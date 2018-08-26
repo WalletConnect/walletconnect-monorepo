@@ -1,0 +1,52 @@
+{
+  "name": "core",
+  "version": "0.5.0",
+  "description": "Walletconnect core library",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "webpack && webpack --env build",
+    "test": "mocha --require @babel/register --colors test/**/*.spec.js",
+    "test:watch": "mocha --require @babel/register --colors -w test/**/*.spec.js"
+  },
+  "keywords": [
+    "walletconnect",
+    "ethereum",
+    "web3",
+    "crypto"
+  ],
+  "author": "Jaynti Kanani <jdkanani@gmail.com>",
+  "homepage": "https://walletconnect.org",
+  "license": "MIT",
+  "main": "dist/core.js",
+  "directories": {
+    "dist": "dist",
+    "test": "test"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect/walletconnect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect/walletconnect/issues"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-rc.3",
+    "@babel/core": "^7.0.0-rc.3",
+    "@babel/preset-env": "^7.0.0-rc.3",
+    "@babel/register": "^7.0.0-rc.3",
+    "babel-loader": "^8.0.0-beta.6",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "mocha": "^5.2.0",
+    "webpack": "^4.17.1",
+    "webpack-cli": "^3.1.0",
+    "yargs": "^12.0.1"
+  },
+  "dependencies": {
+    "ajv": "^6.5.3",
+    "safe-buffer": "^5.1.2",
+    "xhr2": "^0.1.4"
+  }
+}
