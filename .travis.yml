@@ -7,8 +7,10 @@ node_js:
 cache:
   directories:
     - node_modules
+    - ~/.npm
 matrix:
   fast_finish: true
 script:
+  - npm run bootstrap
   - npm run lint
   - npm run test

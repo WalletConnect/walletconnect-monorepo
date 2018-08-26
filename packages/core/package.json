@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "version": "0.5.0",
+  "version": "0.1.0",
   "description": "Walletconnect core library",
   "scripts": {
     "clean": "rm -rf dist",

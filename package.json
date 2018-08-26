@@ -3,19 +3,17 @@
   "private": true,
   "scripts": {
     "ls": "lerna ls",
-    "bootstrap": "lerna bootstrap",
+    "bootstrap": "lerna exec -- npm i && lerna link",
     "clean": "lerna run clean",
     "build": "lerna run build",
     "test": "lerna run test",
     "test:watch": "lerna run test:watch",
     "lint": "eslint packages/*/src/**/*.js packages/*/test/**/*.spec.js",
-    "update-version": "lerna publish --skip-git --skip-npm --force-publish '*'",
-    "check-packages": "npm clean && npm build && npm test && npm lint",
-    "publish-packages": "./scripts/publish"
+    "public": "npm run check-packages && lerna publish --skip-git --skip-npm --force-publish '*'",
+    "check-packages": "npm clean && npm test && npm lint && npm build"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.6",
-    "chai": "^4.1.2",
     "eslint": "^5.4.0",
     "eslint-loader": "^2.1.0",
     "eslint-plugin-import": "^2.14.0",
