@@ -19,13 +19,10 @@ const config = {
   entry: [path.join(__dirname, '/src/index.js')],
   mode: env === 'build' ? 'production' : 'development',
   devtool: env === 'build' ? 'source-map' : 'inline-source-map',
-  externals: {
-    crypto: 'crypto'
-  },
   output: {
     path: path.join(__dirname, '/dist'),
     filename: outputFile,
-    library: libraryName,
+    library: 'WalletConnect',
     libraryTarget: 'umd',
     umdNamedDefine: true
   },
