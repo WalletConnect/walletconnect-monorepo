@@ -7,11 +7,11 @@ Monorepo for walletconnect libraries. This repository contains core libraries, r
 ### Usage
 
 ```bash
-$ npm install --save @walletconnect/walletconnect
+$ npm install --save walletconnect
 
 # OR with yarn
 
-$ yarn add @walletconnect/walletconnect
+$ yarn add walletconnect
 ```
 
 ### Development process

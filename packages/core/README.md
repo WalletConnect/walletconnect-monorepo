@@ -5,11 +5,11 @@ Walletconnect core library
 ### Install
 
 ```bash
-$ npm install --save @walletconnect/core
+$ npm install --save js-walletconnect-core
 ```
 
 ## Usage
 
 ```
-import { Connector } from "@walletconnec/core"
+import { Connector } from "js-walletconnect-core"
 ```
