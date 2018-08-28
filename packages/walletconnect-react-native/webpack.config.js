@@ -1,10 +1,11 @@
 /* global __dirname, require, module */
 
+const webpack = require('webpack')
 const path = require('path')
 const env = require('yargs').argv.env // use --env with webpack 2
 const pkg = require('./package.json')
 
-const libraryName = pkg.name
+let libraryName = pkg.name
 
 let outputFile
 
@@ -15,13 +16,16 @@ if (env === 'build') {
 }
 
 const config = {
-  entry: [path.join(__dirname, '/src/index.js')],
+  entry: [__dirname + '/src/index.js'],
   mode: env === 'build' ? 'production' : 'development',
   devtool: env === 'build' ? 'source-map' : 'inline-source-map',
+  externals: {
+    crypto: 'crypto'
+  },
   output: {
-    path: path.join(__dirname, '/dist'),
+    path: __dirname + '/dist',
     filename: outputFile,
-    library: 'WalletConnect',
+    library: libraryName,
     libraryTarget: 'umd',
     umdNamedDefine: true
   },
@@ -30,7 +34,7 @@ const config = {
       {
         test: /(\.jsx|\.js)$/,
         loader: 'babel-loader',
-        exclude: /node_modules/
+        exclude: /(node_modules|bower_components)/
       }
     ]
   },

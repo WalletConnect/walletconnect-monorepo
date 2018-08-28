@@ -14,12 +14,12 @@
     "web3",
     "crypto"
   ],
-  "author": "Jaynti Kanani <jdkanani@gmail.com>",
+  "author": "WalletConnect Foundation <info@walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "MIT",
   "main": "dist/walletconnect.js",
   "directories": {
-    "dist": "dist",
+    "lib": "dist",
     "test": "test"
   },
   "files": [

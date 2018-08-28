@@ -1,7 +1,7 @@
 {
-  "name": "js-walletconnect-core",
+  "name": "rn-walletconnect-wallet",
   "version": "0.5.0",
-  "description": "Walletconnect core library",
+  "description": "React Native SDK for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "webpack && webpack --env build",
@@ -12,12 +12,14 @@
     "walletconnect",
     "ethereum",
     "web3",
-    "crypto"
+    "crypto",
+    "dapp"
   ],
   "author": "WalletConnect Foundation <info@walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "MIT",
-  "main": "dist/js-walletconnect-core.js",
+  "main": "dist/rn-walletconnect-wallet.js",
+  "module": "dist/rn-walletconnect-wallet.module.js",
   "directories": {
     "lib": "dist",
     "test": "test"
@@ -27,10 +29,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect/walletconnect.git"
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect/walletconnect/issues"
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0-rc.3",
@@ -45,7 +47,7 @@
     "yargs": "^12.0.1"
   },
   "dependencies": {
-    "ajv": "^6.5.3",
+    "js-walletconnect-core": "^0.5.0",
     "safe-buffer": "^5.1.2",
     "xhr2": "^0.1.4"
   }

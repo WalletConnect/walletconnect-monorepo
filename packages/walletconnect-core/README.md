@@ -1,15 +1,21 @@
-# `core`
+# WalletConnect Javascript Core Library
 
-Walletconnect core library
+This JS library includes connector, listener and utilities for WalletConnect standard
 
-### Install
+## Develop
 
 ```bash
-$ npm install --save js-walletconnect-core
+$ npm run start
 ```
 
-## Usage
+## Test
 
+```bash
+$ npm run test
 ```
-import { Connector } from "js-walletconnect-core"
+
+## Build
+
+```bash
+$ npm run build
 ```
