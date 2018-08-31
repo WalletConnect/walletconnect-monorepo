@@ -1,4 +1,14 @@
 {
-  "presets": ["@babel/preset-env"],
-  "plugins": ["add-module-exports"]
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "modules": false,
+        "targets": {
+          "browsers": ["last 2 versions"],
+          "node": "8"
+        }
+      }
+    ]
+  ]
 }
