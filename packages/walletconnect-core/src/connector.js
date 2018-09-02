@@ -1,11 +1,10 @@
-/* global fetch */
-
 import crypto from 'crypto'
-import { Buffer } from 'safe-buffer'
+import { Buffer } from 'buffer'
 import Ajv from 'ajv'
 
-import generateKey from './generate-key'
-import URLTransactionRequest from './url-transaction-request'
+import generateKey from './generateKey'
+import parseStandardURI from './parseStandardURI'
+import URLTransactionRequest from './url_transaction_request'
 
 const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
@@ -90,7 +89,7 @@ export default class Connector {
               type: 'object',
               properties: {
                 name: { type: 'string' },
-                type: { type: 'string', enum: this.solidityTypes }
+                type: { type: 'string', enum: this._solidityTypes }
               },
               required: ['name', 'type']
             }
@@ -193,44 +192,132 @@ export default class Connector {
     return URLTransactionRequest.encode(tx)
   }
 
-  //
-  // Private methods
-  //
+  // -- Private --------------------------------------------------------------- //
 
   //
-  // Get encryptedData remote data
+  //  Format ERC-1328 URI Format
+  //
+  _formatURI() {
+    const _sharedKey = Buffer.from(this.sharedKey, 'hex')
+    const symKey = _sharedKey.toString('base64')
+    const uri = `ethereum:wc-${this.sessionId}@1?name=${this.dappName}&bridge=${
+      this.bridgeUrl
+    }&symKey=${symKey}`
+    return uri
+  }
+
+  //
+  //  Parse ERC-1328 URI Format
+  //
+  _parseURI(string) {
+    const standardURI = parseStandardURI(string)
+    if (standardURI.prefix && standardURI.prefix === 'wc') {
+      const uri = {
+        protocol: standardURI.protocol,
+        version: standardURI.version,
+        sessionID: standardURI.sessionID,
+        bridgeUrl: standardURI.bridge,
+        dappName: standardURI.name,
+        sharedKey: Buffer.from(standardURI.symKey, 'base64').toString('hex')
+      }
+      return uri
+    } else {
+      throw new Error(`URI doesn't follow ERC-1328 standard`)
+    }
+  }
+
+  //
+  //  Fetch Bridge Payload
   //
 
-  async _getEncryptedData(url, withTtl = false) {
-    const res = await fetch(`${this.bridgeUrl}${url}`, {
-      method: 'GET',
+  async _fetchBridge(url, headers = null, body = null) {
+    const requestUrl = `${this.bridgeUrl}${url}`
+
+    const config = {
       headers: {
+        method: 'GET',
         Accept: 'application/json',
         'Content-Type': 'application/json'
       }
-    })
+    }
+
+    if (headers) {
+      config.headers = { ...config.headers, ...headers }
+    }
+
+    if (body) {
+      config.body = JSON.stringify(body)
+    }
+
+    const res = await fetch(requestUrl, config)
 
     // check for no content
     if (res.status === 204) {
       return null
     }
 
+    // check for error message
     if (res.status >= 400) {
       throw new Error(res.statusText)
     }
 
     // get body
-    const body = await res.json()
+    const response = await res.json()
 
-    const decryptedData = this.decrypt(body.data).data
-    if (withTtl) {
-      return { data: decryptedData, ttlInSeconds: body.ttlInSeconds }
-    } else {
-      return decryptedData
-    }
+    return response
   }
 
-  get solidityTypes() {
+  _decryptPayload(data) {
+    let decryptedData = data
+    if (data.encryptionPayload) {
+      decryptedData.data = this.decrypt(data.encryptionPayload).data
+      delete decryptedData.encryptionPayload
+    }
+    return decryptedData
+  }
+
+  //
+  // Get encrypted remote data
+  //
+
+  async _getEncryptedData(url) {
+    const response = this._fetchBridge(url)
+
+    const { data } = response
+
+    const decryptedData = this._decryptPayload(data)
+    return decryptedData
+  }
+
+  //
+  // Get multiple encrypted remote data
+  //
+
+  async _getMultipleEncryptedData(url) {
+    const response = this._fetchBridge(url)
+
+    const { data } = response
+
+    let decryptedData
+
+    if (Array.isArray(data)) {
+      decryptedData = data.map(payload => this._decryptPayload(payload))
+    } else if (typeof data === 'object') {
+      decryptedData = {}
+      Object.keys(data).forEach(key => {
+        const payload = this._decryptPayload(data[key])
+        decryptedData[key] = payload
+      })
+    }
+
+    return decryptedData
+  }
+
+  //
+  // Get solidityTypes
+  //
+
+  get _solidityTypes() {
     const types = ['bool', 'address', 'int', 'uint', 'string', 'byte']
     const ints = Array.from(new Array(32)).map(
       (e, index) => `int${(index + 1) * 8}`

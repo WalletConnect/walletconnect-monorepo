@@ -82,12 +82,10 @@ export default class URLTransactionRequest {
         }
 
         let value = params.substring(i + 1, n)
-        if (
-          key === 'value' ||
-          key === 'gasLimit' ||
-          key === 'gasPrice' ||
-          key === 'gas'
-        ) {
+        if (key === 'value' ||
+            key === 'gasLimit' ||
+            key === 'gasPrice' ||
+            key === 'gas') {
           // Applications that have no access to the blockchain
           // should refuse accepting requests with a non-empty UNIT, if it is not ETH.
           //
@@ -142,9 +140,7 @@ export default class URLTransactionRequest {
 
   static encode(obj) {
     if (!obj['target_address']) {
-      throw new Error(
-        'Transactions should at least have a \'target_address\' parameter'
-      )
+      throw new Error('Transactions should at least have a \'target_address\' parameter')
     }
 
     let res = 'ethereum:' + obj['target_address']

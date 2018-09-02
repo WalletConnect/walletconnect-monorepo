@@ -1,5 +1,3 @@
-/* global Promise */
-
 import crypto from 'crypto'
 
 export default async function generateKey(n = 256 / 8) {

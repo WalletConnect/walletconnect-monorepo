@@ -6,14 +6,14 @@ You can read more about WalletConnect standard here: http://walletconnect.org/
 
 ### Setup
 
-1.  Install package
+1.  Install NPM Package
 
 ```bash
-npm install --save rn-walletconnect-wallet
+yarn add rn-walletconnect-wallet
 
 # OR
 
-yarn add rn-walletconnect-wallet
+npm install --save rn-walletconnect-wallet
 ```
 
 2.  Nodify 'crypto' package for cryptography
@@ -30,34 +30,29 @@ import RNWalletConnect from 'rn-walletconnect-wallet'
 
 
 /**
- *  Scan QR code to get Session data
+ *  Scan QR code URI to init WalletConnect
  */
-onQRCodeScan(session => {
-  // save session data
+onQRCodeScan(string => {
+  // save qrcode string
 })
 
 
 /**
  *  Create WalletConnector
  */
-const walletConnector = new RNWalletConnect(
-  {
-    bridgeUrl: 'https://bridge.walletconnect.org' // Required
-    sessionId: session.sessionId,                 // Required
-    sharedKey: session.sharedKey,                 // Required
-    dappName: session.dappName                    // Required
-  }
-)
+const walletConnector = new RNWalletConnect(string)
 
 /**
  *  Send session data
  */
 walletConnector.sendSessionStatus({
   fcmToken: '12354...3adc',
-  pushEndpoint: 'https://push.walletconnect.org/notification/new',
+  pushEndpoint: 'https://push.walletconnect.org/notification/new',  
   data: {
     accounts: [
-      '0x0000000000000000000000000000000000000000'
+      '0x4292...931B3',
+      '0xa4a7...784E8',
+      ...
     ]
   }
 })

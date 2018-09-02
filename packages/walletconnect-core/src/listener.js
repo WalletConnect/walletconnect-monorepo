@@ -1,5 +1,3 @@
-/* global setTimeout clearTimeout */
-
 export default class Listener {
   // options => fn, cb, timeout, pollInterval
   constructor(connector, options = {}) {
@@ -33,9 +31,7 @@ export default class Listener {
         this._success = true
         this.options.cb(null, result)
       }
-    } catch (e) {
-      // continue regardless of error
-    }
+    } catch (e) {}
   }
 
   stop() {
