@@ -1,10 +1,12 @@
+/* global fetch */
+
 import crypto from 'crypto'
-import { Buffer } from 'buffer'
+import { Buffer } from 'safe-buffer'
 import Ajv from 'ajv'
 
 import generateKey from './generateKey'
 import parseStandardURI from './parseStandardURI'
-import URLTransactionRequest from './url_transaction_request'
+import URLTransactionRequest from './URLTransactionRequest'
 
 const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
@@ -222,7 +224,7 @@ export default class Connector {
       }
       return uri
     } else {
-      throw new Error(`URI doesn't follow ERC-1328 standard`)
+      throw new Error('URI doesn\'t follow ERC-1328 standard')
     }
   }
 
