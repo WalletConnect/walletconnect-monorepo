@@ -1,17 +1,19 @@
 /* global window Promise fetch */
 
 import { Connector, Listener, generateKey } from 'js-walletconnect-core'
-import QRCode from 'qrcode'
 
-let localStorageId = 'wcsmngt'
+const localStorageId = 'wcsmngt'
+let localStorage = null
+if (
+  typeof window !== 'undefined' &&
+  typeof window.localStorage !== 'undefined'
+) {
+  localStorage = window.localStorage
+}
 
 export default class WalletConnect extends Connector {
   constructor(options) {
     super(options)
-    this.canvasElement =
-      typeof options.canvasElement !== 'undefined'
-        ? options.canvasElement
-        : window.document.getElementById('walletconnect-qrcode-canvas')
   }
 
   //
@@ -33,10 +35,9 @@ export default class WalletConnect extends Connector {
             `/session/${session.sessionId}`
           )
           if (accounts) {
-            return {
-              ...session,
+            return Object.assign({}, session, {
               accounts
-            }
+            })
           } else {
             return null
           }
@@ -96,25 +97,8 @@ export default class WalletConnect extends Connector {
       expires: this.expires
     }
 
-    await QRCode.toDataURL(this.canvasElement, JSON.stringify(sessionData), {
-      errorCorrectionLevel: 'H'
-    })
-      .then(url => {
-        this.qrcode = url
-      })
-      .catch(() => {
-        // ignoring err for now
-      })
-
     // sessionId and shared key
-    return {
-      bridgeUrl: this.bridgeUrl,
-      sessionId: this.sessionId,
-      sharedKey: this.sharedKey,
-      dappName: this.dappName,
-      expires: this.expires,
-      qrcode: this.qrcode
-    }
+    return sessionData
   }
 
   //
@@ -213,7 +197,7 @@ export default class WalletConnect extends Connector {
   }
 
   getLocalSessions() {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     let savedSessions = null
     if (savedLocal) {
       savedSessions = JSON.parse(savedLocal)
@@ -222,30 +206,31 @@ export default class WalletConnect extends Connector {
   }
 
   saveLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
       let savedSessions = JSON.parse(savedLocal)
       savedSessions[session.sessionId] = session
-      window.localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
 
   updateLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
       let savedSessions = JSON.parse(savedLocal)
-      savedSessions[session.sessionId] = {
-        ...savedSessions[session.sessionId],
-        ...session
-      }
-      window.localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      savedSessions[session.sessionId] = Object.assign(
+        {},
+        savedSessions[session.sessionId],
+        session
+      )
+      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
 
   deleteLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
-      window.localStorage.removeItem(session.sessionId)
+      localStorage.removeItem(session.sessionId)
     }
   }
 }

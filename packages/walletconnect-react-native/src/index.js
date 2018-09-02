@@ -98,7 +98,7 @@ export default class WalletConnector extends Connector {
     )
   }
 
-  async validateEthereumAddress(address) {
+  validateEthereumAddress(address) {
     return /^(0x){1}[0-9a-fA-F]{40}$/i.test(address)
   }
 }
