@@ -170,4 +170,4 @@ $ npm run publish
 
 ### License
 
-MIT
+LGPL-3.0
