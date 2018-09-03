@@ -14,9 +14,9 @@
     "web3",
     "crypto"
   ],
-  "author": "WalletConnect Foundation <walletconnect.org>",
+  "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://walletconnect.org",
-  "license": "MIT",
+  "license": "LGPL-3.0",
   "main": "dist/js-walletconnect-core.cjs.js",
   "module": "dist/js-walletconnect-core.esm.js",
   "directories": {
