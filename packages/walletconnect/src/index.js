@@ -1,7 +1,5 @@
 /* global window Promise */
 
-import 'idempotent-babel-polyfill'
-
 import { Connector, Listener, generateKey } from 'js-walletconnect-core'
 
 const localStorageId = 'wcsmngt'
@@ -90,7 +88,6 @@ export default class WalletConnect extends Connector {
     }
 
     const uri = this._formatURI(sessionData)
-
     return uri
   }
 
