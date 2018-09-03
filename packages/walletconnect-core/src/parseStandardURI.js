@@ -1,12 +1,38 @@
-// Parse EIP681 and EIP1328 standard URI formats
-// (c) Pedro Gomes <pedrouid@protonmail.com>
-// MIT License
-
 function parseRequiredParams(path, prefix, keys) {
   const required = { prefix }
   path = path.replace(`${prefix}-`, '')
   const values = path.split('@')
   keys.forEach((key, idx) => (required[key] = values[idx] || ''))
+  return required
+}
+
+function parseRequiredFallback(path) {
+  let required = {}
+  let prefix = ''
+  const values = path.split('@')
+  values.forEach((value, idx) => {
+    if (idx === 0) {
+      if (
+        value.match(
+          /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+        )
+      ) {
+        prefix = 'wc'
+        required.prefix = prefix
+        required.sessionID = value
+      } else {
+        prefix = 'pay'
+        required.prefix = prefix
+        required.targetAddress = value
+      }
+    } else if (idx === 1) {
+      if (prefix === 'wc') {
+        required.version = value
+      } else if (prefix === 'pay') {
+        required.chainID = value
+      }
+    }
+  })
   return required
 }
 
@@ -57,7 +83,7 @@ function parseStandardURI(string) {
   } else if (path.startsWith('wc')) {
     required = parseRequiredParams(path, 'wc', ['sessionID', 'version'])
   } else {
-    throw new Error('URI missing prefix')
+    required = parseRequiredFallback(path)
   }
 
   const paramsString =
