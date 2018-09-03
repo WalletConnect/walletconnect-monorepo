@@ -1,0 +1,51 @@
+{
+  "name": "walletconnect-web3-provider",
+  "version": "0.0.1-beta6",
+  "description": "Walletconnect Web3 Povider",
+  "scripts": {
+    "build": "webpack --env dev && webpack --env build && npm run test",
+    "dev": "webpack --progress --colors --watch --env dev",
+    "test":
+      "mocha --require babel-core/register --require babel-polyfill --colors ./test/*.spec.js",
+    "test:watch":
+      "mocha --require babel-core/register --require babel-polyfill --colors -w ./test/*.spec.js",
+    "lint": "eslint src/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/walletconnect/walletconnect-web3-provider.git"
+  },
+  "keywords": ["wallet", "walletconnect", "web3", "react", "ethereum", "dapp"],
+  "author": "Jaynti Kanani <jdkanani@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/walletconnect/walletconnect-web3-provider/issues"
+  },
+  "homepage": "https://github.com/walletconnect/walletconnect-web3-provider",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^8.2.2",
+    "babel-loader": "^7.1.4",
+    "babel-polyfill": "^6.26.0",
+    "chai": "^4.1.2",
+    "eslint": "^4.13.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-loader": "^1.9.0",
+    "eslint-plugin-import": "^2.11.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.7.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "mocha": "^4.0.1",
+    "webpack": "^3.10.0",
+    "yargs": "^10.0.3"
+  },
+  "dependencies": {
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "walletconnect": "0.0.1-beta.11",
+    "xhr2": "^0.1.4"
+  }
+}
