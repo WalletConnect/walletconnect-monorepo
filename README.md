@@ -8,9 +8,9 @@ For more information, check out https://walletconnect.org
 
 ### Index
 
-1. [For Dapps (Browser SDK)](###Quick-Start-for-Dapps-(Browser SDK))
-2. [For Wallets (React-Native SDK)](### Quick Start for Wallets (React-Native SDK))
-2. [### Development workflow](### Development workflow)
+1. [For Dapps (Browser SDK)](#for-dapps-browser-sdk)
+2. [For Wallets (React-Native SDK)](#for-wallets-react-native-sdk)
+3. [Development workflow](#development-workflow)
 
 
 ### For Dapps (Browser SDK)
