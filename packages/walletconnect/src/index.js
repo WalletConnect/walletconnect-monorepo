@@ -12,10 +12,6 @@ if (
 }
 
 export default class WalletConnect extends Connector {
-  constructor(options) {
-    super(options)
-  }
-
   //
   //  Initiate session
   //
@@ -35,10 +31,11 @@ export default class WalletConnect extends Connector {
           const accounts = sessionStatus.data
           const expires = Number(sessionStatus.expiresInSeconds) * 1000
           if (accounts) {
-            return Object.assign({}, session, {
+            return {
+              ...session,
               accounts,
               expires
-            })
+            }
           } else {
             return null
           }
@@ -89,7 +86,7 @@ export default class WalletConnect extends Connector {
       dappName: this.dappName,
       expires: this.expires
     }
-  
+
     const uri = this._formatURI(sessionData)
     return uri
   }
