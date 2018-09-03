@@ -15,7 +15,7 @@
     "crypto",
     "dapp"
   ],
-  "author": "WalletConnect Foundation <info@walletconnect.org>",
+  "author": "WalletConnect Foundation <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "MIT",
   "main": "dist/rn-walletconnect-wallet.cjs.js",
