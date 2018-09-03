@@ -16,7 +16,7 @@
   ],
   "author": "WalletConnect Foundation <walletconnect.org>",
   "homepage": "https://walletconnect.org",
-  "license": "MIT",
+  "license": "LGPL-3.0",
   "main": "dist/walletconnect.cjs.js",
   "module": "dist/walletconnect.esm.js",
   "browser": "dist/walletconnect.umd.js",
