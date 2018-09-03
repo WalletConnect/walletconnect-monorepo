@@ -10,7 +10,7 @@
     "test:watch": "lerna run test:watch",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "lint": "eslint packages/*/src/**/*.js packages/*/test/**/*.spec.js",
-    "public": "npm run check-packages && lerna publish --skip-git --skip-npm --force-publish '*'",
+    "publish": "npm run check-packages && lerna publish --skip-git --skip-npm --force-publish '*'",
     "check-packages": "npm clean && npm test && npm lint && npm build"
   },
   "devDependencies": {
