@@ -22,7 +22,7 @@
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "lint": "eslint packages/*/src/**/*.js packages/*/test/**/*.spec.js",
     "publish": "npm run check-packages && lerna publish --skip-git --skip-npm --force-publish '*'",
-    "check-packages": "npm clean && npm test && npm lint && npm build"
+    "check-packages": "npm run clean && npm run test && npm run lint && npm run build"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.6",
