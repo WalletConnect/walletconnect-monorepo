@@ -1,4 +1,4 @@
-import { WebConnector } from 'walletconnect'
+import WalletConnect from 'walletconnect'
 
 let XMLHttpRequest = null
 let localStorage = null
@@ -114,7 +114,8 @@ export default class WalletConnectProvider {
     }
 
     // create WebConnector
-    const webconnector = new WebConnector(this.bridgeURL, {
+    const webconnector = new WalletConnect({
+      bridgeUrl: this.bridgeURL,
       sessionId: sessionId,
       sharedKey: sharedKey,
       dappName: this.dappName
