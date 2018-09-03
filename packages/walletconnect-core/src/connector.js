@@ -217,6 +217,10 @@ export default class Connector {
       if (!standardURI.sessionID) {
         throw Error('Missing sessionID field')
       }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8ba4928214937b768bc4755423a40f62c0645fdf
       if (!standardURI.bridge) {
         throw Error('Missing bridge field')
       }
