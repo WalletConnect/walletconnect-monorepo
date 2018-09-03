@@ -1,5 +1,5 @@
 /* global describe it */
 
-describe('walletconnect-core', () => {
+describe('walletconnect', () => {
   it('needs tests', () => {})
 })

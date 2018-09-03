@@ -1,21 +1,19 @@
-/* global window Promise fetch */
+/* global window Promise */
 
 import { Connector, Listener, generateKey } from 'js-walletconnect-core'
-import QRCode from 'qrcode'
 
-let localStorageId = 'wcsmngt'
+const localStorageId = 'wcsmngt'
+let localStorage = null
+if (
+  typeof window !== 'undefined' &&
+  typeof window.localStorage !== 'undefined'
+) {
+  localStorage = window.localStorage
+}
 
 export default class WalletConnect extends Connector {
-  constructor(options) {
-    super(options)
-    this.canvasElement =
-      typeof options.canvasElement !== 'undefined'
-        ? options.canvasElement
-        : window.document.getElementById('walletconnect-qrcode-canvas')
-  }
-
   //
-  //  initiate session
+  //  Initiate session
   //
   async initSession() {
     let liveSessions = null
@@ -29,13 +27,14 @@ export default class WalletConnect extends Connector {
       })
       liveSessions = await Promise.all(
         openSessions.map(async session => {
-          const accounts = await this._getEncryptedData(
-            `/session/${session.sessionId}`
-          )
+          const sessionStatus = await this.getSessionStatus()
+          const accounts = sessionStatus.data
+          const expires = Number(sessionStatus.expiresInSeconds) * 1000
           if (accounts) {
             return {
               ...session,
-              accounts
+              accounts,
+              expires
             }
           } else {
             return null
@@ -45,7 +44,8 @@ export default class WalletConnect extends Connector {
       liveSessions = liveSessions.filter(session => !!session)
     }
 
-    const currentSession = liveSessions ? liveSessions[0] : null
+    const currentSession =
+      liveSessions && liveSessions.length ? liveSessions[0] : null
 
     if (currentSession) {
       this.bridgeUrl = currentSession.bridgeUrl
@@ -72,19 +72,10 @@ export default class WalletConnect extends Connector {
     }
 
     // store session info on bridge
-    const res = await fetch(`${this.bridgeUrl}/session/new`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      }
+    const body = await this._fetchBridge('/session/new', {
+      method: 'POST'
     })
-    if (res.status >= 400) {
-      throw new Error(res.statusText)
-    }
 
-    // get json
-    const body = await res.json()
     // session id
     this.sessionId = body.sessionId
 
@@ -96,29 +87,12 @@ export default class WalletConnect extends Connector {
       expires: this.expires
     }
 
-    await QRCode.toDataURL(this.canvasElement, JSON.stringify(sessionData), {
-      errorCorrectionLevel: 'H'
-    })
-      .then(url => {
-        this.qrcode = url
-      })
-      .catch(() => {
-        // ignoring err for now
-      })
-
-    // sessionId and shared key
-    return {
-      bridgeUrl: this.bridgeUrl,
-      sessionId: this.sessionId,
-      sharedKey: this.sharedKey,
-      dappName: this.dappName,
-      expires: this.expires,
-      qrcode: this.qrcode
-    }
+    const uri = this._formatURI(sessionData)
+    return uri
   }
 
   //
-  // create transaction
+  // Create transaction
   //
   async createTransaction(data = {}) {
     if (!this.sessionId) {
@@ -131,26 +105,16 @@ export default class WalletConnect extends Connector {
     const encryptedData = await this.encrypt(data)
 
     // store transaction info on bridge
-    const res = await fetch(
-      `${this.bridgeUrl}/session/${this.sessionId}/transaction/new`,
+    const body = await this._fetchBridge(
+      `/session/${this.sessionId}/transaction/new`,
       {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          data: encryptedData,
-          dappName: this.dappName
-        })
+        method: 'POST'
+      },
+      {
+        data: encryptedData,
+        dappName: this.dappName
       }
     )
-    if (res.status >= 400) {
-      throw new Error(res.statusText)
-    }
-
-    // res
-    const body = await res.json()
 
     // return transactionId
     return {
@@ -159,17 +123,17 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // get session status
+  // Get session status
   //
   getSessionStatus() {
     if (!this.sessionId) {
       throw new Error('sessionId is required')
     }
-    return this._getEncryptedData(`/session/${this.sessionId}`, true)
+    return this._getEncryptedData(`/session/${this.sessionId}`)
   }
 
   //
-  // get transaction status
+  // Get transaction status
   //
   getTransactionStatus(transactionId) {
     if (!this.sessionId || !transactionId) {
@@ -213,7 +177,7 @@ export default class WalletConnect extends Connector {
   }
 
   getLocalSessions() {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     let savedSessions = null
     if (savedLocal) {
       savedSessions = JSON.parse(savedLocal)
@@ -222,30 +186,31 @@ export default class WalletConnect extends Connector {
   }
 
   saveLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
       let savedSessions = JSON.parse(savedLocal)
       savedSessions[session.sessionId] = session
-      window.localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
 
   updateLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
       let savedSessions = JSON.parse(savedLocal)
-      savedSessions[session.sessionId] = {
-        ...savedSessions[session.sessionId],
-        ...session
-      }
-      window.localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      savedSessions[session.sessionId] = Object.assign(
+        {},
+        savedSessions[session.sessionId],
+        session
+      )
+      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
 
   deleteLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
-      window.localStorage.removeItem(session.sessionId)
+      localStorage.removeItem(session.sessionId)
     }
   }
 }

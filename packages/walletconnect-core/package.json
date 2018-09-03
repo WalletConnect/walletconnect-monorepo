@@ -1,6 +1,6 @@
 {
   "name": "js-walletconnect-core",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Walletconnect core library",
   "scripts": {
     "clean": "rm -rf dist",
@@ -14,12 +14,11 @@
     "web3",
     "crypto"
   ],
-  "author": "WalletConnect Foundation <info@walletconnect.org>",
+  "author": "WalletConnect Foundation <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "MIT",
   "main": "dist/js-walletconnect-core.cjs.js",
   "module": "dist/js-walletconnect-core.esm.js",
-  "browser": "dist/js-walletconnect-core.umd.js",
   "directories": {
     "lib": "dist",
     "test": "test"

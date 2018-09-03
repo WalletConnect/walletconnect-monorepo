@@ -1,8 +1,14 @@
-/* global fetch */
-
 import { Connector } from 'js-walletconnect-core'
 
 export default class WalletConnector extends Connector {
+  constructor(string) {
+    super()
+    const uri = this._parseURI(string)
+    this.bridgeUrl = uri.bridgeUrl
+    this.sessionId = uri.sessionId
+    this.sharedKey = uri.sharedKey
+    this.dappName = uri.dappName
+  }
   //
   // send session status
   //
@@ -36,17 +42,16 @@ export default class WalletConnector extends Connector {
     const encryptedData = await this.encrypt(verifiedData)
 
     // store transaction info on bridge
-    const res = await fetch(`${this.bridgeUrl}/session/${this.sessionId}`, {
-      method: 'PUT',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ fcmToken, pushEndpoint, data: encryptedData })
-    })
-    if (res.status >= 400) {
-      throw new Error(res.statusText)
-    }
+    const response = await this._fetchBridge(
+      `/session/${this.sessionId}`,
+      { method: 'PUT' },
+      { fcmToken, pushEndpoint, data: encryptedData }
+    )
+
+    const expires = Number(response.expiresInSeconds) * 1000
+
+    this.expires = expires
+
     return true
   }
 
@@ -62,28 +67,14 @@ export default class WalletConnector extends Connector {
     const encryptedData = await this.encrypt(statusData)
 
     // store transaction info on bridge
-    const res = await fetch(
-      `${this.bridgeUrl}/transaction-status/${transactionId}/new`,
-      {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ data: encryptedData })
-      }
+    await this._fetchBridge(
+      `/transaction-status/${transactionId}/new`,
+      { method: 'POST' },
+      { data: encryptedData }
     )
-    if (res.status >= 400) {
-      throw new Error(res.statusText)
-    }
+
     return true
   }
-
-  //
-  // get session request data
-  //
-  // async getSessionRequest() {   return
-  // this._getEncryptedData(`/session/${this.sessionId}`) }
 
   //
   // get transaction request data
@@ -98,7 +89,16 @@ export default class WalletConnector extends Connector {
     )
   }
 
-  async validateEthereumAddress(address) {
-    return /^(0x){1}[0-9a-fA-F]{40}$/i.test(address)
+  //
+  // get all transaction requests data
+  //
+  async getAllTransactionRequests() {
+    return this._getMultipleEncryptedData(
+      `/session/${this.sessionId}/transactions`
+    )
+  }
+
+  validateEthereumAddress(address) {
+    return /^(0x)?[0-9a-f]{40}$/i.test(address)
   }
 }
