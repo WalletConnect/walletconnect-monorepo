@@ -194,7 +194,7 @@ export default class Connector {
     return URLTransactionRequest.encode(tx)
   }
 
-  // -- Private --------------------------------------------------------------- //
+  // -- Private Methods ----------------------------------------------------- //
 
   //
   //  Format ERC-1328 URI Format
@@ -217,7 +217,6 @@ export default class Connector {
       if (!standardURI.sessionID) {
         throw Error('Missing sessionID field')
       }
-
       if (!standardURI.bridge) {
         throw Error('Missing bridge field')
       }
