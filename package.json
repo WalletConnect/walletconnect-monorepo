@@ -1,6 +1,17 @@
 {
-  "name": "walletconnect",
+  "name": "walletconnect-monorepo",
+  "version": "0.6.0",
+  "description": "Monorepo for WalletConnect Javascript Libraries",
   "private": true,
+  "keywords": [
+    "walletconnect",
+    "ethereum",
+    "web3",
+    "crypto"
+  ],
+  "author": "WalletConnect <walletconnect.org>",
+  "homepage": "https://walletconnect.org",
+  "license": "LGPL-3.0",
   "scripts": {
     "ls": "lerna ls",
     "bootstrap": "lerna exec -- npm i && lerna link",
@@ -10,7 +21,7 @@
     "test:watch": "lerna run test:watch",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "lint": "eslint packages/*/src/**/*.js packages/*/test/**/*.spec.js",
-    "public": "npm run check-packages && lerna publish --skip-git --skip-npm --force-publish '*'",
+    "publish": "npm run check-packages && lerna publish --skip-git --skip-npm --force-publish '*'",
     "check-packages": "npm clean && npm test && npm lint && npm build"
   },
   "devDependencies": {

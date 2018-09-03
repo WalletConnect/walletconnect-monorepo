@@ -18,11 +18,11 @@ For more information, check out https://walletconnect.org
 1. Setup
 
 ```bash
-yarn add rn-walletconnect-wallet
+yarn add walletconnect
 
 # OR
 
-npm install --save rn-walletconnect-wallet
+npm install --save walletconnect
 ```
 
 2. Implementation
