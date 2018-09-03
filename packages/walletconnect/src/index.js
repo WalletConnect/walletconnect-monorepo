@@ -4,7 +4,14 @@ import 'idempotent-babel-polyfill'
 
 import { Connector, Listener, generateKey } from 'js-walletconnect-core'
 
-let localStorageId = 'wcsmngt'
+const localStorageId = 'wcsmngt'
+let localStorage = null
+if (
+  typeof window !== 'undefined' &&
+  typeof window.localStorage !== 'undefined'
+) {
+  localStorage = window.localStorage
+}
 
 export default class WalletConnect extends Connector {
   //
@@ -173,7 +180,7 @@ export default class WalletConnect extends Connector {
   }
 
   getLocalSessions() {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     let savedSessions = null
     if (savedLocal) {
       savedSessions = JSON.parse(savedLocal)
@@ -182,30 +189,31 @@ export default class WalletConnect extends Connector {
   }
 
   saveLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
       let savedSessions = JSON.parse(savedLocal)
       savedSessions[session.sessionId] = session
-      window.localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
 
   updateLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
       let savedSessions = JSON.parse(savedLocal)
-      savedSessions[session.sessionId] = {
-        ...savedSessions[session.sessionId],
-        ...session
-      }
-      window.localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      savedSessions[session.sessionId] = Object.assign(
+        {},
+        savedSessions[session.sessionId],
+        session
+      )
+      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
 
   deleteLocalSession(session) {
-    const savedLocal = window.localStorage.getItem(localStorageId)
+    const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
-      window.localStorage.removeItem(session.sessionId)
+      localStorage.removeItem(session.sessionId)
     }
   }
 }

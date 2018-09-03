@@ -19,7 +19,6 @@
   "license": "MIT",
   "main": "dist/js-walletconnect-core.cjs.js",
   "module": "dist/js-walletconnect-core.esm.js",
-  "browser": "dist/js-walletconnect-core.umd.js",
   "directories": {
     "lib": "dist",
     "test": "test"
