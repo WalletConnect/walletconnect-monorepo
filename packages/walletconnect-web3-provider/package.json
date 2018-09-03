@@ -12,7 +12,7 @@
     "walletconnect",
     "ethereum",
     "web3",
-    "crypto",
+    "crypto"
   ],
   "author": "WalletConnect Foundation <walletconnect.org>",
   "homepage": "https://walletconnect.org",

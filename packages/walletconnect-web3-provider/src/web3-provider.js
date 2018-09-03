@@ -1,3 +1,5 @@
+/* global window */
+
 import WalletConnect from 'walletconnect'
 
 let XMLHttpRequest = null
