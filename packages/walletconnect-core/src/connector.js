@@ -214,6 +214,17 @@ export default class Connector {
   _parseURI(string) {
     const standardURI = parseStandardURI(string)
     if (standardURI.prefix && standardURI.prefix === 'wc') {
+      if (!standardURI.sessionID) {
+        throw Error('Missing sessionID field')
+      }
+      if (!standardURI.bridge) {
+        throw Error('Missing bridge field')
+      }
+
+      if (!standardURI.symKey) {
+        throw Error('Missing symKey field')
+      }
+
       const uri = {
         protocol: standardURI.protocol,
         version: standardURI.version,
