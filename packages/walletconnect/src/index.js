@@ -1,6 +1,6 @@
 /* global window Promise */
 
-import { Connector, Listener, generateKey } from 'js-walletconnect-core'
+import { Connector, Listener, generateKey } from 'walletconnect-core'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
