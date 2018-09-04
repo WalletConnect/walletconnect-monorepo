@@ -34,13 +34,13 @@ const webConnector = new WalletConnect(
  */
 const session = await webConnector.initSession()
 
-console.log(session) // prints { sessionId, sharedKey, qrcode }
+console.log(session)
 
 /**
  *  Listen to session status
  */
 webConnector.listenSessionStatus((err, result) => {
-  console.log(result) // check result
+  console.log(result)
 })
 
 /**
@@ -57,6 +57,6 @@ const transactionId = await webConnector.createTransaction(tx)
  *  Listen to transaction status
  */
 webConnector.listenTransactionStatus(transactionId, (err, result) => {
-  console.log(result) // check result
+  console.log(result)
 })
 ```
