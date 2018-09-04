@@ -53,7 +53,7 @@
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
-    "walletconnect": "0.5.0",
+    "walletconnect": "^0.6.0",
     "xhr2": "^0.1.4"
   }
 }
