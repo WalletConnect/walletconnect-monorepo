@@ -1,5 +1,5 @@
 {
-  "name": "js-walletconnect-core",
+  "name": "walletconnect-core",
   "version": "0.6.0",
   "description": "Walletconnect core library",
   "scripts": {
@@ -17,8 +17,8 @@
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "LGPL-3.0",
-  "main": "dist/js-walletconnect-core.cjs.js",
-  "module": "dist/js-walletconnect-core.esm.js",
+  "main": "dist/walletconnect-core.cjs.js",
+  "module": "dist/walletconnect-core.esm.js",
   "directories": {
     "lib": "dist",
     "test": "test"

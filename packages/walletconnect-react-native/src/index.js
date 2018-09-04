@@ -1,4 +1,4 @@
-import { Connector } from 'js-walletconnect-core'
+import { Connector } from 'walletconnect-core'
 
 export default class WalletConnector extends Connector {
   constructor(string) {
