@@ -12,6 +12,4 @@ matrix:
   fast_finish: true
 script:
   - npm run bootstrap
-  - npm run lint
-  - npm run test
-  - npm run build
+  - npm run check-packages
