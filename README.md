@@ -9,14 +9,13 @@ For more documenation go to: https://docs.walletconnect.org
 
 ### Index
 
-1. [For Dapps (Browser SDK)](#for-dapps-browser-sdk)
-2. [For Wallets (React-Native SDK)](#for-wallets-react-native-sdk)
-3. [Development workflow](#development-workflow)
-
+1.  [For Dapps (Browser SDK)](#for-dapps-browser-sdk)
+2.  [For Wallets (React-Native SDK)](#for-wallets-react-native-sdk)
+3.  [Development workflow](#development-workflow)
 
 ### For Dapps (Browser SDK)
 
-1. Setup
+1.  Setup
 
 ```bash
 yarn add walletconnect
@@ -26,7 +25,7 @@ yarn add walletconnect
 npm install --save walletconnect
 ```
 
-2. Implementation
+2.  Implementation
 
 ```js
 import WalletConnect from 'walletconnect'
@@ -46,7 +45,7 @@ const webConnector = new WalletConnect(
  */
 const session = await webConnector.initSession()
 
-console.log(session)
+const { uri } = session; // Display QR code with URI string
 
 /**
  *  Listen to session status
@@ -96,7 +95,7 @@ npm install --save rn-walletconnect-wallet
 rn-nodeify --install "crypto" --hack
 ```
 
-2. Implementation
+2.  Implementation
 
 ```js
 import RNWalletConnect from 'rn-walletconnect-wallet'

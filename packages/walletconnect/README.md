@@ -34,7 +34,7 @@ const webConnector = new WalletConnect(
  */
 const session = await webConnector.initSession()
 
-console.log(session)
+const { uri } = session; // Display QR code with uri string
 
 /**
  *  Listen to session status
