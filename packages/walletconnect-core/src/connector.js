@@ -217,6 +217,7 @@ export default class Connector {
       if (!standardURI.sessionID) {
         throw Error('Missing sessionID field')
       }
+
       if (!standardURI.bridge) {
         throw Error('Missing bridge field')
       }

@@ -1,7 +1,7 @@
 {
-  "name": "walletconnect",
+  "name": "walletconnect-web3-provider",
   "version": "0.6.1",
-  "description": "Walletconnect library for browser",
+  "description": "Walletconnect Web3 Povider",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "rollup -c rollup.config.js",
@@ -14,7 +14,7 @@
     "web3",
     "crypto"
   ],
-  "author": "WalletConnect <walletconnect.org>",
+  "author": "WalletConnect Foundation <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "LGPL-3.0",
   "main": "dist/walletconnect.cjs.js",
@@ -29,10 +29,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
+    "url": "git+https://github.com/walletconnect/walletconnect.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
+    "url": "https://github.com/walletconnect/walletconnect/issues"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0",
@@ -50,10 +50,10 @@
     "yargs": "12.0.1"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "js-walletconnect-core": "^0.6.0"
-=======
-    "js-walletconnect-core": "^0.6.1"
->>>>>>> e88400ec57794ae38701003d6fcdb24a47c42f94
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "walletconnect": "^0.6.1",
+    "xhr2": "^0.1.4"
   }
 }
