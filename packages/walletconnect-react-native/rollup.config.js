@@ -26,13 +26,13 @@ export default [
         browser: true,
         preferBuiltins: false
       }),
+      babel({
+        exclude: ['node_modules/**'] // only transpile our source code
+      }),
       commonjs(), // so Rollup can convert `crypto` to an ES module
       globals(),
       builtins(),
       json(),
-      babel({
-        exclude: ['node_modules/**'] // only transpile our source code
-      })
       // uglify(),
     ]
   },
@@ -50,6 +50,9 @@ export default [
         modulesOnly: true,
         preferBuiltins: false
       }), // so Rollup can find `crypto`
+      babel({
+        exclude: ['node_modules/**'] // only transpile our source code
+      }),
       commonjs(), // so Rollup can convert `crypto` to an ES module
       globals(),
       json()
