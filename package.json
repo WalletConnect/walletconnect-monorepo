@@ -24,6 +24,13 @@
     "publish": "npm run check-packages && lerna publish --skip-git --skip-npm --force-publish '*'",
     "check-packages": "npm run clean && npm run test && npm run lint && npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
+  },
   "devDependencies": {
     "babel-eslint": "^8.2.6",
     "eslint": "^5.4.0",

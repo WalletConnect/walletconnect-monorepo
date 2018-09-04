@@ -44,7 +44,7 @@ export default class WalletConnect extends Connector {
       liveSessions = liveSessions.filter(session => !!session)
     }
 
-    const currentSession =
+    let currentSession =
       liveSessions && liveSessions.length ? liveSessions[0] : null
 
     if (currentSession) {
@@ -54,8 +54,9 @@ export default class WalletConnect extends Connector {
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
     } else {
-      this.createSession()
+      currentSession = this.createSession()
     }
+    return currentSession
   }
 
   //
@@ -88,7 +89,7 @@ export default class WalletConnect extends Connector {
     }
 
     const uri = this._formatURI(sessionData)
-    return uri
+    return { ...sessionData, uri }
   }
 
   //

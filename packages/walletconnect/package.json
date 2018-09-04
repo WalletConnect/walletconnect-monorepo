@@ -29,10 +29,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect/walletconnect.git"
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect/walletconnect/issues"
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0",
