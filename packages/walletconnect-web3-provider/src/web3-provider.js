@@ -1,4 +1,4 @@
-/* global window */
+/* global window Buffer Promise */
 
 import WalletConnect from 'walletconnect'
 
@@ -152,7 +152,7 @@ export default class WalletConnectProvider {
         }
 
         // start listening close event or data event
-        window.addEventListener('walletconnect:dismissed', e => {
+        window.addEventListener('walletconnect:dismissed', () => {
           // close session
           closeSession()
 
