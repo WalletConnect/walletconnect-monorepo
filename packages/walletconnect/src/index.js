@@ -198,11 +198,10 @@ export default class WalletConnect extends Connector {
     const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
       let savedSessions = JSON.parse(savedLocal)
-      savedSessions[session.sessionId] = Object.assign(
-        {},
-        savedSessions[session.sessionId],
-        session
-      )
+      savedSessions[session.sessionId] = {
+        ...savedSessions[session.sessionId],
+        ...session
+      }
       localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
