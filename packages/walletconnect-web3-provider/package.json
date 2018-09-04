@@ -1,0 +1,59 @@
+{
+  "name": "walletconnect-web3-provider",
+  "version": "0.6.0",
+  "description": "Walletconnect Web3 Povider",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "rollup -c rollup.config.js",
+    "test": "mocha --require @babel/register --colors test/**/*.spec.js",
+    "test:watch": "mocha --require @babel/register --colors -w test/**/*.spec.js"
+  },
+  "keywords": [
+    "walletconnect",
+    "ethereum",
+    "web3",
+    "crypto"
+  ],
+  "author": "WalletConnect Foundation <walletconnect.org>",
+  "homepage": "https://walletconnect.org",
+  "license": "LGPL-3.0",
+  "main": "dist/walletconnect.cjs.js",
+  "module": "dist/walletconnect.esm.js",
+  "browser": "dist/walletconnect.umd.js",
+  "directories": {
+    "lib": "dist",
+    "test": "test"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect/walletconnect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect/walletconnect/issues"
+  },
+  "devDependencies": {
+    "@babel/cli": "7.0.0",
+    "@babel/core": "7.0.0",
+    "@babel/preset-env": "7.0.0",
+    "@babel/register": "7.0.0",
+    "mocha": "5.2.0",
+    "rollup": "0.65.0",
+    "rollup-plugin-babel": "^4.0.3",
+    "rollup-plugin-commonjs": "9.1.6",
+    "rollup-plugin-json": "3.0.0",
+    "rollup-plugin-node-builtins": "2.1.2",
+    "rollup-plugin-node-globals": "1.2.1",
+    "rollup-plugin-node-resolve": "3.3.0",
+    "yargs": "12.0.1"
+  },
+  "dependencies": {
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "walletconnect": "0.5.0",
+    "xhr2": "^0.1.4"
+  }
+}
