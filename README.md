@@ -72,6 +72,10 @@ const transactionId = await webConnector.createTransaction(tx)
  *  Listen to transaction status
  */
 const transactionStatus = await webConnector.listenTransactionStatus(transactionId)
+
+if (transactionStatus.success) {
+  const { txHash } = transactionStatus // Get transaction hash
+}
 ```
 
 ### For Wallets (React-Native SDK)
