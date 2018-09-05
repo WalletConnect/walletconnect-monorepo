@@ -155,33 +155,42 @@ export default class WalletConnect extends Connector {
   //
   // Listen for session status
   //
-  listenSessionStatus(cb, pollInterval = 1000, timeout = 60000) {
-    return new Listener(this, {
-      fn: () => {
-        return this.getSessionStatus()
-      },
-      cb,
-      pollInterval,
-      timeout
+  listenSessionStatus(pollInterval = 1000, timeout = 60000) {
+    return new Promise((resolve, reject) => {
+      new Listener(this, {
+        fn: () => {
+          return this.getSessionStatus()
+        },
+        cb: (err, result) => {
+          if (err) {
+            reject(err)
+          }
+          resolve(result)
+        },
+        pollInterval,
+        timeout
+      })
     })
   }
 
   //
   // Listen for session status
   //
-  listenTransactionStatus(
-    transactionId,
-    cb,
-    pollInterval = 1000,
-    timeout = 60000
-  ) {
-    return new Listener(this, {
-      fn: () => {
-        return this.getTransactionStatus(transactionId)
-      },
-      cb,
-      pollInterval,
-      timeout
+  listenTransactionStatus(transactionId, pollInterval = 1000, timeout = 60000) {
+    return new Promise((resolve, reject) => {
+      new Listener(this, {
+        fn: () => {
+          return this.getTransactionStatus(transactionId)
+        },
+        cb: (err, result) => {
+          if (err) {
+            reject(err)
+          }
+          resolve(result)
+        },
+        pollInterval,
+        timeout
+      })
     })
   }
 
