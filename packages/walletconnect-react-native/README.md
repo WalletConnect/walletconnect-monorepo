@@ -28,24 +28,15 @@ rn-nodeify --install "crypto" --hack
 ```js
 import RNWalletConnect from 'rn-walletconnect-wallet'
 
-
 /**
- *  Scan QR code URI to init WalletConnect
+ *  Create WalletConnector (using the URI from scanning the QR code)
  */
-onQRCodeScan(string => {
-  // save qrcode string
-})
-
-
-/**
- *  Create WalletConnector
- */
-const walletConnector = new RNWalletConnect(string)
+const walletConnector = new RNWalletConnect(uri)
 
 /**
  *  Send session data
  */
-walletConnector.sendSessionStatus({
+await walletConnector.sendSessionStatus({
   fcmToken: '12354...3adc',
   pushEndpoint: 'https://push.walletconnect.org/notification/new',  
   data: {
@@ -69,7 +60,7 @@ FCM.on(FCMEvent.Notification, event => {
 /**
  *  Send transaction status
  */
-walletConnector.sendTransactionStatus({
+await walletConnector.sendTransactionStatus(transactionId, {
   success: true,
   txHash: '0xabcd...873'
 })

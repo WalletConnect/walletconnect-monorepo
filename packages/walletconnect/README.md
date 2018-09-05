@@ -34,14 +34,18 @@ const webConnector = new WalletConnect(
  */
 const session = await webConnector.initSession()
 
-console.log(session)
+if (session.new) {
+  const { uri } = session; // Display QR code with URI string
+} else {
+  const { accounts } = session // Get wallet accounts
+}
 
 /**
- *  Listen to session status
+ *  Listen to session status (for new sessions)
  */
-webConnector.listenSessionStatus((err, result) => {
-  console.log(result)
-})
+const sessionStatus = await webConnector.listenSessionStatus()
+
+const accounts = result.data // Get wallet accounts
 
 /**
  *  Draft transaction
@@ -56,7 +60,12 @@ const transactionId = await webConnector.createTransaction(tx)
 /**
  *  Listen to transaction status
  */
-webConnector.listenTransactionStatus(transactionId, (err, result) => {
-  console.log(result)
-})
+ /**
+  *  Listen to transaction status
+  */
+ const transactionStatus = await webConnector.listenTransactionStatus(transactionId)
+
+ if (transactionStatus.success) {
+   const { txHash } = transactionStatus // Get transaction hash
+ }
 ```
