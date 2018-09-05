@@ -147,19 +147,16 @@ await walletConnector.sendTransactionStatus(transactionId, {
 ### Development workflow
 
 ```bash
-$ git clone https://github.com/WalletConnect/walletconnect-monorepo
-$ cd walletconnect-monorepo
+$ git clone https://github.com/WalletConnect/walletconnect-monorepo.git && cd $_
+
 $ npm install
+
 $ npm run bootstrap
 
-# Run testcases
-$ npm run test
-
-# Run eslint
-$ npm run lint
+$ npm run check-packages
 ```
 
-### Publish
+### Publish packages
 
 ```bash
 $ npm run publish
