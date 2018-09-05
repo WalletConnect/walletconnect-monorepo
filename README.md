@@ -45,14 +45,18 @@ const webConnector = new WalletConnect(
  */
 const session = await webConnector.initSession()
 
-const { uri } = session; // Display QR code with URI string
+if (session.new) {
+  const { uri } = session; // Display QR code with URI string
+} else {
+  const { accounts } = session // Get wallet accounts
+}
 
 /**
- *  Listen to session status
+ *  Listen to session status (for new sessions)
  */
-webConnector.listenSessionStatus((err, result) => {
-  console.log(result)
-})
+const sessionStatus = await webConnector.listenSessionStatus()
+
+const accounts = result.data // Get wallet accounts
 
 /**
  *  Draft transaction
@@ -67,9 +71,11 @@ const transactionId = await webConnector.createTransaction(tx)
 /**
  *  Listen to transaction status
  */
-webConnector.listenTransactionStatus(transactionId, (err, result) => {
-  console.log(result)
-})
+const transactionStatus = await webConnector.listenTransactionStatus(transactionId)
+
+if (transactionStatus.success) {
+  const { txHash } = transactionStatus // Get transaction hash
+}
 ```
 
 ### For Wallets (React-Native SDK)
@@ -100,24 +106,15 @@ rn-nodeify --install "crypto" --hack
 ```js
 import RNWalletConnect from 'rn-walletconnect-wallet'
 
-
 /**
- *  Scan QR code URI to init WalletConnect
+ *  Create WalletConnector (using the URI from scanning the QR code)
  */
-onQRCodeScan(string => {
-  // save qrcode string
-})
-
-
-/**
- *  Create WalletConnector
- */
-const walletConnector = new RNWalletConnect(string)
+const walletConnector = new RNWalletConnect(uri)
 
 /**
  *  Send session data
  */
-walletConnector.sendSessionStatus({
+await walletConnector.sendSessionStatus({
   fcmToken: '12354...3adc',
   pushEndpoint: 'https://push.walletconnect.org/notification/new',  
   data: {
@@ -141,7 +138,7 @@ FCM.on(FCMEvent.Notification, event => {
 /**
  *  Send transaction status
  */
-walletConnector.sendTransactionStatus({
+await walletConnector.sendTransactionStatus(transactionId, {
   success: true,
   txHash: '0xabcd...873'
 })
