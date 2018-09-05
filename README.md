@@ -5,7 +5,7 @@
 Monorepo for WalletConnect Javascript Libraries
 This repository contains core libraries, browser SDK, react-native SDK and web3-provider for WalletConnect standard.
 
-For more documenation go to: https://docs.walletconnect.org
+For more documentation go to: https://docs.walletconnect.org
 
 ### Index
 
