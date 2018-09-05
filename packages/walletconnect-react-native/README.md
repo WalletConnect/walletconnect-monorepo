@@ -69,7 +69,7 @@ FCM.on(FCMEvent.Notification, event => {
 /**
  *  Send transaction status
  */
-walletConnector.sendTransactionStatus({
+walletConnector.sendTransactionStatus(transactionId, {
   success: true,
   txHash: '0xabcd...873'
 })
