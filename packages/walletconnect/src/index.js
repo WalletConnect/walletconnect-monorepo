@@ -23,7 +23,9 @@ export default class WalletConnect extends Connector {
       Object.keys(savedSessions).forEach(sessionId => {
         const session = savedSessions[sessionId]
         const now = Date.now()
-        return session.expires > now
+        if (session.expires > now) {
+          openSessions.push(session)
+        }
       })
       liveSessions = await Promise.all(
         openSessions.map(async session => {
@@ -44,6 +46,10 @@ export default class WalletConnect extends Connector {
       liveSessions = liveSessions.filter(session => !!session)
     }
 
+    let session = {
+      new: false
+    }
+
     let currentSession =
       liveSessions && liveSessions.length ? liveSessions[0] : null
 
@@ -53,21 +59,23 @@ export default class WalletConnect extends Connector {
       this.sharedKey = currentSession.sharedKey
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
+      session.accounts = currentSession.accounts
     } else {
-      currentSession = this.createSession()
+      currentSession = await this.createSession()
+      session.new = true
+      session.uri = currentSession.uri
+
+      // save currentSession on localStorage
+      this.saveLocalSession(currentSession)
     }
-    return currentSession
+
+    return session
   }
 
   //
   // Create session
   //
   async createSession() {
-    if (this.sessionId) {
-      throw new Error('session already created')
-    }
-
-    // create shared key
     if (!this.sharedKey) {
       this.sharedKey = await generateKey()
     }
