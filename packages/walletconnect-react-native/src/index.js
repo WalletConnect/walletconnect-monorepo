@@ -6,7 +6,7 @@ export default class WalletConnector extends Connector {
     const uri = this._parseURI(string)
     this.bridgeUrl = uri.bridgeUrl
     this.sessionId = uri.sessionId
-    this.sharedKey = uri.sharedKey
+    this.symKey = uri.symKey
     this.dappName = uri.dappName
   }
   //

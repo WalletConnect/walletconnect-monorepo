@@ -13,11 +13,11 @@ const HMAC_ALGORITHM = 'SHA256'
 
 export default class Connector {
   constructor(options = {}) {
-    const { bridgeUrl, sessionId, sharedKey, dappName, chainId } = options
+    const { bridgeUrl, sessionId, symKey, dappName, chainId } = options
 
     this.bridgeUrl = bridgeUrl
     this.sessionId = sessionId
-    this.sharedKey = sharedKey
+    this.symKey = symKey
     this.dappName = dappName
     // 1 = mainnet
     this.chainId = chainId || 1
@@ -39,17 +39,17 @@ export default class Connector {
     this._bridgeUrl = value
   }
 
-  get sharedKey() {
-    if (this._sharedKey) {
-      return this._sharedKey.toString('hex')
+  get symKey() {
+    if (this._symKey) {
+      return this._symKey.toString('hex')
     }
 
     return null
   }
 
-  set sharedKey(value) {
-    if (this.sharedKey) {
-      throw new Error('sharedKey already set')
+  set symKey(value) {
+    if (this.symKey) {
+      throw new Error('symKey already set')
     }
 
     if (!value) {
@@ -57,7 +57,7 @@ export default class Connector {
     }
 
     const v = Buffer.from(value.toString('hex'), 'hex')
-    this._sharedKey = v
+    this._symKey = v
   }
 
   // getter for session id
@@ -118,10 +118,10 @@ export default class Connector {
   }
 
   async encrypt(data, customIv = null) {
-    const key = this._sharedKey
+    const key = this._symKey
     if (!key) {
       throw new Error(
-        'Shared key is required. Please set `sharedKey` before using encryption'
+        'Shared key is required. Please set `symKey` before using encryption'
       )
     }
 
@@ -157,7 +157,7 @@ export default class Connector {
   }
 
   decrypt({ data, hmac, iv }) {
-    const key = this._sharedKey
+    const key = this._symKey
     const ivBuffer = Buffer.from(iv, 'hex')
     const hmacBuffer = Buffer.from(hmac, 'hex')
 
@@ -200,8 +200,8 @@ export default class Connector {
   //  Format ERC-1328 URI Format
   //
   _formatURI() {
-    const _sharedKey = Buffer.from(this.sharedKey, 'hex')
-    const symKey = _sharedKey.toString('base64')
+    const _symKey = Buffer.from(this.symKey, 'hex')
+    const symKey = _symKey.toString('base64')
     const uri = `ethereum:wc-${this.sessionId}@1?name=${this.dappName}&bridge=${
       this.bridgeUrl
     }&symKey=${symKey}`
@@ -232,7 +232,7 @@ export default class Connector {
         sessionId: standardURI.sessionId,
         bridgeUrl: standardURI.bridge,
         dappName: standardURI.name,
-        sharedKey: Buffer.from(standardURI.symKey, 'base64').toString('hex')
+        symKey: Buffer.from(standardURI.symKey, 'base64').toString('hex')
       }
       return uri
     } else {
