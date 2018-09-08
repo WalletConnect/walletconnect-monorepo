@@ -19,7 +19,7 @@ function parseRequiredFallback(path) {
       ) {
         prefix = 'wc'
         required.prefix = prefix
-        required.sessionID = value
+        required.sessionId = value
       } else {
         prefix = 'pay'
         required.prefix = prefix
@@ -81,7 +81,7 @@ function parseStandardURI(string) {
   if (path.startsWith('pay')) {
     required = parseRequiredParams(path, 'pay', ['targetAddress', 'chainID'])
   } else if (path.startsWith('wc')) {
-    required = parseRequiredParams(path, 'wc', ['sessionID', 'version'])
+    required = parseRequiredParams(path, 'wc', ['sessionId', 'version'])
   } else {
     required = parseRequiredFallback(path)
   }

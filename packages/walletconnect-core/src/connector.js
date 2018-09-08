@@ -214,8 +214,8 @@ export default class Connector {
   _parseURI(string) {
     const standardURI = parseStandardURI(string)
     if (standardURI.prefix && standardURI.prefix === 'wc') {
-      if (!standardURI.sessionID) {
-        throw Error('Missing sessionID field')
+      if (!standardURI.sessionId) {
+        throw Error('Missing sessionId field')
       }
 
       if (!standardURI.bridge) {
@@ -229,7 +229,7 @@ export default class Connector {
       const uri = {
         protocol: standardURI.protocol,
         version: standardURI.version,
-        sessionID: standardURI.sessionID,
+        sessionId: standardURI.sessionId,
         bridgeUrl: standardURI.bridge,
         dappName: standardURI.name,
         sharedKey: Buffer.from(standardURI.symKey, 'base64').toString('hex')
