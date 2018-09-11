@@ -320,6 +320,10 @@ export default class Connector {
     return response
   }
 
+  //
+  // Decrypt relayed payloads
+  //
+
   _decryptPayload(data) {
     let decryptedData = data
     if (data.encryptionPayload) {
