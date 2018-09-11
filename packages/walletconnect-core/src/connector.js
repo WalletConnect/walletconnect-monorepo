@@ -6,20 +6,26 @@ import Ajv from 'ajv'
 
 import generateKey from './generateKey'
 import parseStandardURI from './parseStandardURI'
-import URLTransactionRequest from './URLTransactionRequest'
 
 const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
 
 export default class Connector {
   constructor(options = {}) {
-    const { bridgeUrl, sessionId, sharedKey, dappName, chainId } = options
+    const {
+      bridgeUrl,
+      sessionId,
+      symKey,
+      dappName,
+      chainId,
+      protocol
+    } = options
 
     this.bridgeUrl = bridgeUrl
     this.sessionId = sessionId
-    this.sharedKey = sharedKey
+    this.symKey = symKey
     this.dappName = dappName
-    // 1 = mainnet
+    this.protocol = protocol || 'ethereum'
     this.chainId = chainId || 1
   }
 
@@ -39,17 +45,17 @@ export default class Connector {
     this._bridgeUrl = value
   }
 
-  get sharedKey() {
-    if (this._sharedKey) {
-      return this._sharedKey.toString('hex')
+  get symKey() {
+    if (this._symKey) {
+      return this._symKey.toString('hex')
     }
 
     return null
   }
 
-  set sharedKey(value) {
-    if (this.sharedKey) {
-      throw new Error('sharedKey already set')
+  set symKey(value) {
+    if (this.symKey) {
+      throw new Error('symKey already set')
     }
 
     if (!value) {
@@ -57,7 +63,7 @@ export default class Connector {
     }
 
     const v = Buffer.from(value.toString('hex'), 'hex')
-    this._sharedKey = v
+    this._symKey = v
   }
 
   // getter for session id
@@ -118,10 +124,10 @@ export default class Connector {
   }
 
   async encrypt(data, customIv = null) {
-    const key = this._sharedKey
+    const key = this._symKey
     if (!key) {
       throw new Error(
-        'Shared key is required. Please set `sharedKey` before using encryption'
+        'Shared key is required. Please set `symKey` before using encryption'
       )
     }
 
@@ -157,7 +163,7 @@ export default class Connector {
   }
 
   decrypt({ data, hmac, iv }) {
-    const key = this._sharedKey
+    const key = this._symKey
     const ivBuffer = Buffer.from(iv, 'hex')
     const hmacBuffer = Buffer.from(hmac, 'hex')
 
@@ -176,67 +182,100 @@ export default class Connector {
     return JSON.parse(decryptedText + decryptor.final('utf8'))
   }
 
-  // EIP681: http://eips.ethereum.org/EIPS/eip-681
-  parseTransactionRequest(url) {
-    const res = URLTransactionRequest.decode(url)
-    if (res.chain_id !== this.chainId) {
-      throw new Error('chain_id does not match')
+  //
+  //  Format ERC-681 - Transaction Request Standard URI Format
+  //
+  formatTransactionRequest(tx) {
+    let uri = `${this.protocol}:pay-${tx.to}@${this.chainId}`
+
+    if (tx.function_name) {
+      uri += '/' + tx.function_name
     }
 
-    return res
+    if (tx.parameters) {
+      let params = ''
+      let keys = Object.keys(tx.parameters)
+      while (keys.length) {
+        let key = keys.pop()
+        let val = tx.parameters[key]
+        params += key + '=' + val.toString()
+        if (keys.length) {
+          params += '&'
+        }
+      }
+      uri += '?' + params
+    }
+
+    return encodeURIComponent(uri)
   }
 
-  // EIP681: http://eips.ethereum.org/EIPS/eip-681
-  // tx.target_address is mandatory
-  stringifyTransactionRequest(tx) {
-    // overwrite/add chain_id
-    tx.chain_id = this.chainId
-    return URLTransactionRequest.encode(tx)
+  //
+  // Parse ERC-681 - Transaction Request Standard URI Format
+  //
+  parseTransactionRequest(string) {
+    const result = parseStandardURI(string)
+    if (result.prefix && result.prefix === 'wc') {
+      if (result.chainId !== this.chainId) {
+        throw new Error('chainId does not match')
+      }
+
+      if (result.protocol !== this.protocol) {
+        throw new Error('Protocol does not match')
+      }
+
+      return result
+    } else {
+      throw new Error('URI string doesn\'t follow ERC-681 standard')
+    }
   }
 
   // -- Private Methods ----------------------------------------------------- //
 
   //
-  //  Format ERC-1328 URI Format
+  //  Format ERC-1328 - WalletConnect Standard URI Format
   //
-  _formatURI() {
-    const _sharedKey = Buffer.from(this.sharedKey, 'hex')
-    const symKey = _sharedKey.toString('base64')
-    const uri = `ethereum:wc-${this.sessionId}@1?name=${this.dappName}&bridge=${
-      this.bridgeUrl
-    }&symKey=${symKey}`
+  _formatWalletConnectURI() {
+    const _symKey = Buffer.from(this.symKey, 'hex')
+    const symKey = _symKey.toString('base64')
+    const uri = `${this.protocol}:wc-${this.sessionId}@1?name=${
+      this.dappName
+    }&bridge=${this.bridgeUrl}&symKey=${symKey}`
     return uri
   }
 
   //
-  //  Parse ERC-1328 URI Format
+  //  Parse ERC-1328 - WalletConnect Standard URI Format
   //
-  _parseURI(string) {
-    const standardURI = parseStandardURI(string)
-    if (standardURI.prefix && standardURI.prefix === 'wc') {
-      if (!standardURI.sessionID) {
-        throw Error('Missing sessionID field')
+  _parseWalletConnectURI(string) {
+    const result = parseStandardURI(string)
+    if (result.prefix && result.prefix === 'wc') {
+      if (!result.sessionId) {
+        throw Error('Missing sessionId field')
       }
 
-      if (!standardURI.bridge) {
+      if (!result.bridge) {
         throw Error('Missing bridge field')
       }
 
-      if (!standardURI.symKey) {
+      if (!result.symKey) {
         throw Error('Missing symKey field')
       }
 
-      const uri = {
-        protocol: standardURI.protocol,
-        version: standardURI.version,
-        sessionID: standardURI.sessionID,
-        bridgeUrl: standardURI.bridge,
-        dappName: standardURI.name,
-        sharedKey: Buffer.from(standardURI.symKey, 'base64').toString('hex')
+      if (result.protocol !== this.protocol) {
+        throw new Error('Protocol does not match')
       }
-      return uri
+
+      const session = {
+        protocol: result.protocol,
+        version: result.version,
+        sessionId: result.sessionId,
+        bridgeUrl: result.bridge,
+        dappName: result.name,
+        symKey: Buffer.from(result.symKey, 'base64').toString('hex')
+      }
+      return session
     } else {
-      throw new Error('URI doesn\'t follow ERC-1328 standard')
+      throw new Error('URI string doesn\'t follow ERC-1328 standard')
     }
   }
 

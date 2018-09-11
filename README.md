@@ -47,16 +47,13 @@ const session = await webConnector.initSession()
 
 if (session.new) {
   const { uri } = session; // Display QR code with URI string
+
+  const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
+
+  const accounts = sessionStatus.data // Get wallet accounts
 } else {
   const { accounts } = session // Get wallet accounts
 }
-
-/**
- *  Listen to session status (for new sessions)
- */
-const sessionStatus = await webConnector.listenSessionStatus()
-
-const accounts = result.data // Get wallet accounts
 
 /**
  *  Draft transaction
@@ -142,6 +139,14 @@ await walletConnector.sendTransactionStatus(transactionId, {
   success: true,
   txHash: '0xabcd...873'
 })
+
+/**
+ *  Get all transactions from bridge
+ */
+const allTransactions = await walletConnector.getAllTransactionRequests();
+
+// allTransactions is a map from transactionId --> transactionData
+const transactionData = allTransactions[someTransactionId];
 ```
 
 ### Development workflow
