@@ -12,20 +12,21 @@ function parseRequiredParams(path) {
     }
   }
 
-  let standard = ''
+  let standard =
+    Object.keys(config).filter(key => path.startsWith(config[key].prefix))[0] ||
+    ''
 
-  if (path.startsWith('pay')) {
-    standard = 'erc681'
-  } else if (path.startsWith('wc')) {
-    standard = 'erc1328'
-  } else if (
-    path.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi)
-  ) {
-    standard = 'erc1328'
-  } else {
-    standard = 'erc681'
+  if (!standard) {
+    if (
+      path.match(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
+      )
+    ) {
+      standard = 'erc1328'
+    } else {
+      standard = 'erc681'
+    }
   }
-
   const requiredParams = { prefix: config[standard].prefix }
 
   path = path.replace(`${config[standard].prefix}-`, '')
