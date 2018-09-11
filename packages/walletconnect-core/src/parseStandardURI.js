@@ -1,49 +1,61 @@
-function parseRequiredParams(path, prefix, keys) {
-  const required = { prefix }
-  path = path.replace(`${prefix}-`, '')
-  const values = path.split('@')
-  keys.forEach((key, idx) => (required[key] = values[idx] || ''))
-  return required
-}
-
-function parseRequiredFallback(path) {
-  let required = {}
-  let prefix = ''
-  const values = path.split('@')
-  values.forEach((value, idx) => {
-    if (idx === 0) {
-      if (
-        value.match(
-          /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-        )
-      ) {
-        prefix = 'wc'
-        required.prefix = prefix
-        required.sessionId = value
-      } else {
-        prefix = 'pay'
-        required.prefix = prefix
-        required.targetAddress = value
-      }
-    } else if (idx === 1) {
-      if (prefix === 'wc') {
-        required.version = value
-      } else if (prefix === 'pay') {
-        required.chainID = value
-      }
+function parseRequiredParams(path) {
+  const config = {
+    erc681: {
+      prefix: 'pay',
+      keys: ['targetAddress', 'chainId', 'functionName']
+    },
+    erc1328: {
+      prefix: 'wc',
+      keys: ['sessionId', 'version', '']
     }
-  })
-  return required
+  }
+  const requiredParams = {}
+  let standard = ''
+  if (path.startsWith('pay')) {
+    standard = 'erc681'
+  } else if (path.startsWith('wc')) {
+    standard = 'erc1328'
+  } else if (
+    path.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi)
+  ) {
+    standard = 'erc1328'
+  } else {
+    standard = 'erc681'
+  }
+
+  path = path.replace(`${config[standard].prefix}-`, '')
+
+  const index2char = '/'
+  const index2 =
+    path.indexOf(index2char) && path.indexOf(index2char) !== -1
+      ? path.indexOf(index2char)
+      : path.length
+
+  const index1char = '@'
+  const index1 =
+    path.indexOf(index1char) && path.indexOf(index1char) !== -1
+      ? path.indexOf(index1char)
+      : index2
+
+  requiredParams[config[standard].keys[0] || 'key0'] = path.substring(0, index1)
+
+  requiredParams[config[standard].keys[1] || 'key1'] =
+    index1 !== index2 ? path.substring(index1 + 1, index2) : ''
+
+  requiredParams[config[standard].keys[2] || 'key2'] =
+    index2 !== path.length ? path.substring(index2 + 1) : ''
+
+  return requiredParams
 }
 
-function parseParamsString(paramsString) {
-  if (!paramsString) return {}
+function parseQueryParams(queryString) {
+  if (!queryString) return {}
 
   let parameters = {}
 
-  let pairs = (paramsString[0] === '?'
-    ? paramsString.substr(1)
-    : paramsString
+  let pairs = (queryString[0] === '?'
+    ? queryString.substr(1)
+    : queryString
   ).split('&')
 
   for (let i = 0; i < pairs.length; i++) {
@@ -71,27 +83,19 @@ function parseStandardURI(string) {
 
   const protocol = string.substring(0, pathStart)
 
-  let required = {}
-
   let path =
     string.indexOf('?') !== -1
       ? string.substring(pathStart + 1, pathEnd)
       : string.substring(pathStart + 1)
 
-  if (path.startsWith('pay')) {
-    required = parseRequiredParams(path, 'pay', ['targetAddress', 'chainID'])
-  } else if (path.startsWith('wc')) {
-    required = parseRequiredParams(path, 'wc', ['sessionId', 'version'])
-  } else {
-    required = parseRequiredFallback(path)
-  }
+  let requiredParams = parseRequiredParams(path)
 
-  const paramsString =
+  const queryString =
     string.indexOf('?') !== -1 ? string.substring(pathEnd) : ''
 
-  const parameters = parseParamsString(paramsString)
+  const queryParams = parseQueryParams(queryString)
 
-  return { protocol, ...required, ...parameters }
+  return { protocol, ...requiredParams, ...queryParams }
 }
 
 export default parseStandardURI
