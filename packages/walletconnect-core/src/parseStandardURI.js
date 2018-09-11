@@ -2,15 +2,17 @@ function parseRequiredParams(path) {
   const config = {
     erc681: {
       prefix: 'pay',
+      separators: ['@', '/'],
       keys: ['targetAddress', 'chainId', 'functionName']
     },
     erc1328: {
       prefix: 'wc',
-      keys: ['sessionId', 'version', '']
+      separators: ['@'],
+      keys: ['sessionId', 'version']
     }
   }
-  const requiredParams = {}
   let standard = ''
+
   if (path.startsWith('pay')) {
     standard = 'erc681'
   } else if (path.startsWith('wc')) {
@@ -23,27 +25,33 @@ function parseRequiredParams(path) {
     standard = 'erc681'
   }
 
+  const requiredParams = { prefix: config[standard].prefix }
+
   path = path.replace(`${config[standard].prefix}-`, '')
 
-  const index2char = '/'
-  const index2 =
-    path.indexOf(index2char) && path.indexOf(index2char) !== -1
-      ? path.indexOf(index2char)
-      : path.length
+  const indexes = []
 
-  const index1char = '@'
-  const index1 =
-    path.indexOf(index1char) && path.indexOf(index1char) !== -1
-      ? path.indexOf(index1char)
-      : index2
+  config[standard].separators.reverse().forEach((separator, idx, arr) => {
+    let fallback
+    if (idx === arr.length) {
+      fallback = path.length
+    } else {
+      fallback = indexes[0]
+    }
+    let index =
+      path.indexOf(separator) && path.indexOf(separator) !== -1
+        ? path.indexOf(separator)
+        : fallback
+    indexes.unshift(index)
+  })
 
-  requiredParams[config[standard].keys[0] || 'key0'] = path.substring(0, index1)
+  requiredParams[config[standard].keys[0]] = path.substring(0, indexes[0])
 
-  requiredParams[config[standard].keys[1] || 'key1'] =
-    index1 !== index2 ? path.substring(index1 + 1, index2) : ''
+  requiredParams[config[standard].keys[1]] =
+    indexes[0] !== indexes[1] ? path.substring(indexes[0] + 1, indexes[1]) : ''
 
-  requiredParams[config[standard].keys[2] || 'key2'] =
-    index2 !== path.length ? path.substring(index2 + 1) : ''
+  requiredParams[config[standard].keys[2]] =
+    indexes[1] !== path.length ? path.substring(indexes[1] + 1) : ''
 
   return requiredParams
 }
