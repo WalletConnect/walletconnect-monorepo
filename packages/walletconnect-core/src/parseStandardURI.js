@@ -1,49 +1,73 @@
-function parseRequiredParams(path, prefix, keys) {
-  const required = { prefix }
-  path = path.replace(`${prefix}-`, '')
-  const values = path.split('@')
-  keys.forEach((key, idx) => (required[key] = values[idx] || ''))
-  return required
-}
-
-function parseRequiredFallback(path) {
-  let required = {}
-  let prefix = ''
-  const values = path.split('@')
-  values.forEach((value, idx) => {
-    if (idx === 0) {
-      if (
-        value.match(
-          /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-        )
-      ) {
-        prefix = 'wc'
-        required.prefix = prefix
-        required.sessionID = value
-      } else {
-        prefix = 'pay'
-        required.prefix = prefix
-        required.targetAddress = value
-      }
-    } else if (idx === 1) {
-      if (prefix === 'wc') {
-        required.version = value
-      } else if (prefix === 'pay') {
-        required.chainID = value
-      }
+function parseRequiredParams(path) {
+  const config = {
+    erc681: {
+      prefix: 'pay',
+      separators: ['@', '/'],
+      keys: ['targetAddress', 'chainId', 'functionName']
+    },
+    erc1328: {
+      prefix: 'wc',
+      separators: ['@'],
+      keys: ['sessionId', 'version']
     }
+  }
+
+  let standard =
+    Object.keys(config).filter(key => path.startsWith(config[key].prefix))[0] ||
+    ''
+
+  if (!standard) {
+    if (
+      path.match(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
+      )
+    ) {
+      standard = 'erc1328'
+    } else {
+      standard = 'erc681'
+    }
+  }
+
+  const requiredParams = { prefix: config[standard].prefix }
+
+  path = path.replace(`${config[standard].prefix}-`, '')
+
+  const indexes = []
+
+  config[standard].separators.reverse().forEach((separator, idx, arr) => {
+    let fallback
+    if (idx === arr.length) {
+      fallback = path.length
+    } else {
+      fallback = indexes[0]
+    }
+    let index =
+      path.indexOf(separator) && path.indexOf(separator) !== -1
+        ? path.indexOf(separator)
+        : fallback
+    indexes.unshift(index)
   })
-  return required
+
+  config[standard].keys.forEach((key, idx, arr) => {
+    let startIndex = idx !== 0 ? indexes[idx - 1] + 1 : 0
+    let endIndex = idx !== arr.length ? indexes[idx] : undefined
+    requiredParams[key] =
+      idx !== 0 && indexes[idx - 1] === indexes[idx]
+        ? ''
+        : path.substring(startIndex, endIndex)
+  })
+
+  return requiredParams
 }
 
-function parseParamsString(paramsString) {
-  if (!paramsString) return {}
+function parseQueryParams(queryString) {
+  if (!queryString) return {}
 
   let parameters = {}
 
-  let pairs = (paramsString[0] === '?'
-    ? paramsString.substr(1)
-    : paramsString
+  let pairs = (queryString[0] === '?'
+    ? queryString.substr(1)
+    : queryString
   ).split('&')
 
   for (let i = 0; i < pairs.length; i++) {
@@ -67,31 +91,19 @@ function parseStandardURI(string) {
 
   const pathStart = string.indexOf(':')
 
-  const pathEnd = string.indexOf('?')
+  const pathEnd = string.indexOf('?') !== -1 ? string.indexOf('?') : undefined
 
   const protocol = string.substring(0, pathStart)
 
-  let required = {}
+  let path = string.substring(pathStart + 1, pathEnd)
 
-  let path =
-    string.indexOf('?') !== -1
-      ? string.substring(pathStart + 1, pathEnd)
-      : string.substring(pathStart + 1)
+  let requiredParams = parseRequiredParams(path)
 
-  if (path.startsWith('pay')) {
-    required = parseRequiredParams(path, 'pay', ['targetAddress', 'chainID'])
-  } else if (path.startsWith('wc')) {
-    required = parseRequiredParams(path, 'wc', ['sessionID', 'version'])
-  } else {
-    required = parseRequiredFallback(path)
-  }
+  const queryString = pathEnd ? string.substring(pathEnd) : ''
 
-  const paramsString =
-    string.indexOf('?') !== -1 ? string.substring(pathEnd) : ''
+  const queryParams = parseQueryParams(queryString)
 
-  const parameters = parseParamsString(paramsString)
-
-  return { protocol, ...required, ...parameters }
+  return { protocol, ...requiredParams, ...queryParams }
 }
 
 export default parseStandardURI

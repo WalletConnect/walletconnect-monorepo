@@ -56,7 +56,7 @@ export default class WalletConnect extends Connector {
     if (currentSession) {
       this.bridgeUrl = currentSession.bridgeUrl
       this.sessionId = currentSession.sessionId
-      this.sharedKey = currentSession.sharedKey
+      this.symKey = currentSession.symKey
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
       session.accounts = currentSession.accounts
@@ -76,8 +76,8 @@ export default class WalletConnect extends Connector {
   // Create session
   //
   async createSession() {
-    if (!this.sharedKey) {
-      this.sharedKey = await generateKey()
+    if (!this.symKey) {
+      this.symKey = await generateKey()
     }
 
     // store session info on bridge
@@ -91,7 +91,7 @@ export default class WalletConnect extends Connector {
     const sessionData = {
       bridgeUrl: this.bridgeUrl,
       sessionId: this.sessionId,
-      sharedKey: this.sharedKey,
+      symKey: this.symKey,
       dappName: this.dappName,
       expires: this.expires
     }
