@@ -11,6 +11,7 @@ function parseRequiredParams(path) {
       keys: ['sessionId', 'version']
     }
   }
+
   let standard = ''
 
   if (path.startsWith('pay')) {
@@ -45,13 +46,14 @@ function parseRequiredParams(path) {
     indexes.unshift(index)
   })
 
-  requiredParams[config[standard].keys[0]] = path.substring(0, indexes[0])
-
-  requiredParams[config[standard].keys[1]] =
-    indexes[0] !== indexes[1] ? path.substring(indexes[0] + 1, indexes[1]) : ''
-
-  requiredParams[config[standard].keys[2]] =
-    indexes[1] !== path.length ? path.substring(indexes[1] + 1) : ''
+  config[standard].keys.forEach((key, idx, arr) => {
+    let startIndex = idx !== 0 ? indexes[idx - 1] + 1 : 0
+    let endIndex = idx !== arr.length ? indexes[idx] : null
+    requiredParams[key] =
+      idx !== 0 && indexes[idx - 1] === indexes[idx]
+        ? ''
+        : path.substring(startIndex, endIndex)
+  })
 
   return requiredParams
 }
