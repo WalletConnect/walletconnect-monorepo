@@ -50,7 +50,7 @@ if (session.new) {
 
   const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
 
-  const accounts = result.data // Get wallet accounts
+  const accounts = sessionStatus.data // Get wallet accounts
 } else {
   const { accounts } = session // Get wallet accounts
 }
