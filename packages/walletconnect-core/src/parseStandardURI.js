@@ -27,6 +27,7 @@ function parseRequiredParams(path) {
       standard = 'erc681'
     }
   }
+
   const requiredParams = { prefix: config[standard].prefix }
 
   path = path.replace(`${config[standard].prefix}-`, '')
