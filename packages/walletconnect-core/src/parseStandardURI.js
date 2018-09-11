@@ -49,7 +49,7 @@ function parseRequiredParams(path) {
 
   config[standard].keys.forEach((key, idx, arr) => {
     let startIndex = idx !== 0 ? indexes[idx - 1] + 1 : 0
-    let endIndex = idx !== arr.length ? indexes[idx] : null
+    let endIndex = idx !== arr.length ? indexes[idx] : undefined
     requiredParams[key] =
       idx !== 0 && indexes[idx - 1] === indexes[idx]
         ? ''
@@ -90,19 +90,15 @@ function parseStandardURI(string) {
 
   const pathStart = string.indexOf(':')
 
-  const pathEnd = string.indexOf('?')
+  const pathEnd = string.indexOf('?') !== -1 ? string.indexOf('?') : undefined
 
   const protocol = string.substring(0, pathStart)
 
-  let path =
-    string.indexOf('?') !== -1
-      ? string.substring(pathStart + 1, pathEnd)
-      : string.substring(pathStart + 1)
+  let path = string.substring(pathStart + 1, pathEnd)
 
   let requiredParams = parseRequiredParams(path)
 
-  const queryString =
-    string.indexOf('?') !== -1 ? string.substring(pathEnd) : ''
+  const queryString = pathEnd ? string.substring(pathEnd) : ''
 
   const queryParams = parseQueryParams(queryString)
 
