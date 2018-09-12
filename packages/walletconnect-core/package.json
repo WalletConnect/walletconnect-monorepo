@@ -1,6 +1,6 @@
 {
   "name": "js-walletconnect-core",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "description": "Walletconnect core library",
   "scripts": {
     "clean": "rm -rf dist",
