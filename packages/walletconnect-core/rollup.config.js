@@ -13,12 +13,12 @@ export default [
   // browser-friendly UMD build
   {
     input: 'src/index.js',
-    external: ['crypto', 'Buffer'],
+    external: ['crypto', 'Buffer', 'ajv'],
     output: {
       name: pkg.name,
       file: pkg.browser,
       format: 'umd',
-      globals: { crypto: 'crypto', Buffer: 'Buffer' }
+      globals: { crypto: 'crypto', Buffer: 'buffer', Ajv: 'ajv' }
     },
     plugins: [
       resolve({
@@ -40,7 +40,7 @@ export default [
   // CommonJS (for Node) and ES module (for bundlers) build.
   {
     input: 'src/index.js',
-    external: ['crypto', 'Buffer'],
+    external: ['crypto', 'Buffer', 'ajv'],
     output: [
       { file: pkg.main, format: 'cjs' },
       { file: pkg.module, format: 'es' }
