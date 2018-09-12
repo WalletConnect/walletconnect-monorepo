@@ -1,6 +1,6 @@
 {
   "name": "js-walletconnect-core",
-  "version": "0.6.3",
+  "version": "0.6.5",
   "description": "Walletconnect core library",
   "scripts": {
     "clean": "rm -rf dist",
@@ -50,7 +50,6 @@
   },
   "dependencies": {
     "ajv": "6.5.3",
-    "safe-buffer": "5.1.2",
     "xhr2": "0.1.4"
   }
 }

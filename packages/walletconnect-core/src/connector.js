@@ -1,7 +1,6 @@
-/* global fetch */
+/* global fetch Buffer */
 
 import crypto from 'crypto'
-import { Buffer } from 'safe-buffer'
 import Ajv from 'ajv'
 
 import generateKey from './generateKey'
@@ -319,6 +318,10 @@ export default class Connector {
 
     return response
   }
+
+  //
+  // Decrypt relayed payloads
+  //
 
   _decryptPayload(data) {
     let decryptedData = data
