@@ -19,6 +19,7 @@
     "test": "lerna run test",
     "test:watch": "lerna run test:watch",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
+    "clean:package_lock": "lerna exec -- rm -rf package-lock.json",
     "lint": "eslint packages/*/src/**/*.js packages/*/test/**/*.spec.js",
     "publish": "npm run check-packages && lerna publish",
     "check-packages": "npm run clean && npm run test && npm run lint && npm run build"
