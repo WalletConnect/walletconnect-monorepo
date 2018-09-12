@@ -50,7 +50,6 @@
   },
   "dependencies": {
     "ajv": "6.5.3",
-    "safe-buffer": "5.1.2",
     "xhr2": "0.1.4"
   }
 }

@@ -1,7 +1,7 @@
 /* global fetch */
 
 import crypto from 'crypto'
-import { Buffer } from 'safe-buffer'
+import Buffer from 'buffer'
 import Ajv from 'ajv'
 
 import generateKey from './generateKey'
