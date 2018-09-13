@@ -93,7 +93,7 @@ export default class Connector {
     // use custom iv or generate one
     let rawIv = customIv
     if (!rawIv) {
-      rawIv = await generateKey(128 / 8)
+      rawIv = await generateKey(128)
     }
     const iv = Buffer.from(rawIv)
 
