@@ -227,7 +227,7 @@ export default class Connector {
         throw new Error('Protocol does not match')
       }
 
-      const symKey = Buffer.from(result.symKey, 'base64').toString('hex')
+      const symKey = Buffer.from(result.symKey, 'base64')
 
       const session = {
         protocol: result.protocol,
