@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-web3-provider",
-  "version": "0.6.10",
+  "version": "0.6.11",
   "description": "Walletconnect Web3 Povider",
   "scripts": {
     "clean": "rm -rf dist",
@@ -49,7 +49,7 @@
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
-    "walletconnect": "^0.6.10",
+    "walletconnect": "^0.6.11",
     "xhr2": "^0.1.4"
   }
 }
