@@ -242,26 +242,26 @@ export default class Connector {
   //  Fetch Bridge Payload
   //
 
-  async _fetchBridge(url, headers = null, body = null) {
+  async _fetchBridge(url, config = null, body = null) {
     const requestUrl = `${this.bridgeUrl}${url}`
 
-    const config = {
+    let _config = {
+      method: 'GET',
       headers: {
-        method: 'GET',
         Accept: 'application/json',
         'Content-Type': 'application/json'
       }
     }
 
-    if (headers) {
-      config.headers = { ...config.headers, ...headers }
+    if (config) {
+      _config = { ..._config, ...config }
     }
 
     if (body) {
       config.body = JSON.stringify(body)
     }
 
-    const res = await fetch(requestUrl, config)
+    const res = await fetch(requestUrl, _config)
 
     // check for no content
     if (res.status === 204) {
