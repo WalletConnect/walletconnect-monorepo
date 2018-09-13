@@ -12,7 +12,15 @@ module.exports = {
     libraryTarget: 'commonjs2'
   },
   module: {
-    rules: [{ test: /\.(js)$/, use: 'babel-loader' }]
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
   },
   node: {
     Buffer: true,
