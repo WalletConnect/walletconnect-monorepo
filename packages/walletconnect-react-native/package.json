@@ -1,6 +1,6 @@
 {
   "name": "rn-walletconnect-wallet",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "description": "React Native SDK for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -45,6 +45,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "js-walletconnect-core": "^0.6.8"
+    "js-walletconnect-core": "^0.6.9"
   }
 }
