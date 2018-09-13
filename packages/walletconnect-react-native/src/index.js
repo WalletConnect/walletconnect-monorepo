@@ -3,7 +3,7 @@ import { Connector } from 'js-walletconnect-core'
 export default class WalletConnector extends Connector {
   constructor(string) {
     super()
-    const uri = this._parseURI(string)
+    const uri = this._parseWalletConnectURI(string)
     this.bridgeUrl = uri.bridgeUrl
     this.sessionId = uri.sessionId
     this.symKey = uri.symKey
