@@ -1,7 +1,6 @@
 /* global fetch Buffer */
 
 import crypto from 'crypto'
-import Ajv from 'ajv'
 
 import generateKey from './generateKey'
 import parseStandardURI from './parseStandardURI'
@@ -81,45 +80,6 @@ export default class Connector {
     }
 
     this._sessionId = value
-  }
-
-  get typedDataSchema() {
-    // From https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md#specification-of-the-eth_signtypeddata-json-rpc
-    return {
-      type: 'object',
-      properties: {
-        types: {
-          type: 'object',
-          additionalProperties: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                name: { type: 'string' },
-                type: { type: 'string', enum: this._solidityTypes }
-              },
-              required: ['name', 'type']
-            }
-          }
-        },
-        primaryType: { type: 'string' },
-        domain: { type: 'object' },
-        message: { type: 'object' }
-      }
-    }
-  }
-
-  async encryptMessage(typedData, customIv = null) {
-    const ajv = new Ajv()
-    const valid = ajv.validate(this.typedDataSchema, typedData)
-
-    if (!valid) {
-      throw new Error(
-        'Data must follow the EIP712 standard. ' + ajv.errorsText()
-      )
-    }
-
-    return this.encrypt(typedData, customIv)
   }
 
   async encrypt(data, customIv = null) {
@@ -282,26 +242,26 @@ export default class Connector {
   //  Fetch Bridge Payload
   //
 
-  async _fetchBridge(url, headers = null, body = null) {
+  async _fetchBridge(url, config = null, body = null) {
     const requestUrl = `${this.bridgeUrl}${url}`
 
-    const config = {
+    let _config = {
+      method: 'GET',
       headers: {
-        method: 'GET',
         Accept: 'application/json',
         'Content-Type': 'application/json'
       }
     }
 
-    if (headers) {
-      config.headers = { ...config.headers, ...headers }
+    if (config) {
+      _config = { ..._config, ...config }
     }
 
     if (body) {
       config.body = JSON.stringify(body)
     }
 
-    const res = await fetch(requestUrl, config)
+    const res = await fetch(requestUrl, _config)
 
     // check for no content
     if (res.status === 204) {
@@ -367,27 +327,5 @@ export default class Connector {
     }
 
     return decryptedData
-  }
-
-  //
-  // Get solidityTypes
-  //
-
-  get _solidityTypes() {
-    const types = ['bool', 'address', 'int', 'uint', 'string', 'byte']
-    const ints = Array.from(new Array(32)).map(
-      (e, index) => `int${(index + 1) * 8}`
-    )
-    const uints = Array.from(new Array(32)).map(
-      (e, index) => `uint${(index + 1) * 8}`
-    )
-    const bytes = Array.from(new Array(32)).map(
-      (e, index) => `bytes${index + 1}`
-    )
-
-    return types
-      .concat(ints)
-      .concat(uints)
-      .concat(bytes)
   }
 }
