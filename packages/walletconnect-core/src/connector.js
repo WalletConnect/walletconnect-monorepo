@@ -93,7 +93,7 @@ export default class Connector {
     // use custom iv or generate one
     let rawIv = customIv
     if (!rawIv) {
-      rawIv = await generateKey(128 / 8)
+      rawIv = await generateKey(128)
     }
     const iv = Buffer.from(rawIv)
 
@@ -194,8 +194,7 @@ export default class Connector {
   //  Format ERC-1328 - WalletConnect Standard URI Format
   //
   _formatWalletConnectURI() {
-    const _symKey = Buffer.from(this.symKey, 'hex')
-    const symKey = _symKey.toString('base64')
+    const symKey = Buffer.from(this.symKey, 'hex').toString('base64')
     const uri = `${this.protocol}:wc-${this.sessionId}@1?name=${
       this.dappName
     }&bridge=${this.bridgeUrl}&symKey=${symKey}`
@@ -213,16 +212,22 @@ export default class Connector {
       }
 
       if (!result.bridge) {
-        throw Error('Missing bridge field')
+        throw Error('Missing bridge url field')
       }
 
       if (!result.symKey) {
         throw Error('Missing symKey field')
       }
 
+      if (!result.name) {
+        throw Error('Missing dapp name field')
+      }
+
       if (result.protocol !== this.protocol) {
         throw new Error('Protocol does not match')
       }
+
+      const symKey = Buffer.from(result.symKey, 'base64')
 
       const session = {
         protocol: result.protocol,
@@ -230,7 +235,7 @@ export default class Connector {
         sessionId: result.sessionId,
         bridgeUrl: result.bridge,
         dappName: result.name,
-        symKey: Buffer.from(result.symKey, 'base64').toString('hex')
+        symKey: symKey
       }
       return session
     } else {
