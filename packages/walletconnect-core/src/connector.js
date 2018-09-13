@@ -194,8 +194,7 @@ export default class Connector {
   //  Format ERC-1328 - WalletConnect Standard URI Format
   //
   _formatWalletConnectURI() {
-    const _symKey = Buffer.from(this.symKey, 'hex')
-    const symKey = _symKey.toString('base64')
+    const symKey = Buffer.from(this.symKey, 'hex').toString('base64')
     const uri = `${this.protocol}:wc-${this.sessionId}@1?name=${
       this.dappName
     }&bridge=${this.bridgeUrl}&symKey=${symKey}`
