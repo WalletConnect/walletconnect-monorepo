@@ -212,16 +212,22 @@ export default class Connector {
       }
 
       if (!result.bridge) {
-        throw Error('Missing bridge field')
+        throw Error('Missing bridge url field')
       }
 
       if (!result.symKey) {
         throw Error('Missing symKey field')
       }
 
+      if (!result.name) {
+        throw Error('Missing dapp name field')
+      }
+
       if (result.protocol !== this.protocol) {
         throw new Error('Protocol does not match')
       }
+
+      const symKey = Buffer.from(result.symKey, 'base64').toString('hex')
 
       const session = {
         protocol: result.protocol,
@@ -229,7 +235,7 @@ export default class Connector {
         sessionId: result.sessionId,
         bridgeUrl: result.bridge,
         dappName: result.name,
-        symKey: Buffer.from(result.symKey, 'base64').toString('hex')
+        symKey: symKey
       }
       return session
     } else {
