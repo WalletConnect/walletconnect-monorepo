@@ -96,7 +96,7 @@ export default class WalletConnect extends Connector {
       expires: this.expires
     }
 
-    const uri = this._formatURI(sessionData)
+    const uri = this._formatWalletConnectURI(sessionData)
     return { ...sessionData, uri }
   }
 
