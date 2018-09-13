@@ -3,15 +3,10 @@
 import WalletConnect from 'walletconnect'
 
 let XMLHttpRequest = null
-let localStorage = null
 if (typeof window !== 'undefined' && window.XMLHttpRequest) {
   XMLHttpRequest = window.XMLHttpRequest
 } else {
   throw new Error('XMLHttpRequest not found')
-}
-
-if (typeof window !== 'undefined' && window.localStorage) {
-  localStorage = window.localStorage
 }
 
 function getCallback(payload, cb) {
@@ -33,7 +28,7 @@ export default class WalletConnectProvider {
     user,
     password,
     headers,
-    webconnector,
+    webConnector,
     bridgeURL = 'https://bridge.walletconnect.org',
     dappName = 'Unknown DApp'
   }) {
@@ -44,8 +39,8 @@ export default class WalletConnectProvider {
     this.headers = headers
     this.dappName = dappName
 
-    // set webconnector
-    this.webconnector = webconnector
+    // set webConnector
+    this.webConnector = webConnector
     this.bridgeURL = bridgeURL
 
     // sessionPromise
@@ -107,90 +102,35 @@ export default class WalletConnectProvider {
     return result
   }
 
-  createWebconnector() {
-    let sessionId, sharedKey, address
-    if (localStorage) {
-      sessionId = localStorage.getItem('sessionId')
-      sharedKey = localStorage.getItem('sharedKey')
-      address = localStorage.getItem('address')
-    }
+  async createWebconnector() {
+    let accounts = null
 
     // create WebConnector
-    const webconnector = new WalletConnect({
+    const webConnector = new WalletConnect({
       bridgeUrl: this.bridgeURL,
-      sessionId: sessionId,
-      sharedKey: sharedKey,
       dappName: this.dappName
     })
 
-    // session id, shared key and address
-    if (sessionId && sharedKey && address) {
-      // set webconnector object
-      this.webconnector = webconnector
+    const session = await webConnector.initSession()
 
-      return Promise.resolve({ address: address })
-    }
+    if (session.new) {
+      const { uri } = session // Display QR code with URI string
 
-    // create new session
-    return webconnector.createSession().then(obj => {
       // show QR code for walletconnect compatible app
-      const event = new window.CustomEvent('walletconnect:session', {
-        detail: JSON.stringify(obj)
+      const event = new window.CustomEvent('walletconnect:new-session', {
+        detail: JSON.stringify(uri)
       })
+
       window.dispatchEvent(event)
 
-      // start listening session status
-      return new Promise((resolve, reject) => {
-        // setup listener
-        let sessionListener = null
-        function closeSession() {
-          if (sessionListener) {
-            sessionListener.stop()
-          }
+      const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
 
-          sessionListener = null
-        }
+      accounts = sessionStatus.data // Get wallet accounts
+    } else {
+      accounts = session.accounts // Get wallet accounts
+    }
 
-        // start listening close event or data event
-        window.addEventListener('walletconnect:dismissed', () => {
-          // close session
-          closeSession()
-
-          // throw new
-          reject(
-            new Error('Walletconnect session: User denied session creation')
-          )
-        })
-
-        sessionListener = webconnector.listenSessionStatus((err, result) => {
-          // set webconnector object
-          this.webconnector = webconnector
-          // emit session created event
-          const event = new window.CustomEvent(
-            'walletconnect:session:created',
-            {
-              detail: JSON.stringify({ ...obj, ...result })
-            }
-          )
-          window.dispatchEvent(event)
-
-          // close session
-          closeSession()
-
-          if (err) {
-            reject(err)
-          } else {
-            // session id and shared key
-            if (localStorage) {
-              localStorage.setItem('sessionId', obj.sessionId)
-              localStorage.setItem('sharedKey', obj.sharedKey)
-              localStorage.setItem('address', result.address)
-            }
-            resolve(result)
-          }
-        })
-      })
-    })
+    return accounts
   }
 
   _sendAsync(payload, callback) {
@@ -230,7 +170,7 @@ export default class WalletConnectProvider {
    */
   sendAsync(payload, callback) {
     let p = Promise.resolve()
-    if (!this.webconnector) {
+    if (!this.webConnector) {
       if (!this.sessionPromise) {
         // create WebConnector
         this.sessionPromise = this.createWebconnector()
@@ -250,10 +190,10 @@ export default class WalletConnectProvider {
     if (payload.method === 'eth_signTypedData') {
       return p
         .then(() => {
-          return this.webconnector.createTransaction(payload)
+          return this.webConnector.createTransaction(payload)
         })
         .then(({ transactionId }) => {
-          this.webconnector.listenTransactionStatus(
+          this.webConnector.listenTransactionStatus(
             transactionId,
             getCallback(payload, callback)
           )
@@ -262,10 +202,10 @@ export default class WalletConnectProvider {
     } else if (payload.method === 'eth_sendTransaction') {
       return p
         .then(() => {
-          return this.webconnector.createTransaction(payload)
+          return this.webConnector.createTransaction(payload)
         })
         .then(({ transactionId }) => {
-          this.webconnector.listenTransactionStatus(
+          this.webConnector.listenTransactionStatus(
             transactionId,
             (err, data) => {
               if (err) {
@@ -309,7 +249,7 @@ export default class WalletConnectProvider {
    * @return {Boolean} returns true if request haven't failed. Otherwise false
    */
   isConnected() {
-    if (this.webconnector) {
+    if (this.webConnector) {
       return true
     }
 
