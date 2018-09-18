@@ -1,9 +1,7 @@
 /* global fetch Buffer */
 
 import crypto from 'crypto'
-
-import generateKey from './generateKey'
-import parseStandardURI from './parseStandardURI'
+import ethParseUri from 'eth-parse-uri'
 
 const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
@@ -25,6 +23,8 @@ export default class Connector {
     this.dappName = dappName
     this.protocol = protocol || 'ethereum'
     this.chainId = chainId || 1
+
+    this.verifySymKey()
   }
 
   get bridgeUrl() {
@@ -56,7 +56,7 @@ export default class Connector {
       throw new Error('symKey already set')
     }
 
-    if (!value) {
+    if (!this.symKey && !value) {
       return
     }
 
@@ -82,6 +82,12 @@ export default class Connector {
     this._sessionId = value
   }
 
+  async verifySymKey() {
+    if (!this.symKey) {
+      this.symKey = await this.generateKey()
+    }
+  }
+
   async encrypt(data, customIv = null) {
     const key = this._symKey
     if (!key) {
@@ -93,7 +99,7 @@ export default class Connector {
     // use custom iv or generate one
     let rawIv = customIv
     if (!rawIv) {
-      rawIv = await generateKey(128)
+      rawIv = await this.generateKey(128)
     }
     const iv = Buffer.from(rawIv)
 
@@ -142,6 +148,16 @@ export default class Connector {
   }
 
   //
+  //  Generate Key (defaults to 256 bit)
+  //
+  async generateKey(s = 256) {
+    const n = s / 8
+    const b = crypto.randomBytes(n)
+    const result = await b
+    return result
+  }
+
+  //
   //  Format ERC-681 - Transaction Request Standard URI Format
   //
   formatTransactionRequest(tx) {
@@ -172,7 +188,7 @@ export default class Connector {
   // Parse ERC-681 - Transaction Request Standard URI Format
   //
   parseTransactionRequest(string) {
-    const result = parseStandardURI(string)
+    const result = ethParseUri(string)
     if (result.prefix && result.prefix === 'wc') {
       if (result.chainId !== this.chainId) {
         throw new Error('chainId does not match')
@@ -205,7 +221,7 @@ export default class Connector {
   //  Parse ERC-1328 - WalletConnect Standard URI Format
   //
   _parseWalletConnectURI(string) {
-    const result = parseStandardURI(string)
+    const result = ethParseUri(string)
     if (result.prefix && result.prefix === 'wc') {
       if (!result.sessionId) {
         throw Error('Missing sessionId field')
