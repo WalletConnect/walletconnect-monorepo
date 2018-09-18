@@ -1,5 +1,3 @@
-/* global window Promise */
-
 import { Connector } from 'js-walletconnect-core'
 
 export default class WalletConnector extends Connector {

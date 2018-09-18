@@ -37,7 +37,7 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
     })
 
     it('creates an instance of Connector', () => {
-      expect(connector instanceof Connector).to.exist
+      expect(connector).to.be.instanceOf(Connector)
     })
 
     it('protocol exists', () => {
@@ -99,7 +99,7 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
     })
 
     it('returns a Buffer object', () => {
-      expect(Buffer.isBuffer(key)).to.exist
+      expect(Buffer.isBuffer(key)).to.be.true
     })
 
     it('defaults to 256 bit key', () => {
