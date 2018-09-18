@@ -3,8 +3,6 @@
 import { expect } from 'chai'
 
 import Connector from '../src/connector'
-import generateKey from '../src/generateKey'
-import parseStandardURI from '../src/parseStandardURI'
 
 function testEncoding(testString, encoding) {
   const buffer = Buffer.from(testString, encoding)
@@ -21,13 +19,13 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
     let config = {
       bridgeUrl: 'https://bridge.walletconnect.org',
       dappName: 'ExampleDapp',
-      sessionId: '8a5e5bdc-a0e4-4702-ba63-8f1a5655744f'
+      sessionId: '8a5e5bdc-a0e4-4702-ba63-8f1a5655744f',
+      symKey: null
     }
 
     let connector = null
 
     beforeEach(async() => {
-      config.symKey = await generateKey()
       connector = new Connector(config)
     })
 
@@ -35,46 +33,70 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
       expect(connector).to.be.instanceOf(Connector)
     })
 
-    it('protocol exists', () => {
-      const protocol = connector.protocol
-      expect(protocol).to.exist
+    describe('protocol', () => {
+      let protocol = null
+
+      beforeEach(() => {
+        protocol = connector.protocol
+      })
+
+      it('exists', () => {
+        expect(protocol).to.exist
+      })
+
+      it('defaults to ethereum', () => {
+        expect(protocol).to.equal('ethereum')
+      })
     })
 
-    it('protocol defaults to ethereum', () => {
-      const protocol = connector.protocol
-      expect(protocol).to.equal('ethereum')
+    describe('chainId', () => {
+      let chainId = null
+
+      beforeEach(() => {
+        chainId = connector.chainId
+      })
+
+      it('exists', () => {
+        expect(chainId).to.exist
+      })
+
+      it('defaults to 1', () => {
+        expect(chainId).to.equal(1)
+      })
     })
 
-    it('chainId exists', () => {
-      const chainId = connector.chainId
-      expect(chainId).to.exist
+    describe('symKey', () => {
+      let symKey = null
+
+      beforeEach(() => {
+        symKey = connector.symKey
+      })
+
+      it('exists', () => {
+        expect(symKey).to.exist
+      })
+
+      it('is hex', () => {
+        const result = testEncoding(symKey, 'hex')
+        expect(result).to.exist
+      })
     })
 
-    it('chainId defaults to 1', () => {
-      const chainId = connector.chainId
-      expect(chainId).to.equal(1)
-    })
+    describe('sessionId', () => {
+      let sessionId = null
 
-    it('symKey exists', () => {
-      const symKey = connector.symKey
-      expect(symKey).to.exist
-    })
+      beforeEach(() => {
+        sessionId = connector.sessionId
+      })
 
-    it('symKey is hex', () => {
-      const symKey = connector.symKey
-      const result = testEncoding(symKey, 'hex')
-      expect(result).to.exist
-    })
+      it('exists', () => {
+        expect(sessionId).to.exist
+      })
 
-    it('sessionId exists', () => {
-      const sessionId = connector.sessionId
-      expect(sessionId).to.exist
-    })
-
-    it('sessionId is UUID', () => {
-      const sessionId = connector.sessionId
-      const regexTest = uuidRegex.test(sessionId)
-      expect(regexTest).to.be.true
+      it('is UUID', () => {
+        const regexTest = uuidRegex.test(sessionId)
+        expect(regexTest).to.be.true
+      })
     })
 
     describe('_formatWalletConnectURI', () => {
@@ -115,92 +137,22 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
         expect(Buffer.isBuffer(symKey)).to.be.true
       })
     })
-  })
+    describe('generateKey', () => {
+      let key = null
 
-  describe('generateKey', () => {
-    let key = null
+      beforeEach(async() => {
+        key = await connector.generateKey()
+      })
 
-    beforeEach(async() => {
-      key = await generateKey()
-    })
+      it('returns a Buffer object', () => {
+        expect(Buffer.isBuffer(key)).to.be.true
+      })
 
-    it('returns a Buffer object', () => {
-      expect(Buffer.isBuffer(key)).to.be.true
-    })
-
-    it('defaults to 256 bit key', () => {
-      const string = key.toString('hex')
-      const hexLength = 64
-      expect(string.length).to.equal(hexLength)
-    })
-  })
-
-  describe('parseStandardURI', () => {
-    let resultURI = null
-
-    beforeEach(() => {
-      resultURI = parseStandardURI(testURI)
-    })
-
-    it('result is an object', () => {
-      expect(resultURI).to.be.a('object')
-    })
-
-    it('result includes protocol', () => {
-      const protocol = resultURI.protocol
-      expect(protocol).to.exist
-    })
-
-    it('result protocol is string', () => {
-      const protocol = resultURI.protocol
-      expect(protocol).to.be.a('string')
-    })
-
-    it('result includes prefix', () => {
-      const prefix = resultURI.prefix
-      expect(prefix).to.exist
-    })
-
-    it('result prefix is string', () => {
-      const prefix = resultURI.prefix
-      expect(prefix).to.be.a('string')
-    })
-
-    it('result includes sessionId', () => {
-      const sessionId = resultURI.sessionId
-      expect(sessionId).to.exist
-    })
-
-    it('result sessionId is string', () => {
-      const sessionId = resultURI.sessionId
-      expect(sessionId).to.be.a('string')
-    })
-
-    // it('result sessionId is UUID', () => {
-    //   const sessionId = resultURI.sessionId
-    //   const regexTest = uuidRegex.test(sessionId)
-    //   expect(regexTest).to.be.true
-    // })
-
-    it('result includes name', () => {
-      const name = resultURI.name
-      expect(name).to.exist
-    })
-
-    it('result name is string', () => {
-      const name = resultURI.name
-      expect(name).to.be.a('string')
-    })
-
-    it('result includes symKey', () => {
-      const symKey = resultURI.symKey
-      expect(symKey).to.exist
-    })
-
-    it('result symKey is base64', () => {
-      const symKey = resultURI.symKey
-      const result = testEncoding(symKey, 'base64')
-      expect(result).to.exist
+      it('defaults to 256 bit key', () => {
+        const string = key.toString('hex')
+        const hexLength = 64
+        expect(string.length).to.equal(hexLength)
+      })
     })
   })
 })

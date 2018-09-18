@@ -1,6 +1,6 @@
 /* global window Promise */
 
-import { Connector, Listener, generateKey } from 'js-walletconnect-core'
+import { Connector, Listener } from 'js-walletconnect-core'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
@@ -77,7 +77,7 @@ export default class WalletConnect extends Connector {
   //
   async createSession() {
     if (!this.symKey) {
-      this.symKey = await generateKey()
+      this.symKey = await this.generateKey()
     }
 
     // store session info on bridge
