@@ -1,25 +1,24 @@
 {
   "name": "walletconnect-web3-provider",
-  "version": "0.6.11",
+  "version": "0.6.13",
   "description": "Walletconnect Web3 Povider",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "webpack --config webpack.config.js",
-    "test": "mocha --require @babel/register --colors test/**/*.spec.js",
-    "test:watch": "mocha --require @babel/register --colors -w test/**/*.spec.js"
+    "test": "BABEL_ENV=test mocha --require @babel/register --require @babel/polyfill --colors test/**/*.spec.js",
+    "test:watch": "npm run test -- -w"
   },
   "keywords": [
     "walletconnect",
     "ethereum",
     "web3",
-    "crypto"
+    "crypto",
+    "dapp"
   ],
-  "author": "WalletConnect Foundation <walletconnect.org>",
+  "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "LGPL-3.0",
-  "main": "dist/walletconnect.cjs.js",
-  "module": "dist/walletconnect.esm.js",
-  "browser": "dist/walletconnect.umd.js",
+  "main": "dist/walletconnect-web3-provider.js",
   "directories": {
     "lib": "dist",
     "test": "test"
@@ -29,10 +28,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect/walletconnect.git"
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect/walletconnect/issues"
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0",
@@ -40,16 +39,16 @@
     "@babel/polyfill": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
     "@babel/register": "7.0.0",
+    "babel-core": "^7.0.0-0",
+    "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.2",
+    "chai": "^4.1.2",
+    "jest": "^23.6.0",
     "mocha": "5.2.0",
     "webpack": "^4.18.0",
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "walletconnect": "^0.6.11",
-    "xhr2": "^0.1.4"
+    "walletconnect": "^0.6.13"
   }
 }
