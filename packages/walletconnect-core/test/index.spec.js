@@ -2,7 +2,7 @@
 
 import { expect } from 'chai'
 
-import Connector from '../src/connector'
+import { Connector } from '../src'
 
 function testEncoding(testString, encoding) {
   const buffer = Buffer.from(testString, encoding)
