@@ -13,24 +13,19 @@ function testEncoding(testString, encoding) {
 }
 
 const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
-
 const testURI =
   'ethereum:wc-8a5e5bdc-a0e4-4702-ba63-8f1a5655744f@1?name=DappExample&bridge=https://bridge.example.com&symKey=KzpSTk1pezg5eTJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U='
 
-let resultURI = null
-
-let key = null
-
-let config = {
-  bridgeUrl: 'https://bridge.walletconnect.org',
-  dappName: 'ExampleDapp',
-  sessionId: '8a5e5bdc-a0e4-4702-ba63-8f1a5655744f'
-}
-
-let connector = null
-
 describe('// ------------- js-walletconnect-core ------------- //', () => {
   describe('Connector class', () => {
+    let config = {
+      bridgeUrl: 'https://bridge.walletconnect.org',
+      dappName: 'ExampleDapp',
+      sessionId: '8a5e5bdc-a0e4-4702-ba63-8f1a5655744f'
+    }
+
+    let connector = null
+
     beforeEach(async() => {
       config.symKey = await generateKey()
       connector = new Connector(config)
@@ -82,18 +77,49 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
       expect(regexTest).to.be.true
     })
 
-    it('_formatWalletConnectURI returns string', () => {
-      const uri = connector._formatWalletConnectURI()
-      expect(uri).to.be.a('string')
+    describe('_formatWalletConnectURI', () => {
+      let formattedURI = null
+
+      beforeEach(() => {
+        formattedURI = connector._formatWalletConnectURI()
+      })
+
+      it('result is a string', () => {
+        expect(formattedURI).to.be.a('string')
+      })
+
+      it('result starts with protocol', () => {
+        const protocol = connector.protocol
+        expect(formattedURI.startsWith(protocol)).to.be.true
+      })
     })
 
-    it('_parseWalletConnectURI returns object', () => {
-      const object = connector._parseWalletConnectURI(testURI)
-      expect(object).to.be.a('object')
+    describe('_parseWalletConnectURI', () => {
+      let parsedURI = null
+
+      beforeEach(() => {
+        parsedURI = connector._parseWalletConnectURI(testURI)
+      })
+
+      it('result is an object', () => {
+        expect(parsedURI).to.be.a('object')
+      })
+
+      it('result symKey exists', () => {
+        const symKey = parsedURI.symKey
+        expect(symKey).to.exist
+      })
+
+      it('result symKey is Buffer', () => {
+        const symKey = parsedURI.symKey
+        expect(Buffer.isBuffer(symKey)).to.be.true
+      })
     })
   })
 
   describe('generateKey', () => {
+    let key = null
+
     beforeEach(async() => {
       key = await generateKey()
     })
@@ -110,6 +136,8 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
   })
 
   describe('parseStandardURI', () => {
+    let resultURI = null
+
     beforeEach(() => {
       resultURI = parseStandardURI(testURI)
     })
