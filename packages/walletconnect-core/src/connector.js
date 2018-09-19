@@ -262,7 +262,7 @@ export default class Connector {
     let _config = {
       method: 'GET',
       headers: {
-        Accept: 'application/json',
+        // Accept: 'application/json',
         'Content-Type': 'application/json'
       }
     }
@@ -272,7 +272,7 @@ export default class Connector {
     }
 
     if (body) {
-      config.body = JSON.stringify(body)
+      _config.body = JSON.stringify(body)
     }
 
     const res = await fetch(requestUrl, _config)
