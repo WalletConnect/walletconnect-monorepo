@@ -207,7 +207,7 @@ export default class Connector {
     const uri = `${this.protocol}:wc-${this.sessionId}@1?name=${
       this.dappName
     }&bridge=${this.bridgeUrl}&symKey=${symKey}`
-    return uri
+    return encodeURIComponent(uri)
   }
 
   //
