@@ -82,6 +82,7 @@ export default class Connector {
 
   async encrypt(data, customIv = null) {
     const key = this._symKey
+
     if (!key) {
       throw new Error(
         'Shared key is required. Please set `symKey` before using encryption'
