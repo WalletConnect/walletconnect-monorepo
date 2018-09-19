@@ -1,15 +1,20 @@
 /* eslint-disable */
 
-var path = require('path')
+const path = require('path')
+const pkg = require('./package.json')
 
 module.exports = {
   mode: 'production',
   entry: ['@babel/polyfill', './src/index.js'],
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'js-walletconnect-core.js',
-    library: 'js-walletconnect-core',
+    filename: `${pkg.name}.js`,
+    library: pkg.name,
     libraryTarget: 'commonjs2'
+  },
+  externals: {
+    crypto: 'crypto',
+    Buffer: 'buffer'
   },
   module: {
     rules: [

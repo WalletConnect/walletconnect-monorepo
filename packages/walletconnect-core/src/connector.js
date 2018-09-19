@@ -207,7 +207,7 @@ export default class Connector {
     const uri = `${this.protocol}:wc-${this.sessionId}@1?name=${
       this.dappName
     }&bridge=${this.bridgeUrl}&symKey=${symKey}`
-    return uri
+    return encodeURIComponent(uri)
   }
 
   //
@@ -262,7 +262,7 @@ export default class Connector {
     let _config = {
       method: 'GET',
       headers: {
-        Accept: 'application/json',
+        // Accept: 'application/json',
         'Content-Type': 'application/json'
       }
     }
@@ -272,7 +272,7 @@ export default class Connector {
     }
 
     if (body) {
-      config.body = JSON.stringify(body)
+      _config.body = JSON.stringify(body)
     }
 
     const res = await fetch(requestUrl, _config)
