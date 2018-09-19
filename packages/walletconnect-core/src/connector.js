@@ -23,8 +23,6 @@ export default class Connector {
     this.dappName = dappName
     this.protocol = protocol || 'ethereum'
     this.chainId = chainId || 1
-
-    this.verifySymKey()
   }
 
   get bridgeUrl() {
@@ -82,14 +80,9 @@ export default class Connector {
     this._sessionId = value
   }
 
-  async verifySymKey() {
-    if (!this.symKey) {
-      this.symKey = await this.generateKey()
-    }
-  }
-
   async encrypt(data, customIv = null) {
     const key = this._symKey
+
     if (!key) {
       throw new Error(
         'Shared key is required. Please set `symKey` before using encryption'

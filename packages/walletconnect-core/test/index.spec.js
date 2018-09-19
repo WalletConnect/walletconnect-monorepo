@@ -27,6 +27,7 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
 
     beforeEach(async() => {
       connector = new Connector(config)
+      connector.symKey = await connector.generateKey()
     })
 
     it('creates an instance of Connector', () => {
