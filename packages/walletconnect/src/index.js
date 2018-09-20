@@ -134,22 +134,28 @@ export default class WalletConnect extends Connector {
   //
   // Get session status
   //
-  getSessionStatus() {
+  async getSessionStatus() {
     if (!this.sessionId) {
       throw new Error('sessionId is required')
     }
-    return this._getEncryptedData(`/session/${this.sessionId}`)
+    const result = await this._getEncryptedData(`/session/${this.sessionId}`)
+
+    return result
   }
 
   //
   // Get transaction status
   //
-  getTransactionStatus(transactionId) {
+  async getTransactionStatus(transactionId) {
     if (!this.sessionId || !transactionId) {
       throw new Error('sessionId and transactionId are required')
     }
 
-    return this._getEncryptedData(`/transaction-status/${transactionId}`)
+    const result = await this._getEncryptedData(
+      `/transaction-status/${transactionId}`
+    )
+
+    return result
   }
 
   //
@@ -157,10 +163,8 @@ export default class WalletConnect extends Connector {
   //
   listenSessionStatus(pollInterval = 1000, timeout = 60000) {
     return new Promise((resolve, reject) => {
-      new Listener(this, {
-        fn: () => {
-          return this.getSessionStatus()
-        },
+      new Listener({
+        fn: async() => await this.getSessionStatus(),
         cb: (err, result) => {
           if (err) {
             reject(err)
@@ -174,14 +178,12 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Listen for session status
+  // Listen for transaction status
   //
   listenTransactionStatus(transactionId, pollInterval = 1000, timeout = 60000) {
     return new Promise((resolve, reject) => {
-      new Listener(this, {
-        fn: () => {
-          return this.getTransactionStatus(transactionId)
-        },
+      new Listener({
+        fn: async() => await this.getTransactionStatus(transactionId),
         cb: (err, result) => {
           if (err) {
             reject(err)
