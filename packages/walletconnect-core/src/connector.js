@@ -314,7 +314,11 @@ export default class Connector {
   //
 
   async _getEncryptedData(url) {
-    const response = this._fetchBridge(url)
+    const response = await this._fetchBridge(url)
+
+    if (!response) {
+      return null
+    }
 
     const { data } = response
 
@@ -327,7 +331,11 @@ export default class Connector {
   //
 
   async _getMultipleEncryptedData(url) {
-    const response = this._fetchBridge(url)
+    const response = await this._fetchBridge(url)
+
+    if (!response) {
+      return null
+    }
 
     const { data } = response
 

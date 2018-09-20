@@ -2,7 +2,7 @@
 
 import { expect } from 'chai'
 
-import { Connector } from '../src'
+import { Connector, Listener } from '../src'
 
 function testEncoding(testString, encoding) {
   const buffer = Buffer.from(testString, encoding)
@@ -154,6 +154,13 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
         const hexLength = 64
         expect(string.length).to.equal(hexLength)
       })
+    })
+  })
+
+  describe('Listener class', () => {
+    it('Creates an instance of Listener', () => {
+      const listener = new Listener({ cb: () => {} })
+      expect(listener).to.be.instanceOf(Listener)
     })
   })
 })
