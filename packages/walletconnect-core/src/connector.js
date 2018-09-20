@@ -262,7 +262,7 @@ export default class Connector {
     let _config = {
       method: 'GET',
       headers: {
-        // Accept: 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json'
       }
     }
@@ -294,14 +294,17 @@ export default class Connector {
   }
 
   //
-  // Decrypt relayed payloads
+  // Decrypt encryption payloads
   //
 
   _decryptPayload(data) {
     let decryptedData = data
     if (data.encryptionPayload) {
-      decryptedData.data = this.decrypt(data.encryptionPayload).data
-      delete decryptedData.encryptionPayload
+      const result = this.decrypt(data.encryptionPayload)
+      if (result) {
+        decryptedData = { ...decryptedData, ...result }
+        delete decryptedData.encryptionPayload
+      }
     }
     return decryptedData
   }
