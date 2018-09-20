@@ -43,11 +43,11 @@ describe('// ------------------ walletconnect ------------------ //', () => {
     expect(session).to.be.ok
   })
 
-  it('listenSessionStatus is a promise', () => {
-    const test = webConnector.listenSessionStatus()
-    console.log('test', JSON.stringify(test, null, 2)) // eslint-disable-line
-    expect(test).to.be.a('promise')
-  })
+  // it('listenSessionStatus is a promise', () => {
+  //   const test = webConnector.listenSessionStatus()
+  //   console.log('test', JSON.stringify(test, null, 2)) // eslint-disable-line
+  //   expect(test).to.be.a('promise')
+  // })
 
   // it('listenSessionStatus success', async() => {
   //   setTimeout(() => mockSendSessionStatus(webConnector), 5000)
