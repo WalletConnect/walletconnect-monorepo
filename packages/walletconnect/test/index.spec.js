@@ -1,4 +1,4 @@
-/* global describe it beforeEach  */
+/* global describe it beforeEach setTimeout */
 
 import { expect } from 'chai'
 
@@ -22,6 +22,8 @@ import WalletConnect from '../src'
 //   c._fetchBridge(`/session/${c.sessionId}`, { method: 'PUT' }, sessionStatus)
 // }
 
+setTimeout
+
 describe('// ------------------ walletconnect ------------------ //', () => {
   let config = {
     bridgeUrl: 'https://bridge.walletconnect.org',
@@ -39,6 +41,12 @@ describe('// ------------------ walletconnect ------------------ //', () => {
 
   it('createSession success', () => {
     expect(session).to.be.ok
+  })
+
+  it('listenSessionStatus is a promise', () => {
+    const test = webConnector.listenSessionStatus()
+    console.log('test', JSON.stringify(test, null, 2)) // eslint-disable-line
+    expect(test).to.be.a('promise')
   })
 
   // it('listenSessionStatus success', async() => {
