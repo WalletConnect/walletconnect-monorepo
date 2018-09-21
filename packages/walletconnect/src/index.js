@@ -44,6 +44,7 @@ export default class WalletConnect extends Connector {
           }
         })
       )
+      liveSessions = liveSessions.filter(session => !!session)
     }
 
     let session = {
