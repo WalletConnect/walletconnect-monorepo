@@ -32,13 +32,11 @@ export default class WalletConnect extends Connector {
       liveSessions = await Promise.all(
         openSessions.map(async session => {
           const sessionStatus = await this.getSessionStatus()
-          const accounts = sessionStatus.data
-          const expires = Number(sessionStatus.expiresInSeconds) * 1000
-          if (accounts) {
+          if (sessionStatus) {
             return {
               ...session,
-              accounts,
-              expires
+              accounts: sessionStatus.accounts,
+              expires: sessionStatus.expires
             }
           } else {
             return null
@@ -65,8 +63,6 @@ export default class WalletConnect extends Connector {
       currentSession = await this.createSession()
       session.new = true
       session.uri = currentSession.uri
-
-      this.saveLocalSession(currentSession)
     }
 
     return session
@@ -92,8 +88,7 @@ export default class WalletConnect extends Connector {
       bridgeUrl: this.bridgeUrl,
       sessionId: this.sessionId,
       symKey: this.symKey,
-      dappName: this.dappName,
-      expires: this.expires
+      dappName: this.dappName
     }
 
     const uri = this._formatWalletConnectURI()
@@ -140,7 +135,25 @@ export default class WalletConnect extends Connector {
     }
     const result = await this._getEncryptedData(`/session/${this.sessionId}`)
 
-    return result
+    if (result) {
+      const expires = Number(result.expiresInSeconds) * 1000
+      const accounts = result.data
+
+      this.expires = expires
+
+      const sessionData = {
+        bridgeUrl: this.bridgeUrl,
+        sessionId: this.sessionId,
+        symKey: this.symKey,
+        dappName: this.dappName,
+        expires
+      }
+
+      this.saveLocalSession(sessionData)
+
+      return { accounts, expires }
+    }
+    return null
   }
 
   //

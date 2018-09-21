@@ -35,13 +35,13 @@ const webConnector = new WalletConnect(
 const session = await webConnector.initSession()
 
 if (session.new) {
- const { uri } = session; // Display QR code with URI string
+  const { uri } = session; // Display QR code with URI string
 
- const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
+  const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
 
- const accounts = sessionStatus.data // Get wallet accounts
+  const { accounts } = sessionStatus // Get wallet accounts
 } else {
- const { accounts } = session // Get wallet accounts
+  const { accounts } = session // Get wallet accounts
 }
 
 /**
