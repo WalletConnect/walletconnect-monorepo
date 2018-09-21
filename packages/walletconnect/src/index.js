@@ -136,7 +136,7 @@ export default class WalletConnect extends Connector {
     if (!_sessionId) {
       throw new Error('sessionId is required')
     }
-    const result = await this._getEncryptedData(`/session/${this.sessionId}`)
+    const result = await this._getEncryptedData(`/session/${_sessionId}`)
 
     if (result) {
       const expires = Number(result.expiresInSeconds) * 1000
