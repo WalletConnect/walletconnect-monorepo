@@ -31,7 +31,8 @@ export default class WalletConnect extends Connector {
       })
       liveSessions = await Promise.all(
         openSessions.map(async session => {
-          const sessionStatus = await this.getSessionStatus()
+          const sessionId = session.sessionId || null
+          const sessionStatus = await this.getSessionStatus(sessionId)
           if (sessionStatus) {
             return {
               ...session,
@@ -129,8 +130,10 @@ export default class WalletConnect extends Connector {
   //
   // Get session status
   //
-  async getSessionStatus() {
-    if (!this.sessionId) {
+  async getSessionStatus(sessionId) {
+    const _sessionId = sessionId || this.sessionId
+
+    if (!_sessionId) {
       throw new Error('sessionId is required')
     }
     const result = await this._getEncryptedData(`/session/${this.sessionId}`)
