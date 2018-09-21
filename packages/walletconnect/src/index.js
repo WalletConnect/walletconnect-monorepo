@@ -146,7 +146,7 @@ export default class WalletConnect extends Connector {
 
       const sessionData = {
         bridgeUrl: this.bridgeUrl,
-        sessionId: this.sessionId,
+        sessionId: _sessionId,
         symKey: this.symKey,
         dappName: this.dappName,
         expires
