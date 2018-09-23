@@ -98,6 +98,40 @@ export default class WalletConnect extends Connector {
   }
 
   //
+  // Send Transaction
+  //
+  async sendTransaction(tx = {}) {
+    const txId = await this.createTransaction(tx)
+
+    const txStatus = await this.listenTransactionStatus(txId)
+
+    if (txStatus.success) {
+      const { txHash } = txStatus // Get transaction hash
+      return txHash
+    } else {
+      throw new Error('Transaction request has been rejected')
+    }
+  }
+
+  //
+  // Sign Message
+  //
+  async signMessage(msg) {
+    const hexMsg = `0x${this._toHex(msg)}`
+
+    const msgId = await this.createTransaction(hexMsg)
+
+    const msgStatus = await this.listenTransactionStatus(msgId)
+
+    if (msgStatus.success) {
+      const { txHash } = msgStatus // Get transaction hash
+      return txHash
+    } else {
+      throw new Error('Message signing has been rejected')
+    }
+  }
+
+  //
   // Create transaction
   //
   async createTransaction(data = {}) {
