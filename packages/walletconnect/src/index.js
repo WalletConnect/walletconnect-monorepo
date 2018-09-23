@@ -76,9 +76,7 @@ export default class WalletConnect extends Connector {
   // Create session
   //
   async createSession() {
-    if (!this.symKey) {
-      this.symKey = await this.generateKey()
-    }
+    this.symKey = await this.generateKey()
 
     const body = await this._fetchBridge('/session/new', {
       method: 'POST'
