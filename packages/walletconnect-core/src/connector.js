@@ -30,10 +30,6 @@ export default class Connector {
   }
 
   set bridgeUrl(value) {
-    if (this.bridgeUrl) {
-      throw new Error('bridgeUrl already set')
-    }
-
     if (!value) {
       return
     }
@@ -50,10 +46,6 @@ export default class Connector {
   }
 
   set symKey(value) {
-    if (this.symKey) {
-      throw new Error('symKey already set')
-    }
-
     if (!this.symKey && !value) {
       return
     }
@@ -69,10 +61,6 @@ export default class Connector {
 
   // setter for sessionId
   set sessionId(value) {
-    if (this.sessionId) {
-      throw new Error('sessionId already set')
-    }
-
     if (!value) {
       return
     }
