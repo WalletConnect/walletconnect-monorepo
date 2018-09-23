@@ -58,7 +58,7 @@ export default class Connector {
       return
     }
 
-    const v = Buffer.from(value.toString('hex'), 'hex')
+    const v = Buffer.from(value, 'hex')
     this._symKey = v
   }
 
