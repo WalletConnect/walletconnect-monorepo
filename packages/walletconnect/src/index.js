@@ -1,6 +1,7 @@
 /* global window Promise */
 
 import { Connector, Listener } from 'js-walletconnect-core'
+import ethSigUtil from 'eth-sig-util'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
@@ -106,10 +107,10 @@ export default class WalletConnect extends Connector {
     const txStatus = await this.listenTransactionStatus(txId)
 
     if (txStatus.success) {
-      const { txHash } = txStatus // Get transaction hash
-      return txHash
+      const { result } = txStatus
+      return result
     } else {
-      throw new Error('Transaction request has been rejected')
+      throw new Error('Rejected: Transaction Request')
     }
   }
 
@@ -124,10 +125,28 @@ export default class WalletConnect extends Connector {
     const msgStatus = await this.listenTransactionStatus(msgId)
 
     if (msgStatus.success) {
-      const { txHash } = msgStatus // Get transaction hash
-      return txHash
+      const { result } = msgStatus
+      return result
     } else {
-      throw new Error('Message signing has been rejected')
+      throw new Error('Rejected: Signed Message')
+    }
+  }
+
+  //
+  //  Sign Typed Data
+  //
+  async signTypedData(msgParams) {
+    const msg = ethSigUtil.TypedDataUtils.sign(msgParams.data)
+
+    const msgId = await this.createTransaction(msg)
+
+    const msgStatus = await this.listenTransactionStatus(msgId)
+
+    if (msgStatus.success) {
+      const { result } = msgStatus
+      return result
+    } else {
+      throw new Error('Rejected: Signed Typed Data')
     }
   }
 
@@ -137,7 +156,7 @@ export default class WalletConnect extends Connector {
   async createTransaction(data = {}) {
     if (!this.sessionId) {
       throw new Error(
-        'Create session using `initSession` before sending transaction'
+        'Create session using `initSession` before creating a transaction'
       )
     }
 

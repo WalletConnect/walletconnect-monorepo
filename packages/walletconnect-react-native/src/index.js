@@ -63,7 +63,7 @@ export default class WalletConnector extends Connector {
   }
 
   //
-  // send transaction status
+  // Send transaction status
   //
   async sendTransactionStatus(transactionId, statusData = {}) {
     if (!transactionId) {

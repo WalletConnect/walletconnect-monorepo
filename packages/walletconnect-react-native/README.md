@@ -62,6 +62,16 @@ FCM.on(FCMEvent.Notification, event => {
  */
 await walletConnector.sendTransactionStatus(transactionId, {
   success: true,
-  txHash: '0xabcd...873'
+  result: '0xabcd...873'
 })
+
+/**
+ *  Get all transactions from bridge
+ */
+const allTransactions = await walletConnector.getAllTransactionRequests();
+
+/**
+ *  allTransactions is a map from transactionId --> transactionData
+ */
+const transactionData = allTransactions[transactionId];
 ```
