@@ -32,8 +32,9 @@ export default class WalletConnect extends Connector {
       })
       liveSessions = await Promise.all(
         openSessions.map(async session => {
-          const sessionId = session.sessionId || null
-          const sessionStatus = await this.getSessionStatus(sessionId)
+          this.sessionId = session.sessionId
+          this.symKey = session.symKey
+          const sessionStatus = await this.getSessionStatus()
           if (sessionStatus) {
             return {
               ...session,
@@ -76,9 +77,7 @@ export default class WalletConnect extends Connector {
   // Create session
   //
   async createSession() {
-    if (!this.symKey) {
-      this.symKey = await this.generateKey()
-    }
+    this.symKey = await this.generateKey()
 
     const body = await this._fetchBridge('/session/new', {
       method: 'POST'
@@ -184,13 +183,11 @@ export default class WalletConnect extends Connector {
   //
   // Get session status
   //
-  async getSessionStatus(sessionId) {
-    const _sessionId = sessionId || this.sessionId
-
-    if (!_sessionId) {
+  async getSessionStatus() {
+    if (!this.sessionId) {
       throw new Error('sessionId is required')
     }
-    const result = await this._getEncryptedData(`/session/${_sessionId}`)
+    const result = await this._getEncryptedData(`/session/${this.sessionId}`)
 
     if (result) {
       const expires = Number(result.expiresInSeconds) * 1000
@@ -200,7 +197,7 @@ export default class WalletConnect extends Connector {
 
       const sessionData = {
         bridgeUrl: this.bridgeUrl,
-        sessionId: _sessionId,
+        sessionId: this.sessionId,
         symKey: this.symKey,
         dappName: this.dappName,
         expires
