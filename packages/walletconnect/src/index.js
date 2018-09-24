@@ -169,7 +169,11 @@ export default class WalletConnect extends Connector {
       `/transaction-status/${transactionId}`
     )
 
-    return result
+    if (result) {
+      return result.data
+    } else {
+      return { success: false }
+    }
   }
 
   //
