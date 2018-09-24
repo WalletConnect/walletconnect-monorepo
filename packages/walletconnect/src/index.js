@@ -171,9 +171,9 @@ export default class WalletConnect extends Connector {
 
     if (result) {
       return result.data
-    } else {
-      return { success: false }
     }
+
+    return null
   }
 
   //
