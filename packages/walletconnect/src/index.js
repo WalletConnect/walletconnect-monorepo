@@ -1,6 +1,7 @@
 /* global window Promise */
 
 import { Connector, Listener } from 'js-walletconnect-core'
+import ethSigUtil from 'eth-sig-util'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
@@ -25,18 +26,20 @@ export default class WalletConnect extends Connector {
         const now = Date.now()
         if (session.expires > now) {
           openSessions.push(session)
+        } else {
+          this.deleteLocalSession(session)
         }
       })
       liveSessions = await Promise.all(
         openSessions.map(async session => {
+          this.sessionId = session.sessionId
+          this.symKey = session.symKey
           const sessionStatus = await this.getSessionStatus()
-          const accounts = sessionStatus.data
-          const expires = Number(sessionStatus.expiresInSeconds) * 1000
-          if (accounts) {
+          if (sessionStatus) {
             return {
               ...session,
-              accounts,
-              expires
+              accounts: sessionStatus.accounts,
+              expires: sessionStatus.expires
             }
           } else {
             return null
@@ -59,14 +62,12 @@ export default class WalletConnect extends Connector {
       this.symKey = currentSession.symKey
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
+
       session.accounts = currentSession.accounts
     } else {
       currentSession = await this.createSession()
       session.new = true
       session.uri = currentSession.uri
-
-      // save currentSession on localStorage
-      this.saveLocalSession(currentSession)
     }
 
     return session
@@ -76,28 +77,76 @@ export default class WalletConnect extends Connector {
   // Create session
   //
   async createSession() {
-    if (!this.symKey) {
-      this.symKey = await this.generateKey()
-    }
+    this.symKey = await this.generateKey()
 
-    // store session info on bridge
     const body = await this._fetchBridge('/session/new', {
       method: 'POST'
     })
 
-    // session id
     this.sessionId = body.sessionId
 
     const sessionData = {
       bridgeUrl: this.bridgeUrl,
       sessionId: this.sessionId,
       symKey: this.symKey,
-      dappName: this.dappName,
-      expires: this.expires
+      dappName: this.dappName
     }
 
     const uri = this._formatWalletConnectURI()
+
     return { ...sessionData, uri }
+  }
+
+  //
+  // Send Transaction
+  //
+  async sendTransaction(tx = {}) {
+    const txId = await this.createTransaction(tx)
+
+    const txStatus = await this.listenTransactionStatus(txId)
+
+    if (txStatus.success) {
+      const { result } = txStatus
+      return result
+    } else {
+      throw new Error('Rejected: Transaction Request')
+    }
+  }
+
+  //
+  // Sign Message
+  //
+  async signMessage(msg) {
+    const hexMsg = `0x${this._toHex(msg)}`
+
+    const msgId = await this.createTransaction(hexMsg)
+
+    const msgStatus = await this.listenTransactionStatus(msgId)
+
+    if (msgStatus.success) {
+      const { result } = msgStatus
+      return result
+    } else {
+      throw new Error('Rejected: Signed Message')
+    }
+  }
+
+  //
+  //  Sign Typed Data
+  //
+  async signTypedData(msgParams) {
+    const msg = ethSigUtil.TypedDataUtils.sign(msgParams.data)
+
+    const msgId = await this.createTransaction(msg)
+
+    const msgStatus = await this.listenTransactionStatus(msgId)
+
+    if (msgStatus.success) {
+      const { result } = msgStatus
+      return result
+    } else {
+      throw new Error('Rejected: Signed Typed Data')
+    }
   }
 
   //
@@ -106,7 +155,7 @@ export default class WalletConnect extends Connector {
   async createTransaction(data = {}) {
     if (!this.sessionId) {
       throw new Error(
-        'Create session using `initSession` before sending transaction'
+        'Create session using `initSession` before creating a transaction'
       )
     }
 
@@ -134,22 +183,46 @@ export default class WalletConnect extends Connector {
   //
   // Get session status
   //
-  getSessionStatus() {
+  async getSessionStatus() {
     if (!this.sessionId) {
       throw new Error('sessionId is required')
     }
-    return this._getEncryptedData(`/session/${this.sessionId}`)
+    const result = await this._getEncryptedData(`/session/${this.sessionId}`)
+
+    if (result) {
+      const expires = Number(result.expiresInSeconds) * 1000
+      const accounts = result.data
+
+      this.expires = expires
+
+      const sessionData = {
+        bridgeUrl: this.bridgeUrl,
+        sessionId: this.sessionId,
+        symKey: this.symKey,
+        dappName: this.dappName,
+        expires
+      }
+
+      this.saveLocalSession(sessionData)
+
+      return { accounts, expires }
+    }
+    return null
   }
 
   //
   // Get transaction status
   //
-  getTransactionStatus(transactionId) {
+  async getTransactionStatus(transactionId) {
     if (!this.sessionId || !transactionId) {
       throw new Error('sessionId and transactionId are required')
     }
 
-    return this._getEncryptedData(`/transaction-status/${transactionId}`)
+    const result = await this._getEncryptedData(
+      `/transaction-status/${transactionId}`
+    )
+
+    return result
   }
 
   //
@@ -157,10 +230,8 @@ export default class WalletConnect extends Connector {
   //
   listenSessionStatus(pollInterval = 1000, timeout = 60000) {
     return new Promise((resolve, reject) => {
-      new Listener(this, {
-        fn: () => {
-          return this.getSessionStatus()
-        },
+      new Listener({
+        fn: async() => await this.getSessionStatus(),
         cb: (err, result) => {
           if (err) {
             reject(err)
@@ -174,14 +245,12 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Listen for session status
+  // Listen for transaction status
   //
   listenTransactionStatus(transactionId, pollInterval = 1000, timeout = 60000) {
     return new Promise((resolve, reject) => {
-      new Listener(this, {
-        fn: () => {
-          return this.getTransactionStatus(transactionId)
-        },
+      new Listener({
+        fn: async() => await this.getTransactionStatus(transactionId),
         cb: (err, result) => {
           if (err) {
             reject(err)
@@ -193,6 +262,8 @@ export default class WalletConnect extends Connector {
       })
     })
   }
+
+  // -- localStorage -------------------------------------------------------- //
 
   getLocalSessions() {
     const savedLocal = localStorage && localStorage.getItem(localStorageId)
@@ -205,29 +276,33 @@ export default class WalletConnect extends Connector {
 
   saveLocalSession(session) {
     const savedLocal = localStorage && localStorage.getItem(localStorageId)
+    let savedSessions = {}
     if (savedLocal) {
-      let savedSessions = JSON.parse(savedLocal)
-      savedSessions[session.sessionId] = session
-      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      savedSessions = JSON.parse(savedLocal)
     }
+    savedSessions[session.sessionId] = session
+    localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
   }
 
   updateLocalSession(session) {
     const savedLocal = localStorage && localStorage.getItem(localStorageId)
+    let savedSessions = {}
     if (savedLocal) {
-      let savedSessions = JSON.parse(savedLocal)
-      savedSessions[session.sessionId] = {
-        ...savedSessions[session.sessionId],
-        ...session
-      }
-      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+      savedSessions = JSON.parse(savedLocal)
     }
+    savedSessions[session.sessionId] = {
+      ...savedSessions[session.sessionId],
+      ...session
+    }
+    localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
   }
 
   deleteLocalSession(session) {
     const savedLocal = localStorage && localStorage.getItem(localStorageId)
     if (savedLocal) {
-      localStorage.removeItem(session.sessionId)
+      let savedSessions = JSON.parse(savedLocal)
+      delete savedSessions[session.sessionId]
+      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
     }
   }
 }

@@ -2,7 +2,7 @@
 
 export default class Listener {
   // options => fn, cb, timeout, pollInterval
-  constructor(connector, options = {}) {
+  constructor(options = {}) {
     this.pollId = null
     this.timeoutId = null
 

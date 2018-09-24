@@ -35,34 +35,71 @@ const webConnector = new WalletConnect(
 const session = await webConnector.initSession()
 
 if (session.new) {
- const { uri } = session; // Display QR code with URI string
+  const { uri } = session; // Display QR code with URI string
 
- const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
+  const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
 
- const accounts = sessionStatus.data // Get wallet accounts
+  const { accounts } = sessionStatus // Get wallet accounts
 } else {
- const { accounts } = session // Get wallet accounts
+  const { accounts } = session // Get wallet accounts
 }
 
 /**
-*  Draft transaction
-*/
+ *  Draft transaction
+ */
 const tx = {from: '0xab12...1cd', to: '0x0', nonce: 1, gas: 100000, value: 0, data: '0x0'}
 
 /**
- *  Create transaction
+ *  Send transaction
  */
-const transactionId = await webConnector.createTransaction(tx)
+try {
+  // Submitted Transaction Hash
+  const result = await webConnector.sendTransaction(tx)
+} catch (error) {
+  // Rejected Transaction
+  console.error(error)
+}
 
 /**
- *  Listen to transaction status
+ *  Draft message
  */
- /**
-  *  Listen to transaction status
-  */
- const transactionStatus = await webConnector.listenTransactionStatus(transactionId)
+const msg = 'My name is John Doe'
 
- if (transactionStatus.success) {
-   const { txHash } = transactionStatus // Get transaction hash
- }
+/**
+ *  Sign message
+ */
+try {
+  // Signed message
+  const result = await webConnector.signMessage(msg)
+} catch (error) {
+  // Rejected signing
+  console.error(error)
+}
+
+/**
+ *  Draft Typed Data
+ */
+const msgParams = [
+  {
+    type: 'string',
+    name: 'Message',
+    value: 'Hi, Alice!'
+  },
+  {
+    type: 'uint32',
+    name: 'A number',
+    value: '1337'
+  }
+]
+
+/**
+ *  Sign Typed Data
+ */
+try {
+  // Signed typed data
+  const result = await webConnector.signTypedData(msgParams)
+} catch (error) {
+  // Rejected signing
+  console.error(error)
+}
 ```

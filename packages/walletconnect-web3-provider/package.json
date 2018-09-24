@@ -49,6 +49,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "walletconnect": "^0.6.16"
+    "walletconnect": "^0.6.26"
   }
 }

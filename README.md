@@ -50,7 +50,7 @@ if (session.new) {
 
   const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
 
-  const accounts = sessionStatus.data // Get wallet accounts
+  const { accounts } = sessionStatus // Get wallet accounts
 } else {
   const { accounts } = session // Get wallet accounts
 }
@@ -61,17 +61,57 @@ if (session.new) {
 const tx = {from: '0xab12...1cd', to: '0x0', nonce: 1, gas: 100000, value: 0, data: '0x0'}
 
 /**
- *  Create transaction
+ *  Send transaction
  */
-const transactionId = await webConnector.createTransaction(tx)
+try {
+  // Submitted Transaction Hash
+  const result = await webConnector.sendTransaction(tx)
+} catch (error) {
+  // Rejected Transaction
+  console.error(error)
+}
 
 /**
- *  Listen to transaction status
+ *  Draft message
  */
-const transactionStatus = await webConnector.listenTransactionStatus(transactionId)
+const msg = 'My name is John Doe'
 
-if (transactionStatus.success) {
-  const { txHash } = transactionStatus // Get transaction hash
+/**
+ *  Sign message
+ */
+try {
+  // Signed message
+  const result = await webConnector.signMessage(msg)
+} catch (error) {
+  // Rejected signing
+  console.error(error)
+}
+
+/**
+ *  Draft Typed Data
+ */
+const msgParams = [
+  {
+    type: 'string',
+    name: 'Message',
+    value: 'Hi, Alice!'
+  },
+  {
+    type: 'uint32',
+    name: 'A number',
+    value: '1337'
+  }
+]
+
+/**
+ *  Sign Typed Data
+ */
+try {
+  // Signed typed data
+  const result = await webConnector.signTypedData(msgParams)
+} catch (error) {
+  // Rejected signing
+  console.error(error)
 }
 ```
 
@@ -137,7 +177,7 @@ FCM.on(FCMEvent.Notification, event => {
  */
 await walletConnector.sendTransactionStatus(transactionId, {
   success: true,
-  txHash: '0xabcd...873'
+  result: '0xabcd...873'
 })
 
 /**
@@ -145,8 +185,10 @@ await walletConnector.sendTransactionStatus(transactionId, {
  */
 const allTransactions = await walletConnector.getAllTransactionRequests();
 
-// allTransactions is a map from transactionId --> transactionData
-const transactionData = allTransactions[someTransactionId];
+/**
+ *  allTransactions is a map from transactionId --> transactionData
+ */
+const transactionData = allTransactions[transactionId];
 ```
 
 ### Development workflow

@@ -30,10 +30,6 @@ export default class Connector {
   }
 
   set bridgeUrl(value) {
-    if (this.bridgeUrl) {
-      throw new Error('bridgeUrl already set')
-    }
-
     if (!value) {
       return
     }
@@ -50,15 +46,11 @@ export default class Connector {
   }
 
   set symKey(value) {
-    if (this.symKey) {
-      throw new Error('symKey already set')
-    }
-
     if (!this.symKey && !value) {
       return
     }
 
-    const v = Buffer.from(value.toString('hex'), 'hex')
+    const v = Buffer.from(value, 'hex')
     this._symKey = v
   }
 
@@ -69,10 +61,6 @@ export default class Connector {
 
   // setter for sessionId
   set sessionId(value) {
-    if (this.sessionId) {
-      throw new Error('sessionId already set')
-    }
-
     if (!value) {
       return
     }
@@ -154,10 +142,13 @@ export default class Connector {
   //  Format ERC-681 - Transaction Request Standard URI Format
   //
   formatTransactionRequest(tx) {
-    let uri = `${this.protocol}:pay-${tx.to}@${this.chainId}`
+    const protocol = this.protocol
+    const targetAddress = tx.to
+    const chainId = this.chainId
+    let uri = `${protocol}:pay-${targetAddress}@${chainId}`
 
-    if (tx.function_name) {
-      uri += '/' + tx.function_name
+    if (tx.functionName) {
+      uri += '/' + tx.functionName
     }
 
     if (tx.parameters) {
@@ -165,8 +156,8 @@ export default class Connector {
       let keys = Object.keys(tx.parameters)
       while (keys.length) {
         let key = keys.pop()
-        let val = tx.parameters[key]
-        params += key + '=' + val.toString()
+        let val = tx.parameters[key].toString()
+        params += key + '=' + encodeURIComponent(val)
         if (keys.length) {
           params += '&'
         }
@@ -174,7 +165,7 @@ export default class Connector {
       uri += '?' + params
     }
 
-    return encodeURIComponent(uri)
+    return uri
   }
 
   //
@@ -182,7 +173,7 @@ export default class Connector {
   //
   parseTransactionRequest(string) {
     const result = ethParseUri(string)
-    if (result.prefix && result.prefix === 'wc') {
+    if (result.prefix && result.prefix === 'pay') {
       if (result.chainId !== this.chainId) {
         throw new Error('chainId does not match')
       }
@@ -203,11 +194,14 @@ export default class Connector {
   //  Format ERC-1328 - WalletConnect Standard URI Format
   //
   _formatWalletConnectURI() {
+    const protocol = this.protocol
+    const sessionId = this.sessionId
+    const version = '1'
+    const name = encodeURIComponent(this.dappName)
+    const bridgeUrl = encodeURIComponent(this.bridgeUrl)
     const symKey = Buffer.from(this.symKey, 'hex').toString('base64')
-    const uri = `${this.protocol}:wc-${this.sessionId}@1?name=${
-      this.dappName
-    }&bridge=${this.bridgeUrl}&symKey=${symKey}`
-    return encodeURIComponent(uri)
+    const uri = `${protocol}:wc-${sessionId}@${version}?name=${name}&bridge=${bridgeUrl}&symKey=${symKey}`
+    return uri
   }
 
   //
@@ -262,7 +256,7 @@ export default class Connector {
     let _config = {
       method: 'GET',
       headers: {
-        // Accept: 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json'
       }
     }
@@ -294,14 +288,17 @@ export default class Connector {
   }
 
   //
-  // Decrypt relayed payloads
+  // Decrypt encryption payloads
   //
 
   _decryptPayload(data) {
     let decryptedData = data
     if (data.encryptionPayload) {
-      decryptedData.data = this.decrypt(data.encryptionPayload).data
-      delete decryptedData.encryptionPayload
+      const result = this.decrypt(data.encryptionPayload)
+      if (result) {
+        decryptedData = { ...decryptedData, ...result }
+        delete decryptedData.encryptionPayload
+      }
     }
     return decryptedData
   }
@@ -311,7 +308,11 @@ export default class Connector {
   //
 
   async _getEncryptedData(url) {
-    const response = this._fetchBridge(url)
+    const response = await this._fetchBridge(url)
+
+    if (!response) {
+      return null
+    }
 
     const { data } = response
 
@@ -324,7 +325,11 @@ export default class Connector {
   //
 
   async _getMultipleEncryptedData(url) {
-    const response = this._fetchBridge(url)
+    const response = await this._fetchBridge(url)
+
+    if (!response) {
+      return null
+    }
 
     const { data } = response
 
@@ -341,5 +346,13 @@ export default class Connector {
     }
 
     return decryptedData
+  }
+
+  _toHex(str) {
+    var hex = ''
+    for (var i = 0; i < str.length; i++) {
+      hex += '' + str.charCodeAt(i).toString(16)
+    }
+    return hex
   }
 }
