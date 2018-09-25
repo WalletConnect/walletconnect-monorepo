@@ -282,7 +282,12 @@ export default class Connector {
     }
 
     // get body
-    const response = await res.json()
+    let response = null
+
+    const text = await res.text()
+    if (text.length) {
+      response = JSON.parse(text)
+    }
 
     return response
   }

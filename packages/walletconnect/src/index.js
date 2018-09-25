@@ -222,7 +222,11 @@ export default class WalletConnect extends Connector {
       `/transaction-status/${transactionId}`
     )
 
-    return result
+    if (result) {
+      return result.data
+    }
+
+    return null
   }
 
   //
