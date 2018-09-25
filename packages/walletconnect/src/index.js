@@ -1,7 +1,6 @@
 /* global window Promise */
 
 import { Connector, Listener } from 'js-walletconnect-core'
-import ethSigUtil from 'eth-sig-util'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
@@ -101,9 +100,9 @@ export default class WalletConnect extends Connector {
   // Send Transaction
   //
   async sendTransaction(tx = {}) {
-    const txId = await this.createTransaction(tx)
+    const txId = await this.createCall('eth_sendTransaction', tx)
 
-    const txStatus = await this.listenTransactionStatus(txId)
+    const txStatus = await this.listenCallStatus(txId)
 
     if (txStatus.success) {
       const { result } = txStatus
@@ -117,11 +116,9 @@ export default class WalletConnect extends Connector {
   // Sign Message
   //
   async signMessage(msg) {
-    const hexMsg = `0x${this._toHex(msg)}`
+    const msgId = await this.createCall('eth_sign', msg)
 
-    const msgId = await this.createTransaction(hexMsg)
-
-    const msgStatus = await this.listenTransactionStatus(msgId)
+    const msgStatus = await this.listenCallStatus(msgId)
 
     if (msgStatus.success) {
       const { result } = msgStatus
@@ -135,11 +132,9 @@ export default class WalletConnect extends Connector {
   //  Sign Typed Data
   //
   async signTypedData(msgParams) {
-    const msg = ethSigUtil.TypedDataUtils.sign(msgParams.data)
+    const msgId = await this.createCall('eth_signTypedData', msgParams)
 
-    const msgId = await this.createTransaction(msg)
-
-    const msgStatus = await this.listenTransactionStatus(msgId)
+    const msgStatus = await this.listenCallStatus(msgId)
 
     if (msgStatus.success) {
       const { result } = msgStatus
@@ -150,33 +145,34 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Create transaction
+  // Create call
   //
-  async createTransaction(data = {}) {
+  async createCall(method = 'eth_sendTransaction', data = {}) {
     if (!this.sessionId) {
       throw new Error(
-        'Create session using `initSession` before creating a transaction'
+        'Create session using `initSession` before creating a call'
       )
     }
 
     // encrypt data
     const encryptedData = await this.encrypt(data)
 
-    // store transaction info on bridge
+    // store call data on bridge
     const body = await this._fetchBridge(
-      `/session/${this.sessionId}/transaction/new`,
+      `/session/${this.sessionId}call/new`,
       {
         method: 'POST'
       },
       {
+        method: method,
         data: encryptedData,
         dappName: this.dappName
       }
     )
 
-    // return transactionId
+    // return callId
     return {
-      transactionId: body.transactionId
+      callId: body.callId
     }
   }
 
@@ -211,16 +207,14 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Get transaction status
+  // Get call status
   //
-  async getTransactionStatus(transactionId) {
-    if (!this.sessionId || !transactionId) {
-      throw new Error('sessionId and transactionId are required')
+  async getCallStatus(callId) {
+    if (!this.sessionId || !callId) {
+      throw new Error('sessionId and callId are required')
     }
 
-    const result = await this._getEncryptedData(
-      `/transaction-status/${transactionId}`
-    )
+    const result = await this._getEncryptedData(`/call-status/${callId}`)
 
     if (result) {
       return result.data
@@ -249,12 +243,12 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Listen for transaction status
+  // Listen for call status
   //
-  listenTransactionStatus(transactionId, pollInterval = 1000, timeout = 60000) {
+  listenCallStatus(callId, pollInterval = 1000, timeout = 60000) {
     return new Promise((resolve, reject) => {
       new Listener({
-        fn: async() => await this.getTransactionStatus(transactionId),
+        fn: async() => await this.getCallStatus(callId),
         cb: (err, result) => {
           if (err) {
             reject(err)
