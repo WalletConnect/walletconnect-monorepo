@@ -282,7 +282,12 @@ export default class Connector {
     }
 
     // get body
-    const response = await res.json()
+    let response = null
+
+    const text = await res.text()
+    if (text.length) {
+      response = JSON.parse(text)
+    }
 
     return response
   }
@@ -346,13 +351,5 @@ export default class Connector {
     }
 
     return decryptedData
-  }
-
-  _toHex(str) {
-    var hex = ''
-    for (var i = 0; i < str.length; i++) {
-      hex += '' + str.charCodeAt(i).toString(16)
-    }
-    return hex
   }
 }

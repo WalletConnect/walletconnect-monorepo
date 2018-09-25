@@ -49,29 +49,42 @@ await walletConnector.sendSessionStatus({
 })
 
 /**
- *  Handle push notification events & Get transaction data
+ *  Handle push notification events & get call data
  */
 FCM.on(FCMEvent.Notification, event => {
-  const { sessionId, transactionId } = event;
+  const { sessionId, callId } = event;
 
-  const transactionData = await walletConnector.getTransactionRequest(transactionId);
+  const callData = await walletConnector.getCallRequest(callId);
+
+  // example callData
+  {
+    method: 'eth_sendTransaction',
+    data: {
+      from: '0xab12...1cd',
+      to: '0x0',
+      nonce: 1,
+      gas: 100000,
+      value: 0,
+      data: '0x0'
+    }
+  }
 });
 
 /**
- *  Send transaction status
+ *  Send call status
  */
-await walletConnector.sendTransactionStatus(transactionId, {
+await walletConnector.sendCallStatus(callId, {
   success: true,
   result: '0xabcd...873'
 })
 
 /**
- *  Get all transactions from bridge
+ *  Get all calls from bridge
  */
-const allTransactions = await walletConnector.getAllTransactionRequests();
+const allCalls = await walletConnector.getAllCallRequests();
 
 /**
- *  allTransactions is a map from transactionId --> transactionData
+ *  allCalls is a map from callId --> callData
  */
-const transactionData = allTransactions[transactionId];
+const callData = allCalls[callId];
 ```

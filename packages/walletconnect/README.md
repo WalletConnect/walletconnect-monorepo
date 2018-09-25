@@ -63,7 +63,7 @@ try {
 /**
  *  Draft message
  */
-const msg = 'My name is John Doe'
+const msg = 'My email is john@doe.com - 1537836206101'
 
 /**
  *  Sign message
@@ -83,12 +83,12 @@ const msgParams = [
   {
     type: 'string',
     name: 'Message',
-    value: 'Hi, Alice!'
+    value: 'My email is john@doe.com'
   },
   {
     type: 'uint32',
     name: 'A number',
-    value: '1337'
+    value: '1537836206101'
   }
 ]
 
