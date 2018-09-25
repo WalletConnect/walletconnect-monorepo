@@ -55,6 +55,19 @@ FCM.on(FCMEvent.Notification, event => {
   const { sessionId, callId } = event;
 
   const callData = await walletConnector.getCallRequest(callId);
+
+  // example callData
+  {
+    method: 'eth_sendTransaction',
+    data: {
+      from: '0xab12...1cd',
+      to: '0x0',
+      nonce: 1,
+      gas: 100000,
+      value: 0,
+      data: '0x0'
+    }
+  }
 });
 
 /**
