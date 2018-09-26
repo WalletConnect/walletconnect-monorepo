@@ -352,4 +352,40 @@ export default class Connector {
 
     return decryptedData
   }
+
+  randomId() {
+    // 13 time digits
+    var datePart = new Date().getTime() * Math.pow(10, 3)
+    // 3 random digits
+    var extraPart = Math.floor(Math.random() * Math.pow(10, 3))
+    // 16 digits
+    return datePart + extraPart
+  }
+
+  createPayload(data) {
+    let payload = {}
+    if (data) {
+      if (typeof data === 'object') {
+        if (Object.keys(data).length) {
+          payload = data
+        }
+      } else if (typeof data === 'string') {
+        data = JSON.parse(data)
+        if (Object.keys(data).length) {
+          payload = data
+        }
+      }
+    }
+
+    if (payload.id) {
+      delete payload.id
+    }
+
+    return {
+      id: this.randomId(),
+      jsonrpc: '2.0',
+      params: [],
+      ...payload
+    }
+  }
 }
