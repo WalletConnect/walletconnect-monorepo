@@ -108,4 +108,14 @@ export default class WalletConnector extends Connector {
   validateEthereumAddress(address) {
     return /^(0x)?[0-9a-f]{40}$/i.test(address)
   }
+  
+  toJSON() {
+    return {
+      symKey: this.symKey,
+      sessionId: this.sessionId,
+      dappName: this.dappName,
+      bridgeUrl: this.bridgeUrl,
+      protocol: this.protocol,
+    }
+  }
 }
