@@ -4,12 +4,7 @@ import { expect } from 'chai'
 
 import { Connector, Listener } from '../src'
 
-function testEncoding(testString, encoding) {
-  const buffer = Buffer.from(testString, encoding)
-  const result = buffer.toString(encoding)
-  return result === testString
-}
-
+const hexRegex = /[0-9a-f]+/gi
 const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
 const testURI =
   'ethereum:wc-8a5e5bdc-a0e4-4702-ba63-8f1a5655744f@1?name=DappExample&bridge=https://bridge.example.com&symKey=KzpSTk1pezg5eTJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U='
@@ -77,9 +72,12 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
         expect(symKey).to.exist
       })
 
+      it('is a string', () => {
+        expect(symKey).to.be.a('string')
+      })
+
       it('is hex', () => {
-        const result = testEncoding(symKey, 'hex')
-        expect(result).to.exist
+        expect(hexRegex.test(symKey)).to.be.true
       })
     })
 

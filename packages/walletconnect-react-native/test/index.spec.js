@@ -1,15 +1,9 @@
-/* global describe it beforeEach Buffer */
+/* global describe it beforeEach */
 
 import { expect } from 'chai'
 
 import { Connector } from 'js-walletconnect-core'
 import RNWalletConnect from '../src'
-
-function testEncoding(testString, encoding) {
-  const buffer = Buffer.from(testString, encoding)
-  const result = buffer.toString(encoding)
-  return result === testString
-}
 
 async function mockCreateSession(connector) {
   connector.symKey = await connector.generateKey()
@@ -21,8 +15,7 @@ async function mockCreateSession(connector) {
   return uri
 }
 
-// const testURI =
-//   'ethereum:wc-8a5e5bdc-a0e4-4702-ba63-8f1a5655744f@1?name=DappExample&bridge=https://bridge.example.com&symKey=KzpSTk1pezg5eTJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U='
+const hexRegex = /[0-9a-f]+/gi
 
 describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
   let walletConnector = null
@@ -74,9 +67,12 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
       expect(symKey).to.exist
     })
 
+    it('is a string', () => {
+      expect(symKey).to.be.a('string')
+    })
+
     it('is hex', () => {
-      const result = testEncoding(symKey, 'hex')
-      expect(result).to.exist
+      expect(hexRegex.test(symKey)).to.be.true
     })
   })
 })

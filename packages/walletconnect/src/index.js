@@ -100,15 +100,14 @@ export default class WalletConnect extends Connector {
   // Send Transaction
   //
   async sendTransaction(tx = {}) {
-    const txId = await this.createCall('eth_sendTransaction', tx)
-
-    const txStatus = await this.listenCallStatus(txId)
-
-    if (txStatus.success) {
-      const { result } = txStatus
+    try {
+      const result = await this.createCall({
+        method: 'eth_sendTransaction',
+        params: [tx]
+      })
       return result
-    } else {
-      throw new Error('Rejected: Transaction Request')
+    } catch (error) {
+      throw new Error('Rejected: Signed Transaction Request')
     }
   }
 
@@ -116,15 +115,14 @@ export default class WalletConnect extends Connector {
   // Sign Message
   //
   async signMessage(msg) {
-    const msgId = await this.createCall('eth_sign', msg)
-
-    const msgStatus = await this.listenCallStatus(msgId)
-
-    if (msgStatus.success) {
-      const { result } = msgStatus
+    try {
+      const result = await this.createCall({
+        method: 'eth_sign',
+        params: [msg]
+      })
       return result
-    } else {
-      throw new Error('Rejected: Signed Message')
+    } catch (error) {
+      throw new Error('Rejected: Signed Message Request')
     }
   }
 
@@ -132,22 +130,21 @@ export default class WalletConnect extends Connector {
   //  Sign Typed Data
   //
   async signTypedData(msgParams) {
-    const msgId = await this.createCall('eth_signTypedData', msgParams)
-
-    const msgStatus = await this.listenCallStatus(msgId)
-
-    if (msgStatus.success) {
-      const { result } = msgStatus
+    try {
+      const result = await this.createCall({
+        method: 'eth_signTypedData',
+        params: [msgParams]
+      })
       return result
-    } else {
-      throw new Error('Rejected: Signed Typed Data')
+    } catch (error) {
+      throw new Error('Rejected: Signed TypedData Request')
     }
   }
 
   //
   // Create call
   //
-  async createCall(method = 'eth_sendTransaction', data = {}) {
+  async createCall({ method = 'eth_sendTransaction', params = [] }) {
     if (!this.sessionId) {
       throw new Error(
         'Create session using `initSession` before creating a call'
@@ -155,7 +152,7 @@ export default class WalletConnect extends Connector {
     }
 
     // encrypt data
-    const encryptedData = await this.encrypt(data)
+    const encryptedData = await this.encrypt(params)
 
     // store call data on bridge
     const body = await this._fetchBridge(
@@ -170,9 +167,13 @@ export default class WalletConnect extends Connector {
       }
     )
 
-    // return callId
-    return {
-      callId: body.callId
+    const response = await this.listenCallStatus(body.callId)
+
+    if (response.success) {
+      const { result } = response
+      return result
+    } else {
+      throw new Error('Rejected Call Request')
     }
   }
 
