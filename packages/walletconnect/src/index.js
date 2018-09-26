@@ -144,25 +144,26 @@ export default class WalletConnect extends Connector {
   //
   // Create call
   //
-  async createCallRequest({ method = 'eth_sendTransaction', params = [] }) {
+  async createCallRequest(data) {
     if (!this.sessionId) {
       throw new Error(
         'Create session using `initSession` before creating a call'
       )
     }
 
+    const payload = this.createPayload(data)
+
     // encrypt data
-    const encryptedData = await this.encrypt(params)
+    const encryptedPayload = await this.encrypt(payload)
 
     // store call data on bridge
     const body = await this._fetchBridge(
-      `/session/${this.sessionId}call/new`,
+      `/session/${this.sessionId}/call/new`,
       {
         method: 'POST'
       },
       {
-        method: method,
-        data: encryptedData,
+        data: encryptedPayload,
         dappName: this.dappName
       }
     )
