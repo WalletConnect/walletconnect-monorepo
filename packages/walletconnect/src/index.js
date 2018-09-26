@@ -193,13 +193,7 @@ export default class WalletConnect extends Connector {
 
       this.expires = expires
 
-      const sessionData = {
-        bridgeUrl: this.bridgeUrl,
-        sessionId: this.sessionId,
-        symKey: this.symKey,
-        dappName: this.dappName,
-        expires: this.expires
-      }
+      const sessionData = this.toJSON()
 
       this.saveLocalSession(sessionData)
 
