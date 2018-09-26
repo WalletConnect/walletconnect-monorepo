@@ -14,7 +14,8 @@ export default class Connector {
       symKey,
       dappName,
       chainId,
-      protocol
+      protocol,
+      expires
     } = options
 
     this.bridgeUrl = bridgeUrl
@@ -23,6 +24,7 @@ export default class Connector {
     this.dappName = dappName
     this.protocol = protocol || 'ethereum'
     this.chainId = chainId || 1
+    this.expires = expires || null
   }
 
   get bridgeUrl() {
@@ -352,6 +354,15 @@ export default class Connector {
 
     return decryptedData
   }
+
+  toJSON = () => ({
+    bridgeUrl: this.bridgeUrl,
+    sessionId: this.sessionId,
+    symKey: this.symKey,
+    dappName: this.dappName,
+    protocol: this.protocol,
+    expires: this.expires
+  })
 
   randomId() {
     // 13 time digits

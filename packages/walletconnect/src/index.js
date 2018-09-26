@@ -198,7 +198,7 @@ export default class WalletConnect extends Connector {
         sessionId: this.sessionId,
         symKey: this.symKey,
         dappName: this.dappName,
-        expires
+        expires: this.expires
       }
 
       this.saveLocalSession(sessionData)
