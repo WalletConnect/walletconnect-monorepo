@@ -80,14 +80,4 @@ export default class WalletConnector extends Connector {
   async getAllCallRequests() {
     return this._getMultipleEncryptedData(`/session/${this.sessionId}/calls`)
   }
-  
-  toJSON() {
-    return {
-      symKey: this.symKey,
-      sessionId: this.sessionId,
-      dappName: this.dappName,
-      bridgeUrl: this.bridgeUrl,
-      protocol: this.protocol,
-    }
-  }
 }
