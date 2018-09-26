@@ -61,17 +61,57 @@ if (session.new) {
 const tx = {from: '0xab12...1cd', to: '0x0', nonce: 1, gas: 100000, value: 0, data: '0x0'}
 
 /**
- *  Create transaction
+ *  Send transaction
  */
-const transactionId = await webConnector.createTransaction(tx)
+try {
+  // Submitted Transaction Hash
+  const result = await webConnector.sendTransaction(tx)
+} catch (error) {
+  // Rejected Transaction
+  console.error(error)
+}
 
 /**
- *  Listen to transaction status
+ *  Draft message
  */
-const transactionStatus = await webConnector.listenTransactionStatus(transactionId)
+const msg = 'My email is john@doe.com - 1537836206101'
 
-if (transactionStatus.success) {
-  const { txHash } = transactionStatus // Get transaction hash
+/**
+ *  Sign message
+ */
+try {
+  // Signed message
+  const result = await webConnector.signMessage(msg)
+} catch (error) {
+  // Rejected signing
+  console.error(error)
+}
+
+/**
+ *  Draft Typed Data
+ */
+const msgParams = [
+  {
+    type: 'string',
+    name: 'Message',
+    value: 'My email is john@doe.com'
+  },
+  {
+    type: 'uint32',
+    name: 'A number',
+    value: '1537836206101'
+  }
+]
+
+/**
+ *  Sign Typed Data
+ */
+try {
+  // Signed typed data
+  const result = await webConnector.signTypedData(msgParams)
+} catch (error) {
+  // Rejected signing
+  console.error(error)
 }
 ```
 
@@ -124,29 +164,44 @@ await walletConnector.sendSessionStatus({
 })
 
 /**
- *  Handle push notification events & Get transaction data
+ *  Handle push notification events & get call data
  */
 FCM.on(FCMEvent.Notification, event => {
-  const { sessionId, transactionId } = event;
+  const { sessionId, callId } = event;
 
-  const transactionData = await walletConnector.getTransactionRequest(transactionId);
+  const callData = await walletConnector.getCallRequest(callId);
+
+  // example callData
+  {
+    method: 'eth_sendTransaction',
+    data: {
+      from: '0xab12...1cd',
+      to: '0x0',
+      nonce: 1,
+      gas: 100000,
+      value: 0,
+      data: '0x0'
+    }
+  }
 });
 
 /**
- *  Send transaction status
+ *  Send call status
  */
-await walletConnector.sendTransactionStatus(transactionId, {
+await walletConnector.sendCallStatus(callId, {
   success: true,
-  txHash: '0xabcd...873'
+  result: '0xabcd...873'
 })
 
 /**
- *  Get all transactions from bridge
+ *  Get all calls from bridge
  */
-const allTransactions = await walletConnector.getAllTransactionRequests();
+const allCalls = await walletConnector.getAllCallRequests();
 
-// allTransactions is a map from transactionId --> transactionData
-const transactionData = allTransactions[someTransactionId];
+/**
+ *  allCalls is a map from callId --> callData
+ */
+const callData = allCalls[callId];
 ```
 
 ### Development workflow

@@ -97,33 +97,84 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Create transaction
+  // Send Transaction
   //
-  async createTransaction(data = {}) {
+  async sendTransaction(tx = {}) {
+    try {
+      const result = await this.createCallRequest({
+        method: 'eth_sendTransaction',
+        params: [tx]
+      })
+      return result
+    } catch (error) {
+      throw new Error('Rejected: Signed Transaction Request')
+    }
+  }
+
+  //
+  // Sign Message
+  //
+  async signMessage(msg) {
+    try {
+      const result = await this.createCallRequest({
+        method: 'eth_sign',
+        params: [msg]
+      })
+      return result
+    } catch (error) {
+      throw new Error('Rejected: Signed Message Request')
+    }
+  }
+
+  //
+  //  Sign Typed Data
+  //
+  async signTypedData(msgParams) {
+    try {
+      const result = await this.createCallRequest({
+        method: 'eth_signTypedData',
+        params: [msgParams]
+      })
+      return result
+    } catch (error) {
+      throw new Error('Rejected: Signed TypedData Request')
+    }
+  }
+
+  //
+  // Create call
+  //
+  async createCallRequest(data) {
     if (!this.sessionId) {
       throw new Error(
-        'Create session using `initSession` before sending transaction'
+        'Create session using `initSession` before creating a call'
       )
     }
 
-    // encrypt data
-    const encryptedData = await this.encrypt(data)
+    const payload = this.createPayload(data)
 
-    // store transaction info on bridge
+    // encrypt data
+    const encryptedPayload = await this.encrypt(payload)
+
+    // store call data on bridge
     const body = await this._fetchBridge(
-      `/session/${this.sessionId}/transaction/new`,
+      `/session/${this.sessionId}/call/new`,
       {
         method: 'POST'
       },
       {
-        data: encryptedData,
+        data: encryptedPayload,
         dappName: this.dappName
       }
     )
 
-    // return transactionId
-    return {
-      transactionId: body.transactionId
+    const response = await this.listenCallStatus(body.callId)
+
+    if (response.success) {
+      const { result } = response
+      return result
+    } else {
+      throw new Error('Rejected Call Request')
     }
   }
 
@@ -147,7 +198,7 @@ export default class WalletConnect extends Connector {
         sessionId: this.sessionId,
         symKey: this.symKey,
         dappName: this.dappName,
-        expires
+        expires: this.expires
       }
 
       this.saveLocalSession(sessionData)
@@ -158,16 +209,14 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Get transaction status
+  // Get call status
   //
-  async getTransactionStatus(transactionId) {
-    if (!this.sessionId || !transactionId) {
-      throw new Error('sessionId and transactionId are required')
+  async getCallStatus(callId) {
+    if (!this.sessionId || !callId) {
+      throw new Error('sessionId and callId are required')
     }
 
-    const result = await this._getEncryptedData(
-      `/transaction-status/${transactionId}`
-    )
+    const result = await this._getEncryptedData(`/call-status/${callId}`)
 
     if (result) {
       return result.data
@@ -196,12 +245,12 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Listen for transaction status
+  // Listen for call status
   //
-  listenTransactionStatus(transactionId, pollInterval = 1000, timeout = 60000) {
+  listenCallStatus(callId, pollInterval = 1000, timeout = 60000) {
     return new Promise((resolve, reject) => {
       new Listener({
-        fn: async() => await this.getTransactionStatus(transactionId),
+        fn: async() => await this.getCallStatus(callId),
         cb: (err, result) => {
           if (err) {
             reject(err)

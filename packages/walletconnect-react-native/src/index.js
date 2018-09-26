@@ -25,30 +25,10 @@ export default class WalletConnector extends Connector {
       throw new Error('fcmToken and pushEndpoint are required')
     }
 
-    let verifiedData = []
-    // check if provided data is array or string
-    if (Array.isArray(data)) {
-      data.forEach(address => {
-        if (this.validateEthereumAddress(address)) {
-          verifiedData.push(address)
-        } else {
-          throw new Error('Invalid ethereum address')
-        }
-      })
-    } else if (typeof data === 'string') {
-      data.split().forEach(address => {
-        if (this.validateEthereumAddress(address)) {
-          verifiedData.push(address)
-        } else {
-          throw new Error('Invalid ethereum address')
-        }
-      })
-    }
-
     // encrypt data
-    const encryptedData = await this.encrypt(verifiedData)
+    const encryptedData = await this.encrypt(data)
 
-    // store transaction info on bridge
+    // store session info on bridge
     const response = await this._fetchBridge(
       `/session/${this.sessionId}`,
       { method: 'PUT' },
@@ -63,19 +43,19 @@ export default class WalletConnector extends Connector {
   }
 
   //
-  // send transaction status
+  // Send call status
   //
-  async sendTransactionStatus(transactionId, statusData = {}) {
-    if (!transactionId) {
-      throw new Error('`transactionId` is required')
+  async sendCallStatus(callId, statusData = {}) {
+    if (!callId) {
+      throw new Error('`callId` is required')
     }
 
     // encrypt data
     const encryptedData = await this.encrypt(statusData)
 
-    // store transaction info on bridge
+    // store call info on bridge
     await this._fetchBridge(
-      `/transaction-status/${transactionId}/new`,
+      `/call-status/${callId}/new`,
       { method: 'POST' },
       { data: encryptedData }
     )
@@ -84,29 +64,21 @@ export default class WalletConnector extends Connector {
   }
 
   //
-  // get transaction request data
+  // get call request data
   //
-  async getTransactionRequest(transactionId) {
-    if (!transactionId) {
-      throw new Error('transactionId is required')
+  async getCallRequest(callId) {
+    if (!callId) {
+      throw new Error('callId is required')
     }
 
-    return this._getEncryptedData(
-      `/session/${this.sessionId}/transaction/${transactionId}`
-    )
+    return this._getEncryptedData(`/session/${this.sessionId}/call/${callId}`)
   }
 
   //
-  // get all transaction requests data
+  // get all call requests data
   //
-  async getAllTransactionRequests() {
-    return this._getMultipleEncryptedData(
-      `/session/${this.sessionId}/transactions`
-    )
-  }
-
-  validateEthereumAddress(address) {
-    return /^(0x)?[0-9a-f]{40}$/i.test(address)
+  async getAllCallRequests() {
+    return this._getMultipleEncryptedData(`/session/${this.sessionId}/calls`)
   }
   
   toJSON() {
