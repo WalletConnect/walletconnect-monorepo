@@ -101,7 +101,7 @@ export default class WalletConnect extends Connector {
   //
   async sendTransaction(tx = {}) {
     try {
-      const result = await this.createCall({
+      const result = await this.createCallRequest({
         method: 'eth_sendTransaction',
         params: [tx]
       })
@@ -116,7 +116,7 @@ export default class WalletConnect extends Connector {
   //
   async signMessage(msg) {
     try {
-      const result = await this.createCall({
+      const result = await this.createCallRequest({
         method: 'eth_sign',
         params: [msg]
       })
@@ -131,7 +131,7 @@ export default class WalletConnect extends Connector {
   //
   async signTypedData(msgParams) {
     try {
-      const result = await this.createCall({
+      const result = await this.createCallRequest({
         method: 'eth_signTypedData',
         params: [msgParams]
       })
@@ -144,7 +144,7 @@ export default class WalletConnect extends Connector {
   //
   // Create call
   //
-  async createCall({ method = 'eth_sendTransaction', params = [] }) {
+  async createCallRequest({ method = 'eth_sendTransaction', params = [] }) {
     if (!this.sessionId) {
       throw new Error(
         'Create session using `initSession` before creating a call'
