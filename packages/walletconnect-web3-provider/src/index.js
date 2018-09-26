@@ -1,11 +1,8 @@
 import WalletConnect from 'walletconnect'
-import displayQRCode from './qrcode'
-import SubProvider from './subprovider'
+import { toggleQRCode } from './qrcode'
 
-class WalletConnectProvider extends SubProvider {
+class WalletConnectProvider {
   constructor(provider) {
-    super()
-
     if (!provider) throw new Error('Provider - no provider specified')
     if (!provider.sendAsync) {
       throw new Error(
@@ -26,24 +23,37 @@ class WalletConnectProvider extends SubProvider {
     this.bridgeUrl = bridgeUrl
     this.dappName = dappName
     this.isWalletConnect = true
-    this.webConnector = null
     this.provider = provider
-  }
-
-  async createWebconnector() {
-    let accounts = null
 
     this.webConnector = new WalletConnect({
       bridgeUrl: this.bridgeUrl,
       dappName: this.dappName
     })
+  }
+
+  setEngine(engine) {
+    const self = this
+    self.engine = engine
+    engine.on('block', function(block) {
+      self.currentBlock = block
+    })
+  }
+
+  emitPayload(payload, cb) {
+    const self = this
+    const _payload = this.webConnector.createPayload(payload)
+    self.engine.sendAsync(_payload, cb)
+  }
+
+  async initSession() {
+    let accounts = null
 
     const session = await this.webConnector.initSession()
 
     if (session.new) {
       const { uri } = session
 
-      await displayQRCode(uri)
+      await toggleQRCode(uri)
 
       const sessionStatus = await this.webConnector.listenSessionStatus()
 
@@ -69,7 +79,7 @@ class WalletConnectProvider extends SubProvider {
       'personal_sign'
     ]
     if (payload.method === 'eth_accounts') {
-      this.createWebconnector()
+      this.initSession()
         .then(accounts => end(null, accounts))
         .catch(err => end(err))
     } else if (supportedMethods.includes(payload.method)) {
