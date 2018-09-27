@@ -52,7 +52,7 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
     it('successfully posts session status to bridge', async() => {
       const result = await walletConnector.sendSessionStatus(sessionStatus)
 
-      expect(result).to.be.true
+      expect(result).to.be.ok
     })
   })
 
