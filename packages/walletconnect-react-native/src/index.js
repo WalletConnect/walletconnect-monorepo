@@ -14,17 +14,15 @@ export default class WalletConnector extends Connector {
     const encryptedData = await this.encrypt(data)
 
     // store session info on bridge
-    const response = await this._fetchBridge(
+    const result = await this._fetchBridge(
       `/session/${this.sessionId}`,
       { method: 'PUT' },
       { fcmToken, pushEndpoint, data: encryptedData }
     )
 
-    const expires = Number(response.expiresInSeconds) * 1000
+    this.expires = result.expires
 
-    this.expires = expires
-
-    return true
+    return this.toJSON()
   }
 
   //

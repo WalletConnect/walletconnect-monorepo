@@ -76,6 +76,8 @@ export default class WalletConnect extends Connector {
     })
 
     this.sessionId = body.sessionId
+    this.expires = body.expires
+    this.accounts = []
 
     const session = this.toJSON()
 
@@ -197,6 +199,7 @@ export default class WalletConnect extends Connector {
       const accounts = result.data
 
       this.expires = expires
+      this.accounts = accounts
 
       const sessionData = this.toJSON()
 

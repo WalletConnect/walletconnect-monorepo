@@ -47,9 +47,9 @@ if (!accounts.length) {
   const { uri } = webConnector.uri;
 
   // Listen for session confirmation from wallet
-  const sessionStatus = await webConnector.listenSessionStatus()
+  await webConnector.listenSessionStatus()
 
-  // Get accounts after session confirmation
+  // Get accounts after session status is resolved
   accounts = webConnector.accounts
 }
 /**
