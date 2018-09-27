@@ -16,40 +16,30 @@ export default class WalletConnect extends Connector {
   //  Initiate session
   //
   async initSession() {
-    let liveSessions = null
-    const savedSessions = this.getLocalSessions()
-    if (savedSessions) {
-      const openSessions = []
-      Object.keys(savedSessions).forEach(sessionId => {
-        const session = savedSessions[sessionId]
-        const now = Date.now()
-        if (session.expires > now) {
-          openSessions.push(session)
-        } else {
-          this.deleteLocalSession(session)
-        }
-      })
-      liveSessions = await Promise.all(
-        openSessions.map(async session => {
-          this.sessionId = session.sessionId
-          this.symKey = session.symKey
-          const sessionStatus = await this.getSessionStatus()
-          if (sessionStatus) {
-            return {
-              ...session,
-              accounts: sessionStatus.accounts,
-              expires: sessionStatus.expires
-            }
-          } else {
-            return null
+    let liveSession = null
+
+    const savedSession = this.getLocalSession()
+
+    if (savedSession) {
+      if (savedSession.expires > Date.now()) {
+        this.sessionId = savedSession.sessionId
+        this.symKey = savedSession.symKey
+
+        const sessionStatus = await this.getSessionStatus()
+
+        if (sessionStatus) {
+          liveSession = {
+            ...savedSession,
+            accounts: sessionStatus.accounts,
+            expires: sessionStatus.expires
           }
-        })
-      )
-      liveSessions = liveSessions.filter(session => !!session)
+        }
+      } else {
+        this.deleteLocalSession(savedSession)
+      }
     }
 
-    let currentSession =
-      liveSessions && liveSessions.length ? liveSessions[0] : null
+    let currentSession = liveSession || null
 
     if (currentSession) {
       this.accounts = currentSession.accounts
@@ -264,44 +254,20 @@ export default class WalletConnect extends Connector {
 
   // -- localStorage -------------------------------------------------------- //
 
-  getLocalSessions() {
+  getLocalSession() {
+    let savedSession = null
     const savedLocal = localStorage && localStorage.getItem(localStorageId)
-    let savedSessions = null
     if (savedLocal) {
-      savedSessions = JSON.parse(savedLocal)
+      savedSession = this.checkObject(savedLocal, 'local session')
     }
-    return savedSessions
+    return savedSession
   }
 
   saveLocalSession(session) {
-    const savedLocal = localStorage && localStorage.getItem(localStorageId)
-    let savedSessions = {}
-    if (savedLocal) {
-      savedSessions = JSON.parse(savedLocal)
-    }
-    savedSessions[session.sessionId] = session
-    localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
+    localStorage.setItem(localStorageId, JSON.stringify(session))
   }
 
-  updateLocalSession(session) {
-    const savedLocal = localStorage && localStorage.getItem(localStorageId)
-    let savedSessions = {}
-    if (savedLocal) {
-      savedSessions = JSON.parse(savedLocal)
-    }
-    savedSessions[session.sessionId] = {
-      ...savedSessions[session.sessionId],
-      ...session
-    }
-    localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
-  }
-
-  deleteLocalSession(session) {
-    const savedLocal = localStorage && localStorage.getItem(localStorageId)
-    if (savedLocal) {
-      let savedSessions = JSON.parse(savedLocal)
-      delete savedSessions[session.sessionId]
-      localStorage.setItem(localStorageId, JSON.stringify(savedSessions))
-    }
+  deleteLocalSession() {
+    localStorage.removeItem(localStorageId)
   }
 }
