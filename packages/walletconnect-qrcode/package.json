@@ -1,7 +1,7 @@
 {
-  "name": "walletconnect-web3-subprovider",
+  "name": "walletconnect-qrcode",
   "version": "0.7.0",
-  "description": "Walletconnect Web3 Subprovider",
+  "description": "Walletconnect QR Code",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "webpack --config webpack.config.js",
@@ -18,7 +18,7 @@
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "LGPL-3.0",
-  "main": "dist/walletconnect-web3-subprovider.js",
+  "main": "dist/walletconnect-qrcode.js",
   "directories": {
     "lib": "dist",
     "test": "test"
@@ -49,6 +49,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "walletconnect": "^0.6.29"
+    "qr-image": "^3.2.0"
   }
 }

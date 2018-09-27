@@ -367,7 +367,8 @@ export default class Connector {
       symKey: this.symKey,
       dappName: this.dappName,
       protocol: this.protocol,
-      expires: this.expires
+      expires: this.expires,
+      uri: this.uri
     }
   }
 

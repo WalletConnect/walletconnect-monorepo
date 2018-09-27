@@ -48,31 +48,25 @@ export default class WalletConnect extends Connector {
       liveSessions = liveSessions.filter(session => !!session)
     }
 
-    let session = {
-      new: false
-    }
-
     let currentSession =
       liveSessions && liveSessions.length ? liveSessions[0] : null
 
     if (currentSession) {
+      this.accounts = currentSession.accounts
       this.bridgeUrl = currentSession.bridgeUrl
       this.sessionId = currentSession.sessionId
       this.symKey = currentSession.symKey
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
-      this.accounts = session.accounts = currentSession.accounts
     } else {
       currentSession = await this.createSession()
-      session.new = true
-      session.uri = currentSession.uri
     }
 
-    return session
+    return currentSession
   }
 
   //
-  // Create session
+  // Create new session
   //
   async createSession() {
     this.symKey = await this.generateKey()
@@ -83,11 +77,28 @@ export default class WalletConnect extends Connector {
 
     this.sessionId = body.sessionId
 
-    const sessionData = this.toJSON()
+    const session = this.toJSON()
 
-    const uri = this.uri
+    return session
+  }
 
-    return { ...sessionData, uri }
+  //
+  //  Get Accounts
+  //
+  async getAccounts() {
+    let accounts = this.accounts
+    if (!accounts && !accounts.length) {
+      return accounts
+    }
+    try {
+      accounts = await this.createCallRequest({
+        method: 'eth_accounts'
+      })
+      this.accounts = accounts
+      return accounts
+    } catch (error) {
+      throw new Error('Rejected: Accounts Request')
+    }
   }
 
   //

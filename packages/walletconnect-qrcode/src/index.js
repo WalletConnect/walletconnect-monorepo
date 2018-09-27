@@ -9,11 +9,12 @@ import * as style from './style'
  *  the image URI.
  *
  *  @param    {String}     data      data string
+ *  @param    {String}     type      type string
  *  @return   {String}               image URI
  */
-const getQRCodeDataURI = data => {
-  let pngBuffer = qrImage.imageSync(data, { type: 'png' })
-  return 'data:image/png;charset=utf-8;base64, ' + pngBuffer.toString('base64')
+const getQRCodeDataURI = (data, type = 'png') => {
+  let buffer = qrImage.imageSync(data, { type })
+  return 'data:image/png;charset=utf-8;base64, ' + buffer.toString('base64')
 }
 
 /**
@@ -89,4 +90,4 @@ const Modal = innerHTML => `
   </div>
 `
 
-export { closeQRCode, openQRCode }
+export { closeQRCode, openQRCode, getQRCodeDataURI }

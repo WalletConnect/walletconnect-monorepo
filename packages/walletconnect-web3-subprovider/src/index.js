@@ -1,5 +1,4 @@
 import WalletConnect from 'walletconnect'
-import { closeQRCode, openQRCode } from './qrcode'
 
 export default class WalletConnectSubprovider {
   constructor(opts) {
@@ -19,25 +18,9 @@ export default class WalletConnectSubprovider {
   }
 
   async initSession() {
-    let accounts = null
-
     const session = await this.webConnector.initSession()
 
-    if (session.new) {
-      const { uri } = session
-
-      await openQRCode(uri)
-
-      const sessionStatus = await this.webConnector.listenSessionStatus()
-
-      await closeQRCode()
-
-      accounts = sessionStatus.data
-    } else {
-      accounts = session.accounts
-    }
-
-    return accounts
+    return session
   }
 
   setEngine(engine) {
@@ -61,6 +44,7 @@ export default class WalletConnectSubprovider {
       end(null, response.result)
     })
     const supportedMethods = [
+      'eth_accounts',
       'eth_signTransaction',
       'eth_sendTransaction',
       'eth_sendRawTransaction',
@@ -68,11 +52,7 @@ export default class WalletConnectSubprovider {
       'eth_signTypedData',
       'personal_sign'
     ]
-    if (payload.method === 'eth_accounts') {
-      this.initSession()
-        .then(accounts => end(null, accounts))
-        .catch(err => end(err))
-    } else if (supportedMethods.includes(payload.method)) {
+    if (supportedMethods.includes(payload.method)) {
       if (this.webConnector) {
         this.webConnector
           .createCall(payload)
