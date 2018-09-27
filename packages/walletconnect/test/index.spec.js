@@ -1,4 +1,6 @@
-/* global describe it beforeEach */
+/* global describe it beforeEach  */
+
+import './mock/localStorage'
 
 import { expect } from 'chai'
 
