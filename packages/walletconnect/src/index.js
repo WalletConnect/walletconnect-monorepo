@@ -221,7 +221,7 @@ export default class WalletConnect extends Connector {
     let listener = null
     const promise = new Promise((resolve, reject) => {
       listener = new Listener({
-        fn: async() => await fn(),
+        fn,
         cb: (err, result) => {
           if (err) {
             reject(err)
