@@ -355,14 +355,16 @@ export default class Connector {
     return decryptedData
   }
 
-  toJSON = () => ({
-    bridgeUrl: this.bridgeUrl,
-    sessionId: this.sessionId,
-    symKey: this.symKey,
-    dappName: this.dappName,
-    protocol: this.protocol,
-    expires: this.expires
-  })
+  toJSON() {
+    return {
+      bridgeUrl: this.bridgeUrl,
+      sessionId: this.sessionId,
+      symKey: this.symKey,
+      dappName: this.dappName,
+      protocol: this.protocol,
+      expires: this.expires
+    }
+  }
 
   randomId() {
     // 13 time digits
