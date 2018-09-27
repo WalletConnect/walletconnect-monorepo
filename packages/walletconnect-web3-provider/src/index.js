@@ -1,8 +1,6 @@
 import ProviderEngine from 'web3-provider-engine'
 import RpcSubprovider from 'web3-provider-engine/subproviders/rpc'
-import Subprovider from './subprovider'
-
-export const WalletConnectSubprovider = Subprovider
+import WalletConnectSubprovider from './subprovider'
 
 class WalletConnectProvider {
   constructor(opts) {

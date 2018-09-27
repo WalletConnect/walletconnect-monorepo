@@ -49,6 +49,7 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
+    "qr-image": "^3.2.0",
     "walletconnect": "^0.6.29",
     "web3-provider-engine": "^14.0.6"
   }

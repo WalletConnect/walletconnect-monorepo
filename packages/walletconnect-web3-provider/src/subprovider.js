@@ -1,6 +1,6 @@
 import WalletConnect from 'walletconnect'
 import Subprovider from 'web3-provider-engine/subproviders/subprovider'
-import { toggleQRCode } from './qrcode'
+import { closeQRCode, openQRCode } from './qrcode'
 
 class WalletConnectSubprovider extends Subprovider {
   constructor(opts) {
@@ -34,9 +34,11 @@ class WalletConnectSubprovider extends Subprovider {
     if (session.new) {
       const { uri } = session
 
-      await toggleQRCode(uri)
+      await openQRCode(uri)
 
       const sessionStatus = await this.webConnector.listenSessionStatus()
+
+      await closeQRCode()
 
       accounts = sessionStatus.data
     } else {
