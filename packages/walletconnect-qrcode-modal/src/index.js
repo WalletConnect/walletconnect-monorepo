@@ -1,93 +1,84 @@
 /* global document */
 
 import qrImage from 'qr-image'
-import * as style from './style'
+import style from './style'
 
 /**
- *  Given a string of data it returns a image URI which is a QR code. An image
- *  URI can be displayed in a img html tag by setting the src attrbiute to the
- *  the image URI.
- *
- *  @param    {String}     data      data string
- *  @param    {String}     type      type string
- *  @return   {String}               image URI
+ *  @desc     Returns QR Code Data String for given image type
+ *  @param    {String}     data
+ *  @param    {String}     type
+ *  @return   {String}
  */
-const getQRCodeDataURI = (data, type = 'png') => {
+function getDataString(data, type = 'png') {
   let buffer = qrImage.imageSync(data, { type })
-  return 'data:image/png;charset=utf-8;base64, ' + buffer.toString('base64')
+  if (type === 'png') {
+    return 'data:image/png;charset=utf-8;base64, ' + buffer.toString('base64')
+  }
+  return buffer
 }
 
 /**
- *  A default QR pop over display, which injects the neccessary html
- *
- *  @param    {String}     data       data which is displayed in QR code
- *  @param    {Function}   cancel     a function called when the cancel button is clicked
- *  @param    {String}     appName    name of the users app
- *  @param    {Boolean}    introModal a flag for displaying the intro
+ *  @desc     Open WalletConnect QR Code Modal
+ *  @param    {String}     uri
+ *  @param    {Function}   cb
  */
-const openQRCode = (data, cancel) => {
+function open(uri, cb) {
   let wrapper = document.createElement('div')
   wrapper.setAttribute('id', 'walletconnect-wrapper')
 
-  wrapper.innerHTML = QRCodeDisplay({
-    qrImageUri: getQRCodeDataURI(data),
-    cancel
+  let data = getDataString(uri)
+
+  wrapper.innerHTML = formatQRCodeModal({
+    qrImageUri: getDataString(data),
+    cb
   })
 
-  const cancelClick = () => {
-    document.getElementById('walletconnect-qr-text').innerHTML = 'Cancelling'
-    cancel()
+  function cancelClick() {
+    document.getElementById('walletconnect-qrcode-text').innerHTML =
+      'Cancelling'
+    cb()
   }
 
   document.body.appendChild(wrapper)
   document
-    .getElementById('walletconnect-qr-cancel')
+    .getElementById('walletconnect-qrcode-cancel')
     .addEventListener('click', cancelClick)
 }
 
 /**
- *  Closes the default QR pop over
+ *  @desc     Close WalletConnect QR Code Modal
  */
-const closeQRCode = () => {
+function close() {
   const Wrapper = document.getElementById('walletconnect-wrapper')
   document.body.removeChild(Wrapper)
 }
 
 /**
- *  A html pop over QR display template
- *
- *  @param    {Object}     args
- *  @param    {String}     args.qrImageUri    a image URI for the QR code
+ *  @desc     QR Code Modal HTML String
+ *  @param    {Object}     args     { qrImageUri}
+ *  @return   {String}
  */
-const QRCodeDisplay = ({ qrImageUri }) =>
-  Modal(`
-  <div>
-    <p id="walletconnect-qr-text" style="${
-      style.QRCodeInstructions
-    }">Scan QR code with WalletConnect</p>
-    <img src="${qrImageUri}" style="${style.QRCodeIMG}" />
-  </div>
-`)
-
-/**
- *  Modal skeleton
- *
- *  @param    {String}     innerHTML    content of modal
- */
-const Modal = innerHTML => `
-  <div id="walletconnect-qr" style="${style.QRCode}">
-    <div style="${style.Modal}" class="animated fadeIn">
-      <div style="${style.ModalHeader}">
-        <div id="walletconnect-qr-cancel" style="${style.ModalHeaderClose}">
-          <p>Close</p>
+function formatQRCodeModal({ qrImageUri }) {
+  return `
+    <div id="walletconnect-qrcode-modal" style="${style.QRCode.base}">
+      <div style="${style.Modal.base}" class="animated fadeIn">
+        <div style="${style.Modal.header}">
+          <div id="walletconnect-qrcode-cancel" style="${style.Modal.close}">
+            <p>Close</p>
+          </div>
+        </div>
+        <div>
+          <div>
+            <p id="walletconnect-qrcode-text" style="${
+              style.QRCode.text
+            }">Scan QR code with WalletConnect</p>
+            <img src="${qrImageUri}" style="${style.QRCode.image}" />
+          </div>
         </div>
       </div>
-      <div>
-        ${innerHTML}
-      </div>
+      ${style.animate}
     </div>
-    ${style.animate}
-  </div>
 `
+}
 
-export { closeQRCode, openQRCode, getQRCodeDataURI }
+export { close, open, getDataString }

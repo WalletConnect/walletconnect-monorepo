@@ -1,13 +1,13 @@
 # WalletConnect QR Code Modal
 
-This implements provider for walletconnect standard.
+QR Code Modal for WalletConnect Standard
 
 You can read more about WalletConnect standard here: http://walletconnect.org/
 
 ## Example
 
 ```js
-import WalletConnectQRCode from 'walletconnect-qrcode-modal'
+import WalletConnectQRCodeModal from 'walletconnect-qrcode-modal'
 
 /**
  *  Get URI from WalletConnect object
@@ -17,10 +17,10 @@ const uri = webConnector.uri
 /**
  *  Open QR Code Modal
  */
-WalletConnectQRCode.openQRCode(uri)
+WalletConnectQRCodeModal.open(uri)
 
 /**
  *  Close QR Code Modal
  */
-WalletConnectQRCode.closeQRCode()
+WalletConnectQRCodeModal.close()
 ```

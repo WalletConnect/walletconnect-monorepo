@@ -40,6 +40,7 @@ npm install --save walletconnect
 
 ```js
 import WalletConnect from 'walletconnect'
+import WalletConnectQRCodeModal
 
 /**
  *  Create a webConnector
@@ -56,14 +57,15 @@ const webConnector = new WalletConnect(
  */
 const session = await webConnector.initSession()
 
-if (session.new) {
+const accounts = webConnector.accounts
+
+/**
+ *  Check if accounts
+ */
+if (!accounts) {
   const { uri } = session; // Display QR code with URI string
 
   const sessionStatus = await webConnector.listenSessionStatus() // Listen to session status
-
-  const { accounts } = sessionStatus // Get wallet accounts
-} else {
-  const { accounts } = session // Get wallet accounts
 }
 
 /**
@@ -270,7 +272,7 @@ npm install --save walletconnect-qrcode-modal
 2.  Implementation
 
 ```js
-import WalletConnectQRCode from 'walletconnect-qrcode-modal'
+import WalletConnectQRCodeModal from 'walletconnect-qrcode-modal'
 
 /**
  *  Get URI from WalletConnect object
@@ -280,12 +282,12 @@ const uri = webConnector.uri
 /**
  *  Open QR Code Modal
  */
-WalletConnectQRCode.openQRCode(uri)
+WalletConnectQRCodeModal.open(uri)
 
 /**
  *  Close QR Code Modal
  */
-WalletConnectQRCode.closeQRCode()
+WalletConnectQRCodeModal.close()
 ```
 
 ### Development workflow
