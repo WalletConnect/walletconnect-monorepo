@@ -215,12 +215,13 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Listen for session status
+  //  Promisify listener + expose stop() method
   //
-  listenSessionStatus(pollInterval = 1000, timeout = 60000) {
-    return new Promise((resolve, reject) => {
-      new Listener({
-        fn: async() => await this.getSessionStatus(),
+  promisifyListener = (fn, pollInterval = 1000, timeout = 60000) => {
+    let listener = null
+    const promise = new Promise((resolve, reject) => {
+      listener = new Listener({
+        fn: async() => await fn(),
         cb: (err, result) => {
           if (err) {
             reject(err)
@@ -231,25 +232,22 @@ export default class WalletConnect extends Connector {
         timeout
       })
     })
+    promise.stop = listener.stop
+    return promise
+  }
+
+  //
+  // Listen for session status
+  //
+  listenSessionStatus(pollInterval, timeout) {
+    return this.promisifyListener(this.getSessionStatus, pollInterval, timeout)
   }
 
   //
   // Listen for call status
   //
-  listenCallStatus(callId, pollInterval = 1000, timeout = 60000) {
-    return new Promise((resolve, reject) => {
-      new Listener({
-        fn: async() => await this.getCallStatus(callId),
-        cb: (err, result) => {
-          if (err) {
-            reject(err)
-          }
-          resolve(result)
-        },
-        pollInterval,
-        timeout
-      })
-    })
+  listenCallStatus(callId, pollInterval, timeout) {
+    return this.promisifyListener(this.getCallStatus, pollInterval, timeout)
   }
 
   // -- localStorage -------------------------------------------------------- //
