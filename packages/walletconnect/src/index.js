@@ -195,17 +195,14 @@ export default class WalletConnect extends Connector {
     const result = await this._getEncryptedData(`/session/${this.sessionId}`)
 
     if (result) {
-      const expires = Number(result.expiresInSeconds) * 1000
-      const accounts = result.data
-
-      this.expires = expires
-      this.accounts = accounts
+      this.expires = result.expires
+      this.accounts = result.data
 
       const sessionData = this.toJSON()
 
       this.saveLocalSession(sessionData)
 
-      return { accounts, expires }
+      return sessionData
     }
     return null
   }

@@ -370,6 +370,7 @@ export default class Connector {
       dappName: this.dappName,
       protocol: this.protocol,
       expires: this.expires,
+      accounts: this.accounts,
       uri: this.uri
     }
   }
