@@ -77,7 +77,7 @@ export default class Connector {
     this.dappName = session.dappName
   }
 
-  async encrypt(data, password, customIv = null) {
+  async encrypt(data, customIv = null) {
     const key = this._symKey
 
     if (!key) {
