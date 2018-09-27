@@ -13,7 +13,7 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
   let connector = null
 
   let config = {
-    bridgeUrl: 'https://bridge.walletconnect.org',
+    bridgeUrl: 'https://test-bridge.walletconnect.org',
     dappName: 'Example'
   }
 

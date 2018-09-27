@@ -8,7 +8,7 @@ import WalletConnect from '../src'
 
 describe('// ------------------ walletconnect ------------------ //', () => {
   let config = {
-    bridgeUrl: 'https://bridge.walletconnect.org',
+    bridgeUrl: 'https://test-bridge.walletconnect.org',
     dappName: 'ExampleDapp'
   }
 
