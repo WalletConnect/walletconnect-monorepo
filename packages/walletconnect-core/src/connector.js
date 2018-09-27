@@ -66,13 +66,15 @@ export default class Connector {
   }
 
   set uri(string) {
+    if (!string || typeof string !== 'string') {
+      return
+    }
     const session = this._parseWalletConnectURI(string)
     this.protocol = session.protocol
     this.bridgeUrl = session.bridgeUrl
     this.sessionId = session.sessionId
     this.symKey = session.symKey
     this.dappName = session.dappName
-    this._uri = string
   }
 
   async encrypt(data, customIv = null) {

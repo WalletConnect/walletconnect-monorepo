@@ -22,9 +22,5 @@ module.exports = {
         }
       }
     ]
-  },
-  node: {
-    Buffer: true,
-    crypto: true
   }
 }

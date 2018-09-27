@@ -31,7 +31,7 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
 
     const uri = await mockCreateSession(connector)
 
-    walletConnector = new RNWalletConnect(uri)
+    walletConnector = new RNWalletConnect({ uri })
   })
 
   it('creates an instance using URI string', () => {
