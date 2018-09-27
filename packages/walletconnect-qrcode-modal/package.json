@@ -1,5 +1,5 @@
 {
-  "name": "walletconnect-qrcode",
+  "name": "walletconnect-qrcode-modal",
   "version": "0.6.29",
   "description": "QR Code modal for WalletConnect",
   "scripts": {
@@ -18,7 +18,7 @@
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "LGPL-3.0",
-  "main": "dist/walletconnect-qrcode.js",
+  "main": "dist/walletconnect-qrcode-modal.js",
   "directories": {
     "lib": "dist",
     "test": "test"

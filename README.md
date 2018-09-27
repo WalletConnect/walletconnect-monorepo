@@ -2,16 +2,22 @@
 
 [![Build Status](https://travis-ci.org/WalletConnect/walletconnect-monorepo.svg?branch=master)](https://travis-ci.org/WalletConnect/walletconnect-monorepo)
 
-Monorepo for WalletConnect Javascript Libraries
-This repository contains core libraries, browser SDK, react-native SDK and web3-provider for WalletConnect standard.
+#### Monorepo for WalletConnect Javascript Libraries
+
+1.  js-walletconnect-core ............ WalletConnect Javascript Core library
+2.  walletconnect .................... WalletConnect Browser SDK
+3.  rn-walletconnect-wallet .......... WalletConnect React-Native SDK
+4.  walletconnect-web3-subprovider ... WalletConnect Web3 Subprovider
+5.  walletconnect-qrcode-modal ............. WalletConnect QR Code Modal
 
 For more documentation go to: https://docs.walletconnect.org
 
-### Index
+### Getting Started
 
 1.  [For Dapps (Browser SDK)](#for-dapps-browser-sdk)
 2.  [For Wallets (React-Native SDK)](#for-wallets-react-native-sdk)
-3.  [Development workflow](#development-workflow)
+3.  [For Web3 Subprovider (web3.js)](#for-web3-subprovider-web3.js)
+4.  [For QR Code Modal (Browsers only)](#for-qr-code-modal-browsers-only)
 
 ### For Dapps (Browser SDK)
 
@@ -202,6 +208,79 @@ const allCalls = await walletConnector.getAllCallRequests();
  *  allCalls is a map from callId --> callData
  */
 const callData = allCalls[callId];
+```
+
+### For Web3 Subprovider (web3.js)
+
+1.  Setup
+
+```bash
+/**
+ *  Install NPM Package
+ */
+
+yarn add web3 web3-provider-engine walletconnect-web3-subprovider
+
+# OR
+
+npm install --save web3 web3-provider-engine walletconnect-web3-subprovider
+```
+
+2.  Implementation
+
+```js
+import Web3 from 'web3'
+import ProviderEngine from 'web3-provider-engine'
+import RpcSubprovider from 'web3-provider-engine/subproviders/rpc'
+import WalletConnectSubprovider from 'walletconnect-web3-subprovider'
+
+const engine = new ProviderEngine()
+
+engine.addProvider(new WalletConnectSubprovider({
+  bridgeUrl: 'https://bridge.walletconnect.org',  // Required
+  dappName: 'INSERT_DAPP_NAME',                   // Required
+})
+engine.addProvider(new RpcSubprovider({ rpcUrl:'http://localhost:8545' }))
+engine.start()
+
+const web3 = new Web3(engine)
+```
+
+### For QR Code Modal (Browsers only)
+
+1.  Setup
+
+```bash
+/**
+ *  Install NPM Package
+ */
+
+yarn add walletconnect-qrcode-modal
+
+# OR
+
+npm install --save walletconnect-qrcode-modal
+```
+
+2.  Implementation
+
+```js
+import WalletConnectQRCode from 'walletconnect-qrcode-modal'
+
+/**
+ *  Get URI from WalletConnect object
+ */
+const uri = webConnector.uri
+
+/**
+ *  Open QR Code Modal
+ */
+WalletConnectQRCode.openQRCode(uri)
+
+/**
+ *  Close QR Code Modal
+ */
+WalletConnectQRCode.closeQRCode()
 ```
 
 ### Development workflow

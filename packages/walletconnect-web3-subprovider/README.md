@@ -1,4 +1,4 @@
-# WalletConnect Web3 Provider
+# WalletConnect Web3 Subprovider
 
 This implements provider for walletconnect standard.
 
