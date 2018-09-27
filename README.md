@@ -2,15 +2,21 @@
 
 [![Build Status](https://travis-ci.org/WalletConnect/walletconnect-monorepo.svg?branch=master)](https://travis-ci.org/WalletConnect/walletconnect-monorepo)
 
-#### Monorepo for WalletConnect Javascript Libraries
-
-1.  js-walletconnect-core ............ WalletConnect Javascript Core library
-2.  walletconnect .................... WalletConnect Browser SDK
-3.  rn-walletconnect-wallet .......... WalletConnect React-Native SDK
-4.  walletconnect-web3-subprovider ... WalletConnect Web3 Subprovider
-5.  walletconnect-qrcode-modal ............. WalletConnect QR Code Modal
+An open source standard for connecting mobile wallets to dapps - https://walletconnect.org
 
 For more documentation go to: https://docs.walletconnect.org
+
+#### Monorepo for WalletConnect Javascript Libraries
+
+| Library                        | Description             |
+| ------------------------------ | ----------------------- |
+| js-walletconnect-core          | Javascript Core library |
+| walletconnect                  | Browser SDK             |
+| rn-walletconnect-wallet        | React-Native SDK        |
+| walletconnect-web3-subprovider | Web3 Subprovider        |
+| walletconnect-qrcode-modal     | QR Code Modal           |
+
+
 
 ### Getting Started
 
