@@ -70,6 +70,7 @@ export default class WalletConnect extends Connector {
     this.accounts = []
 
     const session = this.toJSON()
+    this.saveLocalSession(session)
 
     return session
   }
@@ -188,11 +189,10 @@ export default class WalletConnect extends Connector {
       this.expires = result.expires
       this.accounts = result.data
 
-      const sessionData = this.toJSON()
+      const session = this.toJSON()
+      this.saveLocalSession(session)
 
-      this.saveLocalSession(sessionData)
-
-      return sessionData
+      return session
     }
     return null
   }
