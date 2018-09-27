@@ -1,7 +1,7 @@
 /* global document */
 
 import qrImage from 'qr-image'
-import * as style from './styles'
+import * as style from './style'
 
 /**
  *  Given a string of data it returns a image URI which is a QR code. An image
