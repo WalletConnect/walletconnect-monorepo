@@ -1,7 +1,7 @@
 {
-  "name": "walletconnect-web3-provider",
+  "name": "walletconnect-web3-subprovider",
   "version": "0.6.16",
-  "description": "Walletconnect Web3 Provider",
+  "description": "Walletconnect Web3 Subprovider",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "webpack --config webpack.config.js",
@@ -18,7 +18,7 @@
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://walletconnect.org",
   "license": "LGPL-3.0",
-  "main": "dist/walletconnect-web3-provider.js",
+  "main": "dist/walletconnect-web3-subprovider.js",
   "directories": {
     "lib": "dist",
     "test": "test"
@@ -50,7 +50,6 @@
   },
   "dependencies": {
     "qr-image": "^3.2.0",
-    "walletconnect": "^0.6.29",
-    "web3-provider-engine": "^14.0.6"
+    "walletconnect": "^0.6.29"
   }
 }

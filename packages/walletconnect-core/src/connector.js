@@ -7,24 +7,17 @@ const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
 
 export default class Connector {
-  constructor(options = {}) {
-    const {
-      bridgeUrl,
-      sessionId,
-      symKey,
-      dappName,
-      chainId,
-      protocol,
-      expires
-    } = options
-
-    this.bridgeUrl = bridgeUrl
-    this.sessionId = sessionId
-    this.symKey = symKey
-    this.dappName = dappName
-    this.protocol = protocol || 'ethereum'
-    this.chainId = chainId || 1
-    this.expires = expires || null
+  constructor(opts = {}) {
+    const options = this.checkObject(opts, 'options')
+    this.bridgeUrl = options.bridgeUrl
+    this.sessionId = options.sessionId
+    this.symKey = options.symKey
+    this.dappName = options.dappName
+    this.protocol = options.protocol || 'ethereum'
+    this.chainId = options.chainId || 1
+    this.expires = options.expires || null
+    this.accounts = options.accounts || []
+    this.uri = options.uri || ''
   }
 
   get bridgeUrl() {
@@ -56,18 +49,30 @@ export default class Connector {
     this._symKey = v
   }
 
-  // getter for session id
   get sessionId() {
     return this._sessionId
   }
 
-  // setter for sessionId
   set sessionId(value) {
     if (!value) {
       return
     }
 
     this._sessionId = value
+  }
+
+  get uri() {
+    return this._formatWalletConnectURI()
+  }
+
+  set uri(string) {
+    const session = this._parseWalletConnectURI(string)
+    this.protocol = session.protocol
+    this.bridgeUrl = session.bridgeUrl
+    this.sessionId = session.sessionId
+    this.symKey = session.symKey
+    this.dappName = session.dappName
+    this._uri = string
   }
 
   async encrypt(data, customIv = null) {
@@ -375,20 +380,39 @@ export default class Connector {
     return datePart + extraPart
   }
 
-  createPayload(data) {
-    let payload = {}
-    if (data) {
-      if (typeof data === 'object') {
-        if (Object.keys(data).length) {
-          payload = data
+  checkObject(obj, name) {
+    let result = null
+
+    const throwError = () => {
+      throw new Error(`${name} object is invalid`)
+    }
+
+    if (obj) {
+      if (typeof obj === 'object') {
+        if (Object.keys(obj).length) {
+          result = obj
         }
-      } else if (typeof data === 'string') {
-        data = JSON.parse(data)
-        if (Object.keys(data).length) {
-          payload = data
+      } else if (typeof obj === 'string') {
+        try {
+          obj = JSON.parse(obj)
+        } catch (error) {
+          throwError()
+        }
+        if (Object.keys(obj).length) {
+          result = obj
         }
       }
     }
+
+    if (!result) {
+      throwError()
+    }
+
+    return result
+  }
+
+  createPayload(data) {
+    let payload = this.checkObject(data, 'payload')
 
     if (payload.id) {
       delete payload.id

@@ -1,21 +1,6 @@
 import { Connector } from 'js-walletconnect-core'
 
 export default class WalletConnector extends Connector {
-  constructor(options) {
-    if (options && typeof options === 'object') {
-      super(options)
-    } else if (options && typeof options === 'string') {
-      super()
-      const session = this._parseWalletConnectURI(options)
-      this.protocol = session.protocol
-      this.bridgeUrl = session.bridgeUrl
-      this.sessionId = session.sessionId
-      this.symKey = session.symKey
-      this.dappName = session.dappName
-    } else {
-      throw new Error('Missing session details')
-    }
-  }
   //
   // send session status
   //

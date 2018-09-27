@@ -1,11 +1,8 @@
 import WalletConnect from 'walletconnect'
-import Subprovider from 'web3-provider-engine/subproviders/subprovider'
 import { closeQRCode, openQRCode } from './qrcode'
 
-class WalletConnectSubprovider extends Subprovider {
+export default class WalletConnectSubprovider {
   constructor(opts) {
-    super()
-
     const bridgeUrl = opts.bridgeUrl || null
     if (!bridgeUrl || typeof bridgeUrl !== 'string') {
       throw new Error('Missing or Invalid bridgeUrl field')
@@ -16,14 +13,9 @@ class WalletConnectSubprovider extends Subprovider {
       throw new Error('Missing or Invalid dappName field')
     }
 
-    this.bridgeUrl = bridgeUrl
-    this.dappName = dappName
     this.isWalletConnect = true
 
-    this.webConnector = new WalletConnect({
-      bridgeUrl: this.bridgeUrl,
-      dappName: this.dappName
-    })
+    this.webConnector = new WalletConnect(opts)
   }
 
   async initSession() {
@@ -48,6 +40,20 @@ class WalletConnectSubprovider extends Subprovider {
     return accounts
   }
 
+  setEngine(engine) {
+    const self = this
+    self.engine = engine
+    engine.on('block', function(block) {
+      self.currentBlock = block
+    })
+  }
+
+  emitPayload(payload, cb) {
+    const self = this
+    const _payload = this.webConnector.createPayload(payload)
+    self.engine.sendAsync(_payload, cb)
+  }
+
   handleRequest(payload, next, end) {
     this.provider.sendAsync(payload, function(err, response) {
       if (err) return end(err)
@@ -55,6 +61,7 @@ class WalletConnectSubprovider extends Subprovider {
       end(null, response.result)
     })
     const supportedMethods = [
+      'eth_signTransaction',
       'eth_sendTransaction',
       'eth_sendRawTransaction',
       'eth_sign',
@@ -79,5 +86,3 @@ class WalletConnectSubprovider extends Subprovider {
     }
   }
 }
-
-export default WalletConnectSubprovider

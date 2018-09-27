@@ -61,8 +61,7 @@ export default class WalletConnect extends Connector {
       this.symKey = currentSession.symKey
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
-
-      session.accounts = currentSession.accounts
+      this.accounts = session.accounts = currentSession.accounts
     } else {
       currentSession = await this.createSession()
       session.new = true
@@ -84,14 +83,9 @@ export default class WalletConnect extends Connector {
 
     this.sessionId = body.sessionId
 
-    const sessionData = {
-      bridgeUrl: this.bridgeUrl,
-      sessionId: this.sessionId,
-      symKey: this.symKey,
-      dappName: this.dappName
-    }
+    const sessionData = this.toJSON()
 
-    const uri = this._formatWalletConnectURI()
+    const uri = this.uri
 
     return { ...sessionData, uri }
   }

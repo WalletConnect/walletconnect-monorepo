@@ -31,7 +31,7 @@ import RNWalletConnect from 'rn-walletconnect-wallet'
 /**
  *  Create WalletConnector (using the URI from scanning the QR code)
  */
-const walletConnector = new RNWalletConnect(uri)
+const walletConnector = new RNWalletConnect({ uri: uri })
 
 /**
  *  Send session data
