@@ -43,8 +43,8 @@ let accounts = webConnector.accounts
  *  Check if accounts is empty array
  */
 if (!accounts.length) {
-  // If so prompt the user to scan the QR code
-  const { uri } = session;
+  // If there is no accounts, prompt the user to scan the QR code
+  const { uri } = webConnector.uri;
 
   // Listen for session confirmation from wallet
   const sessionStatus = await webConnector.listenSessionStatus()
