@@ -247,7 +247,7 @@ export default class WalletConnect extends Connector {
   // Listen for call status
   //
   listenCallStatus(callId, pollInterval, timeout) {
-    return this.promisifyListener(this.getCallStatus, pollInterval, timeout)
+    return this.promisifyListener(() => this.getCallStatus(callId), pollInterval, timeout)
   }
 
   // -- localStorage -------------------------------------------------------- //
