@@ -14,13 +14,10 @@ export default class WalletConnectSubprovider {
 
     this.isWalletConnect = true
 
-    this.webConnector = new WalletConnect(opts)
+    this.walletConnect = new WalletConnect(opts)
+    this.initSession()
   }
 
-  async initSession() {
-    const session = await this.webConnector.initSession()
-    return session
-  }
 
   setEngine(engine) {
     const self = this
@@ -32,8 +29,18 @@ export default class WalletConnectSubprovider {
 
   emitPayload(payload, cb) {
     const self = this
-    const _payload = this.webConnector.createPayload(payload)
+    const _payload = this.walletConnect.createPayload(payload)
     self.engine.sendAsync(_payload, cb)
+  }
+
+  async initSession() {
+    const session = await this.walletConnect.initSession()
+    return session
+  }
+
+  async getAccounts() {
+    const accounts = await this.walletconnect.getAccounts()
+    return accounts
   }
 
   handleRequest(payload, next, end) {
@@ -51,12 +58,15 @@ export default class WalletConnectSubprovider {
       'eth_signTypedData',
       'personal_sign'
     ]
-    if (this.webConnector.sessionId) {
-      const accounts = this.webConnector.accounts
-      if (payload.method === 'eth_accounts' && accounts.length) {
-        end(null, accounts)
+    if (this.walletConnect.connected) {
+      if (payload.method === 'eth_accounts') {
+        this.getAccounts()
+        .then(accounts => {
+          end(null, accounts)
+        })
+        .catch(err => end(err))
       } else if (supportedMethods.includes(payload.method)) {
-        this.webConnector
+        this.walletConnect
           .createCall(payload)
           .then(result => end(null, result))
           .catch(err => end(err))

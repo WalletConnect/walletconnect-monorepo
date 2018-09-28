@@ -21,6 +21,7 @@ export default class WalletConnector extends Connector {
     )
 
     this.expires = result.expires
+    this.connected = true
 
     return this.toJSON()
   }

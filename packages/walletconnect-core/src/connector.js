@@ -18,6 +18,19 @@ export default class Connector {
     this.expires = options.expires || null
     this.accounts = options.accounts || []
     this.uri = options.uri || ''
+    this.connected = false
+  }
+
+  get connected() {
+    return this._connected
+  }
+
+  set connected(value) {
+    if (typeof value !== 'boolean'){
+      throw new Error('connected must be a boolean')
+    }
+
+    this._connected = !!value
   }
 
   get bridgeUrl() {

@@ -48,6 +48,7 @@ export default class WalletConnect extends Connector {
       this.symKey = currentSession.symKey
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
+      this.connected = true
     } else {
       currentSession = await this.createSession()
     }
@@ -187,7 +188,13 @@ export default class WalletConnect extends Connector {
 
     if (result) {
       this.expires = result.expires
-      this.accounts = result.data
+
+      const accounts = result.data
+
+      if (accounts && accounts.length) {
+        this.accounts = accounts
+        this.connected = true
+      }
 
       const session = this.toJSON()
       this.saveLocalSession(session)
