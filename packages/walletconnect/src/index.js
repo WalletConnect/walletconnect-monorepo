@@ -224,7 +224,7 @@ export default class WalletConnect extends Connector {
   //
   //  Promisify listener + expose stop() method
   //
-  promisifyListener = (fn, pollInterval = 1000, timeout = 60000) => {
+  promisifyListener(fn, pollInterval = 1000, timeout = 60000) {
     let listener = null
     const promise = new Promise((resolve, reject) => {
       listener = new Listener({
