@@ -22,7 +22,8 @@
     "clean:package_lock": "lerna exec -- rm -rf package-lock.json",
     "lint": "eslint packages/*/src/**/*.js packages/*/test/**/*.spec.js",
     "publish": "npm run check-packages && lerna publish",
-    "check-packages": "npm run clean && npm run lint && npm run build && npm run test"
+    "check-packages": "npm run clean && npm run lint && npm run build && npm run test",
+    "pre-push": "npm run check-packages"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,7 @@
     "eslint-plugin-node": "^7.0.1",
     "eslint-plugin-promise": "^4.0.0",
     "eslint-plugin-standard": "^3.1.0",
+    "husky": "^1.0.1",
     "lerna": "^3.0.0-rc.0"
   }
 }
