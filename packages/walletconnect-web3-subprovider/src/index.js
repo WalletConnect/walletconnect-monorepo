@@ -19,7 +19,6 @@ export default class WalletConnectSubprovider {
 
   async initSession() {
     const session = await this.webConnector.initSession()
-
     return session
   }
 
@@ -52,17 +51,20 @@ export default class WalletConnectSubprovider {
       'eth_signTypedData',
       'personal_sign'
     ]
-    if (supportedMethods.includes(payload.method)) {
-      if (this.webConnector) {
+    if (this.webConnector.sessionId) {
+      const accounts = this.webConnector.accounts
+      if (payload.method === 'eth_accounts' && accounts.length) {
+        end(null, accounts)
+      } else if (supportedMethods.includes(payload.method)) {
         this.webConnector
           .createCall(payload)
           .then(result => end(null, result))
           .catch(err => end(err))
       } else {
-        throw new Error('WalletConnect connection is not established')
+        next(payload)
       }
     } else {
-      next(payload)
+      throw new Error('WalletConnect connection is not established')
     }
   }
 }
