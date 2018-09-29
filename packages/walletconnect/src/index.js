@@ -144,16 +144,16 @@ export default class WalletConnect extends Connector {
   // Create call
   //
   async createCallRequest(data) {
-    if (!this.sessionId) {
+    if (!this.connected) {
       throw new Error(
-        'Create session using `initSession` before creating a call'
+        'Initiate session using `initSession` before creating a call request'
       )
     }
 
     const payload = this.createPayload(data)
 
     // encrypt data
-    const encryptedPayload = await this.encrypt(payload)
+    const encryptionPayload = await this.encrypt(payload)
 
     // store call data on bridge
     const body = await this._fetchBridge(
@@ -162,7 +162,7 @@ export default class WalletConnect extends Connector {
         method: 'POST'
       },
       {
-        data: encryptedPayload,
+        encryptionPayload,
         dappName: this.dappName
       }
     )
@@ -187,20 +187,21 @@ export default class WalletConnect extends Connector {
     const result = await this._getEncryptedData(`/session/${this.sessionId}`)
 
     if (result) {
-      this.expires = result.expires
-
-      const accounts = result.data
-
-      if (accounts && accounts.length) {
-        this.accounts = accounts
+      if (result.approved) {
+        this.expires = result.expires
+        this.accounts = result.data
         this.connected = true
+
+        const session = this.toJSON()
+        this.saveLocalSession(session)
+
+        return session
+      } else {
+        this.connected = false
+        return null
       }
-
-      const session = this.toJSON()
-      this.saveLocalSession(session)
-
-      return session
     }
+
     return null
   }
 
@@ -254,7 +255,11 @@ export default class WalletConnect extends Connector {
   // Listen for call status
   //
   listenCallStatus(callId, pollInterval, timeout) {
-    return this.promisifyListener(() => this.getCallStatus(callId), pollInterval, timeout)
+    return this.promisifyListener(
+      () => this.getCallStatus(callId),
+      pollInterval,
+      timeout
+    )
   }
 
   // -- localStorage -------------------------------------------------------- //
