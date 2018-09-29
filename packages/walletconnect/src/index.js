@@ -223,12 +223,11 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  //  Promisify listener + expose stop() method
+  //  Promisify listener
   //
   promisifyListener(fn, pollInterval = 1000, timeout = 60000) {
-    let listener = null
     const promise = new Promise((resolve, reject) => {
-      listener = new Listener({
+      this.listener = new Listener({
         fn,
         cb: (err, result) => {
           if (err) {
@@ -240,7 +239,6 @@ export default class WalletConnect extends Connector {
         timeout
       })
     })
-    promise.stop = listener.stop
     return promise
   }
 
