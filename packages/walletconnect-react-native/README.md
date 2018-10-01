@@ -45,13 +45,11 @@ const walletConnector = new RNWalletConnect({
  *  Approve Session
  */
 await walletConnector.approveSession({
-  data: {
-    accounts: [
-      '0x4292...931B3',
-      '0xa4a7...784E8',
-      ...
-    ]
-  }
+  accounts: [
+    '0x4292...931B3',
+    '0xa4a7...784E8',
+    ...
+  ]
 })
 
 /**

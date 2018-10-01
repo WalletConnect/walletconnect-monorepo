@@ -11,7 +11,7 @@ export default class WalletConnector extends Connector {
   // approve session
   //
   async approveSession(data) {
-    const encryptionPayload = await this.encrypt(data)
+    const encryptionPayload = await this.encrypt({ data })
 
     const result = await this.sendSessionStatus({
       approved: true,
