@@ -29,24 +29,39 @@ rn-nodeify --install "crypto" --hack
 import RNWalletConnect from 'rn-walletconnect-wallet'
 
 /**
- *  Create WalletConnector (using the URI from scanning the QR code)
+ *  Create WalletConnector
  */
-const walletConnector = new RNWalletConnect({ uri: uri })
-
-/**
- *  Send session data
- */
-await walletConnector.sendSessionStatus({
-  fcmToken: '12354...3adc',
-  pushEndpoint: 'https://push.walletconnect.org/notification/new',  
-  data: {
-    accounts: [
-      '0x4292...931B3',
-      '0xa4a7...784E8',
-      ...
-    ]
+const walletConnector = new RNWalletConnect({
+  uri: 'ethereum:wc-8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=',
+  push: {
+    type: 'fcm',
+    token: 'cSgGd8BWURk:APA91bGXsLd_...YdFbutyfc8pScl0Qe8-',
+    endpoint: 'https://push.walletconnect.org/notification/new',
   }
 })
+
+
+/**
+ *  Approve Session
+ */
+await walletConnector.approveSession({
+  accounts: [
+    '0x4292...931B3',
+    '0xa4a7...784E8',
+    ...
+  ]
+})
+
+/**
+ *  Reject Session
+ */
+await walletConnector.rejectSession()
+
+
+/**
+ *  Kill Session
+ */
+await walletConnector.killSession()
 
 /**
  *  Handle push notification events & get call data

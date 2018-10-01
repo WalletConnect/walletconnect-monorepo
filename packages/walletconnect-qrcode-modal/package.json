@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "webpack --config webpack.config.js",
-    "test": "BABEL_ENV=test mocha --require @babel/register --require @babel/polyfill --require isomorphic-fetch --colors test/**/*.spec.js",
+    "test": "BABEL_ENV=test mocha --require @babel/register --require @babel/polyfill --colors test/**/*.spec.js",
     "test:watch": "npm run test -- -w"
   },
   "keywords": [
@@ -43,7 +43,6 @@
     "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.2",
     "chai": "^4.1.2",
-    "isomorphic-fetch": "^2.2.1",
     "jest": "^23.6.0",
     "mocha": "5.2.0",
     "webpack": "^4.18.0",

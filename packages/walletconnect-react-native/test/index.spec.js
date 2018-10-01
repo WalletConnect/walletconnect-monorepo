@@ -1,4 +1,5 @@
 /* global describe it beforeEach */
+// /* global describe it beforeEach setTimeout Promise */
 
 import { expect } from 'chai'
 
@@ -22,30 +23,64 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
 
     const uri = await mockCreateSession(connector)
 
-    walletConnector = new RNWalletConnect({ uri })
+    walletConnector = new RNWalletConnect({
+      uri,
+      push: {
+        type: 'fcm',
+        token:
+          'cSgGd8BWURk:APA91bGXsLd_ga4wnUqtO5O8CQqe6RRdyb4LuJ1h-TAwVRFha1PDe6LPAr5irb0ZRYtEkGvrJ38LsvG9INiqlx4KBx9ATCHkc2dWwsncN4YkkZnSPwsaJNABVYdFbutyfc8pScl0Qe8-',
+        endpoint:
+          'https://us-central1-walletconnect-app.cloudfunctions.net/push'
+      }
+    })
   })
 
-  it('creates an instance using URI string', () => {
+  it('creates an instance', () => {
     expect(walletConnector).to.exist
   })
 
-  describe('sendSessionStatus', () => {
-    const sessionStatus = {
-      fcmToken:
-        'cSgGd8BWURk:APA91bGXsLd_ga4wnUqtO5O8CQqe6RRdyb4LuJ1h-TAwVRFha1PDe6LPAr5irb0ZRYtEkGvrJ38LsvG9INiqlx4KBx9ATCHkc2dWwsncN4YkkZnSPwsaJNABVYdFbutyfc8pScl0Qe8-',
-      pushEndpoint:
-        'https://us-central1-walletconnect-app.cloudfunctions.net/push',
-      data: {
-        accounts: ['0x89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7']
-      }
-    }
-
-    it('successfully posts session status to bridge', async() => {
-      const result = await walletConnector.sendSessionStatus(sessionStatus)
-
-      expect(result).to.be.ok
-    })
-  })
+  // describe('approveSession', () => {
+  //   it('successfully approves session', async() => {
+  //     const data = {
+  //       accounts: ['0x89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7']
+  //     }
+  //
+  //     const result = await walletConnector.approveSession(data)
+  //
+  //     expect(result).to.be.ok
+  //   })
+  // })
+  //
+  // describe('rejectSession', () => {
+  //   it('successfully rejects session', async() => {
+  //     const result = await walletConnector.rejectSession()
+  //
+  //     expect(result).to.be.ok
+  //   })
+  // })
+  //
+  // describe('killSession', () => {
+  //   it('successfully approves and later kills session', async() => {
+  //     const data = {
+  //       accounts: ['0x89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7']
+  //     }
+  //     await walletConnector.approveSession(data)
+  //
+  //     const promise = () =>
+  //       new Promise((resolve, reject) => {
+  //         setTimeout(() => {
+  //           walletConnector
+  //             .killSession()
+  //             .then(result => resolve(result))
+  //             .catch(err => reject(err))
+  //         }, 1000)
+  //       })
+  //
+  //     const result = await promise()
+  //
+  //     expect(result).to.be.ok
+  //   })
+  // })
 
   describe('symKey', () => {
     let symKey = null

@@ -26,7 +26,7 @@ export default class Connector {
   }
 
   set connected(value) {
-    if (typeof value !== 'boolean'){
+    if (typeof value !== 'boolean') {
       throw new Error('connected must be a boolean')
     }
 
@@ -116,15 +116,15 @@ export default class Connector {
     encryptor.end()
 
     // get cipher text
-    const encryptedData = encryptor.read()
+    const cipher = encryptor.read()
 
-    // ensure that both the IV and the cipher-text is protected by the HMAC
+    // ensure that both the IV and the cipher text is protected by the HMAC
     const hmac = crypto.createHmac(HMAC_ALGORITHM, key)
-    hmac.update(encryptedData)
+    hmac.update(cipher)
     hmac.update(iv.toString('hex'))
 
     return {
-      data: encryptedData,
+      data: cipher,
       hmac: hmac.digest('hex'),
       iv: iv.toString('hex')
     }
