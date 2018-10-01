@@ -1,4 +1,9 @@
-/* global document */
+/* global window */
+
+let document = null
+if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+  document = window.document
+}
 
 import qrImage from 'qr-image'
 import style from './style'
