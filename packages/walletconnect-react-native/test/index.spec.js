@@ -35,7 +35,7 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
     })
   })
 
-  it('creates an instance using URI string', () => {
+  it('creates an instance', () => {
     expect(walletConnector).to.exist
   })
 
