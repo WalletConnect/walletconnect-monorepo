@@ -19,13 +19,15 @@ const provider = new WalletConnectProvider({
   rpcUrl:'http://localhost:8545'                 // Required
 }
 
-
 /**
  *  Create Web3
  */
 const web3 = new Web3(provider)
 
-
+/**
+ *  Symlink WalletConnect
+ */
+web3.walletconnect = web3._provider.walletconnect
 
 /**
  *  Get Accounts
