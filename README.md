@@ -1,7 +1,7 @@
 # WalletConnect
 
 [![Build Status](https://travis-ci.org/WalletConnect/walletconnect-monorepo.svg?branch=master)](https://travis-ci.org/WalletConnect/walletconnect-monorepo)
-[![NPM Version](https://img.shields.io/badge/npm-v0.7.0-brightgreen.svg)](http://npmjs.com/package/walletconnect)
+[![npm version](https://badge.fury.io/js/walletconnect.svg)](https://badge.fury.io/js/walletconnect)
 
 An open source standard for connecting mobile wallets to dapps - https://walletconnect.org
 
