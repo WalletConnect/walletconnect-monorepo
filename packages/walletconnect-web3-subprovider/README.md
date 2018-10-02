@@ -1,6 +1,6 @@
 # WalletConnect Web3 Subprovider
 
-This implements provider for walletconnect standard.
+This implements subprovider for walletconnect standard.
 
 You can read more about WalletConnect standard here: http://walletconnect.org/
 
@@ -14,11 +14,13 @@ import WalletConnectSubprovider from 'walletconnect-web3-subprovider'
 
 const engine = new ProviderEngine()
 
-engine.addProvider(new WalletConnectSubprovider({
-  bridgeUrl: 'https://bridge.walletconnect.org',  // Required
-  dappName: 'INSERT_DAPP_NAME',                   // Required
-})
-engine.addProvider(new RpcSubprovider({ rpcUrl:'http://localhost:8545' }))
+engine.addProvider(
+  new WalletConnectSubprovider({
+    bridgeUrl: 'https://bridge.walletconnect.org', // Required
+    dappName: 'INSERT_DAPP_NAME' // Required
+  })
+)
+engine.addProvider(new RpcSubprovider({ rpcUrl: 'http://localhost:8545' }))
 engine.start()
 
 const web3 = new Web3(engine)

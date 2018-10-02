@@ -12,12 +12,41 @@ export default class WalletConnectSubprovider {
       throw new Error('Missing or Invalid dappName field')
     }
 
-    this.isWalletConnect = true
-
-    this.walletConnect = new WalletConnect(opts)
+    this.webConnector = new WalletConnect(opts)
     this.initSession()
   }
 
+  set isWalletConnect(value) {
+    return
+  }
+
+  get isWalletConnect() {
+    return true
+  }
+
+  set isConnected(value) {
+    return
+  }
+
+  get isConnected() {
+    return this.webConnector.isConnected
+  }
+
+  set uri(value) {
+    return
+  }
+
+  get uri() {
+    return this.webConnector.uri
+  }
+
+  set accounts(value) {
+    return
+  }
+
+  get accounts() {
+    return this.webConnector.accounts
+  }
 
   setEngine(engine) {
     const self = this
@@ -29,18 +58,23 @@ export default class WalletConnectSubprovider {
 
   emitPayload(payload, cb) {
     const self = this
-    const _payload = this.walletConnect.createPayload(payload)
+    const _payload = this.webConnector.createPayload(payload)
     self.engine.sendAsync(_payload, cb)
   }
 
   async initSession() {
-    const session = await this.walletConnect.initSession()
+    const session = await this.webConnector.initSession()
     return session
   }
 
   async getAccounts() {
     const accounts = await this.walletconnect.getAccounts()
     return accounts
+  }
+
+  async listenSessionStatus() {
+    const result = await this.webConnector.listenSessionStatus()
+    return result
   }
 
   handleRequest(payload, next, end) {
@@ -58,15 +92,15 @@ export default class WalletConnectSubprovider {
       'eth_signTypedData',
       'personal_sign'
     ]
-    if (this.walletConnect.connected) {
+    if (this.webConnector.isConnected) {
       if (payload.method === 'eth_accounts') {
         this.getAccounts()
-        .then(accounts => {
-          end(null, accounts)
-        })
-        .catch(err => end(err))
+          .then(accounts => {
+            end(null, accounts)
+          })
+          .catch(err => end(err))
       } else if (supportedMethods.includes(payload.method)) {
-        this.walletConnect
+        this.webConnector
           .createCall(payload)
           .then(result => end(null, result))
           .catch(err => end(err))
