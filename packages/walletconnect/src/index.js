@@ -246,7 +246,11 @@ export default class WalletConnect extends Connector {
   // Listen for session status
   //
   listenSessionStatus(pollInterval, timeout) {
-    return this.promisifyListener(this.getSessionStatus, pollInterval, timeout)
+    return this.promisifyListener(
+      () => this.getSessionStatus(),
+      pollInterval,
+      timeout
+    )
   }
 
   //
