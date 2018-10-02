@@ -153,7 +153,7 @@ export default class WalletConnect extends Connector {
     const payload = this.createPayload(data)
 
     // encrypt data
-    const encryptionPayload = await this.encrypt(payload)
+    const encryptionPayload = await this.encrypt({ data: { payload } })
 
     // store call data on bridge
     const body = await this._fetchBridge(
@@ -169,9 +169,8 @@ export default class WalletConnect extends Connector {
 
     const response = await this.listenCallStatus(body.callId)
 
-    if (response.success) {
-      const { result } = response
-      return result
+    if (response.approved) {
+      return response.result
     } else {
       throw new Error('Rejected Call Request')
     }
@@ -189,7 +188,7 @@ export default class WalletConnect extends Connector {
     if (result) {
       if (result.approved) {
         this.expires = result.expires
-        this.accounts = result.data
+        this.accounts = result.data.accounts
         this.isConnected = true
 
         const session = this.toJSON()
@@ -246,7 +245,11 @@ export default class WalletConnect extends Connector {
   // Listen for session status
   //
   listenSessionStatus(pollInterval, timeout) {
-    return this.promisifyListener(this.getSessionStatus, pollInterval, timeout)
+    return this.promisifyListener(
+      () => this.getSessionStatus(),
+      pollInterval,
+      timeout
+    )
   }
 
   //

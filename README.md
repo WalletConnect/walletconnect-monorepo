@@ -220,22 +220,26 @@ FCM.on(FCMEvent.Notification, event => {
 });
 
 /**
- *  Send call status
- */
-await walletConnector.sendCallStatus(callId, {
-  success: true,
-  result: '0xabcd...873'
-})
-
-/**
  *  Get all calls from bridge
  */
 const allCalls = await walletConnector.getAllCallRequests();
 
 /**
- *  allCalls is a map from callId --> callData
+ *  Approve and share call result
  */
-const callData = allCalls[callId];
+walletConnector.approveCallRequest(
+  callId,
+  {
+    result: '0xabcd...873'
+  }
+)
+
+/**
+ *  Reject call request
+ */
+walletConnector.rejectCallRequest(
+  callId
+)
 ```
 
 ### For Web3 Provider (web3.js)
