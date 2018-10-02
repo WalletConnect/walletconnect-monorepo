@@ -275,21 +275,16 @@ const provider = new WalletConnectProvider({
 const web3 = new Web3(provider)
 
 /**
- *  Shortcut WalletConnect Provider
- */
-web3.walletconnect = web3._provider.walletconnect
-
-/**
  *  Get Accounts
  */
 const accounts = await web3.eth.getAccounts()
 
 if (!accounts.length) {
   // Display QR Code URI
-  const uri = web3.walletconnect.uri
+  const uri = web3.currentProvider.walletconnect.uri
 
   // Listen for session status
-  await  web3.walletconnect.listenSessionStatus()
+  await  web3.currentProvider.walletconnect.listenSessionStatus()
 
   // Get Accounts Again
   accounts = await web3.eth.getAccounts()
