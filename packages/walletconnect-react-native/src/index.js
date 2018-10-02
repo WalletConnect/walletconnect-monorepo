@@ -20,7 +20,7 @@ export default class WalletConnector extends Connector {
     })
 
     this.expires = result.expires
-    this.connected = true
+    this.isConnected = true
 
     const session = this.toJSON()
 
@@ -37,7 +37,7 @@ export default class WalletConnector extends Connector {
       encryptionPayload: null
     })
 
-    this.connected = false
+    this.isConnected = false
 
     const session = this.toJSON()
 
@@ -65,7 +65,7 @@ export default class WalletConnector extends Connector {
       method: 'DELETE'
     })
 
-    this.connected = false
+    this.isConnected = false
 
     return result
   }

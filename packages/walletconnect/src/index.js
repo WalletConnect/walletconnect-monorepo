@@ -48,7 +48,7 @@ export default class WalletConnect extends Connector {
       this.symKey = currentSession.symKey
       this.dappName = currentSession.dappName
       this.expires = currentSession.expires
-      this.connected = true
+      this.isConnected = true
     } else {
       currentSession = await this.createSession()
     }
@@ -144,7 +144,7 @@ export default class WalletConnect extends Connector {
   // Create call
   //
   async createCallRequest(data) {
-    if (!this.connected) {
+    if (!this.isConnected) {
       throw new Error(
         'Initiate session using `initSession` before creating a call request'
       )
@@ -190,14 +190,14 @@ export default class WalletConnect extends Connector {
       if (result.approved) {
         this.expires = result.expires
         this.accounts = result.data
-        this.connected = true
+        this.isConnected = true
 
         const session = this.toJSON()
         this.saveLocalSession(session)
 
         return session
       } else {
-        this.connected = false
+        this.isConnected = false
         return null
       }
     }

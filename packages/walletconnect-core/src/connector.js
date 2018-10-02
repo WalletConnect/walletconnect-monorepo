@@ -18,14 +18,14 @@ export default class Connector {
     this.expires = options.expires || null
     this.accounts = options.accounts || []
     this.uri = options.uri || ''
-    this.connected = false
+    this.isConnected = false
   }
 
-  get connected() {
+  get isConnected() {
     return this._connected
   }
 
-  set connected(value) {
+  set isConnected(value) {
     if (typeof value !== 'boolean') {
       throw new Error('connected must be a boolean')
     }
