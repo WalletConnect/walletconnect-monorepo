@@ -72,6 +72,11 @@ export default class WalletConnectSubprovider {
     return accounts
   }
 
+  async listenSessionStatus() {
+    const result = await this.webConnector.listenSessionStatus()
+    return result
+  }
+
   handleRequest(payload, next, end) {
     this.provider.sendAsync(payload, function(err, response) {
       if (err) return end(err)
