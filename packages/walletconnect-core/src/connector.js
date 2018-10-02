@@ -27,7 +27,7 @@ export default class Connector {
 
   set isConnected(value) {
     if (typeof value !== 'boolean') {
-      throw new Error('connected must be a boolean')
+      throw new Error('isConnected must be a boolean')
     }
 
     this._connected = !!value

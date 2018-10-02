@@ -25,7 +25,7 @@ const provider = new WalletConnectProvider({
 const web3 = new Web3(provider)
 
 /**
- *  Symlink WalletConnect
+ *  Shortcut WalletConnect Provider
  */
 web3.walletconnect = web3._provider.walletconnect
 

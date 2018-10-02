@@ -58,22 +58,20 @@ const webConnector = new WalletConnect(
 await webConnector.initSession()
 
 /**
- *  Get accounts (type: <Array>)
+ *  Check if connection is already established
  */
-let accounts = webConnector.accounts
-
-/**
- *  Check if accounts is empty array
- */
-if (!accounts.length) {
-  // If there is no accounts, prompt the user to scan the QR code
+if (webConnector.isConnected) {
+  // If yes, get accounts
+  const accounts = webConnector.accounts
+} else {
+  // If not, prompt the user to scan the QR code
   const uri = webConnector.uri;
 
   // Listen for session confirmation from wallet
   await webConnector.listenSessionStatus()
 
   // Get accounts after session status is resolved
-  accounts = webConnector.accounts
+  accounts = webConnector.accounts  
 }
 
 /**
