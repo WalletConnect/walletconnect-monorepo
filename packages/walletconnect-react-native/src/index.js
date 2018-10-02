@@ -11,10 +11,15 @@ export default class WalletConnector extends Connector {
   // approve session
   //
   async approveSession(data) {
-    const encryptionPayload = await this.encrypt(data)
+    if (!data || typeof data !== 'object') {
+      throw new Error('Data parameter is missing or invalid')
+    }
+
+    data.approved = true
+
+    const encryptionPayload = await this.encrypt({ data })
 
     const result = await this.sendSessionStatus({
-      approved: true,
       push: this.push,
       encryptionPayload
     })
@@ -31,10 +36,13 @@ export default class WalletConnector extends Connector {
   // reject session
   //
   async rejectSession() {
+    const data = { approved: false }
+
+    const encryptionPayload = await this.encrypt({ data })
+
     await this.sendSessionStatus({
-      approved: false,
       push: null,
-      encryptionPayload: null
+      encryptionPayload
     })
 
     this.isConnected = false
@@ -47,11 +55,11 @@ export default class WalletConnector extends Connector {
   //
   // send session status
   //
-  async sendSessionStatus(session = {}) {
+  async sendSessionStatus(sessionStatus = {}) {
     const result = await this._fetchBridge(
       `/session/${this.sessionId}`,
       { method: 'PUT' },
-      session
+      sessionStatus
     )
 
     return result
@@ -69,22 +77,57 @@ export default class WalletConnector extends Connector {
 
     return result
   }
+
   //
-  // Send call status
+  // approve call request
   //
-  async sendCallStatus(callId, statusData = {}) {
+  async approveCallRequest(callId, data) {
     if (!callId) {
       throw new Error('`callId` is required')
     }
 
-    // encrypt data
-    const encryptionPayload = await this.encrypt(statusData)
+    if (!data || typeof data !== 'object') {
+      throw new Error('Data parameter is missing or invalid')
+    }
 
-    // store call info on bridge
+    data.approved = true
+
+    const encryptionPayload = await this.encrypt({ data })
+
+    const result = await this.sendCallStatus({
+      encryptionPayload
+    })
+
+    return result
+  }
+
+  //
+  // reject call request
+  //
+  async rejectCallRequest(callId) {
+    if (!callId) {
+      throw new Error('`callId` is required')
+    }
+
+    const data = { approved: false }
+
+    const encryptionPayload = await this.encrypt({ data })
+
+    const result = await this.sendCallStatus(callId, {
+      encryptionPayload
+    })
+
+    return result
+  }
+
+  //
+  // Send call status
+  //
+  async sendCallStatus(callId, callStatus) {
     await this._fetchBridge(
       `/call-status/${callId}/new`,
       { method: 'POST' },
-      { encryptionPayload }
+      callStatus
     )
 
     return true
