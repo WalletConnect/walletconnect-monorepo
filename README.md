@@ -14,6 +14,7 @@ For more documentation go to: https://docs.walletconnect.org
 | js-walletconnect-core          | Javascript Core library |
 | walletconnect                  | Browser SDK             |
 | rn-walletconnect-wallet        | React-Native SDK        |
+| walletconnect-web3-provider    | Web3 Provider           |
 | walletconnect-web3-subprovider | Web3 Subprovider        |
 | walletconnect-qrcode-modal     | QR Code Modal           |
 
@@ -21,12 +22,11 @@ For more documentation go to: https://docs.walletconnect.org
 
 1.  [For Dapps (Browser SDK)](#for-dapps-browser-sdk)
 2.  [For Wallets (React-Native SDK)](#for-wallets-react-native-sdk)
-3.  [For Web3 Subprovider (web3.js)](#for-web3-subprovider-web3.js)
-4.  [For QR Code Modal (Browsers only)](#for-qr-code-modal-browsers-only)
+3.  [For Web3 Provider (web3.js)](#for-web3-provider-web3.js)
 
 ### For Dapps (Browser SDK)
 
-1.  Setup
+1.  Install
 
 ```bash
 yarn add walletconnect
@@ -36,7 +36,7 @@ yarn add walletconnect
 npm install --save walletconnect
 ```
 
-2.  Implementation
+2.  Example
 
 ```js
 import WalletConnect from 'walletconnect'
@@ -136,7 +136,7 @@ try {
 
 ### For Wallets (React-Native SDK)
 
-1.  Setup
+1.  Install
 
 ```bash
 /**
@@ -157,7 +157,7 @@ npm install --save rn-walletconnect-wallet
 rn-nodeify --install "crypto" --hack
 ```
 
-2.  Implementation
+2.  Example
 
 ```js
 import RNWalletConnect from 'rn-walletconnect-wallet'
@@ -240,7 +240,7 @@ const callData = allCalls[callId];
 
 ### For Web3 Subprovider (web3.js)
 
-1.  Setup
+1.  Install
 
 ```bash
 /**
@@ -254,61 +254,66 @@ yarn add web3 web3-provider-engine walletconnect-web3-subprovider
 npm install --save web3 web3-provider-engine walletconnect-web3-subprovider
 ```
 
-2.  Implementation
+2.  Example
 
 ```js
 import Web3 from 'web3'
-import ProviderEngine from 'web3-provider-engine'
-import RpcSubprovider from 'web3-provider-engine/subproviders/rpc'
-import WalletConnectSubprovider from 'walletconnect-web3-subprovider'
+import WalletConnectProvider from 'walletconnect-web3-provider'
 
-const engine = new ProviderEngine()
-
-engine.addProvider(new WalletConnectSubprovider({
-  bridgeUrl: 'https://bridge.walletconnect.org',  // Required
+/**
+ *  Create WalletConnect Provider
+ */
+const provider = new WalletConnectProvider({
+  bridgeUrl: 'https://bridge.walletconnect.org',   // Required
   dappName: 'INSERT_DAPP_NAME',                   // Required
-})
-engine.addProvider(new RpcSubprovider({ rpcUrl:'http://localhost:8545' }))
-engine.start()
-
-const web3 = new Web3(engine)
-```
-
-### For QR Code Modal (Browsers only)
-
-1.  Setup
-
-```bash
-/**
- *  Install NPM Package
- */
-
-yarn add walletconnect-qrcode-modal
-
-# OR
-
-npm install --save walletconnect-qrcode-modal
-```
-
-2.  Implementation
-
-```js
-import WalletConnectQRCodeModal from 'walletconnect-qrcode-modal'
+  rpcUrl:'http://localhost:8545'                 // Required
+}
 
 /**
- *  Get URI from WalletConnect object
+ *  Create Web3
  */
-const uri = webConnector.uri
+const web3 = new Web3(provider)
 
 /**
- *  Open QR Code Modal
+ *  Shortcut WalletConnect Provider
  */
-WalletConnectQRCodeModal.open(uri)
+web3.walletconnect = web3._provider.walletconnect
 
 /**
- *  Close QR Code Modal
+ *  Get Accounts
  */
-WalletConnectQRCodeModal.close()
+const accounts = await web3.eth.getAccounts()
+
+if (!accounts.length) {
+  // Display QR Code URI
+  const uri = web3.walletconnect.uri
+
+  // Listen for session status
+  await  web3.walletconnect.listenSessionStatus()
+
+  // Get Accounts Again
+  accounts = await web3.eth.getAccounts()
+}
+
+/**
+ * Send Transaction
+ */
+const txHash = await web3.eth.sendTransaction(tx)
+
+/**
+ * Sign Transaction
+ */
+const signedTx = await web3.eth.signTransaction(tx)
+
+/**
+ * Sign Message
+ */
+const signedMessage = await web3.eth.sign(msg)
+
+/**
+ * Sign Typed Data
+ */
+const signedTypedData = await web3.eth.signTypedData(msg)
 ```
 
 ### Development workflow
