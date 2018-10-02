@@ -238,7 +238,7 @@ const allCalls = await walletConnector.getAllCallRequests();
 const callData = allCalls[callId];
 ```
 
-### For Web3 Subprovider (web3.js)
+### For Web3 Provider (web3.js)
 
 1.  Install
 
@@ -247,11 +247,11 @@ const callData = allCalls[callId];
  *  Install NPM Package
  */
 
-yarn add web3 web3-provider-engine walletconnect-web3-subprovider
+yarn add web3 walletconnect-web3-provider
 
 # OR
 
-npm install --save web3 web3-provider-engine walletconnect-web3-subprovider
+npm install --save web3 walletconnect-web3-provider
 ```
 
 2.  Example
