@@ -35,9 +35,9 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
     })
   })
 
-  it('creates an instance', () => {
-    expect(walletConnector).to.exist
-  })
+  // it('creates an instance', () => {
+  //   expect(walletConnector).to.exist
+  // })
 
   // describe('approveSession', () => {
   //   it('successfully approves session', async() => {
