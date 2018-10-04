@@ -224,7 +224,7 @@ export default class WalletConnect extends Connector {
   //
   //  Promisify listener
   //
-  promisifyListener(fn, pollInterval = 1000, timeout = 60000) {
+  promisifyListener(fn, interval, timeout) {
     const promise = new Promise((resolve, reject) => {
       this.listener = new Listener({
         fn,
@@ -234,7 +234,7 @@ export default class WalletConnect extends Connector {
           }
           resolve(result)
         },
-        pollInterval,
+        interval,
         timeout
       })
     })
@@ -244,10 +244,10 @@ export default class WalletConnect extends Connector {
   //
   // Listen for session status
   //
-  listenSessionStatus(pollInterval, timeout) {
+  listenSessionStatus(interval, timeout) {
     return this.promisifyListener(
       async() => await this.getSessionStatus(),
-      pollInterval,
+      interval,
       timeout
     )
   }
@@ -255,10 +255,10 @@ export default class WalletConnect extends Connector {
   //
   // Listen for call status
   //
-  listenCallStatus(callId, pollInterval, timeout) {
+  listenCallStatus(callId, interval, timeout) {
     return this.promisifyListener(
       async() => await this.getCallStatus(callId),
-      pollInterval,
+      interval,
       timeout
     )
   }

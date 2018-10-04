@@ -1,40 +1,49 @@
 /* global setTimeout clearTimeout */
 
 export default class Listener {
-  // options => fn, cb, timeout, pollInterval
-  constructor(options = {}) {
+  constructor(opts = {}) {
+    if (!opts.fn || typeof opts.fn !== 'function') {
+      throw new Error('Listener fn option is missing or invalid')
+    }
+
+    if (!opts.cb || typeof opts.cb !== 'function') {
+      throw new Error('Listener cb option is missing or invalid')
+    }
+
     this.pollId = null
     this.timeoutId = null
 
-    // options
-    this.options = options
+    this.opts = {
+      fn: opts.fn,
+      cb: opts.cb,
+      interval: opts.interval || 1000,
+      timeout: opts.timeout || 60000
+    }
 
-    // stop timeout
     this.timeoutId = setTimeout(() => {
       this.stop()
       if (!this._success) {
-        this.options.cb(new Error(), null)
+        this.opts.cb(new Error(), null)
       }
-    }, this.options.timeout)
+    }, this.opts.timeout)
 
-    // call fn
     this._callFn()
   }
 
   async _callFn() {
     this.pollId = setTimeout(() => {
       this._callFn()
-    }, this.options.pollInterval)
+    }, this.opts.interval)
 
     try {
-      const result = await this.options.fn()
+      const result = await this.opts.fn()
       if (result) {
         this.stop()
         this._success = true
-        this.options.cb(null, result)
+        this.opts.cb(null, result)
       }
-    } catch (e) {
-      // continue regardless of error
+    } catch (err) {
+      this.opts.cb(err)
     }
   }
 
