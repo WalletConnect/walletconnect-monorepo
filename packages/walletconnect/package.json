@@ -1,6 +1,6 @@
 {
   "name": "walletconnect",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Walletconnect library for browser",
   "scripts": {
     "clean": "rm -rf dist",
