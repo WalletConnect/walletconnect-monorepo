@@ -246,7 +246,7 @@ export default class WalletConnect extends Connector {
   //
   listenSessionStatus(pollInterval, timeout) {
     return this.promisifyListener(
-      () => this.getSessionStatus(),
+      async() => await this.getSessionStatus(),
       pollInterval,
       timeout
     )
@@ -257,7 +257,7 @@ export default class WalletConnect extends Connector {
   //
   listenCallStatus(callId, pollInterval, timeout) {
     return this.promisifyListener(
-      () => this.getCallStatus(callId),
+      async() => await this.getCallStatus(callId),
       pollInterval,
       timeout
     )
