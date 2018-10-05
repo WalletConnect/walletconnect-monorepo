@@ -2,12 +2,12 @@
 
 export default class Listener {
   constructor(opts = {}) {
-    if (!opts.fn || typeof opts.fn !== 'function') {
-      throw new Error('Listener fn option is missing or invalid')
+    if (!opts.fn) {
+      throw new Error('Listener fn option is missing')
     }
 
-    if (!opts.cb || typeof opts.cb !== 'function') {
-      throw new Error('Listener cb option is missing or invalid')
+    if (!opts.cb) {
+      throw new Error('Listener cb option is missing')
     }
 
     this.pollId = null

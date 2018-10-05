@@ -157,7 +157,7 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
 
   describe('Listener class', () => {
     it('Creates an instance of Listener', () => {
-      const listener = new Listener({ cb: () => {} })
+      const listener = new Listener({ cb: () => {}, fn: () => {} })
       expect(listener).to.be.instanceOf(Listener)
     })
   })
