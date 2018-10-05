@@ -7,16 +7,14 @@ An open source standard for connecting mobile wallets to dapps - https://walletc
 
 For more documentation go to: https://docs.walletconnect.org
 
-#### Monorepo for WalletConnect Javascript Libraries
-
-| Library                        | Description             |
-| ------------------------------ | ----------------------- |
-| js-walletconnect-core          | Javascript Core library |
-| walletconnect                  | Browser SDK             |
-| rn-walletconnect-wallet        | React-Native SDK        |
-| walletconnect-web3-provider    | Web3 Provider           |
-| walletconnect-web3-subprovider | Web3 Subprovider        |
-| walletconnect-qrcode-modal     | QR Code Modal           |
+| Library                        | Current Version                                                                                                                        | Description             |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| js-walletconnect-core          | [![npm version](https://badge.fury.io/js/js-walletconnect-core.svg)](https://badge.fury.io/js/js-walletconnect-core)                   | Javascript Core library |
+| walletconnect                  | [![npm version](https://badge.fury.io/js/walletconnect.svg)](https://badge.fury.io/js/walletconnect)                                   | Browser SDK             |
+| rn-walletconnect-wallet        | [![npm version](https://badge.fury.io/js/rn-walletconnect-wallet.svg)](https://badge.fury.io/js/rn-walletconnect-wallet)               | React-Native SDK        |
+| walletconnect-web3-provider    | [![npm version](https://badge.fury.io/js/walletconnect-web3-provider.svg)](https://badge.fury.io/js/walletconnect-web3-provider)       | Web3 Provider           |
+| walletconnect-web3-subprovider | [![npm version](https://badge.fury.io/js/walletconnect-web3-subprovider.svg)](https://badge.fury.io/js/walletconnect-web3-subprovider) | Web3 Subprovider        |
+| walletconnect-qrcode-modal     | [![npm version](https://badge.fury.io/js/walletconnect-qrcode-modal.svg)](https://badge.fury.io/js/walletconnect-qrcode-modal)         | QR Code Modal           |
 
 ### Getting Started
 
