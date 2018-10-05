@@ -1,7 +1,6 @@
 # WalletConnect
 
 [![Build Status](https://travis-ci.org/WalletConnect/walletconnect-monorepo.svg?branch=master)](https://travis-ci.org/WalletConnect/walletconnect-monorepo)
-[![npm version](https://badge.fury.io/js/walletconnect.svg)](https://badge.fury.io/js/walletconnect)
 
 An open source standard for connecting mobile wallets to dapps - https://walletconnect.org
 
@@ -20,7 +19,7 @@ For more documentation go to: https://docs.walletconnect.org
 
 1.  [For Dapps (Browser SDK)](#for-dapps-browser-sdk)
 2.  [For Wallets (React-Native SDK)](#for-wallets-react-native-sdk)
-3.  [For Web3 Provider (web3.js)](#for-web3-provider-web3.js)
+3.  [For Web3 Provider (web3.js)](#for-web3-provider-web3js)
 
 ### For Dapps (Browser SDK)
 
