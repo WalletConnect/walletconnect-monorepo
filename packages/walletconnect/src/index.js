@@ -57,7 +57,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Create new session
+  //  Create new session
   //
   async createSession() {
     this.symKey = await this.generateKey()
@@ -96,7 +96,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Send Transaction
+  //  Send Transaction
   //
   async sendTransaction(tx = {}) {
     try {
@@ -111,7 +111,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Sign Message
+  //  Sign Message
   //
   async signMessage(msg) {
     try {
@@ -141,7 +141,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Create call
+  //  Create call
   //
   async createCallRequest(data) {
     if (!this.isConnected) {
@@ -177,7 +177,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Get session status
+  //  Get session status
   //
   async getSessionStatus() {
     if (!this.sessionId) {
@@ -205,7 +205,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  // Get call status
+  //  Get call status
   //
   async getCallStatus(callId) {
     if (!this.sessionId || !callId) {
@@ -224,8 +224,8 @@ export default class WalletConnect extends Connector {
   //
   //  Promisify listener
   //
-  promisifyListener(fn, interval, timeout) {
-    const promise = new Promise((resolve, reject) => {
+  promisifyListener({ fn, interval, timeout }) {
+    return new Promise((resolve, reject) => {
       this.listener = new Listener({
         fn,
         cb: (err, result) => {
@@ -238,29 +238,28 @@ export default class WalletConnect extends Connector {
         timeout
       })
     })
-    return promise
   }
 
   //
-  // Listen for session status
+  //  Listen for session status
   //
   listenSessionStatus(interval, timeout) {
-    return this.promisifyListener(
-      async() => await this.getSessionStatus(),
+    return this.promisifyListener({
+      fn: async() => await this.getSessionStatus(),
       interval,
       timeout
-    )
+    })
   }
 
   //
-  // Listen for call status
+  //  Listen for call status
   //
   listenCallStatus(callId, interval, timeout) {
-    return this.promisifyListener(
-      async() => await this.getCallStatus(callId),
+    return this.promisifyListener({
+      fn: async() => await this.getCallStatus(callId),
       interval,
       timeout
-    )
+    })
   }
 
   // -- localStorage -------------------------------------------------------- //
