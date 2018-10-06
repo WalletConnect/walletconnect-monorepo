@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-qrcode-modal",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "description": "QR Code modal for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
