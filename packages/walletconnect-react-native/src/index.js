@@ -17,7 +17,7 @@ export default class WalletConnector extends Connector {
 
     data.approved = true
 
-    const encryptionPayload = await this.encrypt({ data })
+    const encryptionPayload = await this.encrypt(data)
 
     const result = await this.sendSessionStatus({
       push: this.push,
@@ -38,7 +38,7 @@ export default class WalletConnector extends Connector {
   async rejectSession() {
     const data = { approved: false }
 
-    const encryptionPayload = await this.encrypt({ data })
+    const encryptionPayload = await this.encrypt(data)
 
     await this.sendSessionStatus({
       push: null,
@@ -92,7 +92,7 @@ export default class WalletConnector extends Connector {
 
     data.approved = true
 
-    const encryptionPayload = await this.encrypt({ data })
+    const encryptionPayload = await this.encrypt(data)
 
     const result = await this.sendCallStatus({
       encryptionPayload
@@ -111,7 +111,7 @@ export default class WalletConnector extends Connector {
 
     const data = { approved: false }
 
-    const encryptionPayload = await this.encrypt({ data })
+    const encryptionPayload = await this.encrypt(data)
 
     const result = await this.sendCallStatus(callId, {
       encryptionPayload

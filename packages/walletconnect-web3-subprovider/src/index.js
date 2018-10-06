@@ -58,7 +58,7 @@ export default class WalletConnectSubprovider {
 
   emitPayload(payload, cb) {
     const self = this
-    const _payload = this.webConnector.createPayload(payload)
+    const _payload = this.webConnector.formatPayload(payload)
     self.engine.sendAsync(_payload, cb)
   }
 

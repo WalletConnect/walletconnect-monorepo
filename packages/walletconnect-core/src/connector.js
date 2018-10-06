@@ -428,7 +428,7 @@ export default class Connector {
     return result
   }
 
-  createPayload(data) {
+  formatPayload(data) {
     let payload = this.checkObject(data, 'payload')
 
     if (payload.id) {

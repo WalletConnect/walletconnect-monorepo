@@ -143,17 +143,17 @@ export default class WalletConnect extends Connector {
   //
   //  Create call
   //
-  async createCallRequest(data) {
+  async createCallRequest(payload) {
     if (!this.isConnected) {
       throw new Error(
         'Initiate session using `initSession` before creating a call request'
       )
     }
 
-    const payload = this.createPayload(data)
+    const data = this.formatPayload(payload)
 
     // encrypt data
-    const encryptionPayload = await this.encrypt({ data: { payload } })
+    const encryptionPayload = await this.encrypt(data)
 
     // store call data on bridge
     const body = await this._fetchBridge(
@@ -186,7 +186,7 @@ export default class WalletConnect extends Connector {
     const result = await this._getEncryptedData(`/session/${this.sessionId}`)
 
     if (result) {
-      if (result.approved) {
+      if (result.data.approved) {
         this.expires = result.expires
         this.accounts = result.data.accounts
         this.isConnected = true
