@@ -20,10 +20,7 @@ export default function(opts) {
 
   const engine = new ProviderEngine()
 
-  const walletconnect = new WalletConnectSubprovider({
-    bridgeUrl: 'https://bridge.walletconnect.org',
-    dappName: 'INSERT_DAPP_NAME'
-  })
+  const walletconnect = new WalletConnectSubprovider(opts)
 
   const rpc = new RpcSubprovider({ rpcUrl: 'http://localhost:8545' })
 
