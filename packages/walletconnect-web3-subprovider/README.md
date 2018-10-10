@@ -17,10 +17,14 @@ const engine = new ProviderEngine()
 engine.addProvider(
   new WalletConnectSubprovider({
     bridgeUrl: 'https://bridge.walletconnect.org', // Required
-    dappName: 'INSERT_DAPP_NAME' // Required
+    dappName: 'INSERT_DAPP_NAME'                   // Required
   })
 )
-engine.addProvider(new RpcSubprovider({ rpcUrl: 'http://localhost:8545' }))
+engine.addProvider(
+  new RpcSubprovider({
+    rpcUrl: 'http://localhost:8545'                // Required
+  })
+)
 engine.start()
 
 const web3 = new Web3(engine)

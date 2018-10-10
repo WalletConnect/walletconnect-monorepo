@@ -37,7 +37,7 @@ npm install --save walletconnect
 
 ```js
 import WalletConnect from 'walletconnect'
-import WalletConnectQRCodeModal
+import WalletConnectQRCodeModal from 'walletconnect-qrcode-modal'
 
 /**
  *  Create a webConnector
@@ -267,7 +267,7 @@ import WalletConnectProvider from 'walletconnect-web3-provider'
 const provider = new WalletConnectProvider({
   bridgeUrl: 'https://bridge.walletconnect.org',   // Required
   dappName: 'INSERT_DAPP_NAME',                   // Required
-  rpcUrl:'http://localhost:8545'                 // Required
+  rpcUrl: 'http://localhost:8545'                 // Required
 }
 
 /**

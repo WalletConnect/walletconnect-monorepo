@@ -28,8 +28,5 @@ export default function(opts) {
   engine.addProvider(rpc)
   engine.start()
 
-  engine.walletconnect = walletconnect
-  engine.isWalletConnect = walletconnect.isWalletConnect
-
   return engine
 }
