@@ -50,8 +50,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "utils": "^0.3.1",
-    "walletconnect": "^0.7.7",
-    "xtend": "^4.0.1"
+    "walletconnect": "^0.7.7"
   }
 }
