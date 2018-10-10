@@ -82,19 +82,13 @@ export default class WalletConnectSubprovider extends Subprovider {
     }
   }
   sendAsync(payload, callback) {
-    this.handleRequest(
-      payload,
-      // handleRequest has decided to not handle this, so fall through to the provider
-      () => {
-        const sendAsync = this._provider.sendAsync.bind(this._provider)
-        sendAsync(payload, callback)
-      },
-      // handleRequest has called end and will handle this
-      (err, data) => {
-        return err
-          ? callback(err)
-          : callback(null, { ...payload, result: data })
-      }
-    )
+    const next = () => {
+      const sendAsync = this._provider.sendAsync.bind(this._provider)
+      sendAsync(payload, callback)
+    }
+    const end = (err, data) => {
+      return err ? callback(err) : callback(null, { ...payload, result: data })
+    }
+    this.handleRequest(payload, next, end)
   }
 }
