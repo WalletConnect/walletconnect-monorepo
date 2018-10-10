@@ -1,19 +1,12 @@
 import WalletConnect from 'walletconnect'
+import Subprovider from './subprovider'
 
-export default class WalletConnectSubprovider {
-  constructor(opts) {
-    const bridgeUrl = opts.bridgeUrl || null
-    if (!bridgeUrl || typeof bridgeUrl !== 'string') {
-      throw new Error('Missing or Invalid bridgeUrl field')
-    }
-
-    const dappName = opts.dappName || null
-    if (!dappName || typeof dappName !== 'string') {
-      throw new Error('Missing or Invalid dappName field')
-    }
-
-    this.webConnector = new WalletConnect(opts)
-    this.initSession()
+export default class WalletConnectSubprovider extends Subprovider {
+  constructor(provider) {
+    super()
+    this._provider = provider
+    this._walletconnect = new WalletConnect(provider)
+    this._walletconnect.initSession()
   }
 
   set isWalletConnect(value) {
@@ -29,47 +22,7 @@ export default class WalletConnectSubprovider {
   }
 
   get isConnected() {
-    return this.webConnector.isConnected
-  }
-
-  set uri(value) {
-    return
-  }
-
-  get uri() {
-    return this.webConnector.uri
-  }
-
-  set accounts(value) {
-    return
-  }
-
-  get accounts() {
-    return this.webConnector.accounts
-  }
-
-  setEngine(engine) {
-    const self = this
-    self.engine = engine
-    engine.on('block', function(block) {
-      self.currentBlock = block
-    })
-  }
-
-  emitPayload(payload, cb) {
-    const self = this
-    const _payload = this.webConnector.formatPayload(payload)
-    self.engine.sendAsync(_payload, cb)
-  }
-
-  async initSession() {
-    const session = await this.webConnector.initSession()
-    return session
-  }
-
-  async getAccounts() {
-    const accounts = await this.walletconnect.getAccounts()
-    return accounts
+    return this._walletconnect.isConnected
   }
 
   async listenSessionStatus() {
@@ -77,38 +30,71 @@ export default class WalletConnectSubprovider {
     return result
   }
 
-  handleRequest(payload, next, end) {
-    this.provider.sendAsync(payload, function(err, response) {
-      if (err) return end(err)
-      if (response.error) return end(new Error(response.error.message))
-      end(null, response.result)
-    })
-    const supportedMethods = [
-      'eth_accounts',
-      'eth_signTransaction',
-      'eth_sendTransaction',
-      'eth_sendRawTransaction',
-      'eth_sign',
-      'eth_signTypedData',
-      'personal_sign'
-    ]
-    if (this.webConnector.isConnected) {
-      if (payload.method === 'eth_accounts') {
-        this.getAccounts()
-          .then(accounts => {
-            end(null, accounts)
-          })
-          .catch(err => end(err))
-      } else if (supportedMethods.includes(payload.method)) {
-        this.webConnector
-          .createCall(payload)
-          .then(result => end(null, result))
-          .catch(err => end(err))
-      } else {
-        next(payload)
-      }
-    } else {
-      throw new Error('WalletConnect connection is not established')
+  set uri(value) {
+    return
+  }
+
+  get uri() {
+    return this._walletconnect.uri
+  }
+
+  set accounts(value) {
+    return
+  }
+
+  get accounts() {
+    return this._walletconnect.accounts
+  }
+
+  setEngine(engine) {
+    this.engine = engine
+    this.engine.walletconnect = this
+    this.engine.isWalletConnect = this.isWalletConnect
+  }
+
+  async handleRequest(payload, next, end) {
+    switch (payload.method) {
+      case 'eth_accounts':
+        try {
+          const accounts = await this._walletconnect.getAccounts()
+          end(null, accounts)
+        } catch (err) {
+          end(err)
+        }
+        return
+      case 'eth_signTransaction':
+      case 'eth_sendTransaction':
+      case 'eth_sendRawTransaction':
+      case 'eth_sign':
+      case 'eth_signTypedData':
+      case 'eth_signTypedData_v3':
+      case 'personal_sign':
+        try {
+          const result = await this._walletconnect.createCallRequest(payload)
+          end(null, result)
+        } catch (err) {
+          end(err)
+        }
+        return
+      default:
+        next()
+        return
     }
+  }
+  sendAsync(payload, callback) {
+    this.handleRequest(
+      payload,
+      // handleRequest has decided to not handle this, so fall through to the provider
+      () => {
+        const sendAsync = this._provider.sendAsync.bind(this._provider)
+        sendAsync(payload, callback)
+      },
+      // handleRequest has called end and will handle this
+      (err, data) => {
+        return err
+          ? callback(err)
+          : callback(null, { ...payload, result: data })
+      }
+    )
   }
 }

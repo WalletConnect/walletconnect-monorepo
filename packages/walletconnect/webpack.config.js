@@ -12,6 +12,9 @@ module.exports = {
     library: pkg.name,
     libraryTarget: 'commonjs2'
   },
+  optimization: {
+    minimize: false
+  },
   module: {
     rules: [
       {

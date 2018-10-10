@@ -22,13 +22,14 @@ export default function(opts) {
 
   const walletconnect = new WalletConnectSubprovider(opts)
 
-  const rpc = new RpcSubprovider({ rpcUrl: 'http://localhost:8545' })
+  const rpc = new RpcSubprovider({ rpcUrl: opts.rpcUrl })
 
   engine.addProvider(walletconnect)
   engine.addProvider(rpc)
   engine.start()
 
   engine.walletconnect = walletconnect
+  engine.isWalletConnect = walletconnect.isWalletConnect
 
   return engine
 }

@@ -1,7 +1,4 @@
 # node modules
 node_modules
 
-# ignore transpiled files
-packages/*/dist
-
 lerna-debug.log
