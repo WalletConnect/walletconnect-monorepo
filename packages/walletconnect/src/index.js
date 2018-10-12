@@ -77,29 +77,6 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  //  Get Accounts
-  //
-  async getAccounts() {
-    let accounts = this.accounts
-    if (accounts && accounts.length) {
-      return accounts
-    }
-    if (this.isConnected) {
-      try {
-        accounts = await this.createCallRequest({
-          method: 'eth_accounts'
-        })
-        this.accounts = accounts
-        return accounts
-      } catch (error) {
-        throw new Error('Rejected: Accounts Request')
-      }
-    } else {
-      throw new Error('WalletConnect connection is not established')
-    }
-  }
-
-  //
   //  Send Transaction
   //
   async sendTransaction(tx = {}) {

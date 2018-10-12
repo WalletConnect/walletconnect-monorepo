@@ -12,7 +12,7 @@ module.exports = {
     library: pkg.name,
     libraryTarget: 'commonjs2'
   },
-  devtool: 'source-map',
+  devtool: 'nosources-source-map',
   module: {
     rules: [
       {

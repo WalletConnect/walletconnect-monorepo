@@ -55,12 +55,7 @@ export default class WalletConnectSubprovider extends Subprovider {
   async handleRequest(payload, next, end) {
     switch (payload.method) {
       case 'eth_accounts':
-        try {
-          const accounts = await this._walletconnect.getAccounts()
-          end(null, accounts)
-        } catch (err) {
-          end(err)
-        }
+        end(null, this.accounts)
         return
       case 'eth_signTransaction':
       case 'eth_sendTransaction':
