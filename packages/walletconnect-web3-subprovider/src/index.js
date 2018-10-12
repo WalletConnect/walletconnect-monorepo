@@ -6,8 +6,13 @@ export default class WalletConnectSubprovider extends Subprovider {
     super()
     this._provider = provider
     this._walletconnect = new WalletConnect(provider)
-    this._walletconnect.initSession()
+    this.session = this.initSession()
   }
+
+  async initSession() {
+    return this._walletconnect.initSession()
+  }
+
 
   set isWalletConnect(value) {
     return
@@ -25,9 +30,9 @@ export default class WalletConnectSubprovider extends Subprovider {
     return this._walletconnect.isConnected
   }
 
-  async listenSessionStatus() {
-    const result = await this.webConnector.listenSessionStatus()
-    return result
+  async listenSessionStatus(interval = 700, timeout = 300000) {
+    await this.session
+    return this._walletconnect.listenSessionStatus(interval, timeout)
   }
 
   set uri(value) {
@@ -35,8 +40,14 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
 
   get uri() {
+    return this.getUri()
+  }
+
+  async getUri() {
+    await this.session
     return this._walletconnect.uri
   }
+
 
   set accounts(value) {
     return
@@ -52,14 +63,19 @@ export default class WalletConnectSubprovider extends Subprovider {
     this.engine.isWalletConnect = this.isWalletConnect
   }
 
+  async getAccounts() {
+    return this._walletconnect.getAccounts()
+  }
+
   async handleRequest(payload, next, end) {
     switch (payload.method) {
       case 'eth_accounts':
         try {
+          console.log('eth_accounts @ SUBPROVIDER')
           const accounts = await this._walletconnect.getAccounts()
           end(null, accounts)
         } catch (err) {
-          end(err)
+          end(null, [])
         }
         return
       case 'eth_signTransaction':
@@ -81,7 +97,7 @@ export default class WalletConnectSubprovider extends Subprovider {
         return
     }
   }
-  sendAsync(payload, callback) {
+  async sendAsync(payload, callback) {
     const next = () => {
       const sendAsync = this._provider.sendAsync.bind(this._provider)
       sendAsync(payload, callback)

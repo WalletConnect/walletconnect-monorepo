@@ -247,7 +247,7 @@ export default class WalletConnect extends Connector {
   //
   //  Listen for session status
   //
-  listenSessionStatus(interval, timeout) {
+  async listenSessionStatus(interval, timeout) {
     return this.promisifyListener({
       fn: async() => await this.getSessionStatus(),
       interval,

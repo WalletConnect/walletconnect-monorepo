@@ -26,7 +26,10 @@ export default function(opts) {
 
   engine.addProvider(walletconnect)
   engine.addProvider(rpc)
-  engine.start()
 
+  engine.sendAsync = (payload, callback) => {
+    walletconnect.sendAsync(payload, callback)
+  }
+  engine.start()
   return engine
 }
