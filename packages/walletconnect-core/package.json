@@ -46,6 +46,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "eth-parse-uri": "^0.6.8"
+    "eth-parse-uri": "^0.6.9"
   }
 }
