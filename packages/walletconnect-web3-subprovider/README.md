@@ -16,7 +16,7 @@ const engine = new ProviderEngine()
 
 engine.addProvider(
   new WalletConnectSubprovider({
-    bridgeUrl: 'https://bridge.walletconnect.org', // Required
+    bridgeUrl: 'https://test-bridge.walletconnect.org', // Required
     dappName: 'INSERT_DAPP_NAME'                   // Required
   })
 )

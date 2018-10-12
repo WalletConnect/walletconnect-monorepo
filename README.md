@@ -44,7 +44,7 @@ import WalletConnectQRCodeModal from 'walletconnect-qrcode-modal'
  */
 const webConnector = new WalletConnect(
   {
-    bridgeUrl: 'https://bridge.walletconnect.org',  // Required
+    bridgeUrl: 'https://test-bridge.walletconnect.org',  // Required
     dappName: 'INSERT_DAPP_NAME',                   // Required
   }
 )
@@ -265,7 +265,7 @@ import WalletConnectProvider from 'walletconnect-web3-provider'
  *  Create WalletConnect Provider
  */
 const provider = new WalletConnectProvider({
-  bridgeUrl: 'https://bridge.walletconnect.org',   // Required
+  bridgeUrl: 'https://test-bridge.walletconnect.org',   // Required
   dappName: 'INSERT_DAPP_NAME',                   // Required
   rpcUrl: 'http://localhost:8545'                 // Required
 }
