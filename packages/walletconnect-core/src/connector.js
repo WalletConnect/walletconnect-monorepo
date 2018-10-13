@@ -3,7 +3,6 @@
 import crypto from 'crypto'
 import ethParseUri from 'eth-parse-uri'
 import Listener from './listener'
-import pkg from '../package.json'
 
 const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
@@ -229,7 +228,7 @@ export default class Connector {
       throw new Error('sessionId parameter is missing or invalid')
     }
 
-    const version = pkg.version || '1'
+    const version = '1'
     if (!version || typeof version !== 'string') {
       throw new Error('version parameter is missing or invalid')
     }
