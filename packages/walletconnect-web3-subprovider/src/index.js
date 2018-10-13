@@ -26,7 +26,7 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
 
   async listenSessionStatus() {
-    const result = await this.webConnector.listenSessionStatus()
+    const result = await this._walletconnect.listenSessionStatus()
     return result
   }
 

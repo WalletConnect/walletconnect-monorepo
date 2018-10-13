@@ -7,6 +7,7 @@ if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
 
 import qrImage from 'qr-image'
 import style from './style'
+import asset from './asset'
 
 /**
  *  @desc     Returns QR Code Data String for given image type
@@ -31,16 +32,17 @@ function open(uri, cb) {
   let wrapper = document.createElement('div')
   wrapper.setAttribute('id', 'walletconnect-wrapper')
 
-  let data = getDataString(uri)
+  let dataString = getDataString(uri)
 
   wrapper.innerHTML = formatQRCodeModal({
-    qrImageUri: getDataString(data),
+    qrImageUri: dataString,
     cb
   })
 
   function cancelClick() {
-    document.getElementById('walletconnect-qrcode-text').innerHTML =
-      'Cancelling'
+    const elm = document.getElementById('walletconnect-qrcode-modal-base')
+    elm.className = elm.className.replace('fadeIn', 'fadeOut')
+    close()
     cb()
   }
 
@@ -64,19 +66,29 @@ function close() {
  *  @return   {String}
  */
 function formatQRCodeModal({ qrImageUri }) {
+  const callToAction = 'Scan QR code with a WalletConnect-compatible wallet'
   return `
     <div id="walletconnect-qrcode-modal" style="${style.QRCode.base}">
-      <div style="${style.Modal.base}" class="animated fadeIn">
+      <div id="walletconnect-qrcode-modal-base" style="${
+        style.Modal.base
+      }" class="animated fadeIn">
         <div style="${style.Modal.header}">
-          <div id="walletconnect-qrcode-cancel" style="${style.Modal.close}">
-            <p>Close</p>
+          <img src="${asset.logo}" style="${style.modal.headerLogo}" />
+          <div style=${style.Modal.close.wrapper}>
+            <div
+              id="walletconnect-qrcode-cancel"
+              style="${style.Modal.close.icon}"
+            >
+              <div style=${style.Modal.close.line1}></div>
+              <div style=${style.Modal.close.line2}></div>
+            </div>
           </div>
         </div>
         <div>
           <div>
-            <p id="walletconnect-qrcode-text" style="${
-              style.QRCode.text
-            }">Scan QR code with WalletConnect</p>
+            <p id="walletconnect-qrcode-text" style="${style.QRCode.text}">
+              ${callToAction}
+            </p>
             <img src="${qrImageUri}" style="${style.QRCode.image}" />
           </div>
         </div>
