@@ -21,7 +21,7 @@ export default {
     }
   </style>
   `,
-  Modal: {
+  modal: {
     base: `
         position:relative;
         top:50%;
@@ -79,7 +79,7 @@ export default {
       `
     }
   },
-  QRCode: {
+  qrcode: {
     base: `
       position:fixed;
       top: 0;

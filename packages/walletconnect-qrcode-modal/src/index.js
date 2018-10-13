@@ -65,28 +65,28 @@ function close() {
 function formatQRCodeModal(qrImageUri) {
   const callToAction = 'Scan QR code with a WalletConnect-compatible wallet'
   return `
-    <div id="walletconnect-qrcode-modal" style="${style.QRCode.base}">
+    <div id="walletconnect-qrcode-modal" style="${style.qrcode.base}">
       <div id="walletconnect-qrcode-modal-base" style="${
-        style.Modal.base
+        style.modal.base
       }" class="animated fadeIn">
-        <div style="${style.Modal.header}">
+        <div style="${style.modal.header}">
           <img src="${asset.logo}" style="${style.modal.headerLogo}" />
-          <div style=${style.Modal.close.wrapper}>
+          <div style=${style.modal.close.wrapper}>
             <div
               id="walletconnect-qrcode-cancel"
-              style="${style.Modal.close.icon}"
+              style="${style.modal.close.icon}"
             >
-              <div style=${style.Modal.close.line1}></div>
-              <div style=${style.Modal.close.line2}></div>
+              <div style=${style.modal.close.line1}></div>
+              <div style=${style.modal.close.line2}></div>
             </div>
           </div>
         </div>
         <div>
           <div>
-            <p id="walletconnect-qrcode-text" style="${style.QRCode.text}">
+            <p id="walletconnect-qrcode-text" style="${style.qrcode.text}">
               ${callToAction}
             </p>
-            <img src="${qrImageUri}" style="${style.QRCode.image}" />
+            <img src="${qrImageUri}" style="${style.qrcode.image}" />
           </div>
         </div>
       </div>
