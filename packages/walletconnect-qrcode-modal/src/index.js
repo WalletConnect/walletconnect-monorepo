@@ -86,4 +86,4 @@ function formatQRCodeModal({ qrImageUri }) {
 `
 }
 
-export { close, open, getDataString }
+export default { close, open, getDataString }
