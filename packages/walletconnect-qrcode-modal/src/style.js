@@ -106,8 +106,8 @@ export default {
       align-items: center;
     `,
     image: `
-      width: 100 %;
-      padding: 30 px;
+      width: 100%;
+      padding: 30px;
     `
   }
 }
