@@ -27,10 +27,12 @@ function formatQRCodeImage(data) {
 function formatQRCodeModal(qrCodeImage) {
   const callToAction = 'Scan QR code with a WalletConnect-compatible wallet'
   return `
-    <div id="walletconnect-qrcode-modal" style="${style.qrcode.base}">
-      <div id="walletconnect-qrcode-modal-base" style="${
-        style.modal.base
-      }" class="animated fadeIn">
+    <div
+      id="walletconnect-qrcode-modal"
+      style="${style.qrcode.base}"
+      class="animated fadeIn"
+    >
+      <div style="${style.modal.base}">
         <div style="${style.modal.header}">
           <img src="${asset.logo}" style="${style.modal.headerLogo}" />
           <div style="${style.modal.close.wrapper}">
@@ -83,13 +85,12 @@ function open(uri, cb) {
  *  @desc     Close WalletConnect QR Code Modal
  */
 function close() {
-  const elm = document.getElementById('walletconnect-qrcode-modal-base')
+  const elm = document.getElementById('walletconnect-qrcode-modal')
   elm.className = elm.className.replace('fadeIn', 'fadeOut')
   setTimeout(() => {
     const Wrapper = document.getElementById('walletconnect-wrapper')
     document.body.removeChild(Wrapper)
   }, style.animationDuration)
 }
-
 
 export default { close, open }
