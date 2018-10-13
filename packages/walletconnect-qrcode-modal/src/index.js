@@ -71,13 +71,13 @@ function formatQRCodeModal(qrImageUri) {
       }" class="animated fadeIn">
         <div style="${style.modal.header}">
           <img src="${asset.logo}" style="${style.modal.headerLogo}" />
-          <div style=${style.modal.close.wrapper}>
+          <div style="${style.modal.close.wrapper}">
             <div
               id="walletconnect-qrcode-cancel"
               style="${style.modal.close.icon}"
             >
-              <div style=${style.modal.close.line1}></div>
-              <div style=${style.modal.close.line2}></div>
+              <div style="${style.modal.close.line1}"></div>
+              <div style="${style.modal.close.line2}"></div>
             </div>
           </div>
         </div>

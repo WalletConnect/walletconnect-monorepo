@@ -10,7 +10,7 @@ export default {
       to { opacity: 0; }
     }
     .animated {
-      animation-duration: 1s;
+      animation-duration: 2s;
       animation-fill-mode: both;
     }
     .fadeIn {
@@ -33,8 +33,8 @@ export default {
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 12px 24px 0 rgba(0,0,0,0.1);
-        min-width: 400px;
-        max-width: 100%;
+        width: 100%;
+        max-width: 500px;
       `,
     header: `
         position: relative;
@@ -54,6 +54,7 @@ export default {
         position: absolute;
         top: 15px;
         right: 15px;
+        z-index: 10000;
       `,
       icon: `
         width: 25px;
@@ -69,12 +70,12 @@ export default {
       line1: `
         position: absolute;
         width: 90%;
-        border: 1px solid black;
+        border: 1px solid #7C828B;
       `,
       line2: `
         position: absolute;
         width: 90%;
-        border: 1px solid black;
+        border: 1px solid #7C828B;
         transform: rotate(90deg);
       `
     }
@@ -92,10 +93,10 @@ export default {
     text: `
       color: #7C828B;
       font-family: Avenir;
-      font-size: 18px;
+      font-size: 20px;
       text-align: center;
-      margin: 0;
-      padding: 0;
+      margin: 0 auto;
+      padding: 0 40px;
       width: 100%;
       display: flex;
       justify-content: center;

@@ -4,9 +4,12 @@ import Subprovider from './subprovider'
 export default class WalletConnectSubprovider extends Subprovider {
   constructor(provider) {
     super()
-    this._provider = provider
-    this._walletconnect = new WalletConnect(provider)
-    this._walletconnect.initSession()
+
+    const walletconnect = new WalletConnect(provider)
+
+    walletconnect.initSession()
+
+    this._walletconnect = walletconnect
   }
 
   set isWalletConnect(value) {
@@ -83,7 +86,7 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
   sendAsync(payload, callback) {
     const next = () => {
-      const sendAsync = this._provider.sendAsync.bind(this._provider)
+      const sendAsync = this.engine.sendAsync.bind(this)
       sendAsync(payload, callback)
     }
     const end = (err, data) => {
