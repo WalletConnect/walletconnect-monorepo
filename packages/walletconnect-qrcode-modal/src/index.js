@@ -32,12 +32,9 @@ function open(uri, cb) {
   let wrapper = document.createElement('div')
   wrapper.setAttribute('id', 'walletconnect-wrapper')
 
-  let dataString = getDataString(uri)
+  let qrImageUri = getDataString(uri)
 
-  wrapper.innerHTML = formatQRCodeModal({
-    qrImageUri: dataString,
-    cb
-  })
+  wrapper.innerHTML = formatQRCodeModal(qrImageUri)
 
   function cancelClick() {
     const elm = document.getElementById('walletconnect-qrcode-modal-base')
@@ -62,10 +59,10 @@ function close() {
 
 /**
  *  @desc     QR Code Modal HTML String
- *  @param    {Object}     args     { qrImageUri}
+ *  @param    {String}     qrImageUri
  *  @return   {String}
  */
-function formatQRCodeModal({ qrImageUri }) {
+function formatQRCodeModal(qrImageUri) {
   const callToAction = 'Scan QR code with a WalletConnect-compatible wallet'
   return `
     <div id="walletconnect-qrcode-modal" style="${style.QRCode.base}">
