@@ -1,5 +1,8 @@
+const animationDuration = 300
+
 export default {
-  animate: `
+  animationDuration,
+  animation: `
   <style>
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -10,7 +13,7 @@ export default {
       to { opacity: 0; }
     }
     .animated {
-      animation-duration: 1s;
+      animation-duration: ${animationDuration}ms;
       animation-fill-mode: both;
     }
     .fadeIn {
@@ -93,19 +96,18 @@ export default {
     text: `
       color: #7C828B;
       font-family: Avenir;
-      font-size: 20px;
+      font-size: 18px;
       text-align: center;
       margin: 0 auto;
-      padding: 0 40px;
+      padding: 0 30px;
       width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
     `,
     image: `
-      z-index:102;
-      width: 100%;
-      margin: 0;
+      width: 100 %;
+      padding: 30 px;
     `
   }
 }
