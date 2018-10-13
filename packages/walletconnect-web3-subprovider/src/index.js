@@ -2,14 +2,10 @@ import WalletConnect from 'walletconnect'
 import Subprovider from './subprovider'
 
 export default class WalletConnectSubprovider extends Subprovider {
-  constructor(provider) {
+  constructor(opts) {
     super()
 
-    const walletconnect = new WalletConnect(provider)
-
-    walletconnect.initSession()
-
-    this._walletconnect = walletconnect
+    this._walletconnect = new WalletConnect(opts)
   }
 
   set isWalletConnect(value) {
@@ -28,16 +24,6 @@ export default class WalletConnectSubprovider extends Subprovider {
     return this._walletconnect.isConnected
   }
 
-  async listenSessionStatus() {
-    const result = await this._walletconnect.listenSessionStatus()
-    return result
-  }
-
-  stopLastListener() {
-    const result = this._walletconnect.stopLastListener()
-    return result
-  }
-
   set uri(value) {
     return
   }
@@ -53,6 +39,22 @@ export default class WalletConnectSubprovider extends Subprovider {
   get accounts() {
     return this._walletconnect.accounts
   }
+
+  async initSession() {
+    const result = await this._walletconnect.initSession()
+    return result
+  }
+
+  async listenSessionStatus() {
+    const result = await this._walletconnect.listenSessionStatus()
+    return result
+  }
+
+  stopLastListener() {
+    const result = this._walletconnect.stopLastListener()
+    return result
+  }
+
 
   setEngine(engine) {
     this.engine = engine

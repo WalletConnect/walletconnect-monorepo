@@ -25,6 +25,11 @@ const provider = new WalletConnectProvider({
 const web3 = new Web3(provider)
 
 /**
+ *  Initiate WalletConnect Session
+ */
+const session = await web3.currentProvider.walletconnect.initSession()
+
+/**
  *  Get Accounts
  */
 const accounts = await web3.eth.getAccounts()
