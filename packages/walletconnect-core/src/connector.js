@@ -1,7 +1,8 @@
-/* global fetch Buffer */
+/* global fetch Buffer Promise */
 
 import crypto from 'crypto'
 import ethParseUri from 'eth-parse-uri'
+import Listener from './listener'
 
 const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
@@ -19,6 +20,7 @@ export default class Connector {
     this.accounts = options.accounts || []
     this.uri = options.uri || ''
     this.isConnected = false
+    this.listeners = []
   }
 
   get isConnected() {
@@ -441,5 +443,34 @@ export default class Connector {
       params: [],
       ...payload
     }
+  }
+
+  //
+  //  Promisify listener
+  //
+  promisifyListener({ fn, interval, timeout }) {
+    return new Promise((resolve, reject) => {
+      const listener = new Listener({
+        fn,
+        cb: (err, result) => {
+          if (err) {
+            reject(err)
+          }
+          resolve(result)
+        },
+        interval,
+        timeout
+      })
+      this.listeners.unshift(listener)
+    })
+  }
+
+  //
+  //  Stop last listener
+  //
+  stopLastListener() {
+    const listener = this.listeners.shift()
+    listener.stop()
+    return true
   }
 }

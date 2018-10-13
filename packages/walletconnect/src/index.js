@@ -1,6 +1,6 @@
-/* global window Promise */
+/* global window */
 
-import { Connector, Listener } from 'js-walletconnect-core'
+import { Connector } from 'js-walletconnect-core'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
@@ -200,25 +200,6 @@ export default class WalletConnect extends Connector {
     }
 
     return null
-  }
-
-  //
-  //  Promisify listener
-  //
-  promisifyListener({ fn, interval, timeout }) {
-    return new Promise((resolve, reject) => {
-      this.listener = new Listener({
-        fn,
-        cb: (err, result) => {
-          if (err) {
-            reject(err)
-          }
-          resolve(result)
-        },
-        interval,
-        timeout
-      })
-    })
   }
 
   //

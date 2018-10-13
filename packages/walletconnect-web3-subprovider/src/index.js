@@ -30,6 +30,11 @@ export default class WalletConnectSubprovider extends Subprovider {
     return result
   }
 
+  stopLastListener() {
+    const result = this._walletconnect.stopLastListener()
+    return result
+  }
+
   set uri(value) {
     return
   }
