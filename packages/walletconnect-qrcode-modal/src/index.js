@@ -1,4 +1,4 @@
-/* global window */
+/* global window setTimeout */
 
 let document = null
 if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
@@ -15,54 +15,71 @@ import asset from './asset'
  *  @param    {String}     type
  *  @return   {String}
  */
-function getDataString(data, type = 'png') {
-  let buffer = qrImage.imageSync(data, { type })
+function getDataString(data, type = 'svg') {
+  const dataString = qrImage.imageSync(data, { type })
   if (type === 'png') {
-    return 'data:image/png;charset=utf-8;base64, ' + buffer.toString('base64')
+    return 'data:image/png;charset=utf-8;base64, ' + dataString.toString('base64')
   }
-  return buffer
+  return dataString
 }
+
+
+/**
+ *  @desc     Format QR Code Image HTML String
+ *  @param    {String}     data
+ *  @param    {String}     type
+ *  @return   {String}
+ */
+function formatQRCodeImage(data, type = 'svg') {
+  const dataString = getDataString(data, type)
+  if (type === 'png') {
+    return `<img src="${dataString}" style="${style.qrcode.image}" />`
+  }
+  return dataString
+}
+
 
 /**
  *  @desc     Open WalletConnect QR Code Modal
  *  @param    {String}     uri
  *  @param    {Function}   cb
+ *  @param    {String}     type
  */
-function open(uri, cb) {
-  let wrapper = document.createElement('div')
+function open(uri, cb, type = 'svg') {
+  const wrapper = document.createElement('div')
   wrapper.setAttribute('id', 'walletconnect-wrapper')
 
-  let qrImageUri = getDataString(uri)
+  const qrCodeImage = formatQRCodeImage(uri, type)
 
-  wrapper.innerHTML = formatQRCodeModal(qrImageUri)
-
-  function cancelClick() {
-    const elm = document.getElementById('walletconnect-qrcode-modal-base')
-    elm.className = elm.className.replace('fadeIn', 'fadeOut')
-    close()
-    cb()
-  }
+  wrapper.innerHTML = formatQRCodeModal(qrCodeImage)
 
   document.body.appendChild(wrapper)
   document
-    .getElementById('walletconnect-qrcode-cancel')
-    .addEventListener('click', cancelClick)
+    .getElementById('walletconnect-qrcode-close')
+    .addEventListener('click', () => {
+          close()
+          cb()
+    })
 }
 
 /**
  *  @desc     Close WalletConnect QR Code Modal
  */
 function close() {
-  const Wrapper = document.getElementById('walletconnect-wrapper')
-  document.body.removeChild(Wrapper)
+  const elm = document.getElementById('walletconnect-qrcode-modal-base')
+  elm.className = elm.className.replace('fadeIn', 'fadeOut')
+  setTimeout(() => {
+    const Wrapper = document.getElementById('walletconnect-wrapper')
+    document.body.removeChild(Wrapper)
+  }, 1000)
 }
 
 /**
- *  @desc     QR Code Modal HTML String
- *  @param    {String}     qrImageUri
+ *  @desc     Format QR Code Modal HTML String
+ *  @param    {String}     qrCode
  *  @return   {String}
  */
-function formatQRCodeModal(qrImageUri) {
+function formatQRCodeModal(qrCodeImage) {
   const callToAction = 'Scan QR code with a WalletConnect-compatible wallet'
   return `
     <div id="walletconnect-qrcode-modal" style="${style.qrcode.base}">
@@ -73,7 +90,7 @@ function formatQRCodeModal(qrImageUri) {
           <img src="${asset.logo}" style="${style.modal.headerLogo}" />
           <div style="${style.modal.close.wrapper}">
             <div
-              id="walletconnect-qrcode-cancel"
+              id="walletconnect-qrcode-close"
               style="${style.modal.close.icon}"
             >
               <div style="${style.modal.close.line1}"></div>
@@ -86,7 +103,7 @@ function formatQRCodeModal(qrImageUri) {
             <p id="walletconnect-qrcode-text" style="${style.qrcode.text}">
               ${callToAction}
             </p>
-            <img src="${qrImageUri}" style="${style.qrcode.image}" />
+            ${qrCodeImage}
           </div>
         </div>
       </div>

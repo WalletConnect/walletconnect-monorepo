@@ -10,7 +10,7 @@ export default {
       to { opacity: 0; }
     }
     .animated {
-      animation-duration: 2s;
+      animation-duration: 1s;
       animation-fill-mode: both;
     }
     .fadeIn {
