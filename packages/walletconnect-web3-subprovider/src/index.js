@@ -71,7 +71,6 @@ export default class WalletConnectSubprovider extends Subprovider {
     switch (payload.method) {
       case 'eth_accounts':
         try {
-          console.log('eth_accounts @ SUBPROVIDER')
           const accounts = await this._walletconnect.getAccounts()
           end(null, accounts)
         } catch (err) {
