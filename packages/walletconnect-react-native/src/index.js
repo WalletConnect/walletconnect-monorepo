@@ -158,7 +158,7 @@ export default class WalletConnector extends Connector {
   //
   _checkPushOptions(opts) {
     if (!opts.push || typeof opts.push !== 'object') {
-      throw new Error('Push notification options are missing or invalid')
+      return null
     }
 
     const push = opts.push
