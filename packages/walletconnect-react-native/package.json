@@ -1,6 +1,6 @@
 {
   "name": "rn-walletconnect-wallet",
-  "version": "0.7.17",
+  "version": "0.7.21",
   "description": "React Native SDK for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
