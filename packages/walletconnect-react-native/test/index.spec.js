@@ -30,7 +30,7 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
   //       type: 'fcm',
   //       token:
   //         'cSgGd8BWURk:APA91bGXsLd_ga4wnUqtO5O8CQqe6RRdyb4LuJ1h-TAwVRFha1PDe6LPAr5irb0ZRYtEkGvrJ38LsvG9INiqlx4KBx9ATCHkc2dWwsncN4YkkZnSPwsaJNABVYdFbutyfc8pScl0Qe8-',
-  //       endpoint:
+  //       webhook:
   //         'https://us-central1-walletconnect-app.cloudfunctions.net/push'
   //     }
   //   })

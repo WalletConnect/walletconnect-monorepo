@@ -36,7 +36,7 @@ const walletConnector = new RNWalletConnect({
   push: {
     type: 'fcm',
     token: 'cSgGd8BWURk:APA91bGXsLd_...YdFbutyfc8pScl0Qe8-',
-    endpoint: 'https://push.walletconnect.org/notification/new',
+    webhook: 'https://push.walletconnect.org/notification/new',
   }
 })
 

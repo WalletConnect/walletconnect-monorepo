@@ -158,7 +158,7 @@ export default class WalletConnector extends Connector {
   //
   _checkPushOptions(opts) {
     if (!opts.push || typeof opts.push !== 'object') {
-      throw new Error('Push notification options are missing or invalid')
+      return null
     }
 
     const push = opts.push
@@ -181,8 +181,8 @@ export default class WalletConnector extends Connector {
       throw new Error('Push token option is missing or invalid')
     }
 
-    if (!push.endpoint || typeof push.endpoint !== 'string') {
-      throw new Error('Push endpoint option is missing or invalid')
+    if (!push.webhook || typeof push.webhook !== 'string') {
+      throw new Error('Push webhook option is missing or invalid')
     }
 
     return push
