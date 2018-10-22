@@ -2,11 +2,10 @@ import WalletConnect from 'walletconnect'
 import Subprovider from './subprovider'
 
 export default class WalletConnectSubprovider extends Subprovider {
-  constructor(provider) {
+  constructor(opts) {
     super()
-    this._provider = provider
-    this._walletconnect = new WalletConnect(provider)
-    this._walletconnect.initSession()
+
+    this._walletconnect = new WalletConnect(opts)
   }
 
   set isWalletConnect(value) {
@@ -25,11 +24,6 @@ export default class WalletConnectSubprovider extends Subprovider {
     return this._walletconnect.isConnected
   }
 
-  async listenSessionStatus() {
-    const result = await this.webConnector.listenSessionStatus()
-    return result
-  }
-
   set uri(value) {
     return
   }
@@ -46,6 +40,22 @@ export default class WalletConnectSubprovider extends Subprovider {
     return this._walletconnect.accounts
   }
 
+  async initSession() {
+    const result = await this._walletconnect.initSession()
+    return result
+  }
+
+  async listenSessionStatus() {
+    const result = await this._walletconnect.listenSessionStatus()
+    return result
+  }
+
+  stopLastListener() {
+    const result = this._walletconnect.stopLastListener()
+    return result
+  }
+
+
   setEngine(engine) {
     this.engine = engine
     this.engine.walletconnect = this
@@ -55,12 +65,7 @@ export default class WalletConnectSubprovider extends Subprovider {
   async handleRequest(payload, next, end) {
     switch (payload.method) {
       case 'eth_accounts':
-        try {
-          const accounts = await this._walletconnect.getAccounts()
-          end(null, accounts)
-        } catch (err) {
-          end(err)
-        }
+        end(null, this.accounts)
         return
       case 'eth_signTransaction':
       case 'eth_sendTransaction':
@@ -83,7 +88,7 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
   sendAsync(payload, callback) {
     const next = () => {
-      const sendAsync = this._provider.sendAsync.bind(this._provider)
+      const sendAsync = this.engine.sendAsync.bind(this)
       sendAsync(payload, callback)
     }
     const end = (err, data) => {

@@ -1,7 +1,8 @@
-/* global fetch Buffer */
+/* global fetch Buffer Promise */
 
 import crypto from 'crypto'
 import ethParseUri from 'eth-parse-uri'
+import Listener from './listener'
 
 const AES_ALGORITHM = 'AES-256-CBC'
 const HMAC_ALGORITHM = 'SHA256'
@@ -19,6 +20,7 @@ export default class Connector {
     this.accounts = options.accounts || []
     this.uri = options.uri || ''
     this.isConnected = false
+    this.listeners = []
   }
 
   get isConnected() {
@@ -216,12 +218,36 @@ export default class Connector {
   //  Format ERC-1328 - WalletConnect Standard URI Format
   //
   _formatWalletConnectURI() {
-    const protocol = this.protocol
-    const sessionId = this.sessionId
+    const protocol = this.protocol || ''
+    if (!protocol || typeof protocol !== 'string') {
+      throw new Error('protocol parameter is missing or invalid')
+    }
+
+    const sessionId = this.sessionId || ''
+    if (!sessionId || typeof sessionId !== 'string') {
+      throw new Error('sessionId parameter is missing or invalid')
+    }
+
     const version = '1'
-    const name = encodeURIComponent(this.dappName)
-    const bridgeUrl = encodeURIComponent(this.bridgeUrl)
-    const symKey = Buffer.from(this.symKey, 'hex').toString('base64')
+    if (!version || typeof version !== 'string') {
+      throw new Error('version parameter is missing or invalid')
+    }
+
+    const name = encodeURIComponent(this.dappName) || ''
+    if (!name || typeof name !== 'string') {
+      throw new Error('name parameter is missing or invalid')
+    }
+
+    const bridgeUrl = encodeURIComponent(this.bridgeUrl) || ''
+    if (!bridgeUrl || typeof bridgeUrl !== 'string') {
+      throw new Error('bridgeUrl parameter is missing or invalid')
+    }
+
+    const symKey = Buffer.from(this.symKey, 'hex').toString('base64') || ''
+    if (!symKey || typeof symKey !== 'string') {
+      throw new Error('symKey parameter is missing or invalid')
+    }
+
     const uri = `${protocol}:wc-${sessionId}@${version}?name=${name}&bridge=${bridgeUrl}&symKey=${symKey}`
     return uri
   }
@@ -441,5 +467,34 @@ export default class Connector {
       params: [],
       ...payload
     }
+  }
+
+  //
+  //  Promisify listener
+  //
+  promisifyListener({ fn, interval, timeout }) {
+    return new Promise((resolve, reject) => {
+      const listener = new Listener({
+        fn,
+        cb: (err, result) => {
+          if (err) {
+            reject(err)
+          }
+          resolve(result)
+        },
+        interval,
+        timeout
+      })
+      this.listeners.unshift(listener)
+    })
+  }
+
+  //
+  //  Stop last listener
+  //
+  stopLastListener() {
+    const listener = this.listeners.shift()
+    listener.stop()
+    return true
   }
 }

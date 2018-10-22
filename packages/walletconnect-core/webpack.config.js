@@ -12,9 +12,7 @@ module.exports = {
     library: pkg.name,
     libraryTarget: 'commonjs2'
   },
-  optimization: {
-    minimize: false
-  },
+  devtool: 'nosources-source-map',
   externals: {
     crypto: 'crypto',
     Buffer: 'buffer'

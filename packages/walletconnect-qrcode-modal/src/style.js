@@ -1,20 +1,30 @@
+const animationDuration = 300
+
 export default {
-  animate: `
+  animationDuration,
+  animation: `
   <style>
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
     .animated {
-      animation-duration: 1s;
+      animation-duration: ${animationDuration}ms;
       animation-fill-mode: both;
     }
     .fadeIn {
       animation-name: fadeIn;
     }
+    .fadeOut {
+      animation-name: fadeOut;
+    }
   </style>
   `,
-  Modal: {
+  modal: {
     base: `
         position:relative;
         top:50%;
@@ -26,22 +36,54 @@ export default {
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 12px 24px 0 rgba(0,0,0,0.1);
-        min-width: 400px;
-        max-width: 100%;
+        width: 100%;
+        max-width: 500px;
       `,
     header: `
+        position: relative;
         width: 100%;
-        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       `,
-    close: `
-        float: right;
-        height: 25px;
+    headerLogo: `
+      width: 100%;
+      max-width: 320px;
+      margin: 20px auto;
+      height: 100%;
+    `,
+    close: {
+      wrapper: `
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10000;
+      `,
+      icon: `
         width: 25px;
-        margin: 15px;
-        cursor: pointer;
+        height: 25px;
+        position: relative;
+        top: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(45deg);
+      `,
+      line1: `
+        position: absolute;
+        width: 90%;
+        border: 1px solid #7C828B;
+      `,
+      line2: `
+        position: absolute;
+        width: 90%;
+        border: 1px solid #7C828B;
+        transform: rotate(90deg);
       `
+    }
   },
-  QRCode: {
+  qrcode: {
     base: `
       position:fixed;
       top: 0;
@@ -56,11 +98,16 @@ export default {
       font-family: Avenir;
       font-size: 18px;
       text-align: center;
-      margin-top: 0;
+      margin: 0 auto;
+      padding: 0 30px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     `,
     image: `
-      z-index:102;
-      margin-bottom: 35px;
+      width: 100%;
+      padding: 30px;
     `
   }
 }

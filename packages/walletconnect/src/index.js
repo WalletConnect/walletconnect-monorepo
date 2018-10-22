@@ -1,6 +1,6 @@
-/* global window Promise */
+/* global window */
 
-import { Connector, Listener } from 'js-walletconnect-core'
+import { Connector } from 'js-walletconnect-core'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
@@ -74,29 +74,6 @@ export default class WalletConnect extends Connector {
     this.saveLocalSession(session)
 
     return session
-  }
-
-  //
-  //  Get Accounts
-  //
-  async getAccounts() {
-    let accounts = this.accounts
-    if (accounts && accounts.length) {
-      return accounts
-    }
-    if (this.isConnected) {
-      try {
-        accounts = await this.createCallRequest({
-          method: 'eth_accounts'
-        })
-        this.accounts = accounts
-        return accounts
-      } catch (error) {
-        throw new Error('Rejected: Accounts Request')
-      }
-    } else {
-      throw new Error('WalletConnect connection is not established')
-    }
   }
 
   //
@@ -223,25 +200,6 @@ export default class WalletConnect extends Connector {
     }
 
     return null
-  }
-
-  //
-  //  Promisify listener
-  //
-  promisifyListener({ fn, interval, timeout }) {
-    return new Promise((resolve, reject) => {
-      this.listener = new Listener({
-        fn,
-        cb: (err, result) => {
-          if (err) {
-            reject(err)
-          }
-          resolve(result)
-        },
-        interval,
-        timeout
-      })
-    })
   }
 
   //
