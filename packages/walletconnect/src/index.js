@@ -122,7 +122,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  //  Create call
+  //  Create call request
   //
   async createCallRequest(payload) {
     if (!this.isConnected) {
