@@ -6,6 +6,7 @@ export default class WalletConnectSubprovider extends Subprovider {
     super()
 
     this._walletconnect = new WalletConnect(opts)
+    this.session = this.initSession()
   }
 
   set isWalletConnect(value) {
@@ -29,6 +30,11 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
 
   get uri() {
+    return this._getUri()
+  }
+
+  async _getUri() {
+    await this.session
     return this._walletconnect.uri
   }
 
@@ -41,13 +47,12 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
 
   async initSession() {
-    const result = await this._walletconnect.initSession()
-    return result
+    return this._walletconnect.initSession()
   }
 
-  async listenSessionStatus() {
-    const result = await this._walletconnect.listenSessionStatus()
-    return result
+  async listenSessionStatus(interval=800, timeout=30000) {
+    await this.session
+    return this._walletconnect.listenSessionStatus(interval, timeout)
   }
 
   stopLastListener() {
@@ -65,7 +70,12 @@ export default class WalletConnectSubprovider extends Subprovider {
   async handleRequest(payload, next, end) {
     switch (payload.method) {
       case 'eth_accounts':
-        end(null, this.accounts)
+        try {
+          const accounts = await this._walletconnect.getAccounts()
+            end(null, accounts)
+          } catch (err) {
+            end(null, [])
+          }
         return
       case 'eth_signTransaction':
       case 'eth_sendTransaction':
@@ -88,7 +98,7 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
   sendAsync(payload, callback) {
     const next = () => {
-      const sendAsync = this.engine.sendAsync.bind(this)
+      const sendAsync = this._walletconnect.sendAsync.bind(this)
       sendAsync(payload, callback)
     }
     const end = (err, data) => {
