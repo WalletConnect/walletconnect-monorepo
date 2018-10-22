@@ -1,6 +1,5 @@
 {
   "name": "walletconnect-monorepo",
-  "version": "0.7.8",
   "description": "Monorepo for WalletConnect Javascript Libraries",
   "private": true,
   "keywords": [
