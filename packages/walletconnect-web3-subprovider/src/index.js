@@ -71,7 +71,7 @@ export default class WalletConnectSubprovider extends Subprovider {
     switch (payload.method) {
       case 'eth_accounts':
         try {
-          const accounts = await this._walletconnect.getAccounts()
+          const accounts = await this._walletconnect.accounts
             end(null, accounts)
           } catch (err) {
             end(null, [])
@@ -98,7 +98,7 @@ export default class WalletConnectSubprovider extends Subprovider {
   }
   sendAsync(payload, callback) {
     const next = () => {
-      const sendAsync = this._walletconnect.sendAsync.bind(this)
+      const sendAsync = this.engine.sendAsync.bind(this)
       sendAsync(payload, callback)
     }
     const end = (err, data) => {
