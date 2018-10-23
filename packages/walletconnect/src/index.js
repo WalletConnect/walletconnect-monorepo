@@ -167,7 +167,18 @@ export default class WalletConnect extends Connector {
     const result = await this._getEncryptedData(`/session/${this.sessionId}`)
 
     if (result) {
-      if (result.data.approved) {
+      if (result.data && !result.data.approved) {
+        // Fall back old API.
+        this.expires = result.expires
+        this.accounts = result.data
+        this.isConnected = true
+
+        const session = this.toJSON()
+        this.saveLocalSession(session)
+
+        return session
+      }
+      else if (result.data.approved) {
         this.expires = result.expires
         this.accounts = result.data.accounts
         this.isConnected = true
