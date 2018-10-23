@@ -94,7 +94,7 @@ export default class WalletConnector extends Connector {
 
     const encryptionPayload = await this.encrypt(data)
 
-    const result = await this.sendCallStatus({
+    const result = await this.sendCallStatus(callId, {
       encryptionPayload
     })
 
