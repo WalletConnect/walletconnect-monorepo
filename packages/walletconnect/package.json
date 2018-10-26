@@ -1,6 +1,6 @@
 {
   "name": "walletconnect",
-  "version": "0.7.25",
+  "version": "0.7.26",
   "description": "Walletconnect library for browser",
   "scripts": {
     "clean": "rm -rf dist",
@@ -50,6 +50,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "js-walletconnect-core": "^0.7.25"
+    "js-walletconnect-core": "^0.7.26"
   }
 }
