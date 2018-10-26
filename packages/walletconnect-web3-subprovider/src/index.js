@@ -55,7 +55,6 @@ export default class WalletConnectSubprovider extends Subprovider {
     return result
   }
 
-
   setEngine(engine) {
     this.engine = engine
     this.engine.walletconnect = this
@@ -72,6 +71,7 @@ export default class WalletConnectSubprovider extends Subprovider {
       case 'eth_sendRawTransaction':
       case 'eth_sign':
       case 'eth_signTypedData':
+      case 'eth_signTypedData_v1':
       case 'eth_signTypedData_v3':
       case 'personal_sign':
         try {

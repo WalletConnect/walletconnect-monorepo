@@ -424,31 +424,19 @@ export default class Connector {
   }
 
   checkObject(obj, name) {
-    let result = null
-
-    const throwError = () => {
-      throw new Error(`${name} object is invalid`)
-    }
+    let result = {}
 
     if (obj) {
       if (typeof obj === 'object') {
-        if (Object.keys(obj).length) {
-          result = obj
-        }
+        result = obj
       } else if (typeof obj === 'string') {
         try {
           obj = JSON.parse(obj)
         } catch (error) {
-          throwError()
+          throw new Error(`${name} object is invalid`)
         }
-        if (Object.keys(obj).length) {
-          result = obj
-        }
+        result = obj
       }
-    }
-
-    if (!result) {
-      throwError()
     }
 
     return result
