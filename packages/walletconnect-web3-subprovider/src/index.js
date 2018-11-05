@@ -50,7 +50,7 @@ export default class WalletConnectSubprovider extends Subprovider {
     return this._walletconnect.initSession()
   }
 
-  async listenSessionStatus(interval=800, timeout=30000) {
+  async listenSessionStatus(interval, timeout) {
     await this.session
     return this._walletconnect.listenSessionStatus(interval, timeout)
   }
@@ -59,7 +59,6 @@ export default class WalletConnectSubprovider extends Subprovider {
     const result = this._walletconnect.stopLastListener()
     return result
   }
-
 
   setEngine(engine) {
     this.engine = engine
@@ -82,6 +81,7 @@ export default class WalletConnectSubprovider extends Subprovider {
       case 'eth_sendRawTransaction':
       case 'eth_sign':
       case 'eth_signTypedData':
+      case 'eth_signTypedData_v1':
       case 'eth_signTypedData_v3':
       case 'personal_sign':
         try {

@@ -77,6 +77,17 @@ export default class WalletConnect extends Connector {
   }
 
   //
+  //  Kill active session
+  //
+  killSession() {
+    this.sessionId = null
+    this.symKey = null
+    this.expires = null
+    this.isConnected = false
+    this.deleteLocalSession()
+  }
+
+  //
   //  Send Transaction
   //
   async sendTransaction(tx = {}) {
@@ -122,7 +133,7 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  //  Create call
+  //  Create call request
   //
   async createCallRequest(payload) {
     if (!this.isConnected) {
