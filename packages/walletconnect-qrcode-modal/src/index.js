@@ -77,7 +77,7 @@ function open(uri, cb) {
     .getElementById('walletconnect-qrcode-close')
     .addEventListener('click', () => {
       close()
-      cb()
+      cb ? cb() : null
     })
 }
 
