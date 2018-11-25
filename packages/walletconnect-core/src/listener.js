@@ -23,7 +23,10 @@ export default class Listener {
     this.timeoutId = setTimeout(() => {
       this.stop()
       if (!this._success) {
-        this.opts.cb(new Error(), null)
+        this.opts.cb(
+          new Error(`Listener timeout after ${this.opts.timeout} ms`),
+          null
+        )
       }
     }, this.opts.timeout)
 
