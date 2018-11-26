@@ -80,9 +80,10 @@ export default class WalletConnect extends Connector {
   //  Kill active session
   //
   killSession() {
-    this.sessionId = null
-    this.symKey = null
+    this.sessionId = ''
+    this.symKey = ''
     this.expires = null
+    this.accounts = []
     this.isConnected = false
     this.deleteLocalSession()
   }
@@ -92,28 +93,34 @@ export default class WalletConnect extends Connector {
   //
   async sendTransaction(tx = {}) {
     try {
-      const result = await this.createCallRequest({
+      const response = await this.createCallRequest({
         method: 'eth_sendTransaction',
         params: [tx]
       })
-      return result
+      if (!response.approved) {
+        throw new Error('Rejected: Signed Transaction Request')
+      }
+      return response.result
     } catch (error) {
-      throw new Error('Rejected: Signed Transaction Request')
+      throw error
     }
   }
 
   //
   //  Sign Message
   //
-  async signMessage(msg) {
+  async signMessage(msgParams) {
     try {
-      const result = await this.createCallRequest({
+      const response = await this.createCallRequest({
         method: 'eth_sign',
-        params: [msg]
+        params: [...msgParams]
       })
-      return result
+      if (!response.approved) {
+        throw new Error('Rejected: Signed Message Request')
+      }
+      return response.result
     } catch (error) {
-      throw new Error('Rejected: Signed Message Request')
+      throw error
     }
   }
 
@@ -122,13 +129,16 @@ export default class WalletConnect extends Connector {
   //
   async signTypedData(msgParams) {
     try {
-      const result = await this.createCallRequest({
+      const response = await this.createCallRequest({
         method: 'eth_signTypedData',
-        params: [msgParams]
+        params: [...msgParams]
       })
-      return result
+      if (!response.approved) {
+        throw new Error('Rejected: Signed TypedData Request')
+      }
+      return response.result
     } catch (error) {
-      throw new Error('Rejected: Signed TypedData Request')
+      throw error
     }
   }
 
@@ -158,13 +168,12 @@ export default class WalletConnect extends Connector {
         dappName: this.dappName
       }
     )
+    try {
+      const response = await this.listenCallStatus(body.callId)
 
-    const response = await this.listenCallStatus(body.callId)
-
-    if (response.approved) {
-      return response.result
-    } else {
-      throw new Error('Rejected Call Request')
+      return response
+    } catch (error) {
+      throw error
     }
   }
 
