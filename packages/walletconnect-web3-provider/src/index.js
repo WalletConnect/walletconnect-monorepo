@@ -1,3 +1,5 @@
+import 'idempotent-babel-polyfill'
+
 import ProviderEngine from 'web3-provider-engine'
 import RpcSubprovider from 'web3-provider-engine/subproviders/rpc'
 import WalletConnectSubprovider from 'walletconnect-web3-subprovider'

@@ -1,3 +1,5 @@
+import 'idempotent-babel-polyfill'
+
 import WalletConnect from 'walletconnect'
 import Subprovider from './subprovider'
 

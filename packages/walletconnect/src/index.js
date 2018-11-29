@@ -1,5 +1,7 @@
 /* global window */
 
+import 'idempotent-babel-polyfill'
+
 import { Connector } from 'js-walletconnect-core'
 
 const localStorageId = 'wcsmngt'

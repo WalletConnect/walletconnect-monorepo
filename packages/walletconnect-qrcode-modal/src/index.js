@@ -1,5 +1,7 @@
 /* global window setTimeout */
 
+import 'idempotent-babel-polyfill'
+
 let document = null
 if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
   document = window.document

@@ -1,3 +1,5 @@
+import 'idempotent-babel-polyfill'
+
 import { Connector } from 'js-walletconnect-core'
 
 export default class WalletConnector extends Connector {
