@@ -50,6 +50,11 @@ if (webConnector.isConnected) {
 }
 
 /**
+ * Get chainId
+ */
+const chainId = webConnector.chainId;
+
+/**
  *  Draft transaction
  */
 const tx = {

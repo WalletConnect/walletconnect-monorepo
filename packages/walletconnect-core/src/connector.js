@@ -408,9 +408,9 @@ export default class Connector {
       symKey: this.symKey,
       dappName: this.dappName,
       protocol: this.protocol,
+      chainId: this.chainId,
       expires: this.expires,
-      accounts: this.accounts,
-      uri: this.uri
+      accounts: this.accounts
     }
   }
 

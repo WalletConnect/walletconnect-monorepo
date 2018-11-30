@@ -32,20 +32,20 @@ import RNWalletConnect from 'rn-walletconnect-wallet'
  *  Create WalletConnector
  */
 const walletConnector = new RNWalletConnect({
-  uri: 'ethereum:wc-8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=',
-  push: {
+  uri: 'ethereum:wc-8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=',  // Required
+  push: {                                                                 // Optional
     type: 'fcm',
     token: 'cSgGd8BWURk:APA91bGXsLd_...YdFbutyfc8pScl0Qe8-',
     webhook: 'https://push.walletconnect.org/notification/new',
   }
 })
 
-
 /**
  *  Approve Session
  */
 await walletConnector.approveSession({
-  accounts: [
+  chainId: 1,             //  Required
+  accounts: [             //  Required
     '0x4292...931B3',
     '0xa4a7...784E8',
     ...
@@ -63,6 +63,7 @@ await walletConnector.rejectSession()
  */
 await walletConnector.killSession()
 
+
 /**
  *  Handle push notification events & get call data
  */
@@ -71,17 +72,19 @@ FCM.on(FCMEvent.Notification, event => {
 
   const callData = await walletConnector.getCallRequest(callId);
 
-  // example callData
-  {
+  // example callData for eth_sendTransaction
+  callData {
     method: 'eth_sendTransaction',
-    data: {
-      from: '0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3',
-      to: '0x0',
-      nonce: 1,
-      gas: 100000,
-      value: 0,
-      data: '0x0'
-    }
+    params: [
+      {
+        from: '0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3',
+        to: '0x0',
+        nonce: 1,
+        gas: 100000,
+        value: 0,
+        data: '0x0'
+      }
+    ]
   }
 });
 
@@ -95,9 +98,7 @@ const allCalls = await walletConnector.getAllCallRequests();
  */
 walletConnector.approveCallRequest(
   callId,
-  {
-    result: '0xabcd...873'
-  }
+  '0xabcd...873'
 )
 
 /**

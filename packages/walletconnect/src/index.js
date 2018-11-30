@@ -70,8 +70,7 @@ export default class WalletConnect extends Connector {
     this.expires = body.expires
     this.accounts = []
 
-    const session = this.toJSON()
-    this.saveLocalSession(session)
+    const session = this.saveLocalSession()
 
     return session
   }
@@ -189,11 +188,12 @@ export default class WalletConnect extends Connector {
     if (result) {
       if (result.data.approved) {
         this.expires = result.expires
+        this.chainId = result.data.chainId
         this.accounts = result.data.accounts
+
         this.isConnected = true
 
-        const session = this.toJSON()
-        this.saveLocalSession(session)
+        const session = this.saveLocalSession()
 
         return session
       } else {
@@ -255,8 +255,11 @@ export default class WalletConnect extends Connector {
     return savedSession
   }
 
-  saveLocalSession(session) {
+  saveLocalSession() {
+    const session = this.toJSON()
     localStorage.setItem(localStorageId, JSON.stringify(session))
+
+    return session
   }
 
   deleteLocalSession() {

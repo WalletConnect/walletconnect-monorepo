@@ -12,8 +12,20 @@ export default class WalletConnector extends Connector {
   //
   async approveSession(data) {
     if (!data || typeof data !== 'object') {
-      throw new Error('Data parameter is missing or invalid')
+      throw new Error('Session data is missing or invalid')
     }
+
+    const chainId = data.chainId
+    if (!chainId || typeof chainId !== 'number') {
+      throw new Error('chainId parameter is missing or invalid')
+    }
+    this.chainId = chainId
+
+    const accounts = data.accounts
+    if (!accounts || typeof accounts !== 'number') {
+      throw new Error('accounts parameter is missing or invalid')
+    }
+    this.accounts = accounts
 
     data.approved = true
 
@@ -81,16 +93,15 @@ export default class WalletConnector extends Connector {
   //
   // approve call request
   //
-  async approveCallRequest(callId, data) {
+  async approveCallRequest(callId, callResult) {
     if (!callId) {
       throw new Error('`callId` is required')
     }
 
-    if (!data || typeof data !== 'object') {
-      throw new Error('Data parameter is missing or invalid')
+    const data = {
+      approved: true,
+      result: callResult
     }
-
-    data.approved = true
 
     const encryptionPayload = await this.encrypt(data)
 
