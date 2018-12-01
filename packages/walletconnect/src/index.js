@@ -163,8 +163,7 @@ export default class WalletConnect extends Connector {
         method: 'POST'
       },
       {
-        encryptionPayload,
-        dappName: this.dappName
+        encryptionPayload
       }
     )
     try {
