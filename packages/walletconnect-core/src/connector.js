@@ -446,11 +446,10 @@ export default class Connector {
     let payload = this.checkObject(data, 'payload')
 
     if (payload.id) {
-      delete payload.id
+      payload.id = this.randomId()
     }
 
     return {
-      id: this.randomId(),
       jsonrpc: '2.0',
       params: [],
       ...payload
@@ -486,3 +485,4 @@ export default class Connector {
     return true
   }
 }
+
