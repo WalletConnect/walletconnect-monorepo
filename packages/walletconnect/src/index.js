@@ -143,24 +143,6 @@ export default class WalletConnect extends Connector {
   }
 
   //
-  //  Sign Personal Message
-  //
-  async signPersonalMessage(msgParams) {
-    try {
-      const response = await this.createCallRequest({
-        method: 'personal_sign',
-        params: [...msgParams]
-      })
-      if (!response.approved) {
-        throw new Error('Rejected: Signed Personal Message Request')
-      }
-      return response.result
-    } catch (error) {
-      throw error
-    }
-  }
-
-  //
   //  Create call request
   //
   async createCallRequest(payload) {
@@ -281,4 +263,3 @@ export default class WalletConnect extends Connector {
     localStorage.removeItem(localStorageId)
   }
 }
-
