@@ -445,9 +445,7 @@ export default class Connector {
   formatPayload(data) {
     let payload = this.checkObject(data, 'payload')
 
-    if (payload.id) {
-      payload.id = this.randomId()
-    }
+    payload.id = this.randomId()
 
     return {
       jsonrpc: '2.0',
@@ -485,4 +483,5 @@ export default class Connector {
     return true
   }
 }
+
 
