@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-web3-subprovider",
-  "version": "0.7.27",
+  "version": "0.7.28",
   "description": "Web3 Suprovider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -51,6 +51,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "walletconnect": "^0.7.27"
+    "walletconnect": "^0.7.28"
   }
 }
