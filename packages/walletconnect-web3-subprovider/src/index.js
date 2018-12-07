@@ -79,7 +79,7 @@ export default class WalletConnectSubprovider extends Subprovider {
       case 'personal_sign':
         try {
           const result = await this._walletconnect.createCallRequest(payload)
-          end(null, result)
+          end(null, result.result)
         } catch (err) {
           end(err)
         }
