@@ -14,7 +14,6 @@ export default class Connector {
     this.sessionId = options.sessionId
     this.symKey = options.symKey
     this.dappName = options.dappName
-    this.protocol = options.protocol || 'ethereum'
     this.chainId = options.chainId || 1
     this.expires = options.expires || null
     this.accounts = options.accounts || []
@@ -85,11 +84,9 @@ export default class Connector {
       return
     }
     const session = this._parseWalletConnectURI(string)
-    this.protocol = session.protocol
     this.bridgeUrl = session.bridgeUrl
     this.sessionId = session.sessionId
     this.symKey = session.symKey
-    this.dappName = session.dappName
   }
 
   async encrypt(data, customIv = null) {
@@ -166,10 +163,9 @@ export default class Connector {
   //  Format ERC-681 - Transaction Request Standard URI Format
   //
   formatTransactionRequest(tx) {
-    const protocol = this.protocol
     const targetAddress = tx.to
     const chainId = this.chainId
-    let uri = `${protocol}:pay-${targetAddress}@${chainId}`
+    let uri = `ethereum:pay-${targetAddress}@${chainId}`
 
     if (tx.functionName) {
       uri += '/' + tx.functionName
@@ -202,10 +198,6 @@ export default class Connector {
         throw new Error('chainId does not match')
       }
 
-      if (result.protocol !== this.protocol) {
-        throw new Error('Protocol does not match')
-      }
-
       return result
     } else {
       throw new Error('URI string doesn\'t follow ERC-681 standard')
@@ -218,11 +210,6 @@ export default class Connector {
   //  Format ERC-1328 - WalletConnect Standard URI Format
   //
   _formatWalletConnectURI() {
-    const protocol = this.protocol || ''
-    if (!protocol || typeof protocol !== 'string') {
-      throw new Error('protocol parameter is missing or invalid')
-    }
-
     const sessionId = this.sessionId || ''
     if (!sessionId || typeof sessionId !== 'string') {
       throw new Error('sessionId parameter is missing or invalid')
@@ -231,11 +218,6 @@ export default class Connector {
     const version = '1'
     if (!version || typeof version !== 'string') {
       throw new Error('version parameter is missing or invalid')
-    }
-
-    const name = encodeURIComponent(this.dappName) || ''
-    if (!name || typeof name !== 'string') {
-      throw new Error('name parameter is missing or invalid')
     }
 
     const bridgeUrl = encodeURIComponent(this.bridgeUrl) || ''
@@ -248,7 +230,7 @@ export default class Connector {
       throw new Error('symKey parameter is missing or invalid')
     }
 
-    const uri = `${protocol}:wc-${sessionId}@${version}?name=${name}&bridge=${bridgeUrl}&symKey=${symKey}`
+    const uri = `ethereum:wc-${sessionId}@${version}?bridge=${bridgeUrl}&symKey=${symKey}`
     return uri
   }
 
@@ -270,22 +252,12 @@ export default class Connector {
         throw Error('Missing symKey field')
       }
 
-      if (!result.name) {
-        throw Error('Missing dapp name field')
-      }
-
-      if (result.protocol !== this.protocol) {
-        throw new Error('Protocol does not match')
-      }
-
       const symKey = Buffer.from(result.symKey, 'base64')
 
       const session = {
-        protocol: result.protocol,
         version: result.version,
         sessionId: result.sessionId,
         bridgeUrl: result.bridge,
-        dappName: result.name,
         symKey: symKey
       }
       return session
@@ -407,7 +379,6 @@ export default class Connector {
       sessionId: this.sessionId,
       symKey: this.symKey,
       dappName: this.dappName,
-      protocol: this.protocol,
       chainId: this.chainId,
       expires: this.expires,
       accounts: this.accounts
@@ -483,5 +454,3 @@ export default class Connector {
     return true
   }
 }
-
-

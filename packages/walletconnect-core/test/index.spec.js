@@ -29,22 +29,6 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
       expect(connector).to.be.instanceOf(Connector)
     })
 
-    describe('protocol', () => {
-      let protocol = null
-
-      beforeEach(() => {
-        protocol = connector.protocol
-      })
-
-      it('exists', () => {
-        expect(protocol).to.exist
-      })
-
-      it('defaults to ethereum', () => {
-        expect(protocol).to.equal('ethereum')
-      })
-    })
-
     describe('chainId', () => {
       let chainId = null
 
@@ -107,11 +91,6 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
 
       it('result is a string', () => {
         expect(formattedURI).to.be.a('string')
-      })
-
-      it('result starts with protocol', () => {
-        const protocol = connector.protocol
-        expect(formattedURI.startsWith(protocol)).to.be.true
       })
     })
 
