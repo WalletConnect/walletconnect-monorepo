@@ -97,7 +97,8 @@ export default class WalletConnect extends Connector {
         params: [tx]
       })
       if (!response.approved) {
-        throw new Error('Rejected: Signed Transaction Request')
+        const error = response.error || 'Rejected: Signed Transaction Request'
+        throw new Error(error)
       }
       return response.result
     } catch (error) {
@@ -115,7 +116,8 @@ export default class WalletConnect extends Connector {
         params: [...msgParams]
       })
       if (!response.approved) {
-        throw new Error('Rejected: Signed Message Request')
+        const error = response.error || 'Rejected: Signed Message Request'
+        throw new Error(error)
       }
       return response.result
     } catch (error) {
@@ -133,7 +135,8 @@ export default class WalletConnect extends Connector {
         params: [...msgParams]
       })
       if (!response.approved) {
-        throw new Error('Rejected: Signed TypedData Request')
+        const error = response.error || 'Rejected: Signed TypedData Request'
+        throw new Error(error)
       }
       return response.result
     } catch (error) {
@@ -196,8 +199,9 @@ export default class WalletConnect extends Connector {
 
         return session
       } else {
+        const error = result.data.error || 'Rejected: Signed TypedData Request'
         this.isConnected = false
-        return null
+        throw new Error(error)
       }
     }
 

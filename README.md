@@ -185,7 +185,7 @@ const walletConnector = new RNWalletConnect({
 })
 
 /**
- *  Approve Session
+ *  Approve Session (send chainId and accounts)
  */
 await walletConnector.approveSession({
   chainId: 1,             //  Required
@@ -197,9 +197,11 @@ await walletConnector.approveSession({
 })
 
 /**
- *  Reject Session
+ *  Reject Session (optionally send custom error message)
  */
-await walletConnector.rejectSession()
+await walletConnector.rejectSession(
+  'Custom Error Message'     // Optional
+)
 
 
 /**
@@ -238,18 +240,19 @@ FCM.on(FCMEvent.Notification, event => {
 const allCalls = await walletConnector.getAllCallRequests();
 
 /**
- *  Approve and share call result
+ *  Approve call request (send call result)
  */
 walletConnector.approveCallRequest(
-  callId,
-  '0xabcd...873'
+  callId,                    // Required
+  '0xabcd...873'             // Required
 )
 
 /**
- *  Reject call request
+ *  Reject call request (optionally send custom error message)
  */
 walletConnector.rejectCallRequest(
-  callId
+  callId,                    // Required
+  'Custom Error Message'     // Optional
 )
 ```
 

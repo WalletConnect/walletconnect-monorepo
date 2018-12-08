@@ -47,8 +47,8 @@ export default class WalletConnector extends Connector {
   //
   // reject session
   //
-  async rejectSession() {
-    const data = { approved: false }
+  async rejectSession(error) {
+    const data = { approved: false, error: error }
 
     const encryptionPayload = await this.encrypt(data)
 
@@ -115,12 +115,12 @@ export default class WalletConnector extends Connector {
   //
   // reject call request
   //
-  async rejectCallRequest(callId) {
+  async rejectCallRequest(callId, error) {
     if (!callId) {
       throw new Error('`callId` is required')
     }
 
-    const data = { approved: false }
+    const data = { approved: false, error: error }
 
     const encryptionPayload = await this.encrypt(data)
 
