@@ -1,6 +1,7 @@
 /* global window */
 
 import { Connector } from 'js-walletconnect-core'
+import getWebsiteData from './getWebsiteData'
 
 const localStorageId = 'wcsmngt'
 let localStorage = null
@@ -46,7 +47,6 @@ export default class WalletConnect extends Connector {
       this.bridgeUrl = currentSession.bridgeUrl
       this.sessionId = currentSession.sessionId
       this.symKey = currentSession.symKey
-      this.dappName = currentSession.dappName
       this.expires = currentSession.expires
       this.isConnected = true
     } else {
@@ -62,9 +62,21 @@ export default class WalletConnect extends Connector {
   async createSession() {
     this.symKey = await this.generateKey()
 
-    const body = await this._fetchBridge('/session/new', {
-      method: 'POST'
-    })
+    // get website data
+    const data = getWebsiteData()
+
+    // encrypt data
+    const encryptionPayload = await this.encrypt(data)
+
+    const body = await this._fetchBridge(
+      '/session/new',
+      {
+        method: 'POST'
+      },
+      {
+        encryptionPayload
+      }
+    )
 
     this.sessionId = body.sessionId
     this.expires = body.expires

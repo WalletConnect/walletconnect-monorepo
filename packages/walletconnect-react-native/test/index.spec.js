@@ -16,7 +16,6 @@ describe('// ------------- rn-walletconnect-wallet ------------- //', () => {
   //
   // let config = {
   //   bridgeUrl: 'https://test-bridge.walletconnect.org',
-  //   dappName: 'Example'
   // }
   //
   // beforeEach(async() => {

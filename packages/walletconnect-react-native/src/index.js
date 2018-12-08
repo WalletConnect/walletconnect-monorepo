@@ -1,172 +1,188 @@
-import { Connector } from 'js-walletconnect-core'
+/* global fetch Promise */
 
-export default class WalletConnector extends Connector {
+import { Utils } from 'js-walletconnect-core'
+import WalletConnector from './walletConnector'
+import {
+  asyncStorageLoadSessions,
+  asyncStorageSaveSession,
+  asyncStorageDeleteSession
+} from './asyncStorage'
+
+export default class WalletConnectController {
   constructor(opts) {
-    super(opts)
-
     this.push = this._checkPushOptions(opts)
+    this.walletConnectors = {}
   }
 
-  //
-  // approve session
-  //
-  async approveSession(data) {
-    if (!data || typeof data !== 'object') {
-      throw new Error('Session data is missing or invalid')
+  async init() {
+    const liveSessions = {}
+    let savedSessions = {}
+    try {
+      savedSessions = await asyncStorageLoadSessions()
+    } catch (err) {
+      throw err
     }
+    const savedSessionIds = savedSessions ? Object.keys(savedSessions) : []
+    if (savedSessions && savedSessionIds.length) {
+      try {
+        await Promise.all(
+          savedSessionIds.map(async sessionId => {
+            const now = Date.now()
+            const session = savedSessions[sessionId]
+            if (session.expires > now) {
+              liveSessions[sessionId] = session
+            } else {
+              try {
+                await asyncStorageDeleteSession(session)
+              } catch (err) {
+                throw err
+              }
+            }
+          })
+        )
+      } catch (err) {
+        throw err
+      }
+      const liveSessionIds = liveSessions ? Object.keys(liveSessions) : {}
+      if (liveSessions && liveSessionIds.length) {
+        try {
+          await Promise.all(
+            liveSessionIds.map(async sessionId => {
+              const session = liveSessions[sessionId]
 
-    const chainId = data.chainId
-    if (!chainId || typeof chainId !== 'number') {
-      throw new Error('chainId parameter is missing or invalid')
+              const walletConnector = await this.generateWalletConnector(
+                session
+              )
+
+              this.setWalletConnector(sessionId, walletConnector)
+            })
+          )
+        } catch (err) {
+          throw err
+        }
+      }
     }
-    this.chainId = chainId
-
-    const accounts = data.accounts
-    if (!accounts || typeof accounts !== 'number') {
-      throw new Error('accounts parameter is missing or invalid')
-    }
-    this.accounts = accounts
-
-    data.approved = true
-
-    const encryptionPayload = await this.encrypt(data)
-
-    const result = await this.sendSessionStatus({
-      push: this.push,
-      encryptionPayload
-    })
-
-    this.expires = result.expires
-    this.isConnected = true
-
-    const session = this.toJSON()
-
-    return session
+    return liveSessions
   }
 
-  //
-  // reject session
-  //
-  async rejectSession(error) {
-    const data = { approved: false, error: error }
+  async generateWalletConnector(uri) {
+    let session = Utils.parseWalletConnectURI(uri)
 
-    const encryptionPayload = await this.encrypt(data)
+    const walletConnector = new WalletConnector(session, this.push.webhook)
 
-    await this.sendSessionStatus({
-      push: null,
-      encryptionPayload
-    })
+    const sessionId = walletConnector.sessionId
 
-    this.isConnected = false
-
-    const session = this.toJSON()
-
-    return session
-  }
-
-  //
-  // send session status
-  //
-  async sendSessionStatus(sessionStatus = {}) {
-    const result = await this._fetchBridge(
-      `/session/${this.sessionId}`,
-      { method: 'PUT' },
-      sessionStatus
+    const result = await walletConnector._getEncryptedData(
+      `/session/${sessionId}`
     )
 
-    return result
-  }
+    if (result) {
+      const dappData = result.data
 
-  //
-  // kill session
-  //
-  async killSession() {
-    const result = await this._fetchBridge(`/session/${this.sessionId}`, {
-      method: 'DELETE'
-    })
+      walletConnector.dappData = dappData
 
-    this.isConnected = false
+      await this._fetchPush(sessionId, dappData.name)
 
-    return result
-  }
+      this._setWalletConnector(sessionId, walletConnector)
 
-  //
-  // approve call request
-  //
-  async approveCallRequest(callId, callResult) {
-    if (!callId) {
-      throw new Error('`callId` is required')
+      return walletConnector
+    } else {
+      throw new Error('Failed to get Session Request data')
     }
-
-    const data = {
-      approved: true,
-      result: callResult
-    }
-
-    const encryptionPayload = await this.encrypt(data)
-
-    const result = await this.sendCallStatus(callId, {
-      encryptionPayload
-    })
-
-    return result
   }
 
-  //
-  // reject call request
-  //
-  async rejectCallRequest(callId, error) {
-    if (!callId) {
-      throw new Error('`callId` is required')
+  async approveWalletConnector({ sessionId, chainId, accounts }) {
+    const walletConnector = this._getWalletConnector(sessionId)
+
+    const session = await walletConnector.approveSession({ chainId, accounts })
+
+    try {
+      await asyncStorageSaveSession(session)
+    } catch (err) {
+      throw err
     }
-
-    const data = { approved: false, error: error }
-
-    const encryptionPayload = await this.encrypt(data)
-
-    const result = await this.sendCallStatus(callId, {
-      encryptionPayload
-    })
-
-    return result
   }
 
-  //
-  // Send call status
-  //
-  async sendCallStatus(callId, callStatus) {
-    await this._fetchBridge(
-      `/call-status/${callId}/new`,
-      { method: 'POST' },
-      callStatus
-    )
+  async rejectWalletConnector({ sessionId, error }) {
+    const walletConnector = this._getWalletConnector(sessionId)
+
+    const session = await walletConnector.rejectSession(error)
+
+    try {
+      await asyncStorageDeleteSession(session)
+    } catch (err) {
+      throw err
+    }
+  }
+
+  async killWalletConnector({ sessionId }) {
+    const walletConnector = this._getWalletConnector(sessionId)
+
+    const session = await walletConnector.killSession()
+
+    try {
+      await asyncStorageDeleteSession(session)
+    } catch (err) {
+      throw err
+    }
+  }
+
+  async getCallRequests({ sessionId }) {
+    const walletConnector = this._getWalletConnector(sessionId)
+
+    const allCallRequests = await walletConnector.getAllCallRequests()
+
+    return allCallRequests
+  }
+
+  async approveCallRequest({ sessionId, callId, callResult }) {
+    const walletConnector = this._getWalletConnector(sessionId)
+
+    await walletConnector.approveCallRequest(callId, callResult)
 
     return true
   }
 
-  //
-  // get call request data
-  //
-  async getCallRequest(callId) {
-    if (!callId) {
-      throw new Error('callId is required')
-    }
+  async rejectCallRequest({ sessionId, callId, error }) {
+    const walletConnector = this._getWalletConnector(sessionId)
 
-    return this._getEncryptedData(`/session/${this.sessionId}/call/${callId}`)
-  }
+    await walletConnector.rejectCallRequest(callId, error)
 
-  //
-  // get all call requests data
-  //
-  async getAllCallRequests() {
-    return this._getMultipleEncryptedData(`/session/${this.sessionId}/calls`)
+    return true
   }
 
   // -- Private Methods ----------------------------------------------------- //
 
-  //
-  //  Checks Push Options are present or valid type
-  //
+  async _fetchPush(sessionId, dappName) {
+    const push = this.push
+
+    const response = await fetch(push.database, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sessionId: sessionId,
+        type: push.type,
+        token: push.token,
+        dappName: dappName,
+        language: push.language
+      })
+    })
+    return response
+  }
+
+  _setWalletConnector(sessionId, walletConnector) {
+    this.walletConnectors[sessionId] = walletConnector
+    return true
+  }
+
+  _getWalletConnector(sessionId) {
+    const walletConnector = this.walletConnectors[sessionId]
+    return walletConnector
+  }
+
   _checkPushOptions(opts) {
     if (!opts.push || typeof opts.push !== 'object') {
       return null
@@ -181,7 +197,7 @@ export default class WalletConnector extends Connector {
     )
 
     if (!push.type || typeof push.type !== 'string') {
-      throw new Error('Push type option is missing or invalid')
+      throw new Error('Push type parameter is missing or invalid')
     } else if (!supportedTypes.includes(push.type.toLowerCase())) {
       throw new Error(
         `Push type must be one of the following: ${supportedString}`
@@ -189,11 +205,19 @@ export default class WalletConnector extends Connector {
     }
 
     if (!push.token || typeof push.token !== 'string') {
-      throw new Error('Push token option is missing or invalid')
+      throw new Error('Push token parameter is missing or invalid')
     }
 
     if (!push.webhook || typeof push.webhook !== 'string') {
-      throw new Error('Push webhook option is missing or invalid')
+      throw new Error('Push webhook parameter is missing or invalid')
+    }
+
+    if (!push.database || typeof push.database !== 'string') {
+      throw new Error('Push database parameter is missing or invalid')
+    }
+
+    if (push.language && typeof push.language !== 'string') {
+      throw new Error('Push language parameter is invalid')
     }
 
     return push

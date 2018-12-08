@@ -11,7 +11,6 @@ describe('// ------------------ walletconnect ------------------ //', () => {
   it('needs tests', () => {})
   // let config = {
   //   bridgeUrl: 'https://test-bridge.walletconnect.org',
-  //   dappName: 'ExampleDapp'
   // }
   //
   // let webConnector = null

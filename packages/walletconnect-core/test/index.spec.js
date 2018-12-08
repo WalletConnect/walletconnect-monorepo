@@ -13,7 +13,6 @@ describe('// ------------- js-walletconnect-core ------------- //', () => {
   describe('Connector class', () => {
     let config = {
       bridgeUrl: 'https://test-bridge.walletconnect.org',
-      dappName: 'ExampleDapp',
       sessionId: '8a5e5bdc-a0e4-4702-ba63-8f1a5655744f',
       symKey: null
     }

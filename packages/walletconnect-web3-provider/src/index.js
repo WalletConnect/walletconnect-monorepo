@@ -8,11 +8,6 @@ export default function(opts) {
     throw new Error('Missing or Invalid bridgeUrl field')
   }
 
-  const dappName = opts.dappName || null
-  if (!dappName || typeof dappName !== 'string') {
-    throw new Error('Missing or Invalid dappName field')
-  }
-
   const rpcUrl = opts.rpcUrl || null
   if (!rpcUrl || typeof rpcUrl !== 'string') {
     throw new Error('Missing or Invalid rpcUrl field')

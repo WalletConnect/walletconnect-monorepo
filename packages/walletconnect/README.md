@@ -23,8 +23,7 @@ import WalletConnect from "walletconnect";
  *  Create a webConnector
  */
 const webConnector = new WalletConnect({
-  bridgeUrl: "https://test-bridge.walletconnect.org", // Required
-  dappName: "INSERT_DAPP_NAME" // Required
+  bridgeUrl: "https://test-bridge.walletconnect.org" // Required
 });
 
 /**

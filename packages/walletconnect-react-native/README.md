@@ -29,23 +29,47 @@ rn-nodeify --install "crypto" --hack
 import RNWalletConnect from 'rn-walletconnect-wallet'
 
 /**
- *  Create WalletConnector
+ *  Create WalletConnect Controller
  */
-const walletConnector = new RNWalletConnect({
-  uri: 'ethereum:wc-8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=',  // Required
-  push: {                                                                 // Optional
+const WalletConnectController = new RNWalletConnect({
+  push: {                                                                // Optional
     type: 'fcm',
     token: 'cSgGd8BWURk:APA91bGXsLd_...YdFbutyfc8pScl0Qe8-',
     webhook: 'https://push.walletconnect.org/notification/new',
+    database: 'https://push.walletconnect.org/notification/data',
+    language: 'en'
   }
 })
+
+
+/**
+ *  Initiate WalletConnect Controller (on App load)
+ */
+WalletConnectController.init()
+
+/**
+ *  Generate new session from scanned URI on QR Code
+ */
+const walletConnector = WalletConnectController.generateWalletConnector(
+  'ethereum:wc-8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U='  // Required
+)
+
+/**
+ *  Handle deep linking events
+ */
+Linking.addEventListener('url', event => {
+  const uri = event.url
+
+  const walletConnector = WalletConnectController.generateWalletConnector(uri)
+});
 
 /**
  *  Approve Session (send chainId and accounts)
  */
-await walletConnector.approveSession({
-  chainId: 1,             //  Required
-  accounts: [             //  Required
+await WalletConnectController.approveWalletConnector({
+  sessionId: walletConnector.sessionId        //  Required
+  chainId: 1,                                 //  Required
+  accounts: [                                 //  Required
     '0x4292...931B3',
     '0xa4a7...784E8',
     ...
@@ -55,59 +79,80 @@ await walletConnector.approveSession({
 /**
  *  Reject Session (optionally send custom error message)
  */
-await walletConnector.rejectSession(
-  'Custom Error Message'     // Optional
-)
+await WalletConnectController.rejectWalletConnector({
+  sessionId: walletConnector.sessionId        //  Required
+  error: 'Custom Error Message'               //  Optional
+})
 
 
 /**
  *  Kill Session
  */
-await walletConnector.killSession()
+await WalletConnectController.killWalletConnector({
+  sessionId: walletConnector.sessionId        //  Required
+})
 
 
 /**
- *  Handle push notification events & get call data
+ *  Handle push notification events
  */
-FCM.on(FCMEvent.Notification, event => {
-  const { sessionId, callId } = event;
+PushNotificationService.on('notification', event => {
+  const { sessionId, callId } = event.data;
 
-  const callData = await walletConnector.getCallRequest(callId);
+  // Get Call Request data
+  const callRequest = await WalletConnectController.onCallRequest({
+    sessionId: sessionId,
+    callId: callId
+  })
 
-  // example callData for eth_sendTransaction
-  callData {
-    method: 'eth_sendTransaction',
+  // Display Call Request
+  callRequest {
+    id: 15423847283472,
+    jsonrpc: '2.0',
+    method: 'eth_sign',
     params: [
-      {
-        from: '0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3',
-        to: '0x0',
-        nonce: 1,
-        gas: 100000,
-        value: 0,
-        data: '0x0'
-      }
+      '0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3',
+      'Are you Bob?'
     ]
   }
-});
+})
+
 
 /**
- *  Get all calls from bridge
+ *  Get all pending call requests
  */
-const allCalls = await walletConnector.getAllCallRequests();
+const allCallRequests = await WalletConnectController.getCallRequests({
+  sessionId: walletConnector.sessionId        //  Required
+});
+
+// allCallRequests sample
+allCallRequests {
+  '8668929c-00ea-4885-b03a-4220eb1c00fb': {
+    id: 15423847283472,
+    jsonrpc: '2.0',
+    method: 'eth_sign',
+    params: [
+      '0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3',
+      'Are you Bob?'
+    ]
+  }
+}
 
 /**
  *  Approve call request (send call result)
  */
-walletConnector.approveCallRequest(
-  callId,                    // Required
-  '0xabcd...873'             // Required
-)
+await WalletConnectController.approveCallRequest({
+  sessionId: walletConnector.sessionId,       //  Required
+  callId: callRequest.callId,                 //  Required
+  result: '0xabcd...873'                      //  Required
+})
 
 /**
  *  Reject call request (optionally send custom error message)
  */
-walletConnector.rejectCallRequest(
-  callId,                    // Required
-  'Custom Error Message'     // Optional
+await WalletConnectController.rejectCallRequest({
+  sessionId: walletConnector.sessionId,       //  Required
+  callId: callRequest.callId,                 //  Required
+  error: 'Custom Error Message'               //  Optional
 )
 ```

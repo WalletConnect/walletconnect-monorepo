@@ -1,7 +1,6 @@
 /* global fetch Buffer Promise */
 
 import crypto from 'crypto'
-import ethParseUri from 'eth-parse-uri'
 import Listener from './listener'
 
 const AES_ALGORITHM = 'AES-256-CBC'
@@ -13,7 +12,6 @@ export default class Connector {
     this.bridgeUrl = options.bridgeUrl
     this.sessionId = options.sessionId
     this.symKey = options.symKey
-    this.dappName = options.dappName
     this.chainId = options.chainId || 1
     this.expires = options.expires || null
     this.accounts = options.accounts || []
@@ -159,51 +157,6 @@ export default class Connector {
     return result
   }
 
-  //
-  //  Format ERC-681 - Transaction Request Standard URI Format
-  //
-  formatTransactionRequest(tx) {
-    const targetAddress = tx.to
-    const chainId = this.chainId
-    let uri = `ethereum:pay-${targetAddress}@${chainId}`
-
-    if (tx.functionName) {
-      uri += '/' + tx.functionName
-    }
-
-    if (tx.parameters) {
-      let params = ''
-      let keys = Object.keys(tx.parameters)
-      while (keys.length) {
-        let key = keys.pop()
-        let val = tx.parameters[key].toString()
-        params += key + '=' + encodeURIComponent(val)
-        if (keys.length) {
-          params += '&'
-        }
-      }
-      uri += '?' + params
-    }
-
-    return uri
-  }
-
-  //
-  // Parse ERC-681 - Transaction Request Standard URI Format
-  //
-  parseTransactionRequest(string) {
-    const result = ethParseUri(string)
-    if (result.prefix && result.prefix === 'pay') {
-      if (result.chainId !== this.chainId) {
-        throw new Error('chainId does not match')
-      }
-
-      return result
-    } else {
-      throw new Error('URI string doesn\'t follow ERC-681 standard')
-    }
-  }
-
   // -- Private Methods ----------------------------------------------------- //
 
   //
@@ -232,38 +185,6 @@ export default class Connector {
 
     const uri = `ethereum:wc-${sessionId}@${version}?bridge=${bridgeUrl}&symKey=${symKey}`
     return uri
-  }
-
-  //
-  //  Parse ERC-1328 - WalletConnect Standard URI Format
-  //
-  _parseWalletConnectURI(string) {
-    const result = ethParseUri(string)
-    if (result.prefix && result.prefix === 'wc') {
-      if (!result.sessionId) {
-        throw Error('Missing sessionId field')
-      }
-
-      if (!result.bridge) {
-        throw Error('Missing bridge url field')
-      }
-
-      if (!result.symKey) {
-        throw Error('Missing symKey field')
-      }
-
-      const symKey = Buffer.from(result.symKey, 'base64')
-
-      const session = {
-        version: result.version,
-        sessionId: result.sessionId,
-        bridgeUrl: result.bridge,
-        symKey: symKey
-      }
-      return session
-    } else {
-      throw new Error('URI string doesn\'t follow ERC-1328 standard')
-    }
   }
 
   //
@@ -378,7 +299,6 @@ export default class Connector {
       bridgeUrl: this.bridgeUrl,
       sessionId: this.sessionId,
       symKey: this.symKey,
-      dappName: this.dappName,
       chainId: this.chainId,
       expires: this.expires,
       accounts: this.accounts
