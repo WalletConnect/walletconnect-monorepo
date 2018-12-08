@@ -48,14 +48,16 @@ const WalletConnectController = new RNWalletConnect({
 WalletConnectController.init()
 
 /**
- *  Generate new session from scanned URI on QR Code
+ *  Handle scanned QR Code (New Session)
  */
-const walletConnector = WalletConnectController.generateWalletConnector(
-  'ethereum:wc-8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U='  // Required
-)
+QRCodeScanner.on('scan', event => {
+  const uri = event.data
+
+  const walletConnector = WalletConnectController.generateWalletConnector(uri)
+})
 
 /**
- *  Handle deep linking events
+ *  Handle depp linking events (New Session)
  */
 Linking.addEventListener('url', event => {
   const uri = event.url
