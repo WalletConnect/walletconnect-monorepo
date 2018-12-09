@@ -12,6 +12,7 @@ export default class WalletConnectController {
   constructor(opts) {
     this.push = this._checkPushOptions(opts)
     this.walletConnectors = {}
+    this.callRequests = {}
   }
 
   async init() {
@@ -100,6 +101,7 @@ export default class WalletConnectController {
 
     try {
       await asyncStorageDeleteSession(session)
+      this._deleteWalletConnector(sessionId)
     } catch (err) {
       throw err
     }
@@ -112,23 +114,42 @@ export default class WalletConnectController {
 
     try {
       await asyncStorageDeleteSession(session)
+      this._deleteWalletConnector(sessionId)
     } catch (err) {
       throw err
     }
   }
 
+  async onCallRequest({ sessionId, callId }) {
+    const walletConnector = this._getWalletConnector(sessionId)
+
+    const callRequest = await walletConnector.getCallRequest(callId)
+
+    this._setCallRequest(callId, callRequest)
+
+    return callRequest
+  }
+
   async getCallRequests({ sessionId }) {
     const walletConnector = this._getWalletConnector(sessionId)
 
-    const allCallRequests = await walletConnector.getAllCallRequests()
+    const newCallRequests = await walletConnector.getAllCallRequests()
 
-    return allCallRequests
+    Object.keys(newCallRequests).forEach(callId => {
+      this._setCallRequest(callId, newCallRequests[callId])
+    })
+
+    const callRequests = this.callRequests
+
+    return callRequests
   }
 
   async approveCallRequest({ sessionId, callId, callResult }) {
     const walletConnector = this._getWalletConnector(sessionId)
 
     await walletConnector.approveCallRequest(callId, callResult)
+
+    this._deleteCallRequest(callId)
 
     return true
   }
@@ -137,6 +158,8 @@ export default class WalletConnectController {
     const walletConnector = this._getWalletConnector(sessionId)
 
     await walletConnector.rejectCallRequest(callId, error)
+
+    this._deleteCallRequest(callId)
 
     return true
   }
@@ -174,6 +197,24 @@ export default class WalletConnectController {
   _getWalletConnector(sessionId) {
     const walletConnector = this.walletConnectors[sessionId]
     return walletConnector
+  }
+
+  _deleteWalletConnector(sessionId) {
+    delete this.walletConnectors[sessionId]
+  }
+
+  _setCallRequest(callId, callRequest) {
+    this.callRequests[callId] = callRequest
+    return true
+  }
+
+  _getCallRequest(callId) {
+    const callRequest = this.callRequests[callId]
+    return callRequest
+  }
+
+  _deleteCallRequest(callId) {
+    delete this.callRequests[callId]
   }
 
   _checkPushOptions(opts) {
