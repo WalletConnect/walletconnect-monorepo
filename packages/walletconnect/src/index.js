@@ -43,11 +43,13 @@ export default class WalletConnect extends Connector {
     let currentSession = liveSession || null
 
     if (currentSession) {
-      this.accounts = currentSession.accounts
       this.bridgeUrl = currentSession.bridgeUrl
       this.sessionId = currentSession.sessionId
       this.symKey = currentSession.symKey
+      this.chainId = currentSession.chainId
       this.expires = currentSession.expires
+      this.dappData = currentSession.dappData
+      this.accounts = currentSession.accounts
       this.isConnected = true
     } else {
       currentSession = await this.createSession()
@@ -62,11 +64,11 @@ export default class WalletConnect extends Connector {
   async createSession() {
     this.symKey = await this.generateKey()
 
-    // get website data
-    const data = getWebsiteData()
+    // get dapp's website data
+    this.dappData = getWebsiteData()
 
     // encrypt data
-    const encryptionPayload = await this.encrypt(data)
+    const encryptionPayload = await this.encrypt(this.dappData)
 
     const body = await this._fetchBridge(
       '/session/new',

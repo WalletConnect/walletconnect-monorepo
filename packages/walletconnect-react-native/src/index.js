@@ -70,23 +70,15 @@ export default class WalletConnectController {
 
     const sessionId = walletConnector.sessionId
 
-    const result = await walletConnector._getEncryptedData(
-      `/session/${sessionId}`
-    )
+    const dappData = await walletConnector.getSessionRequest(sessionId)
 
-    if (result) {
-      const dappData = result.data
+    walletConnector.dappData = dappData
 
-      walletConnector.dappData = dappData
+    await this._fetchPush(sessionId, dappData.name)
 
-      await this._fetchPush(sessionId, dappData.name)
+    this._setWalletConnector(sessionId, walletConnector)
 
-      this._setWalletConnector(sessionId, walletConnector)
-
-      return { sessionId, dappData }
-    } else {
-      throw new Error('Failed to get Session Request data')
-    }
+    return { sessionId, dappData }
   }
 
   async approveSession({ sessionId, chainId, accounts }) {

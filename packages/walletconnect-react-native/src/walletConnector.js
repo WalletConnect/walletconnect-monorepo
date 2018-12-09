@@ -2,6 +2,19 @@ import { Connector } from 'js-walletconnect-core'
 
 export default class WalletConnector extends Connector {
   //
+  // get session request data
+  //
+  async getSessionRequest(sessionId) {
+    const result = await this._getEncryptedData(`/session/${sessionId}`)
+
+    if (result) {
+      return result.data
+    } else {
+      throw new Error('Failed to get Session Request data')
+    }
+  }
+
+  //
   // approve session
   //
   async approveSession(data, pushWebhook) {

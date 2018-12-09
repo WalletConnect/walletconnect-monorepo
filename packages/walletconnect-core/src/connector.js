@@ -15,6 +15,7 @@ export default class Connector {
     this.chainId = options.chainId || 1
     this.expires = options.expires || null
     this.accounts = options.accounts || []
+    this.dappData = options.dappData || null
     this.uri = options.uri || ''
     this.isConnected = false
     this.listeners = []
@@ -301,6 +302,7 @@ export default class Connector {
       symKey: this.symKey,
       chainId: this.chainId,
       expires: this.expires,
+      dappData: this.dappData,
       accounts: this.accounts
     }
   }
