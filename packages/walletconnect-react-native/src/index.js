@@ -85,7 +85,7 @@ export default class WalletConnectController {
 
       this._setWalletConnector(sessionId, walletConnector)
 
-      return walletConnector
+      return { sessionId, dappData }
     } else {
       throw new Error('Failed to get Session Request data')
     }

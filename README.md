@@ -184,7 +184,6 @@ const WalletConnectController = new RNWalletConnect({
   }
 })
 
-
 /**
  *  Initiate WalletConnect Controller (on App load)
  */
@@ -196,7 +195,7 @@ WalletConnectController.init()
 QRCodeScanner.on('scan', event => {
   const uri = event.data
 
-  const walletConnector = WalletConnectController.generateWalletConnector(uri)
+  const session = WalletConnectController.generateWalletConnector(uri)
 })
 
 /**
@@ -205,14 +204,30 @@ QRCodeScanner.on('scan', event => {
 Linking.addEventListener('url', event => {
   const uri = event.url
 
-  const walletConnector = WalletConnectController.generateWalletConnector(uri)
+  const session = WalletConnectController.generateWalletConnector(uri)
 });
+
+// session sample
+session {
+  sessionId: 'c6f552b0-dc1d-4291-8099-b0c941a75477',
+  dappData: {
+    name: 'WalletConnect Example',
+    ssl: true
+    host: "example.walletconnect.org",
+    icons: ["https://example.walletconnect.org/favicon.ico"]
+  }
+}
+
+/**
+ * IMPORTANT!
+ * Display WalletConnect session request using the provided dappData
+ */
 
 /**
  *  Approve Session (send chainId and accounts)
  */
 await WalletConnectController.approveWalletConnector({
-  sessionId: walletConnector.sessionId        //  Required
+  sessionId: session.sessionId        //  Required
   chainId: 1,                                 //  Required
   accounts: [                                 //  Required
     '0x4292...931B3',
@@ -225,7 +240,7 @@ await WalletConnectController.approveWalletConnector({
  *  Reject Session (optionally send custom error message)
  */
 await WalletConnectController.rejectWalletConnector({
-  sessionId: walletConnector.sessionId        //  Required
+  sessionId: session.sessionId        //  Required
   error: 'Custom Error Message'               //  Optional
 })
 
@@ -234,7 +249,7 @@ await WalletConnectController.rejectWalletConnector({
  *  Kill Session
  */
 await WalletConnectController.killWalletConnector({
-  sessionId: walletConnector.sessionId        //  Required
+  sessionId: session.sessionId        //  Required
 })
 
 
@@ -267,7 +282,7 @@ PushNotificationService.on('notification', event => {
  *  Get all pending call requests
  */
 const allCallRequests = await WalletConnectController.getCallRequests({
-  sessionId: walletConnector.sessionId        //  Required
+  sessionId: session.sessionId        //  Required
 });
 
 // allCallRequests sample
@@ -287,7 +302,7 @@ allCallRequests {
  *  Approve call request (send call result)
  */
 await WalletConnectController.approveCallRequest({
-  sessionId: walletConnector.sessionId,       //  Required
+  sessionId: session.sessionId,       //  Required
   callId: callRequest.callId,                 //  Required
   result: '0xabcd...873'                      //  Required
 })
@@ -296,7 +311,7 @@ await WalletConnectController.approveCallRequest({
  *  Reject call request (optionally send custom error message)
  */
 await WalletConnectController.rejectCallRequest({
-  sessionId: walletConnector.sessionId,       //  Required
+  sessionId: session.sessionId,       //  Required
   callId: callRequest.callId,                 //  Required
   error: 'Custom Error Message'               //  Optional
 )
