@@ -195,7 +195,7 @@ WalletConnectController.init()
 QRCodeScanner.on('scan', event => {
   const uri = event.data
 
-  const session = WalletConnectController.generateWalletConnector(uri)
+  const session = WalletConnectController.generateSession(uri)
 })
 
 /**
@@ -204,7 +204,7 @@ QRCodeScanner.on('scan', event => {
 Linking.addEventListener('url', event => {
   const uri = event.url
 
-  const session = WalletConnectController.generateWalletConnector(uri)
+  const session = WalletConnectController.generateSession(uri)
 });
 
 // session sample
@@ -226,7 +226,7 @@ session {
 /**
  *  Approve Session (send chainId and accounts)
  */
-await WalletConnectController.approveWalletConnector({
+await WalletConnectController.approveSession({
   sessionId: session.sessionId        //  Required
   chainId: 1,                                 //  Required
   accounts: [                                 //  Required
@@ -239,7 +239,7 @@ await WalletConnectController.approveWalletConnector({
 /**
  *  Reject Session (optionally send custom error message)
  */
-await WalletConnectController.rejectWalletConnector({
+await WalletConnectController.rejectSession({
   sessionId: session.sessionId        //  Required
   error: 'Custom Error Message'               //  Optional
 })
@@ -248,7 +248,7 @@ await WalletConnectController.rejectWalletConnector({
 /**
  *  Kill Session
  */
-await WalletConnectController.killWalletConnector({
+await WalletConnectController.killSession({
   sessionId: session.sessionId        //  Required
 })
 

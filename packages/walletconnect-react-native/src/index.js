@@ -50,9 +50,7 @@ export default class WalletConnectController {
             liveSessionIds.map(async sessionId => {
               const session = liveSessions[sessionId]
 
-              const walletConnector = await this.generateWalletConnector(
-                session
-              )
+              const walletConnector = await this.generateSession(session)
 
               this.setWalletConnector(sessionId, walletConnector)
             })
@@ -65,7 +63,7 @@ export default class WalletConnectController {
     return liveSessions
   }
 
-  async generateWalletConnector(uri) {
+  async generateSession(uri) {
     let session = Utils.parseWalletConnectURI(uri)
 
     const walletConnector = new WalletConnector(session, this.push.webhook)
@@ -91,7 +89,7 @@ export default class WalletConnectController {
     }
   }
 
-  async approveWalletConnector({ sessionId, chainId, accounts }) {
+  async approveSession({ sessionId, chainId, accounts }) {
     const walletConnector = this._getWalletConnector(sessionId)
 
     const session = await walletConnector.approveSession({ chainId, accounts })
@@ -103,7 +101,7 @@ export default class WalletConnectController {
     }
   }
 
-  async rejectWalletConnector({ sessionId, error }) {
+  async rejectSession({ sessionId, error }) {
     const walletConnector = this._getWalletConnector(sessionId)
 
     const session = await walletConnector.rejectSession(error)
@@ -115,7 +113,7 @@ export default class WalletConnectController {
     }
   }
 
-  async killWalletConnector({ sessionId }) {
+  async killSession({ sessionId }) {
     const walletConnector = this._getWalletConnector(sessionId)
 
     const session = await walletConnector.killSession()
