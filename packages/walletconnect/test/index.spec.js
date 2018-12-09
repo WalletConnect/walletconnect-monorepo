@@ -13,13 +13,13 @@ describe('// ------------------ walletconnect ------------------ //', () => {
   //   bridgeUrl: 'https://test-bridge.walletconnect.org',
   // }
   //
-  // let webConnector = null
+  // let walletConnect = null
   //
   // let session = null
   //
   // beforeEach(async() => {
-  //   webConnector = new WalletConnect(config)
-  //   session = await webConnector.createSession()
+  //   walletConnect = new WalletConnect(config)
+  //   session = await walletConnect.createSession()
   // })
   //
   // it('createSession success', () => {

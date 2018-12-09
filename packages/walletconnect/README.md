@@ -20,38 +20,38 @@ npm install --save walletconnect
 import WalletConnect from "walletconnect";
 
 /**
- *  Create a webConnector
+ *  Create a walletConnect
  */
-const webConnector = new WalletConnect({
+const walletConnect = new WalletConnect({
   bridgeUrl: "https://test-bridge.walletconnect.org" // Required
 });
 
 /**
  *  Initiate WalletConnect session
  */
-await webConnector.initSession();
+await walletConnect.initSession();
 
 /**
  *  Check if connection is already established
  */
-if (webConnector.isConnected) {
+if (walletConnect.isConnected) {
   // If yes, get accounts
-  const accounts = webConnector.accounts;
+  const accounts = walletConnect.accounts;
 } else {
   // If not, prompt the user to scan the QR code
-  const uri = webConnector.uri;
+  const uri = walletConnect.uri;
 
   // Listen for session confirmation from wallet
-  await webConnector.listenSessionStatus();
+  await walletConnect.listenSessionStatus();
 
   // Get accounts after session status is resolved
-  accounts = webConnector.accounts;
+  accounts = walletConnect.accounts;
 }
 
 /**
  * Get chainId
  */
-const chainId = webConnector.chainId;
+const chainId = walletConnect.chainId;
 
 /**
  *  Draft transaction
@@ -70,7 +70,7 @@ const tx = {
  */
 try {
   // Submitted Transaction Hash
-  const result = await webConnector.sendTransaction(tx);
+  const result = await walletConnect.sendTransaction(tx);
 } catch (error) {
   // Rejected Transaction
   console.error(error);
@@ -89,7 +89,7 @@ const msgParams = [
  */
 try {
   // Signed message
-  const result = await webConnector.signMessage(msgParams);
+  const result = await walletConnect.signMessage(msgParams);
 } catch (error) {
   // Rejected signing
   console.error(error);
@@ -116,7 +116,7 @@ const msgParams = [
  */
 try {
   // Signed typed data
-  const result = await webConnector.signTypedData(msgParams);
+  const result = await walletConnect.signTypedData(msgParams);
 } catch (error) {
   // Rejected signing
   console.error(error);
