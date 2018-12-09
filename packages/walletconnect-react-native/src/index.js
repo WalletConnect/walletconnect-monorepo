@@ -154,21 +154,24 @@ export default class WalletConnectController {
   async _fetchPush(sessionId, dappName) {
     const push = this.push
 
-    const response = await fetch(push.database, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sessionId: sessionId,
-        type: push.type,
-        token: push.token,
-        dappName: dappName,
-        language: push.language
+    if (push) {
+      const response = await fetch(push.database, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          type: push.type,
+          token: push.token,
+          dappName: dappName,
+          language: push.language
+        })
       })
-    })
-    return response
+      return response
+    }
+    return null
   }
 
   _setWalletConnector(sessionId, walletConnector) {
