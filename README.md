@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/WalletConnect/walletconnect-monorepo.svg?branch=master)](https://travis-ci.org/WalletConnect/walletconnect-monorepo)
 
-An open source standard for connecting mobile wallets to dapps - https://walletconnect.org
+Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 
 For more documentation go to: https://docs.walletconnect.org
 
