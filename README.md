@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/WalletConnect/walletconnect-monorepo.svg?branch=master)](https://travis-ci.org/WalletConnect/walletconnect-monorepo)
 
-An open source standard for connecting mobile wallets to dapps - https://walletconnect.org
+Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 
 For more documentation go to: https://docs.walletconnect.org
 
@@ -119,15 +119,43 @@ try {
  *  Draft Typed Data
  */
 const msgParams = [
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
   {
-    type: "string",
-    name: "Message",
-    value: "My email is john@doe.com"
-  },
-  {
-    type: "uint32",
-    name: "A number",
-    value: "1537836206101"
+    types: {
+      EIP712Domain: [
+        { name: "name", type: "string" },
+        { name: "version", type: "string" },
+        { name: "chainId", type: "uint256" },
+        { name: "verifyingContract", type: "address" }
+      ],
+      Person: [
+        { name: "name", type: "string" },
+        { name: "account", type: "address" }
+      ],
+      Mail: [
+        { name: "from", type: "Person" },
+        { name: "to", type: "Person" },
+        { name: "contents", type: "string" }
+      ]
+    },
+    primaryType: "Mail",
+    domain: {
+      name: "Example Dapp",
+      version: "0.7.0",
+      chainId: 1,
+      verifyingContract: "0x0000000000000000000000000000000000000000"
+    },
+    message: {
+      from: {
+        name: "Alice",
+        account: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      to: {
+        name: "Bob",
+        account: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      contents: "Hey, Bob!"
+    }
   }
 ];
 
