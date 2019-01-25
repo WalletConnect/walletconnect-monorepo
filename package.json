@@ -24,7 +24,8 @@
     "publish": "lerna publish",
     "publish:beta": "lerna version && lerna exec -- npm publish",
     "check-packages": "npm run clean && npm run build",
-    "deploy": "npm run check-packages && lerna publish"
+    "deploy": "npm run check-packages && npm run publish",
+    "deploy:beta": "npm run check-packages && npm run publish:beta"
   },
   "repository": {
     "type": "git",
