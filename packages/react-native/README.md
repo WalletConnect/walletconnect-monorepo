@@ -1,6 +1,8 @@
-# React-Native WalletConnect
+# WalletConnect React-Native SDK
 
 React Native SDK for WalletConnect
+
+For more details, read the [documentation](https://docs.walletconnect.org)
 
 ### Install
 

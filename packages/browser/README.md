@@ -1,4 +1,8 @@
-# WalletConnect
+# WalletConnect Browser SDK
+
+Browser SDK for WalletConnect
+
+For more details, read the [documentation](https://docs.walletconnect.org)
 
 ### Install
 

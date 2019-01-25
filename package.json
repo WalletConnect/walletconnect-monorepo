@@ -9,7 +9,7 @@
     "crypto"
   ],
   "author": "WalletConnect <walletconnect.org>",
-  "homepage": "https://walletconnect.org",
+  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
   "scripts": {
     "ls": "lerna ls",
@@ -21,8 +21,10 @@
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "clean:package_lock": "lerna exec -- rm -rf package-lock.json",
     "lint": "tslint packages/*/src/**/*.ts",
-    "publish": "npm run check-packages && lerna publish",
-    "check-packages": "npm run clean && npm run build"
+    "publish": "lerna publish",
+    "publish:beta": "lerna version && lerna exec -- npm publish",
+    "check-packages": "npm run clean && npm run build",
+    "deploy": "npm run check-packages && lerna publish"
   },
   "repository": {
     "type": "git",

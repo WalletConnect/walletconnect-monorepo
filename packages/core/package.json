@@ -16,7 +16,7 @@
     "wallet"
   ],
   "author": "WalletConnect <walletconnect.org>",
-  "homepage": "https://walletconnect.org",
+  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
   "main": "lib/index.js",
   "directories": {

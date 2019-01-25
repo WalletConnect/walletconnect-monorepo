@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/web3-subprovider",
   "version": "1.0.0-beta.1",
-  "description": "Web3 Suprovider for WalletConnect",
+  "description": "Web3 Subprovider for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
     "build": "webpack",
@@ -16,7 +16,7 @@
     "wallet"
   ],
   "author": "WalletConnect <walletconnect.org>",
-  "homepage": "https://walletconnect.org",
+  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
   "main": "lib/index.js",
   "directories": {
