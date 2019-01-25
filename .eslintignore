@@ -5,4 +5,3 @@ node_modules
 packages/*/lib
 
 lerna-debug.log
-.DS_Store

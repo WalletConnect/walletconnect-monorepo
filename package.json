@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-monorepo",
-  "description": "Monorepo for WalletConnect Javascript Libraries",
+  "description": "Monorepo for WalletConnect",
   "private": true,
   "keywords": [
     "walletconnect",
@@ -13,16 +13,16 @@
   "license": "LGPL-3.0",
   "scripts": {
     "ls": "lerna ls",
-    "bootstrap": "lerna exec -- npm i && lerna link",
+    "bootstrap": "npm install && lerna bootstrap",
     "build": "lerna run build",
     "test": "lerna run test",
     "test:watch": "lerna run test:watch",
     "clean": "lerna run clean",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "clean:package_lock": "lerna exec -- rm -rf package-lock.json",
-    "lint": "eslint packages/*/src/**/*.js packages/*/test/**/*.spec.js",
+    "lint": "tslint packages/*/src/**/*.ts",
     "publish": "npm run check-packages && lerna publish",
-    "check-packages": "npm run clean && npm run lint && npm run build && npm run test"
+    "check-packages": "npm run clean && npm run build"
   },
   "repository": {
     "type": "git",
@@ -33,12 +33,15 @@
   },
   "devDependencies": {
     "babel-eslint": "^8.2.6",
-    "eslint": "^5.6.1",
-    "eslint-loader": "^2.1.1",
+    "eslint": "^5.8.0",
+    "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-node": "^7.0.1",
     "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^3.1.0",
-    "lerna": "^3.4.0"
+    "eslint-plugin-standard": "^4.0.0",
+    "lerna": "^3.4.0",
+    "tslint": "^5.11.0",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.2.4"
   }
 }
