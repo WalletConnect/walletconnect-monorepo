@@ -2,16 +2,16 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 
-| Library                         | Current Version                                                                                                                          | Description      |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| @walletconnect/core             | [![npm version](https://badge.fury.io/js/@walletconnect/core.svg)](https://badge.fury.io/js/@walletconnect/core)                         | Core SDK         |
-| @walletconnect/browser          | [![npm version](https://badge.fury.io/js/@walletconnect/browser.svg)](https://badge.fury.io/js/@walletconnect/browser)                   | Browser SDK      |
-| @walletconnect/react-native     | [![npm version](https://badge.fury.io/js/@walletconnect/react-native.svg)](https://badge.fury.io/js/@walletconnect/react-native)         | React-Native SDK |
-| @walletconnect/utils            | [![npm version](https://badge.fury.io/js/@walletconnect/utils.svg)](https://badge.fury.io/js/@walletconnect/utils)                       | Utility Library  |
-| @walletconnect/types            | [![npm version](https://badge.fury.io/js/@walletconnect/types.svg)](https://badge.fury.io/js/@walletconnect/types)                       | Typescript Types |
-| @walletconnect/web3-provider    | [![npm version](https://badge.fury.io/js/@walletconnect/web3-provider.svg)](https://badge.fury.io/js/@walletconnect/web3-provider)       | Web3 Provider    |
-| @walletconnect/web3-subprovider | [![npm version](https://badge.fury.io/js/@walletconnect/web3-subprovider.svg)](https://badge.fury.io/js/@walletconnect/web3-subprovider) | Web3 Subprovider |
-| @walletconnect/qrcode-modal     | [![npm version](https://badge.fury.io/js/@walletconnect/qrcode-modal.svg)](https://badge.fury.io/js/@walletconnect/qrcode-modal)         | QR Code Modal    |
+| Library                         | Current Version                                                                                                                                  | Description      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| @walletconnect/core             | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                         | Core SDK         |
+| @walletconnect/browser          | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fbrowser.svg)](https://badge.fury.io/js/%40walletconnect%2Fbrowser)                   | Browser SDK      |
+| @walletconnect/react-native     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Freact-native.svg)](https://badge.fury.io/js/%40walletconnect%2Freact-native)         | React-Native SDK |
+| @walletconnect/utils            | [![npm version](https://badge.fury.io/js/%40walletconnect%2Futils.svg)](https://badge.fury.io/js/%40walletconnect%2Futils)                       | Utility Library  |
+| @walletconnect/types            | [![npm version](https://badge.fury.io/js/%40walletconnect%2Ftypes.svg)](https://badge.fury.io/js/%40walletconnect%2Ftypes)                       | Typescript Types |
+| @walletconnect/web3-provider    | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider)       | Web3 Provider    |
+| @walletconnect/web3-subprovider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider) | Web3 Subprovider |
+| @walletconnect/qrcode-modal     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal.svg)](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal)         | QR Code Modal    |
 
 ## Getting Started
 
