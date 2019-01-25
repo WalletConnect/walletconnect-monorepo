@@ -15,8 +15,8 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 
 ## Getting Started
 
-1. [For Dapps (Client SDK - browser)](#for-dapps-client-sdk-browser)
-2. [For Wallets (Client SDK - react-native)](#for-wallets-client-sdk-react-native)
+1. [For Dapps (Client SDK - browser)](#for-dapps-client-sdk---browser)
+2. [For Wallets (Client SDK - react-native)](#for-wallets-client-sdk---react-native)
 
 ## For Dapps (Client SDK - browser)
 
