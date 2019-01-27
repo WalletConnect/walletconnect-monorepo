@@ -21,9 +21,13 @@ npm install --save @walletconnect/react-native
  *  Polyfill NodeJS modules for React-Native
  */
 
-npm install --save rn-nodeify
+npm install --save react-native-crypto react-native-randombytes
 
-rn-nodeify --install --hack
+react-native link react-native-randombytes
+
+npm install --save-dev tradle/rn-nodeify
+
+./node_modules/.bin/rn-nodeify --hack --install
 ```
 
 ### Initiate Connection

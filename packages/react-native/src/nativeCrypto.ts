@@ -51,17 +51,11 @@ export async function verifyHmac (
   key: Buffer
 ): Promise<boolean> {
   const cipherText: Buffer = convertHexToBuffer(payload.data)
-
   const iv: Buffer = convertHexToBuffer(payload.iv)
-
   const hmac: Buffer = convertHexToBuffer(payload.hmac)
-
   const hmacHex: string = convertBufferToHex(hmac)
-
   const unsigned: Buffer = concatBuffers(cipherText, iv)
-
   const chmac: Buffer = await createHmac(unsigned, key)
-
   const chmacHex: string = convertBufferToHex(chmac)
 
   if (hmacHex === chmacHex) {
@@ -76,18 +70,26 @@ export async function aesCbcEncrypt (
   key: Buffer,
   iv: Buffer
 ): Promise<Buffer> {
+  const encoding = 'hex'
+  const input: any = data.toString(encoding)
   const cipher = crypto.createCipheriv(AES_ALGORITHM, key, iv)
-  cipher.setEncoding('hex')
-  cipher.write(data)
-  cipher.end()
+  let encrypted = cipher.update(input, encoding, encoding)
+  encrypted += cipher.final(encoding)
+  const result = new Buffer(encrypted, encoding)
+  return result
 
-  const hex = cipher.read()
-  if (typeof hex === 'string') {
-    const result = convertHexToBuffer(hex)
-    return result
-  } else {
-    return new Buffer('')
-  }
+  // const cipher = crypto.createCipheriv(AES_ALGORITHM, key, iv);
+  // cipher.setEncoding("hex");
+  // cipher.write(data);
+  // cipher.end();
+
+  // const hex = cipher.read();
+  // if (typeof hex === "string") {
+  //   const result = convertHexToBuffer(hex);
+  //   return result;
+  // } else {
+  //   return new Buffer("");
+  // }
 }
 
 export async function aesCbcDecrypt (
