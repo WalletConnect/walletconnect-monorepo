@@ -1,10 +1,6 @@
 {
-  "parser": "babel-eslint",
-  "extends": "eslint:recommended",
+  "extends": "standard",
   "rules": {
-    "space-before-function-paren": ["error", "never"],
-    "semi": ["error", "never"],
-    "no-underscore-dangle": 0,
-    "quotes": ["error", "single"]
+    "space-before-function-paren": ["error", "always"]
   }
 }
