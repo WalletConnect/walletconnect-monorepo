@@ -56,7 +56,6 @@ function formatQRCodeModal (qrCodeImage: string) {
 function open (uri: string, cb: any) {
   const wrapper = document.createElement('div')
   wrapper.setAttribute('id', 'walletconnect-wrapper')
-
   const qrCodeImage = formatQRCodeImage(uri)
 
   wrapper.innerHTML = formatQRCodeModal(qrCodeImage)

@@ -100,7 +100,6 @@ export default {
       text-align: center;
       margin: 0 auto;
       padding: 0 30px;
-      width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
