@@ -485,10 +485,6 @@ class Connector {
   }
 
   public killSession (sessionError?: ISessionError) {
-    if (!this._connected) {
-      throw new Error('Session currently disconnected')
-    }
-
     const message = sessionError ? sessionError.message : null
 
     const sessionParams: ISessionParams = {
