@@ -53,7 +53,7 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.0.0-beta.2",
+    "@walletconnect/types": "1.0.0-beta.3",
     "@walletconnect/web3-subprovider": "^1.0.0-beta.3",
     "web3-provider-engine": "^14.0.6"
   },
