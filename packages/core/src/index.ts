@@ -86,7 +86,7 @@ class Connector {
   private _eventEmitters: IEventEmitter[]
   private _connected: boolean
   private _browser: boolean
-  private _pingInterval: number | null
+  private _pingInterval: any
 
   // -- constructor ----------------------------------------------------- //
 
@@ -439,7 +439,7 @@ class Connector {
     const message =
       sessionError && sessionError.message
         ? sessionError.message
-        : 'Session rejected'
+        : 'Session Rejected'
 
     const response = this._formatResponse({
       id: this.handshakeId,
@@ -490,7 +490,7 @@ class Connector {
   }
 
   public killSession (sessionError?: ISessionError) {
-    const message = sessionError ? sessionError.message : null
+    const message = sessionError ? sessionError.message : 'Session Disconnected'
 
     const sessionParams: ISessionParams = {
       approved: false,
@@ -503,16 +503,9 @@ class Connector {
       params: [sessionParams]
     })
 
-    this._sendSessionRequest(request, 'Session kill rejected')
+    this._sendSessionRequest(request, 'Failed to kill Session')
 
-    this._connected = false
-
-    this._triggerEvents({
-      event: 'disconnect',
-      params: [{ message }]
-    })
-
-    this._removeStorageSession()
+    this._handleSessionDisconnect(message)
   }
 
   public async sendTransaction (tx: ITxData) {
@@ -702,14 +695,16 @@ class Connector {
     return formattedResponseSuccess
   }
 
-  private _handleSessionDisconnect (errorMsg: string) {
+  private _handleSessionDisconnect (errorMsg?: string) {
+    const message = errorMsg || 'Session Disconnected'
     this._connected = false
     this._triggerEvents({
       event: 'disconnect',
-      params: [{ message: errorMsg }]
+      params: [{ message }]
     })
-    console.error(errorMsg) // tslint:disable-line
+    console.error(message) // tslint:disable-line
     this._removeStorageSession()
+    clearInterval(this._pingInterval)
   }
 
   private _handleSessionResponse (
