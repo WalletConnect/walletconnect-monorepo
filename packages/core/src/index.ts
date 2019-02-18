@@ -570,17 +570,21 @@ class Connector {
   }
 
   public approveRequest (response: IPartialRpcResponse) {
-    const formattedResponse:
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError = this._formatResponse(response)
-    this._sendResponse(formattedResponse)
+    if (isRpcResponseSuccess(response)) {
+      const formattedResponse = this._formatResponse(response)
+      this._sendResponse(formattedResponse)
+    } else {
+      throw new Error('JSON-RPC success response must include "result" field')
+    }
   }
 
   public rejectRequest (response: IPartialRpcResponse) {
-    const formattedResponse:
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError = this._formatResponse(response)
-    this._sendResponse(formattedResponse)
+    if (isRpcResponseError(response)) {
+      const formattedResponse = this._formatResponse(response)
+      this._sendResponse(formattedResponse)
+    } else {
+      throw new Error('JSON-RPC error response must include "error" field')
+    }
   }
 
   // -- private --------------------------------------------------------- //
