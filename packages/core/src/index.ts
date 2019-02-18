@@ -24,6 +24,7 @@ import {
   getMeta,
   payloadId,
   uuid,
+  formatRpcError,
   parseWalletConnectUri
 } from '@walletconnect/utils'
 
@@ -670,13 +671,7 @@ class Connector {
     response: IPartialRpcResponse
   ): IJsonRpcResponseSuccess | IJsonRpcResponseError {
     if (isRpcResponseError(response)) {
-      const error =
-        response.error && !response.error.code
-          ? {
-            code: -32000,
-            message: response.error.message
-          }
-          : response.error
+      const error = formatRpcError(response.error)
 
       const formattedResponseError: IJsonRpcResponseError = {
         jsonrpc: '2.0',
