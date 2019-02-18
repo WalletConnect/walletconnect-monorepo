@@ -12,7 +12,7 @@ class RNWalletConnect extends Connector {
     opts: IWalletConnectOptions,
     walletOptions: INativeWalletOptions
   ) {
-    super(cryptoLib, opts, walletOptions.clientMeta)
+    super(cryptoLib, opts, false, walletOptions.clientMeta)
     if (walletOptions.push) {
       this.registerPushServer(walletOptions.push)
     }
@@ -40,7 +40,7 @@ class RNWalletConnect extends Connector {
       language: push.language || ''
     }
 
-    this.on('connect', (error, payload) => {
+    this.on('connect', (error: Error | null, payload: any) => {
       if (error) {
         throw error
       }

@@ -1,5 +1,6 @@
 import {
-  IJsonRpcResponse,
+  IJsonRpcResponseSuccess,
+  IJsonRpcResponseError,
   IJsonRpcRequest,
   IEncryptionPayload
 } from '@walletconnect/types'
@@ -132,7 +133,7 @@ export async function aesCbcDecrypt (
 }
 
 export async function encrypt (
-  data: IJsonRpcRequest | IJsonRpcResponse,
+  data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   key: ArrayBuffer
 ): Promise<IEncryptionPayload> {
   if (!key) {
@@ -162,7 +163,9 @@ export async function encrypt (
 export async function decrypt (
   payload: IEncryptionPayload,
   key: ArrayBuffer
-): Promise<IJsonRpcRequest | IJsonRpcResponse | null> {
+): Promise<
+  IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null
+> {
   if (!key) {
     throw new Error('Missing key: required for decryption')
   }

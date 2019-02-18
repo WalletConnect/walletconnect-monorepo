@@ -3,7 +3,8 @@ import {
   IParseURIResult,
   IRequiredParamsResult,
   IQueryParamsResult,
-  IJsonRpcResponse
+  IJsonRpcResponseSuccess,
+  IJsonRpcResponseError
 } from '@walletconnect/types'
 
 export function convertArrayBufferToBuffer (arrayBuffer: ArrayBuffer): Buffer {
@@ -343,12 +344,17 @@ export function parseWalletConnectUri (str: string): IParseURIResult {
 export function promisify (
   originalFn: (...args: any[]) => void,
   thisArg?: any
-): (...callArgs: any[]) => Promise<IJsonRpcResponse> {
+): (
+    ...callArgs: any[]
+  ) => Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
   const promisifiedFunction = async (
     ...callArgs: any[]
-  ): Promise<IJsonRpcResponse> => {
+  ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> => {
     return new Promise((resolve, reject) => {
-      const callback = (err: Error | null, data: IJsonRpcResponse) => {
+      const callback = (
+        err: Error | null,
+        data: IJsonRpcResponseSuccess | IJsonRpcResponseError
+      ) => {
         if (err === null || typeof err === 'undefined') {
           reject(err)
         }
@@ -358,4 +364,38 @@ export function promisify (
     })
   }
   return promisifiedFunction
+}
+
+export function formatRpcError (error: {
+  code?: number
+  message: string
+}): { code: number; message: string } {
+  let code: number = -32000
+  if (error && !error.code) {
+    switch (error.message) {
+      case 'Parse error':
+        code = -32700
+        break
+      case 'Invalid request':
+        code = -32600
+        break
+      case 'Method not found':
+        code = -32601
+        break
+      case 'Invalid params':
+        code = -32602
+        break
+      case 'Internal error':
+        code = -32603
+        break
+      default:
+        code = -32000
+        break
+    }
+  }
+  const result = {
+    code,
+    message: error.message
+  }
+  return result
 }

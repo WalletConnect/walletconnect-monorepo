@@ -1,7 +1,8 @@
 import { payloadId, promisify } from '@walletconnect/utils'
 import {
   IJsonRpcRequest,
-  IJsonRpcResponse,
+  IJsonRpcResponseSuccess,
+  IJsonRpcResponseError,
   IWeb3Provider,
   ICallback,
   IErrorCallback
@@ -25,7 +26,7 @@ abstract class Subprovider {
     return payloadId()
   }
 
-  public abstract async handleRequest(
+  public abstract async handleRequest (
     payload: IJsonRpcRequest,
     next: ICallback,
     end: IErrorCallback
@@ -33,7 +34,7 @@ abstract class Subprovider {
 
   public async emitPayloadAsync (
     payload: Partial<IJsonRpcRequest>
-  ): Promise<IJsonRpcResponse> {
+  ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
     const finalPayload = Subprovider._createFinalPayload(payload)
     const response = await promisify(this.engine.sendAsync, this.engine)(
       finalPayload
