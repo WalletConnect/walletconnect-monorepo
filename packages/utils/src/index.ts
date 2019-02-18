@@ -366,29 +366,36 @@ export function promisify (
   return promisifiedFunction
 }
 
-export function formatRpcError (error: { code?: number; message: string }) {
-  let _error = error
+export function formatRpcError (error: {
+  code?: number
+  message: string
+}): { code: number; message: string } {
+  let code: number = -32000
   if (error && !error.code) {
     switch (error.message) {
       case 'Parse error':
-        _error.code = -32700
+        code = -32700
         break
       case 'Invalid request':
-        _error.code = -32600
+        code = -32600
         break
       case 'Method not found':
-        _error.code = -32601
+        code = -32601
         break
       case 'Invalid params':
-        _error.code = -32602
+        code = -32602
         break
       case 'Internal error':
-        _error.code = -32603
+        code = -32603
         break
       default:
-        _error.code = -32000
+        code = -32000
         break
     }
   }
-  return _error
+  const result = {
+    code,
+    message: error.message
+  }
+  return result
 }
