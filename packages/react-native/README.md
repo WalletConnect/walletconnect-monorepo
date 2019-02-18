@@ -32,25 +32,27 @@ npm install --save-dev tradle/rn-nodeify
 
 ### Initiate Connection
 
-```js
-import RNWalletConnect from '@walletconnect/react-native'
+```javascript
+import RNWalletConnect from "@walletconnect/react-native";
 
 /**
  *  Create WalletConnector
  */
 const walletConnector = new RNWalletConnect(
   {
-    uri: 'wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=',       // Required
+    uri: "wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=" // Required
   },
   {
-    clientMeta: {                                                       // Required
+    clientMeta: {
+      // Required
       description: "WalletConnect Developer App",
       url: "https://walletconnect.org",
       icons: ["https://walletconnect.org/walletconnect-logo.png"],
       name: "WalletConnect",
       ssl: true
     },
-    push: {                                                             // Optional
+    push: {
+      // Optional
       url: "https://push.walletconnect.org",
       type: "fcm",
       token: token,
@@ -58,10 +60,39 @@ const walletConnector = new RNWalletConnect(
       language: language
     }
   }
-)
+);
 
 /**
- *  Subscribe to connection events
+ *  Subscribe to session requests
+ */
+walletConnector.on("session_request", (error, payload) => {
+  if (error) {
+    throw error;
+  }
+
+  // Handle Session Request
+
+  /* payload:
+  {
+    id: 1,
+    jsonrpc: '2.0'.
+    method: 'session_request',
+    params: [{
+      peerId: '15d8b6a3-15bd-493e-9358-111e3a4e6ee4',
+      peerMeta: {
+        name: "WalletConnect Example",
+        description: "Try out WalletConnect v1.0.0-beta",
+        icons: ["https://example.walletconnect.org/favicon.ico"],
+        url: "https://example.walletconnect.org",
+        ssl: true
+      }
+    }]
+  }
+  */
+});
+
+/**
+ *  Subscribe to call requests
  */
 walletConnector.on("call_request", (error, payload) => {
   if (error) {
@@ -69,7 +100,9 @@ walletConnector.on("call_request", (error, payload) => {
   }
 
   // Handle Call Request
-  payload {
+
+  /* payload:
+  {
     id: 1,
     jsonrpc: '2.0'.
     method: 'eth_sign',
@@ -78,6 +111,7 @@ walletConnector.on("call_request", (error, payload) => {
       "My email is john@doe.com - 1537836206101"
     ]
   }
+  */
 });
 
 walletConnector.on("disconnect", (error, payload) => {
@@ -91,7 +125,7 @@ walletConnector.on("disconnect", (error, payload) => {
 
 ### Manage Connection
 
-```js
+```javascript
 /**
  *  Approve Session
  */
@@ -107,7 +141,9 @@ walletConnector.approveSession({
 /**
  *  Reject Session
  */
-walletConnector.rejectSession()
+walletConnector.rejectSession({
+  message: 'OPTIONAL_ERROR_MESSAGE'
+})
 
 
 /**
@@ -118,7 +154,7 @@ walletConnector.killSession()
 
 ### Manage Call Requests
 
-```js
+```javascript
 /**
  *  Approve Call Request
  */
@@ -132,6 +168,8 @@ walletConnector.approveRequest({
  */
 walletConnector.rejectRequest({
   id: 1,
-  result: null
+  error: {
+    message: "OPTIONAL_ERROR_MESSAGE"
+  }
 });
 ```

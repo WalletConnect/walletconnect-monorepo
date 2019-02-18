@@ -16,7 +16,7 @@ npm install --save @walletconnect/browser
 
 ### Initiate Connection
 
-```js
+```javascript
 import WalletConnect from "@walletconnect/browser";
 import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 
@@ -32,14 +32,13 @@ const walletConnector = new WalletConnect({
  */
 if (!walletConnector.connected) {
   // create new session
-  await walletConnector.createSession();
-
-  // get uri for QR Code modal
-  const uri = walletConnector.uri;
-
-  // display QR Code modal
-  WalletConnectQRCodeModal.open(uri, () => {
-    console.log("QR Code Modal closed");
+  walletConnector.createSession().then(() => {
+    // get uri for QR Code modal
+    const uri = walletConnector.uri;
+    // display QR Code modal
+    WalletConnectQRCodeModal.open(uri, () => {
+      console.log("QR Code Modal closed");
+    });
   });
 }
 
@@ -78,13 +77,13 @@ walletConnector.on("disconnect", (error, payload) => {
 
 ### Send Transaction
 
-```js
+```javascript
 /**
  *  Draft transaction
  */
 const tx = {
   from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  to: "0x0",
+  to: "0x0000000000000000000000000000000000000000",
   nonce: 1,
   gas: 100000,
   value: 0,
@@ -94,18 +93,15 @@ const tx = {
 /**
  *  Send transaction
  */
-try {
-  // Submitted Transaction Hash
-  const result = await walletConnector.sendTransaction(tx);
-} catch (error) {
-  // Rejected Transaction
-  console.error(error);
-}
+walletConnector
+  .sendTransaction(tx)
+  .then(console.log)
+  .catch(console.error);
 ```
 
 ### Sign Message
 
-```js
+```javascript
 /**
  *  Draft Message Parameters
  */
@@ -117,18 +113,15 @@ const msgParams = [
 /**
  *  Sign message
  */
-try {
-  // Signed message
-  const result = await walletConnector.signMessage(msgParams);
-} catch (error) {
-  // Rejected signing
-  console.error(error);
-}
+walletConnector
+  .signMessage(msgParams)
+  .then(console.log)
+  .catch(console.error);
 ```
 
 ### Sign Typed Data
 
-```js
+```javascript
 /**
  *  Draft Typed Data
  */
@@ -176,11 +169,39 @@ const msgParams = [
 /**
  *  Sign Typed Data
  */
-try {
-  // Signed typed data
-  const result = await walletConnector.signTypedData(msgParams);
-} catch (error) {
-  // Rejected signing
-  console.error(error);
-}
+walletConnector
+  .signTypedData(msgParams)
+  .then(console.log)
+  .catch(console.error);
+```
+
+### Send Custom Request
+
+```javascript
+/**
+ *  Draft Custom Request
+ */
+const customRequest = {
+  id: 1,
+  jsonrpc: "2.0",
+  method: "eth_signTransaction",
+  params: [
+    {
+      from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
+      to: "0x0000000000000000000000000000000000000000",
+      nonce: 1,
+      gas: 100000,
+      value: 0,
+      data: "0x0"
+    }
+  ]
+};
+
+/**
+ *  Send Custom Request
+ */
+walletConnector
+  .sendCustomRequest(customRequest)
+  .then(console.log)
+  .catch(console.error);
 ```
