@@ -3,7 +3,8 @@ import {
   IParseURIResult,
   IRequiredParamsResult,
   IQueryParamsResult,
-  IJsonRpcResponse
+  IJsonRpcResponseSuccess,
+  IJsonRpcResponseError
 } from '@walletconnect/types'
 
 export function convertArrayBufferToBuffer (arrayBuffer: ArrayBuffer): Buffer {
@@ -343,12 +344,17 @@ export function parseWalletConnectUri (str: string): IParseURIResult {
 export function promisify (
   originalFn: (...args: any[]) => void,
   thisArg?: any
-): (...callArgs: any[]) => Promise<IJsonRpcResponse> {
+): (
+    ...callArgs: any[]
+  ) => Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
   const promisifiedFunction = async (
     ...callArgs: any[]
-  ): Promise<IJsonRpcResponse> => {
+  ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> => {
     return new Promise((resolve, reject) => {
-      const callback = (err: Error | null, data: IJsonRpcResponse) => {
+      const callback = (
+        err: Error | null,
+        data: IJsonRpcResponseSuccess | IJsonRpcResponseError
+      ) => {
         if (err === null || typeof err === 'undefined') {
           reject(err)
         }

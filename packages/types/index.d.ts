@@ -2,13 +2,15 @@ declare module '@walletconnect/types' {
   export interface ICryptoLib {
     generateKey: (length?: number) => Promise<ArrayBuffer>
     encrypt: (
-      data: IJsonRpcRequest | IJsonRpcResponse,
+      data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
       key: ArrayBuffer
     ) => Promise<IEncryptionPayload>
     decrypt: (
       payload: IEncryptionPayload,
       key: ArrayBuffer
-    ) => Promise<IJsonRpcRequest | IJsonRpcResponse | null>
+    ) => Promise<
+      IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null
+    >
   }
 
   export interface IEncryptionPayload {
@@ -50,13 +52,26 @@ declare module '@walletconnect/types' {
   export type IPartialRpcResponse = {
     id: number
     jsonrpc?: string
-    result: any
+    result?: any
+    error?: {
+      code?: number
+      message: string
+    }
   }
 
-  export type IJsonRpcResponse = {
+  export type IJsonRpcResponseSuccess = {
     id: number
     jsonrpc: string
     result: any
+  }
+
+  export type IJsonRpcResponseError = {
+    id: number
+    jsonrpc: string
+    error: {
+      code: number
+      message: string
+    }
   }
 
   export type IPartialRpcRequest = {
@@ -75,7 +90,7 @@ declare module '@walletconnect/types' {
 
   export type IJsonRpcCallback = (
     err: Error | null,
-    result?: IJsonRpcResponse
+    result?: IJsonRpcResponseSuccess
   ) => void
 
   export interface IWeb3Provider {
@@ -121,7 +136,6 @@ declare module '@walletconnect/types' {
     approved: boolean
     chainId: number | null
     accounts: string[] | null
-    message?: string | null
   }
 
   export interface IWalletConnectSession {

@@ -1,7 +1,8 @@
 import crypto from 'crypto'
 import {
   IJsonRpcRequest,
-  IJsonRpcResponse,
+  IJsonRpcResponseSuccess,
+  IJsonRpcResponseError,
   IEncryptionPayload
 } from '@walletconnect/types'
 import {
@@ -105,7 +106,7 @@ export async function aesCbcDecrypt (
 }
 
 export async function encrypt (
-  data: IJsonRpcRequest | IJsonRpcResponse,
+  data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   key: ArrayBuffer
 ): Promise<IEncryptionPayload> {
   const _key: Buffer = convertArrayBufferToBuffer(key)
@@ -134,7 +135,9 @@ export async function encrypt (
 export async function decrypt (
   payload: IEncryptionPayload,
   key: ArrayBuffer
-): Promise<IJsonRpcRequest | IJsonRpcResponse | null> {
+): Promise<
+  IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null
+> {
   const _key: Buffer = convertArrayBufferToBuffer(key)
 
   if (!_key) {

@@ -4,7 +4,7 @@ import * as cryptoLib from './webCrypto'
 
 class WalletConnect extends Connector {
   constructor (opts: IWalletConnectOptions) {
-    super(cryptoLib, opts)
+    super(cryptoLib, opts, true)
   }
 }
 
