@@ -569,6 +569,21 @@ class Connector {
     }
   }
 
+  public async sendCustomRequest (request: IPartialRpcRequest) {
+    if (!this._connected) {
+      throw new Error('Session currently disconnected')
+    }
+
+    const formattedRequest = this._formatRequest(request)
+
+    try {
+      const result = await this._sendCallRequest(formattedRequest)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
   public approveRequest (response: IPartialRpcResponse) {
     if (isRpcResponseSuccess(response)) {
       const formattedResponse = this._formatResponse(response)
