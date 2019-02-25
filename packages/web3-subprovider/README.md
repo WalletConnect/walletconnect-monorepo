@@ -4,7 +4,7 @@ Web3 Subprovider for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
-### Example
+## Example
 
 ```javascript
 import Web3 from "web3";
