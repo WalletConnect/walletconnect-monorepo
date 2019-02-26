@@ -3,7 +3,7 @@ import HookedWalletSubprovider from 'web3-provider-engine/subproviders/hooked-wa
 
 export default class WalletConnectSubprovider extends HookedWalletSubprovider {
   constructor (opts) {
-    const hookedWalletOpts = {
+    super({
       getAccounts: async cb => {
         const walletConnector = await this.getWalletConnector()
         const accounts = walletConnector.accounts
@@ -57,11 +57,15 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
           cb(error)
         }
       }
+    })
+
+    const bridge = opts.bridge || null
+
+    if (!bridge || typeof bridge !== 'string') {
+      throw new Error('Missing or Invalid bridge field')
     }
 
-    super(hookedWalletOpts)
-
-    this._walletConnector = new WalletConnect(opts)
+    this._walletConnector = new WalletConnect({ bridge })
   }
 
   set isWalletConnect (value) {}
@@ -80,6 +84,12 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
 
   get uri () {
     return this._walletConnector.uri
+  }
+
+  set accounts (value) {}
+
+  get accounts () {
+    return this._walletConnector.accounts
   }
 
   async getWalletConnector () {

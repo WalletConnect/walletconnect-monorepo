@@ -527,6 +527,24 @@ class Connector {
     }
   }
 
+  public async signTransaction (params: any[]) {
+    if (!this._connected) {
+      throw new Error('Session currently disconnected')
+    }
+
+    const request = this._formatRequest({
+      method: 'eth_signTransaction',
+      params
+    })
+
+    try {
+      const result = await this._sendCallRequest(request)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
   public async signMessage (params: any[]) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
@@ -534,6 +552,24 @@ class Connector {
 
     const request = this._formatRequest({
       method: 'eth_sign',
+      params
+    })
+
+    try {
+      const result = await this._sendCallRequest(request)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  public async signPersonalMessage (params: any[]) {
+    if (!this._connected) {
+      throw new Error('Session currently disconnected')
+    }
+
+    const request = this._formatRequest({
+      method: 'personal_sign',
       params
     })
 
