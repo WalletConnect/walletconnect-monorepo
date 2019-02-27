@@ -614,7 +614,7 @@ class Connector {
       payload
     }
 
-    if (this._socket) {
+    if (this._socket && this._socket.readyState === 1) {
       this._socketSend(socketMessage)
     } else {
       this._setToQueue(socketMessage)
@@ -637,7 +637,7 @@ class Connector {
       payload
     }
 
-    if (this._socket) {
+    if (this._socket && this._socket.readyState === 1) {
       this._socketSend(socketMessage)
     } else {
       this._setToQueue(socketMessage)
@@ -692,14 +692,16 @@ class Connector {
 
   private _handleSessionDisconnect (errorMsg?: string) {
     const message = errorMsg || 'Session Disconnected'
-    this._connected = false
-    this._triggerEvents({
-      event: 'disconnect',
-      params: [{ message }]
-    })
-    console.error(message) // tslint:disable-line
+    if (this._connected) {
+      this._connected = false
+      this._triggerEvents({
+        event: 'disconnect',
+        params: [{ message }]
+      })
+      console.error(message) // tslint:disable-line
+    }
     this._removeStorageSession()
-    clearInterval(this._pingInterval)
+    this._toggleSocketPing()
   }
 
   private _handleSessionResponse (
@@ -781,6 +783,8 @@ class Connector {
         }
         if (payload.result) {
           resolve(payload.result)
+        } else if (payload.error && payload.error.message) {
+          reject(new Error(payload.error.message))
         } else {
           reject(new Error('Invalid JSON RPC response format received'))
         }
@@ -932,22 +936,40 @@ class Connector {
       })
 
       this._dispatchQueue()
+      this._toggleSocketPing()
+    }
+  }
 
-      this._pingInterval = setInterval(() => {
-        socket.send('ping')
-      }, 500)
+  private _toggleSocketPing () {
+    if (this._socket && this._socket.readyState === 1) {
+      this._pingInterval = setInterval(
+        () => {
+          if (this._socket) {
+            this._socket.send('ping')
+          }
+        },
+        10000 // 10 seconds
+      )
+    } else {
+      clearInterval(this._pingInterval)
     }
   }
 
   private _socketSend (socketMessage: ISocketMessage) {
-    const socket: WebSocket | null = this._socket
-
-    if (!socket) {
+    if (!this._socket) {
       throw new Error('Missing socket: required for sending message')
     }
+
     const message: string = JSON.stringify(socketMessage)
 
-    socket.send(message)
+    if (this._socket && this._socket.readyState === 1) {
+      this._socket.send(message)
+    } else {
+      if (this._connected) {
+        this._setToQueue(socketMessage)
+        this._socketOpen()
+      }
+    }
   }
 
   private async _socketReceive (event: MessageEvent) {
