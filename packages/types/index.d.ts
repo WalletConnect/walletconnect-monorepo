@@ -106,7 +106,6 @@ declare module '@walletconnect/types' {
     url: string
     icons: string[]
     name: string
-    ssl: boolean
   }
 
   export interface IEventEmitter {

@@ -261,7 +261,6 @@ export function getMeta (): IClientMeta | null {
 
   const name: string = getName()
   const description: string = getDescription()
-  const ssl: boolean = window.location.href.startsWith('https')
   const url: string = window.location.origin
   const icons: string[] = getIcons()
 
@@ -269,8 +268,7 @@ export function getMeta (): IClientMeta | null {
     description,
     url,
     icons,
-    name,
-    ssl
+    name
   }
 
   return meta
@@ -366,10 +364,14 @@ export function promisify (
   return promisifiedFunction
 }
 
-export function formatRpcError (error: {
+type IJsonRpcErrorMessage = {
   code?: number
   message: string
-}): { code: number; message: string } {
+}
+
+export function formatRpcError (
+  error: IJsonRpcErrorMessage
+): { code: number; message: string } {
   let code: number = -32000
   if (error && !error.code) {
     switch (error.message) {
