@@ -25,7 +25,9 @@ import {
   payloadId,
   uuid,
   formatRpcError,
-  parseWalletConnectUri
+  parseWalletConnectUri,
+  isHexStrict,
+  convertUtf8ToHex
 } from '@walletconnect/utils'
 
 // -- typeChecks ----------------------------------------------------------- //
@@ -120,6 +122,14 @@ class Connector {
     this._connected = false
     this._browser = browser
     this._pingInterval = null
+
+    if (
+      browser &&
+      window.location.protocol !== 'https:' &&
+      window.location.hostname !== 'localhost'
+    ) {
+      throw new Error('HTTPS is required for non-localhost origins')
+    }
 
     if (clientMeta) {
       this.clientMeta = clientMeta
@@ -363,7 +373,7 @@ class Connector {
     this._eventEmitters.push(eventEmitter)
   }
 
-  public async createSession (): Promise<void> {
+  public async createSession (opts?: { chainId: number }): Promise<void> {
     if (this._connected) {
       throw new Error('Session currently connected')
     }
@@ -379,7 +389,8 @@ class Connector {
       params: [
         {
           peerId: this.clientId,
-          peerMeta: this.clientMeta
+          peerMeta: this.clientMeta,
+          chainId: opts && opts.chainId ? opts.chainId : null
         }
       ]
     })
@@ -392,7 +403,6 @@ class Connector {
       'Session update rejected',
       this.handshakeTopic
     )
-    this._setStorageSession()
   }
 
   public approveSession (sessionStatus: ISessionStatus) {
@@ -429,7 +439,11 @@ class Connector {
         }
       ]
     })
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
+    }
   }
 
   public rejectSession (sessionError?: ISessionError) {
@@ -487,7 +501,11 @@ class Connector {
         }
       ]
     })
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
+    }
   }
 
   public killSession (sessionError?: ISessionError) {
@@ -534,6 +552,28 @@ class Connector {
 
     const request = this._formatRequest({
       method: 'eth_sign',
+      params
+    })
+
+    try {
+      const result = await this._sendCallRequest(request)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  public async signPersonalMessage (params: any[]) {
+    if (!this._connected) {
+      throw new Error('Session currently disconnected')
+    }
+
+    if (!isHexStrict(params[1])) {
+      params[1] = convertUtf8ToHex(params[1])
+    }
+
+    const request = this._formatRequest({
+      method: 'personal_sign',
       params
     })
 
@@ -748,7 +788,11 @@ class Connector {
             ]
           })
         }
-        this._setStorageSession()
+        if (this._connected) {
+          this._setStorageSession()
+        } else {
+          this._removeStorageSession()
+        }
       } else {
         this._handleSessionDisconnect(errorMsg)
       }
@@ -908,7 +952,11 @@ class Connector {
   private _swapKey () {
     this._key = this._nextKey
     this._nextKey = null
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
+    }
   }
 
   // -- websocket ------------------------------------------------------- //
