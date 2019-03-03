@@ -363,7 +363,7 @@ class Connector {
     this._eventEmitters.push(eventEmitter)
   }
 
-  public async createSession (): Promise<void> {
+  public async createSession (opts?: { chainId: number }): Promise<void> {
     if (this._connected) {
       throw new Error('Session currently connected')
     }
@@ -379,7 +379,8 @@ class Connector {
       params: [
         {
           peerId: this.clientId,
-          peerMeta: this.clientMeta
+          peerMeta: this.clientMeta,
+          chainId: opts && opts.chainId ? opts.chainId : null
         }
       ]
     })
