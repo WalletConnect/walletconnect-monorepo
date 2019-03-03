@@ -121,6 +121,14 @@ class Connector {
     this._browser = browser
     this._pingInterval = null
 
+    if (
+      browser &&
+      window.location.protocol !== 'https:' &&
+      window.location.hostname !== 'localhost'
+    ) {
+      throw new Error('HTTPS is required for non-localhost origins')
+    }
+
     if (clientMeta) {
       this.clientMeta = clientMeta
     }
