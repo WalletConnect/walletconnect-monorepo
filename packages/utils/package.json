@@ -43,6 +43,7 @@
     "@babel/preset-typescript": "^7.1.0",
     "@babel/register": "^7.0.0",
     "@types/chai": "^4.1.6",
+    "@types/lodash.isnumber": "^3.0.5",
     "@types/mocha": "^5.2.5",
     "@types/node": "^10.12.18",
     "chai": "^4.1.2",
@@ -54,7 +55,8 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.0.0-beta.5"
+    "@walletconnect/types": "^1.0.0-beta.5",
+    "lodash.isnumber": "^3.0.3"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

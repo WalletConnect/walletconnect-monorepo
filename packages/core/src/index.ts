@@ -25,7 +25,9 @@ import {
   payloadId,
   uuid,
   formatRpcError,
-  parseWalletConnectUri
+  parseWalletConnectUri,
+  isHexStrict,
+  convertUtf8ToHex
 } from '@walletconnect/utils'
 
 // -- typeChecks ----------------------------------------------------------- //
@@ -550,6 +552,28 @@ class Connector {
 
     const request = this._formatRequest({
       method: 'eth_sign',
+      params
+    })
+
+    try {
+      const result = await this._sendCallRequest(request)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  public async signPersonalMessage (params: any[]) {
+    if (!this._connected) {
+      throw new Error('Session currently disconnected')
+    }
+
+    if (!isHexStrict(params[1])) {
+      params[1] = convertUtf8ToHex(params[1])
+    }
+
+    const request = this._formatRequest({
+      method: 'personal_sign',
       params
     })
 

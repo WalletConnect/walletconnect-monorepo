@@ -1,3 +1,5 @@
+import isNumber from 'lodash.isnumber'
+
 import {
   IClientMeta,
   IParseURIResult,
@@ -126,6 +128,18 @@ export function convertHexToArrayBuffer (hex: string): ArrayBuffer {
   return arrayBuffer
 }
 
+export function convertUtf8ToHex (utf8: string): string {
+  const arrayBuffer = convertUtf8ToArrayBuffer(utf8)
+  const hex = convertArrayBufferToHex(arrayBuffer)
+  return hex
+}
+
+export function convertHexToUtf8 (hex: string): string {
+  const arrayBuffer = convertHexToArrayBuffer(hex)
+  const utf8 = convertArrayBufferToUtf8(arrayBuffer)
+  return utf8
+}
+
 export function payloadId (): number {
   const datePart: number = new Date().getTime() * Math.pow(10, 3)
   const extraPart: number = Math.floor(Math.random() * Math.pow(10, 3))
@@ -148,6 +162,12 @@ export function uuid (): string {
     return b
   })()
   return result
+}
+
+export const isHexStrict = (hex: string) => {
+  return (
+    (typeof hex === 'string' || isNumber(hex)) && /^(-)?0x[0-9a-f]*$/i.test(hex)
+  )
 }
 
 export function getMeta (): IClientMeta | null {
