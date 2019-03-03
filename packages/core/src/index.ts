@@ -392,7 +392,6 @@ class Connector {
       'Session update rejected',
       this.handshakeTopic
     )
-    this._setStorageSession()
   }
 
   public approveSession (sessionStatus: ISessionStatus) {
@@ -429,7 +428,11 @@ class Connector {
         }
       ]
     })
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
+    }
   }
 
   public rejectSession (sessionError?: ISessionError) {
@@ -487,7 +490,11 @@ class Connector {
         }
       ]
     })
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
+    }
   }
 
   public killSession (sessionError?: ISessionError) {
@@ -748,7 +755,11 @@ class Connector {
             ]
           })
         }
-        this._setStorageSession()
+        if (this._connected) {
+          this._setStorageSession()
+        } else {
+          this._removeStorageSession()
+        }
       } else {
         this._handleSessionDisconnect(errorMsg)
       }
@@ -908,7 +919,11 @@ class Connector {
   private _swapKey () {
     this._key = this._nextKey
     this._nextKey = null
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
+    }
   }
 
   // -- websocket ------------------------------------------------------- //
