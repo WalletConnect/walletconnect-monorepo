@@ -895,7 +895,21 @@ class Connector {
       )
     }
 
-    if (!eventEmitters || !eventEmitters.length) {
+    const reservedEvents = [
+      'wc_sessionRequest',
+      'wc_sessionUpdate',
+      'wc_exchangeKey',
+      'session_request',
+      'session_update',
+      'exchange_key',
+      'connect',
+      'disconnect'
+    ]
+
+    if (
+      (!eventEmitters || !eventEmitters.length) &&
+      !reservedEvents.includes(event)
+    ) {
       eventEmitters = this._eventEmitters.filter(
         (eventEmitter: IEventEmitter) => eventEmitter.event === 'call_request'
       )
