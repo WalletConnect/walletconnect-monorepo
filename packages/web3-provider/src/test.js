@@ -7,9 +7,6 @@ import FilterSubprovider from 'web3-provider-engine/subproviders/filters'
 import HookedWalletSubprovider from 'web3-provider-engine/subproviders/hooked-wallet'
 import NonceSubprovider from 'web3-provider-engine/subproviders/nonce-tracker'
 import SubscriptionsSubprovider from 'web3-provider-engine/subproviders/subscriptions'
-import { getTxGas } from './getTxGas'
-import { Query } from './query'
-import supportedChains from './chains.js'
 
 export default class Portis {
   constructor (opts) {
@@ -26,7 +23,6 @@ export default class Portis {
 
   _initProvider () {
     const engine = new ProviderEngine()
-    const query = new Query(engine)
 
     engine.send = (payload, callback) => {
       // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
@@ -64,13 +60,6 @@ export default class Portis {
 
         case 'eth_coinbase':
           result = this.accounts
-          break
-
-        case 'net_version':
-          const network = supportedChains.filter(
-            chain => chain.chain_id === this._walletConnector.chainId
-          )[0].network_id
-          result = network
           break
 
         case 'eth_uninstallFilter':
@@ -158,10 +147,6 @@ export default class Portis {
           } catch (error) {
             cb(error)
           }
-        },
-        estimateGas: async (txParams, cb) => {
-          const gas = await getTxGas(query, txParams)
-          cb(null, gas)
         },
         gasPrice: async cb => {
           cb(null, { result: '' })
