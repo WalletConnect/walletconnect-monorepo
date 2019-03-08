@@ -441,8 +441,6 @@ class Connector {
     })
     if (this._connected) {
       this._setStorageSession()
-    } else {
-      this._removeStorageSession()
     }
   }
 
@@ -968,8 +966,6 @@ class Connector {
     this._nextKey = null
     if (this._connected) {
       this._setStorageSession()
-    } else {
-      this._removeStorageSession()
     }
   }
 
