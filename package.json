@@ -23,9 +23,10 @@
     "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:package_lock",
     "lint": "tslint packages/*/src/**/*.ts",
     "publish": "lerna publish",
+    "publish:beta": "lerna version && lerna exec -- npm publish",
     "check-packages": "npm run clean && npm run lint && npm run build",
     "deploy": "npm run check-packages && npm run publish",
-    "deploy:beta": "npm run clean:all && npm run bootstrap && npm run build && lerna version && lerna exec -- npm publish"
+    "deploy:beta": "npm run clean:all && npm run bootstrap && npm run build && npm run publish:beta"
   },
   "repository": {
     "type": "git",

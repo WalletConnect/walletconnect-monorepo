@@ -25,7 +25,9 @@ import {
   payloadId,
   uuid,
   formatRpcError,
-  parseWalletConnectUri
+  parseWalletConnectUri,
+  isHexStrict,
+  convertUtf8ToHex
 } from '@walletconnect/utils'
 
 // -- typeChecks ----------------------------------------------------------- //
@@ -120,6 +122,14 @@ class Connector {
     this._connected = false
     this._browser = browser
     this._pingInterval = null
+
+    if (
+      browser &&
+      window.location.protocol !== 'https:' &&
+      window.location.hostname !== 'localhost'
+    ) {
+      throw new Error('HTTPS is required for non-localhost origins')
+    }
 
     if (clientMeta) {
       this.clientMeta = clientMeta
@@ -363,7 +373,7 @@ class Connector {
     this._eventEmitters.push(eventEmitter)
   }
 
-  public async createSession (): Promise<void> {
+  public async createSession (opts?: { chainId: number }): Promise<void> {
     if (this._connected) {
       throw new Error('Session currently connected')
     }
@@ -379,7 +389,8 @@ class Connector {
       params: [
         {
           peerId: this.clientId,
-          peerMeta: this.clientMeta
+          peerMeta: this.clientMeta,
+          chainId: opts && opts.chainId ? opts.chainId : null
         }
       ]
     })
@@ -392,7 +403,6 @@ class Connector {
       'Session update rejected',
       this.handshakeTopic
     )
-    this._setStorageSession()
   }
 
   public approveSession (sessionStatus: ISessionStatus) {
@@ -429,7 +439,9 @@ class Connector {
         }
       ]
     })
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    }
   }
 
   public rejectSession (sessionError?: ISessionError) {
@@ -487,7 +499,11 @@ class Connector {
         }
       ]
     })
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
+    }
   }
 
   public killSession (sessionError?: ISessionError) {
@@ -566,6 +582,10 @@ class Connector {
   public async signPersonalMessage (params: any[]) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
+    }
+
+    if (!isHexStrict(params[1])) {
+      params[1] = convertUtf8ToHex(params[1])
     }
 
     const request = this._formatRequest({
@@ -650,7 +670,7 @@ class Connector {
       payload
     }
 
-    if (this._socket) {
+    if (this._socket && this._socket.readyState === 1) {
       this._socketSend(socketMessage)
     } else {
       this._setToQueue(socketMessage)
@@ -673,7 +693,7 @@ class Connector {
       payload
     }
 
-    if (this._socket) {
+    if (this._socket && this._socket.readyState === 1) {
       this._socketSend(socketMessage)
     } else {
       this._setToQueue(socketMessage)
@@ -728,14 +748,16 @@ class Connector {
 
   private _handleSessionDisconnect (errorMsg?: string) {
     const message = errorMsg || 'Session Disconnected'
-    this._connected = false
-    this._triggerEvents({
-      event: 'disconnect',
-      params: [{ message }]
-    })
-    console.error(message) // tslint:disable-line
+    if (this._connected) {
+      this._connected = false
+      this._triggerEvents({
+        event: 'disconnect',
+        params: [{ message }]
+      })
+      console.error(message) // tslint:disable-line
+    }
     this._removeStorageSession()
-    clearInterval(this._pingInterval)
+    this._toggleSocketPing()
   }
 
   private _handleSessionResponse (
@@ -782,7 +804,11 @@ class Connector {
             ]
           })
         }
-        this._setStorageSession()
+        if (this._connected) {
+          this._setStorageSession()
+        } else {
+          this._removeStorageSession()
+        }
       } else {
         this._handleSessionDisconnect(errorMsg)
       }
@@ -817,6 +843,8 @@ class Connector {
         }
         if (payload.result) {
           resolve(payload.result)
+        } else if (payload.error && payload.error.message) {
+          reject(new Error(payload.error.message))
         } else {
           reject(new Error('Invalid JSON RPC response format received'))
         }
@@ -883,7 +911,21 @@ class Connector {
       )
     }
 
-    if (!eventEmitters || !eventEmitters.length) {
+    const reservedEvents = [
+      'wc_sessionRequest',
+      'wc_sessionUpdate',
+      'wc_exchangeKey',
+      'session_request',
+      'session_update',
+      'exchange_key',
+      'connect',
+      'disconnect'
+    ]
+
+    if (
+      (!eventEmitters || !eventEmitters.length) &&
+      !reservedEvents.includes(event)
+    ) {
       eventEmitters = this._eventEmitters.filter(
         (eventEmitter: IEventEmitter) => eventEmitter.event === 'call_request'
       )
@@ -940,7 +982,9 @@ class Connector {
   private _swapKey () {
     this._key = this._nextKey
     this._nextKey = null
-    this._setStorageSession()
+    if (this._connected) {
+      this._setStorageSession()
+    }
   }
 
   // -- websocket ------------------------------------------------------- //
@@ -968,22 +1012,40 @@ class Connector {
       })
 
       this._dispatchQueue()
+      this._toggleSocketPing()
+    }
+  }
 
-      this._pingInterval = setInterval(() => {
-        socket.send('ping')
-      }, 500)
+  private _toggleSocketPing () {
+    if (this._socket && this._socket.readyState === 1) {
+      this._pingInterval = setInterval(
+        () => {
+          if (this._socket) {
+            this._socket.send('ping')
+          }
+        },
+        10000 // 10 seconds
+      )
+    } else {
+      clearInterval(this._pingInterval)
     }
   }
 
   private _socketSend (socketMessage: ISocketMessage) {
-    const socket: WebSocket | null = this._socket
-
-    if (!socket) {
+    if (!this._socket) {
       throw new Error('Missing socket: required for sending message')
     }
+
     const message: string = JSON.stringify(socketMessage)
 
-    socket.send(message)
+    if (this._socket && this._socket.readyState === 1) {
+      this._socket.send(message)
+    } else {
+      if (this._connected) {
+        this._setToQueue(socketMessage)
+        this._socketOpen()
+      }
+    }
   }
 
   private async _socketReceive (event: MessageEvent) {
