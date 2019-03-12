@@ -147,9 +147,6 @@ export default class WalletConnectProvider {
           } catch (error) {
             cb(error)
           }
-        },
-        gasPrice: async cb => {
-          cb(null, { result: '' })
         }
       })
     )
