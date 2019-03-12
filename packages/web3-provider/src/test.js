@@ -8,7 +8,7 @@ import HookedWalletSubprovider from 'web3-provider-engine/subproviders/hooked-wa
 import NonceSubprovider from 'web3-provider-engine/subproviders/nonce-tracker'
 import SubscriptionsSubprovider from 'web3-provider-engine/subproviders/subscriptions'
 
-export default class Portis {
+export default class WalletConnectProvider {
   constructor (opts) {
     const bridge = opts.bridge || null
 

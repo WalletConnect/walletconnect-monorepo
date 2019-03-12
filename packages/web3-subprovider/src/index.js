@@ -56,6 +56,9 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
         } catch (error) {
           cb(error)
         }
+      },
+      gasPrice: async cb => {
+        cb(null, { result: '' })
       }
     })
 
