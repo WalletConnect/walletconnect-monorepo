@@ -78,19 +78,6 @@ export async function aesCbcEncrypt (
   encrypted += cipher.final(encoding)
   const result = new Buffer(encrypted, encoding)
   return result
-
-  // const cipher = crypto.createCipheriv(AES_ALGORITHM, key, iv);
-  // cipher.setEncoding("hex");
-  // cipher.write(data);
-  // cipher.end();
-
-  // const hex = cipher.read();
-  // if (typeof hex === "string") {
-  //   const result = convertHexToBuffer(hex);
-  //   return result;
-  // } else {
-  //   return new Buffer("");
-  // }
 }
 
 export async function aesCbcDecrypt (
