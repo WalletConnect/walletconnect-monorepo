@@ -75,7 +75,7 @@ walletConnector.on("disconnect", (error, payload) => {
 });
 ```
 
-### Send Transaction
+### Send Transaction \(eth_sendTransaction\)
 
 ```javascript
 /**
@@ -99,7 +99,7 @@ walletConnector
   .catch(console.error);
 ```
 
-### Sign Message
+### Sign Message \(eth_sign\)
 
 ```javascript
 /**
@@ -119,7 +119,27 @@ walletConnector
   .catch(console.error);
 ```
 
-### Sign Typed Data
+### Sign Personal Message \(personal_sign\)
+
+```javascript
+/**
+ *  Draft Message Parameters
+ */
+const msgParams = [
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
+  "My email is john@doe.com - 1537836206101"
+];
+
+/**
+ *  Sign personal message
+ */
+walletConnector
+  .signPersonalMessage(msgParams)
+  .then(console.log)
+  .catch(console.error);
+```
+
+### Sign Typed Data \(eth_signTypedData\)
 
 ```javascript
 /**

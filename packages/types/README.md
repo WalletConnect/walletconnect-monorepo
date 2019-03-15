@@ -2,7 +2,7 @@
 
 Typescript Types for WalletConnect
 
-## Types
+## Types
 
 - ICryptoLib
 - IEncryptionPayload
@@ -11,7 +11,15 @@ Typescript Types for WalletConnect
 - ISessionError
 - IInternalEvent
 - ITxData
+- IPartialRpcResponse
+- IJsonRpcResponseSuccess
+- IJsonRpcResponseError
+- IPartialRpcRequest
+- IJsonRpcRequest
+- IJsonRpcCallback
 - IWeb3Provider
+- IErrorCallback
+- ICallback
 - IClientMeta
 - IEventEmitter
 - IRequiredParamsResult
