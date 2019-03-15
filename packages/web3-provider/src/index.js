@@ -16,12 +16,14 @@ export default class WalletConnectProvider {
       throw new Error('Missing or Invalid bridge field')
     }
 
-    this._walletConnector = new WalletConnect({ bridge })
-
-    this.provider = this._initProvider()
+    this.provider = this._initProvider(bridge)
   }
 
-  _initProvider () {
+  _initProvider (bridge) {
+    this._walletConnector = new WalletConnect({ bridge })
+
+    console.log('[_initProvider] this._walletConnector', this._walletConnector)
+
     const engine = new ProviderEngine()
 
     engine.send = (payload, callback) => {
@@ -179,7 +181,26 @@ export default class WalletConnectProvider {
 
     engine.isWalletConnect = this.isWalletConnect
 
+    // log new blocks
+    engine.on('block', function (block) {
+      console.log('================================')
+      console.log(
+        'BLOCK CHANGED:',
+        '#' + block.number.toString('hex'),
+        '0x' + block.hash.toString('hex')
+      )
+      console.log('================================')
+    })
+
+    // network connectivity error
+    engine.on('error', function (err) {
+      // report connectivity errors
+      console.error(err.stack)
+    })
+
+    // start polling for blocks
     engine.start()
+
     return engine
   }
 
@@ -208,6 +229,11 @@ export default class WalletConnectProvider {
   }
 
   async getWalletConnector () {
+    console.log(
+      '[getWalletConnector] this._walletConnector',
+      this._walletConnector
+    )
+
     if (!this._walletConnector.connected) {
       await this._walletConnector.createSession()
     }
