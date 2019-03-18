@@ -1,5 +1,6 @@
 import pkg from '../package.json'
 import WalletConnect from '@walletconnect/browser'
+import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 import ProviderEngine from 'web3-provider-engine'
 import CacheSubprovider from 'web3-provider-engine/subproviders/cache'
 import FixtureSubprovider from 'web3-provider-engine/subproviders/fixture'
@@ -9,6 +10,8 @@ import NonceSubprovider from 'web3-provider-engine/subproviders/nonce-tracker'
 import SubscriptionsSubprovider from 'web3-provider-engine/subproviders/subscriptions'
 
 export default function WalletConnectProvider (opts) {
+  const qrcode = opts.qrcode || true
+
   const bridge = opts.bridge || null
 
   if (!bridge || typeof bridge !== 'string') {
@@ -181,7 +184,15 @@ export default function WalletConnectProvider (opts) {
         walletConnector
           .createSession()
           .then(() => {
+            if (qrcode) {
+              WalletConnectQRCodeModal.open(walletConnector.uri, () => {
+                reject(new Error('User closed WalletConnect modal'))
+              })
+            }
             walletConnector.on('connect', () => {
+              if (qrcode) {
+                WalletConnectQRCodeModal.close()
+              }
               resolve(walletConnector)
             })
           })
@@ -199,17 +210,11 @@ export default function WalletConnectProvider (opts) {
 
   engine.connected = engine._walletConnector.connected
 
-  engine.createSession = () => {
-    engine._walletConnector.createSession()
-  }
+  engine.on = (event, callback) => engine._walletConnector.on(event, callback)
 
-  engine.on = (event, callback) => {
-    engine._walletConnector.on(event, callback)
-  }
+  engine.createSession = () => engine._walletConnector.createSession()
 
-  engine.isConnected = () => {
-    return engine.connected
-  }
+  engine.isConnected = () => engine.connected
 
   engine.start()
 

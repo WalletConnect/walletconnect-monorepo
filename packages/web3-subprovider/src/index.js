@@ -1,4 +1,5 @@
 import WalletConnect from '@walletconnect/browser'
+import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 import HookedWalletSubprovider from 'web3-provider-engine/subproviders/hooked-wallet'
 
 export default class WalletConnectSubprovider extends HookedWalletSubprovider {
@@ -59,6 +60,8 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
       }
     })
 
+    this.qrcode = opts.qrcode || true
+
     const bridge = opts.bridge || null
 
     if (!bridge || typeof bridge !== 'string') {
@@ -92,10 +95,33 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
     return this._walletConnector.accounts
   }
 
-  async getWalletConnector () {
-    if (!this._walletConnector.connected) {
-      await this._walletConnector.createSession()
-    }
-    return this._walletConnector
+  getWalletConnector () {
+    return new Promise((resolve, reject) => {
+      const walletConnector = this._walletConnector
+
+      console.log('[getWalletConnector] walletConnector', walletConnector)
+
+      if (!walletConnector.connected) {
+        walletConnector
+          .createSession()
+          .then(() => {
+            if (this.qrcode) {
+              WalletConnectQRCodeModal.open(walletConnector.uri, () => {
+                reject(new Error('User closed WalletConnect modal'))
+              })
+            }
+            walletConnector.on('connect', () => {
+              if (this.qrcode) {
+                WalletConnectQRCodeModal.close()
+              }
+              resolve(walletConnector)
+            })
+          })
+          .catch(error => reject(error))
+        return
+      }
+
+      resolve(walletConnector)
+    })
   }
 }
