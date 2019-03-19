@@ -822,6 +822,7 @@ class Connector {
       this.on(`response:${id}`, (error, payload) => {
         if (error) {
           reject(error)
+          return
         }
         if (payload.result) {
           resolve(payload.result)
