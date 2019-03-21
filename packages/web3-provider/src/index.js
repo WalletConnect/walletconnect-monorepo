@@ -20,8 +20,6 @@ export default function WalletConnectProvider (opts) {
 
   const walletConnector = new WalletConnect({ bridge })
 
-  console.log('[WalletConnectProvider] walletConnector', walletConnector)
-
   const engine = new ProviderEngine()
 
   engine._walletConnector = walletConnector
@@ -156,7 +154,6 @@ export default function WalletConnectProvider (opts) {
   engine.addProvider({
     setEngine: _ => _,
     handleRequest: async (payload, next, end) => {
-      console.log('[handleRequest] payload', payload)
       const walletConnector = await engine.getWalletConnector()
       const { error, result } = await walletConnector.sendCustomRequest(payload)
       end(error, result)
@@ -177,8 +174,6 @@ export default function WalletConnectProvider (opts) {
   engine.getWalletConnector = () => {
     return new Promise((resolve, reject) => {
       const walletConnector = engine._walletConnector
-
-      console.log('[getWalletConnector] walletConnector', walletConnector)
 
       if (!walletConnector.connected) {
         walletConnector
@@ -205,16 +200,6 @@ export default function WalletConnectProvider (opts) {
   }
 
   engine.isWalletConnect = true
-
-  engine.uri = engine._walletConnector.uri
-
-  engine.connected = engine._walletConnector.connected
-
-  engine.on = (event, callback) => engine._walletConnector.on(event, callback)
-
-  engine.createSession = () => engine._walletConnector.createSession()
-
-  engine.isConnected = () => engine.connected
 
   engine.start()
 
