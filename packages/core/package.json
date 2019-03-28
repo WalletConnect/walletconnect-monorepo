@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/core",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0-beta-cbx.1",
   "description": "Core Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
