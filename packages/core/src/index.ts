@@ -838,6 +838,7 @@ class Connector {
     this.on('wc_sessionRequest', (error, payload) => {
       if (error) {
         console.log('[wc_sessionRequest]',error) // tslint:disable-line
+        this._handleSessionDisconnect(`[wc_sessionRequest] ${error.toString()}`)
       }
       this.handshakeId = payload.id
       this.peerId = payload.params[0].peerId
