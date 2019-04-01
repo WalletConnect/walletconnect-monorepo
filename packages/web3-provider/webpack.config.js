@@ -11,7 +11,8 @@ module.exports = {
     filename: '[name].js',
     libraryTarget: 'umd',
     library: pkg.name,
-    umdNamedDefine: true
+    umdNamedDefine: true,
+    globalObject: 'this'
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js']
