@@ -560,7 +560,7 @@ class Connector {
       throw error
     }
   }
-  
+
   public async signMessage (params: any[]) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
