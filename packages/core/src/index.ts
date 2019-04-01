@@ -416,7 +416,9 @@ class Connector {
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
-      accounts: this.accounts
+      accounts: this.accounts,
+      peerId: this.clientId,
+      peerMeta: this.clientMeta
     }
 
     const response = {
@@ -767,11 +769,21 @@ class Connector {
       if (sessionParams.approved) {
         if (!this._connected) {
           this._connected = true
+
           if (sessionParams.chainId) {
             this.chainId = sessionParams.chainId
           }
+
           if (sessionParams.accounts) {
             this.accounts = sessionParams.accounts
+          }
+
+          if (sessionParams.peerId && !this.peerId) {
+            this.peerId = sessionParams.peerId
+          }
+
+          if (sessionParams.peerMeta && !this.peerMeta) {
+            this.peerMeta = sessionParams.peerMeta
           }
 
           this._triggerEvents({
