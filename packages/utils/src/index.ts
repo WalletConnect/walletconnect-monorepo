@@ -359,6 +359,19 @@ export function parseWalletConnectUri (str: string): IParseURIResult {
   return result
 }
 
+export function sanitizeHex (hex: string): string {
+  hex = hex.substring(0, 2) === '0x' ? hex.substring(2) : hex
+  if (hex === '') {
+    return ''
+  }
+  hex = hex.length % 2 !== 0 ? '0' + hex : hex
+  return '0x' + hex
+}
+
+export function removeHexPrefix (hex: string): string {
+  return hex.toLowerCase().replace('0x', '')
+}
+
 export function promisify (
   originalFn: (...args: any[]) => void,
   thisArg?: any

@@ -99,6 +99,30 @@ walletConnector
   .catch(console.error);
 ```
 
+### Sign Transaction \(eth_signTransaction\)
+
+```javascript
+/**
+ *  Draft transaction
+ */
+const tx = {
+  from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
+  to: "0x0000000000000000000000000000000000000000",
+  nonce: 1,
+  gas: 100000,
+  value: 0,
+  data: "0x0"
+};
+
+/**
+ *  Sign transaction
+ */
+walletConnector
+  .sendTransaction(tx)
+  .then(console.log)
+  .catch(console.error);
+```
+
 ### Sign Message \(eth_sign\)
 
 ```javascript
