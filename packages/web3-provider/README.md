@@ -4,18 +4,17 @@ Web3 Provider for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
-### Example
+## Example
 
 ```javascript
 import Web3 from "web3";
 import WalletConnectProvider from "walletconnect-web3-provider";
 
 /**
- *  Create WalletConnect Provider
+ *  Create WalletConnect Provider (qrcode modal will be displayed automatically)
  */
 const provider = new WalletConnectProvider({
-  bridge: "https://test-bridge.walletconnect.org", // Required
-  rpcUrl: "http://localhost:8545" // Required
+  bridge: "https://test-bridge.walletconnect.org" // Required
 });
 
 /**
@@ -27,17 +26,6 @@ const web3 = new Web3(provider);
  *  Get Accounts
  */
 const accounts = await web3.eth.getAccounts();
-
-if (!accounts.length) {
-  // Display QR Code URI
-  const uri = web3.currentProvider.walletconnect.uri;
-
-  // Create a new session
-  await web3.currentProvider.walletconnect.createSession();
-
-  // Get Accounts Again
-  accounts = await web3.eth.getAccounts();
-}
 
 /**
  * Send Transaction
