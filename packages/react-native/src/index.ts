@@ -73,7 +73,6 @@ class RNWalletConnect extends Connector {
         throw Error('Failed to register push server')
       }
     } catch (error) {
-      console.error(error)
       throw Error('Failed to register push server')
     }
   }
