@@ -754,7 +754,6 @@ class Connector {
         event: 'disconnect',
         params: [{ message }]
       })
-      console.error(message) // tslint:disable-line
     }
     this._removeStorageSession()
     this._toggleSocketPing()
@@ -840,6 +839,7 @@ class Connector {
       this.on(`response:${id}`, (error, payload) => {
         if (error) {
           reject(error)
+          return
         }
         if (payload.result) {
           resolve(payload.result)
@@ -855,7 +855,15 @@ class Connector {
   private _subscribeToInternalEvents () {
     this.on('wc_sessionRequest', (error, payload) => {
       if (error) {
-        console.error(error) // tslint:disable-line
+        this._triggerEvents({
+          event: 'error',
+          params: [
+            {
+              code: 'SESSION_REQUEST_ERROR',
+              message: error.toString()
+            }
+          ]
+        })
       }
       this.handshakeId = payload.id
       this.peerId = payload.params[0].peerId
@@ -879,7 +887,15 @@ class Connector {
 
     this.on('wc_exchangeKey', (error, payload) => {
       if (error) {
-        console.error(error) // tslint:disable-line
+        this._triggerEvents({
+          event: 'error',
+          params: [
+            {
+              code: 'EXCHANGE_KEY_ERROR',
+              message: error.toString()
+            }
+          ]
+        })
       }
       this._handleExchangeKeyRequest(payload)
     })
