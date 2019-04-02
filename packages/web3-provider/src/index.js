@@ -100,8 +100,9 @@ export default function WalletConnectProvider (opts) {
         const accounts = walletConnector.accounts
         if (accounts && accounts.length) {
           cb(null, accounts)
+        } else {
+          cb(new Error('Failed to get accounts'))
         }
-        cb(new Error('Failed to get accounts'))
       },
       sendTransaction: async (txParams, cb) => {
         const walletConnector = await engine.getWalletConnector()
