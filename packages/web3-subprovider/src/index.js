@@ -61,7 +61,7 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
       }
     })
 
-    this.qrcode = opts.qrcode || true
+    this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
 
     const bridge = opts.bridge || null
 
