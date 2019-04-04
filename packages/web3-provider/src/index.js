@@ -10,7 +10,7 @@ import NonceSubprovider from 'web3-provider-engine/subproviders/nonce-tracker'
 import SubscriptionsSubprovider from 'web3-provider-engine/subproviders/subscriptions'
 
 export default function WalletConnectProvider (opts) {
-  const qrcode = opts.qrcode || true
+  const qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
 
   const bridge = opts.bridge || null
 
