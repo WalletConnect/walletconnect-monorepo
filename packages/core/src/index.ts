@@ -841,8 +841,13 @@ class Connector {
       if (error) {
         this._handleSessionResponse(error.message)
       }
-
-      this._handleSessionResponse(errorMsg, payload.result)
+      if (payload.result) {
+        this._handleSessionResponse(errorMsg, payload.result)
+      } else if (payload.error && payload.error.message) {
+        this._handleSessionResponse(payload.error.message)
+      } else {
+        this._handleSessionResponse(errorMsg)
+      }
     })
   }
 
