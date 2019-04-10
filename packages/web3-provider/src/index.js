@@ -104,7 +104,7 @@ export default function WalletConnectProvider (opts) {
           cb(new Error('Failed to get accounts'))
         }
       },
-      sendTransaction: async (txParams, cb) => {
+      processTransaction: async (txParams, cb) => {
         const walletConnector = await engine.getWalletConnector()
         try {
           const result = await walletConnector.sendTransaction(txParams)
@@ -122,7 +122,7 @@ export default function WalletConnectProvider (opts) {
           cb(error)
         }
       },
-      signMessage: async (msgParams, cb) => {
+      processMessage: async (msgParams, cb) => {
         const walletConnector = await engine.getWalletConnector()
         try {
           const result = await walletConnector.signMessage(msgParams)
@@ -131,7 +131,7 @@ export default function WalletConnectProvider (opts) {
           cb(error)
         }
       },
-      signPersonalMessage: async (msgParams, cb) => {
+      processPersonalMessage: async (msgParams, cb) => {
         const walletConnector = await engine.getWalletConnector()
         try {
           const result = await walletConnector.signPersonalMessage(msgParams)
@@ -140,7 +140,7 @@ export default function WalletConnectProvider (opts) {
           cb(error)
         }
       },
-      signTypedMessage: async (msgParams, cb) => {
+      processTypedMessage: async (msgParams, cb) => {
         const walletConnector = await engine.getWalletConnector()
         try {
           const result = await walletConnector.signTypedData(msgParams)
@@ -156,8 +156,12 @@ export default function WalletConnectProvider (opts) {
     setEngine: _ => _,
     handleRequest: async (payload, next, end) => {
       const walletConnector = await engine.getWalletConnector()
-      const { error, result } = await walletConnector.sendCustomRequest(payload)
-      end(error, result)
+      try {
+        const result = await walletConnector.sendCustomRequest(msgParams)
+        cb(null, result)
+      } catch (error) {
+        cb(error)
+      }
     }
   })
 
