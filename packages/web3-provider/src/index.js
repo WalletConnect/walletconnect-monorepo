@@ -113,7 +113,7 @@ export default function WalletConnectProvider (opts) {
           cb(error)
         }
       },
-      signTransaction: async (txParams, cb) => {
+      processSignTransaction: async (txParams, cb) => {
         const walletConnector = await engine.getWalletConnector()
         try {
           const result = await walletConnector.signTransaction(txParams)
@@ -157,10 +157,10 @@ export default function WalletConnectProvider (opts) {
     handleRequest: async (payload, next, end) => {
       const walletConnector = await engine.getWalletConnector()
       try {
-        const result = await walletConnector.sendCustomRequest(msgParams)
-        cb(null, result)
+        const result = await walletConnector.sendCustomRequest(payload)
+        end(null, result)
       } catch (error) {
-        cb(error)
+        end(error)
       }
     }
   })

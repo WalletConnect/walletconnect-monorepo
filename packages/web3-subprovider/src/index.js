@@ -14,7 +14,7 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
           cb(new Error('Failed to get accounts'))
         }
       },
-      sendTransaction: async (txParams, cb) => {
+      processTransaction: async (txParams, cb) => {
         const walletConnector = await this.getWalletConnector()
         try {
           const result = await walletConnector.sendTransaction(txParams)
@@ -23,7 +23,7 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
           cb(error)
         }
       },
-      signTransaction: async (txParams, cb) => {
+      processSignTransaction: async (txParams, cb) => {
         const walletConnector = await this.getWalletConnector()
         try {
           const result = await walletConnector.signTransaction(txParams)
@@ -32,7 +32,7 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
           cb(error)
         }
       },
-      signMessage: async (msgParams, cb) => {
+      processMessage: async (msgParams, cb) => {
         const walletConnector = await this.getWalletConnector()
         try {
           const result = await walletConnector.signMessage(msgParams)
@@ -41,7 +41,7 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
           cb(error)
         }
       },
-      signPersonalMessage: async (msgParams, cb) => {
+      processPersonalMessage: async (msgParams, cb) => {
         const walletConnector = await this.getWalletConnector()
         try {
           const result = await walletConnector.signPersonalMessage(msgParams)
@@ -50,7 +50,7 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
           cb(error)
         }
       },
-      signTypedMessage: async (msgParams, cb) => {
+      processTypedMessage: async (msgParams, cb) => {
         const walletConnector = await this.getWalletConnector()
         try {
           const result = await walletConnector.signTypedData(msgParams)
