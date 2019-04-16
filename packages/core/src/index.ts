@@ -153,9 +153,9 @@ class Connector {
     const session = opts.session || this._getStorageSession()
     if (session) {
       this.session = session
-      if (this._browser) {
-        this._exchangeKey()
-      }
+      // if (this._browser) {
+      //   this._exchangeKey()
+      // }
     }
 
     if (this.handshakeId) {
@@ -886,7 +886,7 @@ class Connector {
       this.peerId = payload.params[0].peerId
       this.peerMeta = payload.params[0].peerMeta
 
-      this._exchangeKey()
+      // this._exchangeKey()
 
       let internalPayload = {
         ...payload,
