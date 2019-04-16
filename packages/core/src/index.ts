@@ -153,9 +153,9 @@ class Connector {
     const session = opts.session || this._getStorageSession()
     if (session) {
       this.session = session
-      // if (this._browser) {
-      //   this._exchangeKey()
-      // }
+      if (this._browser) {
+        //   this._exchangeKey()
+      }
     }
 
     if (this.handshakeId) {
@@ -976,27 +976,27 @@ class Connector {
 
   // -- keyManager ------------------------------------------------------- //
 
-  private async _exchangeKey () {
-    this._nextKey = await this._generateKey()
+  // private async _exchangeKey () {
+  //   this._nextKey = await this._generateKey()
 
-    const request: IJsonRpcRequest = this._formatRequest({
-      method: 'wc_exchangeKey',
-      params: [
-        {
-          peerId: this.clientId,
-          peerMeta: this.clientMeta,
-          nextKey: this.nextKey
-        }
-      ]
-    })
+  //   const request: IJsonRpcRequest = this._formatRequest({
+  //     method: 'wc_exchangeKey',
+  //     params: [
+  //       {
+  //         peerId: this.clientId,
+  //         peerMeta: this.clientMeta,
+  //         nextKey: this.nextKey
+  //       }
+  //     ]
+  //   })
 
-    try {
-      await this._sendCallRequest(request)
-      this._swapKey()
-    } catch (error) {
-      throw error
-    }
-  }
+  //   try {
+  //     await this._sendCallRequest(request)
+  //     this._swapKey()
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
 
   private async _handleExchangeKeyRequest (payload: IJsonRpcRequest) {
     const { peerId, peerMeta, nextKey } = payload.params[0]
