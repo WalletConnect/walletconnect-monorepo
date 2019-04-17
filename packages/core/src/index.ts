@@ -29,6 +29,7 @@ import {
   isHexStrict,
   convertUtf8ToHex
 } from '@walletconnect/utils'
+import SocketTransport from './socket'
 
 // -- typeChecks ----------------------------------------------------------- //
 
@@ -84,12 +85,10 @@ class Connector {
   private _handshakeTopic: string
   private _accounts: string[]
   private _chainId: number
-  private _socket: WebSocket | null
-  private _queue: ISocketMessage[]
+  private _socket: SocketTransport
   private _eventEmitters: IEventEmitter[]
   private _connected: boolean
   private _browser: boolean
-  private _pingInterval: any
 
   // -- constructor ----------------------------------------------------- //
 
@@ -116,12 +115,9 @@ class Connector {
     this._handshakeTopic = ''
     this._accounts = []
     this._chainId = 0
-    this._socket = null
-    this._queue = []
     this._eventEmitters = []
     this._connected = false
     this._browser = browser
-    this._pingInterval = null
 
     if (
       browser &&
@@ -165,8 +161,14 @@ class Connector {
       )
     }
 
+    this._socket = new SocketTransport({
+      bridge: this.bridge,
+      clientId: this.clientId,
+      callback: this._handleIncomingMessages
+    })
+
     this._subscribeToInternalEvents()
-    this._socketOpen()
+    this._socket.open()
   }
 
   // -- setters / getters ----------------------------------------------- //
@@ -672,11 +674,7 @@ class Connector {
       payload
     }
 
-    if (this._socket && this._socket.readyState === 1) {
-      this._socketSend(socketMessage)
-    } else {
-      this._setToQueue(socketMessage)
-    }
+    this._socket.send(socketMessage)
   }
 
   private async _sendResponse (
@@ -695,11 +693,7 @@ class Connector {
       payload
     }
 
-    if (this._socket && this._socket.readyState === 1) {
-      this._socketSend(socketMessage)
-    } else {
-      this._setToQueue(socketMessage)
-    }
+    this._socket.send(socketMessage)
   }
 
   private async _sendSessionRequest (
@@ -758,7 +752,7 @@ class Connector {
       })
     }
     this._removeStorageSession()
-    this._toggleSocketPing()
+    this._socket.togglePing()
   }
 
   private _handleSessionResponse (
@@ -828,8 +822,33 @@ class Connector {
     }
   }
 
+  private async _handleIncomingMessages (socketMessage: ISocketMessage) {
+    const activeTopics = [this.clientId, this.handshakeTopic]
+
+    if (!activeTopics.includes(socketMessage.topic)) {
+      return
+    }
+
+    let encryptionPayload: IEncryptionPayload
+    try {
+      encryptionPayload = JSON.parse(socketMessage.payload)
+    } catch (error) {
+      throw error
+    }
+
+    const payload:
+    | IJsonRpcRequest
+    | IJsonRpcResponseSuccess
+    | IJsonRpcResponseError
+    | null = await this._decrypt(encryptionPayload)
+
+    if (payload) {
+      this._triggerEvents(payload)
+    }
+  }
+
   private _subscribeToSessionRequest () {
-    this._setToQueue({
+    this._socket.setToQueue({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
       payload: ''
@@ -1018,117 +1037,6 @@ class Connector {
     if (this._connected) {
       this._setStorageSession()
     }
-  }
-
-  // -- websocket ------------------------------------------------------- //
-
-  private _socketOpen () {
-    const bridge = this.bridge
-
-    const url = bridge.startsWith('https')
-      ? bridge.replace('https', 'wss')
-      : bridge.startsWith('http')
-        ? bridge.replace('http', 'ws')
-        : bridge
-
-    const socket = new WebSocket(url)
-
-    socket.onmessage = (event: MessageEvent) => this._socketReceive(event)
-
-    socket.onopen = () => {
-      this._socket = socket
-
-      this._setToQueue({
-        topic: `${this.clientId}`,
-        type: 'sub',
-        payload: ''
-      })
-
-      this._dispatchQueue()
-      this._toggleSocketPing()
-    }
-  }
-
-  private _toggleSocketPing () {
-    if (this._socket && this._socket.readyState === 1) {
-      this._pingInterval = setInterval(
-        () => {
-          if (this._socket) {
-            this._socket.send('ping')
-          }
-        },
-        10000 // 10 seconds
-      )
-    } else {
-      clearInterval(this._pingInterval)
-    }
-  }
-
-  private _socketSend (socketMessage: ISocketMessage) {
-    if (!this._socket) {
-      throw new Error('Missing socket: required for sending message')
-    }
-
-    const message: string = JSON.stringify(socketMessage)
-
-    if (this._socket && this._socket.readyState === 1) {
-      this._socket.send(message)
-    } else {
-      if (this._connected) {
-        this._setToQueue(socketMessage)
-        this._socketOpen()
-      }
-    }
-  }
-
-  private async _socketReceive (event: MessageEvent) {
-    let socketMessage: ISocketMessage
-
-    if (event.data === 'pong') {
-      return
-    }
-
-    try {
-      socketMessage = JSON.parse(event.data)
-    } catch (error) {
-      throw error
-    }
-
-    const activeTopics = [this.clientId, this.handshakeTopic]
-    if (!activeTopics.includes(socketMessage.topic)) {
-      return
-    }
-
-    let encryptionPayload: IEncryptionPayload
-    try {
-      encryptionPayload = JSON.parse(socketMessage.payload)
-    } catch (error) {
-      throw error
-    }
-
-    const payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | null = await this._decrypt(encryptionPayload)
-
-    if (payload) {
-      this._triggerEvents(payload)
-    }
-  }
-
-  private _setToQueue (socketMessage: ISocketMessage) {
-    this._queue.push(socketMessage)
-  }
-
-  private _dispatchQueue () {
-    const queue = this._queue
-
-    queue.forEach((socketMessage: ISocketMessage) =>
-      this._socketSend(socketMessage)
-    )
-
-    this._queue = []
   }
 
   // -- uri ------------------------------------------------------------- //
