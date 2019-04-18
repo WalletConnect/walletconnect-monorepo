@@ -5,17 +5,6 @@ import {
   IJsonRpcRequest,
   IEventEmitter
 } from '@walletconnect/types'
-// import {
-//   convertArrayBufferToHex,
-//   convertHexToArrayBuffer,
-//   getMeta,
-//   payloadId,
-//   uuid,
-//   formatRpcError,
-//   parseWalletConnectUri,
-//   isHexStrict,
-//   convertUtf8ToHex
-// } from '@walletconnect/utils'
 
 // -- typeChecks ----------------------------------------------------------- //
 
