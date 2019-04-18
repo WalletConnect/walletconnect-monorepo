@@ -6,6 +6,8 @@ interface ISocketTransportOptions {
   callback: any
 }
 
+// -- SocketTransport ------------------------------------------------------ //
+
 class SocketTransport {
   private _bridge: string
   private _clientId: string
