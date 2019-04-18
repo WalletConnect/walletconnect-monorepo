@@ -21,6 +21,7 @@ class SocketTransport {
     this._bridge = ''
     this._socket = null
     this._queue = []
+    this._incoming = []
     this._pingInterval = null
     this._callback = () => {}
 
