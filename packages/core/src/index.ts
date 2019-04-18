@@ -138,7 +138,6 @@ class Connector {
 
     this._socket = new SocketTransport({
       bridge: this.bridge,
-      clientId: this.clientId,
       callback: (socketMessage: ISocketMessage) =>
         this._handleIncomingMessages(socketMessage)
     })

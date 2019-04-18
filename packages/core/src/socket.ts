@@ -2,7 +2,6 @@ import { ISocketMessage } from '@walletconnect/types'
 
 interface ISocketTransportOptions {
   bridge: string
-  clientId: string
   callback: any
 }
 
