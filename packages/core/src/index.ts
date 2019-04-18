@@ -1,5 +1,6 @@
 import {
   ICryptoLib,
+  ISessionStorage,
   IEncryptionPayload,
   ISocketMessage,
   ISessionStatus,
@@ -13,7 +14,6 @@ import {
   IClientMeta,
   IParseURIResult,
   ISessionParams,
-  IWalletConnectSession,
   IWalletConnectOptions
 } from '@walletconnect/types'
 import {
@@ -40,22 +40,6 @@ function isRpcResponseError (object: any): object is IJsonRpcResponseError {
   return 'error' in object
 }
 
-function isWalletConnectSession (object: any): object is IWalletConnectSession {
-  return 'bridge' in object
-}
-
-// -- localStorage --------------------------------------------------------- //
-
-const storageId: string = 'walletconnect'
-let storage: Storage | null = null
-
-if (
-  typeof window !== 'undefined' &&
-  typeof window.localStorage !== 'undefined'
-) {
-  storage = window.localStorage
-}
-
 // -- Connector ------------------------------------------------------------ //
 
 class Connector {
@@ -79,15 +63,15 @@ class Connector {
   private _socket: SocketTransport
   private _eventManager: EventManager
   private _connected: boolean
-  private _browser: boolean
+  private _storage: ISessionStorage | null
 
   // -- constructor ----------------------------------------------------- //
 
   constructor (
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
-    browser: boolean,
-    clientMeta?: IClientMeta
+    storage?: ISessionStorage | null,
+    clientMeta?: IClientMeta | null
   ) {
     this.cryptoLib = cryptoLib
 
@@ -108,10 +92,9 @@ class Connector {
     this._chainId = 0
     this._eventManager = new EventManager()
     this._connected = false
-    this._browser = browser
+    this._storage = storage || null
 
     if (
-      browser &&
       window.location.protocol !== 'https:' &&
       window.location.hostname !== 'localhost'
     ) {
@@ -137,12 +120,13 @@ class Connector {
       this._subscribeToSessionRequest()
     }
 
-    const session = opts.session || this._getStorageSession()
+    let session = opts.session || null
+
+    if (!session) {
+      session = this._getStorageSession()
+    }
     if (session) {
       this.session = session
-      if (this._browser) {
-        //   this._exchangeKey()
-      }
     }
 
     if (this.handshakeId) {
@@ -500,11 +484,8 @@ class Connector {
         }
       ]
     })
-    if (this._connected) {
-      this._setStorageSession()
-    } else {
-      this._removeStorageSession()
-    }
+
+    this._manageStorageSession()
   }
 
   public killSession (sessionError?: ISessionError) {
@@ -806,11 +787,8 @@ class Connector {
             ]
           })
         }
-        if (this._connected) {
-          this._setStorageSession()
-        } else {
-          this._removeStorageSession()
-        }
+
+        this._manageStorageSession()
       } else {
         this._handleSessionDisconnect(errorMsg)
       }
@@ -1057,39 +1035,32 @@ class Connector {
 
   // -- storage --------------------------------------------------------- //
 
-  private _getStorageSession (): IWalletConnectSession | null {
-    let session = null
-    let local = null
-    if (storage) {
-      local = storage.getItem(storageId)
+  private _getStorageSession () {
+    let result = null
+    if (this._storage) {
+      result = this._storage.getSession()
     }
-    if (local && typeof local === 'string') {
-      try {
-        const json = JSON.parse(local)
-        if (isWalletConnectSession(json)) {
-          session = json
-        }
-      } catch (error) {
-        throw error
-      }
-    }
-    return session
+    return result
   }
 
-  private _setStorageSession (): IWalletConnectSession {
-    const session: IWalletConnectSession = this.session
-    const local: string = JSON.stringify(session)
-    if (storage) {
-      storage.setItem(storageId, local)
+  private _setStorageSession () {
+    if (this._storage) {
+      this._storage.setSession(this.session)
     }
-    return session
   }
 
-  private _removeStorageSession (): void {
-    if (storage) {
-      storage.removeItem(storageId)
+  private _removeStorageSession () {
+    if (this._storage) {
+      this._storage.removeSession()
+    }
+  }
+
+  private _manageStorageSession () {
+    if (this._connected) {
+      this._setStorageSession()
+    } else {
+      this._removeStorageSession()
     }
   }
 }
-
 export default Connector
