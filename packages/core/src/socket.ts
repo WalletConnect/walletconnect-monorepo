@@ -8,15 +8,15 @@ interface ISocketTransportOptions {
 
 class SocketTransport {
   private _bridge: string
-  private _clientId: string
   private _socket: WebSocket | null
   private _queue: ISocketMessage[]
   private _pingInterval: any
   private _callback: any
 
+  // -- constructor ----------------------------------------------------- //
+
   constructor (opts: ISocketTransportOptions) {
     this._bridge = ''
-    this._clientId = ''
     this._socket = null
     this._queue = []
     this._pingInterval = null
@@ -28,12 +28,6 @@ class SocketTransport {
 
     this._bridge = opts.bridge
 
-    if (opts.clientId && typeof opts.clientId !== 'string') {
-      throw new Error('Missing or invalid clientId field')
-    }
-
-    this._clientId = opts.clientId
-
     if (opts.callback && typeof opts.callback !== 'function') {
       throw new Error('Missing or invalid callback field')
     }
@@ -41,33 +35,13 @@ class SocketTransport {
     this._callback = opts.callback
   }
 
-  set bridge (value: string) {
-    if (!value) {
-      return
-    }
-    this._bridge = value
+  // -- public ---------------------------------------------------------- //
+
+  public open (queuedMessages?: ISocketMessage[]) {
+    this._socketOpen(queuedMessages)
   }
 
-  get bridge () {
-    return this._bridge
-  }
-
-  set clientId (value: string) {
-    if (!value) {
-      return
-    }
-    this._clientId = value
-  }
-
-  get clientId () {
-    return this._clientId
-  }
-
-  public open () {
-    this._socketOpen()
-  }
-
-  public send (socketMessage: ISocketMessage) {
+  public send (socketMessage: ISocketMessage): void {
     if (this._socket && this._socket.readyState === 1) {
       this._socketSend(socketMessage)
     } else {
@@ -75,16 +49,18 @@ class SocketTransport {
     }
   }
 
-  public setToQueue (socketMessage: ISocketMessage) {
+  public setToQueue (socketMessage: ISocketMessage): void {
     this._setToQueue(socketMessage)
   }
 
-  public togglePing () {
+  public togglePing (): void {
     this._toggleSocketPing()
   }
 
-  private _socketOpen () {
-    const bridge = this.bridge
+  // -- private ---------------------------------------------------------- //
+
+  private _socketOpen (queuedMessages?: ISocketMessage[]) {
+    const bridge = this._bridge
 
     const url = bridge.startsWith('https')
       ? bridge.replace('https', 'wss')
@@ -99,11 +75,9 @@ class SocketTransport {
     socket.onopen = () => {
       this._socket = socket
 
-      this._setToQueue({
-        topic: `${this.clientId}`,
-        type: 'sub',
-        payload: ''
-      })
+      if (queuedMessages && queuedMessages.length) {
+        queuedMessages.forEach((msg: ISocketMessage) => this._setToQueue(msg))
+      }
 
       this._dispatchQueue()
       this._toggleSocketPing()
