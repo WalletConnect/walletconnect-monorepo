@@ -12,7 +12,6 @@ import {
   IJsonRpcRequest,
   ITxData,
   IClientMeta,
-  IEventEmitter,
   IParseURIResult,
   ISessionParams,
   IWalletConnectSession,
@@ -30,12 +29,9 @@ import {
   convertUtf8ToHex
 } from '@walletconnect/utils'
 import SocketTransport from './socket'
+import EventManager from './events'
 
 // -- typeChecks ----------------------------------------------------------- //
-
-function isRpcRequest (object: any): object is IJsonRpcRequest {
-  return 'method' in object
-}
 
 function isRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
   return 'result' in object
@@ -43,10 +39,6 @@ function isRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
 
 function isRpcResponseError (object: any): object is IJsonRpcResponseError {
   return 'error' in object
-}
-
-function isInternalEvent (object: any): object is IInternalEvent {
-  return 'event' in object
 }
 
 function isWalletConnectSession (object: any): object is IWalletConnectSession {
@@ -86,7 +78,7 @@ class Connector {
   private _accounts: string[]
   private _chainId: number
   private _socket: SocketTransport
-  private _eventEmitters: IEventEmitter[]
+  private _eventManager: EventManager
   private _connected: boolean
   private _browser: boolean
 
@@ -115,7 +107,7 @@ class Connector {
     this._handshakeTopic = ''
     this._accounts = []
     this._chainId = 0
-    this._eventEmitters = []
+    this._eventManager = new EventManager()
     this._connected = false
     this._browser = browser
 
@@ -378,7 +370,7 @@ class Connector {
       event,
       callback
     }
-    this._eventEmitters.push(eventEmitter)
+    this._eventManager.subscribe(eventEmitter)
   }
 
   public async createSession (opts?: { chainId: number }): Promise<void> {
@@ -438,7 +430,7 @@ class Connector {
     this._sendResponse(response)
 
     this._connected = true
-    this._triggerEvents({
+    this._eventManager.trigger({
       event: 'connect',
       params: [
         {
@@ -472,7 +464,7 @@ class Connector {
     this._sendResponse(response)
 
     this._connected = false
-    this._triggerEvents({
+    this._eventManager.trigger({
       event: 'disconnect',
       params: [{ message }]
     })
@@ -500,7 +492,7 @@ class Connector {
 
     this._sendSessionRequest(request, 'Session update rejected')
 
-    this._triggerEvents({
+    this._eventManager.trigger({
       event: 'session_update',
       params: [
         {
@@ -752,7 +744,7 @@ class Connector {
     const message = errorMsg || 'Session Disconnected'
     if (this._connected) {
       this._connected = false
-      this._triggerEvents({
+      this._eventManager.trigger({
         event: 'disconnect',
         params: [{ message }]
       })
@@ -786,7 +778,7 @@ class Connector {
             this.peerMeta = sessionParams.peerMeta
           }
 
-          this._triggerEvents({
+          this._eventManager.trigger({
             event: 'connect',
             params: [
               {
@@ -805,7 +797,7 @@ class Connector {
             this.accounts = sessionParams.accounts
           }
 
-          this._triggerEvents({
+          this._eventManager.trigger({
             event: 'session_update',
             params: [
               {
@@ -849,7 +841,7 @@ class Connector {
     | null = await this._decrypt(encryptionPayload)
 
     if (payload) {
-      this._triggerEvents(payload)
+      this._eventManager.trigger(payload)
     }
   }
 
@@ -897,7 +889,7 @@ class Connector {
   private _subscribeToInternalEvents () {
     this.on('wc_sessionRequest', (error, payload) => {
       if (error) {
-        this._triggerEvents({
+        this._eventManager.trigger({
           event: 'error',
           params: [
             {
@@ -917,7 +909,7 @@ class Connector {
         ...payload,
         method: 'session_request'
       }
-      this._triggerEvents(internalPayload)
+      this._eventManager.trigger(internalPayload)
     })
 
     this.on('wc_sessionUpdate', (error, payload) => {
@@ -929,7 +921,7 @@ class Connector {
 
     this.on('wc_exchangeKey', (error, payload) => {
       if (error) {
-        this._triggerEvents({
+        this._eventManager.trigger({
           event: 'error',
           params: [
             {
@@ -940,62 +932,6 @@ class Connector {
         })
       }
       this._handleExchangeKeyRequest(payload)
-    })
-  }
-
-  private _triggerEvents (
-    payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | IInternalEvent
-  ): void {
-    let eventEmitters: IEventEmitter[] = []
-    let event: string
-
-    if (isRpcRequest(payload)) {
-      event = payload.method
-    } else if (isRpcResponseSuccess(payload) || isRpcResponseError(payload)) {
-      event = `response:${payload.id}`
-    } else if (isInternalEvent(payload)) {
-      event = payload.event
-    } else {
-      event = ''
-    }
-
-    if (event) {
-      eventEmitters = this._eventEmitters.filter(
-        (eventEmitter: IEventEmitter) => eventEmitter.event === event
-      )
-    }
-
-    const reservedEvents = [
-      'wc_sessionRequest',
-      'wc_sessionUpdate',
-      'wc_exchangeKey',
-      'session_request',
-      'session_update',
-      'exchange_key',
-      'connect',
-      'disconnect'
-    ]
-
-    if (
-      (!eventEmitters || !eventEmitters.length) &&
-      !reservedEvents.includes(event)
-    ) {
-      eventEmitters = this._eventEmitters.filter(
-        (eventEmitter: IEventEmitter) => eventEmitter.event === 'call_request'
-      )
-    }
-
-    eventEmitters.forEach((eventEmitter: IEventEmitter) => {
-      if (isRpcResponseError(payload)) {
-        const error = new Error(payload.error.message)
-        eventEmitter.callback(error, null)
-      } else {
-        eventEmitter.callback(null, payload)
-      }
     })
   }
 
