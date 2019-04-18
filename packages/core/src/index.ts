@@ -132,9 +132,7 @@ class Connector {
     let session = opts.session || null
 
     if (!session) {
-      if (this._storage) {
-        session = this._storage.getSession()
-      }
+      session = this._getStorageSession()
     }
     if (session) {
       this.session = session
@@ -1101,6 +1099,14 @@ class Connector {
   }
 
   // -- storage --------------------------------------------------------- //
+
+  private _getStorageSession () {
+    let result = null
+    if (this._storage) {
+      result = this._storage.getSession()
+    }
+    return result
+  }
 
   private _setStorageSession () {
     if (this._storage) {
