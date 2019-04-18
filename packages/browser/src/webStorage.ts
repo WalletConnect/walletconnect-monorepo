@@ -20,39 +20,41 @@ function isWalletConnectSession (object: any): object is IWalletConnectSession {
 
 // -- WebStorage ----------------------------------------------------------- //
 
-class WebStorage {
-  public getSession (): IWalletConnectSession | null {
-    let session = null
-    let local = null
-    if (storage) {
-      local = storage.getItem(storageId)
-    }
-    if (local && typeof local === 'string') {
-      try {
-        const json = JSON.parse(local)
-        if (isWalletConnectSession(json)) {
-          session = json
-        }
-      } catch (error) {
-        throw error
+function getSession (): IWalletConnectSession | null {
+  let session = null
+  let local = null
+  if (storage) {
+    local = storage.getItem(storageId)
+  }
+  if (local && typeof local === 'string') {
+    try {
+      const json = JSON.parse(local)
+      if (isWalletConnectSession(json)) {
+        session = json
       }
+    } catch (error) {
+      throw error
     }
-    return session
   }
+  return session
+}
 
-  public setSession (session: IWalletConnectSession): IWalletConnectSession {
-    const local: string = JSON.stringify(session)
-    if (storage) {
-      storage.setItem(storageId, local)
-    }
-    return session
+function setSession (session: IWalletConnectSession): IWalletConnectSession {
+  const local: string = JSON.stringify(session)
+  if (storage) {
+    storage.setItem(storageId, local)
   }
+  return session
+}
 
-  public removeSession (): void {
-    if (storage) {
-      storage.removeItem(storageId)
-    }
+function removeSession (): void {
+  if (storage) {
+    storage.removeItem(storageId)
   }
 }
 
-export default WebStorage
+export default {
+  getSession,
+  setSession,
+  removeSession
+}
