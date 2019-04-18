@@ -893,6 +893,21 @@ class Connector {
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
     })
+
+    this.on('connected', (error, payload) => {
+      if (error) {
+        this._eventManager.trigger({
+          event: 'error',
+          params: [
+            {
+              code: 'SESSION_CONNECTION_ERROR',
+              message: error.toString()
+            }
+          ]
+        })
+      }
+      this._socket.pushIncoming()
+    })
   }
 
   // -- keyManager ------------------------------------------------------- //
