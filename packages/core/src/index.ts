@@ -730,7 +730,7 @@ class Connector {
       })
     }
     this._removeStorageSession()
-    this._socket.togglePing()
+    this._socket.close()
   }
 
   private _handleSessionResponse (
@@ -823,7 +823,7 @@ class Connector {
   }
 
   private _subscribeToSessionRequest () {
-    this._socket.setToQueue({
+    this._socket.queue({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
       payload: ''

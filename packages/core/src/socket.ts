@@ -50,12 +50,15 @@ class SocketTransport {
     }
   }
 
-  public setToQueue (socketMessage: ISocketMessage): void {
+  public queue (socketMessage: ISocketMessage): void {
     this._setToQueue(socketMessage)
   }
 
-  public togglePing (): void {
-    this._toggleSocketPing()
+  public close () {
+    if (this._socket && this._socket.readyState === 1) {
+      this._toggleSocketPing()
+      this._socket.close()
+    }
   }
 
   // -- private ---------------------------------------------------------- //
