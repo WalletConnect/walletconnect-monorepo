@@ -11,6 +11,7 @@ class SocketTransport {
   private _bridge: string
   private _socket: WebSocket | null
   private _queue: ISocketMessage[]
+  private _incoming: ISocketMessage[]
   private _pingInterval: any
   private _callback: any
 
@@ -83,7 +84,8 @@ class SocketTransport {
         queuedMessages.forEach((msg: ISocketMessage) => this._setToQueue(msg))
       }
 
-      this._dispatchQueue()
+      this._pushQueue()
+      this._pushIncoming()
       this._toggleSocketPing()
     }
   }
@@ -130,15 +132,18 @@ class SocketTransport {
     } catch (error) {
       throw error
     }
-
-    this._callback(socketMessage)
+    if (this._socket && this._socket.readyState === 1) {
+      this._callback(socketMessage)
+    } else {
+      this._incoming.push(socketMessage)
+    }
   }
 
   private _setToQueue (socketMessage: ISocketMessage) {
     this._queue.push(socketMessage)
   }
 
-  private _dispatchQueue () {
+  private _pushQueue () {
     const queue = this._queue
 
     queue.forEach((socketMessage: ISocketMessage) =>
@@ -146,6 +151,16 @@ class SocketTransport {
     )
 
     this._queue = []
+  }
+
+  private _pushIncoming () {
+    const incoming = this._incoming
+
+    incoming.forEach((socketMessage: ISocketMessage) =>
+      this._callback(socketMessage)
+    )
+
+    this._incoming = []
   }
 }
 
