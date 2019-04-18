@@ -107,7 +107,7 @@ class Connector {
 
     if (!opts.bridge && !opts.uri && !opts.session) {
       throw new Error(
-        'Missing one of two required parameters: bridge / uri / session'
+        'Missing one of the required parameters: bridge / uri / session'
       )
     }
 
