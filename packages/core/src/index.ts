@@ -4,7 +4,6 @@ import {
   ISocketMessage,
   ISessionStatus,
   ISessionError,
-  IInternalEvent,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
   IPartialRpcResponse,
