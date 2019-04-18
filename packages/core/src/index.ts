@@ -880,8 +880,6 @@ class Connector {
       this.peerId = payload.params[0].peerId
       this.peerMeta = payload.params[0].peerMeta
 
-      // this._exchangeKey()
-
       const internalPayload = {
         ...payload,
         method: 'session_request'
@@ -895,68 +893,11 @@ class Connector {
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
     })
-
-    this.on('wc_exchangeKey', (error, payload) => {
-      if (error) {
-        this._eventManager.trigger({
-          event: 'error',
-          params: [
-            {
-              code: 'EXCHANGE_KEY_ERROR',
-              message: error.toString()
-            }
-          ]
-        })
-      }
-      this._handleExchangeKeyRequest(payload)
-    })
   }
 
   // -- keyManager ------------------------------------------------------- //
 
-  // private async _exchangeKey () {
-  //   this._nextKey = await this._generateKey()
-
-  //   const request: IJsonRpcRequest = this._formatRequest({
-  //     method: 'wc_exchangeKey',
-  //     params: [
-  //       {
-  //         peerId: this.clientId,
-  //         peerMeta: this.clientMeta,
-  //         nextKey: this.nextKey
-  //       }
-  //     ]
-  //   })
-
-  //   try {
-  //     await this._sendCallRequest(request)
-  //     this._swapKey()
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  private async _handleExchangeKeyRequest (payload: IJsonRpcRequest) {
-    const { peerId, peerMeta, nextKey } = payload.params[0]
-    this.peerId = peerId
-    this.peerMeta = peerMeta
-    this.nextKey = nextKey
-    const response = {
-      id: payload.id,
-      jsonrpc: '2.0',
-      result: true
-    }
-    await this._sendResponse(response)
-    this._swapKey()
-  }
-
-  private _swapKey () {
-    this._key = this._nextKey
-    this._nextKey = null
-    if (this._connected) {
-      this._setStorageSession()
-    }
-  }
+  // TODO: Refactor with new exchange key flow
 
   // -- uri ------------------------------------------------------------- //
 
