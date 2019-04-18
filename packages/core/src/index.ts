@@ -154,7 +154,13 @@ class Connector {
     })
 
     this._subscribeToInternalEvents()
-    this._socket.open()
+    this._socket.open([
+      {
+        topic: `${this.clientId}`,
+        type: 'sub',
+        payload: ''
+      }
+    ])
   }
 
   // -- setters / getters ----------------------------------------------- //
