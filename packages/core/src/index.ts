@@ -163,7 +163,8 @@ class Connector {
 
     this._socket = new SocketTransport({
       bridge: this.bridge,
-      callback: this._handleIncomingMessages
+      callback: (socketMessage: ISocketMessage) =>
+        this._handleIncomingMessages(socketMessage)
     })
 
     this._subscribeToInternalEvents()
