@@ -23,15 +23,17 @@ class SocketTransport {
     this._queue = []
     this._incoming = []
     this._pingInterval = null
-    this._callback = () => {}
+    this._callback = () => {
+      // empty
+    }
 
-    if (opts.bridge && typeof opts.bridge !== 'string') {
+    if (!opts.bridge || typeof opts.bridge !== 'string') {
       throw new Error('Missing or invalid bridge field')
     }
 
     this._bridge = opts.bridge
 
-    if (opts.callback && typeof opts.callback !== 'function') {
+    if (!opts.callback || typeof opts.callback !== 'function') {
       throw new Error('Missing or invalid callback field')
     }
 
