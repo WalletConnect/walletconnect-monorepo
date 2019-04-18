@@ -55,7 +55,7 @@ declare module '@walletconnect/types' {
     data: string
   }
 
-  export type IPartialRpcResponse = {
+  export interface IPartialRpcResponse {
     id: number
     jsonrpc?: string
     result?: any
@@ -65,13 +65,13 @@ declare module '@walletconnect/types' {
     }
   }
 
-  export type IJsonRpcResponseSuccess = {
+  export interface IJsonRpcResponseSuccess {
     id: number
     jsonrpc: string
     result: any
   }
 
-  export type IJsonRpcResponseError = {
+  export interface IJsonRpcResponseError {
     id: number
     jsonrpc: string
     error: {
@@ -80,14 +80,14 @@ declare module '@walletconnect/types' {
     }
   }
 
-  export type IPartialRpcRequest = {
+  export interface IPartialRpcRequest {
     id?: number
     jsonrpc?: string
     method: string
     params: any[]
   }
 
-  export type IJsonRpcRequest = {
+  export interface IJsonRpcRequest {
     id: number
     jsonrpc: string
     method: string

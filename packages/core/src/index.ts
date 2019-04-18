@@ -882,7 +882,7 @@ class Connector {
 
       // this._exchangeKey()
 
-      let internalPayload = {
+      const internalPayload = {
         ...payload,
         method: 'session_request'
       }

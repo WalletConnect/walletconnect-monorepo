@@ -397,7 +397,7 @@ export function promisify (
   return promisifiedFunction
 }
 
-type IJsonRpcErrorMessage = {
+interface IJsonRpcErrorMessage {
   code?: number
   message?: string
 }
@@ -405,7 +405,7 @@ type IJsonRpcErrorMessage = {
 export function formatRpcError (
   error: IJsonRpcErrorMessage
 ): { code: number; message: string } {
-  let message = error.message || 'Failed or Rejected Request'
+  const message = error.message || 'Failed or Rejected Request'
   let code: number = -32000
   if (error && !error.code) {
     switch (message) {
