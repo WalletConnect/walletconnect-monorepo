@@ -840,6 +840,7 @@ class Connector {
     this.on(`response:${id}`, (error, payload) => {
       if (error) {
         this._handleSessionResponse(error.message)
+        return
       }
       if (payload.result) {
         this._handleSessionResponse(errorMsg, payload.result)
@@ -1053,7 +1054,7 @@ class Connector {
     if (this._socket && this._socket.readyState === 1) {
       this._pingInterval = setInterval(
         () => {
-          if (this._socket) {
+          if (this._socket && this._socket.readyState === 1) {
             this._socket.send('ping')
           }
         },
