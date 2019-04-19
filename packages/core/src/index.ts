@@ -1053,7 +1053,7 @@ class Connector {
     if (this._socket && this._socket.readyState === 1) {
       this._pingInterval = setInterval(
         () => {
-          if (this._socket) {
+          if (this._socket && this._socket.readyState === 1) {
             this._socket.send('ping')
           }
         },
