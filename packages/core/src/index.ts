@@ -842,6 +842,7 @@ class Connector {
     this.on(`response:${id}`, (error, payload) => {
       if (error) {
         this._handleSessionResponse(error.message)
+        return
       }
       if (payload.result) {
         this._handleSessionResponse(errorMsg, payload.result)
