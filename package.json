@@ -26,7 +26,7 @@
     "publish:beta": "lerna version && lerna exec -- npm publish",
     "check-packages": "npm run clean && npm run lint && npm run build",
     "deploy": "npm run check-packages && npm run publish",
-    "deploy:beta": "npm run clean:all && npm run bootstrap && npm run build && npm run publish:beta"
+    "deploy:beta": "npm run clean:all && npm run bootstrap && npm run check-packages && git commit -am 'package.lock' && npm run publish:beta"
   },
   "repository": {
     "type": "git",
