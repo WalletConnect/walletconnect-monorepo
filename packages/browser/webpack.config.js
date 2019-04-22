@@ -9,7 +9,7 @@ module.exports = {
     path: path.resolve(__dirname, 'lib'),
     filename: '[name].js',
     libraryTarget: 'umd',
-    library: 'Connector',
+    library: 'WalletConnect',
     umdNamedDefine: true,
     globalObject: 'this'
   },
