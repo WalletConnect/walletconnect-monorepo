@@ -60,7 +60,7 @@ declare module '@walletconnect/types' {
   }
 
   export interface IJsonRpcErrorMessage {
-    code: number
+    code?: number
     message: string
   }
 
