@@ -1,4 +1,5 @@
 import isNumber from 'lodash.isnumber'
+import { keccak_256 } from 'js-sha3'
 
 import {
   ITxData,
@@ -169,6 +170,47 @@ export const isHexStrict = (hex: string) => {
   return (
     (typeof hex === 'string' || isNumber(hex)) && /^(-)?0x[0-9a-f]*$/i.test(hex)
   )
+}
+
+export function keccak256 (data?: string): string {
+  if (!data) {
+    return ''
+  }
+  return '0x' + keccak_256(data)
+}
+
+export const toChecksumAddress = (address: string) => {
+  if (typeof address === 'undefined') return ''
+
+  address = address.toLowerCase().replace('0x', '')
+  const addressHash = keccak256(address).replace('0x', '')
+  let checksumAddress = '0x'
+
+  for (let i = 0; i < address.length; i++) {
+    if (parseInt(addressHash[i], 16) > 7) {
+      checksumAddress += address[i].toUpperCase()
+    } else {
+      checksumAddress += address[i]
+    }
+  }
+  return checksumAddress
+}
+
+export const isValidAddress = (address?: string) => {
+  if (!address) {
+    return false
+  } else if (address.toLowerCase().substring(0, 2) !== '0x') {
+    return false
+  } else if (!/^(0x)?[0-9a-f]{40}$/i.test(address)) {
+    return false
+  } else if (
+    /^(0x)?[0-9a-f]{40}$/.test(address) ||
+    /^(0x)?[0-9A-F]{40}$/.test(address)
+  ) {
+    return true
+  } else {
+    return address === toChecksumAddress(address)
+  }
 }
 
 export function getMeta (): IClientMeta | null {
@@ -398,10 +440,8 @@ export function promisify (
   return promisifiedFunction
 }
 
-export function parseTransactionData (
-  txData: Partial<ITxData>
-): Partial<ITxData> {
-  if (typeof txData.from === 'undefined') {
+export function parseTransactionData (txData: Partial<ITxData>): ITxData {
+  if (typeof txData.from === 'undefined' || !isValidAddress(txData.from)) {
     throw new Error(`Transaction object must include a valid 'from' value.`)
   }
   let txDataRPC = {
