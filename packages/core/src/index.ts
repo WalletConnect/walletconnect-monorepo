@@ -87,7 +87,6 @@ class Connector {
   private _queue: ISocketMessage[]
   private _eventEmitters: IEventEmitter[]
   private _connected: boolean
-  private _browser: boolean
   private _pingInterval: any
 
   // -- constructor ----------------------------------------------------- //
@@ -95,7 +94,6 @@ class Connector {
   constructor (
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
-    browser: boolean,
     clientMeta?: IClientMeta
   ) {
     this.cryptoLib = cryptoLib
@@ -119,11 +117,11 @@ class Connector {
     this._queue = []
     this._eventEmitters = []
     this._connected = false
-    this._browser = browser
     this._pingInterval = null
 
     if (
-      browser &&
+      typeof window !== 'undefined' &&
+      typeof window.location !== 'undefined' &&
       window.location.protocol !== 'https:' &&
       window.location.hostname !== 'localhost'
     ) {
@@ -152,9 +150,6 @@ class Connector {
     const session = opts.session || this._getStorageSession()
     if (session) {
       this.session = session
-      if (this._browser) {
-        this._exchangeKey()
-      }
     }
 
     if (this.handshakeId) {
@@ -902,8 +897,6 @@ class Connector {
       this.peerId = payload.params[0].peerId
       this.peerMeta = payload.params[0].peerMeta
 
-      this._exchangeKey()
-
       const internalPayload = {
         ...payload,
         method: 'session_request'
@@ -916,21 +909,6 @@ class Connector {
         this._handleSessionResponse(error.message)
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
-    })
-
-    this.on('wc_exchangeKey', (error, payload) => {
-      if (error) {
-        this._triggerEvents({
-          event: 'error',
-          params: [
-            {
-              code: 'EXCHANGE_KEY_ERROR',
-              message: error.toString()
-            }
-          ]
-        })
-      }
-      this._handleExchangeKeyRequest(payload)
     })
   }
 
@@ -992,49 +970,7 @@ class Connector {
 
   // -- keyManager ------------------------------------------------------- //
 
-  private async _exchangeKey () {
-    this._nextKey = await this._generateKey()
-
-    const request: IJsonRpcRequest = this._formatRequest({
-      method: 'wc_exchangeKey',
-      params: [
-        {
-          peerId: this.clientId,
-          peerMeta: this.clientMeta,
-          nextKey: this.nextKey
-        }
-      ]
-    })
-
-    try {
-      await this._sendCallRequest(request)
-      this._swapKey()
-    } catch (error) {
-      throw error
-    }
-  }
-
-  private async _handleExchangeKeyRequest (payload: IJsonRpcRequest) {
-    const { peerId, peerMeta, nextKey } = payload.params[0]
-    this.peerId = peerId
-    this.peerMeta = peerMeta
-    this.nextKey = nextKey
-    const response = {
-      id: payload.id,
-      jsonrpc: '2.0',
-      result: true
-    }
-    await this._sendResponse(response)
-    this._swapKey()
-  }
-
-  private _swapKey () {
-    this._key = this._nextKey
-    this._nextKey = null
-    if (this._connected) {
-      this._setStorageSession()
-    }
-  }
+  // TODO: Refactor with new exchange key flow
 
   // -- websocket ------------------------------------------------------- //
 
