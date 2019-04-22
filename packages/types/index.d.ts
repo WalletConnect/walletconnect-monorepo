@@ -45,24 +45,18 @@ declare module '@walletconnect/types' {
     params: any
   }
 
-  export interface ITxData {
-    from: string
-    to: string
-    nonce: string
-    gasPrice: string
-    gasLimit: string
-    value: string
-    data: string
+  export interface ICallTxData {
+    to?: string
+    value?: number | string
+    gas?: number | string
+    gasLimit?: number | string
+    gasPrice?: number | string
+    data?: string
+    nonce?: number
   }
 
-  export interface IPartialRpcResponse {
-    id: number
-    jsonrpc?: string
-    result?: any
-    error?: {
-      code?: number
-      message: string
-    }
+  export interface ITxData extends ICallTxData {
+    from: string
   }
 
   export interface IJsonRpcResponseSuccess {
@@ -78,13 +72,6 @@ declare module '@walletconnect/types' {
       code: number
       message: string
     }
-  }
-
-  export interface IPartialRpcRequest {
-    id?: number
-    jsonrpc?: string
-    method: string
-    params: any[]
   }
 
   export interface IJsonRpcRequest {
