@@ -53,16 +53,6 @@ declare module '@walletconnect/types' {
     from: string
   }
 
-  export interface IPartialRpcResponse {
-    id: number
-    jsonrpc?: string
-    result?: any
-    error?: {
-      code?: number
-      message: string
-    }
-  }
-
   export interface IJsonRpcResponseSuccess {
     id: number
     jsonrpc: string
@@ -76,13 +66,6 @@ declare module '@walletconnect/types' {
       code: number
       message: string
     }
-  }
-
-  export interface IPartialRpcRequest {
-    id?: number
-    jsonrpc?: string
-    method: string
-    params: any[]
   }
 
   export interface IJsonRpcRequest {
