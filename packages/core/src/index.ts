@@ -19,6 +19,7 @@ import {
   IWalletConnectOptions
 } from '@walletconnect/types'
 import {
+  parseTransactionData,
   convertArrayBufferToHex,
   convertHexToArrayBuffer,
   getMeta,
@@ -532,9 +533,11 @@ class Connector {
       throw new Error('Session currently disconnected')
     }
 
+    const parsedTx = parseTransactionData(tx)
+
     const request = this._formatRequest({
       method: 'eth_sendTransaction',
-      params: [tx]
+      params: [parsedTx]
     })
 
     try {
@@ -545,14 +548,16 @@ class Connector {
     }
   }
 
-  public async signTransaction (params: any[]) {
+  public async signTransaction (tx: ITxData) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
     }
 
+    const parsedTx = parseTransactionData(tx)
+
     const request = this._formatRequest({
       method: 'eth_signTransaction',
-      params
+      params: [parsedTx]
     })
 
     try {

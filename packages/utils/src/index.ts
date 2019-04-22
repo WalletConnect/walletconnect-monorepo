@@ -1,6 +1,7 @@
 import isNumber from 'lodash.isnumber'
 
 import {
+  ITxData,
   IClientMeta,
   IParseURIResult,
   IRequiredParamsResult,
@@ -395,6 +396,50 @@ export function promisify (
     })
   }
   return promisifiedFunction
+}
+
+export function parseTransactionData (
+  txData: Partial<ITxData>
+): Partial<ITxData> {
+  if (typeof txData.from === 'undefined') {
+    throw new Error(`Transaction object must include a valid 'from' value.`)
+  }
+  let txDataRPC = {
+    ...txData,
+    to: typeof txData.to === 'undefined' ? undefined : sanitizeHex(txData.to),
+    gasPrice:
+      typeof txData.gasPrice === 'undefined'
+        ? undefined
+        : convertUtf8ToHex(`${txData.gasPrice}`),
+    gasLimit:
+      typeof txData.gasLimit === 'undefined'
+        ? typeof txData.gas === 'undefined'
+          ? undefined
+          : convertUtf8ToHex(`${txData.gas}`)
+        : convertUtf8ToHex(`${txData.gasLimit}`),
+    value:
+      typeof txData.value === 'undefined'
+        ? undefined
+        : convertUtf8ToHex(`${txData.value}`),
+    nonce:
+      typeof txData.nonce === 'undefined'
+        ? undefined
+        : convertUtf8ToHex(`${txData.nonce}`)
+  }
+
+  let result = {
+    from: sanitizeHex(txData.from)
+  }
+
+  const prunable = ['gasPrice', 'gas', 'value', 'nonce']
+  Object.keys(txDataRPC).forEach((key: string) => {
+    if (typeof txDataRPC[key] === 'undefined' && prunable.includes(key)) {
+      return
+    }
+    result[key] = txDataRPC[key]
+  })
+
+  return result
 }
 
 interface IJsonRpcErrorMessage {

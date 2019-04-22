@@ -39,14 +39,18 @@ declare module '@walletconnect/types' {
     params: any
   }
 
-  export interface ITxData {
+  export interface ICallTxData {
+    to?: string
+    value?: number | string
+    gas?: number | string
+    gasLimit?: number | string
+    gasPrice?: number | string
+    data?: string
+    nonce?: number
+  }
+
+  export interface ITxData extends ICallTxData {
     from: string
-    to: string
-    nonce: string
-    gasPrice: string
-    gasLimit: string
-    value: string
-    data: string
   }
 
   export interface IPartialRpcResponse {
