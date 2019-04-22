@@ -94,6 +94,8 @@ class Connector {
     this._storage = storage || null
 
     if (
+      typeof window !== 'undefined' &&
+      typeof window.location !== 'undefined' &&
       window.location.protocol !== 'https:' &&
       window.location.hostname !== 'localhost'
     ) {
@@ -707,7 +709,7 @@ class Connector {
       throw new Error('JSON RPC request must have valid "method" value')
     }
     const formattedRequest: IJsonRpcRequest = {
-      id: payloadId(),
+      id: typeof request.id === 'undefined' ? payloadId() : request.id,
       jsonrpc: '2.0',
       method: request.method,
       params: typeof request.params === 'undefined' ? [] : request.params

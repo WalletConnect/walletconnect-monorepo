@@ -8,7 +8,8 @@ import {
   IRequiredParamsResult,
   IQueryParamsResult,
   IJsonRpcResponseSuccess,
-  IJsonRpcResponseError
+  IJsonRpcResponseError,
+  IJsonRpcErrorMessage
 } from '@walletconnect/types'
 
 export function convertArrayBufferToBuffer (arrayBuffer: ArrayBuffer): Buffer {
@@ -180,7 +181,9 @@ export function keccak256 (data?: string): string {
 }
 
 export const toChecksumAddress = (address: string) => {
-  if (typeof address === 'undefined') return ''
+  if (typeof address === 'undefined') {
+    return ''
+  }
 
   address = address.toLowerCase().replace('0x', '')
   const addressHash = keccak256(address).replace('0x', '')
@@ -440,55 +443,55 @@ export function promisify (
   return promisifiedFunction
 }
 
-export function parseTransactionData (txData: Partial<ITxData>): ITxData {
+export function parseTransactionData (
+  txData: Partial<ITxData>
+): Partial<ITxData> {
   if (typeof txData.from === 'undefined' || !isValidAddress(txData.from)) {
     throw new Error(`Transaction object must include a valid 'from' value.`)
   }
-  let txDataRPC = {
-    ...txData,
-    to: typeof txData.to === 'undefined' ? undefined : sanitizeHex(txData.to),
+
+  function parseHexValues (str: string) {
+    if (isHexStrict(str)) {
+      return str
+    }
+    return convertUtf8ToHex(str)
+  }
+
+  const txDataRPC = {
+    from: sanitizeHex(txData.from),
+    to: typeof txData.to === 'undefined' ? '' : sanitizeHex(txData.to),
     gasPrice:
       typeof txData.gasPrice === 'undefined'
-        ? undefined
-        : convertUtf8ToHex(`${txData.gasPrice}`),
+        ? ''
+        : parseHexValues(`${txData.gasPrice}`),
     gasLimit:
       typeof txData.gasLimit === 'undefined'
         ? typeof txData.gas === 'undefined'
-          ? undefined
-          : convertUtf8ToHex(`${txData.gas}`)
-        : convertUtf8ToHex(`${txData.gasLimit}`),
+          ? ''
+          : parseHexValues(`${txData.gas}`)
+        : parseHexValues(`${txData.gasLimit}`),
     value:
       typeof txData.value === 'undefined'
-        ? undefined
-        : convertUtf8ToHex(`${txData.value}`),
+        ? ''
+        : parseHexValues(`${txData.value}`),
     nonce:
       typeof txData.nonce === 'undefined'
-        ? undefined
-        : convertUtf8ToHex(`${txData.nonce}`)
-  }
-
-  let result = {
-    from: sanitizeHex(txData.from)
+        ? ''
+        : parseHexValues(`${txData.nonce}`)
   }
 
   const prunable = ['gasPrice', 'gas', 'value', 'nonce']
   Object.keys(txDataRPC).forEach((key: string) => {
-    if (typeof txDataRPC[key] === 'undefined' && prunable.includes(key)) {
-      return
+    if (!txDataRPC[key].trim().length && prunable.includes(key)) {
+      delete txDataRPC[key]
     }
-    result[key] = txDataRPC[key]
   })
 
-  return result
-}
-
-interface IJsonRpcErrorMessage {
-  code?: number
-  message?: string
+  return txDataRPC
 }
 
 export function formatRpcError (
-  error: IJsonRpcErrorMessage
+  error: Partial<IJsonRpcErrorMessage>
 ): { code: number; message: string } {
   const message = error.message || 'Failed or Rejected Request'
   let code: number = -32000
