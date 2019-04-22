@@ -45,8 +45,8 @@ declare module '@walletconnect/types' {
     gas?: number | string
     gasLimit?: number | string
     gasPrice?: number | string
+    nonce?: number | string
     data?: string
-    nonce?: number
   }
 
   export interface ITxData extends ICallTxData {
@@ -59,13 +59,15 @@ declare module '@walletconnect/types' {
     result: any
   }
 
+  export interface IJsonRpcErrorMessage {
+    code: number
+    message: string
+  }
+
   export interface IJsonRpcResponseError {
     id: number
     jsonrpc: string
-    error: {
-      code: number
-      message: string
-    }
+    error: IJsonRpcErrorMessage
   }
 
   export interface IJsonRpcRequest {
