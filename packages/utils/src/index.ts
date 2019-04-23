@@ -477,7 +477,10 @@ export function parseTransactionData (
     nonce:
       typeof txData.nonce === 'undefined'
         ? ''
-        : parseHexValues(`${txData.nonce}`)
+        : parseHexValues(`${txData.nonce}`),
+        data:
+          typeof txData.data === "undefined" ? "" : parseHexValues(`${txData.data}`)
+    
   }
 
   const prunable = ['gasPrice', 'gas', 'value', 'nonce']
