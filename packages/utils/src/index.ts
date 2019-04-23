@@ -482,7 +482,7 @@ export function parseTransactionData (
       typeof txData.data === 'undefined' ? '' : parseHexValues(`${txData.data}`)
   }
 
-  const prunable = ['gasPrice', 'gas', 'value', 'nonce']
+  const prunable = ['gasPrice', 'gasLimit', 'value', 'nonce']
   Object.keys(txDataRPC).forEach((key: string) => {
     if (!txDataRPC[key].trim().length && prunable.includes(key)) {
       delete txDataRPC[key]
