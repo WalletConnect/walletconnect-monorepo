@@ -5,6 +5,7 @@ Typescript Types for WalletConnect
 ## Types
 
 - ICryptoLib
+- ISessionStorage
 - IEncryptionPayload
 - ISocketMessage
 - ISessionStatus
