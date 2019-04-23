@@ -17,17 +17,6 @@ const AES_ALGORITHM: string = 'AES-CBC'
 const AES_LENGTH: number = 256
 const HMAC_ALGORITHM: string = 'SHA-256'
 
-if (
-  typeof window !== 'undefined' &&
-  typeof window.location !== 'undefined' &&
-  window.location.protocol !== 'https:' &&
-  window.location.hostname !== 'localhost'
-) {
-  throw new Error(
-    'HTTPS is required by WebCrypto API for non-localhost origins'
-  )
-}
-
 export async function exportKey (cryptoKey: CryptoKey): Promise<ArrayBuffer> {
   const buffer: ArrayBuffer = await window.crypto.subtle.exportKey(
     'raw',
