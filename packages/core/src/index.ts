@@ -749,11 +749,11 @@ class Connector {
     const message = errorMsg || 'Session Disconnected'
     if (this._connected) {
       this._connected = false
-      this._eventManager.trigger({
-        event: 'disconnect',
-        params: [{ message }]
-      })
     }
+    this._eventManager.trigger({
+      event: 'disconnect',
+      params: [{ message }]
+    })
     this._removeStorageSession()
     this._socket.close()
   }
