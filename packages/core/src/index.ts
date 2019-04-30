@@ -571,7 +571,7 @@ class Connector {
     }
 
     if (!isHexStrict(params[1])) {
-      params[1] = convertUtf8ToHex(params[1])
+      params[1] = '0x' + convertUtf8ToHex(params[1])
     }
 
     const request = this._formatRequest({
@@ -1037,3 +1037,4 @@ class Connector {
   }
 }
 export default Connector
+
