@@ -40,6 +40,7 @@ export function convertBufferToHex (buffer: Buffer): string {
 }
 
 export function convertHexToBuffer (hex: string): Buffer {
+  hex = hex.replace('0x', '')
   const result = new Buffer(hex, 'hex')
   return result
 }
@@ -120,6 +121,8 @@ export function convertArrayBufferToHex (arrayBuffer: ArrayBuffer): string {
 }
 
 export function convertHexToArrayBuffer (hex: string): ArrayBuffer {
+  hex = hex.replace('0x', '')
+
   const bytes: number[] = []
 
   for (let i = 0; i < hex.length; i += 2) {
@@ -477,10 +480,12 @@ export function parseTransactionData (
     nonce:
       typeof txData.nonce === 'undefined'
         ? ''
-        : parseHexValues(`${txData.nonce}`)
+        : parseHexValues(`${txData.nonce}`),
+    data:
+      typeof txData.data === 'undefined' ? '' : parseHexValues(`${txData.data}`)
   }
 
-  const prunable = ['gasPrice', 'gas', 'value', 'nonce']
+  const prunable = ['gasPrice', 'gasLimit', 'value', 'nonce']
   Object.keys(txDataRPC).forEach((key: string) => {
     if (!txDataRPC[key].trim().length && prunable.includes(key)) {
       delete txDataRPC[key]

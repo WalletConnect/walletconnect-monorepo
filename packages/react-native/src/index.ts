@@ -12,7 +12,7 @@ class RNWalletConnect extends Connector {
     opts: IWalletConnectOptions,
     walletOptions: INativeWalletOptions
   ) {
-    super(cryptoLib, opts, walletOptions.clientMeta)
+    super(cryptoLib, opts, null, walletOptions.clientMeta)
     if (walletOptions.push) {
       this.registerPushServer(walletOptions.push)
     }

@@ -13,6 +13,12 @@ declare module '@walletconnect/types' {
     >
   }
 
+  export interface ISessionStorage {
+    getSession: () => IWalletConnectSession | null
+    setSession: (session: IWalletConnectSession) => IWalletConnectSession
+    removeSession: () => void
+  }
+
   export interface IEncryptionPayload {
     data: string
     hmac: string
