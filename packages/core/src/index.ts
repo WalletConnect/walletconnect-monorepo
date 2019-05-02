@@ -571,7 +571,7 @@ class Connector {
     }
 
     if (!isHexStrict(params[1])) {
-      params[1] = convertUtf8ToHex(params[1])
+      params[1] = convertUtf8ToHex(params[1], true)
     }
 
     const request = this._formatRequest({
