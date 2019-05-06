@@ -1,10 +1,14 @@
 import crypto from 'crypto'
+
 import {
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
-  IEncryptionPayload
+  IEncryptionPayload,
+  IKeyPair,
+  IKeyPairEncryptionPayload
 } from '@walletconnect/types'
+
 import {
   convertHexToArrayBuffer,
   convertArrayBufferToBuffer,
@@ -148,4 +152,45 @@ export async function decrypt (
   }
 
   return data
+}
+
+export async function generateKeyPair (): Promise<IKeyPair> {
+  const keyPair = {
+    privateKey: '',
+    publicKey: ''
+  }
+  return keyPair
+}
+
+export async function encryptWithPublicKey (
+  publicKey: ArrayBuffer,
+  message: ArrayBuffer
+): Promise<IKeyPairEncryptionPayload> {
+  return {
+    iv: '',
+    ephemPublicKey: '',
+    ciphertext: '',
+    mac: ''
+  }
+}
+
+export async function decryptWithPrivateKey (
+  privateKey: ArrayBuffer,
+  encryptedMessage: IKeyPairEncryptionPayload
+): Promise<ArrayBuffer> {
+  return new ArrayBuffer(0)
+}
+
+export async function sign (
+  privateKey: ArrayBuffer,
+  message: ArrayBuffer
+): Promise<ArrayBuffer> {
+  return new ArrayBuffer(0)
+}
+
+export async function recoverPublicKey (
+  signature: ArrayBuffer,
+  message: ArrayBuffer
+): Promise<ArrayBuffer> {
+  return new ArrayBuffer(0)
 }
