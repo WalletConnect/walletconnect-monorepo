@@ -67,9 +67,13 @@ class EventManager {
       'wc_sessionRequest',
       'wc_sessionUpdate',
       'wc_exchangeKey',
+      'wc_signingChallenge',
+      'wc_keyUpdate',
       'session_request',
       'session_update',
       'exchange_key',
+      'signing_challenge',
+      'update_key',
       'connect',
       'disconnect'
     ]

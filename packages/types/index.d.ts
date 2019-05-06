@@ -11,6 +11,23 @@ declare module '@walletconnect/types' {
     ) => Promise<
       IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null
     >
+    generateKeyPair: () => Promise<IKeyPair>
+    encryptWithPublicKey: (
+      publicKey: ArrayBuffer,
+      message: ArrayBuffer
+    ) => Promise<IKeyPairEncryptionPayload>
+    decryptWithPrivateKey: (
+      privateKey: ArrayBuffer,
+      encryptedMessage: IKeyPairEncryptionPayload
+    ) => Promise<ArrayBuffer>
+    sign: (
+      privateKey: ArrayBuffer,
+      message: ArrayBuffer
+    ) => Promise<ArrayBuffer>
+    recoverPublicKey: (
+      signature: ArrayBuffer,
+      message: ArrayBuffer
+    ) => Promise<ArrayBuffer>
   }
 
   export interface ISessionStorage {
@@ -23,6 +40,18 @@ declare module '@walletconnect/types' {
     data: string
     hmac: string
     iv: string
+  }
+
+  export interface IKeyPair {
+    privateKey: string
+    publicKey: string
+  }
+
+  export interface IKeyPairEncryptionPayload {
+    iv: string
+    ephemPublicKey: string
+    ciphertext: string
+    mac: string
   }
 
   export interface ISocketMessage {

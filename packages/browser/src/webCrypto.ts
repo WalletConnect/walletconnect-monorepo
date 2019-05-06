@@ -1,11 +1,16 @@
+import EthCrypto from 'eth-crypto'
+
 import {
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
   IJsonRpcRequest,
-  IEncryptionPayload
+  IEncryptionPayload,
+  IKeyPair,
+  IKeyPairEncryptionPayload
 } from '@walletconnect/types'
 
 import {
+  sanitizeHex,
   concatArrayBuffers,
   convertArrayBufferToHex,
   convertArrayBufferToUtf8,
@@ -187,4 +192,57 @@ export async function decrypt (
   }
 
   return data
+}
+
+export async function generateKeyPair (): Promise<IKeyPair> {
+  const identity = await EthCrypto.createIdentity()
+  const keyPair: IKeyPair = {
+    privateKey: sanitizeHex(identity.privateKey),
+    publicKey: sanitizeHex(identity.publicKey)
+  }
+  return keyPair
+}
+
+export async function encryptWithPublicKey (
+  publicKey: ArrayBuffer,
+  message: ArrayBuffer
+): Promise<IKeyPairEncryptionPayload> {
+  const encrypted = await EthCrypto.encryptWithPublicKey(
+    convertArrayBufferToHex(publicKey),
+    convertArrayBufferToUtf8(message)
+  )
+  return encrypted
+}
+
+export async function decryptWithPrivateKey (
+  privateKey: ArrayBuffer,
+  encryptedMessage: IKeyPairEncryptionPayload
+): Promise<ArrayBuffer> {
+  const decrypted = await EthCrypto.decryptWithPrivateKey(
+    convertArrayBufferToHex(privateKey),
+    encryptedMessage
+  )
+  return convertUtf8ToArrayBuffer(decrypted)
+}
+
+export async function sign (
+  privateKey: ArrayBuffer,
+  message: ArrayBuffer
+): Promise<ArrayBuffer> {
+  const signature = await EthCrypto.sign(
+    convertArrayBufferToHex(privateKey),
+    EthCrypto.hash.keccak256(convertArrayBufferToUtf8(message))
+  )
+  return convertHexToArrayBuffer(signature)
+}
+
+export async function recoverPublicKey (
+  signature: ArrayBuffer,
+  message: ArrayBuffer
+): Promise<ArrayBuffer> {
+  const publicKey = await EthCrypto.recoverPublicKey(
+    convertArrayBufferToHex(signature),
+    EthCrypto.hash.keccak256(convertArrayBufferToUtf8(message))
+  )
+  return convertHexToArrayBuffer(publicKey)
 }

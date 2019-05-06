@@ -12,7 +12,8 @@ import {
   IClientMeta,
   IParseURIResult,
   ISessionParams,
-  IWalletConnectOptions
+  IWalletConnectOptions,
+  IKeyPair
 } from '@walletconnect/types'
 import {
   parseTransactionData,
@@ -24,7 +25,9 @@ import {
   formatRpcError,
   parseWalletConnectUri,
   isHexStrict,
-  convertUtf8ToHex
+  convertUtf8ToHex,
+  convertUtf8ToArrayBuffer,
+  convertArrayBufferToUtf8
 } from '@walletconnect/utils'
 import SocketTransport from './socket'
 import EventManager from './events'
@@ -50,6 +53,7 @@ class Connector {
   private _bridge: string
   private _key: ArrayBuffer | null
   private _nextKey: ArrayBuffer | null
+  private _keyPair: IKeyPair | null
 
   private _clientId: string
   private _clientMeta: IClientMeta | null
@@ -80,6 +84,7 @@ class Connector {
     this._bridge = ''
     this._key = null
     this._nextKey = null
+    this._keyPair = null
 
     this._clientId = ''
     this._clientMeta = null
@@ -924,12 +929,170 @@ class Connector {
         })
       }
       this._socket.pushIncoming()
+      this._initKeyExchange()
+    })
+
+    this.on('wc_signingChallenge', (error, payload) => {
+      if (error) {
+        this._eventManager.trigger({
+          event: 'error',
+          params: [
+            {
+              code: 'SIGNING_CHALLENGE_ERROR',
+              message: error.toString()
+            }
+          ]
+        })
+      }
+
+      this._handleSigningChallenge(payload)
+    })
+
+    this.on('wc_keyUpdate', (error, payload) => {
+      if (error) {
+        this._eventManager.trigger({
+          event: 'error',
+          params: [
+            {
+              code: 'KEY_UPDATE_ERROR',
+              message: error.toString()
+            }
+          ]
+        })
+      }
+
+      this._handleKeyUpdate(payload)
     })
   }
 
   // -- keyManager ------------------------------------------------------- //
 
-  // TODO: Refactor with new exchange key flow
+  private async _requestSigningChallenge () {
+    const message = `Exchange Key Signing Challenge: ${uuid()}`
+
+    const request = this._formatRequest({
+      method: 'wc_signingChallenge',
+      params: [message]
+    })
+
+    const result = await this._sendCallRequest(request)
+
+    const publicKey = await this.cryptoLib.recoverPublicKey(
+      convertUtf8ToArrayBuffer(result),
+      convertUtf8ToArrayBuffer(message)
+    )
+
+    return publicKey
+  }
+
+  private async _requestKeyUpdate (publicKey: ArrayBuffer) {
+    this._nextKey = await this.cryptoLib.generateKey()
+
+    const messageString = JSON.stringify({ nextKey: this.nextKey })
+
+    const message = convertUtf8ToArrayBuffer(messageString)
+
+    const encryptedMessage = this.cryptoLib.encryptWithPublicKey(
+      publicKey,
+      message
+    )
+
+    const request = this._formatRequest({
+      method: 'wc_keyUpdate',
+      params: [encryptedMessage]
+    })
+
+    const result = await this._sendCallRequest(request)
+
+    return result
+  }
+
+  private async _initKeyExchange () {
+    const publicKey = await this._requestSigningChallenge()
+
+    const result = this._requestKeyUpdate(publicKey)
+
+    if (result) {
+      this._key = this._nextKey
+      this._nextKey = null
+    }
+  }
+
+  private async _handleSigningChallenge (payload: IJsonRpcRequest) {
+    if (!this._keyPair) {
+      this._keyPair = await this.cryptoLib.generateKeyPair()
+    }
+    const message = payload.params[0]
+
+    const signature = await this.cryptoLib.sign(
+      convertUtf8ToArrayBuffer(this._keyPair.privateKey),
+      convertUtf8ToArrayBuffer(message)
+    )
+
+    const response = this._formatResponse({
+      id: payload.id,
+      result: convertArrayBufferToHex(signature)
+    })
+
+    this._sendResponse(response)
+  }
+
+  private async _handleKeyUpdate (payload: IJsonRpcRequest) {
+    if (!this._keyPair) {
+      this._eventManager.trigger({
+        event: 'error',
+        params: [
+          {
+            code: 'KEY_UPDATE_ERROR',
+            message: 'Error: keyPair is missing for on key_update'
+          }
+        ]
+      })
+    } else {
+      const encryptedMessage = payload.params[0]
+
+      const message = await this.cryptoLib.decryptWithPrivateKey(
+        convertUtf8ToArrayBuffer(this._keyPair.privateKey),
+        encryptedMessage
+      )
+
+      const messageString = convertArrayBufferToUtf8(message)
+
+      if (messageString) {
+        const { nextKey } = JSON.parse(messageString)
+
+        if (nextKey) {
+          this.key = nextKey
+          this._nextKey = null
+
+          const response = this._formatResponse({
+            id: payload.id,
+            result: true
+          })
+
+          this._sendResponse(response)
+        } else {
+          const response = this._formatResponse({
+            id: payload.id,
+            error: {
+              message: 'Failed to execute key update'
+            }
+          })
+
+          this._sendResponse(response)
+        }
+      } else {
+        const response = this._formatResponse({
+          id: payload.id,
+          error: {
+            message: 'Failed to execute key update'
+          }
+        })
+
+        this._sendResponse(response)
+      }
+    }
+  }
 
   // -- uri ------------------------------------------------------------- //
 
