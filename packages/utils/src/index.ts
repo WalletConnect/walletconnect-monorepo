@@ -458,6 +458,13 @@ export function promisify (
   return promisifiedFunction
 }
 
+export function parsePersonalSign (params: string[]): string[] {
+  if (!isHexStrict(params[1])) {
+    params[1] = convertUtf8ToHex(params[1], true)
+  }
+  return params
+}
+
 export function parseTransactionData (
   txData: Partial<ITxData>
 ): Partial<ITxData> {
