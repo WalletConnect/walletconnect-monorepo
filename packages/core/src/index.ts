@@ -617,7 +617,7 @@ class Connector {
       case 'eth_accounts':
         return this.accounts
       case 'eth_chainId':
-        return convertUtf8ToHex(`${this.chainId}`)
+        return convertUtf8ToHex(`${this.chainId}`, true)
       case 'eth_sendTransaction':
       case 'eth_signTransaction':
         if (request.params) {
