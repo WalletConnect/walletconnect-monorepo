@@ -55,7 +55,7 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.0.0-beta.19",
+    "@walletconnect/types": "^1.0.0-beta.20",
     "js-sha3": "^0.8.0",
     "lodash.isnumber": "^3.0.3"
   },
