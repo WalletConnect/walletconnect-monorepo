@@ -1058,15 +1058,14 @@ class Connector {
 
   private async _handleKeyUpdate (payload: IJsonRpcRequest) {
     if (!this._keyPair) {
-      this._eventManager.trigger({
-        event: 'error',
-        params: [
-          {
-            code: 'KEY_UPDATE_ERROR',
-            message: 'Error: keyPair is missing for on key_update'
-          }
-        ]
+      const response = this._formatResponse({
+        id: payload.id,
+        error: {
+          message: 'Failed to execute key update'
+        }
       })
+
+      this._sendResponse(response)
     } else {
       const encryptedMessage = payload.params[0]
 
@@ -1081,15 +1080,15 @@ class Connector {
         const { nextKey } = JSON.parse(messageString)
 
         if (nextKey) {
-          this.key = nextKey
-          this._nextKey = null
-
           const response = this._formatResponse({
             id: payload.id,
             result: true
           })
 
-          this._sendResponse(response)
+          await this._sendResponse(response)
+
+          this.key = nextKey
+          this._nextKey = null
         } else {
           const response = this._formatResponse({
             id: payload.id,
