@@ -1011,7 +1011,7 @@ class Connector {
 
     const message = convertUtf8ToArrayBuffer(messageString)
 
-    const encryptedMessage = this.cryptoLib.encryptWithPublicKey(
+    const encryptedMessage = await this.cryptoLib.encryptWithPublicKey(
       publicKey,
       message
     )
