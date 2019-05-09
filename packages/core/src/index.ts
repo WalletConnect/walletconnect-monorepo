@@ -1029,7 +1029,7 @@ class Connector {
   private async _initKeyExchange () {
     const publicKey = await this._requestSigningChallenge()
 
-    const result = this._requestKeyUpdate(publicKey)
+    const result = await this._requestKeyUpdate(publicKey)
 
     if (result) {
       this._key = this._nextKey
