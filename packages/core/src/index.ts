@@ -808,6 +808,8 @@ class Connector {
               }
             ]
           })
+
+          this._initKeyExchange()
         } else {
           if (sessionParams.chainId) {
             this.chainId = sessionParams.chainId
@@ -947,7 +949,6 @@ class Connector {
         })
       }
       this._socket.pushIncoming()
-      this._initKeyExchange()
     })
 
     this.on('wc_signingChallenge', (error, payload) => {
@@ -990,13 +991,13 @@ class Connector {
 
     const request = this._formatRequest({
       method: 'wc_signingChallenge',
-      params: [message]
+      params: [convertUtf8ToHex(message)]
     })
 
     const result = await this._sendCallRequest(request)
 
     const publicKey = await this.cryptoLib.recoverPublicKey(
-      convertUtf8ToArrayBuffer(result),
+      convertHexToArrayBuffer(result),
       convertUtf8ToArrayBuffer(message)
     )
 
@@ -1043,8 +1044,8 @@ class Connector {
     const message = payload.params[0]
 
     const signature = await this.cryptoLib.sign(
-      convertUtf8ToArrayBuffer(this._keyPair.privateKey),
-      convertUtf8ToArrayBuffer(message)
+      convertHexToArrayBuffer(this._keyPair.privateKey),
+      convertHexToArrayBuffer(message)
     )
 
     const response = this._formatResponse({
@@ -1070,7 +1071,7 @@ class Connector {
       const encryptedMessage = payload.params[0]
 
       const message = await this.cryptoLib.decryptWithPrivateKey(
-        convertUtf8ToArrayBuffer(this._keyPair.privateKey),
+        convertHexToArrayBuffer(this._keyPair.privateKey),
         encryptedMessage
       )
 
