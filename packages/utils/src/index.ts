@@ -1,6 +1,4 @@
 import { utils } from 'ethers'
-import isNumber from 'lodash.isnumber'
-import { keccak_256 } from 'js-sha3'
 
 import {
   ITxData,
@@ -203,17 +201,11 @@ export function uuid (): string {
   return result
 }
 
-export const isHexStrict = (hex: string) => {
-  return (
-    (typeof hex === 'string' || isNumber(hex)) && /^(-)?0x[0-9a-f]*$/i.test(hex)
-  )
-}
-
 export function keccak256 (data?: string): string {
   if (!data) {
     return ''
   }
-  return '0x' + keccak_256(data)
+  return utils.keccak256(data)
 }
 
 export const toChecksumAddress = (address: string) => {
@@ -467,7 +459,7 @@ export function promisify (
 }
 
 export function parsePersonalSign (params: string[]): string[] {
-  if (!isHexStrict(params[1])) {
+  if (!utils.isHexString(params[1])) {
     params[1] = convertUtf8ToHex(params[1])
   }
   return params
@@ -481,7 +473,7 @@ export function parseTransactionData (
   }
 
   function parseHexValues (str: string) {
-    if (isHexStrict(str)) {
+    if (utils.isHexString(str)) {
       return str
     }
     return convertUtf8ToHex(str)
