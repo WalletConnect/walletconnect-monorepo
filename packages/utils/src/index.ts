@@ -42,7 +42,7 @@ export function convertArrayBufferToNumber (arrayBuffer: ArrayBuffer): number {
 }
 
 export function concatArrayBuffers (...args: ArrayBuffer[]): ArrayBuffer {
-  const hex: string = args.map(b => convertArrayBufferToHex(b)).join('')
+  const hex: string = args.map(b => convertArrayBufferToHex(b, true)).join('')
   const result: ArrayBuffer = convertHexToArrayBuffer(hex)
   return result
 }
@@ -75,7 +75,7 @@ export function convertBufferToNumber (buffer: Buffer): number {
 }
 
 export function concatBuffers (...args: Buffer[]): Buffer {
-  const hex: string = args.map(b => convertBufferToHex(b)).join('')
+  const hex: string = args.map(b => convertBufferToHex(b, true)).join('')
   const result: Buffer = convertHexToBuffer(hex)
   return result
 }
@@ -139,6 +139,7 @@ export function convertHexToBuffer (hex: string): Buffer {
 }
 
 export function convertHexToArrayBuffer (hex: string): ArrayBuffer {
+  hex = addHexPrefix(hex)
   const arrayBuffer = utils.arrayify(hex).buffer
   return arrayBuffer
 }

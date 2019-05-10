@@ -169,7 +169,7 @@ class Connector {
 
   get key (): string {
     if (this._key) {
-      const key: string = convertArrayBufferToHex(this._key)
+      const key: string = convertArrayBufferToHex(this._key, true)
       return key
     }
     return ''
