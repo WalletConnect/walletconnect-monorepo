@@ -208,7 +208,7 @@ export async function encryptWithPublicKey (
   message: ArrayBuffer
 ): Promise<IKeyPairEncryptionPayload> {
   const encrypted = await EthCrypto.encryptWithPublicKey(
-    convertArrayBufferToHex(publicKey),
+    convertArrayBufferToHex(publicKey, true),
     convertArrayBufferToUtf8(message)
   )
   return encrypted
@@ -219,7 +219,7 @@ export async function decryptWithPrivateKey (
   encryptedMessage: IKeyPairEncryptionPayload
 ): Promise<ArrayBuffer> {
   const decrypted = await EthCrypto.decryptWithPrivateKey(
-    convertArrayBufferToHex(privateKey),
+    convertArrayBufferToHex(privateKey, true),
     encryptedMessage
   )
   return convertUtf8ToArrayBuffer(decrypted)
@@ -230,7 +230,7 @@ export async function sign (
   message: ArrayBuffer
 ): Promise<ArrayBuffer> {
   const signature = await EthCrypto.sign(
-    convertArrayBufferToHex(privateKey),
+    convertArrayBufferToHex(privateKey, true),
     EthCrypto.hash.keccak256(convertArrayBufferToUtf8(message))
   )
   return convertHexToArrayBuffer(signature)
@@ -241,7 +241,7 @@ export async function recoverPublicKey (
   message: ArrayBuffer
 ): Promise<ArrayBuffer> {
   const publicKey = await EthCrypto.recoverPublicKey(
-    convertArrayBufferToHex(signature),
+    convertArrayBufferToHex(signature, true),
     EthCrypto.hash.keccak256(convertArrayBufferToUtf8(message))
   )
   return convertHexToArrayBuffer(publicKey)
