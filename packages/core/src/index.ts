@@ -24,7 +24,7 @@ import {
   uuid,
   formatRpcError,
   parseWalletConnectUri,
-  convertUtf8ToHex
+  convertNumberToHex
 } from '@walletconnect/utils'
 import SocketTransport from './socket'
 import EventManager from './events'
@@ -612,7 +612,7 @@ class Connector {
       case 'eth_accounts':
         return this.accounts
       case 'eth_chainId':
-        return convertUtf8ToHex(`${this.chainId}`)
+        return convertNumberToHex(this.chainId)
       case 'eth_sendTransaction':
       case 'eth_signTransaction':
         if (request.params) {

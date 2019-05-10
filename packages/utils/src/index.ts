@@ -451,11 +451,15 @@ export function parseTransactionData (
     throw new Error(`Transaction object must include a valid 'from' value.`)
   }
 
-  function parseHexValues (str: string) {
-    if (utils.isHexString(str)) {
-      return str
+  function parseHexValues (value: number | string) {
+    let result = value
+    if (!utils.isHexString(value)) {
+      if (typeof value === 'string') {
+        value = convertUtf8ToNumber(value)
+      }
+      result = convertNumberToHex(value)
     }
-    return convertUtf8ToHex(str)
+    return result
   }
 
   const txDataRPC = {
@@ -464,23 +468,18 @@ export function parseTransactionData (
     gasPrice:
       typeof txData.gasPrice === 'undefined'
         ? ''
-        : parseHexValues(`${txData.gasPrice}`),
+        : parseHexValues(txData.gasPrice),
     gasLimit:
       typeof txData.gasLimit === 'undefined'
         ? typeof txData.gas === 'undefined'
           ? ''
-          : parseHexValues(`${txData.gas}`)
-        : parseHexValues(`${txData.gasLimit}`),
+          : parseHexValues(txData.gas)
+        : parseHexValues(txData.gasLimit),
     value:
-      typeof txData.value === 'undefined'
-        ? ''
-        : parseHexValues(`${txData.value}`),
+      typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
     nonce:
-      typeof txData.nonce === 'undefined'
-        ? ''
-        : parseHexValues(`${txData.nonce}`),
-    data:
-      typeof txData.data === 'undefined' ? '' : parseHexValues(`${txData.data}`)
+      typeof txData.nonce === 'undefined' ? '' : parseHexValues(txData.nonce),
+    data: typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data)
   }
 
   const prunable = ['gasPrice', 'gasLimit', 'value', 'nonce']
