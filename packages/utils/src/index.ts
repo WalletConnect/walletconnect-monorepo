@@ -28,10 +28,12 @@ export function convertArrayBufferToUtf8 (arrayBuffer: ArrayBuffer): string {
 
 export function convertArrayBufferToHex (
   arrayBuffer: ArrayBuffer,
-  prefix?: boolean
+  noPrefix?: boolean
 ): string {
   let hex = utils.hexlify(new Uint8Array(arrayBuffer))
-  hex = addHexPrefix(hex)
+  if (noPrefix) {
+    hex = removeHexPrefix(hex)
+  }
   return hex
 }
 
@@ -60,9 +62,11 @@ export function convertBufferToUtf8 (buffer: Buffer): string {
   return result
 }
 
-export function convertBufferToHex (buffer: Buffer): string {
+export function convertBufferToHex (buffer: Buffer, noPrefix?: boolean): string {
   let hex = buffer.toString('hex')
-  hex = addHexPrefix(hex)
+  if (!noPrefix) {
+    hex = addHexPrefix(hex)
+  }
   return hex
 }
 
@@ -90,9 +94,9 @@ export function convertUtf8ToBuffer (utf8: string): Buffer {
   return result
 }
 
-export function convertUtf8ToHex (utf8: string): string {
+export function convertUtf8ToHex (utf8: string, noPrefix?: boolean): string {
   const arrayBuffer = convertUtf8ToArrayBuffer(utf8)
-  const hex = convertArrayBufferToHex(arrayBuffer)
+  const hex = convertArrayBufferToHex(arrayBuffer, noPrefix)
   return hex
 }
 
@@ -120,8 +124,11 @@ export function convertNumberToUtf8 (num: number): string {
   return utf8
 }
 
-export function convertNumberToHex (num: number): string {
-  const hex = utils.bigNumberify(num).toHexString()
+export function convertNumberToHex (num: number, noPrefix?: boolean): string {
+  let hex = utils.bigNumberify(num).toHexString()
+  if (noPrefix) {
+    hex = removeHexPrefix(hex)
+  }
   return hex
 }
 
