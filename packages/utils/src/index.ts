@@ -202,30 +202,8 @@ export function uuid (): string {
   return result
 }
 
-export function keccak256 (data?: string): string {
-  if (!data) {
-    return ''
-  }
-  return utils.keccak256(data)
-}
-
 export const toChecksumAddress = (address: string) => {
-  if (typeof address === 'undefined') {
-    return ''
-  }
-
-  address = address.toLowerCase().replace('0x', '')
-  const addressHash = keccak256(address).replace('0x', '')
-  let checksumAddress = '0x'
-
-  for (let i = 0; i < address.length; i++) {
-    if (parseInt(addressHash[i], 16) > 7) {
-      checksumAddress += address[i].toUpperCase()
-    } else {
-      checksumAddress += address[i]
-    }
-  }
-  return checksumAddress
+  return utils.getAddress(address)
 }
 
 export const isValidAddress = (address?: string) => {
