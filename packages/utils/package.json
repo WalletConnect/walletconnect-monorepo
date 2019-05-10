@@ -56,6 +56,7 @@
   },
   "dependencies": {
     "@walletconnect/types": "^1.0.0-beta.20",
+    "ethers": "^4.0.27",
     "js-sha3": "^0.8.0",
     "lodash.isnumber": "^3.0.3"
   },

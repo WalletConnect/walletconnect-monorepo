@@ -1,3 +1,4 @@
+import { utils } from 'ethers'
 import isNumber from 'lodash.isnumber'
 import { keccak_256 } from 'js-sha3'
 
@@ -12,46 +13,32 @@ import {
   IJsonRpcErrorMessage
 } from '@walletconnect/types'
 
+// -- ArrayBuffer ------------------------------------------ //
+
 export function convertArrayBufferToBuffer (arrayBuffer: ArrayBuffer): Buffer {
   const hex = convertArrayBufferToHex(arrayBuffer)
   const result = convertHexToBuffer(hex)
   return result
 }
 
-export function convertBufferToArrayBuffer (buffer: Buffer): ArrayBuffer {
-  const hex = convertBufferToHex(buffer)
-  const result = convertHexToArrayBuffer(hex)
-  return result
+export function convertArrayBufferToUtf8 (arrayBuffer: ArrayBuffer): string {
+  const utf8 = utils.toUtf8String(new Uint8Array(arrayBuffer))
+  return utf8
 }
 
-export function convertUtf8ToBuffer (utf8: string): Buffer {
-  const result = new Buffer(utf8, 'utf8')
-  return result
+export function convertArrayBufferToHex (
+  arrayBuffer: ArrayBuffer,
+  prefix?: boolean
+): string {
+  let hex = utils.hexlify(new Uint8Array(arrayBuffer))
+  hex = addHexPrefix(hex)
+  return hex
 }
 
-export function convertBufferToUtf8 (buffer: Buffer): string {
-  const result = buffer.toString('utf8')
-  return result
-}
-
-export function convertBufferToHex (buffer: Buffer, prefix?: boolean): string {
-  let result = buffer.toString('hex')
-  if (prefix) {
-    result = '0x' + result
-  }
-  return result
-}
-
-export function convertHexToBuffer (hex: string): Buffer {
-  hex = hex.replace('0x', '')
-  const result = new Buffer(hex, 'hex')
-  return result
-}
-
-export function concatBuffers (...args: Buffer[]): Buffer {
-  const hex: string = args.map(b => convertBufferToHex(b)).join('')
-  const result: Buffer = convertHexToBuffer(hex)
-  return result
+export function convertArrayBufferToNumber (arrayBuffer: ArrayBuffer): number {
+  const hex = convertArrayBufferToHex(arrayBuffer)
+  const num = convertHexToNumber(hex)
+  return num
 }
 
 export function concatArrayBuffers (...args: ArrayBuffer[]): ArrayBuffer {
@@ -60,102 +47,129 @@ export function concatArrayBuffers (...args: ArrayBuffer[]): ArrayBuffer {
   return result
 }
 
-export function convertArrayBufferToUtf8 (arrayBuffer: ArrayBuffer): string {
-  const array: Uint8Array = new Uint8Array(arrayBuffer)
-  const chars: string[] = []
-  let i: number = 0
+// -- Buffer ----------------------------------------------- //
 
-  while (i < array.length) {
-    const byte: number = array[i]
-    if (byte < 128) {
-      chars.push(String.fromCharCode(byte))
-      i++
-    } else if (byte > 191 && byte < 224) {
-      chars.push(
-        String.fromCharCode(((byte & 0x1f) << 6) | (array[i + 1] & 0x3f))
-      )
-      i += 2
-    } else {
-      chars.push(
-        String.fromCharCode(
-          ((byte & 0x0f) << 12) |
-            ((array[i + 1] & 0x3f) << 6) |
-            (array[i + 2] & 0x3f)
-        )
-      )
-      i += 3
-    }
-  }
+export function convertBufferToArrayBuffer (buffer: Buffer): ArrayBuffer {
+  const hex = convertBufferToHex(buffer)
+  const result = convertHexToArrayBuffer(hex)
+  return result
+}
 
-  const utf8: string = chars.join('')
+export function convertBufferToUtf8 (buffer: Buffer): string {
+  const result = buffer.toString('utf8')
+  return result
+}
+
+export function convertBufferToHex (buffer: Buffer): string {
+  let hex = buffer.toString('hex')
+  hex = addHexPrefix(hex)
+  return hex
+}
+
+export function convertBufferToNumber (buffer: Buffer): number {
+  const hex = convertBufferToHex(buffer)
+  const num = convertHexToNumber(hex)
+  return num
+}
+
+export function concatBuffers (...args: Buffer[]): Buffer {
+  const hex: string = args.map(b => convertBufferToHex(b)).join('')
+  const result: Buffer = convertHexToBuffer(hex)
+  return result
+}
+
+// -- Utf8 ------------------------------------------------- //
+
+export function convertUtf8ToArrayBuffer (utf8: string): ArrayBuffer {
+  const arrayBuffer = utils.toUtf8Bytes(utf8).buffer
+  return arrayBuffer
+}
+
+export function convertUtf8ToBuffer (utf8: string): Buffer {
+  const result = new Buffer(utf8, 'utf8')
+  return result
+}
+
+export function convertUtf8ToHex (utf8: string): string {
+  const arrayBuffer = convertUtf8ToArrayBuffer(utf8)
+  const hex = convertArrayBufferToHex(arrayBuffer)
+  return hex
+}
+
+export function convertUtf8ToNumber (utf8: string): number {
+  const num = utils.bigNumberify(utf8).toNumber()
+  return num
+}
+
+// -- Number ----------------------------------------------- //
+
+export function convertNumberToBuffer (num: number): Buffer {
+  const hex = convertNumberToHex(num)
+  const buffer = convertHexToBuffer(hex)
+  return buffer
+}
+
+export function convertNumberToArrayBuffer (num: number): ArrayBuffer {
+  const hex = convertNumberToHex(num)
+  const arrayBuffer = convertHexToArrayBuffer(hex)
+  return arrayBuffer
+}
+
+export function convertNumberToUtf8 (num: number): string {
+  const utf8 = utils.bigNumberify(num).toString()
   return utf8
 }
 
-export function convertUtf8ToArrayBuffer (utf8: string): ArrayBuffer {
-  const bytes: number[] = []
-
-  let i = 0
-  utf8 = encodeURI(utf8)
-  while (i < utf8.length) {
-    const byte: number = utf8.charCodeAt(i++)
-    if (byte === 37) {
-      bytes.push(parseInt(utf8.substr(i, 2), 16))
-      i += 2
-    } else {
-      bytes.push(byte)
-    }
-  }
-
-  const array: Uint8Array = new Uint8Array(bytes)
-  const arrayBuffer: ArrayBuffer = array.buffer
-  return arrayBuffer
+export function convertNumberToHex (num: number): string {
+  const hex = utils.bigNumberify(num).toHexString()
+  return hex
 }
 
-export function convertArrayBufferToHex (
-  arrayBuffer: ArrayBuffer,
-  prefix?: boolean
-): string {
-  const array: Uint8Array = new Uint8Array(arrayBuffer)
-  const HEX_CHARS: string = '0123456789abcdef'
-  const bytes: string[] = []
-  for (let i = 0; i < array.length; i++) {
-    const byte = array[i]
-    bytes.push(HEX_CHARS[(byte & 0xf0) >> 4] + HEX_CHARS[byte & 0x0f])
-  }
-  let hex: string = bytes.join('')
-  if (prefix) {
-    hex = '0x' + hex
-  }
-  return hex
+// -- Hex -------------------------------------------------- //
+
+export function convertHexToBuffer (hex: string): Buffer {
+  hex = removeHexPrefix(hex)
+  const buffer = new Buffer(hex, 'hex')
+  return buffer
 }
 
 export function convertHexToArrayBuffer (hex: string): ArrayBuffer {
-  hex = hex.replace('0x', '')
-
-  const bytes: number[] = []
-
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes.push(parseInt(hex.substr(i, 2), 16))
-  }
-
-  const array: Uint8Array = new Uint8Array(bytes)
-  const arrayBuffer: ArrayBuffer = array.buffer
+  const arrayBuffer = utils.arrayify(hex).buffer
   return arrayBuffer
-}
-
-export function convertUtf8ToHex (utf8: string, prefix?: boolean): string {
-  const arrayBuffer = convertUtf8ToArrayBuffer(utf8)
-  let hex = convertArrayBufferToHex(arrayBuffer)
-  if (prefix) {
-    hex = '0x' + hex
-  }
-  return hex
 }
 
 export function convertHexToUtf8 (hex: string): string {
   const arrayBuffer = convertHexToArrayBuffer(hex)
   const utf8 = convertArrayBufferToUtf8(arrayBuffer)
   return utf8
+}
+
+export function convertHexToNumber (hex: string): number {
+  const num = utils.bigNumberify(hex).toNumber()
+  return num
+}
+
+// -- Misc ------------------------------------------------- //
+
+export function sanitizeHex (hex: string): string {
+  hex = removeHexPrefix(hex)
+  hex = hex.length % 2 !== 0 ? '0' + hex : hex
+  hex = addHexPrefix(hex)
+  return hex
+}
+
+export function addHexPrefix (hex: string): string {
+  if (hex.toLowerCase().substring(0, 2) === '0x') {
+    return hex
+  }
+  return '0x' + hex
+}
+
+export function removeHexPrefix (hex: string): string {
+  if (hex.toLowerCase().substring(0, 2) === '0x') {
+    return hex.substring(2)
+  }
+  return hex
 }
 
 export function payloadId (): number {
@@ -420,19 +434,6 @@ export function parseWalletConnectUri (str: string): IParseURIResult {
   return result
 }
 
-export function sanitizeHex (hex: string): string {
-  hex = hex.substring(0, 2) === '0x' ? hex.substring(2) : hex
-  if (hex === '') {
-    return ''
-  }
-  hex = hex.length % 2 !== 0 ? '0' + hex : hex
-  return '0x' + hex
-}
-
-export function removeHexPrefix (hex: string): string {
-  return hex.toLowerCase().replace('0x', '')
-}
-
 export function promisify (
   originalFn: (...args: any[]) => void,
   thisArg?: any
@@ -460,7 +461,7 @@ export function promisify (
 
 export function parsePersonalSign (params: string[]): string[] {
   if (!isHexStrict(params[1])) {
-    params[1] = convertUtf8ToHex(params[1], true)
+    params[1] = convertUtf8ToHex(params[1])
   }
   return params
 }
