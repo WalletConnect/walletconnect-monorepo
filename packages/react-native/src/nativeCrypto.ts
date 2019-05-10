@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import EthCrypto from 'eth-crypto'
 
 import {
   IJsonRpcRequest,
@@ -154,10 +155,11 @@ export async function decrypt (
   return data
 }
 
-export async function generateKeyPair (): Promise<IKeyPair> {
-  const keyPair = {
-    privateKey: '',
-    publicKey: ''
+export async function generateKeyPair(): Promise<IKeyPair> {
+  const identity = await EthCrypto.createIdentity()
+  const keyPair: IKeyPair = {
+    privateKey: sanitizeHex(identity.privateKey),
+    publicKey: sanitizeHex(identity.publicKey)
   }
   return keyPair
 }
@@ -166,31 +168,42 @@ export async function encryptWithPublicKey (
   publicKey: ArrayBuffer,
   message: ArrayBuffer
 ): Promise<IKeyPairEncryptionPayload> {
-  return {
-    iv: '',
-    ephemPublicKey: '',
-    ciphertext: '',
-    mac: ''
-  }
+  const encrypted = await EthCrypto.encryptWithPublicKey(
+    convertArrayBufferToHex(publicKey),
+    convertArrayBufferToUtf8(message)
+  )
+  return encrypted
 }
 
 export async function decryptWithPrivateKey (
   privateKey: ArrayBuffer,
   encryptedMessage: IKeyPairEncryptionPayload
 ): Promise<ArrayBuffer> {
-  return new ArrayBuffer(0)
+  const decrypted = await EthCrypto.decryptWithPrivateKey(
+    convertArrayBufferToHex(privateKey),
+    encryptedMessage
+  )
+  return convertUtf8ToArrayBuffer(decrypted)
 }
 
 export async function sign (
   privateKey: ArrayBuffer,
   message: ArrayBuffer
 ): Promise<ArrayBuffer> {
-  return new ArrayBuffer(0)
+  const signature = await EthCrypto.sign(
+    convertArrayBufferToHex(privateKey),
+    EthCrypto.hash.keccak256(convertArrayBufferToUtf8(message))
+  )
+  return convertHexToArrayBuffer(signature)
 }
 
 export async function recoverPublicKey (
   signature: ArrayBuffer,
   message: ArrayBuffer
 ): Promise<ArrayBuffer> {
-  return new ArrayBuffer(0)
+  const publicKey = await EthCrypto.recoverPublicKey(
+    convertArrayBufferToHex(signature),
+    EthCrypto.hash.keccak256(convertArrayBufferToUtf8(message))
+  )
+  return convertHexToArrayBuffer(publicKey)
 }
