@@ -356,6 +356,43 @@ class Connector {
     this._eventManager.subscribe(eventEmitter)
   }
 
+  public async createInstantRequest (
+    instantRequest: Partial<IJsonRpcRequest>
+  ): Promise<void> {
+    this._key = await this._generateKey()
+
+    const request: IJsonRpcRequest = this._formatRequest({
+      method: 'wc_instantRequest',
+      params: [
+        {
+          peerId: this.clientId,
+          peerMeta: this.clientMeta,
+          request: this._formatRequest(instantRequest)
+        }
+      ]
+    })
+
+    this.handshakeId = request.id
+    this.handshakeTopic = uuid()
+
+    this._eventManager.trigger({
+      event: 'instant_uri',
+      params: [{ uri: this.uri }]
+    })
+
+    try {
+      const result = await this._sendCallRequest(request)
+
+      if (result) {
+        this.killSession()
+      }
+
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
   public async createSession (opts?: { chainId: number }): Promise<void> {
     if (this._connected) {
       throw new Error('Session currently connected')
