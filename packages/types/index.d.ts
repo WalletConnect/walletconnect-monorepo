@@ -175,4 +175,11 @@ declare module '@walletconnect/types' {
     peerName: string
     language: string
   }
+
+  export interface IUpdateChainParams {
+    chainId: number
+    networkId: number
+    rpcUrl: string
+    nativeCurrencyName: string
+  }
 }
