@@ -180,6 +180,9 @@ declare module '@walletconnect/types' {
     chainId: number
     networkId: number
     rpcUrl: string
-    nativeCurrencyName: string
+    nativeCurrency: {
+      name: string
+      symbol: string
+    }
   }
 }
