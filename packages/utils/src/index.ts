@@ -347,6 +347,27 @@ export function getMeta (): IClientMeta | null {
   return meta
 }
 
+export function parseQueryString (queryString: string): any {
+  const result: any = {}
+
+  const pairs = (queryString[0] === '?'
+    ? queryString.substr(1)
+    : queryString
+  ).split('&')
+
+  for (let i = 0; i < pairs.length; i++) {
+    const keyArr: string[] = pairs[i].match(/\w+(?==)/i) || []
+    const valueArr: string[] = pairs[i].match(/=.+/i) || []
+    if (keyArr[0]) {
+      result[decodeURIComponent(keyArr[0])] = decodeURIComponent(
+        valueArr[0].substr(1)
+      )
+    }
+  }
+
+  return result
+}
+
 export function parseWalletConnectUri (str: string): IParseURIResult {
   const pathStart: number = str.indexOf(':')
 
@@ -376,24 +397,9 @@ export function parseWalletConnectUri (str: string): IParseURIResult {
     typeof pathEnd !== 'undefined' ? str.substr(pathEnd) : ''
 
   function parseQueryParams (queryString: string): IQueryParamsResult {
-    const result: any = {}
+    const result = parseQueryString(queryString)
 
-    const pairs = (queryString[0] === '?'
-      ? queryString.substr(1)
-      : queryString
-    ).split('&')
-
-    for (let i = 0; i < pairs.length; i++) {
-      const keyArr: string[] = pairs[i].match(/\w+(?==)/i) || []
-      const valueArr: string[] = pairs[i].match(/=.+/i) || []
-      if (keyArr[0]) {
-        result[decodeURIComponent(keyArr[0])] = decodeURIComponent(
-          valueArr[0].substr(1)
-        )
-      }
-    }
-
-    const parameters = {
+    const parameters: IQueryParamsResult = {
       key: result.key || '',
       bridge: result.bridge || ''
     }
