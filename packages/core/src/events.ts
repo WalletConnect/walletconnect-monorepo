@@ -64,9 +64,6 @@ class EventManager {
     }
 
     const reservedEvents = [
-      'wc_sessionRequest',
-      'wc_sessionUpdate',
-      'wc_exchangeKey',
       'session_request',
       'session_update',
       'exchange_key',
@@ -76,7 +73,7 @@ class EventManager {
 
     if (
       (!eventEmitters || !eventEmitters.length) &&
-      !reservedEvents.includes(event)
+      !(reservedEvents.includes(event) || event.startsWith('wc_'))
     ) {
       eventEmitters = this._eventEmitters.filter(
         (eventEmitter: IEventEmitter) => eventEmitter.event === 'call_request'
