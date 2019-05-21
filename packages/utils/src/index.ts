@@ -1,4 +1,4 @@
-const utils = require("ethers-utils");
+const utils = require('ethers-utils')
 
 import {
   ITxData,
