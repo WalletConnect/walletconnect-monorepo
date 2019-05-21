@@ -516,7 +516,7 @@ class Connector {
 
     const request = this._formatRequest({
       method: 'eth_sendTransaction',
-      params: [parsedTx]
+      params: [parsedTx, convertNumberToHex(this.chainId)]
     })
 
     try {
@@ -536,7 +536,7 @@ class Connector {
 
     const request = this._formatRequest({
       method: 'eth_signTransaction',
-      params: [parsedTx]
+      params: [parsedTx, convertNumberToHex(this.chainId)]
     })
 
     try {
@@ -617,6 +617,7 @@ class Connector {
       case 'eth_signTransaction':
         if (request.params) {
           request.params[0] = parseTransactionData(request.params[0])
+          request.params[1] = request.params[1] ? convertNumberToHex(request.params[1]) : convertNumberToHex(this.chainId)
         }
         break
       case 'personal_sign':
