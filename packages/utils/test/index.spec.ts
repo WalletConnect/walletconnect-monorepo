@@ -1,4 +1,4 @@
-/* global describe it beforeEach */
+import 'mocha'
 
 import { expect } from 'chai'
 

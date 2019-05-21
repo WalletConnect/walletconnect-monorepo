@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf lib",
     "build": "webpack",
-    "test": "mocha --require ./babel-polyfill.js test/**/*.spec.ts"
+    "test": "mocha --require ./babel-polyfill.js test/**/*.spec.js"
   },
   "keywords": [
     "walletconnect",
