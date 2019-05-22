@@ -16,7 +16,8 @@ import {
   convertBufferToUtf8,
   convertBufferToHex,
   convertHexToBuffer,
-  concatBuffers
+  concatBuffers,
+  removeHexPrefix
 } from '@walletconnect/utils'
 
 const AES_ALGORITHM = 'AES-256-CBC'
@@ -36,7 +37,7 @@ export function randomBytes (length: number): Promise<Buffer> {
 export async function generateKey (length?: number): Promise<ArrayBuffer> {
   const _length = (length || 256) / 8
   const buffer: Buffer = await randomBytes(_length)
-  const hex = convertBufferToHex(buffer)
+  const hex = convertBufferToHex(buffer, true)
   const result = convertHexToArrayBuffer(hex)
 
   return result
@@ -58,12 +59,12 @@ export async function verifyHmac (
   const cipherText: Buffer = convertHexToBuffer(payload.data)
   const iv: Buffer = convertHexToBuffer(payload.iv)
   const hmac: Buffer = convertHexToBuffer(payload.hmac)
-  const hmacHex: string = convertBufferToHex(hmac)
+  const hmacHex: string = convertBufferToHex(hmac, true)
   const unsigned: Buffer = concatBuffers(cipherText, iv)
   const chmac: Buffer = await createHmac(unsigned, key)
-  const chmacHex: string = convertBufferToHex(chmac)
+  const chmacHex: string = convertBufferToHex(chmac, true)
 
-  if (hmacHex === chmacHex) {
+  if (removeHexPrefix(hmacHex) === removeHexPrefix(chmacHex)) {
     return true
   }
 
@@ -104,17 +105,17 @@ export async function encrypt (
 
   const ivArrayBuffer: ArrayBuffer = await generateKey(128)
   const iv: Buffer = convertArrayBufferToBuffer(ivArrayBuffer)
-  const ivHex: string = convertBufferToHex(iv)
+  const ivHex: string = convertBufferToHex(iv, true)
 
   const contentString: string = JSON.stringify(data)
   const content: Buffer = convertUtf8ToBuffer(contentString)
 
   const cipherText: Buffer = await aesCbcEncrypt(content, _key, iv)
-  const cipherTextHex: string = convertBufferToHex(cipherText)
+  const cipherTextHex: string = convertBufferToHex(cipherText, true)
 
   const unsigned: Buffer = concatBuffers(cipherText, iv)
   const hmac: Buffer = await createHmac(unsigned, _key)
-  const hmacHex: string = convertBufferToHex(hmac)
+  const hmacHex: string = convertBufferToHex(hmac, true)
 
   return {
     data: cipherTextHex,
