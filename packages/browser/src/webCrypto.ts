@@ -10,7 +10,8 @@ import {
   convertArrayBufferToHex,
   convertArrayBufferToUtf8,
   convertHexToArrayBuffer,
-  convertUtf8ToArrayBuffer
+  convertUtf8ToArrayBuffer,
+  removeHexPrefix
 } from '@walletconnect/utils'
 
 const AES_ALGORITHM: string = 'AES-CBC'
@@ -85,13 +86,13 @@ export async function verifyHmac (
   const cipherText: ArrayBuffer = convertHexToArrayBuffer(payload.data)
   const iv: ArrayBuffer = convertHexToArrayBuffer(payload.iv)
   const hmac: ArrayBuffer = convertHexToArrayBuffer(payload.hmac)
-  const hmacHex: string = convertArrayBufferToHex(hmac)
+  const hmacHex: string = convertArrayBufferToHex(hmac, true)
 
   const unsigned: ArrayBuffer = concatArrayBuffers(cipherText, iv)
   const chmac: ArrayBuffer = await createHmac(unsigned, key)
-  const chmacHex: string = convertArrayBufferToHex(chmac)
+  const chmacHex: string = convertArrayBufferToHex(chmac, true)
 
-  if (hmacHex === chmacHex) {
+  if (removeHexPrefix(hmacHex) === removeHexPrefix(chmacHex)) {
     return true
   }
 
@@ -141,17 +142,17 @@ export async function encrypt (
   }
 
   const iv: ArrayBuffer = await generateKey(128)
-  const ivHex: string = convertArrayBufferToHex(iv)
+  const ivHex: string = convertArrayBufferToHex(iv, true)
 
   const contentString: string = JSON.stringify(data)
   const content: ArrayBuffer = convertUtf8ToArrayBuffer(contentString)
 
   const cipherText: ArrayBuffer = await aesCbcEncrypt(content, key, iv)
-  const cipherTextHex: string = convertArrayBufferToHex(cipherText)
+  const cipherTextHex: string = convertArrayBufferToHex(cipherText, true)
 
   const unsigned: ArrayBuffer = concatArrayBuffers(cipherText, iv)
   const hmac: ArrayBuffer = await createHmac(unsigned, key)
-  const hmacHex: string = convertArrayBufferToHex(hmac)
+  const hmacHex: string = convertArrayBufferToHex(hmac, true)
 
   return {
     data: cipherTextHex,
