@@ -160,7 +160,9 @@ export function convertHexToNumber (hex: string): number {
 export function sanitizeHex (hex: string): string {
   hex = removeHexPrefix(hex)
   hex = hex.length % 2 !== 0 ? '0' + hex : hex
-  hex = addHexPrefix(hex)
+  if (hex) {
+    hex = addHexPrefix(hex)
+  }
   return hex
 }
 
