@@ -56,7 +56,7 @@
   },
   "dependencies": {
     "@walletconnect/types": "^1.0.0-beta.23",
-    "ethers-utils": "^2.1.11"
+    "ethers": "^4.0.27"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
