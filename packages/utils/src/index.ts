@@ -180,6 +180,10 @@ export function removeHexPrefix (hex: string): string {
   return hex
 }
 
+export function isHexString (value: any): boolean {
+  return utils.isHexString(value)
+}
+
 export function payloadId (): number {
   const datePart: number = new Date().getTime() * Math.pow(10, 3)
   const extraPart: number = Math.floor(Math.random() * Math.pow(10, 3))
@@ -446,7 +450,7 @@ export function promisify (
 }
 
 export function parsePersonalSign (params: string[]): string[] {
-  if (!utils.isHexString(params[1])) {
+  if (!isHexString(params[1])) {
     params[1] = convertUtf8ToHex(params[1])
   }
   return params
@@ -461,11 +465,17 @@ export function parseTransactionData (
 
   function parseHexValues (value: number | string) {
     let result = value
-    if (!utils.isHexString(value)) {
-      if (typeof value === 'string') {
-        value = convertUtf8ToNumber(value)
+    if (value !== '') {
+      if (!utils.isHexString(value)) {
+        if (typeof value === 'string') {
+          value = convertUtf8ToNumber(value)
+        }
+        result = convertNumberToHex(value)
+      } else {
+        if (typeof value === 'string') {
+          result = sanitizeHex(value)
+        }
       }
-      result = convertNumberToHex(value)
     }
     return result
   }
