@@ -195,7 +195,7 @@ export function isHexString (value: any): boolean {
   return _isHexString(value)
 }
 
-export function isEmptyString (value: string) {
+export function isEmptyString (value: string): boolean {
   return value === '' || (typeof value === 'string' && value.trim() === '')
 }
 
@@ -465,8 +465,8 @@ export function promisify (
 }
 
 export function parsePersonalSign (params: string[]): string[] {
-  if (!isHexString(params[1])) {
-    params[1] = convertUtf8ToHex(params[1])
+  if (!isHexString(params[0])) {
+    params[0] = convertUtf8ToHex(params[0])
   }
   return params
 }

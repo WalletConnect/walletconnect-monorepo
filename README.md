@@ -98,12 +98,13 @@ walletConnector.on("disconnect", (error, payload) => {
  *  Draft transaction
  */
 const tx = {
-  from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  to: "0x0000000000000000000000000000000000000000",
-  nonce: 1,
-  gas: 100000,
-  value: 0,
-  data: "0x0"
+  from: "0xbc28Ea04101F03aA7a94C1379bc3AB32E65e62d3", // Required
+  to: "0x89D24A7b4cCB1b6fAA2625Fe562bDd9A23260359", // Required (for non contract deployments)
+  data: "0x", // Required
+  gasPrice: "0x02540be400", // Optional
+  gasLimit: "0x9c40", // Optional
+  value: "0x00", // Optional
+  nonce: "0x0114" // Optional
 };
 
 /**
@@ -122,12 +123,13 @@ walletConnector
  *  Draft transaction
  */
 const tx = {
-  from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  to: "0x0000000000000000000000000000000000000000",
-  nonce: 1,
-  gas: 100000,
-  value: 0,
-  data: "0x0"
+  from: "0xbc28Ea04101F03aA7a94C1379bc3AB32E65e62d3", // Required
+  to: "0x89D24A7b4cCB1b6fAA2625Fe562bDd9A23260359", // Required (for non contract deployments)
+  data: "0x", // Required
+  gasPrice: "0x02540be400", // Optional
+  gasLimit: "0x9c40", // Optional
+  value: "0x00", // Optional
+  nonce: "0x0114" // Optional
 };
 
 /**
@@ -139,26 +141,6 @@ walletConnector
   .catch(console.error);
 ```
 
-### Sign Message \(eth_sign\)
-
-```javascript
-/**
- *  Draft Message Parameters
- */
-const msgParams = [
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  "My email is john@doe.com - 1537836206101"
-];
-
-/**
- *  Sign message
- */
-walletConnector
-  .signMessage(msgParams)
-  .then(console.log)
-  .catch(console.error);
-```
-
 ### Sign Personal Message \(personal_sign\)
 
 ```javascript
@@ -166,8 +148,8 @@ walletConnector
  *  Draft Message Parameters
  */
 const msgParams = [
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  "My email is john@doe.com - 1537836206101"
+  "My email is john@doe.com - 1537836206101"        // Required
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",     // Required
 ];
 
 /**
@@ -179,6 +161,26 @@ walletConnector
   .catch(console.error);
 ```
 
+### Sign Message \(eth_sign\)
+
+```javascript
+/**
+ *  Draft Message Parameters
+ */
+const msgParams = [
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3", // Required
+  "My email is john@doe.com - 1537836206101" // Required
+];
+
+/**
+ *  Sign message
+ */
+walletConnector
+  .signMessage(msgParams)
+  .then(console.log)
+  .catch(console.error);
+```
+
 ### Sign Typed Data \(eth_signTypedData\)
 
 ```javascript
@@ -186,8 +188,9 @@ walletConnector
  *  Draft Typed Data
  */
 const msgParams = [
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3", // Required
   {
+    // Required
     types: {
       EIP712Domain: [
         { name: "name", type: "string" },
@@ -242,17 +245,18 @@ walletConnector
  *  Draft Custom Request
  */
 const customRequest = {
-  id: 1,
+  id: 1337,
   jsonrpc: "2.0",
   method: "eth_signTransaction",
   params: [
     {
-      from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-      to: "0x0000000000000000000000000000000000000000",
-      nonce: 1,
-      gas: 100000,
-      value: 0,
-      data: "0x0"
+      from: "0xbc28Ea04101F03aA7a94C1379bc3AB32E65e62d3",
+      to: "0x89D24A7b4cCB1b6fAA2625Fe562bDd9A23260359",
+      data: "0x",
+      gasPrice: "0x02540be400",
+      gasLimit: "0x9c40",
+      value: "0x00",
+      nonce: "0x0114"
     }
   ]
 };
