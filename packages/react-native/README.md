@@ -4,7 +4,7 @@ React Native SDK for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
-### Install
+## Install
 
 ```bash
 /**
@@ -21,16 +21,12 @@ npm install --save @walletconnect/react-native
  *  Polyfill NodeJS modules for React-Native
  */
 
-npm install --save react-native-crypto react-native-randombytes
+npm install --save rn-nodeify
 
-react-native link react-native-randombytes
-
-npm install --save-dev tradle/rn-nodeify
-
-./node_modules/.bin/rn-nodeify --hack --install
+rn-nodeify --install --hack
 ```
 
-### Initiate Connection
+## Initiate Connection
 
 ```javascript
 import RNWalletConnect from "@walletconnect/react-native";
@@ -123,7 +119,7 @@ walletConnector.on("disconnect", (error, payload) => {
 });
 ```
 
-### Manage Connection
+## Manage Connection
 
 ```javascript
 /**
@@ -152,7 +148,7 @@ walletConnector.rejectSession({
 walletConnector.killSession()
 ```
 
-### Manage Call Requests
+## Manage Call Requests
 
 ```javascript
 /**
