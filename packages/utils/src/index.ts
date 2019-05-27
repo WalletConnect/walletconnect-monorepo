@@ -1,7 +1,11 @@
 import { BigNumber } from '@ethersproject/bignumber'
-import { isHexString,hexlify,arrayify } from '@ethersproject/bytes'
+import {
+  isHexString as _isHexString,
+  hexlify,
+  arrayify
+} from '@ethersproject/bytes'
 import { getAddress } from '@ethersproject/address'
-import { toUtf8Bytes,toUtf8String } from '@ethersproject/strings'
+import { toUtf8Bytes, toUtf8String } from '@ethersproject/strings'
 
 import {
   ITxData,
@@ -184,7 +188,7 @@ export function removeHexPrefix (hex: string): string {
 }
 
 export function isHexString (value: any): boolean {
-  return utils.isHexString(value)
+  return _isHexString(value)
 }
 
 export function payloadId (): number {
@@ -467,6 +471,7 @@ export function parseTransactionData (
   }
 
   function parseHexValues (value: number | string) {
+    let result = value
     if (value !== '') {
       if (!isHexString(value)) {
         if (typeof value === 'string') {
