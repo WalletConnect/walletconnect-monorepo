@@ -1,4 +1,7 @@
-import { utils } from 'ethers'
+import { BigNumber } from '@ethersproject/bignumber'
+import { isHexString,hexlify,arrayify } from '@ethersproject/bytes'
+import { getAddress } from '@ethersproject/address'
+import { toUtf8Bytes,toUtf8String } from '@ethersproject/strings'
 
 import {
   ITxData,
@@ -20,7 +23,7 @@ export function convertArrayBufferToBuffer (arrayBuffer: ArrayBuffer): Buffer {
 }
 
 export function convertArrayBufferToUtf8 (arrayBuffer: ArrayBuffer): string {
-  const utf8 = utils.toUtf8String(new Uint8Array(arrayBuffer))
+  const utf8 = toUtf8String(new Uint8Array(arrayBuffer))
   return utf8
 }
 
@@ -28,7 +31,7 @@ export function convertArrayBufferToHex (
   arrayBuffer: ArrayBuffer,
   noPrefix?: boolean
 ): string {
-  let hex = utils.hexlify(new Uint8Array(arrayBuffer))
+  let hex = hexlify(new Uint8Array(arrayBuffer))
   if (noPrefix) {
     hex = removeHexPrefix(hex)
   }
@@ -83,7 +86,7 @@ export function concatBuffers (...args: Buffer[]): Buffer {
 // -- Utf8 ------------------------------------------------- //
 
 export function convertUtf8ToArrayBuffer (utf8: string): ArrayBuffer {
-  const arrayBuffer = utils.toUtf8Bytes(utf8).buffer
+  const arrayBuffer = toUtf8Bytes(utf8).buffer
   return arrayBuffer
 }
 
@@ -99,7 +102,7 @@ export function convertUtf8ToHex (utf8: string, noPrefix?: boolean): string {
 }
 
 export function convertUtf8ToNumber (utf8: string): number {
-  const num = utils.bigNumberify(utf8).toNumber()
+  const num = BigNumber.from(utf8).toNumber()
   return num
 }
 
@@ -118,12 +121,12 @@ export function convertNumberToArrayBuffer (num: number): ArrayBuffer {
 }
 
 export function convertNumberToUtf8 (num: number): string {
-  const utf8 = utils.bigNumberify(num).toString()
+  const utf8 = BigNumber.from(num).toString()
   return utf8
 }
 
 export function convertNumberToHex (num: number, noPrefix?: boolean): string {
-  let hex = utils.bigNumberify(num).toHexString()
+  let hex = BigNumber.from(num).toHexString()
   if (noPrefix) {
     hex = removeHexPrefix(hex)
   }
@@ -140,7 +143,7 @@ export function convertHexToBuffer (hex: string): Buffer {
 
 export function convertHexToArrayBuffer (hex: string): ArrayBuffer {
   hex = addHexPrefix(hex)
-  const arrayBuffer = utils.arrayify(hex).buffer
+  const arrayBuffer = arrayify(hex).buffer
   return arrayBuffer
 }
 
@@ -151,7 +154,7 @@ export function convertHexToUtf8 (hex: string): string {
 }
 
 export function convertHexToNumber (hex: string): number {
-  const num = utils.bigNumberify(hex).toNumber()
+  const num = BigNumber.from(hex).toNumber()
   return num
 }
 
@@ -203,7 +206,7 @@ export function uuid (): string {
 }
 
 export const toChecksumAddress = (address: string) => {
-  return utils.getAddress(address)
+  return getAddress(address)
 }
 
 export const isValidAddress = (address?: string) => {
@@ -444,7 +447,7 @@ export function promisify (
 }
 
 export function parsePersonalSign (params: string[]): string[] {
-  if (!utils.isHexString(params[1])) {
+  if (!isHexString(params[1])) {
     params[1] = convertUtf8ToHex(params[1])
   }
   return params
@@ -459,7 +462,7 @@ export function parseTransactionData (
 
   function parseHexValues (value: number | string) {
     let result = value
-    if (!utils.isHexString(value)) {
+    if (!isHexString(value)) {
       if (typeof value === 'string') {
         value = convertUtf8ToNumber(value)
       }
