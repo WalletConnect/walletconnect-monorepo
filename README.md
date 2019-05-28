@@ -112,8 +112,18 @@ const tx = {
  */
 walletConnector
   .sendTransaction(tx)
-  .then(console.log)
-  .catch(console.error);
+  .then(result => {
+    /**
+     *  Returns transaction id (hash)
+     */
+    console.log(result);
+  })
+  .catch(error => {
+    /**
+     *  Error returned when rejected
+     */
+    console.error(error);
+  });
 ```
 
 ### Sign Transaction \(eth_signTransaction\)
@@ -136,9 +146,19 @@ const tx = {
  *  Sign transaction
  */
 walletConnector
-  .sendTransaction(tx)
-  .then(console.log)
-  .catch(console.error);
+  .signTransaction(tx)
+  .then(result => {
+    /**
+     *  Returns signed transaction
+     */
+    console.log(result);
+  })
+  .catch(error => {
+    /**
+     *  Error returned when rejected
+     */
+    console.error(error);
+  });
 ```
 
 ### Sign Personal Message \(personal_sign\)
@@ -147,9 +167,11 @@ walletConnector
 /**
  *  Draft Message Parameters
  */
+const message = "My email is john@doe.com - 1537836206101"
+
 const msgParams = [
-  "My email is john@doe.com - 1537836206101"        // Required
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",     // Required
+  convertUtf8ToHex(message)                                                 // Required
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",                             // Required
 ];
 
 /**
@@ -157,8 +179,18 @@ const msgParams = [
  */
 walletConnector
   .signPersonalMessage(msgParams)
-  .then(console.log)
-  .catch(console.error);
+  .then((result) => {
+    /**
+     *  Returns signature.
+     */
+    console.log(result)
+  })
+  .catch(error => {
+    /**
+     *  Error returned when rejected
+     */
+     console.error(error);
+  })
 ```
 
 ### Sign Message \(eth_sign\)
@@ -167,9 +199,11 @@ walletConnector
 /**
  *  Draft Message Parameters
  */
+const message = "My email is john@doe.com - 1537836206101";
+
 const msgParams = [
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3", // Required
-  "My email is john@doe.com - 1537836206101" // Required
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",                            // Required
+  keccak256("\x19Ethereum Signed Message:\n" + len(message) + message))    // Required
 ];
 
 /**
@@ -177,56 +211,67 @@ const msgParams = [
  */
 walletConnector
   .signMessage(msgParams)
-  .then(console.log)
-  .catch(console.error);
+  .then((result) => {
+    /**
+     *  Returns signature.
+     */
+    console.log(result)
+  })
+  .catch(error => {
+    /**
+     *  Error returned when rejected
+     */
+     console.error(error);
+  })
 ```
 
 ### Sign Typed Data \(eth_signTypedData\)
 
 ```javascript
 /**
- *  Draft Typed Data
+ *  Draft Message Parameters
  */
+const typedData = {
+  types: {
+    EIP712Domain: [
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" }
+    ],
+    Person: [
+      { name: "name", type: "string" },
+      { name: "account", type: "address" }
+    ],
+    Mail: [
+      { name: "from", type: "Person" },
+      { name: "to", type: "Person" },
+      { name: "contents", type: "string" }
+    ]
+  },
+  primaryType: "Mail",
+  domain: {
+    name: "Example Dapp",
+    version: "1.0.0-beta",
+    chainId: 1,
+    verifyingContract: "0x0000000000000000000000000000000000000000"
+  },
+  message: {
+    from: {
+      name: "Alice",
+      account: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    to: {
+      name: "Bob",
+      account: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    contents: "Hey, Bob!"
+  }
+};
+
 const msgParams = [
   "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3", // Required
-  {
-    // Required
-    types: {
-      EIP712Domain: [
-        { name: "name", type: "string" },
-        { name: "version", type: "string" },
-        { name: "chainId", type: "uint256" },
-        { name: "verifyingContract", type: "address" }
-      ],
-      Person: [
-        { name: "name", type: "string" },
-        { name: "account", type: "address" }
-      ],
-      Mail: [
-        { name: "from", type: "Person" },
-        { name: "to", type: "Person" },
-        { name: "contents", type: "string" }
-      ]
-    },
-    primaryType: "Mail",
-    domain: {
-      name: "Example Dapp",
-      version: "1.0.0-beta",
-      chainId: 1,
-      verifyingContract: "0x0000000000000000000000000000000000000000"
-    },
-    message: {
-      from: {
-        name: "Alice",
-        account: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      },
-      to: {
-        name: "Bob",
-        account: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-      },
-      contents: "Hey, Bob!"
-    }
-  }
+  typedData // Required
 ];
 
 /**
@@ -234,8 +279,18 @@ const msgParams = [
  */
 walletConnector
   .signTypedData(msgParams)
-  .then(console.log)
-  .catch(console.error);
+  .then(result => {
+    /**
+     *  Returns signature.
+     */
+    console.log(result);
+  })
+  .catch(error => {
+    /**
+     *  Error returned when rejected
+     */
+    console.error(error);
+  });
 ```
 
 ### Send Custom Request
@@ -266,8 +321,18 @@ const customRequest = {
  */
 walletConnector
   .sendCustomRequest(customRequest)
-  .then(console.log)
-  .catch(console.error);
+  .then(result => {
+    /**
+     *  Returns request result
+     */
+    console.log(result);
+  })
+  .catch(error => {
+    /**
+     *  Error returned when rejected
+     */
+    console.error(error);
+  });
 ```
 
 ## For Wallets (Client SDK - react-native)
