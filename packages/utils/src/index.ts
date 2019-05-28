@@ -510,7 +510,8 @@ export function parseTransactionData (
       typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
     nonce:
       typeof txData.nonce === 'undefined' ? '' : parseHexValues(txData.nonce),
-    data: typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data)
+    data:
+      typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data) || '0x'
   }
 
   const prunable = ['gasPrice', 'gasLimit', 'value', 'nonce']
