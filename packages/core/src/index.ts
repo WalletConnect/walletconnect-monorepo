@@ -603,6 +603,29 @@ class Connector {
     }
   }
 
+  public async trustSignTransaction (network: number, transaction: any) {
+    if (!this._connected) {
+      throw new Error('Session currently disconnected')
+    }
+
+    const request = this._formatRequest({
+      method: 'trust_signTransaction',
+      params: [
+        {
+          network,
+          transaction: JSON.stringify(transaction)
+        }
+      ]
+    })
+
+    try {
+      const result = await this._sendCallRequest(request)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
   public async sendCustomRequest (request: Partial<IJsonRpcRequest>) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
