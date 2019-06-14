@@ -27,6 +27,9 @@ function onInit() {
         console.log('QR Code Modal closed')
       })
     })
+  } else {
+    const { accounts, chainId } = walletConnector
+    updateSessionDetails({ accounts, chainId })
   }
 
   onSubscribe()
