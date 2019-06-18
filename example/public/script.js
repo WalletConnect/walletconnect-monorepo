@@ -136,6 +136,7 @@ function sendTestTransaction() {
   const tx = {
     from: walletConnector.accounts[0],
     to: walletConnector.accounts[0],
+    value: 0,
     data: '0x' // Required
   }
 
