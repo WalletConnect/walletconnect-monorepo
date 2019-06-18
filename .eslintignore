@@ -5,3 +5,5 @@ node_modules
 packages/*/lib
 
 lerna-debug.log
+
+example
