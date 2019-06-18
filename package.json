@@ -37,6 +37,7 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
+    "archiver": "^3.0.0",
     "babel-eslint": "^8.2.6",
     "eslint": "^5.8.0",
     "eslint-config-standard": "^12.0.0",
