@@ -24,9 +24,10 @@
     "clean:example": "cd example && rm -rf node_modules",
     "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:package_lock && npm run clean:example",
     "lint": "tslint packages/*/src/**/*.ts",
+    "zip": "node scripts/zip.js",
     "publish": "lerna publish",
     "publish:beta": "lerna version && lerna exec -- npm publish",
-    "routine": "npm run clean:all && npm run bootstrap && npm run check-packages",
+    "routine": "npm run clean:all && npm run bootstrap && npm run check-packages && npm run zip",
     "check-packages": "npm run clean && npm run lint && npm run build && npm run test",
     "example": "npm run check-packages && cd example && npm run start",
     "deploy": "npm run check-packages && npm run publish",
@@ -40,6 +41,7 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
+    "archiver": "^3.0.0",
     "babel-eslint": "^8.2.6",
     "eslint": "^5.8.0",
     "eslint-config-standard": "^12.0.0",
