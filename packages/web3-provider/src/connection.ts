@@ -11,6 +11,8 @@ import {
 
 const dev = process.env.NODE_ENV === 'development'
 
+const INFURA_ID = 'b83e6e49b57b4bebaad968e98f8f9dab'
+
 class WalletConnectConnection extends EventEmitter {
   public bridge: string
   public qrcode: boolean
@@ -201,28 +203,18 @@ class WalletConnectConnection extends EventEmitter {
   }
 
   updateRpcUrl (chainId: number, rpcUrl: string = '') {
-    switch (chainId) {
-      case 1:
-        rpcUrl = presets.infura[1]
-        break
-      case 3:
-        rpcUrl = presets.infuraRopsten[1]
-        break
+    const infuraNetworks = {
+      1: 'mainnet',
+      3: 'ropsten',
+      4: 'rinkeby',
+      5: 'goerli',
+      42: 'kovan'
+    }
+    const network = infuraNetworks[chainId]
 
-      case 4:
-        rpcUrl = presets.infuraRinkeby[1]
-        break
-
-      case 5:
-        rpcUrl = presets.infuraGoerli[1]
-        break
-
-      case 42:
-        rpcUrl = presets.infuraKovan[1]
-        break
-      default:
-        rpcUrl = ''
-        break
+    if (!rpcUrl && network) {
+      const infuraId = this.infuraId || INFURA_ID
+      rpcUrl = `https://${network}.infura.io/v3/${infuraId}`
     }
 
     if (rpcUrl) {
