@@ -8,8 +8,6 @@ import {
   IWalletConnectConnectionOptions
 } from '@walletconnect/types'
 
-const dev = process.env.NODE_ENV === 'development'
-
 const INFURA_ID = 'b83e6e49b57b4bebaad968e98f8f9dab'
 
 class WalletConnectConnection extends EventEmitter {
@@ -103,7 +101,6 @@ class WalletConnectConnection extends EventEmitter {
     this.wc = null
     this.connected = false
     this.closed = true
-    if (dev) console.log('Closing WalletConnector connection')
     this.emit('close')
     this.removeAllListeners()
   }
