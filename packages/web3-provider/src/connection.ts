@@ -11,9 +11,9 @@ import {
 const INFURA_ID = 'b83e6e49b57b4bebaad968e98f8f9dab'
 
 class WalletConnectConnection extends EventEmitter {
-  public bridge: string
-  public qrcode: boolean
-  public infuraId: string
+  public bridge: string = 'https://bridge.walletconnect.org'
+  public qrcode: boolean = true
+  public infuraId: string = ''
   public wc: WalletConnect | null = null
   public http: HTTPConnection | null = null
   public accounts: string[] = []
@@ -23,13 +23,15 @@ class WalletConnectConnection extends EventEmitter {
   public connected: boolean = false
   public closed: boolean = false
 
-  constructor (opts: IWalletConnectConnectionOptions) {
+  constructor (opts?: IWalletConnectConnectionOptions) {
     super()
-    this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
-    this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
-    this.infuraId = opts.infuraId || ''
+    if (opts) {
+      this.bridge = this.bridge || 'https://bridge.walletconnect.org'
+      this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
+      this.infuraId = opts.infuraId || ''
+    }
     this.on('error', () => this.close())
-    setTimeout(() => this.create(opts), 0)
+    setTimeout(() => this.create(), 0)
   }
   openQR () {
     const uri = this.wc ? this.wc.uri : ''
@@ -39,13 +41,9 @@ class WalletConnectConnection extends EventEmitter {
       })
     }
   }
-  create (opts: any) {
-    if (!WalletConnect) {
-      this.emit('error', new Error('WalletConnect not available'))
-    }
-
+  create () {
     try {
-      this.wc = new WalletConnect({ bridge: opts.bridge })
+      this.wc = new WalletConnect({ bridge: this.bridge })
     } catch (e) {
       this.emit('error', e)
       return
