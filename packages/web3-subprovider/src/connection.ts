@@ -7,8 +7,6 @@ import {
   IWalletConnectConnectionOptions
 } from '@walletconnect/types'
 
-const dev = process.env.NODE_ENV === 'development'
-
 class WalletConnectConnection extends EventEmitter {
   public bridge: string
   public qrcode: boolean
@@ -98,7 +96,6 @@ class WalletConnectConnection extends EventEmitter {
     this.wc = null
     this.connected = false
     this.closed = true
-    if (dev) console.log('Closing WalletConnector connection')
     this.emit('close')
     this.removeAllListeners()
   }

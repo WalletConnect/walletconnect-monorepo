@@ -1,8 +1,6 @@
 import EventEmitter from 'events'
 import { uuid } from '@walletconnect/utils'
 
-const dev = process.env.NODE_ENV === 'development'
-
 const _window: any = window
 
 const XHR =
@@ -124,7 +122,6 @@ class HTTPConnection extends EventEmitter {
     )
   }
   close () {
-    if (dev) console.log('Closing HTTP connection')
     this.closed = true
     this.emit('close')
     clearTimeout(this.subscriptionTimeout)
