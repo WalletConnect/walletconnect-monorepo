@@ -2,7 +2,6 @@ import EventEmitter from 'events'
 import { convertNumberToHex } from '@walletconnect/utils'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
-import presets from './presets'
 import HTTPConnection from './http'
 import {
   ISessionParams,
