@@ -72,6 +72,8 @@ class Connector {
   private _handshakeTopic: string
   private _accounts: string[]
   private _chainId: number
+  private _networkId: number
+  private _rpcUrl: string
   private _socket: SocketTransport
   private _eventManager: EventManager
   private _connected: boolean
@@ -102,6 +104,8 @@ class Connector {
     this._handshakeTopic = ''
     this._accounts = []
     this._chainId = 0
+    this._networkId = 0
+    this._rpcUrl = ''
     this._eventManager = new EventManager()
     this._connected = false
     this._storage = storage || null
@@ -296,6 +300,15 @@ class Connector {
     return chainId
   }
 
+  set networkId (value) {
+    this._networkId = value
+  }
+
+  get networkId () {
+    const networkId: number | null = this._networkId
+    return networkId
+  }
+
   set accounts (value) {
     this._accounts = value
   }
@@ -303,6 +316,15 @@ class Connector {
   get accounts () {
     const accounts: string[] | null = this._accounts
     return accounts
+  }
+
+  set rpcUrl (value) {
+    this._rpcUrl = value
+  }
+
+  get rpcUrl () {
+    const rpcUrl: string | null = this._rpcUrl
+    return rpcUrl
   }
 
   set connected (value) {
@@ -405,12 +427,16 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
+    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
+      networkId: this.networkId,
       accounts: this.accounts,
+      rpcUrl: this.rpcUrl,
       peerId: this.clientId,
       peerMeta: this.clientMeta
     }
@@ -471,12 +497,16 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
+    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
-      accounts: this.accounts
+      networkId: this.networkId,
+      accounts: this.accounts,
+      rpcUrl: this.rpcUrl
     }
 
     const request = this._formatRequest({
@@ -505,6 +535,7 @@ class Connector {
     const sessionParams: ISessionParams = {
       approved: false,
       chainId: null,
+      networkId: null,
       accounts: null
     }
 
