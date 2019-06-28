@@ -1,23 +1,23 @@
 const presets = {
   infura: [
-    'wss://mainnet.infura.io/ws/v3/786ade30f36244469480aa5c2bf0743b',
-    'https://mainnet.infura.io/v3/786ade30f36244469480aa5c2bf0743b'
+    'wss://mainnet.infura.io/ws/v3/b83e6e49b57b4bebaad968e98f8f9dab',
+    'https://mainnet.infura.io/v3/b83e6e49b57b4bebaad968e98f8f9dab'
   ],
   infuraRopsten: [
-    'wss://ropsten.infura.io/ws/v3/786ade30f36244469480aa5c2bf0743b',
-    'https://ropsten.infura.io/v3/786ade30f36244469480aa5c2bf0743b'
+    'wss://ropsten.infura.io/ws/v3/b83e6e49b57b4bebaad968e98f8f9dab',
+    'https://ropsten.infura.io/v3/b83e6e49b57b4bebaad968e98f8f9dab'
   ],
   infuraRinkeby: [
-    'wss://rinkeby.infura.io/ws/v3/786ade30f36244469480aa5c2bf0743b',
-    'https://rinkeby.infura.io/v3/786ade30f36244469480aa5c2bf0743b'
+    'wss://rinkeby.infura.io/ws/v3/b83e6e49b57b4bebaad968e98f8f9dab',
+    'https://rinkeby.infura.io/v3/b83e6e49b57b4bebaad968e98f8f9dab'
   ],
   infuraGoerli: [
-    'wss://goerli.infura.io/ws/v3/786ade30f36244469480aa5c2bf0743b',
-    'https://goerli.infura.io/v3/786ade30f36244469480aa5c2bf0743b'
+    'wss://goerli.infura.io/ws/v3/b83e6e49b57b4bebaad968e98f8f9dab',
+    'https://goerli.infura.io/v3/b83e6e49b57b4bebaad968e98f8f9dab'
   ],
   infuraKovan: [
-    'wss://kovan.infura.io/ws/v3/786ade30f36244469480aa5c2bf0743b',
-    'https://kovan.infura.io/v3/786ade30f36244469480aa5c2bf0743b'
+    'wss://kovan.infura.io/ws/v3/b83e6e49b57b4bebaad968e98f8f9dab',
+    'https://kovan.infura.io/v3/b83e6e49b57b4bebaad968e98f8f9dab'
   ]
 }
 

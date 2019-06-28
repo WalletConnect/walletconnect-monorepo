@@ -2,8 +2,6 @@ import EventEmitter from 'events'
 import { convertNumberToHex } from '@walletconnect/utils'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
-import presets from './presets'
-import HTTPConnection from './http'
 import {
   ISessionParams,
   IWalletConnectConnectionOptions
@@ -16,11 +14,9 @@ class WalletConnectConnection extends EventEmitter {
   public qrcode: boolean
   public infuraId: string
   public wc: WalletConnect | null = null
-  public http: HTTPConnection | null = null
   public accounts: string[] = []
   public chainId: number = 1
   public networkId: number = 1
-  public rpcUrl: string = ''
   public connected: boolean = false
   public closed: boolean = false
 
@@ -141,11 +137,10 @@ class WalletConnectConnection extends EventEmitter {
         const response = await this.handleStateMethods(payload)
         this.emit('payload', response)
       } else {
-        if (this.http) {
-          await this.http.send(payload)
-        } else {
-          this.error(payload, 'HTTP Connection not available')
-        }
+        this.error(
+          payload,
+          `JSON RPC method (${payload.method}) not supported by subprovider`
+        )
       }
     } else {
       this.error(payload, 'Not connected')
@@ -176,7 +171,7 @@ class WalletConnectConnection extends EventEmitter {
   }
 
   async updateState (sessionParams: ISessionParams) {
-    const { accounts, chainId, networkId, rpcUrl } = sessionParams
+    const { accounts, chainId, networkId } = sessionParams
 
     // Check if accounts changed and trigger event
     if (accounts && this.accounts !== accounts) {
@@ -194,55 +189,6 @@ class WalletConnectConnection extends EventEmitter {
     if (networkId && this.networkId !== networkId) {
       this.networkId = networkId
       this.emit('networkChanged', networkId)
-    }
-
-    // Handle rpcUrl update
-    this.updateRpcUrl(this.chainId, rpcUrl || '')
-  }
-
-  updateRpcUrl (chainId: number, rpcUrl: string = '') {
-    switch (chainId) {
-      case 1:
-        rpcUrl = presets.infura[1]
-        break
-      case 3:
-        rpcUrl = presets.infuraRopsten[1]
-        break
-
-      case 4:
-        rpcUrl = presets.infuraRinkeby[1]
-        break
-
-      case 5:
-        rpcUrl = presets.infuraGoerli[1]
-        break
-
-      case 42:
-        rpcUrl = presets.infuraKovan[1]
-        break
-      default:
-        rpcUrl = ''
-        break
-    }
-
-    if (rpcUrl) {
-      // Update rpcUrl
-      this.rpcUrl = rpcUrl
-      // Handle http update
-      this.updateHttpConnection()
-    } else {
-      this.emit(
-        'error',
-        new Error(`No RPC Url avaialble for chainId: ${chainId}`)
-      )
-    }
-  }
-
-  updateHttpConnection = () => {
-    if (this.rpcUrl) {
-      this.http = new HTTPConnection(this.rpcUrl)
-      this.http.on('payload', payload => this.emit('payload', payload))
-      this.http.on('error', (error: Error) => this.emit('error', error))
     }
   }
 }
