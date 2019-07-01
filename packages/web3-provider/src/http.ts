@@ -1,14 +1,18 @@
 import EventEmitter from 'events'
+import { XMLHttpRequest } from 'xhr2-cookies'
 import { uuid } from '@walletconnect/utils'
+import { IError } from '@walletconnect/types'
 
+// -- global -------------------------------------------------------------- //
 const _window: any = window
 
 const XHR =
   typeof _window !== 'undefined' &&
   typeof _window.XMLHttpRequest !== 'undefined'
     ? _window.XMLHttpRequest
-    : null
+    : XMLHttpRequest
 
+// -- types --------------------------------------------------------------- //
 type XHRPost = {
   method: string
   headers: {
@@ -17,10 +21,7 @@ type XHRPost = {
   body: any
 }
 
-interface IError extends Error {
-  res?: any
-  code?: any
-}
+// -- HTTPConnection ------------------------------------------------------ //
 
 class HTTPConnection extends EventEmitter {
   public closed: boolean

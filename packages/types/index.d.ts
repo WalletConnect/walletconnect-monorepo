@@ -85,18 +85,27 @@ declare module '@walletconnect/types' {
     params: any[]
   }
 
-  export type IJsonRpcCallback = (
-    err: Error | null,
-    result?: IJsonRpcResponseSuccess
-  ) => void
-
-  export interface IWeb3Provider {
-    sendAsync(payload: IJsonRpcRequest, callback: IJsonRpcCallback): void
+  export interface IJsonRpcSubscription {
+    id: number
+    jsonrpc: string
+    method: string
+    params: any
   }
+
+  export type JsonRpc =
+    | IJsonRpcRequest
+    | IJsonRpcSubscription
+    | IJsonRpcResponseSuccess
+    | IJsonRpcResponseError
 
   export type IErrorCallback = (err: Error | null, data?: any) => void
 
   export type ICallback = () => void
+
+  export interface IError extends Error {
+    res?: any
+    code?: any
+  }
 
   export interface IClientMeta {
     description: string

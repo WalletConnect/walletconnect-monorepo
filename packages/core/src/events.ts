@@ -8,15 +8,15 @@ import {
 
 // -- typeChecks ----------------------------------------------------------- //
 
-function isRpcRequest (object: any): object is IJsonRpcRequest {
+function isJsonRpcRequest (object: any): object is IJsonRpcRequest {
   return 'method' in object
 }
 
-function isRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
+function isJsonRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
   return 'result' in object
 }
 
-function isRpcResponseError (object: any): object is IJsonRpcResponseError {
+function isJsonRpcResponseError (object: any): object is IJsonRpcResponseError {
   return 'error' in object
 }
 
@@ -47,9 +47,9 @@ class EventManager {
     let eventEmitters: IEventEmitter[] = []
     let event: string
 
-    if (isRpcRequest(payload)) {
+    if (isJsonRpcRequest(payload)) {
       event = payload.method
-    } else if (isRpcResponseSuccess(payload) || isRpcResponseError(payload)) {
+    } else if (isJsonRpcResponseSuccess(payload) || isJsonRpcResponseError(payload)) {
       event = `response:${payload.id}`
     } else if (isInternalEvent(payload)) {
       event = payload.event
@@ -80,7 +80,7 @@ class EventManager {
     }
 
     eventEmitters.forEach((eventEmitter: IEventEmitter) => {
-      if (isRpcResponseError(payload)) {
+      if (isJsonRpcResponseError(payload)) {
         const error = new Error(payload.error.message)
         eventEmitter.callback(error, null)
       } else {

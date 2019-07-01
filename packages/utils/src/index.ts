@@ -13,6 +13,8 @@ import {
   IParseURIResult,
   IRequiredParamsResult,
   IQueryParamsResult,
+  IJsonRpcSubscription,
+  IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
   IJsonRpcErrorMessage
@@ -556,4 +558,28 @@ export function formatRpcError (
     message
   }
   return result
+}
+
+// -- typeGuards ----------------------------------------------------------- //
+
+export function isJsonRpcSubscription (
+  object: any
+): object is IJsonRpcSubscription {
+  return typeof object.params === 'object'
+}
+
+export function isJsonRpcRequest (object: any): object is IJsonRpcRequest {
+  return 'method' in object
+}
+
+export function isJsonRpcResponseSuccess (
+  object: any
+): object is IJsonRpcResponseSuccess {
+  return 'result' in object
+}
+
+export function isJsonRpcResponseError (
+  object: any
+): object is IJsonRpcResponseError {
+  return 'error' in object
 }

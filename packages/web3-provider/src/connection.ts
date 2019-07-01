@@ -10,6 +10,8 @@ import {
 
 const INFURA_ID = 'b83e6e49b57b4bebaad968e98f8f9dab'
 
+// -- WalletConnectConnection --------------------------------------------- //
+
 class WalletConnectConnection extends EventEmitter {
   public bridge: string = 'https://bridge.walletconnect.org'
   public qrcode: boolean = true

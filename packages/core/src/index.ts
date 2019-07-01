@@ -44,11 +44,11 @@ import EventManager from './events'
 
 // -- typeChecks ----------------------------------------------------------- //
 
-function isRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
+function isJsonRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
   return 'result' in object
 }
 
-function isRpcResponseError (object: any): object is IJsonRpcResponseError {
+function isJsonRpcResponseError (object: any): object is IJsonRpcResponseError {
   return 'error' in object
 }
 
@@ -703,7 +703,7 @@ class Connector {
   }
 
   public approveRequest (response: Partial<IJsonRpcResponseSuccess>) {
-    if (isRpcResponseSuccess(response)) {
+    if (isJsonRpcResponseSuccess(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
     } else {
@@ -712,7 +712,7 @@ class Connector {
   }
 
   public rejectRequest (response: Partial<IJsonRpcResponseError>) {
-    if (isRpcResponseError(response)) {
+    if (isJsonRpcResponseError(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
     } else {
@@ -797,7 +797,7 @@ class Connector {
       throw new Error(ERROR_MISSING_ID)
     }
 
-    if (isRpcResponseError(response)) {
+    if (isJsonRpcResponseError(response)) {
       const error = formatRpcError(response.error)
 
       const formattedResponseError: IJsonRpcResponseError = {
@@ -806,7 +806,7 @@ class Connector {
         error
       }
       return formattedResponseError
-    } else if (isRpcResponseSuccess(response)) {
+    } else if (isJsonRpcResponseSuccess(response)) {
       const formattedResponseSuccess: IJsonRpcResponseSuccess = {
         jsonrpc: '2.0',
         ...response
