@@ -7,6 +7,8 @@ import {
   IWalletConnectConnectionOptions
 } from '@walletconnect/types'
 
+// -- WalletConnectConnection --------------------------------------------- //
+
 class WalletConnectConnection extends EventEmitter {
   public bridge: string = 'https://bridge.walletconnect.org'
   public qrcode: boolean = true

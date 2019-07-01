@@ -1,4 +1,3 @@
-// @ts-ignore
 import EthereumProvider from './provider'
 import WalletConnectConnection from './connection'
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
