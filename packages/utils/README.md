@@ -36,6 +36,9 @@ function sanitizeHex (hex: string): string
 function addHexPrefix (hex: string): string
 function removeHexPrefix (hex: string): string
 
+function isHexString (value: any): boolean
+function isEmptyString (value: string): boolean
+
 function payloadId (): number
 function uuid (): string
 

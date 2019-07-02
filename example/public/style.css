@@ -1,0 +1,55 @@
+:root {
+  --dark-color: rgb(12, 12, 13);
+  --light-blue-color: rgb(64, 153, 255);
+}
+
+html,
+body {
+  background: white;
+  color: var(--dark-color);
+  font-size: 16px;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+div#content {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.6em 3.2em;
+}
+
+h1,
+h2,
+h3,
+p,
+a {
+  margin: 1.2em 0;
+}
+
+a {
+  color: var(--dark-color);
+  outline: none;
+}
+
+button {
+  transition: all 0.1s ease-in-out;
+  background: var(--light-blue-color);
+  color: white;
+  font-size: 1em;
+  padding: 0.625em 1em;
+  border: none;
+  border-radius: 6px;
+  margin: 0;
+  outline: none;
+  cursor: pointer;
+}
+
+button:active {
+  transform: translate3d(0, -1px, 0);
+}
+
+button:hover {
+  opacity: 0.8;
+}
