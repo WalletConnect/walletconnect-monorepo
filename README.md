@@ -23,11 +23,11 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 ### Install
 
 ```bash
-yarn add @walletconnect/browser
+yarn add @walletconnect/browser @walletconnect/qrcode-modal
 
 # OR
 
-npm install --save @walletconnect/browser
+npm install --save @walletconnect/browser @walletconnect/qrcode-modal
 ```
 
 ### Initiate Connection
@@ -36,16 +36,12 @@ npm install --save @walletconnect/browser
 import WalletConnect from "@walletconnect/browser";
 import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 
-/**
- *  Create a walletConnector
- */
+// Create a walletConnector
 const walletConnector = new WalletConnect({
   bridge: "https://bridge.walletconnect.org" // Required
 });
 
-/**
- *  Check if connection is already established
- */
+// Check if connection is already established
 if (!walletConnector.connected) {
   // create new session
   walletConnector.createSession().then(() => {
@@ -58,18 +54,16 @@ if (!walletConnector.connected) {
   });
 }
 
-/**
- *  Subscribe to connection events
- */
+// Subscribe to connection events
 walletConnector.on("connect", (error, payload) => {
   if (error) {
     throw error;
   }
 
-  // close QR Code Modal
+  // Close QR Code Modal
   WalletConnectQRCodeModal.close();
 
-  // get provided accounts and chainId
+  // Get provided accounts and chainId
   const { accounts, chainId } = payload.params[0];
 });
 
@@ -78,7 +72,7 @@ walletConnector.on("session_update", (error, payload) => {
     throw error;
   }
 
-  // get updated accounts and chainId
+  // Get updated accounts and chainId
   const { accounts, chainId } = payload.params[0];
 });
 
@@ -87,183 +81,208 @@ walletConnector.on("disconnect", (error, payload) => {
     throw error;
   }
 
-  // delete walletConnector
+  // Delete walletConnector
 });
 ```
 
 ### Send Transaction \(eth_sendTransaction\)
 
 ```javascript
-/**
- *  Draft transaction
- */
+// Draft transaction
 const tx = {
-  from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  to: "0x0000000000000000000000000000000000000000",
-  nonce: 1,
-  gas: 100000,
-  value: 0,
-  data: "0x0"
+  from: "0xbc28Ea04101F03aA7a94C1379bc3AB32E65e62d3", // Required
+  to: "0x89D24A7b4cCB1b6fAA2625Fe562bDd9A23260359", // Required (for non contract deployments)
+  data: "0x", // Required
+  gasPrice: "0x02540be400", // Optional
+  gasLimit: "0x9c40", // Optional
+  value: "0x00", // Optional
+  nonce: "0x0114" // Optional
 };
 
-/**
- *  Send transaction
- */
+// Send transaction
 walletConnector
   .sendTransaction(tx)
-  .then(console.log)
-  .catch(console.error);
+  .then(result => {
+    // Returns transaction id (hash)
+    console.log(result);
+  })
+  .catch(error => {
+    // Error returned when rejected
+    console.error(error);
+  });
 ```
 
 ### Sign Transaction \(eth_signTransaction\)
 
 ```javascript
-/**
- *  Draft transaction
- */
+// Draft transaction
 const tx = {
-  from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  to: "0x0000000000000000000000000000000000000000",
-  nonce: 1,
-  gas: 100000,
-  value: 0,
-  data: "0x0"
+  from: "0xbc28Ea04101F03aA7a94C1379bc3AB32E65e62d3", // Required
+  to: "0x89D24A7b4cCB1b6fAA2625Fe562bDd9A23260359", // Required (for non contract deployments)
+  data: "0x", // Required
+  gasPrice: "0x02540be400", // Optional
+  gasLimit: "0x9c40", // Optional
+  value: "0x00", // Optional
+  nonce: "0x0114" // Optional
 };
 
-/**
- *  Sign transaction
- */
+// Sign transaction
 walletConnector
-  .sendTransaction(tx)
-  .then(console.log)
-  .catch(console.error);
-```
-
-### Sign Message \(eth_sign\)
-
-```javascript
-/**
- *  Draft Message Parameters
- */
-const msgParams = [
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  "My email is john@doe.com - 1537836206101"
-];
-
-/**
- *  Sign message
- */
-walletConnector
-  .signMessage(msgParams)
-  .then(console.log)
-  .catch(console.error);
+  .signTransaction(tx)
+  .then(result => {
+    // Returns signed transaction
+    console.log(result);
+  })
+  .catch(error => {
+    // Error returned when rejected
+    console.error(error);
+  });
 ```
 
 ### Sign Personal Message \(personal_sign\)
 
 ```javascript
-/**
- *  Draft Message Parameters
- */
+
+// Draft Message Parameters
+const message = "My email is john@doe.com - 1537836206101"
+
 const msgParams = [
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  "My email is john@doe.com - 1537836206101"
+  convertUtf8ToHex(message)                                                 // Required
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",                             // Required
 ];
 
-/**
- *  Sign personal message
- */
+
+// Sign personal message
 walletConnector
   .signPersonalMessage(msgParams)
-  .then(console.log)
-  .catch(console.error);
+  .then((result) => {
+    // Returns signature.
+    console.log(result)
+  })
+  .catch(error => {
+    // Error returned when rejected
+    console.error(error);
+  })
+```
+
+### Sign Message \(eth_sign\)
+
+```javascript
+
+// Draft Message Parameters
+const message = "My email is john@doe.com - 1537836206101";
+
+const msgParams = [
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",                            // Required
+  keccak256("\x19Ethereum Signed Message:\n" + len(message) + message))    // Required
+];
+
+
+// Sign message
+walletConnector
+  .signMessage(msgParams)
+  .then((result) => {
+    // Returns signature.
+    console.log(result)
+  })
+  .catch(error => {
+    // Error returned when rejected
+    console.error(error);
+  })
 ```
 
 ### Sign Typed Data \(eth_signTypedData\)
 
 ```javascript
-/**
- *  Draft Typed Data
- */
-const msgParams = [
-  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  {
-    types: {
-      EIP712Domain: [
-        { name: "name", type: "string" },
-        { name: "version", type: "string" },
-        { name: "chainId", type: "uint256" },
-        { name: "verifyingContract", type: "address" }
-      ],
-      Person: [
-        { name: "name", type: "string" },
-        { name: "account", type: "address" }
-      ],
-      Mail: [
-        { name: "from", type: "Person" },
-        { name: "to", type: "Person" },
-        { name: "contents", type: "string" }
-      ]
+// Draft Message Parameters
+const typedData = {
+  types: {
+    EIP712Domain: [
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" }
+    ],
+    Person: [
+      { name: "name", type: "string" },
+      { name: "account", type: "address" }
+    ],
+    Mail: [
+      { name: "from", type: "Person" },
+      { name: "to", type: "Person" },
+      { name: "contents", type: "string" }
+    ]
+  },
+  primaryType: "Mail",
+  domain: {
+    name: "Example Dapp",
+    version: "1.0.0-beta",
+    chainId: 1,
+    verifyingContract: "0x0000000000000000000000000000000000000000"
+  },
+  message: {
+    from: {
+      name: "Alice",
+      account: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
-    primaryType: "Mail",
-    domain: {
-      name: "Example Dapp",
-      version: "1.0.0-beta",
-      chainId: 1,
-      verifyingContract: "0x0000000000000000000000000000000000000000"
+    to: {
+      name: "Bob",
+      account: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     },
-    message: {
-      from: {
-        name: "Alice",
-        account: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      },
-      to: {
-        name: "Bob",
-        account: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-      },
-      contents: "Hey, Bob!"
-    }
+    contents: "Hey, Bob!"
   }
+};
+
+const msgParams = [
+  "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3", // Required
+  typedData // Required
 ];
 
-/**
- *  Sign Typed Data
- */
+// Sign Typed Data
 walletConnector
   .signTypedData(msgParams)
-  .then(console.log)
-  .catch(console.error);
+  .then(result => {
+    // Returns signature.
+    console.log(result);
+  })
+  .catch(error => {
+    // Error returned when rejected
+    console.error(error);
+  });
 ```
 
 ### Send Custom Request
 
 ```javascript
-/**
- *  Draft Custom Request
- */
+// Draft Custom Request
 const customRequest = {
-  id: 1,
+  id: 1337,
   jsonrpc: "2.0",
   method: "eth_signTransaction",
   params: [
     {
-      from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-      to: "0x0000000000000000000000000000000000000000",
-      nonce: 1,
-      gas: 100000,
-      value: 0,
-      data: "0x0"
+      from: "0xbc28Ea04101F03aA7a94C1379bc3AB32E65e62d3",
+      to: "0x89D24A7b4cCB1b6fAA2625Fe562bDd9A23260359",
+      data: "0x",
+      gasPrice: "0x02540be400",
+      gasLimit: "0x9c40",
+      value: "0x00",
+      nonce: "0x0114"
     }
   ]
 };
 
-/**
- *  Send Custom Request
- */
+// Send Custom Request
 walletConnector
   .sendCustomRequest(customRequest)
-  .then(console.log)
-  .catch(console.error);
+  .then(result => {
+    // Returns request result
+    console.log(result);
+  })
+  .catch(error => {
+    // Error returned when rejected
+    console.error(error);
+  });
 ```
 
 ## For Wallets (Client SDK - react-native)
@@ -271,9 +290,7 @@ walletConnector
 ### Install
 
 ```bash
-/**
- *  Install NPM Package
- */
+// Install NPM Package
 
 yarn add @walletconnect/react-native
 
@@ -281,9 +298,7 @@ yarn add @walletconnect/react-native
 
 npm install --save @walletconnect/react-native
 
-/**
- *  Polyfill NodeJS modules for React-Native
- */
+// Polyfill NodeJS modules for React-Native
 
 npm install --save rn-nodeify
 
@@ -295,9 +310,7 @@ rn-nodeify --install --hack
 ```javascript
 import RNWalletConnect from "@walletconnect/react-native";
 
-/**
- *  Create WalletConnector
- */
+// Create WalletConnector
 const walletConnector = new RNWalletConnect(
   {
     uri: "wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=" // Required
@@ -322,9 +335,7 @@ const walletConnector = new RNWalletConnect(
   }
 );
 
-/**
- *  Subscribe to session requests
- */
+// Subscribe to session requests
 walletConnector.on("session_request", (error, payload) => {
   if (error) {
     throw error;
@@ -351,9 +362,7 @@ walletConnector.on("session_request", (error, payload) => {
   */
 });
 
-/**
- *  Subscribe to call requests
- */
+// Subscribe to call requests
 walletConnector.on("call_request", (error, payload) => {
   if (error) {
     throw error;
@@ -379,16 +388,14 @@ walletConnector.on("disconnect", (error, payload) => {
     throw error;
   }
 
-  // delete walletConnector
+  // Delete walletConnector
 });
 ```
 
 ### Manage Connection
 
 ```javascript
-/**
- *  Approve Session
- */
+// Approve Session
 walletConnector.approveSession({
   accounts: [
     '0x4292...931B3',
@@ -398,34 +405,26 @@ walletConnector.approveSession({
   chainId: 1
 })
 
-/**
- *  Reject Session
- */
+// Reject Session
 walletConnector.rejectSession({
   message: 'OPTIONAL_ERROR_MESSAGE'
 })
 
 
-/**
- *  Kill Session
- */
+// Kill Session
 walletConnector.killSession()
 ```
 
 ### Manage Call Requests
 
 ```javascript
-/**
- *  Approve Call Request
- */
+// Approve Call Request
 walletConnector.approveRequest({
   id: 1,
   result: "0x41791102999c339c844880b23950704cc43aa840f3739e365323cda4dfa89e7a"
 });
 
-/**
- *  Reject Call Request
- */
+// Reject Call Request
 walletConnector.rejectRequest({
   id: 1,
   error: {

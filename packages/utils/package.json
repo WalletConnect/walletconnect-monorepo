@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/utils",
-  "version": "1.0.0-beta.24",
+  "version": "1.0.0-beta.25",
   "description": "Utility Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
@@ -44,7 +44,7 @@
     "@babel/register": "^7.0.0",
     "@types/chai": "^4.1.6",
     "@types/lodash.isnumber": "^3.0.5",
-    "@types/mocha": "^5.2.5",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^10.12.18",
     "chai": "^4.1.2",
     "isomorphic-fetch": "^2.2.1",
@@ -55,8 +55,11 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.0.0-beta.23",
-    "ethers": "^4.0.27"
+    "@ethersproject/address": "^5.0.0-beta.125",
+    "@ethersproject/bytes": "^5.0.0-beta.126",
+    "@ethersproject/strings": "^5.0.0-beta.125",
+    "@walletconnect/types": "^1.0.0-beta.25",
+    "bignumber.js": "^8.1.1"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

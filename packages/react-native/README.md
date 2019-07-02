@@ -4,12 +4,10 @@ React Native SDK for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
-### Install
+## Install
 
 ```bash
-/**
- *  Install NPM Package
- */
+// Install NPM Package
 
 yarn add @walletconnect/react-native
 
@@ -17,27 +15,19 @@ yarn add @walletconnect/react-native
 
 npm install --save @walletconnect/react-native
 
-/**
- *  Polyfill NodeJS modules for React-Native
- */
+// Polyfill NodeJS modules for React-Native
 
-npm install --save react-native-crypto react-native-randombytes
+npm install --save rn-nodeify
 
-react-native link react-native-randombytes
-
-npm install --save-dev tradle/rn-nodeify
-
-./node_modules/.bin/rn-nodeify --hack --install
+rn-nodeify --install --hack
 ```
 
-### Initiate Connection
+## Initiate Connection
 
 ```javascript
 import RNWalletConnect from "@walletconnect/react-native";
 
-/**
- *  Create WalletConnector
- */
+// Create WalletConnector
 const walletConnector = new RNWalletConnect(
   {
     uri: "wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=" // Required
@@ -62,9 +52,7 @@ const walletConnector = new RNWalletConnect(
   }
 );
 
-/**
- *  Subscribe to session requests
- */
+// Subscribe to session requests
 walletConnector.on("session_request", (error, payload) => {
   if (error) {
     throw error;
@@ -91,9 +79,7 @@ walletConnector.on("session_request", (error, payload) => {
   */
 });
 
-/**
- *  Subscribe to call requests
- */
+// Subscribe to call requests
 walletConnector.on("call_request", (error, payload) => {
   if (error) {
     throw error;
@@ -119,16 +105,14 @@ walletConnector.on("disconnect", (error, payload) => {
     throw error;
   }
 
-  // delete walletConnector
+  // Delete walletConnector
 });
 ```
 
-### Manage Connection
+## Manage Connection
 
 ```javascript
-/**
- *  Approve Session
- */
+// Approve Session
 walletConnector.approveSession({
   accounts: [
     '0x4292...931B3',
@@ -138,34 +122,26 @@ walletConnector.approveSession({
   chainId: 1
 })
 
-/**
- *  Reject Session
- */
+// Reject Session
 walletConnector.rejectSession({
   message: 'OPTIONAL_ERROR_MESSAGE'
 })
 
 
-/**
- *  Kill Session
- */
+// Kill Session
 walletConnector.killSession()
 ```
 
-### Manage Call Requests
+## Manage Call Requests
 
 ```javascript
-/**
- *  Approve Call Request
- */
+// Approve Call Request
 walletConnector.approveRequest({
   id: 1,
   result: "0x41791102999c339c844880b23950704cc43aa840f3739e365323cda4dfa89e7a"
 });
 
-/**
- *  Reject Call Request
- */
+// Reject Call Request
 walletConnector.rejectRequest({
   id: 1,
   error: {

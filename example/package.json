@@ -1,30 +1,30 @@
 {
-  "name": "@walletconnect/types",
-  "version": "1.0.0-beta.25",
-  "description": "Typescript Types for WalletConnect",
-  "scripts": {},
+  "name": "example",
+  "description": "WalletConnect Static Example",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "open": "^6.3.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
   "keywords": [
     "walletconnect",
     "ethereum",
     "web3",
-    "crypto",
-    "dapp",
-    "wallet"
+    "crypto"
   ],
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
-  "main": "",
-  "types": "index",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
   },
   "bugs": {
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
-  },
-  "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7",
-  "devDependencies": {
-    "@types/mocha": "^5.2.6"
   }
 }
