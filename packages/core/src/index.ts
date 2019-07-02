@@ -24,7 +24,9 @@ import {
   uuid,
   formatRpcError,
   parseWalletConnectUri,
-  convertNumberToHex
+  convertNumberToHex,
+  isJsonRpcResponseSuccess,
+  isJsonRpcResponseError
 } from '@walletconnect/utils'
 import {
   ERROR_SESSION_CONNECTED,
@@ -41,16 +43,6 @@ import {
 } from './errors'
 import SocketTransport from './socket'
 import EventManager from './events'
-
-// -- typeChecks ----------------------------------------------------------- //
-
-function isJsonRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
-  return 'result' in object
-}
-
-function isJsonRpcResponseError (object: any): object is IJsonRpcResponseError {
-  return 'error' in object
-}
 
 // -- Connector ------------------------------------------------------------ //
 

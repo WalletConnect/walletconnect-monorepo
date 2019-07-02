@@ -17,7 +17,9 @@ import {
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
-  IJsonRpcErrorMessage
+  IJsonRpcErrorMessage,
+  IInternalEvent,
+  IWalletConnectSession
 } from '@walletconnect/types'
 
 // -- ArrayBuffer ------------------------------------------ //
@@ -582,4 +584,25 @@ export function isJsonRpcResponseError (
   object: any
 ): object is IJsonRpcResponseError {
   return 'error' in object
+}
+
+export function isInternalEvent (object: any): object is IInternalEvent {
+  return 'event' in object
+}
+
+export function isWalletConnectSession (
+  object: any
+): object is IWalletConnectSession {
+  return 'bridge' in object
+}
+
+export function isReservedEvent (event: string) {
+  const reservedEvents = [
+    'session_request',
+    'session_update',
+    'exchange_key',
+    'connect',
+    'disconnect'
+  ]
+  return reservedEvents.includes(event) || event.startsWith('wc_')
 }
