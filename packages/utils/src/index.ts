@@ -1,4 +1,11 @@
-import { utils } from 'ethers'
+import BigNumber from 'bignumber.js'
+import {
+  isHexString as _isHexString,
+  hexlify,
+  arrayify
+} from '@ethersproject/bytes'
+import { getAddress } from '@ethersproject/address'
+import { toUtf8Bytes, toUtf8String } from '@ethersproject/strings'
 
 import {
   ITxData,
@@ -20,7 +27,7 @@ export function convertArrayBufferToBuffer (arrayBuffer: ArrayBuffer): Buffer {
 }
 
 export function convertArrayBufferToUtf8 (arrayBuffer: ArrayBuffer): string {
-  const utf8 = utils.toUtf8String(new Uint8Array(arrayBuffer))
+  const utf8 = toUtf8String(new Uint8Array(arrayBuffer))
   return utf8
 }
 
@@ -28,7 +35,7 @@ export function convertArrayBufferToHex (
   arrayBuffer: ArrayBuffer,
   noPrefix?: boolean
 ): string {
-  let hex = utils.hexlify(new Uint8Array(arrayBuffer))
+  let hex = hexlify(new Uint8Array(arrayBuffer))
   if (noPrefix) {
     hex = removeHexPrefix(hex)
   }
@@ -83,7 +90,7 @@ export function concatBuffers (...args: Buffer[]): Buffer {
 // -- Utf8 ------------------------------------------------- //
 
 export function convertUtf8ToArrayBuffer (utf8: string): ArrayBuffer {
-  const arrayBuffer = utils.toUtf8Bytes(utf8).buffer
+  const arrayBuffer = toUtf8Bytes(utf8).buffer
   return arrayBuffer
 }
 
@@ -99,7 +106,7 @@ export function convertUtf8ToHex (utf8: string, noPrefix?: boolean): string {
 }
 
 export function convertUtf8ToNumber (utf8: string): number {
-  const num = utils.bigNumberify(utf8).toNumber()
+  const num = new BigNumber(utf8).toNumber()
   return num
 }
 
@@ -118,12 +125,16 @@ export function convertNumberToArrayBuffer (num: number): ArrayBuffer {
 }
 
 export function convertNumberToUtf8 (num: number): string {
-  const utf8 = utils.bigNumberify(num).toString()
+  const utf8 = new BigNumber(num).toString()
   return utf8
 }
 
-export function convertNumberToHex (num: number, noPrefix?: boolean): string {
-  let hex = utils.bigNumberify(num).toHexString()
+export function convertNumberToHex (
+  num: number | string,
+  noPrefix?: boolean
+): string {
+  let hex = new BigNumber(num).toString(16)
+  hex = sanitizeHex(hex)
   if (noPrefix) {
     hex = removeHexPrefix(hex)
   }
@@ -140,7 +151,7 @@ export function convertHexToBuffer (hex: string): Buffer {
 
 export function convertHexToArrayBuffer (hex: string): ArrayBuffer {
   hex = addHexPrefix(hex)
-  const arrayBuffer = utils.arrayify(hex).buffer
+  const arrayBuffer = arrayify(hex).buffer
   return arrayBuffer
 }
 
@@ -151,7 +162,7 @@ export function convertHexToUtf8 (hex: string): string {
 }
 
 export function convertHexToNumber (hex: string): number {
-  const num = utils.bigNumberify(hex).toNumber()
+  const num = new BigNumber(hex).toNumber()
   return num
 }
 
@@ -160,7 +171,9 @@ export function convertHexToNumber (hex: string): number {
 export function sanitizeHex (hex: string): string {
   hex = removeHexPrefix(hex)
   hex = hex.length % 2 !== 0 ? '0' + hex : hex
-  hex = addHexPrefix(hex)
+  if (hex) {
+    hex = addHexPrefix(hex)
+  }
   return hex
 }
 
@@ -176,6 +189,14 @@ export function removeHexPrefix (hex: string): string {
     return hex.substring(2)
   }
   return hex
+}
+
+export function isHexString (value: any): boolean {
+  return _isHexString(value)
+}
+
+export function isEmptyString (value: string): boolean {
+  return value === '' || (typeof value === 'string' && value.trim() === '')
 }
 
 export function payloadId (): number {
@@ -203,7 +224,7 @@ export function uuid (): string {
 }
 
 export const toChecksumAddress = (address: string) => {
-  return utils.getAddress(address)
+  return getAddress(address)
 }
 
 export const isValidAddress = (address?: string) => {
@@ -444,8 +465,8 @@ export function promisify (
 }
 
 export function parsePersonalSign (params: string[]): string[] {
-  if (!utils.isHexString(params[1])) {
-    params[1] = convertUtf8ToHex(params[1])
+  if (!isHexString(params[0])) {
+    params[0] = convertUtf8ToHex(params[0])
   }
   return params
 }
@@ -459,11 +480,15 @@ export function parseTransactionData (
 
   function parseHexValues (value: number | string) {
     let result = value
-    if (!utils.isHexString(value)) {
-      if (typeof value === 'string') {
-        value = convertUtf8ToNumber(value)
+    if (
+      typeof value === 'number' ||
+      (typeof value === 'string' && !isEmptyString(value))
+    ) {
+      if (!isHexString(value)) {
+        result = convertNumberToHex(value)
+      } else if (typeof value === 'string') {
+        result = sanitizeHex(value)
       }
-      result = convertNumberToHex(value)
     }
     return result
   }
@@ -485,7 +510,8 @@ export function parseTransactionData (
       typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
     nonce:
       typeof txData.nonce === 'undefined' ? '' : parseHexValues(txData.nonce),
-    data: typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data)
+    data:
+      typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data) || '0x'
   }
 
   const prunable = ['gasPrice', 'gasLimit', 'value', 'nonce']

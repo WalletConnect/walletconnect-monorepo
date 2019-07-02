@@ -1,4 +1,4 @@
-/* global describe it  */
+import 'mocha'
 import './mock/localStorage'
 
 describe('// --------------- @walletconnect/browser ---------------- //', () => {
