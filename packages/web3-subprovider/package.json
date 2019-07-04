@@ -5,7 +5,9 @@
   "scripts": {
     "clean": "rm -rf lib",
     "build": "webpack",
-    "test": "mocha --require ./babel-polyfill.js test/**/*.spec.js"
+    "test": "mocha --require ./babel-polyfill.js test/**/*.spec.js",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "keywords": [
     "walletconnect",
@@ -58,7 +60,9 @@
     "@walletconnect/qrcode-modal": "^1.0.0-beta.25",
     "@walletconnect/types": "^1.0.0-beta.25",
     "@walletconnect/utils": "^1.0.0-beta.25",
-    "web3-provider-engine": "github:walletconnect/web3-provider-engine"
+    "web3-provider-engine": "github:walletconnect/web3-provider-engine",
+    "snyk": "^1.189.0"
   },
-  "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
+  "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7",
+  "snyk": true
 }
