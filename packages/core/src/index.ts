@@ -1,5 +1,6 @@
 import {
   ICryptoLib,
+  ITransportLib,
   ISessionStorage,
   IEncryptionPayload,
   ISocketMessage,
@@ -72,7 +73,7 @@ class Connector {
   private _handshakeTopic: string
   private _accounts: string[]
   private _chainId: number
-  private _socket: SocketTransport
+  private _transport: ITransportLib
   private _eventManager: EventManager
   private _connected: boolean
   private _storage: ISessionStorage | null
@@ -82,6 +83,7 @@ class Connector {
   constructor (
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
+    transport?: ITransportLib | null,
     storage?: ISessionStorage | null,
     clientMeta?: IClientMeta | null
   ) {
@@ -138,17 +140,17 @@ class Connector {
       )
     }
 
-    this._socket = new SocketTransport({
-      bridge: this.bridge,
-      callback: (socketMessage: ISocketMessage) =>
-        this._handleIncomingMessages(socketMessage)
-    })
+    this._transport = transport || new SocketTransport({ bridge: this.bridge })
+
+    this._transport.on('message', (socketMessage: ISocketMessage) =>
+      this._handleIncomingMessages(socketMessage)
+    )
 
     if (opts.uri) {
       this._subscribeToSessionRequest()
     }
     this._subscribeToInternalEvents()
-    this._socket.open([
+    this._transport.open([
       {
         topic: `${this.clientId}`,
         type: 'sub',
@@ -710,7 +712,7 @@ class Connector {
       payload
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendResponse (
@@ -729,7 +731,7 @@ class Connector {
       payload
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendSessionRequest (
@@ -797,7 +799,7 @@ class Connector {
       params: [{ message }]
     })
     this._removeStorageSession()
-    this._socket.close()
+    this._transport.close()
   }
 
   private _handleSessionResponse (
@@ -890,7 +892,7 @@ class Connector {
   }
 
   private _subscribeToSessionRequest () {
-    this._socket.queue({
+    this._transport.send({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
       payload: ''
@@ -967,21 +969,6 @@ class Connector {
         this._handleSessionResponse(error.message)
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
-    })
-
-    this.on('connect', (error, payload) => {
-      if (error) {
-        this._eventManager.trigger({
-          event: 'error',
-          params: [
-            {
-              code: 'SESSION_CONNECTION_ERROR',
-              message: error.toString()
-            }
-          ]
-        })
-      }
-      this._socket.pushIncoming()
     })
   }
 
