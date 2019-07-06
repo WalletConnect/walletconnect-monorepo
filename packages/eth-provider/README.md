@@ -8,7 +8,7 @@ For more details, read the [documentation](https://docs.walletconnect.org)
 
 ```javascript
 import Web3 from "web3";
-import WalletConnectProvider from "@walletconnect/web3-provider";
+import WalletConnectProvider from "walletconnect-eth-provider";
 
 /**
  *  Create WalletConnect Provider (qrcode modal will be displayed automatically)
