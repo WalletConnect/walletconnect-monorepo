@@ -111,7 +111,9 @@ class SocketTransport {
     let socketMessage: ISocketMessage
 
     if (event.data === 'ping') {
-      this._socket.send('pong')
+      if (this._socket && this._socket.readyState === 1) {
+        this._socket.send('pong')
+      }
       return
     }
 
