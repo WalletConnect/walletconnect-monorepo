@@ -12,7 +12,6 @@ class SocketTransport {
   private _socket: WebSocket | null
   private _queue: ISocketMessage[]
   private _incoming: ISocketMessage[]
-  private _pingInterval: any
   private _callback: any
 
   // -- constructor ----------------------------------------------------- //
@@ -22,7 +21,6 @@ class SocketTransport {
     this._socket = null
     this._queue = []
     this._incoming = []
-    this._pingInterval = null
     this._callback = () => {
       // empty
     }
@@ -64,7 +62,6 @@ class SocketTransport {
 
   public close () {
     if (this._socket && this._socket.readyState === 1) {
-      clearInterval(this._pingInterval)
       this._socket.close()
     }
   }
@@ -92,22 +89,6 @@ class SocketTransport {
       }
 
       this._pushQueue()
-      this._toggleSocketPing()
-    }
-  }
-
-  private _toggleSocketPing () {
-    if (this._socket && this._socket.readyState === 1) {
-      this._pingInterval = setInterval(
-        () => {
-          if (this._socket && this._socket.readyState === 1) {
-            this._socket.send('ping')
-          }
-        },
-        10000 // 10 seconds
-      )
-    } else {
-      clearInterval(this._pingInterval)
     }
   }
 
@@ -128,6 +109,11 @@ class SocketTransport {
 
   private async _socketReceive (event: MessageEvent) {
     let socketMessage: ISocketMessage
+
+    if (event.data === 'ping') {
+      this._socket.send('pong')
+      return
+    }
 
     if (event.data === 'pong') {
       return
