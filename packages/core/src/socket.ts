@@ -90,6 +90,9 @@ class SocketTransport {
 
       this._pushQueue()
     }
+    socket.onclose = () => {
+      this._socketOpen(this._queue)
+    }
   }
 
   private _socketSend (socketMessage: ISocketMessage) {
