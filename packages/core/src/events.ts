@@ -1,28 +1,17 @@
 import {
+  isJsonRpcRequest,
+  isJsonRpcResponseSuccess,
+  isJsonRpcResponseError,
+  isInternalEvent,
+  isReservedEvent
+} from '@walletconnect/utils'
+import {
   IInternalEvent,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
   IJsonRpcRequest,
   IEventEmitter
 } from '@walletconnect/types'
-
-// -- typeChecks ----------------------------------------------------------- //
-
-function isRpcRequest (object: any): object is IJsonRpcRequest {
-  return 'method' in object
-}
-
-function isRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
-  return 'result' in object
-}
-
-function isRpcResponseError (object: any): object is IJsonRpcResponseError {
-  return 'error' in object
-}
-
-function isInternalEvent (object: any): object is IInternalEvent {
-  return 'event' in object
-}
 
 // -- EventManager --------------------------------------------------------- //
 
@@ -47,9 +36,12 @@ class EventManager {
     let eventEmitters: IEventEmitter[] = []
     let event: string
 
-    if (isRpcRequest(payload)) {
+    if (isJsonRpcRequest(payload)) {
       event = payload.method
-    } else if (isRpcResponseSuccess(payload) || isRpcResponseError(payload)) {
+    } else if (
+      isJsonRpcResponseSuccess(payload) ||
+      isJsonRpcResponseError(payload)
+    ) {
       event = `response:${payload.id}`
     } else if (isInternalEvent(payload)) {
       event = payload.event
@@ -63,16 +55,6 @@ class EventManager {
       )
     }
 
-    function isReservedEvent (event: string) {
-      const reservedEvents = [
-        'session_request',
-        'session_update',
-        'exchange_key',
-        'connect',
-        'disconnect'
-      ]
-      return reservedEvents.includes(event) || event.startsWith('wc_')
-    }
     if ((!eventEmitters || !eventEmitters.length) && !isReservedEvent(event)) {
       eventEmitters = this._eventEmitters.filter(
         (eventEmitter: IEventEmitter) => eventEmitter.event === 'call_request'
@@ -80,7 +62,7 @@ class EventManager {
     }
 
     eventEmitters.forEach((eventEmitter: IEventEmitter) => {
-      if (isRpcResponseError(payload)) {
+      if (isJsonRpcResponseError(payload)) {
         const error = new Error(payload.error.message)
         eventEmitter.callback(error, null)
       } else {

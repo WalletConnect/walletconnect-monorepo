@@ -46,7 +46,9 @@ declare module '@walletconnect/types' {
 
   export interface ISessionStatus {
     chainId: number
+    networkId: number
     accounts: string[]
+    rpcUrl?: string
   }
 
   export interface ISessionError {
@@ -96,18 +98,27 @@ declare module '@walletconnect/types' {
     params: any[]
   }
 
-  export type IJsonRpcCallback = (
-    err: Error | null,
-    result?: IJsonRpcResponseSuccess
-  ) => void
-
-  export interface IWeb3Provider {
-    sendAsync(payload: IJsonRpcRequest, callback: IJsonRpcCallback): void
+  export interface IJsonRpcSubscription {
+    id: number
+    jsonrpc: string
+    method: string
+    params: any
   }
+
+  export type JsonRpc =
+    | IJsonRpcRequest
+    | IJsonRpcSubscription
+    | IJsonRpcResponseSuccess
+    | IJsonRpcResponseError
 
   export type IErrorCallback = (err: Error | null, data?: any) => void
 
   export type ICallback = () => void
+
+  export interface IError extends Error {
+    res?: any
+    code?: any
+  }
 
   export interface IClientMeta {
     description: string
@@ -142,7 +153,9 @@ declare module '@walletconnect/types' {
   export interface ISessionParams {
     approved: boolean
     chainId: number | null
+    networkId: number | null
     accounts: string[] | null
+    rpcUrl?: string | null
     peerId?: string | null
     peerMeta?: IClientMeta | null
   }
@@ -187,5 +200,11 @@ declare module '@walletconnect/types' {
     token: string
     peerName: string
     language: string
+  }
+
+  export interface IWalletConnectConnectionOptions {
+    bridge?: string
+    qrcode?: boolean
+    infuraId?: string
   }
 }

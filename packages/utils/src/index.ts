@@ -13,10 +13,13 @@ import {
   IParseURIResult,
   IRequiredParamsResult,
   IQueryParamsResult,
+  IJsonRpcSubscription,
+  IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
   IJsonRpcErrorMessage,
-  IJsonRpcRequest
+  IInternalEvent,
+  IWalletConnectSession
 } from '@walletconnect/types'
 
 // -- ArrayBuffer ------------------------------------------ //
@@ -557,6 +560,51 @@ export function formatRpcError (
     message
   }
   return result
+}
+
+// -- typeGuards ----------------------------------------------------------- //
+
+export function isJsonRpcSubscription (
+  object: any
+): object is IJsonRpcSubscription {
+  return typeof object.params === 'object'
+}
+
+export function isJsonRpcRequest (object: any): object is IJsonRpcRequest {
+  return 'method' in object
+}
+
+export function isJsonRpcResponseSuccess (
+  object: any
+): object is IJsonRpcResponseSuccess {
+  return 'result' in object
+}
+
+export function isJsonRpcResponseError (
+  object: any
+): object is IJsonRpcResponseError {
+  return 'error' in object
+}
+
+export function isInternalEvent (object: any): object is IInternalEvent {
+  return 'event' in object
+}
+
+export function isWalletConnectSession (
+  object: any
+): object is IWalletConnectSession {
+  return 'bridge' in object
+}
+
+export function isReservedEvent (event: string) {
+  const reservedEvents = [
+    'session_request',
+    'session_update',
+    'exchange_key',
+    'connect',
+    'disconnect'
+  ]
+  return reservedEvents.includes(event) || event.startsWith('wc_')
 }
 
 export const signingMethods = [
