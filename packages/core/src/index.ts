@@ -1,5 +1,6 @@
 import {
   ICryptoLib,
+  ITransportLib,
   ISessionStorage,
   IEncryptionPayload,
   ISocketMessage,
@@ -25,7 +26,10 @@ import {
   uuid,
   formatRpcError,
   parseWalletConnectUri,
-  convertNumberToHex
+  convertNumberToHex,
+  isJsonRpcResponseSuccess,
+  isJsonRpcResponseError,
+  isSilentPayload
 } from '@walletconnect/utils'
 import {
   ERROR_SESSION_CONNECTED,
@@ -42,16 +46,6 @@ import {
 } from './errors'
 import SocketTransport from './socket'
 import EventManager from './events'
-
-// -- typeChecks ----------------------------------------------------------- //
-
-function isRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
-  return 'result' in object
-}
-
-function isRpcResponseError (object: any): object is IJsonRpcResponseError {
-  return 'error' in object
-}
 
 // -- Connector ------------------------------------------------------------ //
 
@@ -73,7 +67,9 @@ class Connector {
   private _handshakeTopic: string
   private _accounts: string[]
   private _chainId: number
-  private _socket: SocketTransport
+  private _networkId: number
+  private _rpcUrl: string
+  private _transport: ITransportLib
   private _eventManager: EventManager
   private _connected: boolean
   private _storage: ISessionStorage | null
@@ -83,6 +79,7 @@ class Connector {
   constructor (
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
+    transport?: ITransportLib | null,
     storage?: ISessionStorage | null,
     clientMeta?: IClientMeta | null
   ) {
@@ -103,6 +100,8 @@ class Connector {
     this._handshakeTopic = ''
     this._accounts = []
     this._chainId = 0
+    this._networkId = 0
+    this._rpcUrl = ''
     this._eventManager = new EventManager()
     this._connected = false
     this._storage = storage || null
@@ -138,24 +137,19 @@ class Connector {
         'Session request rejected'
       )
     }
+    this._transport =
+      transport ||
+      new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
 
-    this._socket = new SocketTransport({
-      bridge: this.bridge,
-      callback: (socketMessage: ISocketMessage) =>
-        this._handleIncomingMessages(socketMessage)
-    })
+    this._transport.on('message', (socketMessage: ISocketMessage) =>
+      this._handleIncomingMessages(socketMessage)
+    )
 
     if (opts.uri) {
       this._subscribeToSessionRequest()
     }
     this._subscribeToInternalEvents()
-    this._socket.open([
-      {
-        topic: `${this.clientId}`,
-        type: 'sub',
-        payload: ''
-      }
-    ])
+    this._transport.open()
   }
 
   // -- setters / getters ----------------------------------------------- //
@@ -297,6 +291,15 @@ class Connector {
     return chainId
   }
 
+  set networkId (value) {
+    this._networkId = value
+  }
+
+  get networkId () {
+    const networkId: number | null = this._networkId
+    return networkId
+  }
+
   set accounts (value) {
     this._accounts = value
   }
@@ -304,6 +307,15 @@ class Connector {
   get accounts () {
     const accounts: string[] | null = this._accounts
     return accounts
+  }
+
+  set rpcUrl (value) {
+    this._rpcUrl = value
+  }
+
+  get rpcUrl () {
+    const rpcUrl: string | null = this._rpcUrl
+    return rpcUrl
   }
 
   set connected (value) {
@@ -406,12 +418,16 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
+    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
+      networkId: this.networkId,
       accounts: this.accounts,
+      rpcUrl: this.rpcUrl,
       peerId: this.clientId,
       peerMeta: this.clientMeta
     }
@@ -472,12 +488,16 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
+    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
-      accounts: this.accounts
+      networkId: this.networkId,
+      accounts: this.accounts,
+      rpcUrl: this.rpcUrl
     }
 
     const request = this._formatRequest({
@@ -506,6 +526,7 @@ class Connector {
     const sessionParams: ISessionParams = {
       approved: false,
       chainId: null,
+      networkId: null,
       accounts: null
     }
 
@@ -691,7 +712,7 @@ class Connector {
   }
 
   public approveRequest (response: Partial<IJsonRpcResponseSuccess>) {
-    if (isRpcResponseSuccess(response)) {
+    if (isJsonRpcResponseSuccess(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
     } else {
@@ -700,7 +721,7 @@ class Connector {
   }
 
   public rejectRequest (response: Partial<IJsonRpcResponseError>) {
-    if (isRpcResponseError(response)) {
+    if (isJsonRpcResponseError(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
     } else {
@@ -722,14 +743,16 @@ class Connector {
 
     const topic: string = _topic || this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendResponse (
@@ -745,10 +768,11 @@ class Connector {
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent: true
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendSessionRequest (
@@ -785,7 +809,7 @@ class Connector {
       throw new Error(ERROR_MISSING_ID)
     }
 
-    if (isRpcResponseError(response)) {
+    if (isJsonRpcResponseError(response)) {
       const error = formatRpcError(response.error)
 
       const formattedResponseError: IJsonRpcResponseError = {
@@ -794,7 +818,7 @@ class Connector {
         error
       }
       return formattedResponseError
-    } else if (isRpcResponseSuccess(response)) {
+    } else if (isJsonRpcResponseSuccess(response)) {
       const formattedResponseSuccess: IJsonRpcResponseSuccess = {
         jsonrpc: '2.0',
         ...response
@@ -816,7 +840,7 @@ class Connector {
       params: [{ message }]
     })
     this._removeStorageSession()
-    this._socket.close()
+    this._transport.close()
   }
 
   private _handleSessionResponse (
@@ -909,10 +933,11 @@ class Connector {
   }
 
   private _subscribeToSessionRequest () {
-    this._socket.queue({
+    this._transport.send({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
-      payload: ''
+      payload: '',
+      silent: true
     })
   }
 
@@ -986,21 +1011,6 @@ class Connector {
         this._handleSessionResponse(error.message)
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
-    })
-
-    this.on('connect', (error, payload) => {
-      if (error) {
-        this._eventManager.trigger({
-          event: 'error',
-          params: [
-            {
-              code: 'SESSION_CONNECTION_ERROR',
-              message: error.toString()
-            }
-          ]
-        })
-      }
-      this._socket.pushIncoming()
     })
   }
 

@@ -13,9 +13,13 @@ import {
   IParseURIResult,
   IRequiredParamsResult,
   IQueryParamsResult,
+  IJsonRpcSubscription,
+  IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
-  IJsonRpcErrorMessage
+  IJsonRpcErrorMessage,
+  IInternalEvent,
+  IWalletConnectSession
 } from '@walletconnect/types'
 
 // -- ArrayBuffer ------------------------------------------ //
@@ -556,4 +560,69 @@ export function formatRpcError (
     message
   }
   return result
+}
+
+// -- typeGuards ----------------------------------------------------------- //
+
+export function isJsonRpcSubscription (
+  object: any
+): object is IJsonRpcSubscription {
+  return typeof object.params === 'object'
+}
+
+export function isJsonRpcRequest (object: any): object is IJsonRpcRequest {
+  return 'method' in object
+}
+
+export function isJsonRpcResponseSuccess (
+  object: any
+): object is IJsonRpcResponseSuccess {
+  return 'result' in object
+}
+
+export function isJsonRpcResponseError (
+  object: any
+): object is IJsonRpcResponseError {
+  return 'error' in object
+}
+
+export function isInternalEvent (object: any): object is IInternalEvent {
+  return 'event' in object
+}
+
+export function isWalletConnectSession (
+  object: any
+): object is IWalletConnectSession {
+  return 'bridge' in object
+}
+
+export function isReservedEvent (event: string) {
+  const reservedEvents = [
+    'session_request',
+    'session_update',
+    'exchange_key',
+    'connect',
+    'disconnect'
+  ]
+  return reservedEvents.includes(event) || event.startsWith('wc_')
+}
+
+export const signingMethods = [
+  'eth_sendTransaction',
+  'eth_signTransction',
+  'eth_sign',
+  'eth_signTypedData',
+  'eth_signTypedData_v1',
+  'eth_signTypedData_v3',
+  'personal_sign'
+]
+
+export function isSilentPayload (request: IJsonRpcRequest): boolean {
+  if (request.method.startsWith('wc_')) {
+    return true
+  }
+  if (signingMethods.includes(request.method)) {
+    return false
+  }
+  return true
 }

@@ -1,19 +1,18 @@
-import { ISocketMessage } from '@walletconnect/types'
+import { ISocketMessage, ITransportEvent } from '@walletconnect/types'
 
 interface ISocketTransportOptions {
   bridge: string
-  callback: any
+  clientId: string
 }
 
 // -- SocketTransport ------------------------------------------------------ //
 
 class SocketTransport {
   private _bridge: string
+  private _clientId: string
   private _socket: WebSocket | null
   private _queue: ISocketMessage[]
-  private _incoming: ISocketMessage[]
-  private _pingInterval: any
-  private _callback: any
+  private _events: ITransportEvent[] = []
 
   // -- constructor ----------------------------------------------------- //
 
@@ -21,11 +20,6 @@ class SocketTransport {
     this._bridge = ''
     this._socket = null
     this._queue = []
-    this._incoming = []
-    this._pingInterval = null
-    this._callback = () => {
-      // empty
-    }
 
     if (!opts.bridge || typeof opts.bridge !== 'string') {
       throw new Error('Missing or invalid bridge field')
@@ -33,17 +27,17 @@ class SocketTransport {
 
     this._bridge = opts.bridge
 
-    if (!opts.callback || typeof opts.callback !== 'function') {
-      throw new Error('Missing or invalid callback field')
+    if (!opts.clientId || typeof opts.clientId !== 'string') {
+      throw new Error('Missing or invalid clientId field')
     }
 
-    this._callback = opts.callback
+    this._clientId = opts.clientId
   }
 
   // -- public ---------------------------------------------------------- //
 
-  public open (queuedMessages?: ISocketMessage[]) {
-    this._socketOpen(queuedMessages)
+  public open () {
+    this._socketOpen()
   }
 
   public send (socketMessage: ISocketMessage): void {
@@ -54,25 +48,27 @@ class SocketTransport {
     }
   }
 
-  public queue (socketMessage: ISocketMessage): void {
-    this._setToQueue(socketMessage)
-  }
-
-  public pushIncoming () {
-    this._pushIncoming()
-  }
-
   public close () {
     if (this._socket && this._socket.readyState === 1) {
-      clearInterval(this._pingInterval)
       this._socket.close()
     }
   }
 
+  public on (event: string, callback: (payload: any) => void) {
+    this._events.push({ event, callback })
+  }
+
   // -- private ---------------------------------------------------------- //
 
-  private _socketOpen (queuedMessages?: ISocketMessage[]) {
+  private _socketOpen () {
     const bridge = this._bridge
+
+    this._setToQueue({
+      topic: `${this._clientId}`,
+      type: 'sub',
+      payload: '',
+      silent: true
+    })
 
     const url = bridge.startsWith('https')
       ? bridge.replace('https', 'wss')
@@ -86,28 +82,11 @@ class SocketTransport {
 
     socket.onopen = () => {
       this._socket = socket
-
-      if (queuedMessages && queuedMessages.length) {
-        queuedMessages.forEach((msg: ISocketMessage) => this._setToQueue(msg))
-      }
-
       this._pushQueue()
-      this._toggleSocketPing()
     }
-  }
 
-  private _toggleSocketPing () {
-    if (this._socket && this._socket.readyState === 1) {
-      this._pingInterval = setInterval(
-        () => {
-          if (this._socket && this._socket.readyState === 1) {
-            this._socket.send('ping')
-          }
-        },
-        10000 // 10 seconds
-      )
-    } else {
-      clearInterval(this._pingInterval)
+    socket.onclose = () => {
+      this._socketOpen()
     }
   }
 
@@ -129,6 +108,13 @@ class SocketTransport {
   private async _socketReceive (event: MessageEvent) {
     let socketMessage: ISocketMessage
 
+    if (event.data === 'ping') {
+      if (this._socket && this._socket.readyState === 1) {
+        this._socket.send('pong')
+      }
+      return
+    }
+
     if (event.data === 'pong') {
       return
     }
@@ -140,9 +126,10 @@ class SocketTransport {
     }
 
     if (this._socket && this._socket.readyState === 1) {
-      this._callback(socketMessage)
-    } else {
-      this._incoming.push(socketMessage)
+      const events = this._events.filter(event => event.event === 'message')
+      if (events && events.length) {
+        events.forEach(event => event.callback(socketMessage))
+      }
     }
   }
 
@@ -158,16 +145,6 @@ class SocketTransport {
     )
 
     this._queue = []
-  }
-
-  private _pushIncoming () {
-    const incoming = this._incoming
-
-    incoming.forEach((socketMessage: ISocketMessage) =>
-      this._callback(socketMessage)
-    )
-
-    this._incoming = []
   }
 }
 

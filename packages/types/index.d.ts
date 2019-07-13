@@ -13,6 +13,18 @@ declare module '@walletconnect/types' {
     >
   }
 
+  export interface ITransportLib {
+    open: () => void
+    send: (socketMessage: ISocketMessage) => void
+    close: () => void
+    on: (event: string, callback: (payload: any) => void) => void
+  }
+
+  export interface ITransportEvent {
+    event: string
+    callback: (payload: any) => void
+  }
+
   export interface ISessionStorage {
     getSession: () => IWalletConnectSession | null
     setSession: (session: IWalletConnectSession) => IWalletConnectSession
@@ -29,11 +41,14 @@ declare module '@walletconnect/types' {
     topic: string
     type: string
     payload: string
+    silent: boolean
   }
 
   export interface ISessionStatus {
     chainId: number
+    networkId: number
     accounts: string[]
+    rpcUrl?: string
   }
 
   export interface ISessionError {
@@ -83,18 +98,27 @@ declare module '@walletconnect/types' {
     params: any[]
   }
 
-  export type IJsonRpcCallback = (
-    err: Error | null,
-    result?: IJsonRpcResponseSuccess
-  ) => void
-
-  export interface IWeb3Provider {
-    sendAsync(payload: IJsonRpcRequest, callback: IJsonRpcCallback): void
+  export interface IJsonRpcSubscription {
+    id: number
+    jsonrpc: string
+    method: string
+    params: any
   }
+
+  export type JsonRpc =
+    | IJsonRpcRequest
+    | IJsonRpcSubscription
+    | IJsonRpcResponseSuccess
+    | IJsonRpcResponseError
 
   export type IErrorCallback = (err: Error | null, data?: any) => void
 
   export type ICallback = () => void
+
+  export interface IError extends Error {
+    res?: any
+    code?: any
+  }
 
   export interface IClientMeta {
     description: string
@@ -129,7 +153,9 @@ declare module '@walletconnect/types' {
   export interface ISessionParams {
     approved: boolean
     chainId: number | null
+    networkId: number | null
     accounts: string[] | null
+    rpcUrl?: string | null
     peerId?: string | null
     peerMeta?: IClientMeta | null
   }
@@ -184,5 +210,10 @@ declare module '@walletconnect/types' {
       name: string
       symbol: string
     }
+
+  export interface IWalletConnectConnectionOptions {
+    bridge?: string
+    qrcode?: boolean
+    infuraId?: string
   }
 }
