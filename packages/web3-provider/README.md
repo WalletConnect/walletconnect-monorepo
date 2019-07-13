@@ -8,13 +8,13 @@ For more details, read the [documentation](https://docs.walletconnect.org)
 
 ```javascript
 import Web3 from "web3";
-import WalletConnectProvider from "walletconnect-web3-provider";
+import WalletConnectProvider from "@walletconnect/web3-provider";
 
 /**
  *  Create WalletConnect Provider (qrcode modal will be displayed automatically)
  */
 const provider = new WalletConnectProvider({
-  bridge: "https://test-bridge.walletconnect.org" // Required
+  bridge: "https://bridge.walletconnect.org" // Required
 });
 
 /**

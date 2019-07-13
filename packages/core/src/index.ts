@@ -1,5 +1,6 @@
 import {
   ICryptoLib,
+  ITransportLib,
   ISessionStorage,
   IEncryptionPayload,
   ISocketMessage,
@@ -25,20 +26,26 @@ import {
   uuid,
   formatRpcError,
   parseWalletConnectUri,
-  convertNumberToHex
+  convertNumberToHex,
+  isJsonRpcResponseSuccess,
+  isJsonRpcResponseError,
+  isSilentPayload
 } from '@walletconnect/utils'
+import {
+  ERROR_SESSION_CONNECTED,
+  ERROR_SESSION_DISCONNECTED,
+  ERROR_SESSION_REJECTED,
+  ERROR_MISSING_JSON_RPC,
+  ERROR_MISSING_RESULT,
+  ERROR_MISSING_ERROR,
+  ERROR_MISSING_METHOD,
+  ERROR_MISSING_ID,
+  ERROR_INVALID_RESPONSE,
+  ERROR_INVALID_URI,
+  ERROR_MISSING_REQUIRED
+} from './errors'
 import SocketTransport from './socket'
 import EventManager from './events'
-
-// -- typeChecks ----------------------------------------------------------- //
-
-function isRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
-  return 'result' in object
-}
-
-function isRpcResponseError (object: any): object is IJsonRpcResponseError {
-  return 'error' in object
-}
 
 // -- Connector ------------------------------------------------------------ //
 
@@ -60,7 +67,9 @@ class Connector {
   private _handshakeTopic: string
   private _accounts: string[]
   private _chainId: number
-  private _socket: SocketTransport
+  private _networkId: number
+  private _rpcUrl: string
+  private _transport: ITransportLib
   private _eventManager: EventManager
   private _connected: boolean
   private _storage: ISessionStorage | null
@@ -70,6 +79,7 @@ class Connector {
   constructor (
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
+    transport?: ITransportLib | null,
     storage?: ISessionStorage | null,
     clientMeta?: IClientMeta | null
   ) {
@@ -90,6 +100,8 @@ class Connector {
     this._handshakeTopic = ''
     this._accounts = []
     this._chainId = 0
+    this._networkId = 0
+    this._rpcUrl = ''
     this._eventManager = new EventManager()
     this._connected = false
     this._storage = storage || null
@@ -99,9 +111,7 @@ class Connector {
     }
 
     if (!opts.bridge && !opts.uri && !opts.session) {
-      throw new Error(
-        'Missing one of the required parameters: bridge / uri / session'
-      )
+      throw new Error(ERROR_MISSING_REQUIRED)
     }
 
     if (opts.bridge) {
@@ -127,24 +137,19 @@ class Connector {
         'Session request rejected'
       )
     }
+    this._transport =
+      transport ||
+      new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
 
-    this._socket = new SocketTransport({
-      bridge: this.bridge,
-      callback: (socketMessage: ISocketMessage) =>
-        this._handleIncomingMessages(socketMessage)
-    })
+    this._transport.on('message', (socketMessage: ISocketMessage) =>
+      this._handleIncomingMessages(socketMessage)
+    )
 
     if (opts.uri) {
       this._subscribeToSessionRequest()
     }
     this._subscribeToInternalEvents()
-    this._socket.open([
-      {
-        topic: `${this.clientId}`,
-        type: 'sub',
-        payload: ''
-      }
-    ])
+    this._transport.open()
   }
 
   // -- setters / getters ----------------------------------------------- //
@@ -286,6 +291,15 @@ class Connector {
     return chainId
   }
 
+  set networkId (value) {
+    this._networkId = value
+  }
+
+  get networkId () {
+    const networkId: number | null = this._networkId
+    return networkId
+  }
+
   set accounts (value) {
     this._accounts = value
   }
@@ -293,6 +307,15 @@ class Connector {
   get accounts () {
     const accounts: string[] | null = this._accounts
     return accounts
+  }
+
+  set rpcUrl (value) {
+    this._rpcUrl = value
+  }
+
+  get rpcUrl () {
+    const rpcUrl: string | null = this._rpcUrl
+    return rpcUrl
   }
 
   set connected (value) {
@@ -359,7 +382,7 @@ class Connector {
 
   public async createSession (opts?: { chainId: number }): Promise<void> {
     if (this._connected) {
-      throw new Error('Session currently connected')
+      throw new Error(ERROR_SESSION_CONNECTED)
     }
 
     if (this.pending) {
@@ -391,16 +414,20 @@ class Connector {
 
   public approveSession (sessionStatus: ISessionStatus) {
     if (this._connected) {
-      throw new Error('Session currently connected')
+      throw new Error(ERROR_SESSION_CONNECTED)
     }
 
     this.chainId = sessionStatus.chainId
+    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
+      networkId: this.networkId,
       accounts: this.accounts,
+      rpcUrl: this.rpcUrl,
       peerId: this.clientId,
       peerMeta: this.clientMeta
     }
@@ -432,13 +459,13 @@ class Connector {
 
   public rejectSession (sessionError?: ISessionError) {
     if (this._connected) {
-      throw new Error('Session currently connected')
+      throw new Error(ERROR_SESSION_CONNECTED)
     }
 
     const message =
       sessionError && sessionError.message
         ? sessionError.message
-        : 'Session Rejected'
+        : ERROR_SESSION_REJECTED
 
     const response = this._formatResponse({
       id: this.handshakeId,
@@ -457,16 +484,20 @@ class Connector {
 
   public updateSession (sessionStatus: ISessionStatus) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error(ERROR_SESSION_DISCONNECTED)
     }
 
     this.chainId = sessionStatus.chainId
+    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
-      accounts: this.accounts
+      networkId: this.networkId,
+      accounts: this.accounts,
+      rpcUrl: this.rpcUrl
     }
 
     const request = this._formatRequest({
@@ -495,6 +526,7 @@ class Connector {
     const sessionParams: ISessionParams = {
       approved: false,
       chainId: null,
+      networkId: null,
       accounts: null
     }
 
@@ -510,14 +542,14 @@ class Connector {
 
   public async sendTransaction (tx: ITxData) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error(ERROR_SESSION_DISCONNECTED)
     }
 
     const parsedTx = parseTransactionData(tx)
 
     const request = this._formatRequest({
       method: 'eth_sendTransaction',
-      params: [parsedTx]
+      params: [parsedTx, convertNumberToHex(this.chainId)]
     })
 
     try {
@@ -530,14 +562,14 @@ class Connector {
 
   public async signTransaction (tx: ITxData) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error(ERROR_SESSION_DISCONNECTED)
     }
 
     const parsedTx = parseTransactionData(tx)
 
     const request = this._formatRequest({
       method: 'eth_signTransaction',
-      params: [parsedTx]
+      params: [parsedTx, convertNumberToHex(this.chainId)]
     })
 
     try {
@@ -550,7 +582,7 @@ class Connector {
 
   public async signMessage (params: any[]) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error(ERROR_SESSION_DISCONNECTED)
     }
 
     const request = this._formatRequest({
@@ -568,7 +600,7 @@ class Connector {
 
   public async signPersonalMessage (params: any[]) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error(ERROR_SESSION_DISCONNECTED)
     }
 
     params = parsePersonalSign(params)
@@ -588,7 +620,7 @@ class Connector {
 
   public async signTypedData (params: any[]) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error(ERROR_SESSION_DISCONNECTED)
     }
 
     const request = this._formatRequest({
@@ -622,9 +654,31 @@ class Connector {
     }
   }
 
+  public unsafeSend (
+    request: IJsonRpcRequest
+  ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
+    this._sendRequest(request)
+
+    return new Promise((resolve, reject) => {
+      this._subscribeToResponse(
+        request.id,
+        (error: Error | null, payload: any | null) => {
+          if (error) {
+            reject(error)
+            return
+          }
+          if (!payload) {
+            throw new Error(ERROR_MISSING_JSON_RPC)
+          }
+          resolve(payload)
+        }
+      )
+    })
+  }
+
   public async sendCustomRequest (request: Partial<IJsonRpcRequest>) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error(ERROR_SESSION_DISCONNECTED)
     }
 
     switch (request.method) {
@@ -636,6 +690,7 @@ class Connector {
       case 'eth_signTransaction':
         if (request.params) {
           request.params[0] = parseTransactionData(request.params[0])
+          request.params[1] = request.params[1] ? convertNumberToHex(request.params[1]) : convertNumberToHex(this.chainId)
         }
         break
       case 'personal_sign':
@@ -658,20 +713,20 @@ class Connector {
   }
 
   public approveRequest (response: Partial<IJsonRpcResponseSuccess>) {
-    if (isRpcResponseSuccess(response)) {
+    if (isJsonRpcResponseSuccess(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
     } else {
-      throw new Error('JSON-RPC success response must include "result" field')
+      throw new Error(ERROR_MISSING_RESULT)
     }
   }
 
   public rejectRequest (response: Partial<IJsonRpcResponseError>) {
-    if (isRpcResponseError(response)) {
+    if (isJsonRpcResponseError(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
     } else {
-      throw new Error('JSON-RPC error response must include "error" field')
+      throw new Error(ERROR_MISSING_ERROR)
     }
   }
 
@@ -689,14 +744,16 @@ class Connector {
 
     const topic: string = _topic || this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendResponse (
@@ -712,10 +769,11 @@ class Connector {
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent: true
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendSessionRequest (
@@ -734,7 +792,7 @@ class Connector {
 
   private _formatRequest (request: Partial<IJsonRpcRequest>): IJsonRpcRequest {
     if (typeof request.method === 'undefined') {
-      throw new Error('JSON RPC request must have valid "method" value')
+      throw new Error(ERROR_MISSING_METHOD)
     }
     const formattedRequest: IJsonRpcRequest = {
       id: typeof request.id === 'undefined' ? payloadId() : request.id,
@@ -749,10 +807,10 @@ class Connector {
     response: Partial<IJsonRpcResponseSuccess | IJsonRpcResponseError>
   ): IJsonRpcResponseSuccess | IJsonRpcResponseError {
     if (typeof response.id === 'undefined') {
-      throw new Error('JSON RPC request must have valid "id" value')
+      throw new Error(ERROR_MISSING_ID)
     }
 
-    if (isRpcResponseError(response)) {
+    if (isJsonRpcResponseError(response)) {
       const error = formatRpcError(response.error)
 
       const formattedResponseError: IJsonRpcResponseError = {
@@ -761,7 +819,7 @@ class Connector {
         error
       }
       return formattedResponseError
-    } else if (isRpcResponseSuccess(response)) {
+    } else if (isJsonRpcResponseSuccess(response)) {
       const formattedResponseSuccess: IJsonRpcResponseSuccess = {
         jsonrpc: '2.0',
         ...response
@@ -770,7 +828,7 @@ class Connector {
       return formattedResponseSuccess
     }
 
-    throw new Error('JSON RPC response format is invalid')
+    throw new Error(ERROR_INVALID_RESPONSE)
   }
 
   private _handleSessionDisconnect (errorMsg?: string) {
@@ -783,7 +841,7 @@ class Connector {
       params: [{ message }]
     })
     this._removeStorageSession()
-    this._socket.close()
+    this._transport.close()
   }
 
   private _handleSessionResponse (
@@ -876,15 +934,23 @@ class Connector {
   }
 
   private _subscribeToSessionRequest () {
-    this._socket.queue({
+    this._transport.send({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
-      payload: ''
+      payload: '',
+      silent: true
     })
   }
 
+  private _subscribeToResponse (
+    id: number,
+    callback: (error: Error | null, payload: any | null) => void
+  ) {
+    this.on(`response:${id}`, callback)
+  }
+
   private _subscribeToSessionResponse (id: number, errorMsg: string) {
-    this.on(`response:${id}`, (error, payload) => {
+    this._subscribeToResponse(id, (error, payload) => {
       if (error) {
         this._handleSessionResponse(error.message)
         return
@@ -901,7 +967,7 @@ class Connector {
 
   private _subscribeToCallResponse (id: number): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.on(`response:${id}`, (error, payload) => {
+      this._subscribeToResponse(id, (error, payload) => {
         if (error) {
           reject(error)
           return
@@ -911,7 +977,7 @@ class Connector {
         } else if (payload.error && payload.error.message) {
           reject(new Error(payload.error.message))
         } else {
-          reject(new Error('Invalid JSON RPC response format received'))
+          reject(new Error(ERROR_INVALID_RESPONSE))
         }
       })
     })
@@ -946,21 +1012,6 @@ class Connector {
         this._handleSessionResponse(error.message)
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
-    })
-
-    this.on('connect', (error, payload) => {
-      if (error) {
-        this._eventManager.trigger({
-          event: 'error',
-          params: [
-            {
-              code: 'SESSION_CONNECTION_ERROR',
-              message: error.toString()
-            }
-          ]
-        })
-      }
-      this._socket.pushIncoming()
     })
   }
 
@@ -1001,7 +1052,7 @@ class Connector {
 
       return { handshakeTopic, bridge, key }
     } else {
-      throw new Error("URI format doesn't follow Connector protocol")
+      throw new Error(ERROR_INVALID_URI)
     }
   }
 

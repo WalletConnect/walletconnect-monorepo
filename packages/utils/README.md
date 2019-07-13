@@ -36,6 +36,9 @@ function sanitizeHex (hex: string): string
 function addHexPrefix (hex: string): string
 function removeHexPrefix (hex: string): string
 
+function isHexString (value: any): boolean
+function isEmptyString (value: string): boolean
+
 function payloadId (): number
 function uuid (): string
 
@@ -51,4 +54,12 @@ function parsePersonalSign (params: string[]): string[]
 function parseTransactionData (txData: Partial<ITxData>): Partial<ITxData>
 
 function formatRpcError (error: Partial<IJsonRpcErrorMessage>): { code: number; message: string }
+
+function isJsonRpcSubscription (object: any): boolean
+function isJsonRpcRequest (object: any): boolean
+function isJsonRpcResponseSuccess (object: any): boolean
+function isJsonRpcResponseError (object: any): boolean
+function isInternalEvent (object: any): boolean
+function isWalletConnectSession (object: any): boolean
+function isReservedEvent (event: string): boolean
 ```

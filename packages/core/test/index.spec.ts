@@ -1,4 +1,4 @@
-/* global describe it  */
+import 'mocha'
 
 describe('// ---------------- @walletconnect/core --------------- //', () => {
   it('needs tests', () => {})

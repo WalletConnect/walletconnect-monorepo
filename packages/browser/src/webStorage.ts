@@ -1,3 +1,4 @@
+import { isWalletConnectSession } from '@walletconnect/utils'
 import { IWalletConnectSession } from '@walletconnect/types'
 
 // -- localStorage --------------------------------------------------------- //
@@ -10,12 +11,6 @@ if (
   typeof window.localStorage !== 'undefined'
 ) {
   storage = window.localStorage
-}
-
-// -- typeChecks ----------------------------------------------------------- //
-
-function isWalletConnectSession (object: any): object is IWalletConnectSession {
-  return 'bridge' in object
 }
 
 // -- WebStorage ----------------------------------------------------------- //
