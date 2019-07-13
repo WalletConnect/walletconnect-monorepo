@@ -140,6 +140,7 @@ class Connector {
 
     this._socket = new SocketTransport({
       bridge: this.bridge,
+      clientId: this.clientId,
       callback: (socketMessage: ISocketMessage) =>
         this._handleIncomingMessages(socketMessage)
     })
@@ -148,13 +149,7 @@ class Connector {
       this._subscribeToSessionRequest()
     }
     this._subscribeToInternalEvents()
-    this._socket.open([
-      {
-        topic: `${this.clientId}`,
-        type: 'sub',
-        payload: ''
-      }
-    ])
+    this._socket.open()
   }
 
   // -- setters / getters ----------------------------------------------- //

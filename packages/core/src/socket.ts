@@ -2,6 +2,7 @@ import { ISocketMessage } from '@walletconnect/types'
 
 interface ISocketTransportOptions {
   bridge: string
+  clientId: string
   callback: any
 }
 
@@ -9,6 +10,7 @@ interface ISocketTransportOptions {
 
 class SocketTransport {
   private _bridge: string
+  private _clientId: string
   private _socket: WebSocket | null
   private _queue: ISocketMessage[]
   private _incoming: ISocketMessage[]
@@ -31,6 +33,12 @@ class SocketTransport {
 
     this._bridge = opts.bridge
 
+    if (!opts.clientId || typeof opts.clientId !== 'string') {
+      throw new Error('Missing or invalid clientId field')
+    }
+
+    this._clientId = opts.clientId
+
     if (!opts.callback || typeof opts.callback !== 'function') {
       throw new Error('Missing or invalid callback field')
     }
@@ -40,8 +48,8 @@ class SocketTransport {
 
   // -- public ---------------------------------------------------------- //
 
-  public open (queuedMessages?: ISocketMessage[]) {
-    this._socketOpen(queuedMessages)
+  public open () {
+    this._socketOpen()
   }
 
   public send (socketMessage: ISocketMessage): void {
@@ -68,8 +76,14 @@ class SocketTransport {
 
   // -- private ---------------------------------------------------------- //
 
-  private _socketOpen (queuedMessages?: ISocketMessage[]) {
+  private _socketOpen () {
     const bridge = this._bridge
+
+    this.queue({
+      topic: `${this._clientId}`,
+      type: 'sub',
+      payload: ''
+    })
 
     const url = bridge.startsWith('https')
       ? bridge.replace('https', 'wss')
@@ -84,6 +98,8 @@ class SocketTransport {
     socket.onopen = () => {
       this._socket = socket
 
+      const queuedMessages = this._queue
+
       if (queuedMessages && queuedMessages.length) {
         queuedMessages.forEach((msg: ISocketMessage) => this._setToQueue(msg))
       }
@@ -91,7 +107,7 @@ class SocketTransport {
       this._pushQueue()
     }
     socket.onclose = () => {
-      this._socketOpen(this._queue)
+      this._socketOpen()
     }
   }
 
