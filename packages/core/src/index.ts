@@ -1,5 +1,6 @@
 import {
   ICryptoLib,
+  ITransportLib,
   ISessionStorage,
   IEncryptionPayload,
   ISocketMessage,
@@ -26,7 +27,8 @@ import {
   parseWalletConnectUri,
   convertNumberToHex,
   isJsonRpcResponseSuccess,
-  isJsonRpcResponseError
+  isJsonRpcResponseError,
+  isSilentPayload
 } from '@walletconnect/utils'
 import {
   ERROR_SESSION_CONNECTED,
@@ -66,7 +68,7 @@ class Connector {
   private _chainId: number
   private _networkId: number
   private _rpcUrl: string
-  private _socket: SocketTransport
+  private _transport: ITransportLib
   private _eventManager: EventManager
   private _connected: boolean
   private _storage: ISessionStorage | null
@@ -76,6 +78,7 @@ class Connector {
   constructor (
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
+    transport?: ITransportLib | null,
     storage?: ISessionStorage | null,
     clientMeta?: IClientMeta | null
   ) {
@@ -133,24 +136,19 @@ class Connector {
         'Session request rejected'
       )
     }
+    this._transport =
+      transport ||
+      new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
 
-    this._socket = new SocketTransport({
-      bridge: this.bridge,
-      callback: (socketMessage: ISocketMessage) =>
-        this._handleIncomingMessages(socketMessage)
-    })
+    this._transport.on('message', (socketMessage: ISocketMessage) =>
+      this._handleIncomingMessages(socketMessage)
+    )
 
     if (opts.uri) {
       this._subscribeToSessionRequest()
     }
     this._subscribeToInternalEvents()
-    this._socket.open([
-      {
-        topic: `${this.clientId}`,
-        type: 'sub',
-        payload: ''
-      }
-    ])
+    this._transport.open()
   }
 
   // -- setters / getters ----------------------------------------------- //
@@ -726,14 +724,16 @@ class Connector {
 
     const topic: string = _topic || this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendResponse (
@@ -749,10 +749,11 @@ class Connector {
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent: true
     }
 
-    this._socket.send(socketMessage)
+    this._transport.send(socketMessage)
   }
 
   private async _sendSessionRequest (
@@ -820,7 +821,7 @@ class Connector {
       params: [{ message }]
     })
     this._removeStorageSession()
-    this._socket.close()
+    this._transport.close()
   }
 
   private _handleSessionResponse (
@@ -913,10 +914,11 @@ class Connector {
   }
 
   private _subscribeToSessionRequest () {
-    this._socket.queue({
+    this._transport.send({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
-      payload: ''
+      payload: '',
+      silent: true
     })
   }
 
@@ -990,21 +992,6 @@ class Connector {
         this._handleSessionResponse(error.message)
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
-    })
-
-    this.on('connect', (error, payload) => {
-      if (error) {
-        this._eventManager.trigger({
-          event: 'error',
-          params: [
-            {
-              code: 'SESSION_CONNECTION_ERROR',
-              message: error.toString()
-            }
-          ]
-        })
-      }
-      this._socket.pushIncoming()
     })
   }
 

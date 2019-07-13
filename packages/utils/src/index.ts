@@ -606,3 +606,23 @@ export function isReservedEvent (event: string) {
   ]
   return reservedEvents.includes(event) || event.startsWith('wc_')
 }
+
+export const signingMethods = [
+  'eth_sendTransaction',
+  'eth_signTransction',
+  'eth_sign',
+  'eth_signTypedData',
+  'eth_signTypedData_v1',
+  'eth_signTypedData_v3',
+  'personal_sign'
+]
+
+export function isSilentPayload (request: IJsonRpcRequest): boolean {
+  if (request.method.startsWith('wc_')) {
+    return true
+  }
+  if (signingMethods.includes(request.method)) {
+    return false
+  }
+  return true
+}
