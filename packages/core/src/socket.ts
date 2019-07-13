@@ -66,7 +66,8 @@ class SocketTransport {
     this._setToQueue({
       topic: `${this._clientId}`,
       type: 'sub',
-      payload: ''
+      payload: '',
+      silent: true
     })
 
     const url = bridge.startsWith('https')

@@ -41,6 +41,7 @@ declare module '@walletconnect/types' {
     topic: string
     type: string
     payload: string
+    silent: boolean
   }
 
   export interface ISessionStatus {

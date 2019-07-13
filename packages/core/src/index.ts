@@ -25,7 +25,8 @@ import {
   uuid,
   formatRpcError,
   parseWalletConnectUri,
-  convertNumberToHex
+  convertNumberToHex,
+  isSilentPayload
 } from '@walletconnect/utils'
 import {
   ERROR_SESSION_CONNECTED,
@@ -700,11 +701,13 @@ class Connector {
 
     const topic: string = _topic || this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent
     }
 
     this._transport.send(socketMessage)
@@ -723,7 +726,8 @@ class Connector {
     const socketMessage: ISocketMessage = {
       topic,
       type: 'pub',
-      payload
+      payload,
+      silent: true
     }
 
     this._transport.send(socketMessage)
@@ -890,7 +894,8 @@ class Connector {
     this._transport.send({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
-      payload: ''
+      payload: '',
+      silent: true
     })
   }
 
