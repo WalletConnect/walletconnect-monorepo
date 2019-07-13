@@ -17,7 +17,7 @@
     "build": "lerna run build",
     "test": "lerna run test",
     "test:watch": "lerna run test:watch",
-    "clean": "lerna run clean",
+    "clean": "rm -rf dist && lerna run clean",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "clean:package_lock": "lerna exec -- rm -rf package-lock.json",
     "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:package_lock",
