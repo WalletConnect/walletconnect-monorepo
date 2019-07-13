@@ -13,6 +13,18 @@ declare module '@walletconnect/types' {
     >
   }
 
+  export interface ITransportLib {
+    open: () => void
+    send: (socketMessage: ISocketMessage) => void
+    close: () => void
+    on: (event: string, callback: (payload: any) => void) => void
+  }
+
+  export interface ITransportEvent {
+    event: string
+    callback: (payload: any) => void
+  }
+
   export interface ISessionStorage {
     getSession: () => IWalletConnectSession | null
     setSession: (session: IWalletConnectSession) => IWalletConnectSession
