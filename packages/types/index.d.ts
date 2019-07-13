@@ -202,6 +202,16 @@ declare module '@walletconnect/types' {
     language: string
   }
 
+  export interface IUpdateChainParams {
+    chainId: number
+    networkId: number
+    rpcUrl: string
+    nativeCurrency: {
+      name: string
+      symbol: string
+    }
+  }
+
   export interface IWalletConnectConnectionOptions {
     bridge?: string
     qrcode?: boolean

@@ -13,7 +13,8 @@ import {
   IClientMeta,
   IParseURIResult,
   ISessionParams,
-  IWalletConnectOptions
+  IWalletConnectOptions,
+  IUpdateChainParams
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -625,6 +626,24 @@ class Connector {
     const request = this._formatRequest({
       method: 'eth_signTypedData',
       params
+    })
+
+    try {
+      const result = await this._sendCallRequest(request)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  public async updateChain (chainParams: IUpdateChainParams) {
+    if (!this._connected) {
+      throw new Error('Session currently disconnected')
+    }
+
+    const request = this._formatRequest({
+      method: 'wallet_updateChain',
+      params: [chainParams]
     })
 
     try {
