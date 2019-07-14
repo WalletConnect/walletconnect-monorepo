@@ -8,8 +8,6 @@ import {
   IWalletConnectConnectionOptions
 } from '@walletconnect/types'
 
-const INFURA_ID = 'b83e6e49b57b4bebaad968e98f8f9dab'
-
 // -- WalletConnectConnection --------------------------------------------- //
 
 class WalletConnectConnection extends EventEmitter {
@@ -25,13 +23,18 @@ class WalletConnectConnection extends EventEmitter {
   public connected: boolean = false
   public closed: boolean = false
 
-  constructor (opts?: IWalletConnectConnectionOptions) {
+  constructor (opts: IWalletConnectConnectionOptions) {
     super()
-    if (opts) {
-      this.bridge = this.bridge || 'https://bridge.walletconnect.org'
-      this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
-      this.infuraId = opts.infuraId || ''
+    this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
+    this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
+    if (
+      !opts.infuraId ||
+      typeof opts.infuraId !== 'string' ||
+      !opts.infuraId.trim()
+    ) {
+      throw new Error('Missing Infura App Id field')
     }
+    this.infuraId = opts.infuraId
     this.on('error', () => this.close())
     setTimeout(() => this.create(), 0)
   }
@@ -209,8 +212,7 @@ class WalletConnectConnection extends EventEmitter {
     const network = infuraNetworks[chainId]
 
     if (!rpcUrl && network) {
-      const infuraId = this.infuraId || INFURA_ID
-      rpcUrl = `https://${network}.infura.io/v3/${infuraId}`
+      rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`
     }
 
     if (rpcUrl) {
