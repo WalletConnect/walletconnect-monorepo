@@ -418,8 +418,8 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
-    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.networkId = sessionStatus.networkId || 0
     this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
@@ -488,8 +488,8 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
-    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.networkId = sessionStatus.networkId || 0
     this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {

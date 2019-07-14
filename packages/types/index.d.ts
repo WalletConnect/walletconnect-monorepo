@@ -46,8 +46,8 @@ declare module '@walletconnect/types' {
 
   export interface ISessionStatus {
     chainId: number
-    networkId: number
     accounts: string[]
+    networkId?: number
     rpcUrl?: string
   }
 
