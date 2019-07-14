@@ -571,29 +571,29 @@ export function isJsonRpcSubscription (
 }
 
 export function isJsonRpcRequest (object: any): object is IJsonRpcRequest {
-  return 'method' in object
+  return typeof object.method !== 'undefined'
 }
 
 export function isJsonRpcResponseSuccess (
   object: any
 ): object is IJsonRpcResponseSuccess {
-  return 'result' in object
+  return typeof object.result !== 'undefined'
 }
 
 export function isJsonRpcResponseError (
   object: any
 ): object is IJsonRpcResponseError {
-  return 'error' in object
+  return typeof object.error !== 'undefined'
 }
 
 export function isInternalEvent (object: any): object is IInternalEvent {
-  return 'event' in object
+  return typeof object.event !== 'undefined'
 }
 
 export function isWalletConnectSession (
   object: any
 ): object is IWalletConnectSession {
-  return 'bridge' in object
+  return typeof object.bridge !== 'undefined'
 }
 
 export function isReservedEvent (event: string) {

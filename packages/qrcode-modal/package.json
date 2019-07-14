@@ -54,7 +54,10 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@walletconnect/types": "^1.0.0-beta.26",
+=======
+>>>>>>> b3809473e56d9297022b8d95663b12e84d8a7be7
     "qr-image": "^3.2.0",
     "qrcode-terminal": "^0.12.0"
   },

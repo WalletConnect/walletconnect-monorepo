@@ -418,8 +418,8 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
-    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.networkId = sessionStatus.networkId || 0
     this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
@@ -488,8 +488,8 @@ class Connector {
     }
 
     this.chainId = sessionStatus.chainId
-    this.networkId = sessionStatus.networkId
     this.accounts = sessionStatus.accounts
+    this.networkId = sessionStatus.networkId || 0
     this.rpcUrl = sessionStatus.rpcUrl || ''
 
     const sessionParams: ISessionParams = {
@@ -690,7 +690,9 @@ class Connector {
       case 'eth_signTransaction':
         if (request.params) {
           request.params[0] = parseTransactionData(request.params[0])
-          request.params[1] = request.params[1] ? convertNumberToHex(request.params[1]) : convertNumberToHex(this.chainId)
+          request.params[1] = request.params[1]
+            ? convertNumberToHex(request.params[1])
+            : convertNumberToHex(this.chainId)
         }
         break
       case 'personal_sign':
@@ -813,19 +815,21 @@ class Connector {
     if (isJsonRpcResponseError(response)) {
       const error = formatRpcError(response.error)
 
-      const formattedResponseError: IJsonRpcResponseError = {
+      const errorResponse: IJsonRpcResponseError = {
+        id: response.id,
         jsonrpc: '2.0',
         ...response,
         error
       }
-      return formattedResponseError
+      return errorResponse
     } else if (isJsonRpcResponseSuccess(response)) {
-      const formattedResponseSuccess: IJsonRpcResponseSuccess = {
+      const successResponse: IJsonRpcResponseSuccess = {
+        id: response.id,
         jsonrpc: '2.0',
         ...response
       }
 
-      return formattedResponseSuccess
+      return successResponse
     }
 
     throw new Error(ERROR_INVALID_RESPONSE)
