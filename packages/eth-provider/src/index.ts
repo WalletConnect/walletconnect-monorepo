@@ -2,10 +2,11 @@ import EthereumProvider from './provider'
 import WalletConnectConnection from './connection'
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
 
-function WalletConnectProvider (options: IWalletConnectConnectionOptions) {
-  const connection = new WalletConnectConnection(options)
-  const provider = new EthereumProvider(connection)
-  return provider
+class WalletConnectProvider extends EthereumProvider {
+  constructor (opts: IWalletConnectConnectionOptions) {
+    const connection = new WalletConnectConnection(opts)
+    super(connection)
+  }
 }
 
 export default WalletConnectProvider

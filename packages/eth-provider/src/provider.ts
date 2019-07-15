@@ -6,17 +6,13 @@ import {
   isJsonRpcResponseSuccess,
   isJsonRpcResponseError
 } from '@walletconnect/utils'
-import { IJsonRpcRequest, IError, JsonRpc } from '@walletconnect/types'
+import { IError, JsonRpc } from '@walletconnect/types'
+import WalletConnectConnection from './connection'
 
 // -- types ---------------------------------------------------------------- //
 
 interface IPromisesMap {
   [id: number]: { resolve: (res: any) => void; reject: (err: any) => void }
-}
-
-interface IConnection extends EventEmitter {
-  send: (payload: IJsonRpcRequest) => void
-  close: () => void
 }
 
 // -- EthereumProvider ---------------------------------------------------- //
@@ -25,14 +21,14 @@ class EthereumProvider extends EventEmitter {
   public connected: boolean = false
   public promises: IPromisesMap = {}
   public subscriptions: number[] = []
-  public connection: IConnection
+  public connection: WalletConnectConnection
   public accounts: string[] = []
   public coinbase: string = ''
   public attemptedNetworkSubscription: boolean = false
   public attemptedChainSubscription: boolean = false
   public attemptedAccountsSubscription: boolean = false
 
-  constructor (connection: IConnection) {
+  constructor (connection: WalletConnectConnection) {
     super()
     this.connection = connection
     this.connection.on('connect', () => this.checkConnection())
@@ -42,6 +38,10 @@ class EthereumProvider extends EventEmitter {
       if (event === 'networkChanged') {
         if (!this.attemptedNetworkSubscription && this.connected) {
           this.startNetworkSubscription()
+        }
+      } else if (event === 'chainChanged') {
+        if (!this.attemptedChainSubscription && this.connected) {
+          this.startChainSubscription()
         }
       } else if (event === 'accountsChanged') {
         if (!this.attemptedAccountsSubscription && this.connected) {

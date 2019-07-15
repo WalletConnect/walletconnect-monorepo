@@ -145,7 +145,7 @@ export async function decrypt (
   try {
     data = JSON.parse(utf8)
   } catch (error) {
-    throw new Error(`Failed to parse invalid JSON`)
+    return null
   }
 
   return data

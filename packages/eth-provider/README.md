@@ -1,6 +1,6 @@
-# WalletConnect Web3 Provider
+# WalletConnect ETH Provider
 
-Web3 Provider for WalletConnect
+ETH Provider for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
@@ -14,7 +14,7 @@ import WalletConnectProvider from "@walletconnect/eth-provider";
  *  Create WalletConnect Provider (qrcode modal will be displayed automatically)
  */
 const provider = new WalletConnectProvider({
-  bridge: "https://bridge.walletconnect.org" // Required
+  infuraId: "<INSERT_INFURA_APP_ID"
 });
 
 /**

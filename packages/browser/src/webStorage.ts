@@ -28,7 +28,7 @@ function getSession (): IWalletConnectSession | null {
         session = json
       }
     } catch (error) {
-      throw error
+      return null
     }
   }
   return session

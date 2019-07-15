@@ -34,6 +34,14 @@ class SocketTransport {
     this._clientId = opts.clientId
   }
 
+  set connected (value) {
+    // empty
+  }
+
+  get connected (): boolean {
+    return !!(this._socket && this._socket.readyState === 1)
+  }
+
   // -- public ---------------------------------------------------------- //
 
   public open () {
@@ -41,17 +49,11 @@ class SocketTransport {
   }
 
   public send (socketMessage: ISocketMessage): void {
-    if (this._socket && this._socket.readyState === 1) {
-      this._socketSend(socketMessage)
-    } else {
-      this._setToQueue(socketMessage)
-    }
+    this._socketSend(socketMessage)
   }
 
   public close () {
-    if (this._socket && this._socket.readyState === 1) {
-      this._socket.close()
-    }
+    this._socketClose()
   }
 
   public on (event: string, callback: (payload: any) => void) {
@@ -60,7 +62,11 @@ class SocketTransport {
 
   // -- private ---------------------------------------------------------- //
 
-  private _socketOpen () {
+  private _socketOpen (forceOpen?: boolean) {
+    if (!forceOpen && this.connected) {
+      return
+    }
+
     const bridge = this._bridge
 
     this._setToQueue({
@@ -86,18 +92,22 @@ class SocketTransport {
     }
 
     socket.onclose = () => {
-      this._socketOpen()
+      this._socketOpen(true)
+    }
+  }
+
+  private _socketClose () {
+    this._pushQueue()
+    if (this._socket) {
+      this._socket.onclose = () => {}
+      this._socket.close()
     }
   }
 
   private _socketSend (socketMessage: ISocketMessage) {
-    if (!this._socket) {
-      throw new Error('Missing socket: required for sending message')
-    }
-
     const message: string = JSON.stringify(socketMessage)
 
-    if (this._socket && this._socket.readyState === 1) {
+    if (this._socket && this.connected) {
       this._socket.send(message)
     } else {
       this._setToQueue(socketMessage)
@@ -108,24 +118,13 @@ class SocketTransport {
   private async _socketReceive (event: MessageEvent) {
     let socketMessage: ISocketMessage
 
-    if (event.data === 'ping') {
-      if (this._socket && this._socket.readyState === 1) {
-        this._socket.send('pong')
-      }
-      return
-    }
-
-    if (event.data === 'pong') {
-      return
-    }
-
     try {
       socketMessage = JSON.parse(event.data)
     } catch (error) {
-      throw error
+      return
     }
 
-    if (this._socket && this._socket.readyState === 1) {
+    if (this.connected) {
       const events = this._events.filter(event => event.event === 'message')
       if (events && events.length) {
         events.forEach(event => event.callback(socketMessage))
