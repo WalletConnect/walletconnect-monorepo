@@ -41,7 +41,7 @@ class SocketTransport {
   }
 
   public send (socketMessage: ISocketMessage): void {
-    if (this._socket && this._socket.readyState === 1) {
+    if (this._isConnected()) {
       this._socketSend(socketMessage)
     } else {
       this._setToQueue(socketMessage)
@@ -49,7 +49,7 @@ class SocketTransport {
   }
 
   public close () {
-    if (this._socket && this._socket.readyState === 1) {
+    if (this._isConnected()) {
       this._socket.close()
     }
   }
@@ -60,7 +60,15 @@ class SocketTransport {
 
   // -- private ---------------------------------------------------------- //
 
-  private _socketOpen () {
+  private _isConnected () {
+    return this._socket && this._socket.readyState === 1
+  }
+
+  private _socketOpen (forceOpen?: boolean) {
+    if (!forceOpen && this._isConnected()) {
+      return
+    }
+
     const bridge = this._bridge
 
     this._setToQueue({
@@ -86,7 +94,7 @@ class SocketTransport {
     }
 
     socket.onclose = () => {
-      this._socketOpen()
+      this._socketOpen(true)
     }
   }
 
@@ -97,7 +105,7 @@ class SocketTransport {
 
     const message: string = JSON.stringify(socketMessage)
 
-    if (this._socket && this._socket.readyState === 1) {
+    if (this._isConnected()) {
       this._socket.send(message)
     } else {
       this._setToQueue(socketMessage)
@@ -108,24 +116,13 @@ class SocketTransport {
   private async _socketReceive (event: MessageEvent) {
     let socketMessage: ISocketMessage
 
-    if (event.data === 'ping') {
-      if (this._socket && this._socket.readyState === 1) {
-        this._socket.send('pong')
-      }
-      return
-    }
-
-    if (event.data === 'pong') {
-      return
-    }
-
     try {
       socketMessage = JSON.parse(event.data)
     } catch (error) {
       return
     }
 
-    if (this._socket && this._socket.readyState === 1) {
+    if (this._isConnected()) {
       const events = this._events.filter(event => event.event === 'message')
       if (events && events.length) {
         events.forEach(event => event.callback(socketMessage))
