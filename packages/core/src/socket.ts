@@ -34,6 +34,14 @@ class SocketTransport {
     this._clientId = opts.clientId
   }
 
+  set connected (value) {
+    // empty
+  }
+
+  get connected (): boolean {
+    return !!(this._socket && this._socket.readyState === 1)
+  }
+
   // -- public ---------------------------------------------------------- //
 
   public open () {
@@ -41,17 +49,11 @@ class SocketTransport {
   }
 
   public send (socketMessage: ISocketMessage): void {
-    if (this._isConnected()) {
-      this._socketSend(socketMessage)
-    } else {
-      this._setToQueue(socketMessage)
-    }
+    this._socketSend(socketMessage)
   }
 
   public close () {
-    if (this._isConnected()) {
-      this._socket.close()
-    }
+    this._socketClose()
   }
 
   public on (event: string, callback: (payload: any) => void) {
@@ -60,12 +62,8 @@ class SocketTransport {
 
   // -- private ---------------------------------------------------------- //
 
-  private _isConnected () {
-    return this._socket && this._socket.readyState === 1
-  }
-
   private _socketOpen (forceOpen?: boolean) {
-    if (!forceOpen && this._isConnected()) {
+    if (!forceOpen && this.connected) {
       return
     }
 
@@ -98,14 +96,18 @@ class SocketTransport {
     }
   }
 
-  private _socketSend (socketMessage: ISocketMessage) {
-    if (!this._socket) {
-      throw new Error('Missing socket: required for sending message')
+  private _socketClose () {
+    this._pushQueue()
+    if (this._socket) {
+      this._socket.onclose = () => {}
+      this._socket.close()
     }
+  }
 
+  private _socketSend (socketMessage: ISocketMessage) {
     const message: string = JSON.stringify(socketMessage)
 
-    if (this._isConnected()) {
+    if (this._socket && this.connected) {
       this._socket.send(message)
     } else {
       this._setToQueue(socketMessage)
@@ -122,7 +124,7 @@ class SocketTransport {
       return
     }
 
-    if (this._isConnected()) {
+    if (this.connected) {
       const events = this._events.filter(event => event.event === 'message')
       if (events && events.length) {
         events.forEach(event => event.callback(socketMessage))
