@@ -87,6 +87,7 @@ class SocketTransport {
     socket.onmessage = (event: MessageEvent) => this._socketReceive(event)
 
     socket.onopen = () => {
+      this._socketClose()
       this._socket = socket
       this._pushQueue()
     }
@@ -97,9 +98,7 @@ class SocketTransport {
   }
 
   private _socketClose () {
-    this._pushQueue()
     if (this._socket) {
-      this._socket.onclose = () => {}
       this._socket.close()
     }
   }
