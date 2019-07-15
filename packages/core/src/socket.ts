@@ -122,7 +122,7 @@ class SocketTransport {
     try {
       socketMessage = JSON.parse(event.data)
     } catch (error) {
-      throw error
+      return
     }
 
     if (this._socket && this._socket.readyState === 1) {

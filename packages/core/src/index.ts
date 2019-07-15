@@ -920,7 +920,7 @@ class Connector {
     try {
       encryptionPayload = JSON.parse(socketMessage.payload)
     } catch (error) {
-      throw error
+      return
     }
 
     const payload:
