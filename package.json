@@ -26,12 +26,13 @@
     "lint": "tslint packages/*/src/**/*.ts",
     "zip": "node scripts/zip.js",
     "publish": "lerna publish",
-    "publish:beta": "lerna version && lerna exec -- npm publish",
+    "bump-version": "lerna version",
+    "publish:beta": "lerna exec -- npm publish",
     "routine": "npm run clean:all && npm run bootstrap && npm run check-packages && npm run zip",
     "check-packages": "npm run clean && npm run lint && npm run build && npm run test",
     "example": "npm run check-packages && cd example && npm run start",
     "deploy": "npm run check-packages && npm run publish",
-    "deploy:beta": "npm run routine && git commit -am 'package.lock' && npm run publish:beta"
+    "deploy:beta": "npm run bump-version && npm run routine && git commit -am 'package.lock' && npm run publish:beta"
   },
   "repository": {
     "type": "git",
