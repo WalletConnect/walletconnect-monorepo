@@ -1,12 +1,11 @@
 import browser from './browser'
 import node from './node'
 
-const isNode = new Function(
-  'try {return this===global;}catch(e){return false;}'
-)
+let isNode = false
 
-function open (uri: string, cb: any) {
-  if (isNode()) {
+function open (uri: string, cb: any, _isNode?: boolean) {
+  isNode = !!_isNode
+  if (isNode) {
     node.open(uri, cb)
   } else {
     browser.open(uri, cb)
@@ -14,7 +13,7 @@ function open (uri: string, cb: any) {
 }
 
 function close () {
-  if (isNode()) {
+  if (isNode) {
     node.close()
   } else {
     browser.close()
