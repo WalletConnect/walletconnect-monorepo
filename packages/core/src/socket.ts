@@ -8,6 +8,7 @@ interface ISocketTransportOptions {
 // -- SocketTransport ------------------------------------------------------ //
 
 class SocketTransport {
+  private _initiating: boolean
   private _bridge: string
   private _clientId: string
   private _socket: WebSocket | null
@@ -17,6 +18,7 @@ class SocketTransport {
   // -- constructor ----------------------------------------------------- //
 
   constructor (opts: ISocketTransportOptions) {
+    this._initiating = false
     this._bridge = ''
     this._socket = null
     this._queue = []
@@ -34,12 +36,44 @@ class SocketTransport {
     this._clientId = opts.clientId
   }
 
+  set readyState (value) {
+    // empty
+  }
+
+  get readyState (): number {
+    return this._socket ? this._socket.readyState : -1
+  }
+
+  set connecting (value) {
+    // empty
+  }
+
+  get connecting (): boolean {
+    return this.readyState === 0
+  }
+
   set connected (value) {
     // empty
   }
 
   get connected (): boolean {
-    return !!(this._socket && this._socket.readyState === 1)
+    return this.readyState === 1
+  }
+
+  set closing (value) {
+    // empty
+  }
+
+  get closing (): boolean {
+    return this.readyState === 2
+  }
+
+  set closed (value) {
+    // empty
+  }
+
+  get closed (): boolean {
+    return this.readyState === 3
   }
 
   // -- public ---------------------------------------------------------- //
@@ -63,10 +97,11 @@ class SocketTransport {
   // -- private ---------------------------------------------------------- //
 
   private _socketOpen (forceOpen?: boolean) {
-    if (!forceOpen && this.connected) {
+    if ((typeof forceOpen !== 'undefined' && !forceOpen) || this._initiating) {
       return
     }
 
+    this._initiating = true
     const bridge = this._bridge
 
     this._setToQueue({
@@ -88,6 +123,7 @@ class SocketTransport {
 
     socket.onopen = () => {
       this._socketClose()
+      this._initiating = false
       this._socket = socket
       this._pushQueue()
     }
@@ -99,6 +135,9 @@ class SocketTransport {
 
   private _socketClose () {
     if (this._socket) {
+      this._socket.onclose = () => {
+        // empty
+      }
       this._socket.close()
     }
   }
