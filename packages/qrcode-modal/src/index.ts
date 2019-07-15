@@ -1,10 +1,7 @@
 import browser from './browser'
 import node from './node'
 
-let isNode = false
-
-function open (uri: string, cb: any, _isNode?: boolean) {
-  isNode = !!_isNode
+function open (uri: string, cb: any, isNode?: boolean) {
   if (isNode) {
     node.open(uri, cb)
   } else {
@@ -12,7 +9,7 @@ function open (uri: string, cb: any, _isNode?: boolean) {
   }
 }
 
-function close () {
+function close (isNode?: boolean) {
   if (isNode) {
     node.close()
   } else {
