@@ -137,6 +137,7 @@ class Connector {
         'Session request rejected'
       )
     }
+
     this._transport =
       transport ||
       new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
@@ -745,14 +746,7 @@ class Connector {
     const payload: string = JSON.stringify(encryptionPayload)
     const silent = isSilentPayload(callRequest)
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   private async _sendResponse (
@@ -764,15 +758,9 @@ class Connector {
 
     const topic: string = this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = true
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent: true
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   private async _sendSessionRequest (
@@ -935,12 +923,9 @@ class Connector {
   }
 
   private _subscribeToSessionRequest () {
-    this._transport.send({
-      topic: `${this.handshakeTopic}`,
-      type: 'sub',
-      payload: '',
-      silent: true
-    })
+    if (this._transport.subscribeTo) {
+      this._transport.subscribeTo(this.handshakeTopic)
+    }
   }
 
   private _subscribeToResponse (
