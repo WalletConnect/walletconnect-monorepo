@@ -12,6 +12,7 @@ class SocketTransport {
   private _bridge: string
   private _clientId: string
   private _socket: WebSocket | null
+  private _nextSocket: WebSocket | null
   private _queue: ISocketMessage[]
   private _events: ITransportEvent[] = []
 
@@ -21,6 +22,7 @@ class SocketTransport {
     this._initiating = false
     this._bridge = ''
     this._socket = null
+    this._nextSocket = null
     this._queue = []
 
     if (!opts.bridge || typeof opts.bridge !== 'string') {
@@ -34,52 +36,14 @@ class SocketTransport {
     }
 
     this._clientId = opts.clientId
-  }
 
-  set readyState (value) {
-    // empty
-  }
-
-  get readyState (): number {
-    return this._socket ? this._socket.readyState : -1
-  }
-
-  set connecting (value) {
-    // empty
-  }
-
-  get connecting (): boolean {
-    return this.readyState === 0
-  }
-
-  set connected (value) {
-    // empty
-  }
-
-  get connected (): boolean {
-    return this.readyState === 1
-  }
-
-  set closing (value) {
-    // empty
-  }
-
-  get closing (): boolean {
-    return this.readyState === 2
-  }
-
-  set closed (value) {
-    // empty
-  }
-
-  get closed (): boolean {
-    return this.readyState === 3
+    window.addEventListener('online', () => this._socketCreate())
   }
 
   // -- public ---------------------------------------------------------- //
 
   public open () {
-    this._socketOpen()
+    this._socketCreate()
   }
 
   public send (socketMessage: ISocketMessage): void {
@@ -96,20 +60,13 @@ class SocketTransport {
 
   // -- private ---------------------------------------------------------- //
 
-  private _socketOpen (forceOpen?: boolean) {
-    if ((typeof forceOpen !== 'undefined' && !forceOpen) || this._initiating) {
+  private _socketCreate () {
+    if (this._initiating) {
       return
     }
 
     this._initiating = true
     const bridge = this._bridge
-
-    this._setToQueue({
-      topic: `${this._clientId}`,
-      type: 'sub',
-      payload: '',
-      silent: true
-    })
 
     const url = bridge.startsWith('https')
       ? bridge.replace('https', 'wss')
@@ -117,20 +74,26 @@ class SocketTransport {
         ? bridge.replace('http', 'ws')
         : bridge
 
-    const socket = new WebSocket(url)
+    this._nextSocket = new WebSocket(url)
 
-    socket.onmessage = (event: MessageEvent) => this._socketReceive(event)
+    this._nextSocket.onmessage = (event: MessageEvent) =>
+      this._socketReceive(event)
 
-    socket.onopen = () => {
-      this._socketClose()
-      this._initiating = false
-      this._socket = socket
-      this._pushQueue()
-    }
+    this._nextSocket.onopen = () => this._socketOpen()
+  }
 
-    socket.onclose = () => {
-      this._socketOpen(true)
-    }
+  private _socketOpen () {
+    this._socketClose()
+    this._initiating = false
+    this._socket = this._nextSocket
+    this._nextSocket = null
+    this._socketSend({
+      topic: `${this._clientId}`,
+      type: 'sub',
+      payload: '',
+      silent: true
+    })
+    this._pushQueue()
   }
 
   private _socketClose () {
@@ -145,11 +108,11 @@ class SocketTransport {
   private _socketSend (socketMessage: ISocketMessage) {
     const message: string = JSON.stringify(socketMessage)
 
-    if (this._socket && this.connected) {
+    if (this._socket && this._socket.readyState === 1) {
       this._socket.send(message)
     } else {
       this._setToQueue(socketMessage)
-      this._socketOpen()
+      this._socketCreate()
     }
   }
 
@@ -162,7 +125,7 @@ class SocketTransport {
       return
     }
 
-    if (this.connected) {
+    if (this._socket && this._socket.readyState === 1) {
       const events = this._events.filter(event => event.event === 'message')
       if (events && events.length) {
         events.forEach(event => event.callback(socketMessage))
