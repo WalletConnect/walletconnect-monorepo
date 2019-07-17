@@ -153,6 +153,13 @@ class SocketTransport {
       return
     }
 
+    this._socketSend({
+      topic: socketMessage.topic,
+      type: 'ack',
+      payload: '',
+      silent: true
+    })
+
     if (this._socket && this._socket.readyState === 1) {
       const events = this._events.filter(event => event.event === 'message')
       if (events && events.length) {
