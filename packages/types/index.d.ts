@@ -15,9 +15,10 @@ declare module '@walletconnect/types' {
 
   export interface ITransportLib {
     open: () => void
-    send: (socketMessage: ISocketMessage) => void
+    send: (message: string, topic?: string, silent?: boolean) => void
     close: () => void
     on: (event: string, callback: (payload: any) => void) => void
+    subscribeTo?: (topic: string) => void
   }
 
   export interface ITransportEvent {
