@@ -140,7 +140,10 @@ class Connector {
 
     this._transport =
       transport ||
-      new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
+      new SocketTransport({
+        url: this.bridge,
+        subscriptions: [this.clientId]
+      })
 
     this._transport.on('message', (socketMessage: ISocketMessage) =>
       this._handleIncomingMessages(socketMessage)

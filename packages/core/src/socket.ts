@@ -1,18 +1,18 @@
 import { ISocketMessage, ITransportEvent } from '@walletconnect/types'
 
 interface ISocketTransportOptions {
-  bridge: string
-  clientId: string
+  url: string
+  subscriptions?: string[]
 }
 
 // -- SocketTransport ------------------------------------------------------ //
 
 class SocketTransport {
   private _initiating: boolean
-  private _bridge: string
+  private _url: string
   private _socket: WebSocket | null
   private _nextSocket: WebSocket | null
-  private _queue: ISocketMessage[]
+  private _queue: ISocketMessage[] = []
   private _events: ITransportEvent[] = []
   private _subscriptions: string[] = []
 
@@ -20,22 +20,16 @@ class SocketTransport {
 
   constructor (opts: ISocketTransportOptions) {
     this._initiating = false
-    this._bridge = ''
+    this._url = ''
     this._socket = null
     this._nextSocket = null
-    this._queue = []
+    this._subscriptions = opts.subscriptions || []
 
-    if (!opts.bridge || typeof opts.bridge !== 'string') {
-      throw new Error('Missing or invalid bridge field')
+    if (!opts.url || typeof opts.url !== 'string') {
+      throw new Error('Missing or invalid WebSocket url')
     }
 
-    this._bridge = opts.bridge
-
-    if (!opts.clientId || typeof opts.clientId !== 'string') {
-      throw new Error('Missing or invalid clientId field')
-    }
-
-    this._subscriptions.push(opts.clientId)
+    this._url = opts.url
 
     window.addEventListener('online', () => this._socketCreate())
   }
@@ -84,13 +78,12 @@ class SocketTransport {
     }
 
     this._initiating = true
-    const bridge = this._bridge
 
-    const url = bridge.startsWith('https')
-      ? bridge.replace('https', 'wss')
-      : bridge.startsWith('http')
-        ? bridge.replace('http', 'ws')
-        : bridge
+    const url = this._url.startsWith('https')
+      ? this._url.replace('https', 'wss')
+      : this._url.startsWith('http')
+        ? this._url.replace('http', 'ws')
+        : this._url
 
     this._nextSocket = new WebSocket(url)
 
