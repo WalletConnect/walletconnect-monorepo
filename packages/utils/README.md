@@ -38,6 +38,7 @@ function removeHexPrefix (hex: string): string
 
 function isHexString (value: any): boolean
 function isEmptyString (value: string): boolean
+function isEmptyArray (array: any[]): boolean
 
 function payloadId (): number
 function uuid (): string

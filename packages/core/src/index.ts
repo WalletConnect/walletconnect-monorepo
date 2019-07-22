@@ -1016,10 +1016,6 @@ class Connector {
     })
   }
 
-  // -- keyManager ------------------------------------------------------- //
-
-  // TODO: Refactor with new exchange key flow
-
   // -- uri ------------------------------------------------------------- //
 
   private _formatUri () {
