@@ -1,4 +1,35 @@
 declare module '@walletconnect/types' {
+  export interface IConnector {
+    bridge: string
+    key: string
+    nextKey: string
+    clientId: string
+    peerId: string
+    clientMeta: IClientMeta | null
+    peerMeta: IClientMeta | null
+    handshakeTopic: string
+    handshakeId: number
+    accounts: string[]
+    chainId: number
+    networkId: number
+    rpcUrl: string
+    connected: boolean
+    pending: boolean
+    createSession: (opts?: { chainId: number }) => Promise<void>
+    approveSession: (sessionStatus: ISessionStatus) => void
+    rejectSession: (sessionError?: ISessionError) => void
+    updateSession: (sessionStatus: ISessionStatus) => void
+    killSession: (sessionError?: ISessionError) => Promise<void>
+    sendTransaction: (tx: ITxData) => Promise<any>
+    signTransaction: (tx: ITxData) => Promise<any>
+    signMessage: (params: any[]) => Promise<any>
+    signPersonalMessage: (params: any[]) => Promise<any>
+    signTypedData: (params: any[]) => Promise<any>
+    sendCustomRequest: (request: Partial<IJsonRpcRequest>) => Promise<any>
+    approveRequest: (response: Partial<IJsonRpcResponseSuccess>) => void
+    rejectRequest: (response: Partial<IJsonRpcResponseError>) => void
+  }
+
   export interface ICryptoLib {
     generateKey: (length?: number) => Promise<ArrayBuffer>
     encrypt: (
