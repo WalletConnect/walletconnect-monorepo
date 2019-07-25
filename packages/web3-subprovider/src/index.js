@@ -70,6 +70,10 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
     }
 
     this._walletConnector = new WalletConnect({ bridge })
+
+    this.isConnecting = false
+
+    this.connectCallbacks = []
   }
 
   set isWalletConnect (value) {}
@@ -96,13 +100,24 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
     return this._walletConnector.accounts
   }
 
+  onConnect (callback) {
+    this.connectCallbacks.push(callback)
+  }
+
+  triggerConnect (result) {
+    if (this.connectCallbacks && this.connectCallbacks.length) {
+      this.connectCallbacks.forEach(callback => callback(result))
+    }
+  }
+
   getWalletConnector () {
     return new Promise((resolve, reject) => {
       const walletConnector = this._walletConnector
 
-      console.log('[getWalletConnector] walletConnector', walletConnector)
-
-      if (!walletConnector.connected) {
+      if (this.isConnecting) {
+        this.onConnect(_walletConnector => resolve(_walletConnector))
+      } else if (!walletConnector.connected) {
+        this.isConnecting = true
         walletConnector
           .createSession()
           .then(() => {
@@ -115,14 +130,18 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
               if (this.qrcode) {
                 WalletConnectQRCodeModal.close()
               }
+              this.isConnecting = false
+              this.triggerConnect(walletConnector)
               resolve(walletConnector)
             })
           })
-          .catch(error => reject(error))
-        return
+          .catch(error => {
+            this.isConnecting = false
+            reject(error)
+          })
+      } else {
+        resolve(walletConnector)
       }
-
-      resolve(walletConnector)
     })
   }
 }

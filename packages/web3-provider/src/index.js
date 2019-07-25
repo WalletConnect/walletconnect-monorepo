@@ -22,6 +22,20 @@ export default function WalletConnectProvider (opts) {
 
   const engine = new ProviderEngine()
 
+  engine.isConnecting = false
+
+  engine.connectCallbacks = []
+
+  function onConnect (callback) {
+    engine.connectCallbacks.push(callback)
+  }
+
+  function triggerConnect (result) {
+    if (engine.connectCallbacks && engine.connectCallbacks.length) {
+      engine.connectCallbacks.forEach(callback => callback(result))
+    }
+  }
+
   engine._walletConnector = walletConnector
 
   engine.send = (payload, callback) => {
@@ -59,7 +73,16 @@ export default function WalletConnectProvider (opts) {
         break
 
       case 'eth_coinbase':
-        result = engine._walletConnector.accounts
+        result = engine._walletConnector.accounts[0]
+        break
+
+      case 'eth_chainId':
+        result = engine._walletConnector.chainId
+        break
+
+      case 'net_version':
+        result =
+          engine._walletConnector.networkId || engine._walletConnector.chainId
         break
 
       case 'eth_uninstallFilter':
@@ -180,7 +203,10 @@ export default function WalletConnectProvider (opts) {
     return new Promise((resolve, reject) => {
       const walletConnector = engine._walletConnector
 
-      if (!walletConnector.connected) {
+      if (engine.isConnecting) {
+        onConnect(_walletConnector => resolve(_walletConnector))
+      } else if (!walletConnector.connected) {
+        engine.isConnecting = true
         walletConnector
           .createSession()
           .then(() => {
@@ -193,14 +219,18 @@ export default function WalletConnectProvider (opts) {
               if (qrcode) {
                 WalletConnectQRCodeModal.close()
               }
+              engine.isConnecting = false
+              triggerConnect(walletConnector)
               resolve(walletConnector)
             })
           })
-          .catch(error => reject(error))
-        return
+          .catch(error => {
+            engine.isConnecting = false
+            reject(error)
+          })
+      } else {
+        resolve(walletConnector)
       }
-
-      resolve(walletConnector)
     })
   }
 
