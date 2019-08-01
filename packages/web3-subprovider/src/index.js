@@ -6,35 +6,21 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
   constructor (opts) {
     super({
       getAccounts: async cb => {
-        const walletConnector = await this.getWalletConnector()
-        const accounts = walletConnector.accounts
-        if (accounts && accounts.length) {
-          cb(null, accounts)
-        } else {
-          cb(new Error('Failed to get accounts'))
-        }
-      },
-      processTransaction: async (txParams, cb) => {
-        const walletConnector = await this.getWalletConnector()
         try {
-          const result = await walletConnector.sendTransaction(txParams)
-          cb(null, result)
-        } catch (error) {
-          cb(error)
-        }
-      },
-      processSignTransaction: async (txParams, cb) => {
-        const walletConnector = await this.getWalletConnector()
-        try {
-          const result = await walletConnector.signTransaction(txParams)
-          cb(null, result)
+          const walletConnector = await this.getWalletConnector()
+          const accounts = walletConnector.accounts
+          if (accounts && accounts.length) {
+            cb(null, accounts)
+          } else {
+            cb(new Error('Failed to get accounts'))
+          }
         } catch (error) {
           cb(error)
         }
       },
       processMessage: async (msgParams, cb) => {
-        const walletConnector = await this.getWalletConnector()
         try {
+          const walletConnector = await this.getWalletConnector()
           const result = await walletConnector.signMessage(msgParams)
           cb(null, result)
         } catch (error) {
@@ -42,17 +28,35 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
         }
       },
       processPersonalMessage: async (msgParams, cb) => {
-        const walletConnector = await this.getWalletConnector()
         try {
+          const walletConnector = await this.getWalletConnector()
           const result = await walletConnector.signPersonalMessage(msgParams)
           cb(null, result)
         } catch (error) {
           cb(error)
         }
       },
-      processTypedMessage: async (msgParams, cb) => {
-        const walletConnector = await this.getWalletConnector()
+      processSignTransaction: async (txParams, cb) => {
         try {
+          const walletConnector = await this.getWalletConnector()
+          const result = await walletConnector.signTransaction(txParams)
+          cb(null, result)
+        } catch (error) {
+          cb(error)
+        }
+      },
+      processTransaction: async (txParams, cb) => {
+        try {
+          const walletConnector = await this.getWalletConnector()
+          const result = await walletConnector.sendTransaction(txParams)
+          cb(null, result)
+        } catch (error) {
+          cb(error)
+        }
+      },
+      processTypedMessage: async (msgParams, cb) => {
+        try {
+          const walletConnector = await this.getWalletConnector()
           const result = await walletConnector.signTypedData(msgParams)
           cb(null, result)
         } catch (error) {

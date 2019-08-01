@@ -18,7 +18,15 @@ export default function WalletConnectProvider (opts) {
     throw new Error('Missing or Invalid bridge field')
   }
 
-  const walletConnector = new WalletConnect({ bridge })
+  const wc = new WalletConnect({ bridge })
+
+  wc.on('disconnect', (error, payload) => {
+    if (error) {
+      throw error
+    }
+
+    engine.stop()
+  })
 
   const engine = new ProviderEngine()
 
@@ -36,16 +44,63 @@ export default function WalletConnectProvider (opts) {
     }
   }
 
-  engine._walletConnector = walletConnector
+  async function handleRequest (payload) {
+    let result = null
+    try {
+      const walletConnector = await engine.getWalletConnector()
 
-  engine.send = (payload, callback) => {
+      switch (payload.method) {
+        case 'wc_killSession':
+          await walletConnector.killSession()
+          await engine.stop()
+          result = null
+          break
+        case 'eth_accounts':
+          result = walletConnector.accounts
+          break
+
+        case 'eth_coinbase':
+          result = walletConnector.accounts[0]
+          break
+
+        case 'eth_chainId':
+          result = walletConnector.chainId
+          break
+
+        case 'net_version':
+          result = walletConnector.networkId || walletConnector.chainId
+          break
+
+        case 'eth_uninstallFilter':
+          engine.sendAsync(payload, _ => _)
+          result = true
+          break
+
+        default:
+          result = await walletConnector.sendCustomRequest(payload)
+          break
+      }
+    } catch (error) {
+      throw error
+    }
+
+    return {
+      id: payload.id,
+      jsonrpc: payload.jsonrpc,
+      result: result
+    }
+  }
+
+  engine.wc = wc
+
+  engine.send = async (payload, callback) => {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === 'string') {
       return new Promise((resolve, reject) => {
         engine.sendAsync(
           {
-            jsonrpc: '2.0',
             id: 42,
+            jsonrpc: '2.0',
             method: payload,
             params: callback || []
           },
@@ -66,48 +121,18 @@ export default function WalletConnectProvider (opts) {
       return
     }
 
-    let result = null
-    switch (payload.method) {
-      case 'eth_accounts':
-        result = engine._walletConnector.accounts
-        break
+    const res = await handleRequest(payload, callback)
 
-      case 'eth_coinbase':
-        result = engine._walletConnector.accounts[0]
-        break
-
-      case 'eth_chainId':
-        result = engine._walletConnector.chainId
-        break
-
-      case 'net_version':
-        result =
-          engine._walletConnector.networkId || engine._walletConnector.chainId
-        break
-
-      case 'eth_uninstallFilter':
-        engine.sendAsync(payload, _ => _)
-        result = true
-        break
-
-      default:
-        throw new Error(`Method ${payload.method} is not support`)
-    }
-
-    return {
-      id: payload.id,
-      jsonrpc: payload.jsonrpc,
-      result: result
-    }
+    return res
   }
 
   engine.addProvider(
     new FixtureSubprovider({
-      web3_clientVersion: `WalletConnect/v${pkg.version}/javascript`,
-      net_listening: true,
       eth_hashrate: '0x00',
       eth_mining: false,
-      eth_syncing: true
+      eth_syncing: true,
+      net_listening: true,
+      web3_clientVersion: `WalletConnect/v${pkg.version}/javascript`
     })
   )
 
@@ -119,35 +144,21 @@ export default function WalletConnectProvider (opts) {
   engine.addProvider(
     new HookedWalletSubprovider({
       getAccounts: async cb => {
-        const walletConnector = await engine.getWalletConnector()
-        const accounts = walletConnector.accounts
-        if (accounts && accounts.length) {
-          cb(null, accounts)
-        } else {
-          cb(new Error('Failed to get accounts'))
-        }
-      },
-      processTransaction: async (txParams, cb) => {
-        const walletConnector = await engine.getWalletConnector()
         try {
-          const result = await walletConnector.sendTransaction(txParams)
-          cb(null, result)
-        } catch (error) {
-          cb(error)
-        }
-      },
-      processSignTransaction: async (txParams, cb) => {
-        const walletConnector = await engine.getWalletConnector()
-        try {
-          const result = await walletConnector.signTransaction(txParams)
-          cb(null, result)
+          const walletConnector = await engine.getWalletConnector()
+          const accounts = walletConnector.accounts
+          if (accounts && accounts.length) {
+            cb(null, accounts)
+          } else {
+            cb(new Error('Failed to get accounts'))
+          }
         } catch (error) {
           cb(error)
         }
       },
       processMessage: async (msgParams, cb) => {
-        const walletConnector = await engine.getWalletConnector()
         try {
+          const walletConnector = await engine.getWalletConnector()
           const result = await walletConnector.signMessage(msgParams)
           cb(null, result)
         } catch (error) {
@@ -155,17 +166,35 @@ export default function WalletConnectProvider (opts) {
         }
       },
       processPersonalMessage: async (msgParams, cb) => {
-        const walletConnector = await engine.getWalletConnector()
         try {
+          const walletConnector = await engine.getWalletConnector()
           const result = await walletConnector.signPersonalMessage(msgParams)
           cb(null, result)
         } catch (error) {
           cb(error)
         }
       },
-      processTypedMessage: async (msgParams, cb) => {
-        const walletConnector = await engine.getWalletConnector()
+      processSignTransaction: async (txParams, cb) => {
         try {
+          const walletConnector = await engine.getWalletConnector()
+          const result = await walletConnector.signTransaction(txParams)
+          cb(null, result)
+        } catch (error) {
+          cb(error)
+        }
+      },
+      processTransaction: async (txParams, cb) => {
+        try {
+          const walletConnector = await engine.getWalletConnector()
+          const result = await walletConnector.sendTransaction(txParams)
+          cb(null, result)
+        } catch (error) {
+          cb(error)
+        }
+      },
+      processTypedMessage: async (msgParams, cb) => {
+        try {
+          const walletConnector = await engine.getWalletConnector()
           const result = await walletConnector.signTypedData(msgParams)
           cb(null, result)
         } catch (error) {
@@ -176,16 +205,15 @@ export default function WalletConnectProvider (opts) {
   )
 
   engine.addProvider({
-    setEngine: _ => _,
     handleRequest: async (payload, next, end) => {
-      const walletConnector = await engine.getWalletConnector()
       try {
-        const result = await walletConnector.sendCustomRequest(payload)
+        const { result } = await handleRequest(payload)
         end(null, result)
       } catch (error) {
         end(error)
       }
-    }
+    },
+    setEngine: _ => _
   })
 
   engine.enable = () =>
@@ -201,10 +229,10 @@ export default function WalletConnectProvider (opts) {
 
   engine.getWalletConnector = () => {
     return new Promise((resolve, reject) => {
-      const walletConnector = engine._walletConnector
+      const walletConnector = engine.wc
 
       if (engine.isConnecting) {
-        onConnect(_walletConnector => resolve(_walletConnector))
+        onConnect(x => resolve(x))
       } else if (!walletConnector.connected) {
         engine.isConnecting = true
         walletConnector
