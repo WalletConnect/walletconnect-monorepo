@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/web3-provider",
-  "version": "1.0.0-beta.31",
+  "version": "1.0.0-beta.32",
   "description": "Web3 Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
@@ -54,9 +54,9 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/browser": "^1.0.0-beta.31",
-    "@walletconnect/qrcode-modal": "^1.0.0-beta.31",
-    "@walletconnect/types": "^1.0.0-beta.31",
+    "@walletconnect/browser": "^1.0.0-beta.32",
+    "@walletconnect/qrcode-modal": "^1.0.0-beta.32",
+    "@walletconnect/types": "^1.0.0-beta.32",
     "web3-provider-engine": "github:walletconnect/web3-provider-engine"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
