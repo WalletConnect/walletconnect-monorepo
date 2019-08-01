@@ -159,7 +159,10 @@ export default function WalletConnectProvider (opts) {
       processMessage: async (msgParams, cb) => {
         try {
           const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.signMessage(msgParams)
+          const result = await walletConnector.signMessage([
+            msgParams.from,
+            msgParams.data
+          ])
           cb(null, result)
         } catch (error) {
           cb(error)
@@ -168,7 +171,10 @@ export default function WalletConnectProvider (opts) {
       processPersonalMessage: async (msgParams, cb) => {
         try {
           const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.signPersonalMessage(msgParams)
+          const result = await walletConnector.signPersonalMessage([
+            msgParams.data,
+            msgParams.from
+          ])
           cb(null, result)
         } catch (error) {
           cb(error)
@@ -195,7 +201,10 @@ export default function WalletConnectProvider (opts) {
       processTypedMessage: async (msgParams, cb) => {
         try {
           const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.signTypedData(msgParams)
+          const result = await walletConnector.signTypedData([
+            msgParams.from,
+            msgParams.data
+          ])
           cb(null, result)
         } catch (error) {
           cb(error)

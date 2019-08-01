@@ -21,7 +21,10 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
       processMessage: async (msgParams, cb) => {
         try {
           const walletConnector = await this.getWalletConnector()
-          const result = await walletConnector.signMessage(msgParams)
+          const result = await walletConnector.signMessage([
+            msgParams.from,
+            msgParams.data
+          ])
           cb(null, result)
         } catch (error) {
           cb(error)
@@ -30,7 +33,10 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
       processPersonalMessage: async (msgParams, cb) => {
         try {
           const walletConnector = await this.getWalletConnector()
-          const result = await walletConnector.signPersonalMessage(msgParams)
+          const result = await walletConnector.signPersonalMessage([
+            msgParams.data,
+            msgParams.from
+          ])
           cb(null, result)
         } catch (error) {
           cb(error)
@@ -57,7 +63,10 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
       processTypedMessage: async (msgParams, cb) => {
         try {
           const walletConnector = await this.getWalletConnector()
-          const result = await walletConnector.signTypedData(msgParams)
+          const result = await walletConnector.signTypedData([
+            msgParams.from,
+            msgParams.data
+          ])
           cb(null, result)
         } catch (error) {
           cb(error)

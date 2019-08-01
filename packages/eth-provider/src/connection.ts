@@ -1,5 +1,9 @@
 import EventEmitter from 'events'
-import { convertNumberToHex } from '@walletconnect/utils'
+import {
+  convertNumberToHex,
+  signingMethods,
+  stateMethods
+} from '@walletconnect/utils'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
 import HTTPConnection from './http'
@@ -38,7 +42,7 @@ class WalletConnectConnection extends EventEmitter {
     this.on('error', () => this.close())
     setTimeout(() => this.create(), 0)
   }
-  openQR () {
+  public openQRCode () {
     const uri = this.wc ? this.wc.uri : ''
     if (uri) {
       WCQRCode.open(uri, () => {
@@ -46,7 +50,7 @@ class WalletConnectConnection extends EventEmitter {
       })
     }
   }
-  create () {
+  public create () {
     try {
       this.wc = new WalletConnect({ bridge: this.bridge })
     } catch (e) {
@@ -59,7 +63,9 @@ class WalletConnectConnection extends EventEmitter {
       this.wc
         .createSession()
         .then(() => {
-          if (this.qrcode) this.openQR()
+          if (this.qrcode) {
+            this.openQRCode()
+          }
         })
         .catch((e: Error) => this.emit('error', e))
     }
@@ -100,37 +106,27 @@ class WalletConnectConnection extends EventEmitter {
       this.onClose()
     })
   }
-  onClose () {
+  public onClose () {
     this.wc = null
     this.connected = false
     this.closed = true
     this.emit('close')
     this.removeAllListeners()
   }
-  close () {
+  public close () {
     if (this.wc) {
       this.wc.killSession()
     }
     this.onClose()
   }
-  error (payload: any, message: string, code = -1) {
+  public error (payload: any, message: string, code = -1) {
     this.emit('payload', {
       id: payload.id,
       jsonrpc: payload.jsonrpc,
       error: { message, code }
     })
   }
-  async send (payload: any) {
-    const signingMethods = [
-      'eth_sendTransaction',
-      'eth_signTransction',
-      'eth_sign',
-      'eth_signTypedData',
-      'eth_signTypedData_v1',
-      'eth_signTypedData_v3',
-      'personal_sign'
-    ]
-    const stateMethods = ['eth_accounts', 'eth_chainId', 'net_version']
+  public async send (payload: any) {
     if (this.wc && this.wc.connected) {
       if (
         signingMethods.includes(payload.method) &&
@@ -153,7 +149,7 @@ class WalletConnectConnection extends EventEmitter {
     }
   }
 
-  async handleStateMethods (payload: any) {
+  public async handleStateMethods (payload: any) {
     let result: any = null
     switch (payload.method) {
       case 'eth_accounts':
@@ -176,7 +172,7 @@ class WalletConnectConnection extends EventEmitter {
     }
   }
 
-  async updateState (sessionParams: ISessionParams) {
+  public async updateState (sessionParams: ISessionParams) {
     const { accounts, chainId, networkId, rpcUrl } = sessionParams
 
     // Check if accounts changed and trigger event
@@ -201,7 +197,7 @@ class WalletConnectConnection extends EventEmitter {
     this.updateRpcUrl(this.chainId, rpcUrl || '')
   }
 
-  updateRpcUrl (chainId: number, rpcUrl: string = '') {
+  public updateRpcUrl (chainId: number, rpcUrl: string = '') {
     const infuraNetworks = {
       1: 'mainnet',
       3: 'ropsten',
@@ -223,12 +219,12 @@ class WalletConnectConnection extends EventEmitter {
     } else {
       this.emit(
         'error',
-        new Error(`No RPC Url avaialble for chainId: ${chainId}`)
+        new Error(`No RPC Url available for chainId: ${chainId}`)
       )
     }
   }
 
-  updateHttpConnection = () => {
+  public updateHttpConnection = () => {
     if (this.rpcUrl) {
       this.http = new HTTPConnection(this.rpcUrl)
       this.http.on('payload', payload => this.emit('payload', payload))

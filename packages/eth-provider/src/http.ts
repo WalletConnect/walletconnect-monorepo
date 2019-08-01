@@ -13,7 +13,7 @@ const XHR =
     : XMLHttpRequest
 
 // -- types --------------------------------------------------------------- //
-type XHRPost = {
+interface IXHRPost {
   method: string
   headers: {
     [key: string]: string
@@ -30,7 +30,7 @@ class HTTPConnection extends EventEmitter {
   public status: string
   public url: string
   public pollId: string
-  public post: XHRPost
+  public post: IXHRPost
   public subscriptionTimeout: any
 
   constructor (url: string) {
@@ -54,11 +54,13 @@ class HTTPConnection extends EventEmitter {
       return
     }
     this.on('error', () => {
-      if (this.connected) this.close()
+      if (this.connected) {
+        this.close()
+      }
     })
     this.init()
   }
-  init () {
+  public init () {
     this.send(
       { jsonrpc: '2.0', method: 'eth_syncing', params: [], id: 1 },
       (err: IError, response: any) => {
@@ -85,7 +87,7 @@ class HTTPConnection extends EventEmitter {
       }
     )
   }
-  pollSubscriptions () {
+  public pollSubscriptions () {
     this.send(
       {
         jsonrpc: '2.0',
@@ -122,27 +124,31 @@ class HTTPConnection extends EventEmitter {
       }
     )
   }
-  close () {
+  public close () {
     this.closed = true
     this.emit('close')
     clearTimeout(this.subscriptionTimeout)
     this.removeAllListeners()
   }
-  filterStatus (res: any) {
-    if (res.status >= 200 && res.status < 300) return res
-    let error: IError = new Error(res.statusText)
+  public filterStatus (res: any) {
+    if (res.status >= 200 && res.status < 300) {
+      return res
+    }
+    const error: IError = new Error(res.statusText)
     error.res = res
     throw error.message
   }
-  error (payload: any, message: string, code = -1) {
+  public error (payload: any, message: string, code = -1) {
     this.emit('payload', {
       id: payload.id,
       jsonrpc: payload.jsonrpc,
       error: { message, code }
     })
   }
-  send (payload: any, internal?: any) {
-    if (this.closed) return this.error(payload, 'Not connected')
+  public send (payload: any, internal?: any) {
+    if (this.closed) {
+      return this.error(payload, 'Not connected')
+    }
     if (payload.method === 'eth_subscribe') {
       if (this.subscriptions) {
         payload.pollId = this.pollId
@@ -153,17 +159,17 @@ class HTTPConnection extends EventEmitter {
         )
       }
     }
-    let xhr = new XHR()
+    const xhr = new XHR()
     let responded = false
-    let res = (err: IError, result?: any) => {
+    const res = (err: IError, result?: any) => {
       if (!responded) {
         xhr.abort()
         responded = true
         if (internal) {
           internal(err, result)
         } else {
-          let { id, jsonrpc } = payload
-          let load = err
+          const { id, jsonrpc } = payload
+          const load = err
             ? { id, jsonrpc, error: { message: err.message, code: err.code } }
             : { id, jsonrpc, result }
           this.emit('payload', load)
@@ -182,7 +188,7 @@ class HTTPConnection extends EventEmitter {
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
         try {
-          let response = JSON.parse(xhr.responseText)
+          const response = JSON.parse(xhr.responseText)
           res(response.error, response.result)
         } catch (e) {
           res(e)

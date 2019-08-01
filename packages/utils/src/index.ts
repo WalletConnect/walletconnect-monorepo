@@ -613,13 +613,15 @@ export function isReservedEvent (event: string) {
 
 export const signingMethods = [
   'eth_sendTransaction',
-  'eth_signTransction',
+  'eth_signTransaction',
   'eth_sign',
   'eth_signTypedData',
   'eth_signTypedData_v1',
   'eth_signTypedData_v3',
   'personal_sign'
 ]
+
+export const stateMethods = ['eth_accounts', 'eth_chainId', 'net_version']
 
 export function isSilentPayload (request: IJsonRpcRequest): boolean {
   if (request.method.startsWith('wc_')) {
