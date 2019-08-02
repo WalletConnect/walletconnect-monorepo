@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@walletconnect/core": "^1.0.0-beta.32",
+    "@walletconnect/socket-transport": "^1.0.0-beta.32",
     "@walletconnect/types": "^1.0.0-beta.32",
     "@walletconnect/utils": "^1.0.0-beta.32"
   },

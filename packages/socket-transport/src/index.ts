@@ -1,4 +1,8 @@
-import { ISocketMessage, ITransportEvent } from '@walletconnect/types'
+import {
+  ISocketMessage,
+  ITransportEvent
+  // ITransportLib
+} from '@walletconnect/types'
 
 interface ISocketTransportOptions {
   bridge: string

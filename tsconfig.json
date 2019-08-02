@@ -29,6 +29,7 @@
     { "path": "./packages/browser" },
     { "path": "./packages/core" },
     { "path": "./packages/react-native" },
+    { "path": "./packages/socket-transport" },
     { "path": "./packages/utils" },
     { "path": "./packages/qrcode-modal" },
     { "path": "./packages/web3-subprovider" },

@@ -5,6 +5,7 @@ import {
   IPushServerOptions,
   IPushSubscription
 } from '@walletconnect/types'
+import SocketTransport from '@walletconnect/socket-transport'
 import * as cryptoLib from './nativeCrypto'
 
 class RNWalletConnect extends Connector {
@@ -12,7 +13,16 @@ class RNWalletConnect extends Connector {
     opts: IWalletConnectOptions,
     walletOptions: INativeWalletOptions
   ) {
-    super(cryptoLib, opts, null, null, walletOptions.clientMeta)
+    super(
+      cryptoLib,
+      opts,
+      {
+        transport: SocketTransport,
+        params: ['bridge', 'clientId']
+      },
+      null,
+      walletOptions.clientMeta
+    )
     if (walletOptions.push) {
       this.registerPushServer(walletOptions.push)
     }
