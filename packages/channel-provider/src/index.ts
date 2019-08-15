@@ -1,10 +1,9 @@
-import EthereumProvider from './provider'
+import ChannelProvider from './provider'
 import WalletConnectConnection from './connection'
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
 import { Node as NodeTypes } from "@counterfactual/types";
 import { BigNumber } from "ethers/utils";
-
-class WalletConnectChannelProvider extends EthereumProvider {
+class WalletConnectChannelProvider extends ChannelProvider {
   constructor (opts: IWalletConnectConnectionOptions) {
     const connection = new WalletConnectConnection(opts)
     super(connection)
@@ -15,90 +14,82 @@ class WalletConnectChannelProvider extends EthereumProvider {
     assetId: string,
     notifyCounterparty: boolean = false,
   ): Promise<NodeTypes.DepositResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.DEPOSIT,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.DEPOSIT,
+      [
         amount,
-        multisigAddress: this.opts.multisigAddress,  //TODO where do we get multisigAddress?
+        this.multisigAddress,  //TODO where do we get multisigAddress?
         notifyCounterparty,
-        tokenAddress: assetId,
-      } as NodeTypes.DepositParams,
-    })
+        assetId,
+       ],
+    )
     return result;
   };
 
   public getAppInstances = async (): Promise<any> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.GET_APP_INSTANCES,
-      parameters: {} as NodeTypes.GetAppInstancesParams,
-    });
-
+    const result = await this._send(
+      NodeTypes.RpcMethodName.GET_APP_INSTANCES,
+      [],
+    );
     return result;
   };
 
   public getFreeBalance = async (
     assetId: string,
   ): Promise<NodeTypes.GetFreeBalanceStateResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.GET_FREE_BALANCE_STATE,
-      parameters: {
-        multisigAddress: this.multisigAddress, //TODO where does this come from?
-        tokenAddress: assetId,
-      },
-    });
+    const result = await this._send(
+      NodeTypes.RpcMethodName.GET_FREE_BALANCE_STATE,
+      [
+        this.multisigAddress, //TODO
+        assetId,
+      ],
+    );
     return result;
   }
 
   public getProposedAppInstances = async (): Promise<
     NodeTypes.GetProposedAppInstancesResult | undefined
   > => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.GET_PROPOSED_APP_INSTANCES,
-      parameters: {} as NodeTypes.GetProposedAppInstancesParams,
-    });
+    const result = await this._send(
+      NodeTypes.RpcMethodName.GET_PROPOSED_APP_INSTANCES,
+      [],
+    );
     return result;
   };
 
   public getProposedAppInstance = async (
     appInstanceId: string,
   ): Promise<NodeTypes.GetProposedAppInstanceResult | undefined> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.GET_PROPOSED_APP_INSTANCES,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.GET_PROPOSED_APP_INSTANCES,
+      [
         appInstanceId,
-      } as NodeTypes.GetProposedAppInstancesParams,
-    });
+      ],
+    );
     return result;
   };
 
   public getAppInstanceDetails = async (
     appInstanceId: string,
   ): Promise<NodeTypes.GetAppInstanceDetailsResult | undefined> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.GET_APP_INSTANCE_DETAILS,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.GET_APP_INSTANCE_DETAILS,
+      [
         appInstanceId,
-      } as NodeTypes.GetAppInstanceDetailsParams,
-    });
+      ],
+    );
     return result;
   };
 
   public getAppState = async (
     appInstanceId: string,
   ): Promise<NodeTypes.GetStateResult | undefined> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.GET_STATE,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.GET_STATE,
+      [
         appInstanceId,
-      } as NodeTypes.GetStateParams,
-    });
+      ],
+    );
     return result;
   };
 
@@ -106,15 +97,13 @@ class WalletConnectChannelProvider extends EthereumProvider {
     appInstanceId: string,
     action: any,
   ): Promise<NodeTypes.TakeActionResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.TAKE_ACTION,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.TAKE_ACTION,
+      [
         action,
         appInstanceId,
-      } as NodeTypes.TakeActionParams,
-    });
-
+      ],
+    );
     return result;
   };
 
@@ -122,112 +111,101 @@ class WalletConnectChannelProvider extends EthereumProvider {
     appInstanceId: string,
     newState: any,
   ): Promise<NodeTypes.UpdateStateResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.UPDATE_STATE,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.UPDATE_STATE,
+      [
         appInstanceId,
         newState,
-      } as NodeTypes.UpdateStateParams,
-    });
+      ],
+    );
     return result;
   };
 
   public proposeInstallVirtualApp = async (
     params: NodeTypes.ProposeInstallVirtualParams, //TODO THIS HAS TO CHANGE
   ): Promise<NodeTypes.ProposeInstallVirtualResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.PROPOSE_INSTALL_VIRTUAL,
-      parameters: params,
-    });
+    const result = await this._send(
+      NodeTypes.RpcMethodName.PROPOSE_INSTALL_VIRTUAL,
+      [params],
+    );
     return result;
   };
 
   public proposeInstallApp = async (
     params: NodeTypes.ProposeInstallParams, //TODO THIS HAS TO CHANGE
   ): Promise<NodeTypes.ProposeInstallResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.PROPOSE_INSTALL,
-      parameters: params,
-    });
+    const result = await this._send(
+      NodeTypes.RpcMethodName.PROPOSE_INSTALL,
+      [params],
+    );
     return result;
   };
 
   public installVirtualApp = async (
     appInstanceId: string,
   ): Promise<NodeTypes.InstallVirtualResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.INSTALL_VIRTUAL,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.INSTALL_VIRTUAL,
+      [
         appInstanceId,
-        intermediaries: [this.nodePublicIdentifier], //TODO How do we find this?
-      } as NodeTypes.InstallVirtualParams,
-    });
+        [this.nodePublicIdentifier], //TODO How do we find this?
+      ],
+    );
     return result;
   };
 
   public installApp = async (appInstanceId: string): Promise<NodeTypes.InstallResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.INSTALL,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.INSTALL,
+      [
         appInstanceId,
-      } as NodeTypes.InstallParams,
-    });
+      ],
+    );
     return result;
   };
 
   public uninstallApp = async (appInstanceId: string): Promise<NodeTypes.UninstallResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.UNINSTALL,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.UNINSTALL,
+      [
         appInstanceId,
-      },
-    });
+      ],
+    );
     return result;
   };
 
   public uninstallVirtualApp = async (
     appInstanceId: string,
   ): Promise<NodeTypes.UninstallVirtualResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.UNINSTALL_VIRTUAL,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.UNINSTALL_VIRTUAL,
+      [
         appInstanceId,
-        intermediaryIdentifier: this.nodePublicIdentifier, //TODO
-      } as NodeTypes.UninstallVirtualParams,
-    });
+        this.nodePublicIdentifier, //TODO
+      ],
+    );
     return result;
   };
 
   public rejectInstallApp = async (appInstanceId: string): Promise<NodeTypes.UninstallResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.REJECT_INSTALL,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.REJECT_INSTALL,
+      [
         appInstanceId,
-      } as NodeTypes.RejectInstallParams,
-    });
-
+      ],
+    );
     return result;
   };
 
   public rejectInstallVirtualApp = async (
     appInstanceId: string,
   ): Promise<NodeTypes.UninstallVirtualResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.REJECT_INSTALL,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.REJECT_INSTALL,
+      [
         appInstanceId,
-      } as NodeTypes.RejectInstallParams,
-    });
-
+      ],
+    );
     return result;
   };
 
@@ -236,20 +214,17 @@ class WalletConnectChannelProvider extends EthereumProvider {
     amount: BigNumber,
     recipient: string,
   ): Promise<NodeTypes.WithdrawResult> => {
-    const result = await this.connection.send({
-      id: Date.now(),
-      method: NodeTypes.RpcMethodName.WITHDRAW,
-      parameters: {
+    const result = await this._send(
+      NodeTypes.RpcMethodName.WITHDRAW,
+      [
         amount,
-        multisigAddress: this.multisigAddress,
+        this.multisigAddress, //TODO
         recipient,
-        tokenAddress: assetId,
-      },
-    });
-
+        assetId,
+      ],
+    );
     return result;
   };
-
 }
 
 export default WalletConnectChannelProvider
