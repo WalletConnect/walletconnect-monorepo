@@ -129,13 +129,9 @@ class WalletConnectConnection extends EventEmitter {
   public async send (payload: any) {
     if (this.wc && this.wc.connected) {
       if (
-        signingMethods.includes(payload.method) &&
-        payload.method.includes('wallet_')
+        payload.method.includes('chan_')
       ) {
         const response = await this.wc.unsafeSend(payload)
-        this.emit('payload', response)
-      } else if (stateMethods.includes(payload.method)) {
-        const response = await this.handleStateMethods(payload)
         this.emit('payload', response)
       } else {
         if (this.http) {

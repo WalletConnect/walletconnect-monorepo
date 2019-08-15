@@ -22,11 +22,10 @@ class ChannelProvider extends EventEmitter {
   public promises: IPromisesMap = {}
   public subscriptions: number[] = []
   public connection: WalletConnectConnection
-  public accounts: string[] = []
-  public coinbase: string = ''
   public attemptedNetworkSubscription: boolean = false
   public attemptedChainSubscription: boolean = false
   public attemptedAccountsSubscription: boolean = false
+  public config: any
 
   constructor (connection: WalletConnectConnection) {
     super()
@@ -136,15 +135,13 @@ class ChannelProvider extends EventEmitter {
   }
   public enable () {
     return new Promise((resolve, reject) => {
-      this._send('eth_accounts')
-        .then((accounts: string[]) => {
-          if (accounts.length > 0) {
-            this.accounts = accounts
-            this.coinbase = accounts[0]
-            this.emit('enable')
-            resolve(accounts)
+      this._send('chan_config')
+        .then((config) => {
+          if (config.length > 0) {
+            this.config = config
+            resolve(config)
           } else {
-            const err: IError = new Error('User Denied Full Provider')
+            const err: IError = new Error('User Denied Channel Config')
             err.code = 4001
             reject(err)
           }
