@@ -1,8 +1,6 @@
 import EventEmitter from 'events'
 import {
   convertNumberToHex,
-  signingMethods,
-  stateMethods
 } from '@walletconnect/utils'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
