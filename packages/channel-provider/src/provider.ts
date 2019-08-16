@@ -136,7 +136,7 @@ class ChannelProvider extends EventEmitter {
   public enable () {
     return new Promise((resolve, reject) => {
       this._send('chan_config')
-        .then((config) => {
+        .then(config => {
           if (config.length > 0) {
             this.config = config
             resolve(config)

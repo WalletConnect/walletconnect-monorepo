@@ -139,7 +139,7 @@ class WalletConnectConnection extends EventEmitter {
         this.emit('payload', response)
       } else {
         if (this.http) {
-          await this.http.send(payload)
+          this.http.send(payload)
         } else {
           this.error(payload, 'HTTP Connection not available')
         }

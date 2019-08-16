@@ -1,7 +1,5 @@
 import EventEmitter from 'events'
-import {
-  convertNumberToHex,
-} from '@walletconnect/utils'
+import { convertNumberToHex } from '@walletconnect/utils'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
 import HTTPConnection from './http'
@@ -126,14 +124,12 @@ class WalletConnectConnection extends EventEmitter {
   }
   public async send (payload: any) {
     if (this.wc && this.wc.connected) {
-      if (
-        payload.method.includes('chan_')
-      ) {
+      if (payload.method.includes('chan_')) {
         const response = await this.wc.unsafeSend(payload)
         this.emit('payload', response)
       } else {
         if (this.http) {
-          await this.http.send(payload)
+          this.http.send(payload)
         } else {
           this.error(payload, 'HTTP Connection not available')
         }
