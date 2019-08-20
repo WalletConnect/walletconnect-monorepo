@@ -149,12 +149,12 @@ class ChannelProvider extends EventEmitter {
         .catch(reject)
     })
   }
-  public _send (method?: string, params: any[] = []) {
+  public _send (method?: string, params?: any) {
     if (!method || typeof method !== 'string') {
       throw new Error('Method is not a valid string.')
     }
-    if (!(params instanceof Array)) {
-      throw new Error('Params is not a valid array.')
+    if (!(params instanceof Object)) {
+      throw new Error('Params is not a valid object.')
     }
     const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
     const promise: Promise<any> = new Promise((resolve, reject) => {
