@@ -927,8 +927,8 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest () {
-    if (this._transport.subscribeTo) {
-      this._transport.subscribeTo(this.handshakeTopic)
+    if (this._transport.subscribe) {
+      this._transport.subscribe(this.handshakeTopic)
     }
   }
 

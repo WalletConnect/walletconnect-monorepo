@@ -61,7 +61,7 @@ class SocketTransport {
     this._events.push({ event, callback })
   }
 
-  public subscribeTo (topic: string) {
+  public subscribe (topic: string) {
     this._socketSend({
       topic: topic,
       type: 'sub',

@@ -49,7 +49,7 @@ declare module '@walletconnect/types' {
     send: (message: string, topic?: string, silent?: boolean) => void
     close: () => void
     on: (event: string, callback: (payload: any) => void) => void
-    subscribeTo?: (topic: string) => void
+    subscribe?: (topic: string) => void
   }
 
   export interface ITransportEvent {
