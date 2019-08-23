@@ -99,7 +99,7 @@ export function convertUtf8ToArrayBuffer (utf8: string): ArrayBuffer {
 }
 
 export function convertUtf8ToBuffer (utf8: string): Buffer {
-  const result = new Buffer(utf8, 'utf8')
+  const result = Buffer.from(utf8, 'utf8')
   return result
 }
 
@@ -149,7 +149,7 @@ export function convertNumberToHex (
 
 export function convertHexToBuffer (hex: string): Buffer {
   hex = removeHexPrefix(hex)
-  const buffer = new Buffer(hex, 'hex')
+  const buffer = Buffer.from(hex, 'hex')
   return buffer
 }
 
@@ -468,8 +468,12 @@ export function promisify (
   return promisifiedFunction
 }
 
+export function isEmptyArray (array: any[]): boolean {
+  return !(array && array.length)
+}
+
 export function parsePersonalSign (params: string[]): string[] {
-  if (!isHexString(params[0])) {
+  if (!isEmptyArray(params) && !isHexString(params[0])) {
     params[0] = convertUtf8ToHex(params[0])
   }
   return params
@@ -609,13 +613,15 @@ export function isReservedEvent (event: string) {
 
 export const signingMethods = [
   'eth_sendTransaction',
-  'eth_signTransction',
+  'eth_signTransaction',
   'eth_sign',
   'eth_signTypedData',
   'eth_signTypedData_v1',
   'eth_signTypedData_v3',
   'personal_sign'
 ]
+
+export const stateMethods = ['eth_accounts', 'eth_chainId', 'net_version']
 
 export function isSilentPayload (request: IJsonRpcRequest): boolean {
   if (request.method.startsWith('wc_')) {

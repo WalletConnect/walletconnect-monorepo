@@ -15,18 +15,17 @@ interface IPromisesMap {
   [id: number]: { resolve: (res: any) => void; reject: (err: any) => void }
 }
 
-// -- EthereumProvider ---------------------------------------------------- //
+// -- ChannelProvider ---------------------------------------------------- //
 
-class EthereumProvider extends EventEmitter {
+class ChannelProvider extends EventEmitter {
   public connected: boolean = false
   public promises: IPromisesMap = {}
   public subscriptions: number[] = []
   public connection: WalletConnectConnection
-  public accounts: string[] = []
-  public coinbase: string = ''
   public attemptedNetworkSubscription: boolean = false
   public attemptedChainSubscription: boolean = false
   public attemptedAccountsSubscription: boolean = false
+  public config: any
 
   constructor (connection: WalletConnectConnection) {
     super()
@@ -136,15 +135,13 @@ class EthereumProvider extends EventEmitter {
   }
   public enable () {
     return new Promise((resolve, reject) => {
-      this._send('eth_accounts')
-        .then((accounts: string[]) => {
-          if (accounts.length > 0) {
-            this.accounts = accounts
-            this.coinbase = accounts[0]
-            this.emit('enable')
-            resolve(accounts)
+      this._send('chan_config')
+        .then(config => {
+          if (config.length > 0) {
+            this.config = config
+            resolve(config)
           } else {
-            const err: IError = new Error('User Denied Full Provider')
+            const err: IError = new Error('User Denied Channel Config')
             err.code = 4001
             reject(err)
           }
@@ -152,12 +149,12 @@ class EthereumProvider extends EventEmitter {
         .catch(reject)
     })
   }
-  public _send (method?: string, params: any[] = []) {
+  public _send (method?: string, params?: any) {
     if (!method || typeof method !== 'string') {
       throw new Error('Method is not a valid string.')
     }
-    if (!(params instanceof Array)) {
-      throw new Error('Params is not a valid array.')
+    if (!(params instanceof Object)) {
+      throw new Error('Params is not a valid object.')
     }
     const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
     const promise: Promise<any> = new Promise((resolve, reject) => {
@@ -249,4 +246,4 @@ class EthereumProvider extends EventEmitter {
   }
 }
 
-export default EthereumProvider
+export default ChannelProvider

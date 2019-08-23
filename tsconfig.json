@@ -33,6 +33,7 @@
     { "path": "./packages/qrcode-modal" },
     { "path": "./packages/web3-subprovider" },
     { "path": "./packages/web3-provider" },
-    { "path": "./packages/eth-provider" }
+    { "path": "./packages/eth-provider" },
+    { "path": "./packages/channel-provider" }
   ]
 }

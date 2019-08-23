@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/browser",
-  "version": "1.0.0-beta.29",
+  "version": "1.0.0-beta.33",
   "description": "Browser SDK for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
@@ -54,9 +54,9 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/core": "^1.0.0-beta.29",
-    "@walletconnect/types": "^1.0.0-beta.29",
-    "@walletconnect/utils": "^1.0.0-beta.29"
+    "@walletconnect/core": "^1.0.0-beta.33",
+    "@walletconnect/types": "^1.0.0-beta.33",
+    "@walletconnect/utils": "^1.0.0-beta.33"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

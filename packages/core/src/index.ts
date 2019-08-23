@@ -1,4 +1,5 @@
 import {
+  IConnector,
   ICryptoLib,
   ITransportLib,
   ISessionStorage,
@@ -49,7 +50,7 @@ import EventManager from './events'
 
 // -- Connector ------------------------------------------------------------ //
 
-class Connector {
+class Connector implements IConnector {
   private cryptoLib: ICryptoLib
 
   private protocol: string
@@ -735,7 +736,7 @@ class Connector {
 
   // -- private --------------------------------------------------------- //
 
-  private async _sendRequest (
+  protected async _sendRequest (
     request: Partial<IJsonRpcRequest>,
     _topic?: string
   ) {
@@ -752,7 +753,7 @@ class Connector {
     this._transport.send(payload, topic, silent)
   }
 
-  private async _sendResponse (
+  protected async _sendResponse (
     response: IJsonRpcResponseSuccess | IJsonRpcResponseError
   ) {
     const encryptionPayload: IEncryptionPayload | null = await this._encrypt(
@@ -766,7 +767,7 @@ class Connector {
     this._transport.send(payload, topic, silent)
   }
 
-  private async _sendSessionRequest (
+  protected async _sendSessionRequest (
     request: IJsonRpcRequest,
     errorMsg: string,
     _topic?: string
@@ -775,12 +776,12 @@ class Connector {
     this._subscribeToSessionResponse(request.id, errorMsg)
   }
 
-  private _sendCallRequest (request: IJsonRpcRequest): Promise<any> {
+  protected _sendCallRequest (request: IJsonRpcRequest): Promise<any> {
     this._sendRequest(request)
     return this._subscribeToCallResponse(request.id)
   }
 
-  private _formatRequest (request: Partial<IJsonRpcRequest>): IJsonRpcRequest {
+  protected _formatRequest (request: Partial<IJsonRpcRequest>): IJsonRpcRequest {
     if (typeof request.method === 'undefined') {
       throw new Error(ERROR_MISSING_METHOD)
     }
@@ -793,7 +794,7 @@ class Connector {
     return formattedRequest
   }
 
-  private _formatResponse (
+  protected _formatResponse (
     response: Partial<IJsonRpcResponseSuccess | IJsonRpcResponseError>
   ): IJsonRpcResponseSuccess | IJsonRpcResponseError {
     if (typeof response.id === 'undefined') {
@@ -1003,10 +1004,6 @@ class Connector {
       this._handleSessionResponse('Session disconnected', payload.params[0])
     })
   }
-
-  // -- keyManager ------------------------------------------------------- //
-
-  // TODO: Refactor with new exchange key flow
 
   // -- uri ------------------------------------------------------------- //
 
