@@ -11,6 +11,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 | @walletconnect/utils            | [![npm version](https://badge.fury.io/js/%40walletconnect%2Futils.svg)](https://badge.fury.io/js/%40walletconnect%2Futils)                       | Utility Library  |
 | @walletconnect/types            | [![npm version](https://badge.fury.io/js/%40walletconnect%2Ftypes.svg)](https://badge.fury.io/js/%40walletconnect%2Ftypes)                       | Typescript Types |
 | @walletconnect/eth-provider     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Feth-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Feth-provider)         | ETH Provider     |
+| @walletconnect/channel-provider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fchannel-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fchannel-provider) | Channel Provider |
 | @walletconnect/web3-provider    | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider)       | Web3 Provider    |
 | @walletconnect/web3-subprovider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider) | Web3 Subprovider |
 | @walletconnect/qrcode-modal     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal.svg)](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal)         | QR Code Modal    |
