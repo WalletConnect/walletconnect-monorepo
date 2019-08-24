@@ -1,7 +1,12 @@
-import { ISocketMessage, ITransportEvent } from '@walletconnect/types'
+import {
+  NetworkMonitor,
+  ISocketMessage,
+  ITransportEvent
+} from '@walletconnect/types'
 
 interface ISocketTransportOptions {
   url: string
+  getNetMonitor?: () => NetworkMonitor
   subscriptions?: string[]
 }
 
@@ -10,6 +15,7 @@ interface ISocketTransportOptions {
 class SocketTransport {
   private _initiating: boolean
   private _url: string
+  private _netMonitor: NetworkMonitor | null
   private _socket: WebSocket | null
   private _nextSocket: WebSocket | null
   private _queue: ISocketMessage[] = []
@@ -21,6 +27,7 @@ class SocketTransport {
   constructor (opts: ISocketTransportOptions) {
     this._initiating = false
     this._url = ''
+    this._netMonitor = null
     this._socket = null
     this._nextSocket = null
     this._subscriptions = opts.subscriptions || []
@@ -31,7 +38,13 @@ class SocketTransport {
 
     this._url = opts.url
 
-    window.addEventListener('online', () => this._socketCreate())
+    if (!opts.getNetMonitor || typeof opts.getNetMonitor !== 'function') {
+      throw new Error('Missing or invalid Network Monitor')
+    }
+
+    this._netMonitor = opts.getNetMonitor()
+
+    this._netMonitor.on('online', () => this._socketCreate())
   }
 
   // -- public ---------------------------------------------------------- //
@@ -61,7 +74,7 @@ class SocketTransport {
     this._events.push({ event, callback })
   }
 
-  public subscribe (topic: string) {
+  public listen (topic: string) {
     this._socketSend({
       topic: topic,
       type: 'sub',

@@ -15,7 +15,8 @@ import {
   IParseURIResult,
   ISessionParams,
   IWalletConnectOptions,
-  IUpdateChainParams
+  IUpdateChainParams,
+  NetworkMonitor
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -82,6 +83,7 @@ class Connector implements IConnector {
     opts: IWalletConnectOptions,
     transport?: ITransportLib | null,
     storage?: ISessionStorage | null,
+    getNetMonitor?: () => NetworkMonitor,
     clientMeta?: IClientMeta | null
   ) {
     this.cryptoLib = cryptoLib
@@ -143,6 +145,7 @@ class Connector implements IConnector {
       transport ||
       new SocketTransport({
         url: this.bridge,
+        getNetMonitor: getNetMonitor,
         subscriptions: [this.clientId]
       })
 
@@ -916,10 +919,10 @@ class Connector implements IConnector {
     }
 
     const payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | null = await this._decrypt(encryptionPayload)
+      | IJsonRpcRequest
+      | IJsonRpcResponseSuccess
+      | IJsonRpcResponseError
+      | null = await this._decrypt(encryptionPayload)
 
     if (payload) {
       this._eventManager.trigger(payload)
@@ -927,8 +930,8 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest () {
-    if (this._transport.subscribe) {
-      this._transport.subscribe(this.handshakeTopic)
+    if (this._transport.listen) {
+      this._transport.listen(this.handshakeTopic)
     }
   }
 
@@ -1071,10 +1074,10 @@ class Connector implements IConnector {
     const key: ArrayBuffer | null = this._key
     if (this.cryptoLib && key) {
       const result:
-      | IJsonRpcRequest
-      | IJsonRpcResponseSuccess
-      | IJsonRpcResponseError
-      | null = await this.cryptoLib.decrypt(payload, key)
+        | IJsonRpcRequest
+        | IJsonRpcResponseSuccess
+        | IJsonRpcResponseError
+        | null = await this.cryptoLib.decrypt(payload, key)
       return result
     }
     return null

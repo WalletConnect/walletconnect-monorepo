@@ -28,10 +28,10 @@ class EventManager {
 
   public trigger (
     payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | IInternalEvent
+      | IJsonRpcRequest
+      | IJsonRpcResponseSuccess
+      | IJsonRpcResponseError
+      | IInternalEvent
   ): void {
     let eventEmitters: IEventEmitter[] = []
     let event: string

@@ -1,3 +1,5 @@
+import { ClassElement } from 'typescript'
+
 declare module '@walletconnect/types' {
   export interface IConnector {
     bridge: string
@@ -46,15 +48,26 @@ declare module '@walletconnect/types' {
 
   export interface ITransportLib {
     open: () => void
-    send: (message: string, topic?: string, silent?: boolean) => void
     close: () => void
+    send: (message: string, topic?: string, silent?: boolean) => void
+    listen: (topic: string) => void
     on: (event: string, callback: (payload: any) => void) => void
-    subscribe?: (topic: string) => void
   }
 
   export interface ITransportEvent {
     event: string
     callback: (payload: any) => void
+  }
+
+  export type NetworkEvent = 'online' | 'offline'
+
+  export interface NetworkMonitor {
+    on: (event: NetworkEvent, callback: () => void) => void
+  }
+
+  export interface INetworkEventEmitter {
+    event: NetworkEvent
+    callback: () => void
   }
 
   export interface ISessionStorage {

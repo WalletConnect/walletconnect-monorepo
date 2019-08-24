@@ -5,14 +5,15 @@ import {
   IPushServerOptions,
   IPushSubscription
 } from '@walletconnect/types'
-import * as cryptoLib from './nativeCrypto'
+import * as cryptoLib from './rnCrypto'
+import { getNetMonitor } from './rnNetMonitor'
 
 class RNWalletConnect extends Connector {
   constructor (
     opts: IWalletConnectOptions,
     walletOptions: INativeWalletOptions
   ) {
-    super(cryptoLib, opts, null, null, walletOptions.clientMeta)
+    super(cryptoLib, opts, null, null, getNetMonitor, walletOptions.clientMeta)
     if (walletOptions.push) {
       this.registerPushServer(walletOptions.push)
     }
