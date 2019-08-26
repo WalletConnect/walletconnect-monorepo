@@ -1,4 +1,4 @@
-import pkg from '../package.json'
+// import pkg from "../package.json";
 import WalletConnect from '@walletconnect/browser'
 import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 import ProviderEngine from 'web3-provider-engine'
@@ -8,96 +8,160 @@ import FilterSubprovider from 'web3-provider-engine/subproviders/filters'
 import HookedWalletSubprovider from 'web3-provider-engine/subproviders/hooked-wallet'
 import NonceSubprovider from 'web3-provider-engine/subproviders/nonce-tracker'
 import SubscriptionsSubprovider from 'web3-provider-engine/subproviders/subscriptions'
+import HTTPConnection from './http'
 
-export default function WalletConnectProvider (opts) {
-  const qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
+// TODO: DELETE THIS
+const pkg = {
+  version: '1.0.0-beta.31'
+}
 
-  const bridge = opts.bridge || null
+class WalletConnectProvider extends ProviderEngine {
+  constructor (opts) {
+    super()
 
-  if (!bridge || typeof bridge !== 'string') {
-    throw new Error('Missing or Invalid bridge field')
-  }
+    this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
 
-  const wc = new WalletConnect({ bridge })
+    this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
 
-  wc.on('disconnect', (error, payload) => {
-    if (error) {
-      throw error
+    if (
+      !opts.infuraId ||
+      typeof opts.infuraId !== 'string' ||
+      !opts.infuraId.trim()
+    ) {
+      throw new Error('Invalid or missing Infura App ID')
     }
 
-    engine.stop()
-  })
+    this.infuraId = opts.infuraId
+    this.wc = new WalletConnect({ bridge: this.bridge })
+    this.isConnecting = false
+    this.isWalletConnect = true
+    this.connectCallbacks = []
+    this.accounts = []
+    this.chainId = 1
+    this.networkId = 1
+    this.rpcUrl = ''
+    this.updateRpcUrl(this.chainId)
 
-  const engine = new ProviderEngine()
+    this.addProvider(
+      new FixtureSubprovider({
+        eth_hashrate: '0x00',
+        eth_mining: false,
+        eth_syncing: true,
+        net_listening: true,
+        web3_clientVersion: `WalletConnect/v${pkg.version}/javascript`
+      })
+    )
+    this.addProvider(new CacheSubprovider())
+    this.addProvider(new SubscriptionsSubprovider())
+    this.addProvider(new FilterSubprovider())
+    this.addProvider(new NonceSubprovider())
+    this.addProvider(
+      new HookedWalletSubprovider({
+        getAccounts: async cb => {
+          try {
+            const wc = await this.getWalletConnector()
+            const accounts = wc.accounts
+            if (accounts && accounts.length) {
+              cb(null, accounts)
+            } else {
+              cb(new Error('Failed to get accounts'))
+            }
+          } catch (error) {
+            cb(error)
+          }
+        },
+        processMessage: async (msgParams, cb) => {
+          try {
+            const wc = await this.getWalletConnector()
+            const result = await wc.signMessage([
+              msgParams.from,
+              msgParams.data
+            ])
+            cb(null, result)
+          } catch (error) {
+            cb(error)
+          }
+        },
+        processPersonalMessage: async (msgParams, cb) => {
+          try {
+            const wc = await this.getWalletConnector()
+            const result = await wc.signPersonalMessage([
+              msgParams.data,
+              msgParams.from
+            ])
+            cb(null, result)
+          } catch (error) {
+            cb(error)
+          }
+        },
+        processSignTransaction: async (txParams, cb) => {
+          try {
+            const wc = await this.getWalletConnector()
+            const result = await wc.signTransaction(txParams)
+            cb(null, result)
+          } catch (error) {
+            cb(error)
+          }
+        },
+        processTransaction: async (txParams, cb) => {
+          try {
+            const wc = await this.getWalletConnector()
+            const result = await wc.sendTransaction(txParams)
+            cb(null, result)
+          } catch (error) {
+            cb(error)
+          }
+        },
+        processTypedMessage: async (msgParams, cb) => {
+          try {
+            const wc = await this.getWalletConnector()
+            const result = await wc.signTypedData([
+              msgParams.from,
+              msgParams.data
+            ])
+            cb(null, result)
+          } catch (error) {
+            cb(error)
+          }
+        }
+      })
+    )
 
-  engine.isConnecting = false
-
-  engine.connectCallbacks = []
-
-  function onConnect (callback) {
-    engine.connectCallbacks.push(callback)
+    this.addProvider({
+      handleRequest: async (payload, next, end) => {
+        try {
+          const { result } = await this.handleRequest(payload)
+          end(null, result)
+        } catch (error) {
+          end(error)
+        }
+      },
+      setEngine: _ => _
+    })
   }
 
-  function triggerConnect (result) {
-    if (engine.connectCallbacks && engine.connectCallbacks.length) {
-      engine.connectCallbacks.forEach(callback => callback(result))
-    }
-  }
-
-  async function handleRequest (payload) {
-    let result = null
-    try {
-      const walletConnector = await engine.getWalletConnector()
-
-      switch (payload.method) {
-        case 'wc_killSession':
-          await walletConnector.killSession()
-          await engine.stop()
-          result = null
-          break
-        case 'eth_accounts':
-          result = walletConnector.accounts
-          break
-
-        case 'eth_coinbase':
-          result = walletConnector.accounts[0]
-          break
-
-        case 'eth_chainId':
-          result = walletConnector.chainId
-          break
-
-        case 'net_version':
-          result = walletConnector.networkId || walletConnector.chainId
-          break
-
-        case 'eth_uninstallFilter':
-          engine.sendAsync(payload, _ => _)
-          result = true
-          break
-
-        default:
-          result = await walletConnector.sendCustomRequest(payload)
-          break
+  enable () {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const wc = await this.getWalletConnector()
+        if (wc) {
+          this.start()
+          this.subscribeWalletConnector()
+          resolve(wc.accounts)
+        } else {
+          return reject(new Error('Failed to connect to WalleConnect'))
+        }
+      } catch (error) {
+        return reject(error)
       }
-    } catch (error) {
-      throw error
-    }
-
-    return {
-      id: payload.id,
-      jsonrpc: payload.jsonrpc,
-      result: result
-    }
+    })
   }
 
-  engine.wc = wc
-
-  engine.send = async (payload, callback) => {
+  async send (payload, callback) {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === 'string') {
       return new Promise((resolve, reject) => {
-        engine.sendAsync(
+        this.sendAsync(
           {
             id: 42,
             jsonrpc: '2.0',
@@ -117,163 +181,206 @@ export default function WalletConnectProvider (opts) {
 
     // Web3 1.0 beta.37 (and below) uses `send` with a callback for async queries
     if (callback) {
-      engine.sendAsync(payload, callback)
+      this.sendAsync(payload, callback)
       return
     }
 
-    const res = await handleRequest(payload, callback)
+    const res = await this.handleRequest(payload, callback)
 
     return res
   }
 
-  engine.addProvider(
-    new FixtureSubprovider({
-      eth_hashrate: '0x00',
-      eth_mining: false,
-      eth_syncing: true,
-      net_listening: true,
-      web3_clientVersion: `WalletConnect/v${pkg.version}/javascript`
-    })
-  )
+  onConnect (callback) {
+    this.connectCallbacks.push(callback)
+  }
 
-  engine.addProvider(new CacheSubprovider())
-  engine.addProvider(new SubscriptionsSubprovider())
-  engine.addProvider(new FilterSubprovider())
-  engine.addProvider(new NonceSubprovider())
+  triggerConnect (result) {
+    if (this.connectCallbacks && this.connectCallbacks.length) {
+      this.connectCallbacks.forEach(callback => callback(result))
+    }
+  }
 
-  engine.addProvider(
-    new HookedWalletSubprovider({
-      getAccounts: async cb => {
-        try {
-          const walletConnector = await engine.getWalletConnector()
-          const accounts = walletConnector.accounts
-          if (accounts && accounts.length) {
-            cb(null, accounts)
-          } else {
-            cb(new Error('Failed to get accounts'))
-          }
-        } catch (error) {
-          cb(error)
-        }
-      },
-      processMessage: async (msgParams, cb) => {
-        try {
-          const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.signMessage([
-            msgParams.from,
-            msgParams.data
-          ])
-          cb(null, result)
-        } catch (error) {
-          cb(error)
-        }
-      },
-      processPersonalMessage: async (msgParams, cb) => {
-        try {
-          const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.signPersonalMessage([
-            msgParams.data,
-            msgParams.from
-          ])
-          cb(null, result)
-        } catch (error) {
-          cb(error)
-        }
-      },
-      processSignTransaction: async (txParams, cb) => {
-        try {
-          const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.signTransaction(txParams)
-          cb(null, result)
-        } catch (error) {
-          cb(error)
-        }
-      },
-      processTransaction: async (txParams, cb) => {
-        try {
-          const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.sendTransaction(txParams)
-          cb(null, result)
-        } catch (error) {
-          cb(error)
-        }
-      },
-      processTypedMessage: async (msgParams, cb) => {
-        try {
-          const walletConnector = await engine.getWalletConnector()
-          const result = await walletConnector.signTypedData([
-            msgParams.from,
-            msgParams.data
-          ])
-          cb(null, result)
-        } catch (error) {
-          cb(error)
-        }
+  async close () {
+    const wc = await this.getWalletConnector()
+    await wc.killSession()
+    await this.stop()
+  }
+
+  async handleRequest (payload) {
+    let result = null
+
+    try {
+      const wc = await this.getWalletConnector()
+
+      switch (payload.method) {
+        case 'wc_killSession':
+          await this.close()
+          result = null
+          break
+        case 'eth_accounts':
+          result = wc.accounts
+          break
+
+        case 'eth_coinbase':
+          result = wc.accounts[0]
+          break
+
+        case 'eth_chainId':
+          result = wc.chainId
+          break
+
+        case 'net_version':
+          result = wc.networkId || wc.chainId
+          break
+
+        case 'eth_uninstallFilter':
+          this.sendAsync(payload, _ => _)
+          result = true
+          break
+
+        default:
+          return this.handleReadRequests(payload)
       }
-    })
-  )
+    } catch (error) {
+      throw error
+    }
 
-  engine.addProvider({
-    handleRequest: async (payload, next, end) => {
-      try {
-        const { result } = await handleRequest(payload)
-        end(null, result)
-      } catch (error) {
-        end(error)
-      }
-    },
-    setEngine: _ => _
-  })
+    return {
+      id: payload.id,
+      jsonrpc: payload.jsonrpc,
+      result: result
+    }
+  }
 
-  engine.enable = () =>
-    new Promise((resolve, reject) => {
-      engine.sendAsync({ method: 'eth_accounts' }, (error, response) => {
-        if (error) {
-          reject(error)
-        } else {
-          resolve(response.result)
-        }
-      })
-    })
+  async handleReadRequests (payload) {
+    if (!this.http) {
+      throw new Error('HTTP Connection not available')
+    }
+    return this.http.send(payload)
+  }
 
-  engine.getWalletConnector = () => {
+  getWalletConnector () {
     return new Promise((resolve, reject) => {
-      const walletConnector = engine.wc
+      const wc = this.wc
 
-      if (engine.isConnecting) {
-        onConnect(x => resolve(x))
-      } else if (!walletConnector.connected) {
-        engine.isConnecting = true
-        walletConnector
-          .createSession()
+      if (this.isConnecting) {
+        this.onConnect(x => resolve(x))
+      } else if (!wc.connected) {
+        this.isConnecting = true
+        wc.createSession()
           .then(() => {
-            if (qrcode) {
-              WalletConnectQRCodeModal.open(walletConnector.uri, () => {
+            if (this.qrcode) {
+              WalletConnectQRCodeModal.open(wc.uri, () => {
                 reject(new Error('User closed WalletConnect modal'))
               })
             }
-            walletConnector.on('connect', () => {
-              if (qrcode) {
+            wc.on('connect', payload => {
+              if (this.qrcode) {
                 WalletConnectQRCodeModal.close()
               }
-              engine.isConnecting = false
-              triggerConnect(walletConnector)
-              resolve(walletConnector)
+              this.isConnecting = false
+
+              if (payload) {
+                // Handle session update
+                this.updateState(payload.params[0])
+              }
+              // Emit connect event
+              this.emit('connect')
+
+              this.triggerConnect(wc)
+              resolve(wc)
             })
           })
           .catch(error => {
-            engine.isConnecting = false
+            this.isConnecting = false
             reject(error)
           })
       } else {
-        resolve(walletConnector)
+        resolve(wc)
       }
     })
   }
 
-  engine.isWalletConnect = true
+  async subscribeWalletConnector () {
+    const wc = await this.getWalletConnector()
 
-  engine.start()
+    wc.on('disconnect', (error, payload) => {
+      if (error) {
+        throw error
+      }
 
-  return engine
+      this.stop()
+    })
+
+    wc.on('session_update', (error, payload) => {
+      if (error) {
+        throw error
+      }
+
+      // Handle session update
+      this.updateState(payload.params[0])
+    })
+  }
+
+  async updateState (sessionParams) {
+    const { accounts, chainId, networkId, rpcUrl } = sessionParams
+
+    // Check if accounts changed and trigger event
+    if (!this.accounts || (accounts && this.accounts !== accounts)) {
+      this.accounts = accounts
+      this.emit('accountsChanged', accounts)
+    }
+
+    // Check if chainId changed and trigger event
+    if (!this.chainId || (chainId && this.chainId !== chainId)) {
+      this.chainId = chainId
+      this.emit('chainChanged', chainId)
+    }
+
+    // Check if networkId changed and trigger event
+    if (!this.networkId || (networkId && this.networkId !== networkId)) {
+      this.networkId = networkId
+      this.emit('networkChanged', networkId)
+    }
+
+    // Handle rpcUrl update
+    this.updateRpcUrl(this.chainId, rpcUrl || '')
+  }
+
+  updateRpcUrl (chainId, rpcUrl = '') {
+    const infuraNetworks = {
+      1: 'mainnet',
+      3: 'ropsten',
+      4: 'rinkeby',
+      5: 'goerli',
+      42: 'kovan'
+    }
+    const network = infuraNetworks[chainId]
+
+    if (!rpcUrl && network) {
+      rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`
+    }
+
+    if (rpcUrl) {
+      // Update rpcUrl
+      this.rpcUrl = rpcUrl
+      // Handle http update
+      this.updateHttpConnection()
+    } else {
+      this.emit(
+        'error',
+        new Error(`No RPC Url available for chainId: ${chainId}`)
+      )
+    }
+  }
+
+  updateHttpConnection () {
+    if (this.rpcUrl) {
+      this.http = new HTTPConnection(this.rpcUrl)
+      this.http.on('payload', payload => this.emit('payload', payload))
+      this.http.on('error', error => this.emit('error', error))
+    }
+  }
 }
+
+export default WalletConnectProvider
