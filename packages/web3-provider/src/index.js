@@ -1,4 +1,4 @@
-import pkg from "../package.json";
+import pkg from '../package.json'
 import WalletConnect from '@walletconnect/browser'
 import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 import ProviderEngine from 'web3-provider-engine'
