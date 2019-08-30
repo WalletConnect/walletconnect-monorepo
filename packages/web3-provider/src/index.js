@@ -234,17 +234,30 @@ class WalletConnectProvider extends ProviderEngine {
           break
 
         default:
-          return this.handleReadRequests(payload)
+          return this.handleOtherRequests(payload)
       }
     } catch (error) {
       throw error
     }
 
+    return this.formatResponse(payload, result)
+  }
+
+  formatResponse (payload, result) {
     return {
       id: payload.id,
       jsonrpc: payload.jsonrpc,
       result: result
     }
+  }
+
+  async handleOtherRequests (payload) {
+    if (payload.method.startsWith('eth_')) {
+      return this.handleReadRequests(payload)
+    }
+    const wc = await this.getWalletConnector()
+    const result = await wc.sendCustomRequest(payload)
+    return this.formatResponse(payload, result)
   }
 
   async handleReadRequests (payload) {

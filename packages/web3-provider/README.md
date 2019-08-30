@@ -85,3 +85,32 @@ const signedMessage = await web3.eth.sign(msg);
 // Sign Typed Data
 const signedTypedData = await web3.eth.signTypedData(msg);
 ```
+
+## Provider Options
+
+1. infuraId (required) - the Infura app ID is used for read requests that don't require user approval like signing requests
+2. bridge (optional) - the Bridge URL points to the bridge server used to relay WalletConnect payloads - default="https://bridge.walletconnect.org"
+3. qrcode (optional) - qrcode modal is enabled by default but can be disabled by passing a false boolean
+
+## Custom QR Code
+
+```javascript
+import Web3 from "web3";
+import WalletConnectProvider from "@walletconnect/web3-provider";
+
+//  Create WalletConnect Provider
+const provider = new WalletConnectProvider({
+  infuraId: "27e484dcd9e3efcfd25a83a78777cdf1", // Required
+  qrcode: false // disables qrcode modal
+});
+
+provider.wc.on("session_request");
+
+provider.wc.on("connect");
+
+//  Enable session
+await provider.enable();
+
+//  Create Web3
+const web3 = new Web3(provider);
+```
