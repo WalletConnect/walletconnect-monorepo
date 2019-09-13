@@ -106,8 +106,16 @@ export default {
     `,
     image: `
       width: 100%;
-      padding: 30px;
+      padding: 30px 30px 0 30px;
       box-sizing: border-box;
     `
-  }
+  },
+  shareButton: `
+    cursor: pointer;
+    background: #3999fb;
+    color: #fff;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    padding: 10px;
+  `
 }
