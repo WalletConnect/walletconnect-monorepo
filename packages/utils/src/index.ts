@@ -508,12 +508,11 @@ export function parseTransactionData (
       typeof txData.gasPrice === 'undefined'
         ? ''
         : parseHexValues(txData.gasPrice),
-    gasLimit:
-      typeof txData.gasLimit === 'undefined'
-        ? typeof txData.gas === 'undefined'
-          ? ''
-          : parseHexValues(txData.gas)
-        : parseHexValues(txData.gasLimit),
+    gas: typeof txData.gas === 'undefined'
+          ? typeof txData.gasLimit === 'undefined'
+            ? ''
+            : parseHexValues(txData.gasLimit)
+          : parseHexValues(txData.gas),
     value:
       typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
     nonce:
@@ -522,7 +521,7 @@ export function parseTransactionData (
       typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data) || '0x'
   }
 
-  const prunable = ['gasPrice', 'gasLimit', 'value', 'nonce']
+  const prunable = ['gasPrice', 'gas', 'value', 'nonce']
   Object.keys(txDataRPC).forEach((key: string) => {
     if (!txDataRPC[key].trim().length && prunable.includes(key)) {
       delete txDataRPC[key]
