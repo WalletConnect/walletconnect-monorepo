@@ -195,6 +195,13 @@ export function removeHexPrefix (hex: string): string {
   return hex
 }
 
+export function removeHexLeadingZeros (hex: string): string {
+  hex = removeHexPrefix(hex)
+  hex = hex.startsWith('0') ? hex.substring(1) : hex
+  hex = addHexPrefix(hex)
+  return hex
+}
+
 export function isHexString (value: any): boolean {
   return _isHexString(value)
 }
@@ -259,7 +266,7 @@ export function getMeta (): IClientMeta | null {
 
   function getIcons (): string[] {
     const links: HTMLCollectionOf<
-    HTMLLinkElement
+      HTMLLinkElement
     > = document.getElementsByTagName('link')
     const icons: string[] = []
 
@@ -307,7 +314,7 @@ export function getMeta (): IClientMeta | null {
 
   function getMetaOfAny (...args: string[]): string {
     const metaTags: HTMLCollectionOf<
-    HTMLMetaElement
+      HTMLMetaElement
     > = document.getElementsByTagName('meta')
 
     for (let i = 0; i < metaTags.length; i++) {
@@ -447,8 +454,8 @@ export function promisify (
   originalFn: (...args: any[]) => void,
   thisArg?: any
 ): (
-    ...callArgs: any[]
-  ) => Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
+  ...callArgs: any[]
+) => Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
   const promisifiedFunction = async (
     ...callArgs: any[]
   ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> => {
@@ -497,6 +504,9 @@ export function parseTransactionData (
       } else if (typeof value === 'string') {
         result = sanitizeHex(value)
       }
+    }
+    if (typeof result === 'string') {
+      result = removeHexLeadingZeros(result)
     }
     return result
   }
