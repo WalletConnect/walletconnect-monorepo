@@ -18,15 +18,19 @@ class WalletConnectProvider extends ProviderEngine {
 
     this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
 
+    this.rpc = opts.rpc || null
+
     if (
-      !opts.infuraId ||
-      typeof opts.infuraId !== 'string' ||
-      !opts.infuraId.trim()
+      !this.rpc &&
+      (!opts.infuraId ||
+        typeof opts.infuraId !== 'string' ||
+        !opts.infuraId.trim())
     ) {
       throw new Error('Invalid or missing Infura App ID')
     }
 
-    this.infuraId = opts.infuraId
+    this.infuraId = opts.infuraId || ''
+
     this.wc = new WalletConnect({ bridge: this.bridge })
     this.isConnecting = false
     this.isWalletConnect = true
@@ -368,8 +372,12 @@ class WalletConnectProvider extends ProviderEngine {
     }
     const network = infuraNetworks[chainId]
 
-    if (!rpcUrl && network) {
-      rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`
+    if (!rpcUrl) {
+      if (this.rpc && this.rpc[chainId]) {
+        rpcUrl = this.rpc[chainId]
+      } else if (network) {
+        rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`
+      }
     }
 
     if (rpcUrl) {

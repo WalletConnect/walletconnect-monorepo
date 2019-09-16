@@ -243,10 +243,15 @@ declare module '@walletconnect/types' {
     }
   }
 
+  export type RPCMap = {
+    [chainId: number]: string
+  }
+
   export interface IWalletConnectConnectionOptions {
     bridge?: string
     qrcode?: boolean
     chainId?: number
-    infuraId: string
+    rpc?: RPCMap
+    infuraId?: string
   }
 }
