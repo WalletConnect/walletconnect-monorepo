@@ -39,6 +39,8 @@ class WalletConnectConnection extends EventEmitter {
       throw new Error('Missing Infura App Id field')
     }
     this.infuraId = opts.infuraId
+    this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
+    this.networkId = this.chainId
     this.on('error', () => this.close())
     setTimeout(() => this.create(), 0)
   }
@@ -59,9 +61,12 @@ class WalletConnectConnection extends EventEmitter {
     }
 
     if (!this.wc.connected) {
+      const sessionRequestOpions = this.chainId
+        ? { chainId: this.chainId }
+        : undefined
       // Create new session
       this.wc
-        .createSession()
+        .createSession(sessionRequestOpions)
         .then(() => {
           if (this.qrcode) {
             this.openQRCode()

@@ -32,8 +32,8 @@ class WalletConnectProvider extends ProviderEngine {
     this.isWalletConnect = true
     this.connectCallbacks = []
     this.accounts = []
-    this.chainId = 1
-    this.networkId = 1
+    this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
+    this.networkId = this.chainId
     this.rpcUrl = ''
     this.updateRpcUrl(this.chainId)
 
@@ -275,7 +275,10 @@ class WalletConnectProvider extends ProviderEngine {
         this.onConnect(x => resolve(x))
       } else if (!wc.connected) {
         this.isConnecting = true
-        wc.createSession()
+        const sessionRequestOpions = this.chainId
+          ? { chainId: this.chainId }
+          : undefined
+        wc.createSession(sessionRequestOpions)
           .then(() => {
             if (this.qrcode) {
               WalletConnectQRCodeModal.open(wc.uri, () => {

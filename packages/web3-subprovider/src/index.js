@@ -84,6 +84,8 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
 
     this._walletConnector = new WalletConnect({ bridge })
 
+    this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
+
     this.isConnecting = false
 
     this.connectCallbacks = []
@@ -131,8 +133,11 @@ export default class WalletConnectSubprovider extends HookedWalletSubprovider {
         this.onConnect(_walletConnector => resolve(_walletConnector))
       } else if (!walletConnector.connected) {
         this.isConnecting = true
+        const sessionRequestOpions = this.chainId
+          ? { chainId: this.chainId }
+          : undefined
         walletConnector
-          .createSession()
+          .createSession(sessionRequestOpions)
           .then(() => {
             if (this.qrcode) {
               WalletConnectQRCodeModal.open(walletConnector.uri, () => {

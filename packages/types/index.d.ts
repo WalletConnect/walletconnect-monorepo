@@ -246,6 +246,7 @@ declare module '@walletconnect/types' {
   export interface IWalletConnectConnectionOptions {
     bridge?: string
     qrcode?: boolean
+    chainId?: number
     infuraId: string
   }
 }
