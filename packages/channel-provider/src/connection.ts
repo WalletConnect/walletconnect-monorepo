@@ -30,7 +30,6 @@ class WalletConnectConnection extends EventEmitter {
     this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
     this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
     this.rpc = opts.rpc || null
-
     if (
       !this.rpc &&
       (!opts.infuraId ||
@@ -39,9 +38,7 @@ class WalletConnectConnection extends EventEmitter {
     ) {
       throw new Error('Invalid or missing Infura App ID')
     }
-
     this.infuraId = opts.infuraId || ''
-
     this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
     this.networkId = this.chainId
     this.on('error', () => this.close())
