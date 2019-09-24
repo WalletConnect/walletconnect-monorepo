@@ -243,7 +243,7 @@ declare module '@walletconnect/types' {
     }
   }
 
-  export type RPCMap = {
+  export interface IRPCMap {
     [chainId: number]: string
   }
 
@@ -251,7 +251,7 @@ declare module '@walletconnect/types' {
     bridge?: string
     qrcode?: boolean
     chainId?: number
-    rpc?: RPCMap
+    rpc?: IRPCMap
     infuraId?: string
   }
 }

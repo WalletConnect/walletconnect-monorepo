@@ -10,7 +10,7 @@ import HTTPConnection from './http'
 import {
   ISessionParams,
   IWalletConnectConnectionOptions,
-  RPCMap
+  IRPCMap
 } from '@walletconnect/types'
 
 // -- WalletConnectConnection --------------------------------------------- //
@@ -19,7 +19,7 @@ class WalletConnectConnection extends EventEmitter {
   public bridge: string = 'https://bridge.walletconnect.org'
   public qrcode: boolean = true
   public infuraId: string = ''
-  public rpc: RPCMap | null = null
+  public rpc: IRPCMap | null = null
   public wc: WalletConnect | null = null
   public http: HTTPConnection | null = null
   public accounts: string[] = []
