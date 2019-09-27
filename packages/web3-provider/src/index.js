@@ -18,13 +18,16 @@ class WalletConnectProvider extends ProviderEngine {
 
     this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
 
+    this.disableRpc = opts.disableRpc || false
+
     this.rpc = opts.rpc || null
 
     if (
-      !this.rpc &&
-      (!opts.infuraId ||
-        typeof opts.infuraId !== 'string' ||
-        !opts.infuraId.trim())
+      !this.disableRpc &&
+      (!this.rpc &&
+        (!opts.infuraId ||
+          typeof opts.infuraId !== 'string' ||
+          !opts.infuraId.trim()))
     ) {
       throw new Error('Invalid or missing Infura App ID')
     }
@@ -39,6 +42,7 @@ class WalletConnectProvider extends ProviderEngine {
     this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
     this.networkId = this.chainId
     this.rpcUrl = ''
+
     this.updateRpcUrl(this.chainId)
 
     this.addProvider(
@@ -256,7 +260,7 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async handleOtherRequests (payload) {
-    if (payload.method.startsWith('eth_')) {
+    if (payload.method.startsWith('eth_') && !this.disableRpc) {
       return this.handleReadRequests(payload)
     }
     const wc = await this.getWalletConnector()
@@ -363,6 +367,9 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   updateRpcUrl (chainId, rpcUrl = '') {
+    if (this.disableRpc) {
+      return
+    }
     const infuraNetworks = {
       1: 'mainnet',
       3: 'ropsten',

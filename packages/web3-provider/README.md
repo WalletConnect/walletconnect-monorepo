@@ -91,6 +91,7 @@ const signedTypedData = await web3.eth.signTypedData(msg);
 1. Required (need to provide at least one of the following)
    a. infuraId - the Infura app ID is used for read requests that don't require user approval like signing requests
    b. rpc - custom rpc url mapping with chainId keys for each url (check custom rpc url section)
+   c. disableRpc - disables read requests through http connector
 2. Optional
    a. bridge - the Bridge URL points to the bridge server used to relay WalletConnect payloads - default="https://bridge.walletconnect.org"
    b. chainId - preferred chain id to be provided by the wallet on session request - default=1
