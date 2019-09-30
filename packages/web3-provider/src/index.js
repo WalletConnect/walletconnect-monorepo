@@ -29,7 +29,9 @@ class WalletConnectProvider extends ProviderEngine {
           typeof opts.infuraId !== 'string' ||
           !opts.infuraId.trim()))
     ) {
-      throw new Error('Invalid or missing Infura App ID')
+      throw new Error(
+        'Missing one of the required parameters: disableRpc, rpc or infuraId'
+      )
     }
 
     this.infuraId = opts.infuraId || ''
