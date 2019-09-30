@@ -54,10 +54,15 @@ class WalletConnectProvider extends ProviderEngine {
         web3_clientVersion: `WalletConnect/v${pkg.version}/javascript`
       })
     )
+
     this.addProvider(new CacheSubprovider())
+
     this.addProvider(new SubscriptionsSubprovider())
+
     this.addProvider(new FilterSubprovider())
+
     this.addProvider(new NonceSubprovider())
+
     this.addProvider(
       new HookedWalletSubprovider({
         getAccounts: async cb => {
@@ -245,7 +250,8 @@ class WalletConnectProvider extends ProviderEngine {
           return this.handleOtherRequests(payload)
       }
     } catch (error) {
-      throw error
+      this.emit('error', error)
+      return
     }
 
     return this.formatResponse(payload, result)
@@ -270,7 +276,8 @@ class WalletConnectProvider extends ProviderEngine {
 
   async handleReadRequests (payload) {
     if (!this.http) {
-      throw new Error('HTTP Connection not available')
+      this.emit('error', new Error('HTTP Connection not available'))
+      return
     }
     return this.http.send(payload)
   }
@@ -325,7 +332,8 @@ class WalletConnectProvider extends ProviderEngine {
 
     wc.on('disconnect', (error, payload) => {
       if (error) {
-        throw error
+        this.emit('error', error)
+        return
       }
 
       this.stop()
@@ -333,7 +341,8 @@ class WalletConnectProvider extends ProviderEngine {
 
     wc.on('session_update', (error, payload) => {
       if (error) {
-        throw error
+        this.emit('error', error)
+        return
       }
 
       // Handle session update
@@ -370,6 +379,7 @@ class WalletConnectProvider extends ProviderEngine {
     if (this.disableRpc) {
       return
     }
+
     const infuraNetworks = {
       1: 'mainnet',
       3: 'ropsten',
@@ -377,6 +387,7 @@ class WalletConnectProvider extends ProviderEngine {
       5: 'goerli',
       42: 'kovan'
     }
+
     const network = infuraNetworks[chainId]
 
     if (!rpcUrl) {
