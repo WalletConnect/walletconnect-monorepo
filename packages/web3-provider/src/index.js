@@ -18,20 +18,15 @@ class WalletConnectProvider extends ProviderEngine {
 
     this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
 
-    this.disableRpc = opts.disableRpc || false
-
     this.rpc = opts.rpc || null
 
     if (
-      !this.disableRpc &&
-      (!this.rpc &&
-        (!opts.infuraId ||
-          typeof opts.infuraId !== 'string' ||
-          !opts.infuraId.trim()))
+      !this.rpc &&
+      (!opts.infuraId ||
+        typeof opts.infuraId !== 'string' ||
+        !opts.infuraId.trim())
     ) {
-      throw new Error(
-        'Missing one of the required parameters: disableRpc, rpc or infuraId'
-      )
+      throw new Error('Missing one of the required parameters: rpc or infuraId')
     }
 
     this.infuraId = opts.infuraId || ''
@@ -268,7 +263,7 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async handleOtherRequests (payload) {
-    if (payload.method.startsWith('eth_') && !this.disableRpc) {
+    if (payload.method.startsWith('eth_')) {
       return this.handleReadRequests(payload)
     }
     const wc = await this.getWalletConnector()
@@ -378,10 +373,6 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   updateRpcUrl (chainId, rpcUrl = '') {
-    if (this.disableRpc) {
-      return
-    }
-
     const infuraNetworks = {
       1: 'mainnet',
       3: 'ropsten',
