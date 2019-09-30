@@ -18,23 +18,28 @@ class WalletConnectProvider extends ProviderEngine {
 
     this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
 
+    this.rpc = opts.rpc || null
+
     if (
-      !opts.infuraId ||
-      typeof opts.infuraId !== 'string' ||
-      !opts.infuraId.trim()
+      !this.rpc &&
+      (!opts.infuraId ||
+        typeof opts.infuraId !== 'string' ||
+        !opts.infuraId.trim())
     ) {
-      throw new Error('Invalid or missing Infura App ID')
+      throw new Error('Missing one of the required parameters: rpc or infuraId')
     }
 
-    this.infuraId = opts.infuraId
+    this.infuraId = opts.infuraId || ''
+
     this.wc = new WalletConnect({ bridge: this.bridge })
     this.isConnecting = false
     this.isWalletConnect = true
     this.connectCallbacks = []
     this.accounts = []
-    this.chainId = 1
-    this.networkId = 1
+    this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
+    this.networkId = this.chainId
     this.rpcUrl = ''
+
     this.updateRpcUrl(this.chainId)
 
     this.addProvider(
@@ -46,10 +51,15 @@ class WalletConnectProvider extends ProviderEngine {
         web3_clientVersion: `WalletConnect/v${pkg.version}/javascript`
       })
     )
+
     this.addProvider(new CacheSubprovider())
+
     this.addProvider(new SubscriptionsSubprovider())
+
     this.addProvider(new FilterSubprovider())
+
     this.addProvider(new NonceSubprovider())
+
     this.addProvider(
       new HookedWalletSubprovider({
         getAccounts: async cb => {
@@ -237,7 +247,8 @@ class WalletConnectProvider extends ProviderEngine {
           return this.handleOtherRequests(payload)
       }
     } catch (error) {
-      throw error
+      this.emit('error', error)
+      return
     }
 
     return this.formatResponse(payload, result)
@@ -262,7 +273,8 @@ class WalletConnectProvider extends ProviderEngine {
 
   async handleReadRequests (payload) {
     if (!this.http) {
-      throw new Error('HTTP Connection not available')
+      this.emit('error', new Error('HTTP Connection not available'))
+      return
     }
     return this.http.send(payload)
   }
@@ -275,7 +287,10 @@ class WalletConnectProvider extends ProviderEngine {
         this.onConnect(x => resolve(x))
       } else if (!wc.connected) {
         this.isConnecting = true
-        wc.createSession()
+        const sessionRequestOpions = this.chainId
+          ? { chainId: this.chainId }
+          : undefined
+        wc.createSession(sessionRequestOpions)
           .then(() => {
             if (this.qrcode) {
               WalletConnectQRCodeModal.open(wc.uri, () => {
@@ -314,7 +329,8 @@ class WalletConnectProvider extends ProviderEngine {
 
     wc.on('disconnect', (error, payload) => {
       if (error) {
-        throw error
+        this.emit('error', error)
+        return
       }
 
       this.stop()
@@ -322,7 +338,8 @@ class WalletConnectProvider extends ProviderEngine {
 
     wc.on('session_update', (error, payload) => {
       if (error) {
-        throw error
+        this.emit('error', error)
+        return
       }
 
       // Handle session update
@@ -363,10 +380,15 @@ class WalletConnectProvider extends ProviderEngine {
       5: 'goerli',
       42: 'kovan'
     }
+
     const network = infuraNetworks[chainId]
 
-    if (!rpcUrl && network) {
-      rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`
+    if (!rpcUrl) {
+      if (this.rpc && this.rpc[chainId]) {
+        rpcUrl = this.rpc[chainId]
+      } else if (network) {
+        rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`
+      }
     }
 
     if (rpcUrl) {
