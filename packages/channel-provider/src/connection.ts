@@ -42,7 +42,6 @@ class WalletConnectConnection extends EventEmitter {
     this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
     this.networkId = this.chainId
     this.on('error', () => this.close())
-    setTimeout(() => this.create(), 0)
   }
   public openQRCode () {
     const uri = this.wc ? this.wc.uri : ''
