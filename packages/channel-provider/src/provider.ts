@@ -48,38 +48,46 @@ class ChannelProvider extends EventEmitter {
       }
     }
   }
-  public async checkConnection () {
-    try {
-      this.emit('connect')
-      this.connected = true
-    } catch (e) {
-      this.connected = false
-    }
-  }
   public enable () {
-    this.connection.create()
-
-    this.connection.on('connect', () => this.checkConnection())
-    this.connection.on('close', () => this.emit('close'))
-    this.connection.on('payload', this.onConnectionPayload)
-
     return new Promise((resolve, reject) => {
-      this._send('chan_config')
-        .then(config => {
-          if (config.length > 0) {
-            this.config = config
-            resolve(config)
-          } else {
-            const err: IError = new Error('User Denied Channel Config')
-            err.code = 4001
-            reject(err)
-            this.connection.close()
-          }
-        })
-        .catch(reject)
+      if (this.connected) {
+        resolve(this.config)
+        return
+      }
+      this.connection.create()
+
+      this.connection.on('close', () => {
+        this.connected = false
+        this.emit('close')
+      })
+      this.connection.on('payload', this.onConnectionPayload)
+      this.connection.on('connect', () => {
+        try {
+          this._send('chan_config')
+            .then(config => {
+              if (config.length > 0) {
+                this.connected = true
+                this.config = config
+                this.emit('connect')
+                resolve(config)
+              } else {
+                const err: IError = new Error('User Denied Channel Config')
+                err.code = 4001
+                this.connected = false
+                this.connection.close()
+                reject(err)
+              }
+            })
+            .catch(reject)
+        } catch (e) {
+          this.connected = false
+          this.connection.close()
+          reject(e)
+        }
+      })
     })
   }
-  public _send (method?: string, params?: any) {
+  public _send (method?: string, params: any = {}) {
     if (!method || typeof method !== 'string') {
       throw new Error('Method is not a valid string.')
     }
