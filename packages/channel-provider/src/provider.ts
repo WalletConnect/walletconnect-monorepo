@@ -61,7 +61,7 @@ class ChannelProvider extends EventEmitter {
         this.connected = false
         this.emit('close')
       })
-      this.connection.on('payload', this.onConnectionPayload)
+      this.connection.on('payload', this.onConnectionPayload.bind(this))
       this.connection.on('connect', () => {
         try {
           this._send('chan_config')
