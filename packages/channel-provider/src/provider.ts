@@ -30,7 +30,6 @@ class ChannelProvider extends EventEmitter {
   }
   public async onConnectionPayload (payload: JsonRpc) {
     const { id } = payload
-    console.log(`onConnectionPayload(). this.promises: ${JSON.stringify(this.promises, null, 2)}`)
     if (typeof id !== 'undefined') {
       if (this.promises[id]) {
         if (isJsonRpcResponseError(payload)) {
@@ -66,7 +65,7 @@ class ChannelProvider extends EventEmitter {
         try {
           this._send('chan_config')
             .then(config => {
-              if (config.length > 0) {
+              if (Object.keys(config).length > 0) {
                 this.connected = true
                 this.config = config
                 this.emit('connect')
@@ -96,7 +95,6 @@ class ChannelProvider extends EventEmitter {
       throw new Error('Params is not a valid object.')
     }
     const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
-    console.log(`provider sending payload: ${JSON.stringify(payload, null, 2)}`)
     const promise: Promise<any> = new Promise((resolve, reject) => {
       this.promises[payload.id] = { resolve, reject }
     })
