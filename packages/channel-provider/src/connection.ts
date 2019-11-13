@@ -72,6 +72,9 @@ class WalletConnectConnection extends EventEmitter {
           }
         })
         .catch((e: Error) => this.emit('error', e))
+    } else {
+      this.connected = true
+      this.emit('connect')
     }
 
     this.wc.on('connect', (err: Error | null, payload: any) => {
