@@ -12,7 +12,7 @@ import HTTPConnection from './http'
 
 class WalletConnectProvider extends ProviderEngine {
   constructor (opts) {
-    super()
+    super({ pollingInterval: opts.pollingInterval || 4000 })
 
     this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
 
