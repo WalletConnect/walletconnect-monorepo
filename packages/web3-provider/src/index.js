@@ -12,7 +12,7 @@ import HTTPConnection from './http'
 
 class WalletConnectProvider extends ProviderEngine {
   constructor (opts) {
-    super()
+    super({ pollingInterval: opts.pollingInterval || 4000 })
 
     this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
 
@@ -209,6 +209,7 @@ class WalletConnectProvider extends ProviderEngine {
     const wc = await this.getWalletConnector()
     await wc.killSession()
     await this.stop()
+    this.emit('close', 1000, 'Connection closed')
   }
 
   async handleRequest (payload) {
