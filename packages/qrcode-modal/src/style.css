@@ -1,5 +1,5 @@
 :root {
-  --animation-duration: 300;
+  --animation-duration: 300ms;
 }
 
 @keyframes fadeIn {
@@ -13,7 +13,7 @@
 }
 
 .animated {
-  animation-duration: var(--animationDuration)ms;
+  animation-duration: var(--animation-duration);
   animation-fill-mode: both;
 }
 
