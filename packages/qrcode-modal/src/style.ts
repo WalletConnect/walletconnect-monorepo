@@ -29,7 +29,7 @@ export default {
         position:relative;
         top:50%;
         display:inline-block;
-        z-index:101;
+        z-index: 2147483000;
         background:#fff;
         transform:translateY(-50%);
         margin:0 auto;
@@ -89,7 +89,7 @@ export default {
       top: 0;
       width:100%;
       height:100%;
-      z-index:100;
+      z-index: 2147482999;
       background-color:rgba(0,0,0,0.5);
       text-align:center;
     `,
