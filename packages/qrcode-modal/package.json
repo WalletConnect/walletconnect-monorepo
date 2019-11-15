@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/qrcode-modal",
-  "version": "1.0.0-beta.35",
+  "version": "1.0.0-beta.39",
   "description": "QR Code Modal for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",

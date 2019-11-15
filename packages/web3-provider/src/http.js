@@ -33,7 +33,6 @@ class HTTPConnection extends EventEmitter {
 
   send (payload, internal) {
     return new Promise(resolve => {
-      console.log('[HTTPConnection]', 'send', 'payload', payload) // tslint:disable-line
       if (payload.method === 'eth_subscribe') {
         const error = this.formatError(
           payload,

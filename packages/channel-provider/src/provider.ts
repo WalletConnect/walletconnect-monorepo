@@ -22,32 +22,11 @@ class ChannelProvider extends EventEmitter {
   public promises: IPromisesMap = {}
   public subscriptions: number[] = []
   public connection: WalletConnectConnection
-  public attemptedNetworkSubscription: boolean = false
-  public attemptedChainSubscription: boolean = false
-  public attemptedAccountsSubscription: boolean = false
   public config: any
 
   constructor (connection: WalletConnectConnection) {
     super()
     this.connection = connection
-    this.connection.on('connect', () => this.checkConnection())
-    this.connection.on('close', () => this.emit('close'))
-    this.connection.on('payload', this.onConnectionPayload)
-    this.on('newListener', (event, listener) => {
-      if (event === 'networkChanged') {
-        if (!this.attemptedNetworkSubscription && this.connected) {
-          this.startNetworkSubscription()
-        }
-      } else if (event === 'chainChanged') {
-        if (!this.attemptedChainSubscription && this.connected) {
-          this.startChainSubscription()
-        }
-      } else if (event === 'accountsChanged') {
-        if (!this.attemptedAccountsSubscription && this.connected) {
-          this.startAccountsSubscription()
-        }
-      }
-    })
   }
   public async onConnectionPayload (payload: JsonRpc) {
     const { id } = payload
@@ -69,87 +48,44 @@ class ChannelProvider extends EventEmitter {
       }
     }
   }
-  public async checkConnection () {
-    try {
-      this.emit('connect', await this._send('net_version'))
-      this.connected = true
-
-      if (
-        this.listenerCount('networkChanged') &&
-        !this.attemptedNetworkSubscription
-      ) {
-        this.startNetworkSubscription()
-      }
-
-      if (
-        this.listenerCount('chainChanged') &&
-        !this.attemptedAccountsSubscription
-      ) {
-        this.startAccountsSubscription()
-      }
-
-      if (
-        this.listenerCount('accountsChanged') &&
-        !this.attemptedAccountsSubscription
-      ) {
-        this.startAccountsSubscription()
-      }
-    } catch (e) {
-      this.connected = false
-    }
-  }
-  public async startNetworkSubscription () {
-    this.attemptedNetworkSubscription = true
-    try {
-      const networkChanged = await this.subscribe(
-        'eth_subscribe',
-        'networkChanged'
-      )
-      this.on(networkChanged, netId => this.emit('networkChanged', netId))
-    } catch (e) {
-      console.warn('Unable to subscribe to networkChanged', e) // tslint:disable-line
-    }
-  }
-  public async startChainSubscription () {
-    this.attemptedChainSubscription = true
-    try {
-      const chainChanged = await this.subscribe('eth_subscribe', 'chainChanged')
-      this.on(chainChanged, chainId => this.emit('chainChanged', chainId))
-    } catch (e) {
-      console.warn('Unable to subscribe to chainChanged', e) // tslint:disable-line
-    }
-  }
-  public async startAccountsSubscription () {
-    this.attemptedAccountsSubscription = true
-    try {
-      const accountsChanged = await this.subscribe(
-        'eth_subscribe',
-        'accountsChanged'
-      )
-      this.on(accountsChanged, accounts =>
-        this.emit('accountsChanged', accounts)
-      )
-    } catch (e) {
-      console.warn('Unable to subscribe to accountsChanged', e) // tslint:disable-line
-    }
-  }
   public enable () {
     return new Promise((resolve, reject) => {
-      this._send('chan_config')
-        .then(config => {
-          if (config.length > 0) {
-            this.config = config
-            resolve(config)
-          } else {
-            const err: IError = new Error('User Denied Channel Config')
-            err.code = 4001
-            reject(err)
-          }
-        })
-        .catch(reject)
+
+      this.connection.on('close', () => {
+        this.connected = false
+        this.emit('close')
+      })
+      this.connection.on('payload', this.onConnectionPayload.bind(this))
+
+      this.connection.on('connect', () => {
+        try {
+          this._send('chan_config')
+            .then(config => {
+              if (Object.keys(config).length > 0) {
+                this.connected = true
+                this.config = config
+                this.emit('connect')
+                resolve(config)
+              } else {
+                const err: IError = new Error('User Denied Channel Config')
+                err.code = 4001
+                this.connected = false
+                this.connection.close()
+                reject(err)
+              }
+            })
+            .catch(reject)
+        } catch (e) {
+          this.connected = false
+          this.connection.close()
+          reject(e)
+        }
+      })
+
+      this.connection.create()
     })
   }
-  public _send (method?: string, params?: any) {
+  public _send (method?: string, params: any = {}) {
     if (!method || typeof method !== 'string') {
       throw new Error('Method is not a valid string.')
     }

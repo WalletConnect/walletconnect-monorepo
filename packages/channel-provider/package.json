@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/channel-provider",
-  "version": "1.0.0-beta.35",
+  "version": "1.0.0-beta.39",
   "description": "Channel Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
@@ -44,7 +44,7 @@
     "@babel/register": "^7.0.0",
     "@types/chai": "^4.1.6",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^12.0.10",
+    "@types/node": "^10.12.18",
     "chai": "^4.1.2",
     "isomorphic-fetch": "^2.2.1",
     "mocha": "5.2.0",
@@ -54,10 +54,10 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/browser": "^1.0.0-beta.35",
-    "@walletconnect/qrcode-modal": "^1.0.0-beta.35",
-    "@walletconnect/types": "^1.0.0-beta.35",
-    "@walletconnect/utils": "^1.0.0-beta.35",
+    "@walletconnect/browser": "^1.0.0-beta.39",
+    "@walletconnect/qrcode-modal": "^1.0.0-beta.39",
+    "@walletconnect/types": "^1.0.0-beta.39",
+    "@walletconnect/utils": "^1.0.0-beta.39",
     "xhr2-cookies": "^1.1.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
