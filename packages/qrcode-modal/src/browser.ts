@@ -2,7 +2,7 @@
 
 import * as qrImage from 'qr-image'
 import style from './style'
-import asset from './asset'
+import logo from './logo.svg'
 
 let document: Document
 if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
@@ -28,7 +28,7 @@ function formatQRCodeModal (qrCodeImage: string) {
     >
       <div style="${style.modal.base}">
         <div style="${style.modal.header}">
-          <img src="${asset.logo}" style="${style.modal.headerLogo}" />
+          <img src="${logo}" style="${style.modal.headerLogo}" />
           <div style="${style.modal.close.wrapper}">
             <div
               id="walletconnect-qrcode-close"
