@@ -4,5 +4,8 @@
     "outDir": "lib",
     "rootDir": "src"
   },
+  "files": [
+    "custom.d.ts"
+  ],
   "include": ["./src/**/*"]
 }
