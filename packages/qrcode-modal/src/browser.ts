@@ -14,7 +14,7 @@ function formatQRCodeImage (data: string) {
   let result = ''
   const dataString = qrImage.imageSync(data, { type: 'svg' })
   if (typeof dataString === 'string') {
-    result = dataString.replace('<svg', `<svg class="qrcode__image"`)
+    result = dataString.replace('<svg', `<svg class="walletconnect-qrcode__image"`)
   }
   return result
 }
@@ -24,24 +24,24 @@ function formatQRCodeModal (qrCodeImage: string) {
   return `
     <div
       id="walletconnect-qrcode-modal"
-      class="qrcode__base animated fadeIn"
+      class="walletconnect-qrcode__base animated fadeIn"
     >
-      <div class="modal__base">
-        <div class="modal__header">
-          <img src="${logo}" class="modal__headerLogo" />
-          <div class="modal__close__wrapper">
+      <div class="walletconnect-modal__base">
+        <div class="walletconnect-modal__header">
+          <img src="${logo}" class="walletconnect-modal__headerLogo" />
+          <div class="walletconnect-modal__close__wrapper">
             <div
               id="walletconnect-qrcode-close"
-              class="modal__close__icon"
+              class="walletconnect-modal__close__icon"
             >
-              <div class="modal__close__line1""></div>
-              <div class="modal__close__line2"></div>
+              <div class="walletconnect-modal__close__line1""></div>
+              <div class="walletconnect-modal__close__line2"></div>
             </div>
           </div>
         </div>
         <div>
           <div>
-            <p id="walletconnect-qrcode-text" class="qrcode__text">
+            <p id="walletconnect-qrcode-text" class="walletconnect-qrcode__text">
               ${callToAction}
             </p>
             ${qrCodeImage}

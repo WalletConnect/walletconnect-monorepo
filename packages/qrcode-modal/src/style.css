@@ -25,7 +25,7 @@
   animation-name: fadeOut;
 }
 
-.modal__base {
+.walletconnect-modal__base {
   position:relative;
   top:50%;
   display:inline-block;
@@ -40,7 +40,7 @@
   max-width: 500px;
 }
 
-.modal__header {
+.walletconnect-modal__header {
   position: relative;
   width: 100%;
   display: flex;
@@ -48,21 +48,21 @@
   justify-content: center;
 }
 
-.modal__headerLogo {
+.walletconnect-modal__headerLogo {
   width: 100%;
   max-width: 320px;
   margin: 20px auto;
   height: 100%;
 }
 
-.modal__close__wrapper {
+.walletconnect-modal__close__wrapper {
   position: absolute;
   top: 15px;
   right: 15px;
   z-index: 10000;
 }
 
-.modal__close__icon {
+.walletconnect-modal__close__icon {
   width: 25px;
   height: 25px;
   position: relative;
@@ -74,20 +74,20 @@
   transform: rotate(45deg);
 }
 
-.modal__close__line1 {
+.walletconnect-modal__close__line1 {
   position: absolute;
   width: 90%;
   border: 1px solid #7C828B;
 }
 
-.modal__close__line2 {
+.walletconnect-modal__close__line2 {
   position: absolute;
   width: 90%;
   border: 1px solid #7C828B;
   transform: rotate(90deg);
 }
 
-.qrcode__base {
+.walletconnect-qrcode__base {
   position:fixed;
   top: 0;
   width:100%;
@@ -97,7 +97,7 @@
   text-align:center;
 }
 
-.qrcode__text {
+.walletconnect-qrcode__text {
   color: #7C828B;
   font-family: Avenir;
   font-size: 18px;
@@ -109,7 +109,7 @@
   align-items: center;
 }
 
-.qrcode__image {
+.walletconnect-qrcode__image {
   width: 100%;
   padding: 30px;
   box-sizing: border-box;
