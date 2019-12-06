@@ -13,9 +13,7 @@ import WalletConnectChannelProvider from "@walletconnect/channel-provider";
 /**
  *  Create WalletConnect Provider (qrcode modal will be displayed automatically)
  */
-const channelProvider = new WalletConnectChannelProvider({
-  infuraId: "<INSERT_INFURA_APP_ID>"
-});
+const channelProvider = new WalletConnectChannelProvider();
 
 /**
  *  Create a channel
