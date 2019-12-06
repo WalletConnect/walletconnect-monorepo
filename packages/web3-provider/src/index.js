@@ -300,12 +300,12 @@ class WalletConnectProvider extends ProviderEngine {
               })
             }
             wc.on('connect', (error, payload) => {
+              if (this.qrcode) {
+                WalletConnectQRCodeModal.close()
+              }
               if (error) {
                 this.isConnecting = false
                 return reject(error)
-              }
-              if (this.qrcode) {
-                WalletConnectQRCodeModal.close()
               }
               this.isConnecting = false
               this.connected = true
