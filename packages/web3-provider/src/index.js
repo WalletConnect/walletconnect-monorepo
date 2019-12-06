@@ -324,6 +324,7 @@ class WalletConnectProvider extends ProviderEngine {
             reject(error)
           })
       } else {
+        this.updateState(wc.session)
         resolve(wc)
       }
     })
