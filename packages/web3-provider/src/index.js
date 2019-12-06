@@ -298,7 +298,11 @@ class WalletConnectProvider extends ProviderEngine {
                 reject(new Error('User closed WalletConnect modal'))
               })
             }
-            wc.on('connect', payload => {
+            wc.on('connect', (error, payload) => {
+              if (error) {
+                this.isConnecting = false
+                return reject(error)
+              }
               if (this.qrcode) {
                 WalletConnectQRCodeModal.close()
               }
