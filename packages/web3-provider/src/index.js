@@ -33,6 +33,7 @@ class WalletConnectProvider extends ProviderEngine {
 
     this.wc = new WalletConnect({ bridge: this.bridge })
     this.isConnecting = false
+    this.connected = false
     this.isWalletConnect = true
     this.connectCallbacks = []
     this.accounts = []
@@ -307,6 +308,7 @@ class WalletConnectProvider extends ProviderEngine {
                 WalletConnectQRCodeModal.close()
               }
               this.isConnecting = false
+              this.connected = true
 
               if (payload) {
                 // Handle session update
@@ -324,7 +326,10 @@ class WalletConnectProvider extends ProviderEngine {
             reject(error)
           })
       } else {
-        this.updateState(wc.session)
+        if (!this.connected) {
+          this.connected = true
+          this.updateState(wc.session)
+        }
         resolve(wc)
       }
     })
