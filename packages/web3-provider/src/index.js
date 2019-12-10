@@ -207,6 +207,10 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async close () {
+    // Not using .getWalletConnector() there because if session is already
+    // killed (wc.connected is false), it would try to initialize a new session in the getter
+    // with an invalid wc.uri
+
     const wc = this.wc
     await wc.killSession()
     await this.stop()
