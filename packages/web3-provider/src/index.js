@@ -207,7 +207,7 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async close () {
-    const wc = await this.getWalletConnector()
+    const wc = this.wc
     await wc.killSession()
     await this.stop()
     this.emit('close', 1000, 'Connection closed')
