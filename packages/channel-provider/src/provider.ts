@@ -1,4 +1,5 @@
 import EventEmitter from 'events'
+import { RpcParameters } from 'rpc-server'
 import {
   payloadId,
   isJsonRpcSubscription,
@@ -8,11 +9,27 @@ import {
 } from '@walletconnect/utils'
 import { IError, JsonRpc } from '@walletconnect/types'
 import WalletConnectConnection from './connection'
+import {
+  CFCoreTypes,
+  ChannelRouterConfig,
+  NewRpcMethodName,
+  RpcConnection
+} from './types'
 
 // -- types ---------------------------------------------------------------- //
 
 interface IPromisesMap {
   [id: number]: { resolve: (res: any) => void; reject: (err: any) => void }
+}
+
+type ChannelRouterConfig = {
+  freeBalanceAddress: string
+  multisigAddress?: string // may not be deployed yet
+  natsClusterId?: string
+  natsToken?: string
+  nodeUrl: string
+  signerAddress: string
+  userPublicIdentifier: string
 }
 
 // -- ChannelProvider ---------------------------------------------------- //
@@ -22,7 +39,7 @@ class ChannelProvider extends EventEmitter {
   public promises: IPromisesMap = {}
   public subscriptions: number[] = []
   public connection: WalletConnectConnection
-  public config: any
+  public config: ChannelRouterConfig = {}
 
   constructor (connection: WalletConnectConnection) {
     super()
@@ -50,7 +67,6 @@ class ChannelProvider extends EventEmitter {
   }
   public enable () {
     return new Promise((resolve, reject) => {
-
       this.connection.on('close', () => {
         this.connected = false
         this.emit('close')
@@ -64,6 +80,8 @@ class ChannelProvider extends EventEmitter {
               if (Object.keys(config).length > 0) {
                 this.connected = true
                 this.config = config
+                this._multisigAddress = config.multisigAddress
+                this._signerAddress = config.signerAddress
                 this.emit('connect')
                 resolve(config)
               } else {
@@ -99,10 +117,39 @@ class ChannelProvider extends EventEmitter {
     this.connection.send(payload)
     return promise
   }
-  public send () {
-    // Send can be clobbered, proxy sendPromise for backwards compatibility
-    return this._send(...(arguments as any))
+  public send = async (
+    method: CFCoreTypes.RpcMethodName | NewRpcMethodName,
+    params: RpcParameters = {}
+  ): Promise<any> => {
+    let result
+    switch (method) {
+      case NewRpcMethodName.STORE_SET:
+        const { pairs } = params
+        result = await this.set(pairs)
+        break
+      case NewRpcMethodName.STORE_GET:
+        const { path } = params
+        result = await this.get(path)
+        break
+      case NewRpcMethodName.NODE_AUTH:
+        const { message } = params
+        result = await this.signMessage(message)
+        break
+      case NewRpcMethodName.CONFIG:
+        result = await this._config()
+        break
+      case NewRpcMethodName.RESTORE_STATE:
+        const { path } = params
+        result = await this.restoreState(path)
+        break
+      default:
+        result = await this._send(method as CFCoreTypes.RpcMethodName, params)
+        break
+    }
+
+    return result
   }
+
   public _sendBatch (requests: JsonRpc[]) {
     return Promise.all(
       requests.map(payload => {
@@ -179,6 +226,78 @@ class ChannelProvider extends EventEmitter {
     )
     this.subscriptions.forEach(id => this.emit(String(id), error)) // Send Error objects to any open subscriptions
     this.subscriptions = [] // Clear subscriptions
+  }
+
+  /// ////////////////////////////////////////////
+  /// // GETTERS / SETTERS
+  get config (): ChannelRouterConfig {
+    return this._config
+  }
+
+  get multisigAddress (): string | undefined {
+    return this._multisigAddress
+  }
+
+  set multisigAddress (multisigAddress: string) {
+    this._multisigAddress = multisigAddress
+  }
+
+  get signerAddress (): string | undefined {
+    return this._signerAddress
+  }
+
+  set signerAddress (signerAddress: string) {
+    this._signerAddress = signerAddress
+  }
+
+  /// ////////////////////////////////////////////
+  /// // LISTENER METHODS
+  public on = (
+    event: string,
+    listener: (...args: any[]) => void
+  ): RpcConnection => {
+    this.connection.on(event, listener)
+    return this.connection
+  }
+
+  public once = (
+    event: string,
+    listener: (...args: any[]) => void
+  ): RpcConnection => {
+    this.connection.once(event, listener)
+    return this.connection
+  }
+
+  /// ////////////////////////////////////////////
+  /// // SIGNING METHODS
+  public signMessage = async (message: string): Promise<string> => {
+    return await this._send(NewRpcMethodName.NODE_AUTH as any, { message })
+  }
+
+  /// ////////////////////////////////////////////
+  /// // STORE METHODS
+
+  public get = async (path: string): Promise<any> => {
+    return await this.connection._send(NewRpcMethodName.STORE_GET, {
+      path
+    })
+  }
+
+  public set = async (
+    pairs: {
+      path: string
+      value: any
+    }[],
+    allowDelete?: Boolean
+  ): Promise<void> => {
+    return await this.connection._send(NewRpcMethodName.STORE_SET, {
+      allowDelete,
+      pairs
+    })
+  }
+
+  public restoreState = async (path: string): Promise<void> => {
+    return await this.connection._send(NewRpcMethodName.RESTORE_STATE, { path })
   }
 }
 
