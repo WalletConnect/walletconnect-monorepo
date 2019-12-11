@@ -142,13 +142,10 @@ class Connector implements IConnector {
       transport ||
       new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
 
-    this._transport.on('message', (socketMessage: ISocketMessage) =>
-      this._handleIncomingMessages(socketMessage)
-    )
-
     if (opts.uri) {
       this._subscribeToSessionRequest()
     }
+
     this._subscribeToInternalEvents()
     this._transport.open()
   }
@@ -411,6 +408,11 @@ class Connector implements IConnector {
       'Session update rejected',
       this.handshakeTopic
     )
+
+    this._eventManager.trigger({
+      event: 'display_uri',
+      params: [this.uri]
+    })
   }
 
   public approveSession (sessionStatus: ISessionStatus) {
@@ -925,10 +927,10 @@ class Connector implements IConnector {
     }
 
     const payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | null = await this._decrypt(encryptionPayload)
+      | IJsonRpcRequest
+      | IJsonRpcResponseSuccess
+      | IJsonRpcResponseError
+      | null = await this._decrypt(encryptionPayload)
 
     if (payload) {
       this._eventManager.trigger(payload)
@@ -986,6 +988,18 @@ class Connector implements IConnector {
   }
 
   private _subscribeToInternalEvents () {
+    this._transport.on('message', (socketMessage: ISocketMessage) =>
+      this._handleIncomingMessages(socketMessage)
+    )
+
+    this._transport.on('open', () =>
+      this._eventManager.trigger({ event: 'transport_open', params: [] })
+    )
+
+    this._transport.on('close', () =>
+      this._eventManager.trigger({ event: 'transport_close', params: [] })
+    )
+
     this.on('wc_sessionRequest', (error, payload) => {
       if (error) {
         this._eventManager.trigger({
@@ -1083,10 +1097,10 @@ class Connector implements IConnector {
     const key: ArrayBuffer | null = this._key
     if (this.cryptoLib && key) {
       const result:
-      | IJsonRpcRequest
-      | IJsonRpcResponseSuccess
-      | IJsonRpcResponseError
-      | null = await this.cryptoLib.decrypt(payload, key)
+        | IJsonRpcRequest
+        | IJsonRpcResponseSuccess
+        | IJsonRpcResponseError
+        | null = await this.cryptoLib.decrypt(payload, key)
       return result
     }
     return null
