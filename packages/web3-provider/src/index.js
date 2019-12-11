@@ -207,11 +207,7 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async close () {
-    // Not using .getWalletConnector() there because if session is already
-    // killed (wc.connected is false), it would try to initialize a new session in the getter
-    // with an invalid wc.uri
-
-    const wc = this.wc
+    const wc = this.getWalletConnector({ disableSessionCreation: true })
     await wc.killSession()
     await this.stop()
     this.emit('close', 1000, 'Connection closed')
@@ -285,13 +281,15 @@ class WalletConnectProvider extends ProviderEngine {
     return this.http.send(payload)
   }
 
-  getWalletConnector () {
+  // disableSessionCreation - if true, getWalletConnector won't try to create a new session
+  // in case the connector is disconnected
+  getWalletConnector ({ disableSessionCreation = false }) {
     return new Promise((resolve, reject) => {
       const wc = this.wc
 
       if (this.isConnecting) {
         this.onConnect(x => resolve(x))
-      } else if (!wc.connected) {
+      } else if (!wc.connected && !disableSessionCreation) {
         this.isConnecting = true
         const sessionRequestOpions = this.chainId
           ? { chainId: this.chainId }
