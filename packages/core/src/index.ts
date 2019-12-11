@@ -48,6 +48,10 @@ import {
 import SocketTransport from './socket'
 import EventManager from './events'
 
+// -- Constants ------------------------------------------------------------ //
+
+const IS_ALIVE_INTERVAL_DURATION = 10000 // 10 seconds
+
 // -- Connector ------------------------------------------------------------ //
 
 class Connector implements IConnector {
@@ -60,6 +64,8 @@ class Connector implements IConnector {
   private _key: ArrayBuffer | null
   private _nextKey: ArrayBuffer | null
 
+  private _isAliveInterval: any
+  private _isAlive: boolean
   private _clientId: string
   private _clientMeta: IClientMeta | null
   private _peerId: string
@@ -93,6 +99,7 @@ class Connector implements IConnector {
     this._key = null
     this._nextKey = null
 
+    this._isAlive = false
     this._clientId = ''
     this._clientMeta = null
     this._peerId = ''
@@ -105,6 +112,7 @@ class Connector implements IConnector {
     this._rpcUrl = ''
     this._eventManager = new EventManager()
     this._connected = false
+    this._isAlive = false
     this._storage = storage || null
 
     if (clientMeta) {
@@ -442,6 +450,7 @@ class Connector implements IConnector {
     this._sendResponse(response)
 
     this._connected = true
+    this._isAlive = true
     this._eventManager.trigger({
       event: 'connect',
       params: [
@@ -476,6 +485,7 @@ class Connector implements IConnector {
     this._sendResponse(response)
 
     this._connected = false
+    this._isAlive = false
     this._eventManager.trigger({
       event: 'disconnect',
       params: [{ message }]
@@ -837,6 +847,7 @@ class Connector implements IConnector {
     const message = errorMsg || 'Session Disconnected'
     if (this._connected) {
       this._connected = false
+      this._isAlive = false
     }
     this._eventManager.trigger({
       event: 'disconnect',
@@ -854,6 +865,7 @@ class Connector implements IConnector {
       if (sessionParams.approved) {
         if (!this._connected) {
           this._connected = true
+          this._isAlive = true
 
           if (sessionParams.chainId) {
             this.chainId = sessionParams.chainId
@@ -925,10 +937,10 @@ class Connector implements IConnector {
     }
 
     const payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | null = await this._decrypt(encryptionPayload)
+      | IJsonRpcRequest
+      | IJsonRpcResponseSuccess
+      | IJsonRpcResponseError
+      | null = await this._decrypt(encryptionPayload)
 
     if (payload) {
       this._eventManager.trigger(payload)
@@ -1015,6 +1027,44 @@ class Connector implements IConnector {
       }
       this._handleSessionResponse('Session disconnected', payload.params[0])
     })
+
+    this.on('wc_isAlive', (error, payload) => {
+      if (error) {
+        this._eventManager.trigger({
+          event: 'error',
+          params: [
+            {
+              code: 'IS_ALIVE_ERROR',
+              message: error.toString()
+            }
+          ]
+        })
+      }
+
+      this.approveRequest({ id: payload.id, result: null })
+    })
+
+    this._startIsAliveInterval()
+  }
+
+  private _startIsAliveInterval () {
+    if (this._isAliveInterval) {
+      clearInterval(this._isAliveInterval)
+    }
+    this._isAliveInterval = setInterval(async () => {
+      const formattedRequest = this._formatRequest({
+        method: 'wc_isAlive'
+      })
+
+      try {
+        const result = await this._sendCallRequest(formattedRequest)
+        if (result) {
+          this._isAlive = true
+        }
+      } catch (error) {
+        throw error
+      }
+    }, IS_ALIVE_INTERVAL_DURATION)
   }
 
   // -- uri ------------------------------------------------------------- //
@@ -1083,10 +1133,10 @@ class Connector implements IConnector {
     const key: ArrayBuffer | null = this._key
     if (this.cryptoLib && key) {
       const result:
-      | IJsonRpcRequest
-      | IJsonRpcResponseSuccess
-      | IJsonRpcResponseError
-      | null = await this.cryptoLib.decrypt(payload, key)
+        | IJsonRpcRequest
+        | IJsonRpcResponseSuccess
+        | IJsonRpcResponseError
+        | null = await this.cryptoLib.decrypt(payload, key)
       return result
     }
     return null
