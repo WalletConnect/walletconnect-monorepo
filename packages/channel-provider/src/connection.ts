@@ -1,7 +1,7 @@
-import EventEmitter from 'events'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
+import EventEmitter from 'events'
 
 // -- WalletConnectConnection --------------------------------------------- //
 
@@ -18,7 +18,8 @@ class WalletConnectConnection extends EventEmitter {
     this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
     this.on('error', () => this.close())
   }
-  public openQRCode () {
+
+  public openQRCode (): void {
     const uri = this.wc ? this.wc.uri : ''
     if (uri) {
       WCQRCode.open(uri, () => {
@@ -26,7 +27,8 @@ class WalletConnectConnection extends EventEmitter {
       })
     }
   }
-  public create () {
+
+  public create (): void {
     try {
       this.wc = new WalletConnect({ bridge: this.bridge })
     } catch (e) {
@@ -74,37 +76,42 @@ class WalletConnectConnection extends EventEmitter {
       this.onClose()
     })
   }
-  public onClose () {
+
+  public onClose (): void {
     this.wc = null
     this.connected = false
     this.closed = true
     this.emit('close')
     this.removeAllListeners()
   }
-  public close () {
+
+  public close (): void {
     if (this.wc) {
       this.wc.killSession()
     }
     this.onClose()
   }
-  public error (payload: any, message: string, code = -1) {
+
+  public error (payload: any, message: string, code: number = -1): void {
     this.emit('payload', {
+      error: { message, code },
       id: payload.id,
-      jsonrpc: payload.jsonrpc,
-      error: { message, code }
+      jsonrpc: payload.jsonrpc
     })
   }
-  public async send (payload: any) {
-    if (this.wc && this.wc.connected) {
-      if (payload.method.includes('chan_')) {
-        const response = await this.wc.unsafeSend(payload)
-        this.emit('payload', response)
-      } else {
-        this.error(payload, 'HTTP Connection not available')
+
+  public async send (payload: any): Promise<any> {
+    return new Promise(
+      async (resolve, reject): Promise<void> => {
+        if (this.wc && this.wc.connected) {
+          const response = await this.wc.unsafeSend(payload)
+          resolve(response)
+        }
+        const errorMsg = 'WalletConnect Not Connected'
+        this.error(payload, errorMsg)
+        reject(new Error(errorMsg))
       }
-    } else {
-      this.error(payload, 'Not connected')
-    }
+    )
   }
 }
 
