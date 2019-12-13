@@ -1,35 +1,18 @@
 import EventEmitter from 'events'
-import { RpcParameters } from 'rpc-server'
 import {
   payloadId,
   isJsonRpcSubscription,
-  isJsonRpcRequest,
   isJsonRpcResponseSuccess,
   isJsonRpcResponseError
 } from '@walletconnect/utils'
 import { IError, JsonRpc } from '@walletconnect/types'
 import WalletConnectConnection from './connection'
-import {
-  CFCoreTypes,
-  ChannelRouterConfig,
-  NewRpcMethodName,
-  RpcConnection
-} from './types'
+import { ChannelProviderConfig, NewRpcMethodName, StorePair } from './types'
 
 // -- types ---------------------------------------------------------------- //
 
 interface IPromisesMap {
   [id: number]: { resolve: (res: any) => void; reject: (err: any) => void }
-}
-
-type ChannelRouterConfig = {
-  freeBalanceAddress: string
-  multisigAddress?: string // may not be deployed yet
-  natsClusterId?: string
-  natsToken?: string
-  nodeUrl: string
-  signerAddress: string
-  userPublicIdentifier: string
 }
 
 // -- ChannelProvider ---------------------------------------------------- //
@@ -39,7 +22,9 @@ class ChannelProvider extends EventEmitter {
   public promises: IPromisesMap = {}
   public subscriptions: number[] = []
   public connection: WalletConnectConnection
-  public config: ChannelRouterConfig = {}
+  private _config: ChannelProviderConfig | undefined = undefined // tslint:disable-line:variable-name
+  private _multisigAddress: string | undefined = undefined // tslint:disable-line:variable-name
+  private _signerAddress: string | undefined = undefined // tslint:disable-line:variable-name
 
   constructor (connection: WalletConnectConnection) {
     super()
@@ -79,7 +64,7 @@ class ChannelProvider extends EventEmitter {
             .then(config => {
               if (Object.keys(config).length > 0) {
                 this.connected = true
-                this.config = config
+                this._config = config
                 this._multisigAddress = config.multisigAddress
                 this._signerAddress = config.signerAddress
                 this.emit('connect')
@@ -117,54 +102,41 @@ class ChannelProvider extends EventEmitter {
     this.connection.send(payload)
     return promise
   }
-  public send = async (
-    method: CFCoreTypes.RpcMethodName | NewRpcMethodName,
-    params: RpcParameters = {}
-  ): Promise<any> => {
+  public send = async (method: string, params: any = {}): Promise<any> => {
     let result
+    console.log('[ChannelProvider]', '[send]', 'method', '=>', method)
+    console.log('[ChannelProvider]', '[send]', 'params', '=>', params)
     switch (method) {
       case NewRpcMethodName.STORE_SET:
-        const { pairs } = params
-        result = await this.set(pairs)
+        result = await this.set(params.pairs)
         break
       case NewRpcMethodName.STORE_GET:
-        const { path } = params
-        result = await this.get(path)
+        result = await this.get(params.path)
         break
       case NewRpcMethodName.NODE_AUTH:
-        const { message } = params
-        result = await this.signMessage(message)
+        result = await this.signMessage(params.message)
         break
       case NewRpcMethodName.CONFIG:
-        result = await this._config()
+        result = this.config
         break
       case NewRpcMethodName.RESTORE_STATE:
-        const { path } = params
-        result = await this.restoreState(path)
+        result = await this.restoreState(params.path)
         break
       default:
-        result = await this._send(method as CFCoreTypes.RpcMethodName, params)
+        result = await this._send(method, params)
         break
     }
-
+    console.log('[ChannelProvider]', '[send]', 'result', '=>', result)
     return result
   }
 
-  public _sendBatch (requests: JsonRpc[]) {
-    return Promise.all(
-      requests.map(payload => {
-        if (isJsonRpcRequest(payload)) {
-          this._send(payload.method, payload.params)
-        }
-      })
-    )
-  }
   public subscribe (type: string, method: string, params: any[] = []) {
     return this._send(type, [method, ...params]).then(id => {
       this.subscriptions.push(id)
       return id
     })
   }
+
   public unsubscribe (type: string, id: number) {
     return this._send(type, [id]).then(success => {
       if (success) {
@@ -174,46 +146,7 @@ class ChannelProvider extends EventEmitter {
       }
     })
   }
-  public sendAsync (payload: JsonRpc, cb: any) {
-    // Backwards Compatibility
-    if (!cb || typeof cb !== 'function') {
-      return cb(
-        new Error('Invalid or undefined callback provided to sendAsync')
-      )
-    }
-    if (!payload) {
-      return cb(new Error('Invalid Payload'))
-    }
-    // sendAsync can be called with an array for batch requests used by web3.js 0.x
-    // this is not part of EIP-1193's backwards compatibility but we still want to support it
-    if (payload instanceof Array) {
-      return this.sendAsyncBatch(payload, cb)
-    } else if (isJsonRpcRequest(payload)) {
-      return this._send(payload.method, payload.params)
-        .then(result => {
-          cb(null, { id: payload.id, jsonrpc: payload.jsonrpc, result })
-        })
-        .catch(err => {
-          cb(err)
-        })
-    }
-  }
-  public sendAsyncBatch (requests: JsonRpc[], cb: any) {
-    return this._sendBatch(requests)
-      .then(results => {
-        const result = results.map((entry, index) => {
-          return {
-            id: requests[index].id,
-            jsonrpc: requests[index].jsonrpc,
-            result: entry
-          }
-        })
-        cb(null, result)
-      })
-      .catch(err => {
-        cb(err)
-      })
-  }
+
   public isConnected () {
     // Backwards Compatibility
     return this.connected
@@ -228,42 +161,77 @@ class ChannelProvider extends EventEmitter {
     this.subscriptions = [] // Clear subscriptions
   }
 
-  /// ////////////////////////////////////////////
+  /// ///////////////
   /// // GETTERS / SETTERS
-  get config (): ChannelRouterConfig {
+  get config (): ChannelProviderConfig | undefined {
+    console.log(
+      '[ChannelProvider]',
+      '[get config()]',
+      'this._config',
+      '=>',
+      this._config
+    )
     return this._config
   }
 
   get multisigAddress (): string | undefined {
-    return this._multisigAddress
+    const multisigAddress =
+      this._multisigAddress ||
+      (this._config ? this._config.multisigAddress : undefined)
+    console.log(
+      '[ChannelProvider]',
+      '[get multisigAddress()]',
+      'multisigAddress',
+      '=>',
+      multisigAddress
+    )
+    return multisigAddress
   }
 
-  set multisigAddress (multisigAddress: string) {
+  set multisigAddress (multisigAddress: string | undefined) {
+    console.log(
+      '[ChannelProvider]',
+      '[set multisigAddress()]',
+      'multisigAddress',
+      '=>',
+      multisigAddress
+    )
+    if (this._config) {
+      this._config.multisigAddress = multisigAddress
+    }
     this._multisigAddress = multisigAddress
   }
 
   get signerAddress (): string | undefined {
+    console.log(
+      '[ChannelProvider]',
+      '[get signerAddress()]',
+      'this._signerAddress',
+      '=>',
+      this._signerAddress
+    )
     return this._signerAddress
   }
 
-  set signerAddress (signerAddress: string) {
+  set signerAddress (signerAddress: string | undefined) {
+    console.log(
+      '[ChannelProvider]',
+      '[set signerAddress()]',
+      'signerAddress',
+      '=>',
+      signerAddress
+    )
     this._signerAddress = signerAddress
   }
 
   /// ////////////////////////////////////////////
   /// // LISTENER METHODS
-  public on = (
-    event: string,
-    listener: (...args: any[]) => void
-  ): RpcConnection => {
+  public on = (event: string, listener: (...args: any[]) => void): any => {
     this.connection.on(event, listener)
     return this.connection
   }
 
-  public once = (
-    event: string,
-    listener: (...args: any[]) => void
-  ): RpcConnection => {
+  public once = (event: string, listener: (...args: any[]) => void): any => {
     this.connection.once(event, listener)
     return this.connection
   }
@@ -271,33 +239,30 @@ class ChannelProvider extends EventEmitter {
   /// ////////////////////////////////////////////
   /// // SIGNING METHODS
   public signMessage = async (message: string): Promise<string> => {
-    return await this._send(NewRpcMethodName.NODE_AUTH as any, { message })
+    return this._send(NewRpcMethodName.NODE_AUTH as any, { message })
   }
 
   /// ////////////////////////////////////////////
   /// // STORE METHODS
 
   public get = async (path: string): Promise<any> => {
-    return await this.connection._send(NewRpcMethodName.STORE_GET, {
+    return this._send(NewRpcMethodName.STORE_GET, {
       path
     })
   }
 
   public set = async (
-    pairs: {
-      path: string
-      value: any
-    }[],
+    pairs: StorePair[],
     allowDelete?: Boolean
   ): Promise<void> => {
-    return await this.connection._send(NewRpcMethodName.STORE_SET, {
+    return this._send(NewRpcMethodName.STORE_SET, {
       allowDelete,
       pairs
     })
   }
 
   public restoreState = async (path: string): Promise<void> => {
-    return await this.connection._send(NewRpcMethodName.RESTORE_STATE, { path })
+    return this._send(NewRpcMethodName.RESTORE_STATE, { path })
   }
 }
 

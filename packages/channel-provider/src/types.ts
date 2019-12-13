@@ -1,8 +1,19 @@
-export {
-  ChannelRouterConfig,
-  Node as CFCoreTypes,
-  RpcConnection
-} from '@connext/types'
+export type ChannelProviderConfig = {
+  freeBalanceAddress: string
+  multisigAddress?: string // may not be deployed yet
+  natsClusterId?: string
+  natsToken?: string
+  nodeUrl: string
+  signerAddress: string
+  userPublicIdentifier: string
+}
+
+export type StorePair = {
+  path: string
+  value: any
+}
+
+export type KeyGen = (index: string) => Promise<string>
 
 export enum NewRpcMethodName {
   STORE_SET = 'chan_storeSet',
