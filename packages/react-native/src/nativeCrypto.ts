@@ -48,10 +48,7 @@ export async function createHmac (data: Buffer, key: Buffer): Promise<Buffer> {
   return result
 }
 
-export async function verifyHmac (
-  payload: IEncryptionPayload,
-  key: Buffer
-): Promise<boolean> {
+export async function verifyHmac (payload: IEncryptionPayload, key: Buffer): Promise<boolean> {
   const cipherText: Buffer = convertHexToBuffer(payload.data)
   const iv: Buffer = convertHexToBuffer(payload.iv)
   const hmac: Buffer = convertHexToBuffer(payload.hmac)
@@ -67,29 +64,15 @@ export async function verifyHmac (
   return false
 }
 
-export async function aesCbcEncrypt (
-  data: Buffer,
-  key: Buffer,
-  iv: Buffer
-): Promise<Buffer> {
-  const encoding = 'hex'
-  const input: any = data.toString(encoding)
+export async function aesCbcEncrypt (data: Buffer, key: Buffer, iv: Buffer): Promise<Buffer> {
   const cipher = crypto.createCipheriv(AES_ALGORITHM, key, iv)
-  let encrypted = cipher.update(input, encoding, encoding)
-  encrypted += cipher.final(encoding)
-  const result = new Buffer(encrypted, encoding)
+  const result = concatBuffers(cipher.update(data), cipher.final())
   return result
 }
 
-export async function aesCbcDecrypt (
-  data: Buffer,
-  key: Buffer,
-  iv: Buffer
-): Promise<Buffer> {
+export async function aesCbcDecrypt (data: Buffer, key: Buffer, iv: Buffer): Promise<Buffer> {
   const decipher = crypto.createDecipheriv(AES_ALGORITHM, key, iv)
-  let decrypted = decipher.update(data)
-  decrypted = concatBuffers(decrypted, decipher.final())
-  const result = decrypted
+  const result = concatBuffers(decipher.update(data), decipher.final())
   return result
 }
 
@@ -123,9 +106,7 @@ export async function encrypt (
 export async function decrypt (
   payload: IEncryptionPayload,
   key: ArrayBuffer
-): Promise<
-  IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null
-> {
+): Promise<IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null> {
   const _key: Buffer = convertArrayBufferToBuffer(key)
 
   if (!_key) {

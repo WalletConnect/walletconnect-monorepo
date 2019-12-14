@@ -12,10 +12,10 @@ class WalletConnectConnection extends EventEmitter {
   public connected: boolean = false
   public closed: boolean = false
 
-  constructor (opts: IWalletConnectConnectionOptions) {
+  constructor (opts?: IWalletConnectConnectionOptions) {
     super()
-    this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
-    this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
+    this.bridge = opts && opts.bridge ? opts.bridge : 'https://bridge.walletconnect.org'
+    this.qrcode = opts ? typeof opts.qrcode === 'undefined' || opts.qrcode !== false : true
     this.on('error', () => this.close())
   }
 
