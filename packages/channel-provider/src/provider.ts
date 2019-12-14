@@ -95,8 +95,7 @@ class ChannelProvider extends EventEmitter {
 
   get multisigAddress (): string | undefined {
     const multisigAddress =
-      this._multisigAddress ||
-      (this._config ? this._config.multisigAddress : undefined)
+      this._multisigAddress || (this._config ? this._config.multisigAddress : undefined)
     return multisigAddress
   }
 
@@ -120,12 +119,10 @@ class ChannelProvider extends EventEmitter {
 
   public on = (event: string, listener: (...args: any[]) => void): any => {
     // dumb clients don't require listeners
-
   }
 
   public once = (event: string, listener: (...args: any[]) => void): any => {
     // dumb clients don't require listeners
-
   }
 
   /// ////////////////////////////////////////////
@@ -144,10 +141,7 @@ class ChannelProvider extends EventEmitter {
     })
   }
 
-  public set = async (
-    pairs: StorePair[],
-    allowDelete?: Boolean
-  ): Promise<void> => {
+  public set = async (pairs: StorePair[], allowDelete?: Boolean): Promise<void> => {
     return this._send(NewRpcMethodName.STORE_SET, {
       allowDelete,
       pairs
@@ -164,8 +158,8 @@ class ChannelProvider extends EventEmitter {
   // tslint:disable-next-line:function-name
   private async _send (method: string, params: any = {}): Promise<any> {
     const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
-    const response = await this.connection.send(payload)
-    return response
+    const { result } = await this.connection.send(payload)
+    return result
   }
 }
 
