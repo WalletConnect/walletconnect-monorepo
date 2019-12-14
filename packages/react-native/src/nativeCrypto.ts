@@ -65,20 +65,14 @@ export async function verifyHmac (payload: IEncryptionPayload, key: Buffer): Pro
 }
 
 export async function aesCbcEncrypt (data: Buffer, key: Buffer, iv: Buffer): Promise<Buffer> {
-  const encoding = 'utf8'
-  const input: any = data.toString(encoding)
   const cipher = crypto.createCipheriv(AES_ALGORITHM, key, iv)
-  let encrypted = cipher.update(input, encoding)
-  concatBuffers(encrypted, Buffer.from(cipher.final(encoding)))
-  const result = Buffer.from(encrypted.toString(), 'hex')
+  const result = concatBuffers(cipher.update(data), cipher.final())
   return result
 }
 
 export async function aesCbcDecrypt (data: Buffer, key: Buffer, iv: Buffer): Promise<Buffer> {
   const decipher = crypto.createDecipheriv(AES_ALGORITHM, key, iv)
-  let decrypted = decipher.update(data)
-  decrypted = concatBuffers(decrypted, decipher.final())
-  const result = decrypted
+  const result = concatBuffers(decipher.update(data), decipher.final())
   return result
 }
 
