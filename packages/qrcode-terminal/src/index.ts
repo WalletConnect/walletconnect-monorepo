@@ -1,15 +1,15 @@
-const qrTerminal = require("qrcode-terminal");
+const qrTerminal = require('qrcode-terminal')
 
-async function show(uri: string, cb?: any): Promise<void> {
+async function show (uri: string, cb?: any): Promise<void> {
   return new Promise(resolve => {
     qrTerminal.generate(uri, { small: true }, (qr: string) => {
       if (cb) {
-        cb(qr);
+        cb(qr)
       }
-      console.log(qr);
-      resolve();
-    });
-  });
+      console.log(qr)
+      resolve()
+    })
+  })
 }
 
-export default { show };
+export default { show }
