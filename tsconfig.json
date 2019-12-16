@@ -28,12 +28,15 @@
   "references": [
     { "path": "./packages/browser" },
     { "path": "./packages/core" },
+    { "path": "./packages/node" },
     { "path": "./packages/react-native" },
     { "path": "./packages/utils" },
     { "path": "./packages/qrcode-modal" },
+    { "path": "./packages/qrcode-terminal" },
     { "path": "./packages/web3-subprovider" },
     { "path": "./packages/web3-provider" },
     { "path": "./packages/eth-provider" },
+    { "path": "./packages/truffle-provider" },
     { "path": "./packages/channel-provider" }
   ]
 }
