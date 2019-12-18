@@ -122,6 +122,7 @@ class SocketTransport {
     socket.onmessage = (event: MessageEvent) => this._socketReceive(event)
 
     socket.onopen = () => {
+      this._trigger('open')
       this._socketClose()
       this._initiating = false
       this._socket = socket
@@ -129,6 +130,7 @@ class SocketTransport {
     }
 
     socket.onclose = () => {
+      this._trigger('close')
       this._socketOpen(true)
     }
   }
@@ -163,10 +165,7 @@ class SocketTransport {
     }
 
     if (this.connected) {
-      const events = this._events.filter(event => event.event === 'message')
-      if (events && events.length) {
-        events.forEach(event => event.callback(socketMessage))
-      }
+      this._trigger('message', socketMessage)
     }
   }
 
@@ -182,6 +181,13 @@ class SocketTransport {
     )
 
     this._queue = []
+  }
+
+  private _trigger (eventName: string, payload?: any) {
+    const events = this._events.filter(event => event.event === eventName)
+    if (events && events.length) {
+      events.forEach(event => event.callback(payload))
+    }
   }
 }
 
