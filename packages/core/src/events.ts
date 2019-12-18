@@ -28,10 +28,10 @@ class EventManager {
 
   public trigger (
     payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | IInternalEvent
+      | IJsonRpcRequest
+      | IJsonRpcResponseSuccess
+      | IJsonRpcResponseError
+      | IInternalEvent
   ): void {
     let eventEmitters: IEventEmitter[] = []
     let event: string
@@ -55,7 +55,11 @@ class EventManager {
       )
     }
 
-    if ((!eventEmitters || !eventEmitters.length) && !isReservedEvent(event)) {
+    if (
+      (!eventEmitters || !eventEmitters.length) &&
+      !isReservedEvent(event) &&
+      !isInternalEvent(event)
+    ) {
       eventEmitters = this._eventEmitters.filter(
         (eventEmitter: IEventEmitter) => eventEmitter.event === 'call_request'
       )

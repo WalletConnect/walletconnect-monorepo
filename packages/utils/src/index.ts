@@ -561,7 +561,10 @@ export function isReservedEvent (event: string) {
     'session_update',
     'exchange_key',
     'connect',
-    'disconnect'
+    'disconnect',
+    'display_uri',
+    'transport_open',
+    'transport_close'
   ]
   return reservedEvents.includes(event) || event.startsWith('wc_')
 }
