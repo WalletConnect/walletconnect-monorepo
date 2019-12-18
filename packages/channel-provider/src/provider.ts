@@ -3,7 +3,7 @@ import { payloadId } from '@walletconnect/utils'
 import EventEmitter from 'events'
 
 import WalletConnectConnection from './connection'
-import { ChannelProviderConfig, NewRpcMethodName, StorePair } from './types'
+import { ChannelProviderConfig, StorePair, ChannelProviderRpcMethod } from './types'
 
 class ChannelProvider extends EventEmitter {
   public connected: boolean = false
@@ -56,22 +56,24 @@ class ChannelProvider extends EventEmitter {
       this.connection.create()
     })
   }
-  public send = async (method: string, params: any = {}): Promise<any> => {
+  // probably can remove the `| string` typing once 1.4.1 types package is
+  // published, assuming no non-channel methods are sent to the `_send` fn
+  public send = async (method: ChannelProviderRpcMethod | string, params: any = {}): Promise<any> => {
     let result
     switch (method) {
-      case NewRpcMethodName.STORE_SET:
+      case 'chan_storeSet':
         result = await this.set(params.pairs)
         break
-      case NewRpcMethodName.STORE_GET:
+      case 'chan_storeGet':
         result = await this.get(params.path)
         break
-      case NewRpcMethodName.NODE_AUTH:
+      case 'chan_nodeAuth':
         result = await this.signMessage(params.message)
         break
-      case NewRpcMethodName.CONFIG:
+      case 'chan_config':
         result = this.config
         break
-      case NewRpcMethodName.RESTORE_STATE:
+      case 'chan_restoreState':
         result = await this.restoreState(params.path)
         break
       default:
@@ -129,34 +131,36 @@ class ChannelProvider extends EventEmitter {
   /// // SIGNING METHODS
 
   public signMessage = async (message: string): Promise<string> => {
-    return this._send(NewRpcMethodName.NODE_AUTH as any, { message })
+    return this._send('chan_nodeAuth', { message })
   }
 
   /// ////////////////////////////////////////////
   /// // STORE METHODS
 
   public get = async (path: string): Promise<any> => {
-    return this._send(NewRpcMethodName.STORE_GET, {
+    return this._send('chan_storeGet', {
       path
     })
   }
 
   public set = async (pairs: StorePair[], allowDelete?: Boolean): Promise<void> => {
-    return this._send(NewRpcMethodName.STORE_SET, {
+    return this._send('chan_storeSet', {
       allowDelete,
       pairs
     })
   }
 
   public restoreState = async (path: string): Promise<void> => {
-    return this._send(NewRpcMethodName.RESTORE_STATE, { path })
+    return this._send('chan_restoreState', { path })
   }
 
   /// ////////////////////////////////////////////
   /// // PRIVATE METHODS
 
+  // probably can remove the `| string` typing once 1.4.1 types package is
+  // published, assuming no non-channel methods are sent to the `_send` fn
   // tslint:disable-next-line:function-name
-  private async _send (method: string, params: any = {}): Promise<any> {
+  private async _send (method: ChannelProviderRpcMethod | string, params: any = {}): Promise<any> {
     const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
     const { result } = await this.connection.send(payload)
     return result
