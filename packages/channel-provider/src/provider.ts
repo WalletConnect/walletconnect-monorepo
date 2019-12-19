@@ -1,69 +1,44 @@
+import { IError } from '@walletconnect/types'
+import { payloadId } from '@walletconnect/utils'
 import EventEmitter from 'events'
-import {
-  payloadId,
-  isJsonRpcSubscription,
-  isJsonRpcRequest,
-  isJsonRpcResponseSuccess,
-  isJsonRpcResponseError
-} from '@walletconnect/utils'
-import { IError, JsonRpc } from '@walletconnect/types'
+
 import WalletConnectConnection from './connection'
-
-// -- types ---------------------------------------------------------------- //
-
-interface IPromisesMap {
-  [id: number]: { resolve: (res: any) => void; reject: (err: any) => void }
-}
-
-// -- ChannelProvider ---------------------------------------------------- //
+import {
+  ChannelProviderConfig,
+  StorePair,
+  ChannelProviderRpcMethod
+} from './types'
 
 class ChannelProvider extends EventEmitter {
   public connected: boolean = false
-  public promises: IPromisesMap = {}
-  public subscriptions: number[] = []
   public connection: WalletConnectConnection
-  public config: any
+
+  // tslint:disable-next-line:variable-name
+  private _config: ChannelProviderConfig | undefined = undefined
+  private _multisigAddress: string | undefined = undefined // tslint:disable-line:variable-name
+  private _signerAddress: string | undefined = undefined // tslint:disable-line:variable-name
 
   constructor (connection: WalletConnectConnection) {
     super()
     this.connection = connection
   }
-  public async onConnectionPayload (payload: JsonRpc) {
-    const { id } = payload
-    if (typeof id !== 'undefined') {
-      if (this.promises[id]) {
-        if (isJsonRpcResponseError(payload)) {
-          this.promises[id].reject(payload.error)
-        } else if (isJsonRpcResponseSuccess(payload)) {
-          this.promises[id].resolve(payload.result)
-        }
-        delete this.promises[id]
-      }
-    } else if (isJsonRpcSubscription(payload)) {
-      if (payload.method && payload.method.indexOf('_subscription') > -1) {
-        // Emit subscription result
-        this.emit(payload.params.subscription, payload.params.result)
-        this.emit(payload.method, payload.params) // Latest EIP-1193
-        this.emit('data', payload) // Backwards Compatibility
-      }
-    }
-  }
-  public enable () {
-    return new Promise((resolve, reject) => {
 
+  public enable (): Promise<ChannelProviderConfig> {
+    return new Promise((resolve, reject): void => {
       this.connection.on('close', () => {
         this.connected = false
         this.emit('close')
       })
-      this.connection.on('payload', this.onConnectionPayload.bind(this))
 
       this.connection.on('connect', () => {
         try {
           this._send('chan_config')
-            .then(config => {
+            .then((config: ChannelProviderConfig): void => {
               if (Object.keys(config).length > 0) {
                 this.connected = true
-                this.config = config
+                this._config = config
+                this._multisigAddress = config.multisigAddress
+                this._signerAddress = config.signerAddress
                 this.emit('connect')
                 resolve(config)
               } else {
@@ -85,100 +60,127 @@ class ChannelProvider extends EventEmitter {
       this.connection.create()
     })
   }
-  public _send (method?: string, params: any = {}) {
-    if (!method || typeof method !== 'string') {
-      throw new Error('Method is not a valid string.')
+  // probably can remove the `| string` typing once 1.4.1 types package is
+  // published, assuming no non-channel methods are sent to the `_send` fn
+  public send = async (
+    method: ChannelProviderRpcMethod | string,
+    params: any = {}
+  ): Promise<any> => {
+    let result
+    switch (method) {
+      case 'chan_storeSet':
+        result = await this.set(params.pairs)
+        break
+      case 'chan_storeGet':
+        result = await this.get(params.path)
+        break
+      case 'chan_nodeAuth':
+        result = await this.signMessage(params.message)
+        break
+      case 'chan_config':
+        result = this.config
+        break
+      case 'chan_restoreState':
+        result = await this.restoreState(params.path)
+        break
+      default:
+        result = await this._send(method, params)
+        break
     }
-    if (!(params instanceof Object)) {
-      throw new Error('Params is not a valid object.')
-    }
-    const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
-    const promise: Promise<any> = new Promise((resolve, reject) => {
-      this.promises[payload.id] = { resolve, reject }
-    })
-    this.connection.send(payload)
-    return promise
+    return result
   }
-  public send () {
-    // Send can be clobbered, proxy sendPromise for backwards compatibility
-    return this._send(...(arguments as any))
-  }
-  public _sendBatch (requests: JsonRpc[]) {
-    return Promise.all(
-      requests.map(payload => {
-        if (isJsonRpcRequest(payload)) {
-          this._send(payload.method, payload.params)
-        }
-      })
-    )
-  }
-  public subscribe (type: string, method: string, params: any[] = []) {
-    return this._send(type, [method, ...params]).then(id => {
-      this.subscriptions.push(id)
-      return id
-    })
-  }
-  public unsubscribe (type: string, id: number) {
-    return this._send(type, [id]).then(success => {
-      if (success) {
-        this.subscriptions = this.subscriptions.filter(_id => _id !== id) // Remove subscription
-        this.removeAllListeners(String(id)) // Remove listeners
-        return success
-      }
-    })
-  }
-  public sendAsync (payload: JsonRpc, cb: any) {
-    // Backwards Compatibility
-    if (!cb || typeof cb !== 'function') {
-      return cb(
-        new Error('Invalid or undefined callback provided to sendAsync')
-      )
-    }
-    if (!payload) {
-      return cb(new Error('Invalid Payload'))
-    }
-    // sendAsync can be called with an array for batch requests used by web3.js 0.x
-    // this is not part of EIP-1193's backwards compatibility but we still want to support it
-    if (payload instanceof Array) {
-      return this.sendAsyncBatch(payload, cb)
-    } else if (isJsonRpcRequest(payload)) {
-      return this._send(payload.method, payload.params)
-        .then(result => {
-          cb(null, { id: payload.id, jsonrpc: payload.jsonrpc, result })
-        })
-        .catch(err => {
-          cb(err)
-        })
-    }
-  }
-  public sendAsyncBatch (requests: JsonRpc[], cb: any) {
-    return this._sendBatch(requests)
-      .then(results => {
-        const result = results.map((entry, index) => {
-          return {
-            id: requests[index].id,
-            jsonrpc: requests[index].jsonrpc,
-            result: entry
-          }
-        })
-        cb(null, result)
-      })
-      .catch(err => {
-        cb(err)
-      })
-  }
-  public isConnected () {
-    // Backwards Compatibility
-    return this.connected
-  }
-  public close () {
+
+  public close (): void {
     this.connection.close()
     this.connected = false
-    const error = new Error(
-      `Provider closed, subscription lost, please subscribe again.`
-    )
-    this.subscriptions.forEach(id => this.emit(String(id), error)) // Send Error objects to any open subscriptions
-    this.subscriptions = [] // Clear subscriptions
+  }
+
+  /// ///////////////
+  /// // GETTERS / SETTERS
+  get isSigner (): boolean {
+    return false
+  }
+
+  get config (): ChannelProviderConfig | undefined {
+    return this._config
+  }
+
+  get multisigAddress (): string | undefined {
+    const multisigAddress =
+      this._multisigAddress ||
+      (this._config ? this._config.multisigAddress : undefined)
+    return multisigAddress
+  }
+
+  set multisigAddress (multisigAddress: string | undefined) {
+    if (this._config) {
+      this._config.multisigAddress = multisigAddress
+    }
+    this._multisigAddress = multisigAddress
+  }
+
+  get signerAddress (): string | undefined {
+    return this._signerAddress
+  }
+
+  set signerAddress (signerAddress: string | undefined) {
+    this._signerAddress = signerAddress
+  }
+
+  /// ////////////////////////////////////////////
+  /// // LISTENER METHODS
+
+  public on = (event: string, listener: (...args: any[]) => void): any => {
+    // dumb clients don't require listeners
+  }
+
+  public once = (event: string, listener: (...args: any[]) => void): any => {
+    // dumb clients don't require listeners
+  }
+
+  /// ////////////////////////////////////////////
+  /// // SIGNING METHODS
+
+  public signMessage = async (message: string): Promise<string> => {
+    return this._send('chan_nodeAuth', { message })
+  }
+
+  /// ////////////////////////////////////////////
+  /// // STORE METHODS
+
+  public get = async (path: string): Promise<any> => {
+    return this._send('chan_storeGet', {
+      path
+    })
+  }
+
+  public set = async (
+    pairs: StorePair[],
+    allowDelete?: Boolean
+  ): Promise<void> => {
+    return this._send('chan_storeSet', {
+      allowDelete,
+      pairs
+    })
+  }
+
+  public restoreState = async (path: string): Promise<void> => {
+    return this._send('chan_restoreState', { path })
+  }
+
+  /// ////////////////////////////////////////////
+  /// // PRIVATE METHODS
+
+  // probably can remove the `| string` typing once 1.4.1 types package is
+  // published, assuming no non-channel methods are sent to the `_send` fn
+  // tslint:disable-next-line:function-name
+  private async _send (
+    method: ChannelProviderRpcMethod | string,
+    params: any = {}
+  ): Promise<any> {
+    const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
+    const { result } = await this.connection.send(payload)
+    return result
   }
 }
 
