@@ -283,7 +283,9 @@ class WalletConnectProvider extends ProviderEngine {
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
   // in case the connector is disconnected
-  getWalletConnector ({ disableSessionCreation = false }) {
+  getWalletConnector (opts = {}) {
+    const { disableSessionCreation = false } = opts
+
     return new Promise((resolve, reject) => {
       const wc = this.wc
 
