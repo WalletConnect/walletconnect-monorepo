@@ -211,6 +211,10 @@ declare module '@walletconnect/types' {
     session?: IWalletConnectSession
   }
 
+  export interface INodeJSOptions {
+    clientMeta: IClientMeta
+  }
+
   export interface IPushServerOptions {
     url: string
     type: string
