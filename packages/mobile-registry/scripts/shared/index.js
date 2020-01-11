@@ -1,45 +1,45 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs')
+const path = require('path')
 
-const ROOT_DIRECTORY = path.join(__dirname, "../../");
+const ROOT_DIRECTORY = path.join(__dirname, '../../')
 
-const FILE_NAME = "registry.json";
+const FILE_NAME = 'registry.json'
 
-const FILE_PATH = path.join(ROOT_DIRECTORY, FILE_NAME);
+const FILE_PATH = path.join(ROOT_DIRECTORY, FILE_NAME)
 
-function stat(filePath) {
+function stat (filePath) {
   return new Promise((resolve, reject) => {
-    fs.stat(filePath, function(error, stat) {
+    fs.stat(filePath, function (error, stat) {
       if (error) {
-        return reject(error);
+        return reject(error)
       }
-      resolve(stat);
-    });
-  });
+      resolve(stat)
+    })
+  })
 }
 
-async function isFile(filePath) {
-  const fileStat = await stat(filePath);
-  return fileStat.isFile();
+async function isFile (filePath) {
+  const fileStat = await stat(filePath)
+  return fileStat.isFile()
 }
 
-function isJson(fileName) {
-  const ext = path.extname(fileName);
-  return ext === ".json";
+function isJson (fileName) {
+  const ext = path.extname(fileName)
+  return ext === '.json'
 }
-function formatJson(json) {
-  return JSON.stringify(json, null, 2) + "\n";
+function formatJson (json) {
+  return JSON.stringify(json, null, 2) + '\n'
 }
 
-async function writeFile(filePath, data) {
+async function writeFile (filePath, data) {
   return new Promise((resolve, reject) => {
     fs.writeFile(filePath, data, (err, res) => {
       if (err) {
-        reject(err);
+        reject(err)
       }
-      resolve(res);
-    });
-  });
+      resolve(res)
+    })
+  })
 }
 
 module.exports = {
@@ -51,4 +51,4 @@ module.exports = {
   isJson,
   formatJson,
   writeFile
-};
+}
