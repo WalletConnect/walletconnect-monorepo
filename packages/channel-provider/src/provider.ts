@@ -2,24 +2,24 @@ import { IError } from '@walletconnect/types'
 import { payloadId } from '@walletconnect/utils'
 import EventEmitter from 'events'
 
-import WalletConnectConnection from './connection'
 import {
   ChannelProviderConfig,
   StorePair,
-  ChannelProviderRpcMethod
+  ChannelProviderRpcMethod,
+  JsonRpcRequest
 } from './types'
-import { IChannelProvider } from './interfaces'
+import { IChannelProvider, IRpcConnection } from './interfaces'
 
 class ChannelProvider extends EventEmitter implements IChannelProvider {
   public connected: boolean = false
-  public connection: WalletConnectConnection
+  public connection: IRpcConnection
 
   // tslint:disable-next-line:variable-name
   public _config: ChannelProviderConfig | undefined = undefined
   public _multisigAddress: string | undefined = undefined // tslint:disable-line:variable-name
   public _signerAddress: string | undefined = undefined // tslint:disable-line:variable-name
 
-  constructor (connection: WalletConnectConnection) {
+  constructor (connection: IRpcConnection) {
     super()
     this.connection = connection
   }
@@ -58,7 +58,7 @@ class ChannelProvider extends EventEmitter implements IChannelProvider {
         }
       })
 
-      this.connection.create()
+      this.connection.open()
     })
   }
   // probably can remove the `| string` typing once 1.4.1 types package is
@@ -180,7 +180,7 @@ class ChannelProvider extends EventEmitter implements IChannelProvider {
     params: any = {}
   ): Promise<any> {
     const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
-    const { result } = await this.connection.send(payload)
+    const { result } = await this.connection.send(payload as JsonRpcRequest)
     return result
   }
 }
