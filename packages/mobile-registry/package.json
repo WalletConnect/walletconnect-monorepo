@@ -1,0 +1,25 @@
+{
+  "name": "@walletconnect/mobile-registry",
+  "version": "1.0.0",
+  "description": "Registry for WalletConnect mobile-to-mobile linking supported Wallets",
+  "scripts": {
+    "parse": "node ./scripts/parse.js",
+    "deploy": "npm publish --access=public"
+  },
+  "keywords": [
+    "WalletConnect",
+    "mobile",
+    "registry"
+  ],
+  "author": "WalletConnect <walletconnect.org>",
+  "homepage": "https://github.com/WalletConnect/walletconnect-mobile-registry#readme",
+  "license": "MIT",
+  "main": "registry.json",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/WalletConnect/walletconnect-mobile-registry.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WalletConnect/walletconnect-mobile-registry/issues"
+  }
+}
