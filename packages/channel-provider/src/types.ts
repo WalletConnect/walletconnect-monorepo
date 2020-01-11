@@ -8,3 +8,10 @@ export {
   ChannelProviderConfig,
   StorePair
 } from '@connext/types'
+
+export type JsonRpcRequest = {
+  id: number
+  jsonrpc: '2.0'
+  method: string
+  params: any
+}

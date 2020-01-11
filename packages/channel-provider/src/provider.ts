@@ -8,15 +8,16 @@ import {
   StorePair,
   ChannelProviderRpcMethod
 } from './types'
+import { IChannelProvider } from './interfaces'
 
-class ChannelProvider extends EventEmitter {
+class ChannelProvider extends EventEmitter implements IChannelProvider {
   public connected: boolean = false
   public connection: WalletConnectConnection
 
   // tslint:disable-next-line:variable-name
-  private _config: ChannelProviderConfig | undefined = undefined
-  private _multisigAddress: string | undefined = undefined // tslint:disable-line:variable-name
-  private _signerAddress: string | undefined = undefined // tslint:disable-line:variable-name
+  public _config: ChannelProviderConfig | undefined = undefined
+  public _multisigAddress: string | undefined = undefined // tslint:disable-line:variable-name
+  public _signerAddress: string | undefined = undefined // tslint:disable-line:variable-name
 
   constructor (connection: WalletConnectConnection) {
     super()
@@ -174,7 +175,7 @@ class ChannelProvider extends EventEmitter {
   // probably can remove the `| string` typing once 1.4.1 types package is
   // published, assuming no non-channel methods are sent to the `_send` fn
   // tslint:disable-next-line:function-name
-  private async _send (
+  public async _send (
     method: ChannelProviderRpcMethod | string,
     params: any = {}
   ): Promise<any> {
