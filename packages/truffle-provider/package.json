@@ -58,7 +58,6 @@
   "dependencies": {
     "@walletconnect/qrcode-modal": "1.0.0-next.0",
     "@walletconnect/node": "1.0.0-next.0",
-    "ora": "^4.0.3",
     "web3-provider-engine": "^15.0.4"
   }
 }
