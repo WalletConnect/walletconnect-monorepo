@@ -50,7 +50,7 @@
     "isomorphic-fetch": "^2.2.1",
     "mocha": "5.2.0",
     "ts-loader": "^5.3.3",
-    "typescript": "^3.7.4",
+    "typescript": "^3.5.3",
     "webpack": "^4.28.3",
     "webpack-cli": "^3.2.1"
   },

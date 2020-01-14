@@ -1,7 +1,6 @@
 import NodeWalletConnect from '@walletconnect/node'
 import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 
-const Web3 = require('web3')
 const ProviderEngine = require('web3-provider-engine')
 const FiltersSubprovider = require('web3-provider-engine/subproviders/filters.js')
 const NonceSubProvider = require('web3-provider-engine/subproviders/nonce-tracker.js')
@@ -45,13 +44,7 @@ class WalletConnectProvider {
       shareNonce ? singletonNonceSubProvider : new NonceSubProvider()
     )
     this.engine.addProvider(new FiltersSubprovider())
-    this.engine.addProvider(
-      new ProviderSubprovider(
-        typeof provider === 'string'
-          ? new Web3.providers.HttpProvider(provider, { keepAlive: false })
-          : provider
-      )
-    )
+    this.engine.addProvider(new ProviderSubprovider(provider))
     this.engine.start() // Required by the provider engine.
   }
 
