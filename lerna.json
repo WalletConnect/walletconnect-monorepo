@@ -1,4 +1,4 @@
 {
-  "version": "1.0.0-next.0",
+  "version": "1.0.0-beta.44",
   "packages": ["packages/*"]
 }

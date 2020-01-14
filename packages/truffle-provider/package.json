@@ -1,11 +1,11 @@
 {
   "name": "@walletconnect/truffle-provider",
-  "version": "1.0.0-next.0",
+  "version": "1.0.0-beta.44",
   "description": "WalletConnect Provider for Truffle",
   "scripts": {
     "clean": "rm -rf lib",
     "build": "webpack",
-    "test": "mocha --require ./babel-polyfill.js test/**/*.spec.ts"
+    "test": "mocha --require ./babel-polyfill.js test/**/*.spec.js"
   },
   "keywords": [
     "walletconnect",
@@ -56,8 +56,8 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/qrcode-modal": "1.0.0-next.0",
-    "@walletconnect/node": "1.0.0-next.0",
+    "@walletconnect/qrcode-modal": "1.0.0-beta.44",
+    "@walletconnect/node": "1.0.0-beta.44",
     "web3-provider-engine": "^15.0.4"
   }
 }
