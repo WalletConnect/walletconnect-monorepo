@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/node",
-  "version": "1.0.0-beta.39",
+  "version": "1.0.0-test.0",
   "description": "Node SDK for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
@@ -49,8 +49,8 @@
     "webpack-cli": "^3.2.1"
   },
   "dependencies": {
-    "@walletconnect/core": "^1.0.0-beta.39",
-    "@walletconnect/types": "^1.0.0-beta.39",
-    "@walletconnect/utils": "^1.0.0-beta.39"
+    "@walletconnect/core": "^1.0.0-test.0",
+    "@walletconnect/types": "^1.0.0-test.0",
+    "@walletconnect/utils": "^1.0.0-test.0"
   }
 }
