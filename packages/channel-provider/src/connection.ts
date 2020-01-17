@@ -2,7 +2,7 @@ import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
 import EventEmitter from 'events'
-import { IRpcConnection } from './interfaces'
+import { IRpcConnection } from './types'
 
 // -- WalletConnectConnection --------------------------------------------- //
 

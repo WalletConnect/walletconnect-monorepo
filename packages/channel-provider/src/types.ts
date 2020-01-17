@@ -1,17 +1,11 @@
 export {
   KeyGen,
-  // TODO: add as imports when 1.4.1 published
-  // ConnextRpcMethod,
-  // ConnextRpcMethods,
+  IChannelProvider,
+  IRpcConnection,
+  CFCoreTypes,
   ChannelProviderRpcMethods,
   ChannelProviderRpcMethod,
   ChannelProviderConfig,
-  StorePair
+  StorePair,
+  JsonRpcRequest
 } from '@connext/types'
-
-export type JsonRpcRequest = {
-  id: number
-  jsonrpc: '2.0'
-  method: string
-  params: any
-}

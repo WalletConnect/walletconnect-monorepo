@@ -3,12 +3,14 @@ import { payloadId } from '@walletconnect/utils'
 import EventEmitter from 'events'
 
 import {
+  IChannelProvider,
+  IRpcConnection,
   ChannelProviderConfig,
   StorePair,
+  CFCoreTypes,
   ChannelProviderRpcMethod,
   JsonRpcRequest
 } from './types'
-import { IChannelProvider, IRpcConnection } from './interfaces'
 
 class ChannelProvider extends EventEmitter implements IChannelProvider {
   public connected: boolean = false
@@ -131,11 +133,17 @@ class ChannelProvider extends EventEmitter implements IChannelProvider {
   /// ////////////////////////////////////////////
   /// // LISTENER METHODS
 
-  public on = (event: string, listener: (...args: any[]) => void): any => {
+  public on = (
+    event: CFCoreTypes.EventName | CFCoreTypes.RpcMethodName,
+    listener: (...args: any[]) => void
+  ): any => {
     // dumb clients don't require listeners
   }
 
-  public once = (event: string, listener: (...args: any[]) => void): any => {
+  public once = (
+    event: CFCoreTypes.EventName | CFCoreTypes.RpcMethodName,
+    listener: (...args: any[]) => void
+  ): any => {
     // dumb clients don't require listeners
   }
 
