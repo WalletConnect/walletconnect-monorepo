@@ -20,5 +20,8 @@
   },
   "bugs": {
     "url": "https://github.com/WalletConnect/walletconnect-monorepo/issues"
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.6"
   }
 }
