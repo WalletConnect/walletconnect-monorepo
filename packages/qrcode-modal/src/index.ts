@@ -1,7 +1,12 @@
+import { detectEnv } from '@walletconnect/utils'
+
 import browser from './browser'
 import node from './node'
 
-function open (uri: string, cb: any, isNode?: boolean) {
+const env = detectEnv()
+const isNode = env.name === 'node'
+
+function open (uri: string, cb: any) {
   if (isNode) {
     node.open(uri, cb)
   } else {
@@ -9,7 +14,7 @@ function open (uri: string, cb: any, isNode?: boolean) {
   }
 }
 
-function close (isNode?: boolean) {
+function close () {
   if (isNode) {
     node.close()
   } else {

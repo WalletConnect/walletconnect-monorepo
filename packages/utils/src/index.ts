@@ -205,7 +205,7 @@ export function isMobile (): boolean {
   return mobile
 }
 
-export function detectEnvironment (
+export function detectEnv (
   userAgent?: string
 ): BrowserInfo | BotInfo | NodeInfo | null {
   return detect(userAgent)
