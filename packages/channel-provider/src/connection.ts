@@ -2,10 +2,11 @@ import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
 import EventEmitter from 'events'
+import { IRpcConnection } from './types'
 
 // -- WalletConnectConnection --------------------------------------------- //
 
-class WalletConnectConnection extends EventEmitter {
+class WalletConnectConnection extends EventEmitter implements IRpcConnection {
   public bridge: string = 'https://bridge.walletconnect.org'
   public qrcode: boolean = true
   public wc: WalletConnect | null = null
@@ -14,8 +15,11 @@ class WalletConnectConnection extends EventEmitter {
 
   constructor (opts?: IWalletConnectConnectionOptions) {
     super()
-    this.bridge = opts && opts.bridge ? opts.bridge : 'https://bridge.walletconnect.org'
-    this.qrcode = opts ? typeof opts.qrcode === 'undefined' || opts.qrcode !== false : true
+    this.bridge =
+      opts && opts.bridge ? opts.bridge : 'https://bridge.walletconnect.org'
+    this.qrcode = opts
+      ? typeof opts.qrcode === 'undefined' || opts.qrcode !== false
+      : true
     this.on('error', () => this.close())
   }
 
@@ -83,6 +87,10 @@ class WalletConnectConnection extends EventEmitter {
     this.closed = true
     this.emit('close')
     this.removeAllListeners()
+  }
+
+  public open (): void {
+    return this.create()
   }
 
   public close (): void {

@@ -25,14 +25,17 @@
     "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:package_lock && npm run clean:example",
     "lint": "tslint packages/*/src/**/*.ts",
     "zip": "node scripts/zip.js",
-    "publish": "lerna publish",
     "bump-version": "lerna version",
+    "publish": "lerna publish",
     "publish:beta": "lerna exec -- npm publish",
-    "routine": "npm run clean:all && npm run bootstrap && npm run check-packages && npm run zip",
+    "publish:next": "lerna exec -- npm publish --tag next",
     "check-packages": "npm run clean && npm run lint && npm run build && npm run test",
+    "routine": "npm run clean:all && npm run bootstrap && npm run check-packages && npm run zip",
     "example": "npm run check-packages && cd example && npm run start",
     "deploy": "npm run check-packages && npm run publish",
-    "deploy:beta": "npm run bump-version && npm run routine && git commit -am 'package.lock' && npm run publish:beta"
+    "pre-publish": "npm run bump-version && npm run routine && git commit -am 'package.lock'",
+    "deploy:beta": "npm run pre-publish && npm run publish:beta",
+    "deploy:next": "npm run pre-publish && npm run publish:next"
   },
   "repository": {
     "type": "git",
@@ -53,6 +56,6 @@
     "lerna": "^3.13.0",
     "tslint": "^5.11.0",
     "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.2.4"
+    "typescript": "^3.7.4"
   }
 }
