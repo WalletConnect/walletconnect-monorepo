@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/channel-provider",
-  "version": "1.0.0-beta.44",
+  "version": "1.0.0-beta.45",
   "description": "Channel Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
@@ -55,10 +55,10 @@
   },
   "dependencies": {
     "@connext/types": "3.0.0",
-    "@walletconnect/browser": "^1.0.0-beta.44",
-    "@walletconnect/qrcode-modal": "^1.0.0-beta.44",
-    "@walletconnect/types": "^1.0.0-beta.44",
-    "@walletconnect/utils": "^1.0.0-beta.44",
+    "@walletconnect/browser": "^1.0.0-beta.45",
+    "@walletconnect/qrcode-modal": "^1.0.0-beta.45",
+    "@walletconnect/types": "^1.0.0-beta.45",
+    "@walletconnect/utils": "^1.0.0-beta.45",
     "xhr2-cookies": "^1.1.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
