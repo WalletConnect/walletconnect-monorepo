@@ -59,7 +59,8 @@
     "@ethersproject/bytes": "^5.0.0-beta.126",
     "@ethersproject/strings": "^5.0.0-beta.125",
     "@walletconnect/types": "^1.0.0-beta.45",
-    "bignumber.js": "^8.1.1"
+    "bignumber.js": "^8.1.1",
+    "detect-browser": "^4.8.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
