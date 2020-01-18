@@ -14,6 +14,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 | @walletconnect/channel-provider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fchannel-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fchannel-provider) | Channel Provider |
 | @walletconnect/web3-provider    | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider)       | Web3 Provider    |
 | @walletconnect/web3-subprovider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider) | Web3 Subprovider |
+| @walletconnect/truffle-provider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Ftruffle-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider) | Truffle Provider |
 | @walletconnect/qrcode-modal     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal.svg)](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal)         | QR Code Modal    |
 | @walletconnect/mobile-registry  | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fmobile-registry.svg)](https://badge.fury.io/js/%40walletconnect%2Fmobile-registry)   | Mobile Registry  |
 
