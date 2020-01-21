@@ -24,7 +24,7 @@
     "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:example",
     "lint": "tslint packages/*/src/**/*.ts",
     "zip": "node scripts/zip.js",
-    "bump-version": "lerna version",
+    "bump-version": "lerna version --no-git-tag-version",
     "publish": "lerna publish",
     "publish:beta": "lerna exec -- npm publish --access public",
     "publish:next": "lerna exec -- npm publish --access public --tag next",
