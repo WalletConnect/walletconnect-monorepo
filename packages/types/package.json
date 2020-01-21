@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/types",
-  "version": "1.0.0-beta.45",
+  "version": "1.0.0-beta.46",
   "description": "Typescript Types for WalletConnect",
   "scripts": {},
   "keywords": [
@@ -25,6 +25,6 @@
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7",
   "devDependencies": {
-    "@types/mocha": "^5.2.6"
+    "@types/mocha": "5.2.7"
   }
 }

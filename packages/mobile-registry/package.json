@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/mobile-registry",
-  "version": "1.0.0-beta.45",
+  "version": "1.0.0-beta.46",
   "description": "Registry for WalletConnect mobile-to-mobile linking supported Wallets",
   "scripts": {
     "build": "node ./scripts/parse.js"
@@ -22,6 +22,6 @@
     "url": "https://github.com/WalletConnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.6"
+    "@types/mocha": "5.2.7"
   }
 }
