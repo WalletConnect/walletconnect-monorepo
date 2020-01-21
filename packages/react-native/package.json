@@ -35,29 +35,29 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
-    "@babel/cli": "^7.1.2",
-    "@babel/core": "^7.1.2",
-    "@babel/node": "^7.0.0",
-    "@babel/polyfill": "^7.0.0",
-    "@babel/preset-env": "^7.1.0",
-    "@babel/preset-typescript": "^7.1.0",
-    "@babel/register": "^7.0.0",
-    "@types/chai": "^4.1.6",
-    "@types/mocha": "^5.2.6",
+    "@babel/cli": "7.8.3",
+    "@babel/core": "7.8.3",
+    "@babel/node": "7.8.3",
+    "@babel/polyfill": "7.8.3",
+    "@babel/preset-env": "7.8.3",
+    "@babel/preset-typescript": "7.8.3",
+    "@babel/register": "7.8.3",
+    "@types/chai": "4.2.7",
+    "@types/mocha": "5.2.7",
     "@types/node": "12.12.14",
-    "@types/react-native": "^0.57.25",
-    "chai": "^4.1.2",
-    "isomorphic-fetch": "^2.2.1",
+    "@types/react-native": "0.61.0",
+    "chai": "4.2.0",
+    "isomorphic-fetch": "2.2.1",
     "mocha": "5.2.0",
-    "ts-loader": "^5.3.3",
-    "typescript": "^3.7.4",
-    "webpack": "^4.28.3",
-    "webpack-cli": "^3.2.1"
+    "ts-loader": "5.4.5",
+    "typescript": "3.7.5",
+    "webpack": "4.41.5",
+    "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/core": "^1.0.0-beta.45",
-    "@walletconnect/types": "^1.0.0-beta.45",
-    "@walletconnect/utils": "^1.0.0-beta.45"
+    "@walletconnect/core": "1.0.0-beta.45",
+    "@walletconnect/types": "1.0.0-beta.45",
+    "@walletconnect/utils": "1.0.0-beta.45"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
