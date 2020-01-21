@@ -44,17 +44,17 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
-    "archiver": "^3.0.0",
-    "babel-eslint": "^8.2.6",
-    "eslint": "^5.8.0",
-    "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-node": "^7.0.1",
-    "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^4.0.0",
-    "lerna": "^3.13.0",
-    "tslint": "^5.11.0",
-    "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.7.4"
+    "archiver": "3.1.1",
+    "babel-eslint": "8.2.6",
+    "eslint": "5.12.1",
+    "eslint-config-standard": "12.0.0",
+    "eslint-plugin-import": "2.15.0",
+    "eslint-plugin-node": "7.0.1",
+    "eslint-plugin-promise": "4.0.1",
+    "eslint-plugin-standard": "4.0.0",
+    "lerna": "3.13.0",
+    "tslint": "5.12.0",
+    "tslint-config-standard": "8.0.1",
+    "typescript": "3.7.5"
   }
 }

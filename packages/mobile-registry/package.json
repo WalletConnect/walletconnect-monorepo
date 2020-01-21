@@ -22,6 +22,6 @@
     "url": "https://github.com/WalletConnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.6"
+    "@types/mocha": "5.2.7"
   }
 }
