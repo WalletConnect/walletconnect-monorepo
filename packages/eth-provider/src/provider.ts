@@ -31,25 +31,8 @@ class EthereumProvider extends EventEmitter {
   constructor (connection: WalletConnectConnection) {
     super()
     this.connection = connection
-    this.connection.on('connect', () => this.checkConnection())
-    this.connection.on('close', () => this.emit('close'))
-    this.connection.on('payload', this.onConnectionPayload)
-    this.on('newListener', (event, listener) => {
-      if (event === 'networkChanged') {
-        if (!this.attemptedNetworkSubscription && this.connected) {
-          this.startNetworkSubscription()
-        }
-      } else if (event === 'chainChanged') {
-        if (!this.attemptedChainSubscription && this.connected) {
-          this.startChainSubscription()
-        }
-      } else if (event === 'accountsChanged') {
-        if (!this.attemptedAccountsSubscription && this.connected) {
-          this.startAccountsSubscription()
-        }
-      }
-    })
   }
+
   public async onConnectionPayload (payload: JsonRpc) {
     const { id } = payload
     if (typeof id !== 'undefined') {
@@ -70,6 +53,7 @@ class EthereumProvider extends EventEmitter {
       }
     }
   }
+
   public async checkConnection () {
     try {
       this.emit('connect', await this._send('net_version'))
@@ -99,6 +83,7 @@ class EthereumProvider extends EventEmitter {
       this.connected = false
     }
   }
+
   public async startNetworkSubscription () {
     this.attemptedNetworkSubscription = true
     try {
@@ -111,6 +96,7 @@ class EthereumProvider extends EventEmitter {
       console.warn('Unable to subscribe to networkChanged', e) // tslint:disable-line
     }
   }
+
   public async startChainSubscription () {
     this.attemptedChainSubscription = true
     try {
@@ -120,6 +106,7 @@ class EthereumProvider extends EventEmitter {
       console.warn('Unable to subscribe to chainChanged', e) // tslint:disable-line
     }
   }
+
   public async startAccountsSubscription () {
     this.attemptedAccountsSubscription = true
     try {
@@ -134,24 +121,59 @@ class EthereumProvider extends EventEmitter {
       console.warn('Unable to subscribe to accountsChanged', e) // tslint:disable-line
     }
   }
+
   public enable () {
     return new Promise((resolve, reject) => {
-      this._send('eth_accounts')
-        .then((accounts: string[]) => {
+      this.on('newListener', (event, listener) => {
+        if (event === 'networkChanged') {
+          if (!this.attemptedNetworkSubscription && this.connected) {
+            this.startNetworkSubscription()
+          }
+        } else if (event === 'chainChanged') {
+          if (!this.attemptedChainSubscription && this.connected) {
+            this.startChainSubscription()
+          }
+        } else if (event === 'accountsChanged') {
+          if (!this.attemptedAccountsSubscription && this.connected) {
+            this.startAccountsSubscription()
+          }
+        }
+      })
+
+      this.connection.on('close', () => {
+        this.connected = false
+        this.emit('close')
+      })
+      this.connection.on('payload', this.onConnectionPayload.bind(this))
+
+      this.connection.on('connect', async () => {
+        await this.checkConnection()
+        try {
+          const accounts: string[] = await this._send('eth_accounts')
           if (accounts.length > 0) {
             this.accounts = accounts
             this.coinbase = accounts[0]
             this.emit('enable')
+            this.emit('connect')
             resolve(accounts)
           } else {
             const err: IError = new Error('User Denied Full Provider')
             err.code = 4001
+            this.connected = false
+            this.connection.close()
             reject(err)
           }
-        })
-        .catch(reject)
+        } catch (e) {
+          this.connected = false
+          this.connection.close()
+          reject(e)
+        }
+      })
+
+      this.connection.create()
     })
   }
+
   public _send (method?: string, params: any[] = []) {
     if (!method || typeof method !== 'string') {
       throw new Error('Method is not a valid string.')
@@ -166,10 +188,12 @@ class EthereumProvider extends EventEmitter {
     this.connection.send(payload)
     return promise
   }
+
   public send () {
     // Send can be clobbered, proxy sendPromise for backwards compatibility
     return this._send(...(arguments as any))
   }
+
   public _sendBatch (requests: JsonRpc[]) {
     return Promise.all(
       requests.map(payload => {
@@ -179,21 +203,7 @@ class EthereumProvider extends EventEmitter {
       })
     )
   }
-  public subscribe (type: string, method: string, params: any[] = []) {
-    return this._send(type, [method, ...params]).then(id => {
-      this.subscriptions.push(id)
-      return id
-    })
-  }
-  public unsubscribe (type: string, id: number) {
-    return this._send(type, [id]).then(success => {
-      if (success) {
-        this.subscriptions = this.subscriptions.filter(_id => _id !== id) // Remove subscription
-        this.removeAllListeners(String(id)) // Remove listeners
-        return success
-      }
-    })
-  }
+
   public sendAsync (payload: JsonRpc, cb: any) {
     // Backwards Compatibility
     if (!cb || typeof cb !== 'function') {
@@ -234,10 +244,28 @@ class EthereumProvider extends EventEmitter {
         cb(err)
       })
   }
+
+  public subscribe (type: string, method: string, params: any[] = []) {
+    return this._send(type, [method, ...params]).then(id => {
+      this.subscriptions.push(id)
+      return id
+    })
+  }
+  public unsubscribe (type: string, id: number) {
+    return this._send(type, [id]).then(success => {
+      if (success) {
+        this.subscriptions = this.subscriptions.filter(_id => _id !== id) // Remove subscription
+        this.removeAllListeners(String(id)) // Remove listeners
+        return success
+      }
+    })
+  }
+
   public isConnected () {
     // Backwards Compatibility
     return this.connected
   }
+
   public close () {
     this.connection.close()
     this.connected = false
