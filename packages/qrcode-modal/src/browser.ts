@@ -1,11 +1,11 @@
 /* global window setTimeout */
 
-import mobileRegistry from '@walletconnect/mobile-registry'
-import { isMobile, detectEnv } from '@walletconnect/utils'
+// import mobileRegistry from '@walletconnect/mobile-registry'
 import * as qrImage from 'qr-image'
 
 import logo from './logo.svg'
 import constants from './constants'
+import * as validators from './validators'
 import './style.css'
 
 let document: Document
@@ -47,8 +47,9 @@ function formatSingleDeepLink (uri: string) {
 }
 
 function formateDeepLinkingContent (uri: string) {
-  const isIOS = detectEnv.os.toLowerCase() === 'ios'
-  const content = isIOS ? formatMobileRegistry(uri) : formatSingleDeepLink(uri)
+  const content = validators.isIOS()
+    ? formatMobileRegistry(uri)
+    : formatSingleDeepLink(uri)
   const callToAction = 'Click to connect to your preffered wallet'
   return `
     <div>
@@ -61,7 +62,7 @@ function formateDeepLinkingContent (uri: string) {
 }
 
 function formatModal (uri: string) {
-  const content = isMobile()
+  const content = validators.isMobile()
     ? formateDeepLinkingContent(uri)
     : formatQRCodeContent(uri)
   return `

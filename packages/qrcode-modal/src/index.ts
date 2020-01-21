@@ -1,10 +1,8 @@
-import { detectEnv } from '@walletconnect/utils'
-
 import browser from './browser'
 import node from './node'
+import * as validators from './validators'
 
-const env = detectEnv()
-const isNode = env.name === 'node'
+const isNode = validators.isNode()
 
 function open (uri: string, cb: any) {
   if (isNode) {
