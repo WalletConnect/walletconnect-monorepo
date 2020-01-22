@@ -15,7 +15,8 @@ import {
   IParseURIResult,
   ISessionParams,
   IWalletConnectOptions,
-  IUpdateChainParams
+  IUpdateChainParams,
+  IRequestOptions
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -543,7 +544,7 @@ class Connector implements IConnector {
     this._handleSessionDisconnect(message)
   }
 
-  public async sendTransaction (tx: ITxData) {
+  public async sendTransaction (tx: ITxData, options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -556,14 +557,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request)
+      const result = await this._sendCallRequest(request, options)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signTransaction (tx: ITxData) {
+  public async signTransaction (tx: ITxData, options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -576,14 +577,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request)
+      const result = await this._sendCallRequest(request, options)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signMessage (params: any[]) {
+  public async signMessage (params: any[], options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -594,14 +595,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request)
+      const result = await this._sendCallRequest(request, options)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signPersonalMessage (params: any[]) {
+  public async signPersonalMessage (params: any[], options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -614,14 +615,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request)
+      const result = await this._sendCallRequest(request, options)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signTypedData (params: any[]) {
+  public async signTypedData (params: any[], options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -632,14 +633,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request)
+      const result = await this._sendCallRequest(request, options)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async updateChain (chainParams: IUpdateChainParams) {
+  public async updateChain (chainParams: IUpdateChainParams, options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
     }
@@ -650,7 +651,7 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request)
+      const result = await this._sendCallRequest(request, options)
       return result
     } catch (error) {
       throw error
@@ -679,7 +680,7 @@ class Connector implements IConnector {
     })
   }
 
-  public async sendCustomRequest (request: Partial<IJsonRpcRequest>) {
+  public async sendCustomRequest (request: Partial<IJsonRpcRequest>, options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -707,7 +708,7 @@ class Connector implements IConnector {
     const formattedRequest = this._formatRequest(request)
 
     try {
-      const result = await this._sendCallRequest(formattedRequest)
+      const result = await this._sendCallRequest(formattedRequest, options)
       return result
     } catch (error) {
       throw error
@@ -736,7 +737,7 @@ class Connector implements IConnector {
 
   protected async _sendRequest (
     request: Partial<IJsonRpcRequest>,
-    _topic?: string
+    options?: IRequestOptions
   ) {
     const callRequest: IJsonRpcRequest = this._formatRequest(request)
 
@@ -744,9 +745,9 @@ class Connector implements IConnector {
       callRequest
     )
 
-    const topic: string = _topic || this.peerId
+    const topic: string = options?._topic || this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
-    const silent = isSilentPayload(callRequest)
+    const silent = options?.pushNotification != null ? !options.pushNotification : isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
@@ -783,12 +784,12 @@ class Connector implements IConnector {
     errorMsg: string,
     _topic?: string
   ) {
-    this._sendRequest(request, _topic)
+    this._sendRequest(request, { _topic: _topic })
     this._subscribeToSessionResponse(request.id, errorMsg)
   }
 
-  protected _sendCallRequest (request: IJsonRpcRequest): Promise<any> {
-    this._sendRequest(request)
+  protected _sendCallRequest (request: IJsonRpcRequest, options?: IRequestOptions): Promise<any> {
+    this._sendRequest(request, options)
     return this._subscribeToCallResponse(request.id)
   }
 
