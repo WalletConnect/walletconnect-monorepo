@@ -260,7 +260,6 @@ declare module '@walletconnect/types' {
   }
 
   export interface IRequestOptions {
-    _topic?: string
-    pushNotification?: boolean
+    forcePushNotification?: boolean
   }
 }

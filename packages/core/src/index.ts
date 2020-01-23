@@ -737,6 +737,7 @@ class Connector implements IConnector {
 
   protected async _sendRequest (
     request: Partial<IJsonRpcRequest>,
+    _topic?: string | IRequestOptions,
     options?: IRequestOptions
   ) {
     const callRequest: IJsonRpcRequest = this._formatRequest(request)
@@ -745,9 +746,14 @@ class Connector implements IConnector {
       callRequest
     )
 
-    const topic: string = options?._topic || this.peerId
+    if (typeof _topic === "object" && options == null) {
+      options = _topic
+      _topic = undefined
+    }
+
+    const topic: string = (_topic && typeof _topic === "string") ? _topic : this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
-    const silent = options?.pushNotification != null ? !options.pushNotification : isSilentPayload(callRequest)
+    const silent = options?.forcePushNotification != null ? !options.forcePushNotification : isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
@@ -784,7 +790,7 @@ class Connector implements IConnector {
     errorMsg: string,
     _topic?: string
   ) {
-    this._sendRequest(request, { _topic: _topic })
+    this._sendRequest(request, _topic)
     this._subscribeToSessionResponse(request.id, errorMsg)
   }
 
