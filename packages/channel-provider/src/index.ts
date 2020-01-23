@@ -1,7 +1,7 @@
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
+import { ChannelProvider } from '@connext/channel-provider'
 
 import WalletConnectConnection from './connection'
-import ChannelProvider from './provider'
 
 class WalletConnectChannelProvider extends ChannelProvider {
   constructor (opts?: IWalletConnectConnectionOptions) {

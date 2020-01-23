@@ -89,8 +89,18 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     this.removeAllListeners()
   }
 
-  public open (): void {
-    return this.create()
+  public open (): Promise<void> {
+    return new Promise((resolve, reject): void => {
+      this.on('error', err => {
+        reject(err)
+      })
+
+      this.on('connect', () => {
+        resolve()
+      })
+
+      this.create()
+    })
   }
 
   public close (): void {
