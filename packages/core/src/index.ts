@@ -746,12 +746,12 @@ class Connector implements IConnector {
       callRequest
     )
 
-    if (typeof _topic === "object" && options == null) {
+    if (typeof _topic === 'object' && options == null) {
       options = _topic
       _topic = undefined
     }
 
-    const topic: string = (_topic && typeof _topic === "string") ? _topic : this.peerId
+    const topic: string = (_topic && typeof _topic === 'string') ? _topic : this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
     const silent = options?.forcePushNotification != null ? !options.forcePushNotification : isSilentPayload(callRequest)
 
