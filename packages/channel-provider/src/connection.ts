@@ -103,7 +103,7 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     })
   }
 
-  public close (): void {
+  public async close (): Promise<void> {
     if (this.wc) {
       this.wc.killSession()
     }

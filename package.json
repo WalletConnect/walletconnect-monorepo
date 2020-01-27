@@ -20,7 +20,7 @@
     "test": "lerna run test",
     "test:watch": "lerna run test:watch",
     "clean": "rm -rf dist && lerna run clean",
-    "clean:node_modules": "lerna exec -- rm -rf node_modules",
+    "clean:node_modules": "lerna exec -- rm -rf node_modules && rm -rf node_modules",
     "clean:example": "cd example && rm -rf node_modules",
     "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:example",
     "lint": "tslint packages/*/src/**/*.ts",
