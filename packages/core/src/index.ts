@@ -544,7 +544,7 @@ class Connector implements IConnector {
     this._handleSessionDisconnect(message)
   }
 
-  public async sendTransaction (tx: ITxData, options?: IRequestOptions) {
+  public async sendTransaction (tx: ITxData) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -557,14 +557,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request, options)
+      const result = await this._sendCallRequest(request)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signTransaction (tx: ITxData, options?: IRequestOptions) {
+  public async signTransaction (tx: ITxData) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -577,14 +577,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request, options)
+      const result = await this._sendCallRequest(request)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signMessage (params: any[], options?: IRequestOptions) {
+  public async signMessage (params: any[]) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -595,14 +595,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request, options)
+      const result = await this._sendCallRequest(request)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signPersonalMessage (params: any[], options?: IRequestOptions) {
+  public async signPersonalMessage (params: any[]) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -615,14 +615,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request, options)
+      const result = await this._sendCallRequest(request)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async signTypedData (params: any[], options?: IRequestOptions) {
+  public async signTypedData (params: any[]) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -633,14 +633,14 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request, options)
+      const result = await this._sendCallRequest(request)
       return result
     } catch (error) {
       throw error
     }
   }
 
-  public async updateChain (chainParams: IUpdateChainParams, options?: IRequestOptions) {
+  public async updateChain (chainParams: IUpdateChainParams) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
     }
@@ -651,7 +651,7 @@ class Connector implements IConnector {
     })
 
     try {
-      const result = await this._sendCallRequest(request, options)
+      const result = await this._sendCallRequest(request)
       return result
     } catch (error) {
       throw error
