@@ -3,7 +3,6 @@ export {
   IChannelProvider,
   IRpcConnection,
   CFCoreTypes,
-  ChannelProviderRpcMethods,
   ChannelProviderRpcMethod,
   ChannelProviderConfig,
   StorePair,

@@ -89,15 +89,17 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     this.removeAllListeners()
   }
 
-  public open (): void {
-    return this.create()
+  public open (): Promise<void> {
+    this.create()
+    return Promise.resolve()
   }
 
-  public close (): void {
+  public close (): Promise<void> {
     if (this.wc) {
       this.wc.killSession()
     }
     this.onClose()
+    return Promise.resolve()
   }
 
   public error (payload: any, message: string, code: number = -1): void {

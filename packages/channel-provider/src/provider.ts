@@ -93,9 +93,10 @@ class ChannelProvider extends EventEmitter implements IChannelProvider {
     return result
   }
 
-  public close (): void {
+  public close (): Promise<void> {
     this.connection.close()
     this.connected = false
+    return Promise.resolve()
   }
 
   /// ///////////////
