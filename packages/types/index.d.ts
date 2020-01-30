@@ -262,4 +262,8 @@ declare module '@walletconnect/types' {
   export interface IRequestOptions {
     forcePushNotification?: boolean
   }
+
+  export interface IInternalRequestOptions extends IRequestOptions {
+    topic: string
+  }
 }

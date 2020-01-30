@@ -16,7 +16,8 @@ import {
   ISessionParams,
   IWalletConnectOptions,
   IUpdateChainParams,
-  IRequestOptions
+  IRequestOptions,
+  IInternalRequestOptions
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -407,7 +408,7 @@ class Connector implements IConnector {
     this._sendSessionRequest(
       request,
       'Session update rejected',
-      this.handshakeTopic
+      { topic: this.handshakeTopic }
     )
 
     this._eventManager.trigger({
@@ -737,8 +738,7 @@ class Connector implements IConnector {
 
   protected async _sendRequest (
     request: Partial<IJsonRpcRequest>,
-    _topic?: string | IRequestOptions,
-    options?: IRequestOptions
+    options?: Partial<IInternalRequestOptions>
   ) {
     const callRequest: IJsonRpcRequest = this._formatRequest(request)
 
@@ -746,14 +746,9 @@ class Connector implements IConnector {
       callRequest
     )
 
-    if (typeof _topic === 'object' && options == null) {
-      options = _topic
-      _topic = undefined
-    }
-
-    const topic: string = (_topic && typeof _topic === 'string') ? _topic : this.peerId
+    const topic: string = typeof options?.topic !== 'undefined' ? options.topic : this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
-    const silent = options?.forcePushNotification != null ? !options.forcePushNotification : isSilentPayload(callRequest)
+    const silent = typeof options?.forcePushNotification !== 'undefined' ? !options.forcePushNotification : isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
@@ -788,9 +783,9 @@ class Connector implements IConnector {
   protected async _sendSessionRequest (
     request: IJsonRpcRequest,
     errorMsg: string,
-    _topic?: string
+    options?: IInternalRequestOptions
   ) {
-    this._sendRequest(request, _topic)
+    this._sendRequest(request, options)
     this._subscribeToSessionResponse(request.id, errorMsg)
   }
 
