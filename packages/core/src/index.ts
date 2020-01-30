@@ -659,9 +659,9 @@ class Connector implements IConnector {
   }
 
   public unsafeSend (
-    request: IJsonRpcRequest
+    request: IJsonRpcRequest, options?: IRequestOptions
   ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
-    this._sendRequest(request)
+    this._sendRequest(request, options)
 
     return new Promise((resolve, reject) => {
       this._subscribeToResponse(
