@@ -79,6 +79,7 @@ export class ChannelProvider extends EventEmitter implements IChannelProvider {
   public async close (): Promise<void> {
     await this.connection.close()
     this.connected = false
+    return Promise.resolve()
   }
 
   /// ///////////////
