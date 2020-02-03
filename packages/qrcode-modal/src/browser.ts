@@ -3,6 +3,9 @@
 import * as qrImage from 'qr-image'
 import logo from './logo.svg'
 import constants from './constants'
+import { isMobile, appendToQueryString } from '@walletconnect/utils'
+import MobileSupportedWallets from 'walletconnect-mobile-registry';
+
 import './style.css'
 
 let document: Document
@@ -53,22 +56,63 @@ function formatQRCodeModal (qrCodeImage: string) {
 }
 
 function open (uri: string, cb: any) {
+
   const wrapper = document.createElement('div')
   wrapper.setAttribute('id', 'walletconnect-wrapper')
-  const qrCodeImage = formatQRCodeImage(uri)
 
-  wrapper.innerHTML = formatQRCodeModal(qrCodeImage)
 
-  document.body.appendChild(wrapper)
-  const closeButton = document.getElementById('walletconnect-qrcode-close')
-  if (closeButton) {
-    closeButton.addEventListener('click', () => {
-      close()
-      if (cb) {
-        cb()
-      }
-    })
+  if(isMobile()){
+
+    const encodedUri: string = encodeURIComponent(uri);
+    const redirectUrlQueryString = appendToQueryString(
+        window.location.search,
+        {
+          walletconnect: true
+        }
+      );
+
+      const redirectUrl: string = encodeURIComponent(
+        `${window.location.origin}${
+          window.location.pathname
+        }${redirectUrlQueryString}`
+      );
+
+      const deepLinks = MobileSupportedWallets.map( (wallet: Any) => {
+        return {
+          name: wallet.name,
+          color: wallet.color,
+          href: wallet.universalLink
+            ? `${
+                wallet.universalLink
+              }/wc?uri=${encodedUri}&redirectUrl=${redirectUrl}`
+            : wallet.deepLink
+            ? `{wallet.deepLink}${uri}`
+            : ""
+        };
+      });
+
+      wrapper.innerHTML = formatDeeplinkButtons(qrCodeImage)
+
+
+
+  } else {
+
+    const qrCodeImage = formatQRCodeImage(uri)
+    wrapper.innerHTML = formatQRCodeModal(qrCodeImage)
   }
+
+    document.body.appendChild(wrapper)
+    const closeButton = document.getElementById('walletconnect-qrcode-close')
+    if (closeButton) {
+      closeButton.addEventListener('click', () => {
+        close()
+        if (cb) {
+          cb()
+        }
+      })
+    }
+  }
+
 }
 
 /**
