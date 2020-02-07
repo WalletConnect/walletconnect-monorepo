@@ -1,29 +1,40 @@
-# WalletConnect Browser SDK
+# WalletConnect NodeJS Client
 
-Browser SDK for WalletConnect
+NodeJS Client for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
 ## Install
 
 ```bash
-yarn add @walletconnect/browser @walletconnect/qrcode-modal
+yarn add @walletconnect/node
 
 # OR
 
-npm install --save @walletconnect/browser @walletconnect/qrcode-modal
+npm install --save @walletconnect/node @walletconnect/qrcode-modal
 ```
 
 ## Initiate Connection
 
 ```javascript
-import WalletConnect from "@walletconnect/browser";
+import NodeWalletConnect from "@walletconnect/node";
 import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 
-// Create a walletConnector
-const walletConnector = new WalletConnect({
-  bridge: "https://bridge.walletconnect.org" // Required
-});
+// Create WalletConnector
+const walletConnector = new NodeWalletConnect(
+  {
+    bridge: "https://bridge.walletconnect.org" // Required
+  },
+  {
+    clientMeta: {
+      description: "WalletConnect NodeJS Client",
+      url: "https://nodejs.org/en/",
+      icons: ["https://nodejs.org/static/images/logo.svg"],
+      name: "WalletConnect",
+      ssl: true
+    }
+  }
+);
 
 // Check if connection is already established
 if (!walletConnector.connected) {
@@ -32,9 +43,13 @@ if (!walletConnector.connected) {
     // get uri for QR Code modal
     const uri = walletConnector.uri;
     // display QR Code modal
-    WalletConnectQRCodeModal.open(uri, () => {
-      console.log("QR Code Modal closed");
-    });
+    WalletConnectQRCodeModal.open(
+      uri,
+      () => {
+        console.log("QR Code Modal closed");
+      },
+      true // isNode = true
+    );
   });
 }
 
@@ -45,7 +60,9 @@ walletConnector.on("connect", (error, payload) => {
   }
 
   // Close QR Code Modal
-  WalletConnectQRCodeModal.close();
+  WalletConnectQRCodeModal.close(
+    true // isNode = true
+  );
 
   // Get provided accounts and chainId
   const { accounts, chainId } = payload.params[0];

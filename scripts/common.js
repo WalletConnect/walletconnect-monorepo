@@ -1,13 +1,5 @@
 const fs = require('fs')
 
-function getName (path) {
-  const name = path.replace(/^.*[\\/]/, '')
-  if (name) {
-    return name
-  }
-  return ''
-}
-
 function statPath (path) {
   return new Promise((resolve, reject) => {
     fs.stat(path, async (error, stat) => {
@@ -39,6 +31,27 @@ function createDir (path) {
       resolve(true)
     })
   })
+}
+
+function readDir (path) {
+  return new Promise((resolve, reject) => {
+    fs.readdir(path, (err, files) => {
+      if (err) {
+        return reject(err)
+      }
+      resolve(files)
+    })
+  })
+}
+
+async function isDir (path) {
+  const stat = await statPath(path)
+  return stat.isDirectory()
+}
+
+async function isFile (path) {
+  const stat = await statPath(path)
+  return stat.isFile()
 }
 
 function exists (path) {
@@ -73,10 +86,12 @@ async function verifyFile (path) {
 }
 
 module.exports = {
-  getName,
   statPath,
   writeFile,
   createDir,
+  readDir,
+  isDir,
+  isFile,
   exists,
   verifyDir,
   verifyFile
