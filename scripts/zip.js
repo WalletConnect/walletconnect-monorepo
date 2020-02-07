@@ -2,11 +2,19 @@ const fs = require('fs')
 const path = require('path')
 const archiver = require('archiver')
 
-const { getName, statPath, verifyDir, verifyFile } = require('./common')
+const { readDir, isDir, exists, verifyDir, verifyFile } = require('./common')
 
 const ROOT_DIR = path.join(__dirname, '../')
 const PACKAGES_DIR = path.join(ROOT_DIR, './packages')
-const DIST_DIR = path.join(ROOT_DIR, './dist')
+const TARGET_DIR = path.join(ROOT_DIR, './zip')
+
+function isPackage (filePath) {
+  return exists(path.join(filePath, 'package.json'))
+}
+
+function getName (filePath) {
+  return path.basename(filePath).replace(path.extname(filePath), '')
+}
 
 function archiveDir (inputPath, outputPath) {
   return new Promise(async (resolve, reject) => {
@@ -22,13 +30,13 @@ function archiveDir (inputPath, outputPath) {
     })
 
     output.on('end', function () {
-      console.log('Data has been drained')
+      console.warn('Data has been drained')
       resolve(true)
     })
 
     archive.on('warning', function (err) {
       if (err.code === 'ENOENT') {
-        console.log('WARN:', err.message)
+        console.warn('WARN:', err.message)
       } else {
         reject(err)
       }
@@ -41,27 +49,42 @@ function archiveDir (inputPath, outputPath) {
   })
 }
 
-fs.readdir(PACKAGES_DIR, async (err, files) => {
-  if (err) {
+async function zipPackage (filePath) {
+  if (await isDir(filePath)) {
+    const name = getName(filePath)
+    const inputPath = path.join(filePath, 'lib')
+    const outputPath = path.join(TARGET_DIR, name + '.zip')
+
+    try {
+      await archiveDir(inputPath, outputPath)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+}
+
+async function zipDir (targetDir) {
+  try {
+    const packages = await readDir(targetDir)
+
+    await Promise.all(
+      packages.map(async packageDir => {
+        const filePath = path.join(targetDir, packageDir)
+        if (await isPackage(filePath)) {
+          return zipPackage(filePath)
+        }
+        return zipDir(filePath)
+      })
+    )
+  } catch (err) {
     console.error('Could not list the directory.\n', err.message)
     process.exit(1)
   }
+}
 
-  await verifyDir(DIST_DIR)
+async function run () {
+  await verifyDir(TARGET_DIR)
+  await zipDir(PACKAGES_DIR)
+}
 
-  files.forEach(async (file, index) => {
-    const filePath = path.join(PACKAGES_DIR, file)
-
-    const stat = await statPath(filePath)
-
-    if (stat.isDirectory()) {
-      const inputPath = path.join(filePath, '/lib')
-      const outputPath = path.join(DIST_DIR, file + '.zip')
-      try {
-        await archiveDir(inputPath, outputPath)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-  })
-})
+run()
