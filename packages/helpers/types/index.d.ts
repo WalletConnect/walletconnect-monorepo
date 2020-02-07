@@ -258,4 +258,12 @@ declare module '@walletconnect/types' {
     rpc?: IRPCMap
     infuraId?: string
   }
+
+  export interface IRequestOptions {
+    forcePushNotification?: boolean
+  }
+
+  export interface IInternalRequestOptions extends IRequestOptions {
+    topic: string
+  }
 }
