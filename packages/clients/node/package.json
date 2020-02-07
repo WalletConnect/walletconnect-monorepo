@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/node",
   "version": "1.0.0-beta.46",
-  "description": "NodeJS SDK for WalletConnect",
+  "description": "NodeJS Client for WalletConnect",
   "scripts": {
     "clean": "rm -rf lib",
     "build": "webpack",
