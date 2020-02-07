@@ -8,8 +8,11 @@ const ROOT_DIR = path.join(__dirname, '../')
 const PACKAGES_DIR = path.join(ROOT_DIR, './packages')
 const TARGET_DIR = path.join(ROOT_DIR, './zip')
 
-function isPackage (filePath) {
-  return exists(path.join(filePath, 'package.json'))
+async function isPackage (filePath) {
+  return !!(
+    (await isDir(filePath)) &&
+    (await exists(path.join(filePath, 'package.json')))
+  )
 }
 
 function getName (filePath) {
@@ -69,6 +72,9 @@ async function zipDir (targetDir) {
 
     await Promise.all(
       packages.map(async packageDir => {
+        if (['node_modules', 'lib', 'dist', 'test'].includes(packageDir)) {
+          return
+        }
         const filePath = path.join(targetDir, packageDir)
         if (await isPackage(filePath)) {
           return zipPackage(filePath)
