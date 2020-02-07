@@ -3,7 +3,7 @@ sudo: required
 group: beta
 language: node_js
 node_js:
-  - "8"
+  - "12"
 cache:
   directories:
     - node_modules
@@ -11,5 +11,4 @@ cache:
 matrix:
   fast_finish: true
 script:
-  - npm run bootstrap
-  - npm run check-packages
+  - npm run routine
