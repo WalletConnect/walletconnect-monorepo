@@ -16,7 +16,8 @@ import {
   IParseURIResult,
   ISessionParams,
   IWalletConnectOptions,
-  IUpdateChainParams
+  IUpdateChainParams,
+  NetworkMonitor
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -84,6 +85,7 @@ class Connector implements IConnector {
     opts: IWalletConnectOptions,
     transportOpts: ITransportOpts,
     storage?: ISessionStorage | null,
+    getNetMonitor?: () => NetworkMonitor,
     clientMeta?: IClientMeta | null
   ) {
     this.cryptoLib = cryptoLib
@@ -152,7 +154,10 @@ class Connector implements IConnector {
         }
       })
     }
-    this._transport = new transportOpts.transport(transportParams)
+    this._transport = new transportOpts.transport({
+      ...transportParams,
+      getNetMonitor
+    })
 
     this._transport.on('message', (socketMessage: ISocketMessage) =>
       this._handleIncomingMessages(socketMessage)
@@ -758,14 +763,7 @@ class Connector implements IConnector {
     const payload: string = JSON.stringify(encryptionPayload)
     const silent = isSilentPayload(callRequest)
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendResponse (
@@ -777,15 +775,9 @@ class Connector implements IConnector {
 
     const topic: string = this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = true
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent: true
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendSessionRequest (
@@ -937,10 +929,10 @@ class Connector implements IConnector {
     }
 
     const payload:
-    | IJsonRpcRequest
-    | IJsonRpcResponseSuccess
-    | IJsonRpcResponseError
-    | null = await this._decrypt(encryptionPayload)
+      | IJsonRpcRequest
+      | IJsonRpcResponseSuccess
+      | IJsonRpcResponseError
+      | null = await this._decrypt(encryptionPayload)
 
     if (payload) {
       this._eventManager.trigger(payload)
@@ -948,12 +940,9 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest () {
-    this._transport.send({
-      topic: `${this.handshakeTopic}`,
-      type: 'sub',
-      payload: '',
-      silent: true
-    })
+    if (this._transport.listen) {
+      this._transport.listen(this.handshakeTopic)
+    }
   }
 
   private _subscribeToResponse (
@@ -1095,10 +1084,10 @@ class Connector implements IConnector {
     const key: ArrayBuffer | null = this._key
     if (this.cryptoLib && key) {
       const result:
-      | IJsonRpcRequest
-      | IJsonRpcResponseSuccess
-      | IJsonRpcResponseError
-      | null = await this.cryptoLib.decrypt(payload, key)
+        | IJsonRpcRequest
+        | IJsonRpcResponseSuccess
+        | IJsonRpcResponseError
+        | null = await this.cryptoLib.decrypt(payload, key)
       return result
     }
     return null

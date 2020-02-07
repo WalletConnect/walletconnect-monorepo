@@ -3,6 +3,7 @@ import { IWalletConnectOptions } from '@walletconnect/types'
 import SocketTransport from '@walletconnect/socket-transport'
 import * as cryptoLib from './webCrypto'
 import WebStorage from './webStorage'
+import { getNetMonitor } from './webNetMonitor'
 
 class WalletConnect extends Connector {
   constructor (opts: IWalletConnectOptions) {
@@ -13,6 +14,7 @@ class WalletConnect extends Connector {
         transport: SocketTransport,
         params: ['bridge', 'clientId']
       },
+      getNetMonitor,
       WebStorage
     )
   }

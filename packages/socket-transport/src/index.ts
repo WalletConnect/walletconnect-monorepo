@@ -2,92 +2,69 @@ import {
   ISocketMessage,
   ITransportEvent
   // ITransportLib
+  NetworkMonitor,
 } from '@walletconnect/types'
 
 interface ISocketTransportOptions {
-  bridge: string
-  clientId: string
+  url: string
+  getNetMonitor?: () => NetworkMonitor
+  subscriptions?: string[]
 }
 
 // -- SocketTransport ------------------------------------------------------ //
 
 class SocketTransport {
   private _initiating: boolean
-  private _bridge: string
-  private _clientId: string
+  private _url: string
+  private _netMonitor: NetworkMonitor | null
   private _socket: WebSocket | null
-  private _queue: ISocketMessage[]
+  private _nextSocket: WebSocket | null
+  private _queue: ISocketMessage[] = []
   private _events: ITransportEvent[] = []
+  private _subscriptions: string[] = []
 
   // -- constructor ----------------------------------------------------- //
 
   constructor (opts: ISocketTransportOptions) {
     this._initiating = false
-    this._bridge = ''
+    this._url = ''
+    this._netMonitor = null
     this._socket = null
-    this._queue = []
+    this._nextSocket = null
+    this._subscriptions = opts.subscriptions || []
 
-    if (!opts.bridge || typeof opts.bridge !== 'string') {
-      throw new Error('Missing or invalid bridge field')
+    if (!opts.url || typeof opts.url !== 'string') {
+      throw new Error('Missing or invalid WebSocket url')
     }
 
-    this._bridge = opts.bridge
+    this._url = opts.url
 
-    if (!opts.clientId || typeof opts.clientId !== 'string') {
-      throw new Error('Missing or invalid clientId field')
+    if (!opts.getNetMonitor || typeof opts.getNetMonitor !== 'function') {
+      throw new Error('Missing or invalid Network Monitor')
     }
 
-    this._clientId = opts.clientId
-  }
+    this._netMonitor = opts.getNetMonitor()
 
-  set readyState (value) {
-    // empty
-  }
-
-  get readyState (): number {
-    return this._socket ? this._socket.readyState : -1
-  }
-
-  set connecting (value) {
-    // empty
-  }
-
-  get connecting (): boolean {
-    return this.readyState === 0
-  }
-
-  set connected (value) {
-    // empty
-  }
-
-  get connected (): boolean {
-    return this.readyState === 1
-  }
-
-  set closing (value) {
-    // empty
-  }
-
-  get closing (): boolean {
-    return this.readyState === 2
-  }
-
-  set closed (value) {
-    // empty
-  }
-
-  get closed (): boolean {
-    return this.readyState === 3
+    this._netMonitor.on('online', () => this._socketCreate())
   }
 
   // -- public ---------------------------------------------------------- //
 
   public open () {
-    this._socketOpen()
+    this._socketCreate()
   }
 
-  public send (socketMessage: ISocketMessage): void {
-    this._socketSend(socketMessage)
+  public send (message: string, topic?: string, silent?: boolean): void {
+    if (!topic || typeof topic !== 'string') {
+      throw new Error('Missing or invalid topic field')
+    }
+
+    this._socketSend({
+      topic: topic,
+      type: 'pub',
+      payload: message,
+      silent: !!silent
+    })
   }
 
   public close () {
@@ -98,43 +75,60 @@ class SocketTransport {
     this._events.push({ event, callback })
   }
 
-  // -- private ---------------------------------------------------------- //
-
-  private _socketOpen (forceOpen?: boolean) {
-    if ((typeof forceOpen !== 'undefined' && !forceOpen) || this._initiating) {
-      return
-    }
-
-    this._initiating = true
-    const bridge = this._bridge
-
-    this._setToQueue({
-      topic: `${this._clientId}`,
+  public listen (topic: string) {
+    this._socketSend({
+      topic: topic,
       type: 'sub',
       payload: '',
       silent: true
     })
+  }
 
-    const url = bridge.startsWith('https')
-      ? bridge.replace('https', 'wss')
-      : bridge.startsWith('http')
-        ? bridge.replace('http', 'ws')
-        : bridge
+  // -- private ---------------------------------------------------------- //
 
-    const socket = new WebSocket(url)
-
-    socket.onmessage = (event: MessageEvent) => this._socketReceive(event)
-
-    socket.onopen = () => {
-      this._socketClose()
-      this._initiating = false
-      this._socket = socket
-      this._pushQueue()
+  private _socketCreate () {
+    if (this._initiating) {
+      return
     }
 
-    socket.onclose = () => {
-      this._socketOpen(true)
-    }
+    this._initiating = true
+
+    const url = this._url.startsWith('https')
+      ? this._url.replace('https', 'wss')
+      : this._url.startsWith('http')
+        ? this._url.replace('http', 'ws')
+        : this._url
+
+    this._nextSocket = new WebSocket(url)
+
+    this._nextSocket.onmessage = (event: MessageEvent) =>
+      this._socketReceive(event)
+
+    this._nextSocket.onopen = () => this._socketOpen()
+  }
+
+  private _socketOpen () {
+    this._socketClose()
+    this._initiating = false
+    this._socket = this._nextSocket
+    this._nextSocket = null
+    this._queueSubscriptions()
+    this._pushQueue()
+  }
+
+  private _queueSubscriptions () {
+    const subscriptions = this._subscriptions
+
+    subscriptions.forEach((topic: string) =>
+      this._queue.push({
+        topic: topic,
+        type: 'sub',
+        payload: '',
+        silent: true
+      })
+    )
+
+    this._subscriptions = []
   }
 
   private _socketClose () {
@@ -149,11 +143,11 @@ class SocketTransport {
   private _socketSend (socketMessage: ISocketMessage) {
     const message: string = JSON.stringify(socketMessage)
 
-    if (this._socket && this.connected) {
+    if (this._socket && this._socket.readyState === 1) {
       this._socket.send(message)
     } else {
       this._setToQueue(socketMessage)
-      this._socketOpen()
+      this._socketCreate()
     }
   }
 
@@ -166,7 +160,14 @@ class SocketTransport {
       return
     }
 
-    if (this.connected) {
+    this._socketSend({
+      topic: socketMessage.topic,
+      type: 'ack',
+      payload: '',
+      silent: true
+    })
+
+    if (this._socket && this._socket.readyState === 1) {
       const events = this._events.filter(event => event.event === 'message')
       if (events && events.length) {
         events.forEach(event => event.callback(socketMessage))

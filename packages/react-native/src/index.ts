@@ -6,7 +6,8 @@ import {
   IPushSubscription
 } from '@walletconnect/types'
 import SocketTransport from '@walletconnect/socket-transport'
-import * as cryptoLib from './nativeCrypto'
+import * as cryptoLib from './rnCrypto'
+import { getNetMonitor } from './rnNetMonitor'
 
 class RNWalletConnect extends Connector {
   constructor (
@@ -21,6 +22,7 @@ class RNWalletConnect extends Connector {
         params: ['bridge', 'clientId']
       },
       null,
+      getNetMonitor,
       walletOptions.clientMeta
     )
     if (walletOptions.push) {

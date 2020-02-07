@@ -16,6 +16,9 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js']
   },
+  externals: {
+    'react-native': 'react-native'
+  },
   devtool: 'source-map',
   optimization: {
     minimize: true
