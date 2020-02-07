@@ -99,6 +99,7 @@ function open (uri: string, cb: any) {
 
   document.body.appendChild(wrapper)
   const closeButton = document.getElementById('walletconnect-qrcode-close')
+
   if (closeButton) {
     closeButton.addEventListener('click', () => {
       close()
