@@ -1,9 +1,6 @@
-# node modules
 node_modules
-
 lerna-debug.log
 .DS_Store
-
 lib
 dist
 zip
