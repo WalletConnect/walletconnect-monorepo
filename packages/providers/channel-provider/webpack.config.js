@@ -20,6 +20,11 @@ module.exports = {
   optimization: {
     minimize: true
   },
+  node: {
+    child_process: 'empty',
+    fs: 'empty',
+    net: 'empty'
+  },
   module: {
     rules: [{ test: /\.tsx?$/, loader: 'ts-loader' }]
   }
