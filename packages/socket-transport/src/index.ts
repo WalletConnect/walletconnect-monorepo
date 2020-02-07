@@ -1,7 +1,8 @@
 import {
-  NetworkMonitor,
   ISocketMessage,
   ITransportEvent
+  // ITransportLib
+  NetworkMonitor,
 } from '@walletconnect/types'
 
 interface ISocketTransportOptions {

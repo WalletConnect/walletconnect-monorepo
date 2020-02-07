@@ -5,6 +5,7 @@ import {
   IPushServerOptions,
   IPushSubscription
 } from '@walletconnect/types'
+import SocketTransport from '@walletconnect/socket-transport'
 import * as cryptoLib from './rnCrypto'
 import { getNetMonitor } from './rnNetMonitor'
 
@@ -13,7 +14,17 @@ class RNWalletConnect extends Connector {
     opts: IWalletConnectOptions,
     walletOptions: INativeWalletOptions
   ) {
-    super(cryptoLib, opts, null, null, getNetMonitor, walletOptions.clientMeta)
+    super(
+      cryptoLib,
+      opts,
+      {
+        transport: SocketTransport,
+        params: ['bridge', 'clientId']
+      },
+      null,
+      getNetMonitor,
+      walletOptions.clientMeta
+    )
     if (walletOptions.push) {
       this.registerPushServer(walletOptions.push)
     }

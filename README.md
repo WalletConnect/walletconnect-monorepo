@@ -7,6 +7,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 | @walletconnect/core             | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                         | Core SDK         |
 | @walletconnect/browser          | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fbrowser.svg)](https://badge.fury.io/js/%40walletconnect%2Fbrowser)                   | Browser SDK      |
 | @walletconnect/react-native     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Freact-native.svg)](https://badge.fury.io/js/%40walletconnect%2Freact-native)         | React-Native SDK |
+| @walletconnect/socket-transport | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fsocket-transport.svg)](https://badge.fury.io/js/%40walletconnect%2Fsocket-transport) | Socket Transport |
 | @walletconnect/utils            | [![npm version](https://badge.fury.io/js/%40walletconnect%2Futils.svg)](https://badge.fury.io/js/%40walletconnect%2Futils)                       | Utility Library  |
 | @walletconnect/types            | [![npm version](https://badge.fury.io/js/%40walletconnect%2Ftypes.svg)](https://badge.fury.io/js/%40walletconnect%2Ftypes)                       | Typescript Types |
 | @walletconnect/eth-provider     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Feth-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Feth-provider)         | ETH Provider     |

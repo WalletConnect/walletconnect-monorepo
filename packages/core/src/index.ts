@@ -2,6 +2,7 @@ import {
   IConnector,
   ICryptoLib,
   ITransportLib,
+  ITransportOpts,
   ISessionStorage,
   IEncryptionPayload,
   ISocketMessage,
@@ -31,7 +32,8 @@ import {
   convertNumberToHex,
   isJsonRpcResponseSuccess,
   isJsonRpcResponseError,
-  isSilentPayload
+  isSilentPayload,
+  isEmptyArray
 } from '@walletconnect/utils'
 import {
   ERROR_SESSION_CONNECTED,
@@ -44,9 +46,9 @@ import {
   ERROR_MISSING_ID,
   ERROR_INVALID_RESPONSE,
   ERROR_INVALID_URI,
-  ERROR_MISSING_REQUIRED
+  ERROR_MISSING_REQUIRED,
+  ERROR_MISSING_TRANSPORT_PARAM
 } from './errors'
-import SocketTransport from './socket'
 import EventManager from './events'
 
 // -- Connector ------------------------------------------------------------ //
@@ -81,7 +83,7 @@ class Connector implements IConnector {
   constructor (
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
-    transport?: ITransportLib | null,
+    transportOpts: ITransportOpts,
     storage?: ISessionStorage | null,
     getNetMonitor?: () => NetworkMonitor,
     clientMeta?: IClientMeta | null
@@ -141,13 +143,21 @@ class Connector implements IConnector {
       )
     }
 
-    this._transport =
-      transport ||
-      new SocketTransport({
-        url: this.bridge,
-        getNetMonitor: getNetMonitor,
-        subscriptions: [this.clientId]
+    let transportParams = {}
+
+    if (!isEmptyArray(transportOpts.params)) {
+      transportOpts.params.forEach((param: string) => {
+        if (opts[param]) {
+          transportParams[param] = opts[param]
+        } else {
+          throw new Error(`${ERROR_MISSING_TRANSPORT_PARAM} ${param}`)
+        }
       })
+    }
+    this._transport = new transportOpts.transport({
+      ...transportParams,
+      getNetMonitor
+    })
 
     this._transport.on('message', (socketMessage: ISocketMessage) =>
       this._handleIncomingMessages(socketMessage)

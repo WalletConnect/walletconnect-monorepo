@@ -47,11 +47,17 @@ declare module '@walletconnect/types' {
   }
 
   export interface ITransportLib {
+    new (opts?: any): ITransportLib
     open: () => void
     close: () => void
     send: (message: string, topic?: string, silent?: boolean) => void
     listen: (topic: string) => void
     on: (event: string, callback: (payload: any) => void) => void
+  }
+
+  export interface ITransportOpts {
+    transport: ITransportLib
+    params: string[]
   }
 
   export interface ITransportEvent {
