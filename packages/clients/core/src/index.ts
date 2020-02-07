@@ -15,7 +15,9 @@ import {
   IParseURIResult,
   ISessionParams,
   IWalletConnectOptions,
-  IUpdateChainParams
+  IUpdateChainParams,
+  IRequestOptions,
+  IInternalRequestOptions
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -414,7 +416,7 @@ class Connector implements IConnector {
     this._sendSessionRequest(
       request,
       'Session update rejected',
-      this.handshakeTopic
+      { topic: this.handshakeTopic }
     )
 
     this._eventManager.trigger({
@@ -668,9 +670,9 @@ class Connector implements IConnector {
   }
 
   public unsafeSend (
-    request: IJsonRpcRequest
+    request: IJsonRpcRequest, options?: IRequestOptions
   ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
-    this._sendRequest(request)
+    this._sendRequest(request, options)
 
     return new Promise((resolve, reject) => {
       this._subscribeToResponse(
@@ -689,7 +691,7 @@ class Connector implements IConnector {
     })
   }
 
-  public async sendCustomRequest (request: Partial<IJsonRpcRequest>) {
+  public async sendCustomRequest (request: Partial<IJsonRpcRequest>, options?: IRequestOptions) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -717,7 +719,7 @@ class Connector implements IConnector {
     const formattedRequest = this._formatRequest(request)
 
     try {
-      const result = await this._sendCallRequest(formattedRequest)
+      const result = await this._sendCallRequest(formattedRequest, options)
       return result
     } catch (error) {
       throw error
@@ -746,7 +748,7 @@ class Connector implements IConnector {
 
   protected async _sendRequest (
     request: Partial<IJsonRpcRequest>,
-    _topic?: string
+    options?: Partial<IInternalRequestOptions>
   ) {
     const callRequest: IJsonRpcRequest = this._formatRequest(request)
 
@@ -754,9 +756,9 @@ class Connector implements IConnector {
       callRequest
     )
 
-    const topic: string = _topic || this.peerId
+    const topic: string = typeof options?.topic !== 'undefined' ? options.topic : this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
-    const silent = isSilentPayload(callRequest)
+    const silent = typeof options?.forcePushNotification !== 'undefined' ? !options.forcePushNotification : isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
@@ -791,14 +793,14 @@ class Connector implements IConnector {
   protected async _sendSessionRequest (
     request: IJsonRpcRequest,
     errorMsg: string,
-    _topic?: string
+    options?: IInternalRequestOptions
   ) {
-    this._sendRequest(request, _topic)
+    this._sendRequest(request, options)
     this._subscribeToSessionResponse(request.id, errorMsg)
   }
 
-  protected _sendCallRequest (request: IJsonRpcRequest): Promise<any> {
-    this._sendRequest(request)
+  protected _sendCallRequest (request: IJsonRpcRequest, options?: IRequestOptions): Promise<any> {
+    this._sendRequest(request, options)
     return this._subscribeToCallResponse(request.id)
   }
 
