@@ -8,4 +8,5 @@ lerna-debug.log
 .DS_Store
 
 dist
+zip
 .idea
