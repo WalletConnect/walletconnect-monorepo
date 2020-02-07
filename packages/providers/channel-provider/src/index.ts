@@ -1,7 +1,5 @@
 import { IWalletConnectConnectionOptions } from '@walletconnect/types'
-// TODO: Replace local provider with imported provider
-import { ChannelProvider } from './provider'
-// import { ChannelProvider } from '@connext/channel-provider'
+import { ChannelProvider } from '@connext/channel-provider'
 import WalletConnectConnection from './connection'
 
 class WalletConnectChannelProvider extends ChannelProvider {

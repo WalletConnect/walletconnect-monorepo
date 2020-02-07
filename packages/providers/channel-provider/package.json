@@ -54,7 +54,8 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@connext/types": "4.0.6",
+    "@connext/channel-provider": "4.0.10",
+    "@connext/types": "4.0.10",
     "@walletconnect/browser": "^1.0.0-beta.46",
     "@walletconnect/qrcode-modal": "^1.0.0-beta.46",
     "@walletconnect/types": "^1.0.0-beta.46",
