@@ -1,6 +1,9 @@
 import pkg from '../package.json'
+
 import WalletConnect from '@walletconnect/browser'
 import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
+import HttpConnection from '@walletconnect/http-connection'
+
 import ProviderEngine from 'web3-provider-engine'
 import CacheSubprovider from 'web3-provider-engine/subproviders/cache'
 import FixtureSubprovider from 'web3-provider-engine/subproviders/fixture'
@@ -8,7 +11,6 @@ import FilterSubprovider from 'web3-provider-engine/subproviders/filters'
 import HookedWalletSubprovider from 'web3-provider-engine/subproviders/hooked-wallet'
 import NonceSubprovider from 'web3-provider-engine/subproviders/nonce-tracker'
 import SubscriptionsSubprovider from 'web3-provider-engine/subproviders/subscriptions'
-import HTTPConnection from './http'
 
 class WalletConnectProvider extends ProviderEngine {
   constructor (opts) {
@@ -421,7 +423,7 @@ class WalletConnectProvider extends ProviderEngine {
 
   updateHttpConnection () {
     if (this.rpcUrl) {
-      this.http = new HTTPConnection(this.rpcUrl)
+      this.http = new HttpConnection(this.rpcUrl)
       this.http.on('payload', payload => this.emit('payload', payload))
       this.http.on('error', error => this.emit('error', error))
     }

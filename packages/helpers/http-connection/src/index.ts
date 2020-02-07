@@ -21,9 +21,9 @@ interface IXHRPost {
   body: any
 }
 
-// -- HTTPConnection ------------------------------------------------------ //
+// -- HttpConnection ------------------------------------------------------ //
 
-class HTTPConnection extends EventEmitter {
+class HttpConnection extends EventEmitter {
   public closed: boolean
   public connected: boolean
   public subscriptions: boolean
@@ -138,7 +138,7 @@ class HTTPConnection extends EventEmitter {
     error.res = res
     throw error.message
   }
-  public error (payload: any, message: string, code = -1) {
+  public onError (payload: any, message: string, code = -1) {
     this.emit('payload', {
       id: payload.id,
       jsonrpc: payload.jsonrpc,
@@ -147,13 +147,13 @@ class HTTPConnection extends EventEmitter {
   }
   public send (payload: any, internal?: any) {
     if (this.closed) {
-      return this.error(payload, 'Not connected')
+      return this.onError(payload, 'Not connected')
     }
     if (payload.method === 'eth_subscribe') {
       if (this.subscriptions) {
         payload.pollId = this.pollId
       } else {
-        return this.error(
+        return this.onError(
           payload,
           'Subscriptions are not supported by this HTTP endpoint'
         )
@@ -199,4 +199,4 @@ class HTTPConnection extends EventEmitter {
   }
 }
 
-export default HTTPConnection
+export default HttpConnection

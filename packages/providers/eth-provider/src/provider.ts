@@ -7,7 +7,7 @@ import {
   isJsonRpcResponseError
 } from '@walletconnect/utils'
 import { IError, JsonRpc } from '@walletconnect/types'
-import WalletConnectConnection from './connection'
+import WCRpcConnection from './connection'
 
 // -- types ---------------------------------------------------------------- //
 
@@ -21,14 +21,14 @@ class EthereumProvider extends EventEmitter {
   public connected: boolean = false
   public promises: IPromisesMap = {}
   public subscriptions: number[] = []
-  public connection: WalletConnectConnection
+  public connection: WCRpcConnection
   public accounts: string[] = []
   public coinbase: string = ''
   public attemptedNetworkSubscription: boolean = false
   public attemptedChainSubscription: boolean = false
   public attemptedAccountsSubscription: boolean = false
 
-  constructor (connection: WalletConnectConnection) {
+  constructor (connection: WCRpcConnection) {
     super()
     this.connection = connection
   }

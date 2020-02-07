@@ -251,7 +251,7 @@ declare module '@walletconnect/types' {
     [chainId: number]: string
   }
 
-  export interface IWalletConnectConnectionOptions {
+  export interface IWCRpcConnectionOptions {
     bridge?: string
     qrcode?: boolean
     chainId?: number
@@ -265,5 +265,27 @@ declare module '@walletconnect/types' {
 
   export interface IInternalRequestOptions extends IRequestOptions {
     topic: string
+  }
+
+  export interface IWCRpcConnectionOptions {
+    bridge?: string
+    qrcode?: boolean
+  }
+
+  export interface IWCRpcConnection {
+    bridge: string
+    qrcode: boolean
+    wc: IConnector | null
+    connected: boolean
+    closed: boolean
+
+    openQRCode(): void
+    create(chainId?: number): void
+    onClose(): void
+    open(): Promise<void>
+    close(): Promise<void>
+    onError(payload: any, message: string, code?: number): void
+    sendPayload(payload: any): Promise<any>
+    send(payload: any): Promise<any>
   }
 }

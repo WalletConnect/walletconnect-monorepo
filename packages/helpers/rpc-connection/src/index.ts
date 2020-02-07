@@ -1,19 +1,26 @@
+import EventEmitter from 'events'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
-import { IWalletConnectConnectionOptions } from '@walletconnect/types'
-import EventEmitter from 'events'
-import { IRpcConnection } from './types'
+import {
+  IWCRpcConnection,
+  IWCRpcConnectionOptions,
+  IConnector
+} from '@walletconnect/types'
 
-// -- WalletConnectConnection --------------------------------------------- //
+interface IWCRpcConnectionOptions {
+  bridge?: string
+  qrcode?: boolean
+}
 
-class WalletConnectConnection extends EventEmitter implements IRpcConnection {
+class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public bridge: string = 'https://bridge.walletconnect.org'
   public qrcode: boolean = true
-  public wc: WalletConnect | null = null
+
+  public wc: IConnector | null = null
   public connected: boolean = false
   public closed: boolean = false
 
-  constructor (opts?: IWalletConnectConnectionOptions) {
+  constructor (opts?: IWCRpcConnectionOptions) {
     super()
     this.bridge =
       opts && opts.bridge ? opts.bridge : 'https://bridge.walletconnect.org'
@@ -23,7 +30,7 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     this.on('error', () => this.close())
   }
 
-  public openQRCode (): void {
+  public openQRCode () {
     const uri = this.wc ? this.wc.uri : ''
     if (uri) {
       WCQRCode.open(uri, () => {
@@ -32,7 +39,7 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     }
   }
 
-  public create (): void {
+  public create (chainId?: number): void {
     try {
       this.wc = new WalletConnect({ bridge: this.bridge })
     } catch (e) {
@@ -41,18 +48,14 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     }
 
     if (!this.wc.connected) {
-      // Create new session
       this.wc
-        .createSession()
+        .createSession({ chainId })
         .then(() => {
           if (this.qrcode) {
             this.openQRCode()
           }
         })
         .catch((e: Error) => this.emit('error', e))
-    } else {
-      this.connected = true
-      this.emit('connect')
     }
 
     this.wc.on('connect', (err: Error | null, payload: any) => {
@@ -111,7 +114,7 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     return Promise.resolve()
   }
 
-  public error (payload: any, message: string, code: number = -1): void {
+  public onError (payload: any, message: string, code: number = -1): void {
     this.emit('payload', {
       error: { message, code },
       id: payload.id,
@@ -119,19 +122,21 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
     })
   }
 
-  public async send (payload: any): Promise<any> {
-    return new Promise(
-      async (resolve, reject): Promise<void> => {
-        if (this.wc && this.wc.connected) {
-          const response = await this.wc.unsafeSend(payload)
-          resolve(response)
-        }
-        const errorMsg = 'WalletConnect Not Connected'
-        this.error(payload, errorMsg)
-        reject(new Error(errorMsg))
-      }
-    )
+  public async sendPayload (payload: any): Promise<any> {
+    if (!this.wc || !this.wc.connected) {
+      this.onError(payload, 'WalletConnect Not Connected')
+      return
+    }
+    try {
+      return this.wc.unsafeSend(payload)
+    } catch (error) {
+      this.onError(payload, error.message)
+    }
+  }
+
+  public send (payload: any): Promise<any> {
+    return this.sendPayload(payload)
   }
 }
 
-export default WalletConnectConnection
+export default WCRpcConnection

@@ -23,6 +23,8 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 | @walletconnect/types           | [![npm version](https://badge.fury.io/js/%40walletconnect%2Ftypes.svg)](https://badge.fury.io/js/%40walletconnect%2Ftypes)                     | Typescript Types |
 | @walletconnect/qrcode-modal    | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal.svg)](https://badge.fury.io/js/%40walletconnect%2Fqrcode-modal)       | QR Code Modal    |
 | @walletconnect/mobile-registry | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fmobile-registry.svg)](https://badge.fury.io/js/%40walletconnect%2Fmobile-registry) | Mobile Registry  |
+| @walletconnect/rpc-connection  | [![npm version](https://badge.fury.io/js/%40walletconnect%2Frpc-connection.svg)](https://badge.fury.io/js/%40walletconnect%2Frpc-connection)   | RPC Connection   |
+| @walletconnect/http-connection | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fhttp-connection.svg)](https://badge.fury.io/js/%40walletconnect%2Fhttp-connection) | HTTP Connection  |
 
 ## Quick Start
 
