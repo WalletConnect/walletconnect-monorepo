@@ -1,7 +1,6 @@
 import WalletConnectSubprovider from '@walletconnect/web3-subprovider'
 
-import ProviderEngine from 'web3-provider-engine'
-
+const ProviderEngine = require('web3-provider-engine')
 const FiltersSubprovider = require('web3-provider-engine/subproviders/filters')
 const RpcSubprovider = require('web3-provider-engine/subproviders/rpc')
 const NonceSubprovider = require('web3-provider-engine/subproviders/nonce-tracker')

@@ -8,9 +8,8 @@ import {
   IJsonRpcRequest
 } from '@walletconnect/types'
 
-import ProviderEngine from 'web3-provider-engine'
-
 const pkg = require('../package.json')
+const ProviderEngine = require('web3-provider-engine')
 const CacheSubprovider = require('web3-provider-engine/subproviders/cache')
 const FixtureSubprovider = require('web3-provider-engine/subproviders/fixture')
 const FilterSubprovider = require('web3-provider-engine/subproviders/filters')
@@ -165,8 +164,7 @@ class WalletConnectProvider extends ProviderEngine {
     this.addProvider({
       handleRequest: async (payload: IJsonRpcRequest, next: any, end: any) => {
         try {
-          // @ts-ignore
-          const { result } = await this.handleRequest(payload)
+          const { result } = (await this.handleRequest(payload)) as any
           end(null, result)
         } catch (error) {
           end(error)
@@ -193,7 +191,6 @@ class WalletConnectProvider extends ProviderEngine {
     })
   }
 
-  // @ts-ignore
   async send (payload: any, callback: any): Promise<any> {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === 'string') {
@@ -205,7 +202,7 @@ class WalletConnectProvider extends ProviderEngine {
             method: payload,
             params: callback || []
           },
-          (error, response) => {
+          (error: any, response: any) => {
             if (error) {
               reject(error)
             } else {
@@ -221,8 +218,7 @@ class WalletConnectProvider extends ProviderEngine {
       this.sendAsync(payload, callback)
       return
     }
-    // @ts-ignore
-    const res = await this.handleRequest(payload, callback)
+    const res = await this.handleRequest(payload)
 
     return res
   }
@@ -242,7 +238,6 @@ class WalletConnectProvider extends ProviderEngine {
     await wc.killSession()
     // tslint:disable-next-line:await-promise
     await this.stop()
-    // @ts-ignore
     this.emit('close', 1000, 'Connection closed')
   }
 
@@ -274,7 +269,7 @@ class WalletConnectProvider extends ProviderEngine {
           break
 
         case 'eth_uninstallFilter':
-          this.sendAsync(payload, _ => _)
+          this.sendAsync(payload, (_: any) => _)
           result = true
           break
 
@@ -282,7 +277,6 @@ class WalletConnectProvider extends ProviderEngine {
           return this.handleOtherRequests(payload)
       }
     } catch (error) {
-      // @ts-ignore
       this.emit('error', error)
       return
     }
@@ -309,7 +303,6 @@ class WalletConnectProvider extends ProviderEngine {
 
   async handleReadRequests (payload: any) {
     if (!this.http) {
-      // @ts-ignore
       this.emit('error', new Error('HTTP Connection not available'))
       return
     }
@@ -356,7 +349,6 @@ class WalletConnectProvider extends ProviderEngine {
                 this.updateState(payload.params[0])
               }
               // Emit connect event
-              // @ts-ignore
               this.emit('connect')
 
               this.triggerConnect(wc)
@@ -382,7 +374,6 @@ class WalletConnectProvider extends ProviderEngine {
 
     wc.on('disconnect', (error, payload) => {
       if (error) {
-        // @ts-ignore
         this.emit('error', error)
         return
       }
@@ -392,7 +383,6 @@ class WalletConnectProvider extends ProviderEngine {
 
     wc.on('session_update', (error, payload) => {
       if (error) {
-        // @ts-ignore
         this.emit('error', error)
         return
       }
@@ -408,21 +398,18 @@ class WalletConnectProvider extends ProviderEngine {
     // Check if accounts changed and trigger event
     if (!this.accounts || (accounts && this.accounts !== accounts)) {
       this.accounts = accounts
-      // @ts-ignore
       this.emit('accountsChanged', accounts)
     }
 
     // Check if chainId changed and trigger event
     if (!this.chainId || (chainId && this.chainId !== chainId)) {
       this.chainId = chainId
-      // @ts-ignore
       this.emit('chainChanged', chainId)
     }
 
     // Check if networkId changed and trigger event
     if (!this.networkId || (networkId && this.networkId !== networkId)) {
       this.networkId = networkId
-      // @ts-ignore
       this.emit('networkChanged', networkId)
     }
 
@@ -455,7 +442,6 @@ class WalletConnectProvider extends ProviderEngine {
       // Handle http update
       this.updateHttpConnection()
     } else {
-      // @ts-ignore
       this.emit(
         'error',
         new Error(`No RPC Url available for chainId: ${chainId}`)
@@ -466,9 +452,7 @@ class WalletConnectProvider extends ProviderEngine {
   updateHttpConnection () {
     if (this.rpcUrl) {
       this.http = new HttpConnection(this.rpcUrl)
-      // @ts-ignore
       this.http.on('payload', payload => this.emit('payload', payload))
-      // @ts-ignore
       this.http.on('error', error => this.emit('error', error))
     }
   }
