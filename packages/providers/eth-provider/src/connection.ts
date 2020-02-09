@@ -1,4 +1,4 @@
-import BaseWCRpcConnection from '@walletconnect/rpc-connection'
+import WCRpcConnection from '@walletconnect/rpc-connection'
 import HttpConnection from '@walletconnect/http-connection'
 import {
   convertNumberToHex,
@@ -7,24 +7,23 @@ import {
 } from '@walletconnect/utils'
 import {
   ISessionParams,
-  IWCRpcConnectionOptions,
+  IWCEthRpcConnectionOptions,
   IRPCMap
 } from '@walletconnect/types'
 
-// -- WCRpcConnection --------------------------------------------- //
+// -- WCEthRpcConnection --------------------------------------------- //
 
-class WCRpcConnection extends BaseWCRpcConnection {
+class WCEthRpcConnection extends WCRpcConnection {
   public bridge: string = 'https://bridge.walletconnect.org'
   public qrcode: boolean = true
   public infuraId: string = ''
   public rpc: IRPCMap | null = null
   public http: HttpConnection | null = null
   public accounts: string[] = []
-  public chainId: number = 1
   public networkId: number = 1
   public rpcUrl: string = ''
 
-  constructor (opts: IWCRpcConnectionOptions) {
+  constructor (opts: IWCEthRpcConnectionOptions) {
     super(opts)
     this.rpc = opts.rpc || null
     if (
@@ -36,7 +35,6 @@ class WCRpcConnection extends BaseWCRpcConnection {
       throw new Error('Invalid or missing Infura App ID')
     }
     this.infuraId = opts.infuraId || ''
-    this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
     this.networkId = this.chainId
     setTimeout(() => this.create(this.chainId), 0)
   }
@@ -148,4 +146,4 @@ class WCRpcConnection extends BaseWCRpcConnection {
   }
 }
 
-export default WCRpcConnection
+export default WCEthRpcConnection
