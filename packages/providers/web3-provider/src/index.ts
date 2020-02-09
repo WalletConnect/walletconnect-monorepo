@@ -6,8 +6,7 @@ import {
   IWCEthRpcConnectionOptions,
   IConnector,
   IJsonRpcRequest,
-  IJsonRpcResponseSuccess,
-  IJsonRpcResponseError
+  IJsonRpcResponseSuccess
 } from '@walletconnect/types'
 
 const pkg = require('../package.json')
