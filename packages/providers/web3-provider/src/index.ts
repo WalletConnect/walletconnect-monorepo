@@ -38,28 +38,27 @@ class WalletConnectProvider extends ProviderEngine {
   public networkId = 1
   public rpcUrl = ''
 
-  constructor (opts: IWalletConnectProviderOptions) {
-    super({ pollingInterval: opts.pollingInterval || 4000 })
+  constructor (opts?: IWalletConnectProviderOptions) {
+    super({ pollingInterval: opts?.pollingInterval || 4000 })
 
-    this.bridge = opts.bridge || 'https://bridge.walletconnect.org'
+    this.bridge = opts?.bridge || 'https://bridge.walletconnect.org'
+    this.qrcode = typeof opts?.qrcode === 'undefined' || opts?.qrcode !== false
 
-    this.qrcode = typeof opts.qrcode === 'undefined' || opts.qrcode !== false
-
-    this.rpc = opts.rpc || null
+    this.rpc = opts?.rpc || null
 
     if (
       !this.rpc &&
-      (!opts.infuraId ||
-        typeof opts.infuraId !== 'string' ||
-        !opts.infuraId.trim())
+      (!opts?.infuraId ||
+        typeof opts?.infuraId !== 'string' ||
+        !opts?.infuraId.trim())
     ) {
       throw new Error('Missing one of the required parameters: rpc or infuraId')
     }
 
-    this.infuraId = opts.infuraId || ''
+    this.infuraId = opts?.infuraId || ''
 
     this.wc = new WalletConnect({ bridge: this.bridge })
-    this.chainId = typeof opts.chainId !== 'undefined' ? opts.chainId : 1
+    this.chainId = typeof opts?.chainId !== 'undefined' ? opts?.chainId : 1
     this.networkId = this.chainId
 
     this.updateRpcUrl(this.chainId)
