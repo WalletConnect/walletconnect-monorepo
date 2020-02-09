@@ -57,6 +57,7 @@
   "dependencies": {
     "@walletconnect/browser": "^1.0.0-beta.47",
     "@walletconnect/qrcode-modal": "^1.0.0-beta.47",
+    "@walletconnect/node": "^1.0.0-beta.47",
     "@walletconnect/types": "^1.0.0-beta.47",
     "web3-provider-engine": "15.0.4"
   },

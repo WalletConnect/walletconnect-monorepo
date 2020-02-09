@@ -1,11 +1,16 @@
 import WalletConnect from '@walletconnect/browser'
+import NodeWalletConnect from '@walletconnect/node'
 import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 import { IWCEthRpcConnectionOptions, IConnector } from '@walletconnect/types'
 
 const HookedWalletSubprovider = require('web3-provider-engine/subproviders/hooked-wallet')
 
+interface IWalletConnectSubproviderOptions extends IWCEthRpcConnectionOptions {
+  isNode?: boolean
+}
+
 class WalletConnectSubprovider extends HookedWalletSubprovider {
-  constructor (opts?: IWCEthRpcConnectionOptions) {
+  constructor (opts?: IWalletConnectSubproviderOptions) {
     super({
       getAccounts: async (cb: any) => {
         try {
@@ -85,7 +90,15 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
     this.bridge = opts?.bridge || 'https://bridge.walletconnect.org'
     this.qrcode = typeof opts?.qrcode === 'undefined' || opts?.qrcode !== false
 
-    this.wc = new WalletConnect({ bridge: this.bridge })
+    this.isNode = opts?.isNode
+    this.wc = this.isNode ? new NodeWalletConnect({ bridge: this.bridge }, {
+      clientMeta: {
+        name: 'wallet-connect-provider',
+        description: 'WalletConnect provider',
+        url: '#',
+        icons: ['https://walletconnect.org/walletconnect-logo.png']
+      }
+    }) : new WalletConnect({ bridge: this.bridge })
     this.chainId = typeof opts?.chainId !== 'undefined' ? opts?.chainId : 1
     this.networkId = this.chainId
 
@@ -149,11 +162,11 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
             if (this.qrcode) {
               WalletConnectQRCodeModal.open(wc.uri, () => {
                 reject(new Error('User closed WalletConnect modal'))
-              })
+              }, this.isNode)
             }
             wc.on('connect', (error: any, payload: any) => {
               if (this.qrcode) {
-                WalletConnectQRCodeModal.close()
+                WalletConnectQRCodeModal.close(this.isNode)
               }
               if (error) {
                 this.isConnecting = false
