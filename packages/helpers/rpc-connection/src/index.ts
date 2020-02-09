@@ -33,7 +33,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     }
   }
 
-  public create (chainId?: number): void {
+  public create (): void {
     try {
       this.wc = new WalletConnect({ bridge: this.bridge })
     } catch (e) {
@@ -43,7 +43,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
 
     if (!this.wc.connected) {
       this.wc
-        .createSession({ chainId })
+        .createSession({ chainId: this.chainId })
         .then(() => {
           if (this.qrcode) {
             this.openQRCode()
