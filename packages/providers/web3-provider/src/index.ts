@@ -5,7 +5,9 @@ import {
   IRPCMap,
   IWCEthRpcConnectionOptions,
   IConnector,
-  IJsonRpcRequest
+  IJsonRpcRequest,
+  IJsonRpcResponseSuccess,
+  IJsonRpcResponseError
 } from '@walletconnect/types'
 
 const pkg = require('../package.json')
@@ -164,7 +166,7 @@ class WalletConnectProvider extends ProviderEngine {
     this.addProvider({
       handleRequest: async (payload: IJsonRpcRequest, next: any, end: any) => {
         try {
-          const { result } = (await this.handleRequest(payload)) as any
+          const { result } = await this.handleRequest(payload)
           end(null, result)
         } catch (error) {
           end(error)
@@ -242,9 +244,9 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async handleRequest (payload: any) {
-    let result = null
-
     try {
+      let response = undefined
+      let result = null
       const wc = await this.getWalletConnector()
 
       switch (payload.method) {
@@ -274,14 +276,16 @@ class WalletConnectProvider extends ProviderEngine {
           break
 
         default:
-          return this.handleOtherRequests(payload)
+          response = await this.handleOtherRequests(payload)
       }
+      if (response) {
+        return response
+      }
+      return this.formatResponse(payload, result)
     } catch (error) {
       this.emit('error', error)
-      return
+      throw error
     }
-
-    return this.formatResponse(payload, result)
   }
 
   formatResponse (payload: any, result: any) {
@@ -292,7 +296,7 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
-  async handleOtherRequests (payload: any) {
+  async handleOtherRequests (payload: any): Promise<IJsonRpcResponseSuccess> {
     if (payload.method.startsWith('eth_')) {
       return this.handleReadRequests(payload)
     }
@@ -301,12 +305,20 @@ class WalletConnectProvider extends ProviderEngine {
     return this.formatResponse(payload, result)
   }
 
-  async handleReadRequests (payload: any) {
+  async handleReadRequests (payload: any): Promise<IJsonRpcResponseSuccess> {
     if (!this.http) {
-      this.emit('error', new Error('HTTP Connection not available'))
-      return
+      const error = new Error('HTTP Connection not available')
+      this.emit('error', error)
+      throw error
     }
-    return this.http.send(payload)
+    this.http.send(payload)
+    return new Promise((resolve) => {
+      this.on('payload', (response: IJsonRpcResponseSuccess) => {
+        if (response.id === payload.id) {
+          resolve(response)
+        }
+      })
+    })
   }
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
