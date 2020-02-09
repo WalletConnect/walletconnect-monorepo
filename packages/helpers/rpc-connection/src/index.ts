@@ -1,22 +1,13 @@
 import EventEmitter from 'events'
 import WalletConnect from '@walletconnect/browser'
 import WCQRCode from '@walletconnect/qrcode-modal'
-import {
-  IWCRpcConnection,
-  IWCRpcConnectionOptions,
-  IConnector
-} from '@walletconnect/types'
-
-interface IWCRpcConnectionOptions {
-  bridge?: string
-  qrcode?: boolean
-}
+import { IWCRpcConnection, IWCRpcConnectionOptions } from '@walletconnect/types'
 
 class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public bridge: string = 'https://bridge.walletconnect.org'
   public qrcode: boolean = true
 
-  public wc: IConnector | null = null
+  public wc: WalletConnect | null = null
   public connected: boolean = false
   public closed: boolean = false
 
