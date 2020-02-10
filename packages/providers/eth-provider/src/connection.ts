@@ -36,7 +36,7 @@ class WCEthRpcConnection extends WCRpcConnection {
     }
     this.infuraId = opts.infuraId || ''
     this.networkId = this.chainId
-    setTimeout(() => this.create(this.chainId), 0)
+    setTimeout(() => this.create(), 0)
   }
 
   public async send (payload: any) {
