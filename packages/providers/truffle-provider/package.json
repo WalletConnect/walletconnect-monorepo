@@ -4,10 +4,7 @@
   "description": "WalletConnect Provider for Truffle",
   "scripts": {
     "clean": "rm -rf dist",
-    "build:cjs": "./node_modules/.bin/tsc -p tsconfig.cjs.json",
-    "build:es6": "./node_modules/.bin/tsc -p tsconfig.es6.json",
-    "build:umd": "webpack",
-    "build": "npm run clean && npm run build:cjs && npm run build:es6 && npm run build:umd",
+    "build": "webpack",
     "test": "tsdx test"
   },
   "keywords": [
@@ -51,6 +48,7 @@
     "isomorphic-fetch": "2.2.1",
     "mocha": "5.2.0",
     "tsdx": "0.12.3",
+    "ts-loader": "5.4.5",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
