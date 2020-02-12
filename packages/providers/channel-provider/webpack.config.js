@@ -3,11 +3,11 @@ const path = require('path')
 module.exports = {
   mode: 'production',
   entry: {
-    index: './src/index.ts'
+    index: path.resolve(__dirname, 'dist', 'es6', 'index.js')
   },
   output: {
-    path: path.resolve(__dirname, 'lib'),
-    filename: '[name].js',
+    path: path.resolve(__dirname, 'dist', 'umd'),
+    filename: '[name].min.js',
     libraryTarget: 'umd',
     library: 'WalletConnectChannelProvider',
     umdNamedDefine: true,

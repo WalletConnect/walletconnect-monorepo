@@ -3,9 +3,12 @@
   "version": "1.0.0-beta.53",
   "description": "Utility Library for WalletConnect",
   "scripts": {
-    "clean": "rm -rf lib",
-    "build": "webpack",
-    "test": "mocha --require ./babel-polyfill.js test/**/*.spec.ts"
+    "clean": "rm -rf dist",
+    "build:cjs": "./node_modules/.bin/tsc -p tsconfig.cjs.json",
+    "build:es6": "./node_modules/.bin/tsc -p tsconfig.es6.json",
+    "build:umd": "webpack",
+    "build": "npm run clean && npm run build:cjs && npm run build:es6 && npm run build:umd",
+    "test": "tsdx test"
   },
   "keywords": [
     "walletconnect",
@@ -18,14 +21,12 @@
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
-  "main": "lib/index.js",
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
+  "main": "dist/cjs/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "module": "dist/es6/index.js",
+  "unpkg": "dist/umd/index.min.js",
   "files": [
-    "lib",
-    "src"
+    "dist"
   ],
   "repository": {
     "type": "git",
@@ -49,7 +50,7 @@
     "chai": "4.2.0",
     "isomorphic-fetch": "2.2.1",
     "mocha": "5.2.0",
-    "ts-loader": "5.4.5",
+    "tsdx": "0.12.3",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
