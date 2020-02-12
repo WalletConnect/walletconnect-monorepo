@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/cjs",
+    "rootDir": "./src",
+    "target": "es5",
+    "module": "commonjs"
+  }
+}
