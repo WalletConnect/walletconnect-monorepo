@@ -9,7 +9,6 @@ import {
   IJsonRpcResponseSuccess
 } from '@walletconnect/types'
 
-const pkg = require('../package.json')
 const ProviderEngine = require('web3-provider-engine')
 const CacheSubprovider = require('web3-provider-engine/subproviders/cache')
 const FixtureSubprovider = require('web3-provider-engine/subproviders/fixture')
@@ -69,7 +68,7 @@ class WalletConnectProvider extends ProviderEngine {
         eth_mining: false,
         eth_syncing: true,
         net_listening: true,
-        web3_clientVersion: `WalletConnect/v${pkg.version}/javascript`
+        web3_clientVersion: `WalletConnect/v1.0.0-beta/javascript`
       })
     )
 
