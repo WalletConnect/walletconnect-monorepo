@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/truffle-provider",
-  "version": "1.0.0-beta.53",
+  "version": "1.0.0-beta.54",
   "description": "WalletConnect Provider for Truffle",
   "scripts": {
     "clean": "rm -rf dist",
@@ -50,14 +50,14 @@
     "chai": "4.2.0",
     "isomorphic-fetch": "2.2.1",
     "mocha": "5.2.0",
-    "tsdx": "0.12.3",
     "ts-loader": "5.4.5",
+    "tsdx": "0.12.3",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/web3-subprovider": "^1.0.0-beta.53",
+    "@walletconnect/web3-subprovider": "^1.0.0-beta.54",
     "web3-provider-engine": "15.0.4"
   }
 }
