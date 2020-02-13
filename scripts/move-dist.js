@@ -2,16 +2,17 @@
 const path = require('path')
 
 const {
+  copyFile,
   readDir,
   isDir,
   exists,
-  verifyDir
-  //  verifyFile
+  verifyDir,
+  statPath
 } = require('./common')
 
 const ROOT_DIR = path.join(__dirname, '../')
 const PACKAGES_DIR = path.join(ROOT_DIR, './packages')
-const TARGET_DIR = path.join(ROOT_DIR, './zip')
+const TARGET_DIR = path.join(ROOT_DIR, './dist')
 
 async function isPackage (filePath) {
   return !!(
@@ -20,25 +21,31 @@ async function isPackage (filePath) {
   )
 }
 
-// function getName (filePath) {
-//   return path.basename(filePath).replace(path.extname(filePath), '')
-// }
+function getName (filePath) {
+  return path.basename(filePath).replace(path.extname(filePath), '')
+}
 
-async function zipPackage (filePath) {
+async function copyUmdBundle (filePath) {
   if (await isDir(filePath)) {
-    // const name = getName(filePath)
-    // const inputPath = path.join(filePath, 'dist')
-    // const outputPath = path.join(TARGET_DIR, name + '.zip')
+    const newFileExt = '.min.js'
+    const newFileName = getName(filePath) + newFileExt
+    const fileToCopy = path.join(filePath, 'dist', 'umd', 'index.min.js')
+    const outputFile = path.join(TARGET_DIR, newFileName)
+
+    if (!(await exists(fileToCopy))) return
 
     try {
-      // await archiveDir(inputPath, outputPath)
+      await copyFile(fileToCopy, outputFile)
+      console.log(
+        `${newFileName} (${(await statPath(fileToCopy)).size / 1e3} kB)`
+      )
     } catch (err) {
       console.error(err)
     }
   }
 }
 
-async function zipDir (targetDir) {
+async function moveDist (targetDir) {
   try {
     const packages = await readDir(targetDir)
 
@@ -49,9 +56,9 @@ async function zipDir (targetDir) {
         }
         const filePath = path.join(targetDir, packageDir)
         if (await isPackage(filePath)) {
-          return zipPackage(filePath)
+          return copyUmdBundle(filePath)
         }
-        return zipDir(filePath)
+        return moveDist(filePath)
       })
     )
   } catch (err) {
@@ -62,7 +69,7 @@ async function zipDir (targetDir) {
 
 async function run () {
   await verifyDir(TARGET_DIR)
-  await zipDir(PACKAGES_DIR)
+  await moveDist(PACKAGES_DIR)
 }
 
 run()

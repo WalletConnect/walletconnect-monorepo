@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "webpack",
-    "test": "tsdx test"
+    "test": "tsdx test ./test"
   },
   "keywords": [
     "walletconnect",

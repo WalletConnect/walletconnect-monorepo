@@ -37,7 +37,7 @@ class WalletConnectProvider extends ProviderEngine {
   public networkId = 1
   public rpcUrl = ''
 
-  constructor(opts?: IWalletConnectProviderOptions) {
+  constructor (opts?: IWalletConnectProviderOptions) {
     super({ pollingInterval: opts?.pollingInterval || 4000 })
     this.bridge = opts?.bridge || 'https://bridge.walletconnect.org'
     this.qrcode = typeof opts?.qrcode === 'undefined' || opts?.qrcode !== false
@@ -161,7 +161,7 @@ class WalletConnectProvider extends ProviderEngine {
     })
   }
 
-  enable() {
+  enable () {
     return new Promise(async (resolve, reject) => {
       try {
         const wc = await this.getWalletConnector()
@@ -178,7 +178,7 @@ class WalletConnectProvider extends ProviderEngine {
     })
   }
 
-  async send(payload: any, callback: any): Promise<any> {
+  async send (payload: any, callback: any): Promise<any> {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === 'string') {
       return new Promise((resolve, reject) => {
@@ -208,17 +208,17 @@ class WalletConnectProvider extends ProviderEngine {
     return res
   }
 
-  onConnect(callback: any) {
+  onConnect (callback: any) {
     this.connectCallbacks.push(callback)
   }
 
-  triggerConnect(result: any) {
+  triggerConnect (result: any) {
     if (this.connectCallbacks && this.connectCallbacks.length) {
       this.connectCallbacks.forEach(callback => callback(result))
     }
   }
 
-  async close() {
+  async close () {
     const wc = await this.getWalletConnector({ disableSessionCreation: true })
     await wc.killSession()
     // tslint:disable-next-line:await-promise
@@ -226,7 +226,7 @@ class WalletConnectProvider extends ProviderEngine {
     this.emit('close', 1000, 'Connection closed')
   }
 
-  async handleRequest(payload: any) {
+  async handleRequest (payload: any) {
     try {
       let response = undefined
       let result = null
@@ -265,7 +265,7 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
-  formatResponse(payload: any, result: any) {
+  formatResponse (payload: any, result: any) {
     return {
       id: payload.id,
       jsonrpc: payload.jsonrpc,
@@ -273,7 +273,7 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
-  async handleOtherRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
+  async handleOtherRequests (payload: any): Promise<IJsonRpcResponseSuccess> {
     if (payload.method.startsWith('eth_')) {
       return this.handleReadRequests(payload)
     }
@@ -282,7 +282,7 @@ class WalletConnectProvider extends ProviderEngine {
     return this.formatResponse(payload, result)
   }
 
-  async handleReadRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
+  async handleReadRequests (payload: any): Promise<IJsonRpcResponseSuccess> {
     if (!this.http) {
       const error = new Error('HTTP Connection not available')
       this.emit('error', error)
@@ -300,7 +300,7 @@ class WalletConnectProvider extends ProviderEngine {
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
   // in case the connector is disconnected
-  getWalletConnector(
+  getWalletConnector (
     opts: { disableSessionCreation?: boolean } = {}
   ): Promise<IConnector> {
     const { disableSessionCreation = false } = opts
@@ -354,7 +354,7 @@ class WalletConnectProvider extends ProviderEngine {
     })
   }
 
-  async subscribeWalletConnector() {
+  async subscribeWalletConnector () {
     const wc = await this.getWalletConnector()
     wc.on('disconnect', (error, payload) => {
       if (error) {
@@ -373,7 +373,7 @@ class WalletConnectProvider extends ProviderEngine {
     })
   }
 
-  async updateState(sessionParams: any) {
+  async updateState (sessionParams: any) {
     const { accounts, chainId, networkId, rpcUrl } = sessionParams
     // Check if accounts changed and trigger event
     if (!this.accounts || (accounts && this.accounts !== accounts)) {
@@ -394,7 +394,7 @@ class WalletConnectProvider extends ProviderEngine {
     this.updateRpcUrl(this.chainId, rpcUrl || '')
   }
 
-  updateRpcUrl(chainId: number, rpcUrl = '') {
+  updateRpcUrl (chainId: number, rpcUrl = '') {
     const infuraNetworks = {
       1: 'mainnet',
       3: 'ropsten',
@@ -423,7 +423,7 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
-  updateHttpConnection() {
+  updateHttpConnection () {
     if (this.rpcUrl) {
       this.http = new HttpConnection(this.rpcUrl)
       this.http.on('payload', payload => this.emit('payload', payload))
