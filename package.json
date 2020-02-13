@@ -3,10 +3,16 @@
   "description": "Monorepo for WalletConnect",
   "private": true,
   "keywords": [
+    "wallet",
     "walletconnect",
     "ethereum",
+    "jsonrpc",
+    "mobile",
+    "qrcode",
     "web3",
-    "crypto"
+    "crypto",
+    "cryptocurrency",
+    "dapp"
   ],
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
