@@ -205,6 +205,48 @@ export function isMobile (): boolean {
   return mobile
 }
 
+export function getQueryString (url: string): string {
+  const pathEnd: number | undefined =
+    url.indexOf('?') !== -1 ? url.indexOf('?') : undefined
+
+  const queryString: string =
+    typeof pathEnd !== 'undefined' ? url.substr(pathEnd) : ''
+
+  return queryString
+}
+
+export function appendToQueryString (
+  queryString: string,
+  newQueryParams: any
+): string {
+  let queryParams = parseQueryString(queryString)
+
+  queryParams = { ...queryParams, ...newQueryParams }
+
+  queryString = formatQueryString(queryParams)
+
+  return queryString
+}
+
+export function formatQueryString (queryParams: any): string {
+  let result = ''
+
+  const keys = Object.keys(queryParams)
+
+  if (keys) {
+    keys.forEach((key: string, idx: number) => {
+      const value = queryParams[key]
+      if (idx === 0) {
+        result = `?${key}=${value}`
+      } else {
+        result = result + `&${key}=${value}`
+      }
+    })
+  }
+
+  return result
+}
+
 export function detectEnv (
   userAgent?: string
 ): BrowserInfo | BotInfo | NodeInfo | null {
@@ -304,9 +346,9 @@ export function getMeta (): IClientMeta | null {
   }
 
   function getIcons (): string[] {
-    const links: HTMLCollectionOf<
-      HTMLLinkElement
-    > = document.getElementsByTagName('link')
+    const links: HTMLCollectionOf<HTMLLinkElement> = document.getElementsByTagName(
+      'link'
+    )
     const icons: string[] = []
 
     for (let i = 0; i < links.length; i++) {
@@ -352,9 +394,9 @@ export function getMeta (): IClientMeta | null {
   }
 
   function getMetaOfAny (...args: string[]): string {
-    const metaTags: HTMLCollectionOf<
-      HTMLMetaElement
-    > = document.getElementsByTagName('meta')
+    const metaTags: HTMLCollectionOf<HTMLMetaElement> = document.getElementsByTagName(
+      'meta'
+    )
 
     for (let i = 0; i < metaTags.length; i++) {
       const tag: HTMLMetaElement = metaTags[i]

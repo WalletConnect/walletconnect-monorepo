@@ -3,13 +3,21 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .animated {
@@ -20,7 +28,7 @@
 .fadeIn {
   animation-name: fadeIn;
 }
-  
+
 .fadeOut {
   animation-name: fadeOut;
 }
@@ -35,7 +43,7 @@
   margin: 0 auto;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 12px 24px 0 rgba(0,0,0,0.1);
+  box-shadow: 0 12px 24px 0 rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 500px;
 }
@@ -77,13 +85,13 @@
 .walletconnect-modal__close__line1 {
   position: absolute;
   width: 90%;
-  border: 1px solid #7C828B;
+  border: 1px solid #7c828b;
 }
 
 .walletconnect-modal__close__line2 {
   position: absolute;
   width: 90%;
-  border: 1px solid #7C828B;
+  border: 1px solid #7c828b;
   transform: rotate(90deg);
 }
 
@@ -93,12 +101,12 @@
   width: 100%;
   height: 100%;
   z-index: 2147482999;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   text-align: center;
 }
 
 .walletconnect-qrcode__text {
-  color: #7C828B;
+  color: #7c828b;
   font-family: Avenir;
   font-size: 18px;
   text-align: center;
@@ -113,4 +121,57 @@
   width: 100%;
   padding: 30px;
   box-sizing: border-box;
+}
+
+.walletconnect-connect__button {
+  align-items: flex-start;
+  background-color: rgb(64, 153, 255);
+  background-image: none;
+  border-radius: 8px;
+  border-style: none;
+  border-width: 0px;
+  border-color: rgb(255, 255, 255);
+  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px,
+    rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
+    rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
+  box-sizing: border-box;
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  font-size: 16px;
+  font-stretch: 100%;
+  font-style: normal;
+  font-weight: 600;
+  width: 250px;
+  height: 44px;
+  letter-spacing: normal;
+  line-height: 16px;
+  margin: 12px 0px;
+  padding: 8px 12px;
+  position: relative;
+  text-align: center;
+  text-indent: 0px;
+  text-shadow: none;
+  text-transform: none;
+  transition-delay: 0s;
+  transition-duration: 0.15s;
+  transition-property: all;
+  transition-timing-function: ease-in-out;
+  width: 250px;
+  will-change: transform;
+}
+
+.walletconnect-connect__button:active {
+  transform: translateY(1px);
+  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px,
+    rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
+    rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
+}
+
+@media (hover: hover) {
+  .walletconnect-connect__button:hover {
+    transform: translateY(-1px);
+    box-shadow: rgba(50, 50, 93, 0.1) 0px 7px 14px 0px,
+      rgba(0, 0, 0, 0.08) 0px 3px 6px 0px,
+      rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
+  }
 }

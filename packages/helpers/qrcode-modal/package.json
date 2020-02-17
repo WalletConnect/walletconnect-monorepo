@@ -59,6 +59,7 @@
   },
   "dependencies": {
     "@walletconnect/mobile-registry": "^1.0.0-beta.46",
+    "@walletconnect/types": "^1.0.0-beta.46",
     "@walletconnect/utils": "^1.0.0-beta.46",
     "qr-image": "3.2.0",
     "qrcode-terminal": "0.12.0"

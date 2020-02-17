@@ -1,10 +1,10 @@
-/* global window setTimeout */
-
-// import mobileRegistry from '@walletconnect/mobile-registry'
+import MobileRegistry from '@walletconnect/mobile-registry'
+import { IMobileRegistryEntry } from '@walletconnect/types'
+import { appendToQueryString } from '@walletconnect/utils'
 import * as qrImage from 'qr-image'
 
 import logo from './logo.svg'
-import constants from './constants'
+import * as constants from './constants'
 import * as validators from './validators'
 import './style.css'
 
@@ -38,12 +38,48 @@ function formatQRCodeContent (uri: string) {
   `
 }
 
+function formatDeepLinkHref (uri: string, entry: IMobileRegistryEntry) {
+  const encodedUri: string = encodeURIComponent(uri)
+  const redirectUrlQueryString = appendToQueryString(window.location.search, {
+    walletconnect: true
+  })
+  const redirectUrl: string = encodeURIComponent(
+    `${window.location.origin}${window.location.pathname}${redirectUrlQueryString}`
+  )
+
+  return entry.universalLink
+    ? `${entry.universalLink}/wc?uri=${encodedUri}&redirectUrl=${redirectUrl}`
+    : entry.deepLink
+      ? `{wallet.deepLink}${uri}`
+      : ''
+}
+
+function formatSingleConnectButton (name: string, color: string, href: string) {
+  return `
+    <a href="${href}" target="_blank" rel="noopener noreferrer">
+      <div
+        id="walletconnect-connect-button-${name}"
+        class="walletconnect-connect_button"
+        style="background-color: ${color};"
+      >
+        {name}
+      </div>
+    </a>
+  `
+}
 function formatMobileRegistry (uri: string) {
-  // TODO: render formatMobileRegistry
+  const buttons = MobileRegistry.map((entry: IMobileRegistryEntry) => {
+    const { name, color } = entry
+    const href = formatDeepLinkHref(uri, entry)
+    return formatSingleConnectButton(name, color, href)
+  })
+  return buttons.join('')
 }
 
 function formatSingleDeepLink (uri: string) {
-  // TODO: render formatSingleDeepLink
+  const name = 'Connect to Mobile Wallet'
+  const color = constants.defaultColor
+  return formatSingleConnectButton(name, color, uri)
 }
 
 function formateDeepLinkingContent (uri: string) {
