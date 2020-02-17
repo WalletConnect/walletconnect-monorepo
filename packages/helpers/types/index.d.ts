@@ -228,6 +228,7 @@ declare module '@walletconnect/types' {
     bridge?: string
     uri?: string
     session?: IWalletConnectSession
+    clientMeta?: IClientMeta
   }
 
   export interface INodeJSOptions {

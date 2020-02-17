@@ -5,7 +5,7 @@ import WebStorage from './webStorage'
 
 class WalletConnect extends Connector {
   constructor (opts: IWalletConnectOptions) {
-    super(cryptoLib, opts, null, WebStorage)
+    super(cryptoLib, opts, null, WebStorage, opts.clientMeta)
   }
 }
 
