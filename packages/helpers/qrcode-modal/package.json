@@ -4,6 +4,7 @@
   "description": "QR Code Modal for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
+    "build:pre": "npm run clean",
     "build": "webpack",
     "test": "tsdx test ./test"
   },

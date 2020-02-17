@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist/es6",
-    "rootDir": "./src",
-    "target": "es6",
-    "module": "esnext"
-  }
-}
