@@ -259,6 +259,14 @@ declare module '@walletconnect/types' {
     infuraId?: string
   }
 
+  export interface IRequestOptions {
+    forcePushNotification?: boolean
+  }
+
+  export interface IInternalRequestOptions extends IRequestOptions {
+    topic: string
+  }
+
   export interface IMobileRegistryEntry {
     name: string
     color: string

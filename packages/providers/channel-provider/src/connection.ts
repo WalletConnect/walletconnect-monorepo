@@ -90,11 +90,20 @@ class WalletConnectConnection extends EventEmitter implements IRpcConnection {
   }
 
   public open (): Promise<void> {
-    this.create()
-    return Promise.resolve()
+    return new Promise((resolve, reject): void => {
+      this.on('error', err => {
+        reject(err)
+      })
+
+      this.on('connect', () => {
+        resolve()
+      })
+
+      this.create()
+    })
   }
 
-  public close (): Promise<void> {
+  public async close (): Promise<void> {
     if (this.wc) {
       this.wc.killSession()
     }
