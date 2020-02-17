@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/node",
-  "version": "1.0.0-beta.56",
+  "version": "1.0.0-beta.57",
   "description": "NodeJS Client for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -58,9 +58,9 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/core": "^1.0.0-beta.56",
-    "@walletconnect/types": "^1.0.0-beta.56",
-    "@walletconnect/utils": "^1.0.0-beta.56",
+    "@walletconnect/core": "^1.0.0-beta.57",
+    "@walletconnect/types": "^1.0.0-beta.57",
+    "@walletconnect/utils": "^1.0.0-beta.57",
     "ws": "7.2.1"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
