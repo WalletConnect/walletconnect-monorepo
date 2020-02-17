@@ -2,8 +2,8 @@ import Connector from '@walletconnect/core'
 import { IWalletConnectOptions, INodeJSOptions } from '@walletconnect/types'
 import * as cryptoLib from './nodeCrypto'
 
-// polyfill WebSocket for NodeJS
-WebSocket = require('ws')
+// @ts-ignore
+global.WebSocket = require('ws')
 
 class NodeWalletConnect extends Connector {
   constructor (opts: IWalletConnectOptions, nodeJsOptions: INodeJSOptions) {
