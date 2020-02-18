@@ -2,7 +2,7 @@ import WalletConnect from '@walletconnect/browser'
 import NodeWalletConnect from '@walletconnect/node'
 import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 import { IWCEthRpcConnectionOptions, IConnector } from '@walletconnect/types'
-import { detectEnv } from '@walletconnect/utils'
+import { isNode } from '@walletconnect/utils'
 
 const HookedWalletSubprovider = require('web3-provider-engine/subproviders/hooked-wallet')
 
@@ -87,9 +87,8 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
     this.bridge = opts?.bridge || 'https://bridge.walletconnect.org'
     this.qrcode = typeof opts?.qrcode === 'undefined' || opts?.qrcode !== false
 
-    const env = detectEnv()
+    this.isNode = isNode()
 
-    this.isNode = env && env.name ? env.name.toLowerCase() === 'node' : false
     this.wc = this.isNode
       ? new NodeWalletConnect(
           { bridge: this.bridge },
