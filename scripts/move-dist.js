@@ -1,16 +1,15 @@
-// const fs = require('fs')
 const path = require('path')
 
 const {
+  ROOT_DIR,
   copyFile,
   readDir,
   isDir,
   exists,
   verifyDir,
   statPath
-} = require('./common')
+} = require('./shared')
 
-const ROOT_DIR = path.join(__dirname, '../')
 const PACKAGES_DIR = path.join(ROOT_DIR, './packages')
 const TARGET_DIR = path.join(ROOT_DIR, './dist')
 
