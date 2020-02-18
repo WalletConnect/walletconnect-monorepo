@@ -337,7 +337,7 @@ declare module '@walletconnect/types' {
   }
 
   export interface IQRCodeModal {
-    open(uri: string, cb: any, isNode?: boolean): void
-    close(isNode?: boolean): void
+    open(uri: string, cb: any): void
+    close(): void
   }
 }

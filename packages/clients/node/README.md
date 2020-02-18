@@ -43,13 +43,9 @@ if (!walletConnector.connected) {
     // get uri for QR Code modal
     const uri = walletConnector.uri;
     // display QR Code modal
-    WalletConnectQRCodeModal.open(
-      uri,
-      () => {
-        console.log("QR Code Modal closed");
-      },
-      true // isNode = true
-    );
+    WalletConnectQRCodeModal.open(uri, () => {
+      console.log("QR Code Modal closed");
+    });
   });
 }
 
@@ -60,9 +56,7 @@ walletConnector.on("connect", (error, payload) => {
   }
 
   // Close QR Code Modal
-  WalletConnectQRCodeModal.close(
-    true // isNode = true
-  );
+  WalletConnectQRCodeModal.close();
 
   // Get provided accounts and chainId
   const { accounts, chainId } = payload.params[0];

@@ -5,6 +5,9 @@ import {
   ITransportLib
 } from '@walletconnect/types'
 
+// @ts-ignore
+const WS = global.WebSocket || require('ws')
+
 interface ISocketTransportOptions {
   url: string
   getNetMonitor?: () => NetworkMonitor
@@ -99,7 +102,11 @@ class SocketTransport implements ITransportLib {
         ? this._url.replace('http', 'ws')
         : this._url
 
-    this._nextSocket = new WebSocket(url)
+    this._nextSocket = new WS(url)
+
+    if (!this._nextSocket) {
+      throw new Error('Failed to create socket')
+    }
 
     this._nextSocket.onmessage = (event: MessageEvent) =>
       this._socketReceive(event)
