@@ -39,7 +39,7 @@
     "reset": "npm run clean:all && npm run bootstrap && npm run check",
     "example": "npm run check && cd example && npm run start",
     "deploy": "npm run check && npm run publish",
-    "pre-publish": "npm run new-version && npm run routine && npm run commit-version",
+    "pre-publish": "npm run new-version && npm run reset && npm run commit-version",
     "deploy:beta": "npm run pre-publish && npm run publish:beta",
     "deploy:next": "npm run pre-publish && npm run publish:next"
   },
