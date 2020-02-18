@@ -240,3 +240,42 @@ walletConnector
     console.error(error);
   });
 ```
+
+## Create Instant Request
+
+```js
+import WalletConnect from "@walletconnect/browser";
+import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+
+// Create a walletConnector
+const walletConnector = new WalletConnect();
+
+// Draft Instant Request
+const instantRequest = {
+  id: 1,
+  jsonrpc: "2.0",
+  method: "eth_signTransaction",
+  params: [
+    {
+      from: "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
+      to: "0x0000000000000000000000000000000000000000",
+      nonce: 1,
+      gas: 100000,
+      value: 0,
+      data: "0x0"
+    }
+  ]
+};
+
+// Create Instant Request
+walletConnector
+  .createInstantRequest(instantRequest)
+  .then(result => {
+    // Get Instant Request Result
+    console.log(result);
+  })
+  .catch(error => {
+    // Handle Error or Rejection
+    console.error(error);
+  });
+```
