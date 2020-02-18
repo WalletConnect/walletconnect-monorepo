@@ -304,7 +304,7 @@ const instantRequest = {
 /**
  *  Subscribe to Instant Request URI
  */
-walletConnector.on("instant_uri", (error, payload) => {
+walletConnector.on("display_uri", (error, payload) => {
   if (error) {
     throw error;
   }

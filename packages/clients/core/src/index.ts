@@ -79,7 +79,7 @@ class Connector implements IConnector {
 
   // -- constructor ----------------------------------------------------- //
 
-  constructor (
+  constructor(
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
     transport?: ITransportLib | null,
@@ -154,18 +154,18 @@ class Connector implements IConnector {
 
   // -- setters / getters ----------------------------------------------- //
 
-  set bridge (value: string) {
+  set bridge(value: string) {
     if (!value) {
       return
     }
     this._bridge = value
   }
 
-  get bridge () {
+  get bridge() {
     return this._bridge
   }
 
-  set key (value: string) {
+  set key(value: string) {
     if (!value) {
       return
     }
@@ -173,7 +173,7 @@ class Connector implements IConnector {
     this._key = key
   }
 
-  get key (): string {
+  get key(): string {
     if (this._key) {
       const key: string = convertArrayBufferToHex(this._key, true)
       return key
@@ -181,7 +181,7 @@ class Connector implements IConnector {
     return ''
   }
 
-  set nextKey (value: string) {
+  set nextKey(value: string) {
     if (!value) {
       return
     }
@@ -189,7 +189,7 @@ class Connector implements IConnector {
     this._nextKey = nextKey
   }
 
-  get nextKey (): string {
+  get nextKey(): string {
     if (this._nextKey) {
       const nextKey: string = convertArrayBufferToHex(this._nextKey)
       return nextKey
@@ -197,14 +197,14 @@ class Connector implements IConnector {
     return ''
   }
 
-  set clientId (value: string) {
+  set clientId(value: string) {
     if (!value) {
       return
     }
     this._clientId = value
   }
 
-  get clientId () {
+  get clientId() {
     let clientId: string | null = this._clientId
     if (!clientId) {
       clientId = this._clientId = uuid()
@@ -213,22 +213,22 @@ class Connector implements IConnector {
     return this._clientId
   }
 
-  set peerId (value) {
+  set peerId(value) {
     if (!value) {
       return
     }
     this._peerId = value
   }
 
-  get peerId () {
+  get peerId() {
     return this._peerId
   }
 
-  set clientMeta (value) {
+  set clientMeta(value) {
     // empty
   }
 
-  get clientMeta () {
+  get clientMeta() {
     let clientMeta: IClientMeta | null = this._clientMeta
     if (!clientMeta) {
       clientMeta = this._clientMeta = getMeta()
@@ -236,43 +236,43 @@ class Connector implements IConnector {
     return clientMeta
   }
 
-  set peerMeta (value) {
+  set peerMeta(value) {
     this._peerMeta = value
   }
 
-  get peerMeta () {
+  get peerMeta() {
     const peerMeta: IClientMeta | null = this._peerMeta
     return peerMeta
   }
 
-  set handshakeTopic (value) {
+  set handshakeTopic(value) {
     if (!value) {
       return
     }
     this._handshakeTopic = value
   }
 
-  get handshakeTopic () {
+  get handshakeTopic() {
     return this._handshakeTopic
   }
 
-  set handshakeId (value) {
+  set handshakeId(value) {
     if (!value) {
       return
     }
     this._handshakeId = value
   }
 
-  get handshakeId () {
+  get handshakeId() {
     return this._handshakeId
   }
 
-  get uri () {
+  get uri() {
     const _uri = this._formatUri()
     return _uri
   }
 
-  set uri (value) {
+  set uri(value) {
     if (!value) {
       return
     }
@@ -282,59 +282,59 @@ class Connector implements IConnector {
     this.key = key
   }
 
-  set chainId (value) {
+  set chainId(value) {
     this._chainId = value
   }
 
-  get chainId () {
+  get chainId() {
     const chainId: number | null = this._chainId
     return chainId
   }
 
-  set networkId (value) {
+  set networkId(value) {
     this._networkId = value
   }
 
-  get networkId () {
+  get networkId() {
     const networkId: number | null = this._networkId
     return networkId
   }
 
-  set accounts (value) {
+  set accounts(value) {
     this._accounts = value
   }
 
-  get accounts () {
+  get accounts() {
     const accounts: string[] | null = this._accounts
     return accounts
   }
 
-  set rpcUrl (value) {
+  set rpcUrl(value) {
     this._rpcUrl = value
   }
 
-  get rpcUrl () {
+  get rpcUrl() {
     const rpcUrl: string | null = this._rpcUrl
     return rpcUrl
   }
 
-  set connected (value) {
+  set connected(value) {
     // empty
   }
 
-  get connected () {
+  get connected() {
     return this._connected
   }
 
-  set pending (value) {
+  set pending(value) {
     // empty
   }
 
-  get pending () {
+  get pending() {
     return !!this._handshakeTopic
   }
 
-  get session () {
+  get session() {
     return {
       connected: this.connected,
       accounts: this.accounts,
@@ -350,7 +350,7 @@ class Connector implements IConnector {
     }
   }
 
-  set session (value) {
+  set session(value) {
     if (!value) {
       return
     }
@@ -369,7 +369,7 @@ class Connector implements IConnector {
 
   // -- public ---------------------------------------------------------- //
 
-  public on (
+  public on(
     event: string,
     callback: (error: Error | null, payload: any | null) => void
   ): void {
@@ -380,7 +380,7 @@ class Connector implements IConnector {
     this._eventManager.subscribe(eventEmitter)
   }
 
-  public async createInstantRequest (
+  public async createInstantRequest(
     instantRequest: Partial<IJsonRpcRequest>
   ): Promise<void> {
     this._key = await this._generateKey()
@@ -400,7 +400,7 @@ class Connector implements IConnector {
     this.handshakeTopic = uuid()
 
     this._eventManager.trigger({
-      event: 'instant_uri',
+      event: 'display_uri',
       params: [{ uri: this.uri }]
     })
 
@@ -417,7 +417,7 @@ class Connector implements IConnector {
     }
   }
 
-  public async createSession (opts?: { chainId: number }): Promise<void> {
+  public async createSession(opts?: { chainId: number }): Promise<void> {
     if (this._connected) {
       throw new Error(ERROR_SESSION_CONNECTED)
     }
@@ -442,11 +442,9 @@ class Connector implements IConnector {
     this.handshakeId = request.id
     this.handshakeTopic = uuid()
 
-    this._sendSessionRequest(
-      request,
-      'Session update rejected',
-      { topic: this.handshakeTopic }
-    )
+    this._sendSessionRequest(request, 'Session update rejected', {
+      topic: this.handshakeTopic
+    })
 
     this._eventManager.trigger({
       event: 'display_uri',
@@ -454,7 +452,7 @@ class Connector implements IConnector {
     })
   }
 
-  public approveSession (sessionStatus: ISessionStatus) {
+  public approveSession(sessionStatus: ISessionStatus) {
     if (this._connected) {
       throw new Error(ERROR_SESSION_CONNECTED)
     }
@@ -499,7 +497,7 @@ class Connector implements IConnector {
     }
   }
 
-  public rejectSession (sessionError?: ISessionError) {
+  public rejectSession(sessionError?: ISessionError) {
     if (this._connected) {
       throw new Error(ERROR_SESSION_CONNECTED)
     }
@@ -524,7 +522,7 @@ class Connector implements IConnector {
     this._removeStorageSession()
   }
 
-  public updateSession (sessionStatus: ISessionStatus) {
+  public updateSession(sessionStatus: ISessionStatus) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -562,7 +560,7 @@ class Connector implements IConnector {
     this._manageStorageSession()
   }
 
-  public async killSession (sessionError?: ISessionError) {
+  public async killSession(sessionError?: ISessionError) {
     const message = sessionError ? sessionError.message : 'Session Disconnected'
 
     const sessionParams: ISessionParams = {
@@ -582,7 +580,7 @@ class Connector implements IConnector {
     this._handleSessionDisconnect(message)
   }
 
-  public async sendTransaction (tx: ITxData) {
+  public async sendTransaction(tx: ITxData) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -602,7 +600,7 @@ class Connector implements IConnector {
     }
   }
 
-  public async signTransaction (tx: ITxData) {
+  public async signTransaction(tx: ITxData) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -622,7 +620,7 @@ class Connector implements IConnector {
     }
   }
 
-  public async signMessage (params: any[]) {
+  public async signMessage(params: any[]) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -640,7 +638,7 @@ class Connector implements IConnector {
     }
   }
 
-  public async signPersonalMessage (params: any[]) {
+  public async signPersonalMessage(params: any[]) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -660,7 +658,7 @@ class Connector implements IConnector {
     }
   }
 
-  public async signTypedData (params: any[]) {
+  public async signTypedData(params: any[]) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -678,7 +676,7 @@ class Connector implements IConnector {
     }
   }
 
-  public async updateChain (chainParams: IUpdateChainParams) {
+  public async updateChain(chainParams: IUpdateChainParams) {
     if (!this._connected) {
       throw new Error('Session currently disconnected')
     }
@@ -696,8 +694,9 @@ class Connector implements IConnector {
     }
   }
 
-  public unsafeSend (
-    request: IJsonRpcRequest, options?: IRequestOptions
+  public unsafeSend(
+    request: IJsonRpcRequest,
+    options?: IRequestOptions
   ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
     this._sendRequest(request, options)
 
@@ -718,7 +717,10 @@ class Connector implements IConnector {
     })
   }
 
-  public async sendCustomRequest (request: Partial<IJsonRpcRequest>, options?: IRequestOptions) {
+  public async sendCustomRequest(
+    request: Partial<IJsonRpcRequest>,
+    options?: IRequestOptions
+  ) {
     if (!this._connected) {
       throw new Error(ERROR_SESSION_DISCONNECTED)
     }
@@ -753,7 +755,7 @@ class Connector implements IConnector {
     }
   }
 
-  public approveRequest (response: Partial<IJsonRpcResponseSuccess>) {
+  public approveRequest(response: Partial<IJsonRpcResponseSuccess>) {
     if (isJsonRpcResponseSuccess(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
@@ -762,7 +764,7 @@ class Connector implements IConnector {
     }
   }
 
-  public rejectRequest (response: Partial<IJsonRpcResponseError>) {
+  public rejectRequest(response: Partial<IJsonRpcResponseError>) {
     if (isJsonRpcResponseError(response)) {
       const formattedResponse = this._formatResponse(response)
       this._sendResponse(formattedResponse)
@@ -773,7 +775,7 @@ class Connector implements IConnector {
 
   // -- private --------------------------------------------------------- //
 
-  protected async _sendRequest (
+  protected async _sendRequest(
     request: Partial<IJsonRpcRequest>,
     options?: Partial<IInternalRequestOptions>
   ) {
@@ -783,9 +785,13 @@ class Connector implements IConnector {
       callRequest
     )
 
-    const topic: string = typeof options?.topic !== 'undefined' ? options.topic : this.peerId
+    const topic: string =
+      typeof options?.topic !== 'undefined' ? options.topic : this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
-    const silent = typeof options?.forcePushNotification !== 'undefined' ? !options.forcePushNotification : isSilentPayload(callRequest)
+    const silent =
+      typeof options?.forcePushNotification !== 'undefined'
+        ? !options.forcePushNotification
+        : isSilentPayload(callRequest)
 
     const socketMessage: ISocketMessage = {
       topic,
@@ -797,7 +803,7 @@ class Connector implements IConnector {
     this._transport.send(socketMessage)
   }
 
-  protected async _sendResponse (
+  protected async _sendResponse(
     response: IJsonRpcResponseSuccess | IJsonRpcResponseError
   ) {
     const encryptionPayload: IEncryptionPayload | null = await this._encrypt(
@@ -817,7 +823,7 @@ class Connector implements IConnector {
     this._transport.send(socketMessage)
   }
 
-  protected async _sendSessionRequest (
+  protected async _sendSessionRequest(
     request: IJsonRpcRequest,
     errorMsg: string,
     options?: IInternalRequestOptions
@@ -826,12 +832,15 @@ class Connector implements IConnector {
     this._subscribeToSessionResponse(request.id, errorMsg)
   }
 
-  protected _sendCallRequest (request: IJsonRpcRequest, options?: IRequestOptions): Promise<any> {
+  protected _sendCallRequest(
+    request: IJsonRpcRequest,
+    options?: IRequestOptions
+  ): Promise<any> {
     this._sendRequest(request, options)
     return this._subscribeToCallResponse(request.id)
   }
 
-  protected _formatRequest (request: Partial<IJsonRpcRequest>): IJsonRpcRequest {
+  protected _formatRequest(request: Partial<IJsonRpcRequest>): IJsonRpcRequest {
     if (typeof request.method === 'undefined') {
       throw new Error(ERROR_MISSING_METHOD)
     }
@@ -844,7 +853,7 @@ class Connector implements IConnector {
     return formattedRequest
   }
 
-  protected _formatResponse (
+  protected _formatResponse(
     response: Partial<IJsonRpcResponseSuccess | IJsonRpcResponseError>
   ): IJsonRpcResponseSuccess | IJsonRpcResponseError {
     if (typeof response.id === 'undefined') {
@@ -874,7 +883,7 @@ class Connector implements IConnector {
     throw new Error(ERROR_INVALID_RESPONSE)
   }
 
-  private _handleSessionDisconnect (errorMsg?: string) {
+  private _handleSessionDisconnect(errorMsg?: string) {
     const message = errorMsg || 'Session Disconnected'
     if (this._connected) {
       this._connected = false
@@ -887,7 +896,7 @@ class Connector implements IConnector {
     this._transport.close()
   }
 
-  private _handleSessionResponse (
+  private _handleSessionResponse(
     errorMsg: string,
     sessionParams?: ISessionParams
   ) {
@@ -951,7 +960,7 @@ class Connector implements IConnector {
     }
   }
 
-  private async _handleIncomingMessages (socketMessage: ISocketMessage) {
+  private async _handleIncomingMessages(socketMessage: ISocketMessage) {
     const activeTopics = [this.clientId, this.handshakeTopic]
 
     if (!activeTopics.includes(socketMessage.topic)) {
@@ -976,7 +985,7 @@ class Connector implements IConnector {
     }
   }
 
-  private _subscribeToSessionRequest () {
+  private _subscribeToSessionRequest() {
     this._transport.send({
       topic: `${this.handshakeTopic}`,
       type: 'sub',
@@ -985,14 +994,14 @@ class Connector implements IConnector {
     })
   }
 
-  private _subscribeToResponse (
+  private _subscribeToResponse(
     id: number,
     callback: (error: Error | null, payload: any | null) => void
   ) {
     this.on(`response:${id}`, callback)
   }
 
-  private _subscribeToSessionResponse (id: number, errorMsg: string) {
+  private _subscribeToSessionResponse(id: number, errorMsg: string) {
     this._subscribeToResponse(id, (error, payload) => {
       if (error) {
         this._handleSessionResponse(error.message)
@@ -1008,7 +1017,7 @@ class Connector implements IConnector {
     })
   }
 
-  private _subscribeToCallResponse (id: number): Promise<any> {
+  private _subscribeToCallResponse(id: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this._subscribeToResponse(id, (error, payload) => {
         if (error) {
@@ -1026,7 +1035,7 @@ class Connector implements IConnector {
     })
   }
 
-  private _subscribeToInternalEvents () {
+  private _subscribeToInternalEvents() {
     this._transport.on('message', (socketMessage: ISocketMessage) =>
       this._handleIncomingMessages(socketMessage)
     )
@@ -1072,7 +1081,7 @@ class Connector implements IConnector {
 
   // -- uri ------------------------------------------------------------- //
 
-  private _formatUri () {
+  private _formatUri() {
     const protocol = this.protocol
     const handshakeTopic = this.handshakeTopic
     const version = this.version
@@ -1082,7 +1091,7 @@ class Connector implements IConnector {
     return uri
   }
 
-  private _parseUri (uri: string) {
+  private _parseUri(uri: string) {
     const result: IParseURIResult = parseWalletConnectUri(uri)
 
     if (result.protocol === this.protocol) {
@@ -1109,7 +1118,7 @@ class Connector implements IConnector {
 
   // -- crypto ---------------------------------------------------------- //
 
-  private async _generateKey (): Promise<ArrayBuffer | null> {
+  private async _generateKey(): Promise<ArrayBuffer | null> {
     if (this.cryptoLib) {
       const result = await this.cryptoLib.generateKey()
       return result
@@ -1117,7 +1126,7 @@ class Connector implements IConnector {
     return null
   }
 
-  private async _encrypt (
+  private async _encrypt(
     data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError
   ): Promise<IEncryptionPayload | null> {
     const key: ArrayBuffer | null = this._key
@@ -1128,7 +1137,7 @@ class Connector implements IConnector {
     return null
   }
 
-  private async _decrypt (
+  private async _decrypt(
     payload: IEncryptionPayload
   ): Promise<
     IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null
@@ -1147,7 +1156,7 @@ class Connector implements IConnector {
 
   // -- storage --------------------------------------------------------- //
 
-  private _getStorageSession () {
+  private _getStorageSession() {
     let result = null
     if (this._storage) {
       result = this._storage.getSession()
@@ -1155,19 +1164,19 @@ class Connector implements IConnector {
     return result
   }
 
-  private _setStorageSession () {
+  private _setStorageSession() {
     if (this._storage) {
       this._storage.setSession(this.session)
     }
   }
 
-  private _removeStorageSession () {
+  private _removeStorageSession() {
     if (this._storage) {
       this._storage.removeSession()
     }
   }
 
-  private _manageStorageSession () {
+  private _manageStorageSession() {
     if (this._connected) {
       this._setStorageSession()
     } else {
