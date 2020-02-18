@@ -3,24 +3,14 @@ const path = require('path')
 module.exports = {
   mode: 'production',
   entry: {
-    index: './src/index.ts'
+    index: path.resolve(__dirname, 'dist', 'cjs', 'index.js')
   },
   output: {
-    path: path.resolve(__dirname, 'lib'),
-    filename: '[name].js',
+    path: path.resolve(__dirname, 'dist', 'umd'),
+    filename: '[name].min.js',
     libraryTarget: 'umd',
     library: 'WalletConnectProvider',
     umdNamedDefine: true,
     globalObject: 'this'
-  },
-  resolve: {
-    extensions: ['.ts', '.tsx', '.js']
-  },
-  devtool: 'source-map',
-  optimization: {
-    minimize: true
-  },
-  module: {
-    rules: [{ test: /\.tsx?$/, loader: 'ts-loader' }]
   }
 }

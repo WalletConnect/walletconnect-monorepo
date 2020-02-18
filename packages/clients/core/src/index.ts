@@ -17,7 +17,9 @@ import {
   IWalletConnectOptions,
   IUpdateChainParams,
   IRequestOptions,
-  IInternalRequestOptions
+  IInternalRequestOptions,
+  ICreateSessionOptions,
+  IQRCodeModal
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -75,7 +77,8 @@ class Connector implements IConnector {
   private _transport: ITransportLib
   private _eventManager: EventManager
   private _connected: boolean
-  private _storage: ISessionStorage | null
+  private _sessionStorage: ISessionStorage | null
+  private _qrcodeModal: IQRCodeModal | null
 
   // -- constructor ----------------------------------------------------- //
 
@@ -83,8 +86,9 @@ class Connector implements IConnector {
     cryptoLib: ICryptoLib,
     opts: IWalletConnectOptions,
     transport?: ITransportLib | null,
-    storage?: ISessionStorage | null,
-    clientMeta?: IClientMeta | null
+    sessionStorage?: ISessionStorage | null,
+    clientMeta?: IClientMeta | null,
+    qrcodeModal?: IQRCodeModal | null
   ) {
     this.cryptoLib = cryptoLib
 
@@ -96,7 +100,7 @@ class Connector implements IConnector {
     this._nextKey = null
 
     this._clientId = ''
-    this._clientMeta = null
+    this._clientMeta = getMeta() || clientMeta || null
     this._peerId = ''
     this._peerMeta = null
     this._handshakeId = 0
@@ -107,11 +111,8 @@ class Connector implements IConnector {
     this._rpcUrl = ''
     this._eventManager = new EventManager()
     this._connected = false
-    this._storage = storage || null
-
-    if (clientMeta) {
-      this.clientMeta = clientMeta
-    }
+    this._sessionStorage = sessionStorage || null
+    this._qrcodeModal = qrcodeModal || null
 
     if (!opts.bridge && !opts.uri && !opts.session) {
       throw new Error(ERROR_MISSING_REQUIRED)
@@ -417,7 +418,38 @@ class Connector implements IConnector {
     }
   }
 
-  public async createSession(opts?: { chainId: number }): Promise<void> {
+  public connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
+    if (!this._qrcodeModal) {
+      throw new Error('QR Code Modal not provided')
+    }
+    return new Promise(async (resolve, reject) => {
+      if (!this.connected) {
+        try {
+          await this.createSession(opts)
+          if (this._qrcodeModal) {
+            this._qrcodeModal.open(this.uri, () => {
+              reject(new Error('QR Code Modal closed'))
+            })
+          }
+        } catch (error) {
+          reject(error)
+        }
+      }
+
+      this.on('connect', (error, payload) => {
+        if (error) {
+          return reject(error)
+        }
+        if (this._qrcodeModal) {
+          this._qrcodeModal.close()
+        }
+
+        resolve(payload.params[0])
+      })
+    })
+  }
+
+  public async createSession(opts?: ICreateSessionOptions): Promise<void> {
     if (this._connected) {
       throw new Error(ERROR_SESSION_CONNECTED)
     }
@@ -1154,25 +1186,25 @@ class Connector implements IConnector {
     return null
   }
 
-  // -- storage --------------------------------------------------------- //
+  // -- sessionStorage --------------------------------------------------------- //
 
   private _getStorageSession() {
     let result = null
-    if (this._storage) {
-      result = this._storage.getSession()
+    if (this._sessionStorage) {
+      result = this._sessionStorage.getSession()
     }
     return result
   }
 
   private _setStorageSession() {
-    if (this._storage) {
-      this._storage.setSession(this.session)
+    if (this._sessionStorage) {
+      this._sessionStorage.setSession(this.session)
     }
   }
 
   private _removeStorageSession() {
-    if (this._storage) {
-      this._storage.removeSession()
+    if (this._sessionStorage) {
+      this._sessionStorage.removeSession()
     }
   }
 

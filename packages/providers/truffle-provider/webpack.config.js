@@ -3,11 +3,11 @@ const path = require('path')
 module.exports = {
   mode: 'production',
   entry: {
-    index: './src/index.js'
+    index: path.resolve(__dirname, 'dist', 'cjs', 'index.js')
   },
   output: {
-    path: path.resolve(__dirname, 'lib'),
-    filename: '[name].js',
+    path: path.resolve(__dirname, 'dist', 'umd'),
+    filename: '[name].min.js',
     libraryTarget: 'umd',
     library: 'WalletConnectTruffleProvider',
     umdNamedDefine: true,
@@ -21,6 +21,10 @@ module.exports = {
     minimize: true
   },
   module: {
-    rules: [{ test: /\.tsx?$/, loader: 'ts-loader' }]
+    rules: [
+      { test: /\.tsx?$/, loader: 'ts-loader' },
+      { test: /\.svg$/, loader: 'svg-url-loader' },
+      { test: /\.css$/i, use: ['style-loader', 'css-loader'] }
+    ]
   }
 }
