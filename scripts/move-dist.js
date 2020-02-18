@@ -8,7 +8,7 @@ const {
   exists,
   verifyDir,
   statPath
-} = require('./common')
+} = require('./shared')
 
 const PACKAGES_DIR = path.join(ROOT_DIR, './packages')
 const TARGET_DIR = path.join(ROOT_DIR, './dist')
