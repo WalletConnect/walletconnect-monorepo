@@ -238,11 +238,14 @@ export const toChecksumAddress = (address: string) => {
 }
 
 export const isValidAddress = (address?: string) => {
+  function isAddressAllLowercase (str: string) {
+    return /^(0x)?[0-9a-f]{40}$/i.test(str)
+  }
   if (!address) {
     return false
   } else if (address.toLowerCase().substring(0, 2) !== '0x') {
     return false
-  } else if (!/^(0x)?[0-9a-f]{40}$/i.test(address)) {
+  } else if (!isAddressAllLowercase(address)) {
     return false
   } else if (
     /^(0x)?[0-9a-f]{40}$/.test(address) ||
@@ -517,12 +520,21 @@ export function parseTransactionData (
       typeof txData.gasPrice === 'undefined'
         ? ''
         : parseHexValues(txData.gasPrice),
+<<<<<<< HEAD
     gas:
       typeof txData.gas === 'undefined'
         ? typeof txData.gasLimit === 'undefined'
           ? ''
           : parseHexValues(txData.gasLimit)
         : parseHexValues(txData.gas),
+=======
+    gasLimit:
+      typeof txData.gasLimit === 'undefined'
+        ? typeof txData.gas === 'undefined'
+          ? ''
+          : parseHexValues(txData.gas)
+        : parseHexValues(txData.gasLimit),
+>>>>>>> 6316c993bd1aaaa931e0d74d24a9201d79fe5666
     value:
       typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
     nonce:
@@ -643,4 +655,10 @@ export function isSilentPayload (request: IJsonRpcRequest): boolean {
     return false
   }
   return true
+}
+
+export function logDeprecationWarning () {
+  console.warn(
+    'DEPRECATION WARNING: This WalletConnect client library will be deprecated in favor of @walletconnect/client. Please check docs.walletconnect.org to learn more about this migration!'
+  )
 }
