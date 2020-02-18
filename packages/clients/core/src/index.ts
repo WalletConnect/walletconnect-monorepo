@@ -851,14 +851,7 @@ class Connector implements IConnector {
         ? !options.forcePushNotification
         : isSilentPayload(callRequest)
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendResponse(
@@ -870,15 +863,9 @@ class Connector implements IConnector {
 
     const topic: string = this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = true
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent: true
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendSessionRequest(
@@ -1044,12 +1031,9 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest() {
-    this._transport.send({
-      topic: `${this.handshakeTopic}`,
-      type: 'sub',
-      payload: '',
-      silent: true
-    })
+    if (this._transport.listen) {
+      this._transport.listen(this.handshakeTopic)
+    }
   }
 
   private _subscribeToResponse(

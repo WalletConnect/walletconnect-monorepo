@@ -1,4 +1,8 @@
-import { ISocketMessage, ITransportEvent } from '@walletconnect/types'
+import {
+  ISocketMessage,
+  ITransportEvent,
+  ITransportLib
+} from '@walletconnect/types'
 
 // @ts-ignore
 const WS = global.WebSocket || require('ws')
@@ -10,9 +14,9 @@ interface ISocketTransportOptions {
 
 // -- SocketTransport ------------------------------------------------------ //
 
-class SocketTransport {
+class SocketTransport implements ITransportLib {
   private _initiating: boolean
-  private _bridge: string
+  private _url: string
   private _clientId: string
   private _socket: WebSocket | null
   private _queue: ISocketMessage[]
@@ -85,12 +89,30 @@ class SocketTransport {
     this._socketOpen()
   }
 
-  public send (socketMessage: ISocketMessage): void {
-    this._socketSend(socketMessage)
-  }
-
   public close () {
     this._socketClose()
+  }
+
+  public send (message: string, topic?: string, silent?: boolean): void {
+    if (!topic || typeof topic !== 'string') {
+      throw new Error('Missing or invalid topic field')
+    }
+
+    this._socketSend({
+      topic: topic,
+      type: 'pub',
+      payload: message,
+      silent: !!silent
+    })
+  }
+
+  public subscribe (topic: string) {
+    this._socketSend({
+      topic: topic,
+      type: 'sub',
+      payload: '',
+      silent: true
+    })
   }
 
   public on (event: string, callback: (payload: any) => void) {
@@ -150,11 +172,11 @@ class SocketTransport {
   private _socketSend (socketMessage: ISocketMessage) {
     const message: string = JSON.stringify(socketMessage)
 
-    if (this._socket && this.connected) {
+    if (this._socket && this._socket.readyState === 1) {
       this._socket.send(message)
     } else {
       this._setToQueue(socketMessage)
-      this._socketOpen()
+      this._socketCreate()
     }
   }
 
