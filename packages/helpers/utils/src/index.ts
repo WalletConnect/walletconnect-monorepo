@@ -1,5 +1,9 @@
 import BigNumber from 'bignumber.js'
-import { isHexString as _isHexString, hexlify, arrayify } from '@ethersproject/bytes'
+import {
+  isHexString as _isHexString,
+  hexlify,
+  arrayify
+} from '@ethersproject/bytes'
 import { getAddress } from '@ethersproject/address'
 import { toUtf8Bytes, toUtf8String } from '@ethersproject/strings'
 
@@ -31,7 +35,10 @@ export function convertArrayBufferToUtf8 (arrayBuffer: ArrayBuffer): string {
   return utf8
 }
 
-export function convertArrayBufferToHex (arrayBuffer: ArrayBuffer, noPrefix?: boolean): string {
+export function convertArrayBufferToHex (
+  arrayBuffer: ArrayBuffer,
+  noPrefix?: boolean
+): string {
   let hex = hexlify(new Uint8Array(arrayBuffer))
   if (noPrefix) {
     hex = removeHexPrefix(hex)
@@ -125,7 +132,10 @@ export function convertNumberToUtf8 (num: number): string {
   return utf8
 }
 
-export function convertNumberToHex (num: number | string, noPrefix?: boolean): string {
+export function convertNumberToHex (
+  num: number | string,
+  noPrefix?: boolean
+): string {
   let hex = new BigNumber(num).toString(16)
   hex = sanitizeHex(hex)
   if (noPrefix) {
@@ -211,7 +221,10 @@ export function uuid (): string {
     for (
       b = a = '';
       a++ < 36;
-      b += (a * 51) & 52 ? (a ^ 15 ? 8 ^ (Math.random() * (a ^ 20 ? 16 : 4)) : 4).toString(16) : '-'
+      b +=
+        (a * 51) & 52
+          ? (a ^ 15 ? 8 ^ (Math.random() * (a ^ 20 ? 16 : 4)) : 4).toString(16)
+          : '-'
     ) {
       // empty
     }
@@ -231,7 +244,10 @@ export const isValidAddress = (address?: string) => {
     return false
   } else if (!/^(0x)?[0-9a-f]{40}$/i.test(address)) {
     return false
-  } else if (/^(0x)?[0-9a-f]{40}$/.test(address) || /^(0x)?[0-9A-F]{40}$/.test(address)) {
+  } else if (
+    /^(0x)?[0-9a-f]{40}$/.test(address) ||
+    /^(0x)?[0-9A-F]{40}$/.test(address)
+  ) {
     return true
   } else {
     return address === toChecksumAddress(address)
@@ -248,7 +264,9 @@ export function getMeta (): IClientMeta | null {
   }
 
   function getIcons (): string[] {
-    const links: HTMLCollectionOf<HTMLLinkElement> = document.getElementsByTagName('link')
+    const links: HTMLCollectionOf<HTMLLinkElement> = document.getElementsByTagName(
+      'link'
+    )
     const icons: string[] = []
 
     for (let i = 0; i < links.length; i++) {
@@ -265,7 +283,8 @@ export function getMeta (): IClientMeta | null {
               href.toLowerCase().indexOf('http:') === -1 &&
               href.indexOf('//') !== 0
             ) {
-              let absoluteHref: string = window.location.protocol + '//' + window.location.host
+              let absoluteHref: string =
+                window.location.protocol + '//' + window.location.host
 
               if (href.indexOf('/') === 0) {
                 absoluteHref += href
@@ -293,7 +312,9 @@ export function getMeta (): IClientMeta | null {
   }
 
   function getMetaOfAny (...args: string[]): string {
-    const metaTags: HTMLCollectionOf<HTMLMetaElement> = document.getElementsByTagName('meta')
+    const metaTags: HTMLCollectionOf<HTMLMetaElement> = document.getElementsByTagName(
+      'meta'
+    )
 
     for (let i = 0; i < metaTags.length; i++) {
       const tag: HTMLMetaElement = metaTags[i]
@@ -317,7 +338,12 @@ export function getMeta (): IClientMeta | null {
   }
 
   function getName (): string {
-    let name: string = getMetaOfAny('name', 'og:site_name', 'og:title', 'twitter:title')
+    let name: string = getMetaOfAny(
+      'name',
+      'og:site_name',
+      'og:title',
+      'twitter:title'
+    )
 
     if (!name) {
       name = document.title
@@ -355,13 +381,18 @@ export function getMeta (): IClientMeta | null {
 export function parseQueryString (queryString: string): any {
   const result: any = {}
 
-  const pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&')
+  const pairs = (queryString[0] === '?'
+    ? queryString.substr(1)
+    : queryString
+  ).split('&')
 
   for (let i = 0; i < pairs.length; i++) {
     const keyArr: string[] = pairs[i].match(/\w+(?==)/i) || []
     const valueArr: string[] = pairs[i].match(/=.+/i) || []
     if (keyArr[0]) {
-      result[decodeURIComponent(keyArr[0])] = decodeURIComponent(valueArr[0].substr(1))
+      result[decodeURIComponent(keyArr[0])] = decodeURIComponent(
+        valueArr[0].substr(1)
+      )
     }
   }
 
@@ -371,7 +402,8 @@ export function parseQueryString (queryString: string): any {
 export function parseWalletConnectUri (str: string): IParseURIResult {
   const pathStart: number = str.indexOf(':')
 
-  const pathEnd: number | undefined = str.indexOf('?') !== -1 ? str.indexOf('?') : undefined
+  const pathEnd: number | undefined =
+    str.indexOf('?') !== -1 ? str.indexOf('?') : undefined
 
   const protocol: string = str.substring(0, pathStart)
 
@@ -392,7 +424,8 @@ export function parseWalletConnectUri (str: string): IParseURIResult {
 
   const requiredParams: IRequiredParamsResult = parseRequiredParams(path)
 
-  const queryString: string = typeof pathEnd !== 'undefined' ? str.substr(pathEnd) : ''
+  const queryString: string =
+    typeof pathEnd !== 'undefined' ? str.substr(pathEnd) : ''
 
   function parseQueryParams (queryString: string): IQueryParamsResult {
     const result = parseQueryString(queryString)
@@ -419,7 +452,9 @@ export function parseWalletConnectUri (str: string): IParseURIResult {
 export function promisify (
   originalFn: (...args: any[]) => void,
   thisArg?: any
-): (...callArgs: any[]) => Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
+): (
+  ...callArgs: any[]
+) => Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
   const promisifiedFunction = async (
     ...callArgs: any[]
   ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> => {
@@ -450,14 +485,19 @@ export function parsePersonalSign (params: string[]): string[] {
   return params
 }
 
-export function parseTransactionData (txData: Partial<ITxData>): Partial<ITxData> {
+export function parseTransactionData (
+  txData: Partial<ITxData>
+): Partial<ITxData> {
   if (typeof txData.from === 'undefined' || !isValidAddress(txData.from)) {
     throw new Error(`Transaction object must include a valid 'from' value.`)
   }
 
   function parseHexValues (value: number | string) {
     let result = value
-    if (typeof value === 'number' || (typeof value === 'string' && !isEmptyString(value))) {
+    if (
+      typeof value === 'number' ||
+      (typeof value === 'string' && !isEmptyString(value))
+    ) {
       if (!isHexString(value)) {
         result = convertNumberToHex(value)
       } else if (typeof value === 'string') {
@@ -473,34 +513,22 @@ export function parseTransactionData (txData: Partial<ITxData>): Partial<ITxData
   const txDataRPC = {
     from: sanitizeHex(txData.from),
     to: typeof txData.to === 'undefined' ? '' : sanitizeHex(txData.to),
-<<<<<<< HEAD:packages/utils/src/index.ts
     gasPrice:
       typeof txData.gasPrice === 'undefined'
         ? ''
         : parseHexValues(txData.gasPrice),
-    gas: typeof txData.gas === 'undefined'
-          ? typeof txData.gasLimit === 'undefined'
-            ? ''
-            : parseHexValues(txData.gasLimit)
-          : parseHexValues(txData.gas),
+    gas:
+      typeof txData.gas === 'undefined'
+        ? typeof txData.gasLimit === 'undefined'
+          ? ''
+          : parseHexValues(txData.gasLimit)
+        : parseHexValues(txData.gas),
     value:
       typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
     nonce:
       typeof txData.nonce === 'undefined' ? '' : parseHexValues(txData.nonce),
     data:
       typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data) || '0x'
-=======
-    gasPrice: typeof txData.gasPrice === 'undefined' ? '' : parseHexValues(txData.gasPrice),
-    gasLimit:
-      typeof txData.gasLimit === 'undefined'
-        ? typeof txData.gas === 'undefined'
-          ? ''
-          : parseHexValues(txData.gas)
-        : parseHexValues(txData.gasLimit),
-    value: typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
-    nonce: typeof txData.nonce === 'undefined' ? '' : parseHexValues(txData.nonce),
-    data: typeof txData.data === 'undefined' ? '' : sanitizeHex(txData.data) || '0x'
->>>>>>> 64b8a536449e10b7847fcfd301bfc3fde9a4aa99:packages/helpers/utils/src/index.ts
   }
 
   const prunable = ['gasPrice', 'gas', 'value', 'nonce']
@@ -549,7 +577,9 @@ export function formatRpcError (
 
 // -- typeGuards ----------------------------------------------------------- //
 
-export function isJsonRpcSubscription (object: any): object is IJsonRpcSubscription {
+export function isJsonRpcSubscription (
+  object: any
+): object is IJsonRpcSubscription {
   return typeof object.params === 'object'
 }
 
@@ -557,11 +587,15 @@ export function isJsonRpcRequest (object: any): object is IJsonRpcRequest {
   return typeof object.method !== 'undefined'
 }
 
-export function isJsonRpcResponseSuccess (object: any): object is IJsonRpcResponseSuccess {
+export function isJsonRpcResponseSuccess (
+  object: any
+): object is IJsonRpcResponseSuccess {
   return typeof object.result !== 'undefined'
 }
 
-export function isJsonRpcResponseError (object: any): object is IJsonRpcResponseError {
+export function isJsonRpcResponseError (
+  object: any
+): object is IJsonRpcResponseError {
   return typeof object.error !== 'undefined'
 }
 
@@ -569,7 +603,9 @@ export function isInternalEvent (object: any): object is IInternalEvent {
   return typeof object.event !== 'undefined'
 }
 
-export function isWalletConnectSession (object: any): object is IWalletConnectSession {
+export function isWalletConnectSession (
+  object: any
+): object is IWalletConnectSession {
   return typeof object.bridge !== 'undefined'
 }
 
