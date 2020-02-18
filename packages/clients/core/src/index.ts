@@ -19,7 +19,9 @@ import {
   IRequestOptions,
   IInternalRequestOptions,
   ICreateSessionOptions,
-  IQRCodeModal
+  IQRCodeModal,
+  IPushSubscription,
+  IPushServerOptions
 } from '@walletconnect/types'
 import {
   parsePersonalSign,
@@ -51,6 +53,16 @@ import {
 } from './errors'
 import SocketTransport from './socket'
 import EventManager from './events'
+
+interface IConnectorOpts {
+  cryptoLib: ICryptoLib
+  connectorOpts: IWalletConnectOptions
+  transport?: ITransportLib | null
+  sessionStorage?: ISessionStorage | null
+  clientMeta?: IClientMeta | null
+  qrcodeModal?: IQRCodeModal | null
+  pushServerOpts?: IPushServerOptions
+}
 
 // -- Constants ------------------------------------------------------------ //
 
@@ -88,15 +100,8 @@ class Connector implements IConnector {
 
   // -- constructor ----------------------------------------------------- //
 
-  constructor(
-    cryptoLib: ICryptoLib,
-    opts: IWalletConnectOptions,
-    transport?: ITransportLib | null,
-    sessionStorage?: ISessionStorage | null,
-    clientMeta?: IClientMeta | null,
-    qrcodeModal?: IQRCodeModal | null
-  ) {
-    this.cryptoLib = cryptoLib
+  constructor(opts: IConnectorOpts) {
+    this.cryptoLib = opts.cryptoLib
 
     this.protocol = 'wc'
     this.version = 1
@@ -107,7 +112,7 @@ class Connector implements IConnector {
 
     this._isAlive = false
     this._clientId = ''
-    this._clientMeta = getMeta() || clientMeta || null
+    this._clientMeta = getMeta() || opts.clientMeta || null
     this._peerId = ''
     this._peerMeta = null
     this._handshakeId = 0
@@ -119,22 +124,26 @@ class Connector implements IConnector {
     this._eventManager = new EventManager()
     this._connected = false
     this._isAlive = false
-    this._sessionStorage = sessionStorage || null
-    this._qrcodeModal = qrcodeModal || null
+    this._sessionStorage = opts.sessionStorage || null
+    this._qrcodeModal = opts.qrcodeModal || null
 
-    if (!opts.bridge && !opts.uri && !opts.session) {
+    if (
+      !opts.connectorOpts.bridge &&
+      !opts.connectorOpts.uri &&
+      !opts.connectorOpts.session
+    ) {
       throw new Error(ERROR_MISSING_REQUIRED)
     }
 
-    if (opts.bridge) {
-      this.bridge = opts.bridge
+    if (opts.connectorOpts.bridge) {
+      this.bridge = opts.connectorOpts.bridge
     }
 
-    if (opts.uri) {
-      this.uri = opts.uri
+    if (opts.connectorOpts.uri) {
+      this.uri = opts.connectorOpts.uri
     }
 
-    let session = opts.session || null
+    let session = opts.connectorOpts.session || null
 
     if (!session) {
       session = this._getStorageSession()
@@ -150,15 +159,18 @@ class Connector implements IConnector {
       )
     }
     this._transport =
-      transport ||
+      opts.transport ||
       new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
 
-    if (opts.uri) {
+    if (opts.connectorOpts.uri) {
       this._subscribeToSessionRequest()
     }
 
     this._subscribeToInternalEvents()
     this._transport.open()
+    if (opts.pushServerOpts) {
+      this._registerPushServer(opts.pushServerOpts)
+    }
   }
 
   // -- setters / getters ----------------------------------------------- //
@@ -1282,6 +1294,60 @@ class Connector implements IConnector {
     } else {
       this._removeStorageSession()
     }
+  }
+
+  // -- pushServer ------------------------------------------------------------- //
+
+  private _registerPushServer(pushServerOpts: IPushServerOptions) {
+    if (!pushServerOpts.url || typeof pushServerOpts.url !== 'string') {
+      throw Error('Invalid or missing pushServerOpts.url parameter value')
+    }
+
+    if (!pushServerOpts.type || typeof pushServerOpts.type !== 'string') {
+      throw Error('Invalid or missing pushServerOpts.type parameter value')
+    }
+
+    if (!pushServerOpts.token || typeof pushServerOpts.token !== 'string') {
+      throw Error('Invalid or missing pushServerOpts.token parameter value')
+    }
+
+    const pushSubscription: IPushSubscription = {
+      bridge: this.bridge,
+      topic: this.clientId,
+      type: pushServerOpts.type,
+      token: pushServerOpts.token,
+      peerName: '',
+      language: pushServerOpts.language || ''
+    }
+
+    this.on('connect', async (error: Error | null, payload: any) => {
+      if (error) {
+        throw error
+      }
+
+      if (pushServerOpts.peerMeta) {
+        const peerName = payload.params[0].peerMeta.name
+        pushSubscription.peerName = peerName
+      }
+
+      try {
+        const response = await fetch(`${pushServerOpts.url}/new`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(pushSubscription)
+        })
+
+        const json = await response.json()
+        if (!json.success) {
+          throw Error('Failed to register in Push Server')
+        }
+      } catch (error) {
+        throw Error('Failed to register in Push Server')
+      }
+    })
   }
 }
 export default Connector
