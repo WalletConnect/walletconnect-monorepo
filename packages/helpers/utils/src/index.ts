@@ -520,21 +520,12 @@ export function parseTransactionData (
       typeof txData.gasPrice === 'undefined'
         ? ''
         : parseHexValues(txData.gasPrice),
-<<<<<<< HEAD
     gas:
       typeof txData.gas === 'undefined'
         ? typeof txData.gasLimit === 'undefined'
           ? ''
           : parseHexValues(txData.gasLimit)
         : parseHexValues(txData.gas),
-=======
-    gasLimit:
-      typeof txData.gasLimit === 'undefined'
-        ? typeof txData.gas === 'undefined'
-          ? ''
-          : parseHexValues(txData.gas)
-        : parseHexValues(txData.gasLimit),
->>>>>>> 6316c993bd1aaaa931e0d74d24a9201d79fe5666
     value:
       typeof txData.value === 'undefined' ? '' : parseHexValues(txData.value),
     nonce:
