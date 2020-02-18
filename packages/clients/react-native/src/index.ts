@@ -6,6 +6,7 @@ import {
   IPushSubscription
 } from '@walletconnect/types'
 import SocketTransport from '@walletconnect/socket-transport'
+// import { logDeprecationWarning } from '@walletconnect/utils'
 import * as cryptoLib from './rnCrypto'
 import { getNetMonitor } from './rnNetMonitor'
 
@@ -24,12 +25,14 @@ class RNWalletConnect extends Connector {
       opts,
       transportOpts,
       null,
-      getNetMonitor,
-      walletOptions.clientMeta
+      opts.clientMeta || walletOptions.clientMeta,
+      null,
+      getNetMonitor
     )
     if (walletOptions.push) {
       this.registerPushServer(walletOptions.push)
     }
+    // logDeprecationWarning()
   }
 
   private registerPushServer (push: IPushServerOptions) {
@@ -70,7 +73,7 @@ class RNWalletConnect extends Connector {
 
   private async postClientDetails (
     url: string,
-    pushSubcription: IPushSubscription
+    pushSubscription: IPushSubscription
   ) {
     try {
       const response = await fetch(`${url}/new`, {
@@ -79,7 +82,7 @@ class RNWalletConnect extends Connector {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(pushSubcription)
+        body: JSON.stringify(pushSubscription)
       })
 
       const json = await response.json()
