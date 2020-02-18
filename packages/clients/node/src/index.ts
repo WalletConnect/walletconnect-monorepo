@@ -1,5 +1,6 @@
 import Connector from '@walletconnect/core'
 import { IWalletConnectOptions, INodeJSOptions } from '@walletconnect/types'
+// import { logDeprecationWarning } from '@walletconnect/utils'
 import * as cryptoLib from './nodeCrypto'
 
 class NodeWalletConnect extends Connector {
@@ -11,6 +12,7 @@ class NodeWalletConnect extends Connector {
       null,
       opts.clientMeta || nodeJsOptions.clientMeta
     )
+    // logDeprecationWarning()
   }
 }
 
