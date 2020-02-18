@@ -62,6 +62,7 @@
     "@walletconnect/node": "^1.0.0-beta.59",
     "@walletconnect/qrcode-modal": "^1.0.0-beta.59",
     "@walletconnect/types": "^1.0.0-beta.59",
+    "@walletconnect/utils": "^1.0.0-beta.59",
     "web3-provider-engine": "15.0.4"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
