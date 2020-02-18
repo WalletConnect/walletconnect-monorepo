@@ -1,17 +1,9 @@
 const path = require('path')
 
-module.exports = {
+const baseConfig = {
   mode: 'production',
   entry: {
-    index: './src/index.ts'
-  },
-  output: {
-    path: path.resolve(__dirname, 'lib'),
-    filename: '[name].js',
-    libraryTarget: 'umd',
-    library: 'WalletConnectQRCodeModal',
-    umdNamedDefine: true,
-    globalObject: 'this'
+    index: path.resolve(__dirname, 'src', 'index.ts')
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js']
@@ -28,3 +20,24 @@ module.exports = {
     ]
   }
 }
+
+const cjsConfig = Object.assign({}, baseConfig, {
+  output: {
+    path: path.resolve(__dirname, 'dist', 'cjs'),
+    filename: '[name].js',
+    libraryTarget: 'commonjs'
+  }
+})
+
+const umdConfig = Object.assign({}, baseConfig, {
+  output: {
+    path: path.resolve(__dirname, 'dist', 'umd'),
+    filename: '[name].min.js',
+    libraryTarget: 'umd',
+    library: 'WalletConnectQRCodeModal',
+    umdNamedDefine: true,
+    globalObject: 'this'
+  }
+})
+
+module.exports = [cjsConfig, umdConfig]

@@ -1,5 +1,8 @@
 import { ISocketMessage, ITransportEvent } from '@walletconnect/types'
 
+// @ts-ignore
+const WS = global.WebSocket || require('ws')
+
 interface ISocketTransportOptions {
   bridge: string
   clientId: string
@@ -117,7 +120,7 @@ class SocketTransport {
         ? bridge.replace('http', 'ws')
         : bridge
 
-    const socket = new WebSocket(url)
+    const socket = new WS(url)
 
     socket.onmessage = (event: MessageEvent) => this._socketReceive(event)
 

@@ -22,6 +22,17 @@ function writeFile (path, data) {
   })
 }
 
+function copyFile (fileToCopy, outputFile) {
+  return new Promise((resolve, reject) => {
+    fs.copyFile(fileToCopy, outputFile, function (err) {
+      if (err) {
+        reject(err)
+      }
+      resolve()
+    })
+  })
+}
+
 function createDir (path) {
   return new Promise((resolve, reject) => {
     fs.mkdir(path, err => {
@@ -88,6 +99,7 @@ async function verifyFile (path) {
 module.exports = {
   statPath,
   writeFile,
+  copyFile,
   createDir,
   readDir,
   isDir,

@@ -1,11 +1,9 @@
 import Connector from '@walletconnect/core'
 import { IWalletConnectOptions, INodeJSOptions } from '@walletconnect/types'
 import SocketTransport from '@walletconnect/socket-transport'
+// import { logDeprecationWarning } from '@walletconnect/utils'
 import * as cryptoLib from './nodeCrypto'
 import { getNetMonitor } from './nodeNetMonitor'
-
-// polyfill WebSocket for NodeJS
-WebSocket = require('ws')
 
 const transportOpts = {
   initTransport: (opts: any) => new SocketTransport(opts),
@@ -19,9 +17,11 @@ class NodeWalletConnect extends Connector {
       opts,
       transportOpts,
       null,
-      getNetMonitor,
-      nodeJsOptions.clientMeta
+      opts.clientMeta || nodeJsOptions.clientMeta,
+      null,
+      getNetMonitor
     )
+    // logDeprecationWarning()
   }
 }
 
