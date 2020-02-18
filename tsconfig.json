@@ -22,18 +22,26 @@
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "skipLibCheck": true
   },
   "include": [],
   "references": [
-    { "path": "./packages/browser" },
-    { "path": "./packages/core" },
-    { "path": "./packages/react-native" },
-    { "path": "./packages/utils" },
-    { "path": "./packages/qrcode-modal" },
-    { "path": "./packages/web3-subprovider" },
-    { "path": "./packages/web3-provider" },
-    { "path": "./packages/eth-provider" },
-    { "path": "./packages/channel-provider" }
+    { "path": "./packages/clients/browser" },
+    { "path": "./packages/clients/client" },
+    { "path": "./packages/clients/core" },
+    { "path": "./packages/clients/node" },
+    { "path": "./packages/clients/react-native" },
+
+    { "path": "./packages/providers/channel-provider" },
+    { "path": "./packages/providers/eth-provider" },
+    { "path": "./packages/providers/web3-provider" },
+    { "path": "./packages/providers/web3-subprovider" },
+
+    { "path": "./packages/helpers/utils" },
+    { "path": "./packages/helpers/qrcode-modal" },
+    { "path": "./packages/helpers/rpc-connection" },
+    { "path": "./packages/helpers/http-connection" },
+    { "path": "./packages/helpers/types" }
   ]
 }
