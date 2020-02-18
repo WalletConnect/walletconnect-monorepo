@@ -12,11 +12,6 @@ const DefaultOptions = {
 
 const singletonNonceSubProvider = new NonceSubprovider()
 
-// eslint-disable-next-line
-const isNode = new Function(
-  'try {return this===global;}catch(e){return false;}'
-)
-
 class WalletConnectProvider extends ProviderEngine {
   constructor (opts?: any) {
     super({ ...DefaultOptions, ...opts })
@@ -40,7 +35,7 @@ class WalletConnectProvider extends ProviderEngine {
       ? this.addProvider(singletonNonceSubProvider)
       : this.addProvider(new NonceSubprovider())
 
-    this.addProvider(new WalletConnectSubprovider({ bridge, isNode: isNode() }))
+    this.addProvider(new WalletConnectSubprovider({ bridge }))
     this.addProvider(new RpcSubprovider({ rpcUrl }))
 
     this.start()

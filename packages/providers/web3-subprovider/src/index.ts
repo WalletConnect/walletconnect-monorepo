@@ -2,15 +2,12 @@ import WalletConnect from '@walletconnect/browser'
 import NodeWalletConnect from '@walletconnect/node'
 import WalletConnectQRCodeModal from '@walletconnect/qrcode-modal'
 import { IWCEthRpcConnectionOptions, IConnector } from '@walletconnect/types'
+import { isNode } from '@walletconnect/utils'
 
 const HookedWalletSubprovider = require('web3-provider-engine/subproviders/hooked-wallet')
 
-interface IWalletConnectSubproviderOptions extends IWCEthRpcConnectionOptions {
-  isNode?: boolean
-}
-
 class WalletConnectSubprovider extends HookedWalletSubprovider {
-  constructor (opts?: IWalletConnectSubproviderOptions) {
+  constructor(opts?: IWCEthRpcConnectionOptions) {
     super({
       getAccounts: async (cb: any) => {
         try {
@@ -90,15 +87,21 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
     this.bridge = opts?.bridge || 'https://bridge.walletconnect.org'
     this.qrcode = typeof opts?.qrcode === 'undefined' || opts?.qrcode !== false
 
-    this.isNode = opts?.isNode
-    this.wc = this.isNode ? new NodeWalletConnect({ bridge: this.bridge }, {
-      clientMeta: {
-        name: 'wallet-connect-provider',
-        description: 'WalletConnect provider',
-        url: '#',
-        icons: ['https://walletconnect.org/walletconnect-logo.png']
-      }
-    }) : new WalletConnect({ bridge: this.bridge })
+    this.isNode = isNode()
+
+    this.wc = this.isNode
+      ? new NodeWalletConnect(
+          { bridge: this.bridge },
+          {
+            clientMeta: {
+              name: 'wallet-connect-provider',
+              description: 'WalletConnect provider',
+              url: '#',
+              icons: ['https://walletconnect.org/walletconnect-logo.png']
+            }
+          }
+        )
+      : new WalletConnect({ bridge: this.bridge })
     this.chainId = typeof opts?.chainId !== 'undefined' ? opts?.chainId : 1
     this.networkId = this.chainId
 
@@ -106,35 +109,35 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
     this.connectCallbacks = []
   }
 
-  set isWalletConnect (value) {}
+  set isWalletConnect(value) {}
 
-  get isWalletConnect () {
+  get isWalletConnect() {
     return true
   }
 
-  set connected (value) {}
+  set connected(value) {}
 
-  get connected () {
+  get connected() {
     return this.wc.connected
   }
 
-  set uri (value) {}
+  set uri(value) {}
 
-  get uri () {
+  get uri() {
     return this.wc.uri
   }
 
-  set accounts (value) {}
+  set accounts(value) {}
 
-  get accounts () {
+  get accounts() {
     return this.wc.accounts
   }
 
-  onConnect (callback: any) {
+  onConnect(callback: any) {
     this.connectCallbacks.push(callback)
   }
 
-  triggerConnect (result: any) {
+  triggerConnect(result: any) {
     if (this.connectCallbacks && this.connectCallbacks.length) {
       this.connectCallbacks.forEach((callback: any) => callback(result))
     }
@@ -142,7 +145,7 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
   // in case the connector is disconnected
-  getWalletConnector (
+  getWalletConnector(
     opts: { disableSessionCreation?: boolean } = {}
   ): Promise<IConnector> {
     const { disableSessionCreation = false } = opts
@@ -162,11 +165,11 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
             if (this.qrcode) {
               WalletConnectQRCodeModal.open(wc.uri, () => {
                 reject(new Error('User closed WalletConnect modal'))
-              }, this.isNode)
+              })
             }
             wc.on('connect', (error: any, payload: any) => {
               if (this.qrcode) {
-                WalletConnectQRCodeModal.close(this.isNode)
+                WalletConnectQRCodeModal.close()
               }
               if (error) {
                 this.isConnecting = false
@@ -200,7 +203,6 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
       }
     })
   }
-
 }
 
 export default WalletConnectSubprovider
