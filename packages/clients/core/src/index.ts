@@ -151,8 +151,7 @@ class Connector implements IConnector {
       )
     }
     this._transport =
-      opts.transport ||
-      new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
+      opts.transport || new SocketTransport({ url: this.bridge })
 
     if (opts.connectorOpts.uri) {
       this._subscribeToSessionRequest()

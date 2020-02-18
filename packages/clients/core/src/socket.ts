@@ -8,8 +8,8 @@ import {
 const WS = global.WebSocket || require('ws')
 
 interface ISocketTransportOptions {
-  bridge: string
-  clientId: string
+  url: string
+  subscriptions?: string[]
 }
 
 // -- SocketTransport ------------------------------------------------------ //
@@ -21,6 +21,7 @@ class SocketTransport implements ITransportLib {
   private _socket: WebSocket | null
   private _queue: ISocketMessage[]
   private _events: ITransportEvent[] = []
+  private _subscriptions: string[] = []
 
   // -- constructor ----------------------------------------------------- //
 
