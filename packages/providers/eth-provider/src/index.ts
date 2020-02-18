@@ -1,10 +1,10 @@
 import EthereumProvider from './provider'
-import WalletConnectConnection from './connection'
-import { IWalletConnectConnectionOptions } from '@walletconnect/types'
+import WCRpcConnection from './connection'
+import { IWCRpcConnectionOptions } from '@walletconnect/types'
 
 class WalletConnectProvider extends EthereumProvider {
-  constructor (opts: IWalletConnectConnectionOptions) {
-    const connection = new WalletConnectConnection(opts)
+  constructor (opts: IWCRpcConnectionOptions) {
+    const connection = new WCRpcConnection(opts)
     super(connection)
   }
 }

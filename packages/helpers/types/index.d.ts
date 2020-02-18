@@ -5,29 +5,48 @@ declare module '@walletconnect/types' {
     nextKey: string
     clientId: string
     peerId: string
-    clientMeta: IClientMeta | null
+    readonly clientMeta: IClientMeta | null
     peerMeta: IClientMeta | null
     handshakeTopic: string
     handshakeId: number
-    accounts: string[]
+    uri: string
     chainId: number
     networkId: number
+    accounts: string[]
     rpcUrl: string
-    connected: boolean
-    pending: boolean
-    createSession: (opts?: { chainId: number }) => Promise<void>
-    approveSession: (sessionStatus: ISessionStatus) => void
-    rejectSession: (sessionError?: ISessionError) => void
-    updateSession: (sessionStatus: ISessionStatus) => void
-    killSession: (sessionError?: ISessionError) => Promise<void>
-    sendTransaction: (tx: ITxData) => Promise<any>
-    signTransaction: (tx: ITxData) => Promise<any>
-    signMessage: (params: any[]) => Promise<any>
-    signPersonalMessage: (params: any[]) => Promise<any>
-    signTypedData: (params: any[]) => Promise<any>
-    sendCustomRequest: (request: Partial<IJsonRpcRequest>) => Promise<any>
-    approveRequest: (response: Partial<IJsonRpcResponseSuccess>) => void
-    rejectRequest: (response: Partial<IJsonRpcResponseError>) => void
+    readonly connected: boolean
+    readonly pending: boolean
+    session: IWalletConnectSession
+
+    on(
+      event: string,
+      callback: (error: Error | null, payload: any | null) => void
+    ): void
+
+    createSession(opts?: ICreateSessionOptions): Promise<void>
+    approveSession(sessionStatus: ISessionStatus): void
+    rejectSession(sessionError?: ISessionError): void
+    updateSession(sessionStatus: ISessionStatus): void
+    killSession(sessionError?: ISessionError): Promise<void>
+
+    sendTransaction(tx: ITxData): Promise<any>
+    signTransaction(tx: ITxData): Promise<any>
+    signMessage(params: any[]): Promise<any>
+    signPersonalMessage(params: any[]): Promise<any>
+    signTypedData(params: any[]): Promise<any>
+    updateChain(chainParams: IUpdateChainParams): Promise<any>
+
+    sendCustomRequest(
+      request: Partial<IJsonRpcRequest>,
+      options?: IRequestOptions
+    ): Promise<any>
+    unsafeSend(
+      request: IJsonRpcRequest,
+      options?: IRequestOptions
+    ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError>
+
+    approveRequest(response: Partial<IJsonRpcResponseSuccess>): void
+    rejectRequest(response: Partial<IJsonRpcResponseError>): void
   }
 
   export interface ICryptoLib {
@@ -251,10 +270,13 @@ declare module '@walletconnect/types' {
     [chainId: number]: string
   }
 
-  export interface IWalletConnectConnectionOptions {
+  export interface IWCRpcConnectionOptions {
     bridge?: string
     qrcode?: boolean
     chainId?: number
+  }
+
+  export interface IWCEthRpcConnectionOptions extends IWCRpcConnectionOptions {
     rpc?: IRPCMap
     infuraId?: string
   }
@@ -267,6 +289,30 @@ declare module '@walletconnect/types' {
     topic: string
   }
 
+  export interface ICreateSessionOptions {
+    chainId?: number
+  }
+
+  export interface IWCRpcConnectionOptions {
+    bridge?: string
+    qrcode?: boolean
+  }
+
+  export interface IWCRpcConnection {
+    bridge: string
+    qrcode: boolean
+    wc: IConnector | null
+    connected: boolean
+    closed: boolean
+
+    openQRCode(): void
+    create(chainId?: number): void
+    onClose(): void
+    open(): Promise<void>
+    close(): Promise<void>
+    onError(payload: any, message: string, code?: number): void
+    sendPayload(payload: any): Promise<any>
+    send(payload: any): Promise<any>
   export interface IMobileRegistryEntry {
     name: string
     color: string

@@ -380,7 +380,7 @@ class Connector implements IConnector {
     this._eventManager.subscribe(eventEmitter)
   }
 
-  public async createSession (opts?: { chainId: number }): Promise<void> {
+  public async createSession (opts?: { chainId?: number }): Promise<void> {
     if (this._connected) {
       throw new Error(ERROR_SESSION_CONNECTED)
     }

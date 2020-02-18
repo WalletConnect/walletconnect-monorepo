@@ -1,15 +1,19 @@
 {
   "name": "@walletconnect/types",
-  "version": "1.0.0-beta.47",
+  "version": "1.0.0-beta.58",
   "description": "Typescript Types for WalletConnect",
   "scripts": {},
   "keywords": [
+    "wallet",
     "walletconnect",
     "ethereum",
+    "jsonrpc",
+    "mobile",
+    "qrcode",
     "web3",
     "crypto",
-    "dapp",
-    "wallet"
+    "cryptocurrency",
+    "dapp"
   ],
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",

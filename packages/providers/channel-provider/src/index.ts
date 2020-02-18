@@ -1,12 +1,12 @@
-import { IWalletConnectConnectionOptions } from '@walletconnect/types'
+import { IWCRpcConnectionOptions } from '@walletconnect/types'
+import WCRpcConnection from '@walletconnect/rpc-connection'
 import { ChannelProvider } from '@connext/channel-provider'
-import WalletConnectConnection from './connection'
 
 class WalletConnectChannelProvider extends ChannelProvider {
   public isWalletConnect: boolean
 
-  constructor (opts?: IWalletConnectConnectionOptions) {
-    const connection = new WalletConnectConnection(opts)
+  constructor (opts?: IWCRpcConnectionOptions) {
+    const connection = new WCRpcConnection(opts)
     super(connection)
     this.isWalletConnect = true
   }
