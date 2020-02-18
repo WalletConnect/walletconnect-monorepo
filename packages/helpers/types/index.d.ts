@@ -22,7 +22,7 @@ declare module '@walletconnect/types' {
       event: string,
       callback: (error: Error | null, payload: any | null) => void
     ): void
-
+    connect(opts?: ICreateSessionOptions): Promise<ISessionStatus>
     createSession(opts?: ICreateSessionOptions): Promise<void>
     approveSession(sessionStatus: ISessionStatus): void
     rejectSession(sessionError?: ISessionError): void
@@ -228,6 +228,8 @@ declare module '@walletconnect/types' {
     bridge?: string
     uri?: string
     session?: IWalletConnectSession
+    clientMeta?: IClientMeta
+    storage?: ISessionStorage
   }
 
   export interface INodeJSOptions {
@@ -313,11 +315,18 @@ declare module '@walletconnect/types' {
     onError(payload: any, message: string, code?: number): void
     sendPayload(payload: any): Promise<any>
     send(payload: any): Promise<any>
+  }
+
   export interface IMobileRegistryEntry {
     name: string
     color: string
     universalLink: string
     deepLink: string
     chromeIntent: string
+  }
+
+  export interface IQRCodeModal {
+    open(uri: string, cb: any): void
+    close(): void
   }
 }

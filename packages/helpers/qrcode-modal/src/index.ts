@@ -1,11 +1,9 @@
 import browser from './browser'
 import node from './node'
-import * as validators from './validators'
-
-const isNode = validators.isNode()
+import { isNode } from '@walletconnect/utils'
 
 function open (uri: string, cb: any) {
-  if (isNode) {
+  if (isNode()) {
     node.open(uri, cb)
   } else {
     browser.open(uri, cb)
@@ -13,7 +11,7 @@ function open (uri: string, cb: any) {
 }
 
 function close () {
-  if (isNode) {
+  if (isNode()) {
     node.close()
   } else {
     browser.close()

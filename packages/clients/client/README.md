@@ -1,66 +1,25 @@
-# WalletConnect NodeJS Client
+# WalletConnect Client
 
-NodeJS Client for WalletConnect
+Client for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
 ## Install
 
 ```bash
-yarn add @walletconnect/node
-
+yarn add @walletconnect/client
 # OR
 
-npm install --save @walletconnect/node @walletconnect/qrcode-modal
+npm install --save @walletconnect/client
 ```
 
 ## Initiate Connection
 
 ```javascript
-import NodeWalletConnect from "@walletconnect/node";
-import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+import WalletConnect from "@walletconnect/client";
 
-// Create WalletConnector
-const walletConnector = new NodeWalletConnect(
-  {
-    bridge: "https://bridge.walletconnect.org" // Required
-  },
-  {
-    clientMeta: {
-      description: "WalletConnect NodeJS Client",
-      url: "https://nodejs.org/en/",
-      icons: ["https://nodejs.org/static/images/logo.svg"],
-      name: "WalletConnect",
-      ssl: true
-    }
-  }
-);
-
-// Check if connection is already established
-if (!walletConnector.connected) {
-  // create new session
-  walletConnector.createSession().then(() => {
-    // get uri for QR Code modal
-    const uri = walletConnector.uri;
-    // display QR Code modal
-    WalletConnectQRCodeModal.open(uri, () => {
-      console.log("QR Code Modal closed");
-    });
-  });
-}
-
-// Subscribe to connection events
-walletConnector.on("connect", (error, payload) => {
-  if (error) {
-    throw error;
-  }
-
-  // Close QR Code Modal
-  WalletConnectQRCodeModal.close();
-
-  // Get provided accounts and chainId
-  const { accounts, chainId } = payload.params[0];
-});
+// Create a walletConnector
+const walletConnector = new WalletConnect();
 
 walletConnector.on("session_update", (error, payload) => {
   if (error) {
@@ -78,6 +37,8 @@ walletConnector.on("disconnect", (error, payload) => {
 
   // Delete walletConnector
 });
+
+const { accounts, chainId } = await walletConnector.connect();
 ```
 
 ## Send Transaction \(eth_sendTransaction\)

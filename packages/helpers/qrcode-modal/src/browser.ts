@@ -1,11 +1,10 @@
 import MobileRegistry from '@walletconnect/mobile-registry'
 import { IMobileRegistryEntry } from '@walletconnect/types'
-import { appendToQueryString } from '@walletconnect/utils'
+import { appendToQueryString, isIOS, isMobile } from '@walletconnect/utils'
 import * as qrImage from 'qr-image'
 
 import logo from './logo.svg'
 import * as constants from './constants'
-import * as validators from './validators'
 import './style.css'
 
 let document: Document
@@ -83,7 +82,7 @@ function formatSingleDeepLink (uri: string) {
 }
 
 function formateDeepLinkingContent (uri: string) {
-  const content = validators.isIOS()
+  const content = isIOS()
     ? formatMobileRegistry(uri)
     : formatSingleDeepLink(uri)
   const callToAction = 'Click to connect to your preffered wallet'
@@ -98,7 +97,7 @@ function formateDeepLinkingContent (uri: string) {
 }
 
 function formatModal (uri: string) {
-  const content = validators.isMobile()
+  const content = isMobile()
     ? formateDeepLinkingContent(uri)
     : formatQRCodeContent(uri)
   return `

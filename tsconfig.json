@@ -28,6 +28,7 @@
   "include": [],
   "references": [
     { "path": "./packages/clients/browser" },
+    { "path": "./packages/clients/client" },
     { "path": "./packages/clients/core" },
     { "path": "./packages/clients/node" },
     { "path": "./packages/clients/react-native" },

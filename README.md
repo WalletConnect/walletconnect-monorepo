@@ -5,6 +5,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 | Clients                     | Current Version                                                                                                                          | Description         |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | @walletconnect/core         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                 | Core Client         |
+| @walletconnect/client       | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fclient.svg)](https://badge.fury.io/js/%40walletconnect%2Fclient)             | Isomorphic Client   |
 | @walletconnect/browser      | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fbrowser.svg)](https://badge.fury.io/js/%40walletconnect%2Fbrowser)           | Browser Client      |
 | @walletconnect/node         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fnode.svg)](https://badge.fury.io/js/%40walletconnect%2Fnode)                 | NodeJS Client       |
 | @walletconnect/react-native | [![npm version](https://badge.fury.io/js/%40walletconnect%2Freact-native.svg)](https://badge.fury.io/js/%40walletconnect%2Freact-native) | React-Native Client |

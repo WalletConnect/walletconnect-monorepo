@@ -320,11 +320,14 @@ export const toChecksumAddress = (address: string) => {
 }
 
 export const isValidAddress = (address?: string) => {
+  function isAddressAllLowercase (str: string) {
+    return /^(0x)?[0-9a-f]{40}$/i.test(str)
+  }
   if (!address) {
     return false
   } else if (address.toLowerCase().substring(0, 2) !== '0x') {
     return false
-  } else if (!/^(0x)?[0-9a-f]{40}$/i.test(address)) {
+  } else if (!isAddressAllLowercase(address)) {
     return false
   } else if (
     /^(0x)?[0-9a-f]{40}$/.test(address) ||
@@ -725,4 +728,28 @@ export function isSilentPayload (request: IJsonRpcRequest): boolean {
     return false
   }
   return true
+}
+
+export function logDeprecationWarning () {
+  console.warn(
+    'DEPRECATION WARNING: This WalletConnect client library will be deprecated in favor of @walletconnect/client. Please check docs.walletconnect.org to learn more about this migration!'
+  )
+}
+
+export function isIOS (): boolean {
+  const env = detectEnv()
+  const result = env && env.os ? env.os.toLowerCase() === 'ios' : false
+  return result
+}
+
+export function isAndroid (): boolean {
+  const env = detectEnv()
+  const result = env && env.os ? env.os.toLowerCase() === 'android' : false
+  return result
+}
+
+export function isNode (): boolean {
+  const env = detectEnv()
+  const result = env && env.name ? env.name.toLowerCase() === 'node' : false
+  return result
 }

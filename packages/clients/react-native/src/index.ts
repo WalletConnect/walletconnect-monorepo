@@ -5,6 +5,7 @@ import {
   IPushServerOptions,
   IPushSubscription
 } from '@walletconnect/types'
+// import { logDeprecationWarning } from '@walletconnect/utils'
 import * as cryptoLib from './nativeCrypto'
 
 class RNWalletConnect extends Connector {
@@ -12,10 +13,17 @@ class RNWalletConnect extends Connector {
     opts: IWalletConnectOptions,
     walletOptions: INativeWalletOptions
   ) {
-    super(cryptoLib, opts, null, null, walletOptions.clientMeta)
+    super(
+      cryptoLib,
+      opts,
+      null,
+      null,
+      opts.clientMeta || walletOptions.clientMeta
+    )
     if (walletOptions.push) {
       this.registerPushServer(walletOptions.push)
     }
+    // logDeprecationWarning()
   }
 
   private registerPushServer (push: IPushServerOptions) {
@@ -56,7 +64,7 @@ class RNWalletConnect extends Connector {
 
   private async postClientDetails (
     url: string,
-    pushSubcription: IPushSubscription
+    pushSubscription: IPushSubscription
   ) {
     try {
       const response = await fetch(`${url}/new`, {
@@ -65,7 +73,7 @@ class RNWalletConnect extends Connector {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(pushSubcription)
+        body: JSON.stringify(pushSubscription)
       })
 
       const json = await response.json()
