@@ -275,16 +275,12 @@ walletConnector
 import WalletConnect from "@walletconnect/browser";
 import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 
-/**
- *  Create a walletConnector
- */
+//  Create a walletConnector
 const walletConnector = new WalletConnect({
   bridge: "https://bridge.walletconnect.org" // Required
 });
 
-/**
- *  Draft Instant Request
- */
+//  Draft Instant Request
 const instantRequest = {
   id: 1,
   jsonrpc: "2.0",
@@ -301,9 +297,7 @@ const instantRequest = {
   ]
 };
 
-/**
- *  Subscribe to Instant Request URI
- */
+//  Subscribe to Instant Request URI
 walletConnector.on("display_uri", (error, payload) => {
   if (error) {
     throw error;
@@ -311,36 +305,24 @@ walletConnector.on("display_uri", (error, payload) => {
 
   const uri = payload.params[0].uri;
 
-  /**
-   *  Display QR Code Modal
-   */
+  //  Display QR Code Modal
   WalletConnectQRCodeModal.open(uri, () => {
     console.log("QR Code Modal closed");
   });
 });
 
-/**
- *  Create Instant Request
- */
+//  Create Instant Request
 walletConnector
   .createInstantRequest(instantRequest)
   .then(result => {
-    /**
-     *  Get Instant Request Result
-     */
+    //  Get Instant Request Result
     console.log(result);
 
-    /**
-     *  Close QR Code Modal
-     */
-
+    //  Close QR Code Modal
     WalletConnectQRCodeModal.close();
   })
   .catch(error => {
-    /**
-     *  Handle Error or Rejection
-     */
-
+    //  Handle Error or Rejection
     console.error(error);
   });
 ```
