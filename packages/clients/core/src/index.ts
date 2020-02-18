@@ -381,6 +381,57 @@ class Connector implements IConnector {
     this._eventManager.subscribe(eventEmitter)
   }
 
+  public async createInstantRequest(
+    instantRequest: Partial<IJsonRpcRequest>
+  ): Promise<void> {
+    this._key = await this._generateKey()
+
+    const request: IJsonRpcRequest = this._formatRequest({
+      method: 'wc_instantRequest',
+      params: [
+        {
+          peerId: this.clientId,
+          peerMeta: this.clientMeta,
+          request: this._formatRequest(instantRequest)
+        }
+      ]
+    })
+
+    this.handshakeId = request.id
+    this.handshakeTopic = uuid()
+
+    if (this._qrcodeModal) {
+      this._qrcodeModal.open(this.uri, () => {
+        throw new Error('QR Code Modal closed')
+      })
+    }
+
+    this._eventManager.trigger({
+      event: 'display_uri',
+      params: [{ uri: this.uri }]
+    })
+
+    const endInstantRequest = () => {
+      this.killSession()
+      if (this._qrcodeModal) {
+        this._qrcodeModal.close()
+      }
+    }
+
+    try {
+      const result = await this._sendCallRequest(request)
+
+      if (result) {
+        endInstantRequest()
+      }
+
+      return result
+    } catch (error) {
+      endInstantRequest()
+      throw error
+    }
+  }
+
   public connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
     if (!this._qrcodeModal) {
       throw new Error('QR Code Modal not provided')

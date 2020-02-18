@@ -11,4 +11,4 @@ cache:
 matrix:
   fast_finish: true
 script:
-  - npm run routine
+  - npm run reset
