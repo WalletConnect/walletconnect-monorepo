@@ -400,20 +400,34 @@ class Connector implements IConnector {
     this.handshakeId = request.id
     this.handshakeTopic = uuid()
 
+    if (this._qrcodeModal) {
+      this._qrcodeModal.open(this.uri, () => {
+        throw new Error('QR Code Modal closed')
+      })
+    }
+
     this._eventManager.trigger({
       event: 'display_uri',
       params: [{ uri: this.uri }]
     })
 
+    const endInstantRequest = () => {
+      this.killSession()
+      if (this._qrcodeModal) {
+        this._qrcodeModal.close()
+      }
+    }
+
     try {
       const result = await this._sendCallRequest(request)
 
       if (result) {
-        this.killSession()
+        endInstantRequest()
       }
 
       return result
     } catch (error) {
+      endInstantRequest()
       throw error
     }
   }
