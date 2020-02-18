@@ -34,11 +34,12 @@
     "publish:beta": "lerna exec -- npm publish --access public",
     "publish:next": "lerna exec -- npm publish --access public --tag next",
     "move-dist": "node ./scripts/move-dist.js",
+    "commit-version": "node ./scripts/commit-version.js",
     "check": "npm run clean && npm run build && npm run move-dist",
     "reset": "npm run clean:all && npm run bootstrap && npm run check",
     "example": "npm run check && cd example && npm run start",
     "deploy": "npm run check && npm run publish",
-    "pre-publish": "npm run new-version && npm run routine && git commit -am '--- new version ---'",
+    "pre-publish": "npm run new-version && npm run routine && npm run commit-version",
     "deploy:beta": "npm run pre-publish && npm run publish:beta",
     "deploy:next": "npm run pre-publish && npm run publish:next"
   },
