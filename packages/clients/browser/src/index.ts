@@ -12,16 +12,15 @@ const transportOpts = {
 }
 
 class WalletConnect extends Connector {
-  constructor (opts: IWalletConnectOptions) {
-    super(
+  constructor (connectorOpts: IWalletConnectOptions) {
+    super({
       cryptoLib,
-      opts,
+      connectorOpts,
+      sessionStorage: WebStorage,
+      clientMeta: connectorOpts.clientMeta,
       transportOpts,
-      WebStorage,
-      opts.clientMeta,
-      null,
       getNetMonitor
-    )
+    })
     // logDeprecationWarning()
   }
 }

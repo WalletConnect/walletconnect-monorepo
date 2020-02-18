@@ -4,7 +4,6 @@ import SocketTransport from '@walletconnect/socket-transport'
 import { IWalletConnectOptions, IPushServerOptions } from '@walletconnect/types'
 import * as cryptoLib from './crypto'
 import SessionStorage from './storage'
-import { registerPushServer } from './push'
 
 import * as netMonitor from './netMonitor'
 
@@ -17,19 +16,22 @@ const getNetMonitor =
   typeof window !== 'undefined' ? netMonitor.getNetMonitor : undefined
 
 class WalletConnect extends Connector {
-  constructor (opts: IWalletConnectOptions, pushOpts?: IPushServerOptions) {
-    super(
+  constructor (
+    connectorOpts: IWalletConnectOptions,
+    pushServerOpts?: IPushServerOptions
+  ) {
+    super({
       cryptoLib,
-      { bridge: 'https://bridge.walletconnect.org', ...opts },
-      transportOpts,
-      opts.storage || new SessionStorage(),
-      opts.clientMeta,
+      connectorOpts: {
+        bridge: 'https://bridge.walletconnect.org',
+        ...connectorOpts
+      },
+      sessionStorage: connectorOpts.storage || new SessionStorage(),
       qrcodeModal,
+      pushServerOpts,
+      transportOpts,
       getNetMonitor
-    )
-    if (pushOpts) {
-      registerPushServer(this, pushOpts)
-    }
+    })
   }
 }
 

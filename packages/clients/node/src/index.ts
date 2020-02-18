@@ -11,16 +11,17 @@ const transportOpts = {
 }
 
 class NodeWalletConnect extends Connector {
-  constructor (opts: IWalletConnectOptions, nodeJsOptions: INodeJSOptions) {
-    super(
+  constructor (
+    connectorOpts: IWalletConnectOptions,
+    nodeJsOptions: INodeJSOptions
+  ) {
+    super({
       cryptoLib,
-      opts,
+      connectorOpts,
+      clientMeta: connectorOpts.clientMeta || nodeJsOptions.clientMeta,
       transportOpts,
-      null,
-      opts.clientMeta || nodeJsOptions.clientMeta,
-      null,
       getNetMonitor
-    )
+    })
     // logDeprecationWarning()
   }
 }
