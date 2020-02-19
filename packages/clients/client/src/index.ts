@@ -11,10 +11,7 @@ class WalletConnect extends Connector {
   ) {
     super({
       cryptoLib,
-      connectorOpts: {
-        bridge: 'https://bridge.walletconnect.org',
-        ...connectorOpts
-      },
+      connectorOpts,
       sessionStorage: connectorOpts.storage || new SessionStorage(),
       qrcodeModal,
       pushServerOpts

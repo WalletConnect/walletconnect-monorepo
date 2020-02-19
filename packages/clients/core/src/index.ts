@@ -119,16 +119,13 @@ class Connector implements IConnector {
     this._sessionStorage = opts.sessionStorage || null
     this._qrcodeModal = opts.qrcodeModal || null
 
-    if (
-      !opts.connectorOpts.bridge &&
-      !opts.connectorOpts.uri &&
-      !opts.connectorOpts.session
-    ) {
+    if (!opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED)
     }
 
     if (opts.connectorOpts.bridge) {
-      this.bridge = opts.connectorOpts.bridge
+      this.bridge =
+        opts.connectorOpts.bridge || 'https://bridge.walletconnect.org'
     }
 
     if (opts.connectorOpts.uri) {
@@ -153,7 +150,11 @@ class Connector implements IConnector {
     }
     this._transport =
       opts.transport ||
-      new SocketTransport({ url: this.bridge, subscriptions: [this.clientId] })
+      new SocketTransport({
+        url: this.bridge,
+        subscriptions: [this.clientId],
+        netMonitor: opts.connectorOpts.netMonitor
+      })
 
     if (opts.connectorOpts.uri) {
       this._subscribeToSessionRequest()
