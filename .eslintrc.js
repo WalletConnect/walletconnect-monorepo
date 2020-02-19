@@ -21,7 +21,7 @@ module.exports = {
     "no-prototype-builtins": ["off"],
     "sort-keys": ["off"],
     "space-before-function-paren": ["off"],
-    indent: ["error", 2, { CallExpression: { arguments: 2 } }],
+    indent: ["error", 2],
   },
   env: {
     browser: true,

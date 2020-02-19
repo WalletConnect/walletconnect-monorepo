@@ -26,7 +26,7 @@ class NetworkMonitor implements INetworkMonitor {
 
     if (event) {
       eventEmitters = this._eventEmitters.filter(
-          (eventEmitter: INetworkEventEmitter) => eventEmitter.event === event,
+        (eventEmitter: INetworkEventEmitter) => eventEmitter.event === event,
       );
     }
 

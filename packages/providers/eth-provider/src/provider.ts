@@ -179,11 +179,11 @@ class EthereumProvider extends EventEmitter {
 
   public _sendBatch(requests: JsonRpc[]) {
     return Promise.all(
-        requests.map(payload => {
-          if (isJsonRpcRequest(payload)) {
-            this._send(payload.method, payload.params);
-          }
-        }),
+      requests.map(payload => {
+        if (isJsonRpcRequest(payload)) {
+          this._send(payload.method, payload.params);
+        }
+      }),
     );
   }
 

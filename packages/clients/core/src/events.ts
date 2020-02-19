@@ -44,7 +44,7 @@ class EventManager {
 
     if (event) {
       eventEmitters = this._eventEmitters.filter(
-          (eventEmitter: IEventEmitter) => eventEmitter.event === event,
+        (eventEmitter: IEventEmitter) => eventEmitter.event === event,
       );
     }
 
@@ -54,7 +54,7 @@ class EventManager {
       !isInternalEvent(event)
     ) {
       eventEmitters = this._eventEmitters.filter(
-          (eventEmitter: IEventEmitter) => eventEmitter.event === "call_request",
+        (eventEmitter: IEventEmitter) => eventEmitter.event === "call_request",
       );
     }
 

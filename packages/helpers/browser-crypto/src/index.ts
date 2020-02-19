@@ -42,12 +42,12 @@ export async function importKey (
 export async function generateKey (length?: number): Promise<ArrayBuffer> {
   const _length = length || 256;
   const cryptoKey = await window.crypto.subtle.generateKey(
-      {
-        length: _length,
-        name: AES_ALGORITHM,
-      },
-      true,
-      ["encrypt", "decrypt"],
+    {
+      length: _length,
+      name: AES_ALGORITHM,
+    },
+    true,
+    ["encrypt", "decrypt"],
   );
   const key: ArrayBuffer = await exportKey(cryptoKey);
   return key;
@@ -56,12 +56,12 @@ export async function generateKey (length?: number): Promise<ArrayBuffer> {
 export async function createHmac (data: ArrayBuffer, key: ArrayBuffer): Promise<ArrayBuffer> {
   const cryptoKey: CryptoKey = await importKey(key, "HMAC");
   const signature = await window.crypto.subtle.sign(
-      {
-        length: 256,
-        name: "HMAC",
-      },
-      cryptoKey,
-      data,
+    {
+      length: 256,
+      name: "HMAC",
+    },
+    cryptoKey,
+    data,
   );
   return signature;
 }
@@ -90,12 +90,12 @@ export async function aesCbcEncrypt (
 ): Promise<ArrayBuffer> {
   const cryptoKey: CryptoKey = await importKey(key, AES_ALGORITHM);
   const result: ArrayBuffer = await window.crypto.subtle.encrypt(
-      {
-        iv,
-        name: AES_ALGORITHM,
-      },
-      cryptoKey,
-      data,
+    {
+      iv,
+      name: AES_ALGORITHM,
+    },
+    cryptoKey,
+    data,
   );
   return result;
 }
@@ -107,12 +107,12 @@ export async function aesCbcDecrypt (
 ): Promise<ArrayBuffer> {
   const cryptoKey: CryptoKey = await importKey(key, AES_ALGORITHM);
   const result: ArrayBuffer = await window.crypto.subtle.decrypt(
-      {
-        iv,
-        name: AES_ALGORITHM,
-      },
-      cryptoKey,
-      data,
+    {
+      iv,
+      name: AES_ALGORITHM,
+    },
+    cryptoKey,
+    data,
   );
   return result;
 }

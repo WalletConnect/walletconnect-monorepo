@@ -75,19 +75,17 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
 
     this.isNode = isNode();
 
+    const nodeOpts = {
+      clientMeta: {
+        name: "wallet-connect-provider",
+        description: "WalletConnect provider",
+        url: "#",
+        icons: ["https://walletconnect.org/walletconnect-logo.png"],
+      },
+    };
+
     this.wc = this.isNode
-      ? new NodeWalletConnect(
-          { bridge: this.bridge },
-          {
-            clientMeta: {
-              name: "wallet-connect-provider",
-              description: "WalletConnect provider",
-              url: "#",
-              icons: ["https://walletconnect.org/walletconnect-logo.png"],
-            },
-          },
-          // eslint-disable-next-line indent
-        )
+      ? new NodeWalletConnect({ bridge: this.bridge }, nodeOpts)
       : new WalletConnect({ bridge: this.bridge });
     this.chainId = typeof opts?.chainId !== "undefined" ? opts?.chainId : 1;
     this.networkId = this.chainId;

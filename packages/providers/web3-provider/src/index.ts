@@ -54,79 +54,79 @@ class WalletConnectProvider extends ProviderEngine {
     this.networkId = this.chainId;
     this.updateRpcUrl(this.chainId);
     this.addProvider(
-        new FixtureSubprovider({
-          eth_hashrate: "0x00",
-          eth_mining: false,
-          eth_syncing: true,
-          net_listening: true,
-          web3_clientVersion: `WalletConnect/v1.0.0-beta/javascript`,
-        }),
+      new FixtureSubprovider({
+        eth_hashrate: "0x00",
+        eth_mining: false,
+        eth_syncing: true,
+        net_listening: true,
+        web3_clientVersion: `WalletConnect/v1.0.0-beta/javascript`,
+      }),
     );
     this.addProvider(new CacheSubprovider());
     this.addProvider(new SubscriptionsSubprovider());
     this.addProvider(new FilterSubprovider());
     this.addProvider(new NonceSubprovider());
     this.addProvider(
-        new HookedWalletSubprovider({
-          getAccounts: async (cb: any) => {
-            try {
-              const wc = await this.getWalletConnector();
-              const accounts = wc.accounts;
-              if (accounts && accounts.length) {
-                cb(null, accounts);
-              } else {
-                cb(new Error("Failed to get accounts"));
-              }
-            } catch (error) {
-              cb(error);
+      new HookedWalletSubprovider({
+        getAccounts: async (cb: any) => {
+          try {
+            const wc = await this.getWalletConnector();
+            const accounts = wc.accounts;
+            if (accounts && accounts.length) {
+              cb(null, accounts);
+            } else {
+              cb(new Error("Failed to get accounts"));
             }
-          },
-          processMessage: async (msgParams: { from: string; data: string }, cb: any) => {
-            try {
-              const wc = await this.getWalletConnector();
-              const result = await wc.signMessage([msgParams.from, msgParams.data]);
-              cb(null, result);
-            } catch (error) {
-              cb(error);
-            }
-          },
-          processPersonalMessage: async (msgParams: { from: string; data: string }, cb: any) => {
-            try {
-              const wc = await this.getWalletConnector();
-              const result = await wc.signPersonalMessage([msgParams.data, msgParams.from]);
-              cb(null, result);
-            } catch (error) {
-              cb(error);
-            }
-          },
-          processSignTransaction: async (txParams: any, cb: any) => {
-            try {
-              const wc = await this.getWalletConnector();
-              const result = await wc.signTransaction(txParams);
-              cb(null, result);
-            } catch (error) {
-              cb(error);
-            }
-          },
-          processTransaction: async (txParams: any, cb: any) => {
-            try {
-              const wc = await this.getWalletConnector();
-              const result = await wc.sendTransaction(txParams);
-              cb(null, result);
-            } catch (error) {
-              cb(error);
-            }
-          },
-          processTypedMessage: async (msgParams: { from: string; data: string }, cb: any) => {
-            try {
-              const wc = await this.getWalletConnector();
-              const result = await wc.signTypedData([msgParams.from, msgParams.data]);
-              cb(null, result);
-            } catch (error) {
-              cb(error);
-            }
-          },
-        }),
+          } catch (error) {
+            cb(error);
+          }
+        },
+        processMessage: async (msgParams: { from: string; data: string }, cb: any) => {
+          try {
+            const wc = await this.getWalletConnector();
+            const result = await wc.signMessage([msgParams.from, msgParams.data]);
+            cb(null, result);
+          } catch (error) {
+            cb(error);
+          }
+        },
+        processPersonalMessage: async (msgParams: { from: string; data: string }, cb: any) => {
+          try {
+            const wc = await this.getWalletConnector();
+            const result = await wc.signPersonalMessage([msgParams.data, msgParams.from]);
+            cb(null, result);
+          } catch (error) {
+            cb(error);
+          }
+        },
+        processSignTransaction: async (txParams: any, cb: any) => {
+          try {
+            const wc = await this.getWalletConnector();
+            const result = await wc.signTransaction(txParams);
+            cb(null, result);
+          } catch (error) {
+            cb(error);
+          }
+        },
+        processTransaction: async (txParams: any, cb: any) => {
+          try {
+            const wc = await this.getWalletConnector();
+            const result = await wc.sendTransaction(txParams);
+            cb(null, result);
+          } catch (error) {
+            cb(error);
+          }
+        },
+        processTypedMessage: async (msgParams: { from: string; data: string }, cb: any) => {
+          try {
+            const wc = await this.getWalletConnector();
+            const result = await wc.signTypedData([msgParams.from, msgParams.data]);
+            cb(null, result);
+          } catch (error) {
+            cb(error);
+          }
+        },
+      }),
     );
     this.addProvider({
       handleRequest: async (payload: IJsonRpcRequest, next: any, end: any) => {
@@ -163,19 +163,19 @@ class WalletConnectProvider extends ProviderEngine {
     if (typeof payload === "string") {
       return new Promise((resolve, reject) => {
         this.sendAsync(
-            {
-              id: 42,
-              jsonrpc: "2.0",
-              method: payload,
-              params: callback || [],
-            },
-            (error: any, response: any) => {
-              if (error) {
-                reject(error);
-              } else {
-                resolve(response.result);
-              }
-            },
+          {
+            id: 42,
+            jsonrpc: "2.0",
+            method: payload,
+            params: callback || [],
+          },
+          (error: any, response: any) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(response.result);
+            }
+          },
         );
       });
     }

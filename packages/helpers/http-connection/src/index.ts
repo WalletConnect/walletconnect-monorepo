@@ -47,8 +47,8 @@ class HTTPConnection extends EventEmitter {
     return new Promise(resolve => {
       if (payload.method === "eth_subscribe") {
         const error = this.formatError(
-            payload,
-            "Subscriptions are not supported by this HTTP endpoint",
+          payload,
+          "Subscriptions are not supported by this HTTP endpoint",
         );
         return resolve(error);
       }
