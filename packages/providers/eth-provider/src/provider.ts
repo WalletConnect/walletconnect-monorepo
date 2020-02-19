@@ -1,280 +1,261 @@
-import EventEmitter from 'events'
+import EventEmitter from "events";
 import {
   payloadId,
   isJsonRpcSubscription,
   isJsonRpcRequest,
   isJsonRpcResponseSuccess,
-  isJsonRpcResponseError
-} from '@walletconnect/utils'
-import { IError, JsonRpc } from '@walletconnect/types'
-import WCRpcConnection from './connection'
+  isJsonRpcResponseError,
+} from "@walletconnect/utils";
+import { IError, JsonRpc } from "@walletconnect/types";
+import WCRpcConnection from "./connection";
 
 // -- types ---------------------------------------------------------------- //
 
 interface IPromisesMap {
-  [id: number]: { resolve: (res: any) => void; reject: (err: any) => void }
+  [id: number]: { resolve: (res: any) => void; reject: (err: any) => void };
 }
 
 // -- EthereumProvider ---------------------------------------------------- //
 
 class EthereumProvider extends EventEmitter {
-  public connected: boolean = false
-  public promises: IPromisesMap = {}
-  public subscriptions: number[] = []
-  public connection: WCRpcConnection
-  public accounts: string[] = []
-  public coinbase: string = ''
-  public attemptedNetworkSubscription: boolean = false
-  public attemptedChainSubscription: boolean = false
-  public attemptedAccountsSubscription: boolean = false
+  public connected = false;
+  public promises: IPromisesMap = {};
+  public subscriptions: number[] = [];
+  public connection: WCRpcConnection;
+  public accounts: string[] = [];
+  public coinbase = "";
+  public attemptedNetworkSubscription = false;
+  public attemptedChainSubscription = false;
+  public attemptedAccountsSubscription = false;
 
-  constructor (connection: WCRpcConnection) {
-    super()
-    this.connection = connection
+  constructor(connection: WCRpcConnection) {
+    super();
+    this.connection = connection;
   }
 
-  public async onConnectionPayload (payload: JsonRpc) {
-    const { id } = payload
-    if (typeof id !== 'undefined') {
+  public async onConnectionPayload(payload: JsonRpc) {
+    const { id } = payload;
+    if (typeof id !== "undefined") {
       if (this.promises[id]) {
         if (isJsonRpcResponseError(payload)) {
-          this.promises[id].reject(payload.error)
+          this.promises[id].reject(payload.error);
         } else if (isJsonRpcResponseSuccess(payload)) {
-          this.promises[id].resolve(payload.result)
+          this.promises[id].resolve(payload.result);
         }
-        delete this.promises[id]
+        delete this.promises[id];
       }
     } else if (isJsonRpcSubscription(payload)) {
-      if (payload.method && payload.method.indexOf('_subscription') > -1) {
+      if (payload.method && payload.method.indexOf("_subscription") > -1) {
         // Emit subscription result
-        this.emit(payload.params.subscription, payload.params.result)
-        this.emit(payload.method, payload.params) // Latest EIP-1193
-        this.emit('data', payload) // Backwards Compatibility
+        this.emit(payload.params.subscription, payload.params.result);
+        this.emit(payload.method, payload.params); // Latest EIP-1193
+        this.emit("data", payload); // Backwards Compatibility
       }
     }
   }
 
-  public async checkConnection () {
+  public async checkConnection() {
     try {
-      this.emit('connect', await this._send('net_version'))
-      this.connected = true
+      this.emit("connect", await this._send("net_version"));
+      this.connected = true;
 
-      if (
-        this.listenerCount('networkChanged') &&
-        !this.attemptedNetworkSubscription
-      ) {
-        this.startNetworkSubscription()
+      if (this.listenerCount("networkChanged") && !this.attemptedNetworkSubscription) {
+        this.startNetworkSubscription();
       }
 
-      if (
-        this.listenerCount('chainChanged') &&
-        !this.attemptedAccountsSubscription
-      ) {
-        this.startAccountsSubscription()
+      if (this.listenerCount("chainChanged") && !this.attemptedAccountsSubscription) {
+        this.startAccountsSubscription();
       }
 
-      if (
-        this.listenerCount('accountsChanged') &&
-        !this.attemptedAccountsSubscription
-      ) {
-        this.startAccountsSubscription()
+      if (this.listenerCount("accountsChanged") && !this.attemptedAccountsSubscription) {
+        this.startAccountsSubscription();
       }
     } catch (e) {
-      this.connected = false
+      this.connected = false;
     }
   }
 
-  public async startNetworkSubscription () {
-    this.attemptedNetworkSubscription = true
+  public async startNetworkSubscription() {
+    this.attemptedNetworkSubscription = true;
     try {
-      const networkChanged = await this.subscribe(
-        'eth_subscribe',
-        'networkChanged'
-      )
-      this.on(networkChanged, netId => this.emit('networkChanged', netId))
+      const networkChanged = await this.subscribe("eth_subscribe", "networkChanged");
+      this.on(networkChanged, netId => this.emit("networkChanged", netId));
     } catch (e) {
-      console.warn('Unable to subscribe to networkChanged', e) // tslint:disable-line
+      console.warn("Unable to subscribe to networkChanged", e); // tslint:disable-line
     }
   }
 
-  public async startChainSubscription () {
-    this.attemptedChainSubscription = true
+  public async startChainSubscription() {
+    this.attemptedChainSubscription = true;
     try {
-      const chainChanged = await this.subscribe('eth_subscribe', 'chainChanged')
-      this.on(chainChanged, chainId => this.emit('chainChanged', chainId))
+      const chainChanged = await this.subscribe("eth_subscribe", "chainChanged");
+      this.on(chainChanged, chainId => this.emit("chainChanged", chainId));
     } catch (e) {
-      console.warn('Unable to subscribe to chainChanged', e) // tslint:disable-line
+      console.warn("Unable to subscribe to chainChanged", e); // tslint:disable-line
     }
   }
 
-  public async startAccountsSubscription () {
-    this.attemptedAccountsSubscription = true
+  public async startAccountsSubscription() {
+    this.attemptedAccountsSubscription = true;
     try {
-      const accountsChanged = await this.subscribe(
-        'eth_subscribe',
-        'accountsChanged'
-      )
-      this.on(accountsChanged, accounts =>
-        this.emit('accountsChanged', accounts)
-      )
+      const accountsChanged = await this.subscribe("eth_subscribe", "accountsChanged");
+      this.on(accountsChanged, accounts => this.emit("accountsChanged", accounts));
     } catch (e) {
-      console.warn('Unable to subscribe to accountsChanged', e) // tslint:disable-line
+      console.warn("Unable to subscribe to accountsChanged", e); // tslint:disable-line
     }
   }
 
-  public enable () {
+  public enable() {
     return new Promise((resolve, reject) => {
-      this.on('newListener', (event, listener) => {
-        if (event === 'networkChanged') {
+      this.on("newListener", event => {
+        if (event === "networkChanged") {
           if (!this.attemptedNetworkSubscription && this.connected) {
-            this.startNetworkSubscription()
+            this.startNetworkSubscription();
           }
-        } else if (event === 'chainChanged') {
+        } else if (event === "chainChanged") {
           if (!this.attemptedChainSubscription && this.connected) {
-            this.startChainSubscription()
+            this.startChainSubscription();
           }
-        } else if (event === 'accountsChanged') {
+        } else if (event === "accountsChanged") {
           if (!this.attemptedAccountsSubscription && this.connected) {
-            this.startAccountsSubscription()
+            this.startAccountsSubscription();
           }
         }
-      })
+      });
 
-      this.connection.on('close', () => {
-        this.connected = false
-        this.emit('close')
-      })
-      this.connection.on('payload', this.onConnectionPayload.bind(this))
+      this.connection.on("close", () => {
+        this.connected = false;
+        this.emit("close");
+      });
+      this.connection.on("payload", this.onConnectionPayload.bind(this));
 
-      this.connection.on('connect', async () => {
-        await this.checkConnection()
+      this.connection.on("connect", async () => {
+        await this.checkConnection();
         try {
-          const accounts: string[] = await this._send('eth_accounts')
+          const accounts: string[] = await this._send("eth_accounts");
           if (accounts.length > 0) {
-            this.accounts = accounts
-            this.coinbase = accounts[0]
-            this.emit('enable')
-            this.emit('connect')
-            resolve(accounts)
+            this.accounts = accounts;
+            this.coinbase = accounts[0];
+            this.emit("enable");
+            this.emit("connect");
+            resolve(accounts);
           } else {
-            const err: IError = new Error('User Denied Full Provider')
-            err.code = 4001
-            this.connected = false
-            this.connection.close()
-            reject(err)
+            const err: IError = new Error("User Denied Full Provider");
+            err.code = 4001;
+            this.connected = false;
+            this.connection.close();
+            reject(err);
           }
         } catch (e) {
-          this.connected = false
-          this.connection.close()
-          reject(e)
+          this.connected = false;
+          this.connection.close();
+          reject(e);
         }
-      })
+      });
 
-      this.connection.create()
-    })
+      this.connection.create();
+    });
   }
 
-  public _send (method?: string, params: any[] = []) {
-    if (!method || typeof method !== 'string') {
-      throw new Error('Method is not a valid string.')
+  public _send(method?: string, params: any[] = []) {
+    if (!method || typeof method !== "string") {
+      throw new Error("Method is not a valid string.");
     }
     if (!(params instanceof Array)) {
-      throw new Error('Params is not a valid array.')
+      throw new Error("Params is not a valid array.");
     }
-    const payload = { jsonrpc: '2.0', id: payloadId(), method, params }
+    const payload = { jsonrpc: "2.0", id: payloadId(), method, params };
     const promise: Promise<any> = new Promise((resolve, reject) => {
-      this.promises[payload.id] = { resolve, reject }
-    })
-    this.connection.send(payload)
-    return promise
+      this.promises[payload.id] = { resolve, reject };
+    });
+    this.connection.send(payload);
+    return promise;
   }
 
-  public send () {
+  public send(...args: any[]) {
     // Send can be clobbered, proxy sendPromise for backwards compatibility
-    return this._send(...(arguments as any))
+    return this._send(...args);
   }
 
-  public _sendBatch (requests: JsonRpc[]) {
+  public _sendBatch(requests: JsonRpc[]) {
     return Promise.all(
       requests.map(payload => {
         if (isJsonRpcRequest(payload)) {
-          this._send(payload.method, payload.params)
+          this._send(payload.method, payload.params);
         }
-      })
-    )
+      }),
+    );
   }
 
-  public sendAsync (payload: JsonRpc, cb: any) {
+  public sendAsync(payload: JsonRpc, cb: any) {
     // Backwards Compatibility
-    if (!cb || typeof cb !== 'function') {
-      return cb(
-        new Error('Invalid or undefined callback provided to sendAsync')
-      )
+    if (!cb || typeof cb !== "function") {
+      return cb(new Error("Invalid or undefined callback provided to sendAsync"));
     }
     if (!payload) {
-      return cb(new Error('Invalid Payload'))
+      return cb(new Error("Invalid Payload"));
     }
     // sendAsync can be called with an array for batch requests used by web3.js 0.x
     // this is not part of EIP-1193's backwards compatibility but we still want to support it
     if (payload instanceof Array) {
-      return this.sendAsyncBatch(payload, cb)
+      return this.sendAsyncBatch(payload, cb);
     } else if (isJsonRpcRequest(payload)) {
       return this._send(payload.method, payload.params)
         .then(result => {
-          cb(null, { id: payload.id, jsonrpc: payload.jsonrpc, result })
+          cb(null, { id: payload.id, jsonrpc: payload.jsonrpc, result });
         })
         .catch(err => {
-          cb(err)
-        })
+          cb(err);
+        });
     }
   }
-  public sendAsyncBatch (requests: JsonRpc[], cb: any) {
+
+  public sendAsyncBatch(requests: JsonRpc[], cb: any) {
     return this._sendBatch(requests)
       .then(results => {
         const result = results.map((entry, index) => {
           return {
             id: requests[index].id,
             jsonrpc: requests[index].jsonrpc,
-            result: entry
-          }
-        })
-        cb(null, result)
+            result: entry,
+          };
+        });
+        cb(null, result);
       })
       .catch(err => {
-        cb(err)
-      })
+        cb(err);
+      });
   }
 
-  public subscribe (type: string, method: string, params: any[] = []) {
+  public subscribe(type: string, method: string, params: any[] = []) {
     return this._send(type, [method, ...params]).then(id => {
-      this.subscriptions.push(id)
-      return id
-    })
+      this.subscriptions.push(id);
+      return id;
+    });
   }
-  public unsubscribe (type: string, id: number) {
+
+  public unsubscribe(type: string, id: number) {
     return this._send(type, [id]).then(success => {
       if (success) {
-        this.subscriptions = this.subscriptions.filter(_id => _id !== id) // Remove subscription
-        this.removeAllListeners(String(id)) // Remove listeners
-        return success
+        this.subscriptions = this.subscriptions.filter(_id => _id !== id); // Remove subscription
+        this.removeAllListeners(String(id)); // Remove listeners
+        return success;
       }
-    })
+    });
   }
 
-  public isConnected () {
+  public isConnected() {
     // Backwards Compatibility
-    return this.connected
+    return this.connected;
   }
 
-  public close () {
-    this.connection.close()
-    this.connected = false
-    const error = new Error(
-      `Provider closed, subscription lost, please subscribe again.`
-    )
-    this.subscriptions.forEach(id => this.emit(String(id), error)) // Send Error objects to any open subscriptions
-    this.subscriptions = [] // Clear subscriptions
+  public close() {
+    this.connection.close();
+    this.connected = false;
+    const error = new Error(`Provider closed, subscription lost, please subscribe again.`);
+    this.subscriptions.forEach(id => this.emit(String(id), error)); // Send Error objects to any open subscriptions
+    this.subscriptions = []; // Clear subscriptions
   }
 }
 
-export default EthereumProvider
+export default EthereumProvider;
