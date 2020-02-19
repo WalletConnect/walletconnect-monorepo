@@ -16,7 +16,7 @@ import {
   convertBufferToArrayBuffer,
 } from "@walletconnect/utils";
 
-export async function generateKey (length?: number): Promise<ArrayBuffer> {
+export async function generateKey(length?: number): Promise<ArrayBuffer> {
   const _length = (length || 256) / 8;
   const buffer: Buffer = eccryptoJS.randomBytes(_length);
   const result = convertBufferToArrayBuffer(buffer);
@@ -24,7 +24,7 @@ export async function generateKey (length?: number): Promise<ArrayBuffer> {
   return result;
 }
 
-export async function verifyHmac (payload: IEncryptionPayload, key: Buffer): Promise<boolean> {
+export async function verifyHmac(payload: IEncryptionPayload, key: Buffer): Promise<boolean> {
   const cipherText: Buffer = convertHexToBuffer(payload.data);
   const iv: Buffer = convertHexToBuffer(payload.iv);
   const hmac: Buffer = convertHexToBuffer(payload.hmac);
@@ -40,7 +40,7 @@ export async function verifyHmac (payload: IEncryptionPayload, key: Buffer): Pro
   return false;
 }
 
-export async function encrypt (
+export async function encrypt(
   data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   key: ArrayBuffer,
 ): Promise<IEncryptionPayload> {
@@ -67,7 +67,7 @@ export async function encrypt (
   };
 }
 
-export async function decrypt (
+export async function decrypt(
   payload: IEncryptionPayload,
   key: ArrayBuffer,
 ): Promise<IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null> {

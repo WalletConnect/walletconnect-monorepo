@@ -25,7 +25,7 @@ class HTTPConnection extends EventEmitter {
   public url: string;
   public post: IXHRPost;
 
-  constructor (url: string) {
+  constructor(url: string) {
     super();
     this.url = url;
     this.post = {
@@ -35,7 +35,7 @@ class HTTPConnection extends EventEmitter {
     };
   }
 
-  formatError (payload: any, message: string, code = -1) {
+  formatError(payload: any, message: string, code = -1) {
     return {
       error: { message, code },
       id: payload.id,
@@ -43,7 +43,7 @@ class HTTPConnection extends EventEmitter {
     };
   }
 
-  public send (payload: any, internal?: any) {
+  public send(payload: any, internal?: any) {
     return new Promise(resolve => {
       if (payload.method === "eth_subscribe") {
         const error = this.formatError(

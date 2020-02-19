@@ -15,7 +15,7 @@ class WCEthRpcConnection extends WCRpcConnection {
   public networkId = 1;
   public rpcUrl = "";
 
-  constructor (opts: IWCEthRpcConnectionOptions) {
+  constructor(opts: IWCEthRpcConnectionOptions) {
     super(opts);
     this.rpc = opts.rpc || null;
     if (
@@ -29,7 +29,7 @@ class WCEthRpcConnection extends WCRpcConnection {
     setTimeout(() => this.create(), 0);
   }
 
-  public async send (payload: any) {
+  public async send(payload: any) {
     if (this.wc && this.wc.connected) {
       if (signingMethods.includes(payload.method) && payload.method.includes("wallet_")) {
         const response = await this.sendPayload(payload);
@@ -49,21 +49,21 @@ class WCEthRpcConnection extends WCRpcConnection {
     }
   }
 
-  public async handleStateMethods (payload: any) {
+  public async handleStateMethods(payload: any) {
     let result: any = null;
     switch (payload.method) {
-    case "eth_accounts":
-      result = this.accounts;
-      break;
-    case "eth_chainId":
-      result = convertNumberToHex(this.chainId);
-      break;
+      case "eth_accounts":
+        result = this.accounts;
+        break;
+      case "eth_chainId":
+        result = convertNumberToHex(this.chainId);
+        break;
 
-    case "net_version":
-      result = this.networkId;
-      break;
-    default:
-      break;
+      case "net_version":
+        result = this.networkId;
+        break;
+      default:
+        break;
     }
     return {
       id: payload.id,
@@ -72,7 +72,7 @@ class WCEthRpcConnection extends WCRpcConnection {
     };
   }
 
-  public async updateState (sessionParams: ISessionParams) {
+  public async updateState(sessionParams: ISessionParams) {
     const { accounts, chainId, networkId, rpcUrl } = sessionParams;
 
     // Check if accounts changed and trigger event
@@ -97,7 +97,7 @@ class WCEthRpcConnection extends WCRpcConnection {
     this.updateRpcUrl(this.chainId, rpcUrl || "");
   }
 
-  public updateRpcUrl (chainId: number, rpcUrl = "") {
+  public updateRpcUrl(chainId: number, rpcUrl = "") {
     const infuraNetworks = {
       1: "mainnet",
       3: "ropsten",

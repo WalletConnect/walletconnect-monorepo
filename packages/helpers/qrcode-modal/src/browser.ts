@@ -10,7 +10,7 @@ if (typeof window !== "undefined" && typeof window.document !== "undefined") {
   document = window.document;
 }
 
-function formatQRCodeImage (data: string) {
+function formatQRCodeImage(data: string) {
   let result = "";
   const dataString = qrImage.imageSync(data, { type: "svg" });
   if (typeof dataString === "string") {
@@ -19,7 +19,7 @@ function formatQRCodeImage (data: string) {
   return result;
 }
 
-function formatQRCodeModal (qrCodeImage: string) {
+function formatQRCodeModal(qrCodeImage: string) {
   const callToAction = "Scan QR code with a WalletConnect-compatible wallet";
   return `
     <div
@@ -52,7 +52,7 @@ function formatQRCodeModal (qrCodeImage: string) {
 `;
 }
 
-function open (uri: string, cb: any) {
+function open(uri: string, cb: any) {
   const wrapper = document.createElement("div");
   wrapper.setAttribute("id", "walletconnect-wrapper");
   const qrCodeImage = formatQRCodeImage(uri);
@@ -74,7 +74,7 @@ function open (uri: string, cb: any) {
 /**
  *  @desc     Close WalletConnect QR Code Modal
  */
-function close () {
+function close() {
   const elm = document.getElementById("walletconnect-qrcode-modal");
   if (elm) {
     elm.className = elm.className.replace("fadeIn", "fadeOut");

@@ -29,7 +29,7 @@ class SocketTransport implements ITransportLib {
 
   // -- constructor ----------------------------------------------------- //
 
-  constructor (opts: ISocketTransportOptions) {
+  constructor(opts: ISocketTransportOptions) {
     this._initiating = false;
     this._url = "";
     this._netMonitor = null;
@@ -47,57 +47,57 @@ class SocketTransport implements ITransportLib {
     this._netMonitor.on("online", () => this._socketCreate());
   }
 
-  set readyState (value) {
+  set readyState(value) {
     // empty
   }
 
-  get readyState (): number {
+  get readyState(): number {
     return this._socket ? this._socket.readyState : -1;
   }
 
-  set connecting (value) {
+  set connecting(value) {
     // empty
   }
 
-  get connecting (): boolean {
+  get connecting(): boolean {
     return this.readyState === 0;
   }
 
-  set connected (value) {
+  set connected(value) {
     // empty
   }
 
-  get connected (): boolean {
+  get connected(): boolean {
     return this.readyState === 1;
   }
 
-  set closing (value) {
+  set closing(value) {
     // empty
   }
 
-  get closing (): boolean {
+  get closing(): boolean {
     return this.readyState === 2;
   }
 
-  set closed (value) {
+  set closed(value) {
     // empty
   }
 
-  get closed (): boolean {
+  get closed(): boolean {
     return this.readyState === 3;
   }
 
   // -- public ---------------------------------------------------------- //
 
-  public open () {
+  public open() {
     this._socketCreate();
   }
 
-  public close () {
+  public close() {
     this._socketClose();
   }
 
-  public send (message: string, topic?: string, silent?: boolean): void {
+  public send(message: string, topic?: string, silent?: boolean): void {
     if (!topic || typeof topic !== "string") {
       throw new Error("Missing or invalid topic field");
     }
@@ -110,7 +110,7 @@ class SocketTransport implements ITransportLib {
     });
   }
 
-  public subscribe (topic: string) {
+  public subscribe(topic: string) {
     this._socketSend({
       topic: topic,
       type: "sub",
@@ -119,13 +119,13 @@ class SocketTransport implements ITransportLib {
     });
   }
 
-  public on (event: string, callback: (payload: any) => void) {
+  public on(event: string, callback: (payload: any) => void) {
     this._events.push({ event, callback });
   }
 
   // -- private ---------------------------------------------------------- //
 
-  private _socketCreate () {
+  private _socketCreate() {
     if (this._initiating) {
       return;
     }
@@ -149,7 +149,7 @@ class SocketTransport implements ITransportLib {
     this._nextSocket.onopen = () => this._socketOpen();
   }
 
-  private _socketOpen () {
+  private _socketOpen() {
     this._socketClose();
     this._initiating = false;
     this._socket = this._nextSocket;
@@ -158,7 +158,7 @@ class SocketTransport implements ITransportLib {
     this._pushQueue();
   }
 
-  private _socketClose () {
+  private _socketClose() {
     if (this._socket) {
       this._socket.onclose = () => {
         // empty
@@ -167,7 +167,7 @@ class SocketTransport implements ITransportLib {
     }
   }
 
-  private _socketSend (socketMessage: ISocketMessage) {
+  private _socketSend(socketMessage: ISocketMessage) {
     const message: string = JSON.stringify(socketMessage);
 
     if (this._socket && this._socket.readyState === 1) {
@@ -178,7 +178,7 @@ class SocketTransport implements ITransportLib {
     }
   }
 
-  private async _socketReceive (event: MessageEvent) {
+  private async _socketReceive(event: MessageEvent) {
     let socketMessage: ISocketMessage;
 
     try {
@@ -202,7 +202,7 @@ class SocketTransport implements ITransportLib {
     }
   }
 
-  private _queueSubscriptions () {
+  private _queueSubscriptions() {
     const subscriptions = this._subscriptions;
 
     subscriptions.forEach((topic: string) =>
@@ -217,11 +217,11 @@ class SocketTransport implements ITransportLib {
     this._subscriptions = [];
   }
 
-  private _setToQueue (socketMessage: ISocketMessage) {
+  private _setToQueue(socketMessage: ISocketMessage) {
     this._queue.push(socketMessage);
   }
 
-  private _pushQueue () {
+  private _pushQueue() {
     const queue = this._queue;
 
     queue.forEach((socketMessage: ISocketMessage) => this._socketSend(socketMessage));

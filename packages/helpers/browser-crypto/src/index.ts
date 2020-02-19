@@ -18,28 +18,28 @@ const AES_ALGORITHM = "AES-CBC";
 const AES_LENGTH = 256;
 const HMAC_ALGORITHM = "SHA-256";
 
-export async function exportKey (cryptoKey: CryptoKey): Promise<ArrayBuffer> {
+export async function exportKey(cryptoKey: CryptoKey): Promise<ArrayBuffer> {
   const buffer: ArrayBuffer = await window.crypto.subtle.exportKey("raw", cryptoKey);
   return buffer;
 }
 
-export async function importKey (
+export async function importKey(
   buffer: ArrayBuffer,
   type: string = AES_ALGORITHM,
 ): Promise<CryptoKey> {
-  const algo: AesKeyAlgorithm | HmacImportParams =
-    type === AES_ALGORITHM
-      ? { length: AES_LENGTH, name: AES_ALGORITHM }
-      : {
-        hash: { name: HMAC_ALGORITHM },
-        name: "HMAC",
-      };
+  const aesParams: AesKeyAlgorithm = { length: AES_LENGTH, name: AES_ALGORITHM };
+  const hmacParams: HmacImportParams = {
+    hash: { name: HMAC_ALGORITHM },
+    name: "HMAC",
+  };
+  const algoParams: AesKeyAlgorithm | HmacImportParams =
+    type === AES_ALGORITHM ? aesParams : hmacParams;
   const usages: string[] = type === AES_ALGORITHM ? ["encrypt", "decrypt"] : ["sign", "verify"];
-  const cryptoKey = await window.crypto.subtle.importKey("raw", buffer, algo, true, usages);
+  const cryptoKey = await window.crypto.subtle.importKey("raw", buffer, algoParams, true, usages);
   return cryptoKey;
 }
 
-export async function generateKey (length?: number): Promise<ArrayBuffer> {
+export async function generateKey(length?: number): Promise<ArrayBuffer> {
   const _length = length || 256;
   const cryptoKey = await window.crypto.subtle.generateKey(
     {
@@ -53,7 +53,7 @@ export async function generateKey (length?: number): Promise<ArrayBuffer> {
   return key;
 }
 
-export async function createHmac (data: ArrayBuffer, key: ArrayBuffer): Promise<ArrayBuffer> {
+export async function createHmac(data: ArrayBuffer, key: ArrayBuffer): Promise<ArrayBuffer> {
   const cryptoKey: CryptoKey = await importKey(key, "HMAC");
   const signature = await window.crypto.subtle.sign(
     {
@@ -66,7 +66,7 @@ export async function createHmac (data: ArrayBuffer, key: ArrayBuffer): Promise<
   return signature;
 }
 
-export async function verifyHmac (payload: IEncryptionPayload, key: ArrayBuffer): Promise<boolean> {
+export async function verifyHmac(payload: IEncryptionPayload, key: ArrayBuffer): Promise<boolean> {
   const cipherText: ArrayBuffer = convertHexToArrayBuffer(payload.data);
   const iv: ArrayBuffer = convertHexToArrayBuffer(payload.iv);
   const hmac: ArrayBuffer = convertHexToArrayBuffer(payload.hmac);
@@ -83,7 +83,7 @@ export async function verifyHmac (payload: IEncryptionPayload, key: ArrayBuffer)
   return false;
 }
 
-export async function aesCbcEncrypt (
+export async function aesCbcEncrypt(
   data: ArrayBuffer,
   key: ArrayBuffer,
   iv: ArrayBuffer,
@@ -100,7 +100,7 @@ export async function aesCbcEncrypt (
   return result;
 }
 
-export async function aesCbcDecrypt (
+export async function aesCbcDecrypt(
   data: ArrayBuffer,
   key: ArrayBuffer,
   iv: ArrayBuffer,
@@ -117,7 +117,7 @@ export async function aesCbcDecrypt (
   return result;
 }
 
-export async function encrypt (
+export async function encrypt(
   data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   key: ArrayBuffer,
 ): Promise<IEncryptionPayload> {
@@ -145,7 +145,7 @@ export async function encrypt (
   };
 }
 
-export async function decrypt (
+export async function decrypt(
   payload: IEncryptionPayload,
   key: ArrayBuffer,
 ): Promise<IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null> {

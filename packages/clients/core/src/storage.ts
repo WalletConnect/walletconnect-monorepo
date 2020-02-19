@@ -4,13 +4,13 @@ import { IWalletConnectSession } from "@walletconnect/types";
 class SessionStorage {
   public storageId = "walletconnect";
   public storage: Storage | null = null;
-  constructor () {
+  constructor() {
     if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
       this.storage = window.localStorage;
     }
   }
 
-  public getSession (): IWalletConnectSession | null {
+  public getSession(): IWalletConnectSession | null {
     let session = null;
     let local = null;
     if (this.storage) {
@@ -29,7 +29,7 @@ class SessionStorage {
     return session;
   }
 
-  public setSession (session: IWalletConnectSession): IWalletConnectSession {
+  public setSession(session: IWalletConnectSession): IWalletConnectSession {
     const local: string = JSON.stringify(session);
     if (this.storage) {
       this.storage.setItem(this.storageId, local);
@@ -37,7 +37,7 @@ class SessionStorage {
     return session;
   }
 
-  public removeSession (): void {
+  public removeSession(): void {
     if (this.storage) {
       this.storage.removeItem(this.storageId);
     }

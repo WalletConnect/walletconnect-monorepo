@@ -18,15 +18,15 @@ import {
 class EventManager {
   private _eventEmitters: IEventEmitter[];
 
-  constructor () {
+  constructor() {
     this._eventEmitters = [];
   }
 
-  public subscribe (eventEmitter: IEventEmitter) {
+  public subscribe(eventEmitter: IEventEmitter) {
     this._eventEmitters.push(eventEmitter);
   }
 
-  public trigger (
+  public trigger(
     payload: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | IInternalEvent,
   ): void {
     let eventEmitters: IEventEmitter[] = [];

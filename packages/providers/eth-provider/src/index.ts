@@ -3,7 +3,7 @@ import WCRpcConnection from "./connection";
 import { IWCRpcConnectionOptions } from "@walletconnect/types";
 
 class WalletConnectProvider extends EthereumProvider {
-  constructor (opts: IWCRpcConnectionOptions) {
+  constructor(opts: IWCRpcConnectionOptions) {
     const connection = new WCRpcConnection(opts);
     super(connection);
   }

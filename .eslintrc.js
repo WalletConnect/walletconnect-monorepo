@@ -21,7 +21,8 @@ module.exports = {
     "no-prototype-builtins": ["off"],
     "sort-keys": ["off"],
     "space-before-function-paren": ["off"],
-    indent: ["error", 2],
+    indent: ["error", 2, { SwitchCase: 1 }],
+    "no-console": ["error", { allow: ["warn"] }],
   },
   env: {
     browser: true,

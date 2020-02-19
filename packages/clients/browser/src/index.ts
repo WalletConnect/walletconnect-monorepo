@@ -4,7 +4,7 @@ import { IWalletConnectOptions } from "@walletconnect/types";
 import * as cryptoLib from "@walletconnect/browser-crypto";
 
 class WalletConnect extends Connector {
-  constructor (connectorOpts: IWalletConnectOptions) {
+  constructor(connectorOpts: IWalletConnectOptions) {
     super({
       cryptoLib,
       connectorOpts,

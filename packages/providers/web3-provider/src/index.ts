@@ -212,28 +212,28 @@ class WalletConnectProvider extends ProviderEngine {
       let result = null;
       const wc = await this.getWalletConnector();
       switch (payload.method) {
-      case "wc_killSession":
-        await this.close();
-        result = null;
-        break;
-      case "eth_accounts":
-        result = wc.accounts;
-        break;
-      case "eth_coinbase":
-        result = wc.accounts[0];
-        break;
-      case "eth_chainId":
-        result = wc.chainId;
-        break;
-      case "net_version":
-        result = wc.networkId || wc.chainId;
-        break;
-      case "eth_uninstallFilter":
-        this.sendAsync(payload, (_: any) => _);
-        result = true;
-        break;
-      default:
-        response = await this.handleOtherRequests(payload);
+        case "wc_killSession":
+          await this.close();
+          result = null;
+          break;
+        case "eth_accounts":
+          result = wc.accounts;
+          break;
+        case "eth_coinbase":
+          result = wc.accounts[0];
+          break;
+        case "eth_chainId":
+          result = wc.chainId;
+          break;
+        case "net_version":
+          result = wc.networkId || wc.chainId;
+          break;
+        case "eth_uninstallFilter":
+          this.sendAsync(payload, (_: any) => _);
+          result = true;
+          break;
+        default:
+          response = await this.handleOtherRequests(payload);
       }
       if (response) {
         return response;

@@ -4,7 +4,7 @@ import * as cryptoLib from "@walletconnect/node-crypto";
 // import { logDeprecationWarning } from '@walletconnect/utils'
 
 class NodeWalletConnect extends Connector {
-  constructor (connectorOpts: IWalletConnectOptions, nodeJsOptions: INodeJSOptions) {
+  constructor(connectorOpts: IWalletConnectOptions, nodeJsOptions: INodeJSOptions) {
     super({
       cryptoLib,
       connectorOpts,

@@ -742,23 +742,23 @@ class Connector implements IConnector {
     }
 
     switch (request.method) {
-    case "eth_accounts":
-      return this.accounts;
-    case "eth_chainId":
-      return convertNumberToHex(this.chainId);
-    case "eth_sendTransaction":
-    case "eth_signTransaction":
-      if (request.params) {
-        request.params[0] = parseTransactionData(request.params[0]);
-      }
-      break;
-    case "personal_sign":
-      if (request.params) {
-        request.params = parsePersonalSign(request.params);
-      }
-      break;
-    default:
-      break;
+      case "eth_accounts":
+        return this.accounts;
+      case "eth_chainId":
+        return convertNumberToHex(this.chainId);
+      case "eth_sendTransaction":
+      case "eth_signTransaction":
+        if (request.params) {
+          request.params[0] = parseTransactionData(request.params[0]);
+        }
+        break;
+      case "personal_sign":
+        if (request.params) {
+          request.params = parsePersonalSign(request.params);
+        }
+        break;
+      default:
+        break;
     }
 
     const formattedRequest = this._formatRequest(request);

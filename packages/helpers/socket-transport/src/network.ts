@@ -5,7 +5,7 @@ import { NetworkEvent, INetworkEventEmitter, INetworkMonitor } from "@walletconn
 class NetworkMonitor implements INetworkMonitor {
   private _eventEmitters: INetworkEventEmitter[];
 
-  constructor () {
+  constructor() {
     this._eventEmitters = [];
 
     if (typeof window !== "undefined" || typeof (window as any).addEventListener !== "undefined") {
@@ -14,14 +14,14 @@ class NetworkMonitor implements INetworkMonitor {
     }
   }
 
-  public on (event: NetworkEvent, callback: () => void): void {
+  public on(event: NetworkEvent, callback: () => void): void {
     this._eventEmitters.push({
       event,
       callback,
     });
   }
 
-  public trigger (event: NetworkEvent): void {
+  public trigger(event: NetworkEvent): void {
     let eventEmitters: INetworkEventEmitter[] = [];
 
     if (event) {
