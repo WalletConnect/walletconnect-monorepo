@@ -1,11 +1,11 @@
-const qrTerminal = require('qrcode-terminal')
+const qrTerminal = require("qrcode-terminal");
 
-function open (uri: string, cb: any) {
-  qrTerminal.generate(uri, { small: true })
+function open(uri: string) {
+  qrTerminal.generate(uri, { small: true });
 }
 
-function close () {
+function close() {
   // do nothing
 }
 
-export default { open, close }
+export default { open, close };
