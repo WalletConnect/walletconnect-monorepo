@@ -53,6 +53,7 @@ import {
   ERROR_MISSING_REQUIRED
 } from './errors'
 import EventManager from './events'
+import SessionStorage from './storage'
 
 interface IConnectorOpts {
   cryptoLib: ICryptoLib
@@ -116,7 +117,7 @@ class Connector implements IConnector {
     this._rpcUrl = ''
     this._eventManager = new EventManager()
     this._connected = false
-    this._sessionStorage = opts.sessionStorage || null
+    this._sessionStorage = opts.sessionStorage || new SessionStorage()
     this._qrcodeModal = opts.qrcodeModal || null
 
     if (!opts.connectorOpts.uri && !opts.connectorOpts.session) {

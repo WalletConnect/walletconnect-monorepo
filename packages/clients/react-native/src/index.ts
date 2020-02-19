@@ -3,8 +3,8 @@ import {
   IWalletConnectOptions,
   INativeWalletOptions
 } from '@walletconnect/types'
+import * as cryptoLib from '@walletconnect/node-crypto'
 // import { logDeprecationWarning } from '@walletconnect/utils'
-import * as cryptoLib from './nativeCrypto'
 
 class RNWalletConnect extends Connector {
   constructor (

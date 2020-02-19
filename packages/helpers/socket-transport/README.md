@@ -1,3 +1,3 @@
 # WalletConnect Socket Transport
 
-Socket Transport for WalletConnect Providers
+Socket Transport for WalletConnect

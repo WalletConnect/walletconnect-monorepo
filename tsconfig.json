@@ -43,6 +43,9 @@
     { "path": "./packages/helpers/rpc-connection" },
     { "path": "./packages/helpers/http-connection" },
     { "path": "./packages/helpers/socket-transport" },
+    { "path": "./packages/helpers/browser-crypto" },
+    { "path": "./packages/helpers/node-crypto" },
+    { "path": "./packages/helpers/iso-crypto" },
     { "path": "./packages/helpers/types" }
   ]
 }

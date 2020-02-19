@@ -1,7 +1,7 @@
 {
-  "name": "@walletconnect/client",
+  "name": "@walletconnect/browser-crypto",
   "version": "1.0.0-beta.60",
-  "description": "Client for WalletConnect",
+  "description": "Browser Crypto for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "npm run clean",
@@ -47,21 +47,18 @@
     "@babel/preset-typescript": "7.8.3",
     "@babel/register": "7.8.3",
     "@types/chai": "4.2.7",
+    "@types/lodash.isnumber": "3.0.6",
     "@types/mocha": "5.2.7",
     "@types/node": "12.12.14",
     "chai": "4.2.0",
     "isomorphic-fetch": "2.2.1",
     "mocha": "5.2.0",
-    "mock-local-storage": "1.1.11",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/core": "^1.0.0-beta.60",
-    "@walletconnect/qrcode-modal": "^1.0.0-beta.60",
-    "@walletconnect/iso-crypto": "^1.0.0-beta.60",
     "@walletconnect/types": "^1.0.0-beta.60",
     "@walletconnect/utils": "^1.0.0-beta.60"
   },
