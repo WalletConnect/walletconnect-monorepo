@@ -21,8 +21,8 @@ import {
   ICreateSessionOptions,
   IQRCodeModal,
   IPushSubscription,
-  IPushServerOptions
-} from '@walletconnect/types'
+  IPushServerOptions,
+} from "@walletconnect/types";
 import {
   parsePersonalSign,
   parseTransactionData,
@@ -36,9 +36,9 @@ import {
   convertNumberToHex,
   isJsonRpcResponseSuccess,
   isJsonRpcResponseError,
-  isSilentPayload
-} from '@walletconnect/utils'
-import SocketTransport from '@walletconnect/socket-transport'
+  isSilentPayload,
+} from "@walletconnect/utils";
+import SocketTransport from "@walletconnect/socket-transport";
 import {
   ERROR_SESSION_CONNECTED,
   ERROR_SESSION_DISCONNECTED,
@@ -50,121 +50,113 @@ import {
   ERROR_MISSING_ID,
   ERROR_INVALID_RESPONSE,
   ERROR_INVALID_URI,
-  ERROR_MISSING_REQUIRED
-} from './errors'
-import EventManager from './events'
-import SessionStorage from './storage'
+  ERROR_MISSING_REQUIRED,
+} from "./errors";
+import EventManager from "./events";
+import SessionStorage from "./storage";
 
 interface IConnectorOpts {
-  cryptoLib: ICryptoLib
-  connectorOpts: IWalletConnectOptions
-  transport?: ITransportLib | null
-  sessionStorage?: ISessionStorage | null
-  clientMeta?: IClientMeta | null
-  qrcodeModal?: IQRCodeModal | null
-  pushServerOpts?: IPushServerOptions
+  cryptoLib: ICryptoLib;
+  connectorOpts: IWalletConnectOptions;
+  transport?: ITransportLib | null;
+  sessionStorage?: ISessionStorage | null;
+  clientMeta?: IClientMeta | null;
+  qrcodeModal?: IQRCodeModal | null;
+  pushServerOpts?: IPushServerOptions;
 }
 
 // -- Connector ------------------------------------------------------------ //
 
 class Connector implements IConnector {
-  private cryptoLib: ICryptoLib
+  private cryptoLib: ICryptoLib;
 
-  private protocol: string
-  private version: number
+  private protocol: string;
+  private version: number;
 
-  private _bridge: string
-  private _key: ArrayBuffer | null
-  private _nextKey: ArrayBuffer | null
+  private _bridge: string;
+  private _key: ArrayBuffer | null;
+  private _nextKey: ArrayBuffer | null;
 
-  private _clientId: string
-  private _clientMeta: IClientMeta | null
-  private _peerId: string
-  private _peerMeta: IClientMeta | null
-  private _handshakeId: number
-  private _handshakeTopic: string
-  private _accounts: string[]
-  private _chainId: number
-  private _networkId: number
-  private _rpcUrl: string
-  private _transport: ITransportLib
-  private _eventManager: EventManager
-  private _connected: boolean
-  private _sessionStorage: ISessionStorage | null
-  private _qrcodeModal: IQRCodeModal | null
+  private _clientId: string;
+  private _clientMeta: IClientMeta | null;
+  private _peerId: string;
+  private _peerMeta: IClientMeta | null;
+  private _handshakeId: number;
+  private _handshakeTopic: string;
+  private _accounts: string[];
+  private _chainId: number;
+  private _networkId: number;
+  private _rpcUrl: string;
+  private _transport: ITransportLib;
+  private _eventManager: EventManager;
+  private _connected: boolean;
+  private _sessionStorage: ISessionStorage | null;
+  private _qrcodeModal: IQRCodeModal | null;
 
   // -- constructor ----------------------------------------------------- //
 
   constructor(opts: IConnectorOpts) {
-    this.cryptoLib = opts.cryptoLib
+    this.cryptoLib = opts.cryptoLib;
 
-    this.protocol = 'wc'
-    this.version = 1
+    this.protocol = "wc";
+    this.version = 1;
 
-    this._bridge =
-      opts.connectorOpts.bridge || 'https://bridge.walletconnect.org'
-    this._key = null
-    this._nextKey = null
+    this._bridge = opts.connectorOpts.bridge || "https://bridge.walletconnect.org";
+    this._key = null;
+    this._nextKey = null;
 
-    this._clientId = ''
-    this._clientMeta = getMeta() || opts.clientMeta || null
-    this._peerId = ''
-    this._peerMeta = null
-    this._handshakeId = 0
-    this._handshakeTopic = ''
-    this._accounts = []
-    this._chainId = 0
-    this._networkId = 0
-    this._rpcUrl = ''
-    this._eventManager = new EventManager()
-    this._connected = false
-    this._sessionStorage = opts.sessionStorage || new SessionStorage()
-    this._qrcodeModal = opts.qrcodeModal || null
+    this._clientId = "";
+    this._clientMeta = getMeta() || opts.clientMeta || null;
+    this._peerId = "";
+    this._peerMeta = null;
+    this._handshakeId = 0;
+    this._handshakeTopic = "";
+    this._accounts = [];
+    this._chainId = 0;
+    this._networkId = 0;
+    this._rpcUrl = "";
+    this._eventManager = new EventManager();
+    this._connected = false;
+    this._sessionStorage = opts.sessionStorage || new SessionStorage();
+    this._qrcodeModal = opts.qrcodeModal || null;
 
-    if (
-      !this.bridge &&
-      !opts.connectorOpts.uri &&
-      !opts.connectorOpts.session
-    ) {
-      throw new Error(ERROR_MISSING_REQUIRED)
+    if (!this.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
+      throw new Error(ERROR_MISSING_REQUIRED);
     }
 
     if (opts.connectorOpts.uri) {
-      this.uri = opts.connectorOpts.uri
+      this.uri = opts.connectorOpts.uri;
     }
 
-    let session = opts.connectorOpts.session || null
+    let session = opts.connectorOpts.session || null;
 
     if (!session) {
-      session = this._getStorageSession()
+      session = this._getStorageSession();
     }
 
     if (session) {
-      this.session = session
+      this.session = session;
     }
 
     if (this.handshakeId) {
-      this._subscribeToSessionResponse(
-        this.handshakeId,
-        'Session request rejected'
-      )
+      this._subscribeToSessionResponse(this.handshakeId, "Session request rejected");
     }
     this._transport =
       opts.transport ||
       new SocketTransport({
         url: this.bridge,
         subscriptions: [this.clientId],
-        netMonitor: opts.connectorOpts.netMonitor
-      })
+        netMonitor: opts.connectorOpts.netMonitor,
+      });
 
     if (opts.connectorOpts.uri) {
-      this._subscribeToSessionRequest()
+      this._subscribeToSessionRequest();
     }
 
-    this._subscribeToInternalEvents()
-    this._transport.open()
+    this._subscribeToInternalEvents();
+    this._transport.open();
     if (opts.pushServerOpts) {
-      this._registerPushServer(opts.pushServerOpts)
+      this._registerPushServer(opts.pushServerOpts);
     }
   }
 
@@ -172,72 +164,72 @@ class Connector implements IConnector {
 
   set bridge(value: string) {
     if (!value) {
-      return
+      return;
     }
-    this._bridge = value
+    this._bridge = value;
   }
 
   get bridge() {
-    return this._bridge
+    return this._bridge;
   }
 
   set key(value: string) {
     if (!value) {
-      return
+      return;
     }
-    const key: ArrayBuffer = convertHexToArrayBuffer(value)
-    this._key = key
+    const key: ArrayBuffer = convertHexToArrayBuffer(value);
+    this._key = key;
   }
 
   get key(): string {
     if (this._key) {
-      const key: string = convertArrayBufferToHex(this._key, true)
-      return key
+      const key: string = convertArrayBufferToHex(this._key, true);
+      return key;
     }
-    return ''
+    return "";
   }
 
   set nextKey(value: string) {
     if (!value) {
-      return
+      return;
     }
-    const nextKey: ArrayBuffer = convertHexToArrayBuffer(value)
-    this._nextKey = nextKey
+    const nextKey: ArrayBuffer = convertHexToArrayBuffer(value);
+    this._nextKey = nextKey;
   }
 
   get nextKey(): string {
     if (this._nextKey) {
-      const nextKey: string = convertArrayBufferToHex(this._nextKey)
-      return nextKey
+      const nextKey: string = convertArrayBufferToHex(this._nextKey);
+      return nextKey;
     }
-    return ''
+    return "";
   }
 
   set clientId(value: string) {
     if (!value) {
-      return
+      return;
     }
-    this._clientId = value
+    this._clientId = value;
   }
 
   get clientId() {
-    let clientId: string | null = this._clientId
+    let clientId: string | null = this._clientId;
     if (!clientId) {
-      clientId = this._clientId = uuid()
+      clientId = this._clientId = uuid();
     }
 
-    return this._clientId
+    return this._clientId;
   }
 
   set peerId(value) {
     if (!value) {
-      return
+      return;
     }
-    this._peerId = value
+    this._peerId = value;
   }
 
   get peerId() {
-    return this._peerId
+    return this._peerId;
   }
 
   set clientMeta(value) {
@@ -245,93 +237,93 @@ class Connector implements IConnector {
   }
 
   get clientMeta() {
-    let clientMeta: IClientMeta | null = this._clientMeta
+    let clientMeta: IClientMeta | null = this._clientMeta;
     if (!clientMeta) {
-      clientMeta = this._clientMeta = getMeta()
+      clientMeta = this._clientMeta = getMeta();
     }
-    return clientMeta
+    return clientMeta;
   }
 
   set peerMeta(value) {
-    this._peerMeta = value
+    this._peerMeta = value;
   }
 
   get peerMeta() {
-    const peerMeta: IClientMeta | null = this._peerMeta
-    return peerMeta
+    const peerMeta: IClientMeta | null = this._peerMeta;
+    return peerMeta;
   }
 
   set handshakeTopic(value) {
     if (!value) {
-      return
+      return;
     }
-    this._handshakeTopic = value
+    this._handshakeTopic = value;
   }
 
   get handshakeTopic() {
-    return this._handshakeTopic
+    return this._handshakeTopic;
   }
 
   set handshakeId(value) {
     if (!value) {
-      return
+      return;
     }
-    this._handshakeId = value
+    this._handshakeId = value;
   }
 
   get handshakeId() {
-    return this._handshakeId
+    return this._handshakeId;
   }
 
   get uri() {
-    const _uri = this._formatUri()
-    return _uri
+    const _uri = this._formatUri();
+    return _uri;
   }
 
   set uri(value) {
     if (!value) {
-      return
+      return;
     }
-    const { handshakeTopic, bridge, key } = this._parseUri(value)
-    this.handshakeTopic = handshakeTopic
-    this.bridge = bridge
-    this.key = key
+    const { handshakeTopic, bridge, key } = this._parseUri(value);
+    this.handshakeTopic = handshakeTopic;
+    this.bridge = bridge;
+    this.key = key;
   }
 
   set chainId(value) {
-    this._chainId = value
+    this._chainId = value;
   }
 
   get chainId() {
-    const chainId: number | null = this._chainId
-    return chainId
+    const chainId: number | null = this._chainId;
+    return chainId;
   }
 
   set networkId(value) {
-    this._networkId = value
+    this._networkId = value;
   }
 
   get networkId() {
-    const networkId: number | null = this._networkId
-    return networkId
+    const networkId: number | null = this._networkId;
+    return networkId;
   }
 
   set accounts(value) {
-    this._accounts = value
+    this._accounts = value;
   }
 
   get accounts() {
-    const accounts: string[] | null = this._accounts
-    return accounts
+    const accounts: string[] | null = this._accounts;
+    return accounts;
   }
 
   set rpcUrl(value) {
-    this._rpcUrl = value
+    this._rpcUrl = value;
   }
 
   get rpcUrl() {
-    const rpcUrl: string | null = this._rpcUrl
-    return rpcUrl
+    const rpcUrl: string | null = this._rpcUrl;
+    return rpcUrl;
   }
 
   set connected(value) {
@@ -339,7 +331,7 @@ class Connector implements IConnector {
   }
 
   get connected() {
-    return this._connected
+    return this._connected;
   }
 
   set pending(value) {
@@ -347,7 +339,7 @@ class Connector implements IConnector {
   }
 
   get pending() {
-    return !!this._handshakeTopic
+    return !!this._handshakeTopic;
   }
 
   get session() {
@@ -362,166 +354,161 @@ class Connector implements IConnector {
       peerId: this.peerId,
       peerMeta: this.peerMeta,
       handshakeId: this.handshakeId,
-      handshakeTopic: this.handshakeTopic
-    }
+      handshakeTopic: this.handshakeTopic,
+    };
   }
 
   set session(value) {
     if (!value) {
-      return
+      return;
     }
-    this._connected = value.connected
-    this.accounts = value.accounts
-    this.chainId = value.chainId
-    this.bridge = value.bridge
-    this.key = value.key
-    this.clientId = value.clientId
-    this.clientMeta = value.clientMeta
-    this.peerId = value.peerId
-    this.peerMeta = value.peerMeta
-    this.handshakeId = value.handshakeId
-    this.handshakeTopic = value.handshakeTopic
+    this._connected = value.connected;
+    this.accounts = value.accounts;
+    this.chainId = value.chainId;
+    this.bridge = value.bridge;
+    this.key = value.key;
+    this.clientId = value.clientId;
+    this.clientMeta = value.clientMeta;
+    this.peerId = value.peerId;
+    this.peerMeta = value.peerMeta;
+    this.handshakeId = value.handshakeId;
+    this.handshakeTopic = value.handshakeTopic;
   }
 
   // -- public ---------------------------------------------------------- //
 
-  public on(
-    event: string,
-    callback: (error: Error | null, payload: any | null) => void
-  ): void {
+  public on(event: string, callback: (error: Error | null, payload: any | null) => void): void {
     const eventEmitter = {
       event,
-      callback
-    }
-    this._eventManager.subscribe(eventEmitter)
+      callback,
+    };
+    this._eventManager.subscribe(eventEmitter);
   }
 
-  public async createInstantRequest(
-    instantRequest: Partial<IJsonRpcRequest>
-  ): Promise<void> {
-    this._key = await this._generateKey()
+  public async createInstantRequest(instantRequest: Partial<IJsonRpcRequest>): Promise<void> {
+    this._key = await this._generateKey();
 
     const request: IJsonRpcRequest = this._formatRequest({
-      method: 'wc_instantRequest',
+      method: "wc_instantRequest",
       params: [
         {
           peerId: this.clientId,
           peerMeta: this.clientMeta,
-          request: this._formatRequest(instantRequest)
-        }
-      ]
-    })
+          request: this._formatRequest(instantRequest),
+        },
+      ],
+    });
 
-    this.handshakeId = request.id
-    this.handshakeTopic = uuid()
+    this.handshakeId = request.id;
+    this.handshakeTopic = uuid();
 
     if (this._qrcodeModal) {
       this._qrcodeModal.open(this.uri, () => {
-        throw new Error('QR Code Modal closed')
-      })
+        throw new Error("QR Code Modal closed");
+      });
     }
 
     this._eventManager.trigger({
-      event: 'display_uri',
-      params: [{ uri: this.uri }]
-    })
+      event: "display_uri",
+      params: [{ uri: this.uri }],
+    });
 
     const endInstantRequest = () => {
-      this.killSession()
+      this.killSession();
       if (this._qrcodeModal) {
-        this._qrcodeModal.close()
+        this._qrcodeModal.close();
       }
-    }
+    };
 
     try {
-      const result = await this._sendCallRequest(request)
+      const result = await this._sendCallRequest(request);
 
       if (result) {
-        endInstantRequest()
+        endInstantRequest();
       }
 
-      return result
+      return result;
     } catch (error) {
-      endInstantRequest()
-      throw error
+      endInstantRequest();
+      throw error;
     }
   }
 
   public connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
     if (!this._qrcodeModal) {
-      throw new Error('QR Code Modal not provided')
+      throw new Error("QR Code Modal not provided");
     }
     return new Promise(async (resolve, reject) => {
       if (!this.connected) {
         try {
-          await this.createSession(opts)
+          await this.createSession(opts);
           if (this._qrcodeModal) {
             this._qrcodeModal.open(this.uri, () => {
-              reject(new Error('QR Code Modal closed'))
-            })
+              reject(new Error("QR Code Modal closed"));
+            });
           }
         } catch (error) {
-          reject(error)
+          reject(error);
         }
       }
 
-      this.on('connect', (error, payload) => {
+      this.on("connect", (error, payload) => {
         if (error) {
-          return reject(error)
+          return reject(error);
         }
         if (this._qrcodeModal) {
-          this._qrcodeModal.close()
+          this._qrcodeModal.close();
         }
 
-        resolve(payload.params[0])
-      })
-    })
+        resolve(payload.params[0]);
+      });
+    });
   }
 
   public async createSession(opts?: ICreateSessionOptions): Promise<void> {
     if (this._connected) {
-      throw new Error(ERROR_SESSION_CONNECTED)
+      throw new Error(ERROR_SESSION_CONNECTED);
     }
 
     if (this.pending) {
-      return
+      return;
     }
 
-    this._key = await this._generateKey()
+    this._key = await this._generateKey();
 
     const request: IJsonRpcRequest = this._formatRequest({
-      method: 'wc_sessionRequest',
+      method: "wc_sessionRequest",
       params: [
         {
           peerId: this.clientId,
           peerMeta: this.clientMeta,
-          chainId: opts && opts.chainId ? opts.chainId : null
-        }
-      ]
-    })
+          chainId: opts && opts.chainId ? opts.chainId : null,
+        },
+      ],
+    });
 
-    this.handshakeId = request.id
-    this.handshakeTopic = uuid()
+    this.handshakeId = request.id;
+    this.handshakeTopic = uuid();
 
-    this._sendSessionRequest(request, 'Session update rejected', {
-      topic: this.handshakeTopic
-    })
+    this._sendSessionRequest(request, "Session update rejected", {
+      topic: this.handshakeTopic,
+    });
 
     this._eventManager.trigger({
-      event: 'display_uri',
-      params: [this.uri]
-    })
+      event: "display_uri",
+      params: [this.uri],
+    });
   }
 
   public approveSession(sessionStatus: ISessionStatus) {
     if (this._connected) {
-      throw new Error(ERROR_SESSION_CONNECTED)
+      throw new Error(ERROR_SESSION_CONNECTED);
     }
 
-    this.chainId = sessionStatus.chainId
-    this.accounts = sessionStatus.accounts
-    this.networkId = sessionStatus.networkId || 0
-    this.rpcUrl = sessionStatus.rpcUrl || ''
+    this.chainId = sessionStatus.chainId;
+    this.accounts = sessionStatus.accounts;
+    this.networkId = sessionStatus.networkId || 0;
+    this.rpcUrl = sessionStatus.rpcUrl || "";
 
     const sessionParams: ISessionParams = {
       approved: true,
@@ -530,307 +517,271 @@ class Connector implements IConnector {
       accounts: this.accounts,
       rpcUrl: this.rpcUrl,
       peerId: this.clientId,
-      peerMeta: this.clientMeta
-    }
+      peerMeta: this.clientMeta,
+    };
 
     const response = {
       id: this.handshakeId,
-      jsonrpc: '2.0',
-      result: sessionParams
-    }
+      jsonrpc: "2.0",
+      result: sessionParams,
+    };
 
-    this._sendResponse(response)
+    this._sendResponse(response);
 
-    this._connected = true
+    this._connected = true;
     this._eventManager.trigger({
-      event: 'connect',
+      event: "connect",
       params: [
         {
           peerId: this.peerId,
           peerMeta: this.peerMeta,
           chainId: this.chainId,
-          accounts: this.accounts
-        }
-      ]
-    })
+          accounts: this.accounts,
+        },
+      ],
+    });
     if (this._connected) {
-      this._setStorageSession()
+      this._setStorageSession();
     }
   }
 
   public rejectSession(sessionError?: ISessionError) {
     if (this._connected) {
-      throw new Error(ERROR_SESSION_CONNECTED)
+      throw new Error(ERROR_SESSION_CONNECTED);
     }
 
     const message =
-      sessionError && sessionError.message
-        ? sessionError.message
-        : ERROR_SESSION_REJECTED
+      sessionError && sessionError.message ? sessionError.message : ERROR_SESSION_REJECTED;
 
     const response = this._formatResponse({
       id: this.handshakeId,
-      error: { message }
-    })
+      error: { message },
+    });
 
-    this._sendResponse(response)
+    this._sendResponse(response);
 
-    this._connected = false
+    this._connected = false;
     this._eventManager.trigger({
-      event: 'disconnect',
-      params: [{ message }]
-    })
-    this._removeStorageSession()
+      event: "disconnect",
+      params: [{ message }],
+    });
+    this._removeStorageSession();
   }
 
   public updateSession(sessionStatus: ISessionStatus) {
     if (!this._connected) {
-      throw new Error(ERROR_SESSION_DISCONNECTED)
+      throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
-    this.chainId = sessionStatus.chainId
-    this.accounts = sessionStatus.accounts
-    this.networkId = sessionStatus.networkId || 0
-    this.rpcUrl = sessionStatus.rpcUrl || ''
+    this.chainId = sessionStatus.chainId;
+    this.accounts = sessionStatus.accounts;
+    this.networkId = sessionStatus.networkId || 0;
+    this.rpcUrl = sessionStatus.rpcUrl || "";
 
     const sessionParams: ISessionParams = {
       approved: true,
       chainId: this.chainId,
       networkId: this.networkId,
       accounts: this.accounts,
-      rpcUrl: this.rpcUrl
-    }
+      rpcUrl: this.rpcUrl,
+    };
 
     const request = this._formatRequest({
-      method: 'wc_sessionUpdate',
-      params: [sessionParams]
-    })
+      method: "wc_sessionUpdate",
+      params: [sessionParams],
+    });
 
-    this._sendSessionRequest(request, 'Session update rejected')
+    this._sendSessionRequest(request, "Session update rejected");
 
     this._eventManager.trigger({
-      event: 'session_update',
+      event: "session_update",
       params: [
         {
           chainId: this.chainId,
-          accounts: this.accounts
-        }
-      ]
-    })
+          accounts: this.accounts,
+        },
+      ],
+    });
 
-    this._manageStorageSession()
+    this._manageStorageSession();
   }
 
   public async killSession(sessionError?: ISessionError) {
-    const message = sessionError ? sessionError.message : 'Session Disconnected'
+    const message = sessionError ? sessionError.message : "Session Disconnected";
 
     const sessionParams: ISessionParams = {
       approved: false,
       chainId: null,
       networkId: null,
-      accounts: null
-    }
+      accounts: null,
+    };
 
     const request = this._formatRequest({
-      method: 'wc_sessionUpdate',
-      params: [sessionParams]
-    })
+      method: "wc_sessionUpdate",
+      params: [sessionParams],
+    });
 
-    await this._sendRequest(request)
+    await this._sendRequest(request);
 
-    this._handleSessionDisconnect(message)
+    this._handleSessionDisconnect(message);
   }
 
   public async sendTransaction(tx: ITxData) {
     if (!this._connected) {
-      throw new Error(ERROR_SESSION_DISCONNECTED)
+      throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
-    const parsedTx = parseTransactionData(tx)
+    const parsedTx = parseTransactionData(tx);
 
     const request = this._formatRequest({
-      method: 'eth_sendTransaction',
-      params: [parsedTx]
-    })
+      method: "eth_sendTransaction",
+      params: [parsedTx],
+    });
 
-    try {
-      const result = await this._sendCallRequest(request)
-      return result
-    } catch (error) {
-      throw error
-    }
+    const result = await this._sendCallRequest(request);
+    return result;
   }
 
   public async signTransaction(tx: ITxData) {
     if (!this._connected) {
-      throw new Error(ERROR_SESSION_DISCONNECTED)
+      throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
-    const parsedTx = parseTransactionData(tx)
+    const parsedTx = parseTransactionData(tx);
 
     const request = this._formatRequest({
-      method: 'eth_signTransaction',
-      params: [parsedTx]
-    })
+      method: "eth_signTransaction",
+      params: [parsedTx],
+    });
 
-    try {
-      const result = await this._sendCallRequest(request)
-      return result
-    } catch (error) {
-      throw error
-    }
+    const result = await this._sendCallRequest(request);
+    return result;
   }
 
   public async signMessage(params: any[]) {
     if (!this._connected) {
-      throw new Error(ERROR_SESSION_DISCONNECTED)
+      throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
     const request = this._formatRequest({
-      method: 'eth_sign',
-      params
-    })
+      method: "eth_sign",
+      params,
+    });
 
-    try {
-      const result = await this._sendCallRequest(request)
-      return result
-    } catch (error) {
-      throw error
-    }
+    const result = await this._sendCallRequest(request);
+    return result;
   }
 
   public async signPersonalMessage(params: any[]) {
     if (!this._connected) {
-      throw new Error(ERROR_SESSION_DISCONNECTED)
+      throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
-    params = parsePersonalSign(params)
+    params = parsePersonalSign(params);
 
     const request = this._formatRequest({
-      method: 'personal_sign',
-      params
-    })
+      method: "personal_sign",
+      params,
+    });
 
-    try {
-      const result = await this._sendCallRequest(request)
-      return result
-    } catch (error) {
-      throw error
-    }
+    const result = await this._sendCallRequest(request);
+    return result;
   }
 
   public async signTypedData(params: any[]) {
     if (!this._connected) {
-      throw new Error(ERROR_SESSION_DISCONNECTED)
+      throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
     const request = this._formatRequest({
-      method: 'eth_signTypedData',
-      params
-    })
+      method: "eth_signTypedData",
+      params,
+    });
 
-    try {
-      const result = await this._sendCallRequest(request)
-      return result
-    } catch (error) {
-      throw error
-    }
+    const result = await this._sendCallRequest(request);
+    return result;
   }
 
   public async updateChain(chainParams: IUpdateChainParams) {
     if (!this._connected) {
-      throw new Error('Session currently disconnected')
+      throw new Error("Session currently disconnected");
     }
 
     const request = this._formatRequest({
-      method: 'wallet_updateChain',
-      params: [chainParams]
-    })
+      method: "wallet_updateChain",
+      params: [chainParams],
+    });
 
-    try {
-      const result = await this._sendCallRequest(request)
-      return result
-    } catch (error) {
-      throw error
-    }
+    const result = await this._sendCallRequest(request);
+    return result;
   }
 
   public unsafeSend(
     request: IJsonRpcRequest,
-    options?: IRequestOptions
+    options?: IRequestOptions,
   ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
-    this._sendRequest(request, options)
+    this._sendRequest(request, options);
 
     return new Promise((resolve, reject) => {
-      this._subscribeToResponse(
-        request.id,
-        (error: Error | null, payload: any | null) => {
-          if (error) {
-            reject(error)
-            return
-          }
-          if (!payload) {
-            throw new Error(ERROR_MISSING_JSON_RPC)
-          }
-          resolve(payload)
+      this._subscribeToResponse(request.id, (error: Error | null, payload: any | null) => {
+        if (error) {
+          reject(error);
+          return;
         }
-      )
-    })
+        if (!payload) {
+          throw new Error(ERROR_MISSING_JSON_RPC);
+        }
+        resolve(payload);
+      });
+    });
   }
 
-  public async sendCustomRequest(
-    request: Partial<IJsonRpcRequest>,
-    options?: IRequestOptions
-  ) {
+  public async sendCustomRequest(request: Partial<IJsonRpcRequest>, options?: IRequestOptions) {
     if (!this._connected) {
-      throw new Error(ERROR_SESSION_DISCONNECTED)
+      throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
     switch (request.method) {
-      case 'eth_accounts':
-        return this.accounts
-      case 'eth_chainId':
-        return convertNumberToHex(this.chainId)
-      case 'eth_sendTransaction':
-      case 'eth_signTransaction':
-        if (request.params) {
-          request.params[0] = parseTransactionData(request.params[0])
-        }
-        break
-      case 'personal_sign':
-        if (request.params) {
-          request.params = parsePersonalSign(request.params)
-        }
-        break
-      default:
-        break
+    case "eth_accounts":
+      return this.accounts;
+    case "eth_chainId":
+      return convertNumberToHex(this.chainId);
+    case "eth_sendTransaction":
+    case "eth_signTransaction":
+      if (request.params) {
+        request.params[0] = parseTransactionData(request.params[0]);
+      }
+      break;
+    case "personal_sign":
+      if (request.params) {
+        request.params = parsePersonalSign(request.params);
+      }
+      break;
+    default:
+      break;
     }
 
-    const formattedRequest = this._formatRequest(request)
+    const formattedRequest = this._formatRequest(request);
 
-    try {
-      const result = await this._sendCallRequest(formattedRequest, options)
-      return result
-    } catch (error) {
-      throw error
-    }
+    const result = await this._sendCallRequest(formattedRequest, options);
+    return result;
   }
 
   public approveRequest(response: Partial<IJsonRpcResponseSuccess>) {
     if (isJsonRpcResponseSuccess(response)) {
-      const formattedResponse = this._formatResponse(response)
-      this._sendResponse(formattedResponse)
+      const formattedResponse = this._formatResponse(response);
+      this._sendResponse(formattedResponse);
     } else {
-      throw new Error(ERROR_MISSING_RESULT)
+      throw new Error(ERROR_MISSING_RESULT);
     }
   }
 
   public rejectRequest(response: Partial<IJsonRpcResponseError>) {
     if (isJsonRpcResponseError(response)) {
-      const formattedResponse = this._formatResponse(response)
-      this._sendResponse(formattedResponse)
+      const formattedResponse = this._formatResponse(response);
+      this._sendResponse(formattedResponse);
     } else {
-      throw new Error(ERROR_MISSING_ERROR)
+      throw new Error(ERROR_MISSING_ERROR);
     }
   }
 
@@ -838,326 +789,313 @@ class Connector implements IConnector {
 
   protected async _sendRequest(
     request: Partial<IJsonRpcRequest>,
-    options?: Partial<IInternalRequestOptions>
+    options?: Partial<IInternalRequestOptions>,
   ) {
-    const callRequest: IJsonRpcRequest = this._formatRequest(request)
+    const callRequest: IJsonRpcRequest = this._formatRequest(request);
 
-    const encryptionPayload: IEncryptionPayload | null = await this._encrypt(
-      callRequest
-    )
+    const encryptionPayload: IEncryptionPayload | null = await this._encrypt(callRequest);
 
-    const topic: string =
-      typeof options?.topic !== 'undefined' ? options.topic : this.peerId
-    const payload: string = JSON.stringify(encryptionPayload)
+    const topic: string = typeof options?.topic !== "undefined" ? options.topic : this.peerId;
+    const payload: string = JSON.stringify(encryptionPayload);
     const silent =
-      typeof options?.forcePushNotification !== 'undefined'
+      typeof options?.forcePushNotification !== "undefined"
         ? !options.forcePushNotification
-        : isSilentPayload(callRequest)
+        : isSilentPayload(callRequest);
 
-    this._transport.send(payload, topic, silent)
+    this._transport.send(payload, topic, silent);
   }
 
-  protected async _sendResponse(
-    response: IJsonRpcResponseSuccess | IJsonRpcResponseError
-  ) {
-    const encryptionPayload: IEncryptionPayload | null = await this._encrypt(
-      response
-    )
+  protected async _sendResponse(response: IJsonRpcResponseSuccess | IJsonRpcResponseError) {
+    const encryptionPayload: IEncryptionPayload | null = await this._encrypt(response);
 
-    const topic: string = this.peerId
-    const payload: string = JSON.stringify(encryptionPayload)
-    const silent = true
+    const topic: string = this.peerId;
+    const payload: string = JSON.stringify(encryptionPayload);
+    const silent = true;
 
-    this._transport.send(payload, topic, silent)
+    this._transport.send(payload, topic, silent);
   }
 
   protected async _sendSessionRequest(
     request: IJsonRpcRequest,
     errorMsg: string,
-    options?: IInternalRequestOptions
+    options?: IInternalRequestOptions,
   ) {
-    this._sendRequest(request, options)
-    this._subscribeToSessionResponse(request.id, errorMsg)
+    this._sendRequest(request, options);
+    this._subscribeToSessionResponse(request.id, errorMsg);
   }
 
-  protected _sendCallRequest(
-    request: IJsonRpcRequest,
-    options?: IRequestOptions
-  ): Promise<any> {
-    this._sendRequest(request, options)
-    return this._subscribeToCallResponse(request.id)
+  protected _sendCallRequest(request: IJsonRpcRequest, options?: IRequestOptions): Promise<any> {
+    this._sendRequest(request, options);
+    return this._subscribeToCallResponse(request.id);
   }
 
   protected _formatRequest(request: Partial<IJsonRpcRequest>): IJsonRpcRequest {
-    if (typeof request.method === 'undefined') {
-      throw new Error(ERROR_MISSING_METHOD)
+    if (typeof request.method === "undefined") {
+      throw new Error(ERROR_MISSING_METHOD);
     }
     const formattedRequest: IJsonRpcRequest = {
-      id: typeof request.id === 'undefined' ? payloadId() : request.id,
-      jsonrpc: '2.0',
+      id: typeof request.id === "undefined" ? payloadId() : request.id,
+      jsonrpc: "2.0",
       method: request.method,
-      params: typeof request.params === 'undefined' ? [] : request.params
-    }
-    return formattedRequest
+      params: typeof request.params === "undefined" ? [] : request.params,
+    };
+    return formattedRequest;
   }
 
   protected _formatResponse(
-    response: Partial<IJsonRpcResponseSuccess | IJsonRpcResponseError>
+    response: Partial<IJsonRpcResponseSuccess | IJsonRpcResponseError>,
   ): IJsonRpcResponseSuccess | IJsonRpcResponseError {
-    if (typeof response.id === 'undefined') {
-      throw new Error(ERROR_MISSING_ID)
+    if (typeof response.id === "undefined") {
+      throw new Error(ERROR_MISSING_ID);
     }
 
     if (isJsonRpcResponseError(response)) {
-      const error = formatRpcError(response.error)
+      const error = formatRpcError(response.error);
 
       const errorResponse: IJsonRpcResponseError = {
         id: response.id,
-        jsonrpc: '2.0',
+        jsonrpc: "2.0",
         ...response,
-        error
-      }
-      return errorResponse
+        error,
+      };
+      return errorResponse;
     } else if (isJsonRpcResponseSuccess(response)) {
       const successResponse: IJsonRpcResponseSuccess = {
         id: response.id,
-        jsonrpc: '2.0',
-        ...response
-      }
+        jsonrpc: "2.0",
+        ...response,
+      };
 
-      return successResponse
+      return successResponse;
     }
 
-    throw new Error(ERROR_INVALID_RESPONSE)
+    throw new Error(ERROR_INVALID_RESPONSE);
   }
 
   private _handleSessionDisconnect(errorMsg?: string) {
-    const message = errorMsg || 'Session Disconnected'
+    const message = errorMsg || "Session Disconnected";
     if (this._connected) {
-      this._connected = false
+      this._connected = false;
     }
     this._eventManager.trigger({
-      event: 'disconnect',
-      params: [{ message }]
-    })
-    this._removeStorageSession()
-    this._transport.close()
+      event: "disconnect",
+      params: [{ message }],
+    });
+    this._removeStorageSession();
+    this._transport.close();
   }
 
-  private _handleSessionResponse(
-    errorMsg: string,
-    sessionParams?: ISessionParams
-  ) {
+  private _handleSessionResponse(errorMsg: string, sessionParams?: ISessionParams) {
     if (sessionParams) {
       if (sessionParams.approved) {
         if (!this._connected) {
-          this._connected = true
+          this._connected = true;
 
           if (sessionParams.chainId) {
-            this.chainId = sessionParams.chainId
+            this.chainId = sessionParams.chainId;
           }
 
           if (sessionParams.accounts) {
-            this.accounts = sessionParams.accounts
+            this.accounts = sessionParams.accounts;
           }
 
           if (sessionParams.peerId && !this.peerId) {
-            this.peerId = sessionParams.peerId
+            this.peerId = sessionParams.peerId;
           }
 
           if (sessionParams.peerMeta && !this.peerMeta) {
-            this.peerMeta = sessionParams.peerMeta
+            this.peerMeta = sessionParams.peerMeta;
           }
 
           this._eventManager.trigger({
-            event: 'connect',
+            event: "connect",
             params: [
               {
                 peerId: this.peerId,
                 peerMeta: this.peerMeta,
                 chainId: this.chainId,
-                accounts: this.accounts
-              }
-            ]
-          })
+                accounts: this.accounts,
+              },
+            ],
+          });
         } else {
           if (sessionParams.chainId) {
-            this.chainId = sessionParams.chainId
+            this.chainId = sessionParams.chainId;
           }
           if (sessionParams.accounts) {
-            this.accounts = sessionParams.accounts
+            this.accounts = sessionParams.accounts;
           }
 
           this._eventManager.trigger({
-            event: 'session_update',
+            event: "session_update",
             params: [
               {
                 chainId: this.chainId,
-                accounts: this.accounts
-              }
-            ]
-          })
+                accounts: this.accounts,
+              },
+            ],
+          });
         }
 
-        this._manageStorageSession()
+        this._manageStorageSession();
       } else {
-        this._handleSessionDisconnect(errorMsg)
+        this._handleSessionDisconnect(errorMsg);
       }
     } else {
-      this._handleSessionDisconnect(errorMsg)
+      this._handleSessionDisconnect(errorMsg);
     }
   }
 
   private async _handleIncomingMessages(socketMessage: ISocketMessage) {
-    const activeTopics = [this.clientId, this.handshakeTopic]
+    const activeTopics = [this.clientId, this.handshakeTopic];
 
     if (!activeTopics.includes(socketMessage.topic)) {
-      return
+      return;
     }
 
-    let encryptionPayload: IEncryptionPayload
+    let encryptionPayload: IEncryptionPayload;
     try {
-      encryptionPayload = JSON.parse(socketMessage.payload)
+      encryptionPayload = JSON.parse(socketMessage.payload);
     } catch (error) {
-      return
+      return;
     }
 
     const payload:
       | IJsonRpcRequest
       | IJsonRpcResponseSuccess
       | IJsonRpcResponseError
-      | null = await this._decrypt(encryptionPayload)
+      | null = await this._decrypt(encryptionPayload);
 
     if (payload) {
-      this._eventManager.trigger(payload)
+      this._eventManager.trigger(payload);
     }
   }
 
   private _subscribeToSessionRequest() {
     if (this._transport.subscribe) {
-      this._transport.subscribe(this.handshakeTopic)
+      this._transport.subscribe(this.handshakeTopic);
     }
   }
 
   private _subscribeToResponse(
     id: number,
-    callback: (error: Error | null, payload: any | null) => void
+    callback: (error: Error | null, payload: any | null) => void,
   ) {
-    this.on(`response:${id}`, callback)
+    this.on(`response:${id}`, callback);
   }
 
   private _subscribeToSessionResponse(id: number, errorMsg: string) {
     this._subscribeToResponse(id, (error, payload) => {
       if (error) {
-        this._handleSessionResponse(error.message)
-        return
+        this._handleSessionResponse(error.message);
+        return;
       }
       if (payload.result) {
-        this._handleSessionResponse(errorMsg, payload.result)
+        this._handleSessionResponse(errorMsg, payload.result);
       } else if (payload.error && payload.error.message) {
-        this._handleSessionResponse(payload.error.message)
+        this._handleSessionResponse(payload.error.message);
       } else {
-        this._handleSessionResponse(errorMsg)
+        this._handleSessionResponse(errorMsg);
       }
-    })
+    });
   }
 
   private _subscribeToCallResponse(id: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this._subscribeToResponse(id, (error, payload) => {
         if (error) {
-          reject(error)
-          return
+          reject(error);
+          return;
         }
         if (payload.result) {
-          resolve(payload.result)
+          resolve(payload.result);
         } else if (payload.error && payload.error.message) {
-          reject(new Error(payload.error.message))
+          reject(new Error(payload.error.message));
         } else {
-          reject(new Error(ERROR_INVALID_RESPONSE))
+          reject(new Error(ERROR_INVALID_RESPONSE));
         }
-      })
-    })
+      });
+    });
   }
 
   private _subscribeToInternalEvents() {
-    this._transport.on('message', (socketMessage: ISocketMessage) =>
-      this._handleIncomingMessages(socketMessage)
-    )
+    this._transport.on("message", (socketMessage: ISocketMessage) =>
+      this._handleIncomingMessages(socketMessage),
+    );
 
-    this._transport.on('open', () =>
-      this._eventManager.trigger({ event: 'transport_open', params: [] })
-    )
+    this._transport.on("open", () =>
+      this._eventManager.trigger({ event: "transport_open", params: [] }),
+    );
 
-    this._transport.on('close', () =>
-      this._eventManager.trigger({ event: 'transport_close', params: [] })
-    )
+    this._transport.on("close", () =>
+      this._eventManager.trigger({ event: "transport_close", params: [] }),
+    );
 
-    this.on('wc_sessionRequest', (error, payload) => {
+    this.on("wc_sessionRequest", (error, payload) => {
       if (error) {
         this._eventManager.trigger({
-          event: 'error',
+          event: "error",
           params: [
             {
-              code: 'SESSION_REQUEST_ERROR',
-              message: error.toString()
-            }
-          ]
-        })
+              code: "SESSION_REQUEST_ERROR",
+              message: error.toString(),
+            },
+          ],
+        });
       }
-      this.handshakeId = payload.id
-      this.peerId = payload.params[0].peerId
-      this.peerMeta = payload.params[0].peerMeta
+      this.handshakeId = payload.id;
+      this.peerId = payload.params[0].peerId;
+      this.peerMeta = payload.params[0].peerMeta;
 
       const internalPayload = {
         ...payload,
-        method: 'session_request'
-      }
-      this._eventManager.trigger(internalPayload)
-    })
+        method: "session_request",
+      };
+      this._eventManager.trigger(internalPayload);
+    });
 
-    this.on('wc_sessionUpdate', (error, payload) => {
+    this.on("wc_sessionUpdate", (error, payload) => {
       if (error) {
-        this._handleSessionResponse(error.message)
+        this._handleSessionResponse(error.message);
       }
-      this._handleSessionResponse('Session disconnected', payload.params[0])
-    })
+      this._handleSessionResponse("Session disconnected", payload.params[0]);
+    });
   }
 
   // -- uri ------------------------------------------------------------- //
 
   private _formatUri() {
-    const protocol = this.protocol
-    const handshakeTopic = this.handshakeTopic
-    const version = this.version
-    const bridge = encodeURIComponent(this.bridge)
-    const key = this.key
-    const uri = `${protocol}:${handshakeTopic}@${version}?bridge=${bridge}&key=${key}`
-    return uri
+    const protocol = this.protocol;
+    const handshakeTopic = this.handshakeTopic;
+    const version = this.version;
+    const bridge = encodeURIComponent(this.bridge);
+    const key = this.key;
+    const uri = `${protocol}:${handshakeTopic}@${version}?bridge=${bridge}&key=${key}`;
+    return uri;
   }
 
   private _parseUri(uri: string) {
-    const result: IParseURIResult = parseWalletConnectUri(uri)
+    const result: IParseURIResult = parseWalletConnectUri(uri);
 
     if (result.protocol === this.protocol) {
       if (!result.handshakeTopic) {
-        throw Error('Invalid or missing handshakeTopic parameter value')
+        throw Error("Invalid or missing handshakeTopic parameter value");
       }
-      const handshakeTopic = result.handshakeTopic
+      const handshakeTopic = result.handshakeTopic;
 
       if (!result.bridge) {
-        throw Error('Invalid or missing bridge url parameter value')
+        throw Error("Invalid or missing bridge url parameter value");
       }
-      const bridge = decodeURIComponent(result.bridge)
+      const bridge = decodeURIComponent(result.bridge);
 
       if (!result.key) {
-        throw Error('Invalid or missing kkey parameter value')
+        throw Error("Invalid or missing kkey parameter value");
       }
-      const key = result.key
+      const key = result.key;
 
-      return { handshakeTopic, bridge, key }
+      return { handshakeTopic, bridge, key };
     } else {
-      throw new Error(ERROR_INVALID_URI)
+      throw new Error(ERROR_INVALID_URI);
     }
   }
 
@@ -1165,83 +1103,81 @@ class Connector implements IConnector {
 
   private async _generateKey(): Promise<ArrayBuffer | null> {
     if (this.cryptoLib) {
-      const result = await this.cryptoLib.generateKey()
-      return result
+      const result = await this.cryptoLib.generateKey();
+      return result;
     }
-    return null
+    return null;
   }
 
   private async _encrypt(
-    data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError
+    data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   ): Promise<IEncryptionPayload | null> {
-    const key: ArrayBuffer | null = this._key
+    const key: ArrayBuffer | null = this._key;
     if (this.cryptoLib && key) {
-      const result: IEncryptionPayload = await this.cryptoLib.encrypt(data, key)
-      return result
+      const result: IEncryptionPayload = await this.cryptoLib.encrypt(data, key);
+      return result;
     }
-    return null
+    return null;
   }
 
   private async _decrypt(
-    payload: IEncryptionPayload
-  ): Promise<
-    IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null
-  > {
-    const key: ArrayBuffer | null = this._key
+    payload: IEncryptionPayload,
+  ): Promise<IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null> {
+    const key: ArrayBuffer | null = this._key;
     if (this.cryptoLib && key) {
       const result:
         | IJsonRpcRequest
         | IJsonRpcResponseSuccess
         | IJsonRpcResponseError
-        | null = await this.cryptoLib.decrypt(payload, key)
-      return result
+        | null = await this.cryptoLib.decrypt(payload, key);
+      return result;
     }
-    return null
+    return null;
   }
 
   // -- sessionStorage --------------------------------------------------------- //
 
   private _getStorageSession() {
-    let result = null
+    let result = null;
     if (this._sessionStorage) {
-      result = this._sessionStorage.getSession()
+      result = this._sessionStorage.getSession();
     }
-    return result
+    return result;
   }
 
   private _setStorageSession() {
     if (this._sessionStorage) {
-      this._sessionStorage.setSession(this.session)
+      this._sessionStorage.setSession(this.session);
     }
   }
 
   private _removeStorageSession() {
     if (this._sessionStorage) {
-      this._sessionStorage.removeSession()
+      this._sessionStorage.removeSession();
     }
   }
 
   private _manageStorageSession() {
     if (this._connected) {
-      this._setStorageSession()
+      this._setStorageSession();
     } else {
-      this._removeStorageSession()
+      this._removeStorageSession();
     }
   }
 
   // -- pushServer ------------------------------------------------------------- //
 
   private _registerPushServer(pushServerOpts: IPushServerOptions) {
-    if (!pushServerOpts.url || typeof pushServerOpts.url !== 'string') {
-      throw Error('Invalid or missing pushServerOpts.url parameter value')
+    if (!pushServerOpts.url || typeof pushServerOpts.url !== "string") {
+      throw Error("Invalid or missing pushServerOpts.url parameter value");
     }
 
-    if (!pushServerOpts.type || typeof pushServerOpts.type !== 'string') {
-      throw Error('Invalid or missing pushServerOpts.type parameter value')
+    if (!pushServerOpts.type || typeof pushServerOpts.type !== "string") {
+      throw Error("Invalid or missing pushServerOpts.type parameter value");
     }
 
-    if (!pushServerOpts.token || typeof pushServerOpts.token !== 'string') {
-      throw Error('Invalid or missing pushServerOpts.token parameter value')
+    if (!pushServerOpts.token || typeof pushServerOpts.token !== "string") {
+      throw Error("Invalid or missing pushServerOpts.token parameter value");
     }
 
     const pushSubscription: IPushSubscription = {
@@ -1249,38 +1185,38 @@ class Connector implements IConnector {
       topic: this.clientId,
       type: pushServerOpts.type,
       token: pushServerOpts.token,
-      peerName: '',
-      language: pushServerOpts.language || ''
-    }
+      peerName: "",
+      language: pushServerOpts.language || "",
+    };
 
-    this.on('connect', async (error: Error | null, payload: any) => {
+    this.on("connect", async (error: Error | null, payload: any) => {
       if (error) {
-        throw error
+        throw error;
       }
 
       if (pushServerOpts.peerMeta) {
-        const peerName = payload.params[0].peerMeta.name
-        pushSubscription.peerName = peerName
+        const peerName = payload.params[0].peerMeta.name;
+        pushSubscription.peerName = peerName;
       }
 
       try {
         const response = await fetch(`${pushServerOpts.url}/new`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json'
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(pushSubscription)
-        })
+          body: JSON.stringify(pushSubscription),
+        });
 
-        const json = await response.json()
+        const json = await response.json();
         if (!json.success) {
-          throw Error('Failed to register in Push Server')
+          throw Error("Failed to register in Push Server");
         }
       } catch (error) {
-        throw Error('Failed to register in Push Server')
+        throw Error("Failed to register in Push Server");
       }
-    })
+    });
   }
 }
-export default Connector
+export default Connector;

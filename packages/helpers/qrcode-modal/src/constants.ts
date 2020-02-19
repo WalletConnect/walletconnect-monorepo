@@ -1,5 +1,5 @@
-const animationDuration = 300
+const animationDuration = 300;
 
 export default {
-  animationDuration
-}
+  animationDuration,
+};
