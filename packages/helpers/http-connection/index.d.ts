@@ -1,1 +1,1 @@
-declare module '@walletconnect/rpc-connection'
+declare module '@walletconnect/http-connection'

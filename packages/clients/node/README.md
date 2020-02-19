@@ -21,7 +21,7 @@ import NodeWalletConnect from "@walletconnect/node";
 import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 
 // Create WalletConnector
-const walletConnector = new NodeWalletConnect(
+const connector = new NodeWalletConnect(
   {
     bridge: "https://bridge.walletconnect.org" // Required
   },
@@ -37,11 +37,11 @@ const walletConnector = new NodeWalletConnect(
 );
 
 // Check if connection is already established
-if (!walletConnector.connected) {
+if (!connector.connected) {
   // create new session
-  walletConnector.createSession().then(() => {
+  connector.createSession().then(() => {
     // get uri for QR Code modal
-    const uri = walletConnector.uri;
+    const uri = connector.uri;
     // display QR Code modal
     WalletConnectQRCodeModal.open(uri, () => {
       console.log("QR Code Modal closed");
@@ -50,7 +50,7 @@ if (!walletConnector.connected) {
 }
 
 // Subscribe to connection events
-walletConnector.on("connect", (error, payload) => {
+connector.on("connect", (error, payload) => {
   if (error) {
     throw error;
   }
@@ -62,7 +62,7 @@ walletConnector.on("connect", (error, payload) => {
   const { accounts, chainId } = payload.params[0];
 });
 
-walletConnector.on("session_update", (error, payload) => {
+connector.on("session_update", (error, payload) => {
   if (error) {
     throw error;
   }
@@ -71,12 +71,12 @@ walletConnector.on("session_update", (error, payload) => {
   const { accounts, chainId } = payload.params[0];
 });
 
-walletConnector.on("disconnect", (error, payload) => {
+connector.on("disconnect", (error, payload) => {
   if (error) {
     throw error;
   }
 
-  // Delete walletConnector
+  // Delete connector
 });
 ```
 
@@ -95,7 +95,7 @@ const tx = {
 };
 
 // Send transaction
-walletConnector
+connector
   .sendTransaction(tx)
   .then(result => {
     // Returns transaction id (hash)
@@ -122,7 +122,7 @@ const tx = {
 };
 
 // Sign transaction
-walletConnector
+connector
   .signTransaction(tx)
   .then(result => {
     // Returns signed transaction
@@ -148,7 +148,7 @@ const msgParams = [
 
 
 // Sign personal message
-walletConnector
+connector
   .signPersonalMessage(msgParams)
   .then((result) => {
     // Returns signature.
@@ -174,7 +174,7 @@ const msgParams = [
 
 
 // Sign message
-walletConnector
+connector
   .signMessage(msgParams)
   .then((result) => {
     // Returns signature.
@@ -234,7 +234,7 @@ const msgParams = [
 ];
 
 // Sign Typed Data
-walletConnector
+connector
   .signTypedData(msgParams)
   .then(result => {
     // Returns signature.
@@ -268,7 +268,7 @@ const customRequest = {
 };
 
 // Send Custom Request
-walletConnector
+connector
   .sendCustomRequest(customRequest)
   .then(result => {
     // Returns request result
