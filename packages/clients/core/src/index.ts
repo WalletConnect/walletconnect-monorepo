@@ -38,6 +38,7 @@ import {
   isJsonRpcResponseError,
   isSilentPayload
 } from '@walletconnect/utils'
+import SocketTransport from '@walletconnect/socket-transport'
 import {
   ERROR_SESSION_CONNECTED,
   ERROR_SESSION_DISCONNECTED,
@@ -51,7 +52,6 @@ import {
   ERROR_INVALID_URI,
   ERROR_MISSING_REQUIRED
 } from './errors'
-import SocketTransport from './socket'
 import EventManager from './events'
 
 interface IConnectorOpts {
@@ -140,6 +140,7 @@ class Connector implements IConnector {
     if (!session) {
       session = this._getStorageSession()
     }
+
     if (session) {
       this.session = session
     }
@@ -152,7 +153,7 @@ class Connector implements IConnector {
     }
     this._transport =
       opts.transport ||
-      new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
+      new SocketTransport({ url: this.bridge, subscriptions: [this.clientId] })
 
     if (opts.connectorOpts.uri) {
       this._subscribeToSessionRequest()
@@ -851,14 +852,7 @@ class Connector implements IConnector {
         ? !options.forcePushNotification
         : isSilentPayload(callRequest)
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendResponse(
@@ -870,15 +864,9 @@ class Connector implements IConnector {
 
     const topic: string = this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = true
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent: true
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendSessionRequest(
@@ -1044,12 +1032,9 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest() {
-    this._transport.send({
-      topic: `${this.handshakeTopic}`,
-      type: 'sub',
-      payload: '',
-      silent: true
-    })
+    if (this._transport.subscribe) {
+      this._transport.subscribe(this.handshakeTopic)
+    }
   }
 
   private _subscribeToResponse(
