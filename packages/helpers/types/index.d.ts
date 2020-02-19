@@ -65,14 +65,26 @@ declare module '@walletconnect/types' {
 
   export interface ITransportLib {
     open: () => void
-    send: (socketMessage: ISocketMessage) => void
     close: () => void
+    send: (message: string, topic?: string, silent?: boolean) => void
+    subscribe: (topic: string) => void
     on: (event: string, callback: (payload: any) => void) => void
   }
 
   export interface ITransportEvent {
     event: string
     callback: (payload: any) => void
+  }
+
+  export type NetworkEvent = 'online' | 'offline'
+
+  export interface INetworkMonitor {
+    on: (event: NetworkEvent, callback: () => void) => void
+  }
+
+  export interface INetworkEventEmitter {
+    event: NetworkEvent
+    callback: () => void
   }
 
   export interface ISessionStorage {
@@ -230,6 +242,7 @@ declare module '@walletconnect/types' {
     session?: IWalletConnectSession
     clientMeta?: IClientMeta
     storage?: ISessionStorage
+    netMonitor?: INetworkMonitor
   }
 
   export interface INodeJSOptions {

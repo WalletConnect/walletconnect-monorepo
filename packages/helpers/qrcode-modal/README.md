@@ -10,7 +10,7 @@ import WalletConnectQRCodeModal from "walletconnect-qrcode-modal";
 /**
  *  Get URI from WalletConnect object
  */
-const uri = walletConnector.uri;
+const uri = connector.uri;
 
 /**
  *  Open QR Code Modal

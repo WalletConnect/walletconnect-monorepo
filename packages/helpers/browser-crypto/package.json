@@ -1,0 +1,66 @@
+{
+  "name": "@walletconnect/browser-crypto",
+  "version": "1.0.0-beta.61",
+  "description": "Browser Crypto for WalletConnect",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:pre": "npm run clean",
+    "build:cjs": "./node_modules/.bin/tsc -p tsconfig.cjs.json",
+    "build:umd": "webpack",
+    "build": "npm run build:pre && npm run build:cjs && npm run build:umd",
+    "test": "tsdx test ./test"
+  },
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "ethereum",
+    "jsonrpc",
+    "mobile",
+    "qrcode",
+    "web3",
+    "crypto",
+    "cryptocurrency",
+    "dapp"
+  ],
+  "author": "WalletConnect <walletconnect.org>",
+  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
+  "license": "LGPL-3.0",
+  "main": "dist/cjs/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "unpkg": "dist/umd/index.min.js",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
+  },
+  "devDependencies": {
+    "@babel/cli": "7.8.3",
+    "@babel/core": "7.8.3",
+    "@babel/node": "7.8.3",
+    "@babel/polyfill": "7.8.3",
+    "@babel/preset-env": "7.8.3",
+    "@babel/preset-typescript": "7.8.3",
+    "@babel/register": "7.8.3",
+    "@types/chai": "4.2.7",
+    "@types/lodash.isnumber": "3.0.6",
+    "@types/mocha": "5.2.7",
+    "@types/node": "12.12.14",
+    "chai": "4.2.0",
+    "isomorphic-fetch": "2.2.1",
+    "mocha": "5.2.0",
+    "tsdx": "0.12.3",
+    "typescript": "3.7.5",
+    "webpack": "4.41.5",
+    "webpack-cli": "3.3.10"
+  },
+  "dependencies": {
+    "@walletconnect/types": "^1.0.0-beta.61",
+    "@walletconnect/utils": "^1.0.0-beta.61"
+  },
+  "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
+}

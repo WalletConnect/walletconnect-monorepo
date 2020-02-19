@@ -28,7 +28,7 @@ rn-nodeify --install --hack
 import RNWalletConnect from "@walletconnect/react-native";
 
 // Create WalletConnector
-const walletConnector = new RNWalletConnect(
+const connector = new RNWalletConnect(
   {
     uri: "wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=" // Required
   },
@@ -53,7 +53,7 @@ const walletConnector = new RNWalletConnect(
 );
 
 // Subscribe to session requests
-walletConnector.on("session_request", (error, payload) => {
+connector.on("session_request", (error, payload) => {
   if (error) {
     throw error;
   }
@@ -80,7 +80,7 @@ walletConnector.on("session_request", (error, payload) => {
 });
 
 // Subscribe to call requests
-walletConnector.on("call_request", (error, payload) => {
+connector.on("call_request", (error, payload) => {
   if (error) {
     throw error;
   }
@@ -100,12 +100,12 @@ walletConnector.on("call_request", (error, payload) => {
   */
 });
 
-walletConnector.on("disconnect", (error, payload) => {
+connector.on("disconnect", (error, payload) => {
   if (error) {
     throw error;
   }
 
-  // Delete walletConnector
+  // Delete connector
 });
 ```
 
@@ -113,7 +113,7 @@ walletConnector.on("disconnect", (error, payload) => {
 
 ```javascript
 // Approve Session
-walletConnector.approveSession({
+connector.approveSession({
   accounts: [
     '0x4292...931B3',
     '0xa4a7...784E8',
@@ -123,26 +123,26 @@ walletConnector.approveSession({
 })
 
 // Reject Session
-walletConnector.rejectSession({
+connector.rejectSession({
   message: 'OPTIONAL_ERROR_MESSAGE'
 })
 
 
 // Kill Session
-walletConnector.killSession()
+connector.killSession()
 ```
 
 ## Manage Call Requests
 
 ```javascript
 // Approve Call Request
-walletConnector.approveRequest({
+connector.approveRequest({
   id: 1,
   result: "0x41791102999c339c844880b23950704cc43aa840f3739e365323cda4dfa89e7a"
 });
 
 // Reject Call Request
-walletConnector.rejectRequest({
+connector.rejectRequest({
   id: 1,
   error: {
     message: "OPTIONAL_ERROR_MESSAGE"

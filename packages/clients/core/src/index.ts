@@ -38,6 +38,7 @@ import {
   isJsonRpcResponseError,
   isSilentPayload
 } from '@walletconnect/utils'
+import SocketTransport from '@walletconnect/socket-transport'
 import {
   ERROR_SESSION_CONNECTED,
   ERROR_SESSION_DISCONNECTED,
@@ -51,8 +52,8 @@ import {
   ERROR_INVALID_URI,
   ERROR_MISSING_REQUIRED
 } from './errors'
-import SocketTransport from './socket'
 import EventManager from './events'
+import SessionStorage from './storage'
 
 interface IConnectorOpts {
   cryptoLib: ICryptoLib
@@ -100,7 +101,8 @@ class Connector implements IConnector {
     this.protocol = 'wc'
     this.version = 1
 
-    this._bridge = ''
+    this._bridge =
+      opts.connectorOpts.bridge || 'https://bridge.walletconnect.org'
     this._key = null
     this._nextKey = null
 
@@ -116,19 +118,15 @@ class Connector implements IConnector {
     this._rpcUrl = ''
     this._eventManager = new EventManager()
     this._connected = false
-    this._sessionStorage = opts.sessionStorage || null
+    this._sessionStorage = opts.sessionStorage || new SessionStorage()
     this._qrcodeModal = opts.qrcodeModal || null
 
     if (
-      !opts.connectorOpts.bridge &&
+      !this.bridge &&
       !opts.connectorOpts.uri &&
       !opts.connectorOpts.session
     ) {
       throw new Error(ERROR_MISSING_REQUIRED)
-    }
-
-    if (opts.connectorOpts.bridge) {
-      this.bridge = opts.connectorOpts.bridge
     }
 
     if (opts.connectorOpts.uri) {
@@ -140,6 +138,7 @@ class Connector implements IConnector {
     if (!session) {
       session = this._getStorageSession()
     }
+
     if (session) {
       this.session = session
     }
@@ -152,7 +151,11 @@ class Connector implements IConnector {
     }
     this._transport =
       opts.transport ||
-      new SocketTransport({ bridge: this.bridge, clientId: this.clientId })
+      new SocketTransport({
+        url: this.bridge,
+        subscriptions: [this.clientId],
+        netMonitor: opts.connectorOpts.netMonitor
+      })
 
     if (opts.connectorOpts.uri) {
       this._subscribeToSessionRequest()
@@ -851,14 +854,7 @@ class Connector implements IConnector {
         ? !options.forcePushNotification
         : isSilentPayload(callRequest)
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendResponse(
@@ -870,15 +866,9 @@ class Connector implements IConnector {
 
     const topic: string = this.peerId
     const payload: string = JSON.stringify(encryptionPayload)
+    const silent = true
 
-    const socketMessage: ISocketMessage = {
-      topic,
-      type: 'pub',
-      payload,
-      silent: true
-    }
-
-    this._transport.send(socketMessage)
+    this._transport.send(payload, topic, silent)
   }
 
   protected async _sendSessionRequest(
@@ -1044,12 +1034,9 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest() {
-    this._transport.send({
-      topic: `${this.handshakeTopic}`,
-      type: 'sub',
-      payload: '',
-      silent: true
-    })
+    if (this._transport.subscribe) {
+      this._transport.subscribe(this.handshakeTopic)
+    }
   }
 
   private _subscribeToResponse(
