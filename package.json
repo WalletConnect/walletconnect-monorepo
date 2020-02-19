@@ -24,7 +24,7 @@
     "bootstrap:example": "cd example && npm install",
     "build": "lerna run build",
     "test": "lerna run test",
-    "lint": "tslint packages/*/*/src/**/*.ts",
+    "lint": "eslint -c './.eslintrc.js' --fix 'packages/*/*/src/**/*.ts'",
     "clean": "rm -rf dist && lerna run clean",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "clean:example": "cd example && rm -rf node_modules",
@@ -51,16 +51,14 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
-    "babel-eslint": "8.2.6",
-    "eslint": "5.12.1",
-    "eslint-config-standard": "12.0.0",
-    "eslint-plugin-import": "2.15.0",
-    "eslint-plugin-node": "7.0.1",
-    "eslint-plugin-promise": "4.0.1",
-    "eslint-plugin-standard": "4.0.0",
-    "lerna": "3.13.0",
-    "tslint": "5.12.0",
-    "tslint-config-standard": "8.0.1",
+    "@typescript-eslint/eslint-plugin": "2.20.0",
+    "@typescript-eslint/parser": "2.20.0",
+    "eslint": "6.8.0",
+    "eslint-config-prettier": "6.10.0",
+    "eslint-plugin-prettier": "3.1.2",
+    "eslint-plugin-react": "7.18.3",
+    "lerna": "3.20.2",
+    "prettier": "1.19.1",
     "typescript": "3.7.5"
   }
 }
