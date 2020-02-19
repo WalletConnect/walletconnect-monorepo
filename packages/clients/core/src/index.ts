@@ -38,6 +38,7 @@ import {
   isJsonRpcResponseError,
   isSilentPayload
 } from '@walletconnect/utils'
+import SocketTransport from '@walletconnect/socket-transport'
 import {
   ERROR_SESSION_CONNECTED,
   ERROR_SESSION_DISCONNECTED,
@@ -51,7 +52,6 @@ import {
   ERROR_INVALID_URI,
   ERROR_MISSING_REQUIRED
 } from './errors'
-import SocketTransport from './socket'
 import EventManager from './events'
 
 interface IConnectorOpts {

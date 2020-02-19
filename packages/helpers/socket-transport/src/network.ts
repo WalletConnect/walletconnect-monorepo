@@ -1,12 +1,12 @@
 import {
   NetworkEvent,
   INetworkEventEmitter,
-  NetworkMonitor
+  INetworkMonitor
 } from '@walletconnect/types'
 
-// -- NetMonitor --------------------------------------------------------- //
+// -- NetworkMonitor --------------------------------------------------------- //
 
-class NetMonitor implements NetworkMonitor {
+class NetworkMonitor implements INetworkMonitor {
   private _eventEmitters: INetworkEventEmitter[]
 
   constructor () {
@@ -43,4 +43,4 @@ class NetMonitor implements NetworkMonitor {
   }
 }
 
-export default NetMonitor
+export default NetworkMonitor

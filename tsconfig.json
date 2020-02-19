@@ -42,6 +42,7 @@
     { "path": "./packages/helpers/qrcode-modal" },
     { "path": "./packages/helpers/rpc-connection" },
     { "path": "./packages/helpers/http-connection" },
+    { "path": "./packages/helpers/socket-transport" },
     { "path": "./packages/helpers/types" }
   ]
 }

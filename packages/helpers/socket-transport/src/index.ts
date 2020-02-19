@@ -1,17 +1,17 @@
 import {
   ISocketMessage,
   ITransportEvent,
-  NetworkMonitor,
+  INetworkMonitor,
   ITransportLib
 } from '@walletconnect/types'
-import NetMonitor from './netMonitor'
+import NetworkMonitor from './network'
 
 // @ts-ignore
 const WS = global.WebSocket || require('ws')
 
 interface ISocketTransportOptions {
   url: string
-  netMonitor?: NetworkMonitor
+  netMonitor?: INetworkMonitor
   subscriptions?: string[]
 }
 
@@ -20,7 +20,7 @@ interface ISocketTransportOptions {
 class SocketTransport implements ITransportLib {
   private _initiating: boolean
   private _url: string
-  private _netMonitor: NetworkMonitor | null
+  private _netMonitor: INetworkMonitor | null
   private _socket: WebSocket | null
   private _nextSocket: WebSocket | null
   private _queue: ISocketMessage[] = []
@@ -36,7 +36,7 @@ class SocketTransport implements ITransportLib {
     this._socket = null
     this._nextSocket = null
     this._subscriptions = opts.subscriptions || []
-    this._netMonitor = opts.netMonitor || new NetMonitor()
+    this._netMonitor = opts.netMonitor || new NetworkMonitor()
 
     if (!opts.url || typeof opts.url !== 'string') {
       throw new Error('Missing or invalid WebSocket url')

@@ -78,7 +78,7 @@ declare module '@walletconnect/types' {
 
   export type NetworkEvent = 'online' | 'offline'
 
-  export interface NetworkMonitor {
+  export interface INetworkMonitor {
     on: (event: NetworkEvent, callback: () => void) => void
   }
 
@@ -242,6 +242,7 @@ declare module '@walletconnect/types' {
     session?: IWalletConnectSession
     clientMeta?: IClientMeta
     storage?: ISessionStorage
+    netMonitor?: INetworkMonitor
   }
 
   export interface INodeJSOptions {
