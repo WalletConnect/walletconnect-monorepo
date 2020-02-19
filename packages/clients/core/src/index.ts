@@ -140,6 +140,7 @@ class Connector implements IConnector {
     if (!session) {
       session = this._getStorageSession()
     }
+
     if (session) {
       this.session = session
     }
@@ -1030,8 +1031,8 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest() {
-    if (this._transport.listen) {
-      this._transport.listen(this.handshakeTopic)
+    if (this._transport.subscribe) {
+      this._transport.subscribe(this.handshakeTopic)
     }
   }
 

@@ -76,6 +76,17 @@ declare module '@walletconnect/types' {
     callback: (payload: any) => void
   }
 
+  export type NetworkEvent = 'online' | 'offline'
+
+  export interface NetworkMonitor {
+    on: (event: NetworkEvent, callback: () => void) => void
+  }
+
+  export interface INetworkEventEmitter {
+    event: NetworkEvent
+    callback: () => void
+  }
+
   export interface ISessionStorage {
     getSession: () => IWalletConnectSession | null
     setSession: (session: IWalletConnectSession) => IWalletConnectSession

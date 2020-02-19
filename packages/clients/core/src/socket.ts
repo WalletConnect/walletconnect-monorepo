@@ -1,14 +1,17 @@
 import {
   ISocketMessage,
   ITransportEvent,
+  NetworkMonitor,
   ITransportLib
 } from '@walletconnect/types'
+import NetMonitor from './netMonitor'
 
 // @ts-ignore
 const WS = global.WebSocket || require('ws')
 
 interface ISocketTransportOptions {
   url: string
+  netMonitor?: NetworkMonitor
   subscriptions?: string[]
 }
 
@@ -17,9 +20,10 @@ interface ISocketTransportOptions {
 class SocketTransport implements ITransportLib {
   private _initiating: boolean
   private _url: string
-  private _clientId: string
+  private _netMonitor: NetworkMonitor | null
   private _socket: WebSocket | null
-  private _queue: ISocketMessage[]
+  private _nextSocket: WebSocket | null
+  private _queue: ISocketMessage[] = []
   private _events: ITransportEvent[] = []
   private _subscriptions: string[] = []
 
@@ -27,21 +31,20 @@ class SocketTransport implements ITransportLib {
 
   constructor (opts: ISocketTransportOptions) {
     this._initiating = false
-    this._bridge = ''
+    this._url = ''
+    this._netMonitor = null
     this._socket = null
-    this._queue = []
+    this._nextSocket = null
+    this._subscriptions = opts.subscriptions || []
+    this._netMonitor = opts.netMonitor || new NetMonitor()
 
-    if (!opts.bridge || typeof opts.bridge !== 'string') {
-      throw new Error('Missing or invalid bridge field')
+    if (!opts.url || typeof opts.url !== 'string') {
+      throw new Error('Missing or invalid WebSocket url')
     }
 
-    this._bridge = opts.bridge
+    this._url = opts.url
 
-    if (!opts.clientId || typeof opts.clientId !== 'string') {
-      throw new Error('Missing or invalid clientId field')
-    }
-
-    this._clientId = opts.clientId
+    this._netMonitor.on('online', () => this._socketCreate())
   }
 
   set readyState (value) {
@@ -87,7 +90,7 @@ class SocketTransport implements ITransportLib {
   // -- public ---------------------------------------------------------- //
 
   public open () {
-    this._socketOpen()
+    this._socketCreate()
   }
 
   public close () {
@@ -122,43 +125,38 @@ class SocketTransport implements ITransportLib {
 
   // -- private ---------------------------------------------------------- //
 
-  private _socketOpen (forceOpen?: boolean) {
-    if ((typeof forceOpen !== 'undefined' && !forceOpen) || this._initiating) {
+  private _socketCreate () {
+    if (this._initiating) {
       return
     }
 
     this._initiating = true
-    const bridge = this._bridge
 
-    this._setToQueue({
-      topic: `${this._clientId}`,
-      type: 'sub',
-      payload: '',
-      silent: true
-    })
+    const url = this._url.startsWith('https')
+      ? this._url.replace('https', 'wss')
+      : this._url.startsWith('http')
+        ? this._url.replace('http', 'ws')
+        : this._url
 
-    const url = bridge.startsWith('https')
-      ? bridge.replace('https', 'wss')
-      : bridge.startsWith('http')
-        ? bridge.replace('http', 'ws')
-        : bridge
+    this._nextSocket = new WS(url)
 
-    const socket = new WS(url)
-
-    socket.onmessage = (event: MessageEvent) => this._socketReceive(event)
-
-    socket.onopen = () => {
-      this._trigger('open')
-      this._socketClose()
-      this._initiating = false
-      this._socket = socket
-      this._pushQueue()
+    if (!this._nextSocket) {
+      throw new Error('Failed to create socket')
     }
 
-    socket.onclose = () => {
-      this._trigger('close')
-      this._socketOpen(true)
-    }
+    this._nextSocket.onmessage = (event: MessageEvent) =>
+      this._socketReceive(event)
+
+    this._nextSocket.onopen = () => this._socketOpen()
+  }
+
+  private _socketOpen () {
+    this._socketClose()
+    this._initiating = false
+    this._socket = this._nextSocket
+    this._nextSocket = null
+    this._queueSubscriptions()
+    this._pushQueue()
   }
 
   private _socketClose () {
@@ -190,9 +188,34 @@ class SocketTransport implements ITransportLib {
       return
     }
 
-    if (this.connected) {
-      this._trigger('message', socketMessage)
+    this._socketSend({
+      topic: socketMessage.topic,
+      type: 'ack',
+      payload: '',
+      silent: true
+    })
+
+    if (this._socket && this._socket.readyState === 1) {
+      const events = this._events.filter(event => event.event === 'message')
+      if (events && events.length) {
+        events.forEach(event => event.callback(socketMessage))
+      }
     }
+  }
+
+  private _queueSubscriptions () {
+    const subscriptions = this._subscriptions
+
+    subscriptions.forEach((topic: string) =>
+      this._queue.push({
+        topic: topic,
+        type: 'sub',
+        payload: '',
+        silent: true
+      })
+    )
+
+    this._subscriptions = []
   }
 
   private _setToQueue (socketMessage: ISocketMessage) {
@@ -207,13 +230,6 @@ class SocketTransport implements ITransportLib {
     )
 
     this._queue = []
-  }
-
-  private _trigger (eventName: string, payload?: any) {
-    const events = this._events.filter(event => event.event === eventName)
-    if (events && events.length) {
-      events.forEach(event => event.callback(payload))
-    }
   }
 }
 
