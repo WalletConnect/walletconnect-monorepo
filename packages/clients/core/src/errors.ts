@@ -11,7 +11,7 @@ export const ERROR_MISSING_METHOD =
   'JSON RPC request must have valid "method" value'
 export const ERROR_MISSING_ID = 'JSON RPC request must have valid "id" value'
 export const ERROR_MISSING_REQUIRED =
-  'Missing one of the required parameters: uri / session'
+  'Missing one of the required parameters: bridge / uri / session'
 
 export const ERROR_INVALID_RESPONSE = 'JSON RPC response format is invalid'
 export const ERROR_INVALID_URI = 'URI format is invalid'

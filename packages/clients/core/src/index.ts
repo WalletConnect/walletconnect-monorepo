@@ -101,7 +101,8 @@ class Connector implements IConnector {
     this.protocol = 'wc'
     this.version = 1
 
-    this._bridge = ''
+    this._bridge =
+      opts.connectorOpts.bridge || 'https://bridge.walletconnect.org'
     this._key = null
     this._nextKey = null
 
@@ -120,13 +121,12 @@ class Connector implements IConnector {
     this._sessionStorage = opts.sessionStorage || new SessionStorage()
     this._qrcodeModal = opts.qrcodeModal || null
 
-    if (!opts.connectorOpts.uri && !opts.connectorOpts.session) {
+    if (
+      !this.bridge &&
+      !opts.connectorOpts.uri &&
+      !opts.connectorOpts.session
+    ) {
       throw new Error(ERROR_MISSING_REQUIRED)
-    }
-
-    if (opts.connectorOpts.bridge) {
-      this.bridge =
-        opts.connectorOpts.bridge || 'https://bridge.walletconnect.org'
     }
 
     if (opts.connectorOpts.uri) {
