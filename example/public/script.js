@@ -8,27 +8,27 @@ const WalletConnectQRCodeModal = window.WalletConnectQRCodeModal.default
 
 const bridge = 'https://bridge.walletconnect.org'
 
-let walletConnector = null
+let connector = null
 
 function onInit() {
-  // Create a walletConnector
-  walletConnector = new WalletConnect({
+  // Create a connector
+  connector = new WalletConnect({
     bridge: 'https://bridge.walletconnect.org' // Required
   })
 
   // Check if connection is already established
-  if (!walletConnector.connected) {
+  if (!connector.connected) {
     // create new session
-    walletConnector.createSession().then(() => {
+    connector.createSession().then(() => {
       // get uri for QR Code modal
-      const uri = walletConnector.uri
+      const uri = connector.uri
       // display QR Code modal
       WalletConnectQRCodeModal.open(uri, () => {
         console.log('QR Code Modal closed')
       })
     })
   } else {
-    const { accounts, chainId } = walletConnector
+    const { accounts, chainId } = connector
     updateSessionDetails({ accounts, chainId })
   }
 
@@ -36,11 +36,11 @@ function onInit() {
 }
 
 function onSubscribe() {
-  if (!walletConnector) {
-    throw new Error(`walletConnector hasn't been created yet`)
+  if (!connector) {
+    throw new Error(`connector hasn't been created yet`)
   }
   // Subscribe to connection events
-  walletConnector.on('connect', (error, payload) => {
+  connector.on('connect', (error, payload) => {
     if (error) {
       throw error
     }
@@ -54,7 +54,7 @@ function onSubscribe() {
     updateSessionDetails({ accounts, chainId })
   })
 
-  walletConnector.on('session_update', (error, payload) => {
+  connector.on('session_update', (error, payload) => {
     if (error) {
       throw error
     }
@@ -65,13 +65,13 @@ function onSubscribe() {
     updateSessionDetails({ accounts, chainId })
   })
 
-  walletConnector.on('disconnect', (error, payload) => {
+  connector.on('disconnect', (error, payload) => {
     if (error) {
       throw error
     }
 
-    // Delete walletConnector
-    walletConnector = null
+    // Delete connector
+    connector = null
 
     onDisconnect()
   })
@@ -128,19 +128,19 @@ async function onDisconnect() {
 }
 
 function sendTestTransaction() {
-  if (!walletConnector) {
-    throw new Error(`walletConnector hasn't been created yet`)
+  if (!connector) {
+    throw new Error(`connector hasn't been created yet`)
   }
 
   // Draft transaction
   const tx = {
-    from: walletConnector.accounts[0],
-    to: walletConnector.accounts[0],
+    from: connector.accounts[0],
+    to: connector.accounts[0],
     data: '0x' // Required
   }
 
   // Send transaction
-  walletConnector
+  connector
     .sendTransaction(tx)
     .then(result => {
       // Returns transaction id (hash)

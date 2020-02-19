@@ -18,10 +18,10 @@ npm install --save @walletconnect/client
 ```javascript
 import WalletConnect from "@walletconnect/client";
 
-// Create a walletConnector
-const walletConnector = new WalletConnect();
+// Create a connector
+const connector = new WalletConnect();
 
-walletConnector.on("session_update", (error, payload) => {
+connector.on("session_update", (error, payload) => {
   if (error) {
     throw error;
   }
@@ -30,15 +30,15 @@ walletConnector.on("session_update", (error, payload) => {
   const { accounts, chainId } = payload.params[0];
 });
 
-walletConnector.on("disconnect", (error, payload) => {
+connector.on("disconnect", (error, payload) => {
   if (error) {
     throw error;
   }
 
-  // Delete walletConnector
+  // Delete connector
 });
 
-const { accounts, chainId } = await walletConnector.connect();
+const { accounts, chainId } = await connector.connect();
 ```
 
 ## Send Transaction \(eth_sendTransaction\)
@@ -56,7 +56,7 @@ const tx = {
 };
 
 // Send transaction
-walletConnector
+connector
   .sendTransaction(tx)
   .then(result => {
     // Returns transaction id (hash)
@@ -83,7 +83,7 @@ const tx = {
 };
 
 // Sign transaction
-walletConnector
+connector
   .signTransaction(tx)
   .then(result => {
     // Returns signed transaction
@@ -109,7 +109,7 @@ const msgParams = [
 
 
 // Sign personal message
-walletConnector
+connector
   .signPersonalMessage(msgParams)
   .then((result) => {
     // Returns signature.
@@ -135,7 +135,7 @@ const msgParams = [
 
 
 // Sign message
-walletConnector
+connector
   .signMessage(msgParams)
   .then((result) => {
     // Returns signature.
@@ -195,7 +195,7 @@ const msgParams = [
 ];
 
 // Sign Typed Data
-walletConnector
+connector
   .signTypedData(msgParams)
   .then(result => {
     // Returns signature.
@@ -229,7 +229,7 @@ const customRequest = {
 };
 
 // Send Custom Request
-walletConnector
+connector
   .sendCustomRequest(customRequest)
   .then(result => {
     // Returns request result
@@ -247,8 +247,8 @@ walletConnector
 import WalletConnect from "@walletconnect/browser";
 import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 
-// Create a walletConnector
-const walletConnector = new WalletConnect();
+// Create a connector
+const connector = new WalletConnect();
 
 // Draft Instant Request
 const instantRequest = {
@@ -268,7 +268,7 @@ const instantRequest = {
 };
 
 // Create Instant Request
-walletConnector
+connector
   .createInstantRequest(instantRequest)
   .then(result => {
     // Get Instant Request Result

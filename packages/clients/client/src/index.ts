@@ -1,8 +1,7 @@
 import Connector from '@walletconnect/core'
 import qrcodeModal from '@walletconnect/qrcode-modal'
 import { IWalletConnectOptions, IPushServerOptions } from '@walletconnect/types'
-import * as cryptoLib from './crypto'
-import SessionStorage from './storage'
+import * as cryptoLib from '@walletconnect/iso-crypto'
 
 class WalletConnect extends Connector {
   constructor (
@@ -11,11 +10,7 @@ class WalletConnect extends Connector {
   ) {
     super({
       cryptoLib,
-      connectorOpts: {
-        bridge: 'https://bridge.walletconnect.org',
-        ...connectorOpts
-      },
-      sessionStorage: connectorOpts.storage || new SessionStorage(),
+      connectorOpts,
       qrcodeModal,
       pushServerOpts
     })
