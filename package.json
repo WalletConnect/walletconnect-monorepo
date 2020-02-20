@@ -24,7 +24,7 @@
     "bootstrap:example": "cd example && npm install",
     "build": "lerna run build",
     "test": "lerna run test",
-    "lint": "eslint -c './.eslintrc.js' --fix 'packages/*/*/src/**/*.ts'",
+    "lint": "eslint -c './.eslintrc' --fix 'packages/*/*/src/**/*.ts'",
     "clean": "rm -rf dist && lerna run clean",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "clean:example": "cd example && rm -rf node_modules",
