@@ -47,6 +47,42 @@ class StarkwareProvider extends EventEmitter {
     this.connected = false;
   }
 
+  public register() {
+    // 1. send stark_register with registry address
+    // 2. wallet generates starkKey (if not present)
+    // 3. wallet signs and ETH message of the hash of ethKey and hashKey
+    // 4. wallet sends transaction of starkKey and registration signature to smart contract
+    // 5. wallet returns transaction hash
+  }
+
+  public deposit() {
+    // 1. send stark_deposit with tokenAddress and amount
+    // 2. wallet verifies balance and asserts
+    // 3. wallet calls deposit on smart contract
+    // 4. wallets returns transaction hash
+  }
+
+  public transfer() {
+    // 1. format message to be signed
+    // 2. send stark_sign with formatted message
+    // 3. wallet signs message
+    // 4. wallet returns signature
+  }
+
+  public trade() {
+    // 1. format message to be signed
+    // 2. send stark_sign with formatted message
+    // 3. wallet signs message
+    // 4. wallet returns signature
+  }
+
+  public withdraw() {
+    // 1. format message to be signed
+    // 2. send stark_sign with formatted message
+    // 3. wallet signs message
+    // 4. wallet returns signature
+  }
+
   // -- private ---------------------------------------------------------------- //
 
   private onConnect() {
