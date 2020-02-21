@@ -38,6 +38,7 @@
     { "path": "./packages/providers/starkware-provider" },
     { "path": "./packages/providers/web3-provider" },
     { "path": "./packages/providers/web3-subprovider" },
+    { "path": "./packages/providers/truffle-subprovider" },
 
     { "path": "./packages/helpers/utils" },
     { "path": "./packages/helpers/qrcode-modal" },

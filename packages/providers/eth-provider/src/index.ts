@@ -1,5 +1,5 @@
 import EthereumProvider from "./provider";
-import WCRpcConnection from "./connection";
+import WCRpcConnection from "@walletconnect/rpc-connection";
 import { IWCRpcConnectionOptions } from "@walletconnect/types";
 
 class WalletConnectProvider extends EthereumProvider {
