@@ -6,8 +6,8 @@ import {
   isJsonRpcResponseSuccess,
   isJsonRpcResponseError,
 } from "@walletconnect/utils";
+import WCRpcConnection from "@walletconnect/rpc-connection";
 import { IError, JsonRpc } from "@walletconnect/types";
-import WCRpcConnection from "./connection";
 
 // -- types ---------------------------------------------------------------- //
 
