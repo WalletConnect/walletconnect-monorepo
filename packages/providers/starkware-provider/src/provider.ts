@@ -1,7 +1,7 @@
 import EventEmitter from "events";
 import { payloadId } from "@walletconnect/utils";
-import { IError } from "@walletconnect/types";
 import WCRpcConnection from "@walletconnect/rpc-connection";
+import { timingSafeEqual } from "crypto";
 
 // -- StarkwareProvider ---------------------------------------------------- //
 
@@ -16,24 +16,26 @@ class StarkwareProvider extends EventEmitter {
 
   // -- public ---------------------------------------------------------------- //
 
-  public enable() {
-    return new Promise((resolve, reject) => {
-      this.connection.on("close", () => {
-        this.connected = false;
-        this.emit("close");
-      });
-
-      this.connection.on("connect", () => {
-        this.onConnect()
-          .then(resolve)
-          .catch(reject);
-      });
-
-      this.connection.create();
-    });
+  public async enable() {
+    try {
+      if (!this.connected) {
+        await this.open();
+      }
+      let { accounts } = await this.getAccounts();
+      if (!accounts.length) {
+        const registration = await this.register();
+        accounts = registration.accounts;
+      }
+      this.emit("enable");
+      return accounts;
+    } catch (err) {
+      this.connected = false;
+      this.connection.close();
+      throw err;
+    }
   }
 
-  public send(method: string, params: any = null) {
+  public send(method: string, params: any = []) {
     return this.connection.send({
       id: payloadId(),
       jsonrpc: "2.0",
@@ -42,70 +44,86 @@ class StarkwareProvider extends EventEmitter {
     });
   }
 
+  public open() {
+    return new Promise((resolve, reject) => {
+      this.connection.on("close", () => {
+        this.connected = false;
+        this.emit("close");
+        reject();
+      });
+
+      this.connection.on("connect", () => {
+        this.emit("connect");
+        resolve();
+      });
+
+      this.connection.create();
+    });
+  }
+
   public close() {
     this.connection.close();
     this.connected = false;
   }
 
-  public register() {
+  public async getAccounts() {
+    await this.send("stark_accounts");
+    // 1. send stark_accounts with array of starkKeys
+    // 2. wallet returns array
+    const accounts: string[] = [];
+    return { accounts };
+  }
+
+  public async register() {
+    await this.send("stark_register");
     // 1. send stark_register with registry address
     // 2. wallet generates starkKey (if not present)
     // 3. wallet signs and ETH message of the hash of ethKey and hashKey
     // 4. wallet sends transaction of starkKey and registration signature to smart contract
-    // 5. wallet returns transaction hash
+    // 5. wallet returns starkKey and transaction hash
+    const accounts: string[] = [];
+    const txhash = "";
+    return { accounts, txhash };
   }
 
-  public deposit() {
+  public async deposit() {
+    await this.send("stark_deposit");
     // 1. send stark_deposit with tokenAddress and amount
     // 2. wallet verifies balance and asserts
     // 3. wallet calls deposit on smart contract
     // 4. wallets returns transaction hash
+    const txhash = "";
+    return { txhash };
   }
 
-  public transfer() {
+  public async transfer() {
+    await this.send("stark_transfer");
     // 1. format message to be signed
     // 2. send stark_sign with formatted message
     // 3. wallet signs message
     // 4. wallet returns signature
+    const signature = "";
+    return { signature };
   }
 
-  public trade() {
+  public async trade() {
+    await this.send("stark_sign");
     // 1. format message to be signed
     // 2. send stark_sign with formatted message
     // 3. wallet signs message
     // 4. wallet returns signature
+    const signature = "";
+    return { signature };
   }
 
-  public withdraw() {
+  public async withdraw() {
+    await this.send("stark_withdraw");
     // 1. format message to be signed
-    // 2. send stark_sign with formatted message
+    // 2. send stark_withdraw with formatted message
     // 3. wallet signs message
     // 4. wallet returns signature
-  }
-
-  // -- private ---------------------------------------------------------------- //
-
-  private onConnect() {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const accounts: string[] = await this.send("stark_enable");
-        if (accounts.length > 0) {
-          this.emit("enable");
-          this.emit("connect");
-          resolve(accounts);
-        } else {
-          const err: IError = new Error("User Denied Full Provider");
-          err.code = 4001;
-          this.connected = false;
-          this.connection.close();
-          reject(err);
-        }
-      } catch (e) {
-        this.connected = false;
-        this.connection.close();
-        reject(e);
-      }
-    });
+    const signature = "";
+    return { signature };
   }
 }
 
