@@ -36,6 +36,7 @@ class WalletConnectProvider extends ProviderEngine {
   public chainId = 1;
   public networkId = 1;
   public rpcUrl = "";
+  private sessionCreatedCallbacks: any[] = [];
 
   constructor(opts?: IWalletConnectProviderOptions) {
     super({ pollingInterval: opts?.pollingInterval || 4000 });
@@ -198,6 +199,23 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
+  /**
+   * Registers callback on session creation event
+   * @param callback Callback function to be triggered when session is created
+   */
+  public onSessionCreated(callback: any) {
+    this.sessionCreatedCallbacks.push(callback);
+  }
+
+  /**
+   * Private function to trigger registered callbacks when session is created
+   */
+  private triggerSessionCreated() {
+    if (this.sessionCreatedCallbacks && this.sessionCreatedCallbacks.length) {
+      this.sessionCreatedCallbacks.forEach(callback => callback());
+    }
+  }
+
   async close() {
     const wc = await this.getWalletConnector({ disableSessionCreation: true });
     await wc.killSession();
@@ -291,6 +309,8 @@ class WalletConnectProvider extends ProviderEngine {
         const sessionRequestOpions = this.chainId ? { chainId: this.chainId } : undefined;
         wc.createSession(sessionRequestOpions)
           .then(() => {
+            // Trigger when session is created and uri is generated
+            this.triggerSessionCreated()
             if (this.qrcode) {
               WalletConnectQRCodeModal.open(wc.uri, () => {
                 reject(new Error("User closed WalletConnect modal"));
