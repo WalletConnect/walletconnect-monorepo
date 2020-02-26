@@ -59,12 +59,11 @@
   },
   "dependencies": {
     "@walletconnect/browser": "^1.0.0-beta.62",
-    "@walletconnect/http-connection": "^1.0.0-beta.62",
     "@walletconnect/qrcode-modal": "^1.0.0-beta.62",
     "@walletconnect/rpc-connection": "^1.0.0-beta.62",
     "@walletconnect/types": "^1.0.0-beta.62",
     "@walletconnect/utils": "^1.0.0-beta.62",
-    "xhr2-cookies": "1.1.0"
+    "starkware-crypto": "1.2.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
