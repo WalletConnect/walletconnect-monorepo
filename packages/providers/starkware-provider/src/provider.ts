@@ -88,8 +88,8 @@ class StarkwareProvider extends EventEmitter {
     return result;
   }
 
-  public async deposit(amount: string, token: string) {
-    const result = await this.send("stark_deposit", { amount, token });
+  public async deposit(amount: string, token: string, vaultId: string) {
+    const result = await this.send("stark_deposit", { amount, token, vaultId });
     return result;
   }
 
