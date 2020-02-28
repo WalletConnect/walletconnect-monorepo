@@ -60,7 +60,6 @@
   width: 100%;
   max-width: 310px;
   margin: 30px auto;
-  height: 100%;
   margin-top: 50px;
   padding: 20px;
   box-sizing: border-box;
@@ -201,6 +200,10 @@
 @media only screen and (max-width: 768px) {
   .walletconnect-modal__header {
     height: 130px;
+  }
+  .walletconnect-modal__base {
+    max-height: 70%;
+    overflow: auto;
   }
 }
 

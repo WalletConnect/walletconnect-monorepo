@@ -81,7 +81,7 @@ function formatSingleDeepLink(uri: string) {
 
 function formateDeepLinkingContent(uri: string) {
   const content = isIOS() ? formatMobileRegistry(uri) : formatSingleDeepLink(uri);
-  const callToAction = "Click to connect to your preferred wallet";
+  const callToAction = "Choose your preferred wallet";
   return `
     <div>
       <p id="walletconnect-qrcode-text" class="walletconnect-qrcode__text">
