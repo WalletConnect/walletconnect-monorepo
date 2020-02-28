@@ -80,27 +80,16 @@ class StarkwareProvider extends EventEmitter {
 
   public async getAccounts() {
     const result = await this.send("stark_accounts");
-    // 1. send stark_accounts with array of starkKeys
-    // 2. wallet returns accounts array
     return result;
   }
 
   public async register() {
-    // 1. send stark_register with registry address
     const result = await this.send("stark_register");
-    // 2. wallet generates starkKey (if not present)
-    // 3. wallet signs and ETH message of the hash of ethKey and hashKey
-    // 4. wallet sends transaction of starkKey and registration signature to smart contract
-    // 5. wallet returns accounts array and transaction hash
     return result;
   }
 
   public async deposit(amount: string, token: string) {
-    // 1. send stark_deposit with tokenAddress and amount
     const result = await this.send("stark_deposit", { amount, token });
-    // 2. wallet verifies balance and asserts
-    // 3. wallet calls deposit on smart contract
-    // 4. wallets returns transaction hash
     return result;
   }
 
@@ -148,11 +137,8 @@ class StarkwareProvider extends EventEmitter {
     return result;
   }
 
-  public async withdraw(address: string) {
-    // 1. send stark_withdraw
-    const result = await this.send("stark_withdraw", { address });
-    // 2. wallet signs message
-    // 3. wallet returns signature
+  public async withdraw(token: string) {
+    const result = await this.send("stark_withdraw", { token });
     return result;
   }
 }
