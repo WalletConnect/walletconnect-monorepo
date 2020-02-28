@@ -1,5 +1,6 @@
 import EventEmitter from "events";
 import { payloadId } from "@walletconnect/utils";
+import { IRpcConnection } from "@walletconnect/types";
 
 // -- StarkwareProvider ---------------------------------------------------- //
 
@@ -7,9 +8,9 @@ class StarkwareProvider extends EventEmitter {
   private _accounts: string[] = [];
   private _connected = false;
 
-  public connection: any;
+  public connection: IRpcConnection;
 
-  constructor(connection: any) {
+  constructor(connection: IRpcConnection) {
     super();
     this.connection = connection;
   }
@@ -68,7 +69,7 @@ class StarkwareProvider extends EventEmitter {
         resolve();
       });
 
-      this.connection.create();
+      this.connection.open();
     });
   }
 

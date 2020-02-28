@@ -17,7 +17,6 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
 
   public wc: IConnector | null = null;
   public connected = false;
-  public closed = false;
 
   constructor(opts?: IWCRpcConnectionOptions) {
     super();
@@ -84,7 +83,6 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public onClose(): void {
     this.wc = null;
     this.connected = false;
-    this.closed = true;
     this.emit("close");
     this.removeAllListeners();
   }
