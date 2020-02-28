@@ -1,7 +1,5 @@
 import EventEmitter from "events";
 import { payloadId } from "@walletconnect/utils";
-// import WCRpcConnection from "@walletconnect/rpc-connection";
-import { formatMessage } from "starkware-crypto";
 
 // -- StarkwareProvider ---------------------------------------------------- //
 
@@ -80,30 +78,29 @@ class StarkwareProvider extends EventEmitter {
   }
 
   public async getAccounts() {
-    const {} = await this.send("stark_accounts");
+    const result = await this.send("stark_accounts");
     // 1. send stark_accounts with array of starkKeys
     // 2. wallet returns accounts array
-    const accounts: string[] = [];
-    return { accounts };
+    return result;
   }
 
   public async register() {
     // 1. send stark_register with registry address
-    const { accounts, txhash } = await this.send("stark_register");
+    const result = await this.send("stark_register");
     // 2. wallet generates starkKey (if not present)
     // 3. wallet signs and ETH message of the hash of ethKey and hashKey
     // 4. wallet sends transaction of starkKey and registration signature to smart contract
     // 5. wallet returns accounts array and transaction hash
-    return { accounts, txhash };
+    return result;
   }
 
   public async deposit(amount: string, token: string) {
     // 1. send stark_deposit with tokenAddress and amount
-    const { txhash } = await this.send("stark_deposit", { amount, token });
+    const result = await this.send("stark_deposit", { amount, token });
     // 2. wallet verifies balance and asserts
     // 3. wallet calls deposit on smart contract
     // 4. wallets returns transaction hash
-    return { txhash };
+    return result;
   }
 
   public async transfer(
@@ -115,8 +112,7 @@ class StarkwareProvider extends EventEmitter {
     receiverPublicKey: string,
     expirationTimestamp: string,
   ) {
-    // 1. send stark_sign
-    const { signature } = await this.send("stark_transfer", {
+    const result = await this.send("stark_transfer", {
       amount,
       nonce,
       senderVaultId,
@@ -125,9 +121,7 @@ class StarkwareProvider extends EventEmitter {
       receiverPublicKey,
       expirationTimestamp,
     });
-    // 2. wallet signs message
-    // 3. wallet returns signature
-    return { signature };
+    return result;
   }
 
   public async createOrder(
@@ -140,8 +134,7 @@ class StarkwareProvider extends EventEmitter {
     nonce: string,
     expirationTimestamp: string,
   ) {
-    // 1. send stark_sign
-    const { signature } = await this.send("stark_createOrder", {
+    const result = await this.send("stark_createOrder", {
       vaultSell,
       vaultBuy,
       amountSell,
@@ -151,17 +144,15 @@ class StarkwareProvider extends EventEmitter {
       nonce,
       expirationTimestamp,
     });
-    // 2. wallet signs message
-    // 3. wallet returns signature
-    return { signature };
+    return result;
   }
 
   public async withdraw(address: string) {
     // 1. send stark_withdraw
-    const { signature } = await this.send("stark_withdraw", { address });
+    const result = await this.send("stark_withdraw", { address });
     // 2. wallet signs message
     // 3. wallet returns signature
-    return { signature };
+    return result;
   }
 }
 
