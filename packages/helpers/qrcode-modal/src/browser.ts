@@ -46,20 +46,21 @@ function formatDeepLinkHref(uri: string, entry: IMobileRegistryEntry) {
   return entry.universalLink
     ? `${entry.universalLink}/wc?uri=${encodedUri}&redirectUrl=${redirectUrl}`
     : entry.deepLink
-    ? `{wallet.deepLink}${uri}`
-    : "";
+      ? `{wallet.deepLink}${uri}`
+      : "";
 }
 
 function formatSingleConnectButton(name: string, color: string, href: string) {
   return `
-    <a href="${href}" target="_blank" rel="noopener noreferrer">
-      <div
-        id="walletconnect-connect-button-${name}"
-        class="walletconnect-connect_button"
-        style="background-color: ${color};"
-      >
-        {name}
-      </div>
+    <a
+      id="walletconnect-connect-button-${name}"
+      href="${href}"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="walletconnect-connect__button"
+      style="background-color: ${color};"
+    >
+      ${name}
     </a>
   `;
 }
@@ -80,13 +81,15 @@ function formatSingleDeepLink(uri: string) {
 
 function formateDeepLinkingContent(uri: string) {
   const content = isIOS() ? formatMobileRegistry(uri) : formatSingleDeepLink(uri);
-  const callToAction = "Click to connect to your preffered wallet";
+  const callToAction = "Click to connect to your preferred wallet";
   return `
     <div>
       <p id="walletconnect-qrcode-text" class="walletconnect-qrcode__text">
         ${callToAction}
       </p>
-      ${content}
+      <div class="walletconnect-connect__buttons__wrapper">
+        ${content}
+      </div>
     </div>
   `;
 }
