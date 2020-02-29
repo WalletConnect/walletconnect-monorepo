@@ -692,3 +692,9 @@ export function isNode(): boolean {
   const result = env && env.name ? env.name.toLowerCase() === "node" : false;
   return result;
 }
+
+export function isBrowser(): boolean {
+  const result =
+    !isNode() && typeof window !== "undefined" && typeof window.navigator !== "undefined";
+  return result;
+}
