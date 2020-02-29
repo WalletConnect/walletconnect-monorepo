@@ -8,7 +8,7 @@ class NetworkMonitor implements INetworkMonitor {
   constructor() {
     this._eventEmitters = [];
 
-    if (typeof window !== "undefined" || typeof (window as any).addEventListener !== "undefined") {
+    if (typeof window !== "undefined" && typeof (window as any).addEventListener !== "undefined") {
       window.addEventListener("online", () => this.trigger("online"));
       window.addEventListener("offline", () => this.trigger("offline"));
     }
