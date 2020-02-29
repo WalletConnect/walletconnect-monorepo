@@ -1,21 +1,24 @@
-import browser from "./browser";
-import node from "./node";
-import { isBrowser } from "@walletconnect/utils";
+import * as browserLib from "./browser";
+import * as nodeLib from "./node";
+import { isNode } from "@walletconnect/utils";
 
 function open(uri: string, cb: any) {
-  if (isBrowser()) {
-    browser.open(uri, cb);
+  if (isNode()) {
+    nodeLib.open(uri);
   } else {
-    node.open(uri);
+    browserLib.open(uri, cb);
   }
 }
 
 function close() {
-  if (isBrowser()) {
-    browser.close();
+  if (isNode()) {
+    nodeLib.close();
   } else {
-    node.close();
+    browserLib.close();
   }
 }
+
+export const browser = browserLib;
+export const node = nodeLib;
 
 export default { open, close };

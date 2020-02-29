@@ -52,7 +52,10 @@ function formatQRCodeModal(qrCodeImage: string) {
 `;
 }
 
-function open(uri: string, cb: any) {
+export function open(uri: string, cb: any) {
+  if (!document) {
+    throw new Error("document is not defined in Window");
+  }
   const wrapper = document.createElement("div");
   wrapper.setAttribute("id", "walletconnect-wrapper");
   const qrCodeImage = formatQRCodeImage(uri);
@@ -74,7 +77,10 @@ function open(uri: string, cb: any) {
 /**
  *  @desc     Close WalletConnect QR Code Modal
  */
-function close() {
+export function close() {
+  if (!document) {
+    throw new Error("document is not defined in Window");
+  }
   const elm = document.getElementById("walletconnect-qrcode-modal");
   if (elm) {
     elm.className = elm.className.replace("fadeIn", "fadeOut");
@@ -86,5 +92,3 @@ function close() {
     }, constants.animationDuration);
   }
 }
-
-export default { close, open };
