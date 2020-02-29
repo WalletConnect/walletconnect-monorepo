@@ -30,7 +30,7 @@ import RNWalletConnect from "@walletconnect/react-native";
 // Create WalletConnector
 const connector = new RNWalletConnect(
   {
-    uri: "wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=" // Required
+    uri: "wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=", // Required
   },
   {
     clientMeta: {
@@ -39,7 +39,6 @@ const connector = new RNWalletConnect(
       url: "https://walletconnect.org",
       icons: ["https://walletconnect.org/walletconnect-logo.png"],
       name: "WalletConnect",
-      ssl: true
     },
     push: {
       // Optional
@@ -47,9 +46,9 @@ const connector = new RNWalletConnect(
       type: "fcm",
       token: token,
       peerMeta: true,
-      language: language
-    }
-  }
+      language: language,
+    },
+  },
 );
 
 // Subscribe to session requests
@@ -71,8 +70,7 @@ connector.on("session_request", (error, payload) => {
         name: "WalletConnect Example",
         description: "Try out WalletConnect v1.0.0-beta",
         icons: ["https://example.walletconnect.org/favicon.ico"],
-        url: "https://example.walletconnect.org",
-        ssl: true
+        url: "https://example.walletconnect.org"
       }
     }]
   }
@@ -138,14 +136,14 @@ connector.killSession()
 // Approve Call Request
 connector.approveRequest({
   id: 1,
-  result: "0x41791102999c339c844880b23950704cc43aa840f3739e365323cda4dfa89e7a"
+  result: "0x41791102999c339c844880b23950704cc43aa840f3739e365323cda4dfa89e7a",
 });
 
 // Reject Call Request
 connector.rejectRequest({
   id: 1,
   error: {
-    message: "OPTIONAL_ERROR_MESSAGE"
-  }
+    message: "OPTIONAL_ERROR_MESSAGE",
+  },
 });
 ```
