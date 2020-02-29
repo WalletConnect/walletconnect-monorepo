@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/client",
-  "version": "1.0.0-beta.69",
+  "version": "1.0.0-beta.70",
   "description": "Client for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -59,11 +59,11 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/core": "^1.0.0-beta.69",
-    "@walletconnect/iso-crypto": "^1.0.0-beta.69",
-    "@walletconnect/qrcode-modal": "^1.0.0-beta.69",
-    "@walletconnect/types": "^1.0.0-beta.69",
-    "@walletconnect/utils": "^1.0.0-beta.69"
+    "@walletconnect/core": "^1.0.0-beta.70",
+    "@walletconnect/iso-crypto": "^1.0.0-beta.70",
+    "@walletconnect/qrcode-modal": "^1.0.0-beta.70",
+    "@walletconnect/types": "^1.0.0-beta.70",
+    "@walletconnect/utils": "^1.0.0-beta.70"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
