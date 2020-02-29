@@ -1,9 +1,17 @@
 const path = require("path");
 
-const baseConfig = {
+const umdConfig = {
   mode: "production",
   entry: {
     index: path.resolve(__dirname, "src", "index.ts"),
+  },
+  output: {
+    path: path.resolve(__dirname, "dist"),
+    filename: "[name].min.js",
+    libraryTarget: "umd",
+    library: "WalletConnectQRCodeModal",
+    umdNamedDefine: true,
+    globalObject: "this",
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
@@ -21,23 +29,4 @@ const baseConfig = {
   },
 };
 
-const cjsConfig = Object.assign({}, baseConfig, {
-  output: {
-    path: path.resolve(__dirname, "dist", "cjs"),
-    filename: "[name].js",
-    libraryTarget: "commonjs",
-  },
-});
-
-const umdConfig = Object.assign({}, baseConfig, {
-  output: {
-    path: path.resolve(__dirname, "dist", "umd"),
-    filename: "[name].min.js",
-    libraryTarget: "umd",
-    library: "WalletConnectQRCodeModal",
-    umdNamedDefine: true,
-    globalObject: "this",
-  },
-});
-
-module.exports = [cjsConfig, umdConfig];
+module.exports = [umdConfig];
