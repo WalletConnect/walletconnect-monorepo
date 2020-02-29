@@ -319,8 +319,8 @@ export const isValidAddress = (address?: string) => {
 export function getMeta(): IClientMeta | null {
   if (
     typeof window === "undefined" ||
-    typeof document === "undefined" ||
-    typeof window.location === "undefined"
+    typeof window?.document === "undefined" ||
+    typeof window?.location === "undefined"
   ) {
     return null;
   }
