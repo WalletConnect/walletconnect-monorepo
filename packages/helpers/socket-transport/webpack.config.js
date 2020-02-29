@@ -1,16 +1,16 @@
-const path = require('path')
+const path = require("path");
 
 module.exports = {
-  mode: 'production',
+  mode: "production",
   entry: {
-    index: path.resolve(__dirname, 'dist', 'cjs', 'index.js')
+    index: path.resolve(__dirname, "dist", "cjs", "index.js"),
   },
   output: {
-    path: path.resolve(__dirname, 'dist', 'umd'),
-    filename: '[name].min.js',
-    libraryTarget: 'umd',
-    library: 'WalletConnectSocketTransport',
+    path: path.resolve(__dirname, "dist", "umd"),
+    filename: "[name].min.js",
+    libraryTarget: "umd",
+    library: "WalletConnectSocketTransport",
     umdNamedDefine: true,
-    globalObject: 'this'
-  }
-}
+    globalObject: "this",
+  },
+};
