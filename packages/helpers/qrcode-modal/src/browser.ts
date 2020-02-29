@@ -5,11 +5,6 @@ import logo from "./logo.svg";
 import constants from "./constants";
 import "./style.css";
 
-let document: Document;
-if (typeof window !== "undefined" && typeof window.document !== "undefined") {
-  document = window.document;
-}
-
 function formatQRCodeImage(data: string) {
   let result = "";
   const dataString = qrImage.imageSync(data, { type: "svg" });
@@ -52,10 +47,19 @@ function formatQRCodeModal(qrCodeImage: string) {
 `;
 }
 
-export function open(uri: string, cb: any) {
+function getDocument(): Document {
+  let document: Document | undefined = undefined;
+  if (typeof window !== "undefined" && typeof window.document !== "undefined") {
+    document = window.document;
+  }
   if (!document) {
     throw new Error("document is not defined in Window");
   }
+  return document;
+}
+
+export function open(uri: string, cb: any) {
+  const document = getDocument();
   const wrapper = document.createElement("div");
   wrapper.setAttribute("id", "walletconnect-wrapper");
   const qrCodeImage = formatQRCodeImage(uri);
@@ -78,9 +82,7 @@ export function open(uri: string, cb: any) {
  *  @desc     Close WalletConnect QR Code Modal
  */
 export function close() {
-  if (!document) {
-    throw new Error("document is not defined in Window");
-  }
+  const document = getDocument();
   const elm = document.getElementById("walletconnect-qrcode-modal");
   if (elm) {
     elm.className = elm.className.replace("fadeIn", "fadeOut");
