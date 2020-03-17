@@ -38,7 +38,7 @@ class StarkwareProvider extends EventEmitter {
       if (!this.connected) {
         await this.open();
       }
-      const { accounts } = await this.getAccounts();
+      const accounts = await this.getAccounts();
       this.emit("enable");
       return accounts;
     } catch (err) {
