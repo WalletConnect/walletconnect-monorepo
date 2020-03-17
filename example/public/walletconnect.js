@@ -1,7 +1,7 @@
 "use strict";
 
 // updates title to display package version
-updateTitle();
+window.updateTitle();
 
 const WalletConnect = window.WalletConnect.default;
 const WalletConnectQRCodeModal = window.WalletConnectQRCodeModal.default;
@@ -77,37 +77,6 @@ function onSubscribe() {
   });
 }
 
-async function updateSessionDetails({ accounts, chainId }) {
-  const containerEl = document.getElementById("page-actions");
-  const pTags = containerEl.getElementsByTagName("p");
-  if (pTags.length === 1) {
-    const textEl = containerEl.getElementsByTagName("p")[0];
-    textEl.innerHTML = "Connected!";
-
-    const accountEl = document.createElement("p");
-    accountEl.innerHTML = `Account: ${accounts[0]}`;
-    insertAfter(accountEl, textEl);
-
-    const chainData = await getChainData(chainId);
-
-    const chainEl = document.createElement("p");
-    chainEl.innerHTML = `Chain: ${chainData.name}`;
-    insertAfter(chainEl, accountEl);
-
-    const buttonEl = containerEl.getElementsByTagName("button")[0];
-    buttonEl.innerText = "Send Transaction";
-    buttonEl.onclick = sendTestTransaction;
-  } else {
-    const accountEl = containerEl.getElementsByTagName("p")[1];
-    accountEl.innerHTML = `Account: ${accounts[0]}`;
-
-    const chainData = await getChainData(chainId);
-
-    const chainEl = containerEl.getElementsByTagName("p")[2];
-    chainEl.innerHTML = `Chain: ${chainData.name}`;
-  }
-}
-
 async function onDisconnect() {
   const containerEl = document.getElementById("page-actions");
   const pTags = containerEl.getElementsByTagName("p");
@@ -152,34 +121,33 @@ function sendTestTransaction() {
     });
 }
 
-let supportedChains = null;
+async function updateSessionDetails({ accounts, chainId }) {
+  const containerEl = document.getElementById("page-actions");
+  const pTags = containerEl.getElementsByTagName("p");
+  if (pTags.length === 1) {
+    const textEl = containerEl.getElementsByTagName("p")[0];
+    textEl.innerHTML = "Connected!";
 
-async function getChainData(chainId) {
-  if (!supportedChains) {
-    supportedChains = await getJsonFile("./chains.json");
+    const accountEl = document.createElement("p");
+    accountEl.innerHTML = `Account: ${accounts[0]}`;
+    window.insertAfter(accountEl, textEl);
+
+    const chainData = await window.getChainData(chainId);
+
+    const chainEl = document.createElement("p");
+    chainEl.innerHTML = `Chain: ${chainData.name}`;
+    window.insertAfter(chainEl, accountEl);
+
+    const buttonEl = containerEl.getElementsByTagName("button")[0];
+    buttonEl.innerText = "Send Transaction";
+    buttonEl.onclick = sendTestTransaction;
+  } else {
+    const accountEl = containerEl.getElementsByTagName("p")[1];
+    accountEl.innerHTML = `Account: ${accounts[0]}`;
+
+    const chainData = await window.getChainData(chainId);
+
+    const chainEl = containerEl.getElementsByTagName("p")[2];
+    chainEl.innerHTML = `Chain: ${chainData.name}`;
   }
-
-  const chainData = supportedChains.filter(chain => chain.chain_id === chainId)[0];
-
-  if (!chainData) {
-    throw new Error("ChainId missing or not supported");
-  }
-
-  return chainData;
-}
-
-async function getJsonFile(path) {
-  const res = await fetch(path);
-  const json = await res.json();
-  return json;
-}
-
-async function updateTitle() {
-  const { version } = await getJsonFile("../../lerna.json");
-  const title = document.getElementById("page-title");
-  title.innerHTML = title.innerHTML.replace(/\sv(\w.)+.\w+/gi, "") + ` v${version}`;
-}
-
-function insertAfter(newNode, referenceNode) {
-  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
