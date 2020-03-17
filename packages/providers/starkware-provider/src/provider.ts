@@ -79,18 +79,18 @@ class StarkwareProvider extends EventEmitter {
   }
 
   public async getAccounts() {
-    const result = await this.send("stark_accounts");
-    return result;
+    const { accounts } = await this.send("stark_accounts");
+    return accounts;
   }
 
-  public async register() {
-    const result = await this.send("stark_register");
-    return result;
+  public async register(signature: string) {
+    const { txhash } = await this.send("stark_register", { signature });
+    return txhash;
   }
 
   public async deposit(amount: string, token: string, vaultId: string) {
-    const result = await this.send("stark_deposit", { amount, token, vaultId });
-    return result;
+    const { txhash } = await this.send("stark_deposit", { amount, token, vaultId });
+    return txhash;
   }
 
   public async transfer(
@@ -102,7 +102,7 @@ class StarkwareProvider extends EventEmitter {
     receiverPublicKey: string,
     expirationTimestamp: string,
   ) {
-    const result = await this.send("stark_transfer", {
+    const { signature } = await this.send("stark_transfer", {
       amount,
       nonce,
       senderVaultId,
@@ -111,7 +111,7 @@ class StarkwareProvider extends EventEmitter {
       receiverPublicKey,
       expirationTimestamp,
     });
-    return result;
+    return signature;
   }
 
   public async createOrder(
@@ -124,7 +124,7 @@ class StarkwareProvider extends EventEmitter {
     nonce: string,
     expirationTimestamp: string,
   ) {
-    const result = await this.send("stark_createOrder", {
+    const { signature } = await this.send("stark_createOrder", {
       vaultSell,
       vaultBuy,
       amountSell,
@@ -134,12 +134,12 @@ class StarkwareProvider extends EventEmitter {
       nonce,
       expirationTimestamp,
     });
-    return result;
+    return signature;
   }
 
   public async withdraw(token: string) {
-    const result = await this.send("stark_withdraw", { token });
-    return result;
+    const { txhash } = await this.send("stark_withdraw", { token });
+    return txhash;
   }
 }
 
