@@ -410,7 +410,7 @@ class Connector implements IConnector {
 
     this._eventManager.trigger({
       event: "display_uri",
-      params: [{ uri: this.uri }],
+      params: [this.uri],
     });
 
     const endInstantRequest = () => {
