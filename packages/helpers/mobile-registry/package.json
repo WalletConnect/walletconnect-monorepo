@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/mobile-registry",
-  "version": "1.0.0-beta.71",
+  "version": "1.0.0-beta.72",
   "description": "Registry for WalletConnect mobile-to-mobile linking supported Wallets",
   "scripts": {
     "build": "node ./scripts/parse.js"

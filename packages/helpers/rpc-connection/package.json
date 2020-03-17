@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/rpc-connection",
-  "version": "1.0.0-beta.71",
+  "version": "1.0.0-beta.72",
   "description": "Rpc Connection for WalletConnect Providers",
   "scripts": {
     "clean": "rm -rf dist",
@@ -59,10 +59,10 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/browser": "^1.0.0-beta.71",
-    "@walletconnect/qrcode-modal": "^1.0.0-beta.71",
-    "@walletconnect/types": "^1.0.0-beta.71",
-    "@walletconnect/utils": "^1.0.0-beta.71"
+    "@walletconnect/browser": "^1.0.0-beta.72",
+    "@walletconnect/qrcode-modal": "^1.0.0-beta.72",
+    "@walletconnect/types": "^1.0.0-beta.72",
+    "@walletconnect/utils": "^1.0.0-beta.72"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
