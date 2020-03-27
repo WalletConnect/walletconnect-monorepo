@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "target": "es6",
     "module": "commonjs",
-    "incremental": true,
+    "importHelpers": true,
     "noUnusedLocals": false,
     "strict": false
   }

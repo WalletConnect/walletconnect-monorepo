@@ -30,8 +30,7 @@
     "clean:example": "cd example && rm -rf node_modules",
     "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:example",
     "new-version": "lerna version --no-git-tag-version",
-    "publish": "lerna publish",
-    "publish:beta": "lerna exec -- npm publish --access public",
+    "publish:latest": "lerna exec -- npm publish --access public",
     "publish:next": "lerna exec -- npm publish --access public --tag next",
     "move-dist": "node ./scripts/move-dist.js",
     "commit-version": "node ./scripts/commit-version.js",
@@ -40,7 +39,7 @@
     "example": "npm run check && cd example && npm run start",
     "deploy": "npm run check && npm run publish",
     "pre-publish": "npm run new-version && npm run reset && npm run commit-version",
-    "deploy:beta": "npm run pre-publish && npm run publish:beta",
+    "deploy:latest": "npm run pre-publish && npm run publish:latest",
     "deploy:next": "npm run pre-publish && npm run publish:next"
   },
   "repository": {
