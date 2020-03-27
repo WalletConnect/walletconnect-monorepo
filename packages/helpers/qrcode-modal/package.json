@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/qrcode-modal",
-  "version": "1.0.0-beta.62",
+  "version": "1.0.0-beta.72",
   "description": "QR Code Modal for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -23,9 +23,9 @@
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
-  "main": "dist/cjs/index.js",
+  "main": "dist/index.min.js",
   "types": "dist/index.d.ts",
-  "unpkg": "dist/umd/index.min.js",
+  "unpkg": "dist/index.min.js",
   "files": [
     "dist"
   ],
@@ -60,7 +60,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/utils": "^1.0.0-beta.62",
+    "@walletconnect/utils": "^1.0.0-beta.72",
     "qr-image": "3.2.0",
     "qrcode-terminal": "0.12.0"
   },

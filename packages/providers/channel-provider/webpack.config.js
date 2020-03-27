@@ -1,31 +1,31 @@
-const path = require('path')
+const path = require("path");
 
 module.exports = {
-  mode: 'production',
+  mode: "production",
   entry: {
-    index: path.resolve(__dirname, 'dist', 'cjs', 'index.js')
+    index: path.resolve(__dirname, "dist", "cjs", "index.js"),
   },
   output: {
-    path: path.resolve(__dirname, 'dist', 'umd'),
-    filename: '[name].min.js',
-    libraryTarget: 'umd',
-    library: 'WalletConnectChannelProvider',
+    path: path.resolve(__dirname, "dist", "umd"),
+    filename: "[name].min.js",
+    libraryTarget: "umd",
+    library: "WalletConnectChannelProvider",
     umdNamedDefine: true,
-    globalObject: 'this'
+    globalObject: "this",
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js']
+    extensions: [".ts", ".tsx", ".js"],
   },
-  devtool: 'source-map',
+  devtool: "source-map",
   optimization: {
-    minimize: true
+    minimize: true,
   },
   node: {
-    child_process: 'empty',
-    fs: 'empty',
-    net: 'empty'
+    child_process: "empty",
+    fs: "empty",
+    net: "empty",
   },
   module: {
-    rules: [{ test: /\.tsx?$/, loader: 'ts-loader' }]
-  }
-}
+    rules: [{ test: /\.tsx?$/, loader: "ts-loader" }],
+  },
+};

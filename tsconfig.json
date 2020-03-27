@@ -35,6 +35,7 @@
 
     { "path": "./packages/providers/channel-provider" },
     { "path": "./packages/providers/eth-provider" },
+    { "path": "./packages/providers/starkware-provider" },
     { "path": "./packages/providers/web3-provider" },
     { "path": "./packages/providers/web3-subprovider" },
     { "path": "./packages/providers/truffle-subprovider" },

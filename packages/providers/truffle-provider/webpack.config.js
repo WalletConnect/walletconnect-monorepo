@@ -1,30 +1,30 @@
-const path = require('path')
+const path = require("path");
 
 module.exports = {
-  mode: 'production',
+  mode: "production",
   entry: {
-    index: path.resolve(__dirname, 'dist', 'cjs', 'index.js')
+    index: path.resolve(__dirname, "dist", "cjs", "index.js"),
   },
   output: {
-    path: path.resolve(__dirname, 'dist', 'umd'),
-    filename: '[name].min.js',
-    libraryTarget: 'umd',
-    library: 'WalletConnectTruffleProvider',
+    path: path.resolve(__dirname, "dist", "umd"),
+    filename: "[name].min.js",
+    libraryTarget: "umd",
+    library: "WalletConnectTruffleProvider",
     umdNamedDefine: true,
-    globalObject: 'this'
+    globalObject: "this",
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js']
+    extensions: [".ts", ".tsx", ".js"],
   },
-  devtool: 'source-map',
+  devtool: "source-map",
   optimization: {
-    minimize: true
+    minimize: true,
   },
   module: {
     rules: [
-      { test: /\.tsx?$/, loader: 'ts-loader' },
-      { test: /\.svg$/, loader: 'svg-url-loader' },
-      { test: /\.css$/i, use: ['style-loader', 'css-loader'] }
-    ]
-  }
-}
+      { test: /\.tsx?$/, loader: "ts-loader" },
+      { test: /\.svg$/, loader: "svg-url-loader" },
+      { test: /\.css$/i, use: ["style-loader", "css-loader"] },
+    ],
+  },
+};

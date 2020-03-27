@@ -1,74 +1,69 @@
-const path = require('path')
+const path = require("path");
 
-const {
-  ROOT_DIR,
-  copyFile,
-  readDir,
-  isDir,
-  exists,
-  verifyDir,
-  statPath
-} = require('./shared')
+const { ROOT_DIR, copyFile, readDir, isDir, exists, verifyDir, statPath } = require("./shared");
 
-const PACKAGES_DIR = path.join(ROOT_DIR, './packages')
-const TARGET_DIR = path.join(ROOT_DIR, './dist')
+const PACKAGES_DIR = path.join(ROOT_DIR, "./packages");
+const TARGET_DIR = path.join(ROOT_DIR, "./dist");
 
-async function isPackage (filePath) {
-  return !!(
-    (await isDir(filePath)) &&
-    (await exists(path.join(filePath, 'package.json')))
-  )
+async function isPackage(filePath) {
+  return !!((await isDir(filePath)) && (await exists(path.join(filePath, "package.json"))));
 }
 
-function getName (filePath) {
-  return path.basename(filePath).replace(path.extname(filePath), '')
+function getName(filePath) {
+  return path.basename(filePath).replace(path.extname(filePath), "");
 }
 
-async function copyUmdBundle (filePath) {
+async function copyUmdBundle(filePath) {
   if (await isDir(filePath)) {
-    const newFileExt = '.min.js'
-    const newFileName = getName(filePath) + newFileExt
-    const fileToCopy = path.join(filePath, 'dist', 'umd', 'index.min.js')
-    const outputFile = path.join(TARGET_DIR, newFileName)
+    const newFileExt = ".min.js";
+    const pkgName = getName(filePath);
+    const newFileName = pkgName + newFileExt;
+    // TODO: Find a better way to handle this exception
+    const fileToCopy =
+      pkgName === "qrcode-modal"
+        ? path.join(filePath, "dist", "index.min.js")
+        : path.join(filePath, "dist", "umd", "index.min.js");
+    const outputFile = path.join(TARGET_DIR, newFileName);
 
-    if (!(await exists(fileToCopy))) return
+    if (!(await exists(fileToCopy))) return;
 
     try {
-      await copyFile(fileToCopy, outputFile)
-      console.log(
-        `${newFileName} (${(await statPath(fileToCopy)).size / 1e3} kB)`
-      )
+      await copyFile(fileToCopy, outputFile);
+      // eslint-disable-next-line no-console
+      console.log(`${newFileName} (${(await statPath(fileToCopy)).size / 1e3} kB)`);
     } catch (err) {
-      console.error(err)
+      // eslint-disable-next-line no-console
+      console.error(err);
     }
   }
 }
 
-async function moveDist (targetDir) {
+async function moveDist(targetDir) {
   try {
-    const packages = await readDir(targetDir)
+    const packages = await readDir(targetDir);
 
     await Promise.all(
       packages.map(async packageDir => {
-        if (['node_modules', 'dist', 'test'].includes(packageDir)) {
-          return
+        if (["node_modules", "dist", "test"].includes(packageDir)) {
+          return;
         }
-        const filePath = path.join(targetDir, packageDir)
+        const filePath = path.join(targetDir, packageDir);
         if (await isPackage(filePath)) {
-          return copyUmdBundle(filePath)
+          return copyUmdBundle(filePath);
         }
-        return moveDist(filePath)
-      })
-    )
+        return moveDist(filePath);
+      }),
+    );
   } catch (err) {
-    console.error('Could not list the directory.\n', err.message)
-    process.exit(1)
+    // eslint-disable-next-line no-console
+    console.error("Could not list the directory.\n", err.message);
+    process.exit(1);
   }
 }
 
-async function run () {
-  await verifyDir(TARGET_DIR)
-  await moveDist(PACKAGES_DIR)
+async function run() {
+  await verifyDir(TARGET_DIR);
+  await moveDist(PACKAGES_DIR);
 }
 
-run()
+run();
