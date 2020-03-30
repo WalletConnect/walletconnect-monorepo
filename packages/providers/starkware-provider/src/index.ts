@@ -7,6 +7,10 @@ class WalletConnectStarkwareProvider extends StarkwareProvider {
     const connection = new WCRpcConnection(opts);
     super(connection);
   }
+
+  get isWalletConnect() {
+    return true;
+  }
 }
 
 export default WalletConnectStarkwareProvider;
