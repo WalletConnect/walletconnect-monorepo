@@ -1,10 +1,11 @@
 # WalletConnect v1.0.0-beta
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.org
+[![Financial Contributors on Open Collective](https://opencollective.com/walletconnect/all/badge.svg?label=financial+contributors)](https://opencollective.com/walletconnect)
 
 | Clients                     | Current Version                                                                                                                          | Description         |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| @walletconnect/core         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                 | Core Client         |
+| @walletconnect/core         |  [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                 | Core Client         |
 | @walletconnect/client       | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fclient.svg)](https://badge.fury.io/js/%40walletconnect%2Fclient)             | Isomorphic Client   |
 | @walletconnect/browser      | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fbrowser.svg)](https://badge.fury.io/js/%40walletconnect%2Fbrowser)           | Browser Client      |
 | @walletconnect/node         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fnode.svg)](https://badge.fury.io/js/%40walletconnect%2Fnode)                 | NodeJS Client       |
@@ -43,6 +44,36 @@ Read more about WalletConnect protocol and how to use our Clients at https://doc
 ## Contributing
 
 All contributions are welcome! Feel free to create an Issue or make a PR in this repository
+
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/WalletConnect/walletconnect-monorepo/graphs/contributors"><img src="https://opencollective.com/walletconnect/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/walletconnect/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/walletconnect"><img src="https://opencollective.com/walletconnect/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/walletconnect/contribute)]
+
+<a href="https://opencollective.com/walletconnect/organization/0/website"><img src="https://opencollective.com/walletconnect/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/1/website"><img src="https://opencollective.com/walletconnect/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/2/website"><img src="https://opencollective.com/walletconnect/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/3/website"><img src="https://opencollective.com/walletconnect/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/4/website"><img src="https://opencollective.com/walletconnect/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/5/website"><img src="https://opencollective.com/walletconnect/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/6/website"><img src="https://opencollective.com/walletconnect/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/7/website"><img src="https://opencollective.com/walletconnect/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/8/website"><img src="https://opencollective.com/walletconnect/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/walletconnect/organization/9/website"><img src="https://opencollective.com/walletconnect/organization/9/avatar.svg"></a>
 
 ## License
 
