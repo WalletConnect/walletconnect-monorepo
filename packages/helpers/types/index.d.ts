@@ -300,21 +300,25 @@ declare module "@walletconnect/types" {
     chainId?: number;
   }
 
-  export interface IWCRpcConnection {
+  export interface IRpcConnection extends NodeJS.EventEmitter {
+    connected: boolean;
+
+    send(payload: any): Promise<any>;
+    open(): Promise<void>;
+    close(): Promise<void>;
+  }
+
+  export interface IWCRpcConnection extends IRpcConnection {
     bridge: string;
     qrcode: boolean;
     wc: IConnector | null;
     connected: boolean;
-    closed: boolean;
 
     openQRCode(): void;
     create(chainId?: number): void;
     onClose(): void;
-    open(): Promise<void>;
-    close(): Promise<void>;
     onError(payload: any, message: string, code?: number): void;
-    sendPayload(payload: any): Promise<any>;
-    send(payload: any): Promise<any>;
+    sendPayload(payload: any): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError>;
   }
 
   export interface IMobileRegistryEntry {

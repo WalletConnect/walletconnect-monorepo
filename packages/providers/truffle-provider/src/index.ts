@@ -36,6 +36,10 @@ class WalletConnectProvider extends ProviderEngine {
 
     this.start();
   }
+
+  get isWalletConnect() {
+    return true;
+  }
 }
 
 export default WalletConnectProvider;

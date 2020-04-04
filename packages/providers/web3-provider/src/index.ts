@@ -30,7 +30,6 @@ class WalletConnectProvider extends ProviderEngine {
   public wc: IConnector;
   public isConnecting = false;
   public connected = false;
-  public isWalletConnect = true;
   public connectCallbacks: any[] = [];
   public accounts: string[] = [];
   public chainId = 1;
@@ -139,6 +138,10 @@ class WalletConnectProvider extends ProviderEngine {
       },
       setEngine: (_: any) => _,
     });
+  }
+
+  get isWalletConnect() {
+    return true;
   }
 
   enable() {

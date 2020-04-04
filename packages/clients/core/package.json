@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/core",
-  "version": "1.0.0-beta.62",
+  "version": "1.0.0-beta.74",
   "description": "Core Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -50,7 +50,6 @@
     "@types/mocha": "5.2.7",
     "@types/node": "12.12.14",
     "chai": "4.2.0",
-    "eccrypto-js": "4.3.5",
     "isomorphic-fetch": "2.2.1",
     "mocha": "5.2.0",
     "tsdx": "0.12.3",
@@ -59,9 +58,9 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/socket-transport": "^1.0.0-beta.62",
-    "@walletconnect/types": "^1.0.0-beta.62",
-    "@walletconnect/utils": "^1.0.0-beta.62"
+    "@walletconnect/socket-transport": "^1.0.0-beta.74",
+    "@walletconnect/types": "^1.0.0-beta.74",
+    "@walletconnect/utils": "^1.0.0-beta.74"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
