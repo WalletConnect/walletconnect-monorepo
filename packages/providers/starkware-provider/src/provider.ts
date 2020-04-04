@@ -186,13 +186,13 @@ class StarkwareProvider extends EventEmitter {
     return starkSignature;
   }
 
-  public async withdrawToken(token: Token): Promise<string> {
+  public async withdraw(token: Token): Promise<string> {
     const contractAddress = this.contractAddress;
     const { txhash } = await this.send("stark_withdrawal", { contractAddress, token });
     return txhash;
   }
 
-  public async withdrawVault(vaultId: string): Promise<string> {
+  public async withdrawFull(vaultId: string): Promise<string> {
     const contractAddress = this.contractAddress;
     const { txhash } = await this.send("stark_fullWithdrawal", { contractAddress, vaultId });
     return txhash;

@@ -53,8 +53,8 @@ class StarkwareProvider {
     nonce: string,
     expirationTimestamp: string,
   ): Promise<string>;
-  withdrawToken(token: Token): Promise<string>;
-  withdrawVault(vaultId: string): Promise<string>;
+  withdraw(token: Token): Promise<string>;
+  withdrawFull(vaultId: string): Promise<string>;
   freezeVault(vaultId: string): Promise<string>;
   verifyEspace(proof: string[]): Promise<string>;
 }
