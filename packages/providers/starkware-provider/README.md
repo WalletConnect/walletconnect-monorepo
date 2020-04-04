@@ -34,7 +34,7 @@ class StarkwareProvider {
 
   // provider methods
   enable(index?: number): Promise<string>;
-  getAccount(index: number = this.index): Promise<string>;
+  getAccount(index?: number): Promise<string>;
   register(operatorSignature: string): Promise<string>;
   deposit(quantizedAmount: string, token: Token, vaultId: string): Promise<string>;
   depositCancel(token: Token, vaultId: string): Promise<string>;
