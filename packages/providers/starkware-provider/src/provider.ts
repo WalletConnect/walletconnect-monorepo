@@ -2,23 +2,25 @@ import EventEmitter from "events";
 import { payloadId } from "@walletconnect/utils";
 import { IRpcConnection } from "@walletconnect/types";
 
+import { Token, TransferParams, OrderParams } from "./types";
+
 // -- StarkwareProvider ---------------------------------------------------- //
 
 class StarkwareProvider extends EventEmitter {
-  private _accounts: string[] = [];
   private _connected = false;
+  private connection: IRpcConnection;
+  private index = 0;
 
-  public connection: IRpcConnection;
+  public contractAddress: string;
+  public starkPublicKey: string | undefined;
 
-  constructor(connection: IRpcConnection) {
+  constructor(connection: IRpcConnection, contractAddress: string) {
     super();
     this.connection = connection;
+    this.contractAddress = contractAddress;
   }
 
   // -- public ---------------------------------------------------------------- //
-  get accounts(): string[] {
-    return this._accounts;
-  }
 
   set connected(value: boolean) {
     this._connected = value;
@@ -33,14 +35,14 @@ class StarkwareProvider extends EventEmitter {
     return this._connected;
   }
 
-  public async enable() {
+  public async enable(index?: number): Promise<string> {
     try {
       if (!this.connected) {
         await this.open();
       }
-      const accounts = await this.getAccounts();
+      const starkPublicKey = await this.getAccount(index);
       this.emit("enable");
-      return accounts;
+      return starkPublicKey;
     } catch (err) {
       this.connected = false;
       this.connection.close();
@@ -48,7 +50,7 @@ class StarkwareProvider extends EventEmitter {
     }
   }
 
-  public async send(method: string, params: any = []) {
+  public async send(method: string, params: any = []): Promise<any> {
     return this.connection.send({
       id: payloadId(),
       jsonrpc: "2.0",
@@ -57,8 +59,8 @@ class StarkwareProvider extends EventEmitter {
     });
   }
 
-  public open() {
-    return new Promise((resolve, reject) => {
+  public open(): void {
+    new Promise((resolve, reject) => {
       this.connection.on("close", () => {
         this.connected = false;
         reject();
@@ -73,72 +75,138 @@ class StarkwareProvider extends EventEmitter {
     });
   }
 
-  public close() {
+  public close(): void {
     this.connected = false;
     this.connection.close();
   }
 
-  public async getAccounts() {
-    const { accounts } = await this.send("stark_accounts");
-    return accounts;
+  public async getAccount(index: number = this.index): Promise<string> {
+    const contractAddress = this.contractAddress;
+    if (this.starkPublicKey && this.index === index) {
+      return this.starkPublicKey;
+    }
+    if (this.index !== index) {
+      this.index = index;
+    }
+    const { starkPublicKey } = await this.send("stark_account", {
+      contractAddress,
+      index: this.index,
+    });
+    this.starkPublicKey = starkPublicKey;
+    return starkPublicKey;
   }
 
-  public async register(signature: string) {
-    const { txhash } = await this.send("stark_register", { signature });
+  public async register(operatorSignature: string): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const starkPublicKey = await this.getAccount();
+    const { txhash } = await this.send("stark_register", {
+      contractAddress,
+      starkPublicKey,
+      operatorSignature,
+    });
     return txhash;
   }
 
-  public async deposit(amount: string, token: string, vaultId: string) {
-    const { txhash } = await this.send("stark_deposit", { amount, token, vaultId });
+  public async deposit(quantizedAmount: string, token: Token, vaultId: string): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const starkPublicKey = await this.getAccount();
+    const { txhash } = await this.send("stark_deposit", {
+      contractAddress,
+      starkPublicKey,
+      quantizedAmount,
+      token,
+      vaultId,
+    });
+    return txhash;
+  }
+
+  public async depositCancel(token: Token, vaultId: string): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const starkPublicKey = await this.getAccount();
+    const { txhash } = await this.send("stark_depositCancel", {
+      contractAddress,
+      starkPublicKey,
+      token,
+      vaultId,
+    });
+    return txhash;
+  }
+
+  public async depositReclaim(token: Token, vaultId: string): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const starkPublicKey = await this.getAccount();
+    const { txhash } = await this.send("stark_depositReclaim", {
+      contractAddress,
+      starkPublicKey,
+      token,
+      vaultId,
+    });
     return txhash;
   }
 
   public async transfer(
-    amount: string,
+    to: TransferParams,
+    vaultId: string,
+    token: Token,
+    quantizedAmount: string,
     nonce: string,
-    senderVaultId: string,
-    token: string,
-    receiverVaultId: string,
-    receiverPublicKey: string,
     expirationTimestamp: string,
-  ) {
-    const { signature } = await this.send("stark_transfer", {
-      amount,
-      nonce,
-      senderVaultId,
+  ): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const starkPublicKey = await this.getAccount();
+    const from = { starkPublicKey, vaultId };
+    const { starkSignature } = await this.send("stark_transfer", {
+      contractAddress,
+      from,
+      to,
       token,
-      receiverVaultId,
-      receiverPublicKey,
+      quantizedAmount,
+      nonce,
       expirationTimestamp,
     });
-    return signature;
+    return starkSignature;
   }
 
   public async createOrder(
-    vaultSell: string,
-    vaultBuy: string,
-    amountSell: string,
-    amountBuy: string,
-    tokenSell: string,
-    tokenBuy: string,
+    sell: OrderParams,
+    buy: OrderParams,
     nonce: string,
     expirationTimestamp: string,
-  ) {
-    const { signature } = await this.send("stark_createOrder", {
-      vaultSell,
-      vaultBuy,
-      amountSell,
-      amountBuy,
-      tokenSell,
-      tokenBuy,
+  ): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const starkPublicKey = await this.getAccount();
+    const { starkSignature } = await this.send("stark_createOrder", {
+      contractAddress,
+      starkPublicKey,
+      sell,
+      buy,
       nonce,
       expirationTimestamp,
     });
-    return signature;
+    return starkSignature;
   }
 
-  public async withdraw(token: string) {
-    const { txhash } = await this.send("stark_withdraw", { token });
+  public async withdrawToken(token: Token): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const { txhash } = await this.send("stark_withdrawal", { contractAddress, token });
+    return txhash;
+  }
+
+  public async withdrawVault(vaultId: string): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const { txhash } = await this.send("stark_fullWithdrawal", { contractAddress, vaultId });
+    return txhash;
+  }
+
+  public async freezeVault(vaultId: string): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const { txhash } = await this.send("stark_freeze", { contractAddress, vaultId });
+    return txhash;
+  }
+
+  public async verifyEspace(proof: string[]): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const { txhash } = await this.send("stark_verifyEscape", { contractAddress, proof });
     return txhash;
   }
 }

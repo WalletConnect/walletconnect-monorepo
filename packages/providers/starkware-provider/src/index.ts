@@ -2,15 +2,21 @@ import StarkwareProvider from "./provider";
 import WCRpcConnection from "@walletconnect/rpc-connection";
 import { IWCRpcConnectionOptions } from "@walletconnect/types";
 
+interface WalletConnectStarkwareProviderOptions extends IWCRpcConnectionOptions {
+  contractAddress: string;
+}
+
 class WalletConnectStarkwareProvider extends StarkwareProvider {
-  constructor(opts: IWCRpcConnectionOptions) {
+  constructor(opts: WalletConnectStarkwareProviderOptions) {
     const connection = new WCRpcConnection(opts);
-    super(connection);
+    super(connection, opts.contractAddress);
   }
 
   get isWalletConnect() {
     return true;
   }
 }
+
+export * from "./types";
 
 export default WalletConnectStarkwareProvider;

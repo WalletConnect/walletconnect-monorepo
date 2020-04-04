@@ -4,59 +4,92 @@ Starkware Provider for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
-## Setup
+## Example
 
 ```javascript
 import StarkwareProvider from "@walletconnect/starkware-provider";
 
 //  Create StarkwareProvider Provider
-const provider = new StarkwareProvider();
+const provider = new StarkwareProvider({
+  contractAddress: "0xC5273AbFb36550090095B1EDec019216AD21BE6c",
+});
 
 //  Enable session (triggers QR Code modal)
-const accounts = await provider.enable();
-
-//  Get StarkKey
-const starkKey = accounts[0];
+const starkPublicKey = await provider.enable();
 ```
 
-## Provider Methods
+## Provider API
 
-```javascript
-// Get accounts
-const accounts = await provider.getAccounts();
+```typescript
+class StarkwareProvider {
+  // provider properties
+  connected: boolean;
+  contractAddress: string;
+  starkPublicKey?: string;
 
-// Register account
-const txhash = await provider.register(signature);
+  // connection methods
+  send(method: string, params: any = []): Promise<any>;
+  open(): void;
+  close(): void;
 
-// Deposit asset
-const txhash = await provider.deposit(amount, token, vaultId);
+  // provider methods
+  enable(index?: number): Promise<string>;
+  getAccount(index: number = this.index): Promise<string>;
+  register(operatorSignature: string): Promise<string>;
+  deposit(quantizedAmount: string, token: Token, vaultId: string): Promise<string>;
+  depositCancel(token: Token, vaultId: string): Promise<string>;
+  depositReclaim(token: Token, vaultId: string): Promise<string>;
+  transfer(
+    to: TransferParams,
+    vaultId: string,
+    token: Token,
+    quantizedAmount: string,
+    nonce: string,
+    expirationTimestamp: string,
+  ): Promise<string>;
+  createOrder(
+    sell: OrderParams,
+    buy: OrderParams,
+    nonce: string,
+    expirationTimestamp: string,
+  ): Promise<string>;
+  withdrawToken(token: Token): Promise<string>;
+  withdrawVault(vaultId: string): Promise<string>;
+  freezeVault(vaultId: string): Promise<string>;
+  verifyEspace(proof: string[]): Promise<string>;
+}
+```
 
-// Transfer asset
-const signature = await provider.transfer(
-  amount,
-  nonce,
-  senderVaultId,
-  token,
-  receiverVaultId,
-  receiverPublicKey,
-  expirationTimestamp,
-);
+## Interfaces
 
-// Create Limit Order
-const signature = await provider.createOrder(
-  vaultSell,
-  vaultBuy,
-  amountSell,
-  amountBuy,
-  tokenSell,
-  tokenBuy,
-  nonce,
-  expirationTimestamp,
-);
+```typescript
+interface ETHTokenData {
+  quantum: string;
+}
 
-// Withdraw Asset
-const txhash = await provider.withdraw(token);
+interface ERC20TokenData {
+  quantum: string;
+  tokenAddress: string;
+}
 
-// Close provider session
-await provider.close();
+interface ERC721TokenData {
+  tokenId: string;
+  tokenAddress: string;
+}
+
+interface Token {
+  type: string;
+  data: ETHTokenData | ERC20TokenData | ERC721TokenData;
+}
+
+interface TransferParams {
+  starkPublicKey: string;
+  vaultID: string;
+}
+
+interface OrderParams {
+  vaultID: string;
+  token: Token;
+  quantizedAmount: string;
+}
 ```
