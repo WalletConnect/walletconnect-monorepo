@@ -12,9 +12,13 @@ export interface ERC721TokenData {
   tokenAddress: string;
 }
 
+export type TokenTypes = "ETH" | "ERC20" | "ERC721";
+
+export type TokenData = ETHTokenData | ERC20TokenData | ERC721TokenData;
+
 export interface Token {
-  type: string;
-  data: ETHTokenData | ERC20TokenData | ERC721TokenData;
+  type: TokenTypes;
+  data: TokenData;
 }
 
 export interface TransferParams {
