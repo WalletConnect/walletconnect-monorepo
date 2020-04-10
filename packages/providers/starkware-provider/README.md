@@ -57,7 +57,7 @@ class StarkwareProvider {
   withdrawFull(vaultId: string): Promise<string>;
   freezeVault(vaultId: string): Promise<string>;
   verifyEspace(proof: string[]): Promise<string>;
-  escape(vaultID: string, token: Token, quantizedAmount: string): Promise<string>;
+  escape(vaultId: string, token: Token, quantizedAmount: string): Promise<string>;
 }
 ```
 
@@ -89,11 +89,11 @@ interface Token {
 
 interface TransferParams {
   starkPublicKey: string;
-  vaultID: string;
+  vaultId: string;
 }
 
 interface OrderParams {
-  vaultID: string;
+  vaultId: string;
   token: Token;
   quantizedAmount: string;
 }

@@ -220,13 +220,13 @@ class StarkwareProvider extends EventEmitter {
     return txhash;
   }
 
-  public async escape(vaultID: string, token: Token, quantizedAmount: string): Promise<string> {
+  public async escape(vaultId: string, token: Token, quantizedAmount: string): Promise<string> {
     const contractAddress = this.contractAddress;
     const starkPublicKey = await this.getActiveAccount();
     const { txhash } = await this.send("stark_escape", {
       contractAddress,
       starkPublicKey,
-      vaultID,
+      vaultId,
       token,
       quantizedAmount,
     });

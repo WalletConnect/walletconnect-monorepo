@@ -23,11 +23,11 @@ export interface Token {
 
 export interface TransferParams {
   starkPublicKey: string;
-  vaultID: string;
+  vaultId: string;
 }
 
 export interface OrderParams {
-  vaultID: string;
+  vaultId: string;
   token: Token;
   quantizedAmount: string;
 }
