@@ -4,12 +4,14 @@ import { IRpcConnection } from "@walletconnect/types";
 
 import { Token, TransferParams, OrderParams } from "./types";
 
+const DEFAULT_INDEX = 0;
+
 // -- StarkwareProvider ---------------------------------------------------- //
 
 class StarkwareProvider extends EventEmitter {
   private _connected = false;
   private connection: IRpcConnection;
-  private index = 0;
+  private index = DEFAULT_INDEX;
 
   public contractAddress: string;
   public starkPublicKey: string | undefined;
@@ -40,7 +42,7 @@ class StarkwareProvider extends EventEmitter {
       if (!this.connected) {
         await this.open();
       }
-      const starkPublicKey = await this.getAccount(index);
+      const starkPublicKey = await this.updateAccount(index);
       this.emit("enable");
       return starkPublicKey;
     } catch (err) {
@@ -80,25 +82,33 @@ class StarkwareProvider extends EventEmitter {
     this.connection.close();
   }
 
-  public async getAccount(index: number = this.index): Promise<string> {
-    const contractAddress = this.contractAddress;
-    if (this.starkPublicKey && this.index === index) {
+  public async updateAccount(index: number = this.index): Promise<string> {
+    if (this.starkPublicKey && index === this.index) {
       return this.starkPublicKey;
     }
-    if (this.index !== index) {
-      this.index = index;
+    const starkPublicKey = await this.getAccount(index);
+    return starkPublicKey;
+  }
+
+  public async getActiveAccount(): Promise<string> {
+    if (this.starkPublicKey) {
+      return this.starkPublicKey;
     }
-    const { starkPublicKey } = await this.send("stark_account", {
-      contractAddress,
-      index: this.index,
-    });
+    const starkPublicKey = await this.getAccount(this.index);
+    return starkPublicKey;
+  }
+
+  public async getAccount(index: number): Promise<string> {
+    const contractAddress = this.contractAddress;
+    this.index = index;
+    const { starkPublicKey } = await this.send("stark_account", { contractAddress, index });
     this.starkPublicKey = starkPublicKey;
     return starkPublicKey;
   }
 
   public async register(operatorSignature: string): Promise<string> {
     const contractAddress = this.contractAddress;
-    const starkPublicKey = await this.getAccount();
+    const starkPublicKey = await this.getActiveAccount();
     const { txhash } = await this.send("stark_register", {
       contractAddress,
       starkPublicKey,
@@ -109,7 +119,7 @@ class StarkwareProvider extends EventEmitter {
 
   public async deposit(quantizedAmount: string, token: Token, vaultId: string): Promise<string> {
     const contractAddress = this.contractAddress;
-    const starkPublicKey = await this.getAccount();
+    const starkPublicKey = await this.getActiveAccount();
     const { txhash } = await this.send("stark_deposit", {
       contractAddress,
       starkPublicKey,
@@ -122,7 +132,7 @@ class StarkwareProvider extends EventEmitter {
 
   public async depositCancel(token: Token, vaultId: string): Promise<string> {
     const contractAddress = this.contractAddress;
-    const starkPublicKey = await this.getAccount();
+    const starkPublicKey = await this.getActiveAccount();
     const { txhash } = await this.send("stark_depositCancel", {
       contractAddress,
       starkPublicKey,
@@ -134,7 +144,7 @@ class StarkwareProvider extends EventEmitter {
 
   public async depositReclaim(token: Token, vaultId: string): Promise<string> {
     const contractAddress = this.contractAddress;
-    const starkPublicKey = await this.getAccount();
+    const starkPublicKey = await this.getActiveAccount();
     const { txhash } = await this.send("stark_depositReclaim", {
       contractAddress,
       starkPublicKey,
@@ -153,7 +163,7 @@ class StarkwareProvider extends EventEmitter {
     expirationTimestamp: string,
   ): Promise<string> {
     const contractAddress = this.contractAddress;
-    const starkPublicKey = await this.getAccount();
+    const starkPublicKey = await this.getActiveAccount();
     const from = { starkPublicKey, vaultId };
     const { starkSignature } = await this.send("stark_transfer", {
       contractAddress,
@@ -174,7 +184,7 @@ class StarkwareProvider extends EventEmitter {
     expirationTimestamp: string,
   ): Promise<string> {
     const contractAddress = this.contractAddress;
-    const starkPublicKey = await this.getAccount();
+    const starkPublicKey = await this.getActiveAccount();
     const { starkSignature } = await this.send("stark_createOrder", {
       contractAddress,
       starkPublicKey,
@@ -207,6 +217,19 @@ class StarkwareProvider extends EventEmitter {
   public async verifyEspace(proof: string[]): Promise<string> {
     const contractAddress = this.contractAddress;
     const { txhash } = await this.send("stark_verifyEscape", { contractAddress, proof });
+    return txhash;
+  }
+
+  public async escape(vaultID: string, token: Token, quantizedAmount: string): Promise<string> {
+    const contractAddress = this.contractAddress;
+    const starkPublicKey = await this.getActiveAccount();
+    const { txhash } = await this.send("stark_escape", {
+      contractAddress,
+      starkPublicKey,
+      vaultID,
+      token,
+      quantizedAmount,
+    });
     return txhash;
   }
 }

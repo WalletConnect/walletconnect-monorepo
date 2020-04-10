@@ -57,6 +57,7 @@ class StarkwareProvider {
   withdrawFull(vaultId: string): Promise<string>;
   freezeVault(vaultId: string): Promise<string>;
   verifyEspace(proof: string[]): Promise<string>;
+  escape(vaultID: string, token: Token, quantizedAmount: string): Promise<string>;
 }
 ```
 
@@ -77,9 +78,13 @@ interface ERC721TokenData {
   tokenAddress: string;
 }
 
+type TokenTypes = "ETH" | "ERC20" | "ERC721";
+
+type TokenData = ETHTokenData | ERC20TokenData | ERC721TokenData;
+
 interface Token {
-  type: string;
-  data: ETHTokenData | ERC20TokenData | ERC721TokenData;
+  type: TokenTypes;
+  data: TokenData;
 }
 
 interface TransferParams {
