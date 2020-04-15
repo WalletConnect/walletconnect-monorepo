@@ -4,14 +4,12 @@ import { IRpcConnection } from "@walletconnect/types";
 
 import { Token, TransferParams, OrderParams } from "./types";
 
-const DEFAULT_INDEX = 0;
-
 // -- StarkwareProvider ---------------------------------------------------- //
 
 class StarkwareProvider extends EventEmitter {
   private _connected = false;
   private connection: IRpcConnection;
-  private index = DEFAULT_INDEX;
+  private path: string | undefined;
 
   public contractAddress: string;
   public starkPublicKey: string | undefined;
@@ -37,12 +35,12 @@ class StarkwareProvider extends EventEmitter {
     return this._connected;
   }
 
-  public async enable(index?: number): Promise<string> {
+  public async enable(path: string): Promise<string> {
     try {
       if (!this.connected) {
         await this.open();
       }
-      const starkPublicKey = await this.updateAccount(index);
+      const starkPublicKey = await this.updateAccount(path);
       this.emit("enable");
       return starkPublicKey;
     } catch (err) {
@@ -82,11 +80,11 @@ class StarkwareProvider extends EventEmitter {
     this.connection.close();
   }
 
-  public async updateAccount(index: number = this.index): Promise<string> {
-    if (this.starkPublicKey && index === this.index) {
+  public async updateAccount(path: string): Promise<string> {
+    if (this.starkPublicKey && path === this.path) {
       return this.starkPublicKey;
     }
-    const starkPublicKey = await this.getAccount(index);
+    const starkPublicKey = await this.getAccount(path);
     return starkPublicKey;
   }
 
@@ -94,14 +92,13 @@ class StarkwareProvider extends EventEmitter {
     if (this.starkPublicKey) {
       return this.starkPublicKey;
     }
-    const starkPublicKey = await this.getAccount(this.index);
+    const starkPublicKey = await this.getAccount(this.path);
     return starkPublicKey;
   }
 
-  public async getAccount(index: number): Promise<string> {
-    const contractAddress = this.contractAddress;
-    this.index = index;
-    const { starkPublicKey } = await this.send("stark_account", { contractAddress, index });
+  public async getAccount(path: string): Promise<string> {
+    this.path = path;
+    const { starkPublicKey } = await this.send("stark_account", { path });
     this.starkPublicKey = starkPublicKey;
     return starkPublicKey;
   }
