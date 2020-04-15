@@ -89,6 +89,9 @@ class StarkwareProvider extends EventEmitter {
   }
 
   public async getActiveAccount(): Promise<string> {
+    if (!this.path) {
+      throw new Error("No StarkPublicKey avaialable - please call provider.enable()");
+    }
     if (this.starkPublicKey) {
       return this.starkPublicKey;
     }
