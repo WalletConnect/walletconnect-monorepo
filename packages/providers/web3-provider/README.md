@@ -12,7 +12,7 @@ import WalletConnectProvider from "@walletconnect/web3-provider";
 
 //  Create WalletConnect Provider
 const provider = new WalletConnectProvider({
-  infuraId: "27e484dcd9e3efcfd25a83a78777cdf1" // Required
+  infuraId: "27e484dcd9e3efcfd25a83a78777cdf1", // Required
 });
 
 //  Enable session (triggers QR Code modal)
@@ -67,10 +67,10 @@ await provider.close()
 //  Get Accounts
 const accounts = await web3.eth.getAccounts();
 
-//  Get Chain ID
+//  Get Chain Id
 const chainId = await web3.eth.chainId();
 
-//  Get Network ID
+//  Get Network Id
 const networkId = await web3.eth.net.getId();
 
 // Send Transaction
@@ -89,10 +89,10 @@ const signedTypedData = await web3.eth.signTypedData(msg);
 ## Provider Options
 
 1. Required (at least one of the following)
-   a. infuraId - the Infura app ID is used for read requests that don't require user approval like signing requests
+   a. infuraId - the Infura Id is used for read requests that don't require user approval like signing requests
    b. rpc - custom rpc url mapping with chainId keys for each url (check custom rpc url section)
 2. Optional
-   a. bridge - the Bridge URL points to the bridge server used to relay WalletConnect payloads - default="https://bridge.walletconnect.org"
+   a. bridge - the Bridge Url points to the bridge server used to relay WalletConnect payloads - default="https://bridge.walletconnect.org"
    b. chainId - preferred chain id to be provided by the wallet on session request - default=1
 
 ## Custom RPC Url
@@ -108,8 +108,8 @@ const provider = new WalletConnectProvider({
   rpc: {
     1: "https://mainnet.mycustomnode.com",
     3: "https://ropsten.mycustomnode.com",
-    100: "https://dai.poa.network"
+    100: "https://dai.poa.network",
     // ...
-  }
+  },
 });
 ```

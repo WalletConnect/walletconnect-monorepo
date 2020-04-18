@@ -1,10 +1,11 @@
 import WalletConnect from "@walletconnect/browser";
 import NodeWalletConnect from "@walletconnect/node";
-import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+
 import { IWCEthRpcConnectionOptions, IConnector } from "@walletconnect/types";
 import { isNode } from "@walletconnect/utils";
 
 const HookedWalletSubprovider = require("web3-provider-engine/subproviders/hooked-wallet");
+const qrTerminal = require("qrcode-terminal");
 
 class WalletConnectSubprovider extends HookedWalletSubprovider {
   private _connected = false;
@@ -136,13 +137,11 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
         wc.createSession(sessionRequestOpions)
           .then(() => {
             if (this.qrcode) {
-              WalletConnectQRCodeModal.open(wc.uri, () => {
-                reject(new Error("User closed WalletConnect modal"));
-              });
+              qrTerminal.generate(wc.uri, { small: true });
             }
             wc.on("connect", (error: any, payload: any) => {
               if (this.qrcode) {
-                WalletConnectQRCodeModal.close();
+                // do nothing
               }
               if (error) {
                 this.isConnecting = false;

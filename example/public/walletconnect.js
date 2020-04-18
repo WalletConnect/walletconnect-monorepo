@@ -22,6 +22,7 @@ function onInit() {
     connector.createSession().then(() => {
       // get uri for QR Code modal
       const uri = connector.uri;
+      console.log(uri); // eslint-disable-line
       // display QR Code modal
       WalletConnectQRCodeModal.open(uri, () => {
         console.log("QR Code Modal closed"); // eslint-disable-line
@@ -85,7 +86,7 @@ async function onDisconnect() {
   textEl.innerHTML = "Disconnected!";
 
   const buttonEl = containerEl.getElementsByTagName("button")[0];
-  buttonEl.innerText = "WalletConnect";
+  buttonEl.innerText = "Connect";
   buttonEl.onclick = onInit;
   if (pTags.length > 1) {
     const accountEl = containerEl.getElementsByTagName("p")[1];
@@ -96,21 +97,41 @@ async function onDisconnect() {
   }
 }
 
-function sendTestTransaction() {
+// function sendTestTransaction() {
+//   if (!connector) {
+//     throw new Error(`connector hasn't been created yet`);
+//   }
+
+//   // Draft transaction
+//   const tx = {
+//     from: connector.accounts[0],
+//     to: connector.accounts[0],
+//     data: "0x", // Required
+//   };
+
+//   // Send transaction
+//   connector
+//     .sendTransaction(tx)
+//     .then(result => {
+//       // Returns transaction id (hash)
+//       console.log(result); // eslint-disable-line
+//     })
+//     .catch(error => {
+//       // Error returned when rejected
+//       console.error(error); // eslint-disable-line
+//     });
+// }
+
+function signPersonalMessage() {
   if (!connector) {
     throw new Error(`connector hasn't been created yet`);
   }
 
-  // Draft transaction
-  const tx = {
-    from: connector.accounts[0],
-    to: connector.accounts[0],
-    data: "0x", // Required
-  };
+  const msg = "Test message from WalletConnect example";
 
   // Send transaction
   connector
-    .sendTransaction(tx)
+    .signPersonalMessage([msg, connector.accounts[0]])
     .then(result => {
       // Returns transaction id (hash)
       console.log(result); // eslint-disable-line
@@ -139,8 +160,8 @@ async function updateSessionDetails({ accounts, chainId }) {
     window.insertAfter(chainEl, accountEl);
 
     const buttonEl = containerEl.getElementsByTagName("button")[0];
-    buttonEl.innerText = "Send Transaction";
-    buttonEl.onclick = sendTestTransaction;
+    buttonEl.innerText = "Sign Message";
+    buttonEl.onclick = signPersonalMessage;
   } else {
     const accountEl = containerEl.getElementsByTagName("p")[1];
     accountEl.innerHTML = `Account: ${accounts[0]}`;

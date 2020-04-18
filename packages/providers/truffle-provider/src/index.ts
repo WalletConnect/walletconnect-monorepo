@@ -19,11 +19,11 @@ class WalletConnectProvider extends ProviderEngine {
     const { bridge, rpcUrl, shareNonce } = options;
 
     if (!bridge) {
-      throw new Error(`Bridge URL missing, non-empty string expected, got "${bridge}"`);
+      throw new Error(`Bridge Url missing, non-empty string expected, got "${bridge}"`);
     }
 
     if (!rpcUrl) {
-      throw new Error(`RPC URL missing, non-empty string expected, got "${rpcUrl}"`);
+      throw new Error(`RPC Url missing, non-empty string expected, got "${rpcUrl}"`);
     }
 
     this.addProvider(new FiltersSubprovider());
