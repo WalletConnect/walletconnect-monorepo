@@ -9,7 +9,9 @@ class SessionStorage {
       if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
         this.storage = window.localStorage;
       }
-    } catch(_) {}
+    } catch (_) {
+      // do nothing
+    }
   }
 
   public getSession(): IWalletConnectSession | null {
