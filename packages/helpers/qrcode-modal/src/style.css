@@ -58,9 +58,8 @@
 
 .walletconnect-modal__headerLogo {
   width: 100%;
-  max-width: 310px;
-  margin: 30px auto;
-  margin-top: 50px;
+  max-width: 80px;
+  margin: 20px auto;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -138,8 +137,7 @@
   border-style: none;
   border-width: 0px;
   border-color: rgb(255, 255, 255);
-  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px,
-    rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
+  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px, rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
     rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
   box-sizing: border-box;
   color: rgb(255, 255, 255);
@@ -169,8 +167,7 @@
 
 .walletconnect-connect__button:active {
   transform: translateY(1px);
-  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px,
-    rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
+  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px, rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
     rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
 }
 
@@ -186,16 +183,14 @@
 }
 
 .walletconnect-connect__buttons__wrapper a {
-    text-decoration: none;
-    padding-top: 15px;
+  text-decoration: none;
+  padding-top: 15px;
 }
-
 
 @media (hover: hover) {
   .walletconnect-connect__button:hover {
     transform: translateY(-1px);
-    box-shadow: rgba(50, 50, 93, 0.1) 0px 7px 14px 0px,
-      rgba(0, 0, 0, 0.08) 0px 3px 6px 0px,
+    box-shadow: rgba(50, 50, 93, 0.1) 0px 7px 14px 0px, rgba(0, 0, 0, 0.08) 0px 3px 6px 0px,
       rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
   }
 }

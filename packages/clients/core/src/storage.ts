@@ -7,7 +7,7 @@ class SessionStorage {
   public getSession(): IWalletConnectSession | null {
     let session = null;
     const json = getLocal(this.storageId);
-    if (isWalletConnectSession(json)) {
+    if (json && isWalletConnectSession(json)) {
       session = json;
     }
     return session;
