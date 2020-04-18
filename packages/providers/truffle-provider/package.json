@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@walletconnect/web3-subprovider": "^1.0.0-beta.80",
+    "qrcode-terminal": "0.12.0",
     "web3-provider-engine": "15.0.4"
   }
 }

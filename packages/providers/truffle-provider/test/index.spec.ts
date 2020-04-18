@@ -1,5 +1,7 @@
 /* global describe it */
 
-describe('// ---------- @walletconnect/truffle-subprovider --------- //', () => {
-  it('needs tests', () => {})
-})
+describe("// ---------- @walletconnect/truffle-provider --------- //", () => {
+  it("needs tests", () => {
+    // needs tests
+  });
+});

@@ -61,8 +61,7 @@
   },
   "dependencies": {
     "@walletconnect/utils": "^1.0.0-beta.80",
-    "qr-image": "3.2.0",
-    "qrcode-terminal": "0.12.0"
+    "qr-image": "3.2.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
