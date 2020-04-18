@@ -1,50 +1,25 @@
-import { isWalletConnectSession } from "@walletconnect/utils";
 import { IWalletConnectSession } from "@walletconnect/types";
+import { isWalletConnectSession, getLocal, setLocal, removeLocal } from "@walletconnect/utils";
 
 class SessionStorage {
   public storageId = "walletconnect";
-  public storage: Storage | null = null;
-  constructor() {
-    try {
-      if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
-        this.storage = window.localStorage;
-      }
-    } catch (_) {
-      // do nothing
-    }
-  }
 
   public getSession(): IWalletConnectSession | null {
     let session = null;
-    let local = null;
-    if (this.storage) {
-      local = this.storage.getItem(this.storageId);
-    }
-    if (local && typeof local === "string") {
-      try {
-        const json = JSON.parse(local);
-        if (isWalletConnectSession(json)) {
-          session = json;
-        }
-      } catch (error) {
-        return null;
-      }
+    const json = getLocal(this.storageId);
+    if (isWalletConnectSession(json)) {
+      session = json;
     }
     return session;
   }
 
   public setSession(session: IWalletConnectSession): IWalletConnectSession {
-    const local: string = JSON.stringify(session);
-    if (this.storage) {
-      this.storage.setItem(this.storageId, local);
-    }
+    setLocal(this.storageId, session);
     return session;
   }
 
   public removeSession(): void {
-    if (this.storage) {
-      this.storage.removeItem(this.storageId);
-    }
+    removeLocal(this.storageId);
   }
 }
 
