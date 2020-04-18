@@ -5,9 +5,11 @@ class SessionStorage {
   public storageId = "walletconnect";
   public storage: Storage | null = null;
   constructor() {
-    if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
-      this.storage = window.localStorage;
-    }
+    try {
+      if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
+        this.storage = window.localStorage;
+      }
+    } catch(_) {}
   }
 
   public getSession(): IWalletConnectSession | null {

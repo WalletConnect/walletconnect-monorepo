@@ -121,4 +121,7 @@
   width: 100%;
   padding: 30px;
   box-sizing: border-box;
+  /* viewport height minus padding, text height, logo height and margins: */
+  max-height: calc(100vh - (2 * 30px) - 1ex - 52px - (2 * 20px));
+  min-height: 150px;
 }

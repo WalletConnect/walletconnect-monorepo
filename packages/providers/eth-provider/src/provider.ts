@@ -6,8 +6,7 @@ import {
   isJsonRpcResponseSuccess,
   isJsonRpcResponseError,
 } from "@walletconnect/utils";
-import { IError, JsonRpc } from "@walletconnect/types";
-import WCRpcConnection from "./connection";
+import { IError, JsonRpc, IRpcConnection } from "@walletconnect/types";
 
 // -- types ---------------------------------------------------------------- //
 
@@ -21,14 +20,14 @@ class EthereumProvider extends EventEmitter {
   public connected = false;
   public promises: IPromisesMap = {};
   public subscriptions: number[] = [];
-  public connection: WCRpcConnection;
+  public connection: IRpcConnection;
   public accounts: string[] = [];
   public coinbase = "";
   public attemptedNetworkSubscription = false;
   public attemptedChainSubscription = false;
   public attemptedAccountsSubscription = false;
 
-  constructor(connection: WCRpcConnection) {
+  constructor(connection: IRpcConnection) {
     super();
     this.connection = connection;
   }
@@ -153,7 +152,7 @@ class EthereumProvider extends EventEmitter {
         }
       });
 
-      this.connection.create();
+      this.connection.open();
     });
   }
 

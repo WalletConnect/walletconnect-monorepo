@@ -319,8 +319,8 @@ export const isValidAddress = (address?: string) => {
 export function getMeta(): IClientMeta | null {
   if (
     typeof window === "undefined" ||
-    typeof document === "undefined" ||
-    typeof window.location === "undefined"
+    typeof window?.document === "undefined" ||
+    typeof window?.location === "undefined"
   ) {
     return null;
   }
@@ -690,5 +690,11 @@ export function isAndroid(): boolean {
 export function isNode(): boolean {
   const env = detectEnv();
   const result = env && env.name ? env.name.toLowerCase() === "node" : false;
+  return result;
+}
+
+export function isBrowser(): boolean {
+  const result =
+    !isNode() && typeof window !== "undefined" && typeof window.navigator !== "undefined";
   return result;
 }

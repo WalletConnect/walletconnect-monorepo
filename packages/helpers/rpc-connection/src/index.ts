@@ -1,7 +1,14 @@
 import EventEmitter from "events";
 import WalletConnect from "@walletconnect/browser";
-import WCQRCode from "@walletconnect/qrcode-modal";
-import { IWCRpcConnection, IWCRpcConnectionOptions, IConnector } from "@walletconnect/types";
+import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+import { isJsonRpcResponseError } from "@walletconnect/utils";
+import {
+  IWCRpcConnection,
+  IWCRpcConnectionOptions,
+  IConnector,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
+} from "@walletconnect/types";
 
 class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public bridge = "https://bridge.walletconnect.org";
@@ -10,7 +17,6 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
 
   public wc: IConnector | null = null;
   public connected = false;
-  public closed = false;
 
   constructor(opts?: IWCRpcConnectionOptions) {
     super();
@@ -23,7 +29,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public openQRCode() {
     const uri = this.wc ? this.wc.uri : "";
     if (uri) {
-      WCQRCode.open(uri, () => {
+      WalletConnectQRCodeModal.open(uri, () => {
         this.emit("error", new Error("User close WalletConnect QR Code modal"));
       });
     }
@@ -57,7 +63,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       this.connected = true;
 
       if (this.qrcode) {
-        WCQRCode.close(); // Close QR Code Modal
+        WalletConnectQRCodeModal.close(); // Close QR Code Modal
       }
 
       // Emit connect event
@@ -77,7 +83,6 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public onClose(): void {
     this.wc = null;
     this.connected = false;
-    this.closed = true;
     this.emit("close");
     this.removeAllListeners();
   }
@@ -104,28 +109,37 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     return Promise.resolve();
   }
 
-  public onError(payload: any, message: string, code = -1): void {
-    this.emit("payload", {
-      error: { message, code },
+  public onError(
+    payload: any,
+    message = "Failed or Rejected Request",
+    code = -32000,
+  ): IJsonRpcResponseError {
+    const errorPayload = {
       id: payload.id,
       jsonrpc: payload.jsonrpc,
-    });
+      error: { code, message },
+    };
+    this.emit("payload", errorPayload);
+    return errorPayload;
   }
 
-  public async sendPayload(payload: any): Promise<any> {
+  public async sendPayload(payload: any): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
     if (!this.wc || !this.wc.connected) {
-      this.onError(payload, "WalletConnect Not Connected");
-      return;
+      return this.onError(payload, "WalletConnect Not Connected");
     }
     try {
       return this.wc.unsafeSend(payload);
     } catch (error) {
-      this.onError(payload, error.message);
+      return this.onError(payload, error.message);
     }
   }
 
-  public send(payload: any): Promise<any> {
-    return this.sendPayload(payload);
+  public async send(payload: any): Promise<any> {
+    const response = await this.sendPayload(payload);
+    if (isJsonRpcResponseError(response)) {
+      throw new Error(response.error.message || "Failed or Rejected Request");
+    }
+    return response.result;
   }
 }
 
