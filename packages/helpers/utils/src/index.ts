@@ -552,18 +552,18 @@ export function parseTransactionData(txData: Partial<ITxData>): Partial<ITxData>
     from: sanitizeHex(txData.from),
     to: typeof txData.to === "undefined" ? "" : sanitizeHex(txData.to),
     gasPrice: typeof txData.gasPrice === "undefined" ? "" : parseHexValues(txData.gasPrice),
-    gasLimit:
-      typeof txData.gasLimit === "undefined"
-        ? typeof txData.gas === "undefined"
+    gas:
+      typeof txData.gas === "undefined"
+        ? typeof txData.gasLimit === "undefined"
           ? ""
-          : parseHexValues(txData.gas)
-        : parseHexValues(txData.gasLimit),
+          : parseHexValues(txData.gasLimit)
+        : parseHexValues(txData.gas),
     value: typeof txData.value === "undefined" ? "" : parseHexValues(txData.value),
     nonce: typeof txData.nonce === "undefined" ? "" : parseHexValues(txData.nonce),
     data: typeof txData.data === "undefined" ? "" : sanitizeHex(txData.data) || "0x",
   };
 
-  const prunable = ["gasPrice", "gasLimit", "value", "nonce"];
+  const prunable = ["gasPrice", "gas", "value", "nonce"];
   Object.keys(txDataRPC).forEach((key: string) => {
     if (!txDataRPC[key].trim().length && prunable.includes(key)) {
       delete txDataRPC[key];
@@ -653,7 +653,9 @@ export const signingMethods = [
   "eth_sign",
   "eth_signTypedData",
   "eth_signTypedData_v1",
+  "eth_signTypedData_v2",
   "eth_signTypedData_v3",
+  "eth_signTypedData_v4",
   "personal_sign",
 ];
 
