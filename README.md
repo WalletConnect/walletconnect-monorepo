@@ -1,11 +1,10 @@
 # WalletConnect v1.0.0-beta
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.org
-[![Financial Contributors on Open Collective](https://opencollective.com/walletconnect/all/badge.svg?label=financial+contributors)](https://opencollective.com/walletconnect)
 
 | Clients                     | Current Version                                                                                                                          | Description         |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| @walletconnect/core         |  [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                 | Core Client         |
+| @walletconnect/core         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                 | Core Client         |
 | @walletconnect/client       | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fclient.svg)](https://badge.fury.io/js/%40walletconnect%2Fclient)             | Isomorphic Client   |
 | @walletconnect/browser      | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fbrowser.svg)](https://badge.fury.io/js/%40walletconnect%2Fbrowser)           | Browser Client      |
 | @walletconnect/node         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fnode.svg)](https://badge.fury.io/js/%40walletconnect%2Fnode)                 | NodeJS Client       |
