@@ -25,29 +25,5 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": [],
-  "references": [
-    { "path": "./packages/clients/browser" },
-    { "path": "./packages/clients/client" },
-    { "path": "./packages/clients/core" },
-    { "path": "./packages/clients/node" },
-    { "path": "./packages/clients/react-native" },
-
-    { "path": "./packages/providers/channel-provider" },
-    { "path": "./packages/providers/eth-provider" },
-    { "path": "./packages/providers/starkware-provider" },
-    { "path": "./packages/providers/web3-provider" },
-    { "path": "./packages/providers/web3-subprovider" },
-    { "path": "./packages/providers/truffle-subprovider" },
-
-    { "path": "./packages/helpers/utils" },
-    { "path": "./packages/helpers/qrcode-modal" },
-    { "path": "./packages/helpers/rpc-connection" },
-    { "path": "./packages/helpers/http-connection" },
-    { "path": "./packages/helpers/socket-transport" },
-    { "path": "./packages/helpers/browser-crypto" },
-    { "path": "./packages/helpers/node-crypto" },
-    { "path": "./packages/helpers/iso-crypto" },
-    { "path": "./packages/helpers/types" }
-  ]
+  "include": []
 }
