@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import BN from "bn.js";
 import { hexlify, arrayify } from "@ethersproject/bytes";
 import { toUtf8Bytes, toUtf8String } from "@ethersproject/strings";
 
@@ -88,7 +88,7 @@ export function convertUtf8ToHex(utf8: string, noPrefix?: boolean): string {
 }
 
 export function convertUtf8ToNumber(utf8: string): number {
-  const num = new BigNumber(utf8).toNumber();
+  const num = new BN(utf8).toNumber();
   return num;
 }
 
@@ -107,12 +107,12 @@ export function convertNumberToArrayBuffer(num: number): ArrayBuffer {
 }
 
 export function convertNumberToUtf8(num: number): string {
-  const utf8 = new BigNumber(num).toString();
+  const utf8 = new BN(num).toString();
   return utf8;
 }
 
 export function convertNumberToHex(num: number | string, noPrefix?: boolean): string {
-  let hex = new BigNumber(num).toString(16);
+  let hex = new BN(num).toString(16);
   hex = sanitizeHex(hex);
   if (noPrefix) {
     hex = removeHexPrefix(hex);
@@ -141,6 +141,6 @@ export function convertHexToUtf8(hex: string): string {
 }
 
 export function convertHexToNumber(hex: string): number {
-  const num = new BigNumber(hex).toNumber();
+  const num = new BN(hex, "hex").toNumber();
   return num;
 }
