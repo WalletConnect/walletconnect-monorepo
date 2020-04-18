@@ -1,32 +1,23 @@
+import * as encUtils from "enc-utils";
+
 // -- Hex -------------------------------------------------- //
 
 export function sanitizeHex(hex: string): string {
-  hex = removeHexPrefix(hex);
-  hex = hex.length % 2 !== 0 ? "0" + hex : hex;
-  if (hex) {
-    hex = addHexPrefix(hex);
-  }
-  return hex;
+  return encUtils.sanitizeHex(hex);
 }
 
 export function addHexPrefix(hex: string): string {
-  if (hex.toLowerCase().substring(0, 2) === "0x") {
-    return hex;
-  }
-  return "0x" + hex;
+  return encUtils.addHexPrefix(hex);
 }
 
 export function removeHexPrefix(hex: string): string {
-  if (hex.toLowerCase().substring(0, 2) === "0x") {
-    return hex.substring(2);
-  }
-  return hex;
+  return encUtils.removeHexPrefix(hex);
 }
 
 export function removeHexLeadingZeros(hex: string): string {
-  hex = removeHexPrefix(hex);
+  hex = encUtils.removeHexPrefix(hex);
   hex = hex.startsWith("0") ? hex.substring(1) : hex;
-  hex = addHexPrefix(hex);
+  hex = encUtils.addHexPrefix(hex);
   return hex;
 }
 
