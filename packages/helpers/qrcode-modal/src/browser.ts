@@ -1,6 +1,6 @@
 import MobileRegistry from "@walletconnect/mobile-registry";
 import { IMobileRegistryEntry } from "@walletconnect/types";
-import { appendToQueryString, isIOS, isMobile } from "@walletconnect/utils";
+import { appendToQueryString, isIOS, isMobile, safeGetFromWindow } from "@walletconnect/utils";
 import * as qrImage from "qr-image";
 
 import logo from "./logo.svg";
@@ -30,19 +30,20 @@ function formatQRCodeContent(uri: string) {
 }
 
 function formatDeepLinkHref(uri: string, entry: IMobileRegistryEntry) {
+  const loc = safeGetFromWindow<Location>("location");
   const encodedUri: string = encodeURIComponent(uri);
-  const redirectUrlQueryString = appendToQueryString(window.location.search, {
+  const redirectUrlQueryString = appendToQueryString(loc.search, {
     walletconnect: true,
   });
   const redirectUrl: string = encodeURIComponent(
-    `${window.location.origin}${window.location.pathname}${redirectUrlQueryString}`,
+    `${loc.origin}${loc.pathname}${redirectUrlQueryString}`,
   );
 
   return entry.universalLink
     ? `${entry.universalLink}/wc?uri=${encodedUri}&redirectUrl=${redirectUrl}`
     : entry.deepLink
-      ? `{wallet.deepLink}${uri}`
-      : "";
+    ? `{wallet.deepLink}${uri}`
+    : "";
 }
 
 function formatSingleConnectButton(name: string, color: string, href: string) {
@@ -117,26 +118,15 @@ function formatModal(uri: string) {
 `;
 }
 
-function getDocument(): Document {
-  let document: Document | undefined = undefined;
-  if (typeof window !== "undefined" && typeof window.document !== "undefined") {
-    document = window.document;
-  }
-  if (!document) {
-    throw new Error("document is not defined in Window");
-  }
-  return document;
-}
-
 export function open(uri: string, cb: any) {
-  const document = getDocument();
-  const wrapper = document.createElement("div");
+  const doc = safeGetFromWindow<Document>("document");
+  const wrapper = doc.createElement("div");
   wrapper.setAttribute("id", "walletconnect-wrapper");
 
   wrapper.innerHTML = formatModal(uri);
 
-  document.body.appendChild(wrapper);
-  const closeButton = document.getElementById("walletconnect-qrcode-close");
+  doc.body.appendChild(wrapper);
+  const closeButton = doc.getElementById("walletconnect-qrcode-close");
 
   if (closeButton) {
     closeButton.addEventListener("click", () => {
@@ -152,14 +142,14 @@ export function open(uri: string, cb: any) {
  *  @desc     Close WalletConnect QR Code Modal
  */
 export function close() {
-  const document = getDocument();
-  const elm = document.getElementById("walletconnect-qrcode-modal");
+  const doc = safeGetFromWindow<Document>("document");
+  const elm = doc.getElementById("walletconnect-qrcode-modal");
   if (elm) {
     elm.className = elm.className.replace("fadeIn", "fadeOut");
     setTimeout(() => {
-      const wrapper = document.getElementById("walletconnect-wrapper");
+      const wrapper = doc.getElementById("walletconnect-wrapper");
       if (wrapper) {
-        document.body.removeChild(wrapper);
+        doc.body.removeChild(wrapper);
       }
     }, constants.animationDuration);
   }
