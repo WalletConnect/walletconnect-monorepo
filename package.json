@@ -19,7 +19,7 @@
   "license": "LGPL-3.0",
   "scripts": {
     "ls": "lerna ls",
-    "bootstrap": "npm run bootstrap:monorepo && npm run bootstrap:example",
+    "bootstrap": "run-s bootstrap:monorepo bootstrap:example",
     "bootstrap:monorepo": "npm install && lerna bootstrap --hoist",
     "bootstrap:example": "cd example && npm install",
     "build": "lerna run build",
@@ -28,19 +28,19 @@
     "clean": "rm -rf dist && lerna run clean",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
     "clean:example": "cd example && rm -rf node_modules",
-    "clean:all": "npm run clean && npm run clean:node_modules && npm run clean:example",
+    "clean:all": "run-s clean clean:node_modules clean:example",
     "new-version": "lerna version --no-git-tag-version",
     "publish:latest": "lerna exec -- npm publish --access public",
     "publish:next": "lerna exec -- npm publish --access public --tag next",
     "move-dist": "node ./scripts/move-dist.js",
     "commit-version": "node ./scripts/commit-version.js",
-    "check": "npm run clean && npm run lint && npm run test && npm run build && npm run move-dist",
-    "reset": "npm run clean:all && npm run bootstrap && npm run check",
-    "example": "npm run check && cd example && npm run start",
-    "deploy": "npm run check && npm run publish",
-    "pre-publish": "npm run new-version && npm run reset && npm run commit-version",
-    "deploy:latest": "npm run pre-publish && npm run publish:latest",
-    "deploy:next": "npm run pre-publish && npm run publish:next"
+    "check": "run-s clean lint test build move-dist",
+    "reset": "run-s clean:all bootstrap check",
+    "example": "run-s check && cd example start",
+    "deploy": "run-s check publish",
+    "pre-publish": "run-s new-version reset commit-version",
+    "deploy:latest": "run-s pre-publish publish:latest",
+    "deploy:next": "run-s pre-publish publish:next"
   },
   "repository": {
     "type": "git",
@@ -62,6 +62,7 @@
     "eslint-plugin-react": "7.18.3",
     "eslint-plugin-standard": "4.0.1",
     "lerna": "3.20.2",
+    "npm-run-all": "^4.1.5",
     "prettier": "1.19.1",
     "typescript": "3.7.5"
   }
