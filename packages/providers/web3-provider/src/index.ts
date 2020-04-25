@@ -1,5 +1,5 @@
-import WalletConnect from "@walletconnect/browser";
-import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+import BrowserWalletConnect from "@walletconnect/browser";
+import BrowserQRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
 import {
   IRPCMap,
@@ -38,7 +38,10 @@ class WalletConnectProvider extends ProviderEngine {
 
   constructor(opts?: IWalletConnectProviderOptions) {
     super({ pollingInterval: opts?.pollingInterval || 4000 });
-    this.bridge = opts?.bridge || "https://bridge.walletconnect.org";
+    this.bridge = opts?.connector
+      ? opts.connector.bridge
+      : opts?.bridge || "https://bridge.walletconnect.org";
+    this.wc = opts?.connector || new BrowserWalletConnect({ bridge: this.bridge });
     this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
     this.rpc = opts?.rpc || null;
     if (
@@ -48,7 +51,6 @@ class WalletConnectProvider extends ProviderEngine {
       throw new Error("Missing one of the required parameters: rpc or infuraId");
     }
     this.infuraId = opts?.infuraId || "";
-    this.wc = new WalletConnect({ bridge: this.bridge });
     this.chainId = typeof opts?.chainId !== "undefined" ? opts?.chainId : 1;
     this.networkId = this.chainId;
     this.updateRpcUrl(this.chainId);
@@ -58,7 +60,7 @@ class WalletConnectProvider extends ProviderEngine {
         eth_mining: false,
         eth_syncing: true,
         net_listening: true,
-        web3_clientVersion: `WalletConnect/v1.0.0-beta/javascript`,
+        web3_clientVersion: `BrowserWalletConnect/v1.0.0-beta/javascript`,
       }),
     );
     this.addProvider(new CacheSubprovider());
@@ -295,13 +297,13 @@ class WalletConnectProvider extends ProviderEngine {
         wc.createSession(sessionRequestOpions)
           .then(() => {
             if (this.qrcode) {
-              WalletConnectQRCodeModal.open(wc.uri, () => {
-                reject(new Error("User closed WalletConnect modal"));
+              BrowserQRCodeModal.open(wc.uri, () => {
+                reject(new Error("User closed BrowserWalletConnect modal"));
               });
             }
             wc.on("connect", (error, payload) => {
               if (this.qrcode) {
-                WalletConnectQRCodeModal.close();
+                BrowserQRCodeModal.close();
               }
               if (error) {
                 this.isConnecting = false;

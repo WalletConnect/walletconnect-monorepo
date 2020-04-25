@@ -2,6 +2,10 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 
+| SDK           | Current Version                                                                                      | Description |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ----------- |
+| walletconnect | [![npm version](https://badge.fury.io/js/walletconnect.svg)](https://badge.fury.io/js/walletconnect) | SDK         |
+
 | Clients                     | Current Version                                                                                                                          | Description         |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | @walletconnect/core         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fcore.svg)](https://badge.fury.io/js/%40walletconnect%2Fcore)                 | Core Client         |
@@ -18,6 +22,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 | @walletconnect/web3-subprovider   | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider)     | Web3 Subprovider   |
 | @walletconnect/truffle-provider   | [![npm version](https://badge.fury.io/js/%40walletconnect%2Ftruffle-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Ftruffle-provider)     | Truffle Provider   |
 | @walletconnect/starkware-provider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fstarkware-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fstarkware-provider) | Starkware Provider |
+| @walletconnect/3id-provider       | [![npm version](https://badge.fury.io/js/%40walletconnect%2F3id-provider.svg)](https://badge.fury.io/js/%40walletconnect%2F3id-provider)             | 3ID Provider       |
 
 | Helpers                         | Current Version                                                                                                                                  | Description       |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |

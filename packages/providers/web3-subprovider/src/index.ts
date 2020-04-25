@@ -1,8 +1,6 @@
-import WalletConnect from "@walletconnect/browser";
 import NodeWalletConnect from "@walletconnect/node";
 
 import { IWCEthRpcConnectionOptions, IConnector } from "@walletconnect/types";
-import { isNode } from "@walletconnect/utils";
 
 const HookedWalletSubprovider = require("web3-provider-engine/subproviders/hooked-wallet");
 const qrTerminal = require("qrcode-terminal");
@@ -70,12 +68,6 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
         }
       },
     });
-
-    this.bridge = opts?.bridge || "https://bridge.walletconnect.org";
-    this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
-
-    this.isNode = isNode();
-
     const nodeOpts = {
       clientMeta: {
         name: "wallet-connect-provider",
@@ -85,9 +77,11 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
       },
     };
 
-    this.wc = this.isNode
-      ? new NodeWalletConnect({ bridge: this.bridge }, nodeOpts)
-      : new WalletConnect({ bridge: this.bridge });
+    this.bridge = opts?.connector
+      ? opts.connector.bridge
+      : opts?.bridge || "https://bridge.walletconnect.org";
+    this.wc = opts?.connector || new NodeWalletConnect({ bridge: this.bridge }, nodeOpts);
+    this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
     this.chainId = typeof opts?.chainId !== "undefined" ? opts?.chainId : 1;
     this.networkId = this.chainId;
 

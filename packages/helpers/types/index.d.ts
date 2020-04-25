@@ -278,6 +278,7 @@ declare module "@walletconnect/types" {
   }
 
   export interface IWCRpcConnectionOptions {
+    connector?: IConnector;
     bridge?: string;
     qrcode?: boolean;
     chainId?: number;
@@ -322,11 +323,11 @@ declare module "@walletconnect/types" {
   }
 
   export interface IMobileRegistryEntry {
-    name: string
-    color: string
-    universalLink: string
-    deepLink: string
-    chromeIntent: string
+    name: string;
+    color: string;
+    universalLink: string;
+    deepLink: string;
+    chromeIntent: string;
   }
 
   export interface IQRCodeModal {

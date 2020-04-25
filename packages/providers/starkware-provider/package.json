@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/starkware-provider",
   "version": "1.0.0-beta.84",
-  "description": "Web3 Provider for WalletConnect",
+  "description": "Starkware Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "npm run clean",
@@ -61,7 +61,7 @@
     "@walletconnect/rpc-connection": "^1.0.0-beta.84",
     "@walletconnect/types": "^1.0.0-beta.84",
     "@walletconnect/utils": "^1.0.0-beta.84",
-    "starkware-provider": "1.0.0"
+    "starkware-provider": "1.1.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

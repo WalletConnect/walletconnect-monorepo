@@ -9,13 +9,8 @@ module.exports = {
     path: path.resolve(__dirname, "dist", "umd"),
     filename: "[name].min.js",
     libraryTarget: "umd",
-    library: "WalletConnectChannelProvider",
+    library: "WalletConnect",
     umdNamedDefine: true,
     globalObject: "this",
-  },
-  node: {
-    child_process: "empty",
-    fs: "empty",
-    net: "empty",
   },
 };

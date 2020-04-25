@@ -1,11 +1,13 @@
 {
-  "name": "@walletconnect/qrcode-modal",
+  "name": "walletconnect",
   "version": "1.0.0-beta.84",
-  "description": "QR Code Modal for WalletConnect",
+  "description": "WalletConnect SDK",
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "npm run clean",
-    "build": "webpack",
+    "build:cjs": "./node_modules/.bin/tsc -p tsconfig.cjs.json",
+    "build:umd": "webpack",
+    "build": "npm run build:pre && npm run build:cjs && npm run build:umd",
     "test": "tsdx test ./test"
   },
   "keywords": [
@@ -23,9 +25,9 @@
   "author": "WalletConnect <walletconnect.org>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
-  "main": "dist/index.min.js",
-  "types": "dist/index.d.ts",
-  "unpkg": "dist/index.min.js",
+  "main": "dist/cjs/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "unpkg": "dist/umd/index.min.js",
   "files": [
     "dist"
   ],
@@ -47,24 +49,22 @@
     "@types/chai": "4.2.7",
     "@types/mocha": "5.2.7",
     "@types/node": "12.12.14",
-    "@types/qr-image": "3.2.1",
     "chai": "4.2.0",
-    "css-loader": "3.5.3",
     "isomorphic-fetch": "2.2.1",
     "mocha": "5.2.0",
-    "style-loader": "1.2.0",
-    "svg-url-loader": "3.0.3",
-    "ts-loader": "6.2.2",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/mobile-registry": "^1.0.0-beta.84",
+    "@walletconnect/3id-provider": "^1.0.0-beta.84",
+    "@walletconnect/browser": "^1.0.0-beta.84",
+    "@walletconnect/qrcode-modal": "^1.0.0-beta.84",
+    "@walletconnect/starkware-provider": "^1.0.0-beta.84",
     "@walletconnect/types": "^1.0.0-beta.84",
     "@walletconnect/utils": "^1.0.0-beta.84",
-    "qr-image": "3.2.0"
+    "@walletconnect/web3-provider": "^1.0.0-beta.84"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

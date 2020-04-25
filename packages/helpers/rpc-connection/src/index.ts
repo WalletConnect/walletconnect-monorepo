@@ -1,6 +1,6 @@
 import EventEmitter from "events";
-import WalletConnect from "@walletconnect/browser";
-import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+import BrowserWalletConnect from "@walletconnect/browser";
+import BrowserQRCodeModal from "@walletconnect/qrcode-modal";
 import { isJsonRpcResponseError } from "@walletconnect/utils";
 import {
   IWCRpcConnection,
@@ -15,34 +15,30 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public qrcode = true;
   public chainId = 1;
 
-  public wc: IConnector | null = null;
+  public wc: IConnector;
   public connected = false;
 
   constructor(opts?: IWCRpcConnectionOptions) {
     super();
-    this.bridge = opts?.bridge || "https://bridge.walletconnect.org";
+    this.bridge = opts?.connector
+      ? opts.connector.bridge
+      : opts?.bridge || "https://bridge.walletconnect.org";
+    this.wc = opts?.connector || new BrowserWalletConnect({ bridge: this.bridge });
     this.qrcode = typeof opts?.qrcode === "undefined" || opts.qrcode !== false;
     this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : 1;
     this.on("error", () => this.close());
   }
 
   public openQRCode() {
-    const uri = this.wc ? this.wc.uri : "";
+    const uri = this.wc.uri;
     if (uri) {
-      WalletConnectQRCodeModal.open(uri, () => {
+      BrowserQRCodeModal.open(uri, () => {
         this.emit("error", new Error("User close WalletConnect QR Code modal"));
       });
     }
   }
 
   public create(): void {
-    try {
-      this.wc = new WalletConnect({ bridge: this.bridge });
-    } catch (e) {
-      this.emit("error", e);
-      return;
-    }
-
     if (!this.wc.connected) {
       this.wc
         .createSession({ chainId: this.chainId })
@@ -63,7 +59,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       this.connected = true;
 
       if (this.qrcode) {
-        WalletConnectQRCodeModal.close(); // Close QR Code Modal
+        BrowserQRCodeModal.close(); // Close QR Code Modal
       }
 
       // Emit connect event
@@ -81,7 +77,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   }
 
   public onClose(): void {
-    this.wc = null;
+    this.wc = new BrowserWalletConnect({ bridge: this.bridge });
     this.connected = false;
     this.emit("close");
     this.removeAllListeners();
@@ -102,7 +98,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   }
 
   public async close(): Promise<void> {
-    if (this.wc) {
+    if (this.wc.connected) {
       this.wc.killSession();
     }
     this.onClose();
