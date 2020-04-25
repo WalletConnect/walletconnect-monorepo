@@ -13,4 +13,9 @@ module.exports = {
     umdNamedDefine: true,
     globalObject: "this",
   },
+  node: {
+    child_process: "empty",
+    fs: "empty",
+    net: "empty",
+  },
 };

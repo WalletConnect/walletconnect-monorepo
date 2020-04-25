@@ -1,7 +1,7 @@
 import BrowserWalletConnect from "@walletconnect/browser";
 import BrowserQRCodeModal from "@walletconnect/qrcode-modal";
 import Web3Provider from "@walletconnect/web3-provider";
-// import ChannelProvider from "@walletconnect/channel-provider";
+import ChannelProvider from "@walletconnect/channel-provider";
 import StarkwareProvider from "@walletconnect/starkware-provider";
 import ThreeIdProvider from "@walletconnect/3id-provider";
 import { IWalletConnectOptions, IConnector, ICreateSessionOptions } from "@walletconnect/types";
@@ -35,12 +35,12 @@ class WalletConnectSDK {
     return new Web3Provider({ ...opts, connector: this.connector });
   }
 
-  // public getChannelProvider(opts?: any) {
-  //   if (!this.connector) {
-  //     throw new Error("No connector available - please call connect() first");
-  //   }
-  //   return new ChannelProvider({ ...opts, connector: this.connector });
-  // }
+  public getChannelProvider(opts?: any) {
+    if (!this.connector) {
+      throw new Error("No connector available - please call connect() first");
+    }
+    return new ChannelProvider({ ...opts, connector: this.connector });
+  }
 
   public getStarkwareProvider(opts?: any) {
     if (!this.connector) {

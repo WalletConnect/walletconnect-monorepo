@@ -19,6 +19,8 @@ const connector = await wc.connect();
 
 const web3Provider = await wc.getWeb3Provider();
 
+const channelProvider = await wc.getChannelProvider();
+
 const starkwareProvider = await wc.getStarkwareProvider();
 
 const threeIdProvider = await wc.getThreeIdProvider();
