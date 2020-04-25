@@ -45,11 +45,9 @@ Find quick start examples for your platform at https://docs.walletconnect.org/qu
 
 Read more about WalletConnect protocol and how to use our Clients at https://docs.walletconnect.org
 
-## Contributing
+## Contributors
 
 All contributions are welcome! Feel free to create an Issue or make a PR in this repository
-
-## Contributors
 
 ### Code Contributors
 
