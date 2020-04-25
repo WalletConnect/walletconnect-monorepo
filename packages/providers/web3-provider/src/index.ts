@@ -214,7 +214,7 @@ class WalletConnectProvider extends ProviderEngine {
   async handleRequest(payload: any) {
     try {
       let response;
-      let result = null;
+      let result: any = null;
       const wc = await this.getWalletConnector();
       switch (payload.method) {
         case "wc_killSession":

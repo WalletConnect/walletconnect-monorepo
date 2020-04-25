@@ -6,9 +6,13 @@ import StarkwareProvider from "@walletconnect/starkware-provider";
 import ThreeIdProvider from "@walletconnect/3id-provider";
 import { IWalletConnectOptions, IConnector, ICreateSessionOptions } from "@walletconnect/types";
 
+interface IWalletConnectSDKOptions extends IWalletConnectOptions {
+  bridge?: string;
+}
+
 class WalletConnectSDK {
   public connector: IConnector | undefined;
-  constructor(private options: IWalletConnectOptions) {}
+  constructor(private options?: IWalletConnectSDKOptions) {}
 
   get connected() {
     if (this.connector) {

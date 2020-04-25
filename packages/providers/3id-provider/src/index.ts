@@ -3,9 +3,8 @@ import WCRpcConnection from "@walletconnect/rpc-connection";
 import { IWCRpcConnectionOptions } from "@walletconnect/types";
 
 class WalletConnectThreeIdProvider extends ThreeIdProvider {
-  constructor(opts: IWCRpcConnectionOptions) {
-    const connection = new WCRpcConnection(opts);
-    super(connection);
+  constructor(opts?: IWCRpcConnectionOptions) {
+    super(new WCRpcConnection(opts));
   }
 
   get isWalletConnect() {

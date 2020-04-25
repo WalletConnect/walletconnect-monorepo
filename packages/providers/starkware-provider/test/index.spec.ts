@@ -1,7 +1,8 @@
-/* global describe it */
+import WalletConnectStarkwareProvider from "../src";
 
-describe("// ------------ @walletconnect/starkware-provider ---------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+describe("WalletConnectStarkwareProvider", () => {
+  it("instantiate successfully", () => {
+    const provider = new WalletConnectStarkwareProvider({ contractAddress: "0xdeadbeef" });
+    expect(provider).toBeTruthy();
   });
 });

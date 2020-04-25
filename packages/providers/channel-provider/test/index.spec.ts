@@ -1,7 +1,8 @@
-/* global describe it */
+import WalletConnectChannelProvider from "../src";
 
-describe("// ------------ @walletconnect/channel-provider ---------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+describe("WalletConnectChannelProvider", () => {
+  it("instantiate successfully", () => {
+    const provider = new WalletConnectChannelProvider();
+    expect(provider).toBeTruthy();
   });
 });

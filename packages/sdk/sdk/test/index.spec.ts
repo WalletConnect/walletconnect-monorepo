@@ -1,7 +1,8 @@
-/* global describe it */
+import WalletConnect from "../src";
 
-describe("// ------------ walletconnect ---------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+describe("WalletConnect", () => {
+  it("instantiate successfully", () => {
+    const provider = new WalletConnect();
+    expect(provider).toBeTruthy();
   });
 });

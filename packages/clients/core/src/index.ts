@@ -22,6 +22,7 @@ import {
   IQRCodeModal,
   IPushSubscription,
   IPushServerOptions,
+  IWalletConnectSession,
 } from "@walletconnect/types";
 import {
   parsePersonalSign,
@@ -1138,7 +1139,7 @@ class Connector implements IConnector {
   // -- sessionStorage --------------------------------------------------------- //
 
   private _getStorageSession() {
-    let result = null;
+    let result: IWalletConnectSession | null = null;
     if (this._sessionStorage) {
       result = this._sessionStorage.getSession();
     }

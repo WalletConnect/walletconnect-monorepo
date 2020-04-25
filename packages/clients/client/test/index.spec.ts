@@ -1,5 +1,10 @@
-describe("// --------------- @walletconnect/client ---------------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+import IsomorphicClient from "../src";
+
+describe("IsomorphicClient", () => {
+  it("instantiate successfully", () => {
+    const provider = new IsomorphicClient({
+      bridge: "https://bridge.walletconnect.org",
+    });
+    expect(provider).toBeTruthy();
   });
 });

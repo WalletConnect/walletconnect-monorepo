@@ -4,8 +4,7 @@ import { ChannelProvider } from "@connext/channel-provider";
 
 class WalletConnectChannelProvider extends ChannelProvider {
   constructor(opts?: IWCRpcConnectionOptions) {
-    const connection = new WCRpcConnection(opts);
-    super(connection as any);
+    super(new WCRpcConnection(opts) as any);
   }
 
   get isWalletConnect() {

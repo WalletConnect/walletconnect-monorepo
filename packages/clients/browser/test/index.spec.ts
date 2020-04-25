@@ -1,5 +1,10 @@
-describe("// --------------- @walletconnect/browser ---------------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+import BrowserWalletConnect from "../src";
+
+describe("BrowserWalletConnect", () => {
+  it("instantiate successfully", () => {
+    const provider = new BrowserWalletConnect({
+      bridge: "https://bridge.walletconnect.org",
+    });
+    expect(provider).toBeTruthy();
   });
 });

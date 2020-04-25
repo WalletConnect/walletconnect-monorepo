@@ -1,7 +1,8 @@
-/* global describe it */
+import WalletConnectEthereumProvider from "../src";
 
-describe("// ------------ @walletconnect/eth-provider ---------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+describe("WalletConnectEthereumProvider", () => {
+  it("instantiate successfully", () => {
+    const provider = new WalletConnectEthereumProvider();
+    expect(provider).toBeTruthy();
   });
 });

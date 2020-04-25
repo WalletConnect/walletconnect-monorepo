@@ -1,7 +1,12 @@
-/* global describe it */
+import WalletConnectWeb3Provider from "../src";
 
-describe("// ------------ @walletconnect/web3-provider ---------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+describe("WalletConnectWeb3Provider", () => {
+  it("instantiate successfully", () => {
+    const provider = new WalletConnectWeb3Provider({
+      rpc: {
+        1: "https://api.mycryptoapi.com/eth",
+      },
+    });
+    expect(provider).toBeTruthy();
   });
 });

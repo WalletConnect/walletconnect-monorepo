@@ -1,7 +1,8 @@
-/* global describe it */
+import WalletConnectWeb3Subprovider from "../src";
 
-describe("// ---------- @walletconnect/web3-subprovider --------- //", () => {
-  it("needs tests", () => {
-    // needs tests
+describe("WalletConnectWeb3Subprovider", () => {
+  it("instantiate successfully", () => {
+    const provider = new WalletConnectWeb3Subprovider();
+    expect(provider).toBeTruthy();
   });
 });
