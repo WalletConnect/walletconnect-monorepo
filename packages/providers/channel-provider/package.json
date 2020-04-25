@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/channel-provider",
-  "version": "1.0.0-beta.85",
+  "version": "1.0.0-beta.86",
   "description": "Channel Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -46,8 +46,8 @@
     "@babel/preset-env": "7.8.3",
     "@babel/preset-typescript": "7.8.3",
     "@babel/register": "7.8.3",
-    "@types/node": "12.12.14",
     "@types/jest": "22.2.3",
+    "@types/node": "12.12.14",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
@@ -55,8 +55,8 @@
   },
   "dependencies": {
     "@connext/channel-provider": "6.0.9",
-    "@walletconnect/rpc-connection": "^1.0.0-beta.85",
-    "@walletconnect/types": "^1.0.0-beta.85",
+    "@walletconnect/rpc-connection": "^1.0.0-beta.86",
+    "@walletconnect/types": "^1.0.0-beta.86",
     "ethers": "4.0.47"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
