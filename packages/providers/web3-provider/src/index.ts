@@ -1,5 +1,5 @@
 import BrowserWalletConnect from "@walletconnect/browser";
-import BrowserQRCodeModal from "@walletconnect/qrcode-modal";
+import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
 import {
   IRPCMap,
@@ -293,13 +293,13 @@ class WalletConnectProvider extends ProviderEngine {
         wc.createSession(sessionRequestOpions)
           .then(() => {
             if (this.qrcode) {
-              BrowserQRCodeModal.open(wc.uri, () => {
+              WalletConnectQRCodeModal.open(wc.uri, () => {
                 reject(new Error("User closed BrowserWalletConnect modal"));
               });
             }
             wc.on("connect", (error, payload) => {
               if (this.qrcode) {
-                BrowserQRCodeModal.close();
+                WalletConnectQRCodeModal.close();
               }
               if (error) {
                 this.isConnecting = false;

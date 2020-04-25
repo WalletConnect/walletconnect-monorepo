@@ -58,6 +58,7 @@
     "@walletconnect/browser": "^1.0.0-beta.86",
     "@walletconnect/channel-provider": "^1.0.0-beta.86",
     "@walletconnect/qrcode-modal": "^1.0.0-beta.86",
+    "@walletconnect/node": "^1.0.0-beta.86",
     "@walletconnect/starkware-provider": "^1.0.0-beta.86",
     "@walletconnect/types": "^1.0.0-beta.86",
     "@walletconnect/utils": "^1.0.0-beta.86",

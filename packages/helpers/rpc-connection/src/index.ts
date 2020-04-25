@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 import BrowserWalletConnect from "@walletconnect/browser";
-import BrowserQRCodeModal from "@walletconnect/qrcode-modal";
+import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 import { isJsonRpcResponseError } from "@walletconnect/utils";
 import {
   IWCRpcConnection,
@@ -32,7 +32,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public openQRCode() {
     const uri = this.wc.uri;
     if (uri) {
-      BrowserQRCodeModal.open(uri, () => {
+      WalletConnectQRCodeModal.open(uri, () => {
         this.emit("error", new Error("User close WalletConnect QR Code modal"));
       });
     }
@@ -59,7 +59,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       this.connected = true;
 
       if (this.qrcode) {
-        BrowserQRCodeModal.close(); // Close QR Code Modal
+        WalletConnectQRCodeModal.close(); // Close QR Code Modal
       }
 
       // Emit connect event
