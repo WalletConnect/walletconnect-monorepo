@@ -36,7 +36,7 @@
     "commit-version": "node ./scripts/commit-version.js",
     "check": "run-s clean lint build test move-dist",
     "reset": "run-s clean:all bootstrap check",
-    "example": "run-s check && cd example start",
+    "example": "run-s check && cd example && npm run start",
     "deploy": "run-s check publish",
     "pre-publish": "run-s new-version reset commit-version",
     "deploy:latest": "run-s pre-publish publish:latest",
