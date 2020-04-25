@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/qrcode-modal",
-  "version": "1.0.0-beta.86",
+  "version": "1.0.0-beta.87",
   "description": "QR Code Modal for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -57,9 +57,9 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/mobile-registry": "^1.0.0-beta.86",
-    "@walletconnect/types": "^1.0.0-beta.86",
-    "@walletconnect/utils": "^1.0.0-beta.86",
+    "@walletconnect/mobile-registry": "^1.0.0-beta.87",
+    "@walletconnect/types": "^1.0.0-beta.87",
+    "@walletconnect/utils": "^1.0.0-beta.87",
     "qr-image": "3.2.0",
     "qrcode-terminal": "0.12.0"
   },
