@@ -1,1 +1,1 @@
-declare module '@walletconnect/web3-subprovider'
+declare module "@walletconnect/web3-subprovider"

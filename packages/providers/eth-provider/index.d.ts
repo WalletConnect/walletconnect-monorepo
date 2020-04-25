@@ -1,1 +1,1 @@
-declare module '@walletconnect/eth-provider'
+declare module "@walletconnect/eth-provider"

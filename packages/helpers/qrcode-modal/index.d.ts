@@ -1,1 +1,1 @@
-declare module '@walletconnect/qrcode-modal'
+declare module "@walletconnect/qrcode-modal"

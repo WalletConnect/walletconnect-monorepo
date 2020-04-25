@@ -1,1 +1,1 @@
-declare module '@walletconnect/channel-provider'
+declare module "@walletconnect/channel-provider"

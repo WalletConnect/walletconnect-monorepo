@@ -1,3 +1,5 @@
-describe('// ------------ @walletconnect/utils ----------- //', () => {
-  it('needs tests', () => {})
-})
+describe("// ------------ @walletconnect/utils ----------- //", () => {
+  it("needs tests", () => {
+    // needs tests
+  });
+});

@@ -1,3 +1,5 @@
-describe('// ------------ @walletconnect/react-native ----------- //', () => {
-  it('needs tests', () => {})
-})
+describe("// ------------ @walletconnect/react-native ----------- //", () => {
+  it("needs tests", () => {
+    // needs tests
+  });
+});

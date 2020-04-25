@@ -1,1 +1,1 @@
-declare module '@walletconnect/iso-crypto'
+declare module "@walletconnect/iso-crypto"

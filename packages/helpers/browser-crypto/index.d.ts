@@ -1,1 +1,1 @@
-declare module '@walletconnect/browser-crypto'
+declare module "@walletconnect/browser-crypto"

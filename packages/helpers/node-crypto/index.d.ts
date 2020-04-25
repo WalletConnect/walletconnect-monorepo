@@ -1,1 +1,1 @@
-declare module '@walletconnect/node-crypto'
+declare module "@walletconnect/node-crypto"

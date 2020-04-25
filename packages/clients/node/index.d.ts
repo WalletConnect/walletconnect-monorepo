@@ -1,1 +1,1 @@
-declare module '@walletconnect/node'
+declare module "@walletconnect/node"

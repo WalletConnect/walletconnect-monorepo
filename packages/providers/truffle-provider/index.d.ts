@@ -1,1 +1,1 @@
-declare module '@walletconnect/truffle-provider'
+declare module "@walletconnect/truffle-provider"
