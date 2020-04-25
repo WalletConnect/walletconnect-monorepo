@@ -1,5 +1,6 @@
 import {
   IConnector,
+  IConnectorOpts,
   ICryptoLib,
   ITransportLib,
   ISessionStorage,
@@ -14,7 +15,6 @@ import {
   IClientMeta,
   IParseURIResult,
   ISessionParams,
-  IWalletConnectOptions,
   IUpdateChainParams,
   IRequestOptions,
   IInternalRequestOptions,
@@ -55,16 +55,6 @@ import {
 } from "./errors";
 import EventManager from "./events";
 import SessionStorage from "./storage";
-
-interface IConnectorOpts {
-  cryptoLib: ICryptoLib;
-  connectorOpts: IWalletConnectOptions;
-  transport?: ITransportLib | null;
-  sessionStorage?: ISessionStorage | null;
-  clientMeta?: IClientMeta | null;
-  qrcodeModal?: IQRCodeModal | null;
-  pushServerOpts?: IPushServerOptions;
-}
 
 // -- Connector ------------------------------------------------------------ //
 

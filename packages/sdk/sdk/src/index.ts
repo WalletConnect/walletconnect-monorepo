@@ -4,11 +4,7 @@ import Web3Provider from "@walletconnect/web3-provider";
 import ChannelProvider from "@walletconnect/channel-provider";
 import StarkwareProvider from "@walletconnect/starkware-provider";
 import ThreeIdProvider from "@walletconnect/3id-provider";
-import { IWalletConnectOptions, IConnector, ICreateSessionOptions } from "@walletconnect/types";
-
-interface IWalletConnectSDKOptions extends IWalletConnectOptions {
-  bridge?: string;
-}
+import { IWalletConnectSDKOptions, IConnector, ICreateSessionOptions } from "@walletconnect/types";
 
 class WalletConnectSDK {
   public connector: IConnector | undefined;

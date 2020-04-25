@@ -3,10 +3,10 @@ import BrowserQRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
 import {
   IRPCMap,
-  IWCEthRpcConnectionOptions,
   IConnector,
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
+  IWalletConnectProviderOptions,
 } from "@walletconnect/types";
 
 const ProviderEngine = require("web3-provider-engine");
@@ -16,10 +16,6 @@ const FilterSubprovider = require("web3-provider-engine/subproviders/filters");
 const HookedWalletSubprovider = require("web3-provider-engine/subproviders/hooked-wallet");
 const NonceSubprovider = require("web3-provider-engine/subproviders/nonce-tracker");
 const SubscriptionsSubprovider = require("web3-provider-engine/subproviders/subscriptions");
-
-interface IWalletConnectProviderOptions extends IWCEthRpcConnectionOptions {
-  pollingInterval?: number;
-}
 
 class WalletConnectProvider extends ProviderEngine {
   public bridge = "https://bridge.walletconnect.org";

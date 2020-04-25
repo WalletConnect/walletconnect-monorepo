@@ -98,6 +98,12 @@ declare module "@walletconnect/types" {
     silent: boolean;
   }
 
+  export interface ISocketTransportOptions {
+    url: string;
+    netMonitor?: INetworkMonitor;
+    subscriptions?: string[];
+  }
+
   export interface ISessionStatus {
     chainId: number;
     accounts: string[];
@@ -237,6 +243,16 @@ declare module "@walletconnect/types" {
     netMonitor?: INetworkMonitor;
   }
 
+  export interface IConnectorOpts {
+    cryptoLib: ICryptoLib;
+    connectorOpts: IWalletConnectOptions;
+    transport?: ITransportLib | null;
+    sessionStorage?: ISessionStorage | null;
+    clientMeta?: IClientMeta | null;
+    qrcodeModal?: IQRCodeModal | null;
+    pushServerOpts?: IPushServerOptions;
+  }
+
   export interface INodeJSOptions {
     clientMeta: IClientMeta;
   }
@@ -287,6 +303,18 @@ declare module "@walletconnect/types" {
   export interface IWCEthRpcConnectionOptions extends IWCRpcConnectionOptions {
     rpc?: IRPCMap;
     infuraId?: string;
+  }
+
+  export interface IWalletConnectStarkwareProviderOptions extends IWCRpcConnectionOptions {
+    contractAddress: string;
+  }
+
+  export interface IWalletConnectSDKOptions extends IWalletConnectOptions {
+    bridge?: string;
+  }
+
+  export interface IWalletConnectProviderOptions extends IWCEthRpcConnectionOptions {
+    pollingInterval?: number;
   }
 
   export interface IRequestOptions {

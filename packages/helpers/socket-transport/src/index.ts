@@ -3,17 +3,12 @@ import {
   ITransportEvent,
   INetworkMonitor,
   ITransportLib,
+  ISocketTransportOptions,
 } from "@walletconnect/types";
 import NetworkMonitor from "./network";
 
 // @ts-ignore
 const WS = global.WebSocket || require("ws");
-
-interface ISocketTransportOptions {
-  url: string;
-  netMonitor?: INetworkMonitor;
-  subscriptions?: string[];
-}
 
 // -- SocketTransport ------------------------------------------------------ //
 
@@ -135,8 +130,8 @@ class SocketTransport implements ITransportLib {
     const url = this._url.startsWith("https")
       ? this._url.replace("https", "wss")
       : this._url.startsWith("http")
-        ? this._url.replace("http", "ws")
-        : this._url;
+      ? this._url.replace("http", "ws")
+      : this._url;
 
     this._nextSocket = new WS(url);
 
