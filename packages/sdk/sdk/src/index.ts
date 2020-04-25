@@ -4,7 +4,14 @@ import Web3Provider from "@walletconnect/web3-provider";
 import ChannelProvider from "@walletconnect/channel-provider";
 import StarkwareProvider from "@walletconnect/starkware-provider";
 import ThreeIdProvider from "@walletconnect/3id-provider";
-import { IWalletConnectSDKOptions, IConnector, ICreateSessionOptions } from "@walletconnect/types";
+import {
+  IWalletConnectSDKOptions,
+  IConnector,
+  ICreateSessionOptions,
+  IWalletConnectProviderOptions,
+  IWCRpcConnectionOptions,
+  IWalletConnectStarkwareProviderOptions,
+} from "@walletconnect/types";
 
 class WalletConnectSDK {
   public connector: IConnector | undefined;
@@ -28,28 +35,28 @@ class WalletConnectSDK {
     return connector;
   }
 
-  public getWeb3Provider(opts?: any) {
+  public getWeb3Provider(opts?: IWalletConnectProviderOptions) {
     if (!this.connector) {
       throw new Error("No connector available - please call connect() first");
     }
     return new Web3Provider({ ...opts, connector: this.connector });
   }
 
-  public getChannelProvider(opts?: any) {
+  public getChannelProvider(opts?: IWCRpcConnectionOptions) {
     if (!this.connector) {
       throw new Error("No connector available - please call connect() first");
     }
     return new ChannelProvider({ ...opts, connector: this.connector });
   }
 
-  public getStarkwareProvider(opts?: any) {
+  public getStarkwareProvider(opts: IWalletConnectStarkwareProviderOptions) {
     if (!this.connector) {
       throw new Error("No connector available - please call connect() first");
     }
     return new StarkwareProvider({ ...opts, connector: this.connector });
   }
 
-  public getThreeIdProvider(opts?: any) {
+  public getThreeIdProvider(opts?: IWCRpcConnectionOptions) {
     if (!this.connector) {
       throw new Error("No connector available - please call connect() first");
     }

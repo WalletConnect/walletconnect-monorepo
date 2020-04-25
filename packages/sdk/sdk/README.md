@@ -17,11 +17,15 @@ const connector = await wc.connect();
 
 //  Get your desired provider
 
-const web3Provider = await wc.getWeb3Provider();
+const web3Provider = await wc.getWeb3Provider({
+  infuraId: "<INSERT_INFURA_APP_ID>",
+});
 
 const channelProvider = await wc.getChannelProvider();
 
-const starkwareProvider = await wc.getStarkwareProvider();
+const starkwareProvider = await wc.getStarkwareProvider({
+  contractAddress: "<INSERT_CONTRACT_ADDRESS>",
+});
 
 const threeIdProvider = await wc.getThreeIdProvider();
 ```

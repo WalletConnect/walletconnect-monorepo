@@ -14,7 +14,7 @@ import WalletConnectProvider from "@walletconnect/eth-provider";
  *  Create WalletConnect Provider (qrcode modal will be displayed automatically)
  */
 const provider = new WalletConnectProvider({
-  infuraId: "<INSERT_INFURA_APP_ID"
+  infuraId: "<INSERT_INFURA_APP_ID>",
 });
 
 /**
