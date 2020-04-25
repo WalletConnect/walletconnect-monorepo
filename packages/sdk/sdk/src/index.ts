@@ -6,7 +6,7 @@ import StarkwareProvider from "@walletconnect/starkware-provider";
 import ThreeIdProvider from "@walletconnect/3id-provider";
 import { IWalletConnectOptions, IConnector, ICreateSessionOptions } from "@walletconnect/types";
 
-class WalletConnect {
+class WalletConnectSDK {
   public connector: IConnector | undefined;
   constructor(private options: IWalletConnectOptions) {}
 
@@ -57,4 +57,4 @@ class WalletConnect {
   }
 }
 
-export default WalletConnect;
+export default WalletConnectSDK;

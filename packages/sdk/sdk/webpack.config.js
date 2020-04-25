@@ -9,7 +9,7 @@ module.exports = {
     path: path.resolve(__dirname, "dist", "umd"),
     filename: "[name].min.js",
     libraryTarget: "umd",
-    library: "WalletConnect",
+    library: "WalletConnectSDK",
     umdNamedDefine: true,
     globalObject: "this",
   },
