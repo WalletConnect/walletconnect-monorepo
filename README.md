@@ -51,12 +51,12 @@ All contributions are welcome! Feel free to create an Issue or make a PR in this
 
 ### Code Contributors
 
-This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+This project exists thanks to all the people who contribute.
 <a href="https://github.com/WalletConnect/walletconnect-monorepo/graphs/contributors"><img src="https://opencollective.com/walletconnect/contributors.svg?width=890&button=false" /></a>
 
 ### Financial Contributors
 
-Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/walletconnect/contribute)]
+Become a financial contributor and help us sustain our community. 
 
 #### Individuals
 
@@ -64,7 +64,7 @@ Become a financial contributor and help us sustain our community. [[Contribute](
 
 #### Organizations
 
-Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/walletconnect/contribute)]
+Support this project with your organization. Your logo will show up here with a link to your website. 
 
 <a href="https://opencollective.com/walletconnect/organization/0/website"><img src="https://opencollective.com/walletconnect/organization/0/avatar.svg"></a>
 <a href="https://opencollective.com/walletconnect/organization/1/website"><img src="https://opencollective.com/walletconnect/organization/1/avatar.svg"></a>
