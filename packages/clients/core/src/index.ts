@@ -83,6 +83,7 @@ class Connector implements IConnector {
   private _connected: boolean;
   private _sessionStorage: ISessionStorage | null;
   private _qrcodeModal: IQRCodeModal | null;
+  private _disableModal: boolean;
 
   // -- constructor ----------------------------------------------------- //
 
@@ -110,6 +111,7 @@ class Connector implements IConnector {
     this._connected = false;
     this._sessionStorage = opts.sessionStorage || new SessionStorage();
     this._qrcodeModal = opts.qrcodeModal || null;
+    this._disableModal = opts.connectorOpts.disableModal || false;
 
     if (!this.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
@@ -393,7 +395,7 @@ class Connector implements IConnector {
     this.handshakeId = request.id;
     this.handshakeTopic = uuid();
 
-    if (this._qrcodeModal) {
+    if (this._qrcodeModal && !this._disableModal) {
       this._qrcodeModal.open(this.uri, () => {
         throw new Error("QR Code Modal closed");
       });
@@ -406,7 +408,7 @@ class Connector implements IConnector {
 
     const endInstantRequest = () => {
       this.killSession();
-      if (this._qrcodeModal) {
+      if (this._qrcodeModal && !this._disableModal) {
         this._qrcodeModal.close();
       }
     };
@@ -433,7 +435,7 @@ class Connector implements IConnector {
       if (!this.connected) {
         try {
           await this.createSession(opts);
-          if (this._qrcodeModal) {
+          if (this._qrcodeModal && !this._disableModal) {
             this._qrcodeModal.open(this.uri, () => {
               reject(new Error("QR Code Modal closed"));
             });
@@ -447,7 +449,7 @@ class Connector implements IConnector {
         if (error) {
           return reject(error);
         }
-        if (this._qrcodeModal) {
+        if (this._qrcodeModal && !this._disableModal) {
           this._qrcodeModal.close();
         }
 

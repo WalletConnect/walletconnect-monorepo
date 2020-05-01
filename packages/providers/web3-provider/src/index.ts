@@ -1,5 +1,4 @@
 import WalletConnect from "@walletconnect/client";
-import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
 import {
   IRPCMap,
@@ -37,8 +36,9 @@ class WalletConnectProvider extends ProviderEngine {
     this.bridge = opts?.connector
       ? opts.connector.bridge
       : opts?.bridge || "https://bridge.walletconnect.org";
-    this.wc = opts?.connector || new WalletConnect({ bridge: this.bridge });
     this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
+    this.wc =
+      opts?.connector || new WalletConnect({ bridge: this.bridge, disableModal: !this.qrcode });
     this.rpc = opts?.rpc || null;
     if (
       !this.rpc &&
@@ -292,15 +292,7 @@ class WalletConnectProvider extends ProviderEngine {
         const sessionRequestOpions = this.chainId ? { chainId: this.chainId } : undefined;
         wc.createSession(sessionRequestOpions)
           .then(() => {
-            if (this.qrcode) {
-              WalletConnectQRCodeModal.open(wc.uri, () => {
-                reject(new Error("User closed WalletConnect modal"));
-              });
-            }
             wc.on("connect", (error, payload) => {
-              if (this.qrcode) {
-                WalletConnectQRCodeModal.close();
-              }
               if (error) {
                 this.isConnecting = false;
                 return reject(error);

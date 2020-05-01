@@ -242,6 +242,7 @@ declare module "@walletconnect/types" {
     clientMeta?: IClientMeta;
     storage?: ISessionStorage;
     netMonitor?: INetworkMonitor;
+    disableModal?: boolean;
   }
 
   export interface IConnectorOpts {
@@ -344,7 +345,6 @@ declare module "@walletconnect/types" {
     wc: IConnector | null;
     connected: boolean;
 
-    openQRCode(): void;
     create(chainId?: number): void;
     onClose(): void;
     onError(payload: any, message: string, code?: number): void;

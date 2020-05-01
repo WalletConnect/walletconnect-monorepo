@@ -1,6 +1,5 @@
 import EventEmitter from "events";
 import WalletConnect from "@walletconnect/client";
-import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 import { isJsonRpcResponseError } from "@walletconnect/utils";
 import {
   IWCRpcConnection,
@@ -23,30 +22,18 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     this.bridge = opts?.connector
       ? opts.connector.bridge
       : opts?.bridge || "https://bridge.walletconnect.org";
-    this.wc = opts?.connector || new WalletConnect({ bridge: this.bridge });
     this.qrcode = typeof opts?.qrcode === "undefined" || opts.qrcode !== false;
+    this.wc =
+      opts?.connector || new WalletConnect({ bridge: this.bridge, disableModal: !this.qrcode });
     this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : 1;
     this.on("error", () => this.close());
-  }
-
-  public openQRCode() {
-    const uri = this.wc.uri;
-    if (uri) {
-      WalletConnectQRCodeModal.open(uri, () => {
-        this.emit("error", new Error("User close WalletConnect QR Code modal"));
-      });
-    }
   }
 
   public create(): void {
     if (!this.wc.connected) {
       this.wc
         .createSession({ chainId: this.chainId })
-        .then(() => {
-          if (this.qrcode) {
-            this.openQRCode();
-          }
-        })
+        .then(() => this.emit("created"))
         .catch((e: Error) => this.emit("error", e));
     }
 
@@ -57,10 +44,6 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       }
 
       this.connected = true;
-
-      if (this.qrcode) {
-        WalletConnectQRCodeModal.close(); // Close QR Code Modal
-      }
 
       // Emit connect event
       this.emit("connect");
