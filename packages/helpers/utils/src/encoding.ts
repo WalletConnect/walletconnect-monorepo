@@ -92,6 +92,31 @@ export function convertUtf8ToNumber(utf8: string): number {
   return num;
 }
 
+// -- Hex -------------------------------------------------- //
+
+export function convertHexToBuffer(hex: string): Buffer {
+  hex = removeHexPrefix(hex);
+  const buffer = Buffer.from(hex, "hex");
+  return buffer;
+}
+
+export function convertHexToArrayBuffer(hex: string): ArrayBuffer {
+  hex = addHexPrefix(hex);
+  const arrayBuffer = arrayify(hex).buffer;
+  return arrayBuffer;
+}
+
+export function convertHexToUtf8(hex: string): string {
+  const arrayBuffer = convertHexToArrayBuffer(hex);
+  const utf8 = convertArrayBufferToUtf8(arrayBuffer);
+  return utf8;
+}
+
+export function convertHexToNumber(hex: string): number {
+  const num = new BN(hex, "hex").toNumber();
+  return num;
+}
+
 // -- Number ----------------------------------------------- //
 
 export function convertNumberToBuffer(num: number): Buffer {
@@ -118,29 +143,4 @@ export function convertNumberToHex(num: number | string, noPrefix?: boolean): st
     hex = removeHexPrefix(hex);
   }
   return hex;
-}
-
-// -- Hex -------------------------------------------------- //
-
-export function convertHexToBuffer(hex: string): Buffer {
-  hex = removeHexPrefix(hex);
-  const buffer = Buffer.from(hex, "hex");
-  return buffer;
-}
-
-export function convertHexToArrayBuffer(hex: string): ArrayBuffer {
-  hex = addHexPrefix(hex);
-  const arrayBuffer = arrayify(hex).buffer;
-  return arrayBuffer;
-}
-
-export function convertHexToUtf8(hex: string): string {
-  const arrayBuffer = convertHexToArrayBuffer(hex);
-  const utf8 = convertArrayBufferToUtf8(arrayBuffer);
-  return utf8;
-}
-
-export function convertHexToNumber(hex: string): number {
-  const num = new BN(hex, "hex").toNumber();
-  return num;
 }
