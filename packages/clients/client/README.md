@@ -19,7 +19,9 @@ npm install --save @walletconnect/client
 import WalletConnect from "@walletconnect/client";
 
 // Create a connector
-const connector = new WalletConnect();
+const connector = new WalletConnect({
+  bridge: "https://bridge.walletconnect.org", // Required
+});
 
 connector.on("session_update", (error, payload) => {
   if (error) {
@@ -52,7 +54,7 @@ const tx = {
   gasPrice: "0x02540be400", // Optional
   gasLimit: "0x9c40", // Optional
   value: "0x00", // Optional
-  nonce: "0x0114" // Optional
+  nonce: "0x0114", // Optional
 };
 
 // Send transaction
@@ -79,7 +81,7 @@ const tx = {
   gasPrice: "0x02540be400", // Optional
   gasLimit: "0x9c40", // Optional
   value: "0x00", // Optional
-  nonce: "0x0114" // Optional
+  nonce: "0x0114", // Optional
 };
 
 // Sign transaction
@@ -157,41 +159,41 @@ const typedData = {
       { name: "name", type: "string" },
       { name: "version", type: "string" },
       { name: "chainId", type: "uint256" },
-      { name: "verifyingContract", type: "address" }
+      { name: "verifyingContract", type: "address" },
     ],
     Person: [
       { name: "name", type: "string" },
-      { name: "account", type: "address" }
+      { name: "account", type: "address" },
     ],
     Mail: [
       { name: "from", type: "Person" },
       { name: "to", type: "Person" },
-      { name: "contents", type: "string" }
-    ]
+      { name: "contents", type: "string" },
+    ],
   },
   primaryType: "Mail",
   domain: {
     name: "Example Dapp",
     version: "1.0.0-beta",
     chainId: 1,
-    verifyingContract: "0x0000000000000000000000000000000000000000"
+    verifyingContract: "0x0000000000000000000000000000000000000000",
   },
   message: {
     from: {
       name: "Alice",
-      account: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      account: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     },
     to: {
       name: "Bob",
-      account: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      account: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     },
-    contents: "Hey, Bob!"
-  }
+    contents: "Hey, Bob!",
+  },
 };
 
 const msgParams = [
   "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3", // Required
-  typedData // Required
+  typedData, // Required
 ];
 
 // Sign Typed Data
@@ -223,9 +225,9 @@ const customRequest = {
       gasPrice: "0x02540be400",
       gasLimit: "0x9c40",
       value: "0x00",
-      nonce: "0x0114"
-    }
-  ]
+      nonce: "0x0114",
+    },
+  ],
 };
 
 // Send Custom Request
@@ -262,9 +264,9 @@ const instantRequest = {
       nonce: 1,
       gas: 100000,
       value: 0,
-      data: "0x0"
-    }
-  ]
+      data: "0x0",
+    },
+  ],
 };
 
 // Create Instant Request

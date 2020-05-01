@@ -4,7 +4,6 @@
 window.updateTitle();
 
 const WalletConnect = window.WalletConnect.default;
-const WalletConnectQRCodeModal = window.WalletConnectQRCodeModal.default;
 
 const DEFAULT_BRIDGE = "https://bridge.walletconnect.org";
 
@@ -14,21 +13,12 @@ function onInit() {
   // Create a connector
   connector = new WalletConnect({
     bridge: DEFAULT_BRIDGE, // Required
-    disableModal: true,
   });
 
   // Check if connection is already established
   if (!connector.connected) {
     // create new session
-    connector.createSession().then(() => {
-      // get uri for QR Code modal
-      const uri = connector.uri;
-      console.log(uri); // eslint-disable-line
-      // display QR Code modal
-      WalletConnectQRCodeModal.open(uri, () => {
-        console.log("QR Code Modal closed"); // eslint-disable-line
-      });
-    });
+    connector.createSession();
   } else {
     const { accounts, chainId } = connector;
     updateSessionDetails({ accounts, chainId });
@@ -46,9 +36,6 @@ function onSubscribe() {
     if (error) {
       throw error;
     }
-
-    // Close QR Code Modal
-    WalletConnectQRCodeModal.close();
 
     // Get provided accounts and chainId
     const { accounts, chainId } = payload.params[0];
