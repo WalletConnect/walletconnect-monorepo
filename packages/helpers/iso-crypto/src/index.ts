@@ -30,7 +30,7 @@ export async function verifyHmac(payload: IEncryptionPayload, key: Buffer): Prom
   const hmac: Buffer = convertHexToBuffer(payload.hmac);
   const hmacHex: string = convertBufferToHex(hmac, true);
   const unsigned: Buffer = concatBuffers(cipherText, iv);
-  const chmac: Buffer = await eccryptoJS.hmacSha256Sign(unsigned, key);
+  const chmac: Buffer = await eccryptoJS.hmacSha256Sign(key, unsigned);
   const chmacHex: string = convertBufferToHex(chmac, true);
 
   if (removeHexPrefix(hmacHex) === removeHexPrefix(chmacHex)) {
@@ -54,11 +54,11 @@ export async function encrypt(
   const contentString: string = JSON.stringify(data);
   const content: Buffer = convertUtf8ToBuffer(contentString);
 
-  const cipherText: Buffer = await eccryptoJS.aesCbcEncrypt(content, _key, iv);
+  const cipherText: Buffer = await eccryptoJS.aesCbcEncrypt(iv, _key, content);
   const cipherTextHex: string = convertBufferToHex(cipherText, true);
 
   const unsigned: Buffer = concatBuffers(cipherText, iv);
-  const hmac: Buffer = await eccryptoJS.hmacSha256Sign(unsigned, _key);
+  const hmac: Buffer = await eccryptoJS.hmacSha256Sign(_key, unsigned);
   const hmacHex: string = convertBufferToHex(hmac, true);
 
   return {
@@ -85,7 +85,7 @@ export async function decrypt(
 
   const cipherText: Buffer = convertHexToBuffer(payload.data);
   const iv: Buffer = convertHexToBuffer(payload.iv);
-  const buffer: Buffer = await eccryptoJS.aesCbcDecrypt(cipherText, _key, iv);
+  const buffer: Buffer = await eccryptoJS.aesCbcDecrypt(iv, _key, cipherText);
   const utf8: string = convertBufferToUtf8(buffer);
   let data: IJsonRpcRequest;
   try {
