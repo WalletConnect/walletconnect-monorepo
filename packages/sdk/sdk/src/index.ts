@@ -1,6 +1,4 @@
-import BrowserWalletConnect from "@walletconnect/browser";
-import NodeWalletConnect from "@walletconnect/node";
-import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+import WalletConnect from "@walletconnect/client";
 import Web3Provider from "@walletconnect/web3-provider";
 import ChannelProvider from "@walletconnect/channel-provider";
 import StarkwareProvider from "@walletconnect/starkware-provider";
@@ -13,6 +11,7 @@ import {
   IWCRpcConnectionOptions,
   IWalletConnectStarkwareProviderOptions,
   IClientMeta,
+  IWalletConnectOptions,
 } from "@walletconnect/types";
 import { isNode } from "@walletconnect/utils";
 
@@ -28,21 +27,18 @@ class WalletConnectSDK {
   }
 
   public async connect(createSessionOpts?: ICreateSessionOptions): Promise<IConnector> {
-    const options = {
-      qrcodeModal: WalletConnectQRCodeModal,
-      bridge: "https://bridge.walletconnect.org",
+    const options: IWalletConnectOptions = {
       ...this.options,
     };
-    const connector = isNode()
-      ? new NodeWalletConnect(options, {
-          clientMeta: this.clientMeta || {
-            name: "WalletConnect SDK",
-            description: "WalletConnect SDK in NodeJS",
-            url: "#",
-            icons: ["https://walletconnect.org/walletconnect-logo.png"],
-          },
-        })
-      : new BrowserWalletConnect(options);
+    if (isNode()) {
+      options.clientMeta = this.clientMeta || {
+        name: "WalletConnect SDK",
+        description: "WalletConnect SDK in NodeJS",
+        url: "#",
+        icons: ["https://walletconnect.org/walletconnect-logo.png"],
+      };
+    }
+    const connector = new WalletConnect(options);
     await connector.connect(createSessionOpts);
     return connector;
   }

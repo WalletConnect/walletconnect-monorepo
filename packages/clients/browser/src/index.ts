@@ -1,6 +1,6 @@
 import Connector from "@walletconnect/core";
 import { IWalletConnectOptions } from "@walletconnect/types";
-// import { logDeprecationWarning } from '@walletconnect/utils'
+import { logDeprecationWarning } from "@walletconnect/utils";
 import * as cryptoLib from "@walletconnect/browser-crypto";
 
 class WalletConnect extends Connector {
@@ -10,7 +10,7 @@ class WalletConnect extends Connector {
       connectorOpts,
       clientMeta: connectorOpts.clientMeta,
     });
-    // logDeprecationWarning()
+    logDeprecationWarning();
   }
 }
 

@@ -54,7 +54,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/node": "^1.0.0-beta.87",
+    "@walletconnect/client": "^1.0.0-beta.87",
     "@walletconnect/types": "^1.0.0-beta.87",
     "@walletconnect/utils": "^1.0.0-beta.87",
     "qrcode-terminal": "0.12.0",

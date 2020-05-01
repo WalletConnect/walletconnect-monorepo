@@ -1,6 +1,9 @@
-import NodeWalletConnect from "@walletconnect/node";
-
-import { IWCEthRpcConnectionOptions, IConnector } from "@walletconnect/types";
+import WalletConnect from "@walletconnect/client";
+import {
+  IWCEthRpcConnectionOptions,
+  IConnector,
+  IWalletConnectOptions,
+} from "@walletconnect/types";
 
 const HookedWalletSubprovider = require("web3-provider-engine/subproviders/hooked-wallet");
 const qrTerminal = require("qrcode-terminal");
@@ -68,7 +71,12 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
         }
       },
     });
-    const nodeOpts = {
+
+    this.bridge = opts?.connector
+      ? opts.connector.bridge
+      : opts?.bridge || "https://bridge.walletconnect.org";
+    const clientOpts: IWalletConnectOptions = {
+      bridge: this.bridge,
       clientMeta: {
         name: "wallet-connect-provider",
         description: "WalletConnect provider",
@@ -76,11 +84,7 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
         icons: ["https://walletconnect.org/walletconnect-logo.png"],
       },
     };
-
-    this.bridge = opts?.connector
-      ? opts.connector.bridge
-      : opts?.bridge || "https://bridge.walletconnect.org";
-    this.wc = opts?.connector || new NodeWalletConnect({ bridge: this.bridge }, nodeOpts);
+    this.wc = opts?.connector || new WalletConnect(clientOpts);
     this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
     this.chainId = typeof opts?.chainId !== "undefined" ? opts?.chainId : 1;
     this.networkId = this.chainId;

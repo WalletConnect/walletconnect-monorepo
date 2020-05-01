@@ -1,4 +1,4 @@
-import BrowserWalletConnect from "@walletconnect/browser";
+import WalletConnect from "@walletconnect/client";
 import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
 import {
@@ -37,7 +37,7 @@ class WalletConnectProvider extends ProviderEngine {
     this.bridge = opts?.connector
       ? opts.connector.bridge
       : opts?.bridge || "https://bridge.walletconnect.org";
-    this.wc = opts?.connector || new BrowserWalletConnect({ bridge: this.bridge });
+    this.wc = opts?.connector || new WalletConnect({ bridge: this.bridge });
     this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
     this.rpc = opts?.rpc || null;
     if (
@@ -56,7 +56,7 @@ class WalletConnectProvider extends ProviderEngine {
         eth_mining: false,
         eth_syncing: true,
         net_listening: true,
-        web3_clientVersion: `BrowserWalletConnect/v1.0.0-beta/javascript`,
+        web3_clientVersion: `WalletConnect/v1.0.0-beta/javascript`,
       }),
     );
     this.addProvider(new CacheSubprovider());
@@ -294,7 +294,7 @@ class WalletConnectProvider extends ProviderEngine {
           .then(() => {
             if (this.qrcode) {
               WalletConnectQRCodeModal.open(wc.uri, () => {
-                reject(new Error("User closed BrowserWalletConnect modal"));
+                reject(new Error("User closed WalletConnect modal"));
               });
             }
             wc.on("connect", (error, payload) => {

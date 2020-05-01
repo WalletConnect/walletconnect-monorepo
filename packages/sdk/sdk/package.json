@@ -55,10 +55,8 @@
   },
   "dependencies": {
     "@walletconnect/3id-provider": "^1.0.0-beta.87",
-    "@walletconnect/browser": "^1.0.0-beta.87",
+    "@walletconnect/client": "^1.0.0-beta.87",
     "@walletconnect/channel-provider": "^1.0.0-beta.87",
-    "@walletconnect/node": "^1.0.0-beta.87",
-    "@walletconnect/qrcode-modal": "^1.0.0-beta.87",
     "@walletconnect/starkware-provider": "^1.0.0-beta.87",
     "@walletconnect/types": "^1.0.0-beta.87",
     "@walletconnect/utils": "^1.0.0-beta.87",
