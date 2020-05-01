@@ -14,6 +14,7 @@ function onInit() {
   // Create a connector
   connector = new WalletConnect({
     bridge: DEFAULT_BRIDGE, // Required
+    disableModal: true,
   });
 
   // Check if connection is already established

@@ -12,3 +12,6 @@ export const ERROR_MISSING_REQUIRED =
 
 export const ERROR_INVALID_RESPONSE = "JSON RPC response format is invalid";
 export const ERROR_INVALID_URI = "URI format is invalid";
+
+export const ERROR_QRCODE_MODAL_NOT_PROVIDED = "QRCode Modal not provided";
+export const ERROR_QRCODE_MODAL_USER_CLOSED = "User close QRCode Modal";

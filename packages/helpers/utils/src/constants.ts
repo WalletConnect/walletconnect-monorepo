@@ -5,6 +5,7 @@ export const reservedEvents = [
   "connect",
   "disconnect",
   "display_uri",
+  "modal_closed",
   "transport_open",
   "transport_close",
 ];

@@ -52,6 +52,8 @@ import {
   ERROR_INVALID_RESPONSE,
   ERROR_INVALID_URI,
   ERROR_MISSING_REQUIRED,
+  ERROR_QRCODE_MODAL_NOT_PROVIDED,
+  ERROR_QRCODE_MODAL_USER_CLOSED,
 } from "./errors";
 import EventManager from "./events";
 import SessionStorage from "./storage";
@@ -111,7 +113,10 @@ class Connector implements IConnector {
     this._connected = false;
     this._sessionStorage = opts.sessionStorage || new SessionStorage();
     this._qrcodeModal = opts.qrcodeModal || null;
-    this._disableModal = opts.connectorOpts.disableModal || false;
+    this._disableModal =
+      typeof opts.connectorOpts.disableModal !== "undefined"
+        ? opts.connectorOpts.disableModal
+        : false;
 
     if (!this.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
@@ -395,20 +400,18 @@ class Connector implements IConnector {
     this.handshakeId = request.id;
     this.handshakeTopic = uuid();
 
-    if (this._qrcodeModal && !this._disableModal) {
-      this._qrcodeModal.open(this.uri, () => {
-        throw new Error("QR Code Modal closed");
-      });
-    }
-
     this._eventManager.trigger({
       event: "display_uri",
       params: [this.uri],
     });
 
+    this.on("modal_closed", () => {
+      throw new Error(ERROR_QRCODE_MODAL_USER_CLOSED);
+    });
+
     const endInstantRequest = () => {
       this.killSession();
-      if (this._qrcodeModal && !this._disableModal) {
+      if (this._qrcodeModal) {
         this._qrcodeModal.close();
       }
     };
@@ -429,27 +432,24 @@ class Connector implements IConnector {
 
   public connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
     if (!this._qrcodeModal) {
-      throw new Error("QR Code Modal not provided");
+      throw new Error(ERROR_QRCODE_MODAL_NOT_PROVIDED);
     }
     return new Promise(async (resolve, reject) => {
       if (!this.connected) {
         try {
           await this.createSession(opts);
-          if (this._qrcodeModal && !this._disableModal) {
-            this._qrcodeModal.open(this.uri, () => {
-              reject(new Error("QR Code Modal closed"));
-            });
-          }
         } catch (error) {
           reject(error);
         }
       }
 
+      this.on("modal_closed", () => reject(new Error(ERROR_QRCODE_MODAL_USER_CLOSED)));
+
       this.on("connect", (error, payload) => {
         if (error) {
           return reject(error);
         }
-        if (this._qrcodeModal && !this._disableModal) {
+        if (this._qrcodeModal) {
           this._qrcodeModal.close();
         }
 
@@ -1023,6 +1023,17 @@ class Connector implements IConnector {
     this._transport.on("close", () =>
       this._eventManager.trigger({ event: "transport_close", params: [] }),
     );
+
+    this.on("display_uri", () => {
+      if (this._qrcodeModal && !this._disableModal) {
+        this._qrcodeModal.open(this.uri, () => {
+          this._eventManager.trigger({
+            event: "modal_closed",
+            params: [],
+          });
+        });
+      }
+    });
 
     this.on("wc_sessionRequest", (error, payload) => {
       if (error) {
