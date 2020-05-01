@@ -1,4 +1,4 @@
-describe("// ------------ @walletconnect/http-connection ----------- //", () => {
+describe("HttpConnection", () => {
   it("needs tests", () => {
     // needs tests
   });

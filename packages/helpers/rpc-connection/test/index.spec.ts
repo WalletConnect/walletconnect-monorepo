@@ -1,4 +1,4 @@
-describe("// ------------ @walletconnect/rpc-connection ----------- //", () => {
+describe("RpcConnection", () => {
   it("needs tests", () => {
     // needs tests
   });

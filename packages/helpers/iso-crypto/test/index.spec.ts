@@ -1,4 +1,4 @@
-describe("// ------------ @walletconnect/iso-crypto ----------- //", () => {
+describe("IsoCrypto", () => {
   it("needs tests", () => {
     // needs tests
   });

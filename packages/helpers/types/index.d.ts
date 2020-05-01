@@ -48,6 +48,7 @@ declare module "@walletconnect/types" {
     encrypt: (
       data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
       key: ArrayBuffer,
+      iv?: ArrayBuffer,
     ) => Promise<IEncryptionPayload>;
     decrypt: (
       payload: IEncryptionPayload,

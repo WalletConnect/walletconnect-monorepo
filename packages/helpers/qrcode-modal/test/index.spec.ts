@@ -1,4 +1,4 @@
-describe("// ------------ @walletconnect/qrcode-modal ----------- //", () => {
+describe("QrcodeModal", () => {
   it("needs tests", () => {
     // needs tests
   });

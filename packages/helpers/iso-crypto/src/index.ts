@@ -43,10 +43,11 @@ export async function verifyHmac(payload: IEncryptionPayload, key: Buffer): Prom
 export async function encrypt(
   data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   key: ArrayBuffer,
+  providedIv?: ArrayBuffer,
 ): Promise<IEncryptionPayload> {
   const _key: Buffer = convertArrayBufferToBuffer(key);
 
-  const ivArrayBuffer: ArrayBuffer = await generateKey(128);
+  const ivArrayBuffer: ArrayBuffer = providedIv || (await generateKey(128));
   const iv: Buffer = convertArrayBufferToBuffer(ivArrayBuffer);
   const ivHex: string = convertBufferToHex(iv, true);
 

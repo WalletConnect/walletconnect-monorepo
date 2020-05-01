@@ -127,12 +127,13 @@ export async function aesCbcDecrypt(
 export async function encrypt(
   data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   key: ArrayBuffer,
+  providedIv?: ArrayBuffer,
 ): Promise<IEncryptionPayload> {
   if (!key) {
     throw new Error("Missing key: required for encryption");
   }
 
-  const iv: ArrayBuffer = await generateKey(128);
+  const iv: ArrayBuffer = providedIv || (await generateKey(128));
   const ivHex: string = convertArrayBufferToHex(iv, true);
 
   const contentString: string = JSON.stringify(data);

@@ -1,4 +1,4 @@
-describe("// ------------ @walletconnect/socket-transport ----------- //", () => {
+describe("SocketTransport", () => {
   it("needs tests", () => {
     // needs tests
   });

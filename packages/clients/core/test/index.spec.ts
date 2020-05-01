@@ -1,4 +1,4 @@
-describe("// ---------------- @walletconnect/core --------------- //", () => {
+describe("Connector", () => {
   it("needs tests", () => {
     // needs tests
   });
