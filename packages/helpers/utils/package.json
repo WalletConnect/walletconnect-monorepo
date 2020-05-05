@@ -56,8 +56,6 @@
   },
   "dependencies": {
     "@ethersproject/address": "5.0.0-beta.134",
-    "@ethersproject/bytes": "5.0.0-beta.136",
-    "@ethersproject/strings": "5.0.0-beta.136",
     "@walletconnect/types": "^1.0.0-beta.90",
     "bn.js": "4.11.8",
     "detect-browser": "5.1.0",
