@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/browser-crypto",
-  "version": "1.0.0-beta.90",
+  "version": "1.0.0-beta.91",
   "description": "Browser Crypto for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -56,8 +56,8 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.0.0-beta.90",
-    "@walletconnect/utils": "^1.0.0-beta.90"
+    "@walletconnect/types": "^1.0.0-beta.91",
+    "@walletconnect/utils": "^1.0.0-beta.91"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
