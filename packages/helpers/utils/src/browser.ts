@@ -1,4 +1,11 @@
-import { detect, BrowserInfo, BotInfo, NodeInfo } from "detect-browser";
+import {
+  detect,
+  BrowserInfo,
+  BotInfo,
+  NodeInfo,
+  SearchBotDeviceInfo,
+  ReactNativeInfo,
+} from "detect-browser";
 import { IClientMeta } from "@walletconnect/types";
 
 export function unsafeGetFromWindow<T>(name: string): T | undefined {
@@ -219,7 +226,9 @@ export function formatQueryString(queryParams: any): string {
   return result;
 }
 
-export function detectEnv(userAgent?: string): BrowserInfo | BotInfo | NodeInfo | null {
+export function detectEnv(
+  userAgent?: string,
+): BrowserInfo | BotInfo | NodeInfo | SearchBotDeviceInfo | ReactNativeInfo | null {
   return detect(userAgent);
 }
 
