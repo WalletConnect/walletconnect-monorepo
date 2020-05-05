@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2015",
+    "target": "es5",
+    "importHelpers": true,
+    "noUnusedLocals": false,
+    "strict": false
+  }
+}

@@ -1,9 +1,9 @@
 import MobileRegistry from "@walletconnect/mobile-registry";
-import { IMobileRegistryEntry } from "@walletconnect/types";
-import { appendToQueryString, isIOS, isMobile, safeGetFromWindow } from "@walletconnect/utils";
+import * as types from "@walletconnect/types";
+import * as utils from "@walletconnect/utils";
 import * as qrImage from "qr-image";
 
-import logo from "./logo.svg";
+import * as logo from "./logo.svg";
 import * as constants from "./constants";
 import "./style.css";
 
@@ -29,10 +29,10 @@ function formatQRCodeContent(uri: string) {
   `;
 }
 
-function formatDeepLinkHref(uri: string, entry: IMobileRegistryEntry) {
-  const loc = safeGetFromWindow<Location>("location");
+function formatDeepLinkHref(uri: string, entry: types.IMobileRegistryEntry) {
+  const loc = utils.safeGetFromWindow<Location>("location");
   const encodedUri: string = encodeURIComponent(uri);
-  const redirectUrlQueryString = appendToQueryString(loc.search, {
+  const redirectUrlQueryString = utils.appendToQueryString(loc.search, {
     walletconnect: true,
   });
   const redirectUrl: string = encodeURIComponent(
@@ -61,7 +61,7 @@ function formatSingleConnectButton(name: string, color: string, href: string) {
   `;
 }
 function formatMobileRegistry(uri: string) {
-  const buttons = MobileRegistry.map((entry: IMobileRegistryEntry) => {
+  const buttons = MobileRegistry.map((entry: types.IMobileRegistryEntry) => {
     const { name, color } = entry;
     const href = formatDeepLinkHref(uri, entry);
     return formatSingleConnectButton(name, color, href);
@@ -76,7 +76,7 @@ function formatSingleDeepLink(uri: string) {
 }
 
 function formateDeepLinkingContent(uri: string) {
-  const content = isIOS() ? formatMobileRegistry(uri) : formatSingleDeepLink(uri);
+  const content = utils.isIOS() ? formatMobileRegistry(uri) : formatSingleDeepLink(uri);
   const callToAction = "Choose your preferred wallet";
   return `
     <div>
@@ -91,7 +91,7 @@ function formateDeepLinkingContent(uri: string) {
 }
 
 function formatModal(uri: string) {
-  const content = isMobile() ? formateDeepLinkingContent(uri) : formatQRCodeContent(uri);
+  const content = utils.isMobile() ? formateDeepLinkingContent(uri) : formatQRCodeContent(uri);
   return `
   <div
     id="walletconnect-qrcode-modal"
@@ -119,7 +119,7 @@ function formatModal(uri: string) {
 }
 
 export function open(uri: string, cb: any) {
-  const doc = safeGetFromWindow<Document>("document");
+  const doc = utils.safeGetFromWindow<Document>("document");
   const wrapper = doc.createElement("div");
   wrapper.setAttribute("id", "walletconnect-wrapper");
 
@@ -142,7 +142,7 @@ export function open(uri: string, cb: any) {
  *  @desc     Close WalletConnect QR Code Modal
  */
 export function close() {
-  const doc = safeGetFromWindow<Document>("document");
+  const doc = utils.safeGetFromWindow<Document>("document");
   const elm = doc.getElementById("walletconnect-qrcode-modal");
   if (elm) {
     elm.className = elm.className.replace("fadeIn", "fadeOut");
