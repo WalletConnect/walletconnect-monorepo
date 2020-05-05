@@ -113,7 +113,7 @@ export function convertHexToUtf8(hex: string): string {
 }
 
 export function convertHexToNumber(hex: string): number {
-  const num = new BN(hex, "hex").toNumber();
+  const num = new BN(removeHexPrefix(hex), "hex").toNumber();
   return num;
 }
 

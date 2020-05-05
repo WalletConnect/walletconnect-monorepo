@@ -16,6 +16,28 @@ export function isEmptyArray(array: any[]): boolean {
   return !(array && array.length);
 }
 
+export function isTypedArray(val: any) {
+  return !!val.buffer && !Buffer.isBuffer(val);
+}
+
+export function isArrayBuffer(val: any) {
+  return !val.buffer && !Buffer.isBuffer(val) && val.length;
+}
+
+export function isType(val: any) {
+  if (Buffer.isBuffer(val)) {
+    return "buffer";
+  } else if (Array.isArray(val)) {
+    return "array";
+  } else if (isTypedArray(val)) {
+    return "typed-array";
+  } else if (isArrayBuffer(val)) {
+    return "array-buffer";
+  } else {
+    return typeof val;
+  }
+}
+
 export function isHexString(value: any, length?: number): boolean {
   if (typeof value !== "string" || !value.match(/^0x[0-9A-Fa-f]*$/)) {
     return false;
