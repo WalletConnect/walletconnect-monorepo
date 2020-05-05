@@ -13,7 +13,7 @@ const DefaultOptions = {
 const singletonNonceSubProvider = new NonceSubprovider();
 
 class WalletConnectProvider extends ProviderEngine {
-  constructor(opts?: any) {
+  constructor(opts: any) {
     super({ ...DefaultOptions, ...opts });
     const options = { ...DefaultOptions, ...opts };
     const { bridge, rpcUrl, shareNonce } = options;
