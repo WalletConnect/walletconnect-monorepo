@@ -31,23 +31,23 @@ class WalletConnectProvider extends ProviderEngine {
   public networkId = 1;
   public rpcUrl = "";
 
-  constructor(opts?: IWalletConnectProviderOptions) {
-    super({ pollingInterval: opts?.pollingInterval || 4000 });
-    this.bridge = opts?.connector
+  constructor(opts: IWalletConnectProviderOptions) {
+    super({ pollingInterval: opts.pollingInterval || 4000 });
+    this.bridge = opts.connector
       ? opts.connector.bridge
-      : opts?.bridge || "https://bridge.walletconnect.org";
-    this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
+      : opts.bridge || "https://bridge.walletconnect.org";
+    this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
     this.wc =
-      opts?.connector || new WalletConnect({ bridge: this.bridge, disableModal: !this.qrcode });
-    this.rpc = opts?.rpc || null;
+      opts.connector || new WalletConnect({ bridge: this.bridge, disableModal: !this.qrcode });
+    this.rpc = opts.rpc || null;
     if (
       !this.rpc &&
-      (!opts?.infuraId || typeof opts?.infuraId !== "string" || !opts?.infuraId.trim())
+      (!opts.infuraId || typeof opts.infuraId !== "string" || !opts.infuraId.trim())
     ) {
       throw new Error("Missing one of the required parameters: rpc or infuraId");
     }
-    this.infuraId = opts?.infuraId || "";
-    this.chainId = typeof opts?.chainId !== "undefined" ? opts?.chainId : 1;
+    this.infuraId = opts.infuraId || "";
+    this.chainId = typeof opts.chainId !== "undefined" ? opts.chainId : 1;
     this.networkId = this.chainId;
     this.updateRpcUrl(this.chainId);
     this.addProvider(

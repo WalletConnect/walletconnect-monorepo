@@ -10,7 +10,7 @@ const qrTerminal = require("qrcode-terminal");
 
 class WalletConnectSubprovider extends HookedWalletSubprovider {
   private _connected = false;
-  constructor(opts?: IWCEthRpcConnectionOptions) {
+  constructor(opts: IWCEthRpcConnectionOptions) {
     super({
       getAccounts: async (cb: any) => {
         try {
@@ -72,9 +72,9 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
       },
     });
 
-    this.bridge = opts?.connector
+    this.bridge = opts.connector
       ? opts.connector.bridge
-      : opts?.bridge || "https://bridge.walletconnect.org";
+      : opts.bridge || "https://bridge.walletconnect.org";
     const clientOpts: IWalletConnectOptions = {
       bridge: this.bridge,
       clientMeta: {
@@ -84,9 +84,9 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
         icons: ["https://walletconnect.org/walletconnect-logo.png"],
       },
     };
-    this.wc = opts?.connector || new WalletConnect(clientOpts);
-    this.qrcode = typeof opts?.qrcode === "undefined" || opts?.qrcode !== false;
-    this.chainId = typeof opts?.chainId !== "undefined" ? opts?.chainId : 1;
+    this.wc = opts.connector || new WalletConnect(clientOpts);
+    this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
+    this.chainId = typeof opts.chainId !== "undefined" ? opts.chainId : 1;
     this.networkId = this.chainId;
 
     this.isConnecting = false;

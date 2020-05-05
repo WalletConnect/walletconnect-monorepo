@@ -95,7 +95,10 @@ class Connector implements IConnector {
     this.protocol = "wc";
     this.version = 1;
 
-    this._bridge = opts.connectorOpts.bridge || "https://bridge.walletconnect.org";
+    this._bridge =
+      typeof opts.connectorOpts.bridge !== "undefined"
+        ? opts.connectorOpts.bridge
+        : "https://bridge.walletconnect.org";
     this._key = null;
     this._nextKey = null;
 
@@ -111,8 +114,9 @@ class Connector implements IConnector {
     this._rpcUrl = "";
     this._eventManager = new EventManager();
     this._connected = false;
-    this._sessionStorage = opts.sessionStorage || new SessionStorage();
-    this._qrcodeModal = opts.qrcodeModal || null;
+    this._sessionStorage =
+      typeof opts.sessionStorage !== "undefined" ? opts.sessionStorage : new SessionStorage();
+    this._qrcodeModal = typeof opts.qrcodeModal !== "undefined" ? opts.qrcodeModal : null;
     this._disableModal =
       typeof opts.connectorOpts.disableModal !== "undefined"
         ? opts.connectorOpts.disableModal
