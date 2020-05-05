@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/utils",
-  "version": "1.0.0-beta.92",
+  "version": "1.0.0-beta.93",
   "description": "Utility Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -56,7 +56,7 @@
   },
   "dependencies": {
     "@ethersproject/address": "5.0.0-beta.134",
-    "@walletconnect/types": "^1.0.0-beta.92",
+    "@walletconnect/types": "^1.0.0-beta.93",
     "bn.js": "4.11.8",
     "detect-browser": "5.1.0",
     "enc-utils": "1.3.0"
