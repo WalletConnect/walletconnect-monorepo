@@ -411,9 +411,6 @@ class Connector implements IConnector {
 
     const endInstantRequest = () => {
       this.killSession();
-      if (this._qrcodeModal) {
-        this._qrcodeModal.close();
-      }
     };
 
     try {
@@ -448,9 +445,6 @@ class Connector implements IConnector {
       this.on("connect", (error, payload) => {
         if (error) {
           return reject(error);
-        }
-        if (this._qrcodeModal) {
-          this._qrcodeModal.close();
         }
 
         resolve(payload.params[0]);
@@ -1032,6 +1026,12 @@ class Connector implements IConnector {
             params: [],
           });
         });
+      }
+    });
+
+    this.on("connect", () => {
+      if (this._qrcodeModal && !this._disableModal) {
+        this._qrcodeModal.close();
       }
     });
 
