@@ -5,3 +5,4 @@ lerna-debug.log
 dist
 zip
 .idea
+.rts2_cache_*
