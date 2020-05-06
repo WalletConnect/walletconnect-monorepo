@@ -15,13 +15,11 @@ export function convertArrayBufferToHex(arrBuf: ArrayBuffer, noPrefix?: boolean)
 }
 
 export function convertArrayBufferToNumber(arrBuf: ArrayBuffer): number {
-  const hex = convertArrayBufferToHex(arrBuf);
-  return convertHexToNumber(hex);
+  return encUtils.arrayToNumber(new Uint8Array(arrBuf));
 }
 
 export function concatArrayBuffers(...args: ArrayBuffer[]): ArrayBuffer {
-  const hex = args.map(b => encUtils.arrayToHex(new Uint8Array(b))).join("");
-  return encUtils.hexToArray(hex).buffer;
+  return encUtils.hexToArray(args.map(b => encUtils.arrayToHex(new Uint8Array(b))).join("")).buffer;
 }
 
 // -- Buffer ----------------------------------------------- //
@@ -39,8 +37,7 @@ export function convertBufferToHex(buf: Buffer, noPrefix?: boolean): string {
 }
 
 export function convertBufferToNumber(buf: Buffer): number {
-  const hex = convertBufferToHex(buf);
-  return convertHexToNumber(hex);
+  return encUtils.bufferToNumber(buf);
 }
 
 export function concatBuffers(...args: Buffer[]): Buffer {
@@ -86,13 +83,11 @@ export function convertHexToNumber(hex: string): number {
 // -- Number ----------------------------------------------- //
 
 export function convertNumberToBuffer(num: number): Buffer {
-  const hex = convertNumberToHex(num);
-  return convertHexToBuffer(hex);
+  return encUtils.numberToBuffer(num);
 }
 
 export function convertNumberToArrayBuffer(num: number): ArrayBuffer {
-  const hex = convertNumberToHex(num);
-  return convertHexToArrayBuffer(hex);
+  return encUtils.numberToArray(num).buffer;
 }
 
 export function convertNumberToUtf8(num: number): string {

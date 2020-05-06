@@ -42,10 +42,9 @@ export function safeJsonStringify(value: any): string {
 // -- id -------------------------------------------------- //
 
 export function payloadId(): number {
-  const datePart: number = new Date().getTime() * Math.pow(10, 3);
-  const extraPart: number = Math.floor(Math.random() * Math.pow(10, 3));
-  const id: number = datePart + extraPart;
-  return id;
+  const date = new Date().getTime() * Math.pow(10, 3);
+  const extra = Math.floor(Math.random() * Math.pow(10, 3));
+  return date + extra;
 }
 
 export function uuid(): string {
