@@ -18,11 +18,7 @@ async function copyUmdBundle(filePath) {
     const newFileExt = ".min.js";
     const pkgName = getName(filePath);
     const newFileName = pkgName + newFileExt;
-    // TODO: Find a better way to handle this exception
-    const fileToCopy =
-      pkgName === "qrcode-modal"
-        ? path.join(filePath, "dist", "index.min.js")
-        : path.join(filePath, "dist", "umd", "index.min.js");
+    const fileToCopy = path.join(filePath, "dist", "umd", "index.min.js");
     const outputFile = path.join(TARGET_DIR, newFileName);
 
     if (!(await exists(fileToCopy))) return;

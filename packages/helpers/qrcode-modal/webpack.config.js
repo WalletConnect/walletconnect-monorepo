@@ -6,7 +6,7 @@ const umdConfig = {
     index: path.resolve(__dirname, "src", "index.ts"),
   },
   output: {
-    path: path.resolve(__dirname, "dist"),
+    path: path.resolve(__dirname, "dist", "umd"),
     filename: "[name].min.js",
     libraryTarget: "umd",
     library: "WalletConnectQRCodeModal",
