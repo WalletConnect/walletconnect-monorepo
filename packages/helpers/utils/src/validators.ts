@@ -1,3 +1,4 @@
+import * as encUtils from "enc-utils";
 import {
   IJsonRpcSubscription,
   IJsonRpcRequest,
@@ -16,36 +17,28 @@ export function isEmptyArray(array: any[]): boolean {
   return !(array && array.length);
 }
 
+export function isBuffer(val: any) {
+  return encUtils.isBuffer(val);
+}
+
 export function isTypedArray(val: any) {
-  return !!val.buffer && !Buffer.isBuffer(val);
+  return encUtils.isTypedArray(val);
 }
 
 export function isArrayBuffer(val: any) {
-  return !val.buffer && !Buffer.isBuffer(val) && val.length;
+  return encUtils.isArrayBuffer(val);
 }
 
-export function isType(val: any) {
-  if (Buffer.isBuffer(val)) {
-    return "buffer";
-  } else if (Array.isArray(val)) {
-    return "array";
-  } else if (isTypedArray(val)) {
-    return "typed-array";
-  } else if (isArrayBuffer(val)) {
-    return "array-buffer";
-  } else {
-    return typeof val;
-  }
+export function getType(val: any) {
+  return encUtils.getType(val);
+}
+
+export function getEncoding(val: any) {
+  return encUtils.getEncoding(val);
 }
 
 export function isHexString(value: any, length?: number): boolean {
-  if (typeof value !== "string" || !value.match(/^0x[0-9A-Fa-f]*$/)) {
-    return false;
-  }
-  if (length && value.length !== 2 + 2 * length) {
-    return false;
-  }
-  return true;
+  return encUtils.isHexString(value, length);
 }
 
 export function isJsonRpcSubscription(object: any): object is IJsonRpcSubscription {

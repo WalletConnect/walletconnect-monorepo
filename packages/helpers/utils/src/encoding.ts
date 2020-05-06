@@ -1,36 +1,31 @@
-import BN from "bn.js";
 import * as encUtils from "enc-utils";
-
-import { removeHexPrefix, sanitizeHex } from "./misc";
 
 // -- ArrayBuffer ------------------------------------------ //
 
 export function convertArrayBufferToBuffer(arrBuf: ArrayBuffer): Buffer {
-  return encUtils.arrayBufferToBuffer(arrBuf);
+  return encUtils.arrayToBuffer(new Uint8Array(arrBuf));
 }
 
 export function convertArrayBufferToUtf8(arrBuf: ArrayBuffer): string {
-  return encUtils.arrayBufferToUtf8(arrBuf);
+  return encUtils.arrayToUtf8(new Uint8Array(arrBuf));
 }
 
 export function convertArrayBufferToHex(arrBuf: ArrayBuffer, noPrefix?: boolean): string {
-  return encUtils.arrayBufferToHex(arrBuf, !noPrefix);
+  return encUtils.arrayToHex(new Uint8Array(arrBuf), !noPrefix);
 }
 
 export function convertArrayBufferToNumber(arrBuf: ArrayBuffer): number {
-  const hex = convertArrayBufferToHex(arrBuf);
-  const num = convertHexToNumber(hex);
-  return num;
+  return encUtils.arrayToNumber(new Uint8Array(arrBuf));
 }
 
 export function concatArrayBuffers(...args: ArrayBuffer[]): ArrayBuffer {
-  return encUtils.concatArrayBuffers(...args);
+  return encUtils.hexToArray(args.map(b => encUtils.arrayToHex(new Uint8Array(b))).join("")).buffer;
 }
 
 // -- Buffer ----------------------------------------------- //
 
 export function convertBufferToArrayBuffer(buf: Buffer): ArrayBuffer {
-  return encUtils.bufferToArrayBuffer(buf);
+  return encUtils.bufferToArray(buf).buffer;
 }
 
 export function convertBufferToUtf8(buf: Buffer): string {
@@ -42,9 +37,7 @@ export function convertBufferToHex(buf: Buffer, noPrefix?: boolean): string {
 }
 
 export function convertBufferToNumber(buf: Buffer): number {
-  const hex = convertBufferToHex(buf);
-  const num = convertHexToNumber(hex);
-  return num;
+  return encUtils.bufferToNumber(buf);
 }
 
 export function concatBuffers(...args: Buffer[]): Buffer {
@@ -54,7 +47,7 @@ export function concatBuffers(...args: Buffer[]): Buffer {
 // -- Utf8 ------------------------------------------------- //
 
 export function convertUtf8ToArrayBuffer(utf8: string): ArrayBuffer {
-  return encUtils.utf8ToArrayBuffer(utf8);
+  return encUtils.utf8ToArray(utf8).buffer;
 }
 
 export function convertUtf8ToBuffer(utf8: string): Buffer {
@@ -66,8 +59,7 @@ export function convertUtf8ToHex(utf8: string, noPrefix?: boolean): string {
 }
 
 export function convertUtf8ToNumber(utf8: string): number {
-  const num = new BN(utf8).toNumber();
-  return num;
+  return encUtils.utf8ToNumber(utf8);
 }
 
 // -- Hex -------------------------------------------------- //
@@ -77,7 +69,7 @@ export function convertHexToBuffer(hex: string): Buffer {
 }
 
 export function convertHexToArrayBuffer(hex: string): ArrayBuffer {
-  return encUtils.hexToArrayBuffer(hex);
+  return encUtils.hexToArray(hex).buffer;
 }
 
 export function convertHexToUtf8(hex: string): string {
@@ -85,34 +77,23 @@ export function convertHexToUtf8(hex: string): string {
 }
 
 export function convertHexToNumber(hex: string): number {
-  const num = new BN(removeHexPrefix(hex), "hex").toNumber();
-  return num;
+  return encUtils.hexToNumber(hex);
 }
 
 // -- Number ----------------------------------------------- //
 
 export function convertNumberToBuffer(num: number): Buffer {
-  const hex = convertNumberToHex(num);
-  const buf = convertHexToBuffer(hex);
-  return buf;
+  return encUtils.numberToBuffer(num);
 }
 
 export function convertNumberToArrayBuffer(num: number): ArrayBuffer {
-  const hex = convertNumberToHex(num);
-  const arrBuf = convertHexToArrayBuffer(hex);
-  return arrBuf;
+  return encUtils.numberToArray(num).buffer;
 }
 
 export function convertNumberToUtf8(num: number): string {
-  const utf8 = new BN(num).toString();
-  return utf8;
+  return encUtils.numberToUtf8(num);
 }
 
 export function convertNumberToHex(num: number | string, noPrefix?: boolean): string {
-  let hex = new BN(num).toString(16);
-  hex = sanitizeHex(hex);
-  if (noPrefix) {
-    hex = removeHexPrefix(hex);
-  }
-  return hex;
+  return encUtils.numberToHex(num, !noPrefix);
 }

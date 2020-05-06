@@ -1,33 +1,21 @@
+import * as encUtils from "enc-utils";
+
 // -- Hex -------------------------------------------------- //
 
 export function sanitizeHex(hex: string): string {
-  hex = removeHexPrefix(hex);
-  hex = hex.length % 2 !== 0 ? "0" + hex : hex;
-  if (hex) {
-    hex = addHexPrefix(hex);
-  }
-  return hex;
+  return encUtils.sanitizeHex(hex);
 }
 
 export function addHexPrefix(hex: string): string {
-  if (hex.toLowerCase().substring(0, 2) === "0x") {
-    return hex;
-  }
-  return "0x" + hex;
+  return encUtils.addHexPrefix(hex);
 }
 
 export function removeHexPrefix(hex: string): string {
-  if (hex.toLowerCase().substring(0, 2) === "0x") {
-    return hex.substring(2);
-  }
-  return hex;
+  return encUtils.removeHexPrefix(hex);
 }
 
 export function removeHexLeadingZeros(hex: string): string {
-  hex = removeHexPrefix(hex);
-  hex = hex.startsWith("0") ? hex.substring(1) : hex;
-  hex = addHexPrefix(hex);
-  return hex;
+  return encUtils.removeHexLeadingZeros(encUtils.addHexPrefix(hex));
 }
 
 // -- JSON -------------------------------------------------- //
@@ -51,10 +39,9 @@ export function safeJsonStringify(value: any): string {
 // -- id -------------------------------------------------- //
 
 export function payloadId(): number {
-  const datePart: number = new Date().getTime() * Math.pow(10, 3);
-  const extraPart: number = Math.floor(Math.random() * Math.pow(10, 3));
-  const id: number = datePart + extraPart;
-  return id;
+  const date = new Date().getTime() * Math.pow(10, 3);
+  const extra = Math.floor(Math.random() * Math.pow(10, 3));
+  return date + extra;
 }
 
 export function uuid(): string {
