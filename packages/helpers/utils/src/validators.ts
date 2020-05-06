@@ -17,26 +17,24 @@ export function isEmptyArray(array: any[]): boolean {
   return !(array && array.length);
 }
 
+export function isBuffer(val: any) {
+  return encUtils.isBuffer(val);
+}
+
 export function isTypedArray(val: any) {
-  return !!val.buffer && !Buffer.isBuffer(val);
+  return encUtils.isTypedArray(val);
 }
 
 export function isArrayBuffer(val: any) {
-  return !val.buffer && !Buffer.isBuffer(val) && val.length;
+  return encUtils.isArrayBuffer(val);
 }
 
-export function isType(val: any) {
-  if (Buffer.isBuffer(val)) {
-    return "buffer";
-  } else if (Array.isArray(val)) {
-    return "array";
-  } else if (isTypedArray(val)) {
-    return "typed-array";
-  } else if (isArrayBuffer(val)) {
-    return "array-buffer";
-  } else {
-    return typeof val;
-  }
+export function getType(val: any) {
+  return encUtils.getType(val);
+}
+
+export function getEncoding(val: any) {
+  return encUtils.getEncoding(val);
 }
 
 export function isHexString(value: any, length?: number): boolean {
