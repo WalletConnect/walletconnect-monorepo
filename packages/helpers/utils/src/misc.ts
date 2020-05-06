@@ -15,10 +15,7 @@ export function removeHexPrefix(hex: string): string {
 }
 
 export function removeHexLeadingZeros(hex: string): string {
-  hex = encUtils.removeHexPrefix(hex);
-  hex = hex.startsWith("0") ? hex.substring(1) : hex;
-  hex = encUtils.addHexPrefix(hex);
-  return hex;
+  return encUtils.removeHexLeadingZeros(encUtils.addHexPrefix(hex));
 }
 
 // -- JSON -------------------------------------------------- //
