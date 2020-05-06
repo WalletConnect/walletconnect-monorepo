@@ -16,7 +16,6 @@ const umdConfig = {
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
   },
-  devtool: "source-map",
   optimization: {
     minimize: true,
   },
