@@ -13,7 +13,11 @@ import {
   IClientMeta,
   IWalletConnectOptions,
 } from "@walletconnect/types";
-import { isNode } from "@walletconnect/utils";
+
+export const isNode = () =>
+  typeof process !== "undefined" &&
+  typeof process.versions !== "undefined" &&
+  typeof process.versions.node !== "undefined";
 
 class WalletConnectSDK {
   public connector: IConnector | undefined;

@@ -2,7 +2,6 @@
 import * as React from "react";
 // @ts-ignore
 import * as ReactDOM from "react-dom";
-import { safeGetFromWindow } from "@walletconnect/utils";
 
 import "./assets/style.css";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -13,6 +12,7 @@ import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_CLOSE_BUTTON_ID,
 } from "./constants";
+import { safeGetFromWindow } from "./helpers";
 
 function triggerCloseAnimation(): void {
   const doc = safeGetFromWindow<Document>("document");

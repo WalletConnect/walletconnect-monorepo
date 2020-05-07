@@ -1,6 +1,10 @@
-import * as browserLib from "./browser";
 import * as nodeLib from "./node";
-import { isNode } from "@walletconnect/utils";
+import * as browserLib from "./browser";
+
+export const isNode = () =>
+  typeof process !== "undefined" &&
+  typeof process.versions !== "undefined" &&
+  typeof process.versions.node !== "undefined";
 
 function open(uri: string, cb: any) {
   if (isNode()) {

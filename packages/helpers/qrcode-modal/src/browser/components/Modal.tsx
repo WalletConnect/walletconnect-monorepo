@@ -1,6 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
-import { isMobile } from "@walletconnect/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import DeepLinkDisplay from "./DeepLinkDisplay";
@@ -8,6 +7,7 @@ import DeepLinkDisplay from "./DeepLinkDisplay";
 import QRCodeDisplay from "./QRCodeDisplay";
 
 import * as logo from "../assets/logo.svg";
+import { isMobile } from "../helpers";
 import { WALLETCONNECT_MODAL_ID, WALLETCONNECT_CLOSE_BUTTON_ID } from "../constants";
 
 interface ModalProps {

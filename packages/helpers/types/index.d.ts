@@ -351,14 +351,6 @@ declare module "@walletconnect/types" {
     sendPayload(payload: any): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError>;
   }
 
-  export interface IMobileRegistryEntry {
-    name: string;
-    color: string;
-    universalLink: string;
-    deepLink: string;
-    chromeIntent: string;
-  }
-
   export interface IQRCodeModal {
     open(uri: string, cb: any): void;
     close(): void;
