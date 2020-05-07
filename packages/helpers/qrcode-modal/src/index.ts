@@ -1,9 +1,9 @@
 import * as browserLib from "./browser";
 import * as nodeLib from "./node";
-import * as utils from "@walletconnect/utils";
+import { isNode } from "@walletconnect/utils";
 
 function open(uri: string, cb: any) {
-  if (utils.isNode()) {
+  if (isNode()) {
     nodeLib.open(uri);
   } else {
     browserLib.open(uri, cb);
@@ -11,7 +11,7 @@ function open(uri: string, cb: any) {
 }
 
 function close() {
-  if (utils.isNode()) {
+  if (isNode()) {
     nodeLib.close();
   } else {
     browserLib.close();
