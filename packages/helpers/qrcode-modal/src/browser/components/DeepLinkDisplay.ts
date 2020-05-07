@@ -2,7 +2,7 @@ import MobileRegistry from "@walletconnect/mobile-registry";
 import { IMobileRegistryEntry } from "@walletconnect/types";
 import { safeGetFromWindow, appendToQueryString, isIOS } from "@walletconnect/utils";
 
-import { defaultColor } from "../constants";
+import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 import ConnectButton from "./ConnectButton";
 
 function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
@@ -37,12 +37,16 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
     });
     content = buttons.join("");
   } else {
-    content = ConnectButton({ name: "Connect to Mobile Wallet", color: defaultColor, href: uri });
+    content = ConnectButton({
+      name: "Connect to Mobile Wallet",
+      color: DEFAULT_BUTTON_COLOR,
+      href: uri,
+    });
   }
   const callToAction = "Choose your preferred wallet";
   return `
     <div>
-      <p id="walletconnect-qrcode-text" class="walletconnect-qrcode__text">
+      <p id="${WALLETCONNECT_CTA_TEXT_ID}" class="walletconnect-qrcode__text">
         ${callToAction}
       </p>
       <div class="walletconnect-connect__buttons__wrapper">

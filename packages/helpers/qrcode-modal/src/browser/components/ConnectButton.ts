@@ -1,3 +1,5 @@
+import { WALLETCONNECT_CONNECT_BUTTON_ID } from "../constants";
+
 interface ConnectButtonProps {
   name: string;
   color: string;
@@ -7,7 +9,7 @@ interface ConnectButtonProps {
 function ConnectButton(props: ConnectButtonProps) {
   return `
     <a
-      id="walletconnect-connect-button-${props.name}"
+      id="${WALLETCONNECT_CONNECT_BUTTON_ID}-${props.name}"
       href="${props.href}"
       target="_blank"
       rel="noopener noreferrer"

@@ -1,4 +1,5 @@
 import * as qrImage from "qr-image";
+import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
 function formatQRCodeImage(data: string) {
   let result = "";
@@ -14,14 +15,14 @@ interface QRCodeDisplayProps {
 }
 
 function QRCodeDisplay(props: QRCodeDisplayProps) {
-  const qrCodeImage = formatQRCodeImage(props.uri);
+  const content = formatQRCodeImage(props.uri);
   const callToAction = "Scan QR code with a WalletConnect-compatible wallet";
   return `
     <div>
-      <p id="walletconnect-qrcode-text" class="walletconnect-qrcode__text">
+      <p id="${WALLETCONNECT_CTA_TEXT_ID}" class="walletconnect-qrcode__text">
         ${callToAction}
       </p>
-      ${qrCodeImage}
+      ${content}
     </div>
   `;
 }

@@ -2,21 +2,41 @@ import { safeGetFromWindow } from "@walletconnect/utils";
 
 import "./assets/style.css";
 import Modal from "./components/Modal";
-import { animationDuration } from "./constants";
+import {
+  ANIMATION_DURATION,
+  WALLETCONNECT_WRAPPER_ID,
+  WALLETCONNECT_MODAL_ID,
+  WALLETCONNECT_CLOSE_BUTTON_ID,
+} from "./constants";
 
-export function open(uri: string, cb: any) {
+function renderModalWrapper(): HTMLDivElement {
   const doc = safeGetFromWindow<Document>("document");
   const wrapper = doc.createElement("div");
-  wrapper.setAttribute("id", "walletconnect-wrapper");
-
-  wrapper.innerHTML = Modal({ uri });
-
+  wrapper.setAttribute("id", WALLETCONNECT_WRAPPER_ID);
   doc.body.appendChild(wrapper);
-  const closeButton = doc.getElementById("walletconnect-qrcode-close");
+  return wrapper;
+}
 
+function triggerCloseAnimation(): void {
+  const doc = safeGetFromWindow<Document>("document");
+  const elm = doc.getElementById(WALLETCONNECT_MODAL_ID);
+  if (elm) {
+    elm.className = elm.className.replace("fadeIn", "fadeOut");
+    setTimeout(() => {
+      const wrapper = doc.getElementById(WALLETCONNECT_WRAPPER_ID);
+      if (wrapper) {
+        doc.body.removeChild(wrapper);
+      }
+    }, ANIMATION_DURATION);
+  }
+}
+
+function registerCloseEvent(cb: any): void {
+  const doc = safeGetFromWindow<Document>("document");
+  const closeButton = doc.getElementById(WALLETCONNECT_CLOSE_BUTTON_ID);
   if (closeButton) {
     closeButton.addEventListener("click", () => {
-      close();
+      triggerCloseAnimation();
       if (cb) {
         cb();
       }
@@ -24,16 +44,12 @@ export function open(uri: string, cb: any) {
   }
 }
 
+export function open(uri: string, cb: any) {
+  const wrapper = renderModalWrapper();
+  wrapper.innerHTML = Modal({ uri });
+  registerCloseEvent(cb);
+}
+
 export function close() {
-  const doc = safeGetFromWindow<Document>("document");
-  const elm = doc.getElementById("walletconnect-qrcode-modal");
-  if (elm) {
-    elm.className = elm.className.replace("fadeIn", "fadeOut");
-    setTimeout(() => {
-      const wrapper = doc.getElementById("walletconnect-wrapper");
-      if (wrapper) {
-        doc.body.removeChild(wrapper);
-      }
-    }, animationDuration);
-  }
+  triggerCloseAnimation();
 }
