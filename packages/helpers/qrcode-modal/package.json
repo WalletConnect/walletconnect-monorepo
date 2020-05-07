@@ -6,7 +6,7 @@
     "clean": "rm -rf dist",
     "build:pre": "npm run clean",
     "build:umd": "webpack",
-    "build:cjs": "microbundle --no-compress -f cjs --tsconfig ./tsconfig.json",
+    "build:cjs": "microbundle --no-compress -f cjs",
     "build": "npm run build:pre && npm run build:cjs && npm run build:umd",
     "test": "tsdx test ./test"
   },
