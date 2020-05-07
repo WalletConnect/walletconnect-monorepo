@@ -1,5 +1,6 @@
 import EventEmitter from "events";
 import WalletConnect from "@walletconnect/client";
+import QRCodeModal from "@walletconnect/qrcode-modal";
 import { isJsonRpcResponseError } from "@walletconnect/utils";
 import {
   IWCRpcConnection,
@@ -24,7 +25,11 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       : opts?.bridge || "https://bridge.walletconnect.org";
     this.qrcode = typeof opts?.qrcode === "undefined" || opts.qrcode !== false;
     this.wc =
-      opts?.connector || new WalletConnect({ bridge: this.bridge, disableModal: !this.qrcode });
+      opts?.connector ||
+      new WalletConnect({
+        bridge: this.bridge,
+        qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+      });
     this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : 1;
     this.on("error", () => this.close());
   }

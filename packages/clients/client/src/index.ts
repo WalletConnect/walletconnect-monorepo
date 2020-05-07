@@ -1,5 +1,4 @@
 import Connector from "@walletconnect/core";
-import qrcodeModal from "@walletconnect/qrcode-modal";
 import { IWalletConnectOptions, IPushServerOptions } from "@walletconnect/types";
 import * as cryptoLib from "@walletconnect/iso-crypto";
 
@@ -8,7 +7,6 @@ class WalletConnect extends Connector {
     super({
       cryptoLib,
       connectorOpts,
-      qrcodeModal,
       pushServerOpts,
     });
   }

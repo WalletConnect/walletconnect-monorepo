@@ -4,6 +4,7 @@
 window.updateTitle();
 
 const WalletConnect = window.WalletConnect.default;
+const WalletConnectQRCodeModal = window.WalletConnectQRCodeModal.default;
 
 const DEFAULT_BRIDGE = "https://bridge.walletconnect.org";
 
@@ -13,6 +14,7 @@ function onInit() {
   // Create a connector
   connector = new WalletConnect({
     bridge: DEFAULT_BRIDGE, // Required
+    qrcodeModal: WalletConnectQRCodeModal,
   });
 
   // Check if connection is already established

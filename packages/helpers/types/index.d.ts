@@ -242,16 +242,15 @@ declare module "@walletconnect/types" {
     clientMeta?: IClientMeta;
     storage?: ISessionStorage;
     netMonitor?: INetworkMonitor;
-    disableModal?: boolean;
+    qrcodeModal?: IQRCodeModal;
   }
 
   export interface IConnectorOpts {
     cryptoLib: ICryptoLib;
     connectorOpts: IWalletConnectOptions;
-    transport?: ITransportLib | null;
-    sessionStorage?: ISessionStorage | null;
-    clientMeta?: IClientMeta | null;
-    qrcodeModal?: IQRCodeModal | null;
+    transport?: ITransportLib;
+    sessionStorage?: ISessionStorage;
+    clientMeta?: IClientMeta;
     pushServerOpts?: IPushServerOptions;
   }
 

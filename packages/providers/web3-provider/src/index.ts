@@ -1,4 +1,5 @@
 import WalletConnect from "@walletconnect/client";
+import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
 import {
   IRPCMap,
@@ -38,7 +39,11 @@ class WalletConnectProvider extends ProviderEngine {
       : opts.bridge || "https://bridge.walletconnect.org";
     this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
     this.wc =
-      opts.connector || new WalletConnect({ bridge: this.bridge, disableModal: !this.qrcode });
+      opts.connector ||
+      new WalletConnect({
+        bridge: this.bridge,
+        qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+      });
     this.rpc = opts.rpc || null;
     if (
       !this.rpc &&

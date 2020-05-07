@@ -83,9 +83,8 @@ class Connector implements IConnector {
   private _transport: ITransportLib;
   private _eventManager: EventManager;
   private _connected: boolean;
-  private _sessionStorage: ISessionStorage | null;
-  private _qrcodeModal: IQRCodeModal | null;
-  private _disableModal: boolean;
+  private _sessionStorage: ISessionStorage | undefined;
+  private _qrcodeModal: IQRCodeModal | undefined;
 
   // -- constructor ----------------------------------------------------- //
 
@@ -116,11 +115,10 @@ class Connector implements IConnector {
     this._connected = false;
     this._sessionStorage =
       typeof opts.sessionStorage !== "undefined" ? opts.sessionStorage : new SessionStorage();
-    this._qrcodeModal = typeof opts.qrcodeModal !== "undefined" ? opts.qrcodeModal : null;
-    this._disableModal =
-      typeof opts.connectorOpts.disableModal !== "undefined"
-        ? opts.connectorOpts.disableModal
-        : false;
+    this._qrcodeModal =
+      typeof opts.connectorOpts.qrcodeModal !== "undefined"
+        ? opts.connectorOpts.qrcodeModal
+        : undefined;
 
     if (!this.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
@@ -1023,7 +1021,7 @@ class Connector implements IConnector {
     );
 
     this.on("display_uri", () => {
-      if (this._qrcodeModal && !this._disableModal) {
+      if (this._qrcodeModal) {
         this._qrcodeModal.open(this.uri, () => {
           this._eventManager.trigger({
             event: "modal_closed",
@@ -1034,7 +1032,7 @@ class Connector implements IConnector {
     });
 
     this.on("connect", () => {
-      if (this._qrcodeModal && !this._disableModal) {
+      if (this._qrcodeModal) {
         this._qrcodeModal.close();
       }
     });

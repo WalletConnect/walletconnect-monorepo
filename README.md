@@ -19,7 +19,6 @@ These are the latest packages in maintenance, which we recommend you use.
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
 | @walletconnect/channel-provider   | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fchannel-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fchannel-provider)     | Channel Provider   |
 | @walletconnect/web3-provider      | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-provider)           | Web3 Provider      |
-| @walletconnect/web3-subprovider   | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider)     | Web3 Subprovider   |
 | @walletconnect/truffle-provider   | [![npm version](https://badge.fury.io/js/%40walletconnect%2Ftruffle-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Ftruffle-provider)     | Truffle Provider   |
 | @walletconnect/starkware-provider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fstarkware-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Fstarkware-provider) | Starkware Provider |
 | @walletconnect/3id-provider       | [![npm version](https://badge.fury.io/js/%40walletconnect%2F3id-provider.svg)](https://badge.fury.io/js/%40walletconnect%2F3id-provider)             | 3ID Provider       |
@@ -45,9 +44,10 @@ These are legacy packages which will be deprecated once the beta is over.
 | @walletconnect/node         | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fnode.svg)](https://badge.fury.io/js/%40walletconnect%2Fnode)                 | NodeJS Client       |
 | @walletconnect/react-native | [![npm version](https://badge.fury.io/js/%40walletconnect%2Freact-native.svg)](https://badge.fury.io/js/%40walletconnect%2Freact-native) | React-Native Client |
 
-| Providers                   | Current Version                                                                                                                          | Description  |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| @walletconnect/eth-provider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Feth-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Feth-provider) | ETH Provider |
+| Providers                       | Current Version                                                                                                                                  | Description      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| @walletconnect/eth-provider     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Feth-provider.svg)](https://badge.fury.io/js/%40walletconnect%2Feth-provider)         | ETH Provider     |
+| @walletconnect/web3-subprovider | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider.svg)](https://badge.fury.io/js/%40walletconnect%2Fweb3-subprovider) | Web3 Subprovider |
 
 | Helpers                       | Current Version                                                                                                                              | Description    |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
