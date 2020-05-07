@@ -1,4 +1,4 @@
-import * as utils from "@walletconnect/utils";
+import { isMobile } from "@walletconnect/utils";
 
 import DeepLinkDisplay from "./DeepLinkDisplay";
 import QRCodeDisplay from "./QRCodeDisplay";
@@ -11,7 +11,7 @@ interface ModalProps {
 
 function Modal(props: ModalProps) {
   const { uri } = props;
-  const content = utils.isMobile() ? DeepLinkDisplay({ uri }) : QRCodeDisplay({ uri });
+  const content = isMobile() ? DeepLinkDisplay({ uri }) : QRCodeDisplay({ uri });
   return `
   <div
     id="walletconnect-qrcode-modal"

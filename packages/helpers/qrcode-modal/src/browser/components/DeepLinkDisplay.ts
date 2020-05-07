@@ -1,14 +1,14 @@
 import MobileRegistry from "@walletconnect/mobile-registry";
-import * as types from "@walletconnect/types";
-import * as utils from "@walletconnect/utils";
+import { IMobileRegistryEntry } from "@walletconnect/types";
+import { safeGetFromWindow, appendToQueryString, isIOS } from "@walletconnect/utils";
 
-import * as constants from "../constants";
+import { defaultColor } from "../constants";
 import ConnectButton from "./ConnectButton";
 
-function formatIOSDeepLink(uri: string, entry: types.IMobileRegistryEntry) {
-  const loc = utils.safeGetFromWindow<Location>("location");
+function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
+  const loc = safeGetFromWindow<Location>("location");
   const encodedUri: string = encodeURIComponent(uri);
-  const redirectUrlQueryString = utils.appendToQueryString(loc.search, {
+  const redirectUrlQueryString = appendToQueryString(loc.search, {
     walletconnect: true,
   });
   const redirectUrl: string = encodeURIComponent(
@@ -29,17 +29,15 @@ interface DeepLinkDisplayProps {
 function DeepLinkDisplay(props: DeepLinkDisplayProps) {
   const { uri } = props;
   let content: string;
-  if (utils.isIOS()) {
-    const buttons = MobileRegistry.map((entry: types.IMobileRegistryEntry) => {
+  if (isIOS()) {
+    const buttons = MobileRegistry.map((entry: IMobileRegistryEntry) => {
       const { name, color } = entry;
       const href = formatIOSDeepLink(uri, entry);
       return ConnectButton({ name, color, href });
     });
     content = buttons.join("");
   } else {
-    const name = "Connect to Mobile Wallet";
-    const color = constants.defaultColor;
-    content = ConnectButton({ name, color, href: uri });
+    content = ConnectButton({ name: "Connect to Mobile Wallet", color: defaultColor, href: uri });
   }
   const callToAction = "Choose your preferred wallet";
   return `

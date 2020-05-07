@@ -1,11 +1,11 @@
-import * as utils from "@walletconnect/utils";
+import { safeGetFromWindow } from "@walletconnect/utils";
 
 import "./assets/style.css";
 import Modal from "./components/Modal";
-import * as constants from "./constants";
+import { animationDuration } from "./constants";
 
 export function open(uri: string, cb: any) {
-  const doc = utils.safeGetFromWindow<Document>("document");
+  const doc = safeGetFromWindow<Document>("document");
   const wrapper = doc.createElement("div");
   wrapper.setAttribute("id", "walletconnect-wrapper");
 
@@ -25,7 +25,7 @@ export function open(uri: string, cb: any) {
 }
 
 export function close() {
-  const doc = utils.safeGetFromWindow<Document>("document");
+  const doc = safeGetFromWindow<Document>("document");
   const elm = doc.getElementById("walletconnect-qrcode-modal");
   if (elm) {
     elm.className = elm.className.replace("fadeIn", "fadeOut");
@@ -34,6 +34,6 @@ export function close() {
       if (wrapper) {
         doc.body.removeChild(wrapper);
       }
-    }, constants.animationDuration);
+    }, animationDuration);
   }
 }
