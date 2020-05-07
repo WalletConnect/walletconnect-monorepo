@@ -6,7 +6,7 @@
     "clean": "rm -rf dist",
     "build:pre": "npm run clean",
     "build:umd": "webpack",
-    "build:cjs": "microbundle --no-compress -f cjs",
+    "build:cjs": "microbundle --no-compress -f cjs --alias react=preact/compat,react-dom/test-utils=preact/test-utils,react-dom=preact/compat",
     "build": "npm run build:pre && npm run build:cjs && npm run build:umd",
     "test": "tsdx test ./test"
   },
