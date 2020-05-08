@@ -19,7 +19,7 @@ interface ModalProps {
 }
 
 function Modal(props: ModalProps) {
-  const [mobile] = React.useState(isMobile());
+  const mobile = isMobile();
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   return (
     <div id={WALLETCONNECT_MODAL_ID} className="walletconnect-qrcode__base animated fadeIn">
@@ -38,7 +38,7 @@ function Modal(props: ModalProps) {
           </div>
         </div>
         <div>
-          {displayQRCode ? <DeepLinkDisplay uri={props.uri} /> : <QRCodeDisplay uri={props.uri} />}
+          {displayQRCode ? <QRCodeDisplay uri={props.uri} /> : <DeepLinkDisplay uri={props.uri} />}
         </div>
         {mobile && (
           <a onClick={() => setDisplayQRCode(!displayQRCode)}>

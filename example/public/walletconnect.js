@@ -1,7 +1,7 @@
 "use strict";
 
 // updates title to display package version
-window.updateTitle();
+updateTitle();
 
 const WalletConnect = window.WalletConnect.default;
 const WalletConnectQRCodeModal = window.WalletConnectQRCodeModal.default;
@@ -68,50 +68,6 @@ function onSubscribe() {
   });
 }
 
-async function onDisconnect() {
-  const containerEl = document.getElementById("page-actions");
-  const pTags = containerEl.getElementsByTagName("p");
-
-  const textEl = containerEl.getElementsByTagName("p")[0];
-  textEl.innerHTML = "Disconnected!";
-
-  const buttonEl = containerEl.getElementsByTagName("button")[0];
-  buttonEl.innerText = "Connect";
-  buttonEl.onclick = onInit;
-  if (pTags.length > 1) {
-    const accountEl = containerEl.getElementsByTagName("p")[1];
-    accountEl.remove();
-
-    const chainEl = containerEl.getElementsByTagName("p")[1];
-    chainEl.remove();
-  }
-}
-
-// function sendTestTransaction() {
-//   if (!connector) {
-//     throw new Error(`connector hasn't been created yet`);
-//   }
-
-//   // Draft transaction
-//   const tx = {
-//     from: connector.accounts[0],
-//     to: connector.accounts[0],
-//     data: "0x", // Required
-//   };
-
-//   // Send transaction
-//   connector
-//     .sendTransaction(tx)
-//     .then(result => {
-//       // Returns transaction id (hash)
-//       console.log(result); // eslint-disable-line
-//     })
-//     .catch(error => {
-//       // Error returned when rejected
-//       console.error(error); // eslint-disable-line
-//     });
-// }
-
 function signPersonalMessage() {
   if (!connector) {
     throw new Error(`connector hasn't been created yet`);
@@ -119,46 +75,15 @@ function signPersonalMessage() {
 
   const msg = "Test message from WalletConnect example";
 
-  // Send transaction
+  // send personal_sign request
   connector
     .signPersonalMessage([msg, connector.accounts[0]])
     .then(result => {
-      // Returns transaction id (hash)
+      // Returns message signature
       console.log(result); // eslint-disable-line
     })
     .catch(error => {
       // Error returned when rejected
       console.error(error); // eslint-disable-line
     });
-}
-
-async function updateSessionDetails({ accounts, chainId }) {
-  const containerEl = document.getElementById("page-actions");
-  const pTags = containerEl.getElementsByTagName("p");
-  if (pTags.length === 1) {
-    const textEl = containerEl.getElementsByTagName("p")[0];
-    textEl.innerHTML = "Connected!";
-
-    const accountEl = document.createElement("p");
-    accountEl.innerHTML = `Account: ${accounts[0]}`;
-    window.insertAfter(accountEl, textEl);
-
-    const chainData = await window.getChainData(chainId);
-
-    const chainEl = document.createElement("p");
-    chainEl.innerHTML = `Chain: ${chainData.name}`;
-    window.insertAfter(chainEl, accountEl);
-
-    const buttonEl = containerEl.getElementsByTagName("button")[0];
-    buttonEl.innerText = "Sign Message";
-    buttonEl.onclick = signPersonalMessage;
-  } else {
-    const accountEl = containerEl.getElementsByTagName("p")[1];
-    accountEl.innerHTML = `Account: ${accounts[0]}`;
-
-    const chainData = await window.getChainData(chainId);
-
-    const chainEl = containerEl.getElementsByTagName("p")[2];
-    chainEl.innerHTML = `Chain: ${chainData.name}`;
-  }
 }

@@ -4,10 +4,10 @@
   "description": "NodeJS Client for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
-    "build:pre": "npm run clean",
+    "build:pre": "run-s clean",
     "build:cjs": "./node_modules/.bin/tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
-    "build": "npm run build:pre && npm run build:cjs && npm run build:umd",
+    "build": "run-s build:pre build:cjs build:umd",
     "test": "tsdx test ./test"
   },
   "keywords": [
@@ -48,6 +48,8 @@
     "@babel/register": "7.8.3",
     "@types/jest": "22.2.3",
     "@types/node": "12.12.14",
+    "microbundle": "0.11.0",
+    "npm-run-all": "4.1.5",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
