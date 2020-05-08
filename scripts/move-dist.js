@@ -8,7 +8,7 @@ const {
   exists,
   verifyDir,
   statPath,
-  logResults,
+  logBundles,
 } = require("./shared");
 
 const PACKAGES_DIR = path.join(ROOT_DIR, "./packages");
@@ -22,17 +22,6 @@ async function isPackage(filePath) {
 
 function getName(filePath) {
   return path.basename(filePath).replace(path.extname(filePath), "");
-}
-
-async function logBundles() {
-  const sorted = bundles.sort((a, b) => a.value - b.value);
-  const results = [
-    { label: "File Name", value: "Size (kb)" },
-    { label: "linebreak", value: "" },
-    ...sorted,
-  ];
-
-  logResults(results);
 }
 
 async function copyUmdBundle(filePath) {
@@ -84,7 +73,7 @@ async function moveDist(targetDir) {
 async function run() {
   await verifyDir(TARGET_DIR);
   await moveDist(PACKAGES_DIR);
-  await logBundles();
+  logBundles(bundles);
 }
 
 run();
