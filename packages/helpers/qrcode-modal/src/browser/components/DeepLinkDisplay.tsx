@@ -38,7 +38,6 @@ interface DeepLinkDisplayProps {
 }
 
 function DeepLinkDisplay(props: DeepLinkDisplayProps) {
-  const { uri } = props;
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
@@ -48,14 +47,14 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
         {isIOS() ? (
           MobileRegistry.map((entry: IMobileRegistryEntry) => {
             const { name, color } = entry;
-            const href = formatIOSDeepLink(uri, entry);
+            const href = formatIOSDeepLink(props.uri, entry);
             return <ConnectButton name={name} color={color} href={href} />;
           })
         ) : (
           <ConnectButton
             name={"Connect to Mobile Wallet"}
             color={DEFAULT_BUTTON_COLOR}
-            href={uri}
+            href={props.uri}
           />
         )}
       </div>
