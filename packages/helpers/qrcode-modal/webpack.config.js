@@ -1,6 +1,6 @@
 const path = require("path");
 
-module.exports = {
+const umdConfig = {
   mode: "production",
   entry: {
     index: path.resolve(__dirname, "src", "index.ts"),
@@ -15,6 +15,11 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
+    alias: {
+      react: "preact/compat",
+      "react-dom/test-utils": "preact/test-utils",
+      "react-dom": "preact/compat",
+    },
   },
   optimization: {
     minimize: true,
@@ -27,3 +32,5 @@ module.exports = {
     ],
   },
 };
+
+module.exports = [umdConfig];
