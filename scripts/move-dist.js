@@ -1,9 +1,20 @@
 const path = require("path");
 
-const { ROOT_DIR, copyFile, readDir, isDir, exists, verifyDir, statPath } = require("./shared");
+const {
+  ROOT_DIR,
+  copyFile,
+  readDir,
+  isDir,
+  exists,
+  verifyDir,
+  statPath,
+  logResults,
+} = require("./shared");
 
 const PACKAGES_DIR = path.join(ROOT_DIR, "./packages");
 const TARGET_DIR = path.join(ROOT_DIR, "./dist");
+
+const bundles = [];
 
 async function isPackage(filePath) {
   return !!((await isDir(filePath)) && (await exists(path.join(filePath, "package.json"))));
@@ -11,6 +22,17 @@ async function isPackage(filePath) {
 
 function getName(filePath) {
   return path.basename(filePath).replace(path.extname(filePath), "");
+}
+
+async function logBundles() {
+  const sorted = bundles.sort((a, b) => a.value - b.value);
+  const results = [
+    { label: "File Name", value: "Size (kb)" },
+    { label: "linebreak", value: "" },
+    ...sorted,
+  ];
+
+  logResults(results);
 }
 
 async function copyUmdBundle(filePath) {
@@ -25,8 +47,10 @@ async function copyUmdBundle(filePath) {
 
     try {
       await copyFile(fileToCopy, outputFile);
-      // eslint-disable-next-line no-console
-      console.log(`${newFileName} (${(await statPath(fileToCopy)).size / 1e3} kB)`);
+      bundles.push({
+        label: newFileName,
+        value: ((await statPath(fileToCopy)).size / 1e3).toFixed(2),
+      });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error(err);
@@ -60,6 +84,7 @@ async function moveDist(targetDir) {
 async function run() {
   await verifyDir(TARGET_DIR);
   await moveDist(PACKAGES_DIR);
+  await logBundles();
 }
 
 run();

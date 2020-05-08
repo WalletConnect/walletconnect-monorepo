@@ -118,6 +118,40 @@ function execGitCmd(args) {
   });
 }
 
+function padString(str, length, left, padding = "0") {
+  const diff = length - str.length;
+  let result = str;
+  if (diff > 0) {
+    const pad = padding.repeat(diff);
+    result = left ? pad + str : str + pad;
+  }
+  return result;
+}
+
+function padLeft(str, length, padding = "0") {
+  return padString(str, length, true, padding);
+}
+
+function padRight(str, length, padding = "0") {
+  return padString(str, length, false, padding);
+}
+
+function logResults(results, title) {
+  // eslint-disable-next-line no-console
+  console.log("\n----------------- RESULT ------------------\n");
+  results.map(entry => {
+    if (entry.label === "linebreak") {
+      // eslint-disable-next-line no-console
+      console.log("\n");
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(padRight(`${entry.label}`, 32, " "), padLeft(`${entry.value}`, 8, " "));
+    }
+  });
+  // eslint-disable-next-line no-console
+  console.log("\n-------------------------------------------\n");
+}
+
 module.exports = {
   ROOT_DIR,
   execGitCmd,
@@ -131,4 +165,5 @@ module.exports = {
   exists,
   verifyDir,
   verifyFile,
+  logResults,
 };
