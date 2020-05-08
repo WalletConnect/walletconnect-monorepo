@@ -136,7 +136,7 @@ function padRight(str, length, padding = "0") {
   return padString(str, length, false, padding);
 }
 
-function logResults(results, title) {
+function logResults(results) {
   // eslint-disable-next-line no-console
   console.log("\n----------------- RESULT ------------------\n");
   results.map(entry => {
@@ -150,6 +150,17 @@ function logResults(results, title) {
   });
   // eslint-disable-next-line no-console
   console.log("\n-------------------------------------------\n");
+}
+
+function logBundles(bundles) {
+  const sorted = bundles.sort((a, b) => a.value - b.value);
+  const results = [
+    { label: "File Name", value: "Size (kb)" },
+    { label: "linebreak", value: "" },
+    ...sorted,
+  ];
+
+  logResults(results);
 }
 
 module.exports = {
@@ -166,4 +177,5 @@ module.exports = {
   verifyDir,
   verifyFile,
   logResults,
+  logBundles,
 };
