@@ -2,7 +2,7 @@
 import * as React from "react";
 import MobileRegistry from "@walletconnect/mobile-registry";
 
-import { isIOS, safeGetFromWindow, appendToQueryString } from "../helpers";
+import { isIOS, getLocation, appendToQueryString } from "../helpers";
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -17,7 +17,7 @@ interface IMobileRegistryEntry {
 }
 
 function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
-  const loc = safeGetFromWindow<Location>("location");
+  const loc = getLocation();
   const encodedUri: string = encodeURIComponent(uri);
   const redirectUrlQueryString = appendToQueryString(loc.search, {
     walletconnect: true,

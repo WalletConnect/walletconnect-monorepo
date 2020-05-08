@@ -7,7 +7,7 @@ function formatQRCodeImage(data: string) {
   let result = "";
   const dataString = qrImage.imageSync(data, { type: "svg" });
   if (typeof dataString === "string") {
-    result = dataString.replace("<svg", `<svg className="walletconnect-qrcode__image"`);
+    result = dataString.replace("<svg", `<svg class="walletconnect-qrcode__image"`);
   }
   return result;
 }

@@ -12,10 +12,18 @@ import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_CLOSE_BUTTON_ID,
 } from "./constants";
-import { safeGetFromWindow } from "./helpers";
+import { getDocument } from "./helpers";
+
+function renderWrapperElement(): HTMLDivElement {
+  const doc = getDocument();
+  const elm = doc.createElement("div");
+  elm.setAttribute("id", WALLETCONNECT_WRAPPER_ID);
+  doc.body.appendChild(elm);
+  return elm;
+}
 
 function triggerCloseAnimation(): void {
-  const doc = safeGetFromWindow<Document>("document");
+  const doc = getDocument();
   const elm = doc.getElementById(WALLETCONNECT_MODAL_ID);
   if (elm) {
     elm.className = elm.className.replace("fadeIn", "fadeOut");
@@ -29,8 +37,7 @@ function triggerCloseAnimation(): void {
 }
 
 function registerCloseEvent(cb: any): void {
-  const doc = safeGetFromWindow<Document>("document");
-  const closeButton = doc.getElementById(WALLETCONNECT_CLOSE_BUTTON_ID);
+  const closeButton = getDocument().getElementById(WALLETCONNECT_CLOSE_BUTTON_ID);
   if (closeButton) {
     closeButton.addEventListener("click", () => {
       triggerCloseAnimation();
@@ -42,13 +49,8 @@ function registerCloseEvent(cb: any): void {
 }
 
 export function open(uri: string, cb: any) {
-  const doc = safeGetFromWindow<Document>("document");
-  ReactDOM.render(
-    <div id={WALLETCONNECT_WRAPPER_ID}>
-      <Modal uri={uri} />
-    </div>,
-    doc,
-  );
+  const wrapper = renderWrapperElement();
+  ReactDOM.render(<Modal uri={uri} />, wrapper);
   registerCloseEvent(cb);
 }
 

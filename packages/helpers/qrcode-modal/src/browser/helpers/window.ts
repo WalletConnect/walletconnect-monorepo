@@ -13,3 +13,15 @@ export function safeGetFromWindow<T>(name: string): T {
   }
   return res;
 }
+
+export function getDocument(): Document {
+  return safeGetFromWindow<Document>("document");
+}
+
+export function getNavigator(): Navigator {
+  return safeGetFromWindow<Navigator>("navigator");
+}
+
+export function getLocation(): Location {
+  return safeGetFromWindow<Location>("location");
+}
