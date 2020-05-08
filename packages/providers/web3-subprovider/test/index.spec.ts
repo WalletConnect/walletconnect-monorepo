@@ -2,9 +2,7 @@ import WalletConnectWeb3Subprovider from "../src";
 
 describe("WalletConnectWeb3Subprovider", () => {
   it("instantiate successfully", () => {
-    const provider = new WalletConnectWeb3Subprovider({
-      bridge: "https://bridge.walletconnect.org",
-    });
+    const provider = new WalletConnectWeb3Subprovider();
     expect(provider).toBeTruthy();
   });
 });

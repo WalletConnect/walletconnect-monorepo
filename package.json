@@ -34,7 +34,7 @@
     "publish:next": "lerna exec -- npm publish --access public --tag next",
     "move-dist": "node ./scripts/move-dist.js",
     "commit-version": "node ./scripts/commit-version.js",
-    "check": "run-s clean lint build move-dist",
+    "check": "run-s clean lint build test move-dist",
     "reset": "run-s clean:all bootstrap check",
     "start": "cd example && npm run start",
     "example": "run-s check start",
