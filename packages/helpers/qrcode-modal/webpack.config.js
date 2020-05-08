@@ -15,11 +15,6 @@ const umdConfig = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
-    alias: {
-      react: "preact/compat",
-      "react-dom/test-utils": "preact/test-utils",
-      "react-dom": "preact/compat",
-    },
   },
   optimization: {
     minimize: true,
