@@ -3,7 +3,7 @@ import * as React from "react";
 // @ts-ignore
 import * as ReactDOM from "react-dom";
 
-import "./assets/style.css";
+import "./style.css";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Modal from "./components/Modal";
 import {
