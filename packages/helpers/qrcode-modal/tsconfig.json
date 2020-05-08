@@ -1,7 +1,7 @@
 {
   "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist/cjs",
+    "outDir": "dist/umd",
     "rootDir": "src",
     "jsx": "react"
   },
