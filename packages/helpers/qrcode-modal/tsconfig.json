@@ -6,7 +6,6 @@
     "target": "es6",
     "importHelpers": true,
     "noUnusedLocals": false,
-    "jsx": "react",
     "strict": false
   },
   "files": ["custom.d.ts"],
