@@ -32,7 +32,7 @@
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
     "suppressImplicitAnyIndexErrors": true,
-    "target": "es2017"
+    "target": "es6"
   },
   "include": []
 }

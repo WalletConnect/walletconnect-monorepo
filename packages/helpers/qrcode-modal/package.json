@@ -6,7 +6,8 @@
     "clean": "rm -rf dist",
     "build:pre": "run-s clean",
     "build:umd": "webpack",
-    "build:cjs": "microbundle --no-compress -f cjs --alias react=preact/compat,react-dom/test-utils=preact/test-utils,react-dom=preact/compat",
+    "build:cjs": "echo 'disabled cjs build'",
+    "build:cjs2": "microbundle --no-compress -f cjs --alias react=preact/compat,react-dom/test-utils=preact/test-utils,react-dom=preact/compat",
     "build": "run-s build:pre build:cjs build:umd",
     "test": "tsdx test ./test"
   },

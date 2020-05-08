@@ -19,7 +19,8 @@ async function onInit() {
 
   const accounts = await provider.enable();
 
-  updateSessionDetails({ accounts, chainId: provider.chainId });
+  updateView({ accounts, chainId: provider.chainId });
+  updateAction("Sign Message", signPersonalMessage);
 }
 
 function onSubscribe() {
@@ -28,11 +29,11 @@ function onSubscribe() {
   }
 
   provider.on("accountsChanged", accounts => {
-    updateSessionDetails({ accounts });
+    updateView({ accounts });
   });
 
   provider.on("chainChanged", chainId => {
-    updateSessionDetails({ chainId });
+    updateView({ chainId });
   });
 
   provider.on("close", () => {

@@ -3,12 +3,8 @@
   "compilerOptions": {
     "outDir": "dist/cjs",
     "rootDir": "src",
-    "target": "es6",
-    "importHelpers": true,
-    "noUnusedLocals": false,
-    "strict": false,
     "jsx": "react"
   },
-  "files": ["custom.d.ts"],
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*"],
+  "files": ["custom.d.ts"]
 }

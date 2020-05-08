@@ -34,30 +34,25 @@ function insertAfter(newNode, referenceNode) {
   referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
 
-async function updateSessionDetails({ accounts, chainId }) {
+async function updateView({ accounts, chainId }) {
   const containerEl = document.getElementById("page-actions");
   const pTags = containerEl.getElementsByTagName("p");
   if (pTags.length === 1) {
     const textEl = containerEl.getElementsByTagName("p")[0];
     textEl.innerHTML = "Connected!";
 
+    const accountEl = document.createElement("p");
     if (accounts) {
-      const accountEl = document.createElement("p");
       accountEl.innerHTML = `Account: ${accounts[0]}`;
-      insertAfter(accountEl, textEl);
     }
+    insertAfter(accountEl, textEl);
 
+    const chainEl = document.createElement("p");
     if (chainId) {
       const chainData = await getChainData(chainId);
-
-      const chainEl = document.createElement("p");
       chainEl.innerHTML = `Chain: ${chainData.name}`;
-      insertAfter(chainEl, accountEl);
     }
-
-    const buttonEl = containerEl.getElementsByTagName("button")[0];
-    buttonEl.innerText = "Sign Message";
-    buttonEl.onclick = signPersonalMessage;
+    insertAfter(chainEl, accountEl);
   } else {
     if (accounts) {
       const accountEl = containerEl.getElementsByTagName("p")[1];
@@ -73,6 +68,13 @@ async function updateSessionDetails({ accounts, chainId }) {
   }
 }
 
+function updateAction(title, action) {
+  const containerEl = document.getElementById("page-actions");
+  const buttonEl = containerEl.getElementsByTagName("button")[0];
+  buttonEl.innerText = title;
+  buttonEl.onclick = action;
+}
+
 function onDisconnect() {
   const containerEl = document.getElementById("page-actions");
   const pTags = containerEl.getElementsByTagName("p");
@@ -80,9 +82,6 @@ function onDisconnect() {
   const textEl = containerEl.getElementsByTagName("p")[0];
   textEl.innerHTML = "Disconnected!";
 
-  const buttonEl = containerEl.getElementsByTagName("button")[0];
-  buttonEl.innerText = "Connect";
-  buttonEl.onclick = onInit;
   if (pTags.length > 1) {
     const accountEl = containerEl.getElementsByTagName("p")[1];
     accountEl.remove();
@@ -90,4 +89,6 @@ function onDisconnect() {
     const chainEl = containerEl.getElementsByTagName("p")[1];
     chainEl.remove();
   }
+
+  updateAction("Connect", onInit);
 }

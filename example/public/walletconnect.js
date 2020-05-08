@@ -23,10 +23,11 @@ function onInit() {
     connector.createSession();
   } else {
     const { accounts, chainId } = connector;
-    updateSessionDetails({ accounts, chainId });
+    updateView({ accounts, chainId });
   }
 
   onSubscribe();
+  updateAction("Sign Message", signPersonalMessage);
 }
 
 function onSubscribe() {
@@ -42,7 +43,7 @@ function onSubscribe() {
     // Get provided accounts and chainId
     const { accounts, chainId } = payload.params[0];
 
-    updateSessionDetails({ accounts, chainId });
+    updateView({ accounts, chainId });
   });
 
   connector.on("session_update", (error, payload) => {
@@ -53,7 +54,7 @@ function onSubscribe() {
     // Get updated accounts and chainId
     const { accounts, chainId } = payload.params[0];
 
-    updateSessionDetails({ accounts, chainId });
+    updateView({ accounts, chainId });
   });
 
   connector.on("disconnect", (error, payload) => {
