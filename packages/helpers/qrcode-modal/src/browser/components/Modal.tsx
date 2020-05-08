@@ -15,24 +15,38 @@ import {
 
 interface ModalProps {
   uri: string;
+  onClose: any;
 }
 
 function Modal(props: ModalProps) {
+  const [mobile] = React.useState(isMobile());
+  const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   return (
     <div id={WALLETCONNECT_MODAL_ID} className="walletconnect-qrcode__base animated fadeIn">
       <div className="walletconnect-modal__base">
         <div className="walletconnect-modal__header">
           <img src={WALLETCONNECT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" />
           <div className="walletconnect-modal__close__wrapper">
-            <div id={WALLETCONNECT_CLOSE_BUTTON_ID} className="walletconnect-modal__close__icon">
+            <div
+              id={WALLETCONNECT_CLOSE_BUTTON_ID}
+              className="walletconnect-modal__close__icon"
+              onClick={props.onClose}
+            >
               <div className="walletconnect-modal__close__line1"></div>
               <div className="walletconnect-modal__close__line2"></div>
             </div>
           </div>
         </div>
         <div>
-          {isMobile() ? <DeepLinkDisplay uri={props.uri} /> : <QRCodeDisplay uri={props.uri} />}
+          {displayQRCode ? <DeepLinkDisplay uri={props.uri} /> : <QRCodeDisplay uri={props.uri} />}
         </div>
+        {mobile && (
+          <a onClick={() => setDisplayQRCode(!displayQRCode)}>
+            {displayQRCode
+              ? "Display mobile options again!"
+              : "Want to display QR Code instead? Click here"}
+          </a>
+        )}
       </div>
     </div>
   );
