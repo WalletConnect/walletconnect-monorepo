@@ -8,7 +8,6 @@
     "noUnusedLocals": false,
     "strict": false,
     "jsx": "react"
-    "strict": false
   },
   "files": ["custom.d.ts"],
   "include": ["./src/**/*"]
