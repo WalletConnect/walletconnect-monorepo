@@ -1,0 +1,16 @@
+{
+  "name": "@walletconnect/health-check-cli",
+  "version": "0.0.1",
+  "description": "Command line utility to check Bridge connectivity issues ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mikko Ohtamaa",
+  "license": "LGPL-3.0",
+  "devDependencies": {
+    "@walletconnect/browser": "^1.0.0-beta.47",
+    "tslint": "^5.12.1",
+    "typescript": "^3.3.3"
+  }
+}
