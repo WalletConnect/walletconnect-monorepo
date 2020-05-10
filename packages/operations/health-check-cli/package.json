@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "health-check": "ts-node src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "discord": "ts-node src/discord.ts"
   },
   "author": "Mikko Ohtamaa",
   "license": "LGPL-3.0",
@@ -20,6 +20,7 @@
     "@walletconnect/browser-crypto": "^1.0.0-beta.95",
     "@walletconnect/core": "^1.0.0-beta.95",
     "@walletconnect/iso-crypto": "^1.0.0-beta.95",
-    "@walletconnect/types": "^1.0.0-beta.95"
+    "@walletconnect/types": "^1.0.0-beta.95",
+    "discord.js": "^12.2.0"
   }
 }
