@@ -6,6 +6,7 @@ import {
   IConnectorOpts,
 } from "@walletconnect/types";
 
+
 // Returned for the clients to analyse
 interface HealthCheckResult {
 
@@ -19,37 +20,10 @@ interface HealthCheckResult {
   durationSeconds: number;
 };
 
+
 interface HealthCheckCallable {
   (result: HealthCheckResult): void;
 }
-
-/*
-// Subscribe to connection events
-walletConnector.on("connect", (error: any, payload: any) => {
-  if (error) {
-    throw error;
-  }
-  // Get provided accounts and chainId
-  const { accounts, chainId } = payload.params[0];
-});
-
-walletConnector.on("session_update", (error: any, payload: any) => {
-  if (error) {
-    throw error;
-  }
-
-  // Get updated accounts and chainId
-  const { accounts, chainId } = payload.params[0];
-});
-
-walletConnector.on("disconnect", (error: any, payload: any) => {
-  if (error) {
-    throw error;
-  }
-
-  // Delete walletConnector
-});
-*/
 
 
 /**
@@ -96,20 +70,6 @@ export class HealthChecker {
       durationSeconds: this.getDuration(),
     }
     this.onFinish(result);
-  }
-
-  /**
-   * Create default connecor argumetns.
-   */
-  getConnectorOpts(): IConnectorOpts {
-    // Server we test
-    const opts = {
-      connectorOpts: {
-        bridge: "https://bridge.walletconnect.org"
-      },
-      cryptoLib: cryptoLib,
-    };
-    return opts;
   }
 
   /**
@@ -162,16 +122,45 @@ export class HealthChecker {
    */
   connectToSession(uri: string) {
     console.log("Connecting to session", uri);
-    const opts = this.getConnectorOpts();
-    this.joiner = this.createConnector(false, opts);
+
+    // For joining, we give URI instead of a bridge server
+    const opts = {
+      connectorOpts: {
+        uri,
+      },
+      cryptoLib: cryptoLib,
+    };
+    this.joiner = this.createConnector(true, opts);
+    this.joiner.on("display_uri", (err: Error | null, payload: any) => { this.onConnection(err, payload); });
+    this.joiner.connect();
   }
+
+  /**
+   * We have two WalletConnect clients tha have joined to the same session
+   *
+   * @param err
+   * @param payload
+   */
+  onConnection(err: Error | null, payload: any)  {
+    if(err) {
+      this.fail(err);
+    }
+
+    console.log("Connected");
+  }
+
 
   /**
    * Initiate a health check.
    */
   async start() {
     this.startedAt = new Date();
-    const opts = this.getConnectorOpts();
+    const opts = {
+      connectorOpts: {
+        bridge: "https://bridge.walletconnect.org"
+      },
+      cryptoLib: cryptoLib,
+    };
     this.originator = this.createConnector(true, opts);
     this.originator.on("display_uri", (err: Error | null, payload: any) => { this.onDisplayURI(err, payload); });
     console.log("Creating session");
