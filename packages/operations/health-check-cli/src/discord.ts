@@ -38,7 +38,7 @@ client.on('ready', async () => {
   console.log("My channel is", channel);
 
   // channel.send() missing
-  (channel as any).send("WalletConnect health bot restarted");
+  (channel as Discord.TextChannel).send("WalletConnect health bot restarted");
 
   await reportHealth(channel);
 
