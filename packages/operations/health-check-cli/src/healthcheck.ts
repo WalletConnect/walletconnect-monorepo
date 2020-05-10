@@ -4,6 +4,7 @@ import * as cryptoLib from "@walletconnect/iso-crypto";
 import {
   IConnector,
   IConnectorOpts,
+  ISessionStatus,
 } from "@walletconnect/types";
 
 
@@ -14,15 +15,22 @@ interface HealthCheckResult {
   alive: boolean;
 
   // Any thrown error as string
-  error: Error;
+  error?: Error;
 
   // How long it took to go through the full cycle;
   durationSeconds: number;
 };
 
 
+// Called when health check has completed or failed
 interface HealthCheckCallable {
   (result: HealthCheckResult): void;
+}
+
+
+// Allow console.log replacement
+interface LogCallable {
+  (...args: any): void;
 }
 
 
@@ -31,20 +39,22 @@ interface HealthCheckCallable {
  *
  * We cannot use purely linear async/await code as much of WalletConnect functionaloty is built on the top of event handlers.
  * This class encapsulates that to a simpler state handler.
+ *
+ * See also: https://docs.walletconnect.org/tech-spec
  */
 export class HealthChecker {
 
   // This emulators dApp that requests the QR code
-  originator?: IConnector;
+  originator: IConnector;
 
   // This emulators a wallet that joins to the session by a QR code
-  joiner?: IConnector;
+  joiner: IConnector;
 
   // Any error coming through WalletConnect event callbacks
-  error?: Error;
+  error: Error;
 
   // Connection URI
-  uri?: string;
+  uri: string;
 
   // When health check was started
   startedAt?: Date;
@@ -55,7 +65,7 @@ export class HealthChecker {
    * @param timeout Check timeout in milliseconds
    * @param onFinish Callback then the check is finished, one way or another
    */
-  constructor(private timeout: number, private onFinish: HealthCheckCallable) {
+  constructor(private timeout: number, private onFinish: HealthCheckCallable, private log: LogCallable) {
   }
 
   /**
@@ -131,8 +141,9 @@ export class HealthChecker {
       cryptoLib: cryptoLib,
     };
     this.joiner = this.createConnector(true, opts);
-    this.joiner.on("display_uri", (err: Error | null, payload: any) => { this.onConnection(err, payload); });
-    this.joiner.connect();
+    this.joiner.on("session_request", (err: Error | null, payload: any) => { this.onSessionRequest(err, payload); });
+    this.joiner.on("ping", (err: Error | null, payload: any) => { this.onPing(err, payload); });
+    this.joiner.createSession();
   }
 
   /**
@@ -141,14 +152,76 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onConnection(err: Error | null, payload: any)  {
+  onSessionRequest(err: Error | null, payload: any)  {
     if(err) {
       this.fail(err);
     }
 
-    console.log("Connected");
+    this.log("Session requested", payload);
+
+    // Use dummy chain parameters, as we are not really connected to any blockchain
+    const approvalParams: ISessionStatus = {
+      chainId: 0,
+      accounts: [],
+      networkId: 0,
+    }
+
+    this.joiner.approveSession(approvalParams);
   }
 
+  /**
+   * dApp receives after the wallet approves the session.
+   *
+   * @param err
+   * @param payload
+   */
+  onConnect(err: Error | null, payload: any)  {
+    if(err) {
+      this.fail(err);
+    }
+    this.log("Connected", payload);
+    this.sendPing();
+  }
+
+  /**
+   * dApp receives after the wallet approves the session.
+   *
+   * @param err
+   * @param payload
+   */
+  onSessionUpdate(err: Error | null, payload: any)  {
+    if(err) {
+      this.fail(err);
+    }
+    this.log("Session updated", payload);
+  }
+
+  /**
+   * Wallet receives a ping request.
+   *
+   * @param err
+   * @param payload
+   */
+  onPing(err: Error | null, payload: any)  {
+    if(err) {
+      this.fail(err);
+    }
+    this.log("Ping received", payload);
+
+    // All seems to be good
+    this.onFinish({
+      alive: true,
+      durationSeconds: this.getDuration()
+    })
+  }
+
+
+  /**
+   * Send a custom message from originator to joiner.
+   */
+  sendPing() {
+    this.originator.sendCustomRequest({ method: "ping"});
+  }
 
   /**
    * Initiate a health check.
@@ -163,7 +236,9 @@ export class HealthChecker {
     };
     this.originator = this.createConnector(true, opts);
     this.originator.on("display_uri", (err: Error | null, payload: any) => { this.onDisplayURI(err, payload); });
-    console.log("Creating session");
+    this.originator.on("connect", (err: Error | null, payload: any) => { this.onConnect(err, payload); });
+    this.originator.on("session_update", (err: Error | null, payload: any) => { this.onSessionUpdate(err, payload); });
+    this.log("Creating session");
     this.originator.createSession();
   }
 
@@ -172,10 +247,10 @@ export class HealthChecker {
    *
    * @param timeout Timeout in milliseconds
    */
-  static async run(timeout: number): Promise<HealthCheckResult> {
+  static async run(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
 
     const checker: Promise<HealthCheckResult> = new Promise((resolve, reject) => {
-      const checker = new HealthChecker(timeout, resolve);
+      const checker = new HealthChecker(timeout, resolve, log);
       checker.start();
     });
 
@@ -194,7 +269,7 @@ export class HealthChecker {
 
 };
 
-export async function checkHealth(timeout: number): Promise<HealthCheckResult> {
- const result = await HealthChecker.run(timeout);
+export async function checkHealth(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
+ const result = await HealthChecker.run(timeout, log);
  return result;
 }
