@@ -7,16 +7,17 @@
     "health-check": "ts-node src/index.ts",
     "discord": "ts-node src/discord.ts"
   },
-  "author": "Mikko Ohtamaa",
+  "author": "WalletConnect <walletconnect.org>",
+  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
   "devDependencies": {
-    "@walletconnect/browser": "^1.0.0-beta.47",
     "ts-node": "^8.10.1",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3"
   },
   "dependencies": {
     "@types/node": "^13.13.5",
+    "@walletconnect/browser": "^1.0.0-beta.47",
     "@walletconnect/browser-crypto": "^1.0.0-beta.95",
     "@walletconnect/core": "^1.0.0-beta.95",
     "@walletconnect/iso-crypto": "^1.0.0-beta.95",
