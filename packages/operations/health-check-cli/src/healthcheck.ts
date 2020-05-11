@@ -19,7 +19,7 @@ interface HealthCheckResult {
 
   // How long it took to go through the full cycle;
   durationSeconds: number;
-};
+}
 
 
 // Called when health check has completed or failed
@@ -78,7 +78,7 @@ export class HealthChecker {
       alive: false,
       error: error,
       durationSeconds: this.getDuration(),
-    }
+    };
     this.onFinish(result);
   }
 
@@ -95,12 +95,8 @@ export class HealthChecker {
    * @param initiator
    * @param opts
    */
-  createConnector(initiator: boolean, opts: IConnectorOpts): IConnector  {
-    let connector: IConnector;
-    if(initiator) {
-    } else {
-    }
-    connector = new Connector(opts);
+  createConnector(opts: IConnectorOpts): IConnector  {
+    const connector = new Connector(opts);
     return connector;
   }
 
@@ -140,7 +136,7 @@ export class HealthChecker {
       },
       cryptoLib: cryptoLib,
     };
-    this.joiner = this.createConnector(true, opts);
+    this.joiner = this.createConnector(opts);
     this.joiner.on("session_request", (err: Error | null, payload: any) => { this.onSessionRequest(err, payload); });
     this.joiner.on("ping", (err: Error | null, payload: any) => { this.onPing(err, payload); });
     this.joiner.createSession();
@@ -164,7 +160,7 @@ export class HealthChecker {
       chainId: 0,
       accounts: [],
       networkId: 0,
-    }
+    };
 
     this.joiner.approveSession(approvalParams);
   }
@@ -211,8 +207,8 @@ export class HealthChecker {
     // All seems to be good
     this.onFinish({
       alive: true,
-      durationSeconds: this.getDuration()
-    })
+      durationSeconds: this.getDuration(),
+    });
   }
 
 
@@ -220,7 +216,7 @@ export class HealthChecker {
    * Send a custom message from originator to joiner.
    */
   sendPing() {
-    this.originator.sendCustomRequest({ method: "ping"});
+    this.originator.sendCustomRequest({ method: "ping" });
   }
 
   /**
@@ -230,11 +226,11 @@ export class HealthChecker {
     this.startedAt = new Date();
     const opts = {
       connectorOpts: {
-        bridge: "https://bridge.walletconnect.org"
+        bridge: "https://bridge.walletconnect.org",
       },
       cryptoLib: cryptoLib,
     };
-    this.originator = this.createConnector(true, opts);
+    this.originator = this.createConnector(opts);
     this.originator.on("display_uri", (err: Error | null, payload: any) => { this.onDisplayURI(err, payload); });
     this.originator.on("connect", (err: Error | null, payload: any) => { this.onConnect(err, payload); });
     this.originator.on("session_update", (err: Error | null, payload: any) => { this.onSessionUpdate(err, payload); });
@@ -249,12 +245,12 @@ export class HealthChecker {
    */
   static async run(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
 
-    const checker: Promise<HealthCheckResult> = new Promise((resolve, reject) => {
+    const checker: Promise<HealthCheckResult> = new Promise((resolve) => {
       const checker = new HealthChecker(timeout, resolve, log);
       checker.start();
     });
 
-    const timeoutter: Promise<HealthCheckResult> = new Promise((resolve, reject) => {
+    const timeoutter: Promise<HealthCheckResult> = new Promise((resolve) => {
       setTimeout(resolve, timeout, {
         alive: false,
         error: new Error(`Timeoutted in ${timeout} ms`),
@@ -267,7 +263,7 @@ export class HealthChecker {
     return Promise.race([checker, timeoutter]);
   }
 
-};
+}
 
 export async function checkHealth(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
  const result = await HealthChecker.run(timeout, log);

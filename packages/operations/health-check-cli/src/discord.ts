@@ -2,9 +2,8 @@
  * A Discord bot that runs the health check regularly
  *
  */
-import Discord from 'discord.js';
-import { checkHealth } from './healthcheck';
-import assert from 'assert';
+import Discord from "discord.js";
+import { checkHealth } from "./healthcheck";
 
 const client = new Discord.Client();
 
@@ -25,7 +24,7 @@ async function reportHealth(channel: Discord.Channel) {
 }
 
 // Set up bot logic
-client.on('ready', async () => {
+client.on("ready", async () => {
 
   const myChannel = process.env.CHANNEL;
   if(!myChannel) {
@@ -53,9 +52,9 @@ client.on('ready', async () => {
 });
 
 // Respond to ping messages to see if the bot is alive
-client.on('message', (msg: any) => {
-  if (msg.content === 'ping') {
-    msg.reply('pong');
+client.on("message", (msg: any) => {
+  if (msg.content === "ping") {
+    msg.reply("pong");
   }
 });
 
