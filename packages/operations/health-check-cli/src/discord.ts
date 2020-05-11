@@ -28,9 +28,12 @@ async function reportHealth(channel: Discord.Channel) {
 client.on('ready', async () => {
 
   const myChannel = process.env.CHANNEL;
-  assert(myChannel, "CHANNEL environment variable missing");
+  if(!myChannel) {
+    throw new Error("CHANNEL environment variable missing");
+  }
 
-  console.log(`Logged in as ${client.user.tag}, activated on channel id ${myChannel}`);
+  const tag = client && client.user && client.user.tag || "missing";
+  console.log(`Logged in as ${tag}, activated on channel id ${myChannel}`);
 
   console.log("Channels", client.channels);
 
