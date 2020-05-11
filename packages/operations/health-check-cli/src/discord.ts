@@ -17,9 +17,9 @@ async function reportHealth(channel: Discord.Channel) {
   const result = await checkHealth(5000, console.log);
   if(result.alive) {
     // https://github.com/discordjs/discord.js/issues/4278
-    (channel as Discord.TextChannel).send(`Health check completed in ${result.durationSeconds} seconds`);
+    (channel as Discord.TextChannel).send(`Bridge server round trip health check completed in ${result.durationSeconds} seconds`);
   } else {
-    (channel as Discord.TextChannel).send(`Health check failed, ${result.error}`);
+    (channel as Discord.TextChannel).send(`Health check failed, ${result.error} - please check server logs`);
   }
 
 }

@@ -36,6 +36,7 @@ You need to type in a custom URL in a browser to get to the Discord add bot scre
 
 https://discordapp.com/oauth2/authorize?&client_id=YOUR_CLIENT_ID_HERE&scope=bot&permissions=0
 
+
 Then you need to get the channel id, a long number, from the last part of the URL when your
 web browser is on that channel. Here the id would be `709138598124847144`.
 
@@ -52,6 +53,30 @@ DISCORD_TOKEN="Nz..." CHANNEL="" npm run discord
 You can also say `ping` on the channel of the bot to get `pong` to see if it's alive.
 
 [More information how to create a Discord bot](https://www.digitaltrends.com/gaming/how-to-make-a-discord-bot/).
+
+# Deploying the Discord bot on DigitalOcean
+
+We are going to run the Discord bot in UNIX `screen` on the cheapest possible virtual machine we found.
+Create a new Ubuntu 20.04 VM.
+
+SSH in to your box and enable SSH agent forwarding.
+
+```sh
+ssh -A root@[DigitalOcean IP]
+```
+
+Then:
+
+```sh
+sudo apt update
+sudo apt install -y nodejs git npm screen
+git clone git@github.com:miohtama/walletconnect-monorepo.git
+cd walletconnect-monorepo
+git checkout feat/health-check
+cd packages/operations/health-check-cli/
+npm install
+screen DISCORD_TOKEN="Nz..." CHANNEL="" npm run discord
+```
 
 # Internals
 
