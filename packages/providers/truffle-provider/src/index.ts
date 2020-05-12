@@ -1,4 +1,4 @@
-import WalletConnectSubprovider from "./subprovider";
+import WalletConnectSubprovider from "@walletconnect/web3-subprovider";
 
 const ProviderEngine = require("web3-provider-engine");
 const FiltersSubprovider = require("web3-provider-engine/subproviders/filters");

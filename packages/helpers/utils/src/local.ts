@@ -1,9 +1,9 @@
 import { safeJsonParse, safeJsonStringify } from "./misc";
-import { unsafeGetFromWindow } from "./browser";
+import { getLocalStorageUnsafe } from "./browser";
 
 export function setLocal(key: string, data: any): void {
   const raw = safeJsonStringify(data);
-  const local = unsafeGetFromWindow<Storage>("localStorage");
+  const local = getLocalStorageUnsafe();
   if (local) {
     local.setItem(key, raw);
   }
@@ -12,7 +12,7 @@ export function setLocal(key: string, data: any): void {
 export function getLocal(key: string): any {
   let data: any = null;
   let raw: string | null = null;
-  const local = unsafeGetFromWindow<Storage>("localStorage");
+  const local = getLocalStorageUnsafe();
   if (local) {
     raw = local.getItem(key);
   }
@@ -21,7 +21,7 @@ export function getLocal(key: string): any {
 }
 
 export function removeLocal(key: string): void {
-  const local = unsafeGetFromWindow<Storage>("localStorage");
+  const local = getLocalStorageUnsafe();
   if (local) {
     local.removeItem(key);
   }

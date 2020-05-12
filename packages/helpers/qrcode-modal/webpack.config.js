@@ -15,6 +15,11 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
+    alias: {
+      react: "preact/compat",
+      "react-dom/test-utils": "preact/test-utils",
+      "react-dom": "preact/compat",
+    },
   },
   optimization: {
     minimize: true,
@@ -22,7 +27,6 @@ module.exports = {
   module: {
     rules: [
       { test: /\.tsx?$/, loader: "ts-loader" },
-      { test: /\.svg$/, loader: "svg-url-loader" },
       { test: /\.css$/i, use: ["style-loader", "css-loader"] },
     ],
   },
