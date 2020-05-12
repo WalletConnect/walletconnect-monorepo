@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "run-s clean",
-    "build:cjs": "npx tsc -p tsconfig.json",
+    "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
     "build": "run-s build:pre build:cjs build:umd",
     "test": "tsdx test ./test"

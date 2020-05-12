@@ -15,6 +15,17 @@ function statPath(path) {
   });
 }
 
+function readFile(path) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, (err, res) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(res);
+    });
+  });
+}
+
 function writeFile(path, data) {
   return new Promise((resolve, reject) => {
     fs.writeFile(path, data, (err, res) => {
@@ -174,6 +185,7 @@ function logBundles(bundles) {
 module.exports = {
   ROOT_DIR,
   execGitCmd,
+  readFile,
   statPath,
   writeFile,
   copyFile,
