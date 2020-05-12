@@ -1,0 +1,234 @@
+:root {
+  --animation-duration: 300ms;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animated {
+  animation-duration: var(--animation-duration);
+  animation-fill-mode: both;
+}
+
+.fadeIn {
+  animation-name: fadeIn;
+}
+
+.fadeOut {
+  animation-name: fadeOut;
+}
+
+.walletconnect-modal__base {
+  position: relative;
+  top: 50%;
+  display: inline-block;
+  z-index: 2147483000;
+  background: #fff;
+  transform: translateY(-50%);
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 12px 24px 0 rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+}
+
+.walletconnect-modal__header {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.walletconnect-modal__headerLogo {
+  width: 100%;
+  max-width: 80%;
+  margin: 20px auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.walletconnect-modal__close__wrapper {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 10000;
+}
+
+.walletconnect-modal__close__icon {
+  width: 25px;
+  height: 25px;
+  position: relative;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+}
+
+.walletconnect-modal__close__line1 {
+  position: absolute;
+  width: 90%;
+  border: 1px solid #7c828b;
+}
+
+.walletconnect-modal__close__line2 {
+  position: absolute;
+  width: 90%;
+  border: 1px solid #7c828b;
+  transform: rotate(90deg);
+}
+
+.walletconnect-qrcode__base {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2147482999;
+  background-color: rgba(0, 0, 0, 0.5);
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.walletconnect-qrcode__text {
+  color: #7c828b;
+  font-family: Avenir;
+  font-size: 18px;
+  text-align: center;
+  margin: 0 auto;
+  padding: 0 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.walletconnect-qrcode__image {
+  width: 100%;
+  padding: 30px;
+  box-sizing: border-box;
+  /* viewport height minus padding, text height, logo height and margins: */
+  max-height: calc(100vh - (2 * 30px) - 1ex - 52px - (2 * 20px));
+  min-height: 150px;
+}
+
+.walletconnect-connect__button {
+  align-items: flex-start;
+  background-color: rgb(64, 153, 255);
+  background-image: none;
+  border-radius: 8px;
+  border-style: none;
+  border-width: 0px;
+  border-color: rgb(255, 255, 255);
+  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px, rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
+    rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
+  box-sizing: border-box;
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  font-size: 16px;
+  font-stretch: 100%;
+  font-style: normal;
+  font-weight: 600;
+  width: 250px;
+  height: 44px;
+  letter-spacing: normal;
+  line-height: 16px;
+  margin: 12px 0px;
+  padding: 8px 12px;
+  position: relative;
+  text-align: center;
+  text-indent: 0px;
+  text-shadow: none;
+  text-transform: none;
+  transition-delay: 0s;
+  transition-duration: 0.15s;
+  transition-property: all;
+  transition-timing-function: ease-in-out;
+  width: 250px;
+  will-change: transform;
+}
+
+.walletconnect-connect__button:active {
+  transform: translateY(1px);
+  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px, rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
+    rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
+}
+
+.walletconnect-connect__buttons__wrapper {
+  width: 100%;
+  padding: 15px;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.walletconnect-connect__buttons__wrapper a {
+  text-decoration: none;
+  padding-top: 15px;
+}
+
+@media (hover: hover) {
+  .walletconnect-connect__button:hover {
+    transform: translateY(-1px);
+    box-shadow: rgba(50, 50, 93, 0.1) 0px 7px 14px 0px, rgba(0, 0, 0, 0.08) 0px 3px 6px 0px,
+      rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .walletconnect-modal__header {
+    height: 130px;
+  }
+  .walletconnect-modal__base {
+    max-height: 70%;
+    overflow: auto;
+  }
+}
+
+@media only screen and (min-device-width: 415px) and (max-width: 768px) {
+  #content {
+    max-width: 768px;
+    box-sizing: border-box;
+  }
+}
+
+@media only screen and (min-width: 375px) and (max-width: 415px) {
+  #content {
+    max-width: 414px;
+    box-sizing: border-box;
+  }
+}
+
+@media only screen and (min-width: 320px) and (max-width: 375px) {
+  #content {
+    max-width: 375px;
+    box-sizing: border-box;
+  }
+}
+
+@media only screen and (max-width: 320px) {
+  #content {
+    max-width: 320px;
+    box-sizing: border-box;
+  }
+}
