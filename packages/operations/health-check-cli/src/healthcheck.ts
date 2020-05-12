@@ -1,16 +1,9 @@
-import Connector from "@walletconnect/core";
-import * as cryptoLib from "@walletconnect/iso-crypto";
+import WalletConnect from "@walletconnect/client";
 
-import {
-  IConnector,
-  IConnectorOpts,
-  ISessionStatus,
-} from "@walletconnect/types";
-
+import { IConnector, IWalletConnectOptions, ISessionStatus } from "@walletconnect/types";
 
 // Returned for the clients to analyse
 interface HealthCheckResult {
-
   // Did health check success
   alive: boolean;
 
@@ -21,18 +14,15 @@ interface HealthCheckResult {
   durationSeconds: number;
 }
 
-
 // Called when health check has completed or failed
 interface HealthCheckCallable {
   (result: HealthCheckResult): void;
 }
 
-
 // Allow console.log replacement
 interface LogCallable {
   (...args: any): void;
 }
-
 
 /**
  * Check WalletConnect state.
@@ -43,7 +33,6 @@ interface LogCallable {
  * See also: https://docs.walletconnect.org/tech-spec
  */
 export class HealthChecker {
-
   // This emulators dApp that requests the QR code
   originator: IConnector;
 
@@ -65,8 +54,11 @@ export class HealthChecker {
    * @param timeout Check timeout in milliseconds
    * @param onFinish Callback then the check is finished, one way or another
    */
-  constructor(private timeout: number, private onFinish: HealthCheckCallable, private log: LogCallable) {
-  }
+  constructor(
+    private timeout: number,
+    private onFinish: HealthCheckCallable,
+    private log: LogCallable,
+  ) {}
 
   /**
    * Some of the WalletConnect callback methods raised an error
@@ -95,8 +87,8 @@ export class HealthChecker {
    * @param initiator
    * @param opts
    */
-  createConnector(opts: IConnectorOpts): IConnector  {
-    const connector = new Connector(opts);
+  createConnector(opts: IWalletConnectOptions): IConnector {
+    const connector = new WalletConnect(opts);
     return connector;
   }
 
@@ -107,14 +99,14 @@ export class HealthChecker {
    * @param payload
    */
   onDisplayURI(err: Error | null, payload: any) {
-    if(err) {
+    if (err) {
       this.fail(err);
     }
 
     this.uri = payload.params[0];
 
     // Let's trigger the process to have another client to join the same session
-    if(this.uri) {
+    if (this.uri) {
       this.connectToSession(this.uri);
       return;
     }
@@ -130,15 +122,13 @@ export class HealthChecker {
     console.log("Connecting to session", uri);
 
     // For joining, we give URI instead of a bridge server
-    const opts = {
-      connectorOpts: {
-        uri,
-      },
-      cryptoLib: cryptoLib,
-    };
-    this.joiner = this.createConnector(opts);
-    this.joiner.on("session_request", (err: Error | null, payload: any) => { this.onSessionRequest(err, payload); });
-    this.joiner.on("ping", (err: Error | null, payload: any) => { this.onPing(err, payload); });
+    this.joiner = this.createConnector({ uri });
+    this.joiner.on("session_request", (err: Error | null, payload: any) => {
+      this.onSessionRequest(err, payload);
+    });
+    this.joiner.on("ping", (err: Error | null, payload: any) => {
+      this.onPing(err, payload);
+    });
     this.joiner.createSession();
   }
 
@@ -148,8 +138,8 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onSessionRequest(err: Error | null, payload: any)  {
-    if(err) {
+  onSessionRequest(err: Error | null, payload: any) {
+    if (err) {
       this.fail(err);
     }
 
@@ -171,8 +161,8 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onConnect(err: Error | null, payload: any)  {
-    if(err) {
+  onConnect(err: Error | null, payload: any) {
+    if (err) {
       this.fail(err);
     }
     this.log("Connected", payload);
@@ -185,8 +175,8 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onSessionUpdate(err: Error | null, payload: any)  {
-    if(err) {
+  onSessionUpdate(err: Error | null, payload: any) {
+    if (err) {
       this.fail(err);
     }
     this.log("Session updated", payload);
@@ -198,8 +188,8 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onPing(err: Error | null, payload: any)  {
-    if(err) {
+  onPing(err: Error | null, payload: any) {
+    if (err) {
       this.fail(err);
     }
     this.log("Ping received", payload);
@@ -210,7 +200,6 @@ export class HealthChecker {
       durationSeconds: this.getDuration(),
     });
   }
-
 
   /**
    * Send a custom message from originator to joiner.
@@ -224,16 +213,18 @@ export class HealthChecker {
    */
   async start() {
     this.startedAt = new Date();
-    const opts = {
-      connectorOpts: {
-        bridge: "https://bridge.walletconnect.org",
-      },
-      cryptoLib: cryptoLib,
-    };
-    this.originator = this.createConnector(opts);
-    this.originator.on("display_uri", (err: Error | null, payload: any) => { this.onDisplayURI(err, payload); });
-    this.originator.on("connect", (err: Error | null, payload: any) => { this.onConnect(err, payload); });
-    this.originator.on("session_update", (err: Error | null, payload: any) => { this.onSessionUpdate(err, payload); });
+    this.originator = this.createConnector({
+      bridge: "https://bridge.walletconnect.org",
+    });
+    this.originator.on("display_uri", (err: Error | null, payload: any) => {
+      this.onDisplayURI(err, payload);
+    });
+    this.originator.on("connect", (err: Error | null, payload: any) => {
+      this.onConnect(err, payload);
+    });
+    this.originator.on("session_update", (err: Error | null, payload: any) => {
+      this.onSessionUpdate(err, payload);
+    });
     this.log("Creating session");
     this.originator.createSession();
   }
@@ -244,13 +235,12 @@ export class HealthChecker {
    * @param timeout Timeout in milliseconds
    */
   static async run(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
-
-    const checker: Promise<HealthCheckResult> = new Promise((resolve) => {
+    const checker: Promise<HealthCheckResult> = new Promise(resolve => {
       const checker = new HealthChecker(timeout, resolve, log);
       checker.start();
     });
 
-    const timeoutter: Promise<HealthCheckResult> = new Promise((resolve) => {
+    const timeoutter: Promise<HealthCheckResult> = new Promise(resolve => {
       setTimeout(resolve, timeout, {
         alive: false,
         error: new Error(`Timeoutted in ${timeout} ms`),
@@ -262,10 +252,9 @@ export class HealthChecker {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/race
     return Promise.race([checker, timeoutter]);
   }
-
 }
 
 export async function checkHealth(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
- const result = await HealthChecker.run(timeout, log);
- return result;
+  const result = await HealthChecker.run(timeout, log);
+  return result;
 }

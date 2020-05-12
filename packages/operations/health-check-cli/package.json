@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/health-check-cli",
-  "version": "0.0.1",
+  "version": "1.0.0-beta.95",
   "description": "Command line utility to check Bridge connectivity issues ",
   "main": "src/index.ts",
   "scripts": {
@@ -11,17 +11,13 @@
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
   "devDependencies": {
-    "ts-node": "^8.10.1",
-    "tslint": "^5.12.1",
-    "typescript": "^3.3.3"
+    "ts-node": "8.10.1",
+    "typescript": "3.7.5"
   },
   "dependencies": {
-    "@types/node": "^13.13.5",
-    "@walletconnect/browser": "^1.0.0-beta.47",
-    "@walletconnect/browser-crypto": "^1.0.0-beta.95",
-    "@walletconnect/core": "^1.0.0-beta.95",
-    "@walletconnect/iso-crypto": "^1.0.0-beta.95",
+    "@types/node": "12.12.14",
+    "@walletconnect/client": "^1.0.0-beta.95",
     "@walletconnect/types": "^1.0.0-beta.95",
-    "discord.js": "^12.2.0"
+    "discord.js": "12.2.0"
   }
 }

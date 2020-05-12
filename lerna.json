@@ -1,6 +1,12 @@
 {
   "version": "1.0.0-beta.95",
-  "packages": [
-    "packages/**/*"
-  ]
+  "packages": ["packages/**/*"],
+  "command": {
+    "run": {
+      "ignore": "@walletconnect/health-check-cli"
+    },
+    "exec": {
+      "ignore": "@walletconnect/health-check-cli"
+    }
+  }
 }
