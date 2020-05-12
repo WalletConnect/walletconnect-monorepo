@@ -4,7 +4,7 @@ import {
   IQueryParamsResult,
   IWalletConnectSession,
 } from "@walletconnect/types";
-import { parseQueryString } from "./browser";
+import { parseQueryString } from "./url";
 
 export function isWalletConnectSession(object: any): object is IWalletConnectSession {
   return typeof object.bridge !== "undefined";

@@ -1,7 +1,7 @@
 import * as nodeLib from "./node";
 import * as browserLib from "./browser";
 
-export const isNode = () =>
+const isNode = () =>
   typeof process !== "undefined" &&
   typeof process.versions !== "undefined" &&
   typeof process.versions.node !== "undefined";

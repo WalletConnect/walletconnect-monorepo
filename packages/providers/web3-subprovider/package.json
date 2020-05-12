@@ -4,10 +4,10 @@
   "description": "Web3 Subprovider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
-    "build:pre": "npm run clean",
-    "build:cjs": "./node_modules/.bin/tsc -p tsconfig.cjs.json",
+    "build:pre": "run-s clean",
+    "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
-    "build": "npm run build:pre && npm run build:cjs && npm run build:umd",
+    "build": "run-s build:pre build:cjs build:umd",
     "test": "tsdx test ./test"
   },
   "keywords": [
@@ -48,10 +48,17 @@
     "@babel/register": "7.8.3",
     "@types/jest": "22.2.3",
     "@types/node": "12.12.14",
+    "npm-run-all": "4.1.5",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
+  },
+  "dependencies": {
+    "@walletconnect/client": "^1.0.0-beta.95",
+    "@walletconnect/qrcode-modal": "^1.0.0-beta.95",
+    "@walletconnect/types": "^1.0.0-beta.95",
+    "web3-provider-engine": "15.0.7"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

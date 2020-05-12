@@ -1,34 +1,32 @@
-const {
-  FILE_NAME,
-  FILE_PATH,
-  isFile,
-  isJson,
-  formatJson,
-  writeFile
-} = require('./shared')
+const path = require("path");
+const { isFile, isJson, formatJson, writeFile } = require("../../../../scripts/shared");
 
-function parseEntry (entry) {
+const PKG_DIR = path.join(__dirname, "../");
+const FILE_NAME = "registry.json";
+const FILE_PATH = path.join(PKG_DIR, FILE_NAME);
+
+function parseEntry(entry) {
   return {
-    name: entry.name || '',
-    color: entry.color || '',
-    universalLink: entry.universalLink || '',
-    deepLink: entry.deepLink || '',
-    chromeIntent: entry.chromeIntent || ''
-  }
+    name: entry.name || "",
+    color: entry.color || "",
+    universalLink: entry.universalLink || "",
+    deepLink: entry.deepLink || "",
+    chromeIntent: entry.chromeIntent || "",
+  };
 }
 
-async function parse () {
+async function parse() {
   if ((await isFile(FILE_PATH)) && isJson(FILE_NAME)) {
-    let json = require(FILE_PATH)
+    const json = require(FILE_PATH);
 
-    let newJson = json.map(parseEntry)
+    const newJson = json.map(parseEntry);
 
-    const formattedJson = formatJson(newJson)
+    const formattedJson = formatJson(newJson);
 
-    await writeFile(FILE_PATH, formattedJson)
+    await writeFile(FILE_PATH, formattedJson);
   } else {
-    throw new Error(`Invalid - Failed to read file: ${FILE_NAME}`)
+    throw new Error(`Invalid - Failed to read file: ${FILE_NAME}`);
   }
 }
 
-parse()
+parse();

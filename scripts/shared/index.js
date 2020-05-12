@@ -15,6 +15,17 @@ function statPath(path) {
   });
 }
 
+function readFile(path) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, (err, res) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(res);
+    });
+  });
+}
+
 function writeFile(path, data) {
   return new Promise((resolve, reject) => {
     fs.writeFile(path, data, (err, res) => {
@@ -67,6 +78,14 @@ async function isDir(path) {
 async function isFile(path) {
   const stat = await statPath(path);
   return stat.isFile();
+}
+
+function isJson(fileName) {
+  const ext = path.extname(fileName);
+  return ext === ".json";
+}
+function formatJson(json) {
+  return JSON.stringify(json, null, 2) + "\n";
 }
 
 function exists(path) {
@@ -166,6 +185,7 @@ function logBundles(bundles) {
 module.exports = {
   ROOT_DIR,
   execGitCmd,
+  readFile,
   statPath,
   writeFile,
   copyFile,
@@ -178,4 +198,6 @@ module.exports = {
   verifyFile,
   logResults,
   logBundles,
+  isJson,
+  formatJson,
 };

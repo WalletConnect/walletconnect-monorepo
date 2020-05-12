@@ -33,3 +33,62 @@ async function updateTitle() {
 function insertAfter(newNode, referenceNode) {
   referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
+
+async function updateView({ accounts, chainId }) {
+  const containerEl = document.getElementById("page-actions");
+  const pTags = containerEl.getElementsByTagName("p");
+  if (pTags.length === 1) {
+    const textEl = containerEl.getElementsByTagName("p")[0];
+    textEl.innerHTML = "Connected!";
+
+    const accountEl = document.createElement("p");
+    if (accounts) {
+      accountEl.innerHTML = `Account: ${accounts[0]}`;
+    }
+    insertAfter(accountEl, textEl);
+
+    const chainEl = document.createElement("p");
+    if (chainId) {
+      const chainData = await getChainData(chainId);
+      chainEl.innerHTML = `Chain: ${chainData.name}`;
+    }
+    insertAfter(chainEl, accountEl);
+  } else {
+    if (accounts) {
+      const accountEl = containerEl.getElementsByTagName("p")[1];
+      accountEl.innerHTML = `Account: ${accounts[0]}`;
+    }
+
+    if (chainId) {
+      const chainData = await getChainData(chainId);
+
+      const chainEl = containerEl.getElementsByTagName("p")[2];
+      chainEl.innerHTML = `Chain: ${chainData.name}`;
+    }
+  }
+}
+
+function updateAction(title, action) {
+  const containerEl = document.getElementById("page-actions");
+  const buttonEl = containerEl.getElementsByTagName("button")[0];
+  buttonEl.innerText = title;
+  buttonEl.onclick = action;
+}
+
+function onDisconnect() {
+  const containerEl = document.getElementById("page-actions");
+  const pTags = containerEl.getElementsByTagName("p");
+
+  const textEl = containerEl.getElementsByTagName("p")[0];
+  textEl.innerHTML = "Disconnected!";
+
+  if (pTags.length > 1) {
+    const accountEl = containerEl.getElementsByTagName("p")[1];
+    accountEl.remove();
+
+    const chainEl = containerEl.getElementsByTagName("p")[1];
+    chainEl.remove();
+  }
+
+  updateAction("Connect", onInit);
+}

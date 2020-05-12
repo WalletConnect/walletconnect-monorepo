@@ -4,10 +4,11 @@
   "description": "QR Code Modal for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
-    "build:pre": "npm run clean",
+    "build:css": "node ./scripts/build-css.js",
+    "build:pre": "run-s clean build:css",
     "build:umd": "webpack",
-    "build:cjs": "echo 'no CJS script'",
-    "build": "npm run build:pre && npm run build:cjs && npm run build:umd",
+    "build:cjs": "microbundle --no-compress -f cjs --alias react=preact/compat,react-dom/test-utils=preact/test-utils,react-dom=preact/compat --tsconfig ./tsconfig.cjs.json",
+    "build": "run-s build:pre build:cjs build:umd",
     "test": "tsdx test ./test"
   },
   "keywords": [
@@ -26,8 +27,8 @@
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
   "license": "LGPL-3.0",
   "source": "src/index.ts",
-  "main": "dist/umd/index.min.js",
-  "types": "dist/umd/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "types": "dist/cjs/index.d.ts",
   "unpkg": "dist/umd/index.min.js",
   "files": [
     "dist"
@@ -52,7 +53,8 @@
     "@types/qr-image": "3.2.1",
     "css-loader": "3.5.3",
     "style-loader": "1.2.0",
-    "svg-url-loader": "3.0.3",
+    "microbundle": "0.11.0",
+    "npm-run-all": "4.1.5",
     "ts-loader": "6.2.2",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
@@ -61,7 +63,9 @@
   },
   "dependencies": {
     "@walletconnect/mobile-registry": "^1.0.0-beta.95",
-    "detect-browser": "5.1.0",
+    "@walletconnect/types": "^1.0.0-beta.95",
+    "@walletconnect/utils": "^1.0.0-beta.95",
+    "preact": "10.4.1",
     "qr-image": "3.2.0",
     "qrcode-terminal": "0.12.0"
   },

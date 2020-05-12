@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import * as React from "react";
 import * as qrImage from "qr-image";
 import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
@@ -15,16 +17,15 @@ interface QRCodeDisplayProps {
 }
 
 function QRCodeDisplay(props: QRCodeDisplayProps) {
-  const content = formatQRCodeImage(props.uri);
-  const callToAction = "Scan QR code with a WalletConnect-compatible wallet";
-  return `
+  const svg = formatQRCodeImage(props.uri);
+  return (
     <div>
-      <p id="${WALLETCONNECT_CTA_TEXT_ID}" class="walletconnect-qrcode__text">
-        ${callToAction}
+      <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
+        {"Scan QR code with a WalletConnect-compatible wallet"}
       </p>
-      ${content}
+      <div dangerouslySetInnerHTML={{ __html: svg }}></div>
     </div>
-  `;
+  );
 }
 
 export default QRCodeDisplay;
