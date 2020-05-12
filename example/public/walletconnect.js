@@ -27,7 +27,6 @@ function onInit() {
   }
 
   onSubscribe();
-  updateAction("Sign Message", signPersonalMessage);
 }
 
 function onSubscribe() {
@@ -44,6 +43,7 @@ function onSubscribe() {
     const { accounts, chainId } = payload.params[0];
 
     updateView({ accounts, chainId });
+    updateAction("Sign Message", signPersonalMessage);
   });
 
   connector.on("session_update", (error, payload) => {

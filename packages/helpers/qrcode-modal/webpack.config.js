@@ -1,6 +1,6 @@
 const path = require("path");
 
-const umdConfig = {
+module.exports = {
   mode: "production",
   entry: {
     index: path.resolve(__dirname, "src", "index.ts"),
@@ -31,5 +31,3 @@ const umdConfig = {
     ],
   },
 };
-
-module.exports = [umdConfig];
