@@ -69,6 +69,14 @@ async function isFile(path) {
   return stat.isFile();
 }
 
+function isJson(fileName) {
+  const ext = path.extname(fileName);
+  return ext === ".json";
+}
+function formatJson(json) {
+  return JSON.stringify(json, null, 2) + "\n";
+}
+
 function exists(path) {
   return new Promise((resolve, reject) => {
     fs.stat(path, err => {
@@ -178,4 +186,6 @@ module.exports = {
   verifyFile,
   logResults,
   logBundles,
+  isJson,
+  formatJson,
 };
