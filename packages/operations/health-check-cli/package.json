@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/health-check-cli",
-  "version": "1.0.0-beta.95",
+  "version": "1.0.0-beta.96",
   "description": "Command line utility to check Bridge connectivity issues ",
   "main": "src/index.ts",
   "scripts": {
@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@types/node": "12.12.14",
-    "@walletconnect/client": "^1.0.0-beta.95",
-    "@walletconnect/types": "^1.0.0-beta.95",
+    "@walletconnect/client": "^1.0.0-beta.96",
+    "@walletconnect/types": "^1.0.0-beta.96",
     "discord.js": "12.2.0"
   }
 }
