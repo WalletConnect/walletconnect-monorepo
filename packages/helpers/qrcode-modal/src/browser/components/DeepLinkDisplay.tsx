@@ -1,20 +1,13 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
 import MobileRegistry from "@walletconnect/mobile-registry";
+import { IMobileRegistryEntry } from "@walletconnect/types";
+import { isIOS, getLocation, appendToQueryString } from "@walletconnect/utils";
 
-import { isIOS, getLocation, appendToQueryString } from "../helpers";
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
-
-interface IMobileRegistryEntry {
-  name: string;
-  color: string;
-  universalLink: string;
-  deepLink: string;
-  chromeIntent: string;
-}
 
 function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
   const loc = getLocation();

@@ -1,5 +1,46 @@
 import { IClientMeta } from "@walletconnect/types";
 
+import {
+  detect,
+  BrowserInfo,
+  BotInfo,
+  NodeInfo,
+  SearchBotDeviceInfo,
+  ReactNativeInfo,
+} from "detect-browser";
+
+export function detectEnv(
+  userAgent?: string,
+): BrowserInfo | BotInfo | NodeInfo | SearchBotDeviceInfo | ReactNativeInfo | null {
+  return detect(userAgent);
+}
+
+export function detectOS() {
+  const env = detectEnv();
+  return env && env.os ? env.os : undefined;
+}
+
+export function isIOS(): boolean {
+  const os = detectOS();
+  return os ? os.toLowerCase().includes("ios") : false;
+}
+
+export function isMobile(): boolean {
+  const os = detectOS();
+  return os ? os.toLowerCase().includes("android") || os.toLowerCase().includes("ios") : false;
+}
+
+export function isNode(): boolean {
+  const env = detectEnv();
+  const result = env && env.name ? env.name.toLowerCase() === "node" : false;
+  return result;
+}
+
+export function isBrowser(): boolean {
+  const result = !isNode() && !!getNavigatorUnsafe();
+  return result;
+}
+
 export function unsafeGetFromWindow<T>(name: string): T | undefined {
   let res: T | undefined = undefined;
   if (typeof window !== "undefined" && typeof window[name] !== "undefined") {
@@ -16,20 +57,44 @@ export function safeGetFromWindow<T>(name: string): T {
   return res;
 }
 
-export function parseQueryString(queryString: string): any {
-  const result: any = {};
+export function getDocument(): Document {
+  return safeGetFromWindow<Document>("document");
+}
 
-  const pairs = (queryString[0] === "?" ? queryString.substr(1) : queryString).split("&");
+export function getDocumentUnsafe(): Document | undefined {
+  return unsafeGetFromWindow<Document>("document");
+}
 
-  for (let i = 0; i < pairs.length; i++) {
-    const keyArr: string[] = pairs[i].match(/\w+(?==)/i) || [];
-    const valueArr: string[] = pairs[i].match(/=.+/i) || [];
-    if (keyArr[0]) {
-      result[decodeURIComponent(keyArr[0])] = decodeURIComponent(valueArr[0].substr(1));
-    }
-  }
+export function getNavigator(): Navigator {
+  return safeGetFromWindow<Navigator>("navigator");
+}
 
-  return result;
+export function getNavigatorUnsafe(): Navigator | undefined {
+  return unsafeGetFromWindow<Navigator>("navigator");
+}
+
+export function getLocation(): Location {
+  return safeGetFromWindow<Location>("location");
+}
+
+export function getLocationUnsafe(): Location | undefined {
+  return unsafeGetFromWindow<Location>("location");
+}
+
+export function getCrypto(): Crypto {
+  return safeGetFromWindow<Crypto>("crypto");
+}
+
+export function getCryptoUnsafe(): Crypto | undefined {
+  return unsafeGetFromWindow<Crypto>("crypto");
+}
+
+export function getLocalStorage(): Storage {
+  return safeGetFromWindow<Storage>("localStorage");
+}
+
+export function getLocalStorageUnsafe(): Storage | undefined {
+  return unsafeGetFromWindow<Storage>("localStorage");
 }
 
 export function getMeta(): IClientMeta | null {
@@ -37,8 +102,8 @@ export function getMeta(): IClientMeta | null {
   let loc: Location;
 
   try {
-    doc = safeGetFromWindow<Document>("document");
-    loc = safeGetFromWindow<Location>("location");
+    doc = getDocument();
+    loc = getLocation();
   } catch (e) {
     return null;
   }

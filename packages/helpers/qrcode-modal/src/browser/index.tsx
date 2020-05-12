@@ -2,6 +2,7 @@
 import * as React from "react";
 // @ts-ignore
 import * as ReactDOM from "react-dom";
+import { getDocument } from "@walletconnect/utils";
 
 import { WALLETCONNECT_STYLE_SHEET } from "./assets/style";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -12,7 +13,6 @@ import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_STYLE_ID,
 } from "./constants";
-import { getDocument } from "./helpers";
 
 function injectStyleSheet() {
   const doc = getDocument();

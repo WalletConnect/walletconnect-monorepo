@@ -1,12 +1,12 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
+import { isMobile } from "@walletconnect/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import DeepLinkDisplay from "./DeepLinkDisplay";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import QRCodeDisplay from "./QRCodeDisplay";
 
-import { isMobile } from "../helpers";
 import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_CLOSE_BUTTON_ID,

@@ -354,4 +354,12 @@ declare module "@walletconnect/types" {
     open(uri: string, cb: any): void;
     close(): void;
   }
+
+  export interface IMobileRegistryEntry {
+    name: string;
+    color: string;
+    universalLink: string;
+    deepLink: string;
+    chromeIntent: string;
+  }
 }
