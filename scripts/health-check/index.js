@@ -1,4 +1,4 @@
-import { checkHealth } from "./healthcheck";
+const { checkHealth } = require("./healthcheck");
 
 async function run() {
   // eslint-disable-next-line no-console

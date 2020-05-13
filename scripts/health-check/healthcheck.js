@@ -1,4 +1,4 @@
-const WalletConnect = require("../../dist/client.min.js").default;
+const WalletConnect = require("../../packages/clients/client").default;
 
 /**
  * Check WalletConnect state.
@@ -8,7 +8,7 @@ const WalletConnect = require("../../dist/client.min.js").default;
  *
  * See also: https://docs.walletconnect.org/tech-spec
  */
-export class HealthChecker {
+class HealthChecker {
   /**
    * @param timeout Check timeout in milliseconds
    * @param onFinish Callback then the check is finished, one way or another
@@ -214,7 +214,12 @@ export class HealthChecker {
   }
 }
 
-export async function checkHealth(timeout, log) {
+async function checkHealth(timeout, log) {
   const result = await HealthChecker.run(timeout, log);
   return result;
 }
+
+module.exports = {
+  HealthChecker,
+  checkHealth,
+};

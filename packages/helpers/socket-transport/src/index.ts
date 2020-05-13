@@ -8,7 +8,7 @@ import {
 import NetworkMonitor from "./network";
 
 // @ts-ignore
-const WS = global.WebSocket || require("ws");
+const WS = typeof global.WebSocket !== "undefined" ? global.WebSocket : require("ws");
 
 // -- SocketTransport ------------------------------------------------------ //
 
