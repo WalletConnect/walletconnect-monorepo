@@ -32,6 +32,7 @@
     "new-version": "lerna version --no-git-tag-version",
     "publish:latest": "lerna exec -- npm publish --access public",
     "publish:next": "lerna exec -- npm publish --access public --tag next",
+    "health-check": "node ./scripts/health-check/index.js",
     "move-dist": "node ./scripts/move-dist.js",
     "commit-version": "node ./scripts/commit-version.js",
     "check": "run-s clean lint build test move-dist",
@@ -53,6 +54,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "2.20.0",
     "@typescript-eslint/parser": "2.20.0",
+    "discord.js": "12.2.0",
     "eslint": "5.16.0",
     "eslint-config-prettier": "6.10.0",
     "eslint-config-standard": "14.1.0",

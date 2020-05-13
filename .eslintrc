@@ -38,13 +38,5 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": ["prettier", "@typescript-eslint"],
-  "overrides": [
-    {
-      "files": ["packages/operations/health-check-cli/**/*.ts"],
-      "rules": {
-        "no-console": "off"
-      }
-    }
-  ],
+  "plugins": ["prettier", "@typescript-eslint"]
 }

@@ -1,28 +1,4 @@
-import WalletConnect from "@walletconnect/client";
-
-import { IConnector, IWalletConnectOptions, ISessionStatus } from "@walletconnect/types";
-
-// Returned for the clients to analyse
-interface HealthCheckResult {
-  // Did health check success
-  alive: boolean;
-
-  // Any thrown error as string
-  error?: Error;
-
-  // How long it took to go through the full cycle;
-  durationSeconds: number;
-}
-
-// Called when health check has completed or failed
-interface HealthCheckCallable {
-  (result: HealthCheckResult): void;
-}
-
-// Allow console.log replacement
-interface LogCallable {
-  (...args: any): void;
-}
+const WalletConnect = require("../../dist/client.min.js").default;
 
 /**
  * Check WalletConnect state.
@@ -33,39 +9,22 @@ interface LogCallable {
  * See also: https://docs.walletconnect.org/tech-spec
  */
 export class HealthChecker {
-  // This emulators dApp that requests the QR code
-  originator: IConnector;
-
-  // This emulators a wallet that joins to the session by a QR code
-  joiner: IConnector;
-
-  // Any error coming through WalletConnect event callbacks
-  error: Error;
-
-  // Connection URI
-  uri: string;
-
-  // When health check was started
-  startedAt?: Date;
-
-  // Event callback when all done
-
   /**
    * @param timeout Check timeout in milliseconds
    * @param onFinish Callback then the check is finished, one way or another
    */
-  constructor(
-    private timeout: number,
-    private onFinish: HealthCheckCallable,
-    private log: LogCallable,
-  ) {}
+  constructor(timeout, onFinish, log) {
+    this.timeout = timeout;
+    this.onFinish = onFinish;
+    this.log = log;
+  }
 
   /**
    * Some of the WalletConnect callback methods raised an error
    *
    * @param error
    */
-  fail(error: Error) {
+  fail(error) {
     const result = {
       alive: false,
       error: error,
@@ -77,7 +36,7 @@ export class HealthChecker {
   /**
    * How long the health check took in seconds
    */
-  getDuration(): number {
+  getDuration() {
     return (Number(new Date()) - Number(this.startedAt)) / 1000;
   }
 
@@ -87,7 +46,7 @@ export class HealthChecker {
    * @param initiator
    * @param opts
    */
-  createConnector(opts: IWalletConnectOptions): IConnector {
+  createConnector(opts) {
     const connector = new WalletConnect(opts);
     return connector;
   }
@@ -98,7 +57,7 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onDisplayURI(err: Error | null, payload: any) {
+  onDisplayURI(err, payload) {
     if (err) {
       this.fail(err);
     }
@@ -118,15 +77,16 @@ export class HealthChecker {
    * Creates another WalletConnect that joins to an existing session
    * @param uri
    */
-  connectToSession(uri: string) {
+  connectToSession(uri) {
+    // eslint-disable-next-line no-console
     console.log("Connecting to session", uri);
 
     // For joining, we give URI instead of a bridge server
     this.joiner = this.createConnector({ uri });
-    this.joiner.on("session_request", (err: Error | null, payload: any) => {
+    this.joiner.on("session_request", (err, payload) => {
       this.onSessionRequest(err, payload);
     });
-    this.joiner.on("ping", (err: Error | null, payload: any) => {
+    this.joiner.on("ping", (err, payload) => {
       this.onPing(err, payload);
     });
     this.joiner.createSession();
@@ -138,7 +98,7 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onSessionRequest(err: Error | null, payload: any) {
+  onSessionRequest(err, payload) {
     if (err) {
       this.fail(err);
     }
@@ -146,7 +106,7 @@ export class HealthChecker {
     this.log("Session requested", payload);
 
     // Use dummy chain parameters, as we are not really connected to any blockchain
-    const approvalParams: ISessionStatus = {
+    const approvalParams = {
       chainId: 0,
       accounts: [],
       networkId: 0,
@@ -161,7 +121,7 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onConnect(err: Error | null, payload: any) {
+  onConnect(err, payload) {
     if (err) {
       this.fail(err);
     }
@@ -175,7 +135,7 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onSessionUpdate(err: Error | null, payload: any) {
+  onSessionUpdate(err, payload) {
     if (err) {
       this.fail(err);
     }
@@ -188,7 +148,7 @@ export class HealthChecker {
    * @param err
    * @param payload
    */
-  onPing(err: Error | null, payload: any) {
+  onPing(err, payload) {
     if (err) {
       this.fail(err);
     }
@@ -216,13 +176,13 @@ export class HealthChecker {
     this.originator = this.createConnector({
       bridge: "https://bridge.walletconnect.org",
     });
-    this.originator.on("display_uri", (err: Error | null, payload: any) => {
+    this.originator.on("display_uri", (err, payload) => {
       this.onDisplayURI(err, payload);
     });
-    this.originator.on("connect", (err: Error | null, payload: any) => {
+    this.originator.on("connect", (err, payload) => {
       this.onConnect(err, payload);
     });
-    this.originator.on("session_update", (err: Error | null, payload: any) => {
+    this.originator.on("session_update", (err, payload) => {
       this.onSessionUpdate(err, payload);
     });
     this.log("Creating session");
@@ -234,13 +194,13 @@ export class HealthChecker {
    *
    * @param timeout Timeout in milliseconds
    */
-  static async run(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
-    const checker: Promise<HealthCheckResult> = new Promise(resolve => {
+  static async run(timeout, log) {
+    const checker = new Promise(resolve => {
       const checker = new HealthChecker(timeout, resolve, log);
       checker.start();
     });
 
-    const timeoutter: Promise<HealthCheckResult> = new Promise(resolve => {
+    const timeoutter = new Promise(resolve => {
       setTimeout(resolve, timeout, {
         alive: false,
         error: new Error(`Timeoutted in ${timeout} ms`),
@@ -254,7 +214,7 @@ export class HealthChecker {
   }
 }
 
-export async function checkHealth(timeout: number, log: LogCallable): Promise<HealthCheckResult> {
+export async function checkHealth(timeout, log) {
   const result = await HealthChecker.run(timeout, log);
   return result;
 }
