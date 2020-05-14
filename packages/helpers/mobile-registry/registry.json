@@ -22,5 +22,13 @@
     "universalLink": "https://safe.gnosis.io/walletconnect",
     "deepLink": "gnosissafe:",
     "chromeIntent": ""
+  },
+  {
+    "name": "Argent",
+    "color": "rgb(255, 135, 91)",
+    "logo" : "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-argent.png",
+    "universalLink": "https://argent.link/app",
+    "deepLink": "argent://app/wc",
+    "chromeIntent": ""
   }
 ]
