@@ -94,10 +94,7 @@ class Connector implements IConnector {
     this.protocol = "wc";
     this.version = 1;
 
-    this._bridge =
-      typeof opts.connectorOpts.bridge !== "undefined"
-        ? opts.connectorOpts.bridge
-        : "https://bridge.walletconnect.org";
+    this._bridge = "";
     this._key = null;
     this._nextKey = null;
 
@@ -120,8 +117,12 @@ class Connector implements IConnector {
         ? opts.connectorOpts.qrcodeModal
         : undefined;
 
-    if (!this.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
+    if (!opts.connectorOpts.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
+    }
+
+    if (opts.connectorOpts.bridge) {
+      this.bridge = opts.connectorOpts.bridge;
     }
 
     if (opts.connectorOpts.uri) {
