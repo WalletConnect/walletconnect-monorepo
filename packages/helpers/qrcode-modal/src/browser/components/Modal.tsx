@@ -7,11 +7,9 @@ import DeepLinkDisplay from "./DeepLinkDisplay";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import QRCodeDisplay from "./QRCodeDisplay";
 
-import {
-  WALLETCONNECT_MODAL_ID,
-  WALLETCONNECT_CLOSE_BUTTON_ID,
-  WALLETCONNECT_LOGO_SVG_URL,
-} from "../constants";
+import { WALLETCONNECT_MODAL_ID, WALLETCONNECT_CLOSE_BUTTON_ID } from "../constants";
+
+import { WALLETCONNECT_LOGO_SVG_URL } from "../assets/logo";
 
 interface ModalProps {
   uri: string;

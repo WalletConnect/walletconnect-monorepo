@@ -4,8 +4,9 @@
   "description": "QR Code Modal for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
+    "build:svg": "node ./scripts/build-svg.js",
     "build:css": "node ./scripts/build-css.js",
-    "build:pre": "run-s clean build:css",
+    "build:pre": "run-s clean build:svg build:css",
     "build:umd": "webpack",
     "build:cjs": "microbundle --no-compress -f cjs --alias react=preact/compat,react-dom/test-utils=preact/test-utils,react-dom=preact/compat --tsconfig ./tsconfig.cjs.json",
     "build": "run-s build:pre build:cjs build:umd",
@@ -55,6 +56,7 @@
     "microbundle": "0.11.0",
     "npm-run-all": "4.1.5",
     "style-loader": "1.2.0",
+    "svg-url-loader": "5.0.0",
     "ts-loader": "6.2.2",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
