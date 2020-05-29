@@ -2,7 +2,7 @@
   {
     "name": "Rainbow",
     "color": "rgb(0, 30, 89)",
-    "logo": "https://raw.githubusercontent.com/christianbaroni/walletconnect-modal/master/resources/css/images/wallet-rainbow.png",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/logos/wallet-rainbow.png",
     "universalLink": "https://rnbw.app",
     "deepLink": "rainbow:",
     "chromeIntent": ""
@@ -10,7 +10,7 @@
   {
     "name": "MetaMask",
     "color": "rgb(255, 255, 255)",
-    "logo": "https://raw.githubusercontent.com/christianbaroni/walletconnect-modal/master/resources/css/images/wallet-metamask.png",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/logos/wallet-metamask.png",
     "universalLink": "https://metamask.app.link",
     "deepLink": "metamask:",
     "chromeIntent": ""
@@ -18,7 +18,7 @@
   {
     "name": "Gnosis Safe",
     "color": "rgb(0, 140, 115)",
-    "logo": "https://raw.githubusercontent.com/christianbaroni/walletconnect-modal/master/resources/css/images/wallet-gnosis.png",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/logos/wallet-gnosis.png",
     "universalLink": "https://safe.gnosis.io/walletconnect",
     "deepLink": "gnosissafe:",
     "chromeIntent": ""
