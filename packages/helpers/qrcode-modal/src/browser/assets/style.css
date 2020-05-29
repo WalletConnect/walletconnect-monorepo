@@ -74,6 +74,7 @@
   box-sizing: border-box;
   width: 25px;
   height: 25px;
+  cursor: pointer;
 }
 
 .walletconnect-modal__close__icon {
@@ -133,55 +134,6 @@
   min-height: 150px;
 }
 
-.walletconnect-connect__button {
-  align-items: flex-start;
-  background-color: rgb(64, 153, 255);
-  background-image: none;
-  border-radius: 8px;
-  border-style: none;
-  border-width: 0px;
-  border-color: rgb(255, 255, 255);
-  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px, rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
-    rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
-  box-sizing: border-box;
-  color: rgb(255, 255, 255);
-  cursor: pointer;
-  font-size: 16px;
-  font-stretch: 100%;
-  font-style: normal;
-  font-weight: 600;
-  width: 250px;
-  height: 44px;
-  letter-spacing: normal;
-  line-height: 16px;
-  margin: 12px 0px;
-  padding: 8px 12px;
-  position: relative;
-  text-align: center;
-  text-indent: 0px;
-  text-shadow: none;
-  text-transform: none;
-  transition-delay: 0s;
-  transition-duration: 0.15s;
-  transition-property: all;
-  transition-timing-function: ease-in-out;
-  width: 250px;
-  will-change: transform;
-}
-
-.walletconnect-connect__button:active {
-  transform: translateY(1px);
-  box-shadow: rgba(50, 50, 93, 0.11) 0px 4px 6px 0px, rgba(0, 0, 0, 0.08) 0px 1px 3px 0px,
-    rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
-}
-
-@media (hover: hover) {
-  .walletconnect-connect__button:hover {
-    transform: translateY(-1px);
-    box-shadow: rgba(50, 50, 93, 0.1) 0px 7px 14px 0px, rgba(0, 0, 0, 0.08) 0px 3px 6px 0px,
-      rgba(0, 0, 0, 0.06) 0px 0px 1px 0px inset;
-  }
-}
 
 @media only screen and (max-width: 768px) {
   .walletconnect-modal__header {
@@ -239,6 +191,8 @@
   overflow: visible;
   transform: translateY(-50%);
   top: 50%;
+  max-width: 500px;
+  margin: auto;
 }
 
 .walletconnect-modal__base .hidden {
@@ -282,34 +236,6 @@
   margin: 0;
 }
 
-.walletconnect-modal__base  .close-button {
-	-webkit-tap-highlight-color: rgba(0,0,0,0);
-  background: url('images/close-button.svg') center no-repeat;
-  cursor: pointer;
-  height: 26px;
-  margin: 0 -15px 0 0;
-  padding: 15px;
-  pointer-events: auto;
-  transition: .12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  width: 26px;
-	will-change: transform;
-}
-
-.walletconnect-modal__base  .close-button:hover {
-	opacity: 0.75;
-}
-
-.walletconnect-modal__base  .close-button:active {
-	opacity: 0.75;
-  transform: scale(0.82);
-}
-
-.walletconnect-modal__base .hidden .close-button {
-	opacity: 0 !important;
-	pointer-events: none !important;
-	transform: scale(0);
-}
-
 .walletconnect-modal__base  h2 {
   color: rgba(60, 66, 82, 0.6);
   font-size: 16px;
@@ -321,7 +247,7 @@
   width: 100%;
 }
 
-.walletconnect-modal__base  .row {
+.walletconnect-modal__base__row {
 	-webkit-tap-highlight-color: rgba(0,0,0,0);
   align-items: center;
   border-radius: 20px;
@@ -338,17 +264,17 @@
   text-decoration: none;
 }
 
-.walletconnect-modal__base  .row:hover {
+.walletconnect-modal__base__row:hover {
   background: rgba(60, 66, 82, 0.06);
 }
 
-.walletconnect-modal__base  .row:active {
+.walletconnect-modal__base__row:active {
   background: rgba(60, 66, 82, 0.06);
   transform: scale(0.975);
   transition: .1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.walletconnect-modal__base  h3 {
+.walletconnect-modal__base__row__h3 {
   color: #25292E;
   font-size: 20px;
   font-weight: 700;
@@ -356,13 +282,13 @@
   padding: 0 42px 3px 0;
 }
 
-.walletconnect-modal__base  .right {
+.walletconnect-modal__base__row__right {
   align-items: center;
   display: flex;
   justify-content: center;
 }
 
-.walletconnect-modal__base  .app-icon {
+.walletconnect-modal__base__row__right__app-icon {
   border-radius: 8px;
   height: 34px;
   margin: 0 11px 2px 0;
@@ -371,7 +297,7 @@
   box-shadow: 0 4px 12px 0 rgba(37, 41, 46, 0.25);
 }
 
-.walletconnect-modal__base  .caret {
+.walletconnect-modal__base__row__right__caret {
   background: url('images/caret.svg') no-repeat;
   height: 18px;
   opacity: 0.3;
@@ -380,7 +306,7 @@
 	will-change: opacity;
 }
 
-.walletconnect-modal__base  .row:hover .caret, .walletconnect-modal__base  .row:active .caret {
+.walletconnect-modal__base__row:hover .caret, .walletconnect-modal__base__row:active .caret {
   opacity: 0.6;
 }
 

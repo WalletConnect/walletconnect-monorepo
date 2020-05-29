@@ -14,19 +14,18 @@ function WalletButton(props:WalletButtonProps) {
   const { color, href, name, logo, onClick } = props;
   return (
     <a
-      className="row"
+      className="walletconnect-modal__base__row"
       href={href}
       onClick={onClick}
       rel="noopener noreferrer"
       target="_blank"
     >
-      <h3>{name}</h3>
-      <div className="right">
-        <div className={`app-icon`}
+      <h3 className={'walletconnect-modal__base__row__h3'}>{name}</h3>
+      <div className="walletconnect-modal__base__row__right">
+        <div className={`walletconnect-modal__base__row__right__app-icon`}
           style={{ background: `url('${logo}') ${color}`, backgroundSize: '100%'}}
         ></div>
-        <img src={CARET_SVG_URL} className="caret" />
-        
+        <img src={CARET_SVG_URL} className="walletconnect-modal__base__row__right__caret" />
       </div>
     </a>
   );
