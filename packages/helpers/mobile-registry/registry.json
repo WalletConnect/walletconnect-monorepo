@@ -1,21 +1,24 @@
 [
   {
     "name": "Rainbow",
-    "color": "#001e58",
-    "universalLink": "https://rainbow.me",
+    "color": "rgb(0, 30, 89)",
+    "logo": "https://raw.githubusercontent.com/christianbaroni/walletconnect-modal/master/resources/css/images/wallet-rainbow.png",
+    "universalLink": "https://rnbw.app",
     "deepLink": "rainbow:",
     "chromeIntent": ""
   },
   {
-    "name": "Metamask",
-    "color": "orange",
+    "name": "MetaMask",
+    "color": "rgb(255, 255, 255)",
+    "logo": "https://raw.githubusercontent.com/christianbaroni/walletconnect-modal/master/resources/css/images/wallet-metamask.png",
     "universalLink": "https://metamask.app.link",
     "deepLink": "metamask:",
     "chromeIntent": ""
   },
   {
     "name": "Gnosis Safe",
-    "color": "#008c73",
+    "color": "rgb(0, 140, 115)",
+    "logo": "https://raw.githubusercontent.com/christianbaroni/walletconnect-modal/master/resources/css/images/wallet-gnosis.png",
     "universalLink": "https://safe.gnosis.io/walletconnect",
     "deepLink": "gnosissafe:",
     "chromeIntent": ""

@@ -11,3 +11,14 @@ buildAsset({
       .replace(`module.exports = "`, "")
       .replace(`"`, ""),
 });
+
+
+buildAsset({
+  assetFile: "caret.svg",
+  targetFile: "caret.ts",
+  targetVar: "CARET_SVG_URL",
+  loader: input =>
+    svgUrlLoader(input)
+      .replace(`module.exports = "`, "")
+      .replace(`"`, ""),
+});

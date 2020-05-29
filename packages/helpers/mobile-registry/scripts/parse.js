@@ -9,6 +9,7 @@ function parseEntry(entry) {
   return {
     name: entry.name || "",
     color: entry.color || "",
+    logo: entry.logo || "",
     universalLink: entry.universalLink || "",
     deepLink: entry.deepLink || "",
     chromeIntent: entry.chromeIntent || "",

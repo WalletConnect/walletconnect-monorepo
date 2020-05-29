@@ -8,6 +8,7 @@ import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
+import WalletButton from './WalletButton';
 
 function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
   const loc = getLocation();
@@ -60,7 +61,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
       <div className="walletconnect-connect__buttons__wrapper">
         {isIOS() ? (
           MobileRegistry.map((entry: IMobileRegistryEntry) => {
-            const { name, color } = entry;
+            const { color, name, logo } = entry;
             const href = formatIOSDeepLink(props.uri, entry);
             const handleClickIOS = React.useCallback((e) => {
               saveDeeplinkInfo({
@@ -68,7 +69,15 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
                 href
               });
             }, []);
-            return <ConnectButton name={name} color={color} href={href} onClick={handleClickIOS}/>;
+            return (
+              <WalletButton
+                color={color}
+                href={href}
+                name={name}
+                logo={logo}
+                onClick={handleClickIOS}
+              />
+            );
           })
         ) : (
           <ConnectButton

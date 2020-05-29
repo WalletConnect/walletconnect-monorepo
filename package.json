@@ -38,6 +38,7 @@
     "check": "run-s clean lint build test move-dist",
     "reset": "run-s clean:all bootstrap check",
     "start": "cd example && npm run start",
+    "quick-start": "run-s build test move-dist start",
     "example": "run-s check start",
     "deploy": "run-s check publish",
     "pre-publish": "run-s new-version reset commit-version",

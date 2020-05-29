@@ -24,6 +24,7 @@ function Modal(props: ModalProps) {
       <div className="walletconnect-modal__base">
         <div className="walletconnect-modal__header">
           <img src={WALLETCONNECT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" />
+          <p>WalletConnect</p>
           <div className="walletconnect-modal__close__wrapper">
             <div
               id={WALLETCONNECT_CLOSE_BUTTON_ID}
@@ -39,11 +40,13 @@ function Modal(props: ModalProps) {
           {displayQRCode ? <QRCodeDisplay uri={props.uri} /> : <DeepLinkDisplay uri={props.uri} />}
         </div>
         {mobile && (
-          <a onClick={() => setDisplayQRCode(!displayQRCode)}>
-            {displayQRCode
-              ? "Display mobile options again!"
-              : "Want to display QR Code instead? Click here"}
-          </a>
+          <div className="walletconnect-modal__footer">
+            <a onClick={() => setDisplayQRCode(!displayQRCode)}>
+              {displayQRCode
+                ? "Return to mobile wallet options"
+                : "View QR code instead"}
+            </a>
+          </div>
         )}
       </div>
     </div>
