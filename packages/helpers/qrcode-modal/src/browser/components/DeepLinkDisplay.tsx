@@ -2,12 +2,13 @@
 import * as React from "react";
 import MobileRegistry from "@walletconnect/mobile-registry";
 import { IMobileRegistryEntry } from "@walletconnect/types";
-import { isIOS, getLocation, appendToQueryString } from "@walletconnect/utils";
+import { isIOS, getLocation, appendToQueryString, deeplinkChoiceKey, setLocal } from "@walletconnect/utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
+import WalletButton from './WalletButton';
 
 function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
   const loc = getLocation();
@@ -26,11 +27,32 @@ function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
     : "";
 }
 
+function saveDeeplinkInfo(data: IDeeplinkInfo) {
+  const focusUri = data.href.split('?')[0];
+
+  setLocal(deeplinkChoiceKey, {
+    ...data,
+    href: focusUri
+  });
+}
+
+interface IDeeplinkInfo {
+  name: string;
+  href: string;
+}
 interface DeepLinkDisplayProps {
   uri: string;
 }
 
 function DeepLinkDisplay(props: DeepLinkDisplayProps) {
+
+  const handleClickAndroid = React.useCallback((e) => {
+    saveDeeplinkInfo({
+      name: 'Unknown',
+      href: props.uri
+    });
+  }, []);
+
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
@@ -39,15 +61,30 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
       <div className="walletconnect-connect__buttons__wrapper">
         {isIOS() ? (
           MobileRegistry.map((entry: IMobileRegistryEntry) => {
-            const { name, color } = entry;
+            const { color, name, logo } = entry;
             const href = formatIOSDeepLink(props.uri, entry);
-            return <ConnectButton name={name} color={color} href={href} />;
+            const handleClickIOS = React.useCallback((e) => {
+              saveDeeplinkInfo({
+                name,
+                href
+              });
+            }, []);
+            return (
+              <WalletButton
+                color={color}
+                href={href}
+                name={name}
+                logo={logo}
+                onClick={handleClickIOS}
+              />
+            );
           })
         ) : (
           <ConnectButton
             name={"Connect to Mobile Wallet"}
             color={DEFAULT_BUTTON_COLOR}
             href={props.uri}
+            onClick={handleClickAndroid}
           />
         )}
       </div>

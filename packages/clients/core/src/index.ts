@@ -38,6 +38,10 @@ import {
   isJsonRpcResponseSuccess,
   isJsonRpcResponseError,
   isSilentPayload,
+  getLocal,
+  signingMethods,
+  deeplinkChoiceKey,
+  isMobile,
 } from "@walletconnect/utils";
 import SocketTransport from "@walletconnect/socket-transport";
 import {
@@ -816,6 +820,12 @@ class Connector implements IConnector {
 
   protected _sendCallRequest(request: IJsonRpcRequest, options?: IRequestOptions): Promise<any> {
     this._sendRequest(request, options);
+    if (isMobile() && signingMethods.includes(request.method)) {
+      const deeplinkUrl = getLocal(deeplinkChoiceKey);
+      if (deeplinkUrl) {
+        window.location.href = deeplinkUrl.href;
+      }
+    }
     return this._subscribeToCallResponse(request.id);
   }
 

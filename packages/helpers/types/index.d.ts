@@ -358,6 +358,7 @@ declare module "@walletconnect/types" {
   export interface IMobileRegistryEntry {
     name: string;
     color: string;
+    logo: string;
     universalLink: string;
     deepLink: string;
     chromeIntent: string;
