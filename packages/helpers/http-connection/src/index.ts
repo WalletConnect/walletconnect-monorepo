@@ -10,29 +10,14 @@ const XHR =
     ? _window.XMLHttpRequest
     : XMLHttpRequest;
 
-// -- types --------------------------------------------------------------- //
-interface IXHRPost {
-  method: string;
-  headers: {
-    [key: string]: string;
-  };
-  body: any;
-}
-
 // -- HttpConnection ------------------------------------------------------ //
 
 class HTTPConnection extends EventEmitter {
   public url: string;
-  public post: IXHRPost;
 
   constructor(url: string) {
     super();
     this.url = url;
-    this.post = {
-      body: null,
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    };
   }
 
   formatError(payload: any, message: string, code = -1) {
@@ -72,13 +57,8 @@ class HTTPConnection extends EventEmitter {
         }
       };
 
-      try {
-        this.post.body = JSON.stringify(payload);
-      } catch (e) {
-        return res(e);
-      }
-
       xhr.open("POST", this.url, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
       xhr.timeout = 60 * 1000;
       xhr.onerror = res as any;
       xhr.ontimeout = res as any;
