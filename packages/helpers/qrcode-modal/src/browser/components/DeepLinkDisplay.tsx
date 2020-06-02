@@ -2,9 +2,9 @@
 import * as React from "react";
 import MobileRegistry from "@walletconnect/mobile-registry";
 import { IMobileRegistryEntry } from "@walletconnect/types";
-import { isIOS, getLocation, appendToQueryString, deeplinkChoiceKey, setLocal } from "@walletconnect/utils";
+import { getLocation, appendToQueryString, deeplinkChoiceKey, setLocal } from "@walletconnect/utils";
 
-import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
+import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
@@ -59,7 +59,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
         {"Choose your preferred wallet"}
       </p>
       <div className="walletconnect-connect__buttons__wrapper">
-        {isIOS() ? (
+        {(
           MobileRegistry.map((entry: IMobileRegistryEntry) => {
             const { color, name, logo } = entry;
             const href = formatIOSDeepLink(props.uri, entry);
@@ -79,13 +79,6 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
               />
             );
           })
-        ) : (
-          <ConnectButton
-            name={"Connect to Mobile Wallet"}
-            color={DEFAULT_BUTTON_COLOR}
-            href={props.uri}
-            onClick={handleClickAndroid}
-          />
         )}
       </div>
     </div>
