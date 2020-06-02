@@ -7,8 +7,10 @@ class NodeWalletConnect extends Connector {
   constructor(connectorOpts: IWalletConnectOptions, nodeJsOptions: INodeJSOptions) {
     super({
       cryptoLib,
-      connectorOpts,
-      clientMeta: connectorOpts.clientMeta || nodeJsOptions.clientMeta,
+      connectorOpts: {
+        ...connectorOpts,
+        clientMeta: nodeJsOptions.clientMeta || connectorOpts.clientMeta,
+      },
     });
     logDeprecationWarning();
   }

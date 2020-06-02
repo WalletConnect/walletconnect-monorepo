@@ -239,8 +239,8 @@ declare module "@walletconnect/types" {
     bridge?: string;
     uri?: string;
     session?: IWalletConnectSession;
-    clientMeta?: IClientMeta;
     storage?: ISessionStorage;
+    clientMeta?: IClientMeta;
     netMonitor?: INetworkMonitor;
     qrcodeModal?: IQRCodeModal;
   }
@@ -250,7 +250,6 @@ declare module "@walletconnect/types" {
     connectorOpts: IWalletConnectOptions;
     transport?: ITransportLib;
     sessionStorage?: ISessionStorage;
-    clientMeta?: IClientMeta;
     pushServerOpts?: IPushServerOptions;
   }
 

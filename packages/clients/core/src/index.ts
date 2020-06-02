@@ -67,26 +67,41 @@ import SessionStorage from "./storage";
 class Connector implements IConnector {
   private cryptoLib: ICryptoLib;
 
-  private protocol: string;
-  private version: number;
+  private readonly protocol = "wc";
+  private readonly version = 1;
 
-  private _bridge: string;
-  private _key: ArrayBuffer | null;
-  private _nextKey: ArrayBuffer | null;
+  // -- state ----------------------------------------------------- //
 
-  private _clientId: string;
-  private _clientMeta: IClientMeta | null;
-  private _peerId: string;
-  private _peerMeta: IClientMeta | null;
-  private _handshakeId: number;
-  private _handshakeTopic: string;
-  private _accounts: string[];
-  private _chainId: number;
-  private _networkId: number;
-  private _rpcUrl: string;
+  private _bridge = "";
+  private _key: ArrayBuffer | null = null;
+  private _nextKey: ArrayBuffer | null = null;
+
+  // -- client ----------------------------------------------------- //
+
+  private _clientId = "";
+  private _clientMeta: IClientMeta | null = null;
+
+  // -- peer ----------------------------------------------------- //
+  private _peerId = "";
+  private _peerMeta: IClientMeta | null = null;
+
+  // -- handshake ----------------------------------------------------- //
+
+  private _handshakeId = 0;
+  private _handshakeTopic = "";
+
+  // -- session ----------------------------------------------------- //
+
+  private _connected = false;
+  private _accounts: string[] = [];
+  private _chainId = 0;
+  private _networkId = 0;
+  private _rpcUrl = "";
+
+  // -- controllers ----------------------------------------------------- //
+
   private _transport: ITransportLib;
-  private _eventManager: EventManager;
-  private _connected: boolean;
+  private _eventManager: EventManager = new EventManager();
   private _sessionStorage: ISessionStorage | undefined;
   private _qrcodeModal: IQRCodeModal | undefined;
 
@@ -95,31 +110,9 @@ class Connector implements IConnector {
   constructor(opts: IConnectorOpts) {
     this.cryptoLib = opts.cryptoLib;
 
-    this.protocol = "wc";
-    this.version = 1;
-
-    this._bridge = "";
-    this._key = null;
-    this._nextKey = null;
-
-    this._clientId = "";
-    this._clientMeta = getMeta() || opts.clientMeta || null;
-    this._peerId = "";
-    this._peerMeta = null;
-    this._handshakeId = 0;
-    this._handshakeTopic = "";
-    this._accounts = [];
-    this._chainId = 0;
-    this._networkId = 0;
-    this._rpcUrl = "";
-    this._eventManager = new EventManager();
-    this._connected = false;
-    this._sessionStorage =
-      typeof opts.sessionStorage !== "undefined" ? opts.sessionStorage : new SessionStorage();
-    this._qrcodeModal =
-      typeof opts.connectorOpts.qrcodeModal !== "undefined"
-        ? opts.connectorOpts.qrcodeModal
-        : undefined;
+    this._clientMeta = getMeta() || opts.connectorOpts.clientMeta || null;
+    this._sessionStorage = opts.sessionStorage || new SessionStorage();
+    this._qrcodeModal = opts.connectorOpts.qrcodeModal;
 
     if (!opts.connectorOpts.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
@@ -159,7 +152,8 @@ class Connector implements IConnector {
     }
 
     this._subscribeToInternalEvents();
-    this._transport.open();
+    this._initTransport();
+
     if (opts.pushServerOpts) {
       this._registerPushServer(opts.pushServerOpts);
     }
@@ -1019,18 +1013,6 @@ class Connector implements IConnector {
   }
 
   private _subscribeToInternalEvents() {
-    this._transport.on("message", (socketMessage: ISocketMessage) =>
-      this._handleIncomingMessages(socketMessage),
-    );
-
-    this._transport.on("open", () =>
-      this._eventManager.trigger({ event: "transport_open", params: [] }),
-    );
-
-    this._transport.on("close", () =>
-      this._eventManager.trigger({ event: "transport_close", params: [] }),
-    );
-
     this.on("display_uri", () => {
       if (this._qrcodeModal) {
         this._qrcodeModal.open(this.uri, () => {
@@ -1077,6 +1059,22 @@ class Connector implements IConnector {
       }
       this._handleSessionResponse("Session disconnected", payload.params[0]);
     });
+  }
+
+  private _initTransport() {
+    this._transport.on("message", (socketMessage: ISocketMessage) =>
+      this._handleIncomingMessages(socketMessage),
+    );
+
+    this._transport.on("open", () =>
+      this._eventManager.trigger({ event: "transport_open", params: [] }),
+    );
+
+    this._transport.on("close", () =>
+      this._eventManager.trigger({ event: "transport_close", params: [] }),
+    );
+
+    this._transport.open();
   }
 
   // -- uri ------------------------------------------------------------- //

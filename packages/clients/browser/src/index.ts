@@ -8,7 +8,6 @@ class WalletConnect extends Connector {
     super({
       cryptoLib,
       connectorOpts,
-      clientMeta: connectorOpts.clientMeta,
     });
     logDeprecationWarning();
   }

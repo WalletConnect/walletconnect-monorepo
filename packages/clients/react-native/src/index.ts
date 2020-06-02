@@ -7,8 +7,10 @@ class RNWalletConnect extends Connector {
   constructor(connectorOpts: IWalletConnectOptions, walletOptions: INativeWalletOptions) {
     super({
       cryptoLib,
-      connectorOpts,
-      clientMeta: connectorOpts.clientMeta || walletOptions.clientMeta,
+      connectorOpts: {
+        ...connectorOpts,
+        clientMeta: walletOptions.clientMeta || connectorOpts.clientMeta,
+      },
       pushServerOpts: walletOptions.push || undefined,
     });
     logDeprecationWarning();
