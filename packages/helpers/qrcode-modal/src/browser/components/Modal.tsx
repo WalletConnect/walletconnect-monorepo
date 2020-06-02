@@ -42,9 +42,7 @@ function Modal(props: ModalProps) {
         {mobile && (
           <div className="walletconnect-modal__footer">
             <a onClick={() => setDisplayQRCode(!displayQRCode)}>
-              {displayQRCode
-                ? "Return to mobile wallet options"
-                : "View QR code instead"}
+              {displayQRCode ? "Return to mobile wallet options" : "View QR code instead"}
             </a>
           </div>
         )}
