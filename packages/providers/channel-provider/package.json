@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/channel-provider",
-  "version": "1.0.0-beta.98",
+  "version": "1.0.0-beta.99",
   "description": "Channel Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -56,8 +56,8 @@
   },
   "dependencies": {
     "@connext/channel-provider": "6.3.7",
-    "@walletconnect/rpc-connection": "^1.0.0-beta.98",
-    "@walletconnect/types": "^1.0.0-beta.98",
+    "@walletconnect/rpc-connection": "^1.0.0-beta.99",
+    "@walletconnect/types": "^1.0.0-beta.99",
     "ethers": "4.0.47"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
