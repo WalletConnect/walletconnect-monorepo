@@ -74,7 +74,6 @@ class Connector implements IConnector {
 
   private _bridge = "";
   private _key: ArrayBuffer | null = null;
-  private _nextKey: ArrayBuffer | null = null;
 
   // -- client ----------------------------------------------------- //
 
@@ -184,22 +183,6 @@ class Connector implements IConnector {
     if (this._key) {
       const key: string = convertArrayBufferToHex(this._key, true);
       return key;
-    }
-    return "";
-  }
-
-  set nextKey(value: string) {
-    if (!value) {
-      return;
-    }
-    const nextKey: ArrayBuffer = convertHexToArrayBuffer(value);
-    this._nextKey = nextKey;
-  }
-
-  get nextKey(): string {
-    if (this._nextKey) {
-      const nextKey: string = convertArrayBufferToHex(this._nextKey);
-      return nextKey;
     }
     return "";
   }

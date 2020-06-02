@@ -2,7 +2,6 @@ declare module "@walletconnect/types" {
   export interface IConnector {
     bridge: string;
     key: string;
-    nextKey: string;
     clientId: string;
     peerId: string;
     readonly clientMeta: IClientMeta | null;
