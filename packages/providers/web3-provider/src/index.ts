@@ -164,7 +164,11 @@ class WalletConnectProvider extends ProviderEngine {
     });
   }
 
-  async send(payload: any, callback: any): Promise<any> {
+  async request(payload: any): Promise<any> {
+    return this.send(payload);
+  }
+
+  async send(payload: any, callback?: any): Promise<any> {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === "string") {
       return new Promise((resolve, reject) => {
@@ -204,12 +208,17 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
+  async disconnect() {
+    this.close();
+  }
+
   async close() {
     const wc = await this.getWalletConnector({ disableSessionCreation: true });
     await wc.killSession();
     // tslint:disable-next-line:await-promise
     await this.stop();
     this.emit("close", 1000, "Connection closed");
+    this.emit("disconnect", 1000, "Connection disconnected");
   }
 
   async handleRequest(payload: any) {
