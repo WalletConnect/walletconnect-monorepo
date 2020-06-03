@@ -330,7 +330,7 @@ class WalletConnectProvider extends ProviderEngine {
 
   async subscribeWalletConnector() {
     const wc = await this.getWalletConnector();
-    wc.on("disconnetect", error => {
+    wc.on("disconnect", error => {
       if (error) {
         this.emit("error", error);
         return;
