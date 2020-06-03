@@ -19,8 +19,7 @@ async function onInit() {
 
   const accounts = await provider.enable();
 
-  updateView({ accounts, chainId: provider.chainId });
-  updateAction("Sign Message", signPersonalMessage);
+  onConnect({ accounts, chainId: provider.chainId });
 }
 
 function onSubscribe() {

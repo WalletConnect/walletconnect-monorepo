@@ -65,12 +65,10 @@ import SessionStorage from "./storage";
 // -- Connector ------------------------------------------------------------ //
 
 class Connector implements IConnector {
-  private cryptoLib: ICryptoLib;
+  public readonly protocol = "wc";
+  public readonly version = 1;
 
-  private readonly protocol = "wc";
-  private readonly version = 1;
-
-  // -- state ----------------------------------------------------- //
+  // -- connection ----------------------------------------------------- //
 
   private _bridge = "";
   private _key: ArrayBuffer | null = null;
@@ -81,6 +79,7 @@ class Connector implements IConnector {
   private _clientMeta: IClientMeta | null = null;
 
   // -- peer ----------------------------------------------------- //
+
   private _peerId = "";
   private _peerMeta: IClientMeta | null = null;
 
@@ -99,6 +98,7 @@ class Connector implements IConnector {
 
   // -- controllers ----------------------------------------------------- //
 
+  private _cryptoLib: ICryptoLib;
   private _transport: ITransportLib;
   private _eventManager: EventManager = new EventManager();
   private _sessionStorage: ISessionStorage | undefined;
@@ -107,7 +107,7 @@ class Connector implements IConnector {
   // -- constructor ----------------------------------------------------- //
 
   constructor(opts: IConnectorOpts) {
-    this.cryptoLib = opts.cryptoLib;
+    this._cryptoLib = opts.cryptoLib;
 
     this._clientMeta = getMeta() || opts.connectorOpts.clientMeta || null;
     this._sessionStorage = opts.sessionStorage || new SessionStorage();
@@ -125,11 +125,7 @@ class Connector implements IConnector {
       this.uri = opts.connectorOpts.uri;
     }
 
-    let session = opts.connectorOpts.session || null;
-
-    if (!session) {
-      session = this._getStorageSession();
-    }
+    const session = opts.connectorOpts.session || this._getStorageSession();
 
     if (session) {
       this.session = session;
@@ -138,6 +134,7 @@ class Connector implements IConnector {
     if (this.handshakeId) {
       this._subscribeToSessionResponse(this.handshakeId, "Session request rejected");
     }
+
     this._transport =
       opts.transport ||
       new SocketTransport({
@@ -1100,8 +1097,8 @@ class Connector implements IConnector {
   // -- crypto ---------------------------------------------------------- //
 
   private async _generateKey(): Promise<ArrayBuffer | null> {
-    if (this.cryptoLib) {
-      const result = await this.cryptoLib.generateKey();
+    if (this._cryptoLib) {
+      const result = await this._cryptoLib.generateKey();
       return result;
     }
     return null;
@@ -1111,8 +1108,8 @@ class Connector implements IConnector {
     data: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError,
   ): Promise<IEncryptionPayload | null> {
     const key: ArrayBuffer | null = this._key;
-    if (this.cryptoLib && key) {
-      const result: IEncryptionPayload = await this.cryptoLib.encrypt(data, key);
+    if (this._cryptoLib && key) {
+      const result: IEncryptionPayload = await this._cryptoLib.encrypt(data, key);
       return result;
     }
     return null;
@@ -1122,12 +1119,12 @@ class Connector implements IConnector {
     payload: IEncryptionPayload,
   ): Promise<IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null> {
     const key: ArrayBuffer | null = this._key;
-    if (this.cryptoLib && key) {
+    if (this._cryptoLib && key) {
       const result:
         | IJsonRpcRequest
         | IJsonRpcResponseSuccess
         | IJsonRpcResponseError
-        | null = await this.cryptoLib.decrypt(payload, key);
+        | null = await this._cryptoLib.decrypt(payload, key);
       return result;
     }
     return null;

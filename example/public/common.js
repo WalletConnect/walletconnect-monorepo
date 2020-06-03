@@ -75,6 +75,11 @@ function updateAction(title, action) {
   buttonEl.onclick = action;
 }
 
+function onConnect({ accounts, chainId }) {
+  updateView({ accounts, chainId });
+  updateAction("Sign Message", signPersonalMessage);
+}
+
 function onDisconnect() {
   const containerEl = document.getElementById("page-actions");
   const pTags = containerEl.getElementsByTagName("p");

@@ -23,7 +23,7 @@ function onInit() {
     connector.createSession();
   } else {
     const { accounts, chainId } = connector;
-    updateView({ accounts, chainId });
+    onConnect({ accounts, chainId });
   }
 
   onSubscribe();
@@ -42,8 +42,7 @@ function onSubscribe() {
     // Get provided accounts and chainId
     const { accounts, chainId } = payload.params[0];
 
-    updateView({ accounts, chainId });
-    updateAction("Sign Message", signPersonalMessage);
+    onConnect({ accounts, chainId });
   });
 
   connector.on("session_update", (error, payload) => {
