@@ -45,6 +45,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   top: 0;
   user-select: none;
   width: 100%;
+  z-index: 99999999999999;
 }
 
 .walletconnect-modal__headerLogo {
