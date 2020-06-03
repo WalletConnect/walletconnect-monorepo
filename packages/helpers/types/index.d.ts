@@ -240,7 +240,6 @@ declare module "@walletconnect/types" {
     session?: IWalletConnectSession;
     storage?: ISessionStorage;
     clientMeta?: IClientMeta;
-    netMonitor?: INetworkMonitor;
     qrcodeModal?: IQRCodeModal;
   }
 

@@ -2,34 +2,21 @@
 import * as React from "react";
 import MobileRegistry from "@walletconnect/mobile-registry";
 import { IMobileRegistryEntry } from "@walletconnect/types";
-import {
-  isIOS,
-  getLocation,
-  appendToQueryString,
-  deeplinkChoiceKey,
-  setLocal,
-} from "@walletconnect/utils";
+import { isIOS, deeplinkChoiceKey, setLocal } from "@walletconnect/utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalletButton from "./WalletButton";
 
 function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
-  const loc = getLocation();
   const encodedUri: string = encodeURIComponent(uri);
-  const redirectUrlQueryString = appendToQueryString(loc.search, {
-    walletconnect: true,
-  });
-  const redirectUrl: string = encodeURIComponent(
-    `${loc.origin}${loc.pathname}${redirectUrlQueryString}`,
-  );
-
   return entry.universalLink
-    ? `${entry.universalLink}/wc?uri=${encodedUri}&redirectUrl=${redirectUrl}`
+    ? `${entry.universalLink}/wc?uri=${encodedUri}`
     : entry.deepLink
-    ? `{wallet.deepLink}${uri}`
+    ? `${entry.deepLink}${uri}`
     : "";
 }
 

@@ -52,7 +52,7 @@ class HealthChecker {
   }
 
   /**
-   * The originator has created a new session
+   * The initiator has created a new session
    *
    * @param err
    * @param payload
@@ -82,14 +82,14 @@ class HealthChecker {
     console.log("Connecting to session", uri);
 
     // For joining, we give URI instead of a bridge server
-    this.joiner = this.createConnector({ uri });
-    this.joiner.on("session_request", (err, payload) => {
+    this.responder = this.createConnector({ uri });
+    this.responder.on("session_request", (err, payload) => {
       this.onSessionRequest(err, payload);
     });
-    this.joiner.on("ping", (err, payload) => {
+    this.responder.on("ping", (err, payload) => {
       this.onPing(err, payload);
     });
-    this.joiner.createSession();
+    this.responder.createSession();
   }
 
   /**
@@ -112,7 +112,7 @@ class HealthChecker {
       networkId: 0,
     };
 
-    this.joiner.approveSession(approvalParams);
+    this.responder.approveSession(approvalParams);
   }
 
   /**
@@ -162,10 +162,10 @@ class HealthChecker {
   }
 
   /**
-   * Send a custom message from originator to joiner.
+   * Send a custom message from initiator to responder.
    */
   sendPing() {
-    this.originator.sendCustomRequest({ method: "ping" });
+    this.initiator.sendCustomRequest({ method: "ping" });
   }
 
   /**
@@ -173,20 +173,20 @@ class HealthChecker {
    */
   async start() {
     this.startedAt = new Date();
-    this.originator = this.createConnector({
+    this.initiator = this.createConnector({
       bridge: "https://bridge.walletconnect.org",
     });
-    this.originator.on("display_uri", (err, payload) => {
+    this.initiator.on("display_uri", (err, payload) => {
       this.onDisplayURI(err, payload);
     });
-    this.originator.on("connect", (err, payload) => {
+    this.initiator.on("connect", (err, payload) => {
       this.onConnect(err, payload);
     });
-    this.originator.on("session_update", (err, payload) => {
+    this.initiator.on("session_update", (err, payload) => {
       this.onSessionUpdate(err, payload);
     });
     this.log("Creating session");
-    this.originator.createSession();
+    this.initiator.createSession();
   }
 
   /**

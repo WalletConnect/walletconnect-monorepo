@@ -140,15 +140,14 @@ class Connector implements IConnector {
       new SocketTransport({
         url: this.bridge,
         subscriptions: [this.clientId],
-        netMonitor: opts.connectorOpts.netMonitor,
       });
-
-    if (opts.connectorOpts.uri) {
-      this._subscribeToSessionRequest();
-    }
 
     this._subscribeToInternalEvents();
     this._initTransport();
+
+    if (this.uri) {
+      this._subscribeToSessionRequest();
+    }
 
     if (opts.pushServerOpts) {
       this._registerPushServer(opts.pushServerOpts);
@@ -946,9 +945,7 @@ class Connector implements IConnector {
   }
 
   private _subscribeToSessionRequest() {
-    if (this._transport.subscribe) {
-      this._transport.subscribe(this.handshakeTopic);
-    }
+    this._transport.subscribe(this.handshakeTopic);
   }
 
   private _subscribeToResponse(
