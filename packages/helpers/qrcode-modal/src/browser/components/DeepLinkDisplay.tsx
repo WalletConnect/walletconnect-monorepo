@@ -16,7 +16,7 @@ function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
   return entry.universalLink
     ? `${entry.universalLink}/wc?uri=${encodedUri}`
     : entry.deepLink
-    ? `${entry.deepLink}${uri}`
+    ? `${entry.deepLink}${entry.deepLink.endsWith(":") ? "//" : "/"}wc?uri=${encodedUri}`
     : "";
 }
 
