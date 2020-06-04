@@ -61,7 +61,7 @@ class WalletConnectProvider extends ProviderEngine {
         eth_mining: false,
         eth_syncing: true,
         net_listening: true,
-        web3_clientVersion: `WalletConnect/v1.0.0-beta/javascript`,
+        web3_clientVersion: `WalletConnect/v1.x.x/javascript`,
       }),
     );
     this.addProvider(new CacheSubprovider());
