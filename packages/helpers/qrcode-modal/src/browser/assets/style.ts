@@ -100,7 +100,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   transform: rotate(90deg);
 }
 
-.walletconnect-qrcode__base {
+.walletconnect-modalback {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   background: rgba(37, 41, 46, 0.95);
   height: 100%;
