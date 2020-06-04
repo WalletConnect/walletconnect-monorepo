@@ -25,11 +25,10 @@ function Modal(props: ModalProps) {
         <div className="walletconnect-modal__header">
           <img src={WALLETCONNECT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" />
           <p>WalletConnect</p>
-          <div className="walletconnect-modal__close__wrapper">
+          <div className="walletconnect-modal__close__wrapper" onClick={props.onClose}>
             <div
               id={WALLETCONNECT_CLOSE_BUTTON_ID}
               className="walletconnect-modal__close__icon"
-              onClick={props.onClose}
             >
               <div className="walletconnect-modal__close__line1"></div>
               <div className="walletconnect-modal__close__line2"></div>
