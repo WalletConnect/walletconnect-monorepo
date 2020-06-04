@@ -16,7 +16,7 @@
     "dapp"
   ],
   "author": "WalletConnect <walletconnect.org>",
-  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/tree/v1.0.0-beta",
+  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
   "main": "",
   "types": "index",
