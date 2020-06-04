@@ -20,7 +20,8 @@ function Modal(props: ModalProps) {
   const mobile = isMobile();
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   return (
-    <div id={WALLETCONNECT_MODAL_ID} className="walletconnect-qrcode__base animated fadeIn">
+    <div id={WALLETCONNECT_MODAL_ID} className="animated fadeIn">
+      <div className="walletconnect-modalback"></div>
       <div className="walletconnect-modal__base">
         <div className="walletconnect-modal__header">
           <img src={WALLETCONNECT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" />

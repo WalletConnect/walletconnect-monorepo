@@ -111,7 +111,6 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
   width: 100%;
   will-change: opacity;
-  padding: 40px;
   box-sizing: border-box;
 }
 
@@ -180,18 +179,15 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   font-family: ui-rounded, "SF Pro Rounded", "SF Pro Text", medium-content-sans-serif-font,
     -apple-system, BlinkMacSystemFont, ui-sans-serif, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
     "Open Sans", "Helvetica Neue", sans-serif;
-  margin-top: 41px;
   padding: 24px 24px 22px;
   pointer-events: auto;
   position: relative;
   text-align: center;
   transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-  will-change: transform;
   overflow: visible;
-  transform: translateY(-50%);
-  top: 50%;
   max-width: 500px;
-  margin: auto;
+  margin-left: 40px;
+  margin-right: 40px;
 }
 
 .walletconnect-modal__base .hidden {
@@ -208,31 +204,6 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   position: absolute;
   top: -45px;
   width: 100%;
-}
-
-.walletconnect-modal__base .wc-logo {
-  align-items: center;
-  display: flex;
-  height: 26px;
-  margin-top: 15px;
-  padding-bottom: 15px;
-  pointer-events: auto;
-}
-
-.walletconnect-modal__base .wc-logo div {
-  -webkit-mask: url("images/wc-logo.svg") center no-repeat;
-  background-color: #3399ff;
-  height: 21px;
-  margin-right: 5px;
-  mask-image: url("images/wc-logo.svg") center no-repeat;
-  width: 32px;
-}
-
-.walletconnect-modal__base .wc-logo p {
-  color: #ffffff;
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
 }
 
 .walletconnect-modal__base h2 {
@@ -297,7 +268,6 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 }
 
 .walletconnect-modal__base__row__right__caret {
-  background: url("images/caret.svg") no-repeat;
   height: 18px;
   opacity: 0.3;
   transition: 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
