@@ -253,6 +253,7 @@ class WalletConnectProvider extends ProviderEngine {
         case "personal_sign":
         case "personal_sendTransaction":
           response = await this.handleWriteRequests(payload);
+          break;
         default:
           response = await this.handleOtherRequests(payload);
       }
