@@ -249,7 +249,12 @@ class WalletConnectProvider extends ProviderEngine {
           break;
         case "eth_sendRawTransaction":
         case "eth_sendTransaction":
+        case "eth_signTransaction":
         case "eth_sign":
+        case "eth_signTypedData":
+        case "eth_signTypedData_v1":
+        case "eth_signTypedData_v3":
+        case "eth_signTypedData_v4":
         case "personal_sign":
         case "personal_sendTransaction":
           response = await this.handleWriteRequests(payload);
@@ -292,18 +297,16 @@ class WalletConnectProvider extends ProviderEngine {
     }
     return this.http.send(payload) as Promise<IJsonRpcResponseSuccess>;
   }
-  
+
   async handleWriteRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
-    return new Promise(resolve => {
-      this.sendAsync(payload,
-          (error: any, response: any) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(response);
-            }
-          },
-        );
+    return new Promise((resolve, reject) => {
+      this.sendAsync(payload, (error: any, response: any) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(response);
+        }
+      });
     });
   }
 
