@@ -283,7 +283,7 @@ class WalletConnectProvider extends ProviderEngine {
       this.emit("error", error);
       throw error;
     }
-    return this.http.send(payload);
+    return this.http.send(payload) as Promise<IJsonRpcResponseSuccess>;
   }
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
