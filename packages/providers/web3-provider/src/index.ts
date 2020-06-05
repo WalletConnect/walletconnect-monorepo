@@ -247,6 +247,12 @@ class WalletConnectProvider extends ProviderEngine {
           this.sendAsync(payload, (_: any) => _);
           result = true;
           break;
+        case "eth_sendRawTransaction":
+        case "eth_sendTransaction":
+        case "eth_sign":
+        case "personal_sign":
+        case "personal_sendTransaction":
+          response = await this.handleWriteRequests(payload);
         default:
           response = await this.handleOtherRequests(payload);
       }
@@ -290,6 +296,20 @@ class WalletConnectProvider extends ProviderEngine {
           resolve(response);
         }
       });
+    });
+  }
+  
+  async handleWriteRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
+    return new Promise(resolve => {
+      this.sendAsync(payload,
+          (error: any, response: any) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(response);
+            }
+          },
+        );
     });
   }
 
