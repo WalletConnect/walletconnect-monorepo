@@ -28,13 +28,14 @@ class HTTPConnection extends EventEmitter {
     };
   }
 
-  public send(payload: any, internal?: any) {
+  public send(payload: any, internal?: any): Promise<any> {
     return new Promise(resolve => {
       if (payload.method === "eth_subscribe") {
         const error = this.formatError(
           payload,
           "Subscriptions are not supported by this HTTP endpoint",
         );
+        this.emit("error", error);
         return resolve(error);
       }
       const xhr = new XHR();
@@ -52,6 +53,7 @@ class HTTPConnection extends EventEmitter {
             const response = err
               ? { id, jsonrpc, error: { message: err.message, code: err.code } }
               : { id, jsonrpc, result };
+            this.emit("payload", response);
             resolve(response);
           }
         }

@@ -3,7 +3,7 @@ import RNWalletConnect from "../src";
 const TEST_BRIDGE_URL = "https://bridge.walletconnect.org";
 
 const TEST_SESSION_PARAMS = {
-  accounts: ["0x1d85568eeabad713fbb5293b45ea066e552a90de"],
+  accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"],
   chainId: 1,
 };
 

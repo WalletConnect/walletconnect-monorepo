@@ -7,6 +7,7 @@ import {
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IWalletConnectProviderOptions,
+  IJsonRpcResponseError,
 } from "@walletconnect/types";
 
 const ProviderEngine = require("web3-provider-engine");
@@ -284,10 +285,15 @@ class WalletConnectProvider extends ProviderEngine {
       throw error;
     }
     this.http.send(payload);
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       this.on("payload", (response: IJsonRpcResponseSuccess) => {
         if (response.id === payload.id) {
           resolve(response);
+        }
+      });
+      this.on("error", (response: IJsonRpcResponseError) => {
+        if (response.id === payload.id) {
+          reject(response.error.message);
         }
       });
     });
