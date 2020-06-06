@@ -37,7 +37,7 @@ describe("WalletConnectWeb3Provider", () => {
 
           const client = new WalletConnect({ uri });
 
-          client.on("session_request", (error, payload) => {
+          client.on("session_request", error => {
             if (error) {
               reject(error);
             }

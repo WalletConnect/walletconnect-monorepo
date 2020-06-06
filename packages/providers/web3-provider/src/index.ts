@@ -195,8 +195,17 @@ class WalletConnectProvider extends ProviderEngine {
       this.sendAsync(payload, callback);
       return;
     }
+
     const res = await this.handleRequest(payload);
-    return res;
+    if (res.result) {
+      return res.result;
+    } else {
+      if (res.error && res.error.message) {
+        throw new Error(res.error.message);
+      } else {
+        throw new Error("Failed JSON-RPC request");
+      }
+    }
   }
 
   onConnect(callback: any) {
