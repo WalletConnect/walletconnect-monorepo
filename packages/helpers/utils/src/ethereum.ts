@@ -1,13 +1,24 @@
-import { getAddress } from "@ethersproject/address";
+import { keccak_256 } from "js-sha3";
 
 import { ITxData } from "@walletconnect/types";
-import { convertUtf8ToHex, convertNumberToHex } from "./encoding";
+import { convertUtf8ToHex, convertNumberToHex, convertUtf8ToBuffer } from "./encoding";
 import { sanitizeHex, removeHexLeadingZeros } from "./misc";
 import { isEmptyArray, isHexString, isEmptyString } from "./validators";
+import { removeHexPrefix, addHexPrefix } from "enc-utils";
 
-export const toChecksumAddress = (address: string) => {
-  return getAddress(address);
-};
+export function toChecksumAddress(address: string): string {
+  address = removeHexPrefix(address);
+  const hash = sanitizeHex(keccak_256(convertUtf8ToBuffer(address)));
+  let checksum = "";
+  for (let i = 0; i < address.length; i++) {
+    if (parseInt(hash[i], 16) > 7) {
+      checksum += address[i].toUpperCase();
+    } else {
+      checksum += address[i];
+    }
+  }
+  return addHexPrefix(checksum);
+}
 
 export const isValidAddress = (address?: string) => {
   function isAddressAllLowercase(str: string) {
