@@ -7,6 +7,7 @@ import {
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IWalletConnectProviderOptions,
+  IJsonRpcResponseError,
 } from "@walletconnect/types";
 
 const ProviderEngine = require("web3-provider-engine");
@@ -194,8 +195,17 @@ class WalletConnectProvider extends ProviderEngine {
       this.sendAsync(payload, callback);
       return;
     }
+
     const res = await this.handleRequest(payload);
-    return res;
+    if (res.result) {
+      return res.result;
+    } else {
+      if (res.error && res.error.message) {
+        throw new Error(res.error.message);
+      } else {
+        throw new Error("Failed JSON-RPC request");
+      }
+    }
   }
 
   onConnect(callback: any) {
@@ -295,16 +305,17 @@ class WalletConnectProvider extends ProviderEngine {
       this.emit("error", error);
       throw error;
     }
-    return this.http.send(payload) as Promise<IJsonRpcResponseSuccess>;
-  }
 
-  async handleWriteRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
+    this.http.send(payload);
     return new Promise((resolve, reject) => {
-      this.sendAsync(payload, (error: any, response: any) => {
-        if (error) {
-          reject(error);
-        } else {
+      this.on("payload", (response: IJsonRpcResponseSuccess) => {
+        if (response.id === payload.id) {
           resolve(response);
+        }
+      });
+      this.on("error", (response: IJsonRpcResponseError) => {
+        if (response.id === payload.id) {
+          reject(response.error.message);
         }
       });
     });

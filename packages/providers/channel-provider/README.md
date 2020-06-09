@@ -29,7 +29,7 @@ const channel: Channel = await connext.connect({
  */
 channel.deposit({
   amount: "0x3abc", // represented as bignumber
-  assetId: AddressZero // Use the AddressZero constant from ethers.js to represent ETH, or enter the token address
+  assetId: AddressZero // Use the AddressZero to srepresent ETH, or enter the token address
 });
 
 /**
