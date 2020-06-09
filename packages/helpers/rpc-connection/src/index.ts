@@ -42,6 +42,10 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
         .catch((e: Error) => this.emit("error", e));
     }
 
+    this.wc.on("modal_closed", () => {
+      this.emit("error", new Error("User closed modal"));
+    });
+
     this.wc.on("connect", (err: Error | null) => {
       if (err) {
         this.emit("error", err);

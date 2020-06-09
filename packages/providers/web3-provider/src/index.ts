@@ -319,6 +319,9 @@ class WalletConnectProvider extends ProviderEngine {
       } else if (!wc.connected && !disableSessionCreation) {
         this.isConnecting = true;
         const sessionRequestOpions = this.chainId ? { chainId: this.chainId } : undefined;
+        wc.on("modal_closed", () => {
+          reject(new Error("User closed modal"));
+        });
         wc.createSession(sessionRequestOpions)
           .then(() => {
             wc.on("connect", (error, payload) => {
