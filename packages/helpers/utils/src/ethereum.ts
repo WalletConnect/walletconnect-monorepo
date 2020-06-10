@@ -7,8 +7,8 @@ import { isEmptyArray, isHexString, isEmptyString } from "./validators";
 import { removeHexPrefix, addHexPrefix } from "enc-utils";
 
 export function toChecksumAddress(address: string): string {
-  address = removeHexPrefix(address);
-  const hash = sanitizeHex(keccak_256(convertUtf8ToBuffer(address)));
+  address = removeHexPrefix(address.toLowerCase());
+  const hash = removeHexPrefix(keccak_256(convertUtf8ToBuffer(address)));
   let checksum = "";
   for (let i = 0; i < address.length; i++) {
     if (parseInt(hash[i], 16) > 7) {
@@ -21,14 +21,11 @@ export function toChecksumAddress(address: string): string {
 }
 
 export const isValidAddress = (address?: string) => {
-  function isAddressAllLowercase(str: string) {
-    return /^(0x)?[0-9a-f]{40}$/i.test(str);
-  }
   if (!address) {
     return false;
   } else if (address.toLowerCase().substring(0, 2) !== "0x") {
     return false;
-  } else if (!isAddressAllLowercase(address)) {
+  } else if (!/^(0x)?[0-9a-f]{40}$/i.test(address)) {
     return false;
   } else if (/^(0x)?[0-9a-f]{40}$/.test(address) || /^(0x)?[0-9A-F]{40}$/.test(address)) {
     return true;
