@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/utils",
-  "version": "1.0.0-rc.3",
+  "version": "1.0.0-rc.4",
   "description": "Utility Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -46,10 +46,10 @@
     "@babel/preset-env": "7.8.3",
     "@babel/preset-typescript": "7.8.3",
     "@babel/register": "7.8.3",
+    "@ethersproject/address": "5.0.0-beta.135",
     "@types/jest": "22.2.3",
     "@types/lodash.isnumber": "3.0.6",
     "@types/node": "12.12.14",
-    "@ethersproject/address": "5.0.0-beta.135",
     "npm-run-all": "4.1.5",
     "tsdx": "0.12.3",
     "typescript": "3.7.5",
@@ -57,7 +57,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.0.0-rc.3",
+    "@walletconnect/types": "^1.0.0-rc.4",
     "detect-browser": "5.1.0",
     "enc-utils": "2.1.0",
     "js-sha3": "0.8.0"
