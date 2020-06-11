@@ -30,5 +30,13 @@
     "universalLink": "https://argent.link/app",
     "deepLink": "argent://app",
     "chromeIntent": ""
+  },
+  {
+    "name": "Pillar Wallet",
+    "color": "rgb(255, 255, 255)",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-pillar.png",
+    "universalLink": "",
+    "deepLink": "pillarwallet:",
+    "chromeIntent": ""
   }
 ]
