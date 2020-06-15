@@ -165,7 +165,6 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
                 this.updateState(payload.params[0]);
               }
               // Emit connect event
-              // @ts-ignore
               this.emit("connect");
 
               this.triggerConnect(wc);

@@ -358,6 +358,5 @@ declare module "@walletconnect/types" {
     logo: string;
     universalLink: string;
     deepLink: string;
-    chromeIntent: string;
   }
 }

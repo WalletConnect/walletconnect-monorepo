@@ -4,31 +4,27 @@
     "color": "rgb(0, 30, 89)",
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-rainbow.png",
     "universalLink": "https://rnbw.app",
-    "deepLink": "rainbow:",
-    "chromeIntent": ""
+    "deepLink": "rainbow:"
   },
   {
     "name": "MetaMask",
     "color": "rgb(255, 255, 255)",
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-metamask.png",
     "universalLink": "https://metamask.app.link",
-    "deepLink": "metamask:",
-    "chromeIntent": ""
+    "deepLink": "metamask:"
   },
   {
     "name": "Gnosis Safe",
     "color": "rgb(0, 140, 115)",
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-gnosis.png",
     "universalLink": "https://safe.gnosis.io/walletconnect",
-    "deepLink": "gnosissafe:",
-    "chromeIntent": ""
+    "deepLink": "gnosissafe:"
   },
   {
     "name": "Argent",
     "color": "rgb(255, 135, 91)",
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-argent.png",
     "universalLink": "https://argent.link/app",
-    "deepLink": "argent://app",
-    "chromeIntent": ""
+    "deepLink": "argent://app"
   }
 ]
