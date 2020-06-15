@@ -105,6 +105,10 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
     return true;
   }
 
+  get connector() {
+    return this.wc;
+  }
+
   get connected() {
     return this._connected;
   }

@@ -34,6 +34,10 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     this.on("error", () => this.close());
   }
 
+  get connector() {
+    return this.wc;
+  }
+
   public create(): void {
     if (!this.wc.connected) {
       this.wc
