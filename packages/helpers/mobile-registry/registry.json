@@ -26,5 +26,12 @@
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-argent.png",
     "universalLink": "https://argent.link/app",
     "deepLink": "argent://app"
+  },
+  {
+    "name": "imToken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-imToken.png",
+    "universalLink": "",
+    "deepLink": "imtokenv2:"
   }
 ]
