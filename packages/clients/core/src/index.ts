@@ -42,6 +42,7 @@ import {
   signingMethods,
   deeplinkChoiceKey,
   isMobile,
+  removeLocal,
 } from "@walletconnect/utils";
 import SocketTransport from "@walletconnect/socket-transport";
 import {
@@ -853,6 +854,10 @@ class Connector implements IConnector {
       event: "disconnect",
       params: [{ message }],
     });
+    if (this._qrcodeModal) {
+      this._qrcodeModal.close();
+    }
+    removeLocal(deeplinkChoiceKey);
     this._removeStorageSession();
     this._transport.close();
   }
