@@ -3,7 +3,7 @@
     "name": "Rainbow",
     "color": "rgb(0, 30, 89)",
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-rainbow.png",
-    "universalLink": "https://rnbw.app",
+    "universalLink": "https://rnbwapp.com",
     "deepLink": "rainbow:"
   },
   {
