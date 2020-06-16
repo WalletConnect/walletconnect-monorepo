@@ -12,7 +12,6 @@ function parseEntry(entry) {
     logo: entry.logo || "",
     universalLink: entry.universalLink || "",
     deepLink: entry.deepLink || "",
-    chromeIntent: entry.chromeIntent || "",
   };
 }
 

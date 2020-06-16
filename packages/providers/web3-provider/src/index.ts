@@ -148,6 +148,10 @@ class WalletConnectProvider extends ProviderEngine {
     return true;
   }
 
+  get connector() {
+    return this.wc;
+  }
+
   enable() {
     return new Promise(async (resolve, reject) => {
       try {

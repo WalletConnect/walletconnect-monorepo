@@ -1,6 +1,6 @@
 {
   "name": "walletconnect",
-  "version": "1.0.0-rc.4",
+  "version": "1.0.2",
   "description": "WalletConnect SDK",
   "scripts": {
     "clean": "rm -rf dist",
@@ -55,13 +55,13 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/3id-provider": "^1.0.0-rc.4",
-    "@walletconnect/channel-provider": "^1.0.0-rc.4",
-    "@walletconnect/client": "^1.0.0-rc.4",
-    "@walletconnect/starkware-provider": "^1.0.0-rc.4",
-    "@walletconnect/types": "^1.0.0-rc.4",
-    "@walletconnect/utils": "^1.0.0-rc.4",
-    "@walletconnect/web3-provider": "^1.0.0-rc.4"
+    "@walletconnect/3id-provider": "^1.0.2",
+    "@walletconnect/channel-provider": "^1.0.2",
+    "@walletconnect/client": "^1.0.2",
+    "@walletconnect/starkware-provider": "^1.0.2",
+    "@walletconnect/types": "^1.0.2",
+    "@walletconnect/utils": "^1.0.2",
+    "@walletconnect/web3-provider": "^1.0.2"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
