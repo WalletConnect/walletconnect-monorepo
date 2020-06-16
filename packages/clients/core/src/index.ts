@@ -847,6 +847,12 @@ class Connector implements IConnector {
 
   private _handleSessionDisconnect(errorMsg?: string) {
     const message = errorMsg || "Session Disconnected";
+    if (!this._connected) {
+      if (this._qrcodeModal) {
+        this._qrcodeModal.close();
+      }
+      removeLocal(deeplinkChoiceKey);
+    }
     if (this._connected) {
       this._connected = false;
     }
@@ -854,10 +860,6 @@ class Connector implements IConnector {
       event: "disconnect",
       params: [{ message }],
     });
-    if (this._qrcodeModal) {
-      this._qrcodeModal.close();
-    }
-    removeLocal(deeplinkChoiceKey);
     this._removeStorageSession();
     this._transport.close();
   }
