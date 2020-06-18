@@ -1,4 +1,5 @@
 import WalletConnect from "@walletconnect/client";
+import QRCodeModal from "@walletconnect/qrcode-modal";
 import Web3Provider from "@walletconnect/web3-provider";
 import ChannelProvider from "@walletconnect/channel-provider";
 import StarkwareProvider from "@walletconnect/starkware-provider";
@@ -28,6 +29,7 @@ class WalletConnectSDK {
   public async connect(createSessionOpts?: ICreateSessionOptions): Promise<IConnector> {
     const options: IWalletConnectOptions = {
       bridge: "https://bridge.walletconnect.org",
+      qrcodeModal: QRCodeModal,
       ...this.options,
     };
     if (isNode()) {
