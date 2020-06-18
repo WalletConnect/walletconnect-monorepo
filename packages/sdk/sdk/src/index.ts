@@ -3,6 +3,7 @@ import Web3Provider from "@walletconnect/web3-provider";
 import ChannelProvider from "@walletconnect/channel-provider";
 import StarkwareProvider from "@walletconnect/starkware-provider";
 import ThreeIdProvider from "@walletconnect/3id-provider";
+import { isNode } from "@walletconnect/utils";
 import {
   IWalletConnectSDKOptions,
   IConnector,
@@ -10,18 +11,12 @@ import {
   IWalletConnectProviderOptions,
   IWCRpcConnectionOptions,
   IWalletConnectStarkwareProviderOptions,
-  IClientMeta,
   IWalletConnectOptions,
 } from "@walletconnect/types";
 
-export const isNode = () =>
-  typeof process !== "undefined" &&
-  typeof process.versions !== "undefined" &&
-  typeof process.versions.node !== "undefined";
-
 class WalletConnectSDK {
   public connector: IConnector | undefined;
-  constructor(private options?: IWalletConnectSDKOptions, private clientMeta?: IClientMeta) {}
+  constructor(private options?: IWalletConnectSDKOptions) {}
 
   get connected() {
     if (this.connector) {
@@ -32,10 +27,11 @@ class WalletConnectSDK {
 
   public async connect(createSessionOpts?: ICreateSessionOptions): Promise<IConnector> {
     const options: IWalletConnectOptions = {
+      bridge: "https://bridge.walletconnect.org",
       ...this.options,
     };
     if (isNode()) {
-      options.clientMeta = this.clientMeta || {
+      options.clientMeta = this.options?.clientMeta || {
         name: "WalletConnect SDK",
         description: "WalletConnect SDK in NodeJS",
         url: "#",
