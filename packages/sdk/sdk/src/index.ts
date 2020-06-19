@@ -42,6 +42,7 @@ class WalletConnectSDK {
     }
     const connector = new WalletConnect(options);
     await connector.connect(createSessionOpts);
+    this.connector = connector;
     return connector;
   }
 
