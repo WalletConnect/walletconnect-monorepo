@@ -33,7 +33,7 @@ class WalletConnectProvider extends ProviderEngine {
   public rpcUrl = "";
 
   constructor(opts: IWalletConnectProviderOptions) {
-    super({ pollingInterval: opts.pollingInterval || 10000 });
+    super({ pollingInterval: opts.pollingInterval || 8000 });
     this.bridge = opts.connector
       ? opts.connector.bridge
       : opts.bridge || "https://bridge.walletconnect.org";
