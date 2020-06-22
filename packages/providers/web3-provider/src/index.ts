@@ -1,6 +1,7 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
+import { payloadId } from "@walletconnect/utils";
 import {
   IRPCMap,
   IConnector,
@@ -169,11 +170,7 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async request(payload: any): Promise<any> {
-    return this.send({
-      id: 42,
-      jsonrpc: "2.0",
-      ...payload,
-    });
+    return this.send(payload);
   }
 
   async send(payload: any, callback?: any): Promise<any> {
@@ -182,7 +179,7 @@ class WalletConnectProvider extends ProviderEngine {
       return new Promise((resolve, reject) => {
         this.sendAsync(
           {
-            id: 42,
+            id: payloadId(),
             jsonrpc: "2.0",
             method: payload,
             params: callback || [],
@@ -197,6 +194,8 @@ class WalletConnectProvider extends ProviderEngine {
         );
       });
     }
+    // ensure payload includes id and jsonrpc
+    payload = { id: payloadId(), jsonrpc: "2.0", ...payload };
     // Web3 1.0 beta.37 (and below) uses `send` with a callback for async queries
     if (callback) {
       this.sendAsync(payload, callback);
