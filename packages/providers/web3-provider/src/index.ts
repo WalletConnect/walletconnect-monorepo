@@ -169,7 +169,11 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async request(payload: any): Promise<any> {
-    return this.send(payload);
+    return this.send({
+      id: 42,
+      jsonrpc: "2.0",
+      ...payload,
+    });
   }
 
   async send(payload: any, callback?: any): Promise<any> {
