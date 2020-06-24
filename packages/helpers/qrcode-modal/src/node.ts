@@ -1,7 +1,8 @@
-const qrTerminal = require("qrcode-terminal");
+import QRCode from "qrcode";
 
 export function open(uri: string) {
-  qrTerminal.generate(uri, { small: true });
+  // eslint-disable-next-line no-console
+  QRCode.toString(uri, { type: "terminal" }).then(console.log);
 }
 
 export function close() {
