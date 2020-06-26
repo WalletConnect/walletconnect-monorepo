@@ -33,6 +33,7 @@ interface IDeeplinkInfo {
   href: string;
 }
 interface DeepLinkDisplayProps {
+  text: { [key: string]: string };
   uri: string;
 }
 
@@ -41,7 +42,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
-        {ios ? "Choose your preferred wallet" : "Connect to Mobile Wallet"}
+        {ios ? props.text.choose_preferred_wallet : props.text.connect_mobile_wallet}
       </p>
       <div className={`walletconnect-connect__buttons__wrapper${!ios && "__android"}`}>
         {ios ? (
@@ -66,7 +67,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
           })
         ) : (
           <ConnectButton
-            name={"Connect"}
+            name={props.text.connect}
             color={DEFAULT_BUTTON_COLOR}
             href={props.uri}
             onClick={React.useCallback(() => {

@@ -11,6 +11,7 @@ import { WALLETCONNECT_MODAL_ID, WALLETCONNECT_CLOSE_BUTTON_ID } from "../consta
 import { WALLETCONNECT_LOGO_SVG_URL } from "../assets/logo";
 
 interface ModalProps {
+  text: { [key: string]: string };
   uri: string;
   onClose: any;
 }
@@ -23,7 +24,7 @@ function Modal(props: ModalProps) {
       <div className="walletconnect-modal__base">
         <div className="walletconnect-modal__header">
           <img src={WALLETCONNECT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" />
-          <p>WalletConnect</p>
+          <p>{"WalletConnect"}</p>
           <div className="walletconnect-modal__close__wrapper" onClick={props.onClose}>
             <div id={WALLETCONNECT_CLOSE_BUTTON_ID} className="walletconnect-modal__close__icon">
               <div className="walletconnect-modal__close__line1"></div>
@@ -32,12 +33,16 @@ function Modal(props: ModalProps) {
           </div>
         </div>
         <div>
-          {displayQRCode ? <QRCodeDisplay uri={props.uri} /> : <DeepLinkDisplay uri={props.uri} />}
+          {displayQRCode ? (
+            <QRCodeDisplay text={props.text} uri={props.uri} />
+          ) : (
+            <DeepLinkDisplay text={props.text} uri={props.uri} />
+          )}
         </div>
         {mobile && (
           <div className="walletconnect-modal__footer">
             <a onClick={() => setDisplayQRCode(!displayQRCode)}>
-              {displayQRCode ? "Return to mobile wallet options" : "View QR code instead"}
+              {displayQRCode ? props.text.return_to_mobile_options : props.text.view_qrcode_option}
             </a>
           </div>
         )}

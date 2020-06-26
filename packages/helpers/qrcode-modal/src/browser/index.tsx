@@ -2,11 +2,12 @@
 import * as React from "react";
 // @ts-ignore
 import * as ReactDOM from "react-dom";
-import { getDocument } from "@walletconnect/utils";
+import { getDocument, getNavigator } from "@walletconnect/utils";
 
 import { WALLETCONNECT_STYLE_SHEET } from "./assets/style";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Modal from "./components/Modal";
+import Languages from "./languages";
 import {
   ANIMATION_DURATION,
   WALLETCONNECT_WRAPPER_ID,
@@ -57,11 +58,15 @@ function getWrappedCallback(cb: any): any {
   };
 }
 
+function getText() {
+  const lang = getNavigator().language.split("-")[0] || "en";
+  return Languages[lang] || Languages["en"];
+}
+
 export function open(uri: string, cb: any) {
   injectStyleSheet();
   const wrapper = renderWrapper();
-  const onClose = getWrappedCallback(cb);
-  ReactDOM.render(<Modal uri={uri} onClose={onClose} />, wrapper);
+  ReactDOM.render(<Modal text={getText()} uri={uri} onClose={getWrappedCallback(cb)} />, wrapper);
 }
 
 export function close() {
