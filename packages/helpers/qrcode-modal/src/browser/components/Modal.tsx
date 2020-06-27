@@ -17,6 +17,8 @@ interface ModalProps {
 }
 
 function Modal(props: ModalProps) {
+  const { text, uri } = props;
+  const displayProps = { text, uri };
   const mobile = isMobile();
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   return (
@@ -34,9 +36,9 @@ function Modal(props: ModalProps) {
         </div>
         <div>
           {displayQRCode ? (
-            <QRCodeDisplay text={props.text} uri={props.uri} />
+            <QRCodeDisplay {...displayProps} />
           ) : (
-            <DeepLinkDisplay text={props.text} uri={props.uri} />
+            <DeepLinkDisplay {...displayProps} />
           )}
         </div>
         {mobile && (

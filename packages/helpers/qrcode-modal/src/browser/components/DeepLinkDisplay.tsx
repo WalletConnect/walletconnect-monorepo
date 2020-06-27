@@ -44,7 +44,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
         {ios ? props.text.choose_preferred_wallet : props.text.connect_mobile_wallet}
       </p>
-      <div className={`walletconnect-connect__buttons__wrapper${!ios && "__android"}`}>
+      <div className={`walletconnect-connect__buttons__wrapper${!ios ? "__android" : ""}`}>
         {ios ? (
           MobileRegistry.map((entry: IMobileRegistryEntry) => {
             const { color, name, logo } = entry;
