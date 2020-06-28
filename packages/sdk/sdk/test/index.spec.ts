@@ -47,7 +47,7 @@ describe("WalletConnect", () => {
     });
   });
 
-  describe("When instantiated with options", () => {
+  describe("When instantiated with options and connect called", () => {
     it("should call WalletConnect with provided options", () => {
       const walletConnect = new WalletConnectSDK(defaultOptions.options);
 
@@ -99,7 +99,7 @@ describe("WalletConnect", () => {
       walletConnect.connector = new WalletConnect(defaultOptions.options);
     });
 
-    it("should throw when we call getWeb3Provider", () => {
+    it("should have a defined connector", () => {
       expect(walletConnect.connector).toBeTruthy();
     });
 
