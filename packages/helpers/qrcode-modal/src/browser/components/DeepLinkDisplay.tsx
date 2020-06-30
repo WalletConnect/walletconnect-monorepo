@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
 import MobileRegistry from "@walletconnect/mobile-registry";
 import { IMobileRegistryEntry } from "@walletconnect/types";
@@ -49,7 +48,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
           MobileRegistry.map((entry: IMobileRegistryEntry) => {
             const { color, name, logo } = entry;
             const href = formatIOSDeepLink(props.uri, entry);
-            const handleClickIOS = React.useCallback(e => {
+            const handleClickIOS = React.useCallback(() => {
               saveDeeplinkInfo({
                 name,
                 href,
@@ -70,7 +69,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
             name={"Connect"}
             color={DEFAULT_BUTTON_COLOR}
             href={props.uri}
-            onClick={React.useCallback(e => {
+            onClick={React.useCallback(() => {
               saveDeeplinkInfo({
                 name: "Unknown",
                 href: props.uri,

@@ -42,6 +42,7 @@ import {
   signingMethods,
   deeplinkChoiceKey,
   isMobile,
+  removeLocal,
 } from "@walletconnect/utils";
 import SocketTransport from "@walletconnect/socket-transport";
 import {
@@ -846,6 +847,12 @@ class Connector implements IConnector {
 
   private _handleSessionDisconnect(errorMsg?: string) {
     const message = errorMsg || "Session Disconnected";
+    if (!this._connected) {
+      if (this._qrcodeModal) {
+        this._qrcodeModal.close();
+      }
+      removeLocal(deeplinkChoiceKey);
+    }
     if (this._connected) {
       this._connected = false;
     }

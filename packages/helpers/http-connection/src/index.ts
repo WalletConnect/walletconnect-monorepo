@@ -1,14 +1,11 @@
 import EventEmitter from "events";
 import { XMLHttpRequest } from "xhr2-cookies";
 import { IError } from "@walletconnect/types";
+import { unsafeGetFromWindow } from "@walletconnect/utils";
 
 // -- global -------------------------------------------------------------- //
-const _window: any = window;
 
-const XHR =
-  typeof _window !== "undefined" && typeof _window.XMLHttpRequest !== "undefined"
-    ? _window.XMLHttpRequest
-    : XMLHttpRequest;
+const XHR = unsafeGetFromWindow<typeof XMLHttpRequest>("XMLHttpRequest") || XMLHttpRequest;
 
 // -- HttpConnection ------------------------------------------------------ //
 

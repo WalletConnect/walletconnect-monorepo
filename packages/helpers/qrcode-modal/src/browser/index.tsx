@@ -16,7 +16,11 @@ import {
 
 function injectStyleSheet() {
   const doc = getDocument();
-  const style = doc.getElementById(WALLETCONNECT_STYLE_ID) || doc.createElement("style");
+  const prev = doc.getElementById(WALLETCONNECT_STYLE_ID);
+  if (prev) {
+    doc.head.removeChild(prev);
+  }
+  const style = doc.createElement("style");
   style.setAttribute("id", WALLETCONNECT_STYLE_ID);
   style.innerText = WALLETCONNECT_STYLE_SHEET;
   doc.head.appendChild(style);

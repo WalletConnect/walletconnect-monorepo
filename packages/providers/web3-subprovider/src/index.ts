@@ -105,6 +105,10 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
     return true;
   }
 
+  get connector() {
+    return this.wc;
+  }
+
   get connected() {
     return this._connected;
   }
@@ -161,7 +165,6 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
                 this.updateState(payload.params[0]);
               }
               // Emit connect event
-              // @ts-ignore
               this.emit("connect");
 
               this.triggerConnect(wc);

@@ -1,11 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
-import * as qrImage from "qr-image";
+import QRCode from "qrcode";
 import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
-function formatQRCodeImage(data: string) {
+async function formatQRCodeImage(data: string) {
   let result = "";
-  const dataString = qrImage.imageSync(data, { type: "svg" });
+  const dataString = await QRCode.toString(data, { type: "svg" });
   if (typeof dataString === "string") {
     result = dataString.replace("<svg", `<svg class="walletconnect-qrcode__image"`);
   }
@@ -17,7 +17,12 @@ interface QRCodeDisplayProps {
 }
 
 function QRCodeDisplay(props: QRCodeDisplayProps) {
-  const svg = formatQRCodeImage(props.uri);
+  const [svg, setSvg] = React.useState("");
+  React.useEffect(() => {
+    (async () => {
+      setSvg(await formatQRCodeImage(props.uri));
+    })();
+  }, []);
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
