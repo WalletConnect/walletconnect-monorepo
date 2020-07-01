@@ -1,13 +1,13 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
+import { payloadId } from "@walletconnect/utils";
 import {
   IRPCMap,
   IConnector,
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IWalletConnectProviderOptions,
-  IJsonRpcResponseError,
 } from "@walletconnect/types";
 
 const ProviderEngine = require("web3-provider-engine");
@@ -34,7 +34,7 @@ class WalletConnectProvider extends ProviderEngine {
   public rpcUrl = "";
 
   constructor(opts: IWalletConnectProviderOptions) {
-    super({ pollingInterval: opts.pollingInterval || 4000 });
+    super({ pollingInterval: opts.pollingInterval || 8000 });
     this.bridge = opts.connector
       ? opts.connector.bridge
       : opts.bridge || "https://bridge.walletconnect.org";
@@ -179,7 +179,7 @@ class WalletConnectProvider extends ProviderEngine {
       return new Promise((resolve, reject) => {
         this.sendAsync(
           {
-            id: 42,
+            id: payloadId(),
             jsonrpc: "2.0",
             method: payload,
             params: callback || [],
@@ -194,6 +194,8 @@ class WalletConnectProvider extends ProviderEngine {
         );
       });
     }
+    // ensure payload includes id and jsonrpc
+    payload = { id: payloadId(), jsonrpc: "2.0", ...payload };
     // Web3 1.0 beta.37 (and below) uses `send` with a callback for async queries
     if (callback) {
       this.sendAsync(payload, callback);
@@ -297,19 +299,7 @@ class WalletConnectProvider extends ProviderEngine {
       this.emit("error", error);
       throw error;
     }
-    this.http.send(payload);
-    return new Promise((resolve, reject) => {
-      this.on("payload", (response: IJsonRpcResponseSuccess) => {
-        if (response.id === payload.id) {
-          resolve(response);
-        }
-      });
-      this.on("error", (response: IJsonRpcResponseError) => {
-        if (response.id === payload.id) {
-          reject(response.error.message);
-        }
-      });
-    });
+    return this.http.send(payload);
   }
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
