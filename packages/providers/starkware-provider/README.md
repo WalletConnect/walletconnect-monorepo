@@ -15,5 +15,5 @@ const provider = new StarkwareProvider({
 });
 
 //  Enable session (triggers QR Code modal)
-const starkPublicKey = await provider.enable();
+const starkPublicKey = await provider.enable("starkex", "starkexdvf", "0");
 ```
