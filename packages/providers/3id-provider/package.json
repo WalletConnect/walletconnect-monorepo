@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/3id-provider",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "3ID Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -56,9 +56,9 @@
   },
   "dependencies": {
     "3id-provider": "1.1.0",
-    "@walletconnect/rpc-connection": "^1.0.11",
-    "@walletconnect/types": "^1.0.11",
-    "@walletconnect/utils": "^1.0.11"
+    "@walletconnect/rpc-connection": "^1.0.12",
+    "@walletconnect/types": "^1.0.12",
+    "@walletconnect/utils": "^1.0.12"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
