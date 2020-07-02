@@ -331,7 +331,6 @@ class WalletConnectProvider extends ProviderEngine {
               this.triggerConnect(wc);
               resolve(wc);
             });
-            wc.on("disconnect", (error, payload) => {});
           })
           .catch(error => {
             this.isConnecting = false;
