@@ -231,10 +231,7 @@ class WalletConnectProvider extends ProviderEngine {
   async close() {
     const wc = await this.getWalletConnector({ disableSessionCreation: true });
     await wc.killSession();
-    // tslint:disable-next-line:await-promise
-    await this.stop();
-    this.emit("close", 1000, "Connection closed");
-    this.emit("disconnect", 1000, "Connection disconnected");
+    await this.onDisconnect();
   }
 
   async handleRequest(payload: any) {
@@ -334,6 +331,7 @@ class WalletConnectProvider extends ProviderEngine {
               this.triggerConnect(wc);
               resolve(wc);
             });
+            wc.on("disconnect", (error, payload) => {});
           })
           .catch(error => {
             this.isConnecting = false;
@@ -356,7 +354,7 @@ class WalletConnectProvider extends ProviderEngine {
         this.emit("error", error);
         return;
       }
-      this.stop();
+      this.onDisconnect();
     });
     wc.on("session_update", (error, payload) => {
       if (error) {
@@ -366,6 +364,13 @@ class WalletConnectProvider extends ProviderEngine {
       // Handle session update
       this.updateState(payload.params[0]);
     });
+  }
+
+  async onDisconnect() {
+    // tslint:disable-next-line:await-promise
+    await this.stop();
+    this.emit("close", 1000, "Connection closed");
+    this.emit("disconnect", 1000, "Connection disconnected");
   }
 
   async updateState(sessionParams: any) {
