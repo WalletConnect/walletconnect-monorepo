@@ -176,23 +176,7 @@ class WalletConnectProvider extends ProviderEngine {
   async send(payload: any, callback?: any): Promise<any> {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === "string") {
-      return new Promise((resolve, reject) => {
-        this.sendAsync(
-          {
-            id: payloadId(),
-            jsonrpc: "2.0",
-            method: payload,
-            params: callback || [],
-          },
-          (error: any, response: any) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(response.result);
-            }
-          },
-        );
-      });
+      return this.sendAsyncPromise(payload, callback);
     }
     // ensure payload includes id and jsonrpc
     payload = { id: payloadId(), jsonrpc: "2.0", ...payload };
@@ -425,6 +409,26 @@ class WalletConnectProvider extends ProviderEngine {
       this.http.on("payload", payload => this.emit("payload", payload));
       this.http.on("error", error => this.emit("error", error));
     }
+  }
+
+  sendAsyncPromise(method: string, params: any) {
+    return new Promise((resolve, reject) => {
+      this.sendAsync(
+        {
+          id: payloadId(),
+          jsonrpc: "2.0",
+          method,
+          params: params || [],
+        },
+        (error: any, response: any) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(response.result);
+          }
+        },
+      );
+    });
   }
 }
 
