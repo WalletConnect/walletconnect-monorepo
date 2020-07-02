@@ -152,6 +152,10 @@ class WalletConnectProvider extends ProviderEngine {
     return this.wc;
   }
 
+  get walletMeta() {
+    return this.wc.peerMeta;
+  }
+
   enable() {
     return new Promise(async (resolve, reject) => {
       try {
