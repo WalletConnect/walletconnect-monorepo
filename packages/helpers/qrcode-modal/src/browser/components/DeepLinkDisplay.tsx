@@ -62,7 +62,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
                 href,
               });
             }, []);
-            if (!showMore && index > 4) return;
+            if (!showMore && index > 3) return;
             return !showMore ? (
               <WalletButton
                 color={color}

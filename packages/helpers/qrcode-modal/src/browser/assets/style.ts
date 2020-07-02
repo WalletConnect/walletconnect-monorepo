@@ -320,7 +320,6 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 
 .walletconnect-connect__buttons__wrapper {
   max-height: 44vh;
-  overflow: scroll;
 }
 
 .walletconnect-connect__buttons__wrapper__android {
