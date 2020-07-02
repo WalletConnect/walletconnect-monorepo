@@ -1,10 +1,3 @@
-jest.mock("@walletconnect/web3-provider");
-jest.mock("@walletconnect/channel-provider");
-jest.mock("@walletconnect/starkware-provider");
-jest.mock("@walletconnect/3id-provider");
-jest.mock("@walletconnect/client");
-jest.mock("@walletconnect/utils");
-
 import { isNode } from "@walletconnect/utils";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import WalletConnect from "@walletconnect/client";
@@ -14,6 +7,13 @@ import StarkwareProvider from "@walletconnect/starkware-provider";
 import ThreeIdProvider from "@walletconnect/3id-provider";
 
 import WalletConnectSDK from "../src";
+
+jest.mock("@walletconnect/web3-provider");
+jest.mock("@walletconnect/channel-provider");
+jest.mock("@walletconnect/starkware-provider");
+jest.mock("@walletconnect/3id-provider");
+jest.mock("@walletconnect/client");
+jest.mock("@walletconnect/utils");
 
 const defaultOptions = {
   clientMeta: {
