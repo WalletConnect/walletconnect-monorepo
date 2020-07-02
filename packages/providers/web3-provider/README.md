@@ -6,7 +6,7 @@ For more details, read the [documentation](https://docs.walletconnect.org)
 
 ## Setup
 
-```javascript
+```typescript
 import Web3 from "web3";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 
@@ -24,7 +24,7 @@ const web3 = new Web3(provider);
 
 ## Events (EIP-1193)
 
-```javascript
+```typescript
 // Subscribe to accounts change
 provider.on("accountsChanged", (accounts: string[]) => {
   console.log(accounts);
@@ -35,35 +35,35 @@ provider.on("chainChanged", (chainId: number) => {
   console.log(chainId);
 });
 
-// Subscribe to networkId change
-provider.on("networkChanged", (networkId: number) => {
-  console.log(networkId);
+// Subscribe to session connection
+provider.on("connect", () => {
+  console.log("connect");
 });
 
-// Subscribe to session connection/open
-provider.on("open", () => {
-  console.log("open");
-});
-
-// Subscribe to session disconnection/close
-provider.on("close", (code: number, reason: string) => {
+// Subscribe to session disconnection
+provider.on("disconnect", (code: number, reason: string) => {
   console.log(code, reason);
 });
 ```
 
 ## Provider Methods
 
-```javascript
+```typescript
+interface RequestArguments {
+  method: string;
+  params?: unknown[] | object;
+}
+
 // Send JSON RPC requests
-const result = await provider.send(method: string, params?: any[]);
+const result = await provider.request(payload: RequestArguments);
 
 // Close provider session
-await provider.close()
+await provider.disconnect()
 ```
 
 ## Web3 Methods
 
-```javascript
+```typescript
 //  Get Accounts
 const accounts = await web3.eth.getAccounts();
 
@@ -103,7 +103,7 @@ It's required to pass either the infuraId or rpc option values to make this conn
 
 Example RPC mapping by chainId
 
-```javascript
+```typescript
 const provider = new WalletConnectProvider({
   rpc: {
     1: "https://mainnet.mycustomnode.com",
