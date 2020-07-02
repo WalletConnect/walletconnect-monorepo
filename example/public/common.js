@@ -75,9 +75,10 @@ function updateAction(title, action) {
   buttonEl.onclick = action;
 }
 
-function onConnect({ accounts, chainId }) {
+function onConnect({ accounts, chainId }, action) {
   updateView({ accounts, chainId });
-  updateAction("Sign Message", signPersonalMessage);
+  actoin = action || { label: "Sign Message", callback: signPersonalMessage };
+  updateAction(action.label, action.callback);
 }
 
 function onDisconnect() {
