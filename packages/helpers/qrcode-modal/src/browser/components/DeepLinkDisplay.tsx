@@ -9,6 +9,8 @@ import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 import ConnectButton from "./ConnectButton";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalletButton from "./WalletButton";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import WalletIcon from "./WalletIcon";
 
 function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
   const encodedUri: string = encodeURIComponent(uri);
@@ -38,15 +40,20 @@ interface DeepLinkDisplayProps {
 }
 
 function DeepLinkDisplay(props: DeepLinkDisplayProps) {
+  const [showMore, setShowMore] = React.useState(false);
   const ios = isIOS();
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
         {ios ? props.text.choose_preferred_wallet : props.text.connect_mobile_wallet}
       </p>
-      <div className={`walletconnect-connect__buttons__wrapper${!ios ? "__android" : ""}`}>
+      <div
+        className={`walletconnect-connect__buttons__wrapper${
+          !ios ? "__android" : showMore ? "__wrap" : ""
+        }`}
+      >
         {ios ? (
-          MobileRegistry.map((entry: IMobileRegistryEntry) => {
+          MobileRegistry.map((entry: IMobileRegistryEntry, index) => {
             const { color, name, logo } = entry;
             const href = formatIOSDeepLink(props.uri, entry);
             const handleClickIOS = React.useCallback(() => {
@@ -55,7 +62,8 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
                 href,
               });
             }, []);
-            return (
+            if (!showMore && index > 4) return;
+            return !showMore ? (
               <WalletButton
                 color={color}
                 href={href}
@@ -63,6 +71,8 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
                 logo={logo}
                 onClick={handleClickIOS}
               />
+            ) : (
+              <WalletIcon color={color} href={href} logo={logo} onClick={handleClickIOS} />
             );
           })
         ) : (
@@ -79,6 +89,11 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
           />
         )}
       </div>
+      {ios ? (
+        <div className="walletconnect-show__more_button" onClick={() => setShowMore(!showMore)}>
+          {!showMore ? "Show More" : "Show Less"}
+        </div>
+      ) : null}
     </div>
   );
 }

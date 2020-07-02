@@ -327,6 +327,11 @@
   margin: 60px 0;
 }
 
+.walletconnect-connect__buttons__wrapper__wrap {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
 .walletconnect-connect__button {
   background-color: rgb(64, 153, 255);
   padding: 12px;
@@ -334,4 +339,36 @@
   text-decoration: none;
   color: rgb(255, 255, 255);
   font-weight: 500;
+}
+
+.walletconnect-connect__button__icon_anchor {
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 8px;
+  height: 42px;
+  width: 42px;
+  justify-self: center;
+}
+
+.walletconnect-connect__button__icon {
+  border-radius: 8px;
+  height: 42px;
+  margin: 0;
+  width: 42px;
+  box-shadow: 0 4px 12px 0 rgba(37, 41, 46, 0.25);
+}
+
+.walletconnect-show__more_button {
+  padding: 0.5em;
+  border: 1px solid black;
+  margin: 1em auto 0.8em;
+  border-radius: 8px;
+  width: 7em;
+  height: 1.2em;
+  opacity: 0.3;
+  font-size: 0.8em;
+  line-height: 1.4em;
+  cursor: pointer;
 }
