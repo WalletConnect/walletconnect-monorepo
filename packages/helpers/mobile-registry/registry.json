@@ -28,10 +28,24 @@
     "deepLink": "argent://app"
   },
   {
+    "name": "Pillar Wallet",
+    "color": "rgb(255, 255, 255)",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-pillar.png",
+    "universalLink": "",
+    "deepLink": "pillarwallet:"
+  },
+  {
     "name": "Trust Wallet",
     "color": "rgb(51, 117, 187)",
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-trust.png",
     "universalLink": "https://link.trustwallet.com",
     "deepLink": "trust:"
+  },
+  {
+    "name": "imToken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-imToken.png",
+    "universalLink": "",
+    "deepLink": "imtokenv2:"
   }
 ]
