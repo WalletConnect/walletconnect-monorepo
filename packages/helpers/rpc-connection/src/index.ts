@@ -31,6 +31,9 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
       });
     this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : 1;
+    if (this.wc.connected) {
+      this.connected = true;
+    }
     this.on("error", () => this.close());
   }
 
@@ -56,12 +59,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
         return;
       }
 
-      this.connected = true;
-
-      // Emit connect event
-      this.emit("connect");
-      // Emit  open event
-      this.emit("open");
+      this.onOpen();
     });
 
     this.wc.on("disconnect", (err: Error | null) => {
@@ -72,6 +70,14 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
 
       this.onClose();
     });
+  }
+
+  public onOpen(): void {
+    this.connected = true;
+    // Emit connect event
+    this.emit("connect");
+    // Emit  open event
+    this.emit("open");
   }
 
   public onClose(): void {
@@ -86,6 +92,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
 
   public open(): Promise<void> {
     if (this.connected) {
+      this.onOpen();
       return Promise.resolve();
     }
     return new Promise((resolve, reject): void => {

@@ -34,8 +34,11 @@ async function onInit() {
   });
 
   console.log("starkwareProvider", starkwareProvider);
+  const layer = "starkex";
+  const application = "starkexdvf";
+  const index = "0";
 
-  const starkPublicKey = await starkwareProvider.enable();
+  const starkPublicKey = await starkwareProvider.enable(layer, application, index);
   console.log("starkPublicKey", starkPublicKey);
 }
 
