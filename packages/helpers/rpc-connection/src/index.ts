@@ -60,6 +60,8 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
 
       // Emit connect event
       this.emit("connect");
+      // Emit  open event
+      this.emit("open");
     });
 
     this.wc.on("disconnect", (err: Error | null) => {
@@ -75,11 +77,17 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public onClose(): void {
     this.wc = new WalletConnect({ bridge: this.bridge });
     this.connected = false;
+    // Emit close event
     this.emit("close");
+    // Emit disconnect event
+    this.emit("disconnect");
     this.removeAllListeners();
   }
 
   public open(): Promise<void> {
+    if (this.connected) {
+      return Promise.resolve();
+    }
     return new Promise((resolve, reject): void => {
       this.on("error", err => {
         reject(err);

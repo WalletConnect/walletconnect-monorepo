@@ -55,7 +55,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "3id-provider": "1.1.0",
+    "3id-provider": "1.2.0",
     "@walletconnect/rpc-connection": "^1.0.13",
     "@walletconnect/types": "^1.0.13",
     "@walletconnect/utils": "^1.0.13"
