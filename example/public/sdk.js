@@ -9,9 +9,10 @@ let wc = null;
 let provider = null;
 
 async function onInit() {
+  console.log("onInit");
   // Create a new SDK
   wc = new WalletConnectSDK();
-
+  console.log("wc", wc);
   // Start connector
   await wc.connect();
 
@@ -20,12 +21,25 @@ async function onInit() {
       1: "https://api.mycryptoapi.com/eth",
     },
   });
-
+  console.log("provider", provider);
   onSubscribe();
 
   const accounts = await provider.enable();
+  console.log("accounts", accounts);
 
   onConnect({ accounts, chainId: provider.chainId });
+
+  const starkwareProvider = await wc.getStarkwareProvider({
+    contractAddress: "0xC5273AbFb36550090095B1EDec019216AD21BE6c",
+  });
+
+  console.log("starkwareProvider", starkwareProvider);
+  const layer = "starkex";
+  const application = "starkexdvf";
+  const index = "0";
+
+  const starkPublicKey = await starkwareProvider.enable(layer, application, index);
+  console.log("starkPublicKey", starkPublicKey);
 }
 
 function onSubscribe() {

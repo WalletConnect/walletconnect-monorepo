@@ -7,6 +7,7 @@ const isNode = () =>
   typeof process.versions.node !== "undefined";
 
 function open(uri: string, cb: any) {
+  console.log(uri); // eslint-disable-line no-console
   if (isNode()) {
     nodeLib.open(uri);
   } else {

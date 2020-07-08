@@ -412,6 +412,12 @@ class Connector implements IConnector {
       throw new Error(ERROR_QRCODE_MODAL_NOT_PROVIDED);
     }
     return new Promise(async (resolve, reject) => {
+      if (this.connected) {
+        resolve({
+          chainId: this.chainId,
+          accounts: this.accounts,
+        });
+      }
       if (!this.connected) {
         try {
           await this.createSession(opts);
