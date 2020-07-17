@@ -33,5 +33,12 @@
     "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-trust.png",
     "universalLink": "https://link.trustwallet.com",
     "deepLink": "trust:"
+  },
+  {
+    "name": "Math Wallet",
+    "color": "rgb(0, 30, 89)",
+    "logo": "https://raw.githubusercontent.com/WalletConnect/walletconnect-monorepo/next/packages/helpers/mobile-registry/logos/wallet-math.png",
+    "universalLink": "https://www.mathwallet.org",
+    "deepLink": "mathwallet:"
   }
 ]
