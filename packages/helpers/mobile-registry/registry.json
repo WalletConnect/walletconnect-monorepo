@@ -47,5 +47,12 @@
     "logo": "./logos/wallet-gnosis.png",
     "universalLink": "https://safe.gnosis.io/walletconnect",
     "deepLink": "gnosissafe:"
+  },
+  {
+    "name": "Math Wallet",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/wallet-math.png",
+    "universalLink": "https://www.mathwallet.org",
+    "deepLink": "mathwallet:"
   }
 ]
