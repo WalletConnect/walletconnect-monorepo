@@ -12,7 +12,8 @@ const registryLoader = input => {
   return Promise.all(
     array.map(async entry => {
       const buffer = await readFile(path.join(REGISTRY_DIR, entry.logo));
-      const logo = `data:image/${path.extname(entry.logo)};base64,${buffer.toString("base64")}`;
+      const ext = path.extname(entry.logo).replace(".", "");
+      const logo = `data:image/${ext};base64,${buffer.toString("base64")}`;
       return { ...entry, logo };
     }),
   );

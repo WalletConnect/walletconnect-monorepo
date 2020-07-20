@@ -278,7 +278,7 @@
   font-size: 20px;
   font-weight: 700;
   margin: 0;
-  padding: 0 42px 3px 0;
+  padding-bottom: 3px;
 }
 
 .walletconnect-modal__base__row__right {

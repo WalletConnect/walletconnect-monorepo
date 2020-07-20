@@ -11,7 +11,8 @@ async function buildAsset({ assetDir, assetFile, targetFile, targetVar, loader }
   const targetFilePath = path.join(ASSETS_DIR, targetFile);
   const output = loader ? await loader(input) : input;
   const value = typeof output === "string" ? "`" + output + "`" : JSON.stringify(output, null, 2);
-  await writeFile(targetFilePath, "export const " + targetVar + " = " + value + ";");
+  const content = "export const " + targetVar + " = " + value + ";";
+  await writeFile(targetFilePath, content);
 }
 
 module.exports = buildAsset;
