@@ -46,7 +46,7 @@ provider.on("disconnect", (code: number, reason: string) => {
 });
 ```
 
-## Provider Methods
+## Provider Methods
 
 ```typescript
 interface RequestArguments {

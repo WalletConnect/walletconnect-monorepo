@@ -58,7 +58,7 @@
     "@walletconnect/rpc-connection": "^1.0.18",
     "@walletconnect/types": "^1.0.18",
     "@walletconnect/utils": "^1.0.18",
-    "starkware-provider": "1.6.0"
+    "starkware-provider": "1.6.1"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
