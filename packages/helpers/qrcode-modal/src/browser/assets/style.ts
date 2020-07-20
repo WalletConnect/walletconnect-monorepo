@@ -358,17 +358,4 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   width: 42px;
   box-shadow: 0 4px 12px 0 rgba(37, 41, 46, 0.25);
 }
-
-.walletconnect-show__more_button {
-  padding: 0.5em;
-  border: 1px solid black;
-  margin: 1em auto 0.8em;
-  border-radius: 8px;
-  width: 7em;
-  height: 1.2em;
-  opacity: 0.3;
-  font-size: 0.8em;
-  line-height: 1.4em;
-  cursor: pointer;
-}
 `;
