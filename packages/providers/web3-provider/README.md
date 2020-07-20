@@ -102,7 +102,7 @@ const provider = new WalletConnectProvider({
 });
 ```
 
-### RPC URL Mapping
+#### RPC URL Mapping
 
 The RPC URL mapping should indexed by chainId and it requires at least one value.
 
