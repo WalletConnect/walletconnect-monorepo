@@ -24,11 +24,7 @@ function formatIOSDeepLink(uri: string, entry: IMobileRegistryEntry) {
 
 function saveDeeplinkInfo(data: IDeeplinkInfo) {
   const focusUri = data.href.split("?")[0];
-
-  setLocal(deeplinkChoiceKey, {
-    ...data,
-    href: focusUri,
-  });
+  setLocal(deeplinkChoiceKey, { ...data, href: focusUri });
 }
 
 interface IDeeplinkInfo {
