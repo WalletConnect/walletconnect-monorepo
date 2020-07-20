@@ -502,6 +502,7 @@ class Connector implements IConnector {
     this._sendResponse(response);
 
     this._connected = true;
+    this._setStorageSession();
     this._eventManager.trigger({
       event: "connect",
       params: [
@@ -513,9 +514,6 @@ class Connector implements IConnector {
         },
       ],
     });
-    if (this._connected) {
-      this._setStorageSession();
-    }
   }
 
   public rejectSession(sessionError?: ISessionError) {

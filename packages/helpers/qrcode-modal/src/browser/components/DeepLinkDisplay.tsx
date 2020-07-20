@@ -1,9 +1,10 @@
 import * as React from "react";
-import MobileRegistry from "@walletconnect/mobile-registry";
 import { IMobileRegistryEntry } from "@walletconnect/types";
 import { isIOS, deeplinkChoiceKey, setLocal } from "@walletconnect/utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
+
+import { MOBILE_REGISTRY } from "../assets/registry";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
@@ -53,7 +54,7 @@ function DeepLinkDisplay(props: DeepLinkDisplayProps) {
         }`}
       >
         {ios ? (
-          MobileRegistry.map((entry: IMobileRegistryEntry, index) => {
+          MOBILE_REGISTRY.map((entry: IMobileRegistryEntry, index) => {
             const { color, name, logo } = entry;
             const href = formatIOSDeepLink(props.uri, entry);
             const handleClickIOS = React.useCallback(() => {
