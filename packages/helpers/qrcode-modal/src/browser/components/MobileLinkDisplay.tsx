@@ -87,7 +87,13 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
                 onClick={handleClickIOS}
               />
             ) : (
-              <WalletIcon color={color} href={href} logo={logo} onClick={handleClickIOS} />
+              <WalletIcon
+                color={color}
+                href={href}
+                name={name}
+                logo={logo}
+                onClick={handleClickIOS}
+              />
             );
           })
         ) : (
