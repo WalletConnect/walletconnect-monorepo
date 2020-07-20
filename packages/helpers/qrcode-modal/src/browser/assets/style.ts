@@ -65,7 +65,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 
 .walletconnect-modal__close__wrapper {
   position: absolute;
-  top: 5px;
+  top: 0px;
   right: 0px;
   z-index: 10000;
   background: white;
@@ -218,7 +218,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   left: 0;
   justify-content: space-between;
   position: absolute;
-  top: -45px;
+  top: -42px;
   width: 100%;
 }
 
@@ -325,6 +325,12 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   margin-top: 5vw;
 }
 
+@media only screen and (min-width: 768px) {
+  .walletconnect-modal__footer {
+    margin-top: 40px;
+  }
+}
+
 .walletconnect-modal__footer a {
   color: #898d97;
   font-size: 15px;
@@ -348,6 +354,12 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   margin-top: 5vw;
+}
+
+@media only screen and (min-width: 768px) {
+  .walletconnect-connect__buttons__wrapper__wrap {
+    margin-top: 40px;
+  }
 }
 
 .walletconnect-connect__button {
@@ -390,13 +402,20 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   font-size: 2.7vw;
   text-decoration: none !important;
   padding: 0;
-  margin-top: 2.3vw;
+  margin-top: 1.8vw;
   font-weight: 600;
 }
 
 @media only screen and (max-width: 320px) {
   .walletconnect-connect__button__text {
     font-size: 3vw;
+  }
+}
+
+@media only screen and (min-width: 768px) {
+  .walletconnect-connect__button__text {
+    font-size: 16px;
+    margin-top: 12px;
   }
 }
 `;
