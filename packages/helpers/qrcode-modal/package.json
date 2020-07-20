@@ -6,10 +6,12 @@
     "clean": "rm -rf dist",
     "build:svg": "node ./scripts/build-svg.js",
     "build:css": "node ./scripts/build-css.js",
-    "build:pre": "run-s clean build:svg build:css",
+    "build:registry": "node ./scripts/build-registry.js",
+    "build:pre": "run-s clean build:registry build:svg build:css",
     "build:umd": "webpack",
     "build:cjs": "microbundle --no-compress -f cjs --alias react=preact/compat,react-dom/test-utils=preact/test-utils,react-dom=preact/compat --tsconfig ./tsconfig.cjs.json",
     "build": "run-s build:pre build:cjs build:umd",
+    "postinstall": "node ./scripts/build-registry.js",
     "test": "tsdx test ./test"
   },
   "keywords": [
