@@ -63,10 +63,18 @@ function getText() {
   return Languages[lang] || Languages["en"];
 }
 
-export function open(uri: string, cb: any) {
+export function open(uri: string, cb: any, mobileLinkOptions?: string[]) {
   injectStyleSheet();
   const wrapper = renderWrapper();
-  ReactDOM.render(<Modal text={getText()} uri={uri} onClose={getWrappedCallback(cb)} />, wrapper);
+  ReactDOM.render(
+    <Modal
+      text={getText()}
+      uri={uri}
+      onClose={getWrappedCallback(cb)}
+      mobileLinkOptions={mobileLinkOptions}
+    />,
+    wrapper,
+  );
 }
 
 export function close() {
