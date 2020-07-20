@@ -360,6 +360,7 @@ declare module "@walletconnect/types" {
 
   export interface IMobileRegistryEntry {
     name: string;
+    shortName: string;
     color: string;
     logo: string;
     universalLink: string;

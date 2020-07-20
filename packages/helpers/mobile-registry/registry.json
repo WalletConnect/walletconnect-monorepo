@@ -1,6 +1,7 @@
 [
   {
     "name": "Rainbow",
+    "shortName": "Rainbow",
     "color": "rgb(0, 30, 89)",
     "logo": "./logos/wallet-rainbow.png",
     "universalLink": "https://rnbwapp.com",
@@ -8,6 +9,7 @@
   },
   {
     "name": "MetaMask",
+    "shortName": "MetaMask",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/wallet-metamask.png",
     "universalLink": "https://metamask.app.link",
@@ -15,6 +17,7 @@
   },
   {
     "name": "Argent",
+    "shortName": "Argent",
     "color": "rgb(255, 135, 91)",
     "logo": "./logos/wallet-argent.png",
     "universalLink": "https://argent.link/app",
@@ -22,6 +25,7 @@
   },
   {
     "name": "Trust Wallet",
+    "shortName": "Trust",
     "color": "rgb(51, 117, 187)",
     "logo": "./logos/wallet-trust.png",
     "universalLink": "https://link.trustwallet.com",
@@ -29,6 +33,7 @@
   },
   {
     "name": "imToken",
+    "shortName": "imToken",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/wallet-imToken.png",
     "universalLink": "",
@@ -36,6 +41,7 @@
   },
   {
     "name": "Pillar Wallet",
+    "shortName": "Pillar",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/wallet-pillar.png",
     "universalLink": "",
@@ -43,6 +49,7 @@
   },
   {
     "name": "Gnosis Safe",
+    "shortName": "Safe",
     "color": "rgb(0, 140, 115)",
     "logo": "./logos/wallet-gnosis.png",
     "universalLink": "https://safe.gnosis.io/walletconnect",
@@ -50,6 +57,7 @@
   },
   {
     "name": "Math Wallet",
+    "shortName": "Math",
     "color": "rgb(0, 30, 89)",
     "logo": "./logos/wallet-math.png",
     "universalLink": "https://www.mathwallet.org",

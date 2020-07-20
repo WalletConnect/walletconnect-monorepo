@@ -70,7 +70,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
       >
         {ios ? (
           links.map((entry: IMobileRegistryEntry) => {
-            const { color, name, logo } = entry;
+            const { color, name, shortName, logo } = entry;
             const href = formatIOSMobile(props.uri, entry);
             const handleClickIOS = React.useCallback(() => {
               saveMobileLinkInfo({
@@ -90,7 +90,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
               <WalletIcon
                 color={color}
                 href={href}
-                name={name}
+                name={shortName}
                 logo={logo}
                 onClick={handleClickIOS}
               />
