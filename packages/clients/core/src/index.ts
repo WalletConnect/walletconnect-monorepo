@@ -23,6 +23,7 @@ import {
   IPushSubscription,
   IPushServerOptions,
   IWalletConnectSession,
+  IQRCodeModalOptions,
 } from "@walletconnect/types";
 import {
   parsePersonalSign,
@@ -103,7 +104,11 @@ class Connector implements IConnector {
   private _transport: ITransportLib;
   private _eventManager: EventManager = new EventManager();
   private _sessionStorage: ISessionStorage | undefined;
+
+  // -- qrcodeModal ----------------------------------------------------- //
+
   private _qrcodeModal: IQRCodeModal | undefined;
+  private _qrcodeModalOptions: IQRCodeModalOptions | undefined;
 
   // -- constructor ----------------------------------------------------- //
 
@@ -112,6 +117,7 @@ class Connector implements IConnector {
     this._cryptoLib = opts.cryptoLib;
     this._sessionStorage = opts.sessionStorage || new SessionStorage();
     this._qrcodeModal = opts.connectorOpts.qrcodeModal;
+    this._qrcodeModalOptions = opts.connectorOpts.qrcodeModalOptions;
 
     if (!opts.connectorOpts.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
@@ -826,20 +832,20 @@ class Connector implements IConnector {
       throw new Error(ERROR_MISSING_ID);
     }
 
+    const baseResponse = { id: response.id, jsonrpc: "2.0" };
+
     if (isJsonRpcResponseError(response)) {
       const error = formatRpcError(response.error);
 
       const errorResponse: IJsonRpcResponseError = {
-        id: response.id,
-        jsonrpc: "2.0",
+        ...baseResponse,
         ...response,
         error,
       };
       return errorResponse;
     } else if (isJsonRpcResponseSuccess(response)) {
       const successResponse: IJsonRpcResponseSuccess = {
-        id: response.id,
-        jsonrpc: "2.0",
+        ...baseResponse,
         ...response,
       };
 
@@ -1002,12 +1008,16 @@ class Connector implements IConnector {
   private _subscribeToInternalEvents() {
     this.on("display_uri", () => {
       if (this._qrcodeModal) {
-        this._qrcodeModal.open(this.uri, () => {
-          this._eventManager.trigger({
-            event: "modal_closed",
-            params: [],
-          });
-        });
+        this._qrcodeModal.open(
+          this.uri,
+          () => {
+            this._eventManager.trigger({
+              event: "modal_closed",
+              params: [],
+            });
+          },
+          this._qrcodeModalOptions,
+        );
       }
     });
 

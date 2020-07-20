@@ -8,6 +8,7 @@ import {
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IWalletConnectProviderOptions,
+  IQRCodeModalOptions,
 } from "@walletconnect/types";
 
 const ProviderEngine = require("web3-provider-engine");
@@ -21,6 +22,7 @@ const SubscriptionsSubprovider = require("web3-provider-engine/subproviders/subs
 class WalletConnectProvider extends ProviderEngine {
   public bridge = "https://bridge.walletconnect.org";
   public qrcode = true;
+  public qrcodeModalOptions: IQRCodeModalOptions | undefined = undefined;
   public rpc: IRPCMap | null = null;
   public infuraId = "";
   public http: HttpConnection | null = null;
@@ -39,11 +41,13 @@ class WalletConnectProvider extends ProviderEngine {
       ? opts.connector.bridge
       : opts.bridge || "https://bridge.walletconnect.org";
     this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
+    this.qrcodeModalOptions = opts.qrcodeModalOptions;
     this.wc =
       opts.connector ||
       new WalletConnect({
         bridge: this.bridge,
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+        qrcodeModalOptions: this.qrcodeModalOptions,
       });
     this.rpc = opts.rpc || null;
     if (

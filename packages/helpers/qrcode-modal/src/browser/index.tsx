@@ -14,6 +14,7 @@ import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_STYLE_ID,
 } from "./constants";
+import { IQRCodeModalOptions } from "@walletconnect/types";
 
 function injectStyleSheet() {
   const doc = getDocument();
@@ -63,7 +64,7 @@ function getText() {
   return Languages[lang] || Languages["en"];
 }
 
-export function open(uri: string, cb: any, mobileLinkOptions?: string[]) {
+export function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
   injectStyleSheet();
   const wrapper = renderWrapper();
   ReactDOM.render(
@@ -71,7 +72,7 @@ export function open(uri: string, cb: any, mobileLinkOptions?: string[]) {
       text={getText()}
       uri={uri}
       onClose={getWrappedCallback(cb)}
-      mobileLinkOptions={mobileLinkOptions}
+      qrcodeModalOptions={qrcodeModalOptions}
     />,
     wrapper,
   );

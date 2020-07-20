@@ -1,5 +1,6 @@
 import * as React from "react";
 import { isMobile } from "@walletconnect/utils";
+import { IQRCodeModalOptions } from "@walletconnect/types";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import MobileLinkDisplay from "./MobileLinkDisplay";
@@ -14,7 +15,7 @@ interface ModalProps {
   text: { [key: string]: string };
   uri: string;
   onClose: any;
-  mobileLinkOptions?: string[];
+  qrcodeModalOptions?: IQRCodeModalOptions;
 }
 
 function Modal(props: ModalProps) {
@@ -39,7 +40,7 @@ function Modal(props: ModalProps) {
           {displayQRCode ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
-            <MobileLinkDisplay {...displayProps} mobileLinkOptions={props.mobileLinkOptions} />
+            <MobileLinkDisplay {...displayProps} qrcodeModalOptions={props.qrcodeModalOptions} />
           )}
         </div>
         {mobile && (

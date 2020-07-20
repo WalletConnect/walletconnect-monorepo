@@ -1,5 +1,5 @@
 import * as React from "react";
-import { IMobileRegistryEntry } from "@walletconnect/types";
+import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
 import { isIOS, mobileLinkChoiceKey, setLocal } from "@walletconnect/utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
@@ -27,22 +27,19 @@ function saveMobileLinkInfo(data: IMobileLinkInfo) {
   setLocal(mobileLinkChoiceKey, { ...data, href: focusUri });
 }
 
-function shouldDisplayOption(name: string, mobileLinkOptions: string[]): boolean {
-  let display = false;
-  mobileLinkOptions.forEach(option => {
-    if (name.toLowerCase().includes(option.toLowerCase())) {
-      display = true;
-    }
-  });
-  return display;
+function getMobileRegistryEntry(name: string): IMobileRegistryEntry {
+  return MOBILE_REGISTRY.filter((entry: IMobileRegistryEntry) =>
+    entry.name.toLowerCase().includes(name),
+  )[0];
 }
-
-function getMobileLinkRegistry(mobileLinkOptions?: string[]) {
+function getMobileLinkRegistry(qrcodeModalOptions?: IQRCodeModalOptions) {
   let links = MOBILE_REGISTRY;
-  if (mobileLinkOptions && mobileLinkOptions.length) {
-    links = MOBILE_REGISTRY.filter((entry: IMobileRegistryEntry) =>
-      shouldDisplayOption(entry.name, mobileLinkOptions),
-    );
+  if (
+    qrcodeModalOptions &&
+    qrcodeModalOptions.mobileLinks &&
+    qrcodeModalOptions.mobileLinks.length
+  ) {
+    links = qrcodeModalOptions.mobileLinks.map((name: string) => getMobileRegistryEntry(name));
   }
   return links;
 }
@@ -52,15 +49,15 @@ interface IMobileLinkInfo {
   href: string;
 }
 interface MobileLinkDisplayProps {
-  mobileLinkOptions?: string[];
+  qrcodeModalOptions?: IQRCodeModalOptions;
   text: { [key: string]: string };
   uri: string;
 }
 
 function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   const ios = isIOS();
-  const links = getMobileLinkRegistry(props.mobileLinkOptions);
-  const grid = MOBILE_REGISTRY.length >= 5;
+  const links = getMobileLinkRegistry(props.qrcodeModalOptions);
+  const grid = links.length > 5;
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
