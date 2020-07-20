@@ -1,0 +1,12 @@
+name: Check Packages
+on: [push]
+
+jobs:
+  build:
+    name: Check All Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap
+        run: npm run bootstrap
+      - name: Run Check
+        run: npm run check
