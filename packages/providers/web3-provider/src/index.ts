@@ -198,22 +198,7 @@ class WalletConnectProvider extends ProviderEngine {
       return;
     }
 
-    let res: any;
-    if (signingMethods.includes(payload.method)) {
-      res = await this.handleSigningRequests(payload);
-    } else {
-      res = await this.handleRequest(payload);
-    }
-
-    if (res.result) {
-      return res.result;
-    } else {
-      if (res.error && res.error.message) {
-        throw new Error(res.error.message);
-      } else {
-        throw new Error("Failed JSON-RPC request");
-      }
-    }
+    return this.sendAsyncPromise(payload.method, payload.params);
   }
 
   onConnect(callback: any) {
@@ -234,35 +219,6 @@ class WalletConnectProvider extends ProviderEngine {
     const wc = await this.getWalletConnector({ disableSessionCreation: true });
     await wc.killSession();
     await this.onDisconnect();
-  }
-
-  async handleSigningRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
-    const wc = await this.getWalletConnector();
-    let result;
-    switch (payload.method) {
-      case "eth_sign":
-        result = await wc.signMessage(payload.params);
-        break;
-      case "personal_sign":
-        result = await wc.signPersonalMessage(payload.params);
-        break;
-      case "eth_signTransaction":
-        result = await wc.signTransaction(payload.params);
-        break;
-      case "eth_sendTransaction":
-        result = await wc.sendTransaction(payload.params);
-        break;
-      case "eth_signTypedData":
-      case "eth_signTypedData_v1":
-      case "eth_signTypedData_v2":
-      case "eth_signTypedData_v3":
-      case "eth_signTypedData_v4":
-        result = await wc.signTypedData(payload.params);
-        break;
-      default:
-        return this.handleOtherRequests(payload);
-    }
-    return this.formatResponse(payload, result);
   }
 
   async handleRequest(payload: any) {
@@ -304,12 +260,13 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
-  formatResponse(payload: any, result: any) {
-    return {
-      id: payload.id,
-      jsonrpc: payload.jsonrpc,
-      result: result,
-    };
+  async handleOtherRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
+    if (!signingMethods.includes(payload.method) && payload.method.startsWith("eth_")) {
+      return this.handleReadRequests(payload);
+    }
+    const wc = await this.getWalletConnector();
+    const result = await wc.sendCustomRequest(payload);
+    return this.formatResponse(payload, result);
   }
 
   async handleReadRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
@@ -320,13 +277,13 @@ class WalletConnectProvider extends ProviderEngine {
     }
     return this.http.send(payload);
   }
-  async handleOtherRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
-    if (payload.method.startsWith("eth_")) {
-      return this.handleReadRequests(payload);
-    }
-    const wc = await this.getWalletConnector();
-    const result = await wc.sendCustomRequest(payload);
-    return this.formatResponse(payload, result);
+
+  formatResponse(payload: any, result: any) {
+    return {
+      id: payload.id,
+      jsonrpc: payload.jsonrpc,
+      result: result,
+    };
   }
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
@@ -469,9 +426,9 @@ class WalletConnectProvider extends ProviderEngine {
         (error: any, response: any) => {
           if (error) {
             reject(error);
-          } else {
-            resolve(response.result);
+            return;
           }
+          resolve(response.result);
         },
       );
     });
