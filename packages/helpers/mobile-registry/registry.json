@@ -21,6 +21,13 @@
     "deepLink": "gnosissafe:"
   },
   {
+    "name": "EasyPocket",
+    "color": "rgb(17, 93, 251)",
+    "logo": "./logos/wallet-easypocket.png",
+    "universalLink": "https://wallet.easypocket.app",
+    "deepLink": "easypocket:"
+  },
+  {
     "name": "Argent",
     "color": "rgb(255, 135, 91)",
     "logo": "./logos/wallet-argent.png",
