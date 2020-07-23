@@ -86,16 +86,17 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
       ? opts.connector.bridge
       : opts.bridge || "https://bridge.walletconnect.org";
     this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
+    this.chainId = typeof opts.chainId !== "undefined" ? opts.chainId : 1;
+    this.networkId = this.chainId;
+    this.qrcodeModalOptions = opts.qrcodeModalOptions;
     this.wc =
       opts.connector ||
       new WalletConnect({
         bridge: this.bridge,
         clientMeta,
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+        qrcodeModalOptions: this.qrcodeModalOptions,
       });
-    this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
-    this.chainId = typeof opts.chainId !== "undefined" ? opts.chainId : 1;
-    this.networkId = this.chainId;
 
     this.isConnecting = false;
     this.connectCallbacks = [];
