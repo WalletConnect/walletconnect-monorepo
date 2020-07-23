@@ -17,11 +17,17 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install
+      - name: Install dependencies
         run: npm install
 
-      - name: Bootstrap
-        run: npm run bootstrap
+      - name: Bootstrap monorepo
+        run: npm run bootstrap:monorepo
 
-      - name: Run Check
-        run: npm run check
+      - name: Lint packages
+        run: npm run lint
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Test packages
+        run: npm run test
