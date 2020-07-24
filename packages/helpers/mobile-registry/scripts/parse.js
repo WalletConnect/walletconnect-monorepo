@@ -8,6 +8,7 @@ const FILE_PATH = path.join(PKG_DIR, FILE_NAME);
 function parseEntry(entry) {
   return {
     name: entry.name || "",
+    shortName: entry.shortName || "",
     color: entry.color || "",
     logo: entry.logo || "",
     universalLink: entry.universalLink || "",

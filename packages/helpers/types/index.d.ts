@@ -241,6 +241,7 @@ declare module "@walletconnect/types" {
     storage?: ISessionStorage;
     clientMeta?: IClientMeta;
     qrcodeModal?: IQRCodeModal;
+    qrcodeModalOptions?: IQRCodeModalOptions;
   }
 
   export interface IConnectorOpts {
@@ -296,6 +297,7 @@ declare module "@walletconnect/types" {
     bridge?: string;
     qrcode?: boolean;
     chainId?: number;
+    qrcodeModalOptions?: IQRCodeModalOptions;
   }
 
   export interface IWCEthRpcConnectionOptions extends IWCRpcConnectionOptions {
@@ -348,12 +350,17 @@ declare module "@walletconnect/types" {
   }
 
   export interface IQRCodeModal {
-    open(uri: string, cb: any): void;
+    open(uri: string, cb: any, opts?: any): void;
     close(): void;
+  }
+
+  export interface IQRCodeModalOptions {
+    mobileLinks?: string[];
   }
 
   export interface IMobileRegistryEntry {
     name: string;
+    shortName: string;
     color: string;
     logo: string;
     universalLink: string;

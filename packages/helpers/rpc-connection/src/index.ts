@@ -8,14 +8,16 @@ import {
   IConnector,
   IJsonRpcResponseError,
   IJsonRpcResponseSuccess,
+  IQRCodeModalOptions,
 } from "@walletconnect/types";
 
 class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public bridge = "https://bridge.walletconnect.org";
   public qrcode = true;
-  public chainId = 1;
+  public qrcodeModalOptions: IQRCodeModalOptions | undefined = undefined;
 
   public wc: IConnector;
+  public chainId = 1;
   public connected = false;
 
   constructor(opts?: IWCRpcConnectionOptions) {
@@ -24,13 +26,16 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       ? opts.connector.bridge
       : opts?.bridge || "https://bridge.walletconnect.org";
     this.qrcode = typeof opts?.qrcode === "undefined" || opts.qrcode !== false;
+    this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : 1;
+    this.qrcodeModalOptions = opts?.qrcodeModalOptions;
     this.wc =
       opts?.connector ||
       new WalletConnect({
         bridge: this.bridge,
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+        qrcodeModalOptions: this.qrcodeModalOptions,
       });
-    this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : 1;
+
     if (this.wc.connected) {
       this.connected = true;
     }
@@ -81,7 +86,10 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   }
 
   public onClose(): void {
-    this.wc = new WalletConnect({ bridge: this.bridge });
+    this.wc = new WalletConnect({
+      bridge: this.bridge,
+      qrcodeModalOptions: this.qrcodeModalOptions,
+    });
     this.connected = false;
     // Emit close event
     this.emit("close");

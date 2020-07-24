@@ -46,7 +46,7 @@ provider.on("disconnect", (code: number, reason: string) => {
 });
 ```
 
-## Provider Methods
+## Provider Methods
 
 ```typescript
 interface RequestArguments {
@@ -88,20 +88,23 @@ const signedTypedData = await web3.eth.signTypedData(msg);
 
 ## Provider Options
 
-1. Required (at least one of the following)
-   a. infuraId - the Infura Id is used for read requests that don't require user approval like signing requests
-   b. rpc - custom rpc url mapping with chainId keys for each url (check custom rpc url section)
-2. Optional
-   a. bridge - the Bridge Url points to the bridge server used to relay WalletConnect payloads - default="https://bridge.walletconnect.org"
-   b. chainId - preferred chain id to be provided by the wallet on session request - default=1
+### Required
 
-## Custom RPC Url
+In order to resolve non-signing requests you need to provide one of the following:
 
-WalletConnect Web3 Provider uses a HTTP connection to a remote node to make read calls instead of making unnecessary JSON-RPC requests through the WalletConnect session.
+#### Infura ID
 
-It's required to pass either the infuraId or rpc option values to make this connection remotely. If you would like to use your own custom RPC url you don't need to pass an InfuraId for the provider to work.
+The infuraId will support the following chainId's: Mainnet (1), Ropsten (3), Rinkeby(4), Goerli (5) and Kovan (42)
 
-Example RPC mapping by chainId
+```typescript
+const provider = new WalletConnectProvider({
+  infuraId: "27e484dcd9e3efcfd25a83a78777cdf1",
+});
+```
+
+#### RPC URL Mapping
+
+The RPC URL mapping should indexed by chainId and it requires at least one value.
 
 ```typescript
 const provider = new WalletConnectProvider({
@@ -111,5 +114,56 @@ const provider = new WalletConnectProvider({
     100: "https://dai.poa.network",
     // ...
   },
+});
+```
+
+### Optional
+
+You can also customize the connector through the provider using the following options
+
+#### Bridge URL
+
+Use your own hosted bridge by providing the url
+
+```typescript
+const provider = new WalletConnectProvider({
+  infuraId: "27e484dcd9e3efcfd25a83a78777cdf1",
+  bridge: "https://bridge.myhostedserver.com",
+});
+```
+
+#### Disable QR Code Modal
+
+Use your own custom qrcode modal and disable the built-in one
+
+```typescript
+const provider = new WalletConnectProvider({
+  infuraId: "27e484dcd9e3efcfd25a83a78777cdf1",
+  qrcode: false,
+});
+
+provider.connector.on("display_uri", (err, payload) => {
+  const uri = payload.params[0];
+  CustomQRCodeModal.display(uri);
+});
+```
+
+#### Filter Mobile Linking Options
+
+If you would like to reduce the number of mobile linking options or customize its order, you can provide an array of wallet names
+
+```typescript
+const provider = new WalletConnectProvider({
+  infuraId: "27e484dcd9e3efcfd25a83a78777cdf1",
+  qrcodeModalOptions: {
+    mobileLinks: [
+      "rainbow",
+      "metamask",
+      "argent",
+      "trust",
+      "imtoken",
+      "pillar
+    ]
+  }
 });
 ```

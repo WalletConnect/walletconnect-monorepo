@@ -13,6 +13,7 @@ async function formatQRCodeImage(data: string) {
 }
 
 interface QRCodeDisplayProps {
+  text: { [key: string]: string };
   uri: string;
 }
 
@@ -26,7 +27,7 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
-        {"Scan QR code with a WalletConnect-compatible wallet"}
+        {props.text.scan_qrcode_with_wallet}
       </p>
       <div dangerouslySetInnerHTML={{ __html: svg }}></div>
     </div>
