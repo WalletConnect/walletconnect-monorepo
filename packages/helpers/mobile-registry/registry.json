@@ -62,5 +62,13 @@
     "logo": "./logos/wallet-math.png",
     "universalLink": "https://www.mathwallet.org",
     "deepLink": "mathwallet:"
+  },
+  {
+    "name": "Nash",
+    "shortName": "Nash",
+    "color": "rgb(0,82,243)",
+    "logo": "./logos/wallet-nash.png",
+    "universalLink": "https://nash.io/walletconnect",
+    "deepLink": "nash:"
   }
 ]
