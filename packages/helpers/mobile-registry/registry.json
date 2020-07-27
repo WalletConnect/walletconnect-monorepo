@@ -62,5 +62,13 @@
     "logo": "./logos/wallet-math.png",
     "universalLink": "https://www.mathwallet.org",
     "deepLink": "mathwallet:"
+  },
+  {
+    "name": "MYKEY",
+    "shortName": "MYKEY",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/wallet-mykey.png",
+    "universalLink": "https://mykey.org",
+    "deepLink": "mykeywalletconnect:"
   }
 ]
