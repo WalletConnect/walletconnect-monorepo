@@ -16,6 +16,20 @@
     "deepLink": "metamask:"
   },
   {
+    "name": "Gnosis Safe",
+    "color": "rgb(0, 140, 115)",
+    "logo": "./logos/wallet-gnosis.png",
+    "universalLink": "https://safe.gnosis.io/walletconnect",
+    "deepLink": "gnosissafe:"
+  },
+  {
+    "name": "EasyPocket",
+    "color": "rgb(17, 93, 251)",
+    "logo": "./logos/wallet-easypocket.png",
+    "universalLink": "https://wallet.easypocket.app",
+    "deepLink": "easypocket:"
+  },
+  {
     "name": "Argent",
     "shortName": "Argent",
     "color": "rgb(255, 135, 91)",
@@ -70,5 +84,13 @@
     "logo": "./logos/wallet-nash.png",
     "universalLink": "https://nash.io/walletconnect",
     "deepLink": "nash:"
+  },
+  {
+    "name": "MYKEY",
+    "shortName": "MYKEY",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/wallet-mykey.png",
+    "universalLink": "https://mykey.org",
+    "deepLink": "mykeywalletconnect:"
   }
 ]
