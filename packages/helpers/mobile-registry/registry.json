@@ -78,6 +78,14 @@
     "deepLink": "mathwallet:"
   },
   {
+    "name": "Nash",
+    "shortName": "Nash",
+    "color": "rgb(0,82,243)",
+    "logo": "./logos/wallet-nash.png",
+    "universalLink": "https://nash.io/walletconnect",
+    "deepLink": "nash:"
+  },
+  {
     "name": "MYKEY",
     "shortName": "MYKEY",
     "color": "rgb(255, 255, 255)",
