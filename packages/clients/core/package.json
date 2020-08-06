@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/core",
-  "version": "1.1.0",
+  "version": "1.1.1-alpha.0",
   "description": "Core Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -55,9 +55,9 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/socket-transport": "^1.1.0",
-    "@walletconnect/types": "^1.1.0",
-    "@walletconnect/utils": "^1.1.0"
+    "@walletconnect/socket-transport": "^1.1.1-alpha.0",
+    "@walletconnect/types": "^1.1.1-alpha.0",
+    "@walletconnect/utils": "^1.1.1-alpha.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
