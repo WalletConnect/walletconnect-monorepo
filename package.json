@@ -19,8 +19,8 @@
   "license": "LGPL-3.0",
   "scripts": {
     "ls": "lerna ls",
-    "bootstrap": "run-s bootstrap:monorepo bootstrap:example",
-    "bootstrap:monorepo": "npm install && lerna bootstrap --hoist",
+    "bootstrap": "npm install && run-s bootstrap:monorepo bootstrap:example",
+    "bootstrap:monorepo": "lerna bootstrap --hoist",
     "bootstrap:example": "cd example && npm install",
     "build": "lerna run build",
     "test": "lerna run test",

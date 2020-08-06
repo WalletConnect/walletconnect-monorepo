@@ -7,7 +7,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x]
+        node-version: [12.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -17,8 +17,17 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Bootstrap
-        run: npm run bootstrap
+      - name: Install dependencies
+        run: npm install
 
-      - name: Run Check
-        run: npm run check
+      - name: Bootstrap monorepo
+        run: npm run bootstrap:monorepo
+
+      - name: Lint packages
+        run: npm run lint
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Test packages
+        run: npm run test
