@@ -1,7 +1,7 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
-import { payloadId, signingMethods } from "@walletconnect/utils";
+import { payloadId, signingMethods, parsePersonalSign } from "@walletconnect/utils";
 import {
   IRPCMap,
   IConnector,
@@ -185,12 +185,22 @@ class WalletConnectProvider extends ProviderEngine {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === "string") {
       const method = payload;
-      const params = callback;
+      let params = callback;
+      // maintaining the previous behavior where personal_sign could be non-hex string
+      if (method === "personal_sign") {
+        params = parsePersonalSign(params);
+      }
+
       return this.sendAsyncPromise(method, params);
     }
 
     // ensure payload includes id and jsonrpc
     payload = { id: payloadId(), jsonrpc: "2.0", ...payload };
+
+    // maintaining the previous behavior where personal_sign could be non-hex string
+    if (payload.method === "personal_sign") {
+      payload.params = parsePersonalSign(payload.params);
+    }
 
     // Web3 1.0 beta.37 (and below) uses `send` with a callback for async queries
     if (callback) {
