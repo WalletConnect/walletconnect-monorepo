@@ -1,7 +1,7 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
-import { payloadId } from "@walletconnect/utils";
+import { payloadId, signingMethods, parsePersonalSign } from "@walletconnect/utils";
 import {
   IRPCMap,
   IConnector,
@@ -184,26 +184,31 @@ class WalletConnectProvider extends ProviderEngine {
   async send(payload: any, callback?: any): Promise<any> {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === "string") {
-      return this.sendAsyncPromise(payload, callback);
+      const method = payload;
+      let params = callback;
+      // maintaining the previous behavior where personal_sign could be non-hex string
+      if (method === "personal_sign") {
+        params = parsePersonalSign(params);
+      }
+
+      return this.sendAsyncPromise(method, params);
     }
+
     // ensure payload includes id and jsonrpc
     payload = { id: payloadId(), jsonrpc: "2.0", ...payload };
+
+    // maintaining the previous behavior where personal_sign could be non-hex string
+    if (payload.method === "personal_sign") {
+      payload.params = parsePersonalSign(payload.params);
+    }
+
     // Web3 1.0 beta.37 (and below) uses `send` with a callback for async queries
     if (callback) {
       this.sendAsync(payload, callback);
       return;
     }
 
-    const res = await this.handleRequest(payload);
-    if (res.result) {
-      return res.result;
-    } else {
-      if (res.error && res.error.message) {
-        throw new Error(res.error.message);
-      } else {
-        throw new Error("Failed JSON-RPC request");
-      }
-    }
+    return this.sendAsyncPromise(payload.method, payload.params);
   }
 
   onConnect(callback: any) {
@@ -265,16 +270,8 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
-  formatResponse(payload: any, result: any) {
-    return {
-      id: payload.id,
-      jsonrpc: payload.jsonrpc,
-      result: result,
-    };
-  }
-
   async handleOtherRequests(payload: any): Promise<IJsonRpcResponseSuccess> {
-    if (payload.method.startsWith("eth_")) {
+    if (!signingMethods.includes(payload.method) && payload.method.startsWith("eth_")) {
       return this.handleReadRequests(payload);
     }
     const wc = await this.getWalletConnector();
@@ -289,6 +286,14 @@ class WalletConnectProvider extends ProviderEngine {
       throw error;
     }
     return this.http.send(payload);
+  }
+
+  formatResponse(payload: any, result: any) {
+    return {
+      id: payload.id,
+      jsonrpc: payload.jsonrpc,
+      result: result,
+    };
   }
 
   // disableSessionCreation - if true, getWalletConnector won't try to create a new session
@@ -419,7 +424,7 @@ class WalletConnectProvider extends ProviderEngine {
     }
   }
 
-  sendAsyncPromise(method: string, params: any) {
+  sendAsyncPromise(method: string, params: any): Promise<any> {
     return new Promise((resolve, reject) => {
       this.sendAsync(
         {
@@ -431,9 +436,9 @@ class WalletConnectProvider extends ProviderEngine {
         (error: any, response: any) => {
           if (error) {
             reject(error);
-          } else {
-            resolve(response.result);
+            return;
           }
+          resolve(response.result);
         },
       );
     });
