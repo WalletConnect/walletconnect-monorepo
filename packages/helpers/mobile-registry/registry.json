@@ -92,5 +92,13 @@
     "logo": "./logos/wallet-mykey.png",
     "universalLink": "https://mykey.org",
     "deepLink": "mykeywalletconnect:"
+  },
+  {
+    "name": "TokenPocket",
+    "shortName": "TokenPocket",
+    "color": "rgb(41, 128, 254)",
+    "logo": "./logos/wallet-tokenpocket.png",
+    "universalLink": "",
+    "deepLink": "tpoutside:"
   }
 ]
