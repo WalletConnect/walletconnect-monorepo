@@ -36,6 +36,14 @@
     "rpc_url": "https://rpc.goerli.mudit.blog/"
   },
   {
+    "name": "RSK Mainnet",
+    "short_name": "rsk",
+    "chain": "RSK",
+    "chain_id": 30,
+    "network_id": 30,
+    "rpc_url": "https://public-node.rsk.co"
+  },
+  {
     "name": "Ethereum Kovan",
     "short_name": "kov",
     "chain": "ETH",
@@ -79,5 +87,13 @@
     "chain_id": 100,
     "network_id": 1,
     "rpc_url": "https://dai.poa.network"
+  },
+  {
+    "name": "Callisto Mainnet",
+    "short_name": "clo",
+    "chain": "callisto",
+    "chain_id": 820,
+    "network_id": 1,
+    "rpc_url": "https://clo-geth.0xinfra.com/"
   }
 ]
