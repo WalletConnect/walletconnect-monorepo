@@ -17,17 +17,11 @@
   },
   {
     "name": "Gnosis Safe",
+    "shortName": "Safe",
     "color": "rgb(0, 140, 115)",
     "logo": "./logos/wallet-gnosis.png",
     "universalLink": "https://safe.gnosis.io/walletconnect",
     "deepLink": "gnosissafe:"
-  },
-  {
-    "name": "EasyPocket",
-    "color": "rgb(17, 93, 251)",
-    "logo": "./logos/wallet-easypocket.png",
-    "universalLink": "https://wallet.easypocket.app",
-    "deepLink": "easypocket:"
   },
   {
     "name": "Argent",
@@ -62,14 +56,6 @@
     "deepLink": "pillarwallet:"
   },
   {
-    "name": "Gnosis Safe",
-    "shortName": "Safe",
-    "color": "rgb(0, 140, 115)",
-    "logo": "./logos/wallet-gnosis.png",
-    "universalLink": "https://safe.gnosis.io/walletconnect",
-    "deepLink": "gnosissafe:"
-  },
-  {
     "name": "Math Wallet",
     "shortName": "Math",
     "color": "rgb(0, 30, 89)",
@@ -100,5 +86,13 @@
     "logo": "./logos/wallet-tokenpocket.png",
     "universalLink": "",
     "deepLink": "tpoutside:"
+  },
+  {
+    "name": "EasyPocket",
+    "shortName": "EasyPocket",
+    "color": "rgb(17, 93, 251)",
+    "logo": "./logos/wallet-easypocket.png",
+    "universalLink": "https://wallet.easypocket.app",
+    "deepLink": "easypocket:"
   }
 ]
