@@ -406,12 +406,6 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   font-weight: 600;
 }
 
-@media only screen and (max-width: 320px) {
-  .walletconnect-connect__button__text {
-    font-size: 3vw;
-  }
-}
-
 @media only screen and (min-width: 768px) {
   .walletconnect-connect__button__text {
     font-size: 16px;

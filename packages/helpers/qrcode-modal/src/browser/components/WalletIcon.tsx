@@ -22,7 +22,12 @@ function WalletIcon(props: WalletIconProps) {
         className="walletconnect-connect__button__icon"
         style={{ background: `url('${logo}') ${color}`, backgroundSize: "100%" }}
       ></div>
-      <div className={"walletconnect-connect__button__text"}>{name}</div>
+      <div
+        style={{ fontSize: `${name.length > 8 ? 2.5 : 2.7}vw` }}
+        className={"walletconnect-connect__button__text"}
+      >
+        {name}
+      </div>
     </a>
   );
 }
