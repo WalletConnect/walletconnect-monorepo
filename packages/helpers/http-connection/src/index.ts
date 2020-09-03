@@ -1,4 +1,4 @@
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import { XMLHttpRequest } from "xhr2-cookies";
 import { IError } from "@walletconnect/types";
 import { unsafeGetFromWindow } from "@walletconnect/utils";
