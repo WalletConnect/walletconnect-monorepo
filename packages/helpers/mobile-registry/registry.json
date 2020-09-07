@@ -94,5 +94,13 @@
     "logo": "./logos/wallet-easypocket.png",
     "universalLink": "https://wallet.easypocket.app",
     "deepLink": "easypocket:"
+  },
+  {
+    "name": "Crypto.com DeFi Wallet",
+    "shortName": "DeFi Wallet",
+    "color": "rgb(17, 153, 250)",
+    "logo": "./logos/wallet-crypto-defi.png",
+    "universalLink": "https://crypto.com/en/ncw/",
+    "deepLink": "cryptowallet:"
   }
 ]
