@@ -100,7 +100,7 @@
     "shortName": "DeFi Wallet",
     "color": "rgb(17, 153, 250)",
     "logo": "./logos/wallet-crypto-defi.png",
-    "universalLink": "https://crypto.com/en/ncw/",
+    "universalLink": "https://wallet.crypto.com",
     "deepLink": "cryptowallet:"
   }
 ]
