@@ -94,5 +94,13 @@
     "logo": "./logos/wallet-easypocket.png",
     "universalLink": "https://wallet.easypocket.app",
     "deepLink": "easypocket:"
+  },
+  {
+    "name": "ZelCore",
+    "shortName": "ZelCore",
+    "color": "rgb(35, 34, 32)",
+    "logo": "./logos/zelcore.png",
+    "universalLink": "https://link.zel.network",
+    "deepLink": "zel:"
   }
 ]
