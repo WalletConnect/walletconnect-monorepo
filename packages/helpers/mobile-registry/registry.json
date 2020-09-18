@@ -94,5 +94,13 @@
     "logo": "./logos/wallet-easypocket.png",
     "universalLink": "https://wallet.easypocket.app",
     "deepLink": "easypocket:"
+  },
+  {
+    "name": "Flare Wallet",
+    "shortName": "Flare",
+    "color": "rgb(31, 36, 59)",
+    "logo": "./logos/wallet-flare.png",
+    "universalLink": "https://flarewallet.io",
+    "deepLink": "flare:"
   }
 ]
