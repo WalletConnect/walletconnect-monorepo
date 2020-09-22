@@ -104,7 +104,14 @@
     "deepLink": "easypocket:"
   },
   {
-
+    "name": "SparkPoint Wallet",
+    "shortName": "SparkPoint",
+    "color": "rgb(20,67,95)",
+    "logo": "./logos/wallet-sparkpoint.png",
+    "universalLink": "https://sparkpoint.io",
+    "deepLink": "sparkpoint:"
+  },
+  {
     "name": "Flare Wallet",
     "shortName": "Flare",
     "color": "rgb(31, 36, 59)",
