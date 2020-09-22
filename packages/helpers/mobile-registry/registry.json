@@ -96,6 +96,14 @@
     "deepLink": "easypocket:"
   },
   {
+    "name": "Flare Wallet",
+    "shortName": "Flare",
+    "color": "rgb(31, 36, 59)",
+    "logo": "./logos/wallet-flare.png",
+    "universalLink": "https://flarewallet.io",
+    "deepLink": "flare:"
+  },
+  {
     "name": "ZelCore",
     "shortName": "ZelCore",
     "color": "rgb(35, 34, 32)",
