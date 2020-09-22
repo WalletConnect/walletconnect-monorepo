@@ -118,5 +118,13 @@
     "logo": "./logos/zelcore.png",
     "universalLink": "https://link.zel.network",
     "deepLink": "zel:"
+  },
+  {
+    "name": "Crypto.com DeFi Wallet",
+    "shortName": "DeFi Wallet",
+    "color": "rgb(17, 153, 250)",
+    "logo": "./logos/wallet-crypto-defi.png",
+    "universalLink": "https://wallet.crypto.com",
+    "deepLink": "cryptowallet:"
   }
 ]
