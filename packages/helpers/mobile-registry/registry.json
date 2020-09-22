@@ -104,6 +104,7 @@
     "deepLink": "easypocket:"
   },
   {
+
     "name": "Flare Wallet",
     "shortName": "Flare",
     "color": "rgb(31, 36, 59)",
@@ -126,5 +127,13 @@
     "logo": "./logos/wallet-crypto-defi.png",
     "universalLink": "https://wallet.crypto.com",
     "deepLink": "cryptowallet:"
+  },
+  {
+    "name": "ONTO",
+    "shortName": "ONTO",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/wallet-onto.png",
+    "universalLink": "https://onto.app",
+    "deepLink": "ontoprovider:"
   }
 ]
