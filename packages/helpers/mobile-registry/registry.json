@@ -142,5 +142,13 @@
     "logo": "./logos/wallet-kyberswap.png",
     "universalLink": "https://kyberswapnew.app.link",
     "deepLink": "kyberswap:"
+  },
+  {
+    "name": "SafePal Wallet",
+    "shortName": "SafePal",
+    "color": "rgb(0, 128, 255)",
+    "logo": "./logos/wallet-safepal.png",
+    "universalLink": "link.safepal.io",
+    "deepLink": "safepalwallet:"
   }
 ]
