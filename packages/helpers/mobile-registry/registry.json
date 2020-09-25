@@ -94,5 +94,13 @@
     "logo": "./logos/wallet-easypocket.png",
     "universalLink": "https://wallet.easypocket.app",
     "deepLink": "easypocket:"
+  },
+    {
+    "name": "SafePal Wallet",
+    "shortName": "SafePal",
+    "color": "rgb(0, 128, 255)",
+    "logo": "./logos/wallet-safepal.png",
+    "universalLink": "",
+    "deepLink": "safepalwallet:"
   }
 ]
