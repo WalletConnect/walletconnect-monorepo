@@ -95,7 +95,55 @@
     "universalLink": "https://wallet.easypocket.app",
     "deepLink": "easypocket:"
   },
-    {
+  {
+    "name": "SparkPoint Wallet",
+    "shortName": "SparkPoint",
+    "color": "rgb(20,67,95)",
+    "logo": "./logos/wallet-sparkpoint.png",
+    "universalLink": "https://sparkpoint.io",
+    "deepLink": "sparkpoint:"
+  },
+  {
+    "name": "Flare Wallet",
+    "shortName": "Flare",
+    "color": "rgb(31, 36, 59)",
+    "logo": "./logos/wallet-flare.png",
+    "universalLink": "https://flarewallet.io",
+    "deepLink": "flare:"
+  },
+  {
+    "name": "ZelCore",
+    "shortName": "ZelCore",
+    "color": "rgb(35, 34, 32)",
+    "logo": "./logos/zelcore.png",
+    "universalLink": "https://link.zel.network",
+    "deepLink": "zel:"
+  },
+  {
+    "name": "Crypto.com DeFi Wallet",
+    "shortName": "DeFi Wallet",
+    "color": "rgb(17, 153, 250)",
+    "logo": "./logos/wallet-crypto-defi.png",
+    "universalLink": "https://wallet.crypto.com",
+    "deepLink": "cryptowallet:"
+  },
+  {
+    "name": "ONTO",
+    "shortName": "ONTO",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/wallet-onto.png",
+    "universalLink": "https://onto.app",
+    "deepLink": "ontoprovider:"
+  },
+  {
+    "name": "KyberSwap",
+    "shortName": "KyberSwap",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/wallet-kyberswap.png",
+    "universalLink": "https://kyberswapnew.app.link",
+    "deepLink": "kyberswap:"
+  },
+  {
     "name": "SafePal Wallet",
     "shortName": "SafePal",
     "color": "rgb(0, 128, 255)",
