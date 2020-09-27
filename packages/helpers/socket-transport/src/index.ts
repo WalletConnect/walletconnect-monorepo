@@ -142,6 +142,8 @@ class SocketTransport implements ITransportLib {
     this._nextSocket.onmessage = (event: MessageEvent) => this._socketReceive(event);
 
     this._nextSocket.onopen = () => this._socketOpen();
+
+    this._nextSocket.onerror = (event: Event) => { throw new Error("WebSocket connection failed"); };
   }
 
   private _socketOpen() {
