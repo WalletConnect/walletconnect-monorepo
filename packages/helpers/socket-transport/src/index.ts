@@ -143,7 +143,7 @@ class SocketTransport implements ITransportLib {
 
     this._nextSocket.onopen = () => this._socketOpen();
 
-    this._nextSocket.onerror = (event: Event) => { throw new Error("WebSocket connection failed"); };
+    this._nextSocket.onerror = (event: Event) => this._socketError(event);
   }
 
   private _socketOpen() {
@@ -196,6 +196,13 @@ class SocketTransport implements ITransportLib {
       if (events && events.length) {
         events.forEach(event => event.callback(socketMessage));
       }
+    }
+  }
+
+  private _socketError(e: Event) {
+    const events = this._events.filter(event => event.event === "error");
+    if (events && events.length) {
+        events.forEach(event => event.callback(e));
     }
   }
 
