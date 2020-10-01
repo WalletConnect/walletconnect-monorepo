@@ -3,7 +3,7 @@
     "name": "Rainbow",
     "shortName": "Rainbow",
     "color": "rgb(0, 30, 89)",
-    "logo": "./logos/wallet-rainbow.png",
+    "logo": "./logos/rainbow.png",
     "universalLink": "https://rnbwapp.com",
     "deepLink": "rainbow:"
   },
@@ -11,23 +11,15 @@
     "name": "MetaMask",
     "shortName": "MetaMask",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/wallet-metamask.png",
+    "logo": "./logos/metamask.png",
     "universalLink": "https://metamask.app.link",
     "deepLink": "metamask:"
-  },
-  {
-    "name": "Gnosis Safe",
-    "shortName": "Safe",
-    "color": "rgb(0, 140, 115)",
-    "logo": "./logos/wallet-gnosis.png",
-    "universalLink": "https://safe.gnosis.io/walletconnect",
-    "deepLink": "gnosissafe:"
   },
   {
     "name": "Argent",
     "shortName": "Argent",
     "color": "rgb(255, 135, 91)",
-    "logo": "./logos/wallet-argent.png",
+    "logo": "./logos/argent.png",
     "universalLink": "https://argent.link/app",
     "deepLink": "argent://app"
   },
@@ -35,7 +27,7 @@
     "name": "Trust Wallet",
     "shortName": "Trust",
     "color": "rgb(51, 117, 187)",
-    "logo": "./logos/wallet-trust.png",
+    "logo": "./logos/trust.png",
     "universalLink": "https://link.trustwallet.com",
     "deepLink": "trust:"
   },
@@ -43,7 +35,7 @@
     "name": "imToken",
     "shortName": "imToken",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/wallet-imToken.png",
+    "logo": "./logos/imToken.png",
     "universalLink": "",
     "deepLink": "imtokenv2:"
   },
@@ -51,7 +43,7 @@
     "name": "Pillar Wallet",
     "shortName": "Pillar",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/wallet-pillar.png",
+    "logo": "./logos/pillar.png",
     "universalLink": "",
     "deepLink": "pillarwallet:"
   },
@@ -59,7 +51,7 @@
     "name": "Math Wallet",
     "shortName": "Math",
     "color": "rgb(0, 30, 89)",
-    "logo": "./logos/wallet-math.png",
+    "logo": "./logos/math.png",
     "universalLink": "https://www.mathwallet.org",
     "deepLink": "mathwallet:"
   },
@@ -67,7 +59,7 @@
     "name": "Nash",
     "shortName": "Nash",
     "color": "rgb(0,82,243)",
-    "logo": "./logos/wallet-nash.png",
+    "logo": "./logos/nash.png",
     "universalLink": "https://nash.io/walletconnect",
     "deepLink": "nash:"
   },
@@ -75,7 +67,7 @@
     "name": "MYKEY",
     "shortName": "MYKEY",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/wallet-mykey.png",
+    "logo": "./logos/mykey.png",
     "universalLink": "https://mykey.org",
     "deepLink": "mykeywalletconnect:"
   },
@@ -83,7 +75,7 @@
     "name": "TokenPocket",
     "shortName": "TokenPocket",
     "color": "rgb(41, 128, 254)",
-    "logo": "./logos/wallet-tokenpocket.png",
+    "logo": "./logos/tokenpocket.png",
     "universalLink": "",
     "deepLink": "tpoutside:"
   },
@@ -91,7 +83,7 @@
     "name": "EasyPocket",
     "shortName": "EasyPocket",
     "color": "rgb(17, 93, 251)",
-    "logo": "./logos/wallet-easypocket.png",
+    "logo": "./logos/easypocket.png",
     "universalLink": "https://wallet.easypocket.app",
     "deepLink": "easypocket:"
   },
@@ -99,7 +91,7 @@
     "name": "SparkPoint Wallet",
     "shortName": "SparkPoint",
     "color": "rgb(20,67,95)",
-    "logo": "./logos/wallet-sparkpoint.png",
+    "logo": "./logos/sparkpoint.png",
     "universalLink": "https://sparkpoint.io",
     "deepLink": "sparkpoint:"
   },
@@ -107,7 +99,7 @@
     "name": "Flare Wallet",
     "shortName": "Flare",
     "color": "rgb(31, 36, 59)",
-    "logo": "./logos/wallet-flare.png",
+    "logo": "./logos/flare.png",
     "universalLink": "https://flarewallet.io",
     "deepLink": "flare:"
   },
@@ -123,7 +115,7 @@
     "name": "Crypto.com DeFi Wallet",
     "shortName": "DeFi Wallet",
     "color": "rgb(17, 153, 250)",
-    "logo": "./logos/wallet-crypto-defi.png",
+    "logo": "./logos/crypto-defi.png",
     "universalLink": "https://wallet.crypto.com",
     "deepLink": "cryptowallet:"
   },
@@ -131,7 +123,7 @@
     "name": "ONTO",
     "shortName": "ONTO",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/wallet-onto.png",
+    "logo": "./logos/onto.png",
     "universalLink": "https://onto.app",
     "deepLink": "ontoprovider:"
   },
@@ -139,7 +131,7 @@
     "name": "KyberSwap",
     "shortName": "KyberSwap",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/wallet-kyberswap.png",
+    "logo": "./logos/kyberswap.png",
     "universalLink": "https://kyberswapnew.app.link",
     "deepLink": "kyberswap:"
   }
