@@ -139,7 +139,7 @@
     "name": "SafePal Wallet",
     "shortName": "SafePal",
     "color": "rgb(0, 128, 255)",
-    "logo": "./logos/wallet-safepal.png",
+    "logo": "./logos/safepal.png",
     "universalLink": "link.safepal.io",
     "deepLink": "safepalwallet:"
   }
