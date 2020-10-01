@@ -8,12 +8,12 @@
     "deepLink": "rainbow:"
   },
   {
-    "name": "MetaMask",
-    "shortName": "MetaMask",
-    "color": "rgb(255, 255, 255)",
-    "logo": "./logos/metamask.png",
-    "universalLink": "https://metamask.app.link",
-    "deepLink": "metamask:"
+    "name": "Trust Wallet",
+    "shortName": "Trust",
+    "color": "rgb(51, 117, 187)",
+    "logo": "./logos/trust.png",
+    "universalLink": "https://link.trustwallet.com",
+    "deepLink": "trust:"
   },
   {
     "name": "Argent",
@@ -24,20 +24,20 @@
     "deepLink": "argent://app"
   },
   {
-    "name": "Trust Wallet",
-    "shortName": "Trust",
-    "color": "rgb(51, 117, 187)",
-    "logo": "./logos/trust.png",
-    "universalLink": "https://link.trustwallet.com",
-    "deepLink": "trust:"
+    "name": "MetaMask",
+    "shortName": "MetaMask",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/metamask.png",
+    "universalLink": "https://metamask.app.link",
+    "deepLink": "metamask:"
   },
   {
-    "name": "imToken",
-    "shortName": "imToken",
-    "color": "rgb(255, 255, 255)",
-    "logo": "./logos/imToken.png",
-    "universalLink": "",
-    "deepLink": "imtokenv2:"
+    "name": "Crypto.com DeFi Wallet",
+    "shortName": "DeFi Wallet",
+    "color": "rgb(17, 153, 250)",
+    "logo": "./logos/crypto-defi.png",
+    "universalLink": "https://wallet.crypto.com",
+    "deepLink": "cryptowallet:"
   },
   {
     "name": "Pillar Wallet",
@@ -48,12 +48,28 @@
     "deepLink": "pillarwallet:"
   },
   {
-    "name": "Math Wallet",
-    "shortName": "Math",
-    "color": "rgb(0, 30, 89)",
-    "logo": "./logos/math.png",
-    "universalLink": "https://www.mathwallet.org",
-    "deepLink": "mathwallet:"
+    "name": "imToken",
+    "shortName": "imToken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/imToken.png",
+    "universalLink": "",
+    "deepLink": "imtokenv2:"
+  },
+  {
+    "name": "TokenPocket",
+    "shortName": "TokenPocket",
+    "color": "rgb(41, 128, 254)",
+    "logo": "./logos/tokenpocket.png",
+    "universalLink": "",
+    "deepLink": "tpoutside:"
+  },
+  {
+    "name": "KyberSwap",
+    "shortName": "KyberSwap",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/kyberswap.png",
+    "universalLink": "https://kyberswapnew.app.link",
+    "deepLink": "kyberswap:"
   },
   {
     "name": "Nash",
@@ -72,12 +88,20 @@
     "deepLink": "mykeywalletconnect:"
   },
   {
-    "name": "TokenPocket",
-    "shortName": "TokenPocket",
-    "color": "rgb(41, 128, 254)",
-    "logo": "./logos/tokenpocket.png",
-    "universalLink": "",
-    "deepLink": "tpoutside:"
+    "name": "Math Wallet",
+    "shortName": "Math",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/math.png",
+    "universalLink": "https://www.mathwallet.org",
+    "deepLink": "mathwallet:"
+  },
+  {
+    "name": "ZelCore",
+    "shortName": "ZelCore",
+    "color": "rgb(35, 34, 32)",
+    "logo": "./logos/zelcore.png",
+    "universalLink": "https://link.zel.network",
+    "deepLink": "zel:"
   },
   {
     "name": "EasyPocket",
@@ -104,36 +128,12 @@
     "deepLink": "flare:"
   },
   {
-    "name": "ZelCore",
-    "shortName": "ZelCore",
-    "color": "rgb(35, 34, 32)",
-    "logo": "./logos/zelcore.png",
-    "universalLink": "https://link.zel.network",
-    "deepLink": "zel:"
-  },
-  {
-    "name": "Crypto.com DeFi Wallet",
-    "shortName": "DeFi Wallet",
-    "color": "rgb(17, 153, 250)",
-    "logo": "./logos/crypto-defi.png",
-    "universalLink": "https://wallet.crypto.com",
-    "deepLink": "cryptowallet:"
-  },
-  {
     "name": "ONTO",
     "shortName": "ONTO",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/onto.png",
     "universalLink": "https://onto.app",
     "deepLink": "ontoprovider:"
-  },
-  {
-    "name": "KyberSwap",
-    "shortName": "KyberSwap",
-    "color": "rgb(255, 255, 255)",
-    "logo": "./logos/kyberswap.png",
-    "universalLink": "https://kyberswapnew.app.link",
-    "deepLink": "kyberswap:"
   },
   {
     "name": "SafePal Wallet",
