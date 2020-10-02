@@ -57,7 +57,9 @@ interface MobileLinkDisplayProps {
 function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   const ios = isIOS();
   const links = getMobileLinkRegistry(props.qrcodeModalOptions);
+  const [showMore, setShowMore] = React.useState(false);
   const grid = links.length > 5;
+  const displayShowMore = links.length > 12;
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
@@ -69,7 +71,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
         }`}
       >
         {ios ? (
-          links.map((entry: IMobileRegistryEntry) => {
+          links.map((entry: IMobileRegistryEntry, idx: number) => {
             const { color, name, shortName, logo } = entry;
             const href = formatIOSMobile(props.uri, entry);
             const handleClickIOS = React.useCallback(() => {
@@ -78,6 +80,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
                 href,
               });
             }, []);
+            if (idx > 11 && !showMore) return;
             return !grid ? (
               <WalletButton
                 color={color}
@@ -110,6 +113,11 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
           />
         )}
       </div>
+      {!!(ios && displayShowMore) && (
+        <div className="walletconnect-modal__footer">
+          <a onClick={() => setShowMore(!showMore)}>{showMore ? "Show Less" : "Show More"}</a>
+        </div>
+      )}
     </div>
   );
 }
