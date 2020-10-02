@@ -6,12 +6,12 @@ const pt: TextMap = {
   scan_qrcode_with_wallet: "Ler o código QR com uma carteira compatível com WalletConnect",
   connect: "Conectar",
   // TODO: review following translations
-  qrcode: "QR Code",
-  mobile: "Mobile",
-  copy_to_clipboard: "Copy to clipboard",
-  copied_to_clipboard: "Copied to clipboard!",
-  show_more: "Show More",
-  show_less: "Show Less",
+  qrcode: "Código QR",
+  mobile: "Móvel",
+  copy_to_clipboard: "Copiar para área de transferência",
+  copied_to_clipboard: "Copiado para a área de transferência!",
+  show_more: "Mostrar mais",
+  show_less: "Mostrar menos",
 };
 
 export default pt;

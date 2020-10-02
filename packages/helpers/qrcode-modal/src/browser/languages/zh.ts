@@ -6,12 +6,12 @@ const zh: TextMap = {
   scan_qrcode_with_wallet: "使用兼容 WalletConnect 的钱包扫描二维码",
   connect: "连接",
   // TODO: review following translations
-  qrcode: "QR Code",
-  mobile: "Mobile",
-  copy_to_clipboard: "Copy to clipboard",
-  copied_to_clipboard: "Copied to clipboard!",
-  show_more: "Show More",
-  show_less: "Show Less",
+  qrcode: "二维码",
+  mobile: "移动",
+  copy_to_clipboard: "复制到剪贴板",
+  copied_to_clipboard: "复制到剪贴板！",
+  show_more: "显示更多",
+  show_less: "显示较少",
 };
 
 export default zh;

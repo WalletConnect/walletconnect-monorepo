@@ -8,10 +8,10 @@ const fr: TextMap = {
   // TODO: review following translations
   qrcode: "QR Code",
   mobile: "Mobile",
-  copy_to_clipboard: "Copy to clipboard",
-  copied_to_clipboard: "Copied to clipboard!",
-  show_more: "Show More",
-  show_less: "Show Less",
+  copy_to_clipboard: "Copier dans le presse-papier",
+  copied_to_clipboard: "Copié dans le presse-papier!",
+  show_more: "Montre plus",
+  show_less: "Montre moins",
 };
 
 export default fr;
