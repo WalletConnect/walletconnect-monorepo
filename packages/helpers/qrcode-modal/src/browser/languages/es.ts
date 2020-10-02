@@ -8,8 +8,8 @@ const es: TextMap = {
   // TODO: review following translations
   qrcode: "Código QR",
   mobile: "Móvil",
-  copy_to_clipboard: "Copiar al portapapeles",
-  copied_to_clipboard: "Copiada al portapapeles!",
+  copy_to_clipboard: "Copiar",
+  copied_to_clipboard: "Copiado!",
   show_more: "Mostrar más",
   show_less: "Mostrar menos",
 };
