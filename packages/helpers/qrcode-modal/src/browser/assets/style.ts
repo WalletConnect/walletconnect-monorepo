@@ -121,9 +121,15 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.1875em;
-  margin: 0 0 19px 0;
+  margin: 10px 0 30px 0;
   text-align: center;
   width: 100%;
+}
+
+@media only screen and (max-width: 768px) {
+  .walletconnect-qrcode__text {
+    font-size: 4vw;
+  }
 }
 
 @media only screen and (max-width: 320px) {
@@ -133,12 +139,30 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 }
 
 .walletconnect-qrcode__image {
-  width: 100%;
+  width: calc(100% - 30px);
   box-sizing: border-box;
-  /* viewport height minus padding, text height, logo height and margins: */
-  max-height: calc(100vh - (2 * 30px) - 1ex - 52px - (2 * 20px));
-  min-height: 150px;
   cursor: none;
+  margin: 0 auto;
+}
+
+.walletconnect-qrcode__notification {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  text-align: center;
+  transition: all 0.1s ease-in-out;
+  background: white;
+  color: black;
+  margin-bottom: -60px;
+  opacity: 0;
+}
+
+.walletconnect-qrcode__notification.notification__show {
+  opacity: 1;
 }
 
 @media only screen and (max-width: 768px) {
@@ -198,6 +222,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   top: 50%;
   max-width: 500px;
   margin: auto;
+  min-height: 370px;
 }
 
 @media only screen and (max-width: 320px) {
@@ -357,10 +382,17 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 }
 
 .walletconnect-modal__footer {
-  margin-top: 5vw;
+  margin-top: 20px;
+}
+
+@media only screen and (max-width: 768px) {
+  .walletconnect-modal__footer {
+    margin-top: 5vw;
+  }
 }
 
 .walletconnect-modal__footer a {
+  cursor: pointer;
   color: #898d97;
   font-size: 15px;
 }
@@ -382,7 +414,8 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 .walletconnect-connect__buttons__wrapper__wrap {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin-top: 5vw;
+  margin-top: 20px;
+  margin-bottom: 10px;
 }
 
 @media only screen and (min-width: 768px) {

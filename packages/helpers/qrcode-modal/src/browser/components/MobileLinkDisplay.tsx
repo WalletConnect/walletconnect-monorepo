@@ -12,6 +12,7 @@ import ConnectButton from "./ConnectButton";
 import WalletButton from "./WalletButton";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalletIcon from "./WalletIcon";
+import { TextMap } from "../types";
 
 function formatIOSMobile(uri: string, entry: IMobileRegistryEntry) {
   const encodedUri: string = encodeURIComponent(uri);
@@ -32,6 +33,7 @@ function getMobileRegistryEntry(name: string): IMobileRegistryEntry {
     entry.name.toLowerCase().includes(name),
   )[0];
 }
+
 function getMobileLinkRegistry(qrcodeModalOptions?: IQRCodeModalOptions) {
   let links = MOBILE_REGISTRY;
   if (
@@ -50,7 +52,7 @@ interface IMobileLinkInfo {
 }
 interface MobileLinkDisplayProps {
   qrcodeModalOptions?: IQRCodeModalOptions;
-  text: { [key: string]: string };
+  text: TextMap;
   uri: string;
 }
 

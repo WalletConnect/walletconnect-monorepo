@@ -15,6 +15,7 @@ import {
   WALLETCONNECT_STYLE_ID,
 } from "./constants";
 import { IQRCodeModalOptions } from "@walletconnect/types";
+import { TextMap } from "./types";
 
 function injectStyleSheet() {
   const doc = getDocument();
@@ -59,7 +60,7 @@ function getWrappedCallback(cb: any): any {
   };
 }
 
-function getText() {
+function getText(): TextMap {
   const lang = getNavigator().language.split("-")[0] || "en";
   return Languages[lang] || Languages["en"];
 }
