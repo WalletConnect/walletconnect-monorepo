@@ -39,7 +39,7 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
     tmp.select();
     document.execCommand("copy");
     tmp.remove();
-    setNotification("Copied to clipboard!");
+    setNotification(props.text.copied_to_clipboard);
     setInterval(() => setNotification(""), 1200);
   };
 
@@ -50,7 +50,7 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
       </p>
       <div dangerouslySetInnerHTML={{ __html: svg }}></div>
       <div className="walletconnect-modal__footer">
-        <a onClick={copyToClipboard}>{"Copy to clipboard"}</a>
+        <a onClick={copyToClipboard}>{props.text.copy_to_clipboard}</a>
       </div>
       <Notification message={notification} />
     </div>
