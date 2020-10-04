@@ -55,7 +55,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "ethereum-provider": "1.5.0",
+    "ethereum-provider": "0.1.2",
     "@walletconnect/rpc-connection": "^1.2.2",
     "@walletconnect/types": "^1.2.2",
     "@walletconnect/utils": "^1.2.2"
