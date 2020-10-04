@@ -1,6 +1,6 @@
 import * as encUtils from "enc-utils";
 import * as safeJsonUtils from "safe-json-utils";
-import _payloadId from "rpc-payload-id";
+import * as rpcPayloadId from "rpc-payload-id";
 
 // -- Hex -------------------------------------------------- //
 
@@ -28,7 +28,7 @@ export const safeJsonStringify = safeJsonUtils.safeJsonStringify;
 
 // -- id -------------------------------------------------- //
 
-export const payloadId = _payloadId;
+export const payloadId = rpcPayloadId.payloadId;
 
 export function uuid(): string {
   const result: string = ((a?: any, b?: any) => {
