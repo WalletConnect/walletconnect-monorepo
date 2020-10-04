@@ -1,8 +1,17 @@
-export default {
+import { TextMap } from "../types";
+
+const en: TextMap = {
   choose_preferred_wallet: "Choose your preferred wallet",
   connect_mobile_wallet: "Connect to Mobile Wallet",
   scan_qrcode_with_wallet: "Scan QR code with a WalletConnect-compatible wallet",
-  return_to_mobile_options: "Return to mobile wallet options",
-  view_qrcode_option: "View QR code",
   connect: "Connect",
+  // TODO: review following translations
+  qrcode: "QR Code",
+  mobile: "Mobile",
+  copy_to_clipboard: "Copy to clipboard",
+  copied_to_clipboard: "Copied to clipboard!",
+  show_more: "Show More",
+  show_less: "Show Less",
 };
+
+export default en;

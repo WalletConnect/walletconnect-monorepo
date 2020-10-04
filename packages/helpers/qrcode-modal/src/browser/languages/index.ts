@@ -1,3 +1,5 @@
+import { TextMap } from "../types";
+
 import de from "./de";
 import en from "./en";
 import es from "./es";
@@ -7,4 +9,6 @@ import pt from "./pt";
 import zh from "./zh";
 import fa from "./fa";
 
-export default { de, en, es, fr, ko, pt, zh, fa };
+const languages: { [lang: string]: TextMap } = { de, en, es, fr, ko, pt, zh, fa };
+
+export default languages;

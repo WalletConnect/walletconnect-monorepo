@@ -3,53 +3,53 @@ import { isMobile } from "@walletconnect/utils";
 import { IQRCodeModalOptions } from "@walletconnect/types";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import Header from "./Header";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import MobileLinkDisplay from "./MobileLinkDisplay";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import QRCodeDisplay from "./QRCodeDisplay";
 
-import { WALLETCONNECT_MODAL_ID, WALLETCONNECT_CLOSE_BUTTON_ID } from "../constants";
-
-import { WALLETCONNECT_LOGO_SVG_URL } from "../assets/logo";
+import { WALLETCONNECT_MODAL_ID } from "../constants";
+import { TextMap } from "../types";
 
 interface ModalProps {
-  text: { [key: string]: string };
+  text: TextMap;
   uri: string;
   onClose: any;
   qrcodeModalOptions?: IQRCodeModalOptions;
 }
 
 function Modal(props: ModalProps) {
-  const { text, uri } = props;
-  const displayProps = { text, uri };
   const mobile = isMobile();
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
+  const displayProps = {
+    text: props.text,
+    uri: props.uri,
+    qrcodeModalOptions: props.qrcodeModalOptions,
+  };
+
   return (
     <div id={WALLETCONNECT_MODAL_ID} className="walletconnect-qrcode__base animated fadeIn">
       <div className="walletconnect-modal__base">
-        <div className="walletconnect-modal__header">
-          <img src={WALLETCONNECT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" />
-          <p>{"WalletConnect"}</p>
-          <div className="walletconnect-modal__close__wrapper" onClick={props.onClose}>
-            <div id={WALLETCONNECT_CLOSE_BUTTON_ID} className="walletconnect-modal__close__icon">
-              <div className="walletconnect-modal__close__line1"></div>
-              <div className="walletconnect-modal__close__line2"></div>
-            </div>
+        <Header onClose={props.onClose} />
+        {mobile && (
+          <div
+            className={`walletconnect-modal__mobile__toggle${
+              displayQRCode ? " right__selected" : ""
+            }`}
+          >
+            <div className="walletconnect-modal__mobile__toggle_selector" />
+            <a onClick={() => setDisplayQRCode(false)}>{props.text.mobile}</a>
+            <a onClick={() => setDisplayQRCode(true)}>{props.text.qrcode}</a>
           </div>
-        </div>
+        )}
         <div>
           {displayQRCode ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
-            <MobileLinkDisplay {...displayProps} qrcodeModalOptions={props.qrcodeModalOptions} />
+            <MobileLinkDisplay {...displayProps} />
           )}
         </div>
-        {mobile && (
-          <div className="walletconnect-modal__footer">
-            <a onClick={() => setDisplayQRCode(!displayQRCode)}>
-              {displayQRCode ? props.text.return_to_mobile_options : props.text.view_qrcode_option}
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );
