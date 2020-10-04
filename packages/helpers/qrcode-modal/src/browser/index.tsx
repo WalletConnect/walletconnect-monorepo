@@ -2,7 +2,7 @@
 import * as React from "react";
 // @ts-ignore
 import * as ReactDOM from "react-dom";
-import { getDocument, getNavigator } from "@walletconnect/utils";
+import { getDocumentOrThrow, getNavigatorOrThrow } from "@walletconnect/utils";
 
 import { WALLETCONNECT_STYLE_SHEET } from "./assets/style";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -18,7 +18,7 @@ import { IQRCodeModalOptions } from "@walletconnect/types";
 import { TextMap } from "./types";
 
 function injectStyleSheet() {
-  const doc = getDocument();
+  const doc = getDocumentOrThrow();
   const prev = doc.getElementById(WALLETCONNECT_STYLE_ID);
   if (prev) {
     doc.head.removeChild(prev);
@@ -30,7 +30,7 @@ function injectStyleSheet() {
 }
 
 function renderWrapper(): HTMLDivElement {
-  const doc = getDocument();
+  const doc = getDocumentOrThrow();
   const wrapper = doc.createElement("div");
   wrapper.setAttribute("id", WALLETCONNECT_WRAPPER_ID);
   doc.body.appendChild(wrapper);
@@ -38,7 +38,7 @@ function renderWrapper(): HTMLDivElement {
 }
 
 function triggerCloseAnimation(): void {
-  const doc = getDocument();
+  const doc = getDocumentOrThrow();
   const modal = doc.getElementById(WALLETCONNECT_MODAL_ID);
   if (modal) {
     modal.className = modal.className.replace("fadeIn", "fadeOut");
@@ -61,7 +61,7 @@ function getWrappedCallback(cb: any): any {
 }
 
 function getText(): TextMap {
-  const lang = getNavigator().language.split("-")[0] || "en";
+  const lang = getNavigatorOrThrow().language.split("-")[0] || "en";
   return Languages[lang] || Languages["en"];
 }
 

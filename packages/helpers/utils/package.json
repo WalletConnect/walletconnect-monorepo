@@ -60,7 +60,11 @@
     "@walletconnect/types": "^1.2.2",
     "detect-browser": "5.1.0",
     "enc-utils": "2.1.0",
-    "js-sha3": "0.8.0"
+    "js-sha3": "0.8.0",
+    "rpc-payload-id": "1.0.0",
+    "safe-json-utils": "1.0.0",
+    "window-getters": "1.0.0",
+    "window-metadata": "1.0.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
