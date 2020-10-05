@@ -160,21 +160,17 @@ class WalletConnectProvider extends ProviderEngine {
     return this.wc.peerMeta;
   }
 
-  enable() {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const wc = await this.getWalletConnector();
-        if (wc) {
-          this.start();
-          this.subscribeWalletConnector();
-          resolve(wc.accounts);
-        } else {
-          return reject(new Error("Failed to connect to WalleConnect"));
-        }
-      } catch (error) {
-        return reject(error);
-      }
-    });
+  // Connect with a wallet and return the addresses of all available
+  // accounts.
+  async enable(): Promise<string[]> {
+    const wc = await this.getWalletConnector();
+    if (wc) {
+      this.start();
+      this.subscribeWalletConnector();
+      return wc.accounts;
+    } else {
+      throw new Error("Failed to connect to WalleConnect");
+    }
   }
 
   async request(payload: any): Promise<any> {
