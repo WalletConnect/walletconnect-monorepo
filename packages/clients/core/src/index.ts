@@ -89,6 +89,7 @@ class Connector implements IConnector {
 
   private _handshakeId = 0;
   private _handshakeTopic = "";
+  private _pending = false;
 
   // -- session ----------------------------------------------------- //
 
@@ -319,11 +320,11 @@ class Connector implements IConnector {
   }
 
   set pending(value) {
-    // empty
+    this._pending = value;
   }
 
   get pending() {
-    return !!this._handshakeTopic;
+    return this._pending;
   }
 
   get session() {
@@ -413,25 +414,22 @@ class Connector implements IConnector {
     }
   }
 
-  public connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
+  public async connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
     if (!this._qrcodeModal) {
       throw new Error(ERROR_QRCODE_MODAL_NOT_PROVIDED);
     }
-    return new Promise(async (resolve, reject) => {
-      if (this.connected) {
-        resolve({
-          chainId: this.chainId,
-          accounts: this.accounts,
-        });
-      }
-      if (!this.connected) {
-        try {
-          await this.createSession(opts);
-        } catch (error) {
-          reject(error);
-        }
-      }
 
+    if (this.connected) {
+      return {
+        chainId: this.chainId,
+        accounts: this.accounts,
+      };
+    }
+
+    this.pending = true;
+    await this.createSession(opts);
+
+    return new Promise<ISessionStatus>(async (resolve, reject) => {
       this.on("modal_closed", () => reject(new Error(ERROR_QRCODE_MODAL_USER_CLOSED)));
 
       this.on("connect", (error, payload) => {
@@ -441,6 +439,8 @@ class Connector implements IConnector {
 
         resolve(payload.params[0]);
       });
+    }).finally(() => {
+      this.pending = false;
     });
   }
 
