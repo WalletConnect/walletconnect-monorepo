@@ -320,7 +320,7 @@ class Connector implements IConnector {
   }
 
   set pending(value) {
-    this._pending = value;
+    // empty
   }
 
   get pending() {
@@ -426,7 +426,7 @@ class Connector implements IConnector {
       };
     }
 
-    this.pending = true;
+    this._pending = true;
     await this.createSession(opts);
 
     return new Promise<ISessionStatus>(async (resolve, reject) => {
@@ -440,7 +440,7 @@ class Connector implements IConnector {
         resolve(payload.params[0]);
       });
     }).finally(() => {
-      this.pending = false;
+      this._pending = false;
     });
   }
 
@@ -449,7 +449,7 @@ class Connector implements IConnector {
       throw new Error(ERROR_SESSION_CONNECTED);
     }
 
-    if (this.pending) {
+    if (this._pending) {
       return;
     }
 
