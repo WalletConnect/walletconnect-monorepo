@@ -12,6 +12,7 @@ import ConnectButton from "./ConnectButton";
 import WalletButton from "./WalletButton";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalletIcon from "./WalletIcon";
+import { TextMap } from "../types";
 
 function formatIOSMobile(uri: string, entry: IMobileRegistryEntry) {
   const encodedUri: string = encodeURIComponent(uri);
@@ -32,6 +33,7 @@ function getMobileRegistryEntry(name: string): IMobileRegistryEntry {
     entry.name.toLowerCase().includes(name),
   )[0];
 }
+
 function getMobileLinkRegistry(qrcodeModalOptions?: IQRCodeModalOptions) {
   let links = MOBILE_REGISTRY;
   if (
@@ -50,14 +52,16 @@ interface IMobileLinkInfo {
 }
 interface MobileLinkDisplayProps {
   qrcodeModalOptions?: IQRCodeModalOptions;
-  text: { [key: string]: string };
+  text: TextMap;
   uri: string;
 }
 
 function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   const ios = isIOS();
   const links = getMobileLinkRegistry(props.qrcodeModalOptions);
+  const [showMore, setShowMore] = React.useState(false);
   const grid = links.length > 5;
+  const displayShowMore = links.length > 12;
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
@@ -69,7 +73,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
         }`}
       >
         {ios ? (
-          links.map((entry: IMobileRegistryEntry) => {
+          links.map((entry: IMobileRegistryEntry, idx: number) => {
             const { color, name, shortName, logo } = entry;
             const href = formatIOSMobile(props.uri, entry);
             const handleClickIOS = React.useCallback(() => {
@@ -78,6 +82,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
                 href,
               });
             }, []);
+            if (idx > 11 && !showMore) return;
             return !grid ? (
               <WalletButton
                 color={color}
@@ -110,6 +115,13 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
           />
         )}
       </div>
+      {!!(ios && displayShowMore) && (
+        <div className="walletconnect-modal__footer">
+          <a onClick={() => setShowMore(!showMore)}>
+            {showMore ? props.text.show_less : props.text.show_more}
+          </a>
+        </div>
+      )}
     </div>
   );
 }

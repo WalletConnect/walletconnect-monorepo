@@ -1,11 +1,11 @@
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import { XMLHttpRequest } from "xhr2-cookies";
 import { IError } from "@walletconnect/types";
-import { unsafeGetFromWindow } from "@walletconnect/utils";
+import { getFromWindow } from "@walletconnect/utils";
 
 // -- global -------------------------------------------------------------- //
 
-const XHR = unsafeGetFromWindow<typeof XMLHttpRequest>("XMLHttpRequest") || XMLHttpRequest;
+const XHR = getFromWindow<typeof XMLHttpRequest>("XMLHttpRequest") || XMLHttpRequest;
 
 // -- HttpConnection ------------------------------------------------------ //
 
