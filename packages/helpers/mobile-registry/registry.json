@@ -142,5 +142,13 @@
     "logo": "./logos/safepal.png",
     "universalLink": "link.safepal.io",
     "deepLink": "safepalwallet:"
+  },
+  {
+    "name": "Tongue Wallet",
+    "shortName": "Tongue",
+    "color": "rgb(255, 49, 120)",
+    "logo": "./logos/tongue.png",
+    "universalLink": "https://www.tongue.fi",
+    "deepLink": "tongue:"
   }
 ]
