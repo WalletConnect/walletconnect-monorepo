@@ -89,6 +89,7 @@ class Connector implements IConnector {
 
   private _handshakeId = 0;
   private _handshakeTopic = "";
+  private _pending = false;
 
   // -- session ----------------------------------------------------- //
 
@@ -323,7 +324,7 @@ class Connector implements IConnector {
   }
 
   get pending() {
-    return !!this._handshakeTopic;
+    return this._pending;
   }
 
   get session() {
@@ -413,25 +414,22 @@ class Connector implements IConnector {
     }
   }
 
-  public connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
+  public async connect(opts?: ICreateSessionOptions): Promise<ISessionStatus> {
     if (!this._qrcodeModal) {
       throw new Error(ERROR_QRCODE_MODAL_NOT_PROVIDED);
     }
-    return new Promise(async (resolve, reject) => {
-      if (this.connected) {
-        resolve({
-          chainId: this.chainId,
-          accounts: this.accounts,
-        });
-      }
-      if (!this.connected) {
-        try {
-          await this.createSession(opts);
-        } catch (error) {
-          reject(error);
-        }
-      }
 
+    if (this.connected) {
+      return {
+        chainId: this.chainId,
+        accounts: this.accounts,
+      };
+    }
+
+    this._pending = true;
+    await this.createSession(opts);
+
+    return new Promise<ISessionStatus>(async (resolve, reject) => {
       this.on("modal_closed", () => reject(new Error(ERROR_QRCODE_MODAL_USER_CLOSED)));
 
       this.on("connect", (error, payload) => {
@@ -441,6 +439,8 @@ class Connector implements IConnector {
 
         resolve(payload.params[0]);
       });
+    }).finally(() => {
+      this._pending = false;
     });
   }
 
@@ -449,7 +449,7 @@ class Connector implements IConnector {
       throw new Error(ERROR_SESSION_CONNECTED);
     }
 
-    if (this.pending) {
+    if (this._pending) {
       return;
     }
 
@@ -1069,6 +1069,16 @@ class Connector implements IConnector {
 
     this._transport.on("close", () =>
       this._eventManager.trigger({ event: "transport_close", params: [] }),
+    );
+
+    this._transport.on("error", (e: Event)  => 
+      this._eventManager.trigger({
+        id: 0,
+        jsonrpc: '',
+        error: {
+          message: "Websocket connection failed"
+        },
+      })
     );
 
     this._transport.open();

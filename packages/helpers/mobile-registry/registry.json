@@ -142,5 +142,13 @@
     "logo": "./logos/safepal.png",
     "universalLink": "link.safepal.io",
     "deepLink": "safepalwallet:"
+  },
+  {
+    "name": "Huobi Wallet",
+    "shortName": "Huobi",
+    "color": "rgb(45,101,248)",
+    "logo": "./logos/huobiwallet.png",
+    "universalLink": "https://www.huobiwallet.com",
+    "deepLink": "huobiwallet:"
   }
 ]
