@@ -1071,6 +1071,16 @@ class Connector implements IConnector {
       this._eventManager.trigger({ event: "transport_close", params: [] }),
     );
 
+    this._transport.on("error", (e: Event)  => 
+      this._eventManager.trigger({
+        id: 0,
+        jsonrpc: '',
+        error: {
+          message: "Websocket connection failed"
+        },
+      })
+    );
+
     this._transport.open();
   }
 
