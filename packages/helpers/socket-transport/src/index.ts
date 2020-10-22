@@ -202,7 +202,7 @@ class SocketTransport implements ITransportLib {
   private _socketError(e: Event) {
     const events = this._events.filter(event => event.event === "error");
     if (events && events.length) {
-        events.forEach(event => event.callback(e));
+      events.forEach(event => event.callback(e));
     }
   }
 
