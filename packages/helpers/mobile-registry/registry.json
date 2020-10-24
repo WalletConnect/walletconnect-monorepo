@@ -144,6 +144,14 @@
     "deepLink": "safepalwallet:"
   },
   {
+    "name": "Tongue Wallet",
+    "shortName": "Tongue",
+    "color": "rgb(255, 49, 120)",
+    "logo": "./logos/tongue.png",
+    "universalLink": "https://www.tongue.fi",
+    "deepLink": "tongue:"
+  },
+  {
     "name": "Huobi Wallet",
     "shortName": "Huobi",
     "color": "rgb(45,101,248)",
