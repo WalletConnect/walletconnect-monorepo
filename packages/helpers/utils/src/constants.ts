@@ -8,6 +8,7 @@ export const reservedEvents = [
   "modal_closed",
   "transport_open",
   "transport_close",
+  "transport_error",
 ];
 
 export const signingMethods = [

@@ -36,7 +36,7 @@
     "shortName": "Crypto.com",
     "color": "rgb(17, 153, 250)",
     "logo": "./logos/crypto-defi.png",
-    "universalLink": "https://wallet.crypto.com",
+    "universalLink": "",
     "deepLink": "cryptowallet:"
   },
   {
@@ -150,5 +150,12 @@
     "logo": "./logos/tongue.png",
     "universalLink": "https://www.tongue.fi",
     "deepLink": "tongue:"
+  },
+    "name": "Huobi Wallet",
+    "shortName": "Huobi",
+    "color": "rgb(45,101,248)",
+    "logo": "./logos/huobiwallet.png",
+    "universalLink": "https://www.huobiwallet.com",
+    "deepLink": "huobiwallet:"
   }
 ]
