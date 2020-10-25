@@ -1,14 +1,11 @@
 ### Deploy configs
-BRANCH=$(shell git for-each-ref --format='%(objectname) %(refname:short)' refs/heads | awk "/^$$(git rev-parse HEAD)/ {print \$$2}")
-REMOTE="https://github.com/WalletConnect/walletconnect-v2-bridge"
+BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+REMOTE="https://github.com/WalletConnect/node-walletconnect-bridge"
 REMOTE_HASH=$(shell git ls-remote $(REMOTE) $(BRANCH) | head -n1 | cut -f1)
 project=walletconnect
 redisImage='redis:5-alpine'
-nginxImage='walletconnect/nginx:$(BRANCH)'
-walletConnectImage='walletconnect/proxy:$(BRANCH)'
-
-BRIDGE_URL=$(shell cat config | grep BRIDGE_URL | cut -f2 -d=)
-CERTBOT_EMAIL=$(shell cat config | grep CERTBOT_EMAIL | cut -f2 -d=)
+nginxImage='$(project)/nginx:$(BRANCH)'
+walletConnectImage='$(project)/bridge:$(BRANCH)'
 
 ### Makefile internal coordination
 flags=.makeFlags
@@ -17,20 +14,39 @@ VPATH=$(flags)
 $(shell mkdir -p $(flags))
 
 .PHONY: all clean default
+define DEFAULT_TEXT
+Available make rules:
+
+pull:\tdownloads docker images
+
+setup:\tconfigures domain an certbot email
+
+build:\tbuilds docker images
+
+dev:\truns local docker stack with open ports
+
+deploy:\tdeploys to production
+
+deploy-monitoring:
+\tdeploys to production with grafana
+
+cloudflare: asks for a cloudflare DNS api and creates a docker secret
+
+stop:\tstops all walletconnect docker stacks
+
+upgrade:
+\tpulls from remote git. Builds the containers and updates each individual
+\tcontainer currently running with the new version that was just built.
+
+clean:\tcleans current docker build
+
+reset:\treset local config
+endef
 
 ### Rules
+export DEFAULT_TEXT
 default:
-	@echo
-	@echo "Available make rules: "
-	@echo "pull:          pulls docker images"
-	@echo "setup:         configures domain an certbot email"
-	@echo "build:         builds docker images"
-	@echo "dev:           runs local docker stack with open ports"
-	@echo "deploy:        deploys to production"
-	@echo "stop:          stops all walletconnect docker stacks"
-	@echo "upgrade:       stops current docker stack. Pulls from remote git. Runs deploys production using deploy rule"
-	@echo "clean:         cleans current docker build"
-	@echo "reset:         reset local config"
+	@echo -e "$$DEFAULT_TEXT"
 
 pull:
 	docker pull $(redisImage)
@@ -43,6 +59,8 @@ setup:
 	echo "BRIDGE_URL="$$bridge > config
 	@read -p 'Email for SSL certificate (default noreply@gmail.com): ' email; \
 	echo "CERTBOT_EMAIL="$$email >> config
+	@read -p 'Is your DNS configured with cloudflare proxy? [y/N]: ' cf; \
+	echo "CLOUDFLARE="$${cf:-false} >> config
 	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
@@ -60,10 +78,9 @@ build-node: pull
 build-nginx: pull
 	docker build \
 		-t $(nginxImage) \
-		--no-cache \
 		--build-arg BRANCH=$(BRANCH) \
 		--build-arg REMOTE_HASH=$(REMOTE_HASH) \
-		-f ops/nginx.Dockerfile .
+		-f ops/nginx/nginx.Dockerfile ./ops/nginx
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
@@ -73,8 +90,8 @@ build: pull build-node build-nginx
 	@echo  "MAKE: Done with $@"
 	@echo
 
-dev: build
-	WALLET_IMAGE=$(walletConnectImage) \
+dev: pull build
+	BRIDGE_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	docker stack deploy \
 	-c ops/docker-compose.yml \
@@ -83,15 +100,46 @@ dev: build
 	@echo  "MAKE: Done with $@"
 	@echo
 
-deploy: setup build
-	WALLET_IMAGE=$(walletConnectImage) \
+dev-monitoring: pull build
+	BRIDGE_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
-	BRIDGE_URL=$(BRIDGE_URL) \
-	CERTBOT_EMAIL=$(CERTBOT_EMAIL) \
-	docker stack deploy -c ops/docker-compose.yml \
-	-c ops/docker-compose.prod.yml $(project)
+	docker stack deploy \
+	-c ops/docker-compose.yml \
+	-c ops/docker-compose.dev.yml \
+	-c ops/docker-compose.monitor.yml \
+	dev_$(project)
 	@echo  "MAKE: Done with $@"
 	@echo
+
+redeploy: 
+	$(MAKE) clean
+	$(MAKE) down
+	$(MAKE) dev-monitoring
+
+cloudflare: setup
+	bash ops/cloudflare-secret.sh $(project)
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
+deploy: setup build cloudflare
+	BRIDGE_IMAGE=$(walletConnectImage) \
+	NGINX_IMAGE=$(nginxImage) \
+	PROJECT=$(project) \
+	bash ops/deploy.sh
+	@echo  "MAKE: Done with $@"
+	@echo
+
+deploy-monitoring: setup build cloudflare
+	BRIDGE_IMAGE=$(walletConnectImage) \
+	NGINX_IMAGE=$(nginxImage) \
+	PROJECT=$(project) \
+	MONITORING=true \
+	bash ops/deploy.sh
+	@echo  "MAKE: Done with $@"
+	@echo
+
+down: stop
 
 stop: 
 	docker stack rm $(project)
@@ -102,20 +150,30 @@ stop:
 	@echo  "MAKE: Done with $@"
 	@echo
 
-upgrade: stop
-	git fetch origin $(BRANCH)
-	git merge origin/$(BRANCH)
-	$(MAKE) deploy
+upgrade: setup
+	rm -f $(flags)/build*
+	$(MAKE) build
 	@echo  "MAKE: Done with $@"
 	@echo
+	git fetch origin $(BRANCH)
+	git merge origin/$(BRANCH)
+	docker service update --force $(project)_bridge0
+	docker service update --force $(project)_bridge1
+	docker service update --force $(project)_nginx
+	docker service update --force $(project)_redis
 
 reset:
-	rm -rf .makeFlags
+	$(MAKE) clean-all
 	rm -f config
 	@echo  "MAKE: Done with $@"
 	@echo
 
 clean:
 	rm -rf .makeFlags/build*
+	@echo  "MAKE: Done with $@"
+	@echo
+
+clean-all:
+	rm -rf .makeFlags
 	@echo  "MAKE: Done with $@"
 	@echo

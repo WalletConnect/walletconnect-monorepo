@@ -1,9 +1,25 @@
-version: "3.7"
+version: '3.7'
 
 services:
   redis:
     ports:
-      - "6379:6379"
-  node:
+      - "127.0.0.1:6379:6379"
+  bridge0:
     ports:
-      - "5555:5555"
+      - "127.0.0.1:5001:5001"
+    volumes:
+      - ../build:/root/build
+
+  bridge1:
+    ports:
+      - "127.0.0.1:5002:5002"
+    volumes:
+      - ../build:/root/build
+  nginx:
+    environment:
+      CONTAINER_NAME: node
+      APP_QTY: 2
+    depends_on:
+      - bridge0
+      - bridge1
+

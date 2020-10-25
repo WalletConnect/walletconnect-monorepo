@@ -1,0 +1,30 @@
+
+global:
+  scrape_interval: 5s
+  scrape_timeout: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+- job_name: docker_host
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+  - targets: [ "172.18.0.1:9323" ]
+
+- job_name: nginx_exporter
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+  - targets: [ "nginx_exporter:9113" ]
+
+- job_name: node_exporter
+  static_configs:
+  - targets: ['node_exporter:9100']
+
+- job_name: cadvisor
+  static_configs:
+  - targets: [ "cadvisor:8080" ]
+
+- job_name: redis_exporter
+  static_configs:
+  - targets: ['redis_exporter:9121']
