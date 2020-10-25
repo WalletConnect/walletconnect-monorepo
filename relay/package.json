@@ -1,0 +1,68 @@
+{
+  "name": "walletconnect-v2-bridge",
+  "description": "WalletConnect v2.0 Bridge Server",
+  "version": "2.0.0",
+  "private": true,
+  "keywords": [
+    "walletconnect",
+    "ethereum",
+    "web3",
+    "crypto"
+  ],
+  "author": "WalletConnect Labs <walletconnectlabs.com>",
+  "homepage": "https://walletconnectlabs.com/",
+  "license": "LGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect-labs/walletconnect-v2-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect-labs/walletconnect-v2-bridge/issues"
+  },
+  "scripts": {
+    "clean": "rm -rf ./build",
+    "compile": "tsc -p tsconfig.json",
+    "build": "npm run clean && npm run compile",
+    "start": "npm run build && node ./build",
+    "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'"
+  },
+  "dependencies": {
+    "axios": "^0.20.0",
+    "bluebird": "^3.5.5",
+    "fastify": "^3.4.1",
+    "fastify-helmet": "^5.0.3",
+    "pino-pretty": "^4.0.1",
+    "redis": "^2.8.0",
+    "rpc-json-utils": "^1.1.0",
+    "ws": "^7.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/node": "^7.4.5",
+    "@babel/polyfill": "^7.4.4",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-typescript": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "@types/axios": "^0.14.0",
+    "@types/bluebird": "^3.5.27",
+    "@types/core-js": "^2.5.2",
+    "@types/node": "^12.0.8",
+    "@types/redis": "^2.8.13",
+    "@types/ws": "^6.0.1",
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "@typescript-eslint/parser": "^2.24.0",
+    "core-js": "^3.2.1",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-node": "^9.2.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-react": "^7.19.0",
+    "eslint-plugin-standard": "^4.0.1",
+    "prettier": "^1.19.1",
+    "typescript": "^3.7.3"
+  }
+}

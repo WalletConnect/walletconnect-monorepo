@@ -1,0 +1,32 @@
+version: '3.7'
+
+networks:
+  default:
+
+volumes:
+  redis:
+  letsencrypt:
+
+services:
+  nginx:
+    image: ${NGINX_IMAGE}
+    deploy:
+      mode: global
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+    depends_on:
+      - node
+
+  redis:
+    image: 'redis:5-alpine'
+    volumes:
+      - redis:/data
+
+  node:
+    image: ${WALLET_IMAGE}
+    environment:
+      NODE_ENV: development
+      REDIS_URL: redis://redis:6379/0
