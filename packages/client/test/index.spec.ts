@@ -3,7 +3,7 @@ import { SessionTypes } from "@walletconnect/types";
 import Client from "../src";
 import { CLIENT_EVENTS, SESSION_EVENTS } from "../src/constants";
 
-const TEST_RELAY_PROVIDER_URL = "http://localhost:5555";
+const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
 
 const TEST_SESSION_CHAINS = ["eip155:1"];
 const TEST_SESSION_JSONRPC = ["eth_sendTransaction", "eth_signTypedData", "personal_sign"];
@@ -41,6 +41,9 @@ describe("Client", () => {
             approved: true,
             proposal: uri,
           });
+          if (typeof topic === "undefined") {
+            throw new Error("topic is undefined");
+          }
           const connection = await clientB.connection.get(topic);
           expect(connection).toBeTruthy();
           resolve();
@@ -59,6 +62,9 @@ describe("Client", () => {
               state: TEST_SESSION_STATE,
             },
           });
+          if (typeof topic === "undefined") {
+            throw new Error("topic is undefined");
+          }
           const session = await clientB.connection.get(topic);
           expect(session).toBeTruthy();
           expect(session.state).toEqual(TEST_SESSION_STATE);

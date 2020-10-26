@@ -1,23 +1,23 @@
 {
-  "name": "walletconnect-v2-bridge",
-  "description": "WalletConnect v2.0 Bridge Server",
-  "version": "2.0.0",
+  "name": "@walletconnect/relay-server",
+  "description": "Relay Server for WalletConnect Protocol",
+  "version": "2.0.0-alpha.0",
   "private": true,
+  "author": "WalletConnect Labs <walletconnectlabs.com>",
+  "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
+  "license": "LGPL-3.0",
   "keywords": [
     "walletconnect",
     "ethereum",
     "web3",
     "crypto"
   ],
-  "author": "WalletConnect Labs <walletconnectlabs.com>",
-  "homepage": "https://walletconnectlabs.com/",
-  "license": "LGPL-3.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect-labs/walletconnect-v2-bridge.git"
+    "url": "git+https://github.com/walletconnect-labs/walletconnect-v2-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect-labs/walletconnect-v2-bridge/issues"
+    "url": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/issues"
   },
   "scripts": {
     "clean": "rm -rf ./build",
@@ -33,27 +33,26 @@
     "fastify-helmet": "^5.0.3",
     "pino-pretty": "^4.0.1",
     "redis": "^2.8.0",
-    "rpc-json-utils": "^1.1.0",
+    "rpc-json-utils": "^1.1.3",
     "ws": "^7.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/core": "^7.4.5",
-    "@babel/node": "^7.4.5",
-    "@babel/polyfill": "^7.4.4",
-    "@babel/preset-env": "^7.5.5",
-    "@babel/preset-typescript": "^7.1.0",
-    "@babel/register": "^7.0.0",
+    "@babel/cli": "^7.12.1",
+    "@babel/core": "^7.12.3",
+    "@babel/node": "^7.12.1",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.12.1",
+    "@babel/preset-typescript": "^7.12.1",
+    "@babel/register": "^7.12.1",
     "@types/axios": "^0.14.0",
     "@types/bluebird": "^3.5.27",
     "@types/core-js": "^2.5.2",
-    "@types/node": "^12.0.8",
+    "@types/node": "^14.14.2",
     "@types/redis": "^2.8.13",
     "@types/ws": "^6.0.1",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
-    "core-js": "^3.2.1",
-    "eslint": "^5.16.0",
+    "core-js": "^3.6.5",
     "eslint-config-prettier": "^6.10.0",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.20.1",
@@ -62,7 +61,8 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-standard": "^4.0.1",
+    "eslint": "^5.16.0",
     "prettier": "^1.19.1",
-    "typescript": "^3.7.3"
+    "typescript": "^3.7.5"
   }
 }

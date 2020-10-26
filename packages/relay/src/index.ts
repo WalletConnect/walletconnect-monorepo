@@ -1,13 +1,14 @@
 import fastify, { RequestGenericInterface } from "fastify";
 import Helmet from "fastify-helmet";
 
-import config from "./config";
 import { setNotification } from "./keystore";
 import { initWebSocketServer } from "./socket";
 import { assertType } from "./utils";
 
+const env = process.env.NODE_ENV || "development";
+
 const app = fastify({
-  logger: { prettyPrint: config.debug } as any,
+  logger: { prettyPrint: env !== "production" } as any,
 });
 
 app.register(Helmet);
@@ -49,9 +50,10 @@ app.ready(() => {
   initWebSocketServer(app.server, app.log);
 });
 
-const [host, port] = config.host.split(":");
+const port = process.env.PORT || (env === "production" ? 5000 : 5555);
+const host = process.env.HOST || `0.0.0.0:${port}`;
+
 app.listen(+port, host, (err, address) => {
   if (err) throw err;
-  console.log(`Server listening on ${address}`);
   app.log.info(`Server listening on ${address}`);
 });
