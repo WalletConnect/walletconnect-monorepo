@@ -48,7 +48,7 @@ export abstract class IClient extends IEvents {
     super();
   }
 
-  public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.State>;
+  public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
   public abstract respond(params: ClientTypes.RespondParams): Promise<string | undefined>;
   public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
 }

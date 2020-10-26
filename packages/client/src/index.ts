@@ -67,7 +67,7 @@ export class Client extends IClient {
     this.events.off(event, listener);
   }
 
-  public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.State> {
+  public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
     let connection: ConnectionTypes.Settled;
     if (!this.connection.length) {
       this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Proposed) => {
@@ -103,7 +103,7 @@ export class Client extends IClient {
         jsonrpc: params.jsonrpc,
       },
     });
-    return session.state;
+    return session;
   }
 
   public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {

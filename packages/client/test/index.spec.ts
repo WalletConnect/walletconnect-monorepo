@@ -37,13 +37,11 @@ describe("Client", () => {
     await Promise.all([
       new Promise(async (resolve, reject) => {
         clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {
-          const connectionTopic = await clientB.respond({
+          const topic = await clientB.respond({
             approved: true,
             proposal: uri,
           });
-
-          const connection = await clientB.connection.get(connectionTopic);
-
+          const connection = await clientB.connection.get(topic);
           expect(connection).toBeTruthy();
           resolve();
         });
@@ -53,7 +51,7 @@ describe("Client", () => {
           expect(proposal.peer.metadata).toEqual(TEST_APP_METADATA_A);
           expect(proposal.stateParams.chains).toEqual(TEST_SESSION_CHAINS);
           expect(proposal.ruleParams.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
-          const sessionTopic = await clientB.respond({
+          const topic = await clientB.respond({
             approved: true,
             proposal,
             response: {
@@ -61,18 +59,21 @@ describe("Client", () => {
               state: TEST_SESSION_STATE,
             },
           });
-          const session = await clientB.connection.get(sessionTopic);
-
+          const session = await clientB.connection.get(topic);
           expect(session).toBeTruthy();
+          expect(session.state).toEqual(TEST_SESSION_STATE);
+          expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
         });
       }),
       new Promise(async (resolve, reject) => {
-        const sessionState = await clientA.connect({
+        const session = await clientA.connect({
           app: TEST_APP_METADATA_A,
           chains: TEST_SESSION_CHAINS,
           jsonrpc: TEST_SESSION_JSONRPC,
         });
-        expect(sessionState.accounts).toEqual(TEST_SESSION_STATE.accounts);
+        expect(session).toBeTruthy();
+        expect(session.state).toEqual(TEST_SESSION_STATE);
+        expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
       }),
     ]);
   });
