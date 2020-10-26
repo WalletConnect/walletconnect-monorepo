@@ -68,6 +68,10 @@ export class Connection extends IConnection {
     await this.settled.init();
   }
 
+  public async get(topic: string): Promise<ConnectionTypes.Settled> {
+    return this.settled.get(topic);
+  }
+
   get length(): number {
     return this.settled.length;
   }

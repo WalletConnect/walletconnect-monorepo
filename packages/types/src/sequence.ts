@@ -35,6 +35,9 @@ export abstract class ISequence<
   // initialize with persisted state
   public abstract init(): Promise<void>;
 
+  // get settled subscription data
+  public abstract get(topic: string): Promise<Settled>;
+
   // called by proposer
   public abstract create(params?: CreateParams): Promise<Settled>;
   // called by responder

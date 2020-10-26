@@ -2,17 +2,23 @@ import { EventEmitter } from "events";
 import {
   IClient,
   ClientOptions,
-  ClientConnectParams,
-  ClientDisconnectParams,
+  ClientTypes,
   ConnectionTypes,
   SessionTypes,
 } from "@walletconnect/types";
-import { formatUri, getAppMetadata } from "@walletconnect/utils";
+import {
+  formatUri,
+  getAppMetadata,
+  isConnectionFailed,
+  isSessionFailed,
+  parseUri,
+} from "@walletconnect/utils";
 import { JsonRpcPayload, JsonRpcRequest, isJsonRpcRequest } from "rpc-json-utils";
 
 import { Store, Connection, Session, Relay } from "./controllers";
 
 import {
+  CLIENT_EVENTS,
   CONNECTION_CONTEXT,
   CONNECTION_EVENTS,
   RELAY_DEFAULT_PROTOCOL,
@@ -61,7 +67,7 @@ export class Client extends IClient {
     this.events.off(event, listener);
   }
 
-  public async connect(params: ClientConnectParams): Promise<string[]> {
+  public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.State> {
     let connection: ConnectionTypes.Settled;
     if (!this.connection.length) {
       this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Proposed) => {
@@ -69,12 +75,12 @@ export class Client extends IClient {
           relay: proposed.topic,
           publicKey: proposed.keyPair.publicKey,
         });
-        this.events.emit("show_uri", { uri });
+        this.events.emit(CLIENT_EVENTS.share_uri, { uri });
       });
       connection = await this.connection.create();
     } else {
       // TODO: display connections to be selected
-      // this.events.emit("show_connections", { connections: this.connections.entries })
+      // this.events.emit(CLIENT_EVENTS.show_connections, { connections: this.connections.entries })
       //
       // (temporarily let's just select the first one)
       //
@@ -97,10 +103,39 @@ export class Client extends IClient {
         jsonrpc: params.jsonrpc,
       },
     });
-    return session.state.accounts;
+    return session.state;
   }
 
-  public async disconnect(params: ClientDisconnectParams): Promise<void> {
+  public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
+    // if proposal is typeof string assume connection proposal uri
+    if (typeof params.proposal === "string") {
+      const responded = await this.connection.respond({
+        approved: params.approved,
+        proposal: parseUri(params.proposal),
+      });
+      if (isConnectionFailed(responded.outcome)) {
+        return;
+      }
+      return responded.outcome.topic;
+    }
+    // else assume session proposal is provided
+
+    if (typeof params.response === "undefined") {
+      throw new Error("Response is required for session proposals");
+    }
+    const responded = await this.session.respond({
+      approved: params.approved,
+      proposal: params.proposal,
+      metadata: getAppMetadata(params.response.app),
+      state: params.response.state,
+    });
+    if (isSessionFailed(responded.outcome)) {
+      return;
+    }
+    return responded.outcome.topic;
+  }
+
+  public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
     await this.session.delete(params);
   }
 

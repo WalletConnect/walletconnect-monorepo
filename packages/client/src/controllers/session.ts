@@ -63,6 +63,10 @@ export class Session extends ISession {
     await this.settled.init();
   }
 
+  public async get(topic: string): Promise<SessionTypes.Settled> {
+    return this.settled.get(topic);
+  }
+
   get length(): number {
     return this.settled.length;
   }

@@ -11,16 +11,27 @@ export interface ClientOptions {
   relayProvider?: string | IJsonRpcProvider;
 }
 
-export interface ClientConnectParams {
-  chains: string[];
-  jsonrpc: string[];
-  app?: string | SessionTypes.Metadata;
-  relay?: RelayProtocolOptions;
-}
+export declare namespace ClientTypes {
+  export interface ConnectParams {
+    chains: string[];
+    jsonrpc: string[];
+    app?: string | SessionTypes.Metadata;
+    relay?: RelayProtocolOptions;
+  }
 
-export interface ClientDisconnectParams {
-  topic: string;
-  reason: string;
+  export interface RespondParams {
+    approved: boolean;
+    proposal: string | SessionTypes.Proposal;
+    response?: {
+      state: SessionTypes.State;
+      app?: string | SessionTypes.Metadata;
+    };
+  }
+
+  export interface DisconnectParams {
+    topic: string;
+    reason: string;
+  }
 }
 
 export abstract class IClient extends IEvents {
@@ -37,6 +48,7 @@ export abstract class IClient extends IEvents {
     super();
   }
 
-  public abstract connect(params: ClientConnectParams);
-  public abstract disconnect(params: ClientDisconnectParams);
+  public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.State>;
+  public abstract respond(params: ClientTypes.RespondParams): Promise<string | undefined>;
+  public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
 }
