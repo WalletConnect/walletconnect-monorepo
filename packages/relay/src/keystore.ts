@@ -1,16 +1,14 @@
-import redis from "redis";
+import redis, { RedisClient } from "redis";
+
 import { Subscription, Notification, BridgePublishParams } from "./types";
 import bluebird from "bluebird";
+import config from "./config";
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
-const redisConfig = {
-  url: process.env.REDIS_URL || "redis://localhost:6379/0",
-  prefix: process.env.REDIS_PREFIX || "walletconnect-bridge",
-};
-
-const redisClient: any = redis.createClient();
+//const redisClient: RedisClient = redis.createClient(config.redis);
+const redisClient: any = redis.createClient(config.redis);
 
 const subs: Subscription[] = [];
 

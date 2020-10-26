@@ -7,7 +7,7 @@ email="${EMAIL:-noreply@gmail.com}"
 docker_containers="${SUBDOMAINS}"
 app_container_dns_name="${CONTAINER_NAME}"
 app_env="${APP_ENV:-development}"
-app_port="${APP_PORT:-5001}"
+app_port="${APP_PORT:-5555}"
 app_qty="${APP_QTY:-5}"
 
 LETSENCRYPT=/etc/letsencrypt/live
@@ -102,7 +102,7 @@ EOF
 function configLoadBalancingForApp () {
   configPath="${1:-$SERVERS/$1}"
   appQty=${2:-1}
-  port=${3:-5001}
+  port=${3:-5555}
   dockerContainerName=$4
   if [[ ! $dockerContainerName ]]; then
     printf "Need to give the docker name of the main app. Quitting...\n"
