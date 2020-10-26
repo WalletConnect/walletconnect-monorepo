@@ -4,22 +4,16 @@ services:
   redis:
     ports:
       - "127.0.0.1:6379:6379"
-  bridge0:
+  relay:
     ports:
       - "127.0.0.1:5001:5001"
     volumes:
-      - ../build:/root/build
+      - ../packages/relay/build:/app/build
 
-  bridge1:
-    ports:
-      - "127.0.0.1:5002:5002"
-    volumes:
-      - ../build:/root/build
   nginx:
     environment:
-      CONTAINER_NAME: node
-      APP_QTY: 2
+      CONTAINER_NAME: relay
+      APP_QTY: 1
     depends_on:
-      - bridge0
-      - bridge1
+      - relay
 

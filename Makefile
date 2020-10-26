@@ -1,11 +1,9 @@
 ### Deploy configs
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
-REMOTE="https://github.com/WalletConnect/node-walletconnect-bridge"
-REMOTE_HASH=$(shell git ls-remote $(REMOTE) $(BRANCH) | head -n1 | cut -f1)
 project=walletconnect
 redisImage='redis:5-alpine'
 nginxImage='$(project)/nginx:$(BRANCH)'
-walletConnectImage='$(project)/bridge:$(BRANCH)'
+walletConnectImage='$(project)/relay:$(BRANCH)'
 
 ### Makefile internal coordination
 flags=.makeFlags
@@ -55,8 +53,8 @@ pull:
 	@echo
 
 setup:
-	@read -p 'Bridge URL domain: ' bridge; \
-	echo "BRIDGE_URL="$$bridge > config
+	@read -p 'Relay URL domain: ' relay; \
+	echo "RELAY_URL="$$relay > config
 	@read -p 'Email for SSL certificate (default noreply@gmail.com): ' email; \
 	echo "CERTBOT_EMAIL="$$email >> config
 	@read -p 'Is your DNS configured with cloudflare proxy? [y/N]: ' cf; \
@@ -65,12 +63,11 @@ setup:
 	@echo "MAKE: Done with $@"
 	@echo
 
-build-node: pull
+build-relay:
 	docker build \
 		-t $(walletConnectImage) \
 		--build-arg BRANCH=$(BRANCH) \
-		--build-arg REMOTE_HASH=$(REMOTE_HASH) \
-		-f ops/node.Dockerfile .
+		-f ops/relay.Dockerfile packages/relay
 	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
@@ -79,19 +76,18 @@ build-nginx: pull
 	docker build \
 		-t $(nginxImage) \
 		--build-arg BRANCH=$(BRANCH) \
-		--build-arg REMOTE_HASH=$(REMOTE_HASH) \
 		-f ops/nginx/nginx.Dockerfile ./ops/nginx
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
 
-build: pull build-node build-nginx
+build: pull build-relay build-nginx
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
 
 dev: pull build
-	BRIDGE_IMAGE=$(walletConnectImage) \
+	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	docker stack deploy \
 	-c ops/docker-compose.yml \
@@ -101,7 +97,7 @@ dev: pull build
 	@echo
 
 dev-monitoring: pull build
-	BRIDGE_IMAGE=$(walletConnectImage) \
+	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	docker stack deploy \
 	-c ops/docker-compose.yml \
@@ -123,7 +119,7 @@ cloudflare: setup
 	@echo
 
 deploy: setup build cloudflare
-	BRIDGE_IMAGE=$(walletConnectImage) \
+	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	PROJECT=$(project) \
 	bash ops/deploy.sh
@@ -131,7 +127,7 @@ deploy: setup build cloudflare
 	@echo
 
 deploy-monitoring: setup build cloudflare
-	BRIDGE_IMAGE=$(walletConnectImage) \
+	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	PROJECT=$(project) \
 	MONITORING=true \
@@ -157,8 +153,7 @@ upgrade: setup
 	@echo
 	git fetch origin $(BRANCH)
 	git merge origin/$(BRANCH)
-	docker service update --force $(project)_bridge0
-	docker service update --force $(project)_bridge1
+	docker service update --force $(project)_relay
 	docker service update --force $(project)_nginx
 	docker service update --force $(project)_redis
 

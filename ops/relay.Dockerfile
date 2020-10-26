@@ -1,12 +1,11 @@
-FROM node:10-slim
+FROM node:12-slim
 
-WORKDIR /root
+WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
 RUN npm install --no-optional && npm cache clean --force
-ENV PATH /root/node_modules/.bin/:$PATH
 
 COPY . .
 RUN npm run build
 
-CMD ["node", "/root/build"]
+CMD ["node", "/app/build"]

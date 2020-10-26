@@ -11,23 +11,10 @@ services:
       APP_QTY: 2
       CLOUDFLARE: ${CLOUDFLARE}
     depends_on:
-      - bridge0
-      - bridge1
+      - relay
 
-  # Because of how the bridge application works
-  # every client request must go to the same bridge replica
-  # By giving each bridge docker service a unique
-  # name we can load balance via the docker internal
-  # service dns and have the nginx entry container
-  # handle the load balancing
-  bridge0:
-    image: ${BRIDGE_IMAGE}
-    environment:
-      NODE_ENV: production
-      REDIS_URL: redis://redis:6379/0
-
-  bridge1:
-    image: ${BRIDGE_IMAGE}
+  relay:
+    image: ${RELAY_IMAGE}
     environment:
       NODE_ENV: production
       REDIS_URL: redis://redis:6379/0

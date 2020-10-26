@@ -110,21 +110,9 @@ function configLoadBalancingForApp () {
   fi
   cat - >> $configPath<<EOF
 upstream app {
-# request_uri is used in this situation because
-# it is compatible with both the random uuid that the stress
-# does and the production server uri of "" (no uri).
-# This allows us to to test the stress and to make it work for
-# the production environment
-#  hash    \$request_uri\$http_user_agent\$remote_addr consistent;
+  server $dockerContainerName:$port max_fails=1 fail_timeout=5s;
+}
 EOF
-  for i in $(seq 0 $((appQty - 1))); do
-    if [[ $i == 0 ]]; then
-      echo "server $dockerContainerName$i:$port max_fails=1 fail_timeout=5s;" >> $configPath
-    else
-      echo "server $dockerContainerName$i:$port backup;" >> $configPath
-    fi
-  done
-  echo "}" >> $configPath
 }
 
 function configRootDomain () {
