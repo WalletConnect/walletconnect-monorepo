@@ -1,0 +1,33 @@
+version: '3.7'
+
+services:
+  nginx:
+    environment:
+      DOMAIN_URL: ${BRIDGE_URL}
+      APP_ENV: production
+      EMAIL: ${CERTBOT_EMAIL}
+      CONTAINER_NAME: bridge
+      APP_PORT: 5000
+      APP_QTY: 2
+      CLOUDFLARE: ${CLOUDFLARE}
+    depends_on:
+      - bridge0
+      - bridge1
+
+  # Because of how the bridge application works
+  # every client request must go to the same bridge replica
+  # By giving each bridge docker service a unique
+  # name we can load balance via the docker internal
+  # service dns and have the nginx entry container
+  # handle the load balancing
+  bridge0:
+    image: ${BRIDGE_IMAGE}
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379/0
+
+  bridge1:
+    image: ${BRIDGE_IMAGE}
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379/0
