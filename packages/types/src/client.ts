@@ -17,6 +17,7 @@ export declare namespace ClientTypes {
     jsonrpc: string[];
     app?: string | SessionTypes.Metadata;
     relay?: RelayProtocolOptions;
+    connection?: string;
   }
 
   export interface RespondParams {

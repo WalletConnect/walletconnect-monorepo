@@ -69,7 +69,7 @@ export class Client extends IClient {
 
   public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
     let connection: ConnectionTypes.Settled;
-    if (!this.connection.length) {
+    if (typeof params.connection === "undefined") {
       this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Proposed) => {
         const uri = formatUri(this.protocol, this.version, proposed.topic, {
           relay: proposed.topic,
@@ -79,12 +79,7 @@ export class Client extends IClient {
       });
       connection = await this.connection.create();
     } else {
-      // TODO: display connections to be selected
-      // this.events.emit(CLIENT_EVENTS.show_connections, { connections: this.connections.entries })
-      //
-      // (temporarily let's just select the first one)
-      //
-      connection = Object.values(this.connection.entries)[0];
+      connection = await this.connection.get(params.connection);
     }
     const session = await this.session.create({
       connection: { topic: connection.topic },
