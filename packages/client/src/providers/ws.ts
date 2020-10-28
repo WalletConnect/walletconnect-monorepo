@@ -71,8 +71,8 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   private onMessage(e: MessageEvent) {
+    if (typeof e.data === "undefined") return;
     const payload = safeJsonParse(e.data) as JsonRpcPayload;
-    if (typeof payload === "undefined") return;
     if (isJsonRpcResponse(payload)) {
       this.events.emit(`${payload.id}`, payload);
     } else {

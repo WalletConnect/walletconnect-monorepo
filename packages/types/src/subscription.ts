@@ -1,4 +1,5 @@
 import { JsonRpcPayload } from "rpc-json-types";
+import { Logger } from "pino";
 
 import { IClient } from "./client";
 import { IEvents } from "./events";
@@ -51,7 +52,7 @@ export abstract class ISubscription<Data> extends IEvents {
 
   public abstract readonly entries: SubscriptionEntries<Data>;
 
-  constructor(public client: IClient, public context: SubscriptionContext) {
+  constructor(public client: IClient, public context: SubscriptionContext, public logger: Logger) {
     super();
   }
 

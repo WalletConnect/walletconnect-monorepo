@@ -12,139 +12,160 @@ import {
   PARSE_ERROR,
   payloadId,
 } from "rpc-json-utils";
+import { Logger } from "pino";
+import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 import { RelayTypes } from "@walletconnect/types";
-import { getRelayProtocolJsonRpc } from "@walletconnect/utils";
+import { formatLoggerContext, getRelayProtocolJsonRpc } from "@walletconnect/utils";
 
-import { pushNotification } from "./notification";
-import { setSub, getSub, setPub, getPub } from "./keystore";
-import { Subscription, Socket, SocketData, Logger, JsonRpcMiddleware } from "./types";
-import { isPublishParams, parsePublishRequest, parseSubscribeRequest } from "./utils";
+import { RedisStore } from "./redis";
+import { NotificationServer } from "./notification";
+import { Subscription, Socket, SocketData } from "./types";
+import {
+  isPublishParams,
+  parsePublishRequest,
+  parseSubscribeRequest,
+  parseUnsubscribeRequest,
+} from "./utils";
 
 const BRIDGE_JSONRPC = getRelayProtocolJsonRpc("bridge");
 const WAKU_JSONRPC = getRelayProtocolJsonRpc("waku");
 
-async function socketSend(
-  socket: Socket,
-  request: JsonRpcRequest | JsonRpcResult | JsonRpcError,
-  logger: Logger,
-) {
-  if (socket.readyState === 1) {
-    const message = JSON.stringify(request);
-    socket.send(message);
-    logger.info({ type: "outgoing", message });
-  } else {
-    if (isJsonRpcRequest(request)) {
-      const params = request.params;
-      if (isPublishParams(params)) {
-        await setPub(params);
+export class JsonRpcServer {
+  public context = "jsonrpc";
+
+  constructor(
+    public logger: Logger,
+    public store: RedisStore,
+    public notification: NotificationServer,
+  ) {
+    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.store = store;
+    this.notification = notification;
+  }
+
+  public async onRequest(socket: Socket, data: SocketData): Promise<void> {
+    const message = String(data);
+
+    if (!message || !message.trim()) {
+      const code = getError(INVALID_REQUEST);
+      this.logger.error({ type: "incoming", code, message });
+      this.socketSend(socket, formatJsonRpcError(payloadId(), code));
+      return;
+    }
+
+    try {
+      const request = safeJsonParse<JsonRpcRequest>(message);
+
+      if (typeof request === "string") {
+        const code = getError(PARSE_ERROR);
+        this.logger.error({ type: "incoming", code, message });
+        this.socketSend(socket, formatJsonRpcError(payloadId(), code));
+        return;
+      } else {
+        this.logger.info({ type: "incoming", request });
+      }
+
+      switch (request.method) {
+        case WAKU_JSONRPC.publish:
+        case BRIDGE_JSONRPC.publish:
+          await this.onPublishRequest(socket, request as JsonRpcRequest<RelayTypes.PublishParams>);
+          break;
+        case WAKU_JSONRPC.subscribe:
+        case BRIDGE_JSONRPC.subscribe:
+          await this.onSubscribeRequest(
+            socket,
+            request as JsonRpcRequest<RelayTypes.SubscribeParams>,
+          );
+          break;
+
+        case WAKU_JSONRPC.unsubscribe:
+        case BRIDGE_JSONRPC.unsubscribe:
+          await this.onUnsubscribeRequest(
+            socket,
+            request as JsonRpcRequest<RelayTypes.UnsubscribeParams>,
+          );
+          break;
+        default:
+          this.socketSend(socket, formatJsonRpcError(payloadId(), getError(METHOD_NOT_FOUND)));
+          return;
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      this.socketSend(socket, formatJsonRpcError(payloadId(), e.message));
+    }
+  }
+  // ---------- Private ----------------------------------------------- //
+  private async onPublishRequest(socket: Socket, request: JsonRpcRequest) {
+    const params = parsePublishRequest(request);
+    this.logger.info({ method: "onPublishRequest", params });
+    const subscribers = this.store.getSub(params.topic, socket);
+    this.logger.info({ method: "onPublishRequest", subscribers: subscribers.length });
+
+    // TODO: assume all payloads are non-silent for now
+    await this.notification.push(params.topic);
+
+    if (subscribers.length) {
+      await Promise.all(
+        subscribers.map((subscriber: Subscription) => this.socketSend(subscriber.socket, request)),
+      );
+    } else {
+      await this.store.setPub(params);
+    }
+
+    this.socketSend(socket, formatJsonRpcResult(request.id, true));
+  }
+
+  private async onSubscribeRequest(socket: Socket, request: JsonRpcRequest) {
+    const params = parseSubscribeRequest(request);
+    this.logger.info({ method: "onSubscribeRequest", params });
+
+    const topic = params.topic;
+
+    const subscriber = { topic, socket };
+
+    this.store.setSub(subscriber);
+
+    const pending = await this.store.getPub(topic);
+    this.logger.info({ method: "onSubscribeRequest", pending: pending.length });
+
+    if (pending && pending.length) {
+      await Promise.all(
+        pending.map((message: string) => {
+          const request = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
+            BRIDGE_JSONRPC.subscription,
+            {
+              topic,
+              message,
+            },
+          );
+          this.socketSend(socket, request);
+        }),
+      );
+    }
+  }
+  private async onUnsubscribeRequest(socket: Socket, request: JsonRpcRequest) {
+    const params = parseUnsubscribeRequest(request);
+    this.logger.info({ method: "onUnsubscribeRequest", params });
+    const topic = params.topic;
+
+    const subscriber = { topic, socket };
+
+    this.store.removeSub(subscriber);
+  }
+
+  private async socketSend(socket: Socket, payload: JsonRpcRequest | JsonRpcResult | JsonRpcError) {
+    if (socket.readyState === 1) {
+      const message = safeJsonStringify(payload);
+      socket.send(message);
+      this.logger.info({ type: "outgoing", payload });
+    } else {
+      if (isJsonRpcRequest(payload)) {
+        const params = payload.params;
+        if (isPublishParams(params)) {
+          await this.store.setPub(params);
+        }
       }
     }
   }
 }
-
-async function handleSubscribe(socket: Socket, request: JsonRpcRequest, logger: Logger) {
-  const params = parseSubscribeRequest(request);
-  const topic = params.topic;
-
-  const subscriber = { topic, socket };
-
-  await setSub(subscriber);
-
-  const pending = await getPub(topic);
-
-  if (pending && pending.length) {
-    await Promise.all(
-      pending.map((message: string) =>
-        socketSend(
-          socket,
-          formatJsonRpcRequest<RelayTypes.SubscriptionParams>(BRIDGE_JSONRPC.subscription, {
-            topic,
-            message,
-          }),
-          logger,
-        ),
-      ),
-    );
-  }
-}
-
-async function handlePublish(socket: Socket, request: JsonRpcRequest, logger: Logger) {
-  const params = parsePublishRequest(request);
-  const subscribers = await getSub(params.topic);
-
-  // TODO: assume all payloads are non-silent for now
-  await pushNotification(params.topic);
-
-  if (subscribers.length) {
-    await Promise.all(
-      subscribers.map((subscriber: Subscription) => socketSend(subscriber.socket, request, logger)),
-    );
-  } else {
-    await setPub(params);
-  }
-
-  socketSend(socket, formatJsonRpcResult(request.id, true), logger);
-}
-
-async function jsonRpcServer(
-  socket: Socket,
-  data: SocketData,
-  logger: Logger,
-  middleware?: JsonRpcMiddleware,
-): Promise<void> {
-  const message = String(data);
-
-  if (!message || !message.trim()) {
-    socketSend(socket, formatJsonRpcError(payloadId(), getError(INVALID_REQUEST)), logger);
-    return;
-  }
-
-  logger.info({ type: "incoming", message });
-
-  try {
-    let request: JsonRpcRequest | undefined;
-
-    try {
-      request = JSON.parse(message);
-    } catch (e) {
-      // do nothing
-    }
-
-    if (typeof request === "undefined") {
-      socketSend(socket, formatJsonRpcError(payloadId(), getError(PARSE_ERROR)), logger);
-      return;
-    }
-
-    if (middleware) {
-      middleware(request);
-    }
-
-    switch (request.method) {
-      case WAKU_JSONRPC.subscribe:
-      case BRIDGE_JSONRPC.subscribe:
-        await handleSubscribe(
-          socket,
-          request as JsonRpcRequest<RelayTypes.SubscribeParams>,
-          logger,
-        );
-        break;
-      case WAKU_JSONRPC.publish:
-      case BRIDGE_JSONRPC.publish:
-        await handlePublish(socket, request as JsonRpcRequest<RelayTypes.PublishParams>, logger);
-        break;
-      case WAKU_JSONRPC.unsubscribe:
-      case BRIDGE_JSONRPC.unsubscribe:
-        // TODO: implement handleUnsubscribe
-        break;
-      default:
-        socketSend(socket, formatJsonRpcError(payloadId(), getError(METHOD_NOT_FOUND)), logger);
-        return;
-    }
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error(e);
-    socketSend(socket, formatJsonRpcError(payloadId(), e.message), logger);
-  }
-}
-
-export default jsonRpcServer;

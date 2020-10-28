@@ -1,7 +1,4 @@
 import WebSocket from "ws";
-import * as fastify from "fastify";
-
-export type Logger = fastify.FastifyLoggerInstance;
 
 export type SocketData = WebSocket.Data;
 

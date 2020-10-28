@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import { Logger } from "pino";
 import {
   IClient,
   ISubscription,
@@ -8,7 +9,7 @@ import {
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { mapToObj, objToMap } from "@walletconnect/utils";
+import { mapToObj, objToMap, formatLoggerContext } from "@walletconnect/utils";
 import { JsonRpcPayload } from "rpc-json-utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
@@ -18,12 +19,15 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   public events = new EventEmitter();
 
-  constructor(public client: IClient, public context: SubscriptionContext) {
-    super(client, context);
+  constructor(public client: IClient, public context: SubscriptionContext, public logger: Logger) {
+    super(client, context, logger);
+    this.logger = logger.child({ context: formatLoggerContext(logger, this.context.status) });
+
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
+    this.logger.info({ type: "init" });
     await this.restore();
   }
 

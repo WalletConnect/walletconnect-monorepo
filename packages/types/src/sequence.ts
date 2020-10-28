@@ -1,3 +1,5 @@
+import { Logger } from "pino";
+
 import { IClient } from "./client";
 import { IEvents } from "./events";
 import { ISubscription, SubscriptionEvent } from "./subscription";
@@ -28,7 +30,7 @@ export abstract class ISequence<
   // describes sequence context
   protected abstract context: string;
 
-  constructor(public client: IClient) {
+  constructor(public client: IClient, public logger: Logger) {
     super();
   }
 

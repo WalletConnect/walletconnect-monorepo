@@ -1,14 +1,22 @@
-import fastify, { RequestGenericInterface } from "fastify";
+import WebSocket from "ws";
 import Helmet from "fastify-helmet";
+import { Logger } from "pino";
+import fastify, { RequestGenericInterface } from "fastify";
+import { getLoggerOptions } from "@walletconnect/utils";
 
-import { setNotification } from "./keystore";
-import { initWebSocketServer } from "./socket";
 import { assertType } from "./utils";
 import config from "./config";
+import { Socket } from "./types";
+import { RedisStore } from "./redis";
+import { JsonRpcServer } from "./jsonrpc";
+import { NotificationServer } from "./notification";
 
 const app = fastify({
-  logger: { prettyPrint: config.debug } as any,
+  logger: getLoggerOptions(config.debug ? "debug" : "warn"),
 });
+
+const logger = app.log.child({ context: "server" }) as Logger;
+const store = new RedisStore(logger);
 
 app.register(Helmet);
 
@@ -34,7 +42,7 @@ app.post<PostSubscribeRequest>("/subscribe", async (req, res) => {
     assertType(req.body, "topic");
     assertType(req.body, "webhook");
 
-    await setNotification({
+    await store.setNotification({
       topic: req.body.topic,
       webhook: req.body.webhook,
     });
@@ -46,10 +54,48 @@ app.post<PostSubscribeRequest>("/subscribe", async (req, res) => {
 });
 
 app.ready(() => {
-  initWebSocketServer(app.server, app.log);
+  const wsServer = new WebSocket.Server({ server: app.server });
+  const notification = new NotificationServer(logger, store);
+  const jsonRpcServer = new JsonRpcServer(logger, store, notification);
+
+  wsServer.on("connection", (socket: Socket) => {
+    socket.on("message", async data => {
+      jsonRpcServer.onRequest(socket, data);
+    });
+
+    socket.on("pong", () => {
+      socket.isAlive = true;
+    });
+
+    socket.on("error", (e: Error) => {
+      if (!e.message.includes("Invalid WebSocket frame")) {
+        throw e;
+      }
+      logger.warn({ type: e.name, message: e.message });
+    });
+  });
+
+  setInterval(
+    () => {
+      const sockets: any = wsServer.clients;
+      sockets.forEach((socket: Socket) => {
+        if (socket.isAlive === false) {
+          return socket.terminate();
+        }
+
+        function noop() {
+          // empty
+        }
+
+        socket.isAlive = false;
+        socket.ping(noop);
+      });
+    },
+    10000, // 10 seconds
+  );
 });
 
 app.listen(+config.port, config.host, (err, address) => {
   if (err) throw err;
-  app.log.info(`Server listening on ${address}`);
+  logger.info(`Server listening on ${address}`);
 });

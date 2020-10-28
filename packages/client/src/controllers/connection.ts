@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import { Logger } from "pino";
 import { ConnectionTypes, IClient, IConnection, SubscriptionEvent } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -8,6 +9,7 @@ import {
   isConnectionFailed,
   mapEntries,
   sha256,
+  formatLoggerContext,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -40,29 +42,46 @@ export class Connection extends IConnection {
 
   public events = new EventEmitter();
 
-  protected context = CONNECTION_CONTEXT;
+  protected context: string = CONNECTION_CONTEXT;
 
-  constructor(public client: IClient) {
-    super(client);
-    this.proposed = new Subscription<ConnectionTypes.Proposed>(client, {
-      name: this.context,
-      status: CONNECTION_STATUS.proposed,
-      encrypted: false,
+  constructor(public client: IClient, public logger: Logger) {
+    super(client, logger);
+    this.logger = logger.child({
+      context: formatLoggerContext(logger, this.context),
     });
-    this.responded = new Subscription<ConnectionTypes.Responded>(client, {
-      name: this.context,
-      status: CONNECTION_STATUS.responded,
-      encrypted: false,
-    });
-    this.settled = new Subscription<ConnectionTypes.Settled>(client, {
-      name: this.context,
-      status: CONNECTION_STATUS.settled,
-      encrypted: true,
-    });
+
+    this.proposed = new Subscription<ConnectionTypes.Proposed>(
+      client,
+      {
+        name: this.context,
+        status: CONNECTION_STATUS.proposed,
+        encrypted: false,
+      },
+      this.logger,
+    );
+    this.responded = new Subscription<ConnectionTypes.Responded>(
+      client,
+      {
+        name: this.context,
+        status: CONNECTION_STATUS.responded,
+        encrypted: false,
+      },
+      this.logger,
+    );
+    this.settled = new Subscription<ConnectionTypes.Settled>(
+      client,
+      {
+        name: this.context,
+        status: CONNECTION_STATUS.settled,
+        encrypted: true,
+      },
+      this.logger,
+    );
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
+    this.logger.info({ type: "init" });
     await this.proposed.init();
     await this.responded.init();
     await this.settled.init();

@@ -1,34 +1,25 @@
 import { RelayTypes } from "@walletconnect/types";
 
-export const RELAY_JSON_RPC: { [protocol: string]: RelayTypes.JsonRpcMethods } = {
-  bridge: {
-    isConnected: "bridge_isConnected",
-    connect: "bridge_connect",
-    disconnect: "bridge_disconnect",
-    publish: "bridge_publish",
-    subscribe: "bridge_subscribe",
-    subscription: "bridge_subscription",
-    unsubscribe: "bridge_unsubscribe",
-  },
-  waku: {
-    isConnected: "waku_isConnected",
-    connect: "waku_connect",
-    disconnect: "waku_disconnect",
-    publish: "waku_publish",
-    subscribe: "waku_subscribe",
-    subscription: "waku_subscription",
-    unsubscribe: "waku_unsubscribe",
-  },
-  webrtc: {
-    isConnected: "webrtc_isConnected",
-    connect: "webrtc_connect",
-    disconnect: "webrtc_disconnect",
-    publish: "webrtc_publish",
-    subscribe: "webrtc_subscribe",
-    subscription: "webrtc_subscription",
-    unsubscribe: "webrtc_unsubscribe",
-  },
-};
+export const RELAY_JSON_RPC: { [protocol: string]: RelayTypes.JsonRpcMethods } = (() => {
+  const protocols = ["bridge", "waku", "webrtc"];
+  const jsonrpc: { [protocol: string]: RelayTypes.JsonRpcMethods } = {};
+  protocols.forEach(protocol => {
+    const methods: RelayTypes.JsonRpcMethods = {
+      isConnected: "",
+      connect: "",
+      disconnect: "",
+      publish: "",
+      subscribe: "",
+      subscription: "",
+      unsubscribe: "",
+    };
+    Object.keys(methods).forEach(method => {
+      methods[method] = `${protocol}_${method}`;
+    });
+    jsonrpc[protocol] = methods;
+  });
+  return jsonrpc;
+})();
 
 export function getRelayProtocolJsonRpc(protocol: string): RelayTypes.JsonRpcMethods {
   const jsonrpc = RELAY_JSON_RPC[protocol];

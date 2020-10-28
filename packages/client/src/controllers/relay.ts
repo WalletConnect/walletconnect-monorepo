@@ -1,6 +1,12 @@
 import { EventEmitter } from "events";
+import { Logger } from "pino";
 import { RelayTypes, IRelay } from "@walletconnect/types";
-import { encrypt, decrypt, getRelayProtocolJsonRpc } from "@walletconnect/utils";
+import {
+  encrypt,
+  decrypt,
+  getRelayProtocolJsonRpc,
+  formatLoggerContext,
+} from "@walletconnect/utils";
 import {
   IJsonRpcProvider,
   formatJsonRpcRequest,
@@ -9,7 +15,7 @@ import {
 } from "rpc-json-utils";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
-import { RELAY_DEFAULT_PROTOCOL, RELAY_DEFAULT_TTL } from "../constants";
+import { RELAY_CONTEXT, RELAY_DEFAULT_PROTOCOL, RELAY_DEFAULT_TTL } from "../constants";
 import { WSProvider } from "../providers";
 
 export class Relay extends IRelay {
@@ -17,13 +23,20 @@ export class Relay extends IRelay {
 
   public provider: IJsonRpcProvider;
 
-  constructor(provider?: string | IJsonRpcProvider) {
-    super();
+  public context: string = RELAY_CONTEXT;
+
+  constructor(public logger: Logger, provider?: string | IJsonRpcProvider) {
+    super(logger);
+    this.logger = logger.child({
+      context: formatLoggerContext(logger, this.context),
+    });
+
     this.provider = this.setProvider(provider);
     this.provider.on("request", this.onRequest);
   }
 
   public async init(): Promise<void> {
+    this.logger.info({ type: "init" });
     await this.provider.connect();
   }
 

@@ -1,26 +1,30 @@
 import axios from "axios";
-import { JsonRpcRequest } from "rpc-json-utils";
+import { Logger } from "pino";
+import { formatLoggerContext } from "@walletconnect/utils";
 
-import { getNotification } from "./keystore";
+import { RedisStore } from "./redis";
 import { Notification } from "./types";
-import { parsePublishRequest } from "./utils";
 
-export const pushNotification = async (topic: string) => {
-  const notifications = await getNotification(topic);
+export class NotificationServer {
+  public context = "notification";
 
-  if (notifications && notifications.length) {
-    notifications.forEach((notification: Notification) =>
-      axios.post(notification.webhook, { topic }),
-    );
+  constructor(public logger: Logger, public store: RedisStore) {
+    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.store = store;
   }
-};
 
-export const notificationMiddleware = async (request: JsonRpcRequest, cb?: any): Promise<void> => {
-  if (request.method === "bridge_publish") {
-    const params = parsePublishRequest(request);
-    await pushNotification(params.topic);
+  public async push(topic: string) {
+    const notifications = await this.store.getNotification(topic);
+
+    if (notifications && notifications.length) {
+      notifications.forEach((notification: Notification) => {
+        axios.post(notification.webhook, { topic });
+        this.logger.info({
+          type: "push",
+          webhook: notification.webhook,
+          topic,
+        });
+      });
+    }
   }
-  if (typeof cb !== "undefined") {
-    cb(request);
-  }
-};
+}

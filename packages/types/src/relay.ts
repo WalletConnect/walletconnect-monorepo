@@ -1,3 +1,4 @@
+import { Logger } from "pino";
 import { IJsonRpcProvider, JsonRpcPayload } from "rpc-json-types";
 
 import { DecryptParams, EncryptParams } from "./crypto";
@@ -52,7 +53,9 @@ export declare namespace RelayTypes {
 export abstract class IRelay extends IEvents {
   public abstract provider: IJsonRpcProvider;
 
-  constructor(provider?: IJsonRpcProvider) {
+  public abstract context: string;
+
+  constructor(public logger: Logger, provider?: IJsonRpcProvider) {
     super();
   }
 

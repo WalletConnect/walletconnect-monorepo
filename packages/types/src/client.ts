@@ -1,3 +1,4 @@
+import { Logger } from "pino";
 import { IJsonRpcProvider } from "rpc-json-types";
 
 import { IRelay, RelayTypes } from "./relay";
@@ -7,6 +8,7 @@ import { IStore } from "./store";
 import { IEvents } from "./events";
 
 export interface ClientOptions {
+  logger?: string | Logger;
   store?: IStore;
   relayProvider?: string | IJsonRpcProvider;
 }
@@ -38,6 +40,8 @@ export declare namespace ClientTypes {
 export abstract class IClient extends IEvents {
   public readonly protocol = "wc";
   public readonly version = 2;
+
+  public abstract logger: Logger;
 
   public abstract store: IStore;
   public abstract relay: IRelay;

@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import { Logger } from "pino";
 import { IClient, ISession, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -7,6 +8,7 @@ import {
   isSessionFailed,
   mapEntries,
   sha256,
+  formatLoggerContext,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -35,29 +37,46 @@ export class Session extends ISession {
 
   public events = new EventEmitter();
 
-  protected context = SESSION_CONTEXT;
+  protected context: string = SESSION_CONTEXT;
 
-  constructor(public client: IClient) {
-    super(client);
-    this.proposed = new Subscription<SessionTypes.Proposed>(client, {
-      name: this.context,
-      status: SESSION_STATUS.proposed,
-      encrypted: true,
+  constructor(public client: IClient, public logger: Logger) {
+    super(client, logger);
+    this.logger = logger.child({
+      context: formatLoggerContext(logger, this.context),
     });
-    this.responded = new Subscription<SessionTypes.Responded>(client, {
-      name: this.context,
-      status: SESSION_STATUS.responded,
-      encrypted: true,
-    });
-    this.settled = new Subscription<SessionTypes.Settled>(client, {
-      name: this.context,
-      status: SESSION_STATUS.settled,
-      encrypted: true,
-    });
+
+    this.proposed = new Subscription<SessionTypes.Proposed>(
+      client,
+      {
+        name: this.context,
+        status: SESSION_STATUS.proposed,
+        encrypted: true,
+      },
+      this.logger,
+    );
+    this.responded = new Subscription<SessionTypes.Responded>(
+      client,
+      {
+        name: this.context,
+        status: SESSION_STATUS.responded,
+        encrypted: true,
+      },
+      this.logger,
+    );
+    this.settled = new Subscription<SessionTypes.Settled>(
+      client,
+      {
+        name: this.context,
+        status: SESSION_STATUS.settled,
+        encrypted: true,
+      },
+      this.logger,
+    );
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
+    this.logger.info({ type: "init" });
     await this.proposed.init();
     await this.responded.init();
     await this.settled.init();
