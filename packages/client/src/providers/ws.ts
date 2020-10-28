@@ -23,9 +23,7 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   public async connect() {
-    const socket = new WS(this.rpcUrl, {
-        rejectUnauthorized: false, // Allows for self signed certs
-    });
+    const socket = new WS(this.rpcUrl);
     socket.onmessage = (event: MessageEvent) => this.onMessage(event.data);
     this.socket = socket;
   }
