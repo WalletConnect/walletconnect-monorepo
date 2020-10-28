@@ -1,17 +1,20 @@
 import * as queryStringUtils from "query-string";
+import { UriParameters } from "@walletconnect/types";
+import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 // -- uri -------------------------------------------------- //
 
-export function formatUri(
-  protocol: string,
-  version: number,
-  topic: string,
-  params: Record<string, string>,
-) {
-  return `${protocol}:${topic}@${version}` + queryStringUtils.stringify(params);
+export function formatUri(params: UriParameters): string {
+  return (
+    `${params.protocol}:${params.topic}@${params.version}?` +
+    queryStringUtils.stringify({
+      publicKey: params.publicKey,
+      relay: safeJsonStringify(params.relay),
+    })
+  );
 }
 
-export function parseUri(str: string): any {
+export function parseUri(str: string): UriParameters {
   const pathStart: number = str.indexOf(":");
 
   const pathEnd: number | undefined = str.indexOf("?") !== -1 ? str.indexOf("?") : undefined;
@@ -20,20 +23,7 @@ export function parseUri(str: string): any {
 
   const path: string = str.substring(pathStart + 1, pathEnd);
 
-  function parseRequiredParams(path: string) {
-    const separator = "@";
-
-    const values = path.split(separator);
-
-    const requiredParams = {
-      topic: values[0],
-      version: parseInt(values[1], 10),
-    };
-
-    return requiredParams;
-  }
-
-  const requiredParams = parseRequiredParams(path);
+  const requiredValues = path.split("@");
 
   const queryString: string = typeof pathEnd !== "undefined" ? str.substr(pathEnd) : "";
 
@@ -41,8 +31,10 @@ export function parseUri(str: string): any {
 
   const result = {
     protocol,
-    ...requiredParams,
-    ...queryParams,
+    topic: requiredValues[0],
+    version: parseInt(requiredValues[1], 10),
+    publicKey: queryParams.publicKey as string,
+    relay: safeJsonParse(queryParams.relay as string),
   };
 
   return result;

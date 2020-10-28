@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { safeJsonStringify } from "safe-json-utils";
+import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 import {
   IJsonRpcProvider,
   JsonRpcPayload,
@@ -22,13 +22,19 @@ export class WSProvider extends IJsonRpcProvider {
     this.rpcUrl = rpcUrl;
   }
 
-  public async connect() {
-    const socket = new WS(this.rpcUrl);
-    socket.onmessage = (event: MessageEvent) => this.onMessage(event.data);
-    this.socket = socket;
+  public async connect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const socket = new WS(this.rpcUrl) as WebSocket;
+      socket.onopen = () => {
+        socket.onmessage = (event: MessageEvent) => this.onMessage(event.data);
+        this.socket = socket;
+        resolve();
+      };
+      socket.onerror = (event: Event) => reject(event);
+    });
   }
 
-  public async disconnect() {
+  public async disconnect(): Promise<void> {
     if (typeof this.socket === "undefined") {
       throw new Error("Socket is not connected");
     }
@@ -65,7 +71,8 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   private onMessage(e: MessageEvent) {
-    const payload = JSON.parse(e.data) as JsonRpcPayload;
+    const payload = safeJsonParse(e.data) as JsonRpcPayload;
+    if (typeof payload === "undefined") return;
     if (isJsonRpcResponse(payload)) {
       this.events.emit(`${payload.id}`, payload);
     } else {

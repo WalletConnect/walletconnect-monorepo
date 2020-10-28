@@ -37,20 +37,28 @@ describe("Client", () => {
     await Promise.all([
       new Promise(async (resolve, reject) => {
         clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {
+          console.log("clientA", CLIENT_EVENTS.share_uri); // eslint-disable-line no-console
+          console.log("uri", uri); // eslint-disable-line no-console
           const topic = await clientB.respond({
             approved: true,
             proposal: uri,
           });
+          console.log("clientB.respond", topic); // eslint-disable-line no-console
+
           if (typeof topic === "undefined") {
             throw new Error("topic is undefined");
           }
           const connection = await clientB.connection.get(topic);
+          console.log("clientB.connection.get"); // eslint-disable-line no-console
           expect(connection).toBeTruthy();
           resolve();
         });
       }),
       new Promise(async (resolve, reject) => {
         clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
+          console.log("clientB", SESSION_EVENTS.proposed); // eslint-disable-line no-console
+
+          console.log("proposal", proposal); // eslint-disable-line no-console
           expect(proposal.peer.metadata).toEqual(TEST_APP_METADATA_A);
           expect(proposal.stateParams.chains).toEqual(TEST_SESSION_CHAINS);
           expect(proposal.ruleParams.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
@@ -62,10 +70,12 @@ describe("Client", () => {
               state: TEST_SESSION_STATE,
             },
           });
+          console.log("clientB.respond", topic); // eslint-disable-line no-console
           if (typeof topic === "undefined") {
             throw new Error("topic is undefined");
           }
           const session = await clientB.connection.get(topic);
+          console.log("clientB.connection.get"); // eslint-disable-line no-console
           expect(session).toBeTruthy();
           expect(session.state).toEqual(TEST_SESSION_STATE);
           expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
@@ -77,6 +87,7 @@ describe("Client", () => {
           chains: TEST_SESSION_CHAINS,
           jsonrpc: TEST_SESSION_JSONRPC,
         });
+        console.log("clientA.connect"); // eslint-disable-line no-console
         expect(session).toBeTruthy();
         expect(session.state).toEqual(TEST_SESSION_STATE);
         expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);

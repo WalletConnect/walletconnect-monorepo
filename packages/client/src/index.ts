@@ -26,6 +26,7 @@ import {
   SESSION_EVENTS,
   SESSION_JSONRPC,
 } from "./constants";
+import { safeJsonStringify } from "safe-json-utils";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -71,9 +72,12 @@ export class Client extends IClient {
     let connection: ConnectionTypes.Settled;
     if (typeof params.connection === "undefined") {
       this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Proposed) => {
-        const uri = formatUri(this.protocol, this.version, proposed.topic, {
-          relay: proposed.topic,
+        const uri = formatUri({
+          protocol: this.protocol,
+          version: this.version,
+          topic: proposed.topic,
           publicKey: proposed.keyPair.publicKey,
+          relay: proposed.relay,
         });
         this.events.emit(CLIENT_EVENTS.share_uri, { uri });
       });
@@ -104,9 +108,16 @@ export class Client extends IClient {
   public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
     // if proposal is typeof string assume connection proposal uri
     if (typeof params.proposal === "string") {
+      const uriParams = parseUri(params.proposal);
       const responded = await this.connection.respond({
         approved: params.approved,
-        proposal: parseUri(params.proposal),
+        proposal: {
+          topic: uriParams.topic,
+          peer: {
+            publicKey: uriParams.publicKey,
+          },
+          relay: uriParams.relay,
+        },
       });
       if (isConnectionFailed(responded.outcome)) {
         return;

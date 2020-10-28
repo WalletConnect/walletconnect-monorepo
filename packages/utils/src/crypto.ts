@@ -6,7 +6,7 @@ export function generateKeyPair(): KeyPair {
   const keyPairBuffer = eccryptoJS.generateKeyPair();
   return {
     privateKey: encUtils.bufferToHex(keyPairBuffer.privateKey),
-    publicKey: encUtils.bufferToHex(keyPairBuffer.publicKey),
+    publicKey: encUtils.bufferToHex(eccryptoJS.compress(keyPairBuffer.publicKey)),
   };
 }
 
