@@ -1,6 +1,6 @@
 import { IJsonRpcProvider } from "rpc-json-types";
 
-import { IRelay, RelayProtocolOptions } from "./relay";
+import { IRelay, RelayTypes } from "./relay";
 import { IConnection } from "./connection";
 import { ISession, SessionTypes } from "./session";
 import { IStore } from "./store";
@@ -16,7 +16,7 @@ export declare namespace ClientTypes {
     chains: string[];
     jsonrpc: string[];
     app?: string | SessionTypes.Metadata;
-    relay?: RelayProtocolOptions;
+    relay?: RelayTypes.ProtocolOptions;
     connection?: string;
   }
 

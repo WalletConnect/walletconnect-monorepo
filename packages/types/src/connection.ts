@@ -1,17 +1,17 @@
 import { ISequence } from "./sequence";
 import { KeyPair } from "./crypto";
-import { RelayProtocolOptions } from "./relay";
+import { RelayTypes } from "./relay";
 
 export declare namespace ConnectionTypes {
   export interface ProposeParams {
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
   }
 
   export type CreateParams = ProposeParams;
 
   export interface Proposal {
     topic: string;
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     peer: Peer;
   }
 
@@ -29,14 +29,14 @@ export declare namespace ConnectionTypes {
   }
 
   export interface SettleParams {
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     peer: Peer;
     keyPair: KeyPair;
   }
 
   export interface Settled {
     topic: string;
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     sharedKey: string;
     keyPair: KeyPair;
     peer: Peer;
@@ -100,7 +100,7 @@ export declare namespace ConnectionTypes {
 
   export interface Success {
     topic: string;
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     state: State;
   }
   export interface Failed {

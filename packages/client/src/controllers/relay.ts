@@ -1,14 +1,6 @@
 import { EventEmitter } from "events";
-import {
-  RelayPublishOptions,
-  RelaySubscribeOptions,
-  IRelay,
-  RelayPublishParams,
-  RelaySubscribeParams,
-  RelaySubscriptionParams,
-  RelayUnsubscribeParams,
-} from "@walletconnect/types";
-import { encrypt, decrypt } from "@walletconnect/utils";
+import { RelayTypes, IRelay } from "@walletconnect/types";
+import { encrypt, decrypt, getRelayProtocolJsonRpc } from "@walletconnect/utils";
 import {
   IJsonRpcProvider,
   formatJsonRpcRequest,
@@ -38,7 +30,7 @@ export class Relay extends IRelay {
   public async publish(
     topic: string,
     payload: JsonRpcPayload,
-    opts?: RelayPublishOptions,
+    opts?: RelayTypes.PublishOptions,
   ): Promise<void> {
     const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
     const msg = safeJsonStringify(payload);
@@ -48,21 +40,23 @@ export class Relay extends IRelay {
           message: msg,
         })
       : msg;
-    const request = formatJsonRpcRequest<RelayPublishParams>(`${protocol}_publish`, {
+    const jsonRpc = getRelayProtocolJsonRpc(protocol);
+    const request = formatJsonRpcRequest<RelayTypes.PublishParams>(jsonRpc.publish, {
       topic,
       message,
       ttl: RELAY_DEFAULT_TTL,
-    } as RelayPublishParams);
+    });
     this.provider.request(request);
   }
 
   public async subscribe(
     topic: string,
     listener: (payload: JsonRpcPayload) => void,
-    opts?: RelaySubscribeOptions,
+    opts?: RelayTypes.SubscribeOptions,
   ): Promise<void> {
     const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
-    const request = formatJsonRpcRequest<RelaySubscribeParams>(`${protocol}_subscribe`, {
+    const jsonRpc = getRelayProtocolJsonRpc(protocol);
+    const request = formatJsonRpcRequest<RelayTypes.SubscribeParams>(jsonRpc.subscribe, {
       topic,
       ttl: RELAY_DEFAULT_TTL,
     });
@@ -83,10 +77,11 @@ export class Relay extends IRelay {
   public async unsubscribe(
     topic: string,
     listener: (payload: JsonRpcPayload) => void,
-    opts?: RelaySubscribeOptions,
+    opts?: RelayTypes.SubscribeOptions,
   ): Promise<void> {
     const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
-    const request = formatJsonRpcRequest<RelayUnsubscribeParams>(`${protocol}_unsubscribe`, {
+    const jsonRpc = getRelayProtocolJsonRpc(protocol);
+    const request = formatJsonRpcRequest<RelayTypes.UnsubscribeParams>(jsonRpc.unsubscribe, {
       topic,
     });
     const id = await this.provider.request(request);
@@ -119,7 +114,7 @@ export class Relay extends IRelay {
 
   private onRequest(request: JsonRpcRequest) {
     if (request.method.endsWith("_subscription")) {
-      const params = request.params as RelaySubscriptionParams;
+      const params = request.params as RelayTypes.SubscriptionParams;
       this.events.emit(params.topic, params.message);
     } else {
       this.events.emit("request", request);

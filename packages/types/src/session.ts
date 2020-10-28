@@ -1,11 +1,11 @@
 import { ISequence } from "./sequence";
 import { KeyPair } from "./crypto";
-import { RelayProtocolOptions } from "./relay";
+import { RelayTypes } from "./relay";
 
 export declare namespace SessionTypes {
   export interface ProposeParams {
     connection: { topic: string };
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     stateParams: StateParams;
     ruleParams: RuleParams;
     metadata: Metadata;
@@ -15,7 +15,7 @@ export declare namespace SessionTypes {
 
   export interface Proposal {
     topic: string;
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     peer: Peer;
     stateParams: StateParams;
     ruleParams: RuleParams;
@@ -37,7 +37,7 @@ export declare namespace SessionTypes {
     outcome: Outcome;
   }
   export interface SettleParams {
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     keyPair: KeyPair;
     peer: Peer;
     state: State;
@@ -58,7 +58,7 @@ export declare namespace SessionTypes {
   }
 
   export interface Settled {
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     topic: string;
     sharedKey: string;
     keyPair: KeyPair;
@@ -112,7 +112,7 @@ export declare namespace SessionTypes {
 
   export interface Success {
     topic: string;
-    relay: RelayProtocolOptions;
+    relay: RelayTypes.ProtocolOptions;
     publicKey: string;
     state: State;
   }

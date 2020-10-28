@@ -6,10 +6,8 @@ import { initWebSocketServer } from "./socket";
 import { assertType } from "./utils";
 import config from "./config";
 
-const env = process.env.NODE_ENV || "development";
-
 const app = fastify({
-  logger: { prettyPrint: env !== "production" } as any,
+  logger: { prettyPrint: config.debug } as any,
 });
 
 app.register(Helmet);

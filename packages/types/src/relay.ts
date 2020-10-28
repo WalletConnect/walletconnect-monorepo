@@ -3,39 +3,52 @@ import { IJsonRpcProvider, JsonRpcPayload } from "rpc-json-types";
 import { DecryptParams, EncryptParams } from "./crypto";
 import { IEvents } from "./events";
 
-export interface RelayProtocolOptions {
-  protocol: string;
-  params?: any;
+export declare namespace RelayTypes {
+  export interface ProtocolOptions {
+    protocol: string;
+    params?: any;
+  }
+
+  export interface JsonRpcMethods {
+    isConnected: string;
+    connect: string;
+    disconnect: string;
+    publish: string;
+    subscribe: string;
+    subscription: string;
+    unsubscribe: string;
+  }
+
+  export interface SubscribeParams {
+    topic: string;
+    ttl: number;
+  }
+
+  export interface PublishParams {
+    topic: string;
+    message: string;
+    ttl: number;
+  }
+
+  export interface SubscriptionParams {
+    topic: string;
+    message: string;
+  }
+
+  export interface UnsubscribeParams {
+    topic: string;
+  }
+
+  export interface PublishOptions {
+    relay: ProtocolOptions;
+    encrypt?: Omit<EncryptParams, "message">;
+  }
+  export interface SubscribeOptions {
+    relay: ProtocolOptions;
+    decrypt?: Omit<DecryptParams, "encrypted">;
+  }
 }
 
-export interface RelaySubscribeParams {
-  topic: string;
-  ttl: number;
-}
-
-export interface RelayPublishParams {
-  topic: string;
-  message: string;
-  ttl: number;
-}
-
-export interface RelaySubscriptionParams {
-  topic: string;
-  message: string;
-}
-
-export interface RelayUnsubscribeParams {
-  topic: string;
-}
-
-export interface RelayPublishOptions {
-  relay: RelayProtocolOptions;
-  encrypt?: Omit<EncryptParams, "message">;
-}
-export interface RelaySubscribeOptions {
-  relay: RelayProtocolOptions;
-  decrypt?: Omit<DecryptParams, "encrypted">;
-}
 export abstract class IRelay extends IEvents {
   public abstract provider: IJsonRpcProvider;
 
@@ -48,18 +61,18 @@ export abstract class IRelay extends IEvents {
   public abstract publish(
     topic: string,
     payload: JsonRpcPayload,
-    opts?: RelayPublishOptions,
+    opts?: RelayTypes.PublishOptions,
   ): Promise<void>;
 
   public abstract subscribe(
     topic: string,
     listener: (payload: JsonRpcPayload) => void,
-    opts?: RelaySubscribeOptions,
+    opts?: RelayTypes.SubscribeOptions,
   ): Promise<void>;
 
   public abstract unsubscribe(
     topic: string,
     listener: (payload: JsonRpcPayload) => void,
-    opts?: RelaySubscribeOptions,
+    opts?: RelayTypes.SubscribeOptions,
   ): Promise<void>;
 }

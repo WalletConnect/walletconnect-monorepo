@@ -1,9 +1,9 @@
-import { RelayProtocolOptions } from "./relay";
+import { RelayTypes } from "./relay";
 
 export interface UriParameters {
   protocol: string;
   version: number;
   topic: string;
   publicKey: string;
-  relay: RelayProtocolOptions;
+  relay: RelayTypes.ProtocolOptions;
 }

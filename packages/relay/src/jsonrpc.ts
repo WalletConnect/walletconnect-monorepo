@@ -12,21 +12,16 @@ import {
   PARSE_ERROR,
   payloadId,
 } from "rpc-json-utils";
+import { RelayTypes } from "@walletconnect/types";
+import { getRelayProtocolJsonRpc } from "@walletconnect/utils";
 
 import { pushNotification } from "./notification";
 import { setSub, getSub, setPub, getPub } from "./keystore";
-import {
-  Subscription,
-  Socket,
-  SocketData,
-  Logger,
-  JsonRpcMiddleware,
-  BridgeSubscriptionParams,
-  BridgeSubscribeParams,
-  BridgePublishParams,
-} from "./types";
-import { isBridgePublish, parseBridgePublish, parseBridgeSubscribe } from "./utils";
-import { BRIDGE_JSONRPC } from "./constants";
+import { Subscription, Socket, SocketData, Logger, JsonRpcMiddleware } from "./types";
+import { isPublishParams, parsePublishRequest, parseSubscribeRequest } from "./utils";
+
+const BRIDGE_JSONRPC = getRelayProtocolJsonRpc("bridge");
+const WAKU_JSONRPC = getRelayProtocolJsonRpc("waku");
 
 async function socketSend(
   socket: Socket,
@@ -40,7 +35,7 @@ async function socketSend(
   } else {
     if (isJsonRpcRequest(request)) {
       const params = request.params;
-      if (isBridgePublish(params)) {
+      if (isPublishParams(params)) {
         await setPub(params);
       }
     }
@@ -48,7 +43,7 @@ async function socketSend(
 }
 
 async function handleSubscribe(socket: Socket, request: JsonRpcRequest, logger: Logger) {
-  const params = parseBridgeSubscribe(request);
+  const params = parseSubscribeRequest(request);
   const topic = params.topic;
 
   const subscriber = { topic, socket };
@@ -62,10 +57,10 @@ async function handleSubscribe(socket: Socket, request: JsonRpcRequest, logger: 
       pending.map((message: string) =>
         socketSend(
           socket,
-          formatJsonRpcRequest(BRIDGE_JSONRPC.subscription, {
+          formatJsonRpcRequest<RelayTypes.SubscriptionParams>(BRIDGE_JSONRPC.subscription, {
             topic,
             message,
-          } as BridgeSubscriptionParams),
+          }),
           logger,
         ),
       ),
@@ -74,7 +69,7 @@ async function handleSubscribe(socket: Socket, request: JsonRpcRequest, logger: 
 }
 
 async function handlePublish(socket: Socket, request: JsonRpcRequest, logger: Logger) {
-  const params = parseBridgePublish(request);
+  const params = parsePublishRequest(request);
   const subscribers = await getSub(params.topic);
 
   // TODO: assume all payloads are non-silent for now
@@ -125,12 +120,19 @@ async function jsonRpcServer(
     }
 
     switch (request.method) {
+      case WAKU_JSONRPC.subscribe:
       case BRIDGE_JSONRPC.subscribe:
-        await handleSubscribe(socket, request as JsonRpcRequest<BridgeSubscribeParams>, logger);
+        await handleSubscribe(
+          socket,
+          request as JsonRpcRequest<RelayTypes.SubscribeParams>,
+          logger,
+        );
         break;
+      case WAKU_JSONRPC.publish:
       case BRIDGE_JSONRPC.publish:
-        await handlePublish(socket, request as JsonRpcRequest<BridgePublishParams>, logger);
+        await handlePublish(socket, request as JsonRpcRequest<RelayTypes.PublishParams>, logger);
         break;
+      case WAKU_JSONRPC.unsubscribe:
       case BRIDGE_JSONRPC.unsubscribe:
         // TODO: implement handleUnsubscribe
         break;
