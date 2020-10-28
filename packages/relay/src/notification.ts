@@ -20,5 +20,7 @@ export const notificationMiddleware = async (request: JsonRpcRequest, cb?: any):
     const params = parsePublishRequest(request);
     await pushNotification(params.topic);
   }
-  cb(request);
+  if (typeof cb !== "undefined") {
+    cb(request);
+  }
 };
