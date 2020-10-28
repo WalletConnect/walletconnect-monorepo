@@ -22,7 +22,6 @@ dist
 build
 .DS_Store
 .makeFlags*
-config
 .env
 *nix
 zip
