@@ -27,7 +27,7 @@
     "strictFunctionTypes": true,
     "strictPropertyInitialization": true,
 
-    "outDir": "./build",
+    "outDir": "./dist",
     "rootDir": "./src",
     "target": "es5",
     "module": "commonjs"

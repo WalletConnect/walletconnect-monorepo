@@ -20,10 +20,10 @@
     "url": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/issues"
   },
   "scripts": {
-    "clean": "rm -rf ./build",
+    "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.json",
     "build": "npm run clean && npm run compile",
-    "start": "npm run build && node ./build",
+    "start": "npm run build && node ./dist",
     "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
