@@ -37,6 +37,7 @@
     "pino-pretty": "^4.0.1",
     "redis": "^2.8.0",
     "rpc-json-utils": "^1.1.3",
+    "safe-json-utils": "^1.1.1",
     "ws": "^7.0.0"
   },
   "devDependencies": {
