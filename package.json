@@ -29,6 +29,7 @@
     "new-version": "lerna version --no-git-tag-version",
     "publish:latest": "lerna exec -- npm publish --access public",
     "publish:next": "lerna exec -- npm publish --access public --tag next",
+    "publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
     "move-dist": "node ./ops/js/move-dist.js",
     "commit-version": "node ./ops/js/commit-version.js",
     "check": "run-s clean lint build",
@@ -36,7 +37,8 @@
     "deploy": "run-s check publish",
     "pre-publish": "run-s new-version reset commit-version",
     "deploy:latest": "run-s pre-publish publish:latest",
-    "deploy:next": "run-s pre-publish publish:next"
+    "deploy:next": "run-s pre-publish publish:next",
+    "deploy:experimental": "run-s pre-publish publish:experimental"
   },
   "repository": {
     "type": "git",
