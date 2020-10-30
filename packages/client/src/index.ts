@@ -58,6 +58,7 @@ export class Client extends IClient {
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : Logger(getLoggerOptions(opts?.logger));
+    this.context = opts?.overrideContext || this.context;
     this.logger = logger.child({
       context: this.context,
     });

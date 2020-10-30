@@ -36,8 +36,8 @@ describe("Client", () => {
     expect(client).toBeTruthy();
   });
   it("connect two clients", async () => {
-    const clientA = await Client.init(TEST_CLIENT_OPTIONS);
-    const clientB = await Client.init(TEST_CLIENT_OPTIONS);
+    const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
+    const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
     await Promise.all([
       new Promise(async (resolve, reject) => {
         clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {

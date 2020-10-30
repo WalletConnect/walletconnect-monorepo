@@ -11,6 +11,7 @@ export interface ClientOptions {
   logger?: string | Logger;
   store?: IStore;
   relayProvider?: string | IJsonRpcProvider;
+  overrideContext?: string;
 }
 
 export declare namespace ClientTypes {
