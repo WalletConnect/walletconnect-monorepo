@@ -27,7 +27,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async init(): Promise<void> {
-    this.logger.info({ type: "init" });
+    this.logger.trace({ type: "init" });
     await this.restore();
   }
 

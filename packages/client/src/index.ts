@@ -185,7 +185,7 @@ export class Client extends IClient {
   // ---------- Private ----------------------------------------------- //
 
   private async initialize(): Promise<any> {
-    this.logger.info({ type: "init" });
+    this.logger.trace({ type: "init" });
     await this.relay.init();
     await this.store.init();
     await this.connection.init();

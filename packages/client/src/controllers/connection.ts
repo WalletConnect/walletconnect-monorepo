@@ -81,7 +81,7 @@ export class Connection extends IConnection {
   }
 
   public async init(): Promise<void> {
-    this.logger.info({ type: "init" });
+    this.logger.trace({ type: "init" });
     await this.proposed.init();
     await this.responded.init();
     await this.settled.init();

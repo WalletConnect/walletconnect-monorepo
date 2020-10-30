@@ -36,7 +36,7 @@ export class Relay extends IRelay {
   }
 
   public async init(): Promise<void> {
-    this.logger.info({ type: "init" });
+    this.logger.trace({ type: "init" });
     await this.provider.connect();
   }
 
