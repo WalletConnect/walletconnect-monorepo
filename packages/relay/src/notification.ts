@@ -11,6 +11,7 @@ export class NotificationServer {
   constructor(public logger: Logger, public store: RedisStore) {
     this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
     this.store = store;
+    this.initialize();
   }
 
   public async push(topic: string) {
@@ -26,5 +27,11 @@ export class NotificationServer {
         });
       });
     }
+  }
+
+  // ---------- Private ----------------------------------------------- //
+
+  private initialize(): void {
+    this.logger.trace({ type: "init" });
   }
 }

@@ -426,7 +426,9 @@ export class Session extends ISession {
       const publicKey = fromPeer ? session.peer.publicKey : session.keyPair.publicKey;
       for (const key of Object.keys(state)) {
         if (!session.rules.state[key][publicKey]) {
-          throw new Error(`Unauthorized state update for key: ${key}`);
+          const errorMessage = `Unauthorized state update for key: ${key}`;
+          this.logger.error(errorMessage);
+          throw new Error(errorMessage);
         }
         session.state[key] = state[key];
       }
@@ -438,7 +440,9 @@ export class Session extends ISession {
       }
       update = { metadata };
     } else {
-      throw new Error(`Invalid ${this.context} update request params`);
+      const errorMessage = `Invalid ${this.context} update request params`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
     }
     await this.settled.update(session.topic, session);
     return update;

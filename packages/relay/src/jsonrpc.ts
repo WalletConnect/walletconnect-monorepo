@@ -41,6 +41,7 @@ export class JsonRpcServer {
     this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
     this.store = store;
     this.notification = notification;
+    this.initialize();
   }
 
   public async onRequest(socket: Socket, data: SocketData): Promise<void> {
@@ -62,7 +63,8 @@ export class JsonRpcServer {
         this.socketSend(socket, formatJsonRpcError(payloadId(), code));
         return;
       } else {
-        this.logger.info({ type: "incoming", request });
+        this.logger.info("Incoming JSON-RPC Payload");
+        this.logger.debug({ type: "payload", direction: "incoming", payload: request });
       }
 
       switch (request.method) {
@@ -96,11 +98,21 @@ export class JsonRpcServer {
     }
   }
   // ---------- Private ----------------------------------------------- //
+
+  private initialize(): void {
+    this.logger.trace({ type: "init" });
+  }
+
   private async onPublishRequest(socket: Socket, request: JsonRpcRequest) {
+    this.logger.info(`Publish Request Received`);
     const params = parsePublishRequest(request);
-    this.logger.info({ method: "onPublishRequest", params });
+    this.logger.debug({ type: "method", method: "onPublishRequest", params });
     const subscribers = this.store.getSub(params.topic, socket);
-    this.logger.info({ method: "onPublishRequest", subscribers: subscribers.length });
+    this.logger.debug({
+      type: "method",
+      method: "onPublishRequest",
+      subscribers: subscribers.length,
+    });
 
     // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
@@ -117,8 +129,9 @@ export class JsonRpcServer {
   }
 
   private async onSubscribeRequest(socket: Socket, request: JsonRpcRequest) {
+    this.logger.info(`Subscribe Request Received`);
     const params = parseSubscribeRequest(request);
-    this.logger.info({ method: "onSubscribeRequest", params });
+    this.logger.debug({ type: "method", method: "onSubscribeRequest", params });
 
     const topic = params.topic;
 
@@ -127,7 +140,7 @@ export class JsonRpcServer {
     this.store.setSub(subscriber);
 
     const pending = await this.store.getPub(topic);
-    this.logger.info({ method: "onSubscribeRequest", pending: pending.length });
+    this.logger.debug({ type: "method", method: "onSubscribeRequest", pending: pending.length });
 
     if (pending && pending.length) {
       await Promise.all(
@@ -145,8 +158,9 @@ export class JsonRpcServer {
     }
   }
   private async onUnsubscribeRequest(socket: Socket, request: JsonRpcRequest) {
+    this.logger.info(`Unsubscribe Request Received`);
     const params = parseUnsubscribeRequest(request);
-    this.logger.info({ method: "onUnsubscribeRequest", params });
+    this.logger.debug({ type: "method", method: "onUnsubscribeRequest", params });
     const topic = params.topic;
 
     const subscriber = { topic, socket };
@@ -158,7 +172,8 @@ export class JsonRpcServer {
     if (socket.readyState === 1) {
       const message = safeJsonStringify(payload);
       socket.send(message);
-      this.logger.info({ type: "outgoing", payload });
+      this.logger.info("Outgoing JSON-RPC Payload");
+      this.logger.debug({ type: "payload", direction: "outgoing", payload });
     } else {
       if (isJsonRpcRequest(payload)) {
         const params = payload.params;

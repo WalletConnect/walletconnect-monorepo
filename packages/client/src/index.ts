@@ -29,7 +29,6 @@ import {
   SESSION_EVENTS,
   SESSION_JSONRPC,
 } from "./constants";
-import { safeJsonStringify } from "safe-json-utils";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -83,39 +82,46 @@ export class Client extends IClient {
   }
 
   public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
-    this.logger.info({ method: "connect", params });
-    const connection =
-      typeof params.connection === "undefined"
-        ? await this.connection.create()
-        : await this.connection.get(params.connection);
-    this.logger.info({ method: "connect", connection });
-    const session = await this.session.create({
-      connection: { topic: connection.topic },
-      relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
-      metadata: getAppMetadata(params.app),
-      stateParams: {
-        chains: params.chains,
-      },
-      ruleParams: {
-        state: {
-          accounts: {
-            proposer: false,
-            responder: true,
-          },
+    this.logger.info(`Connecting Application`);
+    this.logger.debug({ type: "method", method: "connect", params });
+    try {
+      const connection =
+        typeof params.connection === "undefined"
+          ? await this.connection.create()
+          : await this.connection.get(params.connection);
+      this.logger.debug({ type: "method", method: "connect", connection });
+      const session = await this.session.create({
+        connection: { topic: connection.topic },
+        relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
+        metadata: getAppMetadata(params.app),
+        stateParams: {
+          chains: params.chains,
         },
-        jsonrpc: params.jsonrpc,
-      },
-    });
-    this.logger.info({ method: "connect", session });
-    return session;
+        ruleParams: {
+          state: {
+            accounts: {
+              proposer: false,
+              responder: true,
+            },
+          },
+          jsonrpc: params.jsonrpc,
+        },
+      });
+      this.logger.info(`Application Connection Successful`);
+      this.logger.debug({ type: "method", method: "connect", session });
+      return session;
+    } catch (error) {
+      this.logger.info(`Application Connection Failed`);
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
-    this.logger.info({ method: "respond", params });
     if (typeof params.proposal === "string") {
-      this.logger.info(`Responding Connection Proposal`);
       const uriParams = parseUri(params.proposal);
-      this.logger.info({ method: "respond", uriParams });
+      this.logger.info(`Responding Connection Proposal`);
+      this.logger.debug({ type: "method", method: "respond", params, uriParams });
       const responded = await this.connection.respond({
         approved: params.approved,
         proposal: {
@@ -127,15 +133,20 @@ export class Client extends IClient {
         },
       });
       if (isConnectionFailed(responded.outcome)) {
-        this.logger.warn({ method: "respond", outcome: responded.outcome });
+        this.logger.info(`Connection Proposal Response Failure`);
+        this.logger.warn({ type: "method", method: "respond", outcome: responded.outcome });
         return;
       }
-      this.logger.info({ method: "respond", responded });
+      this.logger.info(`Connection Proposal Response Success`);
+      this.logger.debug({ type: "method", method: "respond", responded });
       return responded.outcome.topic;
     }
     this.logger.info(`Responding Session Proposal`);
+    this.logger.debug({ type: "method", method: "respond", params });
     if (typeof params.response === "undefined") {
-      throw new Error("Response is required for session proposals");
+      const errorMessage = "Response is required for session proposals";
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
     }
 
     const responded = await this.session.respond({
@@ -145,15 +156,17 @@ export class Client extends IClient {
       state: params.response.state,
     });
     if (isSessionFailed(responded.outcome)) {
-      this.logger.warn({ method: "respond", outcome: responded.outcome });
+      this.logger.info(`Session Proposal Response Failure`);
+      this.logger.warn({ type: "method", method: "respond", outcome: responded.outcome });
       return;
     }
-    this.logger.info({ method: "respond", responded });
+    this.logger.info(`Session Proposal Response Success`);
+    this.logger.debug({ type: "method", method: "respond", responded });
     return responded.outcome.topic;
   }
 
   public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
-    this.logger.warn({ method: "disconnect", params });
+    this.logger.debug({ type: "method", method: "disconnect", params });
     await this.session.delete(params);
   }
 
@@ -166,18 +179,23 @@ export class Client extends IClient {
       const request = payload as JsonRpcRequest;
       switch (request.method) {
         case SESSION_JSONRPC.propose:
-          this.logger.info(
-            `Emitted ${SESSION_EVENTS.proposed}: ${safeJsonStringify(request.params)}`,
-          );
+          this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
+          this.logger.debug({
+            type: "event",
+            event: SESSION_EVENTS.proposed,
+            data: request.params,
+          });
           this.events.emit(SESSION_EVENTS.proposed, request.params);
           break;
         default:
-          this.logger.info({ type: "event", event: eventName, data: payload });
+          this.logger.info(`Emitting ${eventName}`);
+          this.logger.debug({ type: "event", event: eventName, data: payload });
           this.events.emit(eventName, payload);
           break;
       }
     } else {
-      this.logger.info({ type: "event", event: eventName, data: payload });
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: payload });
       this.events.emit(eventName, payload);
     }
   }
@@ -186,17 +204,25 @@ export class Client extends IClient {
 
   private async initialize(): Promise<any> {
     this.logger.trace({ type: "init" });
-    await this.relay.init();
-    await this.store.init();
-    await this.connection.init();
-    await this.session.init();
-    this.registerEventListeners();
+    try {
+      await this.relay.init();
+      await this.store.init();
+      await this.connection.init();
+      await this.session.init();
+      this.registerEventListeners();
+      this.logger.info(`Client initilization success`);
+    } catch (error) {
+      this.logger.info(`Client initilization failure`);
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   private registerEventListeners(): void {
     // Connection Subscription Events
     this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Proposed) => {
-      this.logger.info({ type: "event", event: CONNECTION_EVENTS.proposed, data: proposed });
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: proposed });
       this.events.emit(CONNECTION_EVENTS.proposed, proposed);
       const uri = formatUri({
         protocol: this.protocol,
@@ -205,23 +231,27 @@ export class Client extends IClient {
         publicKey: proposed.keyPair.publicKey,
         relay: proposed.relay,
       });
-      this.logger.info({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
+      this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
       this.events.emit(CLIENT_EVENTS.share_uri, { uri });
     });
     this.connection.on(CONNECTION_EVENTS.responded, (responded: ConnectionTypes.Responded) => {
-      this.logger.info({ type: "event", event: CONNECTION_EVENTS.responded, data: responded });
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.responded}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.responded, data: responded });
       this.events.emit(CONNECTION_EVENTS.responded, responded);
     });
     this.connection.on(CONNECTION_EVENTS.settled, (connection: ConnectionTypes.Settled) => {
-      this.logger.info({ type: "event", event: CONNECTION_EVENTS.settled, data: connection });
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.settled}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.settled, data: connection });
       this.events.emit(CONNECTION_EVENTS.settled, connection);
     });
     this.connection.on(CONNECTION_EVENTS.updated, (connection: ConnectionTypes.Settled) => {
-      this.logger.info({ type: "event", event: CONNECTION_EVENTS.updated, data: connection });
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.updated}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.updated, data: connection });
       this.events.emit(CONNECTION_EVENTS.updated, connection);
     });
     this.connection.on(CONNECTION_EVENTS.deleted, (connection: ConnectionTypes.Settled) => {
-      this.logger.info({ type: "event", event: CONNECTION_EVENTS.deleted, data: connection });
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.deleted}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.deleted, data: connection });
       this.events.emit(CONNECTION_EVENTS.deleted, connection);
     });
     this.connection.on(CONNECTION_EVENTS.payload, (payload: JsonRpcPayload) => {
@@ -229,23 +259,28 @@ export class Client extends IClient {
     });
     // Session Subscription Events
     this.session.on(SESSION_EVENTS.proposed, (proposed: SessionTypes.Proposed) => {
-      this.logger.info({ type: "event", event: SESSION_EVENTS.proposed, data: proposed });
+      this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.proposed, data: proposed });
       this.events.emit(SESSION_EVENTS.proposed, proposed);
     });
     this.session.on(SESSION_EVENTS.responded, (responded: SessionTypes.Responded) => {
-      this.logger.info({ type: "event", event: SESSION_EVENTS.responded, data: responded });
+      this.logger.info(`Emitting ${SESSION_EVENTS.responded}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.responded, data: responded });
       this.events.emit(SESSION_EVENTS.responded, responded);
     });
     this.session.on(SESSION_EVENTS.settled, (session: SessionTypes.Settled) => {
-      this.logger.info({ type: "event", event: SESSION_EVENTS.settled, data: session });
+      this.logger.info(`Emitting ${SESSION_EVENTS.settled}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.settled, data: session });
       this.events.emit(SESSION_EVENTS.settled, session);
     });
     this.session.on(SESSION_EVENTS.updated, (session: SessionTypes.Settled) => {
-      this.logger.info({ type: "event", event: SESSION_EVENTS.updated, data: session });
+      this.logger.info(`Emitting ${SESSION_EVENTS.updated}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.updated, data: session });
       this.events.emit(SESSION_EVENTS.updated, session);
     });
     this.session.on(SESSION_EVENTS.deleted, (session: SessionTypes.Settled) => {
-      this.logger.info({ type: "event", event: SESSION_EVENTS.deleted, data: session });
+      this.logger.info(`Emitting ${SESSION_EVENTS.deleted}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.deleted, data: session });
       this.events.emit(SESSION_EVENTS.deleted, session);
     });
     this.session.on(SESSION_EVENTS.payload, (payload: JsonRpcPayload) => {

@@ -167,7 +167,7 @@ class HealthChecker {
    * Send a custom message from initiator to responder.
    */
   sendPing() {
-    this.initiator.sendCustomRequest({ method: "ping" });
+    this.initiator.sendCustomRequest({ type: "method", method: "ping" });
   }
 
   /**

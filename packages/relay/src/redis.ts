@@ -20,10 +20,11 @@ export class RedisStore {
 
   constructor(public logger: Logger) {
     this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.initialize();
   }
 
   public setSub(subscriber: Subscription): void {
-    this.logger.info({ method: "setSub", topic: subscriber.topic });
+    this.logger.debug({ type: "method", method: "setSub", topic: subscriber.topic });
     this.subs.push(subscriber);
   }
 
@@ -31,19 +32,19 @@ export class RedisStore {
     const match = this.subs.filter(
       sub => sub.topic === topic && sub.socket !== senderSocket && sub.socket.readyState === 1,
     );
-    this.logger.info({ method: "getSub", topic, length: match.length });
+    this.logger.debug({ type: "method", method: "getSub", topic, length: match.length });
     return match;
   }
 
   public removeSub(subscriber: Subscription): void {
-    this.logger.info({ method: "removeSub", topic: subscriber.topic });
+    this.logger.debug({ type: "method", method: "removeSub", topic: subscriber.topic });
     this.subs = this.subs.filter(
       sub => sub.topic !== subscriber.topic && sub.socket !== subscriber.socket,
     );
   }
 
   public async setPub(params: RelayTypes.PublishParams) {
-    this.logger.info({ method: "setPub", params });
+    this.logger.debug({ type: "method", method: "setPub", params });
     await this.client.lpushAsync(`request:${params.topic}`, params.message);
     // TODO: need to handle ttl
     // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
@@ -54,7 +55,7 @@ export class RedisStore {
       if (raw) {
         const data: string[] = raw.map((message: string) => message);
         this.client.del(`request:${topic}`);
-        this.logger.info({ method: "getPub", topic, data });
+        this.logger.debug({ type: "method", method: "getPub", topic, data });
         return data;
       }
       return;
@@ -62,7 +63,8 @@ export class RedisStore {
   }
 
   public setNotification(notification: Notification) {
-    this.logger.info({ method: "setNotification", notification });
+    this.logger.info(`Notification Request Received`);
+    this.logger.debug({ type: "method", method: "setNotification", notification });
     return this.client.lpushAsync(
       `notification:${notification.topic}`,
       safeJsonStringify(notification),
@@ -73,10 +75,16 @@ export class RedisStore {
     return this.client.lrangeAsync(`notification:${topic}`, 0, -1).then((raw: any) => {
       if (raw) {
         const data = raw.map((item: string) => safeJsonParse(item));
-        this.logger.info({ method: "getNotification", topic, data });
+        this.logger.debug({ type: "method", method: "getNotification", topic, data });
         return data;
       }
       return;
     });
+  }
+
+  // ---------- Private ----------------------------------------------- //
+
+  private initialize(): void {
+    this.logger.trace({ type: "init" });
   }
 }

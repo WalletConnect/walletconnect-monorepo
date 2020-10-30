@@ -351,7 +351,9 @@ export class Connection extends IConnection {
       const publicKey = fromPeer ? connection.peer.publicKey : connection.keyPair.publicKey;
       for (const key of Object.keys(state)) {
         if (!connection.rules.state[key][publicKey]) {
-          throw new Error(`Unauthorized state update for key: ${key}`);
+          const errorMessage = `Unauthorized state update for key: ${key}`;
+          this.logger.error(`Unauthorized state update for key: ${key}`);
+          throw new Error(errorMessage);
         }
         connection.state[key] = state[key];
       }
@@ -363,7 +365,9 @@ export class Connection extends IConnection {
       }
       update = { metadata };
     } else {
-      throw new Error(`Invalid ${this.context} update request params`);
+      const errorMessage = `Invalid ${this.context} update request params`;
+      this.logger.error(`Invalid ${this.context} update request params`);
+      throw new Error(errorMessage);
     }
     await this.settled.update(connection.topic, connection);
     return update;

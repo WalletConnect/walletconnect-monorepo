@@ -44,7 +44,9 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.update(topic, data);
     } else {
       if (this.context.encrypted && typeof opts.decrypt === "undefined") {
-        throw new Error(`Decrypt params required for ${this.context.status} ${this.context.name}`);
+        const errorMessage = `Decrypt params required for ${this.context.status} ${this.context.name}`;
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
       }
       this.subscriptions.set(topic, { topic, data, opts });
       this.events.emit(SUBSCRIPTION_EVENTS.created, {
@@ -114,9 +116,9 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
-      throw new Error(
-        `No matching ${this.context.status} ${this.context.name} with topic: ${topic}`,
-      );
+      const errorMessage = `No matching ${this.context.status} ${this.context.name} with topic: ${topic}`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
     }
     return subscription;
   }

@@ -7,7 +7,7 @@ import { getLoggerOptions } from "@walletconnect/utils";
 
 const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
 
-const TEST_CLIENT_OPTIONS = { logger: "debug", relayProvider: TEST_RELAY_PROVIDER_URL };
+const TEST_CLIENT_OPTIONS = { logger: "trace", relayProvider: TEST_RELAY_PROVIDER_URL };
 
 const TEST_SESSION_CHAINS = ["eip155:1"];
 const TEST_SESSION_JSONRPC = ["eth_sendTransaction", "eth_signTypedData", "personal_sign"];
