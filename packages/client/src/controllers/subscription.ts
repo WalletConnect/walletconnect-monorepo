@@ -152,8 +152,24 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private registerEventListeners(): void {
-    this.events.on(SUBSCRIPTION_EVENTS.created, () => this.persist());
-    this.events.on(SUBSCRIPTION_EVENTS.updated, () => this.persist());
-    this.events.on(SUBSCRIPTION_EVENTS.deleted, () => this.persist());
+    this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
+      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
+      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });
+    });
+    this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created<Data>) => {
+      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
+      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: createdEvent });
+      this.persist();
+    });
+    this.events.on(SUBSCRIPTION_EVENTS.updated, (updatedEvent: SubscriptionEvent.Updated<Data>) => {
+      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
+      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: updatedEvent });
+      this.persist();
+    });
+    this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
+      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
+      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: deletedEvent });
+      this.persist();
+    });
   }
 }

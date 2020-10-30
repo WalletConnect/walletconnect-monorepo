@@ -45,21 +45,31 @@ export class Relay extends IRelay {
     payload: JsonRpcPayload,
     opts?: RelayTypes.PublishOptions,
   ): Promise<void> {
-    const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
-    const msg = safeJsonStringify(payload);
-    const message = opts?.encrypt
-      ? await encrypt({
-          ...opts.encrypt,
-          message: msg,
-        })
-      : msg;
-    const jsonRpc = getRelayProtocolJsonRpc(protocol);
-    const request = formatJsonRpcRequest<RelayTypes.PublishParams>(jsonRpc.publish, {
-      topic,
-      message,
-      ttl: RELAY_DEFAULT_TTL,
-    });
-    this.provider.request(request);
+    this.logger.info(`Publishing Payload`);
+    this.logger.debug({ type: "method", method: "publish", params: { topic, payload, opts } });
+    try {
+      const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
+      const msg = safeJsonStringify(payload);
+      const message = opts?.encrypt
+        ? await encrypt({
+            ...opts.encrypt,
+            message: msg,
+          })
+        : msg;
+      const jsonRpc = getRelayProtocolJsonRpc(protocol);
+      const request = formatJsonRpcRequest<RelayTypes.PublishParams>(jsonRpc.publish, {
+        topic,
+        message,
+        ttl: RELAY_DEFAULT_TTL,
+      });
+      await this.provider.request(request);
+      this.logger.info(`Successfully Published Payload`);
+      this.logger.debug({ type: "method", method: "publish", request });
+    } catch (error) {
+      this.logger.info(`Failed to publish Payload`);
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   public async subscribe(
@@ -67,24 +77,34 @@ export class Relay extends IRelay {
     listener: (payload: JsonRpcPayload) => void,
     opts?: RelayTypes.SubscribeOptions,
   ): Promise<void> {
-    const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
-    const jsonRpc = getRelayProtocolJsonRpc(protocol);
-    const request = formatJsonRpcRequest<RelayTypes.SubscribeParams>(jsonRpc.subscribe, {
-      topic,
-      ttl: RELAY_DEFAULT_TTL,
-    });
-    const id = await this.provider.request(request);
-    this.events.on(id, async (message: string) => {
-      const payload = safeJsonParse(
-        opts?.decrypt
-          ? await decrypt({
-              ...opts.decrypt,
-              encrypted: message,
-            })
-          : message,
-      );
-      listener(payload);
-    });
+    this.logger.info(`Subscribing Topic`);
+    this.logger.debug({ type: "method", method: "subscribe", params: { topic, opts } });
+    try {
+      const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
+      const jsonRpc = getRelayProtocolJsonRpc(protocol);
+      const request = formatJsonRpcRequest<RelayTypes.SubscribeParams>(jsonRpc.subscribe, {
+        topic,
+        ttl: RELAY_DEFAULT_TTL,
+      });
+      const id = await this.provider.request(request);
+      this.events.on(id, async (message: string) => {
+        const payload = safeJsonParse(
+          opts?.decrypt
+            ? await decrypt({
+                ...opts.decrypt,
+                encrypted: message,
+              })
+            : message,
+        );
+        listener(payload);
+      });
+      this.logger.info(`Successfully subscribed Topic`);
+      this.logger.debug({ type: "method", method: "subscribe", request });
+    } catch (error) {
+      this.logger.info(`Failed to subscribe Topic`);
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   public async unsubscribe(
@@ -92,23 +112,33 @@ export class Relay extends IRelay {
     listener: (payload: JsonRpcPayload) => void,
     opts?: RelayTypes.SubscribeOptions,
   ): Promise<void> {
-    const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
-    const jsonRpc = getRelayProtocolJsonRpc(protocol);
-    const request = formatJsonRpcRequest<RelayTypes.UnsubscribeParams>(jsonRpc.unsubscribe, {
-      topic,
-    });
-    const id = await this.provider.request(request);
-    this.events.off(id, async (message: string) => {
-      const payload = safeJsonParse(
-        opts?.decrypt
-          ? await decrypt({
-              ...opts.decrypt,
-              encrypted: message,
-            })
-          : message,
-      );
-      listener(payload);
-    });
+    this.logger.info(`Unsubscribing Topic`);
+    this.logger.debug({ type: "method", method: "unsubscribe", params: { topic, opts } });
+    try {
+      const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
+      const jsonRpc = getRelayProtocolJsonRpc(protocol);
+      const request = formatJsonRpcRequest<RelayTypes.UnsubscribeParams>(jsonRpc.unsubscribe, {
+        topic,
+      });
+      const id = await this.provider.request(request);
+      this.events.off(id, async (message: string) => {
+        const payload = safeJsonParse(
+          opts?.decrypt
+            ? await decrypt({
+                ...opts.decrypt,
+                encrypted: message,
+              })
+            : message,
+        );
+        listener(payload);
+      });
+      this.logger.info(`Successfully unsubscribed Topic`);
+      this.logger.debug({ type: "method", method: "unsubscribe", request });
+    } catch (error) {
+      this.logger.info(`Failed to unsubscribe Topic`);
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   public on(event: string, listener: any): void {
