@@ -13,7 +13,7 @@
     "url": "git+https://github.com/WalletConnect-Labs/walletconnect-v2-monorepo.git"
   },
   "scripts": {
-    "test": "echo \"Error: run tests from root\" && exit 1"
+    "test": "echo \"Error: run tests from root\""
   },
   "bugs": {
     "url": "https://github.com/WalletConnect-Labs/walletconnect-v2-monorepo/issues"

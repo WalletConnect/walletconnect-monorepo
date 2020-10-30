@@ -32,7 +32,7 @@
     "publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
     "move-dist": "node ./ops/js/move-dist.js",
     "commit-version": "node ./ops/js/commit-version.js",
-    "check": "run-s clean lint build",
+    "check": "run-s clean lint build test",
     "reset": "run-s clean:all bootstrap check",
     "deploy": "run-s check publish",
     "pre-publish": "run-s new-version reset commit-version",

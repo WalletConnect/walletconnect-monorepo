@@ -1,4 +1,4 @@
-const WalletConnect = require("../../packages/clients/client").default;
+const WalletConnect = require("../../packages/client").default;
 const uuid = require("uuid");
 
 /**
