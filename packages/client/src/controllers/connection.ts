@@ -102,18 +102,20 @@ export class Connection extends IConnection {
   public async create(params?: ConnectionTypes.CreateParams): Promise<ConnectionTypes.Settled> {
     return new Promise(async (resolve, reject) => {
       const proposal = await this.propose(params);
-      this.proposed.on(SUBSCRIPTION_EVENTS.deleted, async (proposed: ConnectionTypes.Proposed) => {
-        if (proposed.topic !== proposal.topic) return;
-        const responded: ConnectionTypes.Responded = await this.responded.get(proposal.topic);
-        if (isConnectionFailed(responded.outcome)) {
-          await this.responded.delete(responded.topic, responded.outcome.reason);
-          reject(new Error(responded.outcome.reason));
-        } else {
-          const connection = await this.settled.get(responded.outcome.topic);
-          await this.responded.delete(responded.topic, CONNECTION_REASONS.settled);
-          resolve(connection);
-        }
-      });
+      this.responded.on(
+        SUBSCRIPTION_EVENTS.created,
+        async (responded: ConnectionTypes.Responded) => {
+          if (responded.topic !== proposal.topic) return;
+          if (isConnectionFailed(responded.outcome)) {
+            await this.responded.delete(responded.topic, responded.outcome.reason);
+            reject(new Error(responded.outcome.reason));
+          } else {
+            const connection = await this.settled.get(responded.outcome.topic);
+            await this.responded.delete(responded.topic, CONNECTION_REASONS.settled);
+            resolve(connection);
+          }
+        },
+      );
     });
   }
 

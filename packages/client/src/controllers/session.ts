@@ -97,9 +97,8 @@ export class Session extends ISession {
   public async create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
     return new Promise(async (resolve, reject) => {
       const proposal = await this.propose(params);
-      this.proposed.on(SUBSCRIPTION_EVENTS.deleted, async (proposed: SessionTypes.Proposed) => {
-        if (proposed.topic !== proposal.topic) return;
-        const responded: SessionTypes.Responded = await this.responded.get(proposal.topic);
+      this.responded.on(SUBSCRIPTION_EVENTS.created, async (responded: SessionTypes.Responded) => {
+        if (responded.topic !== proposal.topic) return;
         if (isSessionFailed(responded.outcome)) {
           await this.responded.delete(responded.topic, responded.outcome.reason);
           reject(new Error(responded.outcome.reason));
