@@ -1,11 +1,17 @@
-FROM node:12-slim
-
+FROM node:12-slim as builder
 WORKDIR /app
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm install --no-optional && npm cache clean --force
+COPY *.json ./
+RUN npm install
+COPY packages/types packages/types
+COPY packages/utils packages/utils
+COPY packages/relay packages/relay
+RUN /app/node_modules/.bin/lerna bootstrap \
+  --scope @walletconnect/types \
+  --scope @walletconnect/utils \
+  --scope @walletconnect/relay-server
+RUN /app/node_modules/.bin/lerna run build \
+  --scope @walletconnect/types \
+  --scope @walletconnect/utils \
+  --scope @walletconnect/relay-server
 
-COPY . .
-RUN npm run build
-
-CMD ["node", "/app/build"]
+CMD ["node", "/app/packages/relay/dist"]

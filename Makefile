@@ -67,7 +67,7 @@ build-relay:
 	docker build \
 		-t $(walletConnectImage) \
 		--build-arg BRANCH=$(BRANCH) \
-		-f ops/relay.Dockerfile packages/relay
+		-f ops/relay.Dockerfile .
 	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
