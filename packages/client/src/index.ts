@@ -59,7 +59,7 @@ export class Client extends IClient {
         ? opts.logger
         : Logger(getLoggerOptions(opts?.logger));
     this.logger = logger.child({
-      context: { context: this.context },
+      context: this.context,
     });
 
     this.relay = new Relay(this.logger, opts?.relayProvider);
