@@ -5,7 +5,7 @@ RUN npm install
 COPY packages/types packages/types
 COPY packages/utils packages/utils
 COPY packages/relay packages/relay
-RUN /app/node_modules/.bin/lerna bootstrap \
+RUN /app/node_modules/.bin/lerna bootstrap --hoist \
   --scope @walletconnect/types \
   --scope @walletconnect/utils \
   --scope @walletconnect/relay-server
