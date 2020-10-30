@@ -1,0 +1,154 @@
+[
+  {
+    "name": "Rainbow",
+    "shortName": "Rainbow",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/rainbow.png",
+    "universalLink": "https://rnbwapp.com",
+    "deepLink": "rainbow:"
+  },
+  {
+    "name": "Trust Wallet",
+    "shortName": "Trust",
+    "color": "rgb(51, 117, 187)",
+    "logo": "./logos/trust.png",
+    "universalLink": "https://link.trustwallet.com",
+    "deepLink": "trust:"
+  },
+  {
+    "name": "Argent",
+    "shortName": "Argent",
+    "color": "rgb(255, 135, 91)",
+    "logo": "./logos/argent.png",
+    "universalLink": "https://argent.link/app",
+    "deepLink": "argent://app"
+  },
+  {
+    "name": "MetaMask",
+    "shortName": "MetaMask",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/metamask.png",
+    "universalLink": "https://metamask.app.link",
+    "deepLink": "metamask:"
+  },
+  {
+    "name": "Crypto.com DeFi Wallet",
+    "shortName": "Crypto.com",
+    "color": "rgb(17, 153, 250)",
+    "logo": "./logos/crypto-defi.png",
+    "universalLink": "",
+    "deepLink": "cryptowallet:"
+  },
+  {
+    "name": "Pillar Wallet",
+    "shortName": "Pillar",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/pillar.png",
+    "universalLink": "",
+    "deepLink": "pillarwallet:"
+  },
+  {
+    "name": "imToken",
+    "shortName": "imToken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/imToken.png",
+    "universalLink": "",
+    "deepLink": "imtokenv2:"
+  },
+  {
+    "name": "TokenPocket",
+    "shortName": "TokenPocket",
+    "color": "rgb(41, 128, 254)",
+    "logo": "./logos/tokenpocket.png",
+    "universalLink": "",
+    "deepLink": "tpoutside:"
+  },
+  {
+    "name": "KyberSwap",
+    "shortName": "KyberSwap",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/kyberswap.png",
+    "universalLink": "https://kyberswapnew.app.link",
+    "deepLink": "kyberswap:"
+  },
+  {
+    "name": "Nash",
+    "shortName": "Nash",
+    "color": "rgb(0,82,243)",
+    "logo": "./logos/nash.png",
+    "universalLink": "https://nash.io/walletconnect",
+    "deepLink": "nash:"
+  },
+  {
+    "name": "MYKEY",
+    "shortName": "MYKEY",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/mykey.png",
+    "universalLink": "https://mykey.org",
+    "deepLink": "mykeywalletconnect:"
+  },
+  {
+    "name": "Math Wallet",
+    "shortName": "Math",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/math.png",
+    "universalLink": "https://www.mathwallet.org",
+    "deepLink": "mathwallet:"
+  },
+  {
+    "name": "ZelCore",
+    "shortName": "ZelCore",
+    "color": "rgb(35, 34, 32)",
+    "logo": "./logos/zelcore.png",
+    "universalLink": "https://link.zel.network",
+    "deepLink": "zel:"
+  },
+  {
+    "name": "EasyPocket",
+    "shortName": "EasyPocket",
+    "color": "rgb(17, 93, 251)",
+    "logo": "./logos/easypocket.png",
+    "universalLink": "https://wallet.easypocket.app",
+    "deepLink": "easypocket:"
+  },
+  {
+    "name": "SparkPoint Wallet",
+    "shortName": "SparkPoint",
+    "color": "rgb(20,67,95)",
+    "logo": "./logos/sparkpoint.png",
+    "universalLink": "https://sparkpoint.io",
+    "deepLink": "sparkpoint:"
+  },
+  {
+    "name": "Flare Wallet",
+    "shortName": "Flare",
+    "color": "rgb(31, 36, 59)",
+    "logo": "./logos/flare.png",
+    "universalLink": "https://flarewallet.io",
+    "deepLink": "flare:"
+  },
+  {
+    "name": "ONTO",
+    "shortName": "ONTO",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/onto.png",
+    "universalLink": "https://onto.app",
+    "deepLink": "ontoprovider:"
+  },
+  {
+    "name": "SafePal Wallet",
+    "shortName": "SafePal",
+    "color": "rgb(0, 128, 255)",
+    "logo": "./logos/safepal.png",
+    "universalLink": "link.safepal.io",
+    "deepLink": "safepalwallet:"
+  },
+  {
+    "name": "Huobi Wallet",
+    "shortName": "Huobi",
+    "color": "rgb(45,101,248)",
+    "logo": "./logos/huobiwallet.png",
+    "universalLink": "https://www.huobiwallet.com",
+    "deepLink": "huobiwallet:"
+  }
+]
