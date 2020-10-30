@@ -2,7 +2,7 @@
 import * as React from "react";
 // @ts-ignore
 import * as ReactDOM from "react-dom";
-import { getDocumentOrThrow, getNavigatorOrThrow } from "@walletconnect/utils";
+import { getDocumentOrThrow, getNavigatorOrThrow } from "window-getters";
 
 import { WALLETCONNECT_STYLE_SHEET } from "./assets/style";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -14,8 +14,7 @@ import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_STYLE_ID,
 } from "./constants";
-import { IQRCodeModalOptions } from "@walletconnect/types";
-import { TextMap } from "./types";
+import { QRCodeModalOptions, TextMap } from "../types";
 
 function injectStyleSheet() {
   const doc = getDocumentOrThrow();
@@ -65,7 +64,7 @@ function getText(): TextMap {
   return Languages[lang] || Languages["en"];
 }
 
-export function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
+export function open(uri: string, cb: any, qrcodeModalOptions?: QRCodeModalOptions) {
   injectStyleSheet();
   const wrapper = renderWrapper();
   ReactDOM.render(

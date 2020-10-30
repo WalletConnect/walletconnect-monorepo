@@ -1,4 +1,4 @@
-import { TextMap } from "../types";
+import { TextMap } from "../../types";
 
 import de from "./de";
 import en from "./en";

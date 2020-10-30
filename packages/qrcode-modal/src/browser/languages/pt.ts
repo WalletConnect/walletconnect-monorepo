@@ -1,4 +1,4 @@
-import { TextMap } from "../types";
+import { TextMap } from "../../types";
 
 const pt: TextMap = {
   choose_preferred_wallet: "Escolha sua carteira preferida",

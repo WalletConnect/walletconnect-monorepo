@@ -1,5 +1,5 @@
 const path = require("path");
-const { isFile, isJson, formatJson, writeFile } = require("../../../../scripts/shared");
+const { isFile, isJson, formatJson, writeFile } = require("../../../ops/js/shared");
 
 const PKG_DIR = path.join(__dirname, "../");
 const FILE_NAME = "registry.json";

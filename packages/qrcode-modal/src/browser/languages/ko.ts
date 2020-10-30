@@ -1,4 +1,4 @@
-import { TextMap } from "../types";
+import { TextMap } from "../../types";
 
 const ko: TextMap = {
   choose_preferred_wallet: "원하는 지갑을 선택하세요",

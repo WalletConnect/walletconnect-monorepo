@@ -1,4 +1,4 @@
-import { TextMap } from "../types";
+import { TextMap } from "../../types";
 
 const zh: TextMap = {
   choose_preferred_wallet: "选择你的钱包",

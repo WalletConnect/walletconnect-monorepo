@@ -1,14 +1,9 @@
-import { IQRCodeModalOptions } from "@walletconnect/types";
-
 import * as nodeLib from "./node";
 import * as browserLib from "./browser";
+import { QRCodeModalOptions } from "./types";
+import { isNode } from "./utils";
 
-const isNode = () =>
-  typeof process !== "undefined" &&
-  typeof process.versions !== "undefined" &&
-  typeof process.versions.node !== "undefined";
-
-function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
+function open(uri: string, cb: any, qrcodeModalOptions?: QRCodeModalOptions) {
   console.log(uri); // eslint-disable-line no-console
   if (isNode()) {
     nodeLib.open(uri);

@@ -1,4 +1,4 @@
-import QRCode from "qrcode";
+import * as QRCode from "qrcode";
 
 export function open(uri: string) {
   // eslint-disable-next-line no-console

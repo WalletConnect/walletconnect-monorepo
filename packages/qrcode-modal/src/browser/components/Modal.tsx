@@ -1,6 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
-import { isMobile } from "@walletconnect/utils";
-import { IQRCodeModalOptions } from "@walletconnect/types";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Header from "./Header";
@@ -10,13 +9,14 @@ import MobileLinkDisplay from "./MobileLinkDisplay";
 import QRCodeDisplay from "./QRCodeDisplay";
 
 import { WALLETCONNECT_MODAL_ID } from "../constants";
-import { TextMap } from "../types";
+import { QRCodeModalOptions, TextMap } from "../../types";
+import { isMobile } from "../../utils/validators";
 
 interface ModalProps {
   text: TextMap;
   uri: string;
   onClose: any;
-  qrcodeModalOptions?: IQRCodeModalOptions;
+  qrcodeModalOptions?: QRCodeModalOptions;
 }
 
 function Modal(props: ModalProps) {

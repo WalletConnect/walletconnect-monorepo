@@ -1,12 +1,12 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
-import QRCode from "qrcode";
+import * as QRCode from "qrcode";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Notification from "./Notification";
 
 import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
-import { TextMap } from "../types";
+import { TextMap } from "../../types";
 
 async function formatQRCodeImage(data: string) {
   let result = "";

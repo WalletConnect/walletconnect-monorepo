@@ -1,5 +1,5 @@
 const path = require("path");
-const { readFile, writeFile } = require("../../../../scripts/shared");
+const { readFile, writeFile } = require("../../../ops/js/shared");
 
 const PKG_DIR = path.join(__dirname, "../");
 

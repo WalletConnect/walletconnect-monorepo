@@ -1,8 +1,14 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
-import { isIOS, mobileLinkChoiceKey, setLocal } from "@walletconnect/utils";
 
-import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
+import { getLocalStorage } from "window-getters";
+import { safeJsonStringify } from "safe-json-utils";
+
+import {
+  DEFAULT_BUTTON_COLOR,
+  MOBILE_LINK_LOCALSTORAGE_KEY,
+  WALLETCONNECT_CTA_TEXT_ID,
+} from "../constants";
 
 import { MOBILE_REGISTRY } from "../assets/registry";
 
@@ -12,9 +18,19 @@ import ConnectButton from "./ConnectButton";
 import WalletButton from "./WalletButton";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalletIcon from "./WalletIcon";
-import { TextMap } from "../types";
+import { QRCodeModalOptions, TextMap } from "../../types";
+import { MobileRegistryEntry } from "../../types/registry";
+import { isIOS } from "../../utils";
 
-function formatIOSMobile(uri: string, entry: IMobileRegistryEntry) {
+function setLocal(key: string, data: any): void {
+  const raw = safeJsonStringify(data);
+  const local = getLocalStorage();
+  if (local) {
+    local.setItem(key, raw);
+  }
+}
+
+function formatIOSMobile(uri: string, entry: MobileRegistryEntry) {
   const encodedUri: string = encodeURIComponent(uri);
   return entry.universalLink
     ? `${entry.universalLink}/wc?uri=${encodedUri}`
@@ -25,16 +41,16 @@ function formatIOSMobile(uri: string, entry: IMobileRegistryEntry) {
 
 function saveMobileLinkInfo(data: IMobileLinkInfo) {
   const focusUri = data.href.split("?")[0];
-  setLocal(mobileLinkChoiceKey, { ...data, href: focusUri });
+  setLocal(MOBILE_LINK_LOCALSTORAGE_KEY, { ...data, href: focusUri });
 }
 
-function getMobileRegistryEntry(name: string): IMobileRegistryEntry {
-  return MOBILE_REGISTRY.filter((entry: IMobileRegistryEntry) =>
+function getMobileRegistryEntry(name: string): MobileRegistryEntry {
+  return MOBILE_REGISTRY.filter((entry: MobileRegistryEntry) =>
     entry.name.toLowerCase().includes(name),
   )[0];
 }
 
-function getMobileLinkRegistry(qrcodeModalOptions?: IQRCodeModalOptions) {
+function getMobileLinkRegistry(qrcodeModalOptions?: QRCodeModalOptions) {
   let links = MOBILE_REGISTRY;
   if (
     qrcodeModalOptions &&
@@ -51,7 +67,7 @@ interface IMobileLinkInfo {
   href: string;
 }
 interface MobileLinkDisplayProps {
-  qrcodeModalOptions?: IQRCodeModalOptions;
+  qrcodeModalOptions?: QRCodeModalOptions;
   text: TextMap;
   uri: string;
 }
@@ -73,7 +89,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
         }`}
       >
         {ios ? (
-          links.map((entry: IMobileRegistryEntry, idx: number) => {
+          links.map((entry: MobileRegistryEntry, idx: number) => {
             const { color, name, shortName, logo } = entry;
             const href = formatIOSMobile(props.uri, entry);
             const handleClickIOS = React.useCallback(() => {

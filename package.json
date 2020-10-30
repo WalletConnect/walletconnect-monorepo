@@ -19,25 +19,20 @@
   "license": "LGPL-3.0",
   "scripts": {
     "ls": "lerna ls",
-    "bootstrap": "npm install && run-s bootstrap:monorepo",
-    "bootstrap:monorepo": "lerna bootstrap --hoist",
+    "bootstrap": "npm install && lerna bootstrap --hoist",
     "build": "lerna run build",
     "test": "lerna run test",
     "lint": "eslint -c './.eslintrc' --fix 'packages/*/**/*.ts'",
     "clean": "rm -rf dist && lerna run clean",
     "clean:node_modules": "lerna exec -- rm -rf node_modules",
-    "clean:example": "echo \"clean:example not implemented\"",
-    "clean:all": "run-s clean clean:node_modules clean:example",
+    "clean:all": "run-s clean clean:node_modules",
     "new-version": "lerna version --no-git-tag-version",
     "publish:latest": "lerna exec -- npm publish --access public",
     "publish:next": "lerna exec -- npm publish --access public --tag next",
-    "health-check": "echo \"health-check not implemented\"",
-    "move-dist": "echo \"move-dist not implemented\"",
-    "commit-version": "echo \"commit-version not implemented\"",
-    "check": "run-s clean lint build test move-dist",
+    "move-dist": "node ./ops/js/move-dist.js",
+    "commit-version": "node ./ops/js/commit-version.js",
+    "check": "run-s clean lint build",
     "reset": "run-s clean:all bootstrap check",
-    "start": "echo \"start not implemented\"",
-    "example": "run-s check start",
     "deploy": "run-s check publish",
     "pre-publish": "run-s new-version reset commit-version",
     "deploy:latest": "run-s pre-publish publish:latest",
@@ -51,6 +46,7 @@
     "url": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/issues"
   },
   "devDependencies": {
-    "lerna": "3.20.2"
+    "npm-run-all": "^4.1.5",
+    "lerna": "^3.20.2"
   }
 }

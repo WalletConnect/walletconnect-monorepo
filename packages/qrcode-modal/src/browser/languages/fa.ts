@@ -1,4 +1,4 @@
-import { TextMap } from "../types";
+import { TextMap } from "../../types";
 
 const fa: TextMap = {
   choose_preferred_wallet: "کیف پول مورد نظر خود را انتخاب کنید",

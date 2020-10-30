@@ -2,7 +2,7 @@ const path = require("path");
 
 const buildAsset = require("./build-asset");
 
-const { readFile } = require("../../../../scripts/shared");
+const { readFile } = require("../../../ops/js/shared");
 
 const PKG_DIR = path.join(__dirname, "../");
 const REGISTRY_DIR = path.join(PKG_DIR, "node_modules", "@walletconnect", "mobile-registry");
