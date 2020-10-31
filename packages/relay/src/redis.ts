@@ -11,7 +11,7 @@ import { formatLoggerContext } from "@walletconnect/utils";
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
-export class RedisStore {
+export class RedisService {
   public client: any = redis.createClient(config.redis);
 
   public subs: Subscription[] = [];
@@ -23,39 +23,19 @@ export class RedisStore {
     this.initialize();
   }
 
-  public setSub(subscriber: Subscription): void {
-    this.logger.debug({ type: "method", method: "setSub", topic: subscriber.topic });
-    this.subs.push(subscriber);
-  }
-
-  public getSub(topic: string, senderSocket: Socket): Subscription[] {
-    const match = this.subs.filter(
-      sub => sub.topic === topic && sub.socket !== senderSocket && sub.socket.readyState === 1,
-    );
-    this.logger.debug({ type: "method", method: "getSub", topic, length: match.length });
-    return match;
-  }
-
-  public removeSub(subscriber: Subscription): void {
-    this.logger.debug({ type: "method", method: "removeSub", topic: subscriber.topic });
-    this.subs = this.subs.filter(
-      sub => sub.topic !== subscriber.topic && sub.socket !== subscriber.socket,
-    );
-  }
-
-  public async setPub(params: RelayTypes.PublishParams) {
-    this.logger.debug({ type: "method", method: "setPub", params });
+  public async setPublished(params: RelayTypes.PublishParams) {
+    this.logger.debug({ type: "method", method: "setPublished", params });
     await this.client.lpushAsync(`request:${params.topic}`, params.message);
     // TODO: need to handle ttl
     // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
   }
 
-  public async getPub(topic: string) {
+  public async getPublished(topic: string) {
     return this.client.lrangeAsync(`request:${topic}`, 0, -1).then((raw: any) => {
       if (raw) {
         const data: string[] = raw.map((message: string) => message);
         this.client.del(`request:${topic}`);
-        this.logger.debug({ type: "method", method: "getPub", topic, data });
+        this.logger.debug({ type: "method", method: "getPublished", topic, data });
         return data;
       }
       return;

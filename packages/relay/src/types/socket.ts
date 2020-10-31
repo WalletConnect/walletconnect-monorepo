@@ -13,5 +13,5 @@ export interface Notification {
 
 export interface Subscription {
   topic: string;
-  socket: Socket;
+  socketId: string;
 }

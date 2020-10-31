@@ -1,10 +1,9 @@
-import Logger from "pino";
 import { SessionTypes } from "@walletconnect/types";
 
 import Client from "../src";
 import { CLIENT_EVENTS, SESSION_EVENTS } from "../src/constants";
-import { getLoggerOptions } from "@walletconnect/utils";
 
+// TODO: Relay Provider URL needs to be set from ops
 const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
 
 const TEST_CLIENT_OPTIONS = { logger: "debug", relayProvider: TEST_RELAY_PROVIDER_URL };
