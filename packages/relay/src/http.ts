@@ -17,8 +17,6 @@ export class HttpService {
   public ws: WebSocketService | undefined;
   public notification: NotificationService | undefined;
 
-  public port: number;
-  public host: string;
   public context = "server";
 
   constructor(opts: HttpServiceOptions) {
@@ -27,8 +25,6 @@ export class HttpService {
         ? opts.logger
         : pino(getLoggerOptions(opts?.logger));
     this.app = fastify({ logger });
-    this.port = opts.port;
-    this.host = opts.host;
     this.logger = logger.child({ context: "server" });
     this.redis = new RedisService(this.logger);
     this.initialize();
