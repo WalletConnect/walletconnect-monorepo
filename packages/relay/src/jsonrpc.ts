@@ -3,74 +3,55 @@ import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
   getError,
-  INVALID_REQUEST,
   isJsonRpcRequest,
   JsonRpcError,
   JsonRpcRequest,
   JsonRpcResult,
   METHOD_NOT_FOUND,
-  PARSE_ERROR,
   payloadId,
 } from "rpc-json-utils";
 import { Logger } from "pino";
-import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
+import { safeJsonStringify } from "safe-json-utils";
 import { RelayTypes } from "@walletconnect/types";
 import { formatLoggerContext, getRelayProtocolJsonRpc } from "@walletconnect/utils";
 
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
-import { Subscription, SocketData } from "./types";
+import { Subscription } from "./types";
 import {
   isPublishParams,
   parsePublishRequest,
   parseSubscribeRequest,
   parseUnsubscribeRequest,
 } from "./utils";
-import { BridgeService } from "./bridge";
+import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
 
 const BRIDGE_JSONRPC = getRelayProtocolJsonRpc("bridge");
 
 export class JsonRpcService {
+  public subscription: SubscriptionService;
+
   public context = "jsonrpc";
 
   constructor(
     public logger: Logger,
     public redis: RedisService,
     public ws: WebSocketService,
-    public bridge: BridgeService,
     public notification: NotificationService,
   ) {
     this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
     this.redis = redis;
     this.ws = ws;
-    this.bridge = bridge;
     this.notification = notification;
+    this.subscription = new SubscriptionService(this.logger, this.redis);
     this.initialize();
   }
 
-  public async onRequest(socketId: string, data: SocketData): Promise<void> {
-    const message = String(data);
-
-    if (!message || !message.trim()) {
-      const code = getError(INVALID_REQUEST);
-      this.logger.error({ type: "incoming", code, message });
-      this.socketSend(socketId, formatJsonRpcError(payloadId(), code));
-      return;
-    }
-
+  public async onRequest(socketId: string, request: JsonRpcRequest): Promise<void> {
     try {
-      const request = safeJsonParse<JsonRpcRequest>(message);
-
-      if (typeof request === "string") {
-        const code = getError(PARSE_ERROR);
-        this.logger.error({ type: "incoming", code, message });
-        this.socketSend(socketId, formatJsonRpcError(payloadId(), code));
-        return;
-      } else {
-        this.logger.info("Incoming JSON-RPC Payload");
-        this.logger.debug({ type: "payload", direction: "incoming", payload: request });
-      }
+      this.logger.info("Incoming JSON-RPC Payload");
+      this.logger.debug({ type: "payload", direction: "incoming", payload: request });
 
       switch (request.method) {
         case BRIDGE_JSONRPC.publish:
@@ -112,7 +93,7 @@ export class JsonRpcService {
     this.logger.info(`Publish Request Received`);
     const params = parsePublishRequest(request);
     this.logger.debug({ type: "method", method: "onPublishRequest", params });
-    const subscribers = this.bridge.getSubscribers(params.topic, socketId);
+    const subscribers = this.subscription.getSubscribers(params.topic, socketId);
     this.logger.debug({
       type: "method",
       method: "onPublishRequest",
@@ -144,7 +125,7 @@ export class JsonRpcService {
 
     const subscriber = { topic, socketId };
 
-    this.bridge.setSubscriber(subscriber);
+    this.subscription.setSubscriber(subscriber);
 
     const pending = await this.redis.getPublished(topic);
     this.logger.debug({ type: "method", method: "onSubscribeRequest", pending: pending.length });
@@ -172,7 +153,7 @@ export class JsonRpcService {
 
     const subscriber = { topic, socketId };
 
-    this.bridge.removeSubscriber(subscriber);
+    this.subscription.removeSubscriber(subscriber);
   }
 
   private async socketSend(

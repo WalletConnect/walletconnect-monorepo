@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import Logger from "pino";
+import pino, { Logger } from "pino";
 import {
   IClient,
   ClientOptions,
@@ -35,7 +35,7 @@ export class Client extends IClient {
   public readonly version = 2;
 
   public events = new EventEmitter();
-  public logger: Logger.Logger;
+  public logger: Logger;
 
   public store: Store;
   public relay: Relay;
@@ -56,7 +56,7 @@ export class Client extends IClient {
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : Logger(getLoggerOptions(opts?.logger));
+        : pino(getLoggerOptions(opts?.logger));
     this.context = opts?.overrideContext || this.context;
     this.logger = logger.child({
       context: this.context,

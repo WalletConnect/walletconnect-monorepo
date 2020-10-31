@@ -3,7 +3,7 @@ import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 import { RelayTypes } from "@walletconnect/types";
 import { Logger } from "pino";
 
-import { Subscription, Notification, Socket } from "./types";
+import { Subscription, Notification, Socket, LegacySocketMessage } from "./types";
 import bluebird from "bluebird";
 import config from "./config";
 import { formatLoggerContext } from "@walletconnect/utils";
@@ -36,6 +36,25 @@ export class RedisService {
         const data: string[] = raw.map((message: string) => message);
         this.client.del(`request:${topic}`);
         this.logger.debug({ type: "method", method: "getPublished", topic, data });
+        return data;
+      }
+      return;
+    });
+  }
+
+  public async setLegacyPublished(socketMessage: LegacySocketMessage) {
+    this.logger.debug({ type: "method", method: "setLegacyPublished", socketMessage });
+    await this.client.lpushAsync(`request:${socketMessage.topic}`, socketMessage.payload);
+    // TODO: need to handle ttl
+    // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
+  }
+
+  public async getLegacyPublished(topic: string) {
+    return this.client.lrangeAsync(`request:${topic}`, 0, -1).then((raw: any) => {
+      if (raw) {
+        const data: string[] = raw.map((message: string) => message);
+        this.client.del(`request:${topic}`);
+        this.logger.debug({ type: "method", method: "getLegacyPublished", topic, data });
         return data;
       }
       return;

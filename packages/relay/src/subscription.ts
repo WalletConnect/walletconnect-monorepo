@@ -4,10 +4,10 @@ import { Logger } from "pino";
 import { RedisService } from "./redis";
 import { Subscription } from "./types";
 
-export class BridgeService {
+export class SubscriptionService {
   public subs: Subscription[] = [];
 
-  public context = "bridge";
+  public context = "subscription";
 
   constructor(public logger: Logger, public redis: RedisService) {
     this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
