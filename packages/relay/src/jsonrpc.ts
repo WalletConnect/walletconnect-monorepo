@@ -105,9 +105,13 @@ export class JsonRpcService {
 
     if (subscribers.length) {
       await Promise.all(
-        subscribers.map((subscriber: Subscription) =>
-          this.socketSend(subscriber.socketId, request),
-        ),
+        subscribers.map((subscriber: Subscription) => {
+          const payload = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
+            BRIDGE_JSONRPC.subscription,
+            request.params,
+          );
+          this.socketSend(subscriber.socketId, payload);
+        }),
       );
     } else {
       await this.redis.setPublished(params);

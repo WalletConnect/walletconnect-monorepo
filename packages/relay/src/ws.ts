@@ -1,5 +1,6 @@
 import { Server } from "http";
 import WebSocket from "ws";
+import * as encUtils from "enc-utils";
 import { formatLoggerContext } from "@walletconnect/utils";
 import { Logger } from "pino";
 
@@ -45,14 +46,16 @@ export class WebSocketService {
       const socketId = uuid();
       this.sockets.set(socketId, socket);
       socket.on("message", async data => {
-        const message = String(data);
+        const message = typeof data === "string" ? data : encUtils.bufferToUtf8(Buffer.from(data));
 
         if (!message || !message.trim()) {
           socket.send("Missing or invalid socket data");
           return;
         }
         const payload = safeJsonParse(message);
-        if (isJsonRpcRequest(payload)) {
+        if (typeof payload === "string") {
+          socket.send("Socket message is invalid");
+        } else if (isJsonRpcRequest(payload)) {
           this.jsonrpc.onRequest(socketId, payload);
         } else if (isLegacySocketMessage(payload)) {
           this.legacy.onRequest(socketId, payload);

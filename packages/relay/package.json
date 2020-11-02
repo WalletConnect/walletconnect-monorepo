@@ -24,13 +24,15 @@
     "compile": "tsc -p tsconfig.json",
     "build": "npm run clean && npm run compile",
     "start": "npm run build && node ./dist",
-    "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'"
+    "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'",
+    "test": "tap"
   },
   "dependencies": {
     "@walletconnect/types": "2.0.0-alpha.0",
     "@walletconnect/utils": "2.0.0-alpha.0",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",
+    "enc-utils": "^2.2.2",
     "fastify": "^3.4.1",
     "fastify-helmet": "^5.0.3",
     "pino": "^6.7.0",
@@ -38,6 +40,7 @@
     "redis": "^2.8.0",
     "rpc-json-utils": "^1.1.3",
     "safe-json-utils": "^1.1.1",
+    "tap": "^14.10.8",
     "ws": "^7.0.0"
   },
   "devDependencies": {
