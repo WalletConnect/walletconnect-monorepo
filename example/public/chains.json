@@ -95,5 +95,21 @@
     "chain_id": 820,
     "network_id": 1,
     "rpc_url": "https://clo-geth.0xinfra.com/"
+  },
+  {
+    "name": "Energy Web Chain",
+    "short_name": "ewc",
+    "chain": "Energy Web Chain",
+    "chain_id": 246,
+    "network_id": 246,
+    "rpc_url": "https://rpc.energyweb.org/"
+  },
+  {
+    "name": "Energy Web Volta Testnet",
+    "short_name": "vt",
+    "chain": "Volta",
+    "chain_id": 73799,
+    "network_id": 73799,
+    "rpc_url": "https://volta-rpc.energyweb.org/"
   }
 ]
