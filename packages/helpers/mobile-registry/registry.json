@@ -166,5 +166,13 @@
     "logo": "./logos/huobiwallet.png",
     "universalLink": "https://www.huobiwallet.com",
     "deepLink": "huobiwallet:"
+  },
+  {
+    "name": "RWallet",
+    "shortName": "RWallet",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/rwallet.png",
+    "universalLink": "https://www.rwallet.app",
+    "deepLink": "rwallet:"
   }
 ]
