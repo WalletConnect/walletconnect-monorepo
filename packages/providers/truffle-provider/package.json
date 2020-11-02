@@ -53,6 +53,6 @@
   },
   "dependencies": {
     "@walletconnect/web3-subprovider": "^1.3.2-rc.0",
-    "web3-provider-engine": "15.0.12"
+    "web3-provider-engine": "16.0.1"
   }
 }

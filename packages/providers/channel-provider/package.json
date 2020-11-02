@@ -55,7 +55,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@connext/channel-provider": "7.3.8",
+    "@connext/channel-provider": "7.3.17",
     "@walletconnect/rpc-connection": "^1.3.2-rc.0",
     "@walletconnect/types": "^1.3.2-rc.0"
   },
