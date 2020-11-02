@@ -86,6 +86,15 @@ build: pull build-relay build-nginx
 	@echo  "MAKE: Done with $@"
 	@echo
 
+test-client:
+	cd ./packages/client; npm run test; cd -
+
+relay-logs:
+	docker service logs -f --raw dev_$(project)_relay --tail 500
+
+relay-watch:
+	lerna run watch --scope @walletconnect/relay-server
+
 dev: pull build
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
@@ -95,6 +104,8 @@ dev: pull build
 	dev_$(project)
 	@echo  "MAKE: Done with $@"
 	@echo
+
+dev-logs: dev relay-watch relay-logs
 
 dev-monitoring: pull build
 	RELAY_IMAGE=$(walletConnectImage) \
