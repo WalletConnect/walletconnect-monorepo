@@ -22,6 +22,7 @@
   "scripts": {
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch",
     "build": "npm run clean && npm run compile",
     "start": "npm run build && node ./dist",
     "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'",

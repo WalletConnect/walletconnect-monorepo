@@ -1,4 +1,5 @@
 FROM node:12-slim as builder
+RUN npm install -g nodemon
 WORKDIR /app
 COPY *.json ./
 RUN npm install
@@ -14,4 +15,4 @@ RUN /app/node_modules/.bin/lerna run build \
   --scope @walletconnect/utils \
   --scope @walletconnect/relay-server
 
-CMD ["node", "/app/packages/relay/dist"]
+CMD ["nodemon", "/app/packages/relay/dist"]

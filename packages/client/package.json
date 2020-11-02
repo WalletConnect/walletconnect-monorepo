@@ -18,16 +18,17 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "run-s clean",
+    "help": "tsc --help",
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
     "build": "run-s build:pre build:cjs build:umd",
     "test": "tsdx test ./test",
+    "watch": "tsdx test ./test --help",
     "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
     "@walletconnect/types": "2.0.0-alpha.0",
     "@walletconnect/utils": "2.0.0-alpha.0",
-    "dotenv": "^8.2.0",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
     "rpc-json-utils": "^1.1.3",
