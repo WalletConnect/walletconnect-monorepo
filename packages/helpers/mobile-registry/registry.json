@@ -36,7 +36,7 @@
     "shortName": "Crypto.com",
     "color": "rgb(17, 153, 250)",
     "logo": "./logos/crypto-defi.png",
-    "universalLink": "",
+    "universalLink": "https://wallet.crypto.com",
     "deepLink": "cryptowallet:"
   },
   {
