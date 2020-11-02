@@ -40,6 +40,14 @@
     "deepLink": "cryptowallet:"
   },
   {
+    "name": "PeakDeFi Wallet",
+    "shortName": "PeakDeFi",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/peakdefi.png",
+    "universalLink": "https://app.peakdefi.com/download",
+    "deepLink": "peakdefiwallet:"
+  },
+  {
     "name": "Pillar Wallet",
     "shortName": "Pillar",
     "color": "rgb(255, 255, 255)",
