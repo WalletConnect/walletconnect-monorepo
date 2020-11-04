@@ -19,16 +19,30 @@ pull:\tdownloads docker images
 
 setup:\tconfigures domain an certbot email
 
+build-relay:\tbuilds relay docker image
+
+build-nginx:\tbuilds nginx docker image
+
 build:\tbuilds docker images
 
+test-client:\truns client tests
+
+relay-logs:\tdisplays relay logs
+
+relay-watch:\truns relay on watch mode
+
+relay-dev:\truns relay on watch mode and display logs
+
 dev:\truns local docker stack with open ports
+
+cloudflare: asks for a cloudflare DNS api and creates a docker secret
+
+redeploy:\tredeploys to production
 
 deploy:\tdeploys to production
 
 deploy-monitoring:
 \tdeploys to production with grafana
-
-cloudflare: asks for a cloudflare DNS api and creates a docker secret
 
 stop:\tstops all walletconnect docker stacks
 
@@ -36,9 +50,12 @@ upgrade:
 \tpulls from remote git. Builds the containers and updates each individual
 \tcontainer currently running with the new version that was just built.
 
+reset:\treset local config
+
 clean:\tcleans current docker build
 
-reset:\treset local config
+clean-all:\tcleans current all local config
+
 endef
 
 ### Rules
@@ -93,7 +110,9 @@ relay-logs:
 	docker service logs -f --raw dev_$(project)_relay --tail 500
 
 relay-watch:
-	lerna run watch --scope @walletconnect/relay-server
+	lerna run watch --scope=@walletconnect/relay-server
+
+relay-dev: dev relay-watch relay-logs
 
 dev: pull build
 	RELAY_IMAGE=$(walletConnectImage) \
@@ -105,7 +124,6 @@ dev: pull build
 	@echo  "MAKE: Done with $@"
 	@echo
 
-dev-logs: dev relay-watch relay-logs
 
 dev-monitoring: pull build
 	RELAY_IMAGE=$(walletConnectImage) \
@@ -118,16 +136,16 @@ dev-monitoring: pull build
 	@echo  "MAKE: Done with $@"
 	@echo
 
-redeploy: 
-	$(MAKE) clean
-	$(MAKE) down
-	$(MAKE) dev-monitoring
-
 cloudflare: setup
 	bash ops/cloudflare-secret.sh $(project)
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
+
+redeploy: 
+	$(MAKE) clean
+	$(MAKE) down
+	$(MAKE) dev-monitoring
 
 deploy: setup build cloudflare
 	RELAY_IMAGE=$(walletConnectImage) \
