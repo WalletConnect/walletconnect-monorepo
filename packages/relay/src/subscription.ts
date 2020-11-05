@@ -21,9 +21,9 @@ export class SubscriptionService {
   }
 
   public getSubscribers(topic: string, senderSocketId: string): Subscription[] {
-    const match = this.subs.filter(sub => sub.topic === topic && sub.socketId !== senderSocketId);
-    this.logger.debug({ type: "method", method: "getSubscribers", topic, length: match.length });
-    return match;
+    const subs = this.subs.filter(sub => sub.topic === topic && sub.socketId !== senderSocketId);
+    this.logger.debug({ type: "method", method: "getSubscribers", topic, subs });
+    return subs;
   }
 
   public removeSubscriber(subscriber: Subscription): void {

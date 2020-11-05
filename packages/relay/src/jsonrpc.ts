@@ -125,14 +125,28 @@ export class JsonRpcService {
     const params = parseSubscribeRequest(request);
     this.logger.debug({ type: "method", method: "onSubscribeRequest", params });
 
+    this.subscription.setSubscriber({ topic: params.topic, socketId });
+
+    await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
+
+    await this.pushPendingPublished(socketId, params.topic);
+  }
+  private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
+    this.logger.info(`Unsubscribe Request Received`);
+    const params = parseUnsubscribeRequest(request);
+    this.logger.debug({ type: "method", method: "onUnsubscribeRequest", params });
     const topic = params.topic;
 
     const subscriber = { topic, socketId };
 
-    this.subscription.setSubscriber(subscriber);
+    this.subscription.removeSubscriber(subscriber);
 
+    await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
+  }
+
+  private async pushPendingPublished(socketId: string, topic: string) {
     const pending = await this.redis.getPublished(topic);
-    this.logger.debug({ type: "method", method: "onSubscribeRequest", pending: pending.length });
+    this.logger.debug({ type: "method", method: "pushPendingPublished", pending });
 
     if (pending && pending.length) {
       await Promise.all(
@@ -148,16 +162,6 @@ export class JsonRpcService {
         }),
       );
     }
-  }
-  private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
-    this.logger.info(`Unsubscribe Request Received`);
-    const params = parseUnsubscribeRequest(request);
-    this.logger.debug({ type: "method", method: "onUnsubscribeRequest", params });
-    const topic = params.topic;
-
-    const subscriber = { topic, socketId };
-
-    this.subscription.removeSubscriber(subscriber);
   }
 
   private async socketSend(

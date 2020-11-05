@@ -44,23 +44,37 @@ export class WebSocketService {
 
     this.server.on("connection", (socket: Socket) => {
       const socketId = uuid();
+      this.logger.info("New Socket Connected");
+      this.logger.debug({ type: "event", event: "connection", socketId });
       this.sockets.set(socketId, socket);
       socket.on("message", async data => {
         const message = typeof data === "string" ? data : encUtils.bufferToUtf8(Buffer.from(data));
+        this.logger.info("Incoming WebSocket Message");
+        this.logger.debug({ type: "message", direction: "incoming", message });
 
+        let response: string;
         if (!message || !message.trim()) {
-          socket.send("Missing or invalid socket data");
+          response = "Missing or invalid socket data";
+          this.logger.info("Outgoing WebSocket Message");
+          this.logger.debug({ type: "message", direction: "outgoing", response });
+          socket.send(response);
           return;
         }
         const payload = safeJsonParse(message);
         if (typeof payload === "string") {
-          socket.send("Socket message is invalid");
+          response = "Socket message is invalid";
+          this.logger.info("Outgoing WebSocket Message");
+          this.logger.debug({ type: "message", direction: "outgoing", response });
+          socket.send(response);
         } else if (isJsonRpcRequest(payload)) {
           this.jsonrpc.onRequest(socketId, payload);
         } else if (isLegacySocketMessage(payload)) {
           this.legacy.onRequest(socketId, payload);
         } else {
-          socket.send("Socket message unsupported");
+          response = "Socket message unsupported";
+          this.logger.info("Outgoing WebSocket Message");
+          this.logger.debug({ type: "message", direction: "outgoing", response });
+          socket.send(response);
         }
       });
 

@@ -121,9 +121,9 @@ export class Connection extends IConnection {
 
   public async respond(params: ConnectionTypes.RespondParams): Promise<ConnectionTypes.Responded> {
     const { approved, proposal } = params;
+    const keyPair = generateKeyPair();
     if (approved) {
       try {
-        const keyPair = generateKeyPair();
         const relay = proposal.relay;
         const connection = await this.settle({
           relay,
@@ -135,6 +135,7 @@ export class Connection extends IConnection {
 
         const responded: ConnectionTypes.Responded = {
           ...proposal,
+          keyPair,
           outcome: connection,
         };
         await this.responded.set(responded.topic, responded, { relay: responded.relay });
@@ -143,6 +144,7 @@ export class Connection extends IConnection {
         const reason = e.message;
         const responded: ConnectionTypes.Responded = {
           ...proposal,
+          keyPair,
           outcome: { reason },
         };
         await this.responded.set(responded.topic, responded, { relay: responded.relay });
@@ -151,6 +153,7 @@ export class Connection extends IConnection {
     } else {
       const responded: ConnectionTypes.Responded = {
         ...proposal,
+        keyPair,
         outcome: { reason: CONNECTION_REASONS.not_approved },
       };
       await this.responded.set(responded.topic, responded, { relay: responded.relay });
@@ -254,7 +257,7 @@ export class Connection extends IConnection {
         const responded: ConnectionTypes.Responded = {
           relay: relay,
           topic: proposed.topic,
-          peer: { publicKey: proposed.keyPair.publicKey },
+          keyPair: proposed.keyPair,
           outcome: connection,
         };
         await this.responded.set(topic, responded, { relay });
@@ -265,7 +268,7 @@ export class Connection extends IConnection {
         const responded: ConnectionTypes.Responded = {
           relay: relay,
           topic: proposed.topic,
-          peer: { publicKey: proposed.keyPair.publicKey },
+          keyPair: proposed.keyPair,
           outcome: { reason },
         };
         await this.responded.set(topic, responded, { relay });
@@ -277,7 +280,7 @@ export class Connection extends IConnection {
       const responded: ConnectionTypes.Responded = {
         relay: relay,
         topic: proposed.topic,
-        peer: { publicKey: proposed.keyPair.publicKey },
+        keyPair: proposed.keyPair,
         outcome: { reason },
       };
       await this.responded.set(topic, responded, { relay });
@@ -398,10 +401,7 @@ export class Connection extends IConnection {
       (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Responded>) => {
         const responded = createdEvent.data;
         this.events.emit(CONNECTION_EVENTS.responded, responded);
-        const params = isConnectionFailed(responded.outcome)
-          ? { reason: responded.outcome.reason }
-          : { publicKey: responded.peer.publicKey };
-        const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, params);
+        const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, responded.outcome);
         this.client.relay.publish(responded.topic, request, { relay: responded.relay });
       },
     );

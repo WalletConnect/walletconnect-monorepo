@@ -112,11 +112,11 @@ export class Session extends ISession {
   }
 
   public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Responded> {
-    const { approved, proposal } = params;
+    const { approved, metadata, proposal } = params;
     const { relay, peer, ruleParams } = proposal;
+    const keyPair = generateKeyPair();
     if (approved) {
       try {
-        const keyPair = generateKeyPair();
         const proposer = peer.publicKey;
         const responder = keyPair.publicKey;
         const session = await this.settle({
@@ -137,11 +137,15 @@ export class Session extends ISession {
 
         const responded: SessionTypes.Responded = {
           ...proposal,
+          keyPair,
           outcome: {
             topic: session.topic,
             relay: session.relay,
             state: session.state,
-            publicKey: session.keyPair.publicKey,
+            peer: {
+              publicKey: session.keyPair.publicKey,
+              metadata,
+            },
           },
         };
         await this.responded.set(responded.topic, responded, { relay: responded.relay });
@@ -150,6 +154,7 @@ export class Session extends ISession {
         const reason = e.payload;
         const responded: SessionTypes.Responded = {
           ...proposal,
+          keyPair,
           outcome: { reason },
         };
         await this.responded.set(responded.topic, responded, { relay: responded.relay });
@@ -158,6 +163,7 @@ export class Session extends ISession {
     } else {
       const responded: SessionTypes.Responded = {
         ...proposal,
+        keyPair,
         outcome: { reason: SESSION_REASONS.not_approved },
       };
       await this.responded.set(responded.topic, responded, { relay: responded.relay });
@@ -270,11 +276,11 @@ export class Session extends ISession {
     if (!isSessionFailed(outcome)) {
       try {
         const proposer = proposed.keyPair.publicKey;
-        const responder = outcome.publicKey;
+        const responder = outcome.peer.publicKey;
         const session = await this.settle({
           relay,
           keyPair: proposed.keyPair,
-          peer: proposed.peer,
+          peer: outcome.peer,
           state: outcome.state,
           rules: {
             state: {
@@ -300,7 +306,7 @@ export class Session extends ISession {
             topic: session.topic,
             relay: session.relay,
             state: session.state,
-            publicKey: session.keyPair.publicKey,
+            peer: session.peer,
           },
         };
         await this.responded.set(topic, responded, {
@@ -470,11 +476,8 @@ export class Session extends ISession {
       async (createdEvent: SubscriptionEvent.Created<SessionTypes.Responded>) => {
         const responded = createdEvent.data;
         this.events.emit(SESSION_EVENTS.responded, responded);
-        const params = isSessionFailed(responded.outcome)
-          ? { reason: responded.outcome.reason }
-          : { publicKey: responded.outcome.publicKey };
         const connection = await this.client.connection.settled.get(responded.connection.topic);
-        const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, params);
+        const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, responded.outcome);
         this.client.relay.publish(responded.topic, request, {
           relay: responded.relay,
           encrypt: {

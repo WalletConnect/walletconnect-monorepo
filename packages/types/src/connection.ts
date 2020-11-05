@@ -15,7 +15,7 @@ export declare namespace ConnectionTypes {
     peer: Peer;
   }
 
-  export interface Proposed extends Proposal {
+  export interface Proposed extends Omit<Proposal, "peer"> {
     keyPair: KeyPair;
   }
 
@@ -24,7 +24,8 @@ export declare namespace ConnectionTypes {
     proposal: Proposal;
   }
 
-  export interface Responded extends Proposal {
+  export interface Responded extends Omit<Proposal, "peer"> {
+    keyPair: KeyPair;
     outcome: Outcome;
   }
 
@@ -102,7 +103,9 @@ export declare namespace ConnectionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     state: State;
+    peer: Peer;
   }
+
   export interface Failed {
     reason: string;
   }

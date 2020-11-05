@@ -22,7 +22,7 @@ export declare namespace SessionTypes {
     connection: { topic: string };
   }
 
-  export interface Proposed extends Proposal {
+  export interface Proposed extends Omit<Proposal, "peer"> {
     keyPair: KeyPair;
   }
 
@@ -33,7 +33,8 @@ export declare namespace SessionTypes {
     proposal: Proposal;
   }
 
-  export interface Responded extends Proposal {
+  export interface Responded extends Omit<Proposal, "peer"> {
+    keyPair: KeyPair;
     outcome: Outcome;
   }
   export interface SettleParams {
@@ -113,8 +114,8 @@ export declare namespace SessionTypes {
   export interface Success {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    publicKey: string;
     state: State;
+    peer: Peer;
   }
   export interface Failed {
     reason: string;

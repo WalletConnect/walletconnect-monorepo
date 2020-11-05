@@ -43,6 +43,7 @@ export class LegacyService {
           break;
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e);
     }
   }
@@ -60,15 +61,7 @@ export class LegacyService {
 
     await this.subscription.setSubscriber(subscriber);
 
-    const pending = await this.redis.getLegacyPublished(topic);
-
-    if (pending && pending.length) {
-      await Promise.all(
-        pending.map((pendingMessage: LegacySocketMessage) =>
-          this.socketSend(socketId, pendingMessage),
-        ),
-      );
-    }
+    await this.pushPendingPublished(socketId, topic);
   }
 
   private async onPublishRequest(socketId: string, socketMessage: LegacySocketMessage) {
@@ -86,6 +79,19 @@ export class LegacyService {
       );
     } else {
       await this.redis.setLegacyPublished(socketMessage);
+    }
+  }
+
+  private async pushPendingPublished(socketId: string, topic: string) {
+    const pending = await this.redis.getLegacyPublished(topic);
+    this.logger.debug({ type: "method", method: "pushPendingPublished", pending });
+
+    if (pending && pending.length) {
+      await Promise.all(
+        pending.map((pendingMessage: LegacySocketMessage) =>
+          this.socketSend(socketId, pendingMessage),
+        ),
+      );
     }
   }
 

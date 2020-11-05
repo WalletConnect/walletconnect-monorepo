@@ -62,6 +62,8 @@ export class Relay extends IRelay {
         message,
         ttl: RELAY_DEFAULT_TTL,
       });
+      this.logger.info(`Outgoing Relay Payload`);
+      this.logger.debug({ type: "payload", direction: "outgoing", request });
       await this.provider.request(request);
       this.logger.info(`Successfully Published Payload`);
       this.logger.debug({ type: "method", method: "publish", request });
@@ -86,6 +88,8 @@ export class Relay extends IRelay {
         topic,
         ttl: RELAY_DEFAULT_TTL,
       });
+      this.logger.info(`Outgoing Relay Payload`);
+      this.logger.debug({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
       this.events.on(id, async (message: string) => {
         const payload = safeJsonParse(
@@ -120,6 +124,8 @@ export class Relay extends IRelay {
       const request = formatJsonRpcRequest<RelayTypes.UnsubscribeParams>(jsonRpc.unsubscribe, {
         topic,
       });
+      this.logger.info(`Outgoing Relay Payload`);
+      this.logger.debug({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
       this.events.off(id, async (message: string) => {
         const payload = safeJsonParse(
@@ -156,6 +162,8 @@ export class Relay extends IRelay {
   // ---------- Private ----------------------------------------------- //
 
   private onRequest(request: JsonRpcRequest) {
+    this.logger.info(`Incoming Relay Payload`);
+    this.logger.debug({ type: "payload", direction: "incoming", request });
     if (request.method.endsWith("_subscription")) {
       const params = request.params as RelayTypes.SubscriptionParams;
       this.events.emit(params.topic, params.message);

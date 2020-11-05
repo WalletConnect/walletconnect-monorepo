@@ -12,15 +12,15 @@ const TEST_SESSION_CHAINS = ["eip155:1"];
 const TEST_SESSION_JSONRPC = ["eth_sendTransaction", "eth_signTypedData", "personal_sign"];
 
 const TEST_APP_METADATA_A: SessionTypes.Metadata = {
-  name: "App A",
-  description: "Description of App run by client A",
+  name: "App A (Proposer)",
+  description: "Description of Proposer App run by client A",
   url: "#",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
 const TEST_APP_METADATA_B: SessionTypes.Metadata = {
-  name: "App B",
-  description: "Description of App run by client B",
+  name: "App B (Responder)",
+  description: "Description of ResponderApp run by client B",
   url: "#",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
