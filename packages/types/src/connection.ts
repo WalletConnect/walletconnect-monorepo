@@ -15,18 +15,17 @@ export declare namespace ConnectionTypes {
     peer: Peer;
   }
 
-  export interface Proposed extends Omit<Proposal, "peer"> {
+  export interface Pending {
+    status: string;
+    topic: string;
+    relay: RelayTypes.ProtocolOptions;
     keyPair: KeyPair;
+    proposal: Proposal;
+    outcome?: Outcome;
   }
-
   export interface RespondParams {
     approved: boolean;
     proposal: Proposal;
-  }
-
-  export interface Responded extends Omit<Proposal, "peer"> {
-    keyPair: KeyPair;
-    outcome: Outcome;
   }
 
   export interface SettleParams {
@@ -114,9 +113,7 @@ export declare namespace ConnectionTypes {
 }
 
 export abstract class IConnection extends ISequence<
-  ConnectionTypes.Proposed,
-  ConnectionTypes.Proposal,
-  ConnectionTypes.Responded,
+  ConnectionTypes.Pending,
   ConnectionTypes.Settled,
   ConnectionTypes.Update,
   ConnectionTypes.CreateParams,

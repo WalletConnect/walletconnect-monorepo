@@ -36,8 +36,7 @@ import {
 } from "../constants";
 
 export class Connection extends IConnection {
-  public proposed: Subscription<ConnectionTypes.Proposed>;
-  public responded: Subscription<ConnectionTypes.Responded>;
+  public pending: Subscription<ConnectionTypes.Pending>;
   public settled: Subscription<ConnectionTypes.Settled>;
 
   public events = new EventEmitter();
@@ -50,40 +49,24 @@ export class Connection extends IConnection {
       context: formatLoggerContext(logger, this.context),
     });
 
-    this.proposed = new Subscription<ConnectionTypes.Proposed>(
+    this.pending = new Subscription<ConnectionTypes.Pending>(
       client,
-      {
-        name: this.context,
-        status: CONNECTION_STATUS.proposed,
-        encrypted: false,
-      },
       this.logger,
-    );
-    this.responded = new Subscription<ConnectionTypes.Responded>(
-      client,
-      {
-        name: this.context,
-        status: CONNECTION_STATUS.responded,
-        encrypted: false,
-      },
-      this.logger,
+      CONNECTION_STATUS.pending,
+      false,
     );
     this.settled = new Subscription<ConnectionTypes.Settled>(
       client,
-      {
-        name: this.context,
-        status: CONNECTION_STATUS.settled,
-        encrypted: true,
-      },
       this.logger,
+      CONNECTION_STATUS.settled,
+      true,
     );
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
     this.logger.trace({ type: "init" });
-    await this.proposed.init();
-    await this.responded.init();
+    await this.pending.init();
     await this.settled.init();
   }
 
@@ -101,63 +84,77 @@ export class Connection extends IConnection {
 
   public async create(params?: ConnectionTypes.CreateParams): Promise<ConnectionTypes.Settled> {
     return new Promise(async (resolve, reject) => {
-      const proposal = await this.propose(params);
-      this.responded.on(
-        SUBSCRIPTION_EVENTS.created,
-        async (responded: ConnectionTypes.Responded) => {
-          if (responded.topic !== proposal.topic) return;
-          if (isConnectionFailed(responded.outcome)) {
-            await this.responded.delete(responded.topic, responded.outcome.reason);
-            reject(new Error(responded.outcome.reason));
-          } else {
-            const connection = await this.settled.get(responded.outcome.topic);
-            await this.responded.delete(responded.topic, CONNECTION_REASONS.settled);
-            resolve(connection);
+      const pending = await this.propose(params);
+      this.pending.on(
+        SUBSCRIPTION_EVENTS.updated,
+        async (updatedEvent: SubscriptionEvent.Updated<ConnectionTypes.Pending>) => {
+          if (pending.topic !== updatedEvent.data.topic) return;
+          if (
+            updatedEvent.data.status === CONNECTION_STATUS.responded &&
+            typeof updatedEvent.data.outcome !== "undefined"
+          ) {
+            const outcome = updatedEvent.data.outcome;
+            if (isConnectionFailed(outcome)) {
+              await this.pending.delete(pending.topic, outcome.reason);
+              reject(new Error(outcome.reason));
+            } else {
+              const connection = await this.settled.get(outcome.topic);
+              await this.pending.delete(pending.topic, CONNECTION_REASONS.settled);
+              resolve(connection);
+            }
           }
         },
       );
     });
   }
 
-  public async respond(params: ConnectionTypes.RespondParams): Promise<ConnectionTypes.Responded> {
+  public async respond(params: ConnectionTypes.RespondParams): Promise<ConnectionTypes.Pending> {
     const { approved, proposal } = params;
     const keyPair = generateKeyPair();
     if (approved) {
       try {
-        const relay = proposal.relay;
         const connection = await this.settle({
-          relay,
+          relay: proposal.relay,
           keyPair,
           peer: {
             publicKey: proposal.peer.publicKey,
           },
         });
 
-        const responded: ConnectionTypes.Responded = {
-          ...proposal,
+        const pending: ConnectionTypes.Pending = {
+          status: CONNECTION_STATUS.responded,
+          topic: proposal.topic,
+          relay: proposal.relay,
           keyPair,
+          proposal,
           outcome: connection,
         };
-        await this.responded.set(responded.topic, responded, { relay: responded.relay });
-        return responded;
+        await this.pending.set(pending.topic, pending, { relay: pending.relay });
+        return pending;
       } catch (e) {
         const reason = e.message;
-        const responded: ConnectionTypes.Responded = {
-          ...proposal,
+        const pending: ConnectionTypes.Pending = {
+          status: CONNECTION_STATUS.responded,
+          topic: proposal.topic,
+          relay: proposal.relay,
           keyPair,
+          proposal,
           outcome: { reason },
         };
-        await this.responded.set(responded.topic, responded, { relay: responded.relay });
-        return responded;
+        await this.pending.set(pending.topic, pending, { relay: pending.relay });
+        return pending;
       }
     } else {
-      const responded: ConnectionTypes.Responded = {
-        ...proposal,
+      const pending: ConnectionTypes.Pending = {
+        status: CONNECTION_STATUS.responded,
+        topic: proposal.topic,
+        relay: proposal.relay,
         keyPair,
+        proposal,
         outcome: { reason: CONNECTION_REASONS.not_approved },
       };
-      await this.responded.set(responded.topic, responded, { relay: responded.relay });
-      return responded;
+      await this.pending.set(pending.topic, pending, { relay: pending.relay });
+      return pending;
     }
   }
 
@@ -195,7 +192,7 @@ export class Connection extends IConnection {
 
   protected async propose(
     params?: ConnectionTypes.ProposeParams,
-  ): Promise<ConnectionTypes.Proposal> {
+  ): Promise<ConnectionTypes.Pending> {
     const relay = params?.relay || { protocol: RELAY_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
     const keyPair = generateKeyPair();
@@ -204,13 +201,16 @@ export class Connection extends IConnection {
       topic,
       peer: { publicKey: keyPair.publicKey },
     };
-    const proposed: ConnectionTypes.Proposed = {
-      ...proposal,
+    const pending: ConnectionTypes.Pending = {
+      status: CONNECTION_STATUS.proposed,
+      topic: proposal.topic,
+      relay: proposal.relay,
       keyPair,
+      proposal,
     };
-    await this.proposed.set(proposed.topic, proposed, { relay });
+    await this.pending.set(pending.topic, pending, { relay });
 
-    return proposal;
+    return pending;
   }
 
   protected async settle(params: ConnectionTypes.SettleParams): Promise<ConnectionTypes.Settled> {
@@ -241,61 +241,44 @@ export class Connection extends IConnection {
     const { topic, payload } = payloadEvent;
     const request = payload as JsonRpcRequest;
     const outcome = request.params as ConnectionTypes.Outcome;
-    const proposed = await this.proposed.get(topic);
-    const { relay } = proposed;
+    const pending = await this.pending.get(topic);
     if (!isConnectionFailed(outcome)) {
       try {
         const connection = await this.settle({
-          relay: relay,
-          keyPair: proposed.keyPair,
+          relay: pending.relay,
+          keyPair: pending.keyPair,
           peer: {
             publicKey: request.params.publicKey,
           },
         });
         const response = formatJsonRpcResult(request.id, true);
-        this.client.relay.publish(topic, response, { relay });
-        const responded: ConnectionTypes.Responded = {
-          relay: relay,
-          topic: proposed.topic,
-          keyPair: proposed.keyPair,
-          outcome: connection,
-        };
-        await this.responded.set(topic, responded, { relay });
+        this.client.relay.publish(topic, response, { relay: pending.relay });
+
+        await this.pending.update(topic, { outcome: connection });
       } catch (e) {
         const reason = e.message;
         const response = formatJsonRpcError(request.id, reason);
-        this.client.relay.publish(topic, response, { relay });
-        const responded: ConnectionTypes.Responded = {
-          relay: relay,
-          topic: proposed.topic,
-          keyPair: proposed.keyPair,
-          outcome: { reason },
-        };
-        await this.responded.set(topic, responded, { relay });
+        this.client.relay.publish(topic, response, { relay: pending.relay });
+        await this.pending.update(topic, { outcome: { reason } });
       }
     } else {
       const reason = outcome.reason;
       const response = formatJsonRpcError(request.id, reason);
-      this.client.relay.publish(topic, response, { relay });
-      const responded: ConnectionTypes.Responded = {
-        relay: relay,
-        topic: proposed.topic,
-        keyPair: proposed.keyPair,
-        outcome: { reason },
-      };
-      await this.responded.set(topic, responded, { relay });
+      this.client.relay.publish(topic, response, { relay: pending.relay });
+      await this.pending.update(topic, { outcome: { reason } });
     }
-    await this.proposed.delete(topic, CONNECTION_REASONS.responded);
+    await this.pending.delete(topic, CONNECTION_REASONS.responded);
   }
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
     const response = payload as JsonRpcResponse;
-    const responded = await this.responded.get(topic);
-    if (isJsonRpcError(response) && !isConnectionFailed(responded.outcome)) {
-      await this.settled.delete(responded.outcome.topic, response.error.message);
+    const pending = await this.pending.get(topic);
+    if (typeof pending.outcome === "undefined") return;
+    if (isJsonRpcError(response) && !isConnectionFailed(pending.outcome)) {
+      await this.settled.delete(pending.outcome.topic, response.error.message);
     }
-    await this.responded.delete(topic, CONNECTION_REASONS.acknowledged);
+    await this.pending.delete(topic, CONNECTION_REASONS.acknowledged);
   }
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
@@ -382,27 +365,27 @@ export class Connection extends IConnection {
 
   private registerEventListeners(): void {
     // Proposed Subscription Events
-    this.proposed.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
+    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
       this.onResponse(payloadEvent),
     );
-    this.proposed.on(
+    this.pending.on(
       SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Proposed>) => {
-        const proposed = createdEvent.data;
-        this.events.emit(CONNECTION_EVENTS.proposed, proposed);
+      (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Pending>) => {
+        const pending = createdEvent.data;
+        this.events.emit(CONNECTION_EVENTS.responded, pending);
       },
     );
-    // Responded Subscription Events
-    this.responded.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
+    // Pending Subscription Events
+    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
       this.onAcknowledge(payloadEvent),
     );
-    this.responded.on(
+    this.pending.on(
       SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Responded>) => {
-        const responded = createdEvent.data;
-        this.events.emit(CONNECTION_EVENTS.responded, responded);
-        const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, responded.outcome);
-        this.client.relay.publish(responded.topic, request, { relay: responded.relay });
+      (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Pending>) => {
+        const pending = createdEvent.data;
+        this.events.emit(CONNECTION_EVENTS.responded, pending);
+        const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
+        this.client.relay.publish(pending.topic, request, { relay: pending.relay });
       },
     );
     // Settled Subscription Events

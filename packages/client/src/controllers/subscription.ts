@@ -3,7 +3,6 @@ import { Logger } from "pino";
 import {
   IClient,
   ISubscription,
-  SubscriptionContext,
   SubscriptionEntries,
   SubscriptionEvent,
   SubscriptionOptions,
@@ -19,9 +18,14 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   public events = new EventEmitter();
 
-  constructor(public client: IClient, public context: SubscriptionContext, public logger: Logger) {
-    super(client, context, logger);
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context.status) });
+  constructor(
+    public client: IClient,
+    public logger: Logger,
+    public context: string,
+    public encrypted: boolean,
+  ) {
+    super(client, logger, context, encrypted);
+    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
 
     this.registerEventListeners();
   }
@@ -43,8 +47,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     if (this.subscriptions.has(topic)) {
       this.update(topic, data);
     } else {
-      if (this.context.encrypted && typeof opts.decrypt === "undefined") {
-        const errorMessage = `Decrypt params required for ${this.context.status} ${this.context.name}`;
+      if (this.encrypted && typeof opts.decrypt === "undefined") {
+        const errorMessage = `Decrypt params required for ${this.logger.bindings().context}`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
@@ -116,7 +120,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
-      const errorMessage = `No matching ${this.context.status} ${this.context.name} with topic: ${topic}`;
+      const errorMessage = `No matching ${this.logger.bindings().context} with topic: ${topic}`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -125,20 +129,18 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private async persist() {
     await this.client.store.set<SubscriptionEntries<Data>>(
-      `${this.context.name}:${this.context.status}`,
+      `${this.logger.bindings().context}`,
       this.entries,
     );
   }
 
   private async restore() {
     const subscriptions = await this.client.store.get<SubscriptionEntries<Data>>(
-      `${this.context.name}:${this.context.status}`,
+      `${this.logger.bindings().context}`,
     );
     if (typeof subscriptions === "undefined") return;
     if (this.subscriptions.size) {
-      throw new Error(
-        `Restore will override already set ${this.context.status} ${this.context.name}`,
-      );
+      throw new Error(`Restore will override already set ${this.logger.bindings().context}`);
     }
     this.subscriptions = objToMap<SubscriptionParams<Data>>(subscriptions);
     for (const [_, subscription] of this.subscriptions) {

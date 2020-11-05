@@ -5,12 +5,6 @@ import { IClient } from "./client";
 import { IEvents } from "./events";
 import { RelayTypes } from "./relay";
 
-export interface SubscriptionContext {
-  name: string;
-  status: string;
-  encrypted: boolean;
-}
-
 export interface SubscriptionOptions extends RelayTypes.SubscribeOptions {
   relay: RelayTypes.ProtocolOptions;
 }
@@ -52,7 +46,12 @@ export abstract class ISubscription<Data> extends IEvents {
 
   public abstract readonly entries: SubscriptionEntries<Data>;
 
-  constructor(public client: IClient, public context: SubscriptionContext, public logger: Logger) {
+  constructor(
+    public client: IClient,
+    public logger: Logger,
+    public context: string,
+    public encrypted: boolean,
+  ) {
     super();
   }
 

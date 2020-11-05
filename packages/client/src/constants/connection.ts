@@ -16,6 +16,7 @@ export const CONNECTION_CONTEXT = "connection";
 export const CONNECTION_STATUS = {
   proposed: "proposed",
   responded: "responded",
+  pending: "pending",
   settled: "settled",
 };
 

@@ -5,9 +5,7 @@ import { IEvents } from "./events";
 import { ISubscription, SubscriptionEvent } from "./subscription";
 
 export abstract class ISequence<
-  Proposed,
-  Proposal,
-  Responded,
+  Pending,
   Settled,
   Update,
   CreateParams,
@@ -17,10 +15,8 @@ export abstract class ISequence<
   ProposeParams,
   SettleParams
 > extends IEvents {
-  // proposed subscriptions
-  public abstract proposed: ISubscription<Proposed>;
-  // responded subscriptions
-  public abstract responded: ISubscription<Responded>;
+  // pending subscriptions
+  public abstract pending: ISubscription<Pending>;
   // settled subscriptions
   public abstract settled: ISubscription<Settled>;
   // returns settled subscriptions length
@@ -43,7 +39,7 @@ export abstract class ISequence<
   // called by proposer
   public abstract create(params?: CreateParams): Promise<Settled>;
   // called by responder
-  public abstract respond(params: RespondParams): Promise<Responded>;
+  public abstract respond(params: RespondParams): Promise<Pending>;
   // called by either to update state
   public abstract update(params: UpdateParams): Promise<Settled>;
   // called by either to terminate
@@ -52,7 +48,7 @@ export abstract class ISequence<
   // ---------- Protected ----------------------------------------------- //
 
   // called by proposer (internally)
-  protected abstract propose(params?: ProposeParams): Promise<Proposal>;
+  protected abstract propose(params?: ProposeParams): Promise<Pending>;
   // called by both (internally)
   protected abstract settle(params: SettleParams): Promise<Settled>;
 

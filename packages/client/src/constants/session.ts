@@ -14,6 +14,7 @@ export const SESSION_CONTEXT = "session";
 export const SESSION_STATUS = {
   proposed: "proposed",
   responded: "responded",
+  pending: "pending",
   settled: "settled",
 };
 

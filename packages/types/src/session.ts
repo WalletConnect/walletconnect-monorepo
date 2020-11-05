@@ -19,13 +19,16 @@ export declare namespace SessionTypes {
     peer: Peer;
     stateParams: StateParams;
     ruleParams: RuleParams;
-    connection: { topic: string };
   }
 
-  export interface Proposed extends Omit<Proposal, "peer"> {
+  export interface Pending {
+    status: string;
+    topic: string;
+    relay: RelayTypes.ProtocolOptions;
     keyPair: KeyPair;
+    proposal: Proposal;
+    outcome?: Outcome;
   }
-
   export interface RespondParams {
     approved: boolean;
     state: State;
@@ -33,10 +36,6 @@ export declare namespace SessionTypes {
     proposal: Proposal;
   }
 
-  export interface Responded extends Omit<Proposal, "peer"> {
-    keyPair: KeyPair;
-    outcome: Outcome;
-  }
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
     keyPair: KeyPair;
@@ -125,9 +124,7 @@ export declare namespace SessionTypes {
 }
 
 export abstract class ISession extends ISequence<
-  SessionTypes.Proposed,
-  SessionTypes.Proposal,
-  SessionTypes.Responded,
+  SessionTypes.Pending,
   SessionTypes.Settled,
   SessionTypes.Update,
   SessionTypes.CreateParams,
