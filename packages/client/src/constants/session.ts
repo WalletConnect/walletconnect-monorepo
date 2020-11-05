@@ -1,3 +1,5 @@
+import { SessionTypes } from "@walletconnect/types";
+
 export const SESSION_JSONRPC = {
   propose: "wc_proposeSession",
   respond: "wc_respondSession",
@@ -12,8 +14,8 @@ export const SESSION_JSONRPC_AFTER_SETTLEMENT = [SESSION_JSONRPC.update, SESSION
 export const SESSION_CONTEXT = "session";
 
 export const SESSION_STATUS = {
-  proposed: "proposed",
-  responded: "responded",
+  proposed: "proposed" as SessionTypes.ProposedStatus,
+  responded: "responded" as SessionTypes.RespondedStatus,
   pending: "pending",
   settled: "settled",
 };

@@ -21,14 +21,31 @@ export declare namespace SessionTypes {
     ruleParams: RuleParams;
   }
 
-  export interface Pending {
-    status: string;
+  export type ProposedStatus = "proposed";
+
+  export type RespondedStatus = "responded";
+
+  export type PendingStatus = ProposedStatus | RespondedStatus;
+
+  export interface BasePending {
+    status: PendingStatus;
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     keyPair: KeyPair;
     proposal: Proposal;
-    outcome?: Outcome;
   }
+
+  export interface ProposedPending extends BasePending {
+    status: ProposedStatus;
+  }
+
+  export interface RespondedPending extends BasePending {
+    status: RespondedStatus;
+    outcome: Outcome;
+  }
+
+  export type Pending = ProposedPending | RespondedPending;
+
   export interface RespondParams {
     approved: boolean;
     state: State;

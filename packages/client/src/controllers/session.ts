@@ -9,6 +9,7 @@ import {
   mapEntries,
   sha256,
   formatLoggerContext,
+  isSessionResponded,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -31,8 +32,7 @@ import {
 } from "../constants";
 
 export class Session extends ISession {
-  public proposed: Subscription<SessionTypes.Proposed>;
-  public responded: Subscription<SessionTypes.Responded>;
+  public pending: Subscription<SessionTypes.Pending>;
   public settled: Subscription<SessionTypes.Settled>;
 
   public events = new EventEmitter();
@@ -44,41 +44,24 @@ export class Session extends ISession {
     this.logger = logger.child({
       context: formatLoggerContext(logger, this.context),
     });
-
-    this.proposed = new Subscription<SessionTypes.Proposed>(
+    this.pending = new Subscription<SessionTypes.Pending>(
       client,
-      {
-        name: this.context,
-        status: SESSION_STATUS.proposed,
-        encrypted: true,
-      },
       this.logger,
-    );
-    this.responded = new Subscription<SessionTypes.Responded>(
-      client,
-      {
-        name: this.context,
-        status: SESSION_STATUS.responded,
-        encrypted: true,
-      },
-      this.logger,
+      SESSION_STATUS.pending,
+      false,
     );
     this.settled = new Subscription<SessionTypes.Settled>(
       client,
-      {
-        name: this.context,
-        status: SESSION_STATUS.settled,
-        encrypted: true,
-      },
       this.logger,
+      SESSION_STATUS.settled,
+      true,
     );
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
     this.logger.trace({ type: "init" });
-    await this.proposed.init();
-    await this.responded.init();
+    await this.pending.init();
     await this.settled.init();
   }
 
@@ -96,25 +79,32 @@ export class Session extends ISession {
 
   public async create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
     return new Promise(async (resolve, reject) => {
-      const proposal = await this.propose(params);
-      this.responded.on(SUBSCRIPTION_EVENTS.created, async (responded: SessionTypes.Responded) => {
-        if (responded.topic !== proposal.topic) return;
-        if (isSessionFailed(responded.outcome)) {
-          await this.responded.delete(responded.topic, responded.outcome.reason);
-          reject(new Error(responded.outcome.reason));
-        } else {
-          const session = await this.settled.get(responded.outcome.topic);
-          await this.responded.delete(responded.topic, SESSION_REASONS.settled);
-          resolve(session);
-        }
-      });
+      const pending = await this.propose(params);
+      this.pending.on(
+        SUBSCRIPTION_EVENTS.updated,
+        async (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) => {
+          if (pending.topic !== updatedEvent.data.topic) return;
+          if (isSessionResponded(updatedEvent.data)) {
+            const outcome = updatedEvent.data.outcome;
+            if (isSessionFailed(outcome)) {
+              await this.pending.delete(pending.topic, outcome.reason);
+              reject(new Error(outcome.reason));
+            } else {
+              const connection = await this.settled.get(outcome.topic);
+              await this.pending.delete(pending.topic, SESSION_REASONS.settled);
+              resolve(connection);
+            }
+          }
+        },
+      );
     });
   }
 
-  public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Responded> {
+  public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
     const { approved, metadata, proposal } = params;
     const { relay, peer, ruleParams } = proposal;
     const keyPair = generateKeyPair();
+    const connection = await this.client.connection.get(proposal.topic);
     if (approved) {
       try {
         const proposer = peer.publicKey;
@@ -134,40 +124,69 @@ export class Session extends ISession {
             jsonrpc: ruleParams.jsonrpc,
           },
         });
-
-        const responded: SessionTypes.Responded = {
-          ...proposal,
-          keyPair,
-          outcome: {
-            topic: session.topic,
-            relay: session.relay,
-            state: session.state,
-            peer: {
-              publicKey: session.keyPair.publicKey,
-              metadata,
-            },
+        const outcome: SessionTypes.Outcome = {
+          topic: session.topic,
+          relay: session.relay,
+          state: session.state,
+          peer: {
+            publicKey: session.keyPair.publicKey,
+            metadata,
           },
         };
-        await this.responded.set(responded.topic, responded, { relay: responded.relay });
-        return responded;
+        const pending: SessionTypes.Pending = {
+          status: SESSION_STATUS.responded,
+          topic: proposal.topic,
+          relay: proposal.relay,
+          keyPair,
+          proposal,
+          outcome,
+        };
+        await this.pending.set(pending.topic, pending, {
+          relay: pending.relay,
+          decrypt: {
+            sharedKey: connection.sharedKey,
+            publicKey: connection.peer.publicKey,
+          },
+        });
+        return pending;
       } catch (e) {
         const reason = e.payload;
-        const responded: SessionTypes.Responded = {
-          ...proposal,
+        const outcome = { reason };
+        const pending: SessionTypes.Pending = {
+          status: SESSION_STATUS.responded,
+          topic: proposal.topic,
+          relay: proposal.relay,
           keyPair,
-          outcome: { reason },
+          proposal,
+          outcome,
         };
-        await this.responded.set(responded.topic, responded, { relay: responded.relay });
-        return responded;
+        await this.pending.set(pending.topic, pending, {
+          relay: pending.relay,
+          decrypt: {
+            sharedKey: connection.sharedKey,
+            publicKey: connection.peer.publicKey,
+          },
+        });
+        return pending;
       }
     } else {
-      const responded: SessionTypes.Responded = {
-        ...proposal,
+      const outcome = { reason: SESSION_REASONS.not_approved };
+      const pending: SessionTypes.Pending = {
+        status: SESSION_STATUS.responded,
+        topic: proposal.topic,
+        relay: proposal.relay,
         keyPair,
-        outcome: { reason: SESSION_REASONS.not_approved },
+        proposal,
+        outcome,
       };
-      await this.responded.set(responded.topic, responded, { relay: responded.relay });
-      return responded;
+      await this.pending.set(pending.topic, pending, {
+        relay: pending.relay,
+        decrypt: {
+          sharedKey: connection.sharedKey,
+          publicKey: connection.peer.publicKey,
+        },
+      });
+      return pending;
     }
   }
 
@@ -203,7 +222,7 @@ export class Session extends ISession {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Proposal> {
+  protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
     const connection = await this.client.connection.settled.get(params.connection.topic);
     const keyPair = generateKeyPair();
     const proposal: SessionTypes.Proposal = {
@@ -213,15 +232,15 @@ export class Session extends ISession {
         publicKey: keyPair.publicKey,
         metadata: params.metadata,
       },
-      connection: {
-        topic: connection.topic,
-      },
       stateParams: params.stateParams,
       ruleParams: params.ruleParams,
     };
-    const proposed: SessionTypes.Proposed = {
-      ...proposal,
+    const pending: SessionTypes.Pending = {
+      status: SESSION_STATUS.proposed,
+      topic: proposal.topic,
+      relay: proposal.relay,
       keyPair,
+      proposal,
     };
     const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, proposal);
 
@@ -232,14 +251,14 @@ export class Session extends ISession {
         publicKey: connection.keyPair.publicKey,
       },
     });
-    this.proposed.set(proposed.topic, proposed, {
-      relay: proposed.relay,
+    this.pending.set(pending.topic, pending, {
+      relay: pending.relay,
       decrypt: {
         sharedKey: connection.sharedKey,
         publicKey: connection.peer.publicKey,
       },
     });
-    return proposal;
+    return pending;
   }
 
   protected async settle(params: SessionTypes.SettleParams): Promise<SessionTypes.Settled> {
@@ -268,103 +287,75 @@ export class Session extends ISession {
 
   protected async onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    const request = payload as JsonRpcRequest;
-    const outcome = request.params as SessionTypes.Outcome;
-    const proposed = await this.proposed.get(topic);
-    const connection = await this.client.connection.settled.get(proposed.connection.topic);
-    const { relay } = proposed;
-    if (!isSessionFailed(outcome)) {
+    const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
+    const pending = await this.pending.get(topic);
+    const connection = await this.client.connection.settled.get(pending.topic);
+    if (!isSessionFailed(request.params)) {
       try {
-        const proposer = proposed.keyPair.publicKey;
+        const outcome = request.params;
+        const proposer = pending.keyPair.publicKey;
         const responder = outcome.peer.publicKey;
         const session = await this.settle({
-          relay,
-          keyPair: proposed.keyPair,
+          relay: pending.relay,
+          keyPair: pending.keyPair,
           peer: outcome.peer,
           state: outcome.state,
           rules: {
             state: {
               accounts: {
-                [proposer]: proposed.ruleParams.state.accounts.proposer,
-                [responder]: proposed.ruleParams.state.accounts.responder,
+                [proposer]: pending.proposal.ruleParams.state.accounts.proposer,
+                [responder]: pending.proposal.ruleParams.state.accounts.responder,
               },
             },
-            jsonrpc: proposed.ruleParams.jsonrpc,
+            jsonrpc: pending.proposal.ruleParams.jsonrpc,
           },
         });
         const response = formatJsonRpcResult(request.id, true);
         this.client.relay.publish(topic, response, {
-          relay,
+          relay: pending.relay,
           encrypt: {
             sharedKey: connection.sharedKey,
             publicKey: connection.keyPair.publicKey,
           },
         });
-        const responded: SessionTypes.Responded = {
-          ...proposed,
+
+        await this.pending.update(topic, {
           outcome: {
             topic: session.topic,
             relay: session.relay,
             state: session.state,
             peer: session.peer,
           },
-        };
-        await this.responded.set(topic, responded, {
-          relay,
-          decrypt: {
-            sharedKey: connection.sharedKey,
-            publicKey: connection.peer.publicKey,
-          },
         });
       } catch (e) {
         const reason = e.payload;
         const response = formatJsonRpcError(request.id, reason);
         this.client.relay.publish(topic, response, {
-          relay,
+          relay: pending.relay,
           encrypt: {
             sharedKey: connection.sharedKey,
             publicKey: connection.keyPair.publicKey,
           },
         });
-        const responded: SessionTypes.Responded = {
-          ...proposed,
-          outcome: { reason },
-        };
-        await this.responded.set(topic, responded, {
-          relay,
-          decrypt: {
-            sharedKey: connection.sharedKey,
-            publicKey: connection.peer.publicKey,
-          },
-        });
+        await this.pending.update(topic, { outcome: { reason } });
       }
     } else {
-      const reason = outcome.reason;
+      const reason = request.params.reason;
       const response = formatJsonRpcError(request.id, reason);
       this.client.relay.publish(topic, response, {
-        relay,
+        relay: pending.relay,
         encrypt: {
           sharedKey: connection.sharedKey,
           publicKey: connection.keyPair.publicKey,
         },
       });
-      const responded: SessionTypes.Responded = {
-        ...proposed,
-        outcome: { reason },
-      };
-      await this.responded.set(topic, responded, {
-        relay,
-        decrypt: {
-          sharedKey: connection.sharedKey,
-          publicKey: connection.peer.publicKey,
-        },
-      });
+      await this.pending.update(topic, { outcome: { reason } });
     }
-    await this.proposed.delete(topic, SESSION_REASONS.responded);
+    await this.pending.delete(topic, SESSION_REASONS.responded);
   }
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
-    await this.responded.delete(payloadEvent.topic, SESSION_REASONS.acknowledged);
+    await this.pending.delete(payloadEvent.topic, SESSION_REASONS.acknowledged);
   }
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
@@ -456,35 +447,41 @@ export class Session extends ISession {
   // ---------- Private ----------------------------------------------- //
 
   private registerEventListeners(): void {
-    // Proposed Subscription Events
-    this.proposed.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
-      this.onResponse(payloadEvent),
-    );
-    this.proposed.on(
+    // Pending Subscription Events
+    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
+      if (
+        isJsonRpcRequest(payloadEvent.payload) &&
+        payloadEvent.payload.method === SESSION_JSONRPC.respond
+      ) {
+        this.onResponse(payloadEvent);
+      } else {
+        this.onAcknowledge(payloadEvent);
+      }
+    });
+    this.pending.on(
       SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<SessionTypes.Proposed>) => {
-        const proposed = createdEvent.data;
-        this.events.emit(SESSION_EVENTS.proposed, proposed);
+      (createdEvent: SubscriptionEvent.Created<SessionTypes.Pending>) => {
+        const pending = createdEvent.data;
+        this.events.emit(SESSION_EVENTS.proposed, pending);
       },
     );
-    // Responded Subscription Events
-    this.responded.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
-      this.onAcknowledge(payloadEvent),
-    );
-    this.responded.on(
-      SUBSCRIPTION_EVENTS.created,
-      async (createdEvent: SubscriptionEvent.Created<SessionTypes.Responded>) => {
-        const responded = createdEvent.data;
-        this.events.emit(SESSION_EVENTS.responded, responded);
-        const connection = await this.client.connection.settled.get(responded.connection.topic);
-        const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, responded.outcome);
-        this.client.relay.publish(responded.topic, request, {
-          relay: responded.relay,
-          encrypt: {
-            sharedKey: connection.sharedKey,
-            publicKey: connection.keyPair.publicKey,
-          },
-        });
+
+    this.pending.on(
+      SUBSCRIPTION_EVENTS.updated,
+      async (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) => {
+        if (isSessionResponded(updatedEvent.data)) {
+          const pending = updatedEvent.data;
+          this.events.emit(SESSION_EVENTS.responded, pending);
+          const connection = await this.client.connection.settled.get(pending.topic);
+          const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
+          this.client.relay.publish(pending.topic, request, {
+            relay: pending.relay,
+            encrypt: {
+              sharedKey: connection.sharedKey,
+              publicKey: connection.keyPair.publicKey,
+            },
+          });
+        }
       },
     );
     // Settled Subscription Events

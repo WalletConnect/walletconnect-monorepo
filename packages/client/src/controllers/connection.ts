@@ -10,6 +10,7 @@ import {
   mapEntries,
   sha256,
   formatLoggerContext,
+  isConnectionResponded,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -48,7 +49,6 @@ export class Connection extends IConnection {
     this.logger = logger.child({
       context: formatLoggerContext(logger, this.context),
     });
-
     this.pending = new Subscription<ConnectionTypes.Pending>(
       client,
       this.logger,
@@ -89,10 +89,7 @@ export class Connection extends IConnection {
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<ConnectionTypes.Pending>) => {
           if (pending.topic !== updatedEvent.data.topic) return;
-          if (
-            updatedEvent.data.status === CONNECTION_STATUS.responded &&
-            typeof updatedEvent.data.outcome !== "undefined"
-          ) {
+          if (isConnectionResponded(updatedEvent.data)) {
             const outcome = updatedEvent.data.outcome;
             if (isConnectionFailed(outcome)) {
               await this.pending.delete(pending.topic, outcome.reason);
@@ -274,7 +271,7 @@ export class Connection extends IConnection {
     const { topic, payload } = payloadEvent;
     const response = payload as JsonRpcResponse;
     const pending = await this.pending.get(topic);
-    if (typeof pending.outcome === "undefined") return;
+    if (!isConnectionResponded(pending)) return;
     if (isJsonRpcError(response) && !isConnectionFailed(pending.outcome)) {
       await this.settled.delete(pending.outcome.topic, response.error.message);
     }
@@ -364,28 +361,34 @@ export class Connection extends IConnection {
   // ---------- Private ----------------------------------------------- //
 
   private registerEventListeners(): void {
-    // Proposed Subscription Events
-    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
-      this.onResponse(payloadEvent),
-    );
+    // Pending Subscription Events
+    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
+      if (
+        isJsonRpcRequest(payloadEvent.payload) &&
+        payloadEvent.payload.method === CONNECTION_JSONRPC.respond
+      ) {
+        this.onResponse(payloadEvent);
+      } else {
+        this.onAcknowledge(payloadEvent);
+      }
+    });
     this.pending.on(
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Pending>) => {
         const pending = createdEvent.data;
-        this.events.emit(CONNECTION_EVENTS.responded, pending);
+        this.events.emit(CONNECTION_EVENTS.proposed, pending);
       },
     );
-    // Pending Subscription Events
-    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
-      this.onAcknowledge(payloadEvent),
-    );
+
     this.pending.on(
-      SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Pending>) => {
-        const pending = createdEvent.data;
-        this.events.emit(CONNECTION_EVENTS.responded, pending);
-        const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
-        this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+      SUBSCRIPTION_EVENTS.updated,
+      (updatedEvent: SubscriptionEvent.Updated<ConnectionTypes.Pending>) => {
+        if (isConnectionResponded(updatedEvent.data)) {
+          const pending = updatedEvent.data;
+          this.events.emit(CONNECTION_EVENTS.responded, pending);
+          const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
+          this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+        }
       },
     );
     // Settled Subscription Events

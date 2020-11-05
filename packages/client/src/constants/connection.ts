@@ -1,3 +1,5 @@
+import { ConnectionTypes } from "@walletconnect/types";
+
 export const CONNECTION_JSONRPC = {
   respond: "wc_respondConnection",
   update: "wc_updateConnection",
@@ -14,8 +16,8 @@ export const CONNECTION_JSONRPC_AFTER_SETTLEMENT = [
 export const CONNECTION_CONTEXT = "connection";
 
 export const CONNECTION_STATUS = {
-  proposed: "proposed",
-  responded: "responded",
+  proposed: "proposed" as ConnectionTypes.ProposedStatus,
+  responded: "responded" as ConnectionTypes.RespondedStatus,
   pending: "pending",
   settled: "settled",
 };

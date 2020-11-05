@@ -15,6 +15,8 @@ import {
   parseUri,
   getLoggerOptions,
   formatLoggerContext,
+  isConnectionResponded,
+  isSessionResponded,
 } from "@walletconnect/utils";
 import { JsonRpcPayload, JsonRpcRequest, isJsonRpcRequest } from "rpc-json-utils";
 
@@ -122,7 +124,7 @@ export class Client extends IClient {
       const uriParams = parseUri(params.proposal);
       this.logger.info(`Responding Connection Proposal`);
       this.logger.debug({ type: "method", method: "respond", params, uriParams });
-      const responded = await this.connection.respond({
+      const pending = await this.connection.respond({
         approved: params.approved,
         proposal: {
           topic: uriParams.topic,
@@ -132,14 +134,15 @@ export class Client extends IClient {
           relay: uriParams.relay,
         },
       });
-      if (isConnectionFailed(responded.outcome)) {
+      if (!isConnectionResponded(pending)) return;
+      if (isConnectionFailed(pending.outcome)) {
         this.logger.info(`Connection Proposal Response Failure`);
-        this.logger.warn({ type: "method", method: "respond", outcome: responded.outcome });
+        this.logger.warn({ type: "method", method: "respond", outcome: pending.outcome });
         return;
       }
       this.logger.info(`Connection Proposal Response Success`);
-      this.logger.debug({ type: "method", method: "respond", responded });
-      return responded.outcome.topic;
+      this.logger.debug({ type: "method", method: "respond", pending });
+      return pending.outcome.topic;
     }
     this.logger.info(`Responding Session Proposal`);
     this.logger.debug({ type: "method", method: "respond", params });
@@ -149,20 +152,21 @@ export class Client extends IClient {
       throw new Error(errorMessage);
     }
 
-    const responded = await this.session.respond({
+    const pending = await this.session.respond({
       approved: params.approved,
       proposal: params.proposal,
       metadata: getAppMetadata(params.response.app),
       state: params.response.state,
     });
-    if (isSessionFailed(responded.outcome)) {
+    if (!isSessionResponded(pending)) return;
+    if (isSessionFailed(pending.outcome)) {
       this.logger.info(`Session Proposal Response Failure`);
-      this.logger.warn({ type: "method", method: "respond", outcome: responded.outcome });
+      this.logger.warn({ type: "method", method: "respond", outcome: pending.outcome });
       return;
     }
     this.logger.info(`Session Proposal Response Success`);
-    this.logger.debug({ type: "method", method: "respond", responded });
-    return responded.outcome.topic;
+    this.logger.debug({ type: "method", method: "respond", pending });
+    return pending.outcome.topic;
   }
 
   public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
@@ -220,7 +224,7 @@ export class Client extends IClient {
 
   private registerEventListeners(): void {
     // Connection Subscription Events
-    this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Proposed) => {
+    this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Pending) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
       this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: proposed });
       this.events.emit(CONNECTION_EVENTS.proposed, proposed);
@@ -234,7 +238,7 @@ export class Client extends IClient {
       this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
       this.events.emit(CLIENT_EVENTS.share_uri, { uri });
     });
-    this.connection.on(CONNECTION_EVENTS.responded, (responded: ConnectionTypes.Responded) => {
+    this.connection.on(CONNECTION_EVENTS.responded, (responded: ConnectionTypes.Pending) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.responded}`);
       this.logger.debug({ type: "event", event: CONNECTION_EVENTS.responded, data: responded });
       this.events.emit(CONNECTION_EVENTS.responded, responded);
@@ -258,12 +262,12 @@ export class Client extends IClient {
       this.onPayload(payload, CONNECTION_CONTEXT);
     });
     // Session Subscription Events
-    this.session.on(SESSION_EVENTS.proposed, (proposed: SessionTypes.Proposed) => {
+    this.session.on(SESSION_EVENTS.proposed, (proposed: SessionTypes.Pending) => {
       this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
       this.logger.debug({ type: "event", event: SESSION_EVENTS.proposed, data: proposed });
       this.events.emit(SESSION_EVENTS.proposed, proposed);
     });
-    this.session.on(SESSION_EVENTS.responded, (responded: SessionTypes.Responded) => {
+    this.session.on(SESSION_EVENTS.responded, (responded: SessionTypes.Pending) => {
       this.logger.info(`Emitting ${SESSION_EVENTS.responded}`);
       this.logger.debug({ type: "event", event: SESSION_EVENTS.responded, data: responded });
       this.events.emit(SESSION_EVENTS.responded, responded);
