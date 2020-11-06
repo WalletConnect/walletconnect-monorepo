@@ -336,6 +336,7 @@ export class Session extends ISession {
         });
 
         await this.pending.update(topic, {
+          status: SESSION_STATUS.responded,
           outcome: {
             topic: session.topic,
             relay: session.relay,
@@ -353,7 +354,7 @@ export class Session extends ISession {
             publicKey: connection.keyPair.publicKey,
           },
         });
-        await this.pending.update(topic, { outcome: { reason } });
+        await this.pending.update(topic, { status: SESSION_STATUS.responded, outcome: { reason } });
       }
     } else {
       const reason = request.params.reason;
@@ -365,7 +366,7 @@ export class Session extends ISession {
           publicKey: connection.keyPair.publicKey,
         },
       });
-      await this.pending.update(topic, { outcome: { reason } });
+      await this.pending.update(topic, { status: SESSION_STATUS.responded, outcome: { reason } });
     }
     await this.pending.delete(topic, SESSION_REASONS.responded);
   }

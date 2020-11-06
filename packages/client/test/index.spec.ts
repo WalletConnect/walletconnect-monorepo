@@ -30,10 +30,10 @@ const TEST_SESSION_STATE = {
 };
 
 describe("Client", () => {
-  it("instantiate successfully", async () => {
-    const client = await Client.init(TEST_CLIENT_OPTIONS);
-    expect(client).toBeTruthy();
-  });
+  // it("instantiate successfully", async () => {
+  //   const client = await Client.init(TEST_CLIENT_OPTIONS);
+  //   expect(client).toBeTruthy();
+  // });
   it("connect two clients", async () => {
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });

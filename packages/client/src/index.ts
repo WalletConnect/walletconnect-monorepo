@@ -113,7 +113,7 @@ export class Client extends IClient {
       this.logger.debug({ type: "method", method: "connect", session });
       return session;
     } catch (error) {
-      this.logger.info(`Application Connection Failed`);
+      this.logger.info(`Application Connection Failure`);
       this.logger.error(error);
       throw error;
     }

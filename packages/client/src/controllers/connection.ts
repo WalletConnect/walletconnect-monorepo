@@ -265,18 +265,27 @@ export class Connection extends IConnection {
         const response = formatJsonRpcResult(request.id, true);
         this.client.relay.publish(topic, response, { relay: pending.relay });
 
-        await this.pending.update(topic, { outcome: connection });
+        await this.pending.update(topic, {
+          status: CONNECTION_STATUS.responded,
+          outcome: connection,
+        });
       } catch (e) {
         const reason = e.message;
         const response = formatJsonRpcError(request.id, reason);
         this.client.relay.publish(topic, response, { relay: pending.relay });
-        await this.pending.update(topic, { outcome: { reason } });
+        await this.pending.update(topic, {
+          status: CONNECTION_STATUS.responded,
+          outcome: { reason },
+        });
       }
     } else {
       const reason = outcome.reason;
       const response = formatJsonRpcError(request.id, reason);
       this.client.relay.publish(topic, response, { relay: pending.relay });
-      await this.pending.update(topic, { outcome: { reason } });
+      await this.pending.update(topic, {
+        status: CONNECTION_STATUS.responded,
+        outcome: { reason },
+      });
     }
     await this.pending.delete(topic, CONNECTION_REASONS.responded);
   }
