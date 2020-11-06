@@ -476,43 +476,43 @@ export class Session extends ISession {
 
   // ---------- Private ----------------------------------------------- //
 
+  private onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
+    if (isJsonRpcRequest(event.payload) && event.payload.method === SESSION_JSONRPC.respond) {
+      this.onResponse(event);
+    } else {
+      this.onAcknowledge(event);
+    }
+  }
+  private onPendingStatusEvent(
+    event:
+      | SubscriptionEvent.Created<SessionTypes.Pending>
+      | SubscriptionEvent.Updated<SessionTypes.Pending>,
+  ) {
+    if (isSessionResponded(event.data)) {
+      const pending = event.data;
+      this.events.emit(SESSION_EVENTS.responded, pending);
+      const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
+      this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+    } else {
+      const pending = event.data;
+      this.events.emit(SESSION_EVENTS.proposed, pending);
+    }
+  }
+
   private registerEventListeners(): void {
     // Pending Subscription Events
-    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      if (
-        isJsonRpcRequest(payloadEvent.payload) &&
-        payloadEvent.payload.method === SESSION_JSONRPC.respond
-      ) {
-        this.onResponse(payloadEvent);
-      } else {
-        this.onAcknowledge(payloadEvent);
-      }
-    });
+    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
+      this.onPendingPayloadEvent(payloadEvent),
+    );
     this.pending.on(
       SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<SessionTypes.Pending>) => {
-        const pending = createdEvent.data;
-        this.events.emit(SESSION_EVENTS.proposed, pending);
-      },
+      (createdEvent: SubscriptionEvent.Created<SessionTypes.Pending>) =>
+        this.onPendingStatusEvent(createdEvent),
     );
-
     this.pending.on(
       SUBSCRIPTION_EVENTS.updated,
-      async (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) => {
-        if (isSessionResponded(updatedEvent.data)) {
-          const pending = updatedEvent.data;
-          this.events.emit(SESSION_EVENTS.responded, pending);
-          const connection = await this.client.connection.settled.get(pending.topic);
-          const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
-          this.client.relay.publish(pending.topic, request, {
-            relay: pending.relay,
-            encrypt: {
-              sharedKey: connection.sharedKey,
-              publicKey: connection.keyPair.publicKey,
-            },
-          });
-        }
-      },
+      (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) =>
+        this.onPendingStatusEvent(updatedEvent),
     );
     // Settled Subscription Events
     this.settled.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>

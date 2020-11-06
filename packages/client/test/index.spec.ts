@@ -40,6 +40,7 @@ describe("Client", () => {
     await Promise.all([
       new Promise(async (resolve, reject) => {
         clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {
+          console.log("URI Shared"); // eslint-disable-line no-console
           const topic = await clientB.respond({
             approved: true,
             proposal: uri,
@@ -48,31 +49,31 @@ describe("Client", () => {
           if (typeof topic === "undefined") {
             throw new Error("topic is undefined");
           }
+          console.log("Connection Responded"); // eslint-disable-line no-console
           const connection = await clientB.connection.get(topic);
           expect(connection).toBeTruthy();
-          resolve();
-        });
-      }),
-      new Promise(async (resolve, reject) => {
-        clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
-          expect(proposal.peer.metadata).toEqual(TEST_APP_METADATA_A);
-          expect(proposal.stateParams.chains).toEqual(TEST_SESSION_CHAINS);
-          expect(proposal.ruleParams.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
-          const topic = await clientB.respond({
-            approved: true,
-            proposal,
-            response: {
-              app: TEST_APP_METADATA_B,
-              state: TEST_SESSION_STATE,
-            },
+          clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
+            console.log("Session proposed"); // eslint-disable-line no-console
+            expect(proposal.peer.metadata).toEqual(TEST_APP_METADATA_A);
+            expect(proposal.stateParams.chains).toEqual(TEST_SESSION_CHAINS);
+            expect(proposal.ruleParams.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
+            const topic = await clientB.respond({
+              approved: true,
+              proposal,
+              response: {
+                app: TEST_APP_METADATA_B,
+                state: TEST_SESSION_STATE,
+              },
+            });
+            if (typeof topic === "undefined") {
+              throw new Error("topic is undefined");
+            }
+            const session = await clientB.session.get(topic);
+            expect(session).toBeTruthy();
+            expect(session.state.accounts).toEqual(TEST_SESSION_STATE.accounts);
+            expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
+            resolve();
           });
-          if (typeof topic === "undefined") {
-            throw new Error("topic is undefined");
-          }
-          const session = await clientB.connection.get(topic);
-          expect(session).toBeTruthy();
-          expect(session.state).toEqual(TEST_SESSION_STATE);
-          expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
         });
       }),
       new Promise(async (resolve, reject) => {
@@ -82,7 +83,7 @@ describe("Client", () => {
           jsonrpc: TEST_SESSION_JSONRPC,
         });
         expect(session).toBeTruthy();
-        expect(session.state).toEqual(TEST_SESSION_STATE);
+        expect(session.state.accounts).toEqual(TEST_SESSION_STATE.accounts);
         expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
       }),
     ]);

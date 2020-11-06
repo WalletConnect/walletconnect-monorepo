@@ -381,36 +381,43 @@ export class Connection extends IConnection {
 
   // ---------- Private ----------------------------------------------- //
 
+  private onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
+    if (isJsonRpcRequest(event.payload) && event.payload.method === CONNECTION_JSONRPC.respond) {
+      this.onResponse(event);
+    } else {
+      this.onAcknowledge(event);
+    }
+  }
+  private onPendingStatusEvent(
+    event:
+      | SubscriptionEvent.Created<ConnectionTypes.Pending>
+      | SubscriptionEvent.Updated<ConnectionTypes.Pending>,
+  ) {
+    if (isConnectionResponded(event.data)) {
+      const pending = event.data;
+      this.events.emit(CONNECTION_EVENTS.responded, pending);
+      const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
+      this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+    } else {
+      const pending = event.data;
+      this.events.emit(CONNECTION_EVENTS.proposed, pending);
+    }
+  }
+
   private registerEventListeners(): void {
     // Pending Subscription Events
-    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      if (
-        isJsonRpcRequest(payloadEvent.payload) &&
-        payloadEvent.payload.method === CONNECTION_JSONRPC.respond
-      ) {
-        this.onResponse(payloadEvent);
-      } else {
-        this.onAcknowledge(payloadEvent);
-      }
-    });
+    this.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
+      this.onPendingPayloadEvent(payloadEvent),
+    );
     this.pending.on(
       SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Pending>) => {
-        const pending = createdEvent.data;
-        this.events.emit(CONNECTION_EVENTS.proposed, pending);
-      },
+      (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Pending>) =>
+        this.onPendingStatusEvent(createdEvent),
     );
-
     this.pending.on(
       SUBSCRIPTION_EVENTS.updated,
-      (updatedEvent: SubscriptionEvent.Updated<ConnectionTypes.Pending>) => {
-        if (isConnectionResponded(updatedEvent.data)) {
-          const pending = updatedEvent.data;
-          this.events.emit(CONNECTION_EVENTS.responded, pending);
-          const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
-          this.client.relay.publish(pending.topic, request, { relay: pending.relay });
-        }
-      },
+      (updatedEvent: SubscriptionEvent.Updated<ConnectionTypes.Pending>) =>
+        this.onPendingStatusEvent(updatedEvent),
     );
     // Settled Subscription Events
     this.settled.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
