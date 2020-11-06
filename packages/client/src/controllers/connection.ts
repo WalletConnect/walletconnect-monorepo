@@ -388,6 +388,7 @@ export class Connection extends IConnection {
       this.onAcknowledge(event);
     }
   }
+
   private onPendingStatusEvent(
     event:
       | SubscriptionEvent.Created<ConnectionTypes.Pending>

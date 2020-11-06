@@ -483,6 +483,7 @@ export class Session extends ISession {
       this.onAcknowledge(event);
     }
   }
+
   private onPendingStatusEvent(
     event:
       | SubscriptionEvent.Created<SessionTypes.Pending>

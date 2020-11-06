@@ -31,13 +31,13 @@ export function parsePublishRequest(request: JsonRpcRequest): RelayTypes.Publish
 }
 
 export function isUnsubscribeParams(params: any): params is RelayTypes.UnsubscribeParams {
-  return "topic" in params;
+  return "id" in params;
 }
 
 export function parseUnsubscribeRequest(request: JsonRpcRequest): RelayTypes.UnsubscribeParams {
   const params = request.params as RelayTypes.UnsubscribeParams;
 
-  assertType(params, "topic");
+  assertType(params, "id");
 
   return params;
 }
