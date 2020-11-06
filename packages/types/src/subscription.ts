@@ -9,6 +9,7 @@ export interface SubscriptionOptions extends RelayTypes.SubscribeOptions {
   relay: RelayTypes.ProtocolOptions;
 }
 export interface SubscriptionParams<Data> {
+  id: string;
   topic: string;
   data: Data;
   opts: SubscriptionOptions;

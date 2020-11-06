@@ -1,4 +1,4 @@
-import { formatLoggerContext } from "@walletconnect/utils";
+import { formatLoggerContext, generateRandomBytes32 } from "@walletconnect/utils";
 import { Logger } from "pino";
 
 import { RedisService } from "./redis";
@@ -15,9 +15,11 @@ export class SubscriptionService {
     this.initialize();
   }
 
-  public setSubscriber(subscriber: Subscription): void {
+  public setSubscriber(subscriber: Omit<Subscription, "id">): string {
+    const id = generateRandomBytes32();
     this.logger.debug({ type: "method", method: "setSubscriber", topic: subscriber.topic });
-    this.subs.push(subscriber);
+    this.subs.push({ ...subscriber, id });
+    return id;
   }
 
   public getSubscribers(topic: string, senderSocketId: string): Subscription[] {
@@ -26,11 +28,14 @@ export class SubscriptionService {
     return subs;
   }
 
-  public removeSubscriber(subscriber: Subscription): void {
-    this.logger.debug({ type: "method", method: "removeSubscriber", topic: subscriber.topic });
-    this.subs = this.subs.filter(
-      sub => sub.topic !== subscriber.topic && sub.socketId !== subscriber.socketId,
-    );
+  public removeSubscriber(id: string): void {
+    this.logger.debug({ type: "method", method: "removeSubscriber", id });
+    this.subs = this.subs.filter(sub => sub.id !== id);
+  }
+
+  public removeLegacySubscriber(topic: string, socketId: string): void {
+    this.logger.debug({ type: "method", method: "removeLegacySubscriber", topic });
+    this.subs = this.subs.filter(sub => sub.topic !== topic && sub.socketId !== socketId);
   }
 
   // ---------- Private ----------------------------------------------- //

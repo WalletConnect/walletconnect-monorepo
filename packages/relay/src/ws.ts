@@ -1,14 +1,14 @@
 import { Server } from "http";
 import WebSocket from "ws";
 import * as encUtils from "enc-utils";
-import { formatLoggerContext } from "@walletconnect/utils";
+import { formatLoggerContext, generateRandomBytes32 } from "@walletconnect/utils";
 import { Logger } from "pino";
 
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
-import { isLegacySocketMessage, uuid } from "./utils";
+import { isLegacySocketMessage } from "./utils";
 import { safeJsonParse } from "safe-json-utils";
 import { isJsonRpcRequest } from "rpc-json-utils";
 import { LegacyService } from "./legacy";
@@ -43,7 +43,7 @@ export class WebSocketService {
     this.logger.trace({ type: "init" });
 
     this.server.on("connection", (socket: Socket) => {
-      const socketId = uuid();
+      const socketId = generateRandomBytes32();
       this.logger.info("New Socket Connected");
       this.logger.debug({ type: "event", event: "connection", socketId });
       this.sockets.set(socketId, socket);

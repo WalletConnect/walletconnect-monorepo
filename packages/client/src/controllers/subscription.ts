@@ -12,6 +12,7 @@ import { mapToObj, objToMap, formatLoggerContext } from "@walletconnect/utils";
 import { JsonRpcPayload } from "rpc-json-utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
+import { timeStamp } from "console";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
@@ -47,30 +48,36 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     if (this.subscriptions.has(topic)) {
       this.update(topic, data);
     } else {
+      this.logger.info("Setting subscription");
+      this.logger.debug({ type: "method", method: "set", topic, data, opts });
       if (this.encrypted && typeof opts.decrypt === "undefined") {
-        const errorMessage = `Decrypt params required for ${this.logger.bindings().context}`;
+        const errorMessage = `Decrypt params required for ${this.getSubscriptionContext()}`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
-      this.subscriptions.set(topic, { topic, data, opts });
-      this.events.emit(SUBSCRIPTION_EVENTS.created, {
-        topic,
-        data,
-      } as SubscriptionEvent.Created<Data>);
-      this.client.relay.subscribe(
+      const id = await this.client.relay.subscribe(
         topic,
         (payload: JsonRpcPayload) => this.onMessage({ topic, payload }),
         opts,
       );
+      this.subscriptions.set(topic, { id, topic, data, opts });
+      this.events.emit(SUBSCRIPTION_EVENTS.created, {
+        topic,
+        data,
+      } as SubscriptionEvent.Created<Data>);
     }
   }
 
   public async get(topic: string): Promise<Data> {
+    this.logger.info("Getting subscription");
+    this.logger.debug({ type: "method", method: "get", topic });
     const subscription = await this.getSubscription(topic);
     return subscription.data;
   }
 
   public async update(topic: string, update: Partial<Data>): Promise<void> {
+    this.logger.info("Updating subscription");
+    this.logger.debug({ type: "method", method: "update", topic, update });
     const subscription = await this.getSubscription(topic);
     const data = { ...subscription.data, ...update };
     this.subscriptions.set(topic, {
@@ -84,12 +91,13 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async delete(topic: string, reason: string): Promise<void> {
+    this.logger.info("Deleting subscription");
+    this.logger.debug({ type: "method", method: "delete", topic, reason });
     const subscription = await this.getSubscription(topic);
-    this.client.relay.unsubscribe(
-      topic,
-      (payload: JsonRpcPayload) => this.onMessage({ topic, payload }),
-      { relay: subscription.opts.relay, decrypt: subscription.opts.decrypt },
-    );
+    this.client.relay.unsubscribe(subscription.id, {
+      relay: subscription.opts.relay,
+      decrypt: subscription.opts.decrypt,
+    });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
       topic,
       data: subscription.data,
@@ -117,10 +125,23 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   // ---------- Private ----------------------------------------------- //
 
+  private getNestedContext(length: number) {
+    const nestedContext = this.logger.bindings().context.split("/");
+    return nestedContext.slice(nestedContext.length - length, nestedContext.length);
+  }
+
+  private getSubscriptionContext() {
+    return this.getNestedContext(2).join(" ");
+  }
+
+  private getStoreKey() {
+    return this.getNestedContext(2).join(":");
+  }
+
   private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
-      const errorMessage = `No matching ${this.logger.bindings().context} with topic: ${topic}`;
+      const errorMessage = `No matching ${this.getSubscriptionContext()} with topic: ${topic}`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -128,28 +149,35 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private async persist() {
-    await this.client.store.set<SubscriptionEntries<Data>>(
-      `${this.logger.bindings().context}`,
-      this.entries,
-    );
+    await this.client.store.set<SubscriptionEntries<Data>>(this.getStoreKey(), this.entries);
   }
 
   private async restore() {
-    const subscriptions = await this.client.store.get<SubscriptionEntries<Data>>(
-      `${this.logger.bindings().context}`,
-    );
-    if (typeof subscriptions === "undefined") return;
-    if (this.subscriptions.size) {
-      throw new Error(`Restore will override already set ${this.logger.bindings().context}`);
-    }
-    this.subscriptions = objToMap<SubscriptionParams<Data>>(subscriptions);
-    for (const [_, subscription] of this.subscriptions) {
-      const { topic, opts } = subscription;
-      this.client.relay.subscribe(
-        topic,
-        (payload: JsonRpcPayload) => this.onMessage({ topic, payload }),
-        opts,
+    try {
+      const subscriptions = await this.client.store.get<SubscriptionEntries<Data>>(
+        this.getStoreKey(),
       );
+      if (typeof subscriptions === "undefined") return;
+      if (this.subscriptions.size) {
+        const errorMessage = `Restore will override already set ${this.getSubscriptionContext()}`;
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      this.subscriptions = objToMap<SubscriptionParams<Data>>(subscriptions);
+      for (const [_, subscription] of this.subscriptions) {
+        const { topic, opts } = subscription;
+        const id = await this.client.relay.subscribe(
+          topic,
+          (payload: JsonRpcPayload) => this.onMessage({ topic, payload }),
+          opts,
+        );
+        this.subscriptions.set(topic, { ...subscription, id });
+      }
+      this.logger.info(`Successfully restored subscriptions for ${this.getSubscriptionContext()}`);
+      this.logger.debug({ type: "method", method: "restore", subscriptions: this.entries });
+    } catch (e) {
+      this.logger.info(`Failed to restore subscriptions for ${this.getSubscriptionContext()}`);
+      this.logger.error(e);
     }
   }
 

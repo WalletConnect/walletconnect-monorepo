@@ -108,7 +108,7 @@ export class JsonRpcService {
         subscribers.map((subscriber: Subscription) => {
           const payload = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
             BRIDGE_JSONRPC.subscription,
-            request.params,
+            { id: subscriber.id, data: { topic: params.topic, message: params.message } },
           );
           this.socketSend(subscriber.socketId, payload);
         }),
@@ -125,27 +125,25 @@ export class JsonRpcService {
     const params = parseSubscribeRequest(request);
     this.logger.debug({ type: "method", method: "onSubscribeRequest", params });
 
-    this.subscription.setSubscriber({ topic: params.topic, socketId });
+    const id = this.subscription.setSubscriber({ topic: params.topic, socketId });
 
-    await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
+    await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
 
-    await this.pushPendingPublished(socketId, params.topic);
+    await this.pushPendingPublished({ id, topic: params.topic, socketId });
   }
+
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
     this.logger.info(`Unsubscribe Request Received`);
     const params = parseUnsubscribeRequest(request);
     this.logger.debug({ type: "method", method: "onUnsubscribeRequest", params });
-    const topic = params.topic;
 
-    const subscriber = { topic, socketId };
-
-    this.subscription.removeSubscriber(subscriber);
+    this.subscription.removeSubscriber(params.id);
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
 
-  private async pushPendingPublished(socketId: string, topic: string) {
-    const pending = await this.redis.getPublished(topic);
+  private async pushPendingPublished(subscription: Subscription) {
+    const pending = await this.redis.getPublished(subscription.topic);
     this.logger.debug({ type: "method", method: "pushPendingPublished", pending });
 
     if (pending && pending.length) {
@@ -154,11 +152,14 @@ export class JsonRpcService {
           const request = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
             BRIDGE_JSONRPC.subscription,
             {
-              topic,
-              message,
+              id: subscription.id,
+              data: {
+                topic: subscription.topic,
+                message,
+              },
             },
           );
-          this.socketSend(socketId, request);
+          this.socketSend(subscription.socketId, request);
         }),
       );
     }
@@ -174,8 +175,7 @@ export class JsonRpcService {
       throw new Error("socket missing or invalid");
     }
     if (socket.readyState === 1) {
-      const message = safeJsonStringify(payload);
-      socket.send(message);
+      socket.send(safeJsonStringify(payload));
       this.logger.info("Outgoing JSON-RPC Payload");
       this.logger.debug({ type: "payload", direction: "outgoing", payload });
     } else {

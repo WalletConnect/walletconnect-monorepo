@@ -32,12 +32,15 @@ export declare namespace RelayTypes {
   }
 
   export interface SubscriptionParams {
-    topic: string;
-    message: string;
+    id: string;
+    data: {
+      topic: string;
+      message: string;
+    };
   }
 
   export interface UnsubscribeParams {
-    topic: string;
+    id: string;
   }
 
   export interface PublishOptions {
@@ -71,11 +74,7 @@ export abstract class IRelay extends IEvents {
     topic: string,
     listener: (payload: JsonRpcPayload) => void,
     opts?: RelayTypes.SubscribeOptions,
-  ): Promise<void>;
+  ): Promise<string>;
 
-  public abstract unsubscribe(
-    topic: string,
-    listener: (payload: JsonRpcPayload) => void,
-    opts?: RelayTypes.SubscribeOptions,
-  ): Promise<void>;
+  public abstract unsubscribe(id: string, opts?: RelayTypes.SubscribeOptions): Promise<void>;
 }
