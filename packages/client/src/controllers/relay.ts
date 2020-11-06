@@ -15,7 +15,12 @@ import {
 } from "rpc-json-utils";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
-import { RELAY_CONTEXT, RELAY_DEFAULT_PROTOCOL, RELAY_DEFAULT_TTL } from "../constants";
+import {
+  RELAY_CONTEXT,
+  RELAY_DEFAULT_PROTOCOL,
+  RELAY_DEFAULT_RPC_URL,
+  RELAY_DEFAULT_TTL,
+} from "../constants";
 import { WSProvider } from "../providers";
 
 export class Relay extends IRelay {
@@ -32,7 +37,7 @@ export class Relay extends IRelay {
     });
 
     this.provider = this.setProvider(provider);
-    this.provider.on("request", this.onRequest);
+    this.provider.on("request", (request: JsonRpcRequest) => this.onRequest(request));
   }
 
   public async init(): Promise<void> {
@@ -161,9 +166,11 @@ export class Relay extends IRelay {
   }
 
   private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
-    const rpcUrl = typeof provider === "string" ? provider : "wss://relay.walletconnect.org";
+    this.logger.info(`Setting Relay Provider`);
+    this.logger.debug({ type: "method", method: "setProvider", provider: provider?.toString() });
+    const rpcUrl = typeof provider === "string" ? provider : RELAY_DEFAULT_RPC_URL;
     return typeof provider !== "string" && typeof provider !== "undefined"
       ? provider
-      : new WSProvider(rpcUrl);
+      : new WSProvider(rpcUrl, this.logger);
   }
 }

@@ -18,6 +18,8 @@ import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
   isJsonRpcRequest,
+  JsonRpcResponse,
+  isJsonRpcError,
 } from "rpc-json-utils";
 
 import { Subscription } from "./subscription";
@@ -78,6 +80,8 @@ export class Session extends ISession {
   }
 
   public async create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
+    this.logger.info("Create Session");
+    this.logger.debug({ type: "method", method: "create", params });
     return new Promise(async (resolve, reject) => {
       const pending = await this.propose(params);
       this.pending.on(
@@ -101,6 +105,8 @@ export class Session extends ISession {
   }
 
   public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
+    this.logger.info("Respond Session");
+    this.logger.debug({ type: "method", method: "respond", params });
     const { approved, metadata, proposal } = params;
     const { relay, peer, ruleParams } = proposal;
     const keyPair = generateKeyPair();
@@ -191,6 +197,8 @@ export class Session extends ISession {
   }
 
   public async update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
+    this.logger.info("Update Session");
+    this.logger.debug({ type: "method", method: "update", params });
     const session = await this.settled.get(params.topic);
     const update = await this.handleUpdate(session, params);
     const request = formatJsonRpcRequest(SESSION_JSONRPC.update, update);
@@ -205,6 +213,8 @@ export class Session extends ISession {
   }
 
   public async delete(params: SessionTypes.DeleteParams): Promise<void> {
+    this.logger.info("Delete Session");
+    this.logger.debug({ type: "method", method: "delete", params });
     this.settled.delete(params.topic, params.reason);
   }
 
@@ -223,6 +233,8 @@ export class Session extends ISession {
   // ---------- Protected ----------------------------------------------- //
 
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
+    this.logger.info("Propose Session");
+    this.logger.debug({ type: "method", method: "propose", params });
     const connection = await this.client.connection.settled.get(params.connection.topic);
     const keyPair = generateKeyPair();
     const proposal: SessionTypes.Proposal = {
@@ -262,6 +274,8 @@ export class Session extends ISession {
   }
 
   protected async settle(params: SessionTypes.SettleParams): Promise<SessionTypes.Settled> {
+    this.logger.info("Settle Session");
+    this.logger.debug({ type: "method", method: "settle", params });
     const sharedKey = deriveSharedKey(params.keyPair.privateKey, params.peer.publicKey);
     const session: SessionTypes.Settled = {
       relay: params.relay,
@@ -287,6 +301,8 @@ export class Session extends ISession {
 
   protected async onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
+    this.logger.info("Receiving Session response");
+    this.logger.debug({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
     const pending = await this.pending.get(topic);
     const connection = await this.client.connection.settled.get(pending.topic);
@@ -355,11 +371,22 @@ export class Session extends ISession {
   }
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
+    const { topic, payload } = payloadEvent;
+    this.logger.info("Receiving Session acknowledge");
+    this.logger.debug({ type: "method", method: "onAcknowledge", topic, payload });
+    const response = payload as JsonRpcResponse;
+    const pending = await this.pending.get(topic);
+    if (!isSessionResponded(pending)) return;
+    if (isJsonRpcError(response) && !isSessionFailed(pending.outcome)) {
+      await this.settled.delete(pending.outcome.topic, response.error.message);
+    }
     await this.pending.delete(payloadEvent.topic, SESSION_REASONS.acknowledged);
   }
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
-    const payload = payloadEvent.payload as JsonRpcPayload;
+    const { topic, payload } = payloadEvent;
+    this.logger.info("Receiving Session message");
+    this.logger.debug({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const session = await this.settled.get(payloadEvent.topic);
@@ -393,6 +420,9 @@ export class Session extends ISession {
   }
 
   protected async onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
+    const { topic, payload } = payloadEvent;
+    this.logger.info("Receiving Session update");
+    this.logger.debug({ type: "method", method: "onUpdate", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
     const session = await this.settled.get(payloadEvent.topic);
     try {
