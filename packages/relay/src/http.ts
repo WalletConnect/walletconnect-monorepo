@@ -33,7 +33,7 @@ export class HttpService {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.logger.trace({ type: "init" });
+    this.logger.trace(`Initialized`);
 
     this.app.register(Helmet);
 

@@ -29,6 +29,7 @@ export declare namespace SubscriptionEvent {
   export interface Updated<T> {
     topic: string;
     data: T;
+    update: Partial<T>;
   }
 
   export interface Deleted<T> {

@@ -86,13 +86,13 @@ export class JsonRpcService {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.logger.trace({ type: "init" });
+    this.logger.trace(`Initialized`);
   }
 
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
-    this.logger.info(`Publish Request Received`);
     const params = parsePublishRequest(request);
-    this.logger.debug({ type: "method", method: "onPublishRequest", params });
+    this.logger.debug(`Publish Request Received`);
+    this.logger.trace({ type: "method", method: "onPublishRequest", params });
     const subscribers = this.subscription.getSubscribers(params.topic, socketId);
     this.logger.debug({
       type: "method",
@@ -121,9 +121,9 @@ export class JsonRpcService {
   }
 
   private async onSubscribeRequest(socketId: string, request: JsonRpcRequest) {
-    this.logger.info(`Subscribe Request Received`);
     const params = parseSubscribeRequest(request);
-    this.logger.debug({ type: "method", method: "onSubscribeRequest", params });
+    this.logger.debug(`Subscribe Request Received`);
+    this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
 
     const id = this.subscription.setSubscriber({ topic: params.topic, socketId });
 
@@ -133,9 +133,9 @@ export class JsonRpcService {
   }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
-    this.logger.info(`Unsubscribe Request Received`);
     const params = parseUnsubscribeRequest(request);
-    this.logger.debug({ type: "method", method: "onUnsubscribeRequest", params });
+    this.logger.debug(`Unsubscribe Request Received`);
+    this.logger.trace({ type: "method", method: "onUnsubscribeRequest", params });
 
     this.subscription.removeSubscriber(params.id);
 
@@ -144,7 +144,8 @@ export class JsonRpcService {
 
   private async pushPendingPublished(subscription: Subscription) {
     const pending = await this.redis.getPublished(subscription.topic);
-    this.logger.debug({ type: "method", method: "pushPendingPublished", pending });
+    this.logger.debug(`Pushing Pending Published`);
+    this.logger.trace({ type: "method", method: "pushPendingPublished", pending });
 
     if (pending && pending.length) {
       await Promise.all(

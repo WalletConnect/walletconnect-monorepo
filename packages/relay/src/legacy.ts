@@ -51,7 +51,7 @@ export class LegacyService {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.logger.trace({ type: "init" });
+    this.logger.trace(`Initialized`);
   }
 
   private async onSubscribeRequest(socketId: string, socketMessage: LegacySocketMessage) {
@@ -84,7 +84,6 @@ export class LegacyService {
 
   private async pushPendingPublished(socketId: string, topic: string) {
     const pending = await this.redis.getLegacyPublished(topic);
-    this.logger.debug({ type: "method", method: "pushPendingPublished", pending });
 
     if (pending && pending.length) {
       await Promise.all(

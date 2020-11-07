@@ -40,7 +40,7 @@ export class WebSocketService {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.logger.trace({ type: "init" });
+    this.logger.trace(`Initialized`);
 
     this.server.on("connection", (socket: Socket) => {
       const socketId = generateRandomBytes32();
@@ -86,7 +86,7 @@ export class WebSocketService {
         if (!e.message.includes("Invalid WebSocket frame")) {
           throw e;
         }
-        this.logger.warn({ type: e.name, message: e.message });
+        this.logger.error(e);
       });
     });
 

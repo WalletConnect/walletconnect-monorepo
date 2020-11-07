@@ -84,14 +84,14 @@ export class Client extends IClient {
   }
 
   public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
-    this.logger.info(`Connecting Application`);
-    this.logger.debug({ type: "method", method: "connect", params });
+    this.logger.debug(`Connecting Application`);
+    this.logger.trace({ type: "method", method: "connect", params });
     try {
       const connection =
         typeof params.connection === "undefined"
           ? await this.connection.create()
           : await this.connection.get(params.connection);
-      this.logger.debug({ type: "method", method: "connect", connection });
+      this.logger.trace({ type: "method", method: "connect", connection });
       const session = await this.session.create({
         signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, params: { topic: connection.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
@@ -109,21 +109,21 @@ export class Client extends IClient {
           jsonrpc: params.jsonrpc,
         },
       });
-      this.logger.info(`Application Connection Successful`);
-      this.logger.debug({ type: "method", method: "connect", session });
+      this.logger.debug(`Application Connection Successful`);
+      this.logger.trace({ type: "method", method: "connect", session });
       return session;
-    } catch (error) {
-      this.logger.info(`Application Connection Failure`);
-      this.logger.error(error);
-      throw error;
+    } catch (e) {
+      this.logger.debug(`Application Connection Failure`);
+      this.logger.error(e);
+      throw e;
     }
   }
 
   public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
     if (typeof params.proposal === "string") {
       const uriParams = parseUri(params.proposal);
-      this.logger.info(`Responding Connection Proposal`);
-      this.logger.debug({ type: "method", method: "respond", params, uriParams });
+      this.logger.debug(`Responding Connection Proposal`);
+      this.logger.trace({ type: "method", method: "respond", params, uriParams });
       const proposal: ConnectionTypes.Proposal = {
         topic: uriParams.topic,
         relay: uriParams.relay,
@@ -141,16 +141,16 @@ export class Client extends IClient {
       });
       if (!isConnectionResponded(pending)) return;
       if (isConnectionFailed(pending.outcome)) {
-        this.logger.info(`Connection Proposal Response Failure`);
-        this.logger.warn({ type: "method", method: "respond", outcome: pending.outcome });
+        this.logger.debug(`Connection Proposal Response Failure`);
+        this.logger.trace({ type: "method", method: "respond", outcome: pending.outcome });
         return;
       }
-      this.logger.info(`Connection Proposal Response Success`);
-      this.logger.debug({ type: "method", method: "respond", pending });
+      this.logger.debug(`Connection Proposal Response Success`);
+      this.logger.trace({ type: "method", method: "respond", pending });
       return pending.outcome.topic;
     }
-    this.logger.info(`Responding Session Proposal`);
-    this.logger.debug({ type: "method", method: "respond", params });
+    this.logger.debug(`Responding Session Proposal`);
+    this.logger.trace({ type: "method", method: "respond", params });
     if (typeof params.response === "undefined") {
       const errorMessage = "Response is required for session proposals";
       this.logger.error(errorMessage);
@@ -164,17 +164,18 @@ export class Client extends IClient {
     });
     if (!isSessionResponded(pending)) return;
     if (isSessionFailed(pending.outcome)) {
-      this.logger.info(`Session Proposal Response Failure`);
-      this.logger.warn({ type: "method", method: "respond", outcome: pending.outcome });
+      this.logger.debug(`Session Proposal Response Failure`);
+      this.logger.trace({ type: "method", method: "respond", outcome: pending.outcome });
       return;
     }
-    this.logger.info(`Session Proposal Response Success`);
-    this.logger.debug({ type: "method", method: "respond", pending });
+    this.logger.debug(`Session Proposal Response Success`);
+    this.logger.trace({ type: "method", method: "respond", pending });
     return pending.outcome.topic;
   }
 
   public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
-    this.logger.debug({ type: "method", method: "disconnect", params });
+    this.logger.debug(`Disconnecting Application`);
+    this.logger.trace({ type: "method", method: "disconnect", params });
     await this.session.delete(params);
   }
 
@@ -211,7 +212,7 @@ export class Client extends IClient {
   // ---------- Private ----------------------------------------------- //
 
   private async initialize(): Promise<any> {
-    this.logger.trace({ type: "init" });
+    this.logger.trace(`Initialized`);
     try {
       await this.relay.init();
       await this.store.init();
@@ -219,10 +220,10 @@ export class Client extends IClient {
       await this.session.init();
       this.registerEventListeners();
       this.logger.info(`Client initilization success`);
-    } catch (error) {
+    } catch (e) {
       this.logger.info(`Client initilization failure`);
-      this.logger.error(error);
-      throw error;
+      this.logger.error(e);
+      throw e;
     }
   }
 

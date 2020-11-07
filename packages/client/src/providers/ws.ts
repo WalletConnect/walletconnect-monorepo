@@ -32,13 +32,13 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   public async connect(rpcUrl = this.rpcUrl): Promise<void> {
-    this.logger.info("Connecting JSON-RPC Provider WebSocket");
-    this.logger.debug({ type: "method", method: "connect", rpcUrl });
+    this.logger.debug("Connecting JSON-RPC Provider WebSocket");
+    this.logger.trace({ type: "method", method: "connect", rpcUrl });
     return new Promise((resolve, reject) => {
       this.rpcUrl = rpcUrl;
       const socket = new WS(rpcUrl) as WebSocket;
       socket.onopen = () => {
-        this.logger.info("Successfully connected JSON-RPC Provider WebSocket");
+        this.logger.trace("Successfully connected JSON-RPC Provider WebSocket");
         this.logger.debug({ type: "event", event: "onopen" });
         this.events.emit("connect");
         socket.onmessage = (event: MessageEvent) => this.onMessage(event);
@@ -48,7 +48,7 @@ export class WSProvider extends IJsonRpcProvider {
       };
 
       socket.onerror = (event: Event) => {
-        this.logger.info("Failed to connect JSON-RPC Provider WebSocket");
+        this.logger.trace("Failed to connect JSON-RPC Provider WebSocket");
         this.logger.debug({ type: "event", event: "onerror" });
         this.events.emit("error", event);
         reject(event);
@@ -57,8 +57,8 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   public async disconnect(): Promise<void> {
-    this.logger.info("Disconnecting JSON-RPC Provider WebSocket");
-    this.logger.debug({ type: "method", method: "disconnect" });
+    this.logger.debug("Disconnecting JSON-RPC Provider WebSocket");
+    this.logger.trace({ type: "method", method: "disconnect" });
     if (typeof this.socket === "undefined") {
       throw new Error("Socket is not connected");
     }
@@ -98,7 +98,7 @@ export class WSProvider extends IJsonRpcProvider {
   // ---------- Private ----------------------------------------------- //
 
   private onClose(e: CloseEvent) {
-    this.logger.info("Closed JSON-RPC Provider WebSocket");
+    this.logger.trace("Closed JSON-RPC Provider WebSocket");
     this.logger.debug({ type: "event", event: "onclose" });
     this.events.emit("disconnect");
     this.socket = undefined;
@@ -115,6 +115,6 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   private async initialize(): Promise<void> {
-    this.logger.trace({ type: "init" });
+    this.logger.trace(`Initialized`);
   }
 }

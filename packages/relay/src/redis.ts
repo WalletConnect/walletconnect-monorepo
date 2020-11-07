@@ -24,7 +24,8 @@ export class RedisService {
   }
 
   public async setPublished(params: RelayTypes.PublishParams) {
-    this.logger.debug({ type: "method", method: "setPublished", params });
+    this.logger.debug("Setting published");
+    this.logger.trace({ type: "method", method: "setPublished", params });
     await this.client.lpushAsync(`request:${params.topic}`, params.message);
     // TODO: need to handle ttl
     // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
@@ -35,7 +36,8 @@ export class RedisService {
       if (raw) {
         const data: string[] = raw.map((message: string) => message);
         this.client.del(`request:${topic}`);
-        this.logger.debug({ type: "method", method: "getPublished", topic, data });
+        this.logger.debug("Getting published");
+        this.logger.trace({ type: "method", method: "getPublished", topic, data });
         return data;
       }
       return;
@@ -43,7 +45,8 @@ export class RedisService {
   }
 
   public async setLegacyPublished(socketMessage: LegacySocketMessage) {
-    this.logger.debug({ type: "method", method: "setLegacyPublished", socketMessage });
+    this.logger.debug("Setting legacy published");
+    this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
     await this.client.lpushAsync(`request:${socketMessage.topic}`, socketMessage.payload);
     // TODO: need to handle ttl
     // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
@@ -54,7 +57,8 @@ export class RedisService {
       if (raw) {
         const data: string[] = raw.map((message: string) => message);
         this.client.del(`request:${topic}`);
-        this.logger.debug({ type: "method", method: "getLegacyPublished", topic, data });
+        this.logger.debug("Getting legacy published");
+        this.logger.trace({ type: "method", method: "getLegacyPublished", topic, data });
         return data;
       }
       return;
@@ -62,8 +66,8 @@ export class RedisService {
   }
 
   public setNotification(notification: Notification) {
-    this.logger.info(`Notification Request Received`);
-    this.logger.debug({ type: "method", method: "setNotification", notification });
+    this.logger.debug(`Setting Notification`);
+    this.logger.trace({ type: "method", method: "setNotification", notification });
     return this.client.lpushAsync(
       `notification:${notification.topic}`,
       safeJsonStringify(notification),
@@ -74,7 +78,8 @@ export class RedisService {
     return this.client.lrangeAsync(`notification:${topic}`, 0, -1).then((raw: any) => {
       if (raw) {
         const data = raw.map((item: string) => safeJsonParse(item));
-        this.logger.debug({ type: "method", method: "getNotification", topic, data });
+        this.logger.debug(`Getting Notification`);
+        this.logger.trace({ type: "method", method: "getNotification", topic, data });
         return data;
       }
       return;
@@ -84,6 +89,6 @@ export class RedisService {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.logger.trace({ type: "init" });
+    this.logger.trace(`Initialized`);
   }
 }
