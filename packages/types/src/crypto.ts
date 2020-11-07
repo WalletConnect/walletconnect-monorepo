@@ -16,6 +16,7 @@ export interface KeyParams {
 
 export interface EncryptParams extends KeyParams {
   message: string;
+  iv?: string;
 }
 
 export interface DecryptParams extends KeyParams {

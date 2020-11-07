@@ -45,7 +45,9 @@ export function encodeEncryptedMessage(encryptedBuffer: EncryptedBuffer): string
 
 export async function encrypt(params: EncryptParams): Promise<string> {
   const { publicKey, key, macKey } = await getEciesKeys(params.sharedKey, params.publicKey);
-  const iv = eccryptoJS.randomBytes(eccryptoJS.IV_LENGTH);
+  const iv = params.iv
+    ? encUtils.hexToBuffer(params.iv)
+    : eccryptoJS.randomBytes(eccryptoJS.IV_LENGTH);
   const msg = encUtils.utf8ToBuffer(params.message);
   const data = await eccryptoJS.aesCbcEncrypt(iv, key, msg);
   const dataToMac = encUtils.concatBuffers(iv, publicKey, data);
@@ -54,13 +56,14 @@ export async function encrypt(params: EncryptParams): Promise<string> {
 }
 
 export function decodeEncryptedMessage(encrypted: string): EncryptedBuffer {
+  const buffer = encUtils.hexToBuffer(encrypted);
   const slice0 = eccryptoJS.LENGTH_0;
   const slice1 = slice0 + eccryptoJS.IV_LENGTH;
   const slice2 = slice1 + eccryptoJS.KEY_LENGTH;
   return {
-    iv: encUtils.hexToBuffer(encrypted.slice(slice0, slice1)),
-    mac: encUtils.hexToBuffer(encrypted.slice(slice1, slice2)),
-    data: encUtils.hexToBuffer(encrypted.slice(slice2)),
+    iv: buffer.slice(slice0, slice1),
+    mac: buffer.slice(slice1, slice2),
+    data: buffer.slice(slice2),
   };
 }
 
