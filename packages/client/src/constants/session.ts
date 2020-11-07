@@ -11,7 +11,11 @@ export const SESSION_JSONRPC_BEFORE_SETTLEMENT = [SESSION_JSONRPC.propose, SESSI
 
 export const SESSION_JSONRPC_AFTER_SETTLEMENT = [SESSION_JSONRPC.update, SESSION_JSONRPC.delete];
 
+export const SETTLED_SESSION_JSONRPC = [...SESSION_JSONRPC_AFTER_SETTLEMENT];
+
 export const SESSION_CONTEXT = "session";
+
+export const SESSION_SIGNAL_TYPE_CONNECTION = "connection" as SessionTypes.SignalTypeConnection;
 
 export const SESSION_STATUS = {
   proposed: "proposed" as SessionTypes.ProposedStatus,

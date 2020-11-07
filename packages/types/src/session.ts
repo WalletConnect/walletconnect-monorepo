@@ -1,10 +1,11 @@
 import { ISequence } from "./sequence";
 import { KeyPair } from "./crypto";
 import { RelayTypes } from "./relay";
+import { ConnectionTypes } from "./connection";
 
 export declare namespace SessionTypes {
   export interface ProposeParams {
-    connection: { topic: string };
+    signal: { type: SignalTypeConnection; topic: string };
     relay: RelayTypes.ProtocolOptions;
     stateParams: StateParams;
     ruleParams: RuleParams;
@@ -12,6 +13,31 @@ export declare namespace SessionTypes {
   }
 
   export type CreateParams = ProposeParams;
+
+  export type SignalTypeConnection = "connection";
+
+  export type SignalType = SignalTypeConnection;
+
+  export interface SignalParamsConnection {
+    topic: string;
+    keyPair: KeyPair;
+    sharedKey: string;
+    peer: ConnectionTypes.Peer;
+  }
+
+  export type SignalParams = SignalParamsConnection;
+
+  export interface BaseSignal {
+    type: SignalType;
+    params: SignalParams;
+  }
+
+  export interface SignalConnection extends BaseSignal {
+    type: SignalTypeConnection;
+    params: SignalParamsConnection;
+  }
+
+  export type Signal = SignalConnection;
 
   export interface Proposal {
     topic: string;
@@ -31,6 +57,7 @@ export declare namespace SessionTypes {
     status: PendingStatus;
     topic: string;
     relay: RelayTypes.ProtocolOptions;
+    signal: Signal;
     keyPair: KeyPair;
     proposal: Proposal;
   }

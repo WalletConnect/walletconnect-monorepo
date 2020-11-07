@@ -26,10 +26,13 @@ import {
   CLIENT_EVENTS,
   CONNECTION_CONTEXT,
   CONNECTION_EVENTS,
+  CONNECTION_SIGNAL_TYPE_URI,
+  CONNECTION_STATUS,
   RELAY_DEFAULT_PROTOCOL,
   SESSION_CONTEXT,
   SESSION_EVENTS,
   SESSION_JSONRPC,
+  SESSION_SIGNAL_TYPE_CONNECTION,
 } from "./constants";
 
 export class Client extends IClient {
@@ -93,7 +96,7 @@ export class Client extends IClient {
           : await this.connection.get(params.connection);
       this.logger.debug({ type: "method", method: "connect", connection });
       const session = await this.session.create({
-        connection: { topic: connection.topic },
+        signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, topic: connection.topic },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
         metadata: getAppMetadata(params.app),
         stateParams: {
@@ -228,15 +231,11 @@ export class Client extends IClient {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
       this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: proposed });
       this.events.emit(CONNECTION_EVENTS.proposed, proposed);
-      const uri = formatUri({
-        protocol: this.protocol,
-        version: this.version,
-        topic: proposed.topic,
-        publicKey: proposed.keyPair.publicKey,
-        relay: proposed.relay,
-      });
-      this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
-      this.events.emit(CLIENT_EVENTS.share_uri, { uri });
+      if (proposed.signal.type === CONNECTION_SIGNAL_TYPE_URI) {
+        const uri = proposed.signal.params.uri;
+        this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
+        this.events.emit(CLIENT_EVENTS.share_uri, { uri });
+      }
     });
     this.connection.on(CONNECTION_EVENTS.responded, (responded: ConnectionTypes.Pending) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.responded}`);

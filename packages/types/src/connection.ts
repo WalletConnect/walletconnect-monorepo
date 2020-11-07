@@ -8,6 +8,29 @@ export declare namespace ConnectionTypes {
   }
 
   export type CreateParams = ProposeParams;
+
+  export type SignalTypeUri = "uri";
+
+  export type SignalType = SignalTypeUri;
+
+  export interface SignalParamsUri {
+    uri: string;
+  }
+
+  export type SignalParams = SignalParamsUri;
+
+  export interface BaseSignal {
+    type: SignalType;
+    params: SignalParams;
+  }
+
+  export interface SignalUri extends BaseSignal {
+    type: SignalTypeUri;
+    params: SignalParamsUri;
+  }
+
+  export type Signal = SignalUri;
+
   export interface Proposal {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
@@ -24,6 +47,7 @@ export declare namespace ConnectionTypes {
     status: PendingStatus;
     topic: string;
     relay: RelayTypes.ProtocolOptions;
+    signal: Signal;
     keyPair: KeyPair;
     proposal: Proposal;
   }

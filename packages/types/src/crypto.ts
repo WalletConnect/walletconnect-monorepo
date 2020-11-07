@@ -9,14 +9,15 @@ export interface EncryptedBuffer {
   data: Buffer;
 }
 
-export interface EncryptParams {
-  message: string;
+export interface KeyParams {
   sharedKey: string;
   publicKey: string;
 }
 
-export interface DecryptParams {
+export interface EncryptParams extends KeyParams {
+  message: string;
+}
+
+export interface DecryptParams extends KeyParams {
   encrypted: string;
-  sharedKey: string;
-  publicKey: string;
 }

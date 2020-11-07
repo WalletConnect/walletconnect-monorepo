@@ -41,17 +41,7 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {
           console.log("URI Shared"); // eslint-disable-line no-console
-          const topic = await clientB.respond({
-            approved: true,
-            proposal: uri,
-          });
 
-          if (typeof topic === "undefined") {
-            throw new Error("topic is undefined");
-          }
-          console.log("Connection Responded"); // eslint-disable-line no-console
-          const connection = await clientB.connection.get(topic);
-          expect(connection).toBeTruthy();
           clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
             console.log("Session proposed"); // eslint-disable-line no-console
             expect(proposal.peer.metadata).toEqual(TEST_APP_METADATA_A);
@@ -74,6 +64,19 @@ describe("Client", () => {
             expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
             resolve();
           });
+
+          const topic = await clientB.respond({
+            approved: true,
+            proposal: uri,
+          });
+
+          if (typeof topic === "undefined") {
+            throw new Error("topic is undefined");
+          }
+          console.log("Connection Responded"); // eslint-disable-line no-console
+
+          const connection = await clientB.connection.get(topic);
+          expect(connection).toBeTruthy();
         });
       }),
       new Promise(async (resolve, reject) => {

@@ -1,6 +1,12 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { ConnectionTypes, IClient, IConnection, SubscriptionEvent } from "@walletconnect/types";
+import {
+  ConnectionTypes,
+  KeyParams,
+  IClient,
+  IConnection,
+  SubscriptionEvent,
+} from "@walletconnect/types";
 import {
   deriveSharedKey,
   generateKeyPair,
@@ -11,6 +17,7 @@ import {
   sha256,
   formatLoggerContext,
   isConnectionResponded,
+  formatUri,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -27,13 +34,13 @@ import { Subscription } from "./subscription";
 import {
   CONNECTION_CONTEXT,
   CONNECTION_EVENTS,
-  CONNECTION_JSONRPC_AFTER_SETTLEMENT,
   CONNECTION_JSONRPC,
   CONNECTION_REASONS,
   CONNECTION_STATUS,
-  SESSION_JSONRPC_BEFORE_SETTLEMENT,
   SUBSCRIPTION_EVENTS,
   RELAY_DEFAULT_PROTOCOL,
+  SETTLED_CONNECTION_JSONRPC,
+  CONNECTION_SIGNAL_TYPE_URI,
 } from "../constants";
 
 export class Connection extends IConnection {
@@ -74,6 +81,15 @@ export class Connection extends IConnection {
     return this.settled.get(topic);
   }
 
+  public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
+    const connection = await this.settled.get(topic);
+    const encryptKeys: KeyParams = {
+      sharedKey: connection.sharedKey,
+      publicKey: connection.keyPair.publicKey,
+    };
+    this.client.relay.publish(connection.topic, payload, { relay: connection.relay, encryptKeys });
+  }
+
   get length(): number {
     return this.settled.length;
   }
@@ -112,6 +128,17 @@ export class Connection extends IConnection {
     this.logger.debug({ type: "method", method: "respond", params });
     const { approved, proposal } = params;
     const keyPair = generateKeyPair();
+    const uri = formatUri({
+      protocol: this.client.protocol,
+      version: this.client.version,
+      topic: proposal.topic,
+      publicKey: proposal.peer.publicKey,
+      relay: proposal.relay,
+    });
+    const signal: ConnectionTypes.SignalUri = {
+      type: CONNECTION_SIGNAL_TYPE_URI,
+      params: { uri },
+    };
     if (approved) {
       try {
         const connection = await this.settle({
@@ -121,38 +148,55 @@ export class Connection extends IConnection {
             publicKey: proposal.peer.publicKey,
           },
         });
-
+        const outcome: ConnectionTypes.Outcome = {
+          topic: connection.topic,
+          relay: connection.relay,
+          state: connection.state,
+          peer: connection.peer,
+        };
+        const uri = formatUri({
+          protocol: this.client.protocol,
+          version: this.client.version,
+          topic: proposal.topic,
+          publicKey: proposal.peer.publicKey,
+          relay: proposal.relay,
+        });
         const pending: ConnectionTypes.Pending = {
           status: CONNECTION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
+          signal,
           keyPair,
           proposal,
-          outcome: connection,
+          outcome,
         };
         await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       } catch (e) {
         const reason = e.message;
+        const outcome: ConnectionTypes.Outcome = { reason };
         const pending: ConnectionTypes.Pending = {
           status: CONNECTION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
+          signal,
           keyPair,
           proposal,
-          outcome: { reason },
+          outcome,
         };
         await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       }
     } else {
+      const outcome: ConnectionTypes.Outcome = { reason: CONNECTION_REASONS.not_approved };
       const pending: ConnectionTypes.Pending = {
         status: CONNECTION_STATUS.responded,
         topic: proposal.topic,
         relay: proposal.relay,
+        signal,
         keyPair,
         proposal,
-        outcome: { reason: CONNECTION_REASONS.not_approved },
+        outcome,
       };
       await this.pending.set(pending.topic, pending, { relay: pending.relay });
       return pending;
@@ -165,13 +209,7 @@ export class Connection extends IConnection {
     const connection = await this.settled.get(params.topic);
     const update = await this.handleUpdate(connection, params);
     const request = formatJsonRpcRequest(CONNECTION_JSONRPC.update, update);
-    this.client.relay.publish(connection.topic, request, {
-      relay: connection.relay,
-      encrypt: {
-        sharedKey: connection.sharedKey,
-        publicKey: connection.keyPair.publicKey,
-      },
-    });
+    this.send(connection.topic, request);
     return connection;
   }
 
@@ -203,20 +241,34 @@ export class Connection extends IConnection {
     const relay = params?.relay || { protocol: RELAY_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
     const keyPair = generateKeyPair();
+    const peer: ConnectionTypes.Peer = {
+      publicKey: keyPair.publicKey,
+    };
     const proposal: ConnectionTypes.Proposal = {
       relay,
       topic,
-      peer: { publicKey: keyPair.publicKey },
+      peer,
+    };
+    const uri = formatUri({
+      protocol: this.client.protocol,
+      version: this.client.version,
+      topic: proposal.topic,
+      publicKey: proposal.peer.publicKey,
+      relay: proposal.relay,
+    });
+    const signal: ConnectionTypes.SignalUri = {
+      type: CONNECTION_SIGNAL_TYPE_URI,
+      params: { uri },
     };
     const pending: ConnectionTypes.Pending = {
       status: CONNECTION_STATUS.proposed,
       topic: proposal.topic,
       relay: proposal.relay,
+      signal,
       keyPair,
       proposal,
     };
     await this.pending.set(pending.topic, pending, { relay });
-
     return pending;
   }
 
@@ -233,16 +285,14 @@ export class Connection extends IConnection {
       state: {},
       rules: {
         state: {},
-        jsonrpc: [...CONNECTION_JSONRPC_AFTER_SETTLEMENT, ...SESSION_JSONRPC_BEFORE_SETTLEMENT],
+        jsonrpc: SETTLED_CONNECTION_JSONRPC,
       },
     };
-    await this.settled.set(connection.topic, connection, {
-      relay: connection.relay,
-      decrypt: {
-        sharedKey: connection.sharedKey,
-        publicKey: connection.peer.publicKey,
-      },
-    });
+    const decryptKeys: KeyParams = {
+      sharedKey: connection.sharedKey,
+      publicKey: connection.peer.publicKey,
+    };
+    await this.settled.set(connection.topic, connection, { relay: connection.relay, decryptKeys });
     return connection;
   }
 
@@ -250,38 +300,39 @@ export class Connection extends IConnection {
     const { topic, payload } = payloadEvent;
     this.logger.info("Receiving Connection response");
     this.logger.debug({ type: "method", method: "onResponse", topic, payload });
-    const request = payload as JsonRpcRequest;
-    const outcome = request.params as ConnectionTypes.Outcome;
+    const request = payload as JsonRpcRequest<ConnectionTypes.Outcome>;
     const pending = await this.pending.get(topic);
-    if (!isConnectionFailed(outcome)) {
+    if (!isConnectionFailed(request.params)) {
       try {
         const connection = await this.settle({
           relay: pending.relay,
           keyPair: pending.keyPair,
           peer: {
-            publicKey: request.params.publicKey,
+            publicKey: request.params.peer.publicKey,
           },
         });
         const response = formatJsonRpcResult(request.id, true);
-        this.client.relay.publish(topic, response, { relay: pending.relay });
+        this.client.relay.publish(pending.topic, response, { relay: pending.relay });
 
         await this.pending.update(topic, {
           status: CONNECTION_STATUS.responded,
           outcome: connection,
         });
       } catch (e) {
+        this.logger.error(e);
         const reason = e.message;
         const response = formatJsonRpcError(request.id, reason);
-        this.client.relay.publish(topic, response, { relay: pending.relay });
+        this.client.relay.publish(pending.topic, response, { relay: pending.relay });
         await this.pending.update(topic, {
           status: CONNECTION_STATUS.responded,
           outcome: { reason },
         });
       }
     } else {
-      const reason = outcome.reason;
+      this.logger.error(request.params.reason);
+      const reason = request.params.reason;
       const response = formatJsonRpcError(request.id, reason);
-      this.client.relay.publish(topic, response, { relay: pending.relay });
+      this.client.relay.publish(pending.topic, response, { relay: pending.relay });
       await this.pending.update(topic, {
         status: CONNECTION_STATUS.responded,
         outcome: { reason },
@@ -311,11 +362,10 @@ export class Connection extends IConnection {
       const request = payload as JsonRpcRequest;
       const connection = await this.settled.get(payloadEvent.topic);
       if (!connection.rules.jsonrpc.includes(request.method)) {
-        const response = formatJsonRpcError(
-          request.id,
-          `Unauthorized JSON-RPC Method Requested: ${request.method}`,
-        );
-        this.client.relay.publish(connection.topic, response);
+        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
+        this.logger.error(errorMessage);
+        const response = formatJsonRpcError(request.id, errorMessage);
+        this.send(connection.topic, response);
       }
       switch (request.method) {
         case CONNECTION_JSONRPC.update:
@@ -342,16 +392,11 @@ export class Connection extends IConnection {
     try {
       await this.handleUpdate(connection, request.params, true);
       const response = formatJsonRpcResult(request.id, true);
-      this.client.relay.publish(connection.topic, response, {
-        relay: connection.relay,
-        encrypt: { sharedKey: connection.sharedKey, publicKey: connection.keyPair.publicKey },
-      });
+      this.send(connection.topic, response);
     } catch (e) {
+      this.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
-      this.client.relay.publish(connection.topic, response, {
-        relay: connection.relay,
-        encrypt: { sharedKey: connection.sharedKey, publicKey: connection.keyPair.publicKey },
-      });
+      this.send(connection.topic, response);
     }
   }
 
@@ -403,13 +448,12 @@ export class Connection extends IConnection {
       | SubscriptionEvent.Created<ConnectionTypes.Pending>
       | SubscriptionEvent.Updated<ConnectionTypes.Pending>,
   ) {
-    if (isConnectionResponded(event.data)) {
-      const pending = event.data;
+    const pending = event.data;
+    if (isConnectionResponded(pending)) {
       this.events.emit(CONNECTION_EVENTS.responded, pending);
       const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
       this.client.relay.publish(pending.topic, request, { relay: pending.relay });
     } else {
-      const pending = event.data;
       this.events.emit(CONNECTION_EVENTS.proposed, pending);
     }
   }

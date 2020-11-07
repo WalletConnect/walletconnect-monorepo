@@ -40,17 +40,17 @@ export class WSProvider extends IJsonRpcProvider {
       socket.onopen = () => {
         this.logger.info("Successfully connected JSON-RPC Provider WebSocket");
         this.logger.debug({ type: "event", event: "onopen" });
-        socket.onmessage = (event: MessageEvent) => {
-          this.logger.info("Received JSON-RPC Provider WebSocket Message");
-          this.logger.debug({ type: "event", event: "onmessage", data: event.data });
-          this.onMessage(event);
-        };
+        this.events.emit("connect");
+        socket.onmessage = (event: MessageEvent) => this.onMessage(event);
+        socket.onclose = (event: CloseEvent) => this.onClose(event);
         this.socket = socket;
         resolve();
       };
+
       socket.onerror = (event: Event) => {
         this.logger.info("Failed to connect JSON-RPC Provider WebSocket");
         this.logger.debug({ type: "event", event: "onerror" });
+        this.events.emit("error", event);
         reject(event);
       };
     });
@@ -63,6 +63,7 @@ export class WSProvider extends IJsonRpcProvider {
       throw new Error("Socket is not connected");
     }
     this.socket.close();
+    this.events.emit("disconnect");
     this.socket = undefined;
   }
 
@@ -79,12 +80,8 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   public async request(payload: JsonRpcRequest): Promise<any> {
-    this.logger.info("Sending JSON-RPC Request");
-    this.logger.debug({ type: "method", method: "request", payload });
     return new Promise((resolve, reject) => {
       this.events.on(`${payload.id}`, response => {
-        this.logger.info("Receiving JSON-RPC Response");
-        this.logger.debug({ type: "event", event: `${payload.id}`, response });
         if (response.error) {
           reject(response.error.message);
         } else {
@@ -94,24 +91,28 @@ export class WSProvider extends IJsonRpcProvider {
       if (typeof this.socket === "undefined") {
         throw new Error("Socket is not connected");
       }
-      this.logger.info("Outgoing JSON-RPC Payload");
-      this.logger.debug({ type: "payload", direction: "outgoing", payload });
       this.socket.send(safeJsonStringify(payload));
     });
+  }
+
+  // ---------- Private ----------------------------------------------- //
+
+  private onClose(e: CloseEvent) {
+    this.logger.info("Closed JSON-RPC Provider WebSocket");
+    this.logger.debug({ type: "event", event: "onclose" });
+    this.events.emit("disconnect");
+    this.socket = undefined;
   }
 
   private onMessage(e: MessageEvent) {
     if (typeof e.data === "undefined") return;
     const payload = safeJsonParse(e.data) as JsonRpcPayload;
-    this.logger.info("Incoming JSON-RPC Payload");
-    this.logger.debug({ type: "payload", direction: "incoming", payload });
     if (isJsonRpcResponse(payload)) {
       this.events.emit(`${payload.id}`, payload);
     } else {
       this.events.emit("request", payload);
     }
   }
-  // ---------- Private ----------------------------------------------- //
 
   private async initialize(): Promise<void> {
     this.logger.trace({ type: "init" });

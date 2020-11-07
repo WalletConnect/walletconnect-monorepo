@@ -55,9 +55,9 @@ export class Relay extends IRelay {
     try {
       const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
       const msg = safeJsonStringify(payload);
-      const message = opts?.encrypt
+      const message = opts?.encryptKeys
         ? await encrypt({
-            ...opts.encrypt,
+            ...opts.encryptKeys,
             message: msg,
           })
         : msg;
@@ -98,9 +98,9 @@ export class Relay extends IRelay {
       const id = await this.provider.request(request);
       this.events.on(id, async ({ message }) => {
         const payload = safeJsonParse(
-          opts?.decrypt
+          opts?.decryptKeys
             ? await decrypt({
-                ...opts.decrypt,
+                ...opts.decryptKeys,
                 encrypted: message,
               })
             : message,

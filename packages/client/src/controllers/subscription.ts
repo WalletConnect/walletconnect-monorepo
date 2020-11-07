@@ -50,7 +50,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     } else {
       this.logger.info("Setting subscription");
       this.logger.debug({ type: "method", method: "set", topic, data, opts });
-      if (this.encrypted && typeof opts.decrypt === "undefined") {
+      if (this.encrypted && typeof opts.decryptKeys === "undefined") {
         const errorMessage = `Decrypt params required for ${this.getSubscriptionContext()}`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
@@ -96,7 +96,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     const subscription = await this.getSubscription(topic);
     this.client.relay.unsubscribe(subscription.id, {
       relay: subscription.opts.relay,
-      decrypt: subscription.opts.decrypt,
+      decryptKeys: subscription.opts.decryptKeys,
     });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
       topic,

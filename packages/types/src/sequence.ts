@@ -1,4 +1,5 @@
 import { Logger } from "pino";
+import { JsonRpcPayload } from "rpc-json-types";
 
 import { IClient } from "./client";
 import { IEvents } from "./events";
@@ -35,6 +36,8 @@ export abstract class ISequence<
 
   // get settled subscription data
   public abstract get(topic: string): Promise<Settled>;
+  // send JSON-RPC to settled subscription
+  public abstract send(topic: string, payload: JsonRpcPayload): Promise<void>;
 
   // called by proposer
   public abstract create(params?: CreateParams): Promise<Settled>;
