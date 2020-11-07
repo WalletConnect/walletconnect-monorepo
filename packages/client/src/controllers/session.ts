@@ -233,7 +233,7 @@ export class Session extends ISession {
     this.logger.debug({ type: "method", method: "propose", params });
     if (params.signal.type !== SESSION_SIGNAL_TYPE_CONNECTION)
       throw new Error(`Session proposal signal unsupported`);
-    const connection = await this.client.connection.settled.get(params.signal.topic);
+    const connection = await this.client.connection.settled.get(params.signal.params.topic);
     const signal: SessionTypes.SignalConnection = {
       type: SESSION_SIGNAL_TYPE_CONNECTION,
       params: {

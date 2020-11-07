@@ -4,8 +4,13 @@ import { RelayTypes } from "./relay";
 import { ConnectionTypes } from "./connection";
 
 export declare namespace SessionTypes {
+  export interface SignalProposeParams {
+    type: SignalTypeConnection;
+    params: Pick<SignalParamsConnection, "topic">;
+  }
+
   export interface ProposeParams {
-    signal: { type: SignalTypeConnection; topic: string };
+    signal: SignalProposeParams;
     relay: RelayTypes.ProtocolOptions;
     stateParams: StateParams;
     ruleParams: RuleParams;

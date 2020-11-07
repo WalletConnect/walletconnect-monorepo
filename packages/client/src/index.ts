@@ -8,13 +8,11 @@ import {
   SessionTypes,
 } from "@walletconnect/types";
 import {
-  formatUri,
   getAppMetadata,
   isConnectionFailed,
   isSessionFailed,
   parseUri,
   getLoggerOptions,
-  formatLoggerContext,
   isConnectionResponded,
   isSessionResponded,
 } from "@walletconnect/utils";
@@ -27,7 +25,6 @@ import {
   CONNECTION_CONTEXT,
   CONNECTION_EVENTS,
   CONNECTION_SIGNAL_TYPE_URI,
-  CONNECTION_STATUS,
   RELAY_DEFAULT_PROTOCOL,
   SESSION_CONTEXT,
   SESSION_EVENTS,
@@ -96,7 +93,7 @@ export class Client extends IClient {
           : await this.connection.get(params.connection);
       this.logger.debug({ type: "method", method: "connect", connection });
       const session = await this.session.create({
-        signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, topic: connection.topic },
+        signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, params: { topic: connection.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
         metadata: getAppMetadata(params.app),
         stateParams: {
