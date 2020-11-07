@@ -17,6 +17,7 @@ import {
   sha256,
   formatLoggerContext,
   isSessionResponded,
+  isSubscriptionUpdatedEvent,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -58,7 +59,7 @@ export class Session extends ISession {
       client,
       this.logger,
       SESSION_STATUS.pending,
-      false,
+      true,
     );
     this.settled = new Subscription<SessionTypes.Settled>(
       client,
@@ -247,13 +248,14 @@ export class Session extends ISession {
       sharedKey: connection.sharedKey,
       publicKey: connection.peer.publicKey,
     };
+    const topic = generateRandomBytes32();
     const keyPair = generateKeyPair();
     const peer: SessionTypes.Peer = {
       publicKey: keyPair.publicKey,
       metadata: params.metadata,
     };
     const proposal: SessionTypes.Proposal = {
-      topic: generateRandomBytes32(),
+      topic,
       relay: params.relay,
       peer,
       signal,
@@ -267,9 +269,9 @@ export class Session extends ISession {
       keyPair,
       proposal,
     };
-    const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, proposal);
-    this.client.connection.send(signal.params.topic, request);
     await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
+    const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, proposal);
+    await this.client.connection.send(signal.params.topic, request);
     return pending;
   }
 
@@ -303,10 +305,12 @@ export class Session extends ISession {
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
     const pending = await this.pending.get(topic);
+    const { signal, ruleParams } = pending.proposal;
     const encryptKeys: KeyParams = {
-      sharedKey: pending.proposal.signal.params.sharedKey,
-      publicKey: pending.proposal.signal.params.keyPair.publicKey,
+      sharedKey: signal.params.sharedKey,
+      publicKey: signal.params.keyPair.publicKey,
     };
+    let errorMessage: string | undefined;
     if (!isSessionFailed(request.params)) {
       try {
         const proposer = pending.keyPair.publicKey;
@@ -319,16 +323,13 @@ export class Session extends ISession {
           rules: {
             state: {
               accounts: {
-                [proposer]: pending.proposal.ruleParams.state.accounts.proposer,
-                [responder]: pending.proposal.ruleParams.state.accounts.responder,
+                [proposer]: ruleParams.state.accounts.proposer,
+                [responder]: ruleParams.state.accounts.responder,
               },
             },
-            jsonrpc: pending.proposal.ruleParams.jsonrpc,
+            jsonrpc: ruleParams.jsonrpc,
           },
         });
-        const response = formatJsonRpcResult(request.id, true);
-        this.client.relay.publish(topic, response, { relay: pending.relay, encryptKeys });
-
         await this.pending.update(topic, {
           status: SESSION_STATUS.responded,
           outcome: {
@@ -340,19 +341,24 @@ export class Session extends ISession {
         });
       } catch (e) {
         this.logger.error(e);
-        const reason = e.payload;
-        const response = formatJsonRpcError(request.id, reason);
-        this.client.relay.publish(topic, response, { relay: pending.relay, encryptKeys });
-        await this.pending.update(topic, { status: SESSION_STATUS.responded, outcome: { reason } });
+        errorMessage = e.message;
+        await this.pending.update(topic, {
+          status: SESSION_STATUS.responded,
+          outcome: { reason: e.message },
+        });
       }
+      const response =
+        typeof errorMessage === "undefined"
+          ? formatJsonRpcResult(request.id, true)
+          : formatJsonRpcError(request.id, errorMessage);
+      this.client.relay.publish(pending.topic, response, { relay: pending.relay });
     } else {
-      const reason = request.params.reason;
-      this.logger.error(reason);
-      const response = formatJsonRpcError(request.id, reason);
-      this.client.relay.publish(topic, response, { relay: pending.relay, encryptKeys });
-      await this.pending.update(topic, { status: SESSION_STATUS.responded, outcome: { reason } });
+      this.logger.error(request.params.reason);
+      await this.pending.update(topic, {
+        status: SESSION_STATUS.responded,
+        outcome: { reason: request.params.reason },
+      });
     }
-    await this.pending.delete(topic, SESSION_REASONS.responded);
   }
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
@@ -450,13 +456,14 @@ export class Session extends ISession {
   // ---------- Private ----------------------------------------------- //
 
   private onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
-    if (isJsonRpcRequest(event.payload) && event.payload.method === SESSION_JSONRPC.respond) {
-      this.onResponse(event);
+    if (isJsonRpcRequest(event.payload)) {
+      if (event.payload.method === SESSION_JSONRPC.respond) {
+        this.onResponse(event);
+      }
     } else {
       this.onAcknowledge(event);
     }
   }
-
   private onPendingStatusEvent(
     event:
       | SubscriptionEvent.Created<SessionTypes.Pending>
@@ -465,8 +472,15 @@ export class Session extends ISession {
     const pending = event.data;
     if (isSessionResponded(pending)) {
       this.events.emit(SESSION_EVENTS.responded, pending);
-      const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
-      this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+      if (!isSubscriptionUpdatedEvent(event)) {
+        const { signal } = pending.proposal;
+        const encryptKeys: KeyParams = {
+          sharedKey: signal.params.sharedKey,
+          publicKey: signal.params.keyPair.publicKey,
+        };
+        const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
+        this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });
+      }
     } else {
       this.events.emit(SESSION_EVENTS.proposed, pending);
     }
@@ -501,8 +515,8 @@ export class Session extends ISession {
     this.settled.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Settled>) => {
-        const connection = updatedEvent.data;
-        this.events.emit(SESSION_EVENTS.updated, connection);
+        const session = updatedEvent.data;
+        this.events.emit(SESSION_EVENTS.updated, session);
       },
     );
     this.settled.on(
@@ -513,7 +527,7 @@ export class Session extends ISession {
         const request = formatJsonRpcRequest(SESSION_JSONRPC.delete, {
           reason: deletedEvent.reason,
         });
-        this.client.relay.publish(session.topic, request, { relay: session.relay });
+        this.send(session.topic, request);
       },
     );
   }

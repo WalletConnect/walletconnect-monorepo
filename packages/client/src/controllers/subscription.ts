@@ -85,9 +85,11 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       topic,
       data,
     });
-    this.events.emit(SUBSCRIPTION_EVENTS.updated, { topic, data } as SubscriptionEvent.Updated<
-      Data
-    >);
+    this.events.emit(SUBSCRIPTION_EVENTS.updated, {
+      topic,
+      data,
+      update,
+    } as SubscriptionEvent.Updated<Data>);
   }
 
   public async delete(topic: string, reason: string): Promise<void> {

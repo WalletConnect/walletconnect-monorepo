@@ -1,4 +1,4 @@
-import { ConnectionTypes, SessionTypes } from "@walletconnect/types";
+import { ConnectionTypes, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
 
 export function isConnectionRespondedStatus(
   status: ConnectionTypes.PendingStatus,
@@ -32,4 +32,10 @@ export function isSessionResponded(
 
 export function isSessionFailed(outcome: SessionTypes.Outcome): outcome is SessionTypes.Failed {
   return "reason" in outcome;
+}
+
+export function isSubscriptionUpdatedEvent<T = any>(
+  event: SubscriptionEvent.Created<T> | SubscriptionEvent.Updated<T>,
+): event is SubscriptionEvent.Updated<T> {
+  return "update" in event;
 }

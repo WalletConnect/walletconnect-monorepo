@@ -18,6 +18,7 @@ import {
   formatLoggerContext,
   isConnectionResponded,
   formatUri,
+  isSubscriptionUpdatedEvent,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -280,6 +281,7 @@ export class Connection extends IConnection {
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<ConnectionTypes.Outcome>;
     const pending = await this.pending.get(topic);
+    let errorMessage: string | undefined;
     if (!isConnectionFailed(request.params)) {
       try {
         const connection = await this.settle({
@@ -289,34 +291,30 @@ export class Connection extends IConnection {
             publicKey: request.params.peer.publicKey,
           },
         });
-        const response = formatJsonRpcResult(request.id, true);
-        this.client.relay.publish(pending.topic, response, { relay: pending.relay });
-
         await this.pending.update(topic, {
           status: CONNECTION_STATUS.responded,
           outcome: connection,
         });
       } catch (e) {
         this.logger.error(e);
-        const reason = e.message;
-        const response = formatJsonRpcError(request.id, reason);
-        this.client.relay.publish(pending.topic, response, { relay: pending.relay });
+        errorMessage = e.message;
         await this.pending.update(topic, {
           status: CONNECTION_STATUS.responded,
-          outcome: { reason },
+          outcome: { reason: e.message },
         });
       }
+      const response =
+        typeof errorMessage === "undefined"
+          ? formatJsonRpcResult(request.id, true)
+          : formatJsonRpcError(request.id, errorMessage);
+      this.client.relay.publish(pending.topic, response, { relay: pending.relay });
     } else {
       this.logger.error(request.params.reason);
-      const reason = request.params.reason;
-      const response = formatJsonRpcError(request.id, reason);
-      this.client.relay.publish(pending.topic, response, { relay: pending.relay });
       await this.pending.update(topic, {
         status: CONNECTION_STATUS.responded,
-        outcome: { reason },
+        outcome: { reason: request.params.reason },
       });
     }
-    await this.pending.delete(topic, CONNECTION_REASONS.responded);
   }
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
@@ -414,8 +412,10 @@ export class Connection extends IConnection {
   // ---------- Private ----------------------------------------------- //
 
   private onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
-    if (isJsonRpcRequest(event.payload) && event.payload.method === CONNECTION_JSONRPC.respond) {
-      this.onResponse(event);
+    if (isJsonRpcRequest(event.payload)) {
+      if (event.payload.method === CONNECTION_JSONRPC.respond) {
+        this.onResponse(event);
+      }
     } else {
       this.onAcknowledge(event);
     }
@@ -429,8 +429,10 @@ export class Connection extends IConnection {
     const pending = event.data;
     if (isConnectionResponded(pending)) {
       this.events.emit(CONNECTION_EVENTS.responded, pending);
-      const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
-      this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+      if (!isSubscriptionUpdatedEvent(event)) {
+        const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
+        this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+      }
     } else {
       this.events.emit(CONNECTION_EVENTS.proposed, pending);
     }
