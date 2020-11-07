@@ -128,17 +128,6 @@ export class Connection extends IConnection {
     this.logger.debug({ type: "method", method: "respond", params });
     const { approved, proposal } = params;
     const keyPair = generateKeyPair();
-    const uri = formatUri({
-      protocol: this.client.protocol,
-      version: this.client.version,
-      topic: proposal.topic,
-      publicKey: proposal.peer.publicKey,
-      relay: proposal.relay,
-    });
-    const signal: ConnectionTypes.SignalUri = {
-      type: CONNECTION_SIGNAL_TYPE_URI,
-      params: { uri },
-    };
     if (approved) {
       try {
         const connection = await this.settle({
@@ -154,18 +143,10 @@ export class Connection extends IConnection {
           state: connection.state,
           peer: connection.peer,
         };
-        const uri = formatUri({
-          protocol: this.client.protocol,
-          version: this.client.version,
-          topic: proposal.topic,
-          publicKey: proposal.peer.publicKey,
-          relay: proposal.relay,
-        });
         const pending: ConnectionTypes.Pending = {
           status: CONNECTION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          signal,
           keyPair,
           proposal,
           outcome,
@@ -179,7 +160,6 @@ export class Connection extends IConnection {
           status: CONNECTION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          signal,
           keyPair,
           proposal,
           outcome,
@@ -193,7 +173,6 @@ export class Connection extends IConnection {
         status: CONNECTION_STATUS.responded,
         topic: proposal.topic,
         relay: proposal.relay,
-        signal,
         keyPair,
         proposal,
         outcome,
@@ -244,27 +223,26 @@ export class Connection extends IConnection {
     const peer: ConnectionTypes.Peer = {
       publicKey: keyPair.publicKey,
     };
+    const uri = formatUri({
+      protocol: this.client.protocol,
+      version: this.client.version,
+      topic: topic,
+      publicKey: peer.publicKey,
+      relay: relay,
+    });
     const proposal: ConnectionTypes.Proposal = {
       relay,
       topic,
       peer,
-    };
-    const uri = formatUri({
-      protocol: this.client.protocol,
-      version: this.client.version,
-      topic: proposal.topic,
-      publicKey: proposal.peer.publicKey,
-      relay: proposal.relay,
-    });
-    const signal: ConnectionTypes.SignalUri = {
-      type: CONNECTION_SIGNAL_TYPE_URI,
-      params: { uri },
+      signal: {
+        type: CONNECTION_SIGNAL_TYPE_URI,
+        params: { uri },
+      },
     };
     const pending: ConnectionTypes.Pending = {
       status: CONNECTION_STATUS.proposed,
       topic: proposal.topic,
       relay: proposal.relay,
-      signal,
       keyPair,
       proposal,
     };

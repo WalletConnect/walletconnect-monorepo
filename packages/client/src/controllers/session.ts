@@ -127,19 +127,9 @@ export class Session extends ISession {
     const { approved, metadata, proposal } = params;
     const { relay, peer, ruleParams } = proposal;
     const keyPair = generateKeyPair();
-    const connection = await this.client.connection.get(proposal.topic);
-    const signal: SessionTypes.SignalConnection = {
-      type: SESSION_SIGNAL_TYPE_CONNECTION,
-      params: {
-        topic: connection.topic,
-        sharedKey: connection.sharedKey,
-        keyPair: connection.keyPair,
-        peer: connection.peer,
-      },
-    };
     const decryptKeys: KeyParams = {
-      sharedKey: signal.params.sharedKey,
-      publicKey: signal.params.peer.publicKey,
+      sharedKey: proposal.signal.params.sharedKey,
+      publicKey: proposal.signal.params.peer.publicKey,
     };
     if (approved) {
       try {
@@ -173,7 +163,6 @@ export class Session extends ISession {
           status: SESSION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          signal,
           keyPair,
           proposal,
           outcome,
@@ -187,7 +176,6 @@ export class Session extends ISession {
           status: SESSION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          signal,
           keyPair,
           proposal,
           outcome,
@@ -201,7 +189,6 @@ export class Session extends ISession {
         status: SESSION_STATUS.responded,
         topic: proposal.topic,
         relay: proposal.relay,
-        signal,
         keyPair,
         proposal,
         outcome,
@@ -269,6 +256,7 @@ export class Session extends ISession {
       topic: generateRandomBytes32(),
       relay: params.relay,
       peer,
+      signal,
       stateParams: params.stateParams,
       ruleParams: params.ruleParams,
     };
@@ -276,7 +264,6 @@ export class Session extends ISession {
       status: SESSION_STATUS.proposed,
       topic: proposal.topic,
       relay: proposal.relay,
-      signal,
       keyPair,
       proposal,
     };
@@ -317,8 +304,8 @@ export class Session extends ISession {
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
     const pending = await this.pending.get(topic);
     const encryptKeys: KeyParams = {
-      sharedKey: pending.signal.params.sharedKey,
-      publicKey: pending.signal.params.keyPair.publicKey,
+      sharedKey: pending.proposal.signal.params.sharedKey,
+      publicKey: pending.proposal.signal.params.keyPair.publicKey,
     };
     if (!isSessionFailed(request.params)) {
       try {

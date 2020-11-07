@@ -43,6 +43,7 @@ export declare namespace SessionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     peer: Peer;
+    signal: Signal;
     stateParams: StateParams;
     ruleParams: RuleParams;
   }
@@ -57,7 +58,6 @@ export declare namespace SessionTypes {
     status: PendingStatus;
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    signal: Signal;
     keyPair: KeyPair;
     proposal: Proposal;
   }

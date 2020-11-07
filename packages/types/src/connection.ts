@@ -35,6 +35,7 @@ export declare namespace ConnectionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     peer: Peer;
+    signal: Signal;
   }
 
   export type ProposedStatus = "proposed";
@@ -47,7 +48,6 @@ export declare namespace ConnectionTypes {
     status: PendingStatus;
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    signal: Signal;
     keyPair: KeyPair;
     proposal: Proposal;
   }

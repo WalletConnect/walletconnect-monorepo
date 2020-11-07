@@ -127,15 +127,20 @@ export class Client extends IClient {
       const uriParams = parseUri(params.proposal);
       this.logger.info(`Responding Connection Proposal`);
       this.logger.debug({ type: "method", method: "respond", params, uriParams });
+      const proposal: ConnectionTypes.Proposal = {
+        topic: uriParams.topic,
+        relay: uriParams.relay,
+        peer: {
+          publicKey: uriParams.publicKey,
+        },
+        signal: {
+          type: CONNECTION_SIGNAL_TYPE_URI,
+          params: { uri: params.proposal },
+        },
+      };
       const pending = await this.connection.respond({
         approved: params.approved,
-        proposal: {
-          topic: uriParams.topic,
-          peer: {
-            publicKey: uriParams.publicKey,
-          },
-          relay: uriParams.relay,
-        },
+        proposal,
       });
       if (!isConnectionResponded(pending)) return;
       if (isConnectionFailed(pending.outcome)) {
@@ -154,7 +159,6 @@ export class Client extends IClient {
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
-
     const pending = await this.session.respond({
       approved: params.approved,
       proposal: params.proposal,
@@ -231,8 +235,8 @@ export class Client extends IClient {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
       this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: proposed });
       this.events.emit(CONNECTION_EVENTS.proposed, proposed);
-      if (proposed.signal.type === CONNECTION_SIGNAL_TYPE_URI) {
-        const uri = proposed.signal.params.uri;
+      if (proposed.proposal.signal.type === CONNECTION_SIGNAL_TYPE_URI) {
+        const uri = proposed.proposal.signal.params.uri;
         this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
         this.events.emit(CLIENT_EVENTS.share_uri, { uri });
       }
