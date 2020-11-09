@@ -127,7 +127,7 @@ export class Client extends IClient {
       const proposal: ConnectionTypes.Proposal = {
         topic: uriParams.topic,
         relay: uriParams.relay,
-        peer: {
+        proposer: {
           publicKey: uriParams.publicKey,
         },
         signal: {

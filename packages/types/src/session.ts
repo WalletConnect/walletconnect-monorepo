@@ -27,7 +27,7 @@ export declare namespace SessionTypes {
     topic: string;
     keyPair: KeyPair;
     sharedKey: string;
-    peer: ConnectionTypes.Peer;
+    peer: ConnectionTypes.Participant;
   }
 
   export type SignalParams = SignalParamsConnection;
@@ -47,7 +47,7 @@ export declare namespace SessionTypes {
   export interface Proposal {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    peer: Peer;
+    proposer: Participant;
     signal: Signal;
     stateParams: StateParams;
     ruleParams: RuleParams;
@@ -88,7 +88,7 @@ export declare namespace SessionTypes {
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
     keyPair: KeyPair;
-    peer: Peer;
+    peer: Participant;
     state: State;
     rules: Rules;
   }
@@ -111,12 +111,12 @@ export declare namespace SessionTypes {
     topic: string;
     sharedKey: string;
     keyPair: KeyPair;
-    peer: Peer;
+    peer: Participant;
     state: State;
     rules: Rules;
   }
 
-  export interface Peer {
+  export interface Participant {
     publicKey: string;
     metadata: Metadata;
   }
@@ -163,7 +163,7 @@ export declare namespace SessionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     state: State;
-    peer: Peer;
+    responder: Participant;
   }
   export interface Failed {
     reason: string;

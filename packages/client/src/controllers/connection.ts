@@ -134,15 +134,15 @@ export class Connection extends IConnection {
         const connection = await this.settle({
           relay: proposal.relay,
           keyPair,
-          peer: {
-            publicKey: proposal.peer.publicKey,
-          },
+          peer: proposal.proposer,
         });
         const outcome: ConnectionTypes.Outcome = {
           topic: connection.topic,
           relay: connection.relay,
           state: connection.state,
-          peer: connection.peer,
+          responder: {
+            publicKey: connection.keyPair.publicKey,
+          },
         };
         const pending: ConnectionTypes.Pending = {
           status: CONNECTION_STATUS.responded,
@@ -221,20 +221,20 @@ export class Connection extends IConnection {
     const relay = params?.relay || { protocol: RELAY_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
     const keyPair = generateKeyPair();
-    const peer: ConnectionTypes.Peer = {
+    const proposer: ConnectionTypes.Participant = {
       publicKey: keyPair.publicKey,
     };
     const uri = formatUri({
       protocol: this.client.protocol,
       version: this.client.version,
       topic: topic,
-      publicKey: peer.publicKey,
+      publicKey: proposer.publicKey,
       relay: relay,
     });
     const proposal: ConnectionTypes.Proposal = {
       relay,
       topic,
-      peer,
+      proposer,
       signal: {
         type: CONNECTION_SIGNAL_TYPE_URI,
         params: { uri },
@@ -287,13 +287,16 @@ export class Connection extends IConnection {
         const connection = await this.settle({
           relay: pending.relay,
           keyPair: pending.keyPair,
-          peer: {
-            publicKey: request.params.peer.publicKey,
-          },
+          peer: request.params.responder,
         });
         await this.pending.update(topic, {
           status: CONNECTION_STATUS.responded,
-          outcome: connection,
+          outcome: {
+            topic: connection.topic,
+            relay: connection.relay,
+            state: connection.state,
+            responder: request.params.responder,
+          },
         });
       } catch (e) {
         this.logger.error(e);

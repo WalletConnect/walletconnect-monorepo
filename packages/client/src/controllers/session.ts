@@ -126,7 +126,7 @@ export class Session extends ISession {
     this.logger.info("Respond Session");
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, metadata, proposal } = params;
-    const { relay, peer, ruleParams } = proposal;
+    const { relay, proposer, ruleParams } = proposal;
     const keyPair = generateKeyPair();
     const decryptKeys: KeyParams = {
       sharedKey: proposal.signal.params.sharedKey,
@@ -134,18 +134,18 @@ export class Session extends ISession {
     };
     if (approved) {
       try {
-        const proposer = peer.publicKey;
-        const responder = keyPair.publicKey;
+        const proposerPubKey = proposer.publicKey;
+        const responderPubKey = keyPair.publicKey;
         const session = await this.settle({
           relay,
           keyPair,
-          peer: peer,
+          peer: proposal.proposer,
           state: params.state,
           rules: {
             state: {
               accounts: {
-                [proposer]: ruleParams.state.accounts.proposer,
-                [responder]: ruleParams.state.accounts.responder,
+                [proposerPubKey]: ruleParams.state.accounts.proposer,
+                [responderPubKey]: ruleParams.state.accounts.responder,
               },
             },
             jsonrpc: ruleParams.jsonrpc,
@@ -155,7 +155,7 @@ export class Session extends ISession {
           topic: session.topic,
           relay: session.relay,
           state: session.state,
-          peer: {
+          responder: {
             publicKey: session.keyPair.publicKey,
             metadata,
           },
@@ -250,14 +250,14 @@ export class Session extends ISession {
     };
     const topic = generateRandomBytes32();
     const keyPair = generateKeyPair();
-    const peer: SessionTypes.Peer = {
+    const proposer: SessionTypes.Participant = {
       publicKey: keyPair.publicKey,
       metadata: params.metadata,
     };
     const proposal: SessionTypes.Proposal = {
       topic,
       relay: params.relay,
-      peer,
+      proposer,
       signal,
       stateParams: params.stateParams,
       ruleParams: params.ruleParams,
@@ -313,18 +313,18 @@ export class Session extends ISession {
     let errorMessage: string | undefined;
     if (!isSessionFailed(request.params)) {
       try {
-        const proposer = pending.keyPair.publicKey;
-        const responder = request.params.peer.publicKey;
+        const proposerKey = pending.keyPair.publicKey;
+        const responderKey = request.params.responder.publicKey;
         const session = await this.settle({
           relay: pending.relay,
           keyPair: pending.keyPair,
-          peer: request.params.peer,
+          peer: request.params.responder,
           state: request.params.state,
           rules: {
             state: {
               accounts: {
-                [proposer]: ruleParams.state.accounts.proposer,
-                [responder]: ruleParams.state.accounts.responder,
+                [proposerKey]: ruleParams.state.accounts.proposer,
+                [responderKey]: ruleParams.state.accounts.responder,
               },
             },
             jsonrpc: ruleParams.jsonrpc,
@@ -336,7 +336,7 @@ export class Session extends ISession {
             topic: session.topic,
             relay: session.relay,
             state: session.state,
-            peer: session.peer,
+            responder: session.peer,
           },
         });
       } catch (e) {
@@ -351,7 +351,7 @@ export class Session extends ISession {
         typeof errorMessage === "undefined"
           ? formatJsonRpcResult(request.id, true)
           : formatJsonRpcError(request.id, errorMessage);
-      this.client.relay.publish(pending.topic, response, { relay: pending.relay });
+      this.client.relay.publish(pending.topic, response, { relay: pending.relay, encryptKeys });
     } else {
       this.logger.error(request.params.reason);
       await this.pending.update(topic, {
@@ -405,7 +405,7 @@ export class Session extends ISession {
 
   protected async onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.info("Receiving Session update");
+    this.logger.debug("Receiving Session update");
     this.logger.trace({ type: "method", method: "onUpdate", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
     const session = await this.settled.get(payloadEvent.topic);

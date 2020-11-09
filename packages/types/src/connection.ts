@@ -34,7 +34,7 @@ export declare namespace ConnectionTypes {
   export interface Proposal {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    peer: Peer;
+    proposer: Participant;
     signal: Signal;
   }
 
@@ -70,7 +70,7 @@ export declare namespace ConnectionTypes {
 
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
-    peer: Peer;
+    peer: Participant;
     keyPair: KeyPair;
   }
 
@@ -79,7 +79,7 @@ export declare namespace ConnectionTypes {
     relay: RelayTypes.ProtocolOptions;
     sharedKey: string;
     keyPair: KeyPair;
-    peer: Peer;
+    peer: Participant;
     state: State;
     rules: Rules;
   }
@@ -97,7 +97,7 @@ export declare namespace ConnectionTypes {
     reason: string;
   }
 
-  export interface Peer {
+  export interface Participant {
     publicKey: string;
     metadata?: Metadata;
   }
@@ -142,7 +142,7 @@ export declare namespace ConnectionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     state: State;
-    peer: Peer;
+    responder: Participant;
   }
 
   export interface Failed {

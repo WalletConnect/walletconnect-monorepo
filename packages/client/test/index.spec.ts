@@ -44,7 +44,7 @@ describe("Client", () => {
 
           clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
             console.log("Session proposed"); // eslint-disable-line no-console
-            expect(proposal.peer.metadata).toEqual(TEST_APP_METADATA_A);
+            expect(proposal.proposer.metadata).toEqual(TEST_APP_METADATA_A);
             expect(proposal.stateParams.chains).toEqual(TEST_SESSION_CHAINS);
             expect(proposal.ruleParams.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
             const topic = await clientB.respond({
