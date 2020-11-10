@@ -36,17 +36,11 @@ import {
 
 export function generateConnectionProposalFromUri(uri: string): ConnectionTypes.Proposal {
   const uriParams = parseUri(uri);
-
   const proposal: ConnectionTypes.Proposal = {
     topic: uriParams.topic,
     relay: uriParams.relay,
-    proposer: {
-      publicKey: uriParams.publicKey,
-    },
-    signal: {
-      type: CONNECTION_SIGNAL_TYPE_URI,
-      params: { uri },
-    },
+    proposer: { publicKey: uriParams.publicKey },
+    signal: { type: CONNECTION_SIGNAL_TYPE_URI, params: { uri } },
     setting: generateStatelessProposalSetting({ methods: SETTLED_CONNECTION_JSONRPC }),
   };
   return proposal;

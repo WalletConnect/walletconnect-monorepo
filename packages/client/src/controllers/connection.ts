@@ -134,24 +134,26 @@ export class Connection extends IConnection {
     const keyPair = generateKeyPair();
     if (approved) {
       try {
+        const responder: ConnectionTypes.Participant = {
+          publicKey: keyPair.publicKey,
+        };
+        const setting = generateSettledSetting({
+          proposal: proposal.setting,
+          proposer: proposal.proposer,
+          responder,
+          state: {},
+        });
         const connection = await this.settle({
           relay: proposal.relay,
           keyPair,
           peer: proposal.proposer,
-          setting: generateSettledSetting({
-            proposal: proposal.setting,
-            proposer: proposal.proposer,
-            responder: { publicKey: keyPair.publicKey },
-            state: {},
-          }),
+          setting,
         });
         const outcome: ConnectionTypes.Outcome = {
           topic: connection.topic,
           relay: connection.relay,
           setting: connection.setting,
-          responder: {
-            publicKey: connection.keyPair.publicKey,
-          },
+          responder,
         };
         const pending: ConnectionTypes.Pending = {
           status: CONNECTION_STATUS.responded,
@@ -240,6 +242,7 @@ export class Connection extends IConnection {
       publicKey: proposer.publicKey,
       relay: relay,
     });
+    const setting = generateStatelessProposalSetting({ methods: SETTLED_CONNECTION_JSONRPC });
     const proposal: ConnectionTypes.Proposal = {
       relay,
       topic,
@@ -248,7 +251,7 @@ export class Connection extends IConnection {
         type: CONNECTION_SIGNAL_TYPE_URI,
         params: { uri },
       },
-      setting: generateStatelessProposalSetting({ methods: SETTLED_CONNECTION_JSONRPC }),
+      setting,
     };
     const pending: ConnectionTypes.Pending = {
       status: CONNECTION_STATUS.proposed,
@@ -265,16 +268,14 @@ export class Connection extends IConnection {
     this.logger.debug("Settle Connection");
     this.logger.trace({ type: "method", method: "settle", params });
     const sharedKey = deriveSharedKey(params.keyPair.privateKey, params.peer.publicKey);
+    const topic = await sha256(sharedKey);
     const connection: ConnectionTypes.Settled = {
       relay: params.relay,
-      topic: await sha256(sharedKey),
+      topic,
       sharedKey,
       keyPair: params.keyPair,
       peer: params.peer,
-      setting: {
-        state: {},
-        methods: SETTLED_CONNECTION_JSONRPC,
-      },
+      setting: params.setting,
     };
     const decryptKeys: KeyParams = {
       sharedKey: connection.sharedKey,

@@ -5,6 +5,7 @@ import {
   ISession,
   KeyParams,
   SessionTypes,
+  SettingTypes,
   SubscriptionEvent,
 } from "@walletconnect/types";
 import {
@@ -17,8 +18,8 @@ import {
   formatLoggerContext,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
-  generateCaip25ProposalSetting,
   generateSettledSetting,
+  generateCaip25ProposalSetting,
   handleSettledSettingStateUpdate,
 } from "@walletconnect/utils";
 import {
@@ -136,25 +137,27 @@ export class Session extends ISession {
     };
     if (approved) {
       try {
+        const responder: SessionTypes.Participant = {
+          publicKey: keyPair.publicKey,
+          metadata,
+        };
+        const setting = generateSettledSetting({
+          proposal: proposal.setting,
+          proposer: proposal.proposer,
+          responder,
+          state: params.state,
+        });
         const session = await this.settle({
           relay,
           keyPair,
           peer: proposal.proposer,
-          setting: generateSettledSetting({
-            proposal: proposal.setting,
-            proposer: proposal.proposer,
-            responder: { publicKey: keyPair.publicKey },
-            state: params.state,
-          }),
+          setting,
         });
         const outcome: SessionTypes.Outcome = {
           topic: session.topic,
           relay: session.relay,
           setting: session.setting,
-          responder: {
-            publicKey: session.keyPair.publicKey,
-            metadata,
-          },
+          responder,
         };
         const pending: SessionTypes.Pending = {
           status: SESSION_STATUS.responded,
@@ -250,15 +253,16 @@ export class Session extends ISession {
       publicKey: keyPair.publicKey,
       metadata: params.metadata,
     };
+    const setting = generateCaip25ProposalSetting({
+      chains: params.chains,
+      methods: { ...SETTLED_SESSION_JSONRPC, ...params.methods },
+    });
     const proposal: SessionTypes.Proposal = {
       topic,
       relay: params.relay,
       proposer,
       signal,
-      setting: generateCaip25ProposalSetting({
-        chains: params.chains,
-        methods: { ...SETTLED_SESSION_JSONRPC, ...params.methods },
-      }),
+      setting,
     };
     const pending: SessionTypes.Pending = {
       status: SESSION_STATUS.proposed,
@@ -277,9 +281,10 @@ export class Session extends ISession {
     this.logger.info("Settle Session");
     this.logger.trace({ type: "method", method: "settle", params });
     const sharedKey = deriveSharedKey(params.keyPair.privateKey, params.peer.publicKey);
+    const topic = await sha256(sharedKey);
     const session: SessionTypes.Settled = {
       relay: params.relay,
-      topic: await sha256(sharedKey),
+      topic,
       sharedKey,
       keyPair: params.keyPair,
       peer: params.peer,
