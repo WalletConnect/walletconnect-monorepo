@@ -6,6 +6,7 @@ import { IConnection } from "./connection";
 import { ISession, SessionTypes } from "./session";
 import { IStore } from "./store";
 import { IEvents } from "./events";
+import { SettingTypes } from "./settings";
 
 export interface ClientOptions {
   logger?: string | Logger;
@@ -17,7 +18,7 @@ export interface ClientOptions {
 export declare namespace ClientTypes {
   export interface ConnectParams {
     chains: string[];
-    jsonrpc: string[];
+    methods: string[];
     app?: string | SessionTypes.Metadata;
     relay?: RelayTypes.ProtocolOptions;
     connection?: string;
@@ -27,7 +28,7 @@ export declare namespace ClientTypes {
     approved: boolean;
     proposal: string | SessionTypes.Proposal;
     response?: {
-      state: SessionTypes.State;
+      accounts: string[];
       app?: string | SessionTypes.Metadata;
     };
   }

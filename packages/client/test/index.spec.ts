@@ -9,7 +9,7 @@ const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
 const TEST_CLIENT_OPTIONS = { logger: "debug", relayProvider: TEST_RELAY_PROVIDER_URL };
 
 const TEST_SESSION_CHAINS = ["eip155:1"];
-const TEST_SESSION_JSONRPC = ["eth_sendTransaction", "eth_signTypedData", "personal_sign"];
+const TEST_SESSION_METHODS = ["eth_sendTransaction", "eth_signTypedData", "personal_sign"];
 
 const TEST_APP_METADATA_A: SessionTypes.Metadata = {
   name: "App A (Proposer)",
@@ -25,9 +25,7 @@ const TEST_APP_METADATA_B: SessionTypes.Metadata = {
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
-const TEST_SESSION_STATE = {
-  accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"],
-};
+const TEST_SESSION_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"];
 
 describe("Client", () => {
   // it("instantiate successfully", async () => {
@@ -39,31 +37,10 @@ describe("Client", () => {
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
     await Promise.all([
       new Promise(async (resolve, reject) => {
-        clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {
+        async function onSharedUri({ uri }) {
           console.log("URI Shared"); // eslint-disable-line no-console
 
-          clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
-            console.log("Session proposed"); // eslint-disable-line no-console
-            expect(proposal.proposer.metadata).toEqual(TEST_APP_METADATA_A);
-            expect(proposal.stateParams.chains).toEqual(TEST_SESSION_CHAINS);
-            expect(proposal.ruleParams.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
-            const topic = await clientB.respond({
-              approved: true,
-              proposal,
-              response: {
-                app: TEST_APP_METADATA_B,
-                state: TEST_SESSION_STATE,
-              },
-            });
-            if (typeof topic === "undefined") {
-              throw new Error("topic is undefined");
-            }
-            const session = await clientB.session.get(topic);
-            expect(session).toBeTruthy();
-            expect(session.state.accounts).toEqual(TEST_SESSION_STATE.accounts);
-            expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
-            resolve();
-          });
+          clientB.on(SESSION_EVENTS.proposed, onSessionProposal);
 
           const topic = await clientB.respond({
             approved: true,
@@ -77,17 +54,42 @@ describe("Client", () => {
 
           const connection = await clientB.connection.get(topic);
           expect(connection).toBeTruthy();
-        });
+        }
+
+        async function onSessionProposal(proposal: SessionTypes.Proposal) {
+          console.log("Session proposed"); // eslint-disable-line no-console
+          expect(proposal.proposer.metadata).toEqual(TEST_APP_METADATA_A);
+          expect(proposal.setting.state.accounts.params.chains).toEqual(TEST_SESSION_CHAINS);
+          expect(proposal.setting.methods).toEqual(TEST_SESSION_METHODS);
+          const topic = await clientB.respond({
+            approved: true,
+            proposal,
+            response: {
+              app: TEST_APP_METADATA_B,
+              accounts: TEST_SESSION_ACCOUNTS,
+            },
+          });
+          if (typeof topic === "undefined") {
+            throw new Error("topic is undefined");
+          }
+          const session = await clientB.session.get(topic);
+          expect(session).toBeTruthy();
+          expect(session.setting.state.accounts.data).toEqual(TEST_SESSION_ACCOUNTS);
+          expect(session.setting.methods).toEqual(TEST_SESSION_METHODS);
+          resolve();
+        }
+
+        clientA.on(CLIENT_EVENTS.share_uri, onSharedUri);
       }),
       new Promise(async (resolve, reject) => {
         const session = await clientA.connect({
           app: TEST_APP_METADATA_A,
           chains: TEST_SESSION_CHAINS,
-          jsonrpc: TEST_SESSION_JSONRPC,
+          methods: TEST_SESSION_METHODS,
         });
         expect(session).toBeTruthy();
-        expect(session.state.accounts).toEqual(TEST_SESSION_STATE.accounts);
-        expect(session.rules.jsonrpc).toEqual(TEST_SESSION_JSONRPC);
+        expect(session.setting.state.accounts.data).toEqual(TEST_SESSION_ACCOUNTS);
+        expect(session.setting.methods).toEqual(TEST_SESSION_METHODS);
       }),
     ]);
   });

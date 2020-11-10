@@ -2,6 +2,7 @@ import { ISequence } from "./sequence";
 import { KeyPair } from "./crypto";
 import { RelayTypes } from "./relay";
 import { ConnectionTypes } from "./connection";
+import { SettingTypes } from "./settings";
 
 export declare namespace SessionTypes {
   export interface SignalProposeParams {
@@ -12,8 +13,8 @@ export declare namespace SessionTypes {
   export interface ProposeParams {
     signal: SignalProposeParams;
     relay: RelayTypes.ProtocolOptions;
-    stateParams: StateParams;
-    ruleParams: RuleParams;
+    chains: string[];
+    methods: string[];
     metadata: Metadata;
   }
 
@@ -49,8 +50,7 @@ export declare namespace SessionTypes {
     relay: RelayTypes.ProtocolOptions;
     proposer: Participant;
     signal: Signal;
-    stateParams: StateParams;
-    ruleParams: RuleParams;
+    setting: SettingTypes.Proposal;
   }
 
   export type ProposedStatus = "proposed";
@@ -80,26 +80,25 @@ export declare namespace SessionTypes {
 
   export interface RespondParams {
     approved: boolean;
-    state: State;
-    metadata: Metadata;
     proposal: Proposal;
+    state: SettingTypes.BaseStateSettled<string[]>;
+    metadata: Metadata;
   }
 
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
     keyPair: KeyPair;
     peer: Participant;
-    state: State;
-    rules: Rules;
+    setting: SettingTypes.Settled;
   }
 
   export interface UpdateParams {
     topic: string;
-    state?: State;
+    state?: SettingTypes.StateUpdate<string[]>;
     metadata?: Metadata;
   }
 
-  export type Update = { state: State } | { metadata: Metadata };
+  export type Update = { state: SettingTypes.StateUpdate<string[]> } | { metadata: Metadata };
 
   export interface DeleteParams {
     topic: string;
@@ -107,13 +106,12 @@ export declare namespace SessionTypes {
   }
 
   export interface Settled {
-    relay: RelayTypes.ProtocolOptions;
     topic: string;
+    relay: RelayTypes.ProtocolOptions;
     sharedKey: string;
     keyPair: KeyPair;
     peer: Participant;
-    state: State;
-    rules: Rules;
+    setting: SettingTypes.Settled;
   }
 
   export interface Participant {
@@ -128,41 +126,10 @@ export declare namespace SessionTypes {
     icons: string[];
   }
 
-  export interface StateParams {
-    chains: string[];
-  }
-
-  export interface State {
-    accounts: string[];
-  }
-
-  export interface WriteAccessParams {
-    [key: string]: {
-      proposer: boolean;
-      responder: boolean;
-    };
-  }
-
-  export interface RuleParams {
-    state: WriteAccessParams;
-    jsonrpc: string[];
-  }
-
-  export interface WriteAccess {
-    [key: string]: {
-      [publicKey: string]: boolean;
-    };
-  }
-
-  export interface Rules {
-    state: WriteAccess;
-    jsonrpc: string[];
-  }
-
   export interface Success {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    state: State;
+    setting: SettingTypes.Settled;
     responder: Participant;
   }
   export interface Failed {

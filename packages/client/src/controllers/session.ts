@@ -1,7 +1,6 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
-  DecryptParams,
   IClient,
   ISession,
   KeyParams,
@@ -18,6 +17,9 @@ import {
   formatLoggerContext,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
+  generateCaip25ProposalSetting,
+  generateSettledSetting,
+  handleSettledSettingStateUpdate,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -126,7 +128,7 @@ export class Session extends ISession {
     this.logger.info("Respond Session");
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, metadata, proposal } = params;
-    const { relay, proposer, ruleParams } = proposal;
+    const { relay, proposer } = proposal;
     const keyPair = generateKeyPair();
     const decryptKeys: KeyParams = {
       sharedKey: proposal.signal.params.sharedKey,
@@ -134,27 +136,21 @@ export class Session extends ISession {
     };
     if (approved) {
       try {
-        const proposerPubKey = proposer.publicKey;
-        const responderPubKey = keyPair.publicKey;
         const session = await this.settle({
           relay,
           keyPair,
           peer: proposal.proposer,
-          state: params.state,
-          rules: {
-            state: {
-              accounts: {
-                [proposerPubKey]: ruleParams.state.accounts.proposer,
-                [responderPubKey]: ruleParams.state.accounts.responder,
-              },
-            },
-            jsonrpc: ruleParams.jsonrpc,
-          },
+          setting: generateSettledSetting({
+            proposal: proposal.setting,
+            proposer: proposal.proposer,
+            responder: { publicKey: keyPair.publicKey },
+            state: params.state,
+          }),
         });
         const outcome: SessionTypes.Outcome = {
           topic: session.topic,
           relay: session.relay,
-          state: session.state,
+          setting: session.setting,
           responder: {
             publicKey: session.keyPair.publicKey,
             metadata,
@@ -259,8 +255,10 @@ export class Session extends ISession {
       relay: params.relay,
       proposer,
       signal,
-      stateParams: params.stateParams,
-      ruleParams: params.ruleParams,
+      setting: generateCaip25ProposalSetting({
+        chains: params.chains,
+        methods: { ...SETTLED_SESSION_JSONRPC, ...params.methods },
+      }),
     };
     const pending: SessionTypes.Pending = {
       status: SESSION_STATUS.proposed,
@@ -285,11 +283,7 @@ export class Session extends ISession {
       sharedKey,
       keyPair: params.keyPair,
       peer: params.peer,
-      state: params.state,
-      rules: {
-        ...params.rules,
-        jsonrpc: [...SETTLED_SESSION_JSONRPC, ...params.rules.jsonrpc],
-      },
+      setting: params.setting,
     };
     const decryptKeys: KeyParams = {
       sharedKey: session.sharedKey,
@@ -305,7 +299,7 @@ export class Session extends ISession {
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
     const pending = await this.pending.get(topic);
-    const { signal, ruleParams } = pending.proposal;
+    const { signal } = pending.proposal;
     const encryptKeys: KeyParams = {
       sharedKey: signal.params.sharedKey,
       publicKey: signal.params.keyPair.publicKey,
@@ -313,29 +307,18 @@ export class Session extends ISession {
     let errorMessage: string | undefined;
     if (!isSessionFailed(request.params)) {
       try {
-        const proposerKey = pending.keyPair.publicKey;
-        const responderKey = request.params.responder.publicKey;
         const session = await this.settle({
           relay: pending.relay,
           keyPair: pending.keyPair,
           peer: request.params.responder,
-          state: request.params.state,
-          rules: {
-            state: {
-              accounts: {
-                [proposerKey]: ruleParams.state.accounts.proposer,
-                [responderKey]: ruleParams.state.accounts.responder,
-              },
-            },
-            jsonrpc: ruleParams.jsonrpc,
-          },
+          setting: request.params.setting,
         });
         await this.pending.update(topic, {
           status: SESSION_STATUS.responded,
           outcome: {
             topic: session.topic,
             relay: session.relay,
-            state: session.state,
+            setting: session.setting,
             responder: session.peer,
           },
         });
@@ -381,7 +364,7 @@ export class Session extends ISession {
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const session = await this.settled.get(payloadEvent.topic);
-      if (!session.rules.jsonrpc.includes(request.method)) {
+      if (!session.setting.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
         const response = formatJsonRpcError(request.id, errorMessage);
@@ -427,16 +410,12 @@ export class Session extends ISession {
   ): Promise<SessionTypes.Update> {
     let update: SessionTypes.Update;
     if (typeof params.state !== "undefined") {
-      const state = params.state as SessionTypes.State;
       const publicKey = fromPeer ? session.peer.publicKey : session.keyPair.publicKey;
-      for (const key of Object.keys(state)) {
-        if (!session.rules.state[key][publicKey]) {
-          const errorMessage = `Unauthorized state update for key: ${key}`;
-          this.logger.error(errorMessage);
-          throw new Error(errorMessage);
-        }
-        session.state[key] = state[key];
-      }
+      const state = handleSettledSettingStateUpdate({
+        participant: { publicKey },
+        settled: session.setting,
+        update: params.state,
+      });
       update = { state };
     } else if (typeof params.metadata !== "undefined") {
       const metadata = params.metadata as SessionTypes.Metadata;

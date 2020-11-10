@@ -15,6 +15,7 @@ import {
   getLoggerOptions,
   isConnectionResponded,
   isSessionResponded,
+  generateStatelessProposalSetting,
 } from "@walletconnect/utils";
 import { JsonRpcPayload, JsonRpcRequest, isJsonRpcRequest } from "rpc-json-utils";
 
@@ -30,7 +31,26 @@ import {
   SESSION_EVENTS,
   SESSION_JSONRPC,
   SESSION_SIGNAL_TYPE_CONNECTION,
+  SETTLED_CONNECTION_JSONRPC,
 } from "./constants";
+
+export function generateConnectionProposalFromUri(uri: string): ConnectionTypes.Proposal {
+  const uriParams = parseUri(uri);
+
+  const proposal: ConnectionTypes.Proposal = {
+    topic: uriParams.topic,
+    relay: uriParams.relay,
+    proposer: {
+      publicKey: uriParams.publicKey,
+    },
+    signal: {
+      type: CONNECTION_SIGNAL_TYPE_URI,
+      params: { uri },
+    },
+    setting: generateStatelessProposalSetting({ methods: SETTLED_CONNECTION_JSONRPC }),
+  };
+  return proposal;
+}
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -96,18 +116,8 @@ export class Client extends IClient {
         signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, params: { topic: connection.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
         metadata: getAppMetadata(params.app),
-        stateParams: {
-          chains: params.chains,
-        },
-        ruleParams: {
-          state: {
-            accounts: {
-              proposer: false,
-              responder: true,
-            },
-          },
-          jsonrpc: params.jsonrpc,
-        },
+        chains: params.chains,
+        methods: params.methods,
       });
       this.logger.debug(`Application Connection Successful`);
       this.logger.trace({ type: "method", method: "connect", session });
@@ -121,23 +131,11 @@ export class Client extends IClient {
 
   public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
     if (typeof params.proposal === "string") {
-      const uriParams = parseUri(params.proposal);
       this.logger.debug(`Responding Connection Proposal`);
-      this.logger.trace({ type: "method", method: "respond", params, uriParams });
-      const proposal: ConnectionTypes.Proposal = {
-        topic: uriParams.topic,
-        relay: uriParams.relay,
-        proposer: {
-          publicKey: uriParams.publicKey,
-        },
-        signal: {
-          type: CONNECTION_SIGNAL_TYPE_URI,
-          params: { uri: params.proposal },
-        },
-      };
+      this.logger.trace({ type: "method", method: "respond", params });
       const pending = await this.connection.respond({
         approved: params.approved,
-        proposal,
+        proposal: generateConnectionProposalFromUri(params.proposal),
       });
       if (!isConnectionResponded(pending)) return;
       if (isConnectionFailed(pending.outcome)) {
@@ -160,7 +158,11 @@ export class Client extends IClient {
       approved: params.approved,
       proposal: params.proposal,
       metadata: getAppMetadata(params.response.app),
-      state: params.response.state,
+      state: {
+        accounts: {
+          data: params.response.accounts,
+        },
+      },
     });
     if (!isSessionResponded(pending)) return;
     if (isSessionFailed(pending.outcome)) {
@@ -260,6 +262,8 @@ export class Client extends IClient {
       this.events.emit(CONNECTION_EVENTS.deleted, connection);
     });
     this.connection.on(CONNECTION_EVENTS.payload, (payload: JsonRpcPayload) => {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payload });
       this.onPayload(payload, CONNECTION_CONTEXT);
     });
     // Session Subscription Events
@@ -289,6 +293,8 @@ export class Client extends IClient {
       this.events.emit(SESSION_EVENTS.deleted, session);
     });
     this.session.on(SESSION_EVENTS.payload, (payload: JsonRpcPayload) => {
+      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payload });
       this.onPayload(payload, SESSION_CONTEXT);
     });
   }

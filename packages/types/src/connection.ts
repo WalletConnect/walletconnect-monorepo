@@ -1,6 +1,7 @@
 import { ISequence } from "./sequence";
 import { KeyPair } from "./crypto";
 import { RelayTypes } from "./relay";
+import { SettingTypes } from "./settings";
 
 export declare namespace ConnectionTypes {
   export interface ProposeParams {
@@ -36,6 +37,7 @@ export declare namespace ConnectionTypes {
     relay: RelayTypes.ProtocolOptions;
     proposer: Participant;
     signal: Signal;
+    setting: SettingTypes.Proposal;
   }
 
   export type ProposedStatus = "proposed";
@@ -66,12 +68,27 @@ export declare namespace ConnectionTypes {
   export interface RespondParams {
     approved: boolean;
     proposal: Proposal;
+    state?: SettingTypes.BaseStateSettled;
+    metadata?: Metadata;
   }
 
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
     peer: Participant;
     keyPair: KeyPair;
+    setting: SettingTypes.Settled;
+  }
+
+  export interface UpdateParams {
+    topic: string;
+    state?: SettingTypes.StateUpdate<any>;
+    metadata?: Metadata;
+  }
+  export type Update = { state: SettingTypes.StateUpdate<any> } | { metadata: Metadata };
+
+  export interface DeleteParams {
+    topic: string;
+    reason: string;
   }
 
   export interface Settled {
@@ -80,21 +97,7 @@ export declare namespace ConnectionTypes {
     sharedKey: string;
     keyPair: KeyPair;
     peer: Participant;
-    state: State;
-    rules: Rules;
-  }
-
-  export interface UpdateParams {
-    topic: string;
-    state?: State;
-    metadata?: Metadata;
-  }
-
-  export type Update = { state: State } | { metadata: Metadata };
-
-  export interface DeleteParams {
-    topic: string;
-    reason: string;
+    setting: SettingTypes.Settled;
   }
 
   export interface Participant {
@@ -109,39 +112,10 @@ export declare namespace ConnectionTypes {
     os: string;
   }
 
-  // eslint-disable-next-line
-  export interface StateParams {}
-
-  // eslint-disable-next-line
-  export interface State {}
-
-  export interface WriteAccessParams {
-    [key: string]: {
-      proposer: boolean;
-      responder: boolean;
-    };
-  }
-
-  export interface RuleParams {
-    state: WriteAccessParams;
-    jsonrpc: string[];
-  }
-
-  export interface WriteAccess {
-    [key: string]: {
-      [publicKey: string]: boolean;
-    };
-  }
-
-  export interface Rules {
-    state: WriteAccess;
-    jsonrpc: string[];
-  }
-
   export interface Success {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    state: State;
+    setting: SettingTypes.Settled;
     responder: Participant;
   }
 
