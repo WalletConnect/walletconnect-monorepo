@@ -12,7 +12,6 @@ import { mapToObj, objToMap, formatLoggerContext } from "@walletconnect/utils";
 import { JsonRpcPayload } from "rpc-json-utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
-import { timeStamp } from "console";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();

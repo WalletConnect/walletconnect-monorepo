@@ -1,4 +1,5 @@
 import { SessionTypes } from "@walletconnect/types";
+import { generateCaip25ProposalSetting } from "@walletconnect/utils";
 
 import Client from "../src";
 import { CLIENT_EVENTS, SESSION_EVENTS } from "../src/constants";
@@ -28,19 +29,29 @@ const TEST_APP_METADATA_B: SessionTypes.Metadata = {
 const TEST_SESSION_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"];
 
 describe("Client", () => {
-  // it("instantiate successfully", async () => {
-  //   const client = await Client.init(TEST_CLIENT_OPTIONS);
-  //   expect(client).toBeTruthy();
-  // });
+  it("instantiate successfully", async () => {
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
+    expect(client).toBeTruthy();
+  });
   it("connect two clients", async () => {
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
     await Promise.all([
       new Promise(async (resolve, reject) => {
-        async function onSharedUri({ uri }) {
+        const session = await clientA.connect({
+          metadata: TEST_APP_METADATA_A,
+          setting: generateCaip25ProposalSetting({
+            chains: TEST_SESSION_CHAINS,
+            methods: TEST_SESSION_METHODS,
+          }),
+        });
+        console.log("Session connected"); // eslint-disable-line no-console
+        expect(session).toBeTruthy();
+        resolve();
+      }),
+      new Promise(async (resolve, reject) => {
+        clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {
           console.log("URI Shared"); // eslint-disable-line no-console
-
-          clientB.on(SESSION_EVENTS.proposed, onSessionProposal);
 
           const topic = await clientB.respond({
             approved: true,
@@ -54,47 +65,33 @@ describe("Client", () => {
 
           const connection = await clientB.connection.get(topic);
           expect(connection).toBeTruthy();
-        }
+          resolve();
+        });
+      }),
 
-        async function onSessionProposal(proposal: SessionTypes.Proposal) {
+      new Promise(async (resolve, reject) => {
+        clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
           console.log("Session proposed"); // eslint-disable-line no-console
-          // expect(proposal.proposer.metadata.toString()).toEqual(TEST_APP_METADATA_A.toString());
-          // expect(proposal.setting.state.accounts.params.chains.toString()).toEqual(
-          //   TEST_SESSION_CHAINS.toString(),
-          // );
-          // expect(proposal.setting.methods.toString()).toEqual(TEST_SESSION_METHODS.toString());
+          const response = {
+            metadata: TEST_APP_METADATA_B,
+            state: {
+              accounts: {
+                data: TEST_SESSION_ACCOUNTS,
+              },
+            },
+          };
           const topic = await clientB.respond({
             approved: true,
             proposal,
-            response: {
-              app: TEST_APP_METADATA_B,
-              accounts: TEST_SESSION_ACCOUNTS,
-            },
+            response,
           });
           if (typeof topic === "undefined") {
             throw new Error("topic is undefined");
           }
           const session = await clientB.session.get(topic);
           expect(session).toBeTruthy();
-          expect(session.setting.state.accounts.data).toEqual(TEST_SESSION_ACCOUNTS);
-          expect(session.setting.methods).toEqual(TEST_SESSION_METHODS);
           resolve();
-        }
-
-        clientA.on(CLIENT_EVENTS.share_uri, onSharedUri);
-      }),
-      new Promise(async (resolve, reject) => {
-        const session = await clientA.connect({
-          app: TEST_APP_METADATA_A,
-          chains: TEST_SESSION_CHAINS,
-          methods: TEST_SESSION_METHODS,
         });
-        console.log("Session connected"); // eslint-disable-line no-console
-        expect(session).toBeTruthy();
-        expect(session.setting.state.accounts.data.toString()).toEqual(
-          TEST_SESSION_ACCOUNTS.toString(),
-        );
-        expect(session.setting.methods.toString()).toEqual(TEST_SESSION_METHODS.toString());
       }),
     ]);
   });

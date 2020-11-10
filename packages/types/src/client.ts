@@ -17,9 +17,8 @@ export interface ClientOptions {
 
 export declare namespace ClientTypes {
   export interface ConnectParams {
-    chains: string[];
-    methods: string[];
-    app?: string | SessionTypes.Metadata;
+    metadata: SessionTypes.Metadata;
+    setting: SettingTypes.Proposal;
     relay?: RelayTypes.ProtocolOptions;
     connection?: string;
   }
@@ -28,8 +27,8 @@ export declare namespace ClientTypes {
     approved: boolean;
     proposal: string | SessionTypes.Proposal;
     response?: {
-      accounts: string[];
-      app?: string | SessionTypes.Metadata;
+      metadata: SessionTypes.Metadata;
+      state: SettingTypes.BaseStateSettled;
     };
   }
 

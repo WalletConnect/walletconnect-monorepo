@@ -13,8 +13,7 @@ export declare namespace SessionTypes {
   export interface ProposeParams {
     signal: SignalProposeParams;
     relay: RelayTypes.ProtocolOptions;
-    chains: string[];
-    methods: string[];
+    setting: SettingTypes.Proposal;
     metadata: Metadata;
   }
 

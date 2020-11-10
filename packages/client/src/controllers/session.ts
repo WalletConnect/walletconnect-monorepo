@@ -43,6 +43,7 @@ import {
   SUBSCRIPTION_EVENTS,
   SETTLED_SESSION_JSONRPC,
   SESSION_SIGNAL_TYPE_CONNECTION,
+  SETTLED_CONNECTION_JSONRPC,
 } from "../constants";
 
 export class Session extends ISession {
@@ -249,10 +250,10 @@ export class Session extends ISession {
       publicKey: keyPair.publicKey,
       metadata: params.metadata,
     };
-    const setting = generateCaip25ProposalSetting({
-      chains: params.chains,
-      methods: { ...SETTLED_SESSION_JSONRPC, ...params.methods },
-    });
+    const setting = {
+      ...params.setting,
+      methods: { ...SETTLED_CONNECTION_JSONRPC, ...params.setting.methods },
+    };
     const proposal: SessionTypes.Proposal = {
       topic,
       relay: params.relay,

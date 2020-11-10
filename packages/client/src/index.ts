@@ -109,9 +109,8 @@ export class Client extends IClient {
       const session = await this.session.create({
         signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, params: { topic: connection.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
-        metadata: getAppMetadata(params.app),
-        chains: params.chains,
-        methods: params.methods,
+        metadata: params.metadata,
+        setting: params.setting,
       });
       this.logger.debug(`Application Connection Successful`);
       this.logger.trace({ type: "method", method: "connect", session });
@@ -151,12 +150,8 @@ export class Client extends IClient {
     const pending = await this.session.respond({
       approved: params.approved,
       proposal: params.proposal,
-      metadata: getAppMetadata(params.response.app),
-      state: {
-        accounts: {
-          data: params.response.accounts,
-        },
-      },
+      metadata: params.response.metadata,
+      state: params.response.state,
     });
     if (!isSessionResponded(pending)) return;
     if (isSessionFailed(pending.outcome)) {
