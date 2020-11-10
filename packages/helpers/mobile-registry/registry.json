@@ -174,5 +174,13 @@
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
+  },
+  {
+    "name": "CYBAVO Wallet",
+    "shortName": "CYBAVO",
+    "color": "rgb(36, 188, 208)",
+    "logo": "./logos/cybavo.png",
+    "universalLink": "https://cdn.cybavo.com",
+    "deepLink": "cybavowallet:"
   }
 ]
