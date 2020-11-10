@@ -178,7 +178,7 @@
   {
     "name": "CYBAVO Wallet",
     "shortName": "CYBAVO",
-    "color": "rgb(36, 188, 208)",
+    "color": "rgb(255, 255, 255)",
     "logo": "./logos/cybavo.png",
     "universalLink": "https://cdn.cybavo.com",
     "deepLink": "cybavowallet:"
