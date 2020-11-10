@@ -215,9 +215,9 @@ export class Client extends IClient {
       await this.connection.init();
       await this.session.init();
       this.registerEventListeners();
-      this.logger.info(`Client initilization success`);
+      this.logger.info(`Client Initilization Success`);
     } catch (e) {
-      this.logger.info(`Client initilization failure`);
+      this.logger.info(`Client Initilization Failure`);
       this.logger.error(e);
       throw e;
     }

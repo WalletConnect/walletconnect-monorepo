@@ -48,7 +48,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     if (this.subscriptions.has(topic)) {
       this.update(topic, data);
     } else {
-      this.logger.debug("Setting subscription");
+      this.logger.debug(`Setting subscription`);
       this.logger.trace({ type: "method", method: "set", topic, data, opts });
       if (this.encrypted && typeof opts.decryptKeys === "undefined") {
         const errorMessage = `Decrypt params required for ${this.getSubscriptionContext()}`;
@@ -69,14 +69,14 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async get(topic: string): Promise<Data> {
-    this.logger.debug("Getting subscription");
+    this.logger.debug(`Getting subscription`);
     this.logger.trace({ type: "method", method: "get", topic });
     const subscription = await this.getSubscription(topic);
     return subscription.data;
   }
 
   public async update(topic: string, update: Partial<Data>): Promise<void> {
-    this.logger.debug("Updating subscription");
+    this.logger.debug(`Updating subscription`);
     this.logger.trace({ type: "method", method: "update", topic, update });
     const subscription = await this.getSubscription(topic);
     const data = { ...subscription.data, ...update };
@@ -93,7 +93,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async delete(topic: string, reason: string): Promise<void> {
-    this.logger.debug("Deleting subscription");
+    this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });
     const subscription = await this.getSubscription(topic);
     this.client.relay.unsubscribe(subscription.id, {
@@ -175,10 +175,10 @@ export class Subscription<Data = any> extends ISubscription<Data> {
         );
         this.subscriptions.set(topic, { ...subscription, id });
       }
-      this.logger.debug(`Successfully restored subscriptions for ${this.getSubscriptionContext()}`);
+      this.logger.debug(`Successfully Restored subscriptions for ${this.getSubscriptionContext()}`);
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.entries });
     } catch (e) {
-      this.logger.debug(`Failed to restore subscriptions for ${this.getSubscriptionContext()}`);
+      this.logger.debug(`Failed to Restore subscriptions for ${this.getSubscriptionContext()}`);
       this.logger.error(e);
     }
   }

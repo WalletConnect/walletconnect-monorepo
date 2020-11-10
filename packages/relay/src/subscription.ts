@@ -17,7 +17,7 @@ export class SubscriptionService {
 
   public setSubscriber(subscriber: Omit<Subscription, "id">): string {
     const id = generateRandomBytes32();
-    this.logger.debug("Setting Subscriber");
+    this.logger.debug(`Setting Subscriber`);
     this.logger.trace({ type: "method", method: "setSubscriber", topic: subscriber.topic });
     this.subs.push({ ...subscriber, id });
     return id;
@@ -25,13 +25,13 @@ export class SubscriptionService {
 
   public getSubscribers(topic: string, senderSocketId: string): Subscription[] {
     const subs = this.subs.filter(sub => sub.topic === topic && sub.socketId !== senderSocketId);
-    this.logger.debug("Getting Subscribers");
+    this.logger.debug(`Getting Subscribers`);
     this.logger.trace({ type: "method", method: "getSubscribers", topic, subs });
     return subs;
   }
 
   public removeSubscriber(id: string): void {
-    this.logger.debug("Removing Subscriber");
+    this.logger.debug(`Removing Subscriber`);
     this.logger.trace({ type: "method", method: "removeSubscriber", id });
     this.subs = this.subs.filter(sub => sub.id !== id);
   }

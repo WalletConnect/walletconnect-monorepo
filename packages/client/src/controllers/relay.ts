@@ -73,7 +73,7 @@ export class Relay extends IRelay {
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", request });
     } catch (e) {
-      this.logger.debug(`Failed to publish Payload`);
+      this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e);
       throw e;
     }
@@ -107,11 +107,11 @@ export class Relay extends IRelay {
         );
         listener(payload);
       });
-      this.logger.debug(`Successfully subscribed Topic`);
+      this.logger.debug(`Successfully Subscribed Topic`);
       this.logger.trace({ type: "method", method: "subscribe", request });
       return id;
     } catch (e) {
-      this.logger.debug(`Failed to subscribe Topic`);
+      this.logger.debug(`Failed to Subscribe Topic`);
       this.logger.error(e);
       throw e;
     }
@@ -131,10 +131,10 @@ export class Relay extends IRelay {
 
       await this.provider.request(request);
       this.events.removeAllListeners(id);
-      this.logger.debug(`Successfully unsubscribed Topic`);
+      this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", request });
     } catch (e) {
-      this.logger.debug(`Failed to unsubscribe Topic`);
+      this.logger.debug(`Failed to Unsubscribe Topic`);
       this.logger.error(e);
       throw e;
     }

@@ -101,7 +101,7 @@ export class Session extends ISession {
   }
 
   public async create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
-    this.logger.info("Create Session");
+    this.logger.info(`Create Session`);
     this.logger.trace({ type: "method", method: "create", params });
     return new Promise(async (resolve, reject) => {
       const pending = await this.propose(params);
@@ -126,14 +126,15 @@ export class Session extends ISession {
   }
 
   public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
-    this.logger.info("Respond Session");
+    this.logger.info(`Respond Session`);
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, metadata, proposal } = params;
-    const { relay, proposer } = proposal;
+    const { relay } = proposal;
     const keyPair = generateKeyPair();
+    const connection = await this.client.connection.get(proposal.signal.params.topic);
     const decryptKeys: KeyParams = {
-      sharedKey: proposal.signal.params.sharedKey,
-      publicKey: proposal.signal.params.peer.publicKey,
+      sharedKey: connection.sharedKey,
+      publicKey: connection.peer.publicKey,
     };
     if (approved) {
       try {
@@ -199,7 +200,7 @@ export class Session extends ISession {
   }
 
   public async update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
-    this.logger.info("Update Session");
+    this.logger.info(`Update Session`);
     this.logger.trace({ type: "method", method: "update", params });
     const session = await this.settled.get(params.topic);
     const update = await this.handleUpdate(session, params);
@@ -209,7 +210,7 @@ export class Session extends ISession {
   }
 
   public async delete(params: SessionTypes.DeleteParams): Promise<void> {
-    this.logger.info("Delete Session");
+    this.logger.info(`Delete Session`);
     this.logger.trace({ type: "method", method: "delete", params });
     this.settled.delete(params.topic, params.reason);
   }
@@ -229,19 +230,14 @@ export class Session extends ISession {
   // ---------- Protected ----------------------------------------------- //
 
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
-    this.logger.info("Propose Session");
+    this.logger.info(`Propose Session`);
     this.logger.trace({ type: "method", method: "propose", params });
     if (params.signal.type !== SESSION_SIGNAL_TYPE_CONNECTION)
       throw new Error(`Session proposal signal unsupported`);
     const connection = await this.client.connection.settled.get(params.signal.params.topic);
     const signal: SessionTypes.SignalConnection = {
       type: SESSION_SIGNAL_TYPE_CONNECTION,
-      params: {
-        topic: connection.topic,
-        sharedKey: connection.sharedKey,
-        keyPair: connection.keyPair,
-        peer: connection.peer,
-      },
+      params: { topic: connection.topic },
     };
     const decryptKeys: KeyParams = {
       sharedKey: connection.sharedKey,
@@ -278,7 +274,7 @@ export class Session extends ISession {
   }
 
   protected async settle(params: SessionTypes.SettleParams): Promise<SessionTypes.Settled> {
-    this.logger.info("Settle Session");
+    this.logger.info(`Settle Session`);
     this.logger.trace({ type: "method", method: "settle", params });
     const sharedKey = deriveSharedKey(params.keyPair.privateKey, params.peer.publicKey);
     const topic = await sha256(sharedKey);
@@ -300,14 +296,14 @@ export class Session extends ISession {
 
   protected async onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.info("Receiving Session response");
+    this.logger.info(`Receiving Session response`);
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
     const pending = await this.pending.get(topic);
-    const { signal } = pending.proposal;
+    const connection = await this.client.connection.get(pending.proposal.signal.params.topic);
     const encryptKeys: KeyParams = {
-      sharedKey: signal.params.sharedKey,
-      publicKey: signal.params.keyPair.publicKey,
+      sharedKey: connection.sharedKey,
+      publicKey: connection.keyPair.publicKey,
     };
     let errorMessage: string | undefined;
     if (!isSessionFailed(request.params)) {
@@ -351,7 +347,7 @@ export class Session extends ISession {
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.info("Receiving Session acknowledge");
+    this.logger.info(`Receiving Session acknowledge`);
     this.logger.trace({ type: "method", method: "onAcknowledge", topic, payload });
     const response = payload as JsonRpcResponse;
     const pending = await this.pending.get(topic);
@@ -364,7 +360,7 @@ export class Session extends ISession {
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.info("Receiving Session message");
+    this.logger.info(`Receiving Session message`);
     this.logger.trace({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
@@ -393,7 +389,7 @@ export class Session extends ISession {
 
   protected async onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug("Receiving Session update");
+    this.logger.debug(`Receiving Session update`);
     this.logger.trace({ type: "method", method: "onUpdate", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
     const session = await this.settled.get(payloadEvent.topic);
@@ -439,7 +435,7 @@ export class Session extends ISession {
 
   // ---------- Private ----------------------------------------------- //
 
-  private onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
+  private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
       if (event.payload.method === SESSION_JSONRPC.respond) {
         this.onResponse(event);
@@ -448,7 +444,7 @@ export class Session extends ISession {
       this.onAcknowledge(event);
     }
   }
-  private onPendingStatusEvent(
+  private async onPendingStatusEvent(
     event:
       | SubscriptionEvent.Created<SessionTypes.Pending>
       | SubscriptionEvent.Updated<SessionTypes.Pending>,
@@ -457,10 +453,10 @@ export class Session extends ISession {
     if (isSessionResponded(pending)) {
       this.events.emit(SESSION_EVENTS.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
-        const { signal } = pending.proposal;
+        const connection = await this.client.connection.get(pending.proposal.signal.params.topic);
         const encryptKeys: KeyParams = {
-          sharedKey: signal.params.sharedKey,
-          publicKey: signal.params.keyPair.publicKey,
+          sharedKey: connection.sharedKey,
+          publicKey: connection.keyPair.publicKey,
         };
         const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });

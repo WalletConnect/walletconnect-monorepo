@@ -28,7 +28,7 @@ export class LegacyService {
   }
 
   public async onRequest(socketId: string, socketMessage: LegacySocketMessage) {
-    this.logger.info("Incoming Legacy Socket Message");
+    this.logger.info(`Incoming Legacy Socket Message`);
     this.logger.debug({ type: "payload", direction: "incoming", payload: socketMessage });
 
     try {
@@ -103,7 +103,7 @@ export class LegacyService {
     if (socket.readyState === 1) {
       const message = safeJsonStringify(socketMessage);
       socket.send(message);
-      this.logger.info("Outgoing JSON-RPC Payload");
+      this.logger.info(`Outgoing JSON-RPC Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", payload: socketMessage });
     } else {
       await this.redis.setLegacyPublished(socketMessage);

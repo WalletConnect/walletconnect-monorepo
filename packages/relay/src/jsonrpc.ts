@@ -50,7 +50,7 @@ export class JsonRpcService {
 
   public async onRequest(socketId: string, request: JsonRpcRequest): Promise<void> {
     try {
-      this.logger.info("Incoming JSON-RPC Payload");
+      this.logger.info(`Incoming JSON-RPC Payload`);
       this.logger.debug({ type: "payload", direction: "incoming", payload: request });
 
       switch (request.method) {
@@ -177,7 +177,7 @@ export class JsonRpcService {
     }
     if (socket.readyState === 1) {
       socket.send(safeJsonStringify(payload));
-      this.logger.info("Outgoing JSON-RPC Payload");
+      this.logger.info(`Outgoing JSON-RPC Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", payload });
     } else {
       if (isJsonRpcRequest(payload)) {

@@ -26,9 +26,6 @@ export declare namespace SessionTypes {
 
   export interface SignalParamsConnection {
     topic: string;
-    keyPair: KeyPair;
-    sharedKey: string;
-    peer: ConnectionTypes.Participant;
   }
 
   export type SignalParams = SignalParamsConnection;

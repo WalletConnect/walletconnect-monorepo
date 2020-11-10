@@ -103,7 +103,7 @@ export class Connection extends IConnection {
   }
 
   public async create(params?: ConnectionTypes.CreateParams): Promise<ConnectionTypes.Settled> {
-    this.logger.debug("Create Connection");
+    this.logger.debug(`Create Connection`);
     this.logger.trace({ type: "method", method: "create", params });
     return new Promise(async (resolve, reject) => {
       const pending = await this.propose(params);
@@ -128,7 +128,7 @@ export class Connection extends IConnection {
   }
 
   public async respond(params: ConnectionTypes.RespondParams): Promise<ConnectionTypes.Pending> {
-    this.logger.debug("Respond Connection");
+    this.logger.debug(`Respond Connection`);
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, proposal } = params;
     const keyPair = generateKeyPair();
@@ -195,7 +195,7 @@ export class Connection extends IConnection {
   }
 
   public async update(params: ConnectionTypes.UpdateParams): Promise<ConnectionTypes.Settled> {
-    this.logger.debug("Update Connection");
+    this.logger.debug(`Update Connection`);
     this.logger.trace({ type: "method", method: "update", params });
     const connection = await this.settled.get(params.topic);
     const update = await this.handleUpdate(connection, params);
@@ -205,7 +205,7 @@ export class Connection extends IConnection {
   }
 
   public async delete(params: ConnectionTypes.DeleteParams): Promise<void> {
-    this.logger.debug("Delete Connection");
+    this.logger.debug(`Delete Connection`);
     this.logger.trace({ type: "method", method: "delete", params });
     await this.settled.delete(params.topic, params.reason);
   }
@@ -227,7 +227,7 @@ export class Connection extends IConnection {
   protected async propose(
     params?: ConnectionTypes.ProposeParams,
   ): Promise<ConnectionTypes.Pending> {
-    this.logger.debug("Propose Connection");
+    this.logger.debug(`Propose Connection`);
     this.logger.trace({ type: "method", method: "propose", params });
     const relay = params?.relay || { protocol: RELAY_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
@@ -265,7 +265,7 @@ export class Connection extends IConnection {
   }
 
   protected async settle(params: ConnectionTypes.SettleParams): Promise<ConnectionTypes.Settled> {
-    this.logger.debug("Settle Connection");
+    this.logger.debug(`Settle Connection`);
     this.logger.trace({ type: "method", method: "settle", params });
     const sharedKey = deriveSharedKey(params.keyPair.privateKey, params.peer.publicKey);
     const topic = await sha256(sharedKey);
@@ -287,7 +287,7 @@ export class Connection extends IConnection {
 
   protected async onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug("Receiving Connection response");
+    this.logger.debug(`Receiving Connection response`);
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<ConnectionTypes.Outcome>;
     const pending = await this.pending.get(topic);
@@ -333,7 +333,7 @@ export class Connection extends IConnection {
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug("Receiving Connection acknowledge");
+    this.logger.debug(`Receiving Connection acknowledge`);
     this.logger.trace({ type: "method", method: "onAcknowledge", topic, payload });
     const response = payload as JsonRpcResponse;
     const pending = await this.pending.get(topic);
@@ -346,7 +346,7 @@ export class Connection extends IConnection {
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug("Receiving Connection message");
+    this.logger.debug(`Receiving Connection message`);
     this.logger.trace({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
@@ -375,7 +375,7 @@ export class Connection extends IConnection {
 
   protected async onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug("Receiving Connection update");
+    this.logger.debug(`Receiving Connection update`);
     this.logger.trace({ type: "method", method: "onUpdate", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
     const connection = await this.settled.get(payloadEvent.topic);
@@ -421,7 +421,7 @@ export class Connection extends IConnection {
 
   // ---------- Private ----------------------------------------------- //
 
-  private onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
+  private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
       if (event.payload.method === CONNECTION_JSONRPC.respond) {
         this.onResponse(event);
@@ -431,7 +431,7 @@ export class Connection extends IConnection {
     }
   }
 
-  private onPendingStatusEvent(
+  private async onPendingStatusEvent(
     event:
       | SubscriptionEvent.Created<ConnectionTypes.Pending>
       | SubscriptionEvent.Updated<ConnectionTypes.Pending>,

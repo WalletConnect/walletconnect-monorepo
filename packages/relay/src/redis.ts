@@ -24,7 +24,7 @@ export class RedisService {
   }
 
   public async setPublished(params: RelayTypes.PublishParams) {
-    this.logger.debug("Setting published");
+    this.logger.debug(`Setting Published`);
     this.logger.trace({ type: "method", method: "setPublished", params });
     await this.client.lpushAsync(`request:${params.topic}`, params.message);
     // TODO: need to handle ttl
@@ -36,7 +36,7 @@ export class RedisService {
       if (raw) {
         const data: string[] = raw.map((message: string) => message);
         this.client.del(`request:${topic}`);
-        this.logger.debug("Getting published");
+        this.logger.debug(`Getting Published`);
         this.logger.trace({ type: "method", method: "getPublished", topic, data });
         return data;
       }
@@ -45,7 +45,7 @@ export class RedisService {
   }
 
   public async setLegacyPublished(socketMessage: LegacySocketMessage) {
-    this.logger.debug("Setting legacy published");
+    this.logger.debug(`Setting Legacy Published`);
     this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
     await this.client.lpushAsync(`request:${socketMessage.topic}`, socketMessage.payload);
     // TODO: need to handle ttl
@@ -57,7 +57,7 @@ export class RedisService {
       if (raw) {
         const data: string[] = raw.map((message: string) => message);
         this.client.del(`request:${topic}`);
-        this.logger.debug("Getting legacy published");
+        this.logger.debug(`Getting Legacy Published`);
         this.logger.trace({ type: "method", method: "getLegacyPublished", topic, data });
         return data;
       }

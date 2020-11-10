@@ -32,7 +32,7 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   public async connect(rpcUrl = this.rpcUrl): Promise<void> {
-    this.logger.debug("Connecting JSON-RPC Provider WebSocket");
+    this.logger.debug(`Connecting JSON-RPC Provider WebSocket`);
     this.logger.trace({ type: "method", method: "connect", rpcUrl });
     return new Promise((resolve, reject) => {
       this.rpcUrl = rpcUrl;
@@ -57,7 +57,7 @@ export class WSProvider extends IJsonRpcProvider {
   }
 
   public async disconnect(): Promise<void> {
-    this.logger.debug("Disconnecting JSON-RPC Provider WebSocket");
+    this.logger.debug(`Disconnecting JSON-RPC Provider WebSocket`);
     this.logger.trace({ type: "method", method: "disconnect" });
     if (typeof this.socket === "undefined") {
       throw new Error("Socket is not connected");

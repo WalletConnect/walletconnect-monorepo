@@ -32,7 +32,7 @@ export function generateSettledSetting<P = any, S = any>(
   const state: SettingTypes.StateSettled = {};
   for (const key of Object.keys(params.proposal.state)) {
     state[key] = {
-      data: params.state[key],
+      data: params.state[key].data,
       writeAccess: {
         [params.proposer.publicKey]: params.proposal.state[key].writeAccess.proposer,
         [params.responder.publicKey]: params.proposal.state[key].writeAccess.responder,

@@ -44,27 +44,27 @@ export class WebSocketService {
 
     this.server.on("connection", (socket: Socket) => {
       const socketId = generateRandomBytes32();
-      this.logger.info("New Socket Connected");
+      this.logger.info(`New Socket Connected`);
       this.logger.debug({ type: "event", event: "connection", socketId });
       this.sockets.set(socketId, socket);
       socket.on("message", async data => {
         const message = typeof data === "string" ? data : encUtils.bufferToUtf8(Buffer.from(data));
-        this.logger.info("Incoming WebSocket Message");
-        this.logger.debug({ type: "message", direction: "incoming", message });
+        this.logger.debug(`Incoming WebSocket Message`);
+        this.logger.trace({ type: "message", direction: "incoming", message });
 
         let response: string;
         if (!message || !message.trim()) {
           response = "Missing or invalid socket data";
-          this.logger.info("Outgoing WebSocket Message");
-          this.logger.debug({ type: "message", direction: "outgoing", response });
+          this.logger.debug(`Outgoing WebSocket Message`);
+          this.logger.trace({ type: "message", direction: "outgoing", response });
           socket.send(response);
           return;
         }
         const payload = safeJsonParse(message);
         if (typeof payload === "string") {
           response = "Socket message is invalid";
-          this.logger.info("Outgoing WebSocket Message");
-          this.logger.debug({ type: "message", direction: "outgoing", response });
+          this.logger.debug(`Outgoing WebSocket Message`);
+          this.logger.trace({ type: "message", direction: "outgoing", response });
           socket.send(response);
         } else if (isJsonRpcRequest(payload)) {
           this.jsonrpc.onRequest(socketId, payload);
@@ -72,8 +72,8 @@ export class WebSocketService {
           this.legacy.onRequest(socketId, payload);
         } else {
           response = "Socket message unsupported";
-          this.logger.info("Outgoing WebSocket Message");
-          this.logger.debug({ type: "message", direction: "outgoing", response });
+          this.logger.debug(`Outgoing WebSocket Message`);
+          this.logger.trace({ type: "message", direction: "outgoing", response });
           socket.send(response);
         }
       });
