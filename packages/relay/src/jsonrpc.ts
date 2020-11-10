@@ -94,11 +94,6 @@ export class JsonRpcService {
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", params });
     const subscribers = this.subscription.getSubscribers(params.topic, socketId);
-    this.logger.debug({
-      type: "method",
-      method: "onPublishRequest",
-      subscribers: subscribers.length,
-    });
 
     // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
