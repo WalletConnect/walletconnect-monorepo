@@ -34,6 +34,7 @@ describe("Client", () => {
     expect(client).toBeTruthy();
   });
   it("connect two clients", async () => {
+    const before = Date.now();
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
     await Promise.all([
@@ -94,5 +95,7 @@ describe("Client", () => {
         });
       }),
     ]);
+    const after = Date.now();
+    console.log("elapsed:", after - before, "ms"); // eslint-disable-line no-console
   });
 });
