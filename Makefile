@@ -113,7 +113,7 @@ relay-logs:
 	docker service logs -f --raw dev_$(project)_relay --tail 500
 
 watch:
-	lerna run watch --stream --parallel
+	lerna run watch --stream
 
 relay-dev: dev relay-watch relay-logs
 
