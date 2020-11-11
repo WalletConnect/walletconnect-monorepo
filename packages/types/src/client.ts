@@ -23,12 +23,12 @@ export declare namespace ClientTypes {
     connection?: string;
   }
 
-  export interface RespondParams {
+  export interface RespondParams<S = any> {
     approved: boolean;
     proposal: string | SessionTypes.Proposal;
     response?: {
       metadata: SessionTypes.Metadata;
-      state: SettingTypes.BaseStateSettled;
+      state: S;
     };
   }
 

@@ -1,22 +1,23 @@
 export declare namespace SettingTypes {
+  export interface JsonRpcConfig {
+    methods: string[];
+  }
+
   export interface WriteAccessProposal {
     proposer: boolean;
     responder: boolean;
   }
 
-  export interface BaseStateProposalConfig<P = any> {
+  export type WriteAccessProposalConfig<P = any> = Record<keyof P, WriteAccessProposal>;
+
+  export type StateProposal<P = any> = {
     params: P;
-  }
-
-  export interface StateProposalConfig<P = any> extends BaseStateProposalConfig<P> {
-    writeAccess: WriteAccessProposal;
-  }
-
-  export type StateProposal<P = any> = Record<string, StateProposalConfig<P>>;
+    writeAccess: WriteAccessProposalConfig<P>;
+  };
 
   export interface Proposal<P = any> {
     state: StateProposal<P>;
-    methods: string[];
+    jsonrpc: JsonRpcConfig;
   }
 
   export interface Participant {
@@ -27,35 +28,38 @@ export declare namespace SettingTypes {
     [publicKey: string]: boolean;
   }
 
-  export interface BaseStateSettledConfig<S = any> {
+  export type WriteAccessSettledConfig<P = any> = Record<keyof P, WriteAccessSettled>;
+
+  export type StateSettled<S = any> = {
     data: S;
-  }
-
-  export type BaseStateSettled<S = any> = Record<string, BaseStateSettledConfig<S>>;
-
-  export interface StateSettledConfig<S = any> extends BaseStateSettledConfig<S> {
-    writeAccess: WriteAccessSettled;
-  }
-
-  export type StateSettled<S = any> = Record<string, StateSettledConfig<S>>;
+    writeAccess: WriteAccessSettledConfig<S>;
+  };
 
   export interface Settled<S = any> {
     state: StateSettled<S>;
-    methods: string[];
+    jsonrpc: JsonRpcConfig;
   }
-
-  export type StateUpdate<S = any> = Record<string, BaseStateSettledConfig<S>>;
 
   export interface GenerateSettledParams<P = any, S = any> {
     proposal: Proposal<P>;
     proposer: Participant;
     responder: Participant;
-    state: BaseStateSettled<S>;
+    state: S;
   }
 
   export interface HandleSettledStateUpdateParams<S = any> {
     settled: Settled<S>;
-    update: StateUpdate<S>;
+    update: Partial<S>;
     participant: Participant;
   }
+}
+
+export interface Caip25StateParams {
+  accounts: {
+    chains: string[];
+  };
+}
+
+export interface Caip25StateSettled {
+  accounts: string[];
 }

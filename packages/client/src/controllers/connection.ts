@@ -242,7 +242,9 @@ export class Connection extends IConnection {
       publicKey: proposer.publicKey,
       relay: relay,
     });
-    const setting = generateStatelessProposalSetting({ methods: SETTLED_CONNECTION_JSONRPC });
+    const setting = generateStatelessProposalSetting({
+      methods: SETTLED_CONNECTION_JSONRPC,
+    });
     const proposal: ConnectionTypes.Proposal = {
       relay,
       topic,
@@ -351,7 +353,7 @@ export class Connection extends IConnection {
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const connection = await this.settled.get(payloadEvent.topic);
-      if (!connection.setting.methods.includes(request.method)) {
+      if (!connection.setting.jsonrpc.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
         const response = formatJsonRpcError(request.id, errorMessage);

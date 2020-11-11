@@ -97,7 +97,7 @@ export class Client extends IClient {
     this.events.off(event, listener);
   }
 
-  public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
+  public async connect<P = any>(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
     this.logger.debug(`Connecting Application`);
     this.logger.trace({ type: "method", method: "connect", params });
     try {
@@ -106,7 +106,7 @@ export class Client extends IClient {
           ? await this.connection.create()
           : await this.connection.get(params.connection);
       this.logger.trace({ type: "method", method: "connect", connection });
-      const session = await this.session.create({
+      const session = await this.session.create<P>({
         signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, params: { topic: connection.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
         metadata: params.metadata,
@@ -122,7 +122,9 @@ export class Client extends IClient {
     }
   }
 
-  public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
+  public async respond<P = any, S = any>(
+    params: ClientTypes.RespondParams,
+  ): Promise<string | undefined> {
     if (typeof params.proposal === "string") {
       this.logger.debug(`Responding Connection Proposal`);
       this.logger.trace({ type: "method", method: "respond", params });
@@ -147,7 +149,7 @@ export class Client extends IClient {
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
-    const pending = await this.session.respond({
+    const pending = await this.session.respond<P, S>({
       approved: params.approved,
       proposal: params.proposal,
       metadata: params.response.metadata,

@@ -101,11 +101,11 @@ export class Session extends ISession {
     return mapEntries(this.settled.entries, x => x.data);
   }
 
-  public async create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
+  public async create<P = any>(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
     this.logger.info(`Create Session`);
     this.logger.trace({ type: "method", method: "create", params });
     return new Promise(async (resolve, reject) => {
-      const pending = await this.propose(params);
+      const pending = await this.propose<P>(params);
       this.pending.on(
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) => {
@@ -126,7 +126,9 @@ export class Session extends ISession {
     });
   }
 
-  public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
+  public async respond<P = any, S = any>(
+    params: SessionTypes.RespondParams,
+  ): Promise<SessionTypes.Pending> {
     this.logger.info(`Respond Session`);
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, metadata, proposal } = params;
@@ -143,7 +145,7 @@ export class Session extends ISession {
           publicKey: keyPair.publicKey,
           metadata,
         };
-        const setting = generateSettledSetting({
+        const setting = generateSettledSetting<P, S>({
           proposal: proposal.setting,
           proposer: proposal.proposer,
           responder,
@@ -200,11 +202,11 @@ export class Session extends ISession {
     }
   }
 
-  public async update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
+  public async update<S = any>(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
     this.logger.info(`Update Session`);
     this.logger.trace({ type: "method", method: "update", params });
     const session = await this.settled.get(params.topic);
-    const update = await this.handleUpdate(session, params);
+    const update = await this.handleUpdate<S>(session, params);
     const request = formatJsonRpcRequest(SESSION_JSONRPC.update, update);
     this.send(session.topic, request);
     return session;
@@ -230,7 +232,9 @@ export class Session extends ISession {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
+  protected async propose<P = any>(
+    params: SessionTypes.ProposeParams,
+  ): Promise<SessionTypes.Pending> {
     this.logger.info(`Propose Session`);
     this.logger.trace({ type: "method", method: "propose", params });
     if (params.signal.type !== SESSION_SIGNAL_TYPE_CONNECTION)
@@ -250,9 +254,9 @@ export class Session extends ISession {
       publicKey: keyPair.publicKey,
       metadata: params.metadata,
     };
-    const setting = {
+    const setting: SettingTypes.Proposal<P> = {
       ...params.setting,
-      methods: { ...SETTLED_CONNECTION_JSONRPC, ...params.setting.methods },
+      jsonrpc: { methods: { ...SETTLED_CONNECTION_JSONRPC, ...params.setting.jsonrpc.methods } },
     };
     const proposal: SessionTypes.Proposal = {
       topic,
@@ -366,7 +370,7 @@ export class Session extends ISession {
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const session = await this.settled.get(payloadEvent.topic);
-      if (!session.setting.methods.includes(request.method)) {
+      if (!session.setting.jsonrpc.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
         const response = formatJsonRpcError(request.id, errorMessage);
@@ -405,7 +409,7 @@ export class Session extends ISession {
     }
   }
 
-  protected async handleUpdate(
+  protected async handleUpdate<S = any>(
     session: SessionTypes.Settled,
     params: SessionTypes.UpdateParams,
     fromPeer?: boolean,
@@ -413,7 +417,7 @@ export class Session extends ISession {
     let update: SessionTypes.Update;
     if (typeof params.state !== "undefined") {
       const publicKey = fromPeer ? session.peer.publicKey : session.keyPair.publicKey;
-      const state = handleSettledSettingStateUpdate({
+      const state = handleSettledSettingStateUpdate<S>({
         participant: { publicKey },
         settled: session.setting,
         update: params.state,

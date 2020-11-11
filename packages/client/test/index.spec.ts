@@ -1,4 +1,4 @@
-import { SessionTypes } from "@walletconnect/types";
+import { SessionTypes, Caip25StateSettled, Caip25StateParams } from "@walletconnect/types";
 import { generateCaip25ProposalSetting } from "@walletconnect/utils";
 
 import Client from "../src";
@@ -39,7 +39,7 @@ describe("Client", () => {
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
     await Promise.all([
       new Promise(async (resolve, reject) => {
-        const session = await clientA.connect({
+        const session = await clientA.connect<Caip25StateParams>({
           metadata: TEST_APP_METADATA_A,
           setting: generateCaip25ProposalSetting({
             chains: TEST_SESSION_CHAINS,
@@ -73,18 +73,17 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
           console.log("Session proposed"); // eslint-disable-line no-console
-          const response = {
-            metadata: TEST_APP_METADATA_B,
-            state: {
-              accounts: {
-                data: TEST_SESSION_ACCOUNTS,
-              },
-            },
-          };
-          const topic = await clientB.respond({
+          const topic = await clientB.respond<Caip25StateParams, Caip25StateSettled>({
             approved: true,
             proposal,
-            response,
+            response: {
+              metadata: TEST_APP_METADATA_B,
+              state: {
+                accounts: {
+                  data: TEST_SESSION_ACCOUNTS,
+                },
+              },
+            },
           });
           if (typeof topic === "undefined") {
             throw new Error("topic is undefined");

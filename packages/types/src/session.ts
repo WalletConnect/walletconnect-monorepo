@@ -74,10 +74,10 @@ export declare namespace SessionTypes {
 
   export type Pending = ProposedPending | RespondedPending;
 
-  export interface RespondParams {
+  export interface RespondParams<S = any> {
     approved: boolean;
     proposal: Proposal;
-    state: SettingTypes.BaseStateSettled<string[]>;
+    state: S;
     metadata: Metadata;
   }
 
@@ -88,13 +88,13 @@ export declare namespace SessionTypes {
     setting: SettingTypes.Settled;
   }
 
-  export interface UpdateParams {
+  export interface UpdateParams<S = any> {
     topic: string;
-    state?: SettingTypes.StateUpdate<string[]>;
+    state?: S;
     metadata?: Metadata;
   }
 
-  export type Update = { state: SettingTypes.StateUpdate<string[]> } | { metadata: Metadata };
+  export type Update<S = any> = { state: S } | { metadata: Metadata };
 
   export interface DeleteParams {
     topic: string;

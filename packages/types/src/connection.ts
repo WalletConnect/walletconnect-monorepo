@@ -65,10 +65,10 @@ export declare namespace ConnectionTypes {
 
   export type Pending = ProposedPending | RespondedPending;
 
-  export interface RespondParams {
+  export interface RespondParams<S = any> {
     approved: boolean;
     proposal: Proposal;
-    state?: SettingTypes.BaseStateSettled;
+    state?: S;
     metadata?: Metadata;
   }
 
@@ -79,12 +79,12 @@ export declare namespace ConnectionTypes {
     setting: SettingTypes.Settled;
   }
 
-  export interface UpdateParams {
+  export interface UpdateParams<S = any> {
     topic: string;
-    state?: SettingTypes.StateUpdate<any>;
+    state?: S;
     metadata?: Metadata;
   }
-  export type Update = { state: SettingTypes.StateUpdate<any> } | { metadata: Metadata };
+  export type Update<S = any> = { state: S } | { metadata: Metadata };
 
   export interface DeleteParams {
     topic: string;
