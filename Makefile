@@ -98,7 +98,10 @@ build-nginx: pull
 	@echo  "MAKE: Done with $@"
 	@echo
 
-build: pull build-relay build-nginx
+build-lerna:
+	lerna run build
+
+build: pull build-lerna build-relay build-nginx
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
@@ -109,8 +112,8 @@ test-client:
 relay-logs:
 	docker service logs -f --raw dev_$(project)_relay --tail 500
 
-relay-watch:
-	lerna run watch --scope=@walletconnect/relay-server
+watch:
+	lerna run watch --stream --parallel
 
 relay-dev: dev relay-watch relay-logs
 
