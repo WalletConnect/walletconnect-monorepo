@@ -387,11 +387,11 @@ export class Session extends ISession {
           await this.settled.delete(session.topic, request.params.reason);
           break;
         default:
-          this.events.emit(SESSION_EVENTS.payload, payloadEvent.payload);
+          this.events.emit(SESSION_EVENTS.payload, payloadEvent);
           break;
       }
     } else {
-      this.events.emit(SESSION_EVENTS.payload, payloadEvent.payload);
+      this.events.emit(SESSION_EVENTS.payload, payloadEvent);
     }
   }
 

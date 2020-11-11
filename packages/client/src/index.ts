@@ -6,9 +6,9 @@ import {
   ClientTypes,
   ConnectionTypes,
   SessionTypes,
+  SubscriptionEvent,
 } from "@walletconnect/types";
 import {
-  getAppMetadata,
   isConnectionFailed,
   isSessionFailed,
   parseUri,
@@ -18,17 +18,15 @@ import {
   generateStatelessProposalSetting,
   getConnectionMetadata,
 } from "@walletconnect/utils";
-import { JsonRpcPayload, JsonRpcRequest, isJsonRpcRequest } from "rpc-json-utils";
+import { JsonRpcPayload, isJsonRpcRequest } from "rpc-json-utils";
 
 import { Store, Connection, Session, Relay } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_EVENTS,
-  CONNECTION_CONTEXT,
   CONNECTION_EVENTS,
   CONNECTION_SIGNAL_TYPE_URI,
   RELAY_DEFAULT_PROTOCOL,
-  SESSION_CONTEXT,
   SESSION_EVENTS,
   SESSION_JSONRPC,
   SESSION_SIGNAL_TYPE_CONNECTION,
@@ -175,31 +173,17 @@ export class Client extends IClient {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async onPayload(payload: JsonRpcPayload, context: string): Promise<void> {
-    const eventName =
-      context === CONNECTION_CONTEXT ? CONNECTION_EVENTS.payload : SESSION_EVENTS.payload;
+  protected async onConnectionPayload(payload: JsonRpcPayload): Promise<void> {
     if (isJsonRpcRequest(payload)) {
-      const request = payload as JsonRpcRequest;
-      switch (request.method) {
-        case SESSION_JSONRPC.propose:
-          this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
-          this.logger.debug({
-            type: "event",
-            event: SESSION_EVENTS.proposed,
-            data: request.params,
-          });
-          this.events.emit(SESSION_EVENTS.proposed, request.params);
-          break;
-        default:
-          this.logger.info(`Emitting ${eventName}`);
-          this.logger.debug({ type: "event", event: eventName, data: payload });
-          this.events.emit(eventName, payload);
-          break;
+      if (payload.method === SESSION_JSONRPC.propose) {
+        this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
+        this.logger.debug({
+          type: "event",
+          event: SESSION_EVENTS.proposed,
+          data: payload.params,
+        });
+        this.events.emit(SESSION_EVENTS.proposed, payload.params);
       }
-    } else {
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: payload });
-      this.events.emit(eventName, payload);
     }
   }
 
@@ -219,7 +203,6 @@ export class Client extends IClient {
       this.connection.update({ topic: connection.topic, update });
     }
   }
-
   // ---------- Private ----------------------------------------------- //
 
   private async initialize(): Promise<any> {
@@ -267,10 +250,10 @@ export class Client extends IClient {
       this.logger.debug({ type: "event", event: CONNECTION_EVENTS.deleted, data: connection });
       this.events.emit(CONNECTION_EVENTS.deleted, connection);
     });
-    this.connection.on(CONNECTION_EVENTS.payload, (payload: JsonRpcPayload) => {
+    this.connection.on(CONNECTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payload });
-      this.onPayload(payload, CONNECTION_CONTEXT);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payloadEvent });
+      this.onConnectionPayload(payloadEvent.payload);
     });
     // Session Subscription Events
     this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {
@@ -298,10 +281,10 @@ export class Client extends IClient {
       this.logger.debug({ type: "event", event: SESSION_EVENTS.deleted, data: session });
       this.events.emit(SESSION_EVENTS.deleted, session);
     });
-    this.session.on(SESSION_EVENTS.payload, (payload: JsonRpcPayload) => {
+    this.session.on(SESSION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
       this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payload });
-      this.onPayload(payload, SESSION_CONTEXT);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
+      this.events.emit(SESSION_EVENTS.payload, payloadEvent);
     });
   }
 }

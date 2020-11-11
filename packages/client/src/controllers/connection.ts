@@ -370,11 +370,11 @@ export class Connection extends IConnection {
           await this.settled.delete(connection.topic, request.params.reason);
           break;
         default:
-          this.events.emit(CONNECTION_EVENTS.payload, payloadEvent.payload);
+          this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
           break;
       }
     } else {
-      this.events.emit(CONNECTION_EVENTS.payload, payloadEvent.payload);
+      this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
     }
   }
 
