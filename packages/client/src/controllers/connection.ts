@@ -2,10 +2,10 @@ import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
   ConnectionTypes,
-  KeyParams,
   IClient,
   IConnection,
   SubscriptionEvent,
+  CryptoTypes,
 } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -22,6 +22,8 @@ import {
   generateSettledSetting,
   generateStatelessProposalSetting,
   handleSettledSettingStateUpdate,
+  isConnectionStateUpdate,
+  isConnectionMetadataUpdate,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -87,9 +89,9 @@ export class Connection extends IConnection {
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
     const connection = await this.settled.get(topic);
-    const encryptKeys: KeyParams = {
+    const encryptKeys: CryptoTypes.KeyParams = {
       sharedKey: connection.sharedKey,
-      publicKey: connection.keyPair.publicKey,
+      publicKey: connection.self.publicKey,
     };
     this.client.relay.publish(connection.topic, payload, { relay: connection.relay, encryptKeys });
   }
@@ -131,11 +133,11 @@ export class Connection extends IConnection {
     this.logger.debug(`Respond Connection`);
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, proposal } = params;
-    const keyPair = generateKeyPair();
+    const self = generateKeyPair();
     if (approved) {
       try {
-        const responder: ConnectionTypes.Participant = {
-          publicKey: keyPair.publicKey,
+        const responder: ConnectionTypes.Peer = {
+          publicKey: self.publicKey,
         };
         const setting = generateSettledSetting({
           proposal: proposal.setting,
@@ -145,7 +147,7 @@ export class Connection extends IConnection {
         });
         const connection = await this.settle({
           relay: proposal.relay,
-          keyPair,
+          self,
           peer: proposal.proposer,
           setting,
         });
@@ -159,7 +161,7 @@ export class Connection extends IConnection {
           status: CONNECTION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          keyPair,
+          self,
           proposal,
           outcome,
         };
@@ -172,7 +174,7 @@ export class Connection extends IConnection {
           status: CONNECTION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          keyPair,
+          self,
           proposal,
           outcome,
         };
@@ -185,7 +187,7 @@ export class Connection extends IConnection {
         status: CONNECTION_STATUS.responded,
         topic: proposal.topic,
         relay: proposal.relay,
-        keyPair,
+        self,
         proposal,
         outcome,
       };
@@ -198,7 +200,8 @@ export class Connection extends IConnection {
     this.logger.debug(`Update Connection`);
     this.logger.trace({ type: "method", method: "update", params });
     const connection = await this.settled.get(params.topic);
-    const update = await this.handleUpdate(connection, params);
+    const participant: CryptoTypes.Participant = { publicKey: connection.self.publicKey };
+    const update = await this.handleUpdate(connection, params, participant);
     const request = formatJsonRpcRequest(CONNECTION_JSONRPC.update, update);
     this.send(connection.topic, request);
     return connection;
@@ -231,9 +234,9 @@ export class Connection extends IConnection {
     this.logger.trace({ type: "method", method: "propose", params });
     const relay = params?.relay || { protocol: RELAY_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
-    const keyPair = generateKeyPair();
-    const proposer: ConnectionTypes.Participant = {
-      publicKey: keyPair.publicKey,
+    const self = generateKeyPair();
+    const proposer: ConnectionTypes.Peer = {
+      publicKey: self.publicKey,
     };
     const uri = formatUri({
       protocol: this.client.protocol,
@@ -259,7 +262,7 @@ export class Connection extends IConnection {
       status: CONNECTION_STATUS.proposed,
       topic: proposal.topic,
       relay: proposal.relay,
-      keyPair,
+      self,
       proposal,
     };
     await this.pending.set(pending.topic, pending, { relay });
@@ -269,17 +272,17 @@ export class Connection extends IConnection {
   protected async settle(params: ConnectionTypes.SettleParams): Promise<ConnectionTypes.Settled> {
     this.logger.debug(`Settle Connection`);
     this.logger.trace({ type: "method", method: "settle", params });
-    const sharedKey = deriveSharedKey(params.keyPair.privateKey, params.peer.publicKey);
+    const sharedKey = deriveSharedKey(params.self.privateKey, params.peer.publicKey);
     const topic = await sha256(sharedKey);
     const connection: ConnectionTypes.Settled = {
       relay: params.relay,
       topic,
       sharedKey,
-      keyPair: params.keyPair,
+      self: params.self,
       peer: params.peer,
       setting: params.setting,
     };
-    const decryptKeys: KeyParams = {
+    const decryptKeys: CryptoTypes.KeyParams = {
       sharedKey: connection.sharedKey,
       publicKey: connection.peer.publicKey,
     };
@@ -298,7 +301,7 @@ export class Connection extends IConnection {
       try {
         const connection = await this.settle({
           relay: pending.relay,
-          keyPair: pending.keyPair,
+          self: pending.self,
           peer: request.params.responder,
           setting: request.params.setting,
         });
@@ -382,7 +385,8 @@ export class Connection extends IConnection {
     const request = payloadEvent.payload as JsonRpcRequest;
     const connection = await this.settled.get(payloadEvent.topic);
     try {
-      await this.handleUpdate(connection, request.params, true);
+      const participant: CryptoTypes.Participant = { publicKey: connection.peer.publicKey };
+      await this.handleUpdate(connection, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
       this.send(connection.topic, response);
     } catch (e) {
@@ -392,29 +396,28 @@ export class Connection extends IConnection {
     }
   }
 
-  protected async handleUpdate(
+  protected async handleUpdate<S = any>(
     connection: ConnectionTypes.Settled,
     params: ConnectionTypes.UpdateParams,
-    fromPeer?: boolean,
+    participant: { publicKey: string },
   ): Promise<ConnectionTypes.Update> {
     let update: ConnectionTypes.Update;
-    if (typeof params.state !== "undefined") {
-      const publicKey = fromPeer ? connection.peer.publicKey : connection.keyPair.publicKey;
-      const state = handleSettledSettingStateUpdate({
-        participant: { publicKey },
+    if (isConnectionStateUpdate(params.update)) {
+      const state = handleSettledSettingStateUpdate<S>({
+        participant,
         settled: connection.setting,
-        update: params.state,
+        update: params.update.state,
       });
       update = { state };
-    } else if (typeof params.metadata !== "undefined") {
-      const metadata = params.metadata as ConnectionTypes.Metadata;
-      if (fromPeer) {
+    } else if (isConnectionMetadataUpdate(params.update)) {
+      const metadata = params.update.peer.metadata as ConnectionTypes.Metadata;
+      if (connection.peer.publicKey === participant.publicKey) {
         connection.peer.metadata = metadata;
       }
-      update = { metadata };
+      update = { peer: { metadata } };
     } else {
       const errorMessage = `Invalid ${this.context} update request params`;
-      this.logger.error(`Invalid ${this.context} update request params`);
+      this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
     await this.settled.update(connection.topic, connection);
@@ -474,11 +477,6 @@ export class Connection extends IConnection {
       (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Settled>) => {
         const connection = createdEvent.data;
         this.events.emit(CONNECTION_EVENTS.settled, connection);
-        if (typeof connection.peer.metadata === "undefined") {
-          const metadata = getConnectionMetadata();
-          if (!metadata) return;
-          this.update({ topic: connection.topic, metadata });
-        }
       },
     );
     this.settled.on(

@@ -2,6 +2,7 @@ import { Logger } from "pino";
 import { JsonRpcPayload } from "rpc-json-types";
 
 import { IClient } from "./client";
+import { CryptoTypes } from "./crypto";
 import { IEvents } from "./events";
 import { ISubscription, SubscriptionEvent } from "./subscription";
 
@@ -67,6 +68,6 @@ export abstract class ISequence<
   protected abstract handleUpdate(
     settled: Settled,
     params: UpdateParams,
-    fromPeer?: boolean,
+    participant: CryptoTypes.Participant,
   ): Promise<Update>;
 }

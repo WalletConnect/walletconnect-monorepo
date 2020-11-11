@@ -16,6 +16,7 @@ import {
   isConnectionResponded,
   isSessionResponded,
   generateStatelessProposalSetting,
+  getConnectionMetadata,
 } from "@walletconnect/utils";
 import { JsonRpcPayload, JsonRpcRequest, isJsonRpcRequest } from "rpc-json-utils";
 
@@ -202,6 +203,23 @@ export class Client extends IClient {
     }
   }
 
+  protected async onConnectionProposed(pending: ConnectionTypes.Pending) {
+    if (pending.proposal.signal.type === CONNECTION_SIGNAL_TYPE_URI) {
+      const uri = pending.proposal.signal.params.uri;
+      this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
+      this.events.emit(CLIENT_EVENTS.share_uri, { uri });
+    }
+  }
+
+  protected async onConnectionSettled(connection: ConnectionTypes.Settled) {
+    if (typeof connection.peer.metadata === "undefined") {
+      const metadata = getConnectionMetadata();
+      if (!metadata) return;
+      const update = { peer: { metadata } };
+      this.connection.update({ topic: connection.topic, update });
+    }
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize(): Promise<any> {
@@ -222,25 +240,22 @@ export class Client extends IClient {
 
   private registerEventListeners(): void {
     // Connection Subscription Events
-    this.connection.on(CONNECTION_EVENTS.proposed, (proposed: ConnectionTypes.Pending) => {
+    this.connection.on(CONNECTION_EVENTS.proposed, (pending: ConnectionTypes.Pending) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: proposed });
-      this.events.emit(CONNECTION_EVENTS.proposed, proposed);
-      if (proposed.proposal.signal.type === CONNECTION_SIGNAL_TYPE_URI) {
-        const uri = proposed.proposal.signal.params.uri;
-        this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
-        this.events.emit(CLIENT_EVENTS.share_uri, { uri });
-      }
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: pending });
+      this.events.emit(CONNECTION_EVENTS.proposed, pending);
+      this.onConnectionProposed(pending);
     });
-    this.connection.on(CONNECTION_EVENTS.responded, (responded: ConnectionTypes.Pending) => {
+    this.connection.on(CONNECTION_EVENTS.responded, (pending: ConnectionTypes.Pending) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.responded}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.responded, data: responded });
-      this.events.emit(CONNECTION_EVENTS.responded, responded);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.responded, data: pending });
+      this.events.emit(CONNECTION_EVENTS.responded, pending);
     });
     this.connection.on(CONNECTION_EVENTS.settled, (connection: ConnectionTypes.Settled) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.settled}`);
       this.logger.debug({ type: "event", event: CONNECTION_EVENTS.settled, data: connection });
       this.events.emit(CONNECTION_EVENTS.settled, connection);
+      this.onConnectionSettled(connection);
     });
     this.connection.on(CONNECTION_EVENTS.updated, (connection: ConnectionTypes.Settled) => {
       this.logger.info(`Emitting ${CONNECTION_EVENTS.updated}`);
@@ -258,15 +273,15 @@ export class Client extends IClient {
       this.onPayload(payload, CONNECTION_CONTEXT);
     });
     // Session Subscription Events
-    this.session.on(SESSION_EVENTS.proposed, (proposed: SessionTypes.Pending) => {
+    this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {
       this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.proposed, data: proposed });
-      this.events.emit(SESSION_EVENTS.proposed, proposed);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.proposed, data: pending });
+      this.events.emit(SESSION_EVENTS.proposed, pending);
     });
-    this.session.on(SESSION_EVENTS.responded, (responded: SessionTypes.Pending) => {
+    this.session.on(SESSION_EVENTS.responded, (pending: SessionTypes.Pending) => {
       this.logger.info(`Emitting ${SESSION_EVENTS.responded}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.responded, data: responded });
-      this.events.emit(SESSION_EVENTS.responded, responded);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.responded, data: pending });
+      this.events.emit(SESSION_EVENTS.responded, pending);
     });
     this.session.on(SESSION_EVENTS.settled, (session: SessionTypes.Settled) => {
       this.logger.info(`Emitting ${SESSION_EVENTS.settled}`);

@@ -3,10 +3,10 @@ import { Logger } from "pino";
 import {
   IClient,
   ISession,
-  KeyParams,
   SessionTypes,
   SettingTypes,
   SubscriptionEvent,
+  CryptoTypes,
 } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -21,6 +21,8 @@ import {
   generateSettledSetting,
   generateCaip25ProposalSetting,
   handleSettledSettingStateUpdate,
+  isSessionStateUpdate,
+  isSessionMetadataUpdate,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -43,7 +45,6 @@ import {
   SUBSCRIPTION_EVENTS,
   SETTLED_SESSION_JSONRPC,
   SESSION_SIGNAL_TYPE_CONNECTION,
-  SETTLED_CONNECTION_JSONRPC,
 } from "../constants";
 
 export class Session extends ISession {
@@ -86,9 +87,9 @@ export class Session extends ISession {
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
     const session = await this.settled.get(topic);
-    const encryptKeys: KeyParams = {
+    const encryptKeys: CryptoTypes.KeyParams = {
       sharedKey: session.sharedKey,
-      publicKey: session.keyPair.publicKey,
+      publicKey: session.self.publicKey,
     };
     this.client.relay.publish(session.topic, payload, { relay: session.relay, encryptKeys });
   }
@@ -133,16 +134,16 @@ export class Session extends ISession {
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, metadata, proposal } = params;
     const { relay } = proposal;
-    const keyPair = generateKeyPair();
+    const self = generateKeyPair();
     const connection = await this.client.connection.get(proposal.signal.params.topic);
-    const decryptKeys: KeyParams = {
+    const decryptKeys: CryptoTypes.KeyParams = {
       sharedKey: connection.sharedKey,
       publicKey: connection.peer.publicKey,
     };
     if (approved) {
       try {
-        const responder: SessionTypes.Participant = {
-          publicKey: keyPair.publicKey,
+        const responder: SessionTypes.Peer = {
+          publicKey: self.publicKey,
           metadata,
         };
         const setting = generateSettledSetting<P, S>({
@@ -153,7 +154,7 @@ export class Session extends ISession {
         });
         const session = await this.settle({
           relay,
-          keyPair,
+          self,
           peer: proposal.proposer,
           setting,
         });
@@ -167,7 +168,7 @@ export class Session extends ISession {
           status: SESSION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          keyPair,
+          self,
           proposal,
           outcome,
         };
@@ -180,7 +181,7 @@ export class Session extends ISession {
           status: SESSION_STATUS.responded,
           topic: proposal.topic,
           relay: proposal.relay,
-          keyPair,
+          self,
           proposal,
           outcome,
         };
@@ -193,7 +194,7 @@ export class Session extends ISession {
         status: SESSION_STATUS.responded,
         topic: proposal.topic,
         relay: proposal.relay,
-        keyPair,
+        self,
         proposal,
         outcome,
       };
@@ -206,7 +207,9 @@ export class Session extends ISession {
     this.logger.info(`Update Session`);
     this.logger.trace({ type: "method", method: "update", params });
     const session = await this.settled.get(params.topic);
-    const update = await this.handleUpdate<S>(session, params);
+    const update = await this.handleUpdate<S>(session, params, {
+      publicKey: session.self.publicKey,
+    });
     const request = formatJsonRpcRequest(SESSION_JSONRPC.update, update);
     this.send(session.topic, request);
     return session;
@@ -244,19 +247,19 @@ export class Session extends ISession {
       type: SESSION_SIGNAL_TYPE_CONNECTION,
       params: { topic: connection.topic },
     };
-    const decryptKeys: KeyParams = {
+    const decryptKeys: CryptoTypes.KeyParams = {
       sharedKey: connection.sharedKey,
       publicKey: connection.peer.publicKey,
     };
     const topic = generateRandomBytes32();
-    const keyPair = generateKeyPair();
-    const proposer: SessionTypes.Participant = {
-      publicKey: keyPair.publicKey,
+    const self = generateKeyPair();
+    const proposer: SessionTypes.Peer = {
+      publicKey: self.publicKey,
       metadata: params.metadata,
     };
     const setting: SettingTypes.Proposal<P> = {
       ...params.setting,
-      jsonrpc: { methods: { ...SETTLED_CONNECTION_JSONRPC, ...params.setting.jsonrpc.methods } },
+      jsonrpc: { methods: { ...SETTLED_SESSION_JSONRPC, ...params.setting.jsonrpc.methods } },
     };
     const proposal: SessionTypes.Proposal = {
       topic,
@@ -269,7 +272,7 @@ export class Session extends ISession {
       status: SESSION_STATUS.proposed,
       topic: proposal.topic,
       relay: proposal.relay,
-      keyPair,
+      self,
       proposal,
     };
     await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
@@ -281,17 +284,17 @@ export class Session extends ISession {
   protected async settle(params: SessionTypes.SettleParams): Promise<SessionTypes.Settled> {
     this.logger.info(`Settle Session`);
     this.logger.trace({ type: "method", method: "settle", params });
-    const sharedKey = deriveSharedKey(params.keyPair.privateKey, params.peer.publicKey);
+    const sharedKey = deriveSharedKey(params.self.privateKey, params.peer.publicKey);
     const topic = await sha256(sharedKey);
     const session: SessionTypes.Settled = {
       relay: params.relay,
       topic,
       sharedKey,
-      keyPair: params.keyPair,
+      self: params.self,
       peer: params.peer,
       setting: params.setting,
     };
-    const decryptKeys: KeyParams = {
+    const decryptKeys: CryptoTypes.KeyParams = {
       sharedKey: session.sharedKey,
       publicKey: session.peer.publicKey,
     };
@@ -306,16 +309,16 @@ export class Session extends ISession {
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
     const pending = await this.pending.get(topic);
     const connection = await this.client.connection.get(pending.proposal.signal.params.topic);
-    const encryptKeys: KeyParams = {
+    const encryptKeys: CryptoTypes.KeyParams = {
       sharedKey: connection.sharedKey,
-      publicKey: connection.keyPair.publicKey,
+      publicKey: connection.self.publicKey,
     };
     let errorMessage: string | undefined;
     if (!isSessionFailed(request.params)) {
       try {
         const session = await this.settle({
           relay: pending.relay,
-          keyPair: pending.keyPair,
+          self: pending.self,
           peer: request.params.responder,
           setting: request.params.setting,
         });
@@ -399,7 +402,7 @@ export class Session extends ISession {
     const request = payloadEvent.payload as JsonRpcRequest;
     const session = await this.settled.get(payloadEvent.topic);
     try {
-      await this.handleUpdate(session, request.params, true);
+      await this.handleUpdate(session, request.params, { publicKey: session.peer.publicKey });
       const response = formatJsonRpcResult(request.id, true);
       this.send(session.topic, response);
     } catch (e) {
@@ -412,23 +415,22 @@ export class Session extends ISession {
   protected async handleUpdate<S = any>(
     session: SessionTypes.Settled,
     params: SessionTypes.UpdateParams,
-    fromPeer?: boolean,
+    participant: { publicKey: string },
   ): Promise<SessionTypes.Update> {
     let update: SessionTypes.Update;
-    if (typeof params.state !== "undefined") {
-      const publicKey = fromPeer ? session.peer.publicKey : session.keyPair.publicKey;
+    if (isSessionStateUpdate(params.update)) {
       const state = handleSettledSettingStateUpdate<S>({
-        participant: { publicKey },
+        participant,
         settled: session.setting,
-        update: params.state,
+        update: params.update.state,
       });
       update = { state };
-    } else if (typeof params.metadata !== "undefined") {
-      const metadata = params.metadata as SessionTypes.Metadata;
-      if (fromPeer) {
+    } else if (isSessionMetadataUpdate(params.update)) {
+      const metadata = params.update.peer.metadata as SessionTypes.Metadata;
+      if (session.peer.publicKey === participant.publicKey) {
         session.peer.metadata = metadata;
       }
-      update = { metadata };
+      update = { peer: { metadata } };
     } else {
       const errorMessage = `Invalid ${this.context} update request params`;
       this.logger.error(errorMessage);
@@ -459,9 +461,9 @@ export class Session extends ISession {
       this.events.emit(SESSION_EVENTS.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
         const connection = await this.client.connection.get(pending.proposal.signal.params.topic);
-        const encryptKeys: KeyParams = {
+        const encryptKeys: CryptoTypes.KeyParams = {
           sharedKey: connection.sharedKey,
-          publicKey: connection.keyPair.publicKey,
+          publicKey: connection.self.publicKey,
         };
         const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });

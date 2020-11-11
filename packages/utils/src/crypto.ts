@@ -1,8 +1,8 @@
-import { DecryptParams, EncryptedBuffer, EncryptParams, KeyPair } from "@walletconnect/types";
+import { CryptoTypes } from "@walletconnect/types";
 import * as eccryptoJS from "eccrypto-js";
 import * as encUtils from "enc-utils";
 
-export function generateKeyPair(): KeyPair {
+export function generateKeyPair(): CryptoTypes.KeyPair {
   const keyPairBuffer = eccryptoJS.generateKeyPair();
   return {
     privateKey: encUtils.bufferToHex(keyPairBuffer.privateKey),
@@ -35,7 +35,7 @@ async function getEciesKeys(sharedKeyHex: string, publicKeyHex: string) {
   return { publicKey, key, macKey };
 }
 
-export function encodeEncryptedMessage(encryptedBuffer: EncryptedBuffer): string {
+export function encodeEncryptedMessage(encryptedBuffer: CryptoTypes.EncryptedBuffer): string {
   return (
     encUtils.bufferToHex(encryptedBuffer.iv) +
     encUtils.bufferToHex(encryptedBuffer.mac) +
@@ -43,7 +43,7 @@ export function encodeEncryptedMessage(encryptedBuffer: EncryptedBuffer): string
   );
 }
 
-export async function encrypt(params: EncryptParams): Promise<string> {
+export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string> {
   const { publicKey, key, macKey } = await getEciesKeys(params.sharedKey, params.publicKey);
   const iv = params.iv
     ? encUtils.hexToBuffer(params.iv)
@@ -55,7 +55,7 @@ export async function encrypt(params: EncryptParams): Promise<string> {
   return encodeEncryptedMessage({ iv, mac, data });
 }
 
-export function decodeEncryptedMessage(encrypted: string): EncryptedBuffer {
+export function decodeEncryptedMessage(encrypted: string): CryptoTypes.EncryptedBuffer {
   const buffer = encUtils.hexToBuffer(encrypted);
   const slice0 = eccryptoJS.LENGTH_0;
   const slice1 = slice0 + eccryptoJS.IV_LENGTH;
@@ -67,7 +67,7 @@ export function decodeEncryptedMessage(encrypted: string): EncryptedBuffer {
   };
 }
 
-export async function decrypt(params: DecryptParams): Promise<string> {
+export async function decrypt(params: CryptoTypes.DecryptParams): Promise<string> {
   const { publicKey, key, macKey } = await getEciesKeys(params.sharedKey, params.publicKey);
   const { iv, mac, data } = decodeEncryptedMessage(params.encrypted);
   const dataToMac = encUtils.concatBuffers(iv, publicKey, data);

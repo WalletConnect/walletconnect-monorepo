@@ -1,3 +1,5 @@
+import { CryptoTypes } from "./crypto";
+
 export declare namespace SettingTypes {
   export interface JsonRpcConfig {
     methods: string[];
@@ -20,10 +22,6 @@ export declare namespace SettingTypes {
     jsonrpc: JsonRpcConfig;
   }
 
-  export interface Participant {
-    publicKey: string;
-  }
-
   export interface WriteAccessSettled {
     [publicKey: string]: boolean;
   }
@@ -42,15 +40,15 @@ export declare namespace SettingTypes {
 
   export interface GenerateSettledParams<P = any, S = any> {
     proposal: Proposal<P>;
-    proposer: Participant;
-    responder: Participant;
+    proposer: CryptoTypes.Peer;
+    responder: CryptoTypes.Peer;
     state: S;
   }
 
   export interface HandleSettledStateUpdateParams<S = any> {
     settled: Settled<S>;
     update: Partial<S>;
-    participant: Participant;
+    participant: CryptoTypes.Peer;
   }
 }
 

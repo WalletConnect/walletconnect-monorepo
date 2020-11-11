@@ -1,7 +1,7 @@
 import { Logger } from "pino";
 import { IJsonRpcProvider, JsonRpcPayload } from "rpc-json-types";
 
-import { DecryptParams, EncryptParams, KeyParams } from "./crypto";
+import { CryptoTypes } from "./crypto";
 import { IEvents } from "./events";
 
 export declare namespace RelayTypes {
@@ -45,11 +45,11 @@ export declare namespace RelayTypes {
 
   export interface PublishOptions {
     relay: ProtocolOptions;
-    encryptKeys?: KeyParams;
+    encryptKeys?: CryptoTypes.KeyParams;
   }
   export interface SubscribeOptions {
     relay: ProtocolOptions;
-    decryptKeys?: KeyParams;
+    decryptKeys?: CryptoTypes.KeyParams;
   }
 }
 

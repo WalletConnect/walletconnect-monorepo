@@ -1,7 +1,6 @@
 import { ISequence } from "./sequence";
-import { KeyPair } from "./crypto";
+import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
-import { ConnectionTypes } from "./connection";
 import { SettingTypes } from "./settings";
 
 export declare namespace SessionTypes {
@@ -41,10 +40,12 @@ export declare namespace SessionTypes {
 
   export type Signal = SignalConnection;
 
+  export type Peer = Required<CryptoTypes.Peer<Metadata>>;
+
   export interface Proposal {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    proposer: Participant;
+    proposer: Peer;
     signal: Signal;
     setting: SettingTypes.Proposal;
   }
@@ -59,7 +60,7 @@ export declare namespace SessionTypes {
     status: PendingStatus;
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    keyPair: KeyPair;
+    self: CryptoTypes.Self;
     proposal: Proposal;
   }
 
@@ -83,18 +84,21 @@ export declare namespace SessionTypes {
 
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
-    keyPair: KeyPair;
-    peer: Participant;
+    self: CryptoTypes.Self;
+    peer: Peer;
     setting: SettingTypes.Settled;
   }
 
   export interface UpdateParams<S = any> {
     topic: string;
-    state?: S;
-    metadata?: Metadata;
+    update: Update<S>;
   }
 
-  export type Update<S = any> = { state: S } | { metadata: Metadata };
+  export type StateUpdate<S = any> = { state: S };
+
+  export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };
+
+  export type Update<S = any> = StateUpdate<S> | MetadataUpdate;
 
   export interface DeleteParams {
     topic: string;
@@ -105,14 +109,9 @@ export declare namespace SessionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     sharedKey: string;
-    keyPair: KeyPair;
-    peer: Participant;
+    self: CryptoTypes.Self;
+    peer: Peer;
     setting: SettingTypes.Settled;
-  }
-
-  export interface Participant {
-    publicKey: string;
-    metadata: Metadata;
   }
 
   export interface Metadata {
@@ -126,7 +125,7 @@ export declare namespace SessionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     setting: SettingTypes.Settled;
-    responder: Participant;
+    responder: Peer;
   }
   export interface Failed {
     reason: string;

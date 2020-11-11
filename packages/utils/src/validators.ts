@@ -1,5 +1,19 @@
 import { ConnectionTypes, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
 
+// -- connection -------------------------------------------------- //
+
+export function isConnectionStateUpdate<S = any>(
+  update: ConnectionTypes.Update<S>,
+): update is ConnectionTypes.StateUpdate {
+  return "state" in update;
+}
+
+export function isConnectionMetadataUpdate<S = any>(
+  update: ConnectionTypes.Update<S>,
+): update is ConnectionTypes.MetadataUpdate {
+  return "peer" in update;
+}
+
 export function isConnectionRespondedStatus(
   status: ConnectionTypes.PendingStatus,
 ): status is ConnectionTypes.RespondedStatus {
@@ -16,6 +30,20 @@ export function isConnectionFailed(
   outcome: ConnectionTypes.Outcome,
 ): outcome is ConnectionTypes.Failed {
   return "reason" in outcome;
+}
+
+// -- session -------------------------------------------------- //
+
+export function isSessionStateUpdate<S = any>(
+  update: SessionTypes.Update<S>,
+): update is SessionTypes.StateUpdate {
+  return "state" in update;
+}
+
+export function isSessionMetadataUpdate<S = any>(
+  update: SessionTypes.Update<S>,
+): update is SessionTypes.MetadataUpdate {
+  return "peer" in update;
 }
 
 export function isSessionRespondedStatus(
