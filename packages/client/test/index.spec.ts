@@ -1,3 +1,6 @@
+import "mocha";
+import * as chai from "chai";
+
 import { SessionTypes, Caip25StateSettled, Caip25StateParams } from "@walletconnect/types";
 import { generateCaip25ProposalSetting } from "@walletconnect/utils";
 
@@ -31,13 +34,13 @@ const TEST_SESSION_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip15
 describe("Client", () => {
   it("instantiate successfully", async () => {
     const client = await Client.init(TEST_CLIENT_OPTIONS);
-    expect(client).toBeTruthy();
+    chai.expect(client).to.be.exist;
   });
   it("connect two clients", async () => {
     const before = Date.now();
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
-    await Promise.all([
+    Promise.all([
       new Promise(async (resolve, reject) => {
         const session = await clientA.connect<Caip25StateParams>({
           metadata: TEST_APP_METADATA_A,
@@ -47,7 +50,7 @@ describe("Client", () => {
           }),
         });
         console.log("Session connected"); // eslint-disable-line no-console
-        expect(session).toBeTruthy();
+        chai.expect(session).to.be.true;
         resolve();
       }),
       new Promise(async (resolve, reject) => {
@@ -65,11 +68,10 @@ describe("Client", () => {
           console.log("Connection Responded"); // eslint-disable-line no-console
 
           const connection = await clientB.connection.get(topic);
-          expect(connection).toBeTruthy();
+          chai.expect(connection).to.be.true;
           resolve();
         });
       }),
-
       new Promise(async (resolve, reject) => {
         clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
           console.log("Session proposed"); // eslint-disable-line no-console
@@ -89,7 +91,8 @@ describe("Client", () => {
             throw new Error("topic is undefined");
           }
           const session = await clientB.session.get(topic);
-          expect(session).toBeTruthy();
+          chai.expect(session).to.be.true;
+          done();
           resolve();
         });
       }),
