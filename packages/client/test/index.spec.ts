@@ -2,7 +2,6 @@ import "mocha";
 import * as chai from "chai";
 
 import { SessionTypes, ClientOptions } from "@walletconnect/types";
-import { generateCaip25ProposalSetting } from "@walletconnect/utils";
 
 import Client from "../src";
 import { CLIENT_EVENTS, SESSION_EVENTS } from "../src/constants";
