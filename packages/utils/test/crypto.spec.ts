@@ -1,3 +1,5 @@
+import "mocha";
+import * as chai from "chai";
 import * as encUtils from "enc-utils";
 import { safeJsonStringify } from "safe-json-utils";
 
@@ -42,11 +44,11 @@ describe("Crypto", () => {
       TEST_KEY_PAIRS["A"].privateKey,
       TEST_KEY_PAIRS["B"].publicKey,
     );
-    expect(sharedKey).toEqual(TEST_SHARED_KEY);
+    chai.expect(sharedKey).to.eql(TEST_SHARED_KEY);
   });
   it("sha256", async () => {
     const hash = await sha256(TEST_SHARED_KEY);
-    expect(hash).toEqual(TEST_HASHED_KEY);
+    chai.expect(hash).to.eql(TEST_HASHED_KEY);
   });
   it("encodeEncryptedMessage", async () => {
     const encoded = await encodeEncryptedMessage({
@@ -54,13 +56,13 @@ describe("Crypto", () => {
       mac: encUtils.hexToBuffer(TEST_MAC),
       data: encUtils.hexToBuffer(TEST_DATA),
     });
-    expect(encoded).toEqual(TEST_ENCRYPTED);
+    chai.expect(encoded).to.eql(TEST_ENCRYPTED);
   });
   it("decodeEncryptedMessage", async () => {
     const decoded = await decodeEncryptedMessage(TEST_ENCRYPTED);
-    expect(encUtils.bufferToHex(decoded.iv)).toEqual(TEST_IV);
-    expect(encUtils.bufferToHex(decoded.mac)).toEqual(TEST_MAC);
-    expect(encUtils.bufferToHex(decoded.data)).toEqual(TEST_DATA);
+    chai.expect(encUtils.bufferToHex(decoded.iv)).to.eql(TEST_IV);
+    chai.expect(encUtils.bufferToHex(decoded.mac)).to.eql(TEST_MAC);
+    chai.expect(encUtils.bufferToHex(decoded.data)).to.eql(TEST_DATA);
   });
   it("encrypt", async () => {
     const encrypted = await encrypt({
@@ -69,7 +71,7 @@ describe("Crypto", () => {
       sharedKey: TEST_SHARED_KEY,
       publicKey: TEST_KEY_PAIRS["A"].publicKey,
     });
-    expect(encrypted).toEqual(TEST_ENCRYPTED);
+    chai.expect(encrypted).to.eql(TEST_ENCRYPTED);
   });
   it("decrypt", async () => {
     const decrypted = await decrypt({
@@ -77,6 +79,6 @@ describe("Crypto", () => {
       sharedKey: TEST_SHARED_KEY,
       publicKey: TEST_KEY_PAIRS["A"].publicKey,
     });
-    expect(decrypted).toEqual(TEST_MESSAGE);
+    chai.expect(decrypted).to.eql(TEST_MESSAGE);
   });
 });

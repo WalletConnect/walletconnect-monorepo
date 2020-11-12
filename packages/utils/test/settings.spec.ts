@@ -1,3 +1,5 @@
+import "mocha";
+import * as chai from "chai";
 import { Caip25StateParams, Caip25StateSettled } from "@walletconnect/types";
 import {
   generateCaip25ProposalSetting,
@@ -79,7 +81,7 @@ describe("Settings", () => {
   it("generateStatelessProposalSetting", async () => {
     const result = generateStatelessProposalSetting({ methods: TEST_SESSION_METHODS });
     const expected = TEST_STATELESS_PROPOSAL_SETTING;
-    expect(result.toString()).toEqual(expected.toString());
+    chai.expect(result.toString()).to.eql(expected.toString());
   });
   it("generateSettledSetting (stateless)", async () => {
     const result = generateSettledSetting({
@@ -89,7 +91,7 @@ describe("Settings", () => {
       state: {},
     });
     const expected = TEST_STATELESS_SETTLED_SETTING;
-    expect(result.toString()).toEqual(expected.toString());
+    chai.expect(result.toString()).to.equal(expected.toString());
   });
   it("generateCaip25ProposalSetting", async () => {
     const result = generateCaip25ProposalSetting({
@@ -97,7 +99,7 @@ describe("Settings", () => {
       methods: TEST_SESSION_METHODS,
     });
     const expected = TEST_CAIP25_PROPOSAL_SETTING;
-    expect(result.toString()).toEqual(expected.toString());
+    chai.expect(result.toString()).to.equal(expected.toString());
   });
   it("generateSettledSetting (caip25)", async () => {
     const result = generateSettledSetting<Caip25StateParams, Caip25StateSettled>({
@@ -107,7 +109,7 @@ describe("Settings", () => {
       state: TEST_CAIP25_SETTLED_STATE,
     });
     const expected = TEST_CAIP25_SETTLED_SETTING;
-    expect(result.toString()).toEqual(expected.toString());
+    chai.expect(result.toString()).to.equal(expected.toString());
   });
   it("handleSettledSettingStateUpdate (authorized)", async () => {
     const result = handleSettledSettingStateUpdate({
@@ -116,15 +118,15 @@ describe("Settings", () => {
       participant: TEST_RESPONDER,
     });
     const expected = TEST_CAIP25_UPDATED_STATE;
-    expect(result.toString()).toEqual(expected.toString());
+    chai.expect(result.toString()).to.equal(expected.toString());
   });
   it("handleSettledSettingStateUpdate (unauthorized)", async () => {
-    expect(() =>
+    chai.expect(() =>
       handleSettledSettingStateUpdate({
         settled: TEST_CAIP25_SETTLED_SETTING,
         update: TEST_CAIP25_UPDATED_STATE,
         participant: TEST_PROPOSER,
       }),
-    ).toThrow(`Unauthorized state update for key: accounts`);
+    ).to.throw(`Unauthorized state update for key: accounts`);
   });
 });
