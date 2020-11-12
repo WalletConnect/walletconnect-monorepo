@@ -1,18 +1,19 @@
-import { ConnectionTypes, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
+import {
+  ClientTypes,
+  ConnectionTypes,
+  SessionTypes,
+  SubscriptionEvent,
+} from "@walletconnect/types";
+
+// -- client -------------------------------------------------- //
+
+export function isConnectionRespondParams(
+  params: ClientTypes.RespondParams,
+): params is ClientTypes.ConnectionRespondParams {
+  return "uri" in params;
+}
 
 // -- connection -------------------------------------------------- //
-
-export function isConnectionStateUpdate<S = any>(
-  update: ConnectionTypes.Update<S>,
-): update is ConnectionTypes.StateUpdate {
-  return "state" in update;
-}
-
-export function isConnectionMetadataUpdate<S = any>(
-  update: ConnectionTypes.Update<S>,
-): update is ConnectionTypes.MetadataUpdate {
-  return "peer" in update;
-}
 
 export function isConnectionRespondedStatus(
   status: ConnectionTypes.PendingStatus,
@@ -33,18 +34,6 @@ export function isConnectionFailed(
 }
 
 // -- session -------------------------------------------------- //
-
-export function isSessionStateUpdate<S = any>(
-  update: SessionTypes.Update<S>,
-): update is SessionTypes.StateUpdate {
-  return "state" in update;
-}
-
-export function isSessionMetadataUpdate<S = any>(
-  update: SessionTypes.Update<S>,
-): update is SessionTypes.MetadataUpdate {
-  return "peer" in update;
-}
 
 export function isSessionRespondedStatus(
   status: SessionTypes.PendingStatus,

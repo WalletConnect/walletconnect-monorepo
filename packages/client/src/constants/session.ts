@@ -1,4 +1,4 @@
-import { SessionTypes } from "@walletconnect/types";
+import { SessionTypes, SignalTypes } from "@walletconnect/types";
 
 export const SESSION_JSONRPC = {
   propose: "wc_proposeSession",
@@ -15,7 +15,7 @@ export const SETTLED_SESSION_JSONRPC = [...SESSION_JSONRPC_AFTER_SETTLEMENT];
 
 export const SESSION_CONTEXT = "session";
 
-export const SESSION_SIGNAL_TYPE_CONNECTION = "connection" as SessionTypes.SignalTypeConnection;
+export const SESSION_SIGNAL_METHOD_CONNECTION = "connection" as SignalTypes.MethodConnection;
 
 export const SESSION_STATUS = {
   proposed: "proposed" as SessionTypes.ProposedStatus,

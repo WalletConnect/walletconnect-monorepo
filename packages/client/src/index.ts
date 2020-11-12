@@ -15,8 +15,8 @@ import {
   getLoggerOptions,
   isConnectionResponded,
   isSessionResponded,
-  generateStatelessProposalSetting,
   getConnectionMetadata,
+  isConnectionRespondParams,
 } from "@walletconnect/utils";
 import { JsonRpcPayload, isJsonRpcRequest } from "rpc-json-utils";
 
@@ -25,25 +25,13 @@ import {
   CLIENT_CONTEXT,
   CLIENT_EVENTS,
   CONNECTION_EVENTS,
-  CONNECTION_SIGNAL_TYPE_URI,
+  CONNECTION_SIGNAL_METHOD_URI,
   RELAY_DEFAULT_PROTOCOL,
   SESSION_EVENTS,
   SESSION_JSONRPC,
-  SESSION_SIGNAL_TYPE_CONNECTION,
+  SESSION_SIGNAL_METHOD_CONNECTION,
   SETTLED_CONNECTION_JSONRPC,
 } from "./constants";
-
-export function generateConnectionProposalFromUri(uri: string): ConnectionTypes.Proposal {
-  const uriParams = parseUri(uri);
-  const proposal: ConnectionTypes.Proposal = {
-    topic: uriParams.topic,
-    relay: uriParams.relay,
-    proposer: { publicKey: uriParams.publicKey },
-    signal: { type: CONNECTION_SIGNAL_TYPE_URI, params: { uri } },
-    setting: generateStatelessProposalSetting({ methods: SETTLED_CONNECTION_JSONRPC }),
-  };
-  return proposal;
-}
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -96,20 +84,20 @@ export class Client extends IClient {
     this.events.off(event, listener);
   }
 
-  public async connect<P = any>(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
+  public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
     this.logger.debug(`Connecting Application`);
     this.logger.trace({ type: "method", method: "connect", params });
     try {
       const connection =
         typeof params.connection === "undefined"
           ? await this.connection.create()
-          : await this.connection.get(params.connection);
+          : await this.connection.get(params.connection.topic);
       this.logger.trace({ type: "method", method: "connect", connection });
-      const session = await this.session.create<P>({
-        signal: { type: SESSION_SIGNAL_TYPE_CONNECTION, params: { topic: connection.topic } },
+      const session = await this.session.create({
+        signal: { method: SESSION_SIGNAL_METHOD_CONNECTION, params: { topic: connection.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
         metadata: params.metadata,
-        setting: params.setting,
+        permissions: params.permissions,
       });
       this.logger.debug(`Application Connection Successful`);
       this.logger.trace({ type: "method", method: "connect", session });
@@ -121,26 +109,52 @@ export class Client extends IClient {
     }
   }
 
-  public async respond<P = any, S = any>(
-    params: ClientTypes.RespondParams,
-  ): Promise<string | undefined> {
-    if (typeof params.proposal === "string") {
-      this.logger.debug(`Responding Connection Proposal`);
-      this.logger.trace({ type: "method", method: "respond", params });
-      const pending = await this.connection.respond({
-        approved: params.approved,
-        proposal: generateConnectionProposalFromUri(params.proposal),
-      });
-      if (!isConnectionResponded(pending)) return;
-      if (isConnectionFailed(pending.outcome)) {
-        this.logger.debug(`Connection Proposal Response Failure`);
-        this.logger.trace({ type: "method", method: "respond", outcome: pending.outcome });
-        return;
-      }
-      this.logger.debug(`Connection Proposal Response Success`);
-      this.logger.trace({ type: "method", method: "respond", pending });
-      return pending.outcome.topic;
+  public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
+    if (isConnectionRespondParams(params)) {
+      return this.onConnectionResponse(params);
     }
+    return this.onSessionResponse(params);
+  }
+
+  public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
+    this.logger.debug(`Disconnecting Application`);
+    this.logger.trace({ type: "method", method: "disconnect", params });
+    await this.session.delete(params);
+  }
+
+  // ---------- Protected ----------------------------------------------- //
+
+  protected async onConnectionResponse(
+    params: ClientTypes.ConnectionRespondParams,
+  ): Promise<string | undefined> {
+    this.logger.debug(`Responding Connection Proposal`);
+    this.logger.trace({ type: "method", method: "respond", params });
+    const uriParams = parseUri(params.uri);
+    const proposal: ConnectionTypes.Proposal = {
+      topic: uriParams.topic,
+      relay: uriParams.relay,
+      proposer: { publicKey: uriParams.publicKey },
+      signal: { method: CONNECTION_SIGNAL_METHOD_URI, params: { uri: params.uri } },
+      permissions: { jsonrpc: { methods: SETTLED_CONNECTION_JSONRPC } },
+    };
+    const pending = await this.connection.respond({
+      approved: params.approved,
+      proposal,
+    });
+    if (!isConnectionResponded(pending)) return;
+    if (isConnectionFailed(pending.outcome)) {
+      this.logger.debug(`Connection Proposal Response Failure`);
+      this.logger.trace({ type: "method", method: "respond", outcome: pending.outcome });
+      return;
+    }
+    this.logger.debug(`Connection Proposal Response Success`);
+    this.logger.trace({ type: "method", method: "respond", pending });
+    return pending.outcome.topic;
+  }
+
+  protected async onSessionResponse(
+    params: ClientTypes.SessionRespondParams,
+  ): Promise<string | undefined> {
     this.logger.debug(`Responding Session Proposal`);
     this.logger.trace({ type: "method", method: "respond", params });
     if (typeof params.response === "undefined") {
@@ -148,11 +162,10 @@ export class Client extends IClient {
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
-    const pending = await this.session.respond<P, S>({
+    const pending = await this.session.respond({
       approved: params.approved,
       proposal: params.proposal,
-      metadata: params.response.metadata,
-      state: params.response.state,
+      response: params.response,
     });
     if (!isSessionResponded(pending)) return;
     if (isSessionFailed(pending.outcome)) {
@@ -164,14 +177,6 @@ export class Client extends IClient {
     this.logger.trace({ type: "method", method: "respond", pending });
     return pending.outcome.topic;
   }
-
-  public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
-    this.logger.debug(`Disconnecting Application`);
-    this.logger.trace({ type: "method", method: "disconnect", params });
-    await this.session.delete(params);
-  }
-
-  // ---------- Protected ----------------------------------------------- //
 
   protected async onConnectionPayload(payload: JsonRpcPayload): Promise<void> {
     if (isJsonRpcRequest(payload)) {
@@ -188,7 +193,7 @@ export class Client extends IClient {
   }
 
   protected async onConnectionProposed(pending: ConnectionTypes.Pending) {
-    if (pending.proposal.signal.type === CONNECTION_SIGNAL_TYPE_URI) {
+    if (pending.proposal.signal.method === CONNECTION_SIGNAL_METHOD_URI) {
       const uri = pending.proposal.signal.params.uri;
       this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
       this.events.emit(CLIENT_EVENTS.share_uri, { uri });

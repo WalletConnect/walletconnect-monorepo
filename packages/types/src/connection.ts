@@ -1,36 +1,20 @@
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
-import { SettingTypes } from "./settings";
+import { JsonRpcPermissions, SignalTypes } from "./misc";
 
 export declare namespace ConnectionTypes {
+  export interface Permissions {
+    jsonrpc: JsonRpcPermissions;
+  }
+
   export interface ProposeParams {
     relay: RelayTypes.ProtocolOptions;
   }
 
   export type CreateParams = ProposeParams;
 
-  export type SignalTypeUri = "uri";
-
-  export type SignalType = SignalTypeUri;
-
-  export interface SignalParamsUri {
-    uri: string;
-  }
-
-  export type SignalParams = SignalParamsUri;
-
-  export interface BaseSignal {
-    type: SignalType;
-    params: SignalParams;
-  }
-
-  export interface SignalUri extends BaseSignal {
-    type: SignalTypeUri;
-    params: SignalParamsUri;
-  }
-
-  export type Signal = SignalUri;
+  export type Signal = SignalTypes.Uri;
 
   export type Peer = CryptoTypes.Peer<Metadata>;
 
@@ -39,7 +23,7 @@ export declare namespace ConnectionTypes {
     relay: RelayTypes.ProtocolOptions;
     proposer: Peer;
     signal: Signal;
-    setting: SettingTypes.Proposal;
+    permissions: Permissions;
   }
 
   export type ProposedStatus = "proposed";
@@ -67,30 +51,26 @@ export declare namespace ConnectionTypes {
 
   export type Pending = ProposedPending | RespondedPending;
 
-  export interface RespondParams<S = any> {
+  export interface RespondParams {
     approved: boolean;
     proposal: Proposal;
-    state?: S;
-    metadata?: Metadata;
   }
 
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
     peer: Peer;
     self: CryptoTypes.Self;
-    setting: SettingTypes.Settled;
+    permissions: Permissions;
   }
 
-  export interface UpdateParams<S = any> {
+  export interface UpdateParams {
     topic: string;
-    update: Update<S>;
+    update: Update;
   }
-
-  export type StateUpdate<S = any> = { state: S };
 
   export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };
 
-  export type Update<S = any> = StateUpdate<S> | MetadataUpdate;
+  export type Update = MetadataUpdate;
 
   export interface DeleteParams {
     topic: string;
@@ -103,7 +83,7 @@ export declare namespace ConnectionTypes {
     sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
-    setting: SettingTypes.Settled;
+    permissions: Permissions;
   }
 
   export interface Metadata {
@@ -116,7 +96,6 @@ export declare namespace ConnectionTypes {
   export interface Success {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    setting: SettingTypes.Settled;
     responder: Peer;
   }
 

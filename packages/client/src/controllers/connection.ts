@@ -11,7 +11,6 @@ import {
   deriveSharedKey,
   generateKeyPair,
   generateRandomBytes32,
-  getConnectionMetadata,
   isConnectionFailed,
   mapEntries,
   sha256,
@@ -19,11 +18,6 @@ import {
   isConnectionResponded,
   formatUri,
   isSubscriptionUpdatedEvent,
-  generateSettledSetting,
-  generateStatelessProposalSetting,
-  handleSettledSettingStateUpdate,
-  isConnectionStateUpdate,
-  isConnectionMetadataUpdate,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -46,7 +40,7 @@ import {
   SUBSCRIPTION_EVENTS,
   RELAY_DEFAULT_PROTOCOL,
   SETTLED_CONNECTION_JSONRPC,
-  CONNECTION_SIGNAL_TYPE_URI,
+  CONNECTION_SIGNAL_METHOD_URI,
 } from "../constants";
 
 export class Connection extends IConnection {
@@ -139,22 +133,15 @@ export class Connection extends IConnection {
         const responder: ConnectionTypes.Peer = {
           publicKey: self.publicKey,
         };
-        const setting = generateSettledSetting({
-          proposal: proposal.setting,
-          proposer: proposal.proposer,
-          responder,
-          state: {},
-        });
         const connection = await this.settle({
           relay: proposal.relay,
           self,
           peer: proposal.proposer,
-          setting,
+          permissions: proposal.permissions,
         });
         const outcome: ConnectionTypes.Outcome = {
           topic: connection.topic,
           relay: connection.relay,
-          setting: connection.setting,
           responder,
         };
         const pending: ConnectionTypes.Pending = {
@@ -245,18 +232,20 @@ export class Connection extends IConnection {
       publicKey: proposer.publicKey,
       relay: relay,
     });
-    const setting = generateStatelessProposalSetting({
-      methods: SETTLED_CONNECTION_JSONRPC,
-    });
+    const permissions: ConnectionTypes.Permissions = {
+      jsonrpc: {
+        methods: SETTLED_CONNECTION_JSONRPC,
+      },
+    };
     const proposal: ConnectionTypes.Proposal = {
       relay,
       topic,
       proposer,
       signal: {
-        type: CONNECTION_SIGNAL_TYPE_URI,
+        method: CONNECTION_SIGNAL_METHOD_URI,
         params: { uri },
       },
-      setting,
+      permissions,
     };
     const pending: ConnectionTypes.Pending = {
       status: CONNECTION_STATUS.proposed,
@@ -280,7 +269,7 @@ export class Connection extends IConnection {
       sharedKey,
       self: params.self,
       peer: params.peer,
-      setting: params.setting,
+      permissions: params.permissions,
     };
     const decryptKeys: CryptoTypes.KeyParams = {
       sharedKey: connection.sharedKey,
@@ -303,14 +292,13 @@ export class Connection extends IConnection {
           relay: pending.relay,
           self: pending.self,
           peer: request.params.responder,
-          setting: request.params.setting,
+          permissions: pending.proposal.permissions,
         });
         await this.pending.update(topic, {
           status: CONNECTION_STATUS.responded,
           outcome: {
             topic: connection.topic,
             relay: connection.relay,
-            setting: connection.setting,
             responder: request.params.responder,
           },
         });
@@ -356,7 +344,7 @@ export class Connection extends IConnection {
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const connection = await this.settled.get(payloadEvent.topic);
-      if (!connection.setting.jsonrpc.methods.includes(request.method)) {
+      if (!connection.permissions.jsonrpc.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
         const response = formatJsonRpcError(request.id, errorMessage);
@@ -396,20 +384,13 @@ export class Connection extends IConnection {
     }
   }
 
-  protected async handleUpdate<S = any>(
+  protected async handleUpdate(
     connection: ConnectionTypes.Settled,
     params: ConnectionTypes.UpdateParams,
     participant: { publicKey: string },
   ): Promise<ConnectionTypes.Update> {
     let update: ConnectionTypes.Update;
-    if (isConnectionStateUpdate(params.update)) {
-      const state = handleSettledSettingStateUpdate<S>({
-        participant,
-        settled: connection.setting,
-        update: params.update.state,
-      });
-      update = { state };
-    } else if (isConnectionMetadataUpdate(params.update)) {
+    if (typeof params.update.peer !== "undefined") {
       const metadata = params.update.peer.metadata as ConnectionTypes.Metadata;
       if (connection.peer.publicKey === participant.publicKey) {
         connection.peer.metadata = metadata;

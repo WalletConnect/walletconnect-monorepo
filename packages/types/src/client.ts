@@ -5,8 +5,7 @@ import { IRelay, RelayTypes } from "./relay";
 import { IConnection } from "./connection";
 import { ISession, SessionTypes } from "./session";
 import { IStore } from "./store";
-import { IEvents } from "./events";
-import { SettingTypes } from "./settings";
+import { IEvents, SignalTypes } from "./misc";
 
 export interface ClientOptions {
   logger?: string | Logger;
@@ -18,19 +17,23 @@ export interface ClientOptions {
 export declare namespace ClientTypes {
   export interface ConnectParams {
     metadata: SessionTypes.Metadata;
-    setting: SettingTypes.Proposal;
+    permissions: SessionTypes.Permissions;
     relay?: RelayTypes.ProtocolOptions;
-    connection?: string;
+    connection?: SignalTypes.ParamsConnection;
   }
 
-  export interface RespondParams<S = any> {
+  export interface ConnectionRespondParams {
     approved: boolean;
-    proposal: string | SessionTypes.Proposal;
-    response?: {
-      metadata: SessionTypes.Metadata;
-      state: S;
-    };
+    uri: string;
   }
+
+  export interface SessionRespondParams {
+    approved: boolean;
+    proposal: SessionTypes.Proposal;
+    response: SessionTypes.Response;
+  }
+
+  export type RespondParams = ConnectionRespondParams | SessionRespondParams;
 
   export interface DisconnectParams {
     topic: string;

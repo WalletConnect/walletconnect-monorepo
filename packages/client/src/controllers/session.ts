@@ -4,7 +4,6 @@ import {
   IClient,
   ISession,
   SessionTypes,
-  SettingTypes,
   SubscriptionEvent,
   CryptoTypes,
 } from "@walletconnect/types";
@@ -18,11 +17,6 @@ import {
   formatLoggerContext,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
-  generateSettledSetting,
-  generateCaip25ProposalSetting,
-  handleSettledSettingStateUpdate,
-  isSessionStateUpdate,
-  isSessionMetadataUpdate,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -44,8 +38,9 @@ import {
   SESSION_STATUS,
   SUBSCRIPTION_EVENTS,
   SETTLED_SESSION_JSONRPC,
-  SESSION_SIGNAL_TYPE_CONNECTION,
+  SESSION_SIGNAL_METHOD_CONNECTION,
 } from "../constants";
+import { parseAsync } from "@babel/core";
 
 export class Session extends ISession {
   public pending: Subscription<SessionTypes.Pending>;
@@ -102,11 +97,11 @@ export class Session extends ISession {
     return mapEntries(this.settled.entries, x => x.data);
   }
 
-  public async create<P = any>(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
+  public async create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
     this.logger.info(`Create Session`);
     this.logger.trace({ type: "method", method: "create", params });
     return new Promise(async (resolve, reject) => {
-      const pending = await this.propose<P>(params);
+      const pending = await this.propose(params);
       this.pending.on(
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) => {
@@ -132,7 +127,7 @@ export class Session extends ISession {
   ): Promise<SessionTypes.Pending> {
     this.logger.info(`Respond Session`);
     this.logger.trace({ type: "method", method: "respond", params });
-    const { approved, metadata, proposal } = params;
+    const { approved, proposal, response } = params;
     const { relay } = proposal;
     const self = generateKeyPair();
     const connection = await this.client.connection.get(proposal.signal.params.topic);
@@ -144,24 +139,23 @@ export class Session extends ISession {
       try {
         const responder: SessionTypes.Peer = {
           publicKey: self.publicKey,
-          metadata,
+          metadata: response.metadata,
         };
-        const setting = generateSettledSetting<P, S>({
-          proposal: proposal.setting,
-          proposer: proposal.proposer,
-          responder,
-          state: params.state,
-        });
+        const state: SessionTypes.State = {
+          accountIds: params.response.state.accountIds,
+          controller: { publicKey: self.publicKey },
+        };
         const session = await this.settle({
           relay,
           self,
           peer: proposal.proposer,
-          setting,
+          permissions: proposal.permissions,
+          state,
         });
         const outcome: SessionTypes.Outcome = {
           topic: session.topic,
           relay: session.relay,
-          setting: session.setting,
+          state: session.state,
           responder,
         };
         const pending: SessionTypes.Pending = {
@@ -203,11 +197,11 @@ export class Session extends ISession {
     }
   }
 
-  public async update<S = any>(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
+  public async update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
     this.logger.info(`Update Session`);
     this.logger.trace({ type: "method", method: "update", params });
     const session = await this.settled.get(params.topic);
-    const update = await this.handleUpdate<S>(session, params, {
+    const update = await this.handleUpdate(session, params, {
       publicKey: session.self.publicKey,
     });
     const request = formatJsonRpcRequest(SESSION_JSONRPC.update, update);
@@ -235,16 +229,14 @@ export class Session extends ISession {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async propose<P = any>(
-    params: SessionTypes.ProposeParams,
-  ): Promise<SessionTypes.Pending> {
+  protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Propose Session`);
     this.logger.trace({ type: "method", method: "propose", params });
-    if (params.signal.type !== SESSION_SIGNAL_TYPE_CONNECTION)
+    if (params.signal.method !== SESSION_SIGNAL_METHOD_CONNECTION)
       throw new Error(`Session proposal signal unsupported`);
     const connection = await this.client.connection.settled.get(params.signal.params.topic);
-    const signal: SessionTypes.SignalConnection = {
-      type: SESSION_SIGNAL_TYPE_CONNECTION,
+    const signal: SessionTypes.Signal = {
+      method: SESSION_SIGNAL_METHOD_CONNECTION,
       params: { topic: connection.topic },
     };
     const decryptKeys: CryptoTypes.KeyParams = {
@@ -257,16 +249,18 @@ export class Session extends ISession {
       publicKey: self.publicKey,
       metadata: params.metadata,
     };
-    const setting: SettingTypes.Proposal<P> = {
-      ...params.setting,
-      jsonrpc: { methods: { ...SETTLED_SESSION_JSONRPC, ...params.setting.jsonrpc.methods } },
+    const permissions: SessionTypes.Permissions = {
+      ...params.permissions,
+      jsonrpc: {
+        methods: [...params.permissions.jsonrpc.methods, ...SETTLED_SESSION_JSONRPC],
+      },
     };
     const proposal: SessionTypes.Proposal = {
       topic,
       relay: params.relay,
       proposer,
       signal,
-      setting,
+      permissions,
     };
     const pending: SessionTypes.Pending = {
       status: SESSION_STATUS.proposed,
@@ -292,7 +286,8 @@ export class Session extends ISession {
       sharedKey,
       self: params.self,
       peer: params.peer,
-      setting: params.setting,
+      permissions: params.permissions,
+      state: params.state,
     };
     const decryptKeys: CryptoTypes.KeyParams = {
       sharedKey: session.sharedKey,
@@ -320,15 +315,16 @@ export class Session extends ISession {
           relay: pending.relay,
           self: pending.self,
           peer: request.params.responder,
-          setting: request.params.setting,
+          permissions: pending.proposal.permissions,
+          state: request.params.state,
         });
         await this.pending.update(topic, {
           status: SESSION_STATUS.responded,
           outcome: {
             topic: session.topic,
             relay: session.relay,
-            setting: session.setting,
             responder: session.peer,
+            state: session.state,
           },
         });
       } catch (e) {
@@ -373,7 +369,7 @@ export class Session extends ISession {
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const session = await this.settled.get(payloadEvent.topic);
-      if (!session.setting.jsonrpc.methods.includes(request.method)) {
+      if (!session.permissions.jsonrpc.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
         const response = formatJsonRpcError(request.id, errorMessage);
@@ -412,25 +408,18 @@ export class Session extends ISession {
     }
   }
 
-  protected async handleUpdate<S = any>(
+  protected async handleUpdate(
     session: SessionTypes.Settled,
     params: SessionTypes.UpdateParams,
     participant: { publicKey: string },
   ): Promise<SessionTypes.Update> {
     let update: SessionTypes.Update;
-    if (isSessionStateUpdate(params.update)) {
-      const state = handleSettledSettingStateUpdate<S>({
-        participant,
-        settled: session.setting,
-        update: params.update.state,
-      });
-      update = { state };
-    } else if (isSessionMetadataUpdate(params.update)) {
-      const metadata = params.update.peer.metadata as SessionTypes.Metadata;
-      if (session.peer.publicKey === participant.publicKey) {
-        session.peer.metadata = metadata;
+    if (typeof params.update.state !== "undefined") {
+      const state = session.state;
+      if (participant.publicKey === state.controller.publicKey) {
+        state.accountIds = params.update.state.accountIds || state.accountIds;
       }
-      update = { peer: { metadata } };
+      update = { state };
     } else {
       const errorMessage = `Invalid ${this.context} update request params`;
       this.logger.error(errorMessage);

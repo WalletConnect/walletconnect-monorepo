@@ -2,7 +2,7 @@ import { Logger } from "pino";
 import { IJsonRpcProvider, JsonRpcPayload } from "rpc-json-types";
 
 import { CryptoTypes } from "./crypto";
-import { IEvents } from "./events";
+import { IEvents } from "./misc";
 
 export declare namespace RelayTypes {
   export interface ProtocolOptions {

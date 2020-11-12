@@ -1,44 +1,24 @@
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
-import { SettingTypes } from "./settings";
+import { BlockchainPermissions, BlockchainState, JsonRpcPermissions, SignalTypes } from "./misc";
 
 export declare namespace SessionTypes {
-  export interface SignalProposeParams {
-    type: SignalTypeConnection;
-    params: Pick<SignalParamsConnection, "topic">;
+  export interface Permissions {
+    jsonrpc: JsonRpcPermissions;
+    blockchain: BlockchainPermissions;
   }
 
   export interface ProposeParams {
-    signal: SignalProposeParams;
+    signal: Signal;
     relay: RelayTypes.ProtocolOptions;
-    setting: SettingTypes.Proposal;
     metadata: Metadata;
+    permissions: Permissions;
   }
 
   export type CreateParams = ProposeParams;
 
-  export type SignalTypeConnection = "connection";
-
-  export type SignalType = SignalTypeConnection;
-
-  export interface SignalParamsConnection {
-    topic: string;
-  }
-
-  export type SignalParams = SignalParamsConnection;
-
-  export interface BaseSignal {
-    type: SignalType;
-    params: SignalParams;
-  }
-
-  export interface SignalConnection extends BaseSignal {
-    type: SignalTypeConnection;
-    params: SignalParamsConnection;
-  }
-
-  export type Signal = SignalConnection;
+  export type Signal = SignalTypes.Connection;
 
   export type Peer = Required<CryptoTypes.Peer<Metadata>>;
 
@@ -47,7 +27,7 @@ export declare namespace SessionTypes {
     relay: RelayTypes.ProtocolOptions;
     proposer: Peer;
     signal: Signal;
-    setting: SettingTypes.Proposal;
+    permissions: Permissions;
   }
 
   export type ProposedStatus = "proposed";
@@ -75,30 +55,28 @@ export declare namespace SessionTypes {
 
   export type Pending = ProposedPending | RespondedPending;
 
-  export interface RespondParams<S = any> {
+  export interface RespondParams {
     approved: boolean;
     proposal: Proposal;
-    state: S;
-    metadata: Metadata;
+    response: Response;
   }
 
   export interface SettleParams {
     relay: RelayTypes.ProtocolOptions;
     self: CryptoTypes.Self;
     peer: Peer;
-    setting: SettingTypes.Settled;
+    state: State;
+    permissions: Permissions;
   }
 
-  export interface UpdateParams<S = any> {
+  export interface UpdateParams {
     topic: string;
-    update: Update<S>;
+    update: Update;
   }
 
-  export type StateUpdate<S = any> = { state: S };
+  export type StateUpdate = { state: Partial<BlockchainState> };
 
-  export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };
-
-  export type Update<S = any> = StateUpdate<S> | MetadataUpdate;
+  export type Update = StateUpdate;
 
   export interface DeleteParams {
     topic: string;
@@ -111,7 +89,8 @@ export declare namespace SessionTypes {
     sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
-    setting: SettingTypes.Settled;
+    permissions: Permissions;
+    state: State;
   }
 
   export interface Metadata {
@@ -124,14 +103,23 @@ export declare namespace SessionTypes {
   export interface Success {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    setting: SettingTypes.Settled;
     responder: Peer;
+    state: State;
   }
   export interface Failed {
     reason: string;
   }
 
   export type Outcome = Failed | Success;
+
+  export interface State extends BlockchainState {
+    controller: CryptoTypes.Participant;
+  }
+
+  export interface Response {
+    state: Omit<State, "controller">;
+    metadata: Metadata;
+  }
 }
 
 export abstract class ISession extends ISequence<
