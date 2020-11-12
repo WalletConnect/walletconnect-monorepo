@@ -174,5 +174,13 @@
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
+  },
+  {
+    "name": "GK",
+    "shortName": "GK",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/gk.png",
+    "universalLink": "",
+    "deepLink": "gkwalletconnect:"
   }
 ]
