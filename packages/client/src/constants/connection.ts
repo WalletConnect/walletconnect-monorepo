@@ -1,4 +1,4 @@
-import { ConnectionTypes } from "@walletconnect/types";
+import { ConnectionTypes, SignalTypes } from "@walletconnect/types";
 import { SESSION_JSONRPC_BEFORE_SETTLEMENT } from "./session";
 
 export const CONNECTION_JSONRPC = {
@@ -21,7 +21,7 @@ export const SETTLED_CONNECTION_JSONRPC = [
 
 export const CONNECTION_CONTEXT = "connection";
 
-export const CONNECTION_SIGNAL_TYPE_URI = "uri" as ConnectionTypes.SignalTypeUri;
+export const CONNECTION_SIGNAL_METHOD_URI = "uri" as SignalTypes.MethodUri;
 
 export const CONNECTION_STATUS = {
   proposed: "proposed" as ConnectionTypes.ProposedStatus,
