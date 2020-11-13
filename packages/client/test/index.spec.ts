@@ -118,7 +118,7 @@ describe("Client", () => {
         clientB.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
           clientB.logger.warn(`TEST >> Session Acknowledged`);
           const elapsed = Date.now() - before;
-          clientB.logger.warn(`TEST >> Elapsed ${elapsed}mes`);
+          clientB.logger.warn(`TEST >> Elapsed ${elapsed}ms`);
           resolve();
         });
       }),
