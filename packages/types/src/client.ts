@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IJsonRpcProvider } from "rpc-json-types";
+import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse } from "rpc-json-types";
 
 import { IRelay, RelayTypes } from "./relay";
 import { IConnection } from "./connection";
@@ -35,6 +35,19 @@ export declare namespace ClientTypes {
 
   export type RespondParams = ConnectionRespondParams | SessionRespondParams;
 
+  export type UpdateParams = SessionTypes.UpdateParams;
+
+  export interface RequestParams {
+    topic: string;
+    request: JsonRpcRequest;
+    chainId?: string;
+  }
+
+  export interface ResolveParams {
+    topic: string;
+    response: JsonRpcResponse;
+  }
+
   export interface DisconnectParams {
     topic: string;
     reason: string;
@@ -59,5 +72,8 @@ export abstract class IClient extends IEvents {
 
   public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
   public abstract respond(params: ClientTypes.RespondParams): Promise<string | undefined>;
+  public abstract update(params: ClientTypes.UpdateParams): Promise<SessionTypes.Settled>;
+  public abstract request(params: ClientTypes.RequestParams): Promise<any>;
+  public abstract resolve(params: ClientTypes.ResolveParams): Promise<void>;
   public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
 }

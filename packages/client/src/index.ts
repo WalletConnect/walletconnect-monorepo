@@ -18,7 +18,7 @@ import {
   getConnectionMetadata,
   isConnectionRespondParams,
 } from "@walletconnect/utils";
-import { JsonRpcPayload, isJsonRpcRequest } from "rpc-json-utils";
+import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "rpc-json-utils";
 
 import { Store, Connection, Session, Relay } from "./controllers";
 import {
@@ -30,8 +30,8 @@ import {
   SESSION_EVENTS,
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_CONNECTION,
-  SETTLED_CONNECTION_JSONRPC,
 } from "./constants";
+import { reject } from "core-js/fn/promise";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -116,6 +116,30 @@ export class Client extends IClient {
     return this.onSessionResponse(params);
   }
 
+  public async update(params: ClientTypes.UpdateParams): Promise<SessionTypes.Settled> {
+    return this.session.update(params);
+  }
+
+  public async request(params: ClientTypes.RequestParams): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.on(CLIENT_EVENTS.session.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
+        if (params.topic !== payloadEvent.topic) return;
+        if (isJsonRpcRequest(payloadEvent.payload)) return;
+        const response = payloadEvent.payload;
+        if (response.id !== params.request.id) return;
+        if (isJsonRpcError(response)) {
+          return reject(new Error(response.error.message));
+        }
+        return resolve(response.result);
+      });
+      this.session.send(params.topic, params.request, params.chainId);
+    });
+  }
+
+  public async resolve(params: ClientTypes.ResolveParams): Promise<void> {
+    this.session.send(params.topic, params.response);
+  }
+
   public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
     this.logger.debug(`Disconnecting Application`);
     this.logger.trace({ type: "method", method: "disconnect", params });
@@ -135,7 +159,7 @@ export class Client extends IClient {
       relay: uriParams.relay,
       proposer: { publicKey: uriParams.publicKey },
       signal: { method: CONNECTION_SIGNAL_METHOD_URI, params: { uri: params.uri } },
-      permissions: { jsonrpc: { methods: SETTLED_CONNECTION_JSONRPC } },
+      permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
     };
     const pending = await this.connection.respond({
       approved: params.approved,

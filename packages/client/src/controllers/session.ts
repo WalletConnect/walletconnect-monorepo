@@ -37,10 +37,8 @@ import {
   SESSION_REASONS,
   SESSION_STATUS,
   SUBSCRIPTION_EVENTS,
-  SETTLED_SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_CONNECTION,
 } from "../constants";
-import { parseAsync } from "@babel/core";
 
 export class Session extends ISession {
   public pending: Subscription<SessionTypes.Pending>;
@@ -80,12 +78,23 @@ export class Session extends ISession {
     return this.settled.get(topic);
   }
 
-  public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
+  public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     const session = await this.settled.get(topic);
     const encryptKeys: CryptoTypes.KeyParams = {
       sharedKey: session.sharedKey,
       publicKey: session.self.publicKey,
     };
+    if (isJsonRpcRequest(payload) && !Object.values(SESSION_JSONRPC).includes(payload.method)) {
+      if (!session.permissions.jsonrpc.methods.includes(payload.method)) {
+        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${payload.method}`;
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      payload = formatJsonRpcRequest<SessionTypes.Payload>(SESSION_JSONRPC.payload, {
+        chainId,
+        payload,
+      });
+    }
     this.client.relay.publish(session.topic, payload, { relay: session.relay, encryptKeys });
   }
 
@@ -249,18 +258,12 @@ export class Session extends ISession {
       publicKey: self.publicKey,
       metadata: params.metadata,
     };
-    const permissions: SessionTypes.Permissions = {
-      ...params.permissions,
-      jsonrpc: {
-        methods: [...params.permissions.jsonrpc.methods, ...SETTLED_SESSION_JSONRPC],
-      },
-    };
     const proposal: SessionTypes.Proposal = {
       topic,
       relay: params.relay,
       proposer,
       signal,
-      permissions,
+      permissions: params.permissions,
     };
     const pending: SessionTypes.Pending = {
       status: SESSION_STATUS.proposed,
@@ -364,18 +367,16 @@ export class Session extends ISession {
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.info(`Receiving Session message`);
+    this.logger.debug(`Receiving Connection message`);
     this.logger.trace({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const session = await this.settled.get(payloadEvent.topic);
-      if (!session.permissions.jsonrpc.methods.includes(request.method)) {
-        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
-        this.logger.error(errorMessage);
-        const response = formatJsonRpcError(request.id, errorMessage);
-        this.send(session.topic, response);
-      }
+      let errorMessage = "";
       switch (request.method) {
+        case SESSION_JSONRPC.payload:
+          await this.onPayload(payloadEvent);
+          break;
         case SESSION_JSONRPC.update:
           await this.onUpdate(payloadEvent);
           break;
@@ -383,15 +384,49 @@ export class Session extends ISession {
           await this.settled.delete(session.topic, request.params.reason);
           break;
         default:
-          this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
-          this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
-          this.events.emit(SESSION_EVENTS.payload, payloadEvent);
+          errorMessage = `Unknown JSON-RPC Method Requested: ${request.method}`;
+          this.logger.error(errorMessage);
+          this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
           break;
       }
     } else {
       this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
       this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
       this.events.emit(SESSION_EVENTS.payload, payloadEvent);
+    }
+  }
+
+  protected async onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
+    const { topic } = payloadEvent;
+    const request = payloadEvent.payload as JsonRpcRequest<SessionTypes.Payload>;
+    const { payload, chainId } = request.params;
+    const sessionPayloadEvent: SessionTypes.PayloadEvent = { topic, payload, chainId };
+    this.logger.debug(`Receiving Connection payload`);
+    this.logger.trace({ type: "method", method: "onPayload", ...sessionPayloadEvent });
+    if (isJsonRpcRequest(payload)) {
+      const request = payload as JsonRpcRequest;
+      const session = await this.settled.get(topic);
+      if (!session.permissions.jsonrpc.methods.includes(request.method)) {
+        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
+        this.logger.error(errorMessage);
+        this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
+        return;
+      }
+      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
+      this.logger.debug({
+        type: "event",
+        event: SESSION_EVENTS.payload,
+        data: sessionPayloadEvent,
+      });
+      this.events.emit(SESSION_EVENTS.payload, sessionPayloadEvent);
+    } else {
+      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
+      this.logger.debug({
+        type: "event",
+        event: SESSION_EVENTS.payload,
+        data: sessionPayloadEvent,
+      });
+      this.events.emit(SESSION_EVENTS.payload, sessionPayloadEvent);
     }
   }
 

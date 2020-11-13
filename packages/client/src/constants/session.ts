@@ -1,17 +1,12 @@
 import { SessionTypes, SignalTypes } from "@walletconnect/types";
 
 export const SESSION_JSONRPC = {
-  propose: "wc_proposeSession",
-  respond: "wc_respondSession",
-  update: "wc_updateSession",
-  delete: "wc_deleteSession",
+  propose: "wc_sessionPropose",
+  respond: "wc_sessionRespond",
+  update: "wc_sessionUpdate",
+  delete: "wc_sessionDelete",
+  payload: "wc_sessionPayload",
 };
-
-export const SESSION_JSONRPC_BEFORE_SETTLEMENT = [SESSION_JSONRPC.propose, SESSION_JSONRPC.respond];
-
-export const SESSION_JSONRPC_AFTER_SETTLEMENT = [SESSION_JSONRPC.update, SESSION_JSONRPC.delete];
-
-export const SETTLED_SESSION_JSONRPC = [...SESSION_JSONRPC_AFTER_SETTLEMENT];
 
 export const SESSION_CONTEXT = "session";
 

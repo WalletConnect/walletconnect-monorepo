@@ -4,18 +4,13 @@ import { expect } from "chai";
 import { SessionTypes, ClientOptions, ConnectionTypes } from "@walletconnect/types";
 
 import Client from "../src";
-import {
-  CLIENT_EVENTS,
-  SESSION_EVENTS,
-  SETTLED_SESSION_JSONRPC,
-  SUBSCRIPTION_EVENTS,
-} from "../src/constants";
+import { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src/constants";
 
 // TODO: Relay Provider URL needs to be set from ops
 const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
 
 const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "debug",
+  logger: "trace",
   relayProvider: TEST_RELAY_PROVIDER_URL,
 };
 
@@ -61,8 +56,8 @@ describe("Client", () => {
     expect(client).to.be.exist;
   });
   it("connect two clients", async () => {
-    let sessionA: SessionTypes.Settled | undefined;
-    let sessionB: SessionTypes.Settled | undefined;
+    let sessionA: SessionTypes.Created | undefined;
+    let sessionB: SessionTypes.Created | undefined;
     const before = Date.now();
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
@@ -101,14 +96,14 @@ describe("Client", () => {
         });
       }),
       new Promise(async (resolve, reject) => {
-        clientA.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Settled) => {
+        clientA.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
           clientA.logger.warn(`TEST >> Session Created`);
           sessionA = session;
           resolve();
         });
       }),
       new Promise(async (resolve, reject) => {
-        clientB.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Settled) => {
+        clientB.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
           clientB.logger.warn(`TEST >> Session Created`);
           sessionB = session;
           resolve();
@@ -144,10 +139,7 @@ describe("Client", () => {
       sessionB.permissions.blockchain.chainIds,
     );
     // jsonrpc permmissions
-    expect(sessionA.permissions.jsonrpc.methods).to.eql([
-      ...TEST_PERMISSIONS_JSONRPC_METHODS,
-      ...SETTLED_SESSION_JSONRPC,
-    ]);
+    expect(sessionA.permissions.jsonrpc.methods).to.eql(TEST_PERMISSIONS_JSONRPC_METHODS);
     expect(sessionA.permissions.jsonrpc.methods).to.eql(sessionB.permissions.jsonrpc.methods);
   });
 });

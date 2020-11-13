@@ -62,6 +62,8 @@ export abstract class ISequence<
   protected abstract onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
   // callback for settled subscriptions
   protected abstract onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
+  // callback for incoming payloads
+  protected abstract onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
   // callback for state update requests
   protected abstract onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
   // validates and processes state udpates

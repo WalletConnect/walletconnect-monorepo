@@ -1,3 +1,5 @@
+import { JsonRpcPayload } from "rpc-json-types";
+
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
@@ -71,6 +73,13 @@ export declare namespace ConnectionTypes {
   export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };
 
   export type Update = MetadataUpdate;
+  export interface Payload {
+    payload: JsonRpcPayload;
+  }
+
+  export interface PayloadEvent extends Payload {
+    topic: string;
+  }
 
   export interface DeleteParams {
     topic: string;
@@ -85,6 +94,8 @@ export declare namespace ConnectionTypes {
     peer: Peer;
     permissions: Permissions;
   }
+
+  export type Created = Settled;
 
   export interface Metadata {
     type: string;
