@@ -383,10 +383,14 @@ export class Session extends ISession {
           await this.settled.delete(session.topic, request.params.reason);
           break;
         default:
+          this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
+          this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
           this.events.emit(SESSION_EVENTS.payload, payloadEvent);
           break;
       }
     } else {
+      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
       this.events.emit(SESSION_EVENTS.payload, payloadEvent);
     }
   }
@@ -447,6 +451,8 @@ export class Session extends ISession {
   ) {
     const pending = event.data;
     if (isSessionResponded(pending)) {
+      this.logger.info(`Emitting ${SESSION_EVENTS.responded}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.responded, data: pending });
       this.events.emit(SESSION_EVENTS.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
         const connection = await this.client.connection.get(pending.proposal.signal.params.topic);
@@ -458,6 +464,8 @@ export class Session extends ISession {
         this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });
       }
     } else {
+      this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.proposed, data: pending });
       this.events.emit(SESSION_EVENTS.proposed, pending);
     }
   }
@@ -485,6 +493,8 @@ export class Session extends ISession {
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<SessionTypes.Settled>) => {
         const session = createdEvent.data;
+        this.logger.info(`Emitting ${SESSION_EVENTS.settled}`);
+        this.logger.debug({ type: "event", event: SESSION_EVENTS.settled, data: session });
         this.events.emit(SESSION_EVENTS.settled, session);
       },
     );
@@ -492,6 +502,8 @@ export class Session extends ISession {
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Settled>) => {
         const session = updatedEvent.data;
+        this.logger.info(`Emitting ${SESSION_EVENTS.updated}`);
+        this.logger.debug({ type: "event", event: SESSION_EVENTS.updated, data: session });
         this.events.emit(SESSION_EVENTS.updated, session);
       },
     );
@@ -499,6 +511,8 @@ export class Session extends ISession {
       SUBSCRIPTION_EVENTS.deleted,
       (deletedEvent: SubscriptionEvent.Deleted<SessionTypes.Settled>) => {
         const session = deletedEvent.data;
+        this.logger.info(`Emitting ${SESSION_EVENTS.deleted}`);
+        this.logger.debug({ type: "event", event: SESSION_EVENTS.deleted, data: session });
         this.events.emit(SESSION_EVENTS.deleted, session);
         const request = formatJsonRpcRequest(SESSION_JSONRPC.delete, {
           reason: deletedEvent.reason,

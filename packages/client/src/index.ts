@@ -181,22 +181,14 @@ export class Client extends IClient {
   protected async onConnectionPayload(payload: JsonRpcPayload): Promise<void> {
     if (isJsonRpcRequest(payload)) {
       if (payload.method === SESSION_JSONRPC.propose) {
-        this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
+        this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
         this.logger.debug({
           type: "event",
-          event: SESSION_EVENTS.proposed,
+          event: CLIENT_EVENTS.session.proposal,
           data: payload.params,
         });
-        this.events.emit(SESSION_EVENTS.proposed, payload.params);
+        this.events.emit(CLIENT_EVENTS.session.proposal, payload.params);
       }
-    }
-  }
-
-  protected async onConnectionProposed(pending: ConnectionTypes.Pending) {
-    if (pending.proposal.signal.method === CONNECTION_SIGNAL_METHOD_URI) {
-      const uri = pending.proposal.signal.params.uri;
-      this.logger.debug({ type: "event", event: CLIENT_EVENTS.share_uri, uri });
-      this.events.emit(CLIENT_EVENTS.share_uri, { uri });
     }
   }
 
@@ -229,67 +221,79 @@ export class Client extends IClient {
   private registerEventListeners(): void {
     // Connection Subscription Events
     this.connection.on(CONNECTION_EVENTS.proposed, (pending: ConnectionTypes.Pending) => {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: pending });
-      this.events.emit(CONNECTION_EVENTS.proposed, pending);
-      this.onConnectionProposed(pending);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.proposal}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.connection.proposal,
+        data: pending.proposal,
+      });
+      this.events.emit(CLIENT_EVENTS.connection.proposal, pending.proposal);
     });
-    this.connection.on(CONNECTION_EVENTS.responded, (pending: ConnectionTypes.Pending) => {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.responded}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.responded, data: pending });
-      this.events.emit(CONNECTION_EVENTS.responded, pending);
-    });
+
     this.connection.on(CONNECTION_EVENTS.settled, (connection: ConnectionTypes.Settled) => {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.settled}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.settled, data: connection });
-      this.events.emit(CONNECTION_EVENTS.settled, connection);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.created}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.connection.created,
+        data: connection,
+      });
+      this.events.emit(CLIENT_EVENTS.connection.created, connection);
       this.onConnectionSettled(connection);
     });
     this.connection.on(CONNECTION_EVENTS.updated, (connection: ConnectionTypes.Settled) => {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.updated, data: connection });
-      this.events.emit(CONNECTION_EVENTS.updated, connection);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.updated}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.connection.updated,
+        data: connection,
+      });
+      this.events.emit(CLIENT_EVENTS.connection.updated, connection);
     });
     this.connection.on(CONNECTION_EVENTS.deleted, (connection: ConnectionTypes.Settled) => {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.deleted}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.deleted, data: connection });
-      this.events.emit(CONNECTION_EVENTS.deleted, connection);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.deleted}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.connection.deleted,
+        data: connection,
+      });
+      this.events.emit(CLIENT_EVENTS.connection.deleted, connection);
     });
     this.connection.on(CONNECTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payloadEvent });
       this.onConnectionPayload(payloadEvent.payload);
     });
     // Session Subscription Events
     this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {
-      this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.proposed, data: pending });
-      this.events.emit(SESSION_EVENTS.proposed, pending);
-    });
-    this.session.on(SESSION_EVENTS.responded, (pending: SessionTypes.Pending) => {
-      this.logger.info(`Emitting ${SESSION_EVENTS.responded}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.responded, data: pending });
-      this.events.emit(SESSION_EVENTS.responded, pending);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.session.proposal,
+        data: pending.proposal,
+      });
+      this.events.emit(CLIENT_EVENTS.session.proposal, pending.proposal);
     });
     this.session.on(SESSION_EVENTS.settled, (session: SessionTypes.Settled) => {
-      this.logger.info(`Emitting ${SESSION_EVENTS.settled}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.settled, data: session });
-      this.events.emit(SESSION_EVENTS.settled, session);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.created}`);
+      this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.created, data: session });
+      this.events.emit(CLIENT_EVENTS.session.created, session);
     });
     this.session.on(SESSION_EVENTS.updated, (session: SessionTypes.Settled) => {
-      this.logger.info(`Emitting ${SESSION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.updated, data: session });
-      this.events.emit(SESSION_EVENTS.updated, session);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.updated}`);
+      this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.updated, data: session });
+      this.events.emit(CLIENT_EVENTS.session.updated, session);
     });
     this.session.on(SESSION_EVENTS.deleted, (session: SessionTypes.Settled) => {
-      this.logger.info(`Emitting ${SESSION_EVENTS.deleted}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.deleted, data: session });
-      this.events.emit(SESSION_EVENTS.deleted, session);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.deleted}`);
+      this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.deleted, data: session });
+      this.events.emit(CLIENT_EVENTS.session.deleted, session);
     });
     this.session.on(SESSION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
-      this.events.emit(SESSION_EVENTS.payload, payloadEvent);
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.payload}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.session.payload,
+        data: payloadEvent,
+      });
+      this.events.emit(CLIENT_EVENTS.session.payload, payloadEvent);
     });
   }
 }
