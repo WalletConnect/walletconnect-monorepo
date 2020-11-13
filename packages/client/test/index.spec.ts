@@ -1,7 +1,7 @@
 import "mocha";
-import * as chai from "chai";
+import { expect } from "chai";
 
-import { SessionTypes, ClientOptions } from "@walletconnect/types";
+import { ClientTypes, SessionTypes, ClientOptions } from "@walletconnect/types";
 
 import Client from "../src";
 import { CLIENT_EVENTS, SESSION_EVENTS } from "../src/constants";
@@ -53,20 +53,21 @@ const TEST_SESSION_STATE = {
 describe("Client", () => {
   it("instantiate successfully", async () => {
     const client = await Client.init(TEST_CLIENT_OPTIONS);
-    chai.expect(client).to.be.exist;
+    expect(client).to.be.exist;
   });
-  it("connect two clients", async () => {
+  it("connect two clients", async done => {
     const before = Date.now();
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
-    Promise.all([
+    await Promise.all([
       new Promise(async (resolve, reject) => {
         const session = await clientA.connect({
           metadata: TEST_APP_METADATA_A,
           permissions: TEST_PERMISSIONS,
         });
         console.log("Session connected"); // eslint-disable-line no-console
-        chai.expect(session).to.be.true;
+        expect(session).to.be.true;
+        console.log("ONE");// eslint-disable-line no-console
         resolve();
       }),
       new Promise(async (resolve, reject) => {
@@ -81,7 +82,8 @@ describe("Client", () => {
           console.log("Connection Responded"); // eslint-disable-line no-console
 
           const connection = await clientB.connection.get(topic);
-          chai.expect(connection).to.be.true;
+          expect(connection).to.be.true;
+          console.log("TWO"); //eslint-disable-line no-console:W
           resolve();
         });
       }),
@@ -101,12 +103,14 @@ describe("Client", () => {
             throw new Error("topic is undefined");
           }
           const session = await clientB.session.get(topic);
-          chai.expect(session).to.be.true;
+          expect(session).to.be.true;
+          console.log("THREE"); //eslint-disable-line no-console:W
           resolve();
         });
       }),
     ]);
     const after = Date.now();
     console.log("elapsed:", after - before, "ms"); // eslint-disable-line no-console
+    done();
   });
 });
