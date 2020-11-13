@@ -111,9 +111,9 @@ export class Client extends IClient {
 
   public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
     if (isConnectionRespondParams(params)) {
-      return this.onConnectionResponse(params);
+      return this.respondConnection(params);
     }
-    return this.onSessionResponse(params);
+    return this.respondSession(params);
   }
 
   public async update(params: ClientTypes.UpdateParams): Promise<SessionTypes.Settled> {
@@ -148,7 +148,7 @@ export class Client extends IClient {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async onConnectionResponse(
+  protected async respondConnection(
     params: ClientTypes.ConnectionRespondParams,
   ): Promise<string | undefined> {
     this.logger.debug(`Responding Connection Proposal`);
@@ -176,7 +176,7 @@ export class Client extends IClient {
     return pending.outcome.topic;
   }
 
-  protected async onSessionResponse(
+  protected async respondSession(
     params: ClientTypes.SessionRespondParams,
   ): Promise<string | undefined> {
     this.logger.debug(`Responding Session Proposal`);
