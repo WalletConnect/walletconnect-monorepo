@@ -1,7 +1,15 @@
-import { SessionTypes, ClientOptions } from "@walletconnect/types";
+import "mocha";
+import { expect } from "chai";
+
+import { SessionTypes, ClientOptions, ConnectionTypes } from "@walletconnect/types";
 
 import Client from "../src";
-import { CLIENT_EVENTS, SESSION_EVENTS } from "../src/constants";
+import {
+  CLIENT_EVENTS,
+  SESSION_EVENTS,
+  SETTLED_SESSION_JSONRPC,
+  SUBSCRIPTION_EVENTS,
+} from "../src/constants";
 
 // TODO: Relay Provider URL needs to be set from ops
 const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
@@ -50,61 +58,96 @@ const TEST_SESSION_STATE = {
 describe("Client", () => {
   it("instantiate successfully", async () => {
     const client = await Client.init(TEST_CLIENT_OPTIONS);
-    expect(client).toBeTruthy();
+    expect(client).to.be.exist;
   });
   it("connect two clients", async () => {
+    let sessionA: SessionTypes.Settled | undefined;
+    let sessionB: SessionTypes.Settled | undefined;
     const before = Date.now();
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
     await Promise.all([
       new Promise(async (resolve, reject) => {
-        const session = await clientA.connect({
+        await clientA.connect({
           metadata: TEST_APP_METADATA_A,
           permissions: TEST_PERMISSIONS,
         });
-        console.log("Session connected"); // eslint-disable-line no-console
-        expect(session).toBeTruthy();
         resolve();
       }),
       new Promise(async (resolve, reject) => {
-        clientA.on(CLIENT_EVENTS.share_uri, async ({ uri }) => {
-          console.log("URI Shared"); // eslint-disable-line no-console
-
-          const topic = await clientB.respond({ approved: true, uri });
-
-          if (typeof topic === "undefined") {
-            throw new Error("topic is undefined");
-          }
-          console.log("Connection Responded"); // eslint-disable-line no-console
-
-          const connection = await clientB.connection.get(topic);
-          expect(connection).toBeTruthy();
+        clientA.on(
+          CLIENT_EVENTS.connection.proposal,
+          async (proposal: ConnectionTypes.Proposal) => {
+            clientA.logger.warn(`TEST >> Connection Proposed`);
+            await clientB.respond({ approved: true, uri: proposal.signal.params.uri });
+            clientA.logger.warn(`TEST >> Connection Responded`);
+            resolve();
+          },
+        );
+      }),
+      new Promise(async (resolve, reject) => {
+        clientB.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+          clientB.logger.warn(`TEST >> Session proposed`);
+          await clientB.respond({
+            approved: true,
+            proposal,
+            response: {
+              state: TEST_SESSION_STATE,
+              metadata: TEST_APP_METADATA_B,
+            },
+          });
+          clientB.logger.warn(`TEST >> Session Responded`);
           resolve();
         });
       }),
-
       new Promise(async (resolve, reject) => {
-        clientB.on(SESSION_EVENTS.proposed, async (proposal: SessionTypes.Proposal) => {
-          console.log("Session proposed"); // eslint-disable-line no-console
-          const response: SessionTypes.Response = {
-            state: TEST_SESSION_STATE,
-            metadata: TEST_APP_METADATA_B,
-          };
-          const topic = await clientB.respond({
-            approved: true,
-            proposal,
-            response,
-          });
-          if (typeof topic === "undefined") {
-            throw new Error("topic is undefined");
-          }
-          const session = await clientB.session.get(topic);
-          expect(session).toBeTruthy();
+        clientA.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Settled) => {
+          clientA.logger.warn(`TEST >> Session Created`);
+          sessionA = session;
+          resolve();
+        });
+      }),
+      new Promise(async (resolve, reject) => {
+        clientB.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Settled) => {
+          clientB.logger.warn(`TEST >> Session Created`);
+          sessionB = session;
+          resolve();
+        });
+      }),
+      new Promise(async (resolve, reject) => {
+        clientB.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+          clientB.logger.warn(`TEST >> Session Acknowledged`);
+          const elapsed = Date.now() - before;
+          clientB.logger.warn(`TEST >> Elapsed ${elapsed}ms`);
           resolve();
         });
       }),
     ]);
-    const after = Date.now();
-    console.log("elapsed:", after - before, "ms"); // eslint-disable-line no-console
+    if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
+    if (typeof sessionB === "undefined") throw new Error("Missing session for client B");
+    // session data
+    expect(sessionA.topic).to.eql(sessionB.topic);
+    expect(sessionA.relay.protocol).to.eql(sessionB.relay.protocol);
+    expect(sessionA.sharedKey).to.eql(sessionB.sharedKey);
+    expect(sessionA.peer.publicKey).to.eql(sessionB.self.publicKey);
+    expect(sessionA.self.publicKey).to.eql(sessionB.peer.publicKey);
+    expect(sessionA.peer.metadata).to.eql(TEST_APP_METADATA_B);
+    expect(sessionB.peer.metadata).to.eql(TEST_APP_METADATA_A);
+    // blockchain state
+    expect(sessionA.state.accountIds).to.eql(TEST_SESSION_ACCOUNT_IDS);
+    expect(sessionA.state.accountIds).to.eql(sessionB.state.accountIds);
+    expect(sessionA.state.controller.publicKey).to.eql(sessionB.self.publicKey);
+    expect(sessionB.state.controller.publicKey).to.eql(sessionB.self.publicKey);
+    // blockchain permissions
+    expect(sessionA.permissions.blockchain.chainIds).to.eql(TEST_PERMISSIONS_CHAIN_IDS);
+    expect(sessionA.permissions.blockchain.chainIds).to.eql(
+      sessionB.permissions.blockchain.chainIds,
+    );
+    // jsonrpc permmissions
+    expect(sessionA.permissions.jsonrpc.methods).to.eql([
+      ...TEST_PERMISSIONS_JSONRPC_METHODS,
+      ...SETTLED_SESSION_JSONRPC,
+    ]);
+    expect(sessionA.permissions.jsonrpc.methods).to.eql(sessionB.permissions.jsonrpc.methods);
   });
 });

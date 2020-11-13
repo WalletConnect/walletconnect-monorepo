@@ -358,10 +358,18 @@ export class Connection extends IConnection {
           await this.settled.delete(connection.topic, request.params.reason);
           break;
         default:
+          this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
+          this.logger.debug({
+            type: "event",
+            event: CONNECTION_EVENTS.payload,
+            data: payloadEvent,
+          });
           this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
           break;
       }
     } else {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payloadEvent });
       this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
     }
   }
@@ -424,12 +432,16 @@ export class Connection extends IConnection {
   ) {
     const pending = event.data;
     if (isConnectionResponded(pending)) {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.responded}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.responded, data: pending });
       this.events.emit(CONNECTION_EVENTS.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
         const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay });
       }
     } else {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: pending });
       this.events.emit(CONNECTION_EVENTS.proposed, pending);
     }
   }
@@ -457,6 +469,8 @@ export class Connection extends IConnection {
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Settled>) => {
         const connection = createdEvent.data;
+        this.logger.info(`Emitting ${CONNECTION_EVENTS.settled}`);
+        this.logger.debug({ type: "event", event: CONNECTION_EVENTS.settled, data: connection });
         this.events.emit(CONNECTION_EVENTS.settled, connection);
       },
     );
@@ -464,6 +478,8 @@ export class Connection extends IConnection {
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<ConnectionTypes.Settled>) => {
         const connection = updatedEvent.data;
+        this.logger.info(`Emitting ${CONNECTION_EVENTS.updated}`);
+        this.logger.debug({ type: "event", event: CONNECTION_EVENTS.updated, data: connection });
         this.events.emit(CONNECTION_EVENTS.updated, connection);
       },
     );
@@ -471,6 +487,8 @@ export class Connection extends IConnection {
       SUBSCRIPTION_EVENTS.deleted,
       (deletedEvent: SubscriptionEvent.Deleted<ConnectionTypes.Settled>) => {
         const connection = deletedEvent.data;
+        this.logger.info(`Emitting ${CONNECTION_EVENTS.deleted}`);
+        this.logger.debug({ type: "event", event: CONNECTION_EVENTS.deleted, data: connection });
         this.events.emit(CONNECTION_EVENTS.deleted, connection);
         const request = formatJsonRpcRequest(CONNECTION_JSONRPC.delete, {
           reason: deletedEvent.reason,
