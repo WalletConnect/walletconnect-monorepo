@@ -42,6 +42,6 @@ export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string
 export async function decrypt(params: CryptoTypes.DecryptParams): Promise<string> {
   const encrypted = encUtils.hexToArray(params.encrypted);
   const privateKey = encUtils.hexToArray(params.self.privateKey);
-  const msg = await eccies25519.decrypt(encrypted, privateKey);
+  const msg = await eccies25519.decryptSync(encrypted, privateKey);
   return encUtils.arrayToUtf8(msg);
 }

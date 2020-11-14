@@ -8,17 +8,17 @@ import { deriveSharedKey, encrypt, sha256, decrypt } from "../src";
 
 const TEST_KEY_PAIRS = {
   A: {
-    privateKey: "ab2b20f4dee812763a65099347d3206d1b7426cd11866cc5f9e4b05bafee8013",
-    publicKey: "293ad39c56f6023add9353ac2770edc12f1571f0c2978bfe8891e3f4a23f9344",
+    privateKey: "0a857b942485fee18e4c55b6ec02fef6fc0c1c3872c10e669c7790f315fd3d0b",
+    publicKey: "7ff3e362f825ab868e20e767fe580d0311181632707e7c878cbeca0238d45b8b",
   },
   B: {
-    privateKey: "a9bb5cc5fbd8aebae4ef7f4a199234ac0c8f4655038c6e66432ce0f014e2223f",
-    publicKey: "cd01c94ff24526db8705e6fc867b66d02604e8098200d6681d7a394b1b53a30b",
+    privateKey: "a2582f40f38e32546df2cd8f25f19265386820347237c234a223a0d4704f3940",
+    publicKey: "45c59ad0c053925072f4503a39fe579ca8b7b8fa6bf0c7297e6db8f6585ee77f",
   },
 };
 
-const TEST_SHARED_KEY = "262d750e6b241bb6b54e1415b9f4eda2ae8bf2fad263a50470c632ca468b894d";
-const TEST_HASHED_KEY = "9a60d102d6fc8bee489d5df7d2744a5074a5768802305530dcaed242b5891e78";
+const TEST_SHARED_KEY = "1b665e13f74b54aa2401bb8762b6fe06b3fdcf4c248ff0bde8781c3b02f23b06";
+const TEST_HASHED_KEY = "08ca02463e7c45383d43efaee4bbe33f700df0658e99726a755fd77f9a040988";
 
 const TEST_MESSAGE = safeJsonStringify({
   id: 1,
@@ -27,11 +27,11 @@ const TEST_MESSAGE = safeJsonStringify({
   params: {},
 });
 const TEST_SELF = TEST_KEY_PAIRS["A"];
-const TEST_IV = "8fb4967a2016f48e19b9c64529c3fcfc";
+const TEST_IV = "f0d00d4274a7e9711e4e0f21820b8877";
 const TEST_PEER = TEST_KEY_PAIRS["B"];
-const TEST_MAC = "9a12a979f6dce67d4923dea85340d5a3e06661a15231f4dee3231b4ae37599d8";
+const TEST_MAC = "fc6d3106fa827043279f9db08cd2e29a988c7272fa3cfdb739163bb9606822c7";
 const TEST_CIPHERTEXT =
-  "fd69d140adb0a352c90a49ec2d7cf7207ae56416eb344c3bd98d8c757f7afadf40e1ce7762f2b31979e5b3dcaa0229c76f15adb896da32293f4c7d2573dbeadc";
+  "14aa7f6034dd0213be5901b472f461769855ac1e2f6bec6a8ed1157a9da3b2df08802cbd6e0d030d86ff99011040cfc831eec3636c1d46bfc22cbe055560fea3";
 const TEST_ENCRYPTED = TEST_IV + TEST_SELF.publicKey + TEST_MAC + TEST_CIPHERTEXT;
 
 describe("Crypto", () => {
