@@ -123,7 +123,6 @@ describe("Client", () => {
     // session data
     expect(sessionA.topic).to.eql(sessionB.topic);
     expect(sessionA.relay.protocol).to.eql(sessionB.relay.protocol);
-    expect(sessionA.sharedKey).to.eql(sessionB.sharedKey);
     expect(sessionA.peer.publicKey).to.eql(sessionB.self.publicKey);
     expect(sessionA.self.publicKey).to.eql(sessionB.peer.publicKey);
     expect(sessionA.peer.metadata).to.eql(TEST_APP_METADATA_B);

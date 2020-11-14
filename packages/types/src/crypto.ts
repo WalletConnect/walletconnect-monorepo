@@ -19,18 +19,21 @@ export declare namespace CryptoTypes {
     mac: Buffer;
     data: Buffer;
   }
-
-  export interface KeyParams {
-    sharedKey: string;
-    publicKey: string;
-  }
-
-  export interface EncryptParams extends KeyParams {
-    message: string;
+  export interface EncryptKeys {
+    self: Self;
+    peer: Participant;
     iv?: string;
   }
 
-  export interface DecryptParams extends KeyParams {
+  export interface EncryptParams extends EncryptKeys {
+    message: string;
+  }
+
+  export interface DecryptKeys {
+    self: Self;
+  }
+
+  export interface DecryptParams extends DecryptKeys {
     encrypted: string;
   }
 }
