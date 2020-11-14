@@ -7,6 +7,7 @@ import {
   getRelayProtocolJsonRpc,
   formatLoggerContext,
 } from "@walletconnect/utils";
+import { utf8ToHex, hexToUtf8 } from "enc-utils";
 import {
   IJsonRpcProvider,
   formatJsonRpcRequest,
@@ -60,7 +61,7 @@ export class Relay extends IRelay {
             ...opts.encryptKeys,
             message: msg,
           })
-        : msg;
+        : utf8ToHex(msg);
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request = formatJsonRpcRequest<RelayTypes.PublishParams>(jsonRpc.publish, {
         topic,
@@ -103,7 +104,7 @@ export class Relay extends IRelay {
                 ...opts.decryptKeys,
                 encrypted: message,
               })
-            : message,
+            : hexToUtf8(message),
         );
         listener(payload);
       });
