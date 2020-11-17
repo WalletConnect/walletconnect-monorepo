@@ -39,7 +39,7 @@ const TEST_APP_METADATA_A: SessionTypes.Metadata = {
 
 const TEST_APP_METADATA_B: SessionTypes.Metadata = {
   name: "App B (Responder)",
-  description: "Description of ResponderApp run by client B",
+  description: "Description of Responder App run by client B",
   url: "#",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
