@@ -10,7 +10,7 @@ import { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src/constants";
 const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
 
 const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "trace",
+  logger: "debug",
   relayProvider: TEST_RELAY_PROVIDER_URL,
 };
 
