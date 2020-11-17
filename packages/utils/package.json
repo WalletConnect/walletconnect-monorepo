@@ -28,9 +28,8 @@
   "dependencies": {
     "@walletconnect/types": "^2.0.0-alpha.0",
     "detect-browser": "^5.1.0",
-    "ecies-25519": "^1.0.0",
-    "enc-utils": "^2.2.3",
-    "js-sha3": "^0.8.0",
+    "ecies-25519": "^1.1.0",
+    "enc-utils": "^3.0.0",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
     "query-string": "^6.13.5",
