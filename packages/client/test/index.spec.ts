@@ -1,72 +1,21 @@
 import "mocha";
 import { expect } from "chai";
+import { formatJsonRpcRequest, formatJsonRpcResult, isJsonRpcRequest } from "rpc-json-utils";
 
+import { SessionTypes, ConnectionTypes, SubscriptionEvent } from "@walletconnect/types";
+
+import Client, { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src";
 import {
-  SessionTypes,
-  ClientOptions,
-  ConnectionTypes,
-  SubscriptionEvent,
-} from "@walletconnect/types";
-
-import Client from "../src";
-import { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src/constants";
-import {
-  formatJsonRpcRequest,
-  formatJsonRpcResult,
-  isJsonRpcRequest,
-  JsonRpcRequest,
-} from "rpc-json-utils";
-
-// TODO: Relay Provider URL needs to be set from ops
-const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
-
-const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "debug",
-  relayProvider: TEST_RELAY_PROVIDER_URL,
-};
-
-const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
-
-const TEST_PERMISSIONS_CHAIN_IDS: string[] = [TEST_ETHEREUM_CHAIN_ID];
-const TEST_PERMISSIONS_JSONRPC_METHODS: string[] = [
-  "eth_accounts",
-  "eth_sendTransaction",
-  "eth_signTypedData",
-  "personal_sign",
-];
-
-const TEST_PERMISSIONS: SessionTypes.Permissions = {
-  blockchain: {
-    chainIds: TEST_PERMISSIONS_CHAIN_IDS,
-  },
-  jsonrpc: {
-    methods: TEST_PERMISSIONS_JSONRPC_METHODS,
-  },
-};
-
-const TEST_APP_METADATA_A: SessionTypes.Metadata = {
-  name: "App A (Proposer)",
-  description: "Description of Proposer App run by client A",
-  url: "#",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
-};
-
-const TEST_APP_METADATA_B: SessionTypes.Metadata = {
-  name: "App B (Responder)",
-  description: "Description of Responder App run by client B",
-  url: "#",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
-};
-
-const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
-
-const TEST_SESSION_ACCOUNT_IDS = TEST_ETHEREUM_ACCOUNTS.map(
-  address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
-);
-
-const TEST_SESSION_STATE = {
-  accountIds: TEST_SESSION_ACCOUNT_IDS,
-};
+  TEST_CLIENT_OPTIONS,
+  TEST_PERMISSIONS_CHAIN_IDS,
+  TEST_PERMISSIONS_JSONRPC_METHODS,
+  TEST_PERMISSIONS,
+  TEST_APP_METADATA_A,
+  TEST_APP_METADATA_B,
+  TEST_ETHEREUM_ACCOUNTS,
+  TEST_SESSION_ACCOUNT_IDS,
+  TEST_SESSION_STATE,
+} from "./shared";
 
 describe("Client", () => {
   it("instantiate successfully", async () => {
