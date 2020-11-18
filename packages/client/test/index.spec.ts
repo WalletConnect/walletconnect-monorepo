@@ -78,7 +78,12 @@ describe("Client", () => {
     let sessionA: SessionTypes.Created | undefined;
     let sessionB: SessionTypes.Created | undefined;
     let result: string[] = [];
-    const timestamps = { connect: 0, request: 0 };
+
+    // timestamps & elapsed time
+    const timestamps = {
+      connection: { started: 0, elapsed: 0 },
+      request: { started: 0, elapsed: 0 },
+    };
 
     // init clients
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
@@ -87,7 +92,7 @@ describe("Client", () => {
     // connect two clients
     await Promise.all([
       new Promise(async (resolve, reject) => {
-        timestamps.connect = Date.now();
+        timestamps.connection.started = Date.now();
         await clientA.connect({
           metadata: TEST_APP_METADATA_A,
           permissions: TEST_PERMISSIONS,
@@ -137,10 +142,7 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientB.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
           clientB.logger.warn(`TEST >> Session Acknowledged`);
-          if (typeof timestamps.connect !== "undefined") {
-            const elapsed = Date.now() - timestamps.connect;
-            clientB.logger.warn(`TEST >> Session Created in ${elapsed}ms`);
-          }
+          timestamps.connection.elapsed = Date.now() - timestamps.connection.started;
           resolve();
         });
       }),
@@ -168,22 +170,22 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientA.logger.warn(`TEST >> JSON-RPC Request Sent`);
         if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
-        timestamps.request = Date.now();
+        timestamps.request.started = Date.now();
         result = await clientA.request({
           topic: sessionA.topic,
           request: formatJsonRpcRequest("eth_accounts", []),
         });
         clientA.logger.warn(`TEST >> JSON-RPC Response Received`);
-        if (typeof timestamps.request !== "undefined") {
-          const elapsed = Date.now() - timestamps.request;
-          clientB.logger.warn(`TEST >> JSON-RPC Completed in ${elapsed}ms`);
-        }
+        timestamps.request.elapsed = Date.now() - timestamps.request.started;
+
         resolve();
       }),
     ]);
 
     if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
     if (typeof sessionB === "undefined") throw new Error("Missing session for client B");
+    clientB.logger.warn(`TEST >> Connect Elapsed Time: ${timestamps.connection.elapsed}ms`);
+    clientB.logger.warn(`TEST >> Request Elapsed Time: ${timestamps.request.elapsed}ms`);
     // session data
     expect(sessionA.topic).to.eql(sessionB.topic);
     expect(sessionA.relay.protocol).to.eql(sessionB.relay.protocol);
