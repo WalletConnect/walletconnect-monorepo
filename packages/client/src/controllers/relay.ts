@@ -20,7 +20,8 @@ import {
   RELAY_CONTEXT,
   RELAY_DEFAULT_PROTOCOL,
   RELAY_DEFAULT_RPC_URL,
-  RELAY_DEFAULT_TTL,
+  RELAY_DEFAULT_SUBSCRIBE_TTL,
+  RELAY_DEFAULT_PUBLISH_TTL,
 } from "../constants";
 import { WSProvider } from "../providers";
 
@@ -66,7 +67,7 @@ export class Relay extends IRelay {
       const request = formatJsonRpcRequest<RelayTypes.PublishParams>(jsonRpc.publish, {
         topic,
         message,
-        ttl: RELAY_DEFAULT_TTL,
+        ttl: opts?.ttl || RELAY_DEFAULT_PUBLISH_TTL,
       });
       this.logger.info(`Outgoing Relay Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", request });
@@ -92,7 +93,7 @@ export class Relay extends IRelay {
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request = formatJsonRpcRequest<RelayTypes.SubscribeParams>(jsonRpc.subscribe, {
         topic,
-        ttl: RELAY_DEFAULT_TTL,
+        ttl: opts?.ttl || RELAY_DEFAULT_SUBSCRIBE_TTL,
       });
       this.logger.info(`Outgoing Relay Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", request });

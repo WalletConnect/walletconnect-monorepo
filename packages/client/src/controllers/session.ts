@@ -38,6 +38,7 @@ import {
   SESSION_STATUS,
   SUBSCRIPTION_EVENTS,
   SESSION_SIGNAL_METHOD_CONNECTION,
+  SESSION_DEFAULT_SUBSCRIBE_TTL,
 } from "../constants";
 
 export class Session extends ISession {
@@ -131,9 +132,7 @@ export class Session extends ISession {
     });
   }
 
-  public async respond<P = any, S = any>(
-    params: SessionTypes.RespondParams,
-  ): Promise<SessionTypes.Pending> {
+  public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Respond Session`);
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, proposal, response } = params;
@@ -149,6 +148,8 @@ export class Session extends ISession {
           publicKey: self.publicKey,
           metadata: response.metadata,
         };
+        const expiry = Date.now() + proposal.ttl;
+
         const state: SessionTypes.State = {
           accountIds: params.response.state.accountIds,
           controller: { publicKey: self.publicKey },
@@ -158,6 +159,8 @@ export class Session extends ISession {
           self,
           peer: proposal.proposer,
           permissions: proposal.permissions,
+          ttl: proposal.ttl,
+          expiry,
           state,
         });
         const outcome: SessionTypes.Outcome = {
@@ -165,6 +168,7 @@ export class Session extends ISession {
           relay: session.relay,
           state: session.state,
           responder,
+          expiry,
         };
         const pending: SessionTypes.Pending = {
           status: SESSION_STATUS.responded,
@@ -174,7 +178,11 @@ export class Session extends ISession {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
+        await this.pending.set(pending.topic, pending, {
+          relay: pending.relay,
+          decryptKeys,
+          ttl: proposal.ttl,
+        });
         return pending;
       } catch (e) {
         const reason = e.message;
@@ -187,7 +195,11 @@ export class Session extends ISession {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
+        await this.pending.set(pending.topic, pending, {
+          relay: pending.relay,
+          decryptKeys,
+          ttl: proposal.ttl,
+        });
         return pending;
       }
     } else {
@@ -200,7 +212,11 @@ export class Session extends ISession {
         proposal,
         outcome,
       };
-      await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
+      await this.pending.set(pending.topic, pending, {
+        relay: pending.relay,
+        decryptKeys,
+        ttl: proposal.ttl,
+      });
       return pending;
     }
   }
@@ -262,6 +278,7 @@ export class Session extends ISession {
       proposer,
       signal,
       permissions: params.permissions,
+      ttl: params.ttl || SESSION_DEFAULT_SUBSCRIBE_TTL,
     };
     const pending: SessionTypes.Pending = {
       status: SESSION_STATUS.proposed,
@@ -270,7 +287,11 @@ export class Session extends ISession {
       self,
       proposal,
     };
-    await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
+    await this.pending.set(pending.topic, pending, {
+      relay: pending.relay,
+      decryptKeys,
+      ttl: proposal.ttl,
+    });
     const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, proposal);
     await this.client.connection.send(signal.params.topic, request);
     return pending;
@@ -288,12 +309,17 @@ export class Session extends ISession {
       self: params.self,
       peer: params.peer,
       permissions: params.permissions,
+      expiry: params.expiry,
       state: params.state,
     };
     const decryptKeys: CryptoTypes.DecryptKeys = {
       sharedKey,
     };
-    await this.settled.set(session.topic, session, { relay: session.relay, decryptKeys });
+    await this.settled.set(session.topic, session, {
+      relay: session.relay,
+      decryptKeys,
+      ttl: params.ttl,
+    });
     return session;
   }
 
@@ -316,6 +342,8 @@ export class Session extends ISession {
           self: pending.self,
           peer: request.params.responder,
           permissions: pending.proposal.permissions,
+          ttl: pending.proposal.ttl,
+          expiry: request.params.expiry,
           state: request.params.state,
         });
         await this.pending.update(topic, {
@@ -324,6 +352,7 @@ export class Session extends ISession {
             topic: session.topic,
             relay: session.relay,
             responder: session.peer,
+            expiry: connection.expiry,
             state: session.state,
           },
         });

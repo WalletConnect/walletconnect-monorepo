@@ -9,6 +9,8 @@ export const CONNECTION_JSONRPC = {
 
 export const CONNECTION_CONTEXT = "connection";
 
+export const CONNECTION_DEFAULT_SUBSCRIBE_TTL = 2592000; // 30 days
+
 export const CONNECTION_SIGNAL_METHOD_URI = "uri" as SignalTypes.MethodUri;
 
 export const CONNECTION_STATUS = {

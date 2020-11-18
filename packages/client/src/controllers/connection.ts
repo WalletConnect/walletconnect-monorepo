@@ -41,6 +41,7 @@ import {
   RELAY_DEFAULT_PROTOCOL,
   CONNECTION_SIGNAL_METHOD_URI,
   SESSION_JSONRPC,
+  CONNECTION_DEFAULT_SUBSCRIBE_TTL,
 } from "../constants";
 
 export class Connection extends IConnection {
@@ -142,16 +143,20 @@ export class Connection extends IConnection {
         const responder: ConnectionTypes.Peer = {
           publicKey: self.publicKey,
         };
+        const expiry = Date.now() + proposal.ttl;
         const connection = await this.settle({
           relay: proposal.relay,
           self,
           peer: proposal.proposer,
           permissions: proposal.permissions,
+          ttl: proposal.ttl,
+          expiry,
         });
         const outcome: ConnectionTypes.Outcome = {
           topic: connection.topic,
           relay: connection.relay,
           responder,
+          expiry,
         };
         const pending: ConnectionTypes.Pending = {
           status: CONNECTION_STATUS.responded,
@@ -161,7 +166,7 @@ export class Connection extends IConnection {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, { relay: pending.relay });
+        await this.pending.set(pending.topic, pending, { relay: pending.relay, ttl: proposal.ttl });
         return pending;
       } catch (e) {
         const reason = e.message;
@@ -174,7 +179,7 @@ export class Connection extends IConnection {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, { relay: pending.relay });
+        await this.pending.set(pending.topic, pending, { relay: pending.relay, ttl: proposal.ttl });
         return pending;
       }
     } else {
@@ -187,7 +192,7 @@ export class Connection extends IConnection {
         proposal,
         outcome,
       };
-      await this.pending.set(pending.topic, pending, { relay: pending.relay });
+      await this.pending.set(pending.topic, pending, { relay: pending.relay, ttl: proposal.ttl });
       return pending;
     }
   }
@@ -255,6 +260,7 @@ export class Connection extends IConnection {
         params: { uri },
       },
       permissions,
+      ttl: CONNECTION_DEFAULT_SUBSCRIBE_TTL,
     };
     const pending: ConnectionTypes.Pending = {
       status: CONNECTION_STATUS.proposed,
@@ -263,7 +269,7 @@ export class Connection extends IConnection {
       self,
       proposal,
     };
-    await this.pending.set(pending.topic, pending, { relay });
+    await this.pending.set(pending.topic, pending, { relay, ttl: proposal.ttl });
     return pending;
   }
 
@@ -279,11 +285,16 @@ export class Connection extends IConnection {
       self: params.self,
       peer: params.peer,
       permissions: params.permissions,
+      expiry: params.expiry,
     };
     const decryptKeys: CryptoTypes.DecryptKeys = {
       sharedKey,
     };
-    await this.settled.set(connection.topic, connection, { relay: connection.relay, decryptKeys });
+    await this.settled.set(connection.topic, connection, {
+      relay: connection.relay,
+      decryptKeys,
+      ttl: params.ttl,
+    });
     return connection;
   }
 
@@ -301,6 +312,8 @@ export class Connection extends IConnection {
           self: pending.self,
           peer: request.params.responder,
           permissions: pending.proposal.permissions,
+          ttl: pending.proposal.ttl,
+          expiry: request.params.expiry,
         });
         await this.pending.update(topic, {
           status: CONNECTION_STATUS.responded,
@@ -308,6 +321,7 @@ export class Connection extends IConnection {
             topic: connection.topic,
             relay: connection.relay,
             responder: request.params.responder,
+            expiry: connection.expiry,
           },
         });
       } catch (e) {

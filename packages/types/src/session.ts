@@ -16,6 +16,7 @@ export declare namespace SessionTypes {
     relay: RelayTypes.ProtocolOptions;
     metadata: Metadata;
     permissions: Permissions;
+    ttl?: number;
   }
 
   export type CreateParams = ProposeParams;
@@ -30,6 +31,7 @@ export declare namespace SessionTypes {
     proposer: Peer;
     signal: Signal;
     permissions: Permissions;
+    ttl: number;
   }
 
   export type ProposedStatus = "proposed";
@@ -69,6 +71,8 @@ export declare namespace SessionTypes {
     peer: Peer;
     state: State;
     permissions: Permissions;
+    ttl: number;
+    expiry: number;
   }
 
   export interface UpdateParams {
@@ -101,6 +105,7 @@ export declare namespace SessionTypes {
     self: CryptoTypes.Self;
     peer: Peer;
     permissions: Permissions;
+    expiry: number;
     state: State;
   }
 
@@ -117,6 +122,7 @@ export declare namespace SessionTypes {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
     responder: Peer;
+    expiry: number;
     state: State;
   }
   export interface Failed {

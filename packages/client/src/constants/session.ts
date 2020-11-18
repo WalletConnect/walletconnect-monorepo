@@ -10,6 +10,8 @@ export const SESSION_JSONRPC = {
 
 export const SESSION_CONTEXT = "session";
 
+export const SESSION_DEFAULT_SUBSCRIBE_TTL = 604800; // 7 days
+
 export const SESSION_SIGNAL_METHOD_CONNECTION = "connection" as SignalTypes.MethodConnection;
 
 export const SESSION_STATUS = {

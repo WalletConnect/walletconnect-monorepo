@@ -1,4 +1,6 @@
-export const RELAY_DEFAULT_TTL = 86400;
+export const RELAY_DEFAULT_SUBSCRIBE_TTL = 604800; // 7 days
+
+export const RELAY_DEFAULT_PUBLISH_TTL = 86400; // 1 day
 
 export const RELAY_DEFAULT_PROTOCOL = "bridge";
 

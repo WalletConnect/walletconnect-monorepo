@@ -24,6 +24,7 @@ import { Store, Connection, Session, Relay } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_EVENTS,
+  CONNECTION_DEFAULT_SUBSCRIBE_TTL,
   CONNECTION_EVENTS,
   CONNECTION_SIGNAL_METHOD_URI,
   RELAY_DEFAULT_PROTOCOL,
@@ -159,6 +160,7 @@ export class Client extends IClient {
       proposer: { publicKey: uriParams.publicKey },
       signal: { method: CONNECTION_SIGNAL_METHOD_URI, params: { uri: params.uri } },
       permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
+      ttl: CONNECTION_DEFAULT_SUBSCRIBE_TTL,
     };
     const pending = await this.connection.respond({
       approved: params.approved,

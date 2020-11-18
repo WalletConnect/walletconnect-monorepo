@@ -6,6 +6,7 @@ import { IEvents } from "./misc";
 import { RelayTypes } from "./relay";
 
 export interface SubscriptionOptions extends RelayTypes.SubscribeOptions {
+  ttl: number;
   relay: RelayTypes.ProtocolOptions;
 }
 export interface SubscriptionParams<Data> {
