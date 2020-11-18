@@ -18,6 +18,13 @@
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
   "license": "LGPL-3.0",
   "scripts": {
+    "clean:all": "lerna clean",
+    "bootstrap": "lerna bootstrap --hoist",
+    "lint": "lerna run lint",
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "reset": "run-s clean:all boostrap lint build test",
+    "commit-version": "node ops/js/commmit-version.js",
     "new-version": "lerna version --no-git-tag-version",
     "pre-publish": "run-s new-version reset commit-version",
     "publish:latest": "lerna exec -- npm publish --access public",
