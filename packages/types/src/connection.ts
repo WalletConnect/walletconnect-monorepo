@@ -89,6 +89,7 @@ export declare namespace ConnectionTypes {
   export interface Settled {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
+    sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
     permissions: Permissions;

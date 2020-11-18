@@ -14,14 +14,9 @@ export declare namespace CryptoTypes {
     publicKey: string;
   }
 
-  export interface EncryptedBuffer {
-    iv: Buffer;
-    mac: Buffer;
-    data: Buffer;
-  }
   export interface EncryptKeys {
-    self: Self;
-    peer: Participant;
+    sharedKey: string;
+    publicKey: string;
     iv?: string;
   }
 
@@ -30,7 +25,7 @@ export declare namespace CryptoTypes {
   }
 
   export interface DecryptKeys {
-    self: Self;
+    sharedKey: string;
   }
 
   export interface DecryptParams extends DecryptKeys {

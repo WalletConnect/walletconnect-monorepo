@@ -83,8 +83,8 @@ export class Connection extends IConnection {
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     const connection = await this.settled.get(topic);
     const encryptKeys: CryptoTypes.EncryptKeys = {
-      self: connection.self,
-      peer: { publicKey: connection.peer.publicKey },
+      sharedKey: connection.sharedKey,
+      publicKey: connection.self.publicKey,
     };
     if (isJsonRpcRequest(payload) && !Object.values(CONNECTION_JSONRPC).includes(payload.method)) {
       if (!connection.permissions.jsonrpc.methods.includes(payload.method)) {
@@ -273,14 +273,15 @@ export class Connection extends IConnection {
     const sharedKey = deriveSharedKey(params.self.privateKey, params.peer.publicKey);
     const topic = await sha256(sharedKey);
     const connection: ConnectionTypes.Settled = {
-      relay: params.relay,
       topic,
+      relay: params.relay,
+      sharedKey,
       self: params.self,
       peer: params.peer,
       permissions: params.permissions,
     };
     const decryptKeys: CryptoTypes.DecryptKeys = {
-      self: connection.self,
+      sharedKey,
     };
     await this.settled.set(connection.topic, connection, { relay: connection.relay, decryptKeys });
     return connection;
