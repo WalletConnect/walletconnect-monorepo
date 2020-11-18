@@ -98,9 +98,12 @@ build-nginx: pull
 	@echo  "MAKE: Done with $@"
 	@echo
 
-build-lerna:
-	lerna bootstrap --hoist
-	lerna run build
+bootstrap:
+	npm i --also=dev
+	npx lerna bootstrap --hoist
+
+build-lerna: bootstrap
+	npx lerna run build
 
 build: pull build-lerna build-relay build-nginx
 	@touch $(flags)/$@
@@ -114,7 +117,7 @@ relay-logs:
 	docker service logs -f --raw dev_$(project)_relay --tail 500
 
 watch:
-	lerna run watch --stream
+	npx lerna run watch --stream
 
 relay-dev: dev relay-watch relay-logs
 
@@ -198,10 +201,12 @@ reset:
 
 clean:
 	rm -rf .makeFlags/build*
+	npx lerna run clean
 	@echo  "MAKE: Done with $@"
 	@echo
 
-clean-all:
+clean-all: clean
+	npx lerna clean
 	rm -rf .makeFlags
 	@echo  "MAKE: Done with $@"
 	@echo
