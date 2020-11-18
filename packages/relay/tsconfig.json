@@ -1,4 +1,6 @@
 {
+  "extends": "../../tsconfig.json",
+  "include": ["./src/**/*", "./test/**/*/" ],
   "compilerOptions": {
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
@@ -26,10 +28,8 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictPropertyInitialization": true,
-
     "outDir": "./dist",
-    "rootDir": "./src",
-    "target": "es5",
+    "target": "es6",
     "module": "commonjs"
   }
 }
