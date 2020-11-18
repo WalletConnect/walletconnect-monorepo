@@ -99,6 +99,7 @@ build-nginx: pull
 	@echo
 
 build-lerna:
+	lerna bootstrap --hoist
 	lerna run build
 
 build: pull build-lerna build-relay build-nginx
