@@ -45,11 +45,11 @@ export declare namespace RelayTypes {
 
   export interface PublishOptions {
     relay: ProtocolOptions;
-    encryptKeys?: CryptoTypes.KeyParams;
+    encryptKeys?: CryptoTypes.EncryptKeys;
   }
   export interface SubscribeOptions {
     relay: ProtocolOptions;
-    decryptKeys?: CryptoTypes.KeyParams;
+    decryptKeys?: CryptoTypes.DecryptKeys;
   }
 }
 

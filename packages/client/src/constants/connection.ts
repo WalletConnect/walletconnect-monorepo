@@ -1,23 +1,11 @@
 import { ConnectionTypes, SignalTypes } from "@walletconnect/types";
-import { SESSION_JSONRPC_BEFORE_SETTLEMENT } from "./session";
 
 export const CONNECTION_JSONRPC = {
-  respond: "wc_respondConnection",
-  update: "wc_updateConnection",
-  delete: "wc_deleteConnection",
+  respond: "wc_connectionRespond",
+  update: "wc_connectionUpdate",
+  delete: "wc_connectionDelete",
+  payload: "wc_connectionPayload",
 };
-
-export const CONNECTION_JSONRPC_BEFORE_SETTLEMENT = [CONNECTION_JSONRPC.respond];
-
-export const CONNECTION_JSONRPC_AFTER_SETTLEMENT = [
-  CONNECTION_JSONRPC.update,
-  CONNECTION_JSONRPC.delete,
-];
-
-export const SETTLED_CONNECTION_JSONRPC = [
-  ...CONNECTION_JSONRPC_AFTER_SETTLEMENT,
-  ...SESSION_JSONRPC_BEFORE_SETTLEMENT,
-];
 
 export const CONNECTION_CONTEXT = "connection";
 

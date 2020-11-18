@@ -39,8 +39,8 @@ import {
   CONNECTION_STATUS,
   SUBSCRIPTION_EVENTS,
   RELAY_DEFAULT_PROTOCOL,
-  SETTLED_CONNECTION_JSONRPC,
   CONNECTION_SIGNAL_METHOD_URI,
+  SESSION_JSONRPC,
 } from "../constants";
 
 export class Connection extends IConnection {
@@ -80,13 +80,22 @@ export class Connection extends IConnection {
   public async get(topic: string): Promise<ConnectionTypes.Settled> {
     return this.settled.get(topic);
   }
-
-  public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
+  public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     const connection = await this.settled.get(topic);
-    const encryptKeys: CryptoTypes.KeyParams = {
-      sharedKey: connection.sharedKey,
-      publicKey: connection.self.publicKey,
+    const encryptKeys: CryptoTypes.EncryptKeys = {
+      self: connection.self,
+      peer: { publicKey: connection.peer.publicKey },
     };
+    if (isJsonRpcRequest(payload) && !Object.values(CONNECTION_JSONRPC).includes(payload.method)) {
+      if (!connection.permissions.jsonrpc.methods.includes(payload.method)) {
+        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${payload.method}`;
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      payload = formatJsonRpcRequest<ConnectionTypes.Payload>(CONNECTION_JSONRPC.payload, {
+        payload,
+      });
+    }
     this.client.relay.publish(connection.topic, payload, { relay: connection.relay, encryptKeys });
   }
 
@@ -234,7 +243,7 @@ export class Connection extends IConnection {
     });
     const permissions: ConnectionTypes.Permissions = {
       jsonrpc: {
-        methods: SETTLED_CONNECTION_JSONRPC,
+        methods: [SESSION_JSONRPC.propose],
       },
     };
     const proposal: ConnectionTypes.Proposal = {
@@ -266,14 +275,12 @@ export class Connection extends IConnection {
     const connection: ConnectionTypes.Settled = {
       relay: params.relay,
       topic,
-      sharedKey,
       self: params.self,
       peer: params.peer,
       permissions: params.permissions,
     };
-    const decryptKeys: CryptoTypes.KeyParams = {
-      sharedKey: connection.sharedKey,
-      publicKey: connection.peer.publicKey,
+    const decryptKeys: CryptoTypes.DecryptKeys = {
+      self: connection.self,
     };
     await this.settled.set(connection.topic, connection, { relay: connection.relay, decryptKeys });
     return connection;
@@ -344,13 +351,11 @@ export class Connection extends IConnection {
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const connection = await this.settled.get(payloadEvent.topic);
-      if (!connection.permissions.jsonrpc.methods.includes(request.method)) {
-        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
-        this.logger.error(errorMessage);
-        const response = formatJsonRpcError(request.id, errorMessage);
-        this.send(connection.topic, response);
-      }
+      let errorMessage = "";
       switch (request.method) {
+        case CONNECTION_JSONRPC.payload:
+          await this.onPayload(payloadEvent);
+          break;
         case CONNECTION_JSONRPC.update:
           await this.onUpdate(payloadEvent);
           break;
@@ -358,11 +363,49 @@ export class Connection extends IConnection {
           await this.settled.delete(connection.topic, request.params.reason);
           break;
         default:
-          this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
+          errorMessage = `Unknown JSON-RPC Method Requested: ${request.method}`;
+          this.logger.error(errorMessage);
+          this.send(connection.topic, formatJsonRpcError(request.id, errorMessage));
           break;
       }
     } else {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payloadEvent });
       this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
+    }
+  }
+
+  protected async onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
+    const { topic } = payloadEvent;
+    const request = payloadEvent.payload as JsonRpcRequest<ConnectionTypes.Payload>;
+    const { payload } = request.params;
+    const connectionPayloadEvent: ConnectionTypes.PayloadEvent = { topic, payload };
+    this.logger.debug(`Receiving Connection payload`);
+    this.logger.trace({ type: "method", method: "onPayload", ...connectionPayloadEvent });
+    if (isJsonRpcRequest(payload)) {
+      const request = payload as JsonRpcRequest;
+      const connection = await this.settled.get(topic);
+      if (!connection.permissions.jsonrpc.methods.includes(request.method)) {
+        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
+        this.logger.error(errorMessage);
+        this.send(connection.topic, formatJsonRpcError(request.id, errorMessage));
+        return;
+      }
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
+      this.logger.debug({
+        type: "event",
+        event: CONNECTION_EVENTS.payload,
+        data: connectionPayloadEvent,
+      });
+      this.events.emit(CONNECTION_EVENTS.payload, connectionPayloadEvent);
+    } else {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
+      this.logger.debug({
+        type: "event",
+        event: CONNECTION_EVENTS.payload,
+        data: connectionPayloadEvent,
+      });
+      this.events.emit(CONNECTION_EVENTS.payload, connectionPayloadEvent);
     }
   }
 
@@ -424,12 +467,16 @@ export class Connection extends IConnection {
   ) {
     const pending = event.data;
     if (isConnectionResponded(pending)) {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.responded}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.responded, data: pending });
       this.events.emit(CONNECTION_EVENTS.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
         const request = formatJsonRpcRequest(CONNECTION_JSONRPC.respond, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay });
       }
     } else {
+      this.logger.info(`Emitting ${CONNECTION_EVENTS.proposed}`);
+      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.proposed, data: pending });
       this.events.emit(CONNECTION_EVENTS.proposed, pending);
     }
   }
@@ -457,6 +504,8 @@ export class Connection extends IConnection {
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<ConnectionTypes.Settled>) => {
         const connection = createdEvent.data;
+        this.logger.info(`Emitting ${CONNECTION_EVENTS.settled}`);
+        this.logger.debug({ type: "event", event: CONNECTION_EVENTS.settled, data: connection });
         this.events.emit(CONNECTION_EVENTS.settled, connection);
       },
     );
@@ -464,6 +513,8 @@ export class Connection extends IConnection {
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<ConnectionTypes.Settled>) => {
         const connection = updatedEvent.data;
+        this.logger.info(`Emitting ${CONNECTION_EVENTS.updated}`);
+        this.logger.debug({ type: "event", event: CONNECTION_EVENTS.updated, data: connection });
         this.events.emit(CONNECTION_EVENTS.updated, connection);
       },
     );
@@ -471,6 +522,8 @@ export class Connection extends IConnection {
       SUBSCRIPTION_EVENTS.deleted,
       (deletedEvent: SubscriptionEvent.Deleted<ConnectionTypes.Settled>) => {
         const connection = deletedEvent.data;
+        this.logger.info(`Emitting ${CONNECTION_EVENTS.deleted}`);
+        this.logger.debug({ type: "event", event: CONNECTION_EVENTS.deleted, data: connection });
         this.events.emit(CONNECTION_EVENTS.deleted, connection);
         const request = formatJsonRpcRequest(CONNECTION_JSONRPC.delete, {
           reason: deletedEvent.reason,

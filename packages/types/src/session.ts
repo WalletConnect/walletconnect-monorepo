@@ -1,3 +1,5 @@
+import { JsonRpcPayload } from "rpc-json-types";
+
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
@@ -78,6 +80,15 @@ export declare namespace SessionTypes {
 
   export type Update = StateUpdate;
 
+  export interface Payload {
+    chainId?: string;
+    payload: JsonRpcPayload;
+  }
+
+  export interface PayloadEvent extends Payload {
+    topic: string;
+  }
+
   export interface DeleteParams {
     topic: string;
     reason: string;
@@ -86,12 +97,13 @@ export declare namespace SessionTypes {
   export interface Settled {
     topic: string;
     relay: RelayTypes.ProtocolOptions;
-    sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
     permissions: Permissions;
     state: State;
   }
+
+  export type Created = Settled;
 
   export interface Metadata {
     name: string;
