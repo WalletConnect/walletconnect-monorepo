@@ -103,6 +103,7 @@ describe("Client", () => {
         resolve();
       }),
       new Promise(async (resolve, reject) => {
+        // Client A shares connection proposal out-of-band with Client B
         clientA.on(
           CLIENT_EVENTS.connection.proposal,
           async (proposal: ConnectionTypes.Proposal) => {
