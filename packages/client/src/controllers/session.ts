@@ -463,7 +463,11 @@ export class Session extends ISession {
     const request = payloadEvent.payload as JsonRpcRequest;
     const session = await this.settled.get(payloadEvent.topic);
     try {
-      await this.handleUpdate(session, request.params, { publicKey: session.peer.publicKey });
+      await this.handleUpdate(
+        session,
+        { topic, update: request.params },
+        { publicKey: session.peer.publicKey },
+      );
       const response = formatJsonRpcResult(request.id, true);
       this.send(session.topic, response);
     } catch (e) {

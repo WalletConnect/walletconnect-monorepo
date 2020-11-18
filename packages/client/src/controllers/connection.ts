@@ -432,7 +432,7 @@ export class Connection extends IConnection {
     const connection = await this.settled.get(payloadEvent.topic);
     try {
       const participant: CryptoTypes.Participant = { publicKey: connection.peer.publicKey };
-      await this.handleUpdate(connection, request.params, participant);
+      await this.handleUpdate(connection, { topic, update: request.params }, participant);
       const response = formatJsonRpcResult(request.id, true);
       this.send(connection.topic, response);
     } catch (e) {

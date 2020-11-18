@@ -221,7 +221,7 @@ export class Client extends IClient {
     if (typeof connection.peer.metadata === "undefined") {
       const metadata = getConnectionMetadata();
       if (!metadata) return;
-      const update = { peer: { metadata } };
+      const update: ConnectionTypes.Update = { peer: { metadata } };
       this.connection.update({ topic: connection.topic, update });
     }
   }

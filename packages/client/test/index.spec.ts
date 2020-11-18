@@ -205,9 +205,9 @@ describe("Client", () => {
     if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
     if (typeof sessionB === "undefined") throw new Error("Missing session for client B");
     clientB.logger.warn(`TEST >> Connection Elapsed Time: ${timestamps.connection.elapsed}ms`);
-    clientB.logger.warn(`TEST >> Session Elapsed Time:    ${timestamps.session.elapsed}ms`);
-    clientB.logger.warn(`TEST >> Connect Elapsed Time:    ${timestamps.connect.elapsed}ms`);
-    clientB.logger.warn(`TEST >> Request Elapsed Time:    ${timestamps.request.elapsed}ms`);
+    clientB.logger.warn(`TEST >> Session Elapsed Time: ${timestamps.session.elapsed}ms`);
+    clientB.logger.warn(`TEST >> Connect Elapsed Time: ${timestamps.connect.elapsed}ms`);
+    clientB.logger.warn(`TEST >> Request Elapsed Time: ${timestamps.request.elapsed}ms`);
     // session data
     expect(sessionA.topic).to.eql(sessionB.topic);
     expect(sessionA.relay.protocol).to.eql(sessionB.relay.protocol);
