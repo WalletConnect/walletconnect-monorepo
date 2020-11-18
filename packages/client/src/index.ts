@@ -31,7 +31,6 @@ import {
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_CONNECTION,
 } from "./constants";
-import { reject } from "core-js/fn/promise";
 
 export class Client extends IClient {
   public readonly protocol = "wc";

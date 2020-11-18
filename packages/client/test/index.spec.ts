@@ -1,10 +1,21 @@
 import "mocha";
 import { expect } from "chai";
 
-import { SessionTypes, ClientOptions, ConnectionTypes } from "@walletconnect/types";
+import {
+  SessionTypes,
+  ClientOptions,
+  ConnectionTypes,
+  SubscriptionEvent,
+} from "@walletconnect/types";
 
 import Client from "../src";
 import { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src/constants";
+import {
+  formatJsonRpcRequest,
+  formatJsonRpcResult,
+  isJsonRpcRequest,
+  JsonRpcRequest,
+} from "rpc-json-utils";
 
 // TODO: Relay Provider URL needs to be set from ops
 const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
@@ -14,8 +25,11 @@ const TEST_CLIENT_OPTIONS: ClientOptions = {
   relayProvider: TEST_RELAY_PROVIDER_URL,
 };
 
-const TEST_PERMISSIONS_CHAIN_IDS: string[] = ["eip155:1"];
+const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
+
+const TEST_PERMISSIONS_CHAIN_IDS: string[] = [TEST_ETHEREUM_CHAIN_ID];
 const TEST_PERMISSIONS_JSONRPC_METHODS: string[] = [
+  "eth_accounts",
   "eth_sendTransaction",
   "eth_signTypedData",
   "personal_sign",
@@ -44,7 +58,11 @@ const TEST_APP_METADATA_B: SessionTypes.Metadata = {
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
-const TEST_SESSION_ACCOUNT_IDS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"];
+const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
+
+const TEST_SESSION_ACCOUNT_IDS = TEST_ETHEREUM_ACCOUNTS.map(
+  address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
+);
 
 const TEST_SESSION_STATE = {
   accountIds: TEST_SESSION_ACCOUNT_IDS,
@@ -55,14 +73,21 @@ describe("Client", () => {
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     expect(client).to.be.exist;
   });
-  it("connect two clients", async () => {
+  it("connect two clients and resolve a JSON-RPC request", async () => {
+    // testing data points
     let sessionA: SessionTypes.Created | undefined;
     let sessionB: SessionTypes.Created | undefined;
-    const before = Date.now();
+    let result: string[] = [];
+    const timestamps = { connect: 0, request: 0 };
+
+    // init clients
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
     const clientB = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientB" });
+
+    // connect two clients
     await Promise.all([
       new Promise(async (resolve, reject) => {
+        timestamps.connect = Date.now();
         await clientA.connect({
           metadata: TEST_APP_METADATA_A,
           permissions: TEST_PERMISSIONS,
@@ -112,12 +137,51 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientB.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
           clientB.logger.warn(`TEST >> Session Acknowledged`);
-          const elapsed = Date.now() - before;
-          clientB.logger.warn(`TEST >> Elapsed ${elapsed}ms`);
+          if (typeof timestamps.connect !== "undefined") {
+            const elapsed = Date.now() - timestamps.connect;
+            clientB.logger.warn(`TEST >> Session Created in ${elapsed}ms`);
+          }
           resolve();
         });
       }),
     ]);
+
+    // request & resolve a JSON-RPC request
+    await Promise.all([
+      new Promise(async (resolve, reject) => {
+        clientB.on(
+          CLIENT_EVENTS.session.payload,
+          async (payloadEvent: SubscriptionEvent.Payload) => {
+            if (typeof sessionB === "undefined") throw new Error("Missing session for client B");
+            if (isJsonRpcRequest(payloadEvent.payload) && payloadEvent.topic === sessionB.topic) {
+              clientB.logger.warn(`TEST >> JSON-RPC Request Received`);
+              await clientB.resolve({
+                topic: sessionB.topic,
+                response: formatJsonRpcResult(payloadEvent.payload.id, TEST_ETHEREUM_ACCOUNTS),
+              });
+              clientB.logger.warn(`TEST >> JSON-RPC Response Sent`);
+              resolve();
+            }
+          },
+        );
+      }),
+      new Promise(async (resolve, reject) => {
+        clientA.logger.warn(`TEST >> JSON-RPC Request Sent`);
+        if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
+        timestamps.request = Date.now();
+        result = await clientA.request({
+          topic: sessionA.topic,
+          request: formatJsonRpcRequest("eth_accounts", []),
+        });
+        clientA.logger.warn(`TEST >> JSON-RPC Response Received`);
+        if (typeof timestamps.request !== "undefined") {
+          const elapsed = Date.now() - timestamps.request;
+          clientB.logger.warn(`TEST >> JSON-RPC Completed in ${elapsed}ms`);
+        }
+        resolve();
+      }),
+    ]);
+
     if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
     if (typeof sessionB === "undefined") throw new Error("Missing session for client B");
     // session data
@@ -140,5 +204,7 @@ describe("Client", () => {
     // jsonrpc permmissions
     expect(sessionA.permissions.jsonrpc.methods).to.eql(TEST_PERMISSIONS_JSONRPC_METHODS);
     expect(sessionA.permissions.jsonrpc.methods).to.eql(sessionB.permissions.jsonrpc.methods);
+    // jsonrpc request & response
+    expect(result).to.eql;
   });
 });
