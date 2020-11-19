@@ -4,7 +4,7 @@ import { ClientOptions, SessionTypes } from "@walletconnect/types";
 export const TEST_RELAY_PROVIDER_URL = "ws://localhost:5555";
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "debug",
+  logger: "warn",
   relayProvider: TEST_RELAY_PROVIDER_URL,
 };
 

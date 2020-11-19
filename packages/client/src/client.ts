@@ -1,7 +1,9 @@
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
+import Store from "@pedrouid/iso-store";
 import {
   IClient,
+  IStore,
   ClientOptions,
   ClientTypes,
   ConnectionTypes,
@@ -20,7 +22,7 @@ import {
 } from "@walletconnect/utils";
 import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "rpc-json-utils";
 
-import { Store, Connection, Session, Relay } from "./controllers";
+import { Connection, Session, Relay } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_EVENTS,
@@ -40,7 +42,7 @@ export class Client extends IClient {
   public events = new EventEmitter();
   public logger: Logger;
 
-  public store: Store;
+  public store: IStore;
   public relay: Relay;
 
   public connection: Connection;

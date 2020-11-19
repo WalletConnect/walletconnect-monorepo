@@ -27,6 +27,7 @@
     "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
+    "@pedrouid/iso-store": "^1.0.4",
     "@walletconnect/types": "2.0.0-alpha.0",
     "@walletconnect/utils": "2.0.0-alpha.0",
     "pino": "^6.7.0",
