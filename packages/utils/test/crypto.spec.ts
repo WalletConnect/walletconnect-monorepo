@@ -47,8 +47,8 @@ describe("Crypto", () => {
     const encrypted = await encrypt({
       iv: TEST_IV,
       message: TEST_MESSAGE,
-      self: TEST_SELF,
-      peer: TEST_PEER,
+      sharedKey: TEST_SHARED_KEY,
+      publicKey: TEST_SELF.publicKey,
     });
     const deserialized = eccies25519.deserialize(encUtils.hexToArray(encrypted));
     const iv = encUtils.arrayToHex(deserialized.iv);
@@ -63,7 +63,7 @@ describe("Crypto", () => {
   it("decrypt", async () => {
     const decrypted = await decrypt({
       encrypted: TEST_ENCRYPTED,
-      self: TEST_SELF,
+      sharedKey: TEST_SHARED_KEY,
     });
     chai.expect(decrypted).to.eql(TEST_MESSAGE);
   });

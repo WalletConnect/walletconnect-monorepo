@@ -1,9 +1,8 @@
 import { Logger } from "pino";
-import { JsonRpcPayload } from "rpc-json-types";
+import { JsonRpcPayload, IEvents } from "rpc-json-types";
 
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
-import { IEvents } from "./misc";
 import { ISubscription, SubscriptionEvent } from "./subscription";
 
 export abstract class ISequence<

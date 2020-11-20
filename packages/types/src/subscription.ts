@@ -1,8 +1,7 @@
-import { JsonRpcPayload } from "rpc-json-types";
+import { JsonRpcPayload, IEvents } from "rpc-json-types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";
-import { IEvents } from "./misc";
 import { RelayTypes } from "./relay";
 
 export interface SubscriptionOptions extends RelayTypes.SubscribeOptions {

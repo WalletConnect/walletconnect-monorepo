@@ -1,11 +1,11 @@
 import { Logger } from "pino";
-import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse } from "rpc-json-types";
+import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse, IEvents } from "rpc-json-types";
 
 import { IRelay, RelayTypes } from "./relay";
 import { IConnection } from "./connection";
 import { ISession, SessionTypes } from "./session";
 import { IStore } from "./store";
-import { IEvents, SignalTypes } from "./misc";
+import { SignalTypes } from "./misc";
 
 export interface ClientOptions {
   logger?: string | Logger;

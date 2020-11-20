@@ -1,5 +1,3 @@
-import { EventEmitter } from "events";
-
 import { RelayTypes } from "./relay";
 
 export declare namespace SignalTypes {
@@ -52,12 +50,4 @@ export interface UriParameters {
   topic: string;
   publicKey: string;
   relay: RelayTypes.ProtocolOptions;
-}
-
-export abstract class IEvents {
-  public abstract events: EventEmitter;
-
-  public abstract on(event: string, listener: any): void;
-  public abstract once(event: string, listener: any): void;
-  public abstract off(event: string, listener: any): void;
 }
