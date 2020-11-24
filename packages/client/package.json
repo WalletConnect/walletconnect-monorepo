@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/client",
   "description": "Client for WalletConnect Protocol",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.2",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
   "license": "LGPL-3.0",
@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@pedrouid/iso-store": "^1.0.5",
-    "@walletconnect/types": "^2.0.0-alpha.1",
-    "@walletconnect/utils": "^2.0.0-alpha.1",
+    "@walletconnect/types": "^2.0.0-alpha.2",
+    "@walletconnect/utils": "^2.0.0-alpha.2",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
     "rpc-json-utils": "^1.1.4",
