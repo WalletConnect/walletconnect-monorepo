@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/types",
   "description": "Typings for WalletConnect Protocol",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
   "license": "LGPL-3.0",
@@ -23,7 +23,7 @@
     "build": "run-s build:pre build:cjs build:umd",
     "test": "tsdx test ./test",
     "watch": "tsc -p tsconfig.json --watch",
-    "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'"
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
     "pino": "^6.7.0",
@@ -43,6 +43,7 @@
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
     "core-js": "^3.6.5",
+    "eslint": "^5.16.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.20.1",
@@ -51,12 +52,11 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-standard": "^4.0.1",
-    "eslint": "^5.16.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.19.1",
     "tsdx": "^0.14.1",
     "typescript": "^3.7.5",
-    "webpack-cli": "^3.3.10",
-    "webpack": "^4.41.5"
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
   }
 }

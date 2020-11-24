@@ -1,10 +1,10 @@
 {
   "name": "@walletconnect/mobile-registry",
   "description": "Registry for WalletConnect mobile-to-mobile linking supported Wallets",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
-  "license": "LGPL-3.0",
+  "license": "MIT",
   "main": "registry.json",
   "keywords": [
     "wallet",

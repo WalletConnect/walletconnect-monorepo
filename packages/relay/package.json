@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/relay-server",
   "description": "Relay Server for WalletConnect Protocol",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "private": true,
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
@@ -26,11 +26,11 @@
     "build": "npm run clean && npm run compile",
     "start": "npm run build && node ./dist",
     "test": "env TS_NODE_PROJECT=\"tsconfig.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
-    "lint": "eslint -c './.eslintrc' --fix './src/**/*.ts'"
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/types": "2.0.0-alpha.0",
-    "@walletconnect/utils": "2.0.0-alpha.0",
+    "@walletconnect/types": "^2.0.0-alpha.1",
+    "@walletconnect/utils": "^2.0.0-alpha.1",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",
     "enc-utils": "^3.0.0",
