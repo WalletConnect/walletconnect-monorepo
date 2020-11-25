@@ -174,5 +174,13 @@
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
+  },
+  {
+    "name": "AToken Wallet",
+    "shortName": "AToken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/atoken.png",
+    "universalLink": "https://www.atoken.com",
+    "deepLink": "atoken:"
   }
 ]
