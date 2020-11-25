@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "chai";
 import { formatJsonRpcRequest, formatJsonRpcResult, isJsonRpcRequest } from "rpc-json-utils";
 
-import { SessionTypes, ConnectionTypes, SubscriptionEvent } from "@walletconnect/types";
+import { SessionTypes, ConnectionTypes } from "@walletconnect/types";
 
 import Client, { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src";
 import {
@@ -122,9 +122,13 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientB.on(
           CLIENT_EVENTS.session.payload,
-          async (payloadEvent: SubscriptionEvent.Payload) => {
+          async (payloadEvent: SessionTypes.PayloadEvent) => {
             if (typeof sessionB === "undefined") throw new Error("Missing session for client B");
-            if (isJsonRpcRequest(payloadEvent.payload) && payloadEvent.topic === sessionB.topic) {
+            if (
+              isJsonRpcRequest(payloadEvent.payload) &&
+              payloadEvent.topic === sessionB.topic &&
+              payloadEvent.chainId === TEST_PERMISSIONS_CHAIN_IDS[0]
+            ) {
               clientB.logger.warn(`TEST >> JSON-RPC Request Received`);
               await clientB.resolve({
                 topic: sessionB.topic,
@@ -142,6 +146,7 @@ describe("Client", () => {
         timestamps.request.started = Date.now();
         result = await clientA.request({
           topic: sessionA.topic,
+          chainId: TEST_PERMISSIONS_CHAIN_IDS[0],
           request: formatJsonRpcRequest("eth_accounts", []),
         });
         clientA.logger.warn(`TEST >> JSON-RPC Response Received`);

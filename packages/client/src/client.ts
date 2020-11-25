@@ -8,7 +8,6 @@ import {
   ClientTypes,
   ConnectionTypes,
   SessionTypes,
-  SubscriptionEvent,
 } from "@walletconnect/types";
 import {
   isConnectionFailed,
@@ -285,7 +284,7 @@ export class Client extends IClient {
       });
       this.events.emit(CLIENT_EVENTS.connection.deleted, connection);
     });
-    this.connection.on(CONNECTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
+    this.connection.on(CONNECTION_EVENTS.payload, (payloadEvent: ConnectionTypes.PayloadEvent) => {
       this.onConnectionPayload(payloadEvent.payload);
     });
     // Session Subscription Events
@@ -313,7 +312,7 @@ export class Client extends IClient {
       this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.deleted, data: session });
       this.events.emit(CLIENT_EVENTS.session.deleted, session);
     });
-    this.session.on(SESSION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
+    this.session.on(SESSION_EVENTS.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
       this.logger.info(`Emitting ${CLIENT_EVENTS.session.payload}`);
       this.logger.debug({
         type: "event",
