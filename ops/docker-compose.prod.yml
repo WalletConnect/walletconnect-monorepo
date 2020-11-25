@@ -3,10 +3,10 @@ version: '3.7'
 services:
   nginx:
     environment:
-      DOMAIN_URL: ${BRIDGE_URL}
+      DOMAIN_URL: ${RELAY_URL}
       APP_ENV: production
       EMAIL: ${CERTBOT_EMAIL}
-      CONTAINER_NAME: bridge
+      CONTAINER_NAME: relay
       APP_PORT: 5000
       APP_QTY: 2
       CLOUDFLARE: ${CLOUDFLARE}
