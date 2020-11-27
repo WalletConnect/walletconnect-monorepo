@@ -1,4 +1,4 @@
-import { JsonRpcPayload, IEvents } from "rpc-json-types";
+import { JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";

@@ -9,7 +9,7 @@ import {
   JsonRpcResult,
   METHOD_NOT_FOUND,
   payloadId,
-} from "rpc-json-utils";
+} from "@json-rpc-tools/utils";
 import { Logger } from "pino";
 import { safeJsonStringify } from "safe-json-utils";
 import { RelayTypes } from "@walletconnect/types";

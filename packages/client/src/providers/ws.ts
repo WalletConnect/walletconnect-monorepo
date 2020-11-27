@@ -5,7 +5,7 @@ import {
   JsonRpcPayload,
   JsonRpcRequest,
   isJsonRpcResponse,
-} from "rpc-json-utils";
+} from "@json-rpc-tools/utils";
 import { Logger } from "pino";
 import { formatLoggerContext } from "@walletconnect/utils";
 

@@ -28,7 +28,7 @@ import {
   formatJsonRpcResult,
   isJsonRpcError,
   isJsonRpcRequest,
-} from "rpc-json-utils";
+} from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
 import {

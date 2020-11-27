@@ -1,4 +1,4 @@
-import { JsonRpcPayload } from "rpc-json-types";
+import { JsonRpcPayload } from "@json-rpc-tools/types";
 
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";

@@ -33,7 +33,7 @@
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
     "query-string": "^6.13.5",
-    "rpc-json-utils": "^1.1.4",
+    "@json-rpc-tools/utils": "^1.0.0",
     "safe-json-utils": "^1.1.1",
     "window-getters": "^1.0.1",
     "window-metadata": "^1.0.1"

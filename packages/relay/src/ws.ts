@@ -10,7 +10,7 @@ import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
 import { isLegacySocketMessage } from "./utils";
 import { safeJsonParse } from "safe-json-utils";
-import { isJsonRpcRequest } from "rpc-json-utils";
+import { isJsonRpcRequest } from "@json-rpc-tools/utils";
 import { LegacyService } from "./legacy";
 
 export class WebSocketService {

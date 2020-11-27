@@ -1,6 +1,6 @@
 import "mocha";
 import { expect } from "chai";
-import { formatJsonRpcRequest, formatJsonRpcResult, isJsonRpcRequest } from "rpc-json-utils";
+import { formatJsonRpcRequest, formatJsonRpcResult, isJsonRpcRequest } from "@json-rpc-tools/utils";
 
 import { SessionTypes, ConnectionTypes } from "@walletconnect/types";
 

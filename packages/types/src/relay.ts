@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "rpc-json-types";
+import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
 
 import { CryptoTypes } from "./crypto";
 

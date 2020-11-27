@@ -13,7 +13,7 @@ import {
   formatJsonRpcRequest,
   JsonRpcPayload,
   JsonRpcRequest,
-} from "rpc-json-utils";
+} from "@json-rpc-tools/utils";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import {

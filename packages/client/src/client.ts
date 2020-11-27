@@ -19,7 +19,7 @@ import {
   getConnectionMetadata,
   isConnectionRespondParams,
 } from "@walletconnect/utils";
-import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "rpc-json-utils";
+import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "@json-rpc-tools/utils";
 
 import { Connection, Session, Relay } from "./controllers";
 import {

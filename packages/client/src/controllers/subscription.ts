@@ -9,7 +9,7 @@ import {
   SubscriptionParams,
 } from "@walletconnect/types";
 import { mapToObj, objToMap, formatLoggerContext } from "@walletconnect/utils";
-import { JsonRpcPayload } from "rpc-json-utils";
+import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
 

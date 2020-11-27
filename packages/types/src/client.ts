@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse, IEvents } from "rpc-json-types";
+import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
 
 import { IRelay, RelayTypes } from "./relay";
 import { IConnection } from "./connection";
