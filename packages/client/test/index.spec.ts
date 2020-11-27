@@ -56,9 +56,9 @@ describe("Client", () => {
         clientA.on(
           CLIENT_EVENTS.connection.proposal,
           async (proposal: ConnectionTypes.Proposal) => {
-            clientA.logger.warn(`TEST >> Connection Proposal`);
+            clientB.logger.warn(`TEST >> Connection Proposal`);
             await clientB.respond({ approved: true, uri: proposal.signal.params.uri });
-            clientA.logger.warn(`TEST >> Connection Responded`);
+            clientB.logger.warn(`TEST >> Connection Responded`);
             resolve();
           },
         );

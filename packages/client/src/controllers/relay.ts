@@ -12,8 +12,9 @@ import {
   IJsonRpcProvider,
   formatJsonRpcRequest,
   JsonRpcPayload,
-  JsonRpcRequest,
+  JsonRpcProviderMessage,
 } from "@json-rpc-tools/utils";
+import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import {
@@ -23,7 +24,6 @@ import {
   RELAY_DEFAULT_SUBSCRIBE_TTL,
   RELAY_DEFAULT_PUBLISH_TTL,
 } from "../constants";
-import { WSProvider } from "../providers";
 
 export class Relay extends IRelay {
   public events = new EventEmitter();
@@ -39,7 +39,7 @@ export class Relay extends IRelay {
     });
 
     this.provider = this.setProvider(provider);
-    this.provider.on("request", (request: JsonRpcRequest) => this.onRequest(request));
+    this.provider.on("message", (message: JsonRpcProviderMessage) => this.onMessage(message));
   }
 
   public async init(): Promise<void> {
@@ -156,15 +156,10 @@ export class Relay extends IRelay {
 
   // ---------- Private ----------------------------------------------- //
 
-  private onRequest(request: JsonRpcRequest) {
+  private onMessage(message: JsonRpcProviderMessage<RelayTypes.SubscriptionParams>) {
     this.logger.info(`Incoming Relay Payload`);
-    this.logger.debug({ type: "payload", direction: "incoming", request });
-    if (request.method.endsWith("_subscription")) {
-      const params = request.params as RelayTypes.SubscriptionParams;
-      this.events.emit(params.id, params.data);
-    } else {
-      this.events.emit("request", request);
-    }
+    this.logger.debug({ type: "payload", direction: "incoming", message });
+    this.events.emit(message.data.id, message.data.data);
   }
 
   private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
@@ -173,6 +168,6 @@ export class Relay extends IRelay {
     const rpcUrl = typeof provider === "string" ? provider : RELAY_DEFAULT_RPC_URL;
     return typeof provider !== "string" && typeof provider !== "undefined"
       ? provider
-      : new WSProvider(rpcUrl, this.logger);
+      : new JsonRpcProvider(rpcUrl);
   }
 }
