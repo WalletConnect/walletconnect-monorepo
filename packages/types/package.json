@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/types",
   "description": "Typings for WalletConnect Protocol",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
   "license": "LGPL-3.0",
@@ -26,9 +26,9 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
+    "@json-rpc-tools/types": "^1.0.0",
     "pino": "^6.7.0",
-    "pino-pretty": "^4.3.0",
-    "@json-rpc-tools/types": "^1.0.0"
+    "pino-pretty": "^4.3.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
