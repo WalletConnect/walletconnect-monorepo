@@ -93,19 +93,15 @@ export class JsonRpcService {
     const params = parsePublishRequest(request);
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", params });
-    const subscribers = this.subscription.getSubscribers(params.topic, socketId);
+    const subscriptions = this.subscription.get(params.topic, socketId);
 
     // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
 
-    if (subscribers.length) {
+    if (subscriptions.length) {
       await Promise.all(
-        subscribers.map((subscriber: Subscription) => {
-          const payload = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
-            BRIDGE_JSONRPC.subscription,
-            { id: subscriber.id, data: { topic: params.topic, message: params.message } },
-          );
-          this.socketSend(subscriber.socketId, payload);
+        subscriptions.map((subscriber: Subscription) => {
+          this.pushSubscription(subscriber, params.message);
         }),
       );
     } else {
@@ -120,7 +116,7 @@ export class JsonRpcService {
     this.logger.debug(`Subscribe Request Received`);
     this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
 
-    const id = this.subscription.setSubscriber({ topic: params.topic, socketId });
+    const id = this.subscription.set({ topic: params.topic, socketId });
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
 
@@ -132,7 +128,7 @@ export class JsonRpcService {
     this.logger.debug(`Unsubscribe Request Received`);
     this.logger.trace({ type: "method", method: "onUnsubscribeRequest", params });
 
-    this.subscription.removeSubscriber(params.id);
+    this.subscription.remove(params.id);
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
@@ -145,20 +141,24 @@ export class JsonRpcService {
     if (pending && pending.length) {
       await Promise.all(
         pending.map((message: string) => {
-          const request = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
-            BRIDGE_JSONRPC.subscription,
-            {
-              id: subscription.id,
-              data: {
-                topic: subscription.topic,
-                message,
-              },
-            },
-          );
-          this.socketSend(subscription.socketId, request);
+          this.pushSubscription(subscription, message);
         }),
       );
     }
+  }
+
+  private async pushSubscription(subscription: Subscription, message: string): Promise<void> {
+    const request = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
+      BRIDGE_JSONRPC.subscription,
+      {
+        id: subscription.id,
+        data: {
+          topic: subscription.topic,
+          message,
+        },
+      },
+    );
+    this.socketSend(subscription.socketId, request);
   }
 
   private async socketSend(

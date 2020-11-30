@@ -29,7 +29,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.1.2",
+    "@json-rpc-tools/utils": "^1.2.1",
     "@walletconnect/types": "file:../../packages/types",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",

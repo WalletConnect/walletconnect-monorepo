@@ -5,7 +5,7 @@ import { RedisService } from "./redis";
 import { Subscription } from "./types";
 
 export class SubscriptionService {
-  public subs: Subscription[] = [];
+  public subscriptions: Subscription[] = [];
 
   public context = "subscription";
 
@@ -15,25 +15,27 @@ export class SubscriptionService {
     this.initialize();
   }
 
-  public setSubscriber(subscriber: Omit<Subscription, "id">): string {
+  public set(subscription: Omit<Subscription, "id">): string {
     const id = generateRandomBytes32();
-    this.logger.debug(`Setting Subscriber`);
-    this.logger.trace({ type: "method", method: "setSubscriber", topic: subscriber.topic });
-    this.subs.push({ ...subscriber, id });
+    this.logger.debug(`Setting Subscription`);
+    this.logger.trace({ type: "method", method: "set", topic: subscription.topic });
+    this.subscriptions.push({ ...subscription, id });
     return id;
   }
 
-  public getSubscribers(topic: string, senderSocketId: string): Subscription[] {
-    const subs = this.subs.filter(sub => sub.topic === topic && sub.socketId !== senderSocketId);
-    this.logger.debug(`Getting Subscribers`);
-    this.logger.trace({ type: "method", method: "getSubscribers", topic, subs });
-    return subs;
+  public get(topic: string, senderSocketId: string): Subscription[] {
+    const subscriptions = this.subscriptions.filter(
+      sub => sub.topic === topic && sub.socketId !== senderSocketId,
+    );
+    this.logger.debug(`Getting Subscriptions`);
+    this.logger.trace({ type: "method", method: "get", topic, subscriptions });
+    return subscriptions;
   }
 
-  public removeSubscriber(id: string): void {
-    this.logger.debug(`Removing Subscriber`);
-    this.logger.trace({ type: "method", method: "removeSubscriber", id });
-    this.subs = this.subs.filter(sub => sub.id !== id);
+  public remove(id: string): void {
+    this.logger.debug(`Removing Subscription`);
+    this.logger.trace({ type: "method", method: "remove", id });
+    this.subscriptions = this.subscriptions.filter(sub => sub.id !== id);
   }
 
   // ---------- Private ----------------------------------------------- //

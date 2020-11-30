@@ -59,13 +59,13 @@ export class LegacyService {
 
     const subscriber = { topic, socketId };
 
-    await this.subscription.setSubscriber(subscriber);
+    await this.subscription.set(subscriber);
 
     await this.pushPendingPublished(socketId, topic);
   }
 
   private async onPublishRequest(socketId: string, socketMessage: LegacySocketMessage) {
-    const subscribers = await this.subscription.getSubscribers(socketMessage.topic, socketId);
+    const subscribers = await this.subscription.get(socketMessage.topic, socketId);
 
     if (!socketMessage.silent) {
       await this.notification.push(socketMessage.topic);
