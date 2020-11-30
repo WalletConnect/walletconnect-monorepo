@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Logger } from "pino";
-import { formatLoggerContext } from "@walletconnect/utils";
+import { formatLoggerContext } from "./utils";
 
 import { RedisService } from "./redis";
 import { Notification } from "./types";

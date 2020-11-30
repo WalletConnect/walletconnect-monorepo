@@ -6,7 +6,7 @@ import { Logger } from "pino";
 import { Subscription, Notification, Socket, LegacySocketMessage } from "./types";
 import bluebird from "bluebird";
 import config from "./config";
-import { formatLoggerContext } from "@walletconnect/utils";
+import { formatLoggerContext } from "./utils";
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);

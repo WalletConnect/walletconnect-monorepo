@@ -1,4 +1,4 @@
-import { formatLoggerContext, generateRandomBytes32 } from "@walletconnect/utils";
+import { formatLoggerContext, generateRandomBytes32 } from "./utils";
 import { Logger } from "pino";
 
 import { RedisService } from "./redis";

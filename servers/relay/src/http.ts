@@ -1,9 +1,8 @@
 import Helmet from "fastify-helmet";
 import pino, { Logger } from "pino";
 import fastify, { FastifyInstance } from "fastify";
-import { getLoggerOptions } from "@walletconnect/utils";
+import { getLoggerOptions, assertType } from "./utils";
 
-import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";

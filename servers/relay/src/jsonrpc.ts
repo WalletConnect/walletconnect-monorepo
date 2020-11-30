@@ -13,21 +13,21 @@ import {
 import { Logger } from "pino";
 import { safeJsonStringify } from "safe-json-utils";
 import { RelayTypes } from "@walletconnect/types";
-import { formatLoggerContext, getRelayProtocolJsonRpc } from "@walletconnect/utils";
-
-import { RedisService } from "./redis";
-import { NotificationService } from "./notification";
-import { Subscription } from "./types";
 import {
+  formatLoggerContext,
   isPublishParams,
   parsePublishRequest,
   parseSubscribeRequest,
   parseUnsubscribeRequest,
 } from "./utils";
+
+import { RedisService } from "./redis";
+import { NotificationService } from "./notification";
+import { Subscription } from "./types";
+
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
-
-const BRIDGE_JSONRPC = getRelayProtocolJsonRpc("bridge");
+import { BRIDGE_JSONRPC } from "./constants";
 
 export class JsonRpcService {
   public subscription: SubscriptionService;

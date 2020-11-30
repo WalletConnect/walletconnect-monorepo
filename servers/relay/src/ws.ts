@@ -1,14 +1,14 @@
 import { Server } from "http";
 import WebSocket from "ws";
 import * as encUtils from "enc-utils";
-import { formatLoggerContext, generateRandomBytes32 } from "@walletconnect/utils";
+import { formatLoggerContext, generateRandomBytes32, isLegacySocketMessage } from "./utils";
 import { Logger } from "pino";
 
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
-import { isLegacySocketMessage } from "./utils";
+
 import { safeJsonParse } from "safe-json-utils";
 import { isJsonRpcRequest } from "@json-rpc-tools/utils";
 import { LegacyService } from "./legacy";

@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/relay-server",
   "description": "Relay Server for WalletConnect Protocol",
-  "version": "2.0.0-alpha.4",
+  "version": "1.0.0",
   "private": true,
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
@@ -30,8 +30,6 @@
   },
   "dependencies": {
     "@json-rpc-tools/utils": "^1.1.2",
-    "@walletconnect/types": "^2.0.0-alpha.4",
-    "@walletconnect/utils": "^2.0.0-alpha.4",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",
     "enc-utils": "^3.0.0",

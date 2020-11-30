@@ -1,4 +1,4 @@
-import { formatLoggerContext } from "@walletconnect/utils";
+import { formatLoggerContext } from "./utils";
 import { Logger } from "pino";
 import { safeJsonStringify } from "safe-json-utils";
 import { SubscriptionService } from "./subscription";
