@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@json-rpc-tools/utils": "^1.1.2",
+    "@walletconnect/types": "file:../../packages/types",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",
     "enc-utils": "^3.0.0",
