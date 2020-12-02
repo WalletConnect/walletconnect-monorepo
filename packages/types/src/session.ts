@@ -3,13 +3,13 @@ import { JsonRpcPayload } from "@json-rpc-tools/types";
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
-import { BlockchainPermissions, BlockchainState, JsonRpcPermissions, SignalTypes } from "./misc";
+import { SignalTypes, BlockchainTypes, JsonRpcPermissions } from "./misc";
 import { SubscriptionEvent } from "./subscription";
 
 export declare namespace SessionTypes {
   export interface Permissions {
     jsonrpc: JsonRpcPermissions;
-    blockchain: BlockchainPermissions;
+    blockchain: BlockchainTypes.Permissions;
   }
 
   export interface ProposeParams {
@@ -81,7 +81,7 @@ export declare namespace SessionTypes {
     update: Update;
   }
 
-  export type StateUpdate = { state: Partial<BlockchainState> };
+  export type StateUpdate = { state: Partial<BlockchainTypes.State> };
 
   export type Update = StateUpdate;
 
@@ -142,7 +142,7 @@ export declare namespace SessionTypes {
 
   export type Outcome = Failed | Success;
 
-  export interface State extends BlockchainState {
+  export interface State extends BlockchainTypes.State {
     controller: CryptoTypes.Participant;
   }
 
@@ -163,7 +163,7 @@ export abstract class ISession extends ISequence<
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams
 > {
-  public abstract notice(topic: string, notice: SessionTypes.Notice): Promise<void>;
+  public abstract notice(params: SessionTypes.NoticeParams): Promise<void>;
 
   protected abstract onNotice(event: SubscriptionEvent.Payload): Promise<void>;
 }

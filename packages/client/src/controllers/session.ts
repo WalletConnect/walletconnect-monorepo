@@ -79,9 +79,10 @@ export class Session extends ISession {
     return this.settled.get(topic);
   }
 
-  public async notice(topic: string, notice: SessionTypes.Notice): Promise<void> {
+  public async notice(params: SessionTypes.NoticeParams): Promise<void> {
+    const notice: SessionTypes.Notice = { type: params.type, data: params.data };
     const request = formatJsonRpcRequest(SESSION_JSONRPC.notice, notice);
-    this.send(topic, request);
+    this.send(params.topic, request);
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {

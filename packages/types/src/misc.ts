@@ -37,11 +37,13 @@ export interface JsonRpcPermissions {
   methods: string[];
 }
 
-export interface BlockchainPermissions {
-  chainIds: string[];
-}
-export interface BlockchainState {
-  accountIds: string[];
+export declare namespace BlockchainTypes {
+  export interface Permissions {
+    chainIds: string[];
+  }
+  export interface State {
+    accountIds: string[];
+  }
 }
 
 export interface UriParameters {

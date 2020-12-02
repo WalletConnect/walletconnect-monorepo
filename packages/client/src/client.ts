@@ -121,6 +121,10 @@ export class Client extends IClient {
     return this.session.update(params);
   }
 
+  public async notice(params: ClientTypes.NoticeParams): Promise<void> {
+    return this.session.notice(params);
+  }
+
   public async request(params: ClientTypes.RequestParams): Promise<any> {
     return new Promise((resolve, reject) => {
       this.on(CLIENT_EVENTS.session.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
