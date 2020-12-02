@@ -81,7 +81,8 @@ export class Connection extends IConnection {
   public async get(topic: string): Promise<ConnectionTypes.Settled> {
     return this.settled.get(topic);
   }
-  public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
+
+  public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
     const connection = await this.settled.get(topic);
     const encryptKeys: CryptoTypes.EncryptKeys = {
       sharedKey: connection.sharedKey,
@@ -384,9 +385,7 @@ export class Connection extends IConnection {
           break;
       }
     } else {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
-      this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payloadEvent });
-      this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
+      this.onPayloadEvent(payloadEvent);
     }
   }
 
@@ -406,21 +405,9 @@ export class Connection extends IConnection {
         this.send(connection.topic, formatJsonRpcError(request.id, errorMessage));
         return;
       }
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
-      this.logger.debug({
-        type: "event",
-        event: CONNECTION_EVENTS.payload,
-        data: connectionPayloadEvent,
-      });
-      this.events.emit(CONNECTION_EVENTS.payload, connectionPayloadEvent);
+      this.onPayloadEvent(connectionPayloadEvent);
     } else {
-      this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
-      this.logger.debug({
-        type: "event",
-        event: CONNECTION_EVENTS.payload,
-        data: connectionPayloadEvent,
-      });
-      this.events.emit(CONNECTION_EVENTS.payload, connectionPayloadEvent);
+      this.onPayloadEvent(connectionPayloadEvent);
     }
   }
 
@@ -464,6 +451,12 @@ export class Connection extends IConnection {
   }
 
   // ---------- Private ----------------------------------------------- //
+
+  private async onPayloadEvent(payloadEvent: ConnectionTypes.PayloadEvent) {
+    this.logger.info(`Emitting ${CONNECTION_EVENTS.payload}`);
+    this.logger.debug({ type: "event", event: CONNECTION_EVENTS.payload, data: payloadEvent });
+    this.events.emit(CONNECTION_EVENTS.payload, payloadEvent);
+  }
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {

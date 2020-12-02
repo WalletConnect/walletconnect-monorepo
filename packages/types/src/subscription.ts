@@ -69,5 +69,5 @@ export abstract class ISubscription<Data> extends IEvents {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected abstract onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<any>;
+  protected abstract onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<any>;
 }

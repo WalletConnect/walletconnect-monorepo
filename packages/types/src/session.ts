@@ -4,6 +4,7 @@ import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
 import { BlockchainPermissions, BlockchainState, JsonRpcPermissions, SignalTypes } from "./misc";
+import { SubscriptionEvent } from "./subscription";
 
 export declare namespace SessionTypes {
   export interface Permissions {
@@ -93,6 +94,16 @@ export declare namespace SessionTypes {
     topic: string;
   }
 
+  export interface Notice {
+    type: string;
+    data: any;
+  }
+
+  export interface NoticeEvent extends Notice {
+    topic: string;
+  }
+
+  export type NoticeParams = NoticeEvent;
   export interface DeleteParams {
     topic: string;
     reason: string;
@@ -151,4 +162,8 @@ export abstract class ISession extends ISequence<
   SessionTypes.DeleteParams,
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams
-> {}
+> {
+  public abstract notice(topic: string, notice: SessionTypes.Notice): Promise<void>;
+
+  protected abstract onNotice(event: SubscriptionEvent.Payload): Promise<void>;
+}

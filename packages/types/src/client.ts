@@ -37,6 +37,8 @@ export declare namespace ClientTypes {
 
   export type UpdateParams = SessionTypes.UpdateParams;
 
+  export type NoticeParams = SessionTypes.NoticeParams;
+
   export interface RequestParams {
     topic: string;
     request: JsonRpcRequest;

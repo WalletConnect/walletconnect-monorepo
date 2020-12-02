@@ -55,13 +55,13 @@ export abstract class ISequence<
   // called by both (internally)
   protected abstract settle(params: SettleParams): Promise<Settled>;
 
-  // callback for proposed subscriptions
+  // callback for proposed subscriptions payloads
   protected abstract onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for responded subscriptions
+  // callback for responded subscriptions payloads
   protected abstract onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for settled subscriptions
+  // callback for settled subscriptions payloads
   protected abstract onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for incoming payloads
+  // callback for incoming JSON-RPC payloads
   protected abstract onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
   // callback for state update requests
   protected abstract onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void>;

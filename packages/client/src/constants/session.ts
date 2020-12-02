@@ -6,6 +6,7 @@ export const SESSION_JSONRPC = {
   update: "wc_sessionUpdate",
   delete: "wc_sessionDelete",
   payload: "wc_sessionPayload",
+  notice: "wc_sessionNotice",
 };
 
 export const SESSION_CONTEXT = "session";
@@ -28,6 +29,7 @@ export const SESSION_EVENTS = {
   settled: "session_settled",
   updated: "session_updated",
   deleted: "session_deleted",
+  notice: "session_notice",
 };
 
 export const SESSION_REASONS = {

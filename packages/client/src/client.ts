@@ -321,5 +321,14 @@ export class Client extends IClient {
       });
       this.events.emit(CLIENT_EVENTS.session.payload, payloadEvent);
     });
+    this.session.on(SESSION_EVENTS.notice, (noticeEvent: SessionTypes.NoticeEvent) => {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.notice}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.session.notice,
+        data: noticeEvent,
+      });
+      this.events.emit(CLIENT_EVENTS.session.notice, noticeEvent);
+    });
   }
 }

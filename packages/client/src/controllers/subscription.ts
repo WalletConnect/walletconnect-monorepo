@@ -56,7 +56,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       }
       const id = await this.client.relay.subscribe(
         topic,
-        (payload: JsonRpcPayload) => this.onMessage({ topic, payload }),
+        (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
         opts,
       );
       this.subscriptions.set(topic, { id, topic, data, opts });
@@ -120,7 +120,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async onMessage(payloadEvent: SubscriptionEvent.Payload) {
+  protected async onPayload(payloadEvent: SubscriptionEvent.Payload) {
     this.events.emit(SUBSCRIPTION_EVENTS.payload, payloadEvent);
   }
 
@@ -169,7 +169,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
         const { topic, opts } = subscription;
         const id = await this.client.relay.subscribe(
           topic,
-          (payload: JsonRpcPayload) => this.onMessage({ topic, payload }),
+          (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
           opts,
         );
         this.subscriptions.set(topic, { ...subscription, id });

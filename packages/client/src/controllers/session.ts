@@ -79,6 +79,11 @@ export class Session extends ISession {
     return this.settled.get(topic);
   }
 
+  public async notice(topic: string, notice: SessionTypes.Notice): Promise<void> {
+    const request = formatJsonRpcRequest(SESSION_JSONRPC.notice, notice);
+    this.send(topic, request);
+  }
+
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     const session = await this.settled.get(topic);
     const encryptKeys: CryptoTypes.EncryptKeys = {
@@ -393,7 +398,7 @@ export class Session extends ISession {
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug(`Receiving Connection message`);
+    this.logger.debug(`Receiving Session message`);
     this.logger.trace({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
@@ -406,6 +411,9 @@ export class Session extends ISession {
         case SESSION_JSONRPC.update:
           await this.onUpdate(payloadEvent);
           break;
+        case SESSION_JSONRPC.notice:
+          await this.onNotice(payloadEvent);
+          break;
         case SESSION_JSONRPC.delete:
           await this.settled.delete(session.topic, request.params.reason);
           break;
@@ -416,9 +424,7 @@ export class Session extends ISession {
           break;
       }
     } else {
-      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
-      this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
-      this.events.emit(SESSION_EVENTS.payload, payloadEvent);
+      this.onPayloadEvent(payloadEvent);
     }
   }
 
@@ -427,7 +433,7 @@ export class Session extends ISession {
     const request = payloadEvent.payload as JsonRpcRequest<SessionTypes.Payload>;
     const { payload, chainId } = request.params;
     const sessionPayloadEvent: SessionTypes.PayloadEvent = { topic, payload, chainId };
-    this.logger.debug(`Receiving Connection payload`);
+    this.logger.debug(`Receiving Session payload`);
     this.logger.trace({ type: "method", method: "onPayload", ...sessionPayloadEvent });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
@@ -438,21 +444,9 @@ export class Session extends ISession {
         this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
         return;
       }
-      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
-      this.logger.debug({
-        type: "event",
-        event: SESSION_EVENTS.payload,
-        data: sessionPayloadEvent,
-      });
-      this.events.emit(SESSION_EVENTS.payload, sessionPayloadEvent);
+      this.onPayloadEvent(sessionPayloadEvent);
     } else {
-      this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
-      this.logger.debug({
-        type: "event",
-        event: SESSION_EVENTS.payload,
-        data: sessionPayloadEvent,
-      });
-      this.events.emit(SESSION_EVENTS.payload, sessionPayloadEvent);
+      this.onPayloadEvent(sessionPayloadEvent);
     }
   }
 
@@ -498,7 +492,25 @@ export class Session extends ISession {
     return update;
   }
 
+  protected async onNotice(event: SubscriptionEvent.Payload) {
+    const notice = (event.payload as JsonRpcRequest<SessionTypes.Notice>).params;
+    const noticeEvent: SessionTypes.NoticeEvent = {
+      topic: event.topic,
+      type: notice.type,
+      data: notice.data,
+    };
+    this.logger.info(`Emitting ${SESSION_EVENTS.notice}`);
+    this.logger.debug({ type: "event", event: SESSION_EVENTS.notice, noticeEvent });
+    this.events.emit(SESSION_EVENTS.notice, noticeEvent);
+  }
+
   // ---------- Private ----------------------------------------------- //
+
+  private async onPayloadEvent(payloadEvent: SessionTypes.PayloadEvent) {
+    this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
+    this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
+    this.events.emit(SESSION_EVENTS.payload, payloadEvent);
+  }
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
