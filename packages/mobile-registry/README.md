@@ -1,3 +1,3 @@
-# WalletConnect Mobile Registry
+# @walletconnect/mobile-registry
 
-Registry for WalletConnect mobile-to-mobile linking supported Wallets
+Mobile Registry for WalletConnect Protocol
