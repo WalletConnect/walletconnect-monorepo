@@ -66,7 +66,10 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientB.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
           clientB.logger.warn(`TEST >> Session Proposal`);
-          const response = { state: TEST_SESSION_STATE, metadata: TEST_APP_METADATA_B };
+          const response: SessionTypes.Response = {
+            state: TEST_SESSION_STATE,
+            metadata: TEST_APP_METADATA_B,
+          };
           await clientB.respond({ approved: true, proposal, response });
           clientB.logger.warn(`TEST >> Session Responded`);
           resolve();

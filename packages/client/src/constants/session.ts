@@ -38,3 +38,15 @@ export const SESSION_REASONS = {
   responded: "Session proposal responded",
   acknowledged: "Session response acknowledged",
 };
+
+export const SESSION_EMPTY_RESPONSE = {
+  metadata: {
+    name: "",
+    description: "",
+    url: "",
+    icons: [],
+  },
+  state: {
+    accountIds: [],
+  },
+} as SessionTypes.Response;

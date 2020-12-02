@@ -29,6 +29,7 @@ import {
   CONNECTION_EVENTS,
   CONNECTION_SIGNAL_METHOD_URI,
   RELAY_DEFAULT_PROTOCOL,
+  SESSION_EMPTY_RESPONSE,
   SESSION_EVENTS,
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_CONNECTION,
@@ -187,15 +188,15 @@ export class Client extends IClient {
   ): Promise<string | undefined> {
     this.logger.debug(`Responding Session Proposal`);
     this.logger.trace({ type: "method", method: "respond", params });
-    if (typeof params.response === "undefined") {
-      const errorMessage = "Response is required for session proposals";
+    if (params.approved === true && typeof params.response === "undefined") {
+      const errorMessage = "Response is required for approved session proposals";
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
     const pending = await this.session.respond({
       approved: params.approved,
       proposal: params.proposal,
-      response: params.response,
+      response: params.response || SESSION_EMPTY_RESPONSE,
     });
     if (!isSessionResponded(pending)) return;
     if (isSessionFailed(pending.outcome)) {

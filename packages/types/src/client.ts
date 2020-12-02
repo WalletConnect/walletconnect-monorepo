@@ -30,7 +30,7 @@ export declare namespace ClientTypes {
   export interface SessionRespondParams {
     approved: boolean;
     proposal: SessionTypes.Proposal;
-    response: SessionTypes.Response;
+    response?: SessionTypes.Response;
   }
 
   export type RespondParams = ConnectionRespondParams | SessionRespondParams;
