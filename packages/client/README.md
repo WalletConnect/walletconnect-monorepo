@@ -94,7 +94,7 @@ client.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) =
 3. Establish connection with shared URI from dapp
 
 ```js
-client.respond({ approved: true, uri });
+client.tether({ uri });
 ```
 
 4. Handle user approval for proposed session
@@ -102,7 +102,7 @@ client.respond({ approved: true, uri });
 ```js
 function handleSessionUserApproval(approved: boolean, proposal: SessionTypes.Proposal) {
   if (userApproved) {
-    // if user approved then respond with accountIds matching the chainIds and wallet metadata
+    // if user approved then include response with accountIds matching the chainIds and wallet metadata
     const response: SessionTypes.Response = {
       metadata: {
         name: "Test Wallet",
@@ -114,10 +114,10 @@ function handleSessionUserApproval(approved: boolean, proposal: SessionTypes.Pro
         accountIds: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"],
       },
     }
-    await client.respond({approved: true, proposal, response});
+    await client.approve({ proposal, response });
   } else {
-    // if user didn't approve then respond with no response
-    await client.respond({ approved: false, proposal });
+    // if user didn't approve then reject with no response
+    await client.reject({ proposal });
   }
 }
 ```
@@ -151,6 +151,7 @@ Given that session has settled succesfully since user approved the session on th
 ```js
 import { CLIENT_EVENTS } from "@walletconnect/client";
 import { SessionTypes } from "@walletconnect/types";
+import { JsonRpcResponse } from "@json-rpc-tools/utils";
 
 client.on(CLIENT_EVENTS.session.payload, async (payloadEvent: SessionTypes.PayloadEvent) => {
   // WalletConnect client can track multiple sessions
@@ -161,29 +162,28 @@ client.on(CLIENT_EVENTS.session.payload, async (payloadEvent: SessionTypes.Paylo
   const { metadata } = session.peer;
   // after user has either approved or not the request it should be formatted
   // as response with either the result or the error message
-  let approved: boolean;
-  if (approved) {
-    await client.resolve({
-      topic: session.topic,
-      response: {
-        id: payload.id,
-        jsonrpc: "2.0",
-        result,
-      },
-    });
-  } else {
-    await client.resolve({
-      topic: session.topic,
-      response: {
-        id: payload.id,
-        jsonrpc: "2.0",
-        error: {
-          code: -32000,
-          message: "User rejected JSON-RPC request",
+  let result: any;
+  const response = approved
+    ? {
+        topic,
+        response: {
+          id: payload.id,
+          jsonrpc: "2.0",
+          result,
         },
-      },
-    });
-  }
+      }
+    : {
+        topic,
+        response: {
+          id: payload.id,
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: "User rejected JSON-RPC request",
+          },
+        },
+      };
+  await client.respond(response);
 });
 ```
 
@@ -213,38 +213,53 @@ export abstract class IClient extends IEvents {
     super();
   }
 
+  // for proposer to propose a session to a responder
   public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
-  public abstract respond(params: ClientTypes.RespondParams): Promise<string | undefined>;
-  public abstract update(params: ClientTypes.UpdateParams): Promise<SessionTypes.Settled>;
+  // for responder to receive a session proposal from a proposer
+  public abstract tether(params: ClientTypes.TetherParams): Promise<void>;
+
+  // for responder to approve a session proposal
+  public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
+  // for responder to reject a session proposal
+  public abstract reject(params: ClientTypes.RejectParams): Promise<void>;
+
+  // for responder to update session state
+  public abstract update(params: ClientTypes.UpdateParams): Promise<void>;
+  // for either to send notifications
+  public abstract notify(params: ClientTypes.NotifyParams): Promise<void>;
+
+  // for proposer to request JSON-RPC
   public abstract request(params: ClientTypes.RequestParams): Promise<any>;
-  public abstract resolve(params: ClientTypes.ResolveParams): Promise<void>;
+  // for responder to respond JSON-RPC
+  public abstract respond(params: ClientTypes.RespondParams): Promise<void>;
+
+  // for either to disconnect a session
   public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
 }
 
 export declare namespace ClientTypes {
   export interface ConnectParams {
     metadata: SessionTypes.Metadata;
-    permissions: SessionTypes.Permissions;
+    permissions: SessionTypes.BasePermissions;
     relay?: RelayTypes.ProtocolOptions;
     connection?: SignalTypes.ParamsConnection;
   }
 
-  export interface ConnectionRespondParams {
-    approved: boolean;
+  export interface TetherParams {
     uri: string;
   }
 
-  export interface SessionRespondParams {
-    approved: boolean;
+  export interface ApproveParams {
     proposal: SessionTypes.Proposal;
     response: SessionTypes.Response;
   }
-
-  export type RespondParams = ConnectionRespondParams | SessionRespondParams;
+  export interface RejectParams {
+    proposal: SessionTypes.Proposal;
+  }
 
   export type UpdateParams = SessionTypes.UpdateParams;
 
-  export type NoticeParams = SessionTypes.NoticeParams;
+  export type NotifyParams = SessionTypes.NotifyParams;
 
   export interface RequestParams {
     topic: string;
@@ -252,7 +267,7 @@ export declare namespace ClientTypes {
     chainId?: string;
   }
 
-  export interface ResolveParams {
+  export interface RespondParams {
     topic: string;
     response: JsonRpcResponse;
   }
