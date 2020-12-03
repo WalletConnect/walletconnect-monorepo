@@ -18,7 +18,7 @@ export const TEST_PERMISSIONS_JSONRPC_METHODS: string[] = [
   "personal_sign",
 ];
 
-export const TEST_PERMISSIONS: SessionTypes.Permissions = {
+export const TEST_PERMISSIONS: SessionTypes.BasePermissions = {
   blockchain: {
     chainIds: TEST_PERMISSIONS_CHAIN_IDS,
   },

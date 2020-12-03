@@ -1,3 +1,4 @@
+import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
 
 export declare namespace SignalTypes {
@@ -35,6 +36,17 @@ export declare namespace SignalTypes {
 
 export interface JsonRpcPermissions {
   methods: string[];
+}
+
+export declare namespace NotificationPermissions {
+  export interface Proposal {
+    types: string[];
+  }
+
+  export interface Settled {
+    types: string[];
+    controller: CryptoTypes.Participant;
+  }
 }
 
 export declare namespace BlockchainTypes {

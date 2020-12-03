@@ -5,6 +5,7 @@ import { formatJsonRpcRequest, formatJsonRpcResult, isJsonRpcRequest } from "@js
 import { SessionTypes, ConnectionTypes } from "@walletconnect/types";
 
 import Client, { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src";
+
 import {
   TEST_CLIENT_OPTIONS,
   TEST_PERMISSIONS_CHAIN_IDS,
@@ -150,7 +151,6 @@ describe("Client", () => {
         });
         clientA.logger.warn(`TEST >> JSON-RPC Response Received`);
         time.stop("request");
-
         resolve();
       }),
     ]);
@@ -171,9 +171,11 @@ describe("Client", () => {
     // blockchain state
     expect(sessionA.state.accountIds).to.eql(TEST_SESSION_ACCOUNT_IDS);
     expect(sessionA.state.accountIds).to.eql(sessionB.state.accountIds);
-    expect(sessionA.state.controller.publicKey).to.eql(sessionB.self.publicKey);
-    expect(sessionB.state.controller.publicKey).to.eql(sessionB.self.publicKey);
     // blockchain permissions
+    expect(sessionA.permissions.state.controller.publicKey).to.eql(sessionB.self.publicKey);
+    expect(sessionB.permissions.state.controller.publicKey).to.eql(sessionB.self.publicKey);
+    expect(sessionA.permissions.notifications.controller.publicKey).to.eql(sessionB.self.publicKey);
+    expect(sessionB.permissions.notifications.controller.publicKey).to.eql(sessionB.self.publicKey);
     expect(sessionA.permissions.blockchain.chainIds).to.eql(TEST_PERMISSIONS_CHAIN_IDS);
     expect(sessionA.permissions.blockchain.chainIds).to.eql(
       sessionB.permissions.blockchain.chainIds,

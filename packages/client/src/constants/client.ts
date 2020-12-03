@@ -13,6 +13,6 @@ export const CLIENT_EVENTS = {
     created: "session_created",
     deleted: "session_deleted",
     payload: "session_payload",
-    notice: "session_notice",
+    notification: "session_notification",
   },
 };

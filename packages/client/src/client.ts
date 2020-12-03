@@ -29,6 +29,7 @@ import {
   CONNECTION_EVENTS,
   CONNECTION_SIGNAL_METHOD_URI,
   RELAY_DEFAULT_PROTOCOL,
+  SESSION_EMPTY_PERMISSIONS,
   SESSION_EMPTY_RESPONSE,
   SESSION_EVENTS,
   SESSION_JSONRPC,
@@ -99,7 +100,10 @@ export class Client extends IClient {
         signal: { method: SESSION_SIGNAL_METHOD_CONNECTION, params: { topic: connection.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
         metadata: params.metadata,
-        permissions: params.permissions,
+        permissions: {
+          ...params.permissions,
+          notifications: SESSION_EMPTY_PERMISSIONS.notifications,
+        },
       });
       this.logger.debug(`Application Connection Successful`);
       this.logger.trace({ type: "method", method: "connect", session });
@@ -122,8 +126,8 @@ export class Client extends IClient {
     return this.session.update(params);
   }
 
-  public async notice(params: ClientTypes.NoticeParams): Promise<void> {
-    return this.session.notice(params);
+  public async notify(params: ClientTypes.NotificationParams): Promise<void> {
+    return this.session.notify(params);
   }
 
   public async request(params: ClientTypes.RequestParams): Promise<any> {
@@ -326,14 +330,17 @@ export class Client extends IClient {
       });
       this.events.emit(CLIENT_EVENTS.session.payload, payloadEvent);
     });
-    this.session.on(SESSION_EVENTS.notice, (noticeEvent: SessionTypes.NoticeEvent) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.notice}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.session.notice,
-        data: noticeEvent,
-      });
-      this.events.emit(CLIENT_EVENTS.session.notice, noticeEvent);
-    });
+    this.session.on(
+      SESSION_EVENTS.notification,
+      (notificationEvent: SessionTypes.NotificationEvent) => {
+        this.logger.info(`Emitting ${CLIENT_EVENTS.session.notification}`);
+        this.logger.debug({
+          type: "event",
+          event: CLIENT_EVENTS.session.notification,
+          data: notificationEvent,
+        });
+        this.events.emit(CLIENT_EVENTS.session.notification, notificationEvent);
+      },
+    );
   }
 }

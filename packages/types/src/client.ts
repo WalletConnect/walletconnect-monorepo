@@ -17,7 +17,7 @@ export interface ClientOptions {
 export declare namespace ClientTypes {
   export interface ConnectParams {
     metadata: SessionTypes.Metadata;
-    permissions: SessionTypes.Permissions;
+    permissions: SessionTypes.BasePermissions;
     relay?: RelayTypes.ProtocolOptions;
     connection?: SignalTypes.ParamsConnection;
   }
@@ -37,7 +37,7 @@ export declare namespace ClientTypes {
 
   export type UpdateParams = SessionTypes.UpdateParams;
 
-  export type NoticeParams = SessionTypes.NoticeParams;
+  export type NotificationParams = SessionTypes.NotificationParams;
 
   export interface RequestParams {
     topic: string;

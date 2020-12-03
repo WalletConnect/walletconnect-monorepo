@@ -3,20 +3,33 @@ import { JsonRpcPayload } from "@json-rpc-tools/types";
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
-import { SignalTypes, BlockchainTypes, JsonRpcPermissions } from "./misc";
+import { SignalTypes, BlockchainTypes, JsonRpcPermissions, NotificationPermissions } from "./misc";
 import { SubscriptionEvent } from "./subscription";
 
 export declare namespace SessionTypes {
-  export interface Permissions {
+  export interface BasePermissions {
     jsonrpc: JsonRpcPermissions;
     blockchain: BlockchainTypes.Permissions;
+  }
+
+  export interface StatePermissions {
+    controller: CryptoTypes.Participant;
+  }
+
+  export interface ProposedPermissions extends BasePermissions {
+    notifications: NotificationPermissions.Proposal;
+  }
+
+  export interface SettledPermissions extends BasePermissions {
+    notifications: NotificationPermissions.Settled;
+    state: StatePermissions;
   }
 
   export interface ProposeParams {
     signal: Signal;
     relay: RelayTypes.ProtocolOptions;
     metadata: Metadata;
-    permissions: Permissions;
+    permissions: ProposedPermissions;
     ttl?: number;
   }
 
@@ -31,7 +44,7 @@ export declare namespace SessionTypes {
     relay: RelayTypes.ProtocolOptions;
     proposer: Peer;
     signal: Signal;
-    permissions: Permissions;
+    permissions: ProposedPermissions;
     ttl: number;
   }
 
@@ -71,7 +84,7 @@ export declare namespace SessionTypes {
     self: CryptoTypes.Self;
     peer: Peer;
     state: State;
-    permissions: Permissions;
+    permissions: SettledPermissions;
     ttl: number;
     expiry: number;
   }
@@ -94,16 +107,16 @@ export declare namespace SessionTypes {
     topic: string;
   }
 
-  export interface Notice {
+  export interface Notification {
     type: string;
     data: any;
   }
 
-  export interface NoticeEvent extends Notice {
+  export interface NotificationEvent extends Notification {
     topic: string;
   }
 
-  export type NoticeParams = NoticeEvent;
+  export type NotificationParams = NotificationEvent;
   export interface DeleteParams {
     topic: string;
     reason: string;
@@ -115,7 +128,7 @@ export declare namespace SessionTypes {
     sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
-    permissions: Permissions;
+    permissions: SettledPermissions;
     expiry: number;
     state: State;
   }
@@ -142,12 +155,10 @@ export declare namespace SessionTypes {
 
   export type Outcome = Failed | Success;
 
-  export interface State extends BlockchainTypes.State {
-    controller: CryptoTypes.Participant;
-  }
+  export type State = BlockchainTypes.State;
 
   export interface Response {
-    state: Omit<State, "controller">;
+    state: State;
     metadata: Metadata;
   }
 }
@@ -163,7 +174,7 @@ export abstract class ISession extends ISequence<
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams
 > {
-  public abstract notice(params: SessionTypes.NoticeParams): Promise<void>;
+  public abstract notify(params: SessionTypes.NotificationParams): Promise<void>;
 
-  protected abstract onNotice(event: SubscriptionEvent.Payload): Promise<void>;
+  protected abstract onNotification(event: SubscriptionEvent.Payload): Promise<void>;
 }
