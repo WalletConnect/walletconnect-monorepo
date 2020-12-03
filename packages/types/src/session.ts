@@ -116,7 +116,7 @@ export declare namespace SessionTypes {
     topic: string;
   }
 
-  export type NotificationParams = NotificationEvent;
+  export type NotifyParams = NotificationEvent;
   export interface DeleteParams {
     topic: string;
     reason: string;
@@ -174,7 +174,7 @@ export abstract class ISession extends ISequence<
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams
 > {
-  public abstract notify(params: SessionTypes.NotificationParams): Promise<void>;
+  public abstract notify(params: SessionTypes.NotifyParams): Promise<void>;
 
   protected abstract onNotification(event: SubscriptionEvent.Payload): Promise<void>;
 }

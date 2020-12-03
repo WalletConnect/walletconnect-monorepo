@@ -54,7 +54,7 @@ describe("Client", () => {
           CLIENT_EVENTS.connection.proposal,
           async (proposal: ConnectionTypes.Proposal) => {
             clientB.logger.warn(`TEST >> Connection Proposal`);
-            await clientB.respond({ approved: true, uri: proposal.signal.params.uri });
+            await clientB.tether({ uri: proposal.signal.params.uri });
             clientB.logger.warn(`TEST >> Connection Responded`);
             resolve();
           },
@@ -67,7 +67,7 @@ describe("Client", () => {
             state: TEST_SESSION_STATE,
             metadata: TEST_APP_METADATA_B,
           };
-          await clientB.respond({ approved: true, proposal, response });
+          await clientB.approve({ proposal, response });
           clientB.logger.warn(`TEST >> Session Responded`);
           resolve();
         });
@@ -130,7 +130,7 @@ describe("Client", () => {
               payloadEvent.chainId === TEST_PERMISSIONS_CHAIN_IDS[0]
             ) {
               clientB.logger.warn(`TEST >> JSON-RPC Request Received`);
-              await clientB.resolve({
+              await clientB.respond({
                 topic: sessionB.topic,
                 response: formatJsonRpcResult(payloadEvent.payload.id, TEST_ETHEREUM_ACCOUNTS),
               });

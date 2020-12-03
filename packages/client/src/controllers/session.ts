@@ -97,7 +97,7 @@ export class Session extends ISession {
     return this.settled.get(topic);
   }
 
-  public async notify(params: SessionTypes.NotificationParams): Promise<void> {
+  public async notify(params: SessionTypes.NotifyParams): Promise<void> {
     const session = await this.settled.get(params.topic);
     if (
       session.self.publicKey !== session.permissions.notifications.controller.publicKey &&

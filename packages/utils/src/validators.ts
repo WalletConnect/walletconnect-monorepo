@@ -1,17 +1,4 @@
-import {
-  ClientTypes,
-  ConnectionTypes,
-  SessionTypes,
-  SubscriptionEvent,
-} from "@walletconnect/types";
-
-// -- client -------------------------------------------------- //
-
-export function isConnectionRespondParams(
-  params: ClientTypes.RespondParams,
-): params is ClientTypes.ConnectionRespondParams {
-  return "uri" in params;
-}
+import { ConnectionTypes, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
 
 // -- connection -------------------------------------------------- //
 

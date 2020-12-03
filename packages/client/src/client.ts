@@ -17,7 +17,6 @@ import {
   isConnectionResponded,
   isSessionResponded,
   getConnectionMetadata,
-  isConnectionRespondParams,
 } from "@walletconnect/utils";
 import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "@json-rpc-tools/utils";
 
@@ -114,20 +113,78 @@ export class Client extends IClient {
       throw e;
     }
   }
-
-  public async respond(params: ClientTypes.RespondParams): Promise<string | undefined> {
-    if (isConnectionRespondParams(params)) {
-      return this.respondConnection(params);
+  public async tether(params: ClientTypes.TetherParams): Promise<void> {
+    this.logger.debug(`Tethering Connection`);
+    this.logger.trace({ type: "method", method: "tether", params });
+    const uriParams = parseUri(params.uri);
+    const proposal: ConnectionTypes.Proposal = {
+      topic: uriParams.topic,
+      relay: uriParams.relay,
+      proposer: { publicKey: uriParams.publicKey },
+      signal: { method: CONNECTION_SIGNAL_METHOD_URI, params: { uri: params.uri } },
+      permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
+      ttl: CONNECTION_DEFAULT_SUBSCRIBE_TTL,
+    };
+    const pending = await this.connection.respond({
+      approved: true,
+      proposal,
+    });
+    if (!isConnectionResponded(pending)) return;
+    if (isConnectionFailed(pending.outcome)) {
+      this.logger.debug(`Connection Tethering Failure`);
+      this.logger.trace({ type: "method", method: "tether", outcome: pending.outcome });
+      return;
     }
-    return this.respondSession(params);
+    this.logger.debug(`Connection Tethering Success`);
+    this.logger.trace({ type: "method", method: "tether", pending });
   }
 
-  public async update(params: ClientTypes.UpdateParams): Promise<SessionTypes.Settled> {
-    return this.session.update(params);
+  public async approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled> {
+    this.logger.debug(`Approving Session Proposal`);
+    this.logger.trace({ type: "method", method: "approve", params });
+    if (typeof params.response === "undefined") {
+      const errorMessage = "Response is required for approved session proposals";
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    const pending = await this.session.respond({
+      approved: true,
+      proposal: params.proposal,
+      response: params.response || SESSION_EMPTY_RESPONSE,
+    });
+    if (!isSessionResponded(pending)) {
+      const errorMessage = "No Session Response found in pending proposal";
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    if (isSessionFailed(pending.outcome)) {
+      this.logger.debug(`Session Proposal Approval Failure`);
+      this.logger.trace({ type: "method", method: "approve", outcome: pending.outcome });
+      throw new Error(pending.outcome.reason);
+    }
+    this.logger.debug(`Session Proposal Approval Success`);
+    this.logger.trace({ type: "method", method: "approve", pending });
+    return this.session.get(pending.outcome.topic);
   }
 
-  public async notify(params: ClientTypes.NotificationParams): Promise<void> {
-    return this.session.notify(params);
+  public async reject(params: ClientTypes.RejectParams): Promise<void> {
+    this.logger.debug(`Rejecting Session Proposal`);
+    this.logger.trace({ type: "method", method: "reject", params });
+    const pending = await this.session.respond({
+      approved: false,
+      proposal: params.proposal,
+      response: SESSION_EMPTY_RESPONSE,
+    });
+    this.logger.debug(`Session Proposal Response Success`);
+    this.logger.trace({ type: "method", method: "reject", pending });
+  }
+
+  public async update(params: ClientTypes.UpdateParams): Promise<void> {
+    this.session.update(params);
+  }
+
+  public async notify(params: ClientTypes.NotifyParams): Promise<void> {
+    this.session.notify(params);
   }
 
   public async request(params: ClientTypes.RequestParams): Promise<any> {
@@ -146,7 +203,7 @@ export class Client extends IClient {
     });
   }
 
-  public async resolve(params: ClientTypes.ResolveParams): Promise<void> {
+  public async respond(params: ClientTypes.RespondParams): Promise<void> {
     this.session.send(params.topic, params.response);
   }
 
@@ -157,61 +214,6 @@ export class Client extends IClient {
   }
 
   // ---------- Protected ----------------------------------------------- //
-
-  protected async respondConnection(
-    params: ClientTypes.ConnectionRespondParams,
-  ): Promise<string | undefined> {
-    this.logger.debug(`Responding Connection Proposal`);
-    this.logger.trace({ type: "method", method: "respond", params });
-    const uriParams = parseUri(params.uri);
-    const proposal: ConnectionTypes.Proposal = {
-      topic: uriParams.topic,
-      relay: uriParams.relay,
-      proposer: { publicKey: uriParams.publicKey },
-      signal: { method: CONNECTION_SIGNAL_METHOD_URI, params: { uri: params.uri } },
-      permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
-      ttl: CONNECTION_DEFAULT_SUBSCRIBE_TTL,
-    };
-    const pending = await this.connection.respond({
-      approved: params.approved,
-      proposal,
-    });
-    if (!isConnectionResponded(pending)) return;
-    if (isConnectionFailed(pending.outcome)) {
-      this.logger.debug(`Connection Proposal Response Failure`);
-      this.logger.trace({ type: "method", method: "respond", outcome: pending.outcome });
-      return;
-    }
-    this.logger.debug(`Connection Proposal Response Success`);
-    this.logger.trace({ type: "method", method: "respond", pending });
-    return pending.outcome.topic;
-  }
-
-  protected async respondSession(
-    params: ClientTypes.SessionRespondParams,
-  ): Promise<string | undefined> {
-    this.logger.debug(`Responding Session Proposal`);
-    this.logger.trace({ type: "method", method: "respond", params });
-    if (params.approved === true && typeof params.response === "undefined") {
-      const errorMessage = "Response is required for approved session proposals";
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-    const pending = await this.session.respond({
-      approved: params.approved,
-      proposal: params.proposal,
-      response: params.response || SESSION_EMPTY_RESPONSE,
-    });
-    if (!isSessionResponded(pending)) return;
-    if (isSessionFailed(pending.outcome)) {
-      this.logger.debug(`Session Proposal Response Failure`);
-      this.logger.trace({ type: "method", method: "respond", outcome: pending.outcome });
-      return;
-    }
-    this.logger.debug(`Session Proposal Response Success`);
-    this.logger.trace({ type: "method", method: "respond", pending });
-    return pending.outcome.topic;
-  }
 
   protected async onConnectionPayload(payload: JsonRpcPayload): Promise<void> {
     if (isJsonRpcRequest(payload)) {

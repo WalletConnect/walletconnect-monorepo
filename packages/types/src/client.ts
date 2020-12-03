@@ -22,22 +22,21 @@ export declare namespace ClientTypes {
     connection?: SignalTypes.ParamsConnection;
   }
 
-  export interface ConnectionRespondParams {
-    approved: boolean;
+  export interface TetherParams {
     uri: string;
   }
 
-  export interface SessionRespondParams {
-    approved: boolean;
+  export interface ApproveParams {
     proposal: SessionTypes.Proposal;
-    response?: SessionTypes.Response;
+    response: SessionTypes.Response;
   }
-
-  export type RespondParams = ConnectionRespondParams | SessionRespondParams;
+  export interface RejectParams {
+    proposal: SessionTypes.Proposal;
+  }
 
   export type UpdateParams = SessionTypes.UpdateParams;
 
-  export type NotificationParams = SessionTypes.NotificationParams;
+  export type NotifyParams = SessionTypes.NotifyParams;
 
   export interface RequestParams {
     topic: string;
@@ -45,7 +44,7 @@ export declare namespace ClientTypes {
     chainId?: string;
   }
 
-  export interface ResolveParams {
+  export interface RespondParams {
     topic: string;
     response: JsonRpcResponse;
   }
@@ -72,10 +71,26 @@ export abstract class IClient extends IEvents {
     super();
   }
 
+  // for proposer to propose a session to a responder
   public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
-  public abstract respond(params: ClientTypes.RespondParams): Promise<string | undefined>;
-  public abstract update(params: ClientTypes.UpdateParams): Promise<SessionTypes.Settled>;
+  // for responder to receive a session proposal from a proposer
+  public abstract tether(params: ClientTypes.TetherParams): Promise<void>;
+
+  // for responder to approve a session proposal
+  public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
+  // for responder to reject a session proposal
+  public abstract reject(params: ClientTypes.RejectParams): Promise<void>;
+
+  // for responder to update session state
+  public abstract update(params: ClientTypes.UpdateParams): Promise<void>;
+  // for either to send notifications
+  public abstract notify(params: ClientTypes.NotifyParams): Promise<void>;
+
+  // for proposer to request JSON-RPC
   public abstract request(params: ClientTypes.RequestParams): Promise<any>;
-  public abstract resolve(params: ClientTypes.ResolveParams): Promise<void>;
+  // for responder to respond JSON-RPC
+  public abstract respond(params: ClientTypes.RespondParams): Promise<void>;
+
+  // for either to disconnect a session
   public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
 }

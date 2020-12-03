@@ -15,7 +15,7 @@ yarn add @walletconnect/client
 npm install --save @walletconnect/client
 ```
 
-## Connecting
+## Create Session
 
 This quick start example will describe how an integration should be followed for both Dapps and Wallets respectively
 
@@ -26,7 +26,7 @@ This quick start example will describe how an integration should be followed for
 ```js
 import WalletConnectClient from "@walletconnect/client";
 
-const client = await WalletConnectClient.init({ relayProvider: "ws://staging.walletconnect.org" });
+const client = await WalletConnectClient.init({ relayProvider: "wss://staging.walletconnect.org" });
 ```
 
 2. Subscribe to connection proposal event for sharing URI
@@ -69,7 +69,7 @@ const session = await client.connect({
 ```js
 import WalletConnectClient from "@walletconnect/client";
 
-const client = await WalletConnectClient.init({ relayProvider: "ws://staging.walletconnect.org" });
+const client = await WalletConnectClient.init({ relayProvider: "wss://staging.walletconnect.org" });
 ```
 
 2. Subscribe to session proposal event for user approval and session created when successful
@@ -83,7 +83,7 @@ client.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal
   const { proposer, permissions } = proposal;
   const { metadata } = proposer;
   let approved: boolean;
-  handleSessionUserApproval(approved, proposal); // described in the next step
+  handleSessionUserApproval(approved, proposal); // described in the step 4
 });
 
 client.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
@@ -91,7 +91,13 @@ client.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) =
 });
 ```
 
-3. Handle user approval for proposed session
+3. Establish connection with shared URI from dapp
+
+```js
+client.respond({ approved: true, uri });
+```
+
+4. Handle user approval for proposed session
 
 ```js
 function handleSessionUserApproval(approved: boolean, proposal: SessionTypes.Proposal) {
