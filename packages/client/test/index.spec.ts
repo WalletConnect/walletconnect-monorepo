@@ -15,6 +15,7 @@ import {
   TEST_ETHEREUM_ACCOUNTS,
   TEST_SESSION_ACCOUNT_IDS,
   TEST_SESSION_STATE,
+  Time,
 } from "./shared";
 
 describe("Client", () => {
@@ -29,12 +30,7 @@ describe("Client", () => {
     let result: string[] = [];
 
     // timestamps & elapsed time
-    const timestamps = {
-      connection: { started: 0, elapsed: 0 },
-      session: { started: 0, elapsed: 0 },
-      connect: { started: 0, elapsed: 0 },
-      request: { started: 0, elapsed: 0 },
-    };
+    const time = new Time();
 
     // init clients
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });
@@ -43,12 +39,12 @@ describe("Client", () => {
     // connect two clients
     await Promise.all([
       new Promise(async (resolve, reject) => {
-        timestamps.connect.started = Date.now();
+        time.start("connect");
         await clientA.connect({
           metadata: TEST_APP_METADATA_A,
           permissions: TEST_PERMISSIONS,
         });
-        timestamps.connect.elapsed = Date.now() - timestamps.connect.started;
+        time.stop("connect");
         resolve();
       }),
       new Promise(async (resolve, reject) => {
@@ -93,28 +89,28 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientA.connection.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
           clientA.logger.warn(`TEST >> Connection Proposed`);
-          timestamps.connection.started = Date.now();
+          time.start("connection");
           resolve();
         });
       }),
       new Promise(async (resolve, reject) => {
         clientB.connection.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
           clientB.logger.warn(`TEST >> Connection Acknowledged`);
-          timestamps.connection.elapsed = Date.now() - timestamps.connection.started;
+          time.stop("connection");
           resolve();
         });
       }),
       new Promise(async (resolve, reject) => {
         clientA.session.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
           clientA.logger.warn(`TEST >> Session Proposed`);
-          timestamps.session.started = Date.now();
+          time.start("session");
           resolve();
         });
       }),
       new Promise(async (resolve, reject) => {
         clientB.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
           clientB.logger.warn(`TEST >> Session Acknowledged`);
-          timestamps.session.elapsed = Date.now() - timestamps.session.started;
+          time.stop("session");
           resolve();
         });
       }),
@@ -146,14 +142,14 @@ describe("Client", () => {
       new Promise(async (resolve, reject) => {
         clientA.logger.warn(`TEST >> JSON-RPC Request Sent`);
         if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
-        timestamps.request.started = Date.now();
+        time.start("request");
         result = await clientA.request({
           topic: sessionA.topic,
           chainId: TEST_PERMISSIONS_CHAIN_IDS[0],
           request: formatJsonRpcRequest("eth_accounts", []),
         });
         clientA.logger.warn(`TEST >> JSON-RPC Response Received`);
-        timestamps.request.elapsed = Date.now() - timestamps.request.started;
+        time.stop("request");
 
         resolve();
       }),
@@ -161,10 +157,10 @@ describe("Client", () => {
 
     if (typeof sessionA === "undefined") throw new Error("Missing session for client A");
     if (typeof sessionB === "undefined") throw new Error("Missing session for client B");
-    clientB.logger.warn(`TEST >> Connection Elapsed Time: ${timestamps.connection.elapsed}ms`);
-    clientB.logger.warn(`TEST >> Session Elapsed Time: ${timestamps.session.elapsed}ms`);
-    clientB.logger.warn(`TEST >> Connect Elapsed Time: ${timestamps.connect.elapsed}ms`);
-    clientB.logger.warn(`TEST >> Request Elapsed Time: ${timestamps.request.elapsed}ms`);
+    clientB.logger.warn(`TEST >> Connection Elapsed Time: ${time.elapsed("connection")}ms`);
+    clientB.logger.warn(`TEST >> Session Elapsed Time: ${time.elapsed("session")}ms`);
+    clientB.logger.warn(`TEST >> Connect Elapsed Time: ${time.elapsed("connect")}ms`);
+    clientB.logger.warn(`TEST >> Request Elapsed Time: ${time.elapsed("request")}ms`);
     // session data
     expect(sessionA.topic).to.eql(sessionB.topic);
     expect(sessionA.relay.protocol).to.eql(sessionB.relay.protocol);
