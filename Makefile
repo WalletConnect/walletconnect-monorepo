@@ -111,8 +111,6 @@ relay-logs:
 relay-watch:
 	npm run watch --prefix servers/relay
 
-relay-dev: build-container relay-watch
-
 relay-start:
 	npm run start --prefix servers/relay
 
@@ -134,8 +132,7 @@ build-nginx: pull
 	@echo  "MAKE: Done with $@"
 	@echo
 
-
-dev: relay-dev build
+dev: build-container
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	docker stack deploy \
@@ -144,7 +141,7 @@ dev: relay-dev build
 	dev_$(project)
 	@echo  "MAKE: Done with $@"
 	@echo
-
+	$(MAKE) relay-logs
 
 dev-monitoring: pull build
 	RELAY_IMAGE=$(walletConnectImage) \
