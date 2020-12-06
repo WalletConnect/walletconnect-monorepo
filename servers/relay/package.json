@@ -40,6 +40,7 @@
     "pino-pretty": "^4.3.0",
     "redis": "^2.8.0",
     "safe-json-utils": "^1.1.1",
+    "tslib": "^2.0.3",
     "ws": "^7.0.0"
   },
   "devDependencies": {
