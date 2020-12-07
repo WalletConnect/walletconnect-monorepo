@@ -21,7 +21,6 @@ export declare namespace RelayTypes {
 
   export interface SubscribeParams {
     topic: string;
-    ttl: number;
   }
 
   export interface PublishParams {

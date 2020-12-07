@@ -8,14 +8,13 @@ import bluebird from "bluebird";
 import config from "./config";
 import { formatLoggerContext } from "./utils";
 
+
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
 export class RedisService {
   public client: any = redis.createClient(config.redis);
-
   public subs: Subscription[] = [];
-
   public context = "redis";
 
   constructor(public logger: Logger) {
@@ -27,8 +26,7 @@ export class RedisService {
     this.logger.debug(`Setting Published`);
     this.logger.trace({ type: "method", method: "setPublished", params });
     await this.client.lpushAsync(`request:${params.topic}`, params.message);
-    // TODO: need to handle ttl
-    // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
+    await this.client.expireAsync(`request:${params.topic}`, params.ttl);
   }
 
   public async getPublished(topic: string) {
@@ -48,8 +46,8 @@ export class RedisService {
     this.logger.debug(`Setting Legacy Published`);
     this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
     await this.client.lpushAsync(`request:${socketMessage.topic}`, socketMessage.payload);
-    // TODO: need to handle ttl
-    // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
+    //TODO CHANGE ttl to get default
+    await this.client.expireAsync(`request:${socketMessage.topic}`, 1);
   }
 
   public async getLegacyPublished(topic: string) {

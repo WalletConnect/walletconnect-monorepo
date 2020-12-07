@@ -21,6 +21,7 @@ import {
   parseUnsubscribeRequest,
 } from "./utils";
 
+import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { Subscription } from "./types";
@@ -31,7 +32,6 @@ import { BRIDGE_JSONRPC } from "./constants";
 
 export class JsonRpcService {
   public subscription: SubscriptionService;
-
   public context = "jsonrpc";
 
   constructor(
@@ -73,6 +73,7 @@ export class JsonRpcService {
             request as JsonRpcRequest<RelayTypes.UnsubscribeParams>,
           );
           break;
+
         default:
           this.socketSend(socketId, formatJsonRpcError(payloadId(), getError(METHOD_NOT_FOUND)));
           return;
@@ -91,6 +92,10 @@ export class JsonRpcService {
 
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
     const params = parsePublishRequest(request);
+    if (params.ttl > config.REDIS_MAX_TTL) {
+      this.socketSend(socketId, formatJsonRpcError(payloadId(), `requested ttl is above ${config.REDIS_MAX_TTL} seconds`));
+      return;
+    } 
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", params });
     const subscriptions = this.subscription.get(params.topic, socketId);
@@ -115,11 +120,8 @@ export class JsonRpcService {
     const params = parseSubscribeRequest(request);
     this.logger.debug(`Subscribe Request Received`);
     this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
-
     const id = this.subscription.set({ topic: params.topic, socketId });
-
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
-
     await this.pushPendingPublished({ id, topic: params.topic, socketId });
   }
 
