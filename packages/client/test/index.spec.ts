@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
+import Timestamp from "@pedrouid/timestamp";
 import { formatJsonRpcRequest, formatJsonRpcResult, isJsonRpcRequest } from "@json-rpc-tools/utils";
-
 import { SessionTypes, ConnectionTypes } from "@walletconnect/types";
 
 import Client, { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../src";
@@ -16,7 +16,6 @@ import {
   TEST_ETHEREUM_ACCOUNTS,
   TEST_SESSION_ACCOUNT_IDS,
   TEST_SESSION_STATE,
-  Time,
 } from "./shared";
 
 describe("Client", () => {
@@ -31,7 +30,7 @@ describe("Client", () => {
     let result: string[] = [];
 
     // timestamps & elapsed time
-    const time = new Time();
+    const time = new Timestamp();
 
     // init clients
     const clientA = await Client.init({ ...TEST_CLIENT_OPTIONS, overrideContext: "clientA" });

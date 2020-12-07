@@ -6,20 +6,22 @@ import {
   isJsonRpcRequest,
   JsonRpcError,
   JsonRpcRequest,
+  JsonRpcResponse,
   JsonRpcResult,
   METHOD_NOT_FOUND,
   payloadId,
 } from "@json-rpc-tools/utils";
 import { Logger } from "pino";
 import { safeJsonStringify } from "safe-json-utils";
-import { RelayTypes } from "@walletconnect/types";
 import {
-  formatLoggerContext,
+  RELAY_JSONRPC,
+  RelayJsonRpc,
   isPublishParams,
   parsePublishRequest,
   parseSubscribeRequest,
   parseUnsubscribeRequest,
-} from "./utils";
+} from "relay-provider";
+import { formatLoggerContext } from "./utils";
 
 import config from "./config";
 import { RedisService } from "./redis";
@@ -28,7 +30,6 @@ import { Subscription } from "./types";
 
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
-import { BRIDGE_JSONRPC } from "./constants";
 
 export class JsonRpcService {
   public subscription: SubscriptionService;
@@ -54,23 +55,23 @@ export class JsonRpcService {
       this.logger.debug({ type: "payload", direction: "incoming", payload: request });
 
       switch (request.method) {
-        case BRIDGE_JSONRPC.publish:
+        case RELAY_JSONRPC.bridge.publish:
           await this.onPublishRequest(
             socketId,
-            request as JsonRpcRequest<RelayTypes.PublishParams>,
+            request as JsonRpcRequest<RelayJsonRpc.PublishParams>,
           );
           break;
-        case BRIDGE_JSONRPC.subscribe:
+        case RELAY_JSONRPC.bridge.subscribe:
           await this.onSubscribeRequest(
             socketId,
-            request as JsonRpcRequest<RelayTypes.SubscribeParams>,
+            request as JsonRpcRequest<RelayJsonRpc.SubscribeParams>,
           );
           break;
 
-        case BRIDGE_JSONRPC.unsubscribe:
+        case RELAY_JSONRPC.bridge.unsubscribe:
           await this.onUnsubscribeRequest(
             socketId,
-            request as JsonRpcRequest<RelayTypes.UnsubscribeParams>,
+            request as JsonRpcRequest<RelayJsonRpc.UnsubscribeParams>,
           );
           break;
 
@@ -84,6 +85,14 @@ export class JsonRpcService {
       this.socketSend(socketId, formatJsonRpcError(payloadId(), e.message));
     }
   }
+
+  public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
+    this.logger.info(`Incoming JSON-RPC Payload`);
+    this.logger.debug({ type: "payload", direction: "incoming", payload: response });
+
+    // TODO: handle incoming JSON-RPC response
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
@@ -150,8 +159,8 @@ export class JsonRpcService {
   }
 
   private async pushSubscription(subscription: Subscription, message: string): Promise<void> {
-    const request = formatJsonRpcRequest<RelayTypes.SubscriptionParams>(
-      BRIDGE_JSONRPC.subscription,
+    const request = formatJsonRpcRequest<RelayJsonRpc.SubscriptionParams>(
+      RELAY_JSONRPC.bridge.subscription,
       {
         id: subscription.id,
         data: {

@@ -42,12 +42,12 @@ export declare namespace RelayTypes {
   export interface UnsubscribeParams {
     id: string;
   }
-
   export interface PublishOptions {
     relay: ProtocolOptions;
     ttl?: number;
     encryptKeys?: CryptoTypes.EncryptKeys;
   }
+
   export interface SubscribeOptions {
     relay: ProtocolOptions;
     ttl?: number;

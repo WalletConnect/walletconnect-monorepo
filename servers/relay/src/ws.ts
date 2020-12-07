@@ -10,7 +10,7 @@ import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
 
 import { safeJsonParse } from "safe-json-utils";
-import { isJsonRpcRequest } from "@json-rpc-tools/utils";
+import { isJsonRpcRequest, isJsonRpcResponse } from "@json-rpc-tools/utils";
 import { LegacyService } from "./legacy";
 
 export class WebSocketService {
@@ -68,6 +68,8 @@ export class WebSocketService {
           socket.send(response);
         } else if (isJsonRpcRequest(payload)) {
           this.jsonrpc.onRequest(socketId, payload);
+        } else if (isJsonRpcResponse(payload)) {
+          this.jsonrpc.onResponse(socketId, payload);
         } else if (isLegacySocketMessage(payload)) {
           this.legacy.onRequest(socketId, payload);
         } else {
