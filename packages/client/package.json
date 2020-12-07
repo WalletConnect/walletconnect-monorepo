@@ -44,6 +44,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.1",
     "@babel/register": "^7.12.1",
+    "@pedrouid/timestamp": "^1.0.0",
     "@types/chai": "^4.2.14",
     "@types/jest": "^22.2.3",
     "@types/mocha": "^8.0.4",
