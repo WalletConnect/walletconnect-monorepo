@@ -6,6 +6,7 @@ import {
   isJsonRpcRequest,
   JsonRpcError,
   JsonRpcRequest,
+  JsonRpcResponse,
   JsonRpcResult,
   METHOD_NOT_FOUND,
   payloadId,
@@ -83,6 +84,14 @@ export class JsonRpcService {
       this.socketSend(socketId, formatJsonRpcError(payloadId(), e.message));
     }
   }
+
+  public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
+    this.logger.info(`Incoming JSON-RPC Payload`);
+    this.logger.debug({ type: "payload", direction: "incoming", payload: response });
+
+    // TODO: handle incoming JSON-RPC response
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {

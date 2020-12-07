@@ -12,7 +12,9 @@ import {
   IJsonRpcProvider,
   formatJsonRpcRequest,
   JsonRpcPayload,
-  JsonRpcProviderMessage,
+  isJsonRpcRequest,
+  JsonRpcRequest,
+  formatJsonRpcResult,
 } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
@@ -39,7 +41,7 @@ export class Relay extends IRelay {
     });
 
     this.provider = this.setProvider(provider);
-    this.provider.on("message", (message: JsonRpcProviderMessage) => this.onMessage(message));
+    this.provider.on("payload", (payload: JsonRpcPayload) => this.onPayload(payload));
   }
 
   public async init(): Promise<void> {
@@ -156,10 +158,17 @@ export class Relay extends IRelay {
 
   // ---------- Private ----------------------------------------------- //
 
-  private onMessage(message: JsonRpcProviderMessage<RelayTypes.SubscriptionParams>) {
+  private onPayload(payload: JsonRpcPayload) {
     this.logger.info(`Incoming Relay Payload`);
-    this.logger.debug({ type: "payload", direction: "incoming", message });
-    this.events.emit(message.data.id, message.data.data);
+    this.logger.debug({ type: "payload", direction: "incoming", payload });
+    if (isJsonRpcRequest(payload)) {
+      if (payload.method.endsWith("_subscription")) {
+        const event = (payload as JsonRpcRequest<RelayTypes.SubscriptionParams>).params;
+        this.events.emit(event.id, event.data);
+        const response = formatJsonRpcResult(payload.id, true);
+        this.provider.connection.send(response);
+      }
+    }
   }
 
   private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
