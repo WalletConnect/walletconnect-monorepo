@@ -1,6 +1,6 @@
 import redis from "redis";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
-import { RelayTypes } from "@walletconnect/types";
+import { RelayJsonRpc } from "relay-provider";
 import { Logger } from "pino";
 
 import { Subscription, Notification, Socket, LegacySocketMessage } from "./types";
@@ -23,7 +23,7 @@ export class RedisService {
     this.initialize();
   }
 
-  public async setPublished(params: RelayTypes.PublishParams) {
+  public async setPublished(params: RelayJsonRpc.PublishParams) {
     this.logger.debug(`Setting Published`);
     this.logger.trace({ type: "method", method: "setPublished", params });
     await this.client.lpushAsync(`request:${params.topic}`, params.message);

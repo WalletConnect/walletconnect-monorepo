@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "@json-rpc-tools/utils": "^1.2.1",
-    "@walletconnect/types": "file:../../packages/types",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",
     "enc-utils": "^3.0.0",
@@ -39,6 +38,7 @@
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
     "redis": "^2.8.0",
+    "relay-provider": "^1.1.0",
     "safe-json-utils": "^1.1.1",
     "ws": "^7.0.0"
   },
