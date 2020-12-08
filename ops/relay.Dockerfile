@@ -1,10 +1,12 @@
 FROM node:12-slim as builder
-RUN npm install -g nodemon
-WORKDIR /relay
-COPY ./servers/relay/*.json ./
-COPY ./servers/relay/src ./
-COPY ./packages/types/ /packages/types
-RUN npm install
-RUN npm build
+COPY ./servers/relay/package.json /tmp
+COPY ./servers/relay/package-lock.json /tmp
+RUN npm ci --prefix /tmp
 
+WORKDIR /relay
+RUN cp -a /tmp/node_modules ./node_modules
+COPY ./servers/relay .
+RUN npm run build
+
+RUN npm -g install nodemon
 CMD ["nodemon", "/relay/dist"]
