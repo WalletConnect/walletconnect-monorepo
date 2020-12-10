@@ -102,6 +102,9 @@ export class JsonRpcService {
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
     const params = parsePublishRequest(request);
     if (params.ttl > config.REDIS_MAX_TTL) {
+      const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`
+      this.logger.error(errorMessage);
+      this.socketSend(socketId, formatJsonRpcError(request.id, errorMessage));
       this.socketSend(socketId, formatJsonRpcError(payloadId(), `requested ttl is above ${config.REDIS_MAX_TTL} seconds`));
       return;
     } 
@@ -127,6 +130,12 @@ export class JsonRpcService {
 
   private async onSubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseSubscribeRequest(request);
+    if (params.ttl > config.REDIS_MAX_TTL) {
+      const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`
+      this.logger.error(errorMessage);
+      this.socketSend(socketId, formatJsonRpcError(request.id, errorMessage));
+      return;
+    }
     this.logger.debug(`Subscribe Request Received`);
     this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
     const id = this.subscription.set({ topic: params.topic, socketId });

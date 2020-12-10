@@ -1,4 +1,5 @@
 import redis from "redis";
+import { createHash } from "crypto";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 import { RelayJsonRpc } from "relay-provider";
 import { Logger } from "pino";
@@ -25,21 +26,24 @@ export class RedisService {
   public async setPublished(params: RelayJsonRpc.PublishParams) {
     this.logger.debug(`Setting Published`);
     this.logger.trace({ type: "method", method: "setPublished", params });
-    await this.client.lpushAsync(`request:${params.topic}`, params.message);
-    await this.client.expireAsync(`request:${params.topic}`, params.ttl);
+    let key = `message:${params.topic}:${createHash('sha256').update(params.message).digest('hex')}`;
+    await this.client.lpushAsync(key, params.message);
+    await this.client.expireAsync(`message:${params.topic}`, params.ttl);
   }
 
   public async getPublished(topic: string) {
-    return this.client.lrangeAsync(`request:${topic}`, 0, -1).then((raw: any) => {
-      if (raw) {
-        const data: string[] = raw.map((message: string) => message);
-        this.client.del(`request:${topic}`);
-        this.logger.debug(`Getting Published`);
-        this.logger.trace({ type: "method", method: "getPublished", topic, data });
-        return data;
-      }
-      return;
-    });
+    let result = await this.client.scanAsync([0, 'MATCH', `message:${topic}:*`])
+    console.log("DICK3");
+    this.logger.info({type: "DICK2", result});
+    let raw = await this.client.lrangeAsync(`message:${topic}`, 0, -1)
+    let data: string[] = [];
+    if (raw) {
+      data = raw.map((message: string) => message);
+      this.logger.debug(`Getting Published`);
+      this.logger.trace({ type: "method", method: "getPublished", topic, data });
+    }
+    await this.client.del(`message:${topic}`)
+    return data;
   }
 
   public async setLegacyPublished(socketMessage: LegacySocketMessage) {
@@ -82,6 +86,12 @@ export class RedisService {
       }
       return;
     });
+  }
+
+  public setPendingRequest(topic: string, hash: string) {
+  }
+
+  public getPendingRequest(topic: string, hash: string) {
   }
 
   // ---------- Private ----------------------------------------------- //
