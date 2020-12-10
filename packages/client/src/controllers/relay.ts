@@ -19,7 +19,6 @@ import {
   RELAY_CONTEXT,
   RELAY_DEFAULT_PROTOCOL,
   RELAY_DEFAULT_RPC_URL,
-  RELAY_DEFAULT_SUBSCRIBE_TTL,
   RELAY_DEFAULT_PUBLISH_TTL,
 } from "../constants";
 
@@ -99,7 +98,6 @@ export class Relay extends IRelay {
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request = formatJsonRpcRequest<RelayJsonRpc.SubscribeParams>(jsonRpc.subscribe, {
         topic,
-        ttl: opts?.ttl || RELAY_DEFAULT_SUBSCRIBE_TTL,
       });
       this.logger.info(`Outgoing Relay Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", request });

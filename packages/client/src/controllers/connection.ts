@@ -41,7 +41,7 @@ import {
   RELAY_DEFAULT_PROTOCOL,
   CONNECTION_SIGNAL_METHOD_URI,
   SESSION_JSONRPC,
-  CONNECTION_DEFAULT_SUBSCRIBE_TTL,
+  CONNECTION_DEFAULT_TTL,
 } from "../constants";
 
 export class Connection extends IConnection {
@@ -167,7 +167,7 @@ export class Connection extends IConnection {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, { relay: pending.relay, ttl: proposal.ttl });
+        await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       } catch (e) {
         const reason = e.message;
@@ -180,7 +180,7 @@ export class Connection extends IConnection {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, { relay: pending.relay, ttl: proposal.ttl });
+        await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       }
     } else {
@@ -193,7 +193,7 @@ export class Connection extends IConnection {
         proposal,
         outcome,
       };
-      await this.pending.set(pending.topic, pending, { relay: pending.relay, ttl: proposal.ttl });
+      await this.pending.set(pending.topic, pending, { relay: pending.relay });
       return pending;
     }
   }
@@ -261,7 +261,7 @@ export class Connection extends IConnection {
         params: { uri },
       },
       permissions,
-      ttl: CONNECTION_DEFAULT_SUBSCRIBE_TTL,
+      ttl: CONNECTION_DEFAULT_TTL,
     };
     const pending: ConnectionTypes.Pending = {
       status: CONNECTION_STATUS.proposed,
@@ -270,7 +270,7 @@ export class Connection extends IConnection {
       self,
       proposal,
     };
-    await this.pending.set(pending.topic, pending, { relay, ttl: proposal.ttl });
+    await this.pending.set(pending.topic, pending, { relay });
     return pending;
   }
 
@@ -291,11 +291,7 @@ export class Connection extends IConnection {
     const decryptKeys: CryptoTypes.DecryptKeys = {
       sharedKey,
     };
-    await this.settled.set(connection.topic, connection, {
-      relay: connection.relay,
-      decryptKeys,
-      ttl: params.ttl,
-    });
+    await this.settled.set(connection.topic, connection, { relay: connection.relay, decryptKeys });
     return connection;
   }
 

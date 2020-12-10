@@ -39,7 +39,7 @@ import {
   SESSION_STATUS,
   SUBSCRIPTION_EVENTS,
   SESSION_SIGNAL_METHOD_CONNECTION,
-  SESSION_DEFAULT_SUBSCRIBE_TTL,
+  SESSION_DEFAULT_TTL,
 } from "../constants";
 
 function settlePermissions(
@@ -209,11 +209,7 @@ export class Session extends ISession {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, {
-          relay: pending.relay,
-          decryptKeys,
-          ttl: proposal.ttl,
-        });
+        await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
         return pending;
       } catch (e) {
         const reason = e.message;
@@ -226,11 +222,7 @@ export class Session extends ISession {
           proposal,
           outcome,
         };
-        await this.pending.set(pending.topic, pending, {
-          relay: pending.relay,
-          decryptKeys,
-          ttl: proposal.ttl,
-        });
+        await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
         return pending;
       }
     } else {
@@ -243,11 +235,7 @@ export class Session extends ISession {
         proposal,
         outcome,
       };
-      await this.pending.set(pending.topic, pending, {
-        relay: pending.relay,
-        decryptKeys,
-        ttl: proposal.ttl,
-      });
+      await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
       return pending;
     }
   }
@@ -309,7 +297,7 @@ export class Session extends ISession {
       proposer,
       signal,
       permissions: params.permissions,
-      ttl: params.ttl || SESSION_DEFAULT_SUBSCRIBE_TTL,
+      ttl: params.ttl || SESSION_DEFAULT_TTL,
     };
     const pending: SessionTypes.Pending = {
       status: SESSION_STATUS.proposed,
@@ -318,11 +306,7 @@ export class Session extends ISession {
       self,
       proposal,
     };
-    await this.pending.set(pending.topic, pending, {
-      relay: pending.relay,
-      decryptKeys,
-      ttl: proposal.ttl,
-    });
+    await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
     const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, proposal);
     await this.client.connection.send(signal.params.topic, request);
     return pending;
@@ -346,11 +330,7 @@ export class Session extends ISession {
     const decryptKeys: CryptoTypes.DecryptKeys = {
       sharedKey,
     };
-    await this.settled.set(session.topic, session, {
-      relay: session.relay,
-      decryptKeys,
-      ttl: params.ttl,
-    });
+    await this.settled.set(session.topic, session, { relay: session.relay, decryptKeys });
     return session;
   }
 

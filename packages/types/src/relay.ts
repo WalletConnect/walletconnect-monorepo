@@ -17,7 +17,6 @@ export declare namespace RelayTypes {
 
   export interface SubscribeOptions {
     relay: ProtocolOptions;
-    ttl?: number;
     decryptKeys?: CryptoTypes.DecryptKeys;
   }
 }
