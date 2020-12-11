@@ -174,5 +174,13 @@
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
+  },
+  {
+    "name": "Mozi Wallete",
+    "shortName": "Mozi",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/mozi.png",
+    "universalLink": "https://www.moziwallet.com",
+    "deepLink": "moziwallet:"
   }
 ]
