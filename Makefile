@@ -212,6 +212,7 @@ reset:
 
 clean:
 	rm -rf .makeFlags/build*
+	npm run clean --prefix servers/relay
 	npx lerna run clean
 	@echo  "MAKE: Done with $@"
 	@echo
