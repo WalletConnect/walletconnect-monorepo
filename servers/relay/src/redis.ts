@@ -23,21 +23,22 @@ export class RedisService {
     this.initialize();
   }
 
-  public async setPublished(params: RelayJsonRpc.PublishParams) {
-    this.logger.debug(`Setting Published`);
-    this.logger.trace({ type: "method", method: "setPublished", params });
-    await this.client.lpushAsync(`request:${params.topic}`, params.message);
+  public async setMessage(params: RelayJsonRpc.PublishParams) {
+    this.logger.debug(`Setting Message`);
+    this.logger.trace({ type: "method", method: "setMessage", params });
+    await this.client.lpushAsync(`message:${params.topic}`, params.message);
     // TODO: need to handle ttl
-    // await this.client.expireAsync(`request:${params.topic}`, params.ttl);
+    // await this.client.expireAsync(`message:${params.topic}`, params.ttl);
   }
 
-  public async getPublished(topic: string) {
-    return this.client.lrangeAsync(`request:${topic}`, 0, -1).then((raw: any) => {
+  public async getMessages(topic: string) {
+    return this.client.lrangeAsync(`message:${topic}`, 0, -1).then((raw: any) => {
       if (raw) {
         const data: string[] = raw.map((message: string) => message);
-        this.client.del(`request:${topic}`);
-        this.logger.debug(`Getting Published`);
-        this.logger.trace({ type: "method", method: "getPublished", topic, data });
+        // TODO: delete only after acknowledgement
+        // this.client.del(`message:${topic}`);
+        this.logger.debug(`Getting Message`);
+        this.logger.trace({ type: "method", method: "getMessage", topic, data });
         return data;
       }
       return;
