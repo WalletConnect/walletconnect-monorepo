@@ -1,7 +1,7 @@
 ### Deploy configs
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 project=walletconnect
-redisImage='redis:5-alpine'
+redisImage='redis:6-alpine'
 nginxImage='$(project)/nginx:$(BRANCH)'
 walletConnectImage='$(project)/relay:$(BRANCH)'
 

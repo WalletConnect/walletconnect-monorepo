@@ -4,9 +4,9 @@ COPY ./servers/relay/package-lock.json /tmp
 RUN npm ci --prefix /tmp
 
 WORKDIR /relay
+RUN npm -g install nodemon
 RUN cp -a /tmp/node_modules ./node_modules
 COPY ./servers/relay .
 RUN npm run build
 
-RUN npm -g install nodemon
 CMD ["nodemon", "/relay/dist"]
