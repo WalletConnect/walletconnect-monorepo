@@ -116,7 +116,9 @@ export class JsonRpcService {
 
     // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
-    await this.redis.setPublished(params);
+
+    await this.redis.setMessage(params);
+
     if (subscriptions.length) {
       await Promise.all(
         subscriptions.map((subscriber: Subscription) => {
@@ -133,7 +135,8 @@ export class JsonRpcService {
     this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
-    await this.pushPendingPublished({ id, topic: params.topic, socketId });
+
+    await this.pushCachedMessages({ id, topic: params.topic, socketId });
   }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
@@ -146,14 +149,14 @@ export class JsonRpcService {
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
 
-  private async pushPendingPublished(subscription: Subscription) {
-    const pending = await this.redis.getPublished(subscription.topic);
-    this.logger.debug(`Pushing Pending Published`);
-    this.logger.trace({ type: "method", method: "pushPendingPublished", pending });
+  private async pushCachedMessages(subscription: Subscription) {
+    const messages = await this.redis.getMessages(subscription.topic);
+    this.logger.debug(`Pushing Cached Messages`);
+    this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
 
-    if (pending && pending.length) {
+    if (messages && messages.length) {
       await Promise.all(
-        pending.map((message: string) => {
+        messages.map((message: string) => {
           this.pushSubscription(subscription, message);
         }),
       );
@@ -192,7 +195,7 @@ export class JsonRpcService {
       if (isJsonRpcRequest(payload)) {
         const params = payload.params;
         if (isPublishParams(params)) {
-          await this.redis.setPublished(params);
+          await this.redis.setMessage(params);
         }
       }
     }

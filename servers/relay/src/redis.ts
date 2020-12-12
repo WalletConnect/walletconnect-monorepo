@@ -23,22 +23,22 @@ export class RedisService {
     this.initialize();
   }
 
-  public async setPublished(params: RelayJsonRpc.PublishParams) {
-    this.logger.debug(`Setting Published`);
-    this.logger.trace({ type: "method", method: "setPublished", params });
+  public async setMessage(params: RelayJsonRpc.PublishParams) {
+    this.logger.debug(`Setting Message`);
+    this.logger.trace({ type: "method", method: "setMessage", params });
     let key =`message:${params.topic}`;
     let val = `${createHash('sha256').update(params.message).digest('hex')}:${params.message}`;
     await this.client.saddAsync(key, val);
     await this.client.expireAsync(key, params.ttl);
   }
 
-  public async getPublished(topic: string) {
+  public async getMessages(topic: string) {
     let raw = await this.client.smembersAsync(`message:${topic}`)
     let data: string[] = [];
     if (raw) {
       data = raw.map((message: string) => message);
-      this.logger.debug(`Getting Published`);
-      this.logger.trace({ type: "method", method: "getPublished", topic, data });
+      this.logger.debug(`Getting Message`);
+      this.logger.trace({ type: "method", method: "getMessage", topic, data });
     }
     return data;
   }
