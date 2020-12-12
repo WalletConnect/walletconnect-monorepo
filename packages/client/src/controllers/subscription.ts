@@ -8,10 +8,11 @@ import {
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { mapToObj, objToMap, formatLoggerContext } from "@walletconnect/utils";
+import { mapToObj, objToMap } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
+import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
@@ -25,7 +26,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     public encrypted: boolean,
   ) {
     super(client, logger, context, encrypted);
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.logger = generateChildLogger(logger, this.context);
 
     this.registerEventListeners();
   }
@@ -127,7 +128,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   // ---------- Private ----------------------------------------------- //
 
   private getNestedContext(length: number) {
-    const nestedContext = this.logger.bindings().context.split("/");
+    const nestedContext = getLoggerContext(this.logger).split("/");
     return nestedContext.slice(nestedContext.length - length, nestedContext.length);
   }
 

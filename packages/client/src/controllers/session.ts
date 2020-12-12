@@ -1,12 +1,12 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   IClient,
   ISession,
   SessionTypes,
   SubscriptionEvent,
   CryptoTypes,
-  NotificationPermissions,
 } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -15,7 +15,6 @@ import {
   isSessionFailed,
   mapEntries,
   sha256,
-  formatLoggerContext,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
 } from "@walletconnect/utils";
@@ -69,9 +68,7 @@ export class Session extends ISession {
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
-    this.logger = logger.child({
-      context: formatLoggerContext(logger, this.context),
-    });
+    this.logger = generateChildLogger(logger, this.context);
     this.pending = new Subscription<SessionTypes.Pending>(
       client,
       this.logger,

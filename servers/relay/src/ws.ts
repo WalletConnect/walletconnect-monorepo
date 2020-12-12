@@ -1,13 +1,14 @@
 import { Server } from "http";
 import WebSocket from "ws";
 import * as encUtils from "enc-utils";
-import { formatLoggerContext, generateRandomBytes32, isLegacySocketMessage } from "./utils";
 import { Logger } from "pino";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
+import { generateRandomBytes32, isLegacySocketMessage } from "./utils";
 
 import { safeJsonParse } from "safe-json-utils";
 import { isJsonRpcRequest, isJsonRpcResponse } from "@json-rpc-tools/utils";
@@ -28,7 +29,7 @@ export class WebSocketService {
     public redis: RedisService,
     public notification: NotificationService,
   ) {
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.notification = this.notification;
     this.server = new WebSocket.Server({ server });

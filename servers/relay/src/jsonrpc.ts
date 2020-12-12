@@ -21,7 +21,7 @@ import {
   parseSubscribeRequest,
   parseUnsubscribeRequest,
 } from "relay-provider";
-import { formatLoggerContext } from "./utils";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
@@ -41,7 +41,7 @@ export class JsonRpcService {
     public ws: WebSocketService,
     public notification: NotificationService,
   ) {
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;

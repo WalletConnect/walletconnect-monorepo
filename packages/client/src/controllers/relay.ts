@@ -1,8 +1,9 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 import { RelayTypes, IRelay } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
-import { encrypt, decrypt, formatLoggerContext } from "@walletconnect/utils";
+import { encrypt, decrypt } from "@walletconnect/utils";
 import { utf8ToHex, hexToUtf8 } from "enc-utils";
 import {
   IJsonRpcProvider,
@@ -39,9 +40,7 @@ export class Relay extends IRelay {
 
   constructor(public logger: Logger, provider?: string | IJsonRpcProvider) {
     super(logger);
-    this.logger = logger.child({
-      context: formatLoggerContext(logger, this.context),
-    });
+    this.logger = generateChildLogger(logger, this.context);
 
     this.provider = this.setProvider(provider);
     this.provider.on("payload", (payload: JsonRpcPayload) => this.onPayload(payload));

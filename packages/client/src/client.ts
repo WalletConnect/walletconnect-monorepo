@@ -13,12 +13,12 @@ import {
   isConnectionFailed,
   isSessionFailed,
   parseUri,
-  getLoggerOptions,
   isConnectionResponded,
   isSessionResponded,
   getConnectionMetadata,
 } from "@walletconnect/utils";
 import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "@json-rpc-tools/utils";
+import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
 import { Connection, Session, Relay } from "./controllers";
 import {
@@ -61,11 +61,9 @@ export class Client extends IClient {
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : pino(getLoggerOptions(opts?.logger));
+        : pino(getDefaultLoggerOptions({ level: opts?.logger }));
     this.context = opts?.overrideContext || this.context;
-    this.logger = logger.child({
-      context: this.context,
-    });
+    this.logger = generateChildLogger(logger, this.context);
 
     this.relay = new Relay(this.logger, opts?.relayProvider);
     this.store = opts?.store || new Store();

@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   ConnectionTypes,
   IClient,
@@ -14,7 +15,6 @@ import {
   isConnectionFailed,
   mapEntries,
   sha256,
-  formatLoggerContext,
   isConnectionResponded,
   formatUri,
   isSubscriptionUpdatedEvent,
@@ -54,9 +54,7 @@ export class Connection extends IConnection {
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
-    this.logger = logger.child({
-      context: formatLoggerContext(logger, this.context),
-    });
+    this.logger = generateChildLogger(logger, this.context);
     this.pending = new Subscription<ConnectionTypes.Pending>(
       client,
       this.logger,
