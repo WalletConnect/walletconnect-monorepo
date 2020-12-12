@@ -89,8 +89,11 @@ export class JsonRpcService {
   public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
     this.logger.info(`Incoming JSON-RPC Payload`);
     this.logger.debug({ type: "payload", direction: "incoming", payload: response });
-
-    // TODO: handle incoming JSON-RPC response
+    let result = await this.redis.getPendingRequest(response.id);
+    if (result) {
+      this.redis.deletePendingRequest(response.id);
+    }
+    // TODO: Do we need to send a response?
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -104,7 +107,6 @@ export class JsonRpcService {
     if (params.ttl > config.REDIS_MAX_TTL) {
       const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`
       this.logger.error(errorMessage);
-      this.socketSend(socketId, formatJsonRpcError(request.id, errorMessage));
       this.socketSend(socketId, formatJsonRpcError(payloadId(), `requested ttl is above ${config.REDIS_MAX_TTL} seconds`));
       return;
     } 
@@ -114,17 +116,14 @@ export class JsonRpcService {
 
     // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
-
+    await this.redis.setPublished(params);
     if (subscriptions.length) {
       await Promise.all(
         subscriptions.map((subscriber: Subscription) => {
           this.pushSubscription(subscriber, params.message);
         }),
       );
-    } else {
-      await this.redis.setPublished(params);
     }
-
     this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
 
@@ -173,6 +172,7 @@ export class JsonRpcService {
       },
     );
     this.socketSend(subscription.socketId, request);
+    this.redis.setPendingRequest(subscription.topic, request.id, message);
   }
 
   private async socketSend(

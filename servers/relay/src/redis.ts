@@ -26,32 +26,35 @@ export class RedisService {
   public async setPublished(params: RelayJsonRpc.PublishParams) {
     this.logger.debug(`Setting Published`);
     this.logger.trace({ type: "method", method: "setPublished", params });
-    let key = `message:${params.topic}:${createHash('sha256').update(params.message).digest('hex')}`;
-    await this.client.lpushAsync(key, params.message);
-    await this.client.expireAsync(`message:${params.topic}`, params.ttl);
+    let key =`message:${params.topic}`;
+    let val = `${createHash('sha256').update(params.message).digest('hex')}:${params.message}`;
+    await this.client.saddAsync(key, val);
+    await this.client.expireAsync(key, params.ttl);
   }
 
   public async getPublished(topic: string) {
-    let result = await this.client.scanAsync([0, 'MATCH', `message:${topic}:*`])
-    console.log("DICK3");
-    this.logger.info({type: "DICK2", result});
-    let raw = await this.client.lrangeAsync(`message:${topic}`, 0, -1)
+    let raw = await this.client.smembersAsync(`message:${topic}`)
     let data: string[] = [];
     if (raw) {
       data = raw.map((message: string) => message);
       this.logger.debug(`Getting Published`);
       this.logger.trace({ type: "method", method: "getPublished", topic, data });
     }
-    await this.client.del(`message:${topic}`)
     return data;
   }
+
+  public async deletePublished(topic: string, hash: string) {
+
+    // we need an sscan to find the hash and then srem
+    await this.client.srem(`pending:${topic}`);
+  }
+
 
   public async setLegacyPublished(socketMessage: LegacySocketMessage) {
     this.logger.debug(`Setting Legacy Published`);
     this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
     await this.client.lpushAsync(`request:${socketMessage.topic}`, socketMessage.payload);
-    //TODO CHANGE ttl to get default
-    await this.client.expireAsync(`request:${socketMessage.topic}`, 1);
+    await this.client.expireAsync(`request:${socketMessage.topic}`, config.REDIS_MAX_TTL);
   }
 
   public async getLegacyPublished(topic: string) {
@@ -88,10 +91,19 @@ export class RedisService {
     });
   }
 
-  public setPendingRequest(topic: string, hash: string) {
+  public async setPendingRequest(topic: string, id: number, message: string) {
+    let key =`pending:${id}`;
+    let val = `${topic}:${createHash('sha256').update(message).digest('hex')}`;
+    await this.client.setAsync(key, val);
+    await this.client.expireAsync(key, config.REDIS_MAX_TTL);
   }
 
-  public getPendingRequest(topic: string, hash: string) {
+  public async getPendingRequest(id: number) {
+    return await this.client.getAsync(`pending:${id}`);
+  }
+
+  public async deletePendingRequest(id: number) {
+    await this.client.del(`pending:${id}`);
   }
 
   // ---------- Private ----------------------------------------------- //
