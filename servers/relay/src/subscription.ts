@@ -1,8 +1,9 @@
-import { formatLoggerContext, generateRandomBytes32 } from "./utils";
 import { Logger } from "pino";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import { RedisService } from "./redis";
 import { Subscription } from "./types";
+import { generateRandomBytes32 } from "./utils";
 
 export class SubscriptionService {
   public subscriptions: Subscription[] = [];
@@ -10,7 +11,7 @@ export class SubscriptionService {
   public context = "subscription";
 
   constructor(public logger: Logger, public redis: RedisService) {
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.initialize();
   }

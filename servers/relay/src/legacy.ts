@@ -1,9 +1,9 @@
-import { formatLoggerContext } from "./utils";
 import { Logger } from "pino";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 import { safeJsonStringify } from "safe-json-utils";
+
 import { SubscriptionService } from "./subscription";
 import { NotificationService } from "./notification";
-
 import { RedisService } from "./redis";
 import { LegacySocketMessage, Subscription } from "./types";
 import { WebSocketService } from "./ws";
@@ -19,7 +19,7 @@ export class LegacyService {
     public ws: WebSocketService,
     public notification: NotificationService,
   ) {
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;

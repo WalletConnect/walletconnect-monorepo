@@ -3,11 +3,11 @@ import { createHash } from "crypto";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 import { RelayJsonRpc } from "relay-provider";
 import { Logger } from "pino";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 
-import { Subscription, Notification, Socket, LegacySocketMessage } from "./types";
+import { Subscription, Notification, LegacySocketMessage } from "./types";
 import bluebird from "bluebird";
 import config from "./config";
-import { formatLoggerContext } from "./utils";
 
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
@@ -19,7 +19,7 @@ export class RedisService {
   public context = "redis";
 
   constructor(public logger: Logger) {
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.logger = generateChildLogger(logger, this.context);
     this.initialize();
   }
 

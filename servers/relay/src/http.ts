@@ -1,8 +1,9 @@
 import Helmet from "fastify-helmet";
 import pino, { Logger } from "pino";
+import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
 import fastify, { FastifyInstance } from "fastify";
-import { getLoggerOptions, assertType } from "./utils";
 
+import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
@@ -22,9 +23,9 @@ export class HttpService {
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : pino(getLoggerOptions(opts?.logger));
+        : pino(getDefaultLoggerOptions({ level: opts?.logger }));
     this.app = fastify({ logger });
-    this.logger = logger.child({ context: "server" });
+    this.logger = generateChildLogger(logger, this.context);
     this.redis = new RedisService(this.logger);
     this.initialize();
   }

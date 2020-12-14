@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Logger } from "pino";
-import { formatLoggerContext } from "./utils";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import { RedisService } from "./redis";
 import { Notification } from "./types";
@@ -9,7 +9,7 @@ export class NotificationService {
   public context = "notification";
 
   constructor(public logger: Logger, public redis: RedisService) {
-    this.logger = logger.child({ context: formatLoggerContext(logger, this.context) });
+    this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.initialize();
   }
