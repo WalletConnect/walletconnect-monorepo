@@ -89,11 +89,11 @@ export class JsonRpcService {
   public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
     this.logger.info(`Incoming JSON-RPC Payload`);
     this.logger.debug({ type: "payload", direction: "incoming", payload: response });
-    let result = await this.redis.getPendingRequest(response.id);
-    if (result) {
+    let [topic, messageHash ] = (await this.redis.getPendingRequest(response.id)).split(":");
+    if (messageHash) {
       this.redis.deletePendingRequest(response.id);
+      this.redis.deleteMessage(topic, messageHash);
     }
-    // TODO: Do we need to send a response?
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -116,7 +116,6 @@ export class JsonRpcService {
 
     // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
-
     await this.redis.setMessage(params);
 
     if (subscriptions.length) {
@@ -135,7 +134,6 @@ export class JsonRpcService {
     this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
-
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
   }
 
@@ -153,7 +151,6 @@ export class JsonRpcService {
     const messages = await this.redis.getMessages(subscription.topic);
     this.logger.debug(`Pushing Cached Messages`);
     this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
-
     if (messages && messages.length) {
       await Promise.all(
         messages.map((message: string) => {
@@ -174,8 +171,8 @@ export class JsonRpcService {
         },
       },
     );
-    this.socketSend(subscription.socketId, request);
     this.redis.setPendingRequest(subscription.topic, request.id, message);
+    this.socketSend(subscription.socketId, request);
   }
 
   private async socketSend(

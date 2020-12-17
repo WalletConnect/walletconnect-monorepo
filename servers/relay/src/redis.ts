@@ -28,25 +28,24 @@ export class RedisService {
     this.logger.trace({ type: "method", method: "setMessage", params });
     let key =`message:${params.topic}`;
     let val = `${createHash('sha256').update(params.message).digest('hex')}:${params.message}`;
+    this.logger.error(
+      { type: "hash message", hash: createHash('sha256').update(params.message).digest('hex')
+    });
     await this.client.saddAsync(key, val);
     await this.client.expireAsync(key, params.ttl);
   }
 
   public async getMessages(topic: string) {
-    let raw = await this.client.smembersAsync(`message:${topic}`)
-    let data: string[] = [];
-    if (raw) {
-      data = raw.map((message: string) => message);
-      this.logger.debug(`Getting Message`);
-      this.logger.trace({ type: "method", method: "getMessage", topic, data });
-    }
-    return data;
+    this.logger.debug(`Getting Message`);
+    this.logger.trace({ type: "method", method: "getMessage", topic});
+    return await this.client.smembersAsync(`message:${topic}`)
   }
 
-  public async deletePublished(topic: string, hash: string) {
-
-    // we need an sscan to find the hash and then srem
-    await this.client.srem(`pending:${topic}`);
+  public async deleteMessage(topic: string, hash: string) {
+    this.logger.error({type: "delete message input", topic, hash});
+    let [cursor, result] = await this.client.sscanAsync(`message:${topic}`, "0", "MATCH", `${hash}:*`)
+    this.logger.error({type: "delete result", cursor, result});
+    await this.client.sremAsync(`message:${topic}`, result[0]);
   }
 
 
@@ -94,16 +93,17 @@ export class RedisService {
   public async setPendingRequest(topic: string, id: number, message: string) {
     let key =`pending:${id}`;
     let val = `${topic}:${createHash('sha256').update(message).digest('hex')}`;
+    this.logger.error({type: "pending hashing", val});
     await this.client.setAsync(key, val);
     await this.client.expireAsync(key, config.REDIS_MAX_TTL);
   }
 
   public async getPendingRequest(id: number) {
-    return await this.client.getAsync(`pending:${id}`);
+    return this.client.getAsync(`pending:${id}`);
   }
 
   public async deletePendingRequest(id: number) {
-    await this.client.del(`pending:${id}`);
+    this.client.del(`pending:${id}`);
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -111,4 +111,9 @@ export class RedisService {
   private initialize(): void {
     this.logger.trace(`Initialized`);
   }
+  /*
+  private setScan(): Array<string> {
+    this.ssetScan()
+  }
+  */
 }
