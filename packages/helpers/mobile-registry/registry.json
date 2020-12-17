@@ -1,5 +1,13 @@
 [
   {
+     "name": "Mozi Wallete",
+    "shortName": "Mozi",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/mozi.png",
+    "universalLink": "https://www.moziwallet.com",
+    "deepLink": "moziwallet:"
+  },
+  {
     "name": "Rainbow",
     "shortName": "Rainbow",
     "color": "rgb(0, 30, 89)",
