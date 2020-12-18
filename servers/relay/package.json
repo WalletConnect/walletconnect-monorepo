@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@json-rpc-tools/utils": "^1.4.0",
-    "@pedrouid/pino-utils": "^1.0.0",
+    "@pedrouid/pino-utils": "^1.0.1",
     "@types/pino": "^6.3.4",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",

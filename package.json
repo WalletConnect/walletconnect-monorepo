@@ -28,13 +28,12 @@
     "commit-version": "node ops/js/commit-version.js",
     "new-version": "lerna version --no-git-tag-version",
     "pre-publish": "run-s new-version reset commit-version",
-    "publish:latest": "lerna exec -- npm publish --access public",
-    "publish:next": "lerna exec -- npm publish --access public --tag next",
-    "publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
-    "deploy": "run-s check publish",
-    "deploy:latest": "run-s pre-publish publish:latest",
-    "deploy:next": "run-s pre-publish publish:next",
-    "deploy:experimental": "run-s pre-publish publish:experimental"
+    "npm-publish:latest": "lerna exec -- npm publish --access public",
+    "npm-publish:next": "lerna exec -- npm publish --access public --tag next",
+    "npm-publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
+    "publish:latest": "run-s pre-publish npm-publish:latest",
+    "publish:next": "run-s pre-publish npm-publish:next",
+    "publish:experimental": "run-s pre-publish npm-publish:experimental"
   },
   "repository": {
     "type": "git",
