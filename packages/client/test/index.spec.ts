@@ -23,7 +23,11 @@ describe("Client", () => {
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     expect(client).to.be.exist;
   });
-  it("connect two clients and resolve a JSON-RPC request", async () => {
+  it("connect two clients and resolve a JSON-RPC request", async function() {
+    // TODO the localhost value needs to be set with OPS
+    if (TEST_CLIENT_OPTIONS.relayProvider !== "ws://localhost:5555") {
+      this.timeout(10000);
+    }
     // testing data points
     let sessionA: SessionTypes.Created | undefined;
     let sessionB: SessionTypes.Created | undefined;
