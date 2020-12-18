@@ -28,9 +28,6 @@ export class RedisService {
     this.logger.trace({ type: "method", method: "setMessage", params });
     let key =`message:${params.topic}`;
     let val = `${createHash('sha256').update(params.message).digest('hex')}:${params.message}`;
-    this.logger.error(
-      { type: "hash message", hash: createHash('sha256').update(params.message).digest('hex')
-    });
     await this.client.saddAsync(key, val);
     await this.client.expireAsync(key, params.ttl);
   }
@@ -38,14 +35,18 @@ export class RedisService {
   public async getMessages(topic: string) {
     this.logger.debug(`Getting Message`);
     this.logger.trace({ type: "method", method: "getMessage", topic});
-    return await this.client.smembersAsync(`message:${topic}`)
+    let messages: Array<string> = [];
+    (await this.client.smembersAsync(`message:${topic}`)).map((m: string) => {
+      if (m != null ) {
+        messages.push(m.split(":")[1]);
+      }
+    });
+    return messages;
   }
 
   public async deleteMessage(topic: string, hash: string) {
-    this.logger.error({type: "delete message input", topic, hash});
     let [cursor, result] = await this.client.sscanAsync(`message:${topic}`, "0", "MATCH", `${hash}:*`)
-    this.logger.error({type: "delete result", cursor, result});
-    await this.client.sremAsync(`message:${topic}`, result[0]);
+    if (result) this.client.sremAsync(`message:${topic}`, result[0]);
   }
 
 
@@ -93,7 +94,6 @@ export class RedisService {
   public async setPendingRequest(topic: string, id: number, message: string) {
     let key =`pending:${id}`;
     let val = `${topic}:${createHash('sha256').update(message).digest('hex')}`;
-    this.logger.error({type: "pending hashing", val});
     await this.client.setAsync(key, val);
     await this.client.expireAsync(key, config.REDIS_MAX_TTL);
   }
@@ -103,7 +103,7 @@ export class RedisService {
   }
 
   public async deletePendingRequest(id: number) {
-    this.client.del(`pending:${id}`);
+    await this.client.del(`pending:${id}`)
   }
 
   // ---------- Private ----------------------------------------------- //

@@ -91,8 +91,8 @@ export class JsonRpcService {
     this.logger.debug({ type: "payload", direction: "incoming", payload: response });
     let [topic, messageHash ] = (await this.redis.getPendingRequest(response.id)).split(":");
     if (messageHash) {
-      this.redis.deletePendingRequest(response.id);
-      this.redis.deleteMessage(topic, messageHash);
+      await this.redis.deletePendingRequest(response.id);
+      await this.redis.deleteMessage(topic, messageHash);
     }
   }
 
