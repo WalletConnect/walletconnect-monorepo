@@ -9,39 +9,6 @@ export declare namespace RelayTypes {
     params?: any;
   }
 
-  export interface JsonRpcMethods {
-    isConnected: string;
-    connect: string;
-    disconnect: string;
-    publish: string;
-    subscribe: string;
-    subscription: string;
-    unsubscribe: string;
-  }
-
-  export interface SubscribeParams {
-    topic: string;
-  }
-
-  export interface PublishParams {
-    topic: string;
-    message: string;
-    ttl: number;
-  }
-
-  export interface SubscriptionData {
-    topic: string;
-    message: string;
-  }
-
-  export interface SubscriptionParams {
-    id: string;
-    data: SubscriptionData;
-  }
-
-  export interface UnsubscribeParams {
-    id: string;
-  }
   export interface PublishOptions {
     relay: ProtocolOptions;
     ttl?: number;
