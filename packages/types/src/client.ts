@@ -26,6 +26,8 @@ export abstract class IClient extends IEvents {
   public abstract connection: IConnection;
   public abstract session: ISession;
 
+  public abstract context: string;
+
   constructor(opts?: ClientOptions) {
     super();
   }

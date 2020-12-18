@@ -137,7 +137,9 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private getStoreKey() {
-    return this.getNestedContext(2).join(":");
+    const storeKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
+    const subscriptionContext = this.getNestedContext(2).join(":");
+    return `${storeKeyPrefix}//${subscriptionContext}`;
   }
 
   private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
