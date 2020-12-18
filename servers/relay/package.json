@@ -31,6 +31,7 @@
   "dependencies": {
     "@json-rpc-tools/utils": "^1.4.0",
     "@pedrouid/pino-utils": "^1.0.0",
+    "@types/pino": "^6.3.4",
     "axios": "^0.20.0",
     "bluebird": "^3.5.5",
     "enc-utils": "^3.0.0",
@@ -41,6 +42,7 @@
     "redis": "^2.8.0",
     "relay-provider": "^1.2.0",
     "safe-json-utils": "^1.1.1",
+    "tslib": "^2.0.3",
     "ws": "^7.0.0"
   },
   "devDependencies": {

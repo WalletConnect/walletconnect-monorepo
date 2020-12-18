@@ -23,6 +23,7 @@ import {
 } from "relay-provider";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
+import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { Subscription } from "./types";
@@ -32,7 +33,6 @@ import { WebSocketService } from "./ws";
 
 export class JsonRpcService {
   public subscription: SubscriptionService;
-
   public context = "jsonrpc";
 
   constructor(
@@ -74,6 +74,7 @@ export class JsonRpcService {
             request as JsonRpcRequest<RelayJsonRpc.UnsubscribeParams>,
           );
           break;
+
         default:
           this.socketSend(socketId, formatJsonRpcError(payloadId(), getError(METHOD_NOT_FOUND)));
           return;
@@ -88,8 +89,11 @@ export class JsonRpcService {
   public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
     this.logger.info(`Incoming JSON-RPC Payload`);
     this.logger.debug({ type: "payload", direction: "incoming", payload: response });
-
-    // TODO: handle incoming JSON-RPC response
+    let [topic, messageHash ] = (await this.redis.getPendingRequest(response.id)).split(":");
+    if (messageHash) {
+      await this.redis.deletePendingRequest(response.id);
+      await this.redis.deleteMessage(topic, messageHash);
+    }
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -100,13 +104,18 @@ export class JsonRpcService {
 
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
     const params = parsePublishRequest(request);
+    if (params.ttl > config.REDIS_MAX_TTL) {
+      const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`
+      this.logger.error(errorMessage);
+      this.socketSend(socketId, formatJsonRpcError(payloadId(), `requested ttl is above ${config.REDIS_MAX_TTL} seconds`));
+      return;
+    } 
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", params });
     const subscriptions = this.subscription.get(params.topic, socketId);
 
     // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
-
     await this.redis.setMessage(params);
 
     if (subscriptions.length) {
@@ -116,7 +125,6 @@ export class JsonRpcService {
         }),
       );
     }
-
     this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
 
@@ -124,11 +132,8 @@ export class JsonRpcService {
     const params = parseSubscribeRequest(request);
     this.logger.debug(`Subscribe Request Received`);
     this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
-
     const id = this.subscription.set({ topic: params.topic, socketId });
-
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
-
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
   }
 
@@ -146,7 +151,6 @@ export class JsonRpcService {
     const messages = await this.redis.getMessages(subscription.topic);
     this.logger.debug(`Pushing Cached Messages`);
     this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
-
     if (messages && messages.length) {
       await Promise.all(
         messages.map((message: string) => {
@@ -167,6 +171,7 @@ export class JsonRpcService {
         },
       },
     );
+    this.redis.setPendingRequest(subscription.topic, request.id, message);
     this.socketSend(subscription.socketId, request);
   }
 

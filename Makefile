@@ -1,7 +1,7 @@
 ### Deploy configs
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 project=walletconnect
-redisImage='redis:5-alpine'
+redisImage='redis:6-alpine'
 nginxImage='$(project)/nginx:$(BRANCH)'
 walletConnectImage='$(project)/relay:$(BRANCH)'
 
@@ -19,7 +19,7 @@ pull:\tdownloads docker images
 
 setup:\tconfigures domain an certbot email
 
-build-relay:\tbuilds relay docker image
+build-container:\tbuilds relay docker image
 
 build-nginx:\tbuilds nginx docker image
 
@@ -80,7 +80,41 @@ setup:
 	@echo "MAKE: Done with $@"
 	@echo
 
-build-relay:
+bootstrap:
+	npm i
+	npx lerna link
+	npx lerna bootstrap
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
+build-lerna: bootstrap
+	npx lerna run build
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
+build: pull build-lerna build-container
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
+test-client: build
+	npm run test --prefix packages/client
+
+watch:
+	npx lerna run watch --stream
+
+relay-logs:
+	docker service logs -f --raw dev_$(project)_relay --tail 500
+
+relay-watch:
+	npm run watch --prefix servers/relay
+
+relay-start:
+	npm run start --prefix servers/relay
+
+build-container: build-nginx
 	docker build \
 		-t $(walletConnectImage) \
 		--build-arg BRANCH=$(BRANCH) \
@@ -98,33 +132,7 @@ build-nginx: pull
 	@echo  "MAKE: Done with $@"
 	@echo
 
-bootstrap:
-	npm i --also=dev
-	npx lerna bootstrap --hoist
-
-build-lerna: bootstrap
-	npx lerna run build
-
-build: pull build-lerna build-relay build-nginx
-	@touch $(flags)/$@
-	@echo  "MAKE: Done with $@"
-	@echo
-
-test-client:
-	cd ./packages/client; npm run test; cd -
-
-relay-logs:
-	docker service logs -f --raw dev_$(project)_relay --tail 500
-
-watch:
-	npx lerna run watch --stream
-
-relay-dev: dev relay-watch relay-logs
-
-relay-start:
-	cd ./servers/relay; npm run start; cd -
-
-dev: pull build
+dev: build-container
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	docker stack deploy \
@@ -133,7 +141,7 @@ dev: pull build
 	dev_$(project)
 	@echo  "MAKE: Done with $@"
 	@echo
-
+	$(MAKE) relay-logs
 
 dev-monitoring: pull build
 	RELAY_IMAGE=$(walletConnectImage) \
@@ -204,12 +212,13 @@ reset:
 
 clean:
 	rm -rf .makeFlags/build*
+	npm run clean --prefix servers/relay
 	npx lerna run clean
 	@echo  "MAKE: Done with $@"
 	@echo
 
 clean-all: clean
-	npx lerna clean
+	npx lerna clean -y
 	rm -rf .makeFlags
 	@echo  "MAKE: Done with $@"
 	@echo

@@ -24,7 +24,7 @@ services:
       - letsencrypt:/etc/letsencrypt
 
   redis:
-    image: 'redis:5-alpine'
+    image: 'redis:6-alpine'
     volumes:
       - redis:/data
 

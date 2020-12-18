@@ -1,18 +1,12 @@
 FROM node:12-slim as builder
-RUN npm install -g nodemon
-WORKDIR /app
-COPY *.json ./
-RUN npm install
-COPY packages/types packages/types
-COPY packages/utils packages/utils
-COPY packages/relay packages/relay
-RUN /app/node_modules/.bin/lerna bootstrap --hoist \
-  --scope @walletconnect/types \
-  --scope @walletconnect/utils \
-  --scope @walletconnect/relay-server
-RUN /app/node_modules/.bin/lerna run build \
-  --scope @walletconnect/types \
-  --scope @walletconnect/utils \
-  --scope @walletconnect/relay-server
+COPY ./servers/relay/package.json /tmp
+COPY ./servers/relay/package-lock.json /tmp
+RUN npm ci --prefix /tmp
 
-CMD ["nodemon", "/app/packages/relay/dist"]
+WORKDIR /relay
+RUN npm -g install nodemon
+RUN cp -a /tmp/node_modules ./node_modules
+COPY ./servers/relay .
+RUN npm run build
+
+CMD ["nodemon", "/relay/dist"]
