@@ -30,7 +30,7 @@
     "@json-rpc-tools/provider": "^1.4.0",
     "@json-rpc-tools/utils": "^1.4.0",
     "@pedrouid/iso-store": "^1.0.5",
-    "@pedrouid/pino-utils": "^1.0.0",
+    "@pedrouid/pino-utils": "^1.0.1",
     "@walletconnect/types": "^2.0.0-alpha.8",
     "@walletconnect/utils": "^2.0.0-alpha.8",
     "enc-utils": "^3.0.0",
