@@ -10,12 +10,13 @@ import {
   JsonRpcResponse,
 } from "@json-rpc-tools/utils";
 
-import Client, { CLIENT_EVENTS } from "../../src";
+import { CLIENT_EVENTS } from "../../src";
 import { TEST_ETHEREUM_ACCOUNTS, TEST_PERMISSIONS_CHAIN_IDS } from "./values";
+import { IntializedClients } from "./types";
 
 interface RequestScenarioOptions {
   topic: string;
-  clients: Record<string, Client>;
+  clients: IntializedClients;
   chainId?: string;
   request?: JsonRpcRequest;
   response?: JsonRpcResponse;
