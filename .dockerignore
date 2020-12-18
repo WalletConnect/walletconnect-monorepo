@@ -6,4 +6,4 @@ LICENSE.md
 README.md
 Makefile
 nix
-./makeFlags
+.makeFlags
