@@ -153,12 +153,12 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private async persist() {
-    await this.client.store.set<SubscriptionEntries<Data>>(this.getStoreKey(), this.entries);
+    await this.client.storage.setItem<SubscriptionEntries<Data>>(this.getStoreKey(), this.entries);
   }
 
   private async restore() {
     try {
-      const subscriptions = await this.client.store.get<SubscriptionEntries<Data>>(
+      const subscriptions = await this.client.storage.getItem<SubscriptionEntries<Data>>(
         this.getStoreKey(),
       );
       if (typeof subscriptions === "undefined") return;

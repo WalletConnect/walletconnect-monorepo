@@ -1,9 +1,8 @@
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
-import Store from "@pedrouid/iso-store";
+import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
 import {
   IClient,
-  IStore,
   ClientOptions,
   ClientTypes,
   ConnectionTypes,
@@ -24,6 +23,7 @@ import { Connection, Session, Relay } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_EVENTS,
+  CLIENT_STORAGE_OPTIONS,
   CONNECTION_DEFAULT_TTL,
   CONNECTION_EVENTS,
   CONNECTION_SIGNAL_METHOD_URI,
@@ -42,8 +42,8 @@ export class Client extends IClient {
   public events = new EventEmitter();
   public logger: Logger;
 
-  public store: IStore;
   public relay: Relay;
+  public storage: IKeyValueStorage;
 
   public connection: Connection;
   public session: Session;
@@ -66,7 +66,7 @@ export class Client extends IClient {
     this.logger = generateChildLogger(logger, this.context);
 
     this.relay = new Relay(this.logger, opts?.relayProvider);
-    this.store = opts?.store || new Store();
+    this.storage = opts?.storage || new KeyValueStorage(CLIENT_STORAGE_OPTIONS);
 
     this.connection = new Connection(this, this.logger);
     this.session = new Session(this, this.logger);
@@ -241,7 +241,6 @@ export class Client extends IClient {
     this.logger.trace(`Initialized`);
     try {
       await this.relay.init();
-      await this.store.init();
       await this.connection.init();
       await this.session.init();
       this.registerEventListeners();

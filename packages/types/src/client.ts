@@ -1,15 +1,15 @@
 import { Logger } from "pino";
+import { IKeyValueStorage } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
 
 import { IRelay, RelayTypes } from "./relay";
 import { IConnection } from "./connection";
 import { ISession, SessionTypes } from "./session";
-import { IStore } from "./store";
 import { SignalTypes } from "./misc";
 
 export interface ClientOptions {
   logger?: string | Logger;
-  store?: IStore;
+  storage?: IKeyValueStorage;
   relayProvider?: string | IJsonRpcProvider;
   overrideContext?: string;
 }
@@ -20,8 +20,8 @@ export abstract class IClient extends IEvents {
 
   public abstract logger: Logger;
 
-  public abstract store: IStore;
   public abstract relay: IRelay;
+  public abstract storage: IKeyValueStorage;
 
   public abstract connection: IConnection;
   public abstract session: ISession;

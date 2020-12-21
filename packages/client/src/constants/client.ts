@@ -16,3 +16,7 @@ export const CLIENT_EVENTS = {
     notification: "session_notification",
   },
 };
+
+export const CLIENT_STORAGE_OPTIONS = {
+  database: ":memory:",
+};

@@ -5,5 +5,4 @@ export * from "./misc";
 export * from "./relay";
 export * from "./sequence";
 export * from "./session";
-export * from "./store";
 export * from "./subscription";
