@@ -214,5 +214,13 @@
     "logo": "./logos/gk.png",
     "universalLink": "",
     "deepLink": "gkwalletconnect:"
+  },
+  {  
+    "name": "CYBAVO Wallet",
+    "shortName": "CYBAVO",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/cybavo.png",
+    "universalLink": "https://cdn.cybavo.com",
+    "deepLink": "cybavowallet:"
   }
 ]
