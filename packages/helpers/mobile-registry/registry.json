@@ -168,8 +168,8 @@
     "deepLink": "rwallet:"
   },
   {
-    "name": "PeakDeFi Wallet",
-    "shortName": "PeakDeFi",
+    "name": "PEAKDEFI Wallet",
+    "shortName": "PEAKDEFI",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
