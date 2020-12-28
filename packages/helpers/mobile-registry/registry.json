@@ -1,5 +1,13 @@
 [
   {
+    "name": "Ledger Live",
+    "shortName": "Ledger Live",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/ledgerlive.png",
+    "universalLink": "",
+    "deepLink": "ledgerlive:"
+  },
+  {
     "name": "Rainbow",
     "shortName": "Rainbow",
     "color": "rgb(0, 30, 89)",
