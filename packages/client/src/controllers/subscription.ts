@@ -13,7 +13,6 @@ import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
-import { timeStamp } from "console";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
