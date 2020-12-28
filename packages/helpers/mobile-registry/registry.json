@@ -1,5 +1,21 @@
 [
   {
+    "name": "Ledger Live",
+    "shortName": "Ledger Live",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/ledgerlive.png",
+    "universalLink": "",
+    "deepLink": "ledgerlive:"
+  }
+  {
+     "name": "Mozi Wallete",
+    "shortName": "Mozi",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/mozi.png",
+    "universalLink": "https://www.moziwallet.com",
+    "deepLink": "moziwallet:"
+  },
+  {
     "name": "Rainbow",
     "shortName": "Rainbow",
     "color": "rgb(0, 30, 89)",
@@ -168,12 +184,28 @@
     "deepLink": "rwallet:"
   },
   {
-    "name": "PeakDeFi Wallet",
-    "shortName": "PeakDeFi",
+    "name": "PEAKDEFI Wallet",
+    "shortName": "PEAKDEFI",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
+  },
+  {
+    "name": "AToken Wallet",
+    "shortName": "AToken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/atoken.png",
+    "universalLink": "https://www.atoken.com",
+    "deepLink": "atoken:"
+  },
+  {
+    "name": "Eidoo",
+    "shortName": "Eidoo",
+    "color": "rgb(55, 179, 159)",
+    "logo": "./logos/eidoo.png",
+    "universalLink": "https://eidoo.io/crypto-wallet",
+    "deepLink": "eidoo:"
   },
   {
     "name": "GK",
