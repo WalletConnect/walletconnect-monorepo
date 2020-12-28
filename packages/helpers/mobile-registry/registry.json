@@ -1,21 +1,5 @@
 [
   {
-    "name": "Ledger Live",
-    "shortName": "Ledger Live",
-    "color": "rgb(255, 255, 255)",
-    "logo": "./logos/ledgerlive.png",
-    "universalLink": "",
-    "deepLink": "ledgerlive:"
-  }
-  {
-     "name": "Mozi Wallete",
-    "shortName": "Mozi",
-    "color": "rgb(0, 30, 89)",
-    "logo": "./logos/mozi.png",
-    "universalLink": "https://www.moziwallet.com",
-    "deepLink": "moziwallet:"
-  },
-  {
     "name": "Rainbow",
     "shortName": "Rainbow",
     "color": "rgb(0, 30, 89)",
@@ -80,12 +64,12 @@
     "deepLink": "tpoutside:"
   },
   {
-    "name": "KyberSwap",
-    "shortName": "KyberSwap",
+    "name": "Ledger Live",
+    "shortName": "Ledger Live",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/kyberswap.png",
-    "universalLink": "https://kyberswapnew.app.link",
-    "deepLink": "kyberswap:"
+    "logo": "./logos/ledgerlive.png",
+    "universalLink": "",
+    "deepLink": "ledgerlive:"
   },
   {
     "name": "Huobi Wallet",
@@ -118,6 +102,14 @@
     "logo": "./logos/nash.png",
     "universalLink": "https://nash.io/walletconnect",
     "deepLink": "nash:"
+  },
+  {
+    "name": "KyberSwap",
+    "shortName": "KyberSwap",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/kyberswap.png",
+    "universalLink": "https://kyberswapnew.app.link",
+    "deepLink": "kyberswap:"
   },
   {
     "name": "ZelCore",
@@ -200,6 +192,14 @@
     "deepLink": "atoken:"
   },
   {
+    "name": "Mozi Wallete",
+    "shortName": "Mozi",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/mozi.png",
+    "universalLink": "https://www.moziwallet.com",
+    "deepLink": "moziwallet:"
+  },
+  {
     "name": "Eidoo",
     "shortName": "Eidoo",
     "color": "rgb(55, 179, 159)",
@@ -215,7 +215,7 @@
     "universalLink": "",
     "deepLink": "gkwalletconnect:"
   },
-  {  
+  {
     "name": "CYBAVO Wallet",
     "shortName": "CYBAVO",
     "color": "rgb(255, 255, 255)",
