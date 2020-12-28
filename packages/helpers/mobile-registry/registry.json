@@ -198,5 +198,13 @@
     "logo": "./logos/atoken.png",
     "universalLink": "https://www.atoken.com",
     "deepLink": "atoken:"
+  },
+  {
+    "name": "Eidoo",
+    "shortName": "Eidoo",
+    "color": "rgb(55, 179, 159)",
+    "logo": "./logos/eidoo.png",
+    "universalLink": "https://eidoo.io/crypto-wallet",
+    "deepLink": "eidoo:"
   }
 ]
