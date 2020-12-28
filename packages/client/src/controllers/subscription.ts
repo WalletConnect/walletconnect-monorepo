@@ -206,15 +206,9 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     await this.persist();
   }
 
-  private reconnect(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      this.client.relay.once("error", e => reject(e));
-      this.client.relay.once("connect", async () => {
-        await this.resubscribeAll();
-        resolve();
-      });
-      await this.client.relay.init();
-    });
+  private async reconnect(): Promise<void> {
+    await this.client.relay.init();
+    await this.resubscribeAll();
   }
 
   private registerEventListeners(): void {
