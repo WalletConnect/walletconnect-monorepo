@@ -198,5 +198,29 @@
     "logo": "./logos/atoken.png",
     "universalLink": "https://www.atoken.com",
     "deepLink": "atoken:"
+  },
+  {
+    "name": "Eidoo",
+    "shortName": "Eidoo",
+    "color": "rgb(55, 179, 159)",
+    "logo": "./logos/eidoo.png",
+    "universalLink": "https://eidoo.io/crypto-wallet",
+    "deepLink": "eidoo:"
+  },
+  {
+    "name": "GK",
+    "shortName": "GK",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/gk.png",
+    "universalLink": "",
+    "deepLink": "gkwalletconnect:"
+  },
+  {  
+    "name": "CYBAVO Wallet",
+    "shortName": "CYBAVO",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/cybavo.png",
+    "universalLink": "https://cdn.cybavo.com",
+    "deepLink": "cybavowallet:"
   }
 ]
