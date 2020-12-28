@@ -118,7 +118,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
       {!!(ios && displayShowMore) && (
         <div className="walletconnect-modal__footer">
           <a onClick={() => setShowMore(!showMore)}>
-            {showMore ? props.text.show_more : props.text.show_less}
+            {showMore ? props.text.show_less : props.text.show_more}
           </a>
         </div>
       )}

@@ -7,11 +7,11 @@ const ko: TextMap = {
   connect: "연결",
   // TODO: review following translations
   qrcode: "QR 코드",
-  mobile: "변하기 쉬운",
-  copy_to_clipboard: "클립 보드에 복사",
-  copied_to_clipboard: "클립 보드에 복사되었습니다!",
-  show_more: "자세히보기",
-  show_less: "간단히보기",
+  mobile: "모바일",
+  copy_to_clipboard: "클립보드에 복사",
+  copied_to_clipboard: "클립보드에 복사되었습니다!",
+  show_more: "자세히 보기",
+  show_less: "간략히 보기",
 };
 
 export default ko;
