@@ -206,5 +206,13 @@
     "logo": "./logos/eidoo.png",
     "universalLink": "https://eidoo.io/crypto-wallet",
     "deepLink": "eidoo:"
+  },
+  {
+    "name": "GK",
+    "shortName": "GK",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/gk.png",
+    "universalLink": "",
+    "deepLink": "gkwalletconnect:"
   }
 ]
