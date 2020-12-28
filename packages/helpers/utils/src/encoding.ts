@@ -1,3 +1,4 @@
+import BN from "bn.js";
 import * as encUtils from "enc-utils";
 
 // -- ArrayBuffer ------------------------------------------ //
@@ -59,7 +60,7 @@ export function convertUtf8ToHex(utf8: string, noPrefix?: boolean): string {
 }
 
 export function convertUtf8ToNumber(utf8: string): number {
-  return encUtils.utf8ToNumber(utf8);
+  return new BN(utf8, 10).toNumber();
 }
 
 // -- Hex -------------------------------------------------- //
@@ -77,7 +78,7 @@ export function convertHexToUtf8(hex: string): string {
 }
 
 export function convertHexToNumber(hex: string): number {
-  return encUtils.hexToNumber(hex);
+  return new BN(encUtils.removeHexPrefix(hex), "hex").toNumber();
 }
 
 // -- Number ----------------------------------------------- //
@@ -91,9 +92,10 @@ export function convertNumberToArrayBuffer(num: number): ArrayBuffer {
 }
 
 export function convertNumberToUtf8(num: number): string {
-  return encUtils.numberToUtf8(num);
+  return new BN(num).toString();
 }
 
 export function convertNumberToHex(num: number | string, noPrefix?: boolean): string {
-  return encUtils.numberToHex(num, !noPrefix);
+  const hex = encUtils.removeHexPrefix(encUtils.sanitizeHex(new BN(num).toString(16)));
+  return noPrefix ? hex : encUtils.addHexPrefix(hex);
 }
