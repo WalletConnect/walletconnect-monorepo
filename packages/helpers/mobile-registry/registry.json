@@ -1,5 +1,13 @@
 [
   {
+    "name": "Ledger Live",
+    "shortName": "Ledger Live",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/ledgerlive.png",
+    "universalLink": "",
+    "deepLink": "ledgerlive:"
+  }
+  {
      "name": "Mozi Wallete",
     "shortName": "Mozi",
     "color": "rgb(0, 30, 89)",
@@ -176,8 +184,8 @@
     "deepLink": "rwallet:"
   },
   {
-    "name": "PeakDeFi Wallet",
-    "shortName": "PeakDeFi",
+    "name": "PEAKDEFI Wallet",
+    "shortName": "PEAKDEFI",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
