@@ -44,6 +44,9 @@ export class Relay extends IRelay {
 
     this.provider = this.setProvider(provider);
     this.provider.on("payload", (payload: JsonRpcPayload) => this.onPayload(payload));
+    this.provider.on("connect", () => this.events.emit("connect"));
+    this.provider.on("disconnect", () => this.events.emit("disconnect"));
+    this.provider.on("error", e => this.events.emit("error", e));
   }
 
   public async init(): Promise<void> {

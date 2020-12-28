@@ -13,6 +13,7 @@ import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
+import { timeStamp } from "console";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
@@ -55,12 +56,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
-      const id = await this.client.relay.subscribe(
-        topic,
-        (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
-        opts,
-      );
-      this.subscriptions.set(topic, { id, topic, data, opts });
+      await this.subscribeAndSet(topic, data, opts);
       this.events.emit(SUBSCRIPTION_EVENTS.created, {
         topic,
         data,
@@ -152,6 +148,19 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     return subscription;
   }
 
+  private async subscribeAndSet(
+    topic: string,
+    data: Data,
+    opts: SubscriptionOptions,
+  ): Promise<void> {
+    const id = await this.client.relay.subscribe(
+      topic,
+      (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
+      opts,
+    );
+    this.subscriptions.set(topic, { id, topic, data, opts });
+  }
+
   private async persist() {
     await this.client.storage.setItem<SubscriptionEntries<Data>>(this.getStoreKey(), this.entries);
   }
@@ -169,13 +178,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       }
       this.subscriptions = objToMap<SubscriptionParams<Data>>(subscriptions);
       for (const [_, subscription] of this.subscriptions) {
-        const { topic, opts } = subscription;
-        const id = await this.client.relay.subscribe(
-          topic,
-          (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
-          opts,
-        );
-        this.subscriptions.set(topic, { ...subscription, id });
+        const { topic, data, opts } = subscription;
+        await this.subscribeAndSet(topic, data, opts);
       }
       this.logger.debug(`Successfully Restored subscriptions for ${this.getSubscriptionContext()}`);
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.entries });
@@ -185,7 +189,36 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     }
   }
 
+  private async reset(): Promise<void> {
+    this.subscriptions = new Map<string, SubscriptionParams<Data>>();
+    await this.persist();
+  }
+
+  private async resubscribeAll(): Promise<void> {
+    const prevSubscriptions = Object.values(this.entries);
+    await this.reset();
+    await Promise.all(
+      prevSubscriptions.map(async subscription => {
+        const { topic, data, opts } = subscription;
+        await this.subscribeAndSet(topic, data, opts);
+      }),
+    );
+    await this.persist();
+  }
+
+  private reconnect(): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      this.client.relay.once("error", e => reject(e));
+      this.client.relay.once("connect", async () => {
+        await this.resubscribeAll();
+        resolve();
+      });
+      await this.client.relay.init();
+    });
+  }
+
   private registerEventListeners(): void {
+    this.client.relay.on("disconnect", () => this.reconnect());
     this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
       this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
       this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });
