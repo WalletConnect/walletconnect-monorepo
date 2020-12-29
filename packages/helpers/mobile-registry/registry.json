@@ -222,5 +222,13 @@
     "logo": "./logos/cybavo.png",
     "universalLink": "https://cdn.cybavo.com",
     "deepLink": "cybavowallet:"
+  },
+  {
+    "name": "PlasmaPay",
+    "shortName": "PlasmaPay",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/plasmapay.png",
+    "universalLink": "https://plasmapay.com",
+    "deepLink": "plasmapay:"
   }
 ]
