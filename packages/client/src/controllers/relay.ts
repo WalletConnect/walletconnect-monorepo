@@ -160,6 +160,10 @@ export class Relay extends IRelay {
     this.events.off(event, listener);
   }
 
+  public removeListener(event: string, listener: any): void {
+    this.events.removeListener(event, listener);
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private onPayload(payload: JsonRpcPayload) {

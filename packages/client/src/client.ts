@@ -84,6 +84,10 @@ export class Client extends IClient {
     this.events.off(event, listener);
   }
 
+  public removeListener(event: string, listener: any): void {
+    this.events.removeListener(event, listener);
+  }
+
   public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
     this.logger.debug(`Connecting Application`);
     this.logger.trace({ type: "method", method: "connect", params });

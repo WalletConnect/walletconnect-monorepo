@@ -267,6 +267,10 @@ export class Session extends ISession {
     this.events.off(event, listener);
   }
 
+  public removeListener(event: string, listener: any): void {
+    this.events.removeListener(event, listener);
+  }
+
   // ---------- Protected ----------------------------------------------- //
 
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {

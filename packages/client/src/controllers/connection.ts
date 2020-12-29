@@ -225,6 +225,10 @@ export class Connection extends IConnection {
     this.events.off(event, listener);
   }
 
+  public removeListener(event: string, listener: any): void {
+    this.events.removeListener(event, listener);
+  }
+
   // ---------- Protected ----------------------------------------------- //
 
   protected async propose(
