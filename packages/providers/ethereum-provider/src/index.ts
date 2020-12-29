@@ -3,14 +3,7 @@ import { BlockchainProviderConfig } from "@json-rpc-tools/types";
 import { IRPCMap, IWCEthRpcConnectionOptions } from "@walletconnect/types";
 import { stateMethods, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
-import {
-  IEthereumProvider,
-  ProviderAccounts,
-  ProviderInfo,
-  ProviderMessage,
-  ProviderRpcError,
-  RequestArguments,
-} from "eip1193-provider";
+import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
 
 class WalletConnectEthereumProvider implements IEthereumProvider {
   private infuraId: string | undefined;
