@@ -19,16 +19,20 @@ export class SignerConnection extends IJsonRpcConnection {
     return typeof this.connector !== "undefined" && this.connector.connected;
   }
 
-  public off(event: string, listener: any) {
-    this.events.off(event, listener);
-  }
-
   public on(event: string, listener: any) {
     this.events.on(event, listener);
   }
 
   public once(event: string, listener: any) {
     this.events.once(event, listener);
+  }
+
+  public off(event: string, listener: any) {
+    this.events.off(event, listener);
+  }
+
+  public removeListener(event: string, listener: any) {
+    this.events.removeListener(event, listener);
   }
 
   public async open(): Promise<void> {
