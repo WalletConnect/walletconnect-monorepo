@@ -56,12 +56,17 @@ interface MobileLinkDisplayProps {
   uri: string;
 }
 
+const GRID_MIN_COUNT = 5;
+const LINKS_PER_PAGE = 12;
+
 function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   const ios = isIOS();
   const links = getMobileLinkRegistry(props.qrcodeModalOptions);
-  const [showMore, setShowMore] = React.useState(false);
-  const grid = links.length > 5;
-  const displayShowMore = links.length > 12;
+  const [page, setPage] = React.useState(1);
+  const grid = links.length > GRID_MIN_COUNT;
+  const pages = Math.ceil(links.length / LINKS_PER_PAGE);
+  const range = [(page - 1) * LINKS_PER_PAGE + 1, page * LINKS_PER_PAGE];
+  const pageLinks = links.filter((_, index) => index + 1 >= range[0] && index + 1 <= range[1]);
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
@@ -73,7 +78,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
         }`}
       >
         {ios ? (
-          links.map((entry: IMobileRegistryEntry, idx: number) => {
+          pageLinks.map((entry: IMobileRegistryEntry) => {
             const { color, name, shortName, logo } = entry;
             const href = formatIOSMobile(props.uri, entry);
             const handleClickIOS = React.useCallback(() => {
@@ -82,7 +87,6 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
                 href,
               });
             }, []);
-            if (idx > 11 && !showMore) return;
             return !grid ? (
               <WalletButton
                 color={color}
@@ -115,11 +119,22 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
           />
         )}
       </div>
-      {!!(ios && displayShowMore) && (
+      {!!(ios && pages > 1) && (
         <div className="walletconnect-modal__footer">
-          <a onClick={() => setShowMore(!showMore)}>
-            {showMore ? props.text.show_less : props.text.show_more}
-          </a>
+          {Array(pages)
+            .fill(0)
+            .map((_, index) => {
+              const pageNumber = index + 1;
+              const selected = page === pageNumber;
+              return (
+                <a
+                  style={{ margin: "auto 10px", fontWeight: selected ? "bold" : "normal" }}
+                  onClick={() => setPage(pageNumber)}
+                >
+                  {pageNumber}
+                </a>
+              );
+            })}
         </div>
       )}
     </div>

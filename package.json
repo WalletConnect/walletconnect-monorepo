@@ -35,10 +35,11 @@
     "health-check": "node ./scripts/health-check/index.js",
     "move-dist": "node ./scripts/move-dist.js",
     "commit-version": "node ./scripts/commit-version.js",
+    "check:skip-test": "run-s clean lint build move-dist",
     "check": "run-s clean lint build test move-dist",
     "reset": "run-s clean:all bootstrap check",
     "start": "cd example && npm run start",
-    "example": "run-s check start",
+    "example": "run-s check:skip-test start",
     "pre-publish": "run-s new-version reset commit-version",
     "publish:latest": "run-s pre-publish npm-publish:latest",
     "publish:next": "run-s pre-publish npm-publish:next"
