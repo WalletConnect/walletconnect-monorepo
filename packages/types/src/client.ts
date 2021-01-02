@@ -35,7 +35,7 @@ export abstract class IClient extends IEvents {
   // for proposer to propose a session to a responder
   public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
   // for responder to receive a session proposal from a proposer
-  public abstract tether(params: ClientTypes.TetherParams): Promise<void>;
+  public abstract pair(params: ClientTypes.PairParams): Promise<void>;
 
   // for responder to approve a session proposal
   public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
@@ -64,7 +64,7 @@ export declare namespace ClientTypes {
     pairing?: SignalTypes.ParamsPairing;
   }
 
-  export interface TetherParams {
+  export interface PairParams {
     uri: string;
   }
 

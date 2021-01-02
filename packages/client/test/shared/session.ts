@@ -110,7 +110,7 @@ async function testSessionApprovalScenario(
       // Client A shares pairing proposal out-of-band with Client B
       clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
         clientB.logger.warn(`TEST >> Pairing Proposal`);
-        await clientB.tether({ uri: proposal.signal.params.uri });
+        await clientB.pair({ uri: proposal.signal.params.uri });
         clientB.logger.warn(`TEST >> Pairing Responded`);
         resolve();
       });
@@ -239,7 +239,7 @@ async function testSessionRejectionScenario(
       // Client A shares pairing proposal out-of-band with Client B
       clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
         clientB.logger.warn(`TEST >> Pairing Proposal`);
-        await clientB.tether({ uri: proposal.signal.params.uri });
+        await clientB.pair({ uri: proposal.signal.params.uri });
         clientB.logger.warn(`TEST >> Pairing Responded`);
         resolve();
       });

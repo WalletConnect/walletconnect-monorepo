@@ -115,9 +115,9 @@ export class Client extends IClient {
       throw e;
     }
   }
-  public async tether(params: ClientTypes.TetherParams): Promise<void> {
-    this.logger.debug(`Tethering Pairing`);
-    this.logger.trace({ type: "method", method: "tether", params });
+  public async pair(params: ClientTypes.PairParams): Promise<void> {
+    this.logger.debug(`Pairing`);
+    this.logger.trace({ type: "method", method: "pair", params });
     const uriParams = parseUri(params.uri);
     const proposal: PairingTypes.Proposal = {
       topic: uriParams.topic,
@@ -133,12 +133,12 @@ export class Client extends IClient {
     });
     if (!isPairingResponded(pending)) return;
     if (isPairingFailed(pending.outcome)) {
-      this.logger.debug(`Pairing Tethering Failure`);
-      this.logger.trace({ type: "method", method: "tether", outcome: pending.outcome });
+      this.logger.debug(`Pairing Failure`);
+      this.logger.trace({ type: "method", method: "pair", outcome: pending.outcome });
       return;
     }
-    this.logger.debug(`Pairing Tethering Success`);
-    this.logger.trace({ type: "method", method: "tether", pending });
+    this.logger.debug(`Pairing Success`);
+    this.logger.trace({ type: "method", method: "pair", pending });
   }
 
   public async approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled> {
