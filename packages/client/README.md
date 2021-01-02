@@ -29,13 +29,13 @@ import WalletConnectClient from "@walletconnect/client";
 const client = await WalletConnectClient.init({ relayProvider: "wss://staging.walletconnect.org" });
 ```
 
-2. Subscribe to connection proposal event for sharing URI
+2. Subscribe to pairing proposal event for sharing URI
 
 ```js
 import { CLIENT_EVENTS } from "@walletconnect/client";
-import { ConnectionTypes } from "@walletconnect/types";
+import { PairingTypes } from "@walletconnect/types";
 
-client.on(CLIENT_EVENTS.connection.proposal, async (proposal: ConnectionTypes.Proposal) => {
+client.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
   // uri should be shared with the Wallet either through QR Code scanning or mobile deep linking
   const { uri } = proposal.signal.params;
 });
@@ -91,7 +91,7 @@ client.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) =
 });
 ```
 
-3. Establish connection with shared URI from dapp
+3. Establish pairing with shared URI from dapp
 
 ```js
 client.tether({ uri });
@@ -206,7 +206,7 @@ export abstract class IClient extends IEvents {
   public abstract relay: IRelay;
   public abstract storage: IKeyValueStorage;
 
-  public abstract connection: IConnection;
+  public abstract pairing: IPairing;
   public abstract session: ISession;
 
   constructor(opts?: ClientOptions) {
@@ -242,7 +242,7 @@ export declare namespace ClientTypes {
     metadata: SessionTypes.Metadata;
     permissions: SessionTypes.BasePermissions;
     relay?: RelayTypes.ProtocolOptions;
-    connection?: SignalTypes.ParamsConnection;
+    pairing?: SignalTypes.ParamsPairing;
   }
 
   export interface TetherParams {

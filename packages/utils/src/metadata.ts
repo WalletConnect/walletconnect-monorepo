@@ -1,8 +1,8 @@
-import { ConnectionTypes, SessionTypes } from "@walletconnect/types";
+import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import * as detectEnv from "detect-browser";
 import * as WindowMetadata from "window-metadata";
 
-export function getConnectionType(type: string): string {
+export function getPairingType(type: string): string {
   switch (type) {
     case "react-native":
       return "mobile";
@@ -15,12 +15,12 @@ export function getConnectionType(type: string): string {
   }
 }
 
-export function getConnectionMetadata(): ConnectionTypes.Metadata | null {
+export function getPairingMetadata(): PairingTypes.Metadata | null {
   const env = detectEnv.detect();
   if (env === null) return null;
   if (env.type === "bot" || env.type === "bot-device") return null;
   return {
-    type: getConnectionType(env.type),
+    type: getPairingType(env.type),
     platform: env.name,
     version: env.version || "",
     os: env.os || "",

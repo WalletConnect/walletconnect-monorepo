@@ -1,11 +1,11 @@
 export const CLIENT_CONTEXT = "client";
 
 export const CLIENT_EVENTS = {
-  connection: {
-    proposal: "connection_proposal",
-    updated: "connection_updated",
-    created: "connection_created",
-    deleted: "connection_deleted",
+  pairing: {
+    proposal: "pairing_proposal",
+    updated: "pairing_updated",
+    created: "pairing_created",
+    deleted: "pairing_deleted",
   },
   session: {
     proposal: "session_proposal",

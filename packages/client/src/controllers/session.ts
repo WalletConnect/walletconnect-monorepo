@@ -37,7 +37,7 @@ import {
   SESSION_REASONS,
   SESSION_STATUS,
   SUBSCRIPTION_EVENTS,
-  SESSION_SIGNAL_METHOD_CONNECTION,
+  SESSION_SIGNAL_METHOD_PAIRING,
   SESSION_DEFAULT_TTL,
 } from "../constants";
 
@@ -152,9 +152,9 @@ export class Session extends ISession {
               await this.pending.delete(pending.topic, outcome.reason);
               reject(new Error(outcome.reason));
             } else {
-              const connection = await this.settled.get(outcome.topic);
+              const pairing = await this.settled.get(outcome.topic);
               await this.pending.delete(pending.topic, SESSION_REASONS.settled);
-              resolve(connection);
+              resolve(pairing);
             }
           }
         },
@@ -168,9 +168,9 @@ export class Session extends ISession {
     const { approved, proposal, response } = params;
     const { relay } = proposal;
     const self = generateKeyPair();
-    const connection = await this.client.connection.get(proposal.signal.params.topic);
+    const pairing = await this.client.pairing.get(proposal.signal.params.topic);
     const decryptKeys: CryptoTypes.DecryptKeys = {
-      sharedKey: connection.sharedKey,
+      sharedKey: pairing.sharedKey,
     };
     if (approved) {
       try {
@@ -276,15 +276,15 @@ export class Session extends ISession {
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Propose Session`);
     this.logger.trace({ type: "method", method: "propose", params });
-    if (params.signal.method !== SESSION_SIGNAL_METHOD_CONNECTION)
+    if (params.signal.method !== SESSION_SIGNAL_METHOD_PAIRING)
       throw new Error(`Session proposal signal unsupported`);
-    const connection = await this.client.connection.settled.get(params.signal.params.topic);
+    const pairing = await this.client.pairing.settled.get(params.signal.params.topic);
     const signal: SessionTypes.Signal = {
-      method: SESSION_SIGNAL_METHOD_CONNECTION,
-      params: { topic: connection.topic },
+      method: SESSION_SIGNAL_METHOD_PAIRING,
+      params: { topic: pairing.topic },
     };
     const decryptKeys: CryptoTypes.DecryptKeys = {
-      sharedKey: connection.sharedKey,
+      sharedKey: pairing.sharedKey,
     };
     const topic = generateRandomBytes32();
     const self = generateKeyPair();
@@ -309,7 +309,7 @@ export class Session extends ISession {
     };
     await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
     const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, proposal);
-    await this.client.connection.send(signal.params.topic, request);
+    await this.client.pairing.send(signal.params.topic, request);
     return pending;
   }
 
@@ -341,10 +341,10 @@ export class Session extends ISession {
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
     const pending = await this.pending.get(topic);
-    const connection = await this.client.connection.get(pending.proposal.signal.params.topic);
+    const pairing = await this.client.pairing.get(pending.proposal.signal.params.topic);
     const encryptKeys: CryptoTypes.EncryptKeys = {
-      sharedKey: connection.sharedKey,
-      publicKey: connection.self.publicKey,
+      sharedKey: pairing.sharedKey,
+      publicKey: pairing.self.publicKey,
     };
     let errorMessage: string | undefined;
     if (!isSessionFailed(request.params)) {
@@ -367,7 +367,7 @@ export class Session extends ISession {
             topic: session.topic,
             relay: session.relay,
             responder: session.peer,
-            expiry: connection.expiry,
+            expiry: pairing.expiry,
             state: session.state,
           },
         });
@@ -542,10 +542,10 @@ export class Session extends ISession {
       this.logger.debug({ type: "event", event: SESSION_EVENTS.responded, data: pending });
       this.events.emit(SESSION_EVENTS.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
-        const connection = await this.client.connection.get(pending.proposal.signal.params.topic);
+        const pairing = await this.client.pairing.get(pending.proposal.signal.params.topic);
         const encryptKeys: CryptoTypes.EncryptKeys = {
-          sharedKey: connection.sharedKey,
-          publicKey: connection.self.publicKey,
+          sharedKey: pairing.sharedKey,
+          publicKey: pairing.self.publicKey,
         };
         const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });

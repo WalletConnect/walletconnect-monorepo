@@ -2,24 +2,24 @@ import { CryptoTypes } from "./crypto";
 import { RelayTypes } from "./relay";
 
 export declare namespace SignalTypes {
-  export type Method = MethodConnection | MethodUri;
+  export type Method = MethodPairing | MethodUri;
 
-  export type Params = ParamsConnection | ParamsUri;
+  export type Params = ParamsPairing | ParamsUri;
 
   export interface Base {
     method: Method;
     params: Params;
   }
 
-  export type MethodConnection = "connection";
+  export type MethodPairing = "pairing";
 
-  export interface ParamsConnection {
+  export interface ParamsPairing {
     topic: string;
   }
 
-  export interface Connection extends Base {
-    method: MethodConnection;
-    params: ParamsConnection;
+  export interface Pairing extends Base {
+    method: MethodPairing;
+    params: ParamsPairing;
   }
 
   export type MethodUri = "uri";

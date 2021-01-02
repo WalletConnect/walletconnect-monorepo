@@ -35,7 +35,7 @@ export declare namespace SessionTypes {
 
   export type CreateParams = ProposeParams;
 
-  export type Signal = SignalTypes.Connection;
+  export type Signal = SignalTypes.Pairing;
 
   export type Peer = Required<CryptoTypes.Peer<Metadata>>;
 

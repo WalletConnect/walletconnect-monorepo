@@ -3,7 +3,7 @@ import { IKeyValueStorage } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
 
 import { IRelay, RelayTypes } from "./relay";
-import { IConnection } from "./connection";
+import { IPairing } from "./pairing";
 import { ISession, SessionTypes } from "./session";
 import { SignalTypes } from "./misc";
 
@@ -23,7 +23,7 @@ export abstract class IClient extends IEvents {
   public abstract relay: IRelay;
   public abstract storage: IKeyValueStorage;
 
-  public abstract connection: IConnection;
+  public abstract pairing: IPairing;
   public abstract session: ISession;
 
   public abstract context: string;
@@ -61,7 +61,7 @@ export declare namespace ClientTypes {
     metadata: SessionTypes.Metadata;
     permissions: SessionTypes.BasePermissions;
     relay?: RelayTypes.ProtocolOptions;
-    connection?: SignalTypes.ParamsConnection;
+    pairing?: SignalTypes.ParamsPairing;
   }
 
   export interface TetherParams {

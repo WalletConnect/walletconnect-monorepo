@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 import Timestamp from "@pedrouid/timestamp";
-import { SessionTypes, ConnectionTypes, ClientOptions } from "@walletconnect/types";
+import { SessionTypes, PairingTypes, ClientOptions } from "@walletconnect/types";
 
 import {
   TEST_CLIENT_OPTIONS,
@@ -107,11 +107,11 @@ async function testSessionApprovalScenario(
       resolve();
     }),
     new Promise<void>(async (resolve, reject) => {
-      // Client A shares connection proposal out-of-band with Client B
-      clientA.on(CLIENT_EVENTS.connection.proposal, async (proposal: ConnectionTypes.Proposal) => {
-        clientB.logger.warn(`TEST >> Connection Proposal`);
+      // Client A shares pairing proposal out-of-band with Client B
+      clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
+        clientB.logger.warn(`TEST >> Pairing Proposal`);
         await clientB.tether({ uri: proposal.signal.params.uri });
-        clientB.logger.warn(`TEST >> Connection Responded`);
+        clientB.logger.warn(`TEST >> Pairing Responded`);
         resolve();
       });
     }),
@@ -143,16 +143,16 @@ async function testSessionApprovalScenario(
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientA.connection.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
-        clientA.logger.warn(`TEST >> Connection Proposed`);
-        time.start("connection");
+      clientA.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
+        clientA.logger.warn(`TEST >> Pairing Proposed`);
+        time.start("pairing");
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientB.connection.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
-        clientB.logger.warn(`TEST >> Connection Acknowledged`);
-        time.stop("connection");
+      clientB.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+        clientB.logger.warn(`TEST >> Pairing Acknowledged`);
+        time.stop("pairing");
         resolve();
       });
     }),
@@ -173,7 +173,7 @@ async function testSessionApprovalScenario(
   ]);
 
   // log elapsed times
-  clientB.logger.warn(`TEST >> Connection Elapsed Time: ${time.elapsed("connection")}ms`);
+  clientB.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
   clientB.logger.warn(`TEST >> Session Elapsed Time: ${time.elapsed("session")}ms`);
   clientB.logger.warn(`TEST >> Connect Elapsed Time: ${time.elapsed("connect")}ms`);
 
@@ -236,11 +236,11 @@ async function testSessionRejectionScenario(
       }
     }),
     new Promise<void>(async (resolve, reject) => {
-      // Client A shares connection proposal out-of-band with Client B
-      clientA.on(CLIENT_EVENTS.connection.proposal, async (proposal: ConnectionTypes.Proposal) => {
-        clientB.logger.warn(`TEST >> Connection Proposal`);
+      // Client A shares pairing proposal out-of-band with Client B
+      clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
+        clientB.logger.warn(`TEST >> Pairing Proposal`);
         await clientB.tether({ uri: proposal.signal.params.uri });
-        clientB.logger.warn(`TEST >> Connection Responded`);
+        clientB.logger.warn(`TEST >> Pairing Responded`);
         resolve();
       });
     }),
@@ -269,16 +269,16 @@ async function testSessionRejectionScenario(
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientA.connection.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
-        clientA.logger.warn(`TEST >> Connection Proposed`);
-        time.start("connection");
+      clientA.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
+        clientA.logger.warn(`TEST >> Pairing Proposed`);
+        time.start("pairing");
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientB.connection.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
-        clientB.logger.warn(`TEST >> Connection Acknowledged`);
-        time.stop("connection");
+      clientB.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+        clientB.logger.warn(`TEST >> Pairing Acknowledged`);
+        time.stop("pairing");
         resolve();
       });
     }),

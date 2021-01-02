@@ -5,34 +5,34 @@ import {
   IClient,
   ClientOptions,
   ClientTypes,
-  ConnectionTypes,
+  PairingTypes,
   SessionTypes,
 } from "@walletconnect/types";
 import {
-  isConnectionFailed,
+  isPairingFailed,
   isSessionFailed,
   parseUri,
-  isConnectionResponded,
+  isPairingResponded,
   isSessionResponded,
-  getConnectionMetadata,
+  getPairingMetadata,
 } from "@walletconnect/utils";
 import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
-import { Connection, Session, Relay } from "./controllers";
+import { Pairing, Session, Relay } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_EVENTS,
   CLIENT_STORAGE_OPTIONS,
-  CONNECTION_DEFAULT_TTL,
-  CONNECTION_EVENTS,
-  CONNECTION_SIGNAL_METHOD_URI,
+  PAIRING_DEFAULT_TTL,
+  PAIRING_EVENTS,
+  PAIRING_SIGNAL_METHOD_URI,
   RELAY_DEFAULT_PROTOCOL,
   SESSION_EMPTY_PERMISSIONS,
   SESSION_EMPTY_RESPONSE,
   SESSION_EVENTS,
   SESSION_JSONRPC,
-  SESSION_SIGNAL_METHOD_CONNECTION,
+  SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
 
 export class Client extends IClient {
@@ -45,7 +45,7 @@ export class Client extends IClient {
   public relay: Relay;
   public storage: IKeyValueStorage;
 
-  public connection: Connection;
+  public pairing: Pairing;
   public session: Session;
 
   public context: string = CLIENT_CONTEXT;
@@ -68,7 +68,7 @@ export class Client extends IClient {
     this.relay = new Relay(this.logger, opts?.relayProvider);
     this.storage = opts?.storage || new KeyValueStorage(CLIENT_STORAGE_OPTIONS);
 
-    this.connection = new Connection(this, this.logger);
+    this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
   }
 
@@ -92,13 +92,13 @@ export class Client extends IClient {
     this.logger.debug(`Connecting Application`);
     this.logger.trace({ type: "method", method: "connect", params });
     try {
-      const connection =
-        typeof params.connection === "undefined"
-          ? await this.connection.create()
-          : await this.connection.get(params.connection.topic);
-      this.logger.trace({ type: "method", method: "connect", connection });
+      const pairing =
+        typeof params.pairing === "undefined"
+          ? await this.pairing.create()
+          : await this.pairing.get(params.pairing.topic);
+      this.logger.trace({ type: "method", method: "connect", pairing });
       const session = await this.session.create({
-        signal: { method: SESSION_SIGNAL_METHOD_CONNECTION, params: { topic: connection.topic } },
+        signal: { method: SESSION_SIGNAL_METHOD_PAIRING, params: { topic: pairing.topic } },
         relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
         metadata: params.metadata,
         permissions: {
@@ -106,38 +106,38 @@ export class Client extends IClient {
           notifications: SESSION_EMPTY_PERMISSIONS.notifications,
         },
       });
-      this.logger.debug(`Application Connection Successful`);
+      this.logger.debug(`Application Pairing Successful`);
       this.logger.trace({ type: "method", method: "connect", session });
       return session;
     } catch (e) {
-      this.logger.debug(`Application Connection Failure`);
+      this.logger.debug(`Application Pairing Failure`);
       this.logger.error(e);
       throw e;
     }
   }
   public async tether(params: ClientTypes.TetherParams): Promise<void> {
-    this.logger.debug(`Tethering Connection`);
+    this.logger.debug(`Tethering Pairing`);
     this.logger.trace({ type: "method", method: "tether", params });
     const uriParams = parseUri(params.uri);
-    const proposal: ConnectionTypes.Proposal = {
+    const proposal: PairingTypes.Proposal = {
       topic: uriParams.topic,
       relay: uriParams.relay,
       proposer: { publicKey: uriParams.publicKey },
-      signal: { method: CONNECTION_SIGNAL_METHOD_URI, params: { uri: params.uri } },
+      signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri: params.uri } },
       permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
-      ttl: CONNECTION_DEFAULT_TTL,
+      ttl: PAIRING_DEFAULT_TTL,
     };
-    const pending = await this.connection.respond({
+    const pending = await this.pairing.respond({
       approved: true,
       proposal,
     });
-    if (!isConnectionResponded(pending)) return;
-    if (isConnectionFailed(pending.outcome)) {
-      this.logger.debug(`Connection Tethering Failure`);
+    if (!isPairingResponded(pending)) return;
+    if (isPairingFailed(pending.outcome)) {
+      this.logger.debug(`Pairing Tethering Failure`);
       this.logger.trace({ type: "method", method: "tether", outcome: pending.outcome });
       return;
     }
-    this.logger.debug(`Connection Tethering Success`);
+    this.logger.debug(`Pairing Tethering Success`);
     this.logger.trace({ type: "method", method: "tether", pending });
   }
 
@@ -217,7 +217,7 @@ export class Client extends IClient {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async onConnectionPayload(payload: JsonRpcPayload): Promise<void> {
+  protected async onPairingPayload(payload: JsonRpcPayload): Promise<void> {
     if (isJsonRpcRequest(payload)) {
       if (payload.method === SESSION_JSONRPC.propose) {
         this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
@@ -231,12 +231,12 @@ export class Client extends IClient {
     }
   }
 
-  protected async onConnectionSettled(connection: ConnectionTypes.Settled) {
-    if (typeof connection.peer.metadata === "undefined") {
-      const metadata = getConnectionMetadata();
+  protected async onPairingSettled(pairing: PairingTypes.Settled) {
+    if (typeof pairing.peer.metadata === "undefined") {
+      const metadata = getPairingMetadata();
       if (!metadata) return;
-      const update: ConnectionTypes.Update = { peer: { metadata } };
-      this.connection.update({ topic: connection.topic, update });
+      const update: PairingTypes.Update = { peer: { metadata } };
+      this.pairing.update({ topic: pairing.topic, update });
     }
   }
   // ---------- Private ----------------------------------------------- //
@@ -245,7 +245,7 @@ export class Client extends IClient {
     this.logger.trace(`Initialized`);
     try {
       await this.relay.init();
-      await this.connection.init();
+      await this.pairing.init();
       await this.session.init();
       this.registerEventListeners();
       this.logger.info(`Client Initilization Success`);
@@ -257,47 +257,47 @@ export class Client extends IClient {
   }
 
   private registerEventListeners(): void {
-    // Connection Subscription Events
-    this.connection.on(CONNECTION_EVENTS.proposed, (pending: ConnectionTypes.Pending) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.proposal}`);
+    // Pairing Subscription Events
+    this.pairing.on(PAIRING_EVENTS.proposed, (pending: PairingTypes.Pending) => {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.proposal}`);
       this.logger.debug({
         type: "event",
-        event: CLIENT_EVENTS.connection.proposal,
+        event: CLIENT_EVENTS.pairing.proposal,
         data: pending.proposal,
       });
-      this.events.emit(CLIENT_EVENTS.connection.proposal, pending.proposal);
+      this.events.emit(CLIENT_EVENTS.pairing.proposal, pending.proposal);
     });
 
-    this.connection.on(CONNECTION_EVENTS.settled, (connection: ConnectionTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.created}`);
+    this.pairing.on(PAIRING_EVENTS.settled, (pairing: PairingTypes.Settled) => {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.created}`);
       this.logger.debug({
         type: "event",
-        event: CLIENT_EVENTS.connection.created,
-        data: connection,
+        event: CLIENT_EVENTS.pairing.created,
+        data: pairing,
       });
-      this.events.emit(CLIENT_EVENTS.connection.created, connection);
-      this.onConnectionSettled(connection);
+      this.events.emit(CLIENT_EVENTS.pairing.created, pairing);
+      this.onPairingSettled(pairing);
     });
-    this.connection.on(CONNECTION_EVENTS.updated, (connection: ConnectionTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.updated}`);
+    this.pairing.on(PAIRING_EVENTS.updated, (pairing: PairingTypes.Settled) => {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.updated}`);
       this.logger.debug({
         type: "event",
-        event: CLIENT_EVENTS.connection.updated,
-        data: connection,
+        event: CLIENT_EVENTS.pairing.updated,
+        data: pairing,
       });
-      this.events.emit(CLIENT_EVENTS.connection.updated, connection);
+      this.events.emit(CLIENT_EVENTS.pairing.updated, pairing);
     });
-    this.connection.on(CONNECTION_EVENTS.deleted, (connection: ConnectionTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.connection.deleted}`);
+    this.pairing.on(PAIRING_EVENTS.deleted, (pairing: PairingTypes.Settled) => {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.deleted}`);
       this.logger.debug({
         type: "event",
-        event: CLIENT_EVENTS.connection.deleted,
-        data: connection,
+        event: CLIENT_EVENTS.pairing.deleted,
+        data: pairing,
       });
-      this.events.emit(CLIENT_EVENTS.connection.deleted, connection);
+      this.events.emit(CLIENT_EVENTS.pairing.deleted, pairing);
     });
-    this.connection.on(CONNECTION_EVENTS.payload, (payloadEvent: ConnectionTypes.PayloadEvent) => {
-      this.onConnectionPayload(payloadEvent.payload);
+    this.pairing.on(PAIRING_EVENTS.payload, (payloadEvent: PairingTypes.PayloadEvent) => {
+      this.onPairingPayload(payloadEvent.payload);
     });
     // Session Subscription Events
     this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {

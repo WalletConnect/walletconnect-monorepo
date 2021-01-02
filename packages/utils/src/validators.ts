@@ -1,22 +1,20 @@
-import { ConnectionTypes, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
+import { PairingTypes, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
 
-// -- connection -------------------------------------------------- //
+// -- pairing -------------------------------------------------- //
 
-export function isConnectionRespondedStatus(
-  status: ConnectionTypes.PendingStatus,
-): status is ConnectionTypes.RespondedStatus {
+export function isPairingRespondedStatus(
+  status: PairingTypes.PendingStatus,
+): status is PairingTypes.RespondedStatus {
   return status === "responded";
 }
 
-export function isConnectionResponded(
-  pending: ConnectionTypes.Pending,
-): pending is ConnectionTypes.RespondedPending {
-  return isConnectionRespondedStatus(pending.status) && "outcome" in pending;
+export function isPairingResponded(
+  pending: PairingTypes.Pending,
+): pending is PairingTypes.RespondedPending {
+  return isPairingRespondedStatus(pending.status) && "outcome" in pending;
 }
 
-export function isConnectionFailed(
-  outcome: ConnectionTypes.Outcome,
-): outcome is ConnectionTypes.Failed {
+export function isPairingFailed(outcome: PairingTypes.Outcome): outcome is PairingTypes.Failed {
   return "reason" in outcome;
 }
 
@@ -31,7 +29,7 @@ export function isSessionRespondedStatus(
 export function isSessionResponded(
   pending: SessionTypes.Pending,
 ): pending is SessionTypes.RespondedPending {
-  return isConnectionRespondedStatus(pending.status) && "outcome" in pending;
+  return isPairingRespondedStatus(pending.status) && "outcome" in pending;
 }
 
 export function isSessionFailed(outcome: SessionTypes.Outcome): outcome is SessionTypes.Failed {
