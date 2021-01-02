@@ -136,6 +136,7 @@ build-nginx: pull
 	@echo
 
 dev: build-container
+	mkdir -p servers/relay/dist
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	docker stack deploy \
