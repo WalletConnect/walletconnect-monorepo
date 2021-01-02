@@ -10,8 +10,6 @@ const fa: TextMap = {
   mobile: "سیار",
   copy_to_clipboard: "کپی به کلیپ بورد",
   copied_to_clipboard: "در کلیپ بورد کپی شد!",
-  show_more: "بیشتر نشان بده، اطلاعات بیشتر",
-  show_less: "نمایش کمتر",
 };
 
 export default fa;

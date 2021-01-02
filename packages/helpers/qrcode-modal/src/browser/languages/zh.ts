@@ -10,8 +10,6 @@ const zh: TextMap = {
   mobile: "移动",
   copy_to_clipboard: "复制到剪贴板",
   copied_to_clipboard: "复制到剪贴板成功！",
-  show_more: "显示更多",
-  show_less: "显示较少",
 };
 
 export default zh;
