@@ -2,7 +2,7 @@ import "mocha";
 import { use, expect } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import Timestamp from "@pedrouid/timestamp";
-import { SessionTypes, PairingTypes, ClientOptions } from "@walletconnect/types";
+import { SessionTypes, PairingTypes, ClientOptions, SignalTypes } from "@walletconnect/types";
 
 import {
   TEST_CLIENT_OPTIONS,
@@ -17,17 +17,19 @@ import { IntializedClients } from "./types";
 
 use(chaiAsPromised);
 
-interface ClientSetupOptions {
+interface ClientSetup {
   options?: ClientOptions;
   state?: SessionTypes.State;
   metadata?: SessionTypes.Metadata;
   permissions?: SessionTypes.BasePermissions;
 }
 
-type ClientSetupOptionsMap = Record<string, ClientSetupOptions>;
+type ClientSetupMap = Record<string, ClientSetup>;
 
-interface SessionScenarioOptions {
-  clients?: ClientSetupOptionsMap;
+interface SessionScenarioSetup {
+  clients?: IntializedClients;
+  setup?: ClientSetupMap;
+  pairing?: SignalTypes.ParamsPairing;
   rejectSession?: boolean;
 }
 
@@ -36,10 +38,7 @@ interface SessionScenarioResult {
   clients: IntializedClients;
 }
 
-function generateClientSetupOptions(
-  label: string,
-  clients?: ClientSetupOptionsMap,
-): Required<ClientSetupOptions> {
+function generateClientSetup(label: string, clients?: ClientSetupMap): Required<ClientSetup> {
   const clientSetup = typeof clients !== "undefined" ? clients[label] : undefined;
   const overrideContext = "client" + "_" + label.toUpperCase();
   const defaultSetup = {
@@ -59,34 +58,30 @@ function generateClientSetupOptions(
 }
 
 export async function testSessionScenarios(
-  opts?: SessionScenarioOptions,
+  opts?: SessionScenarioSetup,
 ): Promise<SessionScenarioResult> {
   //  generate client setup for scenario
-  const clientASetup = generateClientSetupOptions("a", opts?.clients);
-  const clientBSetup = generateClientSetupOptions("b", opts?.clients);
-  // generate user scenario
-  const userApprovedSession = !opts?.rejectSession;
-
+  const setup = {
+    a: generateClientSetup("a", opts?.setup),
+    b: generateClientSetup("b", opts?.setup),
+  };
   // init clients
-  const clientA = await Client.init(clientASetup.options);
-  const clientB = await Client.init(clientBSetup.options);
+  const clients = opts?.clients || {
+    a: await Client.init(setup.a.options),
+    b: await Client.init(setup.a.options),
+  };
 
-  if (userApprovedSession) {
-    return testSessionApprovalScenario(
-      { a: clientASetup, b: clientBSetup },
-      { a: clientA, b: clientB },
-    );
+  if (!opts?.rejectSession) {
+    return testSessionApprovalScenario(setup, clients, opts?.pairing);
   } else {
-    return testSessionRejectionScenario(
-      { a: clientASetup, b: clientBSetup },
-      { a: clientA, b: clientB },
-    );
+    return testSessionRejectionScenario(setup, clients, opts?.pairing);
   }
 }
 
 async function testSessionApprovalScenario(
-  setup: Record<string, Required<ClientSetupOptions>>,
+  setup: Record<string, Required<ClientSetup>>,
   clients: IntializedClients,
+  pairing?: SignalTypes.ParamsPairing,
 ): Promise<SessionScenarioResult> {
   const { a: clientA, b: clientB } = clients;
 
@@ -104,11 +99,15 @@ async function testSessionApprovalScenario(
       await clientA.connect({
         metadata: setup.a.metadata,
         permissions: setup.a.permissions,
+        pairing,
       });
       time.stop("connect");
       resolve();
     }),
     new Promise<void>(async (resolve, reject) => {
+      if (typeof pairing !== "undefined") {
+        return resolve();
+      }
       // Client A shares pairing proposal out-of-band with Client B
       clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
         clientB.logger.warn(`TEST >> Pairing Proposal`);
@@ -145,6 +144,9 @@ async function testSessionApprovalScenario(
       });
     }),
     new Promise<void>(async (resolve, reject) => {
+      if (typeof pairing !== "undefined") {
+        return resolve();
+      }
       clientA.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
         clientA.logger.warn(`TEST >> Pairing Proposed`);
         time.start("pairing");
@@ -152,6 +154,9 @@ async function testSessionApprovalScenario(
       });
     }),
     new Promise<void>(async (resolve, reject) => {
+      if (typeof pairing !== "undefined") {
+        return resolve();
+      }
       clientB.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
         clientB.logger.warn(`TEST >> Pairing Acknowledged`);
         time.stop("pairing");
@@ -175,7 +180,9 @@ async function testSessionApprovalScenario(
   ]);
 
   // log elapsed times
-  clientB.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
+  if (typeof pairing === "undefined") {
+    clientB.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
+  }
   clientB.logger.warn(`TEST >> Session Elapsed Time: ${time.elapsed("session")}ms`);
   clientB.logger.warn(`TEST >> Connect Elapsed Time: ${time.elapsed("connect")}ms`);
 
@@ -206,8 +213,9 @@ async function testSessionApprovalScenario(
 }
 
 async function testSessionRejectionScenario(
-  setup: Record<string, Required<ClientSetupOptions>>,
+  setup: Record<string, Required<ClientSetup>>,
   clients: IntializedClients,
+  pairing?: SignalTypes.ParamsPairing,
 ): Promise<SessionScenarioResult> {
   const { a: clientA, b: clientB } = clients;
 
@@ -216,6 +224,7 @@ async function testSessionRejectionScenario(
       const promise = clientA.connect({
         metadata: setup.a.metadata,
         permissions: setup.a.permissions,
+        pairing,
       });
       // FIXME: chai-as-promised assertions are not typed hence need to be ignored
       // @ts-ignore
@@ -223,6 +232,9 @@ async function testSessionRejectionScenario(
       resolve();
     }),
     new Promise<void>(async (resolve, reject) => {
+      if (typeof pairing !== "undefined") {
+        return resolve();
+      }
       // Client A shares pairing proposal out-of-band with Client B
       clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
         clientB.logger.warn(`TEST >> Pairing Proposal`);
