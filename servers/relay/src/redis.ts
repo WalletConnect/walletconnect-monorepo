@@ -54,7 +54,8 @@ export class RedisService {
     this.logger.debug(`Setting Legacy Published`);
     this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
     await this.client.lpushAsync(`request:${socketMessage.topic}`, socketMessage.payload);
-    await this.client.expireAsync(`request:${socketMessage.topic}`, config.REDIS_MAX_TTL);
+    const sevenDays = 604800;
+    await this.client.expireAsync(`request:${socketMessage.topic}`, sevenDays);
   }
 
   public async getLegacyPublished(topic: string) {
