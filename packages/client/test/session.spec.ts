@@ -8,8 +8,8 @@ describe("Session", () => {
     const { clients } = await testSessionScenarios({ rejectSession: false });
     expect(!!clients).to.be.true;
   });
-  // it("A proposes session and B rejects", async () => {
-  //   const { clients } = await testSessionScenarios({ rejectSession: true });
-  //   expect(!!clients).to.be.true;
-  // });
+  it("A proposes session and B rejects", async () => {
+    const { clients } = await testSessionScenarios({ rejectSession: true });
+    expect(!!clients).to.be.true;
+  });
 });
