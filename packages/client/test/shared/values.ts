@@ -1,11 +1,12 @@
 import { ClientOptions, SessionTypes } from "@walletconnect/types";
 
 // TODO: Relay Provider URL needs to be set from ops
-export const TEST_RELAY_PROVIDER_URL = process.env.TEST_RELAY_URL ?
-  process.env.TEST_RELAY_URL : "ws://localhost:5555";
+export const TEST_RELAY_PROVIDER_URL = process.env.TEST_RELAY_URL
+  ? process.env.TEST_RELAY_URL
+  : "ws://localhost:5555";
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "debug",
+  logger: "info",
   relayProvider: TEST_RELAY_PROVIDER_URL,
 };
 

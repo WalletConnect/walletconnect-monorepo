@@ -92,6 +92,9 @@ export class Client extends IClient {
     this.logger.debug(`Connecting Application`);
     this.logger.trace({ type: "method", method: "connect", params });
     try {
+      if (typeof params.pairing === undefined) {
+        this.logger.info("Connecing with existing pairing");
+      }
       const pairing =
         typeof params.pairing === "undefined"
           ? await this.pairing.create()
