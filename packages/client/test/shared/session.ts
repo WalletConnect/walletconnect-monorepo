@@ -1,5 +1,6 @@
 import "mocha";
-import { expect } from "chai";
+import { use, expect } from "chai";
+import chaiAsPromised from "chai-as-promised";
 import Timestamp from "@pedrouid/timestamp";
 import { SessionTypes, PairingTypes, ClientOptions } from "@walletconnect/types";
 
@@ -13,6 +14,8 @@ import {
 
 import Client, { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../../src";
 import { IntializedClients } from "./types";
+
+use(chaiAsPromised);
 
 interface ClientSetupOptions {
   options?: ClientOptions;
@@ -85,7 +88,6 @@ async function testSessionApprovalScenario(
   setup: Record<string, Required<ClientSetupOptions>>,
   clients: IntializedClients,
 ): Promise<SessionScenarioResult> {
-  const { a: clientASetup, b: clientBSetup } = setup;
   const { a: clientA, b: clientB } = clients;
 
   // testing data points
@@ -100,8 +102,8 @@ async function testSessionApprovalScenario(
     new Promise<void>(async (resolve, reject) => {
       time.start("connect");
       await clientA.connect({
-        metadata: clientASetup.metadata,
-        permissions: clientASetup.permissions,
+        metadata: setup.a.metadata,
+        permissions: setup.a.permissions,
       });
       time.stop("connect");
       resolve();
@@ -119,8 +121,8 @@ async function testSessionApprovalScenario(
       clientB.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
         clientB.logger.warn(`TEST >> Session Proposal`);
         const response: SessionTypes.Response = {
-          state: clientBSetup.state,
-          metadata: clientBSetup.metadata,
+          state: setup.b.state,
+          metadata: setup.b.metadata,
         };
         await clientB.approve({ proposal, response });
         clientB.logger.warn(`TEST >> Session Responded`);
@@ -182,24 +184,22 @@ async function testSessionApprovalScenario(
   expect(sessionA?.relay.protocol).to.eql(sessionB?.relay.protocol);
   expect(sessionA?.peer.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionA?.self.publicKey).to.eql(sessionB?.peer.publicKey);
-  expect(sessionA?.peer.metadata).to.eql(clientBSetup.metadata);
-  expect(sessionB?.peer.metadata).to.eql(clientASetup.metadata);
+  expect(sessionA?.peer.metadata).to.eql(setup.b.metadata);
+  expect(sessionB?.peer.metadata).to.eql(setup.a.metadata);
   // blockchain state
-  expect(sessionA?.state.accountIds).to.eql(clientBSetup.state.accountIds);
+  expect(sessionA?.state.accountIds).to.eql(setup.b.state.accountIds);
   expect(sessionA?.state.accountIds).to.eql(sessionB?.state.accountIds);
   // blockchain permissions
   expect(sessionA?.permissions.state.controller.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionB?.permissions.state.controller.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionA?.permissions.notifications.controller.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionB?.permissions.notifications.controller.publicKey).to.eql(sessionB?.self.publicKey);
-  expect(sessionA?.permissions.blockchain.chainIds).to.eql(
-    clientBSetup.permissions.blockchain.chainIds,
-  );
+  expect(sessionA?.permissions.blockchain.chainIds).to.eql(setup.b.permissions.blockchain.chainIds);
   expect(sessionA?.permissions.blockchain.chainIds).to.eql(
     sessionB?.permissions.blockchain.chainIds,
   );
   // jsonrpc permmissions
-  expect(sessionA?.permissions.jsonrpc.methods).to.eql(clientBSetup.permissions.jsonrpc.methods);
+  expect(sessionA?.permissions.jsonrpc.methods).to.eql(setup.b.permissions.jsonrpc.methods);
   expect(sessionA?.permissions.jsonrpc.methods).to.eql(sessionB?.permissions.jsonrpc.methods);
 
   return { topic: sessionA?.topic || "", clients: { a: clientA, b: clientB } };
@@ -209,31 +209,18 @@ async function testSessionRejectionScenario(
   setup: Record<string, Required<ClientSetupOptions>>,
   clients: IntializedClients,
 ): Promise<SessionScenarioResult> {
-  const { a: clientASetup, b: clientBSetup } = setup;
   const { a: clientA, b: clientB } = clients;
-
-  // testing data points
-  let sessionA: SessionTypes.Created | undefined;
-  let sessionB: SessionTypes.Created | undefined;
-
-  // timestamps & elapsed time
-  const time = new Timestamp();
 
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
-      time.start("connect");
-      try {
-        await clientA.connect({
-          metadata: clientASetup.metadata,
-          permissions: clientASetup.permissions,
-        });
-        time.stop("connect");
-        resolve();
-      } catch (e) {
-        // ignore error
-        time.stop("connect");
-        resolve();
-      }
+      const promise = clientA.connect({
+        metadata: setup.a.metadata,
+        permissions: setup.a.permissions,
+      });
+      // FIXME: chai-as-promised assertions are not typed hence need to be ignored
+      // @ts-ignore
+      await expect(promise).to.eventually.be.rejectedWith("Session not approved");
+      resolve();
     }),
     new Promise<void>(async (resolve, reject) => {
       // Client A shares pairing proposal out-of-band with Client B
@@ -244,48 +231,16 @@ async function testSessionRejectionScenario(
         resolve();
       });
     }),
+    // Client B receives session proposal and rejects it
     new Promise<void>(async (resolve, reject) => {
       clientB.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
         clientB.logger.warn(`TEST >> Session Proposal`);
-
         await clientB.reject({ proposal });
         clientB.logger.warn(`TEST >> Session Responded`);
         resolve();
       });
     }),
-
-    new Promise<void>(async (resolve, reject) => {
-      clientA.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
-        clientA.logger.warn(`TEST >> Session Created`);
-        sessionA = session;
-        resolve();
-      });
-    }),
-    new Promise<void>(async (resolve, reject) => {
-      clientB.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
-        clientB.logger.warn(`TEST >> Session Created`);
-        sessionB = session;
-        resolve();
-      });
-    }),
-    new Promise<void>(async (resolve, reject) => {
-      clientA.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
-        clientA.logger.warn(`TEST >> Pairing Proposed`);
-        time.start("pairing");
-        resolve();
-      });
-    }),
-    new Promise<void>(async (resolve, reject) => {
-      clientB.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
-        clientB.logger.warn(`TEST >> Pairing Acknowledged`);
-        time.stop("pairing");
-        resolve();
-      });
-    }),
   ]);
-
-  expect(sessionA).to.be.undefined;
-  expect(sessionB).to.be.undefined;
 
   return { topic: "", clients: { a: clientA, b: clientB } };
 }
