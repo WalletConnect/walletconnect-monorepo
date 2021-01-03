@@ -456,8 +456,13 @@ export class Pairing extends IPairing {
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
-      if (event.payload.method === PAIRING_JSONRPC.respond) {
-        this.onResponse(event);
+      switch (event.payload.method) {
+        case PAIRING_JSONRPC.approve:
+        case PAIRING_JSONRPC.reject:
+          this.onResponse(event);
+          break;
+        default:
+          break;
       }
     } else {
       this.onAcknowledge(event);
@@ -475,7 +480,10 @@ export class Pairing extends IPairing {
       this.logger.debug({ type: "event", event: PAIRING_EVENTS.responded, data: pending });
       this.events.emit(PAIRING_EVENTS.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
-        const request = formatJsonRpcRequest(PAIRING_JSONRPC.respond, pending.outcome);
+        const method = !isPairingFailed(pending.outcome)
+          ? PAIRING_JSONRPC.approve
+          : PAIRING_JSONRPC.reject;
+        const request = formatJsonRpcRequest(method, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay });
       }
     } else {

@@ -2,7 +2,8 @@ import { NotificationPermissions, SessionTypes, SignalTypes } from "@walletconne
 
 export const SESSION_JSONRPC = {
   propose: "wc_sessionPropose",
-  respond: "wc_sessionRespond",
+  approve: "wc_sessionApprove",
+  reject: "wc_sessionReject",
   update: "wc_sessionUpdate",
   delete: "wc_sessionDelete",
   payload: "wc_sessionPayload",

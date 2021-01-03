@@ -524,8 +524,13 @@ export class Session extends ISession {
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
-      if (event.payload.method === SESSION_JSONRPC.respond) {
-        this.onResponse(event);
+      switch (event.payload.method) {
+        case SESSION_JSONRPC.approve:
+        case SESSION_JSONRPC.reject:
+          this.onResponse(event);
+          break;
+        default:
+          break;
       }
     } else {
       this.onAcknowledge(event);
@@ -547,7 +552,10 @@ export class Session extends ISession {
           sharedKey: pairing.sharedKey,
           publicKey: pairing.self.publicKey,
         };
-        const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
+        const method = !isSessionFailed(pending.outcome)
+          ? SESSION_JSONRPC.approve
+          : SESSION_JSONRPC.reject;
+        const request = formatJsonRpcRequest(method, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });
       }
     } else {
