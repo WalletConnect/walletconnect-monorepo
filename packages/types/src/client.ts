@@ -1,6 +1,12 @@
 import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
-import { IJsonRpcProvider, JsonRpcRequest, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
+import {
+  IJsonRpcProvider,
+  JsonRpcRequest,
+  JsonRpcResponse,
+  IEvents,
+  RequestArguments,
+} from "@json-rpc-tools/types";
 
 import { IRelay, RelayTypes } from "./relay";
 import { IPairing } from "./pairing";
@@ -82,7 +88,7 @@ export declare namespace ClientTypes {
 
   export interface RequestParams {
     topic: string;
-    request: JsonRpcRequest;
+    request: RequestArguments;
     chainId?: string;
   }
 

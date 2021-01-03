@@ -9,7 +9,7 @@ describe("Session", () => {
     expect(!!clients).to.be.true;
   });
   it("A proposes session and B rejects", async () => {
-    const { clients } = await testSessionScenarios({ rejectSession: true });
+    const { clients } = await testSessionScenarios({ scenario: "reject-session" });
     expect(!!clients).to.be.true;
   });
   it("A proposes session with existing pairing topic", async () => {
@@ -30,5 +30,9 @@ describe("Session", () => {
     expect(sessions.a.includes(topic)).to.be.true;
     expect(sessions.b.includes(topic)).to.be.true;
     expect(sessions.a.length).to.eql(sessions.b.length);
+  });
+  it("A proposes session with incorrect permissions", async () => {
+    const { clients } = await testSessionScenarios({ scenario: "incorrect-permissions" });
+    expect(!!clients).to.be.true;
   });
 });

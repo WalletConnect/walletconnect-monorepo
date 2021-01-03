@@ -1,4 +1,4 @@
-import { NotificationPermissions, SessionTypes, SignalTypes } from "@walletconnect/types";
+import { SessionTypes, SignalTypes } from "@walletconnect/types";
 
 export const SESSION_JSONRPC = {
   propose: "wc_sessionPropose",

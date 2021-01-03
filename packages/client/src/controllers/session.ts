@@ -17,6 +17,7 @@ import {
   sha256,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
+  // isValidSessionProposal,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -276,6 +277,7 @@ export class Session extends ISession {
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Propose Session`);
     this.logger.trace({ type: "method", method: "propose", params });
+    // isValidSessionProposal(params);
     if (params.signal.method !== SESSION_SIGNAL_METHOD_PAIRING)
       throw new Error(`Session proposal signal unsupported`);
     const pairing = await this.client.pairing.settled.get(params.signal.params.topic);

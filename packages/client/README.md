@@ -263,7 +263,7 @@ export declare namespace ClientTypes {
 
   export interface RequestParams {
     topic: string;
-    request: JsonRpcRequest;
+    request: RequestArguments;
     chainId?: string;
   }
 

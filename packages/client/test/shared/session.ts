@@ -30,7 +30,7 @@ interface SessionScenarioSetup {
   clients?: IntializedClients;
   setup?: ClientSetupMap;
   pairing?: SignalTypes.ParamsPairing;
-  rejectSession?: boolean;
+  scenario?: string;
 }
 
 interface SessionScenarioResult {
@@ -60,7 +60,7 @@ function generateClientSetup(label: string, clients?: ClientSetupMap): Required<
 export async function testSessionScenarios(
   opts?: SessionScenarioSetup,
 ): Promise<SessionScenarioResult> {
-  //  generate client setup for scenario
+  //  generate client setup
   const setup = {
     a: generateClientSetup("a", opts?.setup),
     b: generateClientSetup("b", opts?.setup),
@@ -70,15 +70,18 @@ export async function testSessionScenarios(
     a: await Client.init(setup.a.options),
     b: await Client.init(setup.a.options),
   };
-
-  if (!opts?.rejectSession) {
-    return testSessionApprovalScenario(setup, clients, opts?.pairing);
-  } else {
-    return testSessionRejectionScenario(setup, clients, opts?.pairing);
+  // select scenario
+  switch (opts?.scenario) {
+    case "reject-session":
+      return testRejectSession(setup, clients, opts?.pairing);
+    case "incorrect-permissions":
+      return testIncorrectPermissions(setup, clients, opts?.pairing);
+    default:
+      return testApproveSession(setup, clients, opts?.pairing);
   }
 }
 
-async function testSessionApprovalScenario(
+async function testApproveSession(
   setup: Record<string, Required<ClientSetup>>,
   clients: IntializedClients,
   pairing?: SignalTypes.ParamsPairing,
@@ -212,7 +215,7 @@ async function testSessionApprovalScenario(
   return { topic: sessionA?.topic || "", clients: { a: clientA, b: clientB } };
 }
 
-async function testSessionRejectionScenario(
+async function testRejectSession(
   setup: Record<string, Required<ClientSetup>>,
   clients: IntializedClients,
   pairing?: SignalTypes.ParamsPairing,
@@ -253,6 +256,27 @@ async function testSessionRejectionScenario(
       });
     }),
   ]);
+
+  return { topic: "", clients: { a: clientA, b: clientB } };
+}
+
+async function testIncorrectPermissions(
+  setup: Record<string, Required<ClientSetup>>,
+  clients: IntializedClients,
+  pairing?: SignalTypes.ParamsPairing,
+): Promise<SessionScenarioResult> {
+  const { a: clientA, b: clientB } = clients;
+
+  const promise = clientA.connect({
+    metadata: setup.a.metadata,
+    // forcing typescript to ignore to inject incorrect permisssions
+    // @ts-ignore
+    permissions: { blockchain: setup.a.permissions.blockchain },
+    pairing,
+  });
+  // FIXME: chai-as-promised assertions are not typed hence need to be ignored
+  // @ts-ignore
+  await expect(promise).to.eventually.be.rejectedWith("Session not approved");
 
   return { topic: "", clients: { a: clientA, b: clientB } };
 }

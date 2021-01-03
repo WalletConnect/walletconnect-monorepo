@@ -16,7 +16,12 @@ import {
   isSessionResponded,
   getPairingMetadata,
 } from "@walletconnect/utils";
-import { JsonRpcPayload, isJsonRpcRequest, isJsonRpcError } from "@json-rpc-tools/utils";
+import {
+  JsonRpcPayload,
+  isJsonRpcRequest,
+  isJsonRpcError,
+  formatJsonRpcRequest,
+} from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
 import { Pairing, Session, Relay } from "./controllers";
@@ -193,18 +198,19 @@ export class Client extends IClient {
   }
 
   public async request(params: ClientTypes.RequestParams): Promise<any> {
+    const request = formatJsonRpcRequest(params.request.method, params.request.params);
     return new Promise((resolve, reject) => {
       this.on(CLIENT_EVENTS.session.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
         if (params.topic !== payloadEvent.topic) return;
         if (isJsonRpcRequest(payloadEvent.payload)) return;
         const response = payloadEvent.payload;
-        if (response.id !== params.request.id) return;
+        if (response.id !== request.id) return;
         if (isJsonRpcError(response)) {
           return reject(new Error(response.error.message));
         }
         return resolve(response.result);
       });
-      this.session.send(params.topic, params.request, params.chainId);
+      this.session.send(params.topic, request, params.chainId);
     });
   }
 

@@ -52,3 +52,6 @@ export const TEST_SESSION_ACCOUNT_IDS = TEST_ETHEREUM_ACCOUNTS.map(
 export const TEST_SESSION_STATE = {
   accountIds: TEST_SESSION_ACCOUNT_IDS,
 };
+
+export const TEST_ETHEREUM_REQUEST = { method: "eth_accounts" };
+export const TEST_ETHEREUM_RESULT = TEST_ETHEREUM_ACCOUNTS;

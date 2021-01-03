@@ -104,7 +104,7 @@ export class Pairing extends IPairing {
   }
 
   get entries(): Record<string, PairingTypes.Settled> {
-    return mapEntries(this.settled.entries, x => x.data);
+    return mapEntries(this.settled.entries, (x) => x.data);
   }
 
   public async create(params?: PairingTypes.CreateParams): Promise<PairingTypes.Settled> {
