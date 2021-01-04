@@ -17,6 +17,7 @@ import {
   sha256,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
+  isValidSessionProposal,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -276,6 +277,7 @@ export class Session extends ISession {
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Propose Session`);
     this.logger.trace({ type: "method", method: "propose", params });
+    isValidSessionProposal(params);
     if (params.signal.method !== SESSION_SIGNAL_METHOD_PAIRING)
       throw new Error(`Session proposal signal unsupported`);
     const pairing = await this.client.pairing.settled.get(params.signal.params.topic);
@@ -524,8 +526,13 @@ export class Session extends ISession {
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
-      if (event.payload.method === SESSION_JSONRPC.respond) {
-        this.onResponse(event);
+      switch (event.payload.method) {
+        case SESSION_JSONRPC.approve:
+        case SESSION_JSONRPC.reject:
+          this.onResponse(event);
+          break;
+        default:
+          break;
       }
     } else {
       this.onAcknowledge(event);
@@ -547,7 +554,10 @@ export class Session extends ISession {
           sharedKey: pairing.sharedKey,
           publicKey: pairing.self.publicKey,
         };
-        const request = formatJsonRpcRequest(SESSION_JSONRPC.respond, pending.outcome);
+        const method = !isSessionFailed(pending.outcome)
+          ? SESSION_JSONRPC.approve
+          : SESSION_JSONRPC.reject;
+        const request = formatJsonRpcRequest(method, pending.outcome);
         this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });
       }
     } else {

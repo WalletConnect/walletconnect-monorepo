@@ -12,6 +12,7 @@ import {
   isJsonRpcRequest,
   JsonRpcRequest,
   formatJsonRpcResult,
+  RequestArguments,
 } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
@@ -71,11 +72,14 @@ export class Relay extends IRelay {
           })
         : utf8ToHex(msg);
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
-      const request = formatJsonRpcRequest<RelayJsonRpc.PublishParams>(jsonRpc.publish, {
-        topic,
-        message,
-        ttl: opts?.ttl || RELAY_DEFAULT_PUBLISH_TTL,
-      });
+      const request: RequestArguments<RelayJsonRpc.PublishParams> = {
+        method: jsonRpc.publish,
+        params: {
+          topic,
+          message,
+          ttl: opts?.ttl || RELAY_DEFAULT_PUBLISH_TTL,
+        },
+      };
       this.logger.info(`Outgoing Relay Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", request });
       await this.provider.request(request);
@@ -98,9 +102,12 @@ export class Relay extends IRelay {
     try {
       const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
-      const request = formatJsonRpcRequest<RelayJsonRpc.SubscribeParams>(jsonRpc.subscribe, {
-        topic,
-      });
+      const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
+        method: jsonRpc.subscribe,
+        params: {
+          topic,
+        },
+      };
       this.logger.info(`Outgoing Relay Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
@@ -131,9 +138,12 @@ export class Relay extends IRelay {
     try {
       const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
-      const request = formatJsonRpcRequest<RelayJsonRpc.UnsubscribeParams>(jsonRpc.unsubscribe, {
-        id,
-      });
+      const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
+        method: jsonRpc.unsubscribe,
+        params: {
+          id,
+        },
+      };
       this.logger.info(`Outgoing Relay Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", request });
 

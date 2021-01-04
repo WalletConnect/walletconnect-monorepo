@@ -32,23 +32,26 @@ export const TEST_PERMISSIONS: SessionTypes.BasePermissions = {
 export const TEST_APP_METADATA_A: SessionTypes.Metadata = {
   name: "App A (Proposer)",
   description: "Description of Proposer App run by client A",
-  url: "#",
+  url: "https://walletconnect.org",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
 export const TEST_APP_METADATA_B: SessionTypes.Metadata = {
   name: "App B (Responder)",
   description: "Description of Responder App run by client B",
-  url: "#",
+  url: "https://walletconnect.org",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
 export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
 export const TEST_SESSION_ACCOUNT_IDS = TEST_ETHEREUM_ACCOUNTS.map(
-  address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
+  (address) => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
 );
 
 export const TEST_SESSION_STATE = {
   accountIds: TEST_SESSION_ACCOUNT_IDS,
 };
+
+export const TEST_ETHEREUM_REQUEST = { method: "eth_accounts" };
+export const TEST_ETHEREUM_RESULT = TEST_ETHEREUM_ACCOUNTS;
