@@ -4,10 +4,12 @@ import {
   formatJsonRpcResult,
   getError,
   isJsonRpcRequest,
+  isJsonRpcResponse,
   JsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
   JsonRpcResult,
+  JsonRpcPayload,
   METHOD_NOT_FOUND,
   payloadId,
 } from "@json-rpc-tools/utils";
@@ -47,6 +49,14 @@ export class JsonRpcService {
     this.notification = notification;
     this.subscription = new SubscriptionService(this.logger, this.redis);
     this.initialize();
+  }
+
+  public async onPayload(socketId: string, payload: JsonRpcPayload): Promise<void> {
+    if (isJsonRpcRequest(payload)) {
+      this.onRequest(socketId, payload)
+    } else {
+      this.onResponse(socketId, payload)
+    }
   }
 
   public async onRequest(socketId: string, request: JsonRpcRequest): Promise<void> {

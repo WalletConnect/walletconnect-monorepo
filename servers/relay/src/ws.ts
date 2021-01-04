@@ -8,10 +8,9 @@ import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
-import { generateRandomBytes32, isLegacySocketMessage } from "./utils";
+import { generateRandomBytes32, isJsonRpcPayload, isLegacySocketMessage } from "./utils";
 
 import { safeJsonParse } from "safe-json-utils";
-import { isJsonRpcRequest, isJsonRpcResponse } from "@json-rpc-tools/utils";
 import { LegacyService } from "./legacy";
 
 export class WebSocketService {
@@ -69,10 +68,8 @@ export class WebSocketService {
           socket.send(response);
         } else if (isLegacySocketMessage(payload)) {
           this.legacy.onRequest(socketId, payload);
-        } else if (isJsonRpcRequest(payload)) {
-          this.jsonrpc.onRequest(socketId, payload);
-        } else if (isJsonRpcResponse(payload)) {
-          this.jsonrpc.onResponse(socketId, payload);
+        } else if (isJsonRpcPayload(payload)) {
+          this.jsonrpc.onPayload(socketId, payload);
         } else {
           response = "Socket message unsupported";
           this.logger.debug(`Outgoing WebSocket Message`);
