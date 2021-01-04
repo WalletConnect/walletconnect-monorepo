@@ -114,11 +114,11 @@ export class Client extends IClient {
           notifications: SESSION_EMPTY_PERMISSIONS.notifications,
         },
       });
-      this.logger.debug(`Application Pairing Successful`);
+      this.logger.debug(`Application Connection Successful`);
       this.logger.trace({ type: "method", method: "connect", session });
       return session;
     } catch (e) {
-      this.logger.debug(`Application Pairing Failure`);
+      this.logger.debug(`Application Connection Failure`);
       this.logger.error(e);
       throw e;
     }
