@@ -1,7 +1,8 @@
 import { PairingTypes, SignalTypes } from "@walletconnect/types";
 
 export const PAIRING_JSONRPC = {
-  respond: "wc_pairingRespond",
+  approve: "wc_pairingApprove",
+  reject: "wc_pairingReject",
   update: "wc_pairingUpdate",
   delete: "wc_pairingDelete",
   payload: "wc_pairingPayload",
