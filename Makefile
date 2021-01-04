@@ -117,14 +117,31 @@ relay-watch:
 relay-start:
 	npm run start --prefix servers/relay
 
-build-container: build-nginx
+build-container-base: build-nginx
 	docker build \
-		-t $(walletConnectImage) \
 		--build-arg BRANCH=$(BRANCH) \
+		-t "$(project)/relay:base" \
 		-f ops/relay.Dockerfile .
-	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
+
+build-container-dev: build-container-base
+	docker build \
+		--build-arg BRANCH=$(BRANCH) \
+		-t "$(project)/relay:dev" \
+		-f ops/relay.dev.Dockerfile .
+	@echo "MAKE: Done with $@"
+	@echo
+
+build-container-prod: build-container-base
+	docker build \
+		--build-arg BRANCH=$(BRANCH) \
+		-t $(walletConnectImage) \
+		-f ops/relay.prod.Dockerfile .
+	@echo "MAKE: Done with $@"
+	@echo
+
+build-container: build-container-prod
 
 build-nginx: pull
 	docker build \
@@ -135,7 +152,7 @@ build-nginx: pull
 	@echo  "MAKE: Done with $@"
 	@echo
 
-dev: build-container
+dev: build-container-dev
 	mkdir -p servers/relay/dist
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
@@ -147,7 +164,7 @@ dev: build-container
 	@echo
 	$(MAKE) relay-logs
 
-dev-monitoring: pull build
+dev-monitoring: build-container-dev
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	docker stack deploy \
@@ -169,7 +186,7 @@ redeploy:
 	$(MAKE) down
 	$(MAKE) dev-monitoring
 
-deploy: setup build cloudflare
+deploy: setup cloudflare build
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	PROJECT=$(project) \
@@ -177,7 +194,7 @@ deploy: setup build cloudflare
 	@echo  "MAKE: Done with $@"
 	@echo
 
-deploy-monitoring: setup build cloudflare
+deploy-monitoring: setup cloudflare build
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	PROJECT=$(project) \

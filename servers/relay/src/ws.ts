@@ -67,12 +67,12 @@ export class WebSocketService {
           this.logger.debug(`Outgoing WebSocket Message`);
           this.logger.trace({ type: "message", direction: "outgoing", response });
           socket.send(response);
+        } else if (isLegacySocketMessage(payload)) {
+          this.legacy.onRequest(socketId, payload);
         } else if (isJsonRpcRequest(payload)) {
           this.jsonrpc.onRequest(socketId, payload);
         } else if (isJsonRpcResponse(payload)) {
           this.jsonrpc.onResponse(socketId, payload);
-        } else if (isLegacySocketMessage(payload)) {
-          this.legacy.onRequest(socketId, payload);
         } else {
           response = "Socket message unsupported";
           this.logger.debug(`Outgoing WebSocket Message`);
