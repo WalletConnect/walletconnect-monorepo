@@ -1,3 +1,3 @@
 FROM walletconnect/relay:base
-USER relay
+USER node
 CMD ["node", "/relay/dist"]
