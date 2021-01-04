@@ -53,7 +53,7 @@ export class RedisService {
   public async setLegacyPublished(socketMessage: LegacySocketMessage) {
     this.logger.debug(`Setting Legacy Published`);
     this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
-    await this.client.lpushAsync(`request:${socketMessage.topic}`, socketMessage.payload);
+    await this.client.lpushAsync(`request:${socketMessage.topic}`, safeJsonStringify(socketMessage));
     const sevenDays = 604800;
     await this.client.expireAsync(`request:${socketMessage.topic}`, sevenDays);
   }
@@ -61,7 +61,7 @@ export class RedisService {
   public async getLegacyPublished(topic: string) {
     return this.client.lrangeAsync(`request:${topic}`, 0, -1).then((raw: any) => {
       if (raw) {
-        const data: string[] = raw.map((message: string) => message);
+        const data: LegacySocketMessage[] = raw.map((message: string) => safeJsonParse(message));
         this.client.del(`request:${topic}`);
         this.logger.debug(`Getting Legacy Published`);
         this.logger.trace({ type: "method", method: "getLegacyPublished", topic, data });

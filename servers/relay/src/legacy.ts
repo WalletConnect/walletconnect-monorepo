@@ -103,7 +103,7 @@ export class LegacyService {
     if (socket.readyState === 1) {
       const message = safeJsonStringify(socketMessage);
       socket.send(message);
-      this.logger.info(`Outgoing JSON-RPC Payload`);
+      this.logger.info(`Outgoing Legacy Socket Message`);
       this.logger.debug({ type: "payload", direction: "outgoing", payload: socketMessage });
     } else {
       await this.redis.setLegacyPublished(socketMessage);
