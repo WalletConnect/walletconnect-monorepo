@@ -102,7 +102,7 @@ build: pull build-lerna build-container
 test-client: build
 	npm run test --prefix packages/client
 
-test-staging: build
+test-staging: build-lerna
 	TEST_RELAY_URL=wss://staging.walletconnect.org npm run test --prefix packages/client
 
 watch:
