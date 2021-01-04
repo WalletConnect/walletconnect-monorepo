@@ -19,8 +19,8 @@ describe("Session", () => {
       a: Object.keys(clients.a.pairing.entries),
       b: Object.keys(clients.b.pairing.entries),
     };
-    expect(pairings.a[0]).to.eql(pairings.b[0]);
     const pairing = { topic: pairings.a[0] };
+    expect(pairings.b.includes(pairing.topic)).to.be.true;
     const { topic } = await testSessionScenarios({ clients, pairing });
     expect(!!topic).to.be.true;
     const sessions = {
