@@ -58,13 +58,13 @@ export function isValidSessionProposalPermissions(
 }
 
 export function isValidSessionProposalMetadata(metadata: SessionTypes.Metadata): void {
-  if (typeof metadata.name !== "string") {
+  if (!isValidString(metadata.name)) {
     throw new Error("Missing or invalid metadata name");
   }
-  if (typeof metadata.description !== "string") {
+  if (!isValidString(metadata.description)) {
     throw new Error("Missing or invalid metadata description");
   }
-  if (typeof metadata.url !== "string" || !isValidUrl(metadata.url)) {
+  if (typeof metadata.url === "undefined" || !isValidUrl(metadata.url)) {
     throw new Error("Missing or invalid metadata url");
   }
 
@@ -104,9 +104,9 @@ export function isValidNotificationPermissionsProposal(
   notifications: NotificationPermissions.Proposal,
 ) {
   if (
+    typeof notifications === "undefined" ||
     typeof notifications.types === "undefined" ||
-    typeof notifications.types === "undefined" ||
-    isValidArray(notifications.types, isValidString)
+    !isValidArray(notifications.types, isValidString)
   ) {
     throw new Error("Missing or invalid notification permissions");
   }
@@ -116,7 +116,7 @@ export function isValidNotificationPermissionsProposal(
 
 export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
   if (Array.isArray(arr)) {
-    if (itemCondition) {
+    if (typeof itemCondition !== "undefined" && arr.length) {
       const matches = arr.filter(itemCondition);
       return matches.length === arr.length;
     } else {

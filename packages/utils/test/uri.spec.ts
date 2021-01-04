@@ -4,16 +4,14 @@ import { UriParameters } from "@walletconnect/types";
 import { safeJsonStringify } from "safe-json-utils";
 
 import { formatUri, parseUri } from "../src";
+import { TEST_KEY_PAIRS, TEST_PAIRING_TOPIC, TEST_RELAY_OPTIONS } from "./shared";
 
 const TEST_URI_PARAMS: UriParameters = {
   protocol: "wc",
   version: 2,
-  topic: "c9e6d30fb34afe70a15c14e9337ba8e4d5a35dd695c39b94884b0ee60c69d168",
-  publicKey: "03b8bab4d10634ed82e2b358f7ba01704ec9e0f139d7fe1db694ecfbfd8bb4b57f",
-  relay: {
-    protocol: "bridge",
-    params: {},
-  },
+  topic: TEST_PAIRING_TOPIC,
+  publicKey: TEST_KEY_PAIRS["A"].publicKey,
+  relay: TEST_RELAY_OPTIONS,
 };
 
 const TEST_URI_STRING = `${TEST_URI_PARAMS.protocol}:${TEST_URI_PARAMS.topic}@${
