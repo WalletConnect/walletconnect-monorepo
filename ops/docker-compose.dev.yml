@@ -5,6 +5,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
   relay:
+    image: walletconnect/relay:dev
     ports:
       - "127.0.0.1:5555:5555"
     volumes:
