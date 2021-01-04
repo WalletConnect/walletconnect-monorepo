@@ -31,8 +31,13 @@ describe("Session", () => {
     expect(sessions.b.includes(topic)).to.be.true;
     expect(sessions.a.length).to.eql(sessions.b.length);
   });
-  it("A proposes session with incorrect permissions", async () => {
-    const { clients } = await testSessionScenarios({ scenario: "incorrect-permissions" });
-    expect(!!clients).to.be.true;
-  });
+  // TODO: implement session propose params validators
+  // it("A proposes session with incorrect permissions", async () => {
+  //   const { clients } = await testSessionScenarios({ scenario: "incorrect-permissions" });
+  //   expect(!!clients).to.be.true;
+  // });
+  // it("A proposes session with incorrect metadata", async () => {
+  //   const { clients } = await testSessionScenarios({ scenario: "incorrect-metadata" });
+  //   expect(!!clients).to.be.true;
+  // });
 });

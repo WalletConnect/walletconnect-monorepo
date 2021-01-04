@@ -2,22 +2,15 @@ import "mocha";
 import { expect } from "chai";
 import Timestamp from "@pedrouid/timestamp";
 import { SessionTypes } from "@walletconnect/types";
-import {
-  formatJsonRpcRequest,
-  formatJsonRpcResult,
-  isJsonRpcRequest,
-  JsonRpcRequest,
-  JsonRpcResponse,
-  RequestArguments,
-} from "@json-rpc-tools/utils";
+import { formatJsonRpcResult, isJsonRpcRequest, RequestArguments } from "@json-rpc-tools/utils";
 
 import { CLIENT_EVENTS } from "../../src";
 import { TEST_ETHEREUM_ACCOUNTS, TEST_PERMISSIONS_CHAIN_IDS } from "./values";
-import { IntializedClients } from "./types";
+import { InitializedClients } from "./types";
 
 interface RequestScenarioOptions {
   topic: string;
-  clients: IntializedClients;
+  clients: InitializedClients;
   chainId?: string;
   request?: RequestArguments;
   result?: any;
