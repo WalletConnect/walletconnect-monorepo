@@ -122,13 +122,14 @@ build-container-base: build-nginx
 		--build-arg BRANCH=$(BRANCH) \
 		-t "$(project)/relay:base" \
 		-f ops/relay.Dockerfile .
+	@echo "MAKE: Done with $@"
+	@echo
 
 build-container-dev: build-container-base
 	docker build \
 		--build-arg BRANCH=$(BRANCH) \
 		-t "$(project)/relay:dev" \
 		-f ops/relay.dev.Dockerfile .
-	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
 
@@ -137,7 +138,6 @@ build-container-prod: build-container-base
 		--build-arg BRANCH=$(BRANCH) \
 		-t $(walletConnectImage) \
 		-f ops/relay.prod.Dockerfile .
-	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
 
