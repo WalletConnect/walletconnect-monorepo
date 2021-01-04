@@ -89,9 +89,10 @@ export class JsonRpcService {
   public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
     this.logger.info(`Incoming JSON-RPC Payload`);
     this.logger.debug({ type: "payload", direction: "incoming", payload: response });
-    let [topic, messageHash ] = (await this.redis.getPendingRequest(response.id))?.split(":");
-    if (messageHash) {
+    let result = await this.redis.getPendingRequest(response.id)
+    if (result) {
       await this.redis.deletePendingRequest(response.id);
+      let [ topic , messageHash ] = result.split(":");
       await this.redis.deleteMessage(topic, messageHash);
     }
   }
