@@ -230,5 +230,13 @@
     "logo": "./logos/plasmapay.png",
     "universalLink": "https://plasmapay.com",
     "deepLink": "plasmapay:"
+  },
+  {
+    "name": "BitPay Wallet",
+    "shortName": "BitPay",
+    "color": "rgb(26, 59, 139)",
+    "logo": "./logos/bitpay.png",
+    "universalLink": "https://bitpay.com/wallet",
+    "deepLink": "bitpay:"
   }
 ]
