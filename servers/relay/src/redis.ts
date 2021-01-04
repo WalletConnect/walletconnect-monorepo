@@ -54,8 +54,8 @@ export class RedisService {
     this.logger.debug(`Setting Legacy Published`);
     this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
     await this.client.lpushAsync(`request:${socketMessage.topic}`, safeJsonStringify(socketMessage));
-    const sevenDays = 604800;
-    await this.client.expireAsync(`request:${socketMessage.topic}`, sevenDays);
+    const oneDay = 86400;
+    await this.client.expireAsync(`request:${socketMessage.topic}`, oneDay);
   }
 
   public async getLegacyPublished(topic: string) {
