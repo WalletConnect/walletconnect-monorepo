@@ -119,7 +119,7 @@ upstream upstream_app {
 EOF
   for i in $(seq 0 $((appQty - 1))); do
     if [[ $i == 0 ]]; then
-      echo "server $dockerContainerName$i:$port max_fails=1 fail_timeout=5s;" >> $configPath
+      echo "server $dockerContainerName$i:$port max_fails=1 fail_timeout=1s;" >> $configPath
     else
       echo "server $dockerContainerName$i:$port backup;" >> $configPath
     fi
