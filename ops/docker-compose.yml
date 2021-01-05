@@ -32,7 +32,7 @@ services:
   # purpose of Docker swarm and docker load balancing
   # so we are instead handling the load balancing with
   # our own nginx container
-  relay:
+  relay0:
     image: ${RELAY_IMAGE}
     environment:
       NODE_ENV: development

@@ -4,7 +4,7 @@ services:
   redis:
     ports:
       - "127.0.0.1:6379:6379"
-  relay:
+  relay0:
     image: walletconnect/relay:dev
     ports:
       - "127.0.0.1:5555:5555"
@@ -16,5 +16,5 @@ services:
       CONTAINER_NAME: relay
       APP_QTY: 1
     depends_on:
-      - relay
+      - relay0
 
