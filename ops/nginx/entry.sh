@@ -109,7 +109,7 @@ function configLoadBalancingForApp () {
     exit 1
   fi
   cat - >> $configPath<<EOF
-upstream app {
+upstream upstream_app {
 # request_uri is used in this situation because
 # it is compatible with both the random uuid that the stress
 # does and the production server uri of "" (no uri).
@@ -149,7 +149,7 @@ server {
   listen [::]:443 ssl;
   server_name $domain;
   # https://stackoverflow.com/questions/35744650/docker-network-nginx-resolver
-  resolver 127.0.0.11 valid=30s;
+  resolver 127.0.0.11 valid=5s ipv6=off;
  
   ssl_certificate           $certDirectory/fullchain.pem;
   ssl_certificate_key       $certDirectory/privkey.pem;
@@ -161,7 +161,8 @@ server {
     add_header "Access-Control-Allow-Origin"  *;
     proxy_set_header        Host \$host;
     proxy_set_header        http_x_forwarded_for  \$remote_addr;
-    proxy_pass              http://app;
+    set \$app_server        http://upstream_app;
+    proxy_pass              \$app_server;
 
     # Websocket must have configs
     proxy_http_version      1.1;
