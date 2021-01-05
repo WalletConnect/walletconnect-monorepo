@@ -8,18 +8,30 @@ services:
       EMAIL: ${CERTBOT_EMAIL}
       CONTAINER_NAME: relay
       APP_PORT: 5000
-      APP_QTY: 1
+      APP_QTY: 2
       CLOUDFLARE: ${CLOUDFLARE}
     depends_on:
       - relay
 
-  relay:
+  relay0:
     image: ${RELAY_IMAGE}
     environment:
       NODE_ENV: production
       REDIS_URL: redis://redis:6379/0
     deploy:
-      replicas: 1
       resources:
         limits:
-          memory: 1.5G
+          memory: 1G
+        reservations:
+          cpus: '0.4'
+  relay1:
+    image: ${RELAY_IMAGE}
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379/0
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          cpus: '0.4'
