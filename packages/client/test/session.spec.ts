@@ -4,6 +4,7 @@ import { expect } from "chai";
 import { testApproveSession, testRejectSession } from "./shared/session";
 import { setupClientsForTesting } from "./shared";
 import { generateRandomBytes32 } from "@walletconnect/utils";
+import { testPairingWithoutSession } from "./shared/pairing";
 
 describe("Session", () => {
   it("A proposes session and B approves", async () => {
@@ -18,7 +19,7 @@ describe("Session", () => {
   });
   it("A proposes session with existing pairing topic", async () => {
     const { setup, clients } = await setupClientsForTesting();
-    await testApproveSession(setup, clients);
+    await testPairingWithoutSession(clients);
     const pairings = {
       a: clients.a.pairing.topics,
       b: clients.b.pairing.topics,

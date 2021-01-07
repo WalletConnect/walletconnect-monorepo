@@ -14,8 +14,6 @@ export async function testApproveSession(
   clients: InitializedClients,
   pairing?: SignalTypes.ParamsPairing,
 ): Promise<string> {
-  const { a: clientA, b: clientB } = clients;
-
   // testing data points
   let sessionA: SessionTypes.Created | undefined;
   let sessionB: SessionTypes.Created | undefined;
@@ -27,7 +25,7 @@ export async function testApproveSession(
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
       time.start("connect");
-      await clientA.connect({
+      await clients.a.connect({
         metadata: setup.a.metadata,
         permissions: setup.a.permissions,
         pairing,
@@ -40,36 +38,36 @@ export async function testApproveSession(
         return resolve();
       }
       // Client A shares pairing proposal out-of-band with Client B
-      clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
-        clientB.logger.warn(`TEST >> Pairing Proposal`);
-        await clientB.pair({ uri: proposal.signal.params.uri });
-        clientB.logger.warn(`TEST >> Pairing Responded`);
+      clients.a.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
+        clients.b.logger.warn(`TEST >> Pairing Proposal`);
+        await clients.b.pair({ uri: proposal.signal.params.uri });
+        clients.b.logger.warn(`TEST >> Pairing Responded`);
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientB.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
-        clientB.logger.warn(`TEST >> Session Proposal`);
+      clients.b.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+        clients.b.logger.warn(`TEST >> Session Proposal`);
         const response: SessionTypes.Response = {
           state: setup.b.state,
           metadata: setup.b.metadata,
         };
-        await clientB.approve({ proposal, response });
-        clientB.logger.warn(`TEST >> Session Responded`);
+        await clients.b.approve({ proposal, response });
+        clients.b.logger.warn(`TEST >> Session Responded`);
         resolve();
       });
     }),
 
     new Promise<void>(async (resolve, reject) => {
-      clientA.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
-        clientA.logger.warn(`TEST >> Session Created`);
+      clients.a.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
+        clients.a.logger.warn(`TEST >> Session Created`);
         sessionA = session;
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientB.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
-        clientB.logger.warn(`TEST >> Session Created`);
+      clients.b.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
+        clients.b.logger.warn(`TEST >> Session Created`);
         sessionB = session;
         resolve();
       });
@@ -78,8 +76,8 @@ export async function testApproveSession(
       if (typeof pairing !== "undefined") {
         return resolve();
       }
-      clientA.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
-        clientA.logger.warn(`TEST >> Pairing Proposed`);
+      clients.a.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
+        clients.a.logger.warn(`TEST >> Pairing Proposed`);
         time.start("pairing");
         resolve();
       });
@@ -88,22 +86,22 @@ export async function testApproveSession(
       if (typeof pairing !== "undefined") {
         return resolve();
       }
-      clientB.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
-        clientB.logger.warn(`TEST >> Pairing Acknowledged`);
+      clients.b.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+        clients.b.logger.warn(`TEST >> Pairing Acknowledged`);
         time.stop("pairing");
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientA.session.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
-        clientA.logger.warn(`TEST >> Session Proposed`);
+      clients.a.session.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
+        clients.a.logger.warn(`TEST >> Session Proposed`);
         time.start("session");
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clientB.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
-        clientB.logger.warn(`TEST >> Session Acknowledged`);
+      clients.b.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+        clients.b.logger.warn(`TEST >> Session Acknowledged`);
         time.stop("session");
         resolve();
       });
@@ -112,10 +110,10 @@ export async function testApproveSession(
 
   // log elapsed times
   if (typeof pairing === "undefined") {
-    clientB.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
+    clients.b.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
   }
-  clientB.logger.warn(`TEST >> Session Elapsed Time: ${time.elapsed("session")}ms`);
-  clientB.logger.warn(`TEST >> Connect Elapsed Time: ${time.elapsed("connect")}ms`);
+  clients.b.logger.warn(`TEST >> Session Elapsed Time: ${time.elapsed("session")}ms`);
+  clients.b.logger.warn(`TEST >> Connect Elapsed Time: ${time.elapsed("connect")}ms`);
 
   // session data
   expect(sessionA?.topic).to.eql(sessionB?.topic);
@@ -148,11 +146,9 @@ export async function testRejectSession(
   clients: InitializedClients,
   pairing?: SignalTypes.ParamsPairing,
 ): Promise<string> {
-  const { a: clientA, b: clientB } = clients;
-
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
-      const promise = clientA.connect({
+      const promise = clients.a.connect({
         metadata: setup.a.metadata,
         permissions: setup.a.permissions,
         pairing,
@@ -167,19 +163,19 @@ export async function testRejectSession(
         return resolve();
       }
       // Client A shares pairing proposal out-of-band with Client B
-      clientA.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
-        clientB.logger.warn(`TEST >> Pairing Proposal`);
-        await clientB.pair({ uri: proposal.signal.params.uri });
-        clientB.logger.warn(`TEST >> Pairing Responded`);
+      clients.a.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
+        clients.b.logger.warn(`TEST >> Pairing Proposal`);
+        await clients.b.pair({ uri: proposal.signal.params.uri });
+        clients.b.logger.warn(`TEST >> Pairing Responded`);
         resolve();
       });
     }),
     // Client B receives session proposal and rejects it
     new Promise<void>(async (resolve, reject) => {
-      clientB.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
-        clientB.logger.warn(`TEST >> Session Proposal`);
-        await clientB.reject({ proposal });
-        clientB.logger.warn(`TEST >> Session Responded`);
+      clients.b.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+        clients.b.logger.warn(`TEST >> Session Proposal`);
+        await clients.b.reject({ proposal });
+        clients.b.logger.warn(`TEST >> Session Responded`);
         resolve();
       });
     }),
