@@ -105,6 +105,9 @@ test-client: build
 test-staging: build-lerna
 	TEST_RELAY_URL=wss://staging.walletconnect.org npm run test --prefix packages/client
 
+test-production: build-lerna
+	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
+
 watch:
 	npx lerna run watch --stream
 
