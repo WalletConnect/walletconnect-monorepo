@@ -15,16 +15,16 @@ describe("Session", () => {
   it("A proposes session with existing pairing topic", async () => {
     const { clients } = await testSessionScenarios();
     const pairings = {
-      a: Object.keys(clients.a.pairing.entries),
-      b: Object.keys(clients.b.pairing.entries),
+      a: clients.a.pairing.topics,
+      b: clients.b.pairing.topics,
     };
     const pairing = { topic: pairings.a[0] };
     expect(pairings.b.includes(pairing.topic)).to.be.true;
     const { topic } = await testSessionScenarios({ clients, pairing });
     expect(!!topic).to.be.true;
     const sessions = {
-      a: Object.keys(clients.a.session.entries),
-      b: Object.keys(clients.b.session.entries),
+      a: clients.a.session.topics,
+      b: clients.b.session.topics,
     };
     expect(sessions.a.includes(topic)).to.be.true;
     expect(sessions.b.includes(topic)).to.be.true;
@@ -40,9 +40,8 @@ describe("Session", () => {
   //   expect(!!topic).to.be.true;
   // });
   it("A pings B with existing session", async () => {
-    const { topic, clients } = await testSessionScenarios();
-    const session = Object.values(clients.a.session.entries)[0];
-    await clients.a.session.ping(session.topic);
-    expect(!!topic).to.be.true;
+    const { clients } = await testSessionScenarios();
+    const topic = clients.a.session.topics[0];
+    await clients.a.session.ping(topic);
   });
 });

@@ -40,6 +40,10 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     return this.subscriptions.size;
   }
 
+  get topics(): string[] {
+    return Array.from(this.subscriptions.keys());
+  }
+
   get entries(): SubscriptionEntries<Data> {
     return mapToObj<SubscriptionParams<Data>>(this.subscriptions);
   }

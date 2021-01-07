@@ -86,19 +86,12 @@ export declare namespace ClientTypes {
 
   export type NotifyParams = SessionTypes.NotifyParams;
 
-  export interface RequestParams {
-    topic: string;
-    request: RequestArguments;
-    chainId?: string;
-  }
+  export type RequestParams = SessionTypes.RequestParams;
 
   export interface RespondParams {
     topic: string;
     response: JsonRpcResponse;
   }
 
-  export interface DisconnectParams {
-    topic: string;
-    reason: string;
-  }
+  export type DisconnectParams = SessionTypes.DeleteParams;
 }

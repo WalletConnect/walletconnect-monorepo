@@ -23,8 +23,11 @@ export abstract class ISequence<
   public abstract settled: ISubscription<Settled>;
   // returns settled subscriptions length
   public abstract readonly length: number;
+  // returns settled subscriptions topics
+  public abstract readonly topics: string[];
   // returns settled subscriptions entries
   public abstract readonly entries: Record<string, Settled>;
+
   // describes sequence context
   protected abstract context: string;
 

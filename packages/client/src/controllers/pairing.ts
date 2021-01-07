@@ -108,6 +108,10 @@ export class Pairing extends IPairing {
     return this.settled.length;
   }
 
+  get topics(): string[] {
+    return this.settled.topics;
+  }
+
   get entries(): Record<string, PairingTypes.Settled> {
     return mapEntries(this.settled.entries, x => x.data);
   }

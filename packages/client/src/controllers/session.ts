@@ -108,6 +108,10 @@ export class Session extends ISession {
     return this.settled.length;
   }
 
+  get topics(): string[] {
+    return this.settled.topics;
+  }
+
   get entries(): Record<string, SessionTypes.Settled> {
     return mapEntries(this.settled.entries, x => x.data);
   }
