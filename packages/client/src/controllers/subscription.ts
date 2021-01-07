@@ -91,7 +91,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });
     const subscription = await this.getSubscription(topic);
-    this.client.relay.unsubscribe(subscription.id, {
+    this.client.relayer.unsubscribe(subscription.id, {
       relay: subscription.opts.relay,
       decryptKeys: subscription.opts.decryptKeys,
     });
@@ -156,7 +156,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     data: Data,
     opts: SubscriptionOptions,
   ): Promise<void> {
-    const id = await this.client.relay.subscribe(
+    const id = await this.client.relayer.subscribe(
       topic,
       (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
       opts,
@@ -210,12 +210,12 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private async reconnect(): Promise<void> {
-    await this.client.relay.init();
+    await this.client.relayer.init();
     await this.resubscribeAll();
   }
 
   private registerEventListeners(): void {
-    this.client.relay.on("disconnect", () => this.reconnect());
+    this.client.relayer.on("disconnect", () => this.reconnect());
     this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
       this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
       this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });

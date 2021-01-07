@@ -1,13 +1,13 @@
 import { ClientOptions, SessionTypes } from "@walletconnect/types";
 
 // TODO: Relay Provider URL needs to be set from ops
-export const TEST_RELAY_PROVIDER_URL = process.env.TEST_RELAY_URL
-  ? process.env.TEST_RELAY_URL
+export const TEST_RELAYER_PROVIDER_URL = process.env.TEST_RELAYER_URL
+  ? process.env.TEST_RELAYER_URL
   : "ws://localhost:5555";
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "info",
-  relayProvider: TEST_RELAY_PROVIDER_URL,
+  logger: "warn",
+  relayProvider: TEST_RELAYER_PROVIDER_URL,
 };
 
 export const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
@@ -46,7 +46,7 @@ export const TEST_APP_METADATA_B: SessionTypes.Metadata = {
 export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
 export const TEST_SESSION_ACCOUNT_IDS = TEST_ETHEREUM_ACCOUNTS.map(
-  (address) => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
+  address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
 );
 
 export const TEST_SESSION_STATE = {

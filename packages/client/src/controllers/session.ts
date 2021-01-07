@@ -42,23 +42,6 @@ import {
   SESSION_DEFAULT_TTL,
 } from "../constants";
 
-function settlePermissions(
-  permissions: SessionTypes.ProposedPermissions,
-  controllerPublicKey: string,
-): SessionTypes.SettledPermissions {
-  const controller: CryptoTypes.Participant = { publicKey: controllerPublicKey };
-  return {
-    ...permissions,
-    notifications: {
-      types: permissions.notifications.types,
-      controller,
-    },
-    state: {
-      controller,
-    },
-  };
-}
-
 export class Session extends ISession {
   public pending: Subscription<SessionTypes.Pending>;
   public settled: Subscription<SessionTypes.Settled>;
@@ -95,19 +78,29 @@ export class Session extends ISession {
     return this.settled.get(topic);
   }
 
-  public async notify(params: SessionTypes.NotifyParams): Promise<void> {
-    const session = await this.settled.get(params.topic);
-    if (
-      session.self.publicKey !== session.permissions.notifications.controller.publicKey &&
-      !session.permissions.notifications.types.includes(params.type)
-    ) {
-      const errorMessage = `Unauthorized Notification Type Requested: ${params.type}`;
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-    const notification: SessionTypes.Notification = { type: params.type, data: params.data };
-    const request = formatJsonRpcRequest(SESSION_JSONRPC.notification, notification);
-    this.send(params.topic, request);
+  public async ping(topic: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = formatJsonRpcRequest(SESSION_JSONRPC.ping, {});
+      const timeout = setTimeout(() => {
+        const errorMessage = `Session ping failed to respond after 30 seconds for topic: ${topic}`;
+        this.logger.error(errorMessage);
+        reject(errorMessage);
+      }, 30_000);
+      this.events.on(SESSION_EVENTS.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
+        if (topic !== payloadEvent.topic) return;
+        if (isJsonRpcRequest(payloadEvent.payload)) return;
+        const response = payloadEvent.payload;
+        if (response.id !== request.id) return;
+        clearTimeout(timeout);
+        if (isJsonRpcError(response)) {
+          const errorMessage = `Session ping failed - reason: ${response.error.message}`;
+          this.logger.error(errorMessage);
+          return reject(new Error(errorMessage));
+        }
+        return resolve();
+      });
+      this.send(topic, request);
+    });
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
@@ -127,7 +120,7 @@ export class Session extends ISession {
         payload,
       });
     }
-    this.client.relay.publish(session.topic, payload, { relay: session.relay, encryptKeys });
+    this.client.relayer.publish(session.topic, payload, { relay: session.relay, encryptKeys });
   }
 
   get length(): number {
@@ -187,7 +180,7 @@ export class Session extends ISession {
           relay,
           self,
           peer: proposal.proposer,
-          permissions: settlePermissions(proposal.permissions, self.publicKey),
+          permissions: formatSettledPermissions(proposal.permissions, self.publicKey),
           ttl: proposal.ttl,
           expiry,
           state,
@@ -254,6 +247,21 @@ export class Session extends ISession {
     this.logger.info(`Delete Session`);
     this.logger.trace({ type: "method", method: "delete", params });
     this.settled.delete(params.topic, params.reason);
+  }
+
+  public async notify(params: SessionTypes.NotifyParams): Promise<void> {
+    const session = await this.settled.get(params.topic);
+    if (
+      session.self.publicKey !== session.permissions.notifications.controller.publicKey &&
+      !session.permissions.notifications.types.includes(params.type)
+    ) {
+      const errorMessage = `Unauthorized Notification Type Requested: ${params.type}`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    const notification: SessionTypes.Notification = { type: params.type, data: params.data };
+    const request = formatJsonRpcRequest(SESSION_JSONRPC.notification, notification);
+    this.send(params.topic, request);
   }
 
   public on(event: string, listener: any): void {
@@ -355,7 +363,7 @@ export class Session extends ISession {
           relay: pending.relay,
           self: pending.self,
           peer: request.params.responder,
-          permissions: settlePermissions(
+          permissions: formatSettledPermissions(
             pending.proposal.permissions,
             request.params.responder.publicKey,
           ),
@@ -385,7 +393,7 @@ export class Session extends ISession {
         typeof errorMessage === "undefined"
           ? formatJsonRpcResult(request.id, true)
           : formatJsonRpcError(request.id, errorMessage);
-      this.client.relay.publish(pending.topic, response, { relay: pending.relay, encryptKeys });
+      this.client.relayer.publish(pending.topic, response, { relay: pending.relay, encryptKeys });
     } else {
       this.logger.error(request.params.reason);
       await this.pending.update(topic, {
@@ -428,6 +436,9 @@ export class Session extends ISession {
           break;
         case SESSION_JSONRPC.delete:
           await this.settled.delete(session.topic, request.params.reason);
+          break;
+        case SESSION_JSONRPC.ping:
+          this.send(session.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
           errorMessage = `Unknown JSON-RPC Method Requested: ${request.method}`;
@@ -558,7 +569,7 @@ export class Session extends ISession {
           ? SESSION_JSONRPC.approve
           : SESSION_JSONRPC.reject;
         const request = formatJsonRpcRequest(method, pending.outcome);
-        this.client.relay.publish(pending.topic, request, { relay: pending.relay, encryptKeys });
+        this.client.relayer.publish(pending.topic, request, { relay: pending.relay, encryptKeys });
       }
     } else {
       this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
@@ -618,4 +629,21 @@ export class Session extends ISession {
       },
     );
   }
+}
+
+function formatSettledPermissions(
+  permissions: SessionTypes.ProposedPermissions,
+  controllerPublicKey: string,
+): SessionTypes.SettledPermissions {
+  const controller: CryptoTypes.Participant = { publicKey: controllerPublicKey };
+  return {
+    ...permissions,
+    notifications: {
+      types: permissions.notifications.types,
+      controller,
+    },
+    state: {
+      controller,
+    },
+  };
 }

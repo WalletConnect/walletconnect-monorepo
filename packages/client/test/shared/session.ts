@@ -93,7 +93,7 @@ export async function testSessionScenarios(
     case "incorrect-permissions":
       return testIncorrectPermissions(setup, clients, opts?.pairing);
     case "incorrect-metadata":
-      return testIncorrectPermissions(setup, clients, opts?.pairing);
+      return testIncorrectMetadata(setup, clients, opts?.pairing);
     default:
       throw new Error(`Invalid or Unknown Session Test Scenario: ${scenario}`);
   }

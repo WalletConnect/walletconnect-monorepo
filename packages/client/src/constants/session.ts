@@ -7,6 +7,7 @@ export const SESSION_JSONRPC = {
   update: "wc_sessionUpdate",
   delete: "wc_sessionDelete",
   payload: "wc_sessionPayload",
+  ping: "wc_sessionPing",
   notification: "wc_sessionNotification",
 };
 

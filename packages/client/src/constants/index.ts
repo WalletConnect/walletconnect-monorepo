@@ -1,5 +1,5 @@
 export * from "./client";
 export * from "./pairing";
-export * from "./relay";
+export * from "./relayer";
 export * from "./session";
 export * from "./subscription";

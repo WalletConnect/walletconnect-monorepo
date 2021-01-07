@@ -2,13 +2,14 @@ import { Server } from "http";
 import WebSocket from "ws";
 import * as encUtils from "enc-utils";
 import { Logger } from "pino";
+import { isJsonRpcPayload } from "@json-rpc-tools/utils";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
-import { generateRandomBytes32, isJsonRpcPayload, isLegacySocketMessage } from "./utils";
+import { generateRandomBytes32, isLegacySocketMessage } from "./utils";
 
 import { safeJsonParse } from "safe-json-utils";
 import { LegacyService } from "./legacy";

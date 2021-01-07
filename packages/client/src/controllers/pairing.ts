@@ -38,7 +38,7 @@ import {
   PAIRING_REASONS,
   PAIRING_STATUS,
   SUBSCRIPTION_EVENTS,
-  RELAY_DEFAULT_PROTOCOL,
+  RELAYER_DEFAULT_PROTOCOL,
   PAIRING_SIGNAL_METHOD_URI,
   SESSION_JSONRPC,
   PAIRING_DEFAULT_TTL,
@@ -80,6 +80,31 @@ export class Pairing extends IPairing {
     return this.settled.get(topic);
   }
 
+  public async ping(topic: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = formatJsonRpcRequest(SESSION_JSONRPC.ping, {});
+      const timeout = setTimeout(() => {
+        const errorMessage = `Pairing ping failed to respond after 30 seconds for topic: ${topic}`;
+        this.logger.error(errorMessage);
+        reject(errorMessage);
+      }, 30_000);
+      this.events.on(PAIRING_EVENTS.payload, (payloadEvent: PairingTypes.PayloadEvent) => {
+        if (topic !== payloadEvent.topic) return;
+        if (isJsonRpcRequest(payloadEvent.payload)) return;
+        const response = payloadEvent.payload;
+        if (response.id !== request.id) return;
+        clearTimeout(timeout);
+        if (isJsonRpcError(response)) {
+          const errorMessage = `Pairing ping failed - reason: ${response.error.message}`;
+          this.logger.error(errorMessage);
+          return reject(new Error(errorMessage));
+        }
+        return resolve();
+      });
+      this.send(topic, request);
+    });
+  }
+
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
     const pairing = await this.settled.get(topic);
     const encryptKeys: CryptoTypes.EncryptKeys = {
@@ -96,7 +121,7 @@ export class Pairing extends IPairing {
         payload,
       });
     }
-    this.client.relay.publish(pairing.topic, payload, { relay: pairing.relay, encryptKeys });
+    this.client.relayer.publish(pairing.topic, payload, { relay: pairing.relay, encryptKeys });
   }
 
   get length(): number {
@@ -104,7 +129,7 @@ export class Pairing extends IPairing {
   }
 
   get entries(): Record<string, PairingTypes.Settled> {
-    return mapEntries(this.settled.entries, (x) => x.data);
+    return mapEntries(this.settled.entries, x => x.data);
   }
 
   public async create(params?: PairingTypes.CreateParams): Promise<PairingTypes.Settled> {
@@ -234,7 +259,7 @@ export class Pairing extends IPairing {
   protected async propose(params?: PairingTypes.ProposeParams): Promise<PairingTypes.Pending> {
     this.logger.debug(`Propose Pairing`);
     this.logger.trace({ type: "method", method: "propose", params });
-    const relay = params?.relay || { protocol: RELAY_DEFAULT_PROTOCOL };
+    const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
     const self = generateKeyPair();
     const proposer: PairingTypes.Peer = {
@@ -333,7 +358,7 @@ export class Pairing extends IPairing {
         typeof errorMessage === "undefined"
           ? formatJsonRpcResult(request.id, true)
           : formatJsonRpcError(request.id, errorMessage);
-      this.client.relay.publish(pending.topic, response, { relay: pending.relay });
+      this.client.relayer.publish(pending.topic, response, { relay: pending.relay });
     } else {
       this.logger.error(request.params.reason);
       await this.pending.update(topic, {
@@ -484,7 +509,7 @@ export class Pairing extends IPairing {
           ? PAIRING_JSONRPC.approve
           : PAIRING_JSONRPC.reject;
         const request = formatJsonRpcRequest(method, pending.outcome);
-        this.client.relay.publish(pending.topic, request, { relay: pending.relay });
+        this.client.relayer.publish(pending.topic, request, { relay: pending.relay });
       }
     } else {
       this.logger.info(`Emitting ${PAIRING_EVENTS.proposed}`);
@@ -540,7 +565,7 @@ export class Pairing extends IPairing {
         const request = formatJsonRpcRequest(PAIRING_JSONRPC.delete, {
           reason: deletedEvent.reason,
         });
-        this.client.relay.publish(pairing.topic, request, { relay: pairing.relay });
+        this.client.relayer.publish(pairing.topic, request, { relay: pairing.relay });
       },
     );
   }

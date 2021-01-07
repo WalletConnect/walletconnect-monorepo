@@ -7,6 +7,7 @@ import {
   ClientTypes,
   PairingTypes,
   SessionTypes,
+  UriParameters,
 } from "@walletconnect/types";
 import {
   isPairingFailed,
@@ -24,7 +25,7 @@ import {
 } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
-import { Pairing, Session, Relay } from "./controllers";
+import { Pairing, Session, Relayer } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_EVENTS,
@@ -32,7 +33,7 @@ import {
   PAIRING_DEFAULT_TTL,
   PAIRING_EVENTS,
   PAIRING_SIGNAL_METHOD_URI,
-  RELAY_DEFAULT_PROTOCOL,
+  RELAYER_DEFAULT_PROTOCOL,
   SESSION_EMPTY_PERMISSIONS,
   SESSION_EMPTY_RESPONSE,
   SESSION_EVENTS,
@@ -47,7 +48,7 @@ export class Client extends IClient {
   public events = new EventEmitter();
   public logger: Logger;
 
-  public relay: Relay;
+  public relayer: Relayer;
   public storage: IKeyValueStorage;
 
   public pairing: Pairing;
@@ -70,7 +71,7 @@ export class Client extends IClient {
     this.context = opts?.overrideContext || this.context;
     this.logger = generateChildLogger(logger, this.context);
 
-    this.relay = new Relay(this.logger, opts?.relayProvider);
+    this.relayer = new Relayer(this.logger, opts?.relayProvider);
     this.storage = opts?.storage || new KeyValueStorage(CLIENT_STORAGE_OPTIONS);
 
     this.pairing = new Pairing(this, this.logger);
@@ -107,7 +108,7 @@ export class Client extends IClient {
       this.logger.trace({ type: "method", method: "connect", pairing });
       const session = await this.session.create({
         signal: { method: SESSION_SIGNAL_METHOD_PAIRING, params: { topic: pairing.topic } },
-        relay: params.relay || { protocol: RELAY_DEFAULT_PROTOCOL },
+        relay: params.relay || { protocol: RELAYER_DEFAULT_PROTOCOL },
         metadata: params.metadata,
         permissions: {
           ...params.permissions,
@@ -123,22 +124,12 @@ export class Client extends IClient {
       throw e;
     }
   }
+
   public async pair(params: ClientTypes.PairParams): Promise<void> {
     this.logger.debug(`Pairing`);
     this.logger.trace({ type: "method", method: "pair", params });
-    const uriParams = parseUri(params.uri);
-    const proposal: PairingTypes.Proposal = {
-      topic: uriParams.topic,
-      relay: uriParams.relay,
-      proposer: { publicKey: uriParams.publicKey },
-      signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri: params.uri } },
-      permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
-      ttl: PAIRING_DEFAULT_TTL,
-    };
-    const pending = await this.pairing.respond({
-      approved: true,
-      proposal,
-    });
+    const proposal = formatPairingProposal(params.uri);
+    const pending = await this.pairing.respond({ approved: true, proposal });
     if (!isPairingResponded(pending)) return;
     if (isPairingFailed(pending.outcome)) {
       this.logger.debug(`Pairing Failure`);
@@ -206,7 +197,9 @@ export class Client extends IClient {
         const response = payloadEvent.payload;
         if (response.id !== request.id) return;
         if (isJsonRpcError(response)) {
-          return reject(new Error(response.error.message));
+          const errorMessage = response.error.message;
+          this.logger.error(errorMessage);
+          return reject(new Error(errorMessage));
         }
         return resolve(response.result);
       });
@@ -253,7 +246,7 @@ export class Client extends IClient {
   private async initialize(): Promise<any> {
     this.logger.trace(`Initialized`);
     try {
-      await this.relay.init();
+      await this.relayer.init();
       await this.pairing.init();
       await this.session.init();
       this.registerEventListeners();
@@ -355,4 +348,16 @@ export class Client extends IClient {
       },
     );
   }
+}
+
+function formatPairingProposal(uri: string): PairingTypes.Proposal {
+  const uriParams = parseUri(uri);
+  return {
+    topic: uriParams.topic,
+    relay: uriParams.relay,
+    proposer: { publicKey: uriParams.publicKey },
+    signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri } },
+    permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
+    ttl: PAIRING_DEFAULT_TTL,
+  };
 }

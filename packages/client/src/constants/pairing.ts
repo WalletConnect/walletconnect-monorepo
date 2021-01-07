@@ -6,6 +6,7 @@ export const PAIRING_JSONRPC = {
   update: "wc_pairingUpdate",
   delete: "wc_pairingDelete",
   payload: "wc_pairingPayload",
+  ping: "wc_pairingPing",
 };
 
 export const PAIRING_CONTEXT = "pairing";

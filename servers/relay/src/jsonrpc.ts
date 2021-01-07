@@ -4,7 +4,6 @@ import {
   formatJsonRpcResult,
   getError,
   isJsonRpcRequest,
-  isJsonRpcResponse,
   JsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
@@ -53,9 +52,9 @@ export class JsonRpcService {
 
   public async onPayload(socketId: string, payload: JsonRpcPayload): Promise<void> {
     if (isJsonRpcRequest(payload)) {
-      this.onRequest(socketId, payload)
+      this.onRequest(socketId, payload);
     } else {
-      this.onResponse(socketId, payload)
+      this.onResponse(socketId, payload);
     }
   }
 
@@ -99,10 +98,10 @@ export class JsonRpcService {
   public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
     this.logger.info(`Incoming JSON-RPC Payload`);
     this.logger.debug({ type: "payload", direction: "incoming", payload: response });
-    let result = await this.redis.getPendingRequest(response.id)
+    const result = await this.redis.getPendingRequest(response.id);
     if (result) {
       await this.redis.deletePendingRequest(response.id);
-      let [ topic , messageHash ] = result.split(":");
+      const [topic, messageHash] = result.split(":");
       await this.redis.deleteMessage(topic, messageHash);
     }
   }
@@ -116,11 +115,14 @@ export class JsonRpcService {
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
     const params = parsePublishRequest(request);
     if (params.ttl > config.REDIS_MAX_TTL) {
-      const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`
+      const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`;
       this.logger.error(errorMessage);
-      this.socketSend(socketId, formatJsonRpcError(payloadId(), `requested ttl is above ${config.REDIS_MAX_TTL} seconds`));
+      this.socketSend(
+        socketId,
+        formatJsonRpcError(payloadId(), `requested ttl is above ${config.REDIS_MAX_TTL} seconds`),
+      );
       return;
-    } 
+    }
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", params });
     const subscriptions = this.subscription.get(params.topic, socketId);

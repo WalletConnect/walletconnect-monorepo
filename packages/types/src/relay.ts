@@ -21,7 +21,7 @@ export declare namespace RelayTypes {
   }
 }
 
-export abstract class IRelay extends IEvents {
+export abstract class IRelayer extends IEvents {
   public abstract provider: IJsonRpcProvider;
 
   public abstract context: string;

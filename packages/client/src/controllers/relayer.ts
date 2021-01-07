@@ -1,13 +1,12 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { RelayTypes, IRelay } from "@walletconnect/types";
+import { RelayTypes, IRelayer } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
 import { encrypt, decrypt } from "@walletconnect/utils";
 import { utf8ToHex, hexToUtf8 } from "enc-utils";
 import {
   IJsonRpcProvider,
-  formatJsonRpcRequest,
   JsonRpcPayload,
   isJsonRpcRequest,
   JsonRpcRequest,
@@ -18,26 +17,18 @@ import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import {
-  RELAY_CONTEXT,
-  RELAY_DEFAULT_PROTOCOL,
-  RELAY_DEFAULT_RPC_URL,
-  RELAY_DEFAULT_PUBLISH_TTL,
+  RELAYER_CONTEXT,
+  RELAYER_DEFAULT_PROTOCOL,
+  RELAYER_DEFAULT_RPC_URL,
+  RELAYER_DEFAULT_PUBLISH_TTL,
 } from "../constants";
 
-function getRelayProtocolJsonRpc(protocol: string) {
-  const jsonrpc = RELAY_JSONRPC[protocol];
-  if (typeof jsonrpc === "undefined") {
-    throw new Error(`Relay Protocol not supported: ${protocol}`);
-  }
-  return jsonrpc;
-}
-
-export class Relay extends IRelay {
+export class Relayer extends IRelayer {
   public events = new EventEmitter();
 
   public provider: IJsonRpcProvider;
 
-  public context: string = RELAY_CONTEXT;
+  public context: string = RELAYER_CONTEXT;
 
   constructor(public logger: Logger, provider?: string | IJsonRpcProvider) {
     super(logger);
@@ -63,7 +54,7 @@ export class Relay extends IRelay {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
     try {
-      const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
+      const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
       const msg = safeJsonStringify(payload);
       const message = opts?.encryptKeys
         ? await encrypt({
@@ -77,7 +68,7 @@ export class Relay extends IRelay {
         params: {
           topic,
           message,
-          ttl: opts?.ttl || RELAY_DEFAULT_PUBLISH_TTL,
+          ttl: opts?.ttl || RELAYER_DEFAULT_PUBLISH_TTL,
         },
       };
       this.logger.info(`Outgoing Relay Payload`);
@@ -100,7 +91,7 @@ export class Relay extends IRelay {
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
-      const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
+      const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
         method: jsonRpc.subscribe,
@@ -136,7 +127,7 @@ export class Relay extends IRelay {
     this.logger.debug(`Unsubscribing Topic`);
     this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
     try {
-      const protocol = opts?.relay.protocol || RELAY_DEFAULT_PROTOCOL;
+      const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
         method: jsonRpc.unsubscribe,
@@ -192,9 +183,17 @@ export class Relay extends IRelay {
   private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
     this.logger.debug(`Setting Relay Provider`);
     this.logger.trace({ type: "method", method: "setProvider", provider: provider?.toString() });
-    const rpcUrl = typeof provider === "string" ? provider : RELAY_DEFAULT_RPC_URL;
+    const rpcUrl = typeof provider === "string" ? provider : RELAYER_DEFAULT_RPC_URL;
     return typeof provider !== "string" && typeof provider !== "undefined"
       ? provider
       : new JsonRpcProvider(rpcUrl);
   }
+}
+
+function getRelayProtocolJsonRpc(protocol: string) {
+  const jsonrpc = RELAY_JSONRPC[protocol];
+  if (typeof jsonrpc === "undefined") {
+    throw new Error(`Relay Protocol not supported: ${protocol}`);
+  }
+  return jsonrpc;
 }

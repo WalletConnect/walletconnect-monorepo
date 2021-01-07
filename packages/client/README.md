@@ -203,7 +203,7 @@ export abstract class IClient extends IEvents {
 
   public abstract logger: Logger;
 
-  public abstract relay: IRelay;
+  public abstract relayer: IRelayer;
   public abstract storage: IKeyValueStorage;
 
   public abstract pairing: IPairing;
