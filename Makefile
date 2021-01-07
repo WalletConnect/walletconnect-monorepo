@@ -186,7 +186,7 @@ redeploy:
 	$(MAKE) down
 	$(MAKE) dev-monitoring
 
-deploy: setup cloudflare build
+deploy: setup cloudflare build-container
 	RELAY_IMAGE=$(walletConnectImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	PROJECT=$(project) \
