@@ -181,34 +181,19 @@ export class Client extends IClient {
   }
 
   public async update(params: ClientTypes.UpdateParams): Promise<void> {
-    this.session.update(params);
+    await this.session.update(params);
   }
 
   public async notify(params: ClientTypes.NotifyParams): Promise<void> {
-    this.session.notify(params);
+    await this.session.notify(params);
   }
 
   public async request(params: ClientTypes.RequestParams): Promise<any> {
-    const request = formatJsonRpcRequest(params.request.method, params.request.params);
-    return new Promise((resolve, reject) => {
-      this.on(CLIENT_EVENTS.session.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
-        if (params.topic !== payloadEvent.topic) return;
-        if (isJsonRpcRequest(payloadEvent.payload)) return;
-        const response = payloadEvent.payload;
-        if (response.id !== request.id) return;
-        if (isJsonRpcError(response)) {
-          const errorMessage = response.error.message;
-          this.logger.error(errorMessage);
-          return reject(new Error(errorMessage));
-        }
-        return resolve(response.result);
-      });
-      this.session.send(params.topic, request, params.chainId);
-    });
+    return this.session.request(params);
   }
 
   public async respond(params: ClientTypes.RespondParams): Promise<void> {
-    this.session.send(params.topic, params.response);
+    await this.session.send(params.topic, params.response);
   }
 
   public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {

@@ -8,6 +8,5 @@ describe("Pairing", () => {
     const { clients } = await testSessionScenarios();
     const topic = Object.keys(clients.a.pairing.entries)[0];
     await clients.a.pairing.ping(topic);
-    expect(!!clients).to.be.true;
   });
 });

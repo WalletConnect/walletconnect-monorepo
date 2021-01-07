@@ -1,4 +1,4 @@
-import { JsonRpcPayload } from "@json-rpc-tools/types";
+import { JsonRpcPayload, RequestArguments } from "@json-rpc-tools/types";
 
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
@@ -94,6 +94,12 @@ export declare namespace SessionTypes {
     update: Update;
   }
 
+  export interface RequestParams {
+    topic: string;
+    request: RequestArguments;
+    chainId?: string;
+  }
+
   export type StateUpdate = { state: Partial<BlockchainTypes.State> };
 
   export type Update = StateUpdate;
@@ -170,10 +176,13 @@ export abstract class ISession extends ISequence<
   SessionTypes.CreateParams,
   SessionTypes.RespondParams,
   SessionTypes.UpdateParams,
+  SessionTypes.RequestParams,
   SessionTypes.DeleteParams,
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams
 > {
+  public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
+
   public abstract notify(params: SessionTypes.NotifyParams): Promise<void>;
 
   protected abstract onNotification(event: SubscriptionEvent.Payload): Promise<void>;

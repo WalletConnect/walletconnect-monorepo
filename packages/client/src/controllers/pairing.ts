@@ -81,28 +81,8 @@ export class Pairing extends IPairing {
   }
 
   public async ping(topic: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = formatJsonRpcRequest(PAIRING_JSONRPC.ping, {});
-      const timeout = setTimeout(() => {
-        const errorMessage = `Pairing ping failed to respond after 30 seconds for topic: ${topic}`;
-        this.logger.error(errorMessage);
-        reject(errorMessage);
-      }, 30_000);
-      this.events.on(PAIRING_EVENTS.payload, (payloadEvent: PairingTypes.PayloadEvent) => {
-        if (topic !== payloadEvent.topic) return;
-        if (isJsonRpcRequest(payloadEvent.payload)) return;
-        const response = payloadEvent.payload;
-        if (response.id !== request.id) return;
-        clearTimeout(timeout);
-        if (isJsonRpcError(response)) {
-          const errorMessage = `Pairing ping failed - reason: ${response.error.message}`;
-          this.logger.error(errorMessage);
-          return reject(new Error(errorMessage));
-        }
-        return resolve();
-      });
-      this.send(topic, request);
-    });
+    const request = { method: PAIRING_JSONRPC.ping, params: {} };
+    return this.request({ topic, request });
   }
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
@@ -230,6 +210,31 @@ export class Pairing extends IPairing {
     const request = formatJsonRpcRequest(PAIRING_JSONRPC.update, update);
     this.send(pairing.topic, request);
     return pairing;
+  }
+
+  public async request(params: PairingTypes.RequestParams): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const request = formatJsonRpcRequest(params.request.method, params.request.params);
+      const timeout = setTimeout(() => {
+        const errorMessage = `JSON-RPC Request timeout after 30s: ${request.method}`;
+        this.logger.error(errorMessage);
+        reject(errorMessage);
+      }, 30_000);
+      this.events.on(PAIRING_EVENTS.payload, (payloadEvent: PairingTypes.PayloadEvent) => {
+        if (params.topic !== payloadEvent.topic) return;
+        if (isJsonRpcRequest(payloadEvent.payload)) return;
+        const response = payloadEvent.payload;
+        if (response.id !== request.id) return;
+        clearTimeout(timeout);
+        if (isJsonRpcError(response)) {
+          const errorMessage = response.error.message;
+          this.logger.error(errorMessage);
+          return reject(new Error(errorMessage));
+        }
+        return resolve(response.result);
+      });
+      this.send(params.topic, request);
+    });
   }
 
   public async delete(params: PairingTypes.DeleteParams): Promise<void> {

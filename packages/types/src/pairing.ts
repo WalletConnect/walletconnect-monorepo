@@ -1,4 +1,4 @@
-import { JsonRpcPayload } from "@json-rpc-tools/types";
+import { JsonRpcPayload, RequestArguments } from "@json-rpc-tools/types";
 
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
@@ -73,6 +73,11 @@ export declare namespace PairingTypes {
     update: Update;
   }
 
+  export interface RequestParams {
+    topic: string;
+    request: RequestArguments;
+  }
+
   export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };
 
   export type Update = MetadataUpdate;
@@ -129,6 +134,7 @@ export abstract class IPairing extends ISequence<
   PairingTypes.CreateParams,
   PairingTypes.RespondParams,
   PairingTypes.UpdateParams,
+  PairingTypes.RequestParams,
   PairingTypes.DeleteParams,
   PairingTypes.ProposeParams,
   PairingTypes.SettleParams

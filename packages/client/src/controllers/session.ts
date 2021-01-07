@@ -28,6 +28,7 @@ import {
   isJsonRpcRequest,
   JsonRpcResponse,
   isJsonRpcError,
+  RequestArguments,
 } from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
@@ -79,28 +80,8 @@ export class Session extends ISession {
   }
 
   public async ping(topic: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = formatJsonRpcRequest(SESSION_JSONRPC.ping, {});
-      const timeout = setTimeout(() => {
-        const errorMessage = `Session ping failed to respond after 30 seconds for topic: ${topic}`;
-        this.logger.error(errorMessage);
-        reject(errorMessage);
-      }, 30_000);
-      this.events.on(SESSION_EVENTS.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
-        if (topic !== payloadEvent.topic) return;
-        if (isJsonRpcRequest(payloadEvent.payload)) return;
-        const response = payloadEvent.payload;
-        if (response.id !== request.id) return;
-        clearTimeout(timeout);
-        if (isJsonRpcError(response)) {
-          const errorMessage = `Session ping failed - reason: ${response.error.message}`;
-          this.logger.error(errorMessage);
-          return reject(new Error(errorMessage));
-        }
-        return resolve();
-      });
-      this.send(topic, request);
-    });
+    const request = { method: SESSION_JSONRPC.ping, params: {} };
+    return this.request({ topic, request });
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
@@ -241,6 +222,31 @@ export class Session extends ISession {
     const request = formatJsonRpcRequest(SESSION_JSONRPC.update, update);
     this.send(session.topic, request);
     return session;
+  }
+
+  public async request(params: SessionTypes.RequestParams): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const request = formatJsonRpcRequest(params.request.method, params.request.params);
+      const timeout = setTimeout(() => {
+        const errorMessage = `JSON-RPC Request timeout after 30s: ${request.method}`;
+        this.logger.error(errorMessage);
+        reject(errorMessage);
+      }, 30_000);
+      this.events.on(SESSION_EVENTS.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
+        if (params.topic !== payloadEvent.topic) return;
+        if (isJsonRpcRequest(payloadEvent.payload)) return;
+        const response = payloadEvent.payload;
+        if (response.id !== request.id) return;
+        clearTimeout(timeout);
+        if (isJsonRpcError(response)) {
+          const errorMessage = response.error.message;
+          this.logger.error(errorMessage);
+          return reject(new Error(errorMessage));
+        }
+        return resolve(response.result);
+      });
+      this.send(params.topic, request, params.chainId);
+    });
   }
 
   public async delete(params: SessionTypes.DeleteParams): Promise<void> {

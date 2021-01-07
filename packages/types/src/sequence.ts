@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
+import { JsonRpcPayload, IEvents, RequestArguments } from "@json-rpc-tools/types";
 
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
@@ -12,6 +12,7 @@ export abstract class ISequence<
   CreateParams,
   RespondParams,
   UpdateParams,
+  RequestParams,
   DeleteParams,
   ProposeParams,
   SettleParams
@@ -47,6 +48,8 @@ export abstract class ISequence<
   public abstract respond(params: RespondParams): Promise<Pending>;
   // called by either to update state
   public abstract update(params: UpdateParams): Promise<Settled>;
+  // called by proposer to request JSON-RPC
+  public abstract request(params: RequestParams): Promise<any>;
   // called by either to terminate
   public abstract delete(params: DeleteParams): Promise<void>;
 

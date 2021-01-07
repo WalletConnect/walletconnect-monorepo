@@ -5,16 +5,15 @@ import { testSessionScenarios } from "./shared/session";
 
 describe("Session", () => {
   it("A proposes session and B approves", async () => {
-    const { clients } = await testSessionScenarios();
-    expect(!!clients).to.be.true;
+    const { topic } = await testSessionScenarios();
+    expect(!!topic).to.be.true;
   });
   it("A proposes session and B rejects", async () => {
-    const { clients } = await testSessionScenarios({ scenario: "reject-session" });
-    expect(!!clients).to.be.true;
+    const { topic } = await testSessionScenarios({ scenario: "reject-session" });
+    expect(!!topic).to.be.false;
   });
   it("A proposes session with existing pairing topic", async () => {
     const { clients } = await testSessionScenarios();
-    expect(!!clients).to.be.true;
     const pairings = {
       a: Object.keys(clients.a.pairing.entries),
       b: Object.keys(clients.b.pairing.entries),
@@ -34,16 +33,16 @@ describe("Session", () => {
   // FIXME: "Timeout of 2000ms exceeded. For async tests and hooks, ensure "done()" is called;"
   // it("A proposes session with incorrect permissions", async () => {
   //   const { clients } = await testSessionScenarios({ scenario: "incorrect-permissions" });
-  //   expect(!!clients).to.be.true;
+  //   expect(!!topic).to.be.true;
   // });
   // it("A proposes session with incorrect metadata", async () => {
   //   const { clients } = await testSessionScenarios({ scenario: "incorrect-metadata" });
-  //   expect(!!clients).to.be.true;
+  //   expect(!!topic).to.be.true;
   // });
   it("A pings B with existing session", async () => {
-    const { clients } = await testSessionScenarios();
-    const topic = Object.keys(clients.a.session.entries)[0];
-    await clients.a.session.ping(topic);
-    expect(!!clients).to.be.true;
+    const { topic, clients } = await testSessionScenarios();
+    const session = Object.values(clients.a.session.entries)[0];
+    await clients.a.session.ping(session.topic);
+    expect(!!topic).to.be.true;
   });
 });
