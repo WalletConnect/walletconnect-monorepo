@@ -2,25 +2,31 @@ import "mocha";
 import { expect } from "chai";
 import Timestamp from "@pedrouid/timestamp";
 import { SessionTypes } from "@walletconnect/types";
-import { formatJsonRpcResult, isJsonRpcRequest } from "@json-rpc-tools/utils";
+import {
+  isJsonRpcError,
+  isJsonRpcRequest,
+  isJsonRpcResult,
+  JsonRpcResponse,
+  RequestArguments,
+} from "@json-rpc-tools/utils";
 
 import { CLIENT_EVENTS } from "../../src";
-import { TEST_ETHEREUM_ACCOUNTS, TEST_PERMISSIONS_CHAIN_IDS } from "./values";
-import { RequestScenarioOptions } from "./types";
+import { InitializedSetup, InitializedClients } from "./types";
 
-export async function testRequestScenarios(opts: RequestScenarioOptions): Promise<any> {
-  const { topic, clients } = opts;
-  const chainId = opts?.chainId || TEST_PERMISSIONS_CHAIN_IDS[0];
-  const request = opts?.request || { method: "eth_accounts" };
-  const result = opts?.result || TEST_ETHEREUM_ACCOUNTS;
-
+export async function testJsonRpcRequest(
+  setup: InitializedSetup,
+  clients: InitializedClients,
+  topic: string,
+  request: RequestArguments,
+  response: JsonRpcResponse,
+  chainId: string = setup.a.permissions.blockchain.chainIds[0],
+): Promise<any> {
   // cache received result
-  let received: any;
-
+  let result: any;
   // timestamps & elapsed time
   const time = new Timestamp();
 
-  // request & resolve a JSON-RPC request
+  // request & respond a JSON-RPC request
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
       clients.b.on(
@@ -32,8 +38,10 @@ export async function testRequestScenarios(opts: RequestScenarioOptions): Promis
             payloadEvent.chainId === chainId
           ) {
             clients.b.logger.warn(`TEST >> JSON-RPC Request Received`);
-            const response = formatJsonRpcResult(payloadEvent.payload.id, result);
-            await clients.b.respond({ topic, response });
+            await clients.b.respond({
+              topic,
+              response: { ...response, id: payloadEvent.payload.id },
+            });
             clients.b.logger.warn(`TEST >> JSON-RPC Response Sent`);
             resolve();
           }
@@ -43,9 +51,17 @@ export async function testRequestScenarios(opts: RequestScenarioOptions): Promis
     new Promise<void>(async (resolve, reject) => {
       clients.a.logger.warn(`TEST >> JSON-RPC Request Sent`);
       time.start("request");
-      received = await clients.a.request({ topic, chainId, request });
-      clients.a.logger.warn(`TEST >> JSON-RPC Response Received`);
+      if (isJsonRpcError(response)) {
+        const promise = clients.a.request({ topic, chainId, request });
+        // FIXME: chai-as-promised assertions are not typed hence need to be ignored
+        // @ts-ignore
+        await expect(promise).to.eventually.be.rejectedWith(response.error.message);
+        resolve();
+        return;
+      }
+      result = await clients.a.request({ topic, chainId, request });
       time.stop("request");
+      clients.a.logger.warn(`TEST >> JSON-RPC Response Received`);
       resolve();
     }),
   ]);
@@ -53,8 +69,9 @@ export async function testRequestScenarios(opts: RequestScenarioOptions): Promis
   // log elapsed times
   clients.b.logger.warn(`TEST >> Request Elapsed Time: ${time.elapsed("request")}ms`);
 
-  // jsonrpc request & response
-  expect(received).to.eql;
+  if (typeof result !== "undefined" && isJsonRpcResult(response)) {
+    expect(result).to.eql(response.result);
+  }
 
-  return received;
+  return result;
 }

@@ -1,4 +1,4 @@
-import { RequestArguments } from "@json-rpc-tools/utils";
+import { ErrorResponse, RequestArguments } from "@json-rpc-tools/utils";
 import { IClient, SessionTypes, ClientOptions, SignalTypes } from "@walletconnect/types";
 
 export interface InitializedClients {
@@ -32,6 +32,7 @@ export interface RequestScenarioOptions {
   topic: string;
   clients: InitializedClients;
   chainId?: string;
-  request?: RequestArguments;
+  request: RequestArguments;
+  error?: ErrorResponse;
   result?: any;
 }

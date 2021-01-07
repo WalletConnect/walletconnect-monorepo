@@ -6,7 +6,7 @@ export const TEST_RELAYER_PROVIDER_URL = process.env.TEST_RELAYER_URL
   : "ws://localhost:5555";
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "warn",
+  logger: "fatal",
   relayProvider: TEST_RELAYER_PROVIDER_URL,
 };
 
