@@ -44,7 +44,7 @@ describe("Session", () => {
       permissions: setup.a.permissions,
       pairing,
     });
-    // FIXME: chai-as-promised assertions are not typed hence need to be ignored
+    // TODO: chai-as-promised assertions are not typed hence need to be ignored
     // @ts-ignore
     await expect(promise).to.eventually.be.rejectedWith(
       `No matching pairing settled with topic: ${pairing.topic}`,
@@ -59,10 +59,12 @@ describe("Session", () => {
   //     // @ts-ignore
   //     permissions: { blockchain: setup.a.permissions.blockchain },
   //   });
-  //   // FIXME: chai-as-promised assertions are not typed hence need to be ignored
+  //   // TODO: chai-as-promised assertions are not typed hence need to be ignored
   //   // @ts-ignore
   //   await expect(promise).to.eventually.be.rejectedWith("Session not approved");
   // });
+  // FIXME: "Timeout of 2000ms exceeded. For async tests and hooks, ensure "done()" is called;"
+
   // it("A proposes session with incorrect metadata", async () => {
   //   const { setup, clients } = await setupClientsForTesting();
   //   const promise = clients.a.connect({
@@ -71,7 +73,7 @@ describe("Session", () => {
   //     metadata: { name: "" },
   //     permissions: setup.a.permissions,
   //   });
-  //   // FIXME: chai-as-promised assertions are not typed hence need to be ignored
+  //   // TODO: chai-as-promised assertions are not typed hence need to be ignored
   //   // @ts-ignore
   //   await expect(promise).to.eventually.be.rejectedWith("Incorrect Metadata");
   // });

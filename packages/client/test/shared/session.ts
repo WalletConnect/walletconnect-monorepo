@@ -153,7 +153,7 @@ export async function testRejectSession(
         permissions: setup.a.permissions,
         pairing,
       });
-      // FIXME: chai-as-promised assertions are not typed hence need to be ignored
+      // TODO: chai-as-promised assertions are not typed hence need to be ignored
       // @ts-ignore
       await expect(promise).to.eventually.be.rejectedWith("Session not approved");
       resolve();
