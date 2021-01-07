@@ -82,7 +82,7 @@ export class Pairing extends IPairing {
 
   public async ping(topic: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const request = formatJsonRpcRequest(SESSION_JSONRPC.ping, {});
+      const request = formatJsonRpcRequest(PAIRING_JSONRPC.ping, {});
       const timeout = setTimeout(() => {
         const errorMessage = `Pairing ping failed to respond after 30 seconds for topic: ${topic}`;
         this.logger.error(errorMessage);
@@ -398,6 +398,9 @@ export class Pairing extends IPairing {
           break;
         case PAIRING_JSONRPC.delete:
           await this.settled.delete(pairing.topic, request.params.reason);
+          break;
+        case PAIRING_JSONRPC.ping:
+          this.send(pairing.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
           errorMessage = `Unknown JSON-RPC Method Requested: ${request.method}`;

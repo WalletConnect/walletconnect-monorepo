@@ -40,4 +40,10 @@ describe("Session", () => {
   //   const { clients } = await testSessionScenarios({ scenario: "incorrect-metadata" });
   //   expect(!!clients).to.be.true;
   // });
+  it("A pings B with existing session", async () => {
+    const { clients } = await testSessionScenarios();
+    const topic = Object.keys(clients.a.session.entries)[0];
+    await clients.a.session.ping(topic);
+    expect(!!clients).to.be.true;
+  });
 });
