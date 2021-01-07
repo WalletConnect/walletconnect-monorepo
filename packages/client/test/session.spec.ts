@@ -64,7 +64,6 @@ describe("Session", () => {
   //   await expect(promise).to.eventually.be.rejectedWith("Session not approved");
   // });
   // FIXME: "Timeout of 2000ms exceeded. For async tests and hooks, ensure "done()" is called;"
-
   // it("A proposes session with incorrect metadata", async () => {
   //   const { setup, clients } = await setupClientsForTesting();
   //   const promise = clients.a.connect({
