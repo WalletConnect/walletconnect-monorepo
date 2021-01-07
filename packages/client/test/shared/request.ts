@@ -2,19 +2,11 @@ import "mocha";
 import { expect } from "chai";
 import Timestamp from "@pedrouid/timestamp";
 import { SessionTypes } from "@walletconnect/types";
-import { formatJsonRpcResult, isJsonRpcRequest, RequestArguments } from "@json-rpc-tools/utils";
+import { formatJsonRpcResult, isJsonRpcRequest } from "@json-rpc-tools/utils";
 
 import { CLIENT_EVENTS } from "../../src";
 import { TEST_ETHEREUM_ACCOUNTS, TEST_PERMISSIONS_CHAIN_IDS } from "./values";
-import { InitializedClients } from "./types";
-
-interface RequestScenarioOptions {
-  topic: string;
-  clients: InitializedClients;
-  chainId?: string;
-  request?: RequestArguments;
-  result?: any;
-}
+import { RequestScenarioOptions } from "./types";
 
 export async function testRequestScenarios(opts: RequestScenarioOptions): Promise<any> {
   const { topic } = opts;

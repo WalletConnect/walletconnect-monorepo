@@ -4,106 +4,16 @@ import chaiAsPromised from "chai-as-promised";
 import Timestamp from "@pedrouid/timestamp";
 import { SessionTypes, PairingTypes, ClientOptions, SignalTypes } from "@walletconnect/types";
 
-import {
-  TEST_CLIENT_OPTIONS,
-  TEST_PERMISSIONS,
-  TEST_APP_METADATA_A,
-  TEST_SESSION_STATE,
-  TEST_APP_METADATA_B,
-} from "./values";
-
-import Client, { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../../src";
-import { InitializedClients } from "./types";
+import { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../../src";
+import { InitializedClients, InitializedSetup } from "./types";
 
 use(chaiAsPromised);
 
-interface ClientSetup {
-  options?: ClientOptions;
-  state?: SessionTypes.State;
-  metadata?: SessionTypes.Metadata;
-  permissions?: SessionTypes.BasePermissions;
-}
-
-type ClientSetupMap = Record<string, ClientSetup>;
-type InitializedSetup = Record<string, Required<ClientSetup>>;
-
-interface SessionScenarioInitialized {
-  clients: InitializedClients;
-  setup: InitializedSetup;
-}
-
-interface SessionScenarioSetup {
-  clients?: InitializedClients;
-  setup?: ClientSetupMap;
-  pairing?: SignalTypes.ParamsPairing;
-  scenario?: string;
-}
-
-interface SessionScenarioResult {
-  topic: string;
-  clients: InitializedClients;
-}
-
-function generateClientSetup(label: string, clients?: ClientSetupMap): Required<ClientSetup> {
-  const clientSetup = typeof clients !== "undefined" ? clients[label] : undefined;
-  const overrideContext = "client" + "_" + label.toUpperCase();
-  const defaultSetup = {
-    options: { ...TEST_CLIENT_OPTIONS, overrideContext },
-    state: TEST_SESSION_STATE,
-    metadata: label === "a" ? TEST_APP_METADATA_A : TEST_APP_METADATA_B,
-    permissions: TEST_PERMISSIONS,
-  };
-  return typeof clientSetup !== "undefined"
-    ? {
-        options: { ...defaultSetup.options, ...clientSetup.options },
-        state: { ...defaultSetup.state, ...clientSetup.state },
-        metadata: { ...defaultSetup.metadata, ...clientSetup.metadata },
-        permissions: { ...defaultSetup.permissions, ...clientSetup.permissions },
-      }
-    : defaultSetup;
-}
-
-export async function setupClientsForTesting(
-  opts?: SessionScenarioSetup,
-): Promise<SessionScenarioInitialized> {
-  //  generate client setup
-  const setup = {
-    a: generateClientSetup("a", opts?.setup),
-    b: generateClientSetup("b", opts?.setup),
-  };
-  // init clients
-  const clients = opts?.clients || {
-    a: await Client.init(setup.a.options),
-    b: await Client.init(setup.a.options),
-  };
-  return { setup, clients };
-}
-
-export async function testSessionScenarios(
-  opts?: SessionScenarioSetup,
-): Promise<SessionScenarioResult> {
-  const { setup, clients } = await setupClientsForTesting(opts);
-  // select scenario
-  const scenario = opts?.scenario || "approve-session";
-  switch (scenario) {
-    case "approve-session":
-      return testApproveSession(setup, clients, opts?.pairing);
-    case "reject-session":
-      return testRejectSession(setup, clients, opts?.pairing);
-    case "incorrect-permissions":
-      return testIncorrectPermissions(setup, clients, opts?.pairing);
-    case "incorrect-metadata":
-      return testIncorrectMetadata(setup, clients, opts?.pairing);
-    default:
-      throw new Error(`Invalid or Unknown Session Test Scenario: ${scenario}`);
-  }
-}
-
-async function testApproveSession(
+export async function testApproveSession(
   setup: InitializedSetup,
   clients: InitializedClients,
   pairing?: SignalTypes.ParamsPairing,
-): Promise<SessionScenarioResult> {
+): Promise<string> {
   const { a: clientA, b: clientB } = clients;
 
   // testing data points
@@ -230,14 +140,14 @@ async function testApproveSession(
   expect(sessionA?.permissions.jsonrpc.methods).to.eql(setup.b.permissions.jsonrpc.methods);
   expect(sessionA?.permissions.jsonrpc.methods).to.eql(sessionB?.permissions.jsonrpc.methods);
 
-  return { topic: sessionA?.topic || "", clients: { a: clientA, b: clientB } };
+  return sessionA?.topic || "";
 }
 
-async function testRejectSession(
+export async function testRejectSession(
   setup: InitializedSetup,
   clients: InitializedClients,
   pairing?: SignalTypes.ParamsPairing,
-): Promise<SessionScenarioResult> {
+): Promise<string> {
   const { a: clientA, b: clientB } = clients;
 
   await Promise.all([
@@ -275,47 +185,5 @@ async function testRejectSession(
     }),
   ]);
 
-  return { topic: "", clients: { a: clientA, b: clientB } };
-}
-
-async function testIncorrectPermissions(
-  setup: InitializedSetup,
-  clients: InitializedClients,
-  pairing?: SignalTypes.ParamsPairing,
-): Promise<SessionScenarioResult> {
-  const { a: clientA, b: clientB } = clients;
-
-  const promise = clientA.connect({
-    metadata: setup.a.metadata,
-    // forcing typescript to ignore to inject incorrect permisssions
-    // @ts-ignore
-    permissions: { blockchain: setup.a.permissions.blockchain },
-    pairing,
-  });
-  // FIXME: chai-as-promised assertions are not typed hence need to be ignored
-  // @ts-ignore
-  await expect(promise).to.eventually.be.rejectedWith("Session not approved");
-
-  return { topic: "", clients: { a: clientA, b: clientB } };
-}
-
-async function testIncorrectMetadata(
-  setup: InitializedSetup,
-  clients: InitializedClients,
-  pairing?: SignalTypes.ParamsPairing,
-): Promise<SessionScenarioResult> {
-  const { a: clientA, b: clientB } = clients;
-
-  const promise = clientA.connect({
-    // forcing typescript to ignore to inject incorrect permisssions
-    // @ts-ignore
-    metadata: { name: "" },
-    permissions: setup.a.permissions,
-    pairing,
-  });
-  // FIXME: chai-as-promised assertions are not typed hence need to be ignored
-  // @ts-ignore
-  await expect(promise).to.eventually.be.rejectedWith("Session not approved");
-
-  return { topic: "", clients: { a: clientA, b: clientB } };
+  return "";
 }
