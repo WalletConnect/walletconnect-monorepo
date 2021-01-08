@@ -1,5 +1,10 @@
 import "mocha";
-import { generateRandomBytes32 } from "@walletconnect/utils";
+import {
+  generateRandomBytes32,
+  isValidationInvalid,
+  validateSessionProposeParamsMetadata,
+  validateSessionProposeParamsPermissions,
+} from "@walletconnect/utils";
 
 import {
   expect,
@@ -10,6 +15,7 @@ import {
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
 import { SessionTypes } from "@walletconnect/types";
+import { validateSessionProposeParams } from "@walletconnect/utils/src";
 
 describe("Session", () => {
   it("A proposes session and B approves", async () => {
@@ -41,7 +47,7 @@ describe("Session", () => {
     expect(sessions.b.includes(topic)).to.be.true;
     expect(sessions.a.length).to.eql(sessions.b.length);
   });
-  it("A proposes session with incorrect pairing topic", async () => {
+  it("A proposes session with invalid pairing topic", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const pairing = { topic: generateRandomBytes32() };
     const promise = clients.a.connect({
@@ -53,26 +59,24 @@ describe("Session", () => {
       `No matching pairing settled with topic: ${pairing.topic}`,
     );
   });
-  // it("A proposes session with incorrect permissions", async () => {
-  //   const { setup, clients } = await setupClientsForTesting();
-  //   const promise = clients.a.connect({
-  //     metadata: setup.a.metadata,
-  //     // forcing typescript to ignore to inject incorrect permisssions
-  //     // @ts-ignore
-  //     permissions: { blockchain: setup.a.permissions.blockchain },
-  //   });
-  //   await expect(promise).to.eventually.be.rejectedWith("Session not approved");
-  // });
-  // it("A proposes session with incorrect metadata", async () => {
-  //   const { setup, clients } = await setupClientsForTesting();
-  //   const promise = clients.a.connect({
-  //     // forcing typescript to ignore to inject incorrect permisssions
-  //     // @ts-ignore
-  //     metadata: { name: "" },
-  //     permissions: setup.a.permissions,
-  //   });
-  //   await expect(promise).to.eventually.be.rejectedWith("Incorrect Metadata");
-  // });
+  it("A proposes session with invalid permissions", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const permissions = { blockchain: setup.a.permissions.blockchain };
+    const promise = clients.a.connect({
+      metadata: setup.a.metadata,
+      permissions: permissions as any,
+    });
+    await expect(promise).to.eventually.be.rejectedWith("Missing or invalid jsonrpc permissions");
+  });
+  it("A proposes session with invalid metadata", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const metadata = { name: "" };
+    const promise = clients.a.connect({
+      metadata: metadata as any,
+      permissions: setup.a.permissions,
+    });
+    await expect(promise).to.eventually.be.rejectedWith("Missing or invalid metadata name");
+  });
   it("A pings B with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     await testApproveSession(setup, clients);

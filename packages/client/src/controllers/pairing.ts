@@ -128,12 +128,7 @@ export class Pairing extends IPairing {
         this.logger.error(errorMessage);
         reject(errorMessage);
       }, 300_000);
-      let pending: PairingTypes.Pending;
-      try {
-        pending = await this.propose(params);
-      } catch (e) {
-        return reject(e);
-      }
+      const pending = await this.propose(params);
       this.pending.on(
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<PairingTypes.Pending>) => {
@@ -142,20 +137,12 @@ export class Pairing extends IPairing {
             const outcome = updatedEvent.data.outcome;
             clearTimeout(timeout);
             if (isPairingFailed(outcome)) {
-              try {
-                await this.pending.delete(pending.topic, outcome.reason);
-              } catch (e) {
-                return reject(e);
-              }
+              await this.pending.delete(pending.topic, outcome.reason);
               reject(new Error(outcome.reason));
             } else {
-              try {
-                const pairing = await this.settled.get(outcome.topic);
-                await this.pending.delete(pending.topic, PAIRING_REASONS.settled);
-                resolve(pairing);
-              } catch (e) {
-                reject(e);
-              }
+              const pairing = await this.settled.get(outcome.topic);
+              await this.pending.delete(pending.topic, PAIRING_REASONS.settled);
+              resolve(pairing);
             }
           }
         },
