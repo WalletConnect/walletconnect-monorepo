@@ -124,10 +124,10 @@ export class Session extends ISession {
       this.logger.info(`Create Session`);
       this.logger.trace({ type: "method", method: "create", params });
       const timeout = setTimeout(() => {
-        const errorMessage = `Session failed to settle after 1 minute`;
+        const errorMessage = `Session failed to settle after 30 seconds`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 60_000);
+      }, 30_000);
       let pending: SessionTypes.Pending;
       try {
         pending = await this.propose(params);

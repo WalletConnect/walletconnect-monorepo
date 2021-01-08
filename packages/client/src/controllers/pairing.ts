@@ -124,10 +124,10 @@ export class Pairing extends IPairing {
       this.logger.debug(`Create Pairing`);
       this.logger.trace({ type: "method", method: "create", params });
       const timeout = setTimeout(() => {
-        const errorMessage = `Pairing failed to settle after 1 minute`;
+        const errorMessage = `Pairing failed to settle after 30 seconds`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 60_000);
+      }, 30_000);
       let pending: PairingTypes.Pending;
       try {
         pending = await this.propose(params);
@@ -558,7 +558,7 @@ export class Pairing extends IPairing {
       this.logger.info(`Emitting ${PAIRING_EVENTS.proposed}`);
       this.logger.debug({ type: "event", event: PAIRING_EVENTS.proposed, data: pending });
       this.events.emit(PAIRING_EVENTS.proposed, pending);
-      // send proposal signal through uri offline
+      // send proposal signal through uri offlline
     }
   }
 

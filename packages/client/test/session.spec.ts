@@ -1,10 +1,7 @@
 import "mocha";
-import {
-  generateRandomBytes32,
-  isValidationInvalid,
-  validateSessionProposeParamsMetadata,
-  validateSessionProposeParamsPermissions,
-} from "@walletconnect/utils";
+import sinon from "sinon";
+import { SessionTypes } from "@walletconnect/types";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 
 import {
   expect,
@@ -14,10 +11,16 @@ import {
   testPairingWithoutSession,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
-import { SessionTypes } from "@walletconnect/types";
-import { validateSessionProposeParams } from "@walletconnect/utils/src";
 
-describe("Session", () => {
+describe("Session", function() {
+  this.timeout(30_000);
+  let clock: sinon.SinonFakeTimers;
+  beforeEach(function() {
+    clock = sinon.useFakeTimers();
+  });
+  afterEach(function() {
+    clock.restore();
+  });
   it("A proposes session and B approves", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -147,6 +150,31 @@ describe("Session", () => {
     const promise = clients.a.notify({ topic, type: event.type, data: event.data });
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized Notification Type Requested: ${event.type}`,
+    );
+  });
+  it(" A fails to pings B after A deletes session", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    await clients.a.disconnect({ topic, reason: "Ending session early" });
+    await expect(clients.a.session.get(topic)).to.eventually.be.rejectedWith(
+      `No matching session settled with topic: ${topic}`,
+    );
+    const promise = clients.a.session.ping(topic);
+    await expect(promise).to.eventually.be.rejectedWith(
+      `No matching session settled with topic: ${topic}`,
+    );
+  });
+  it(" A fails to pings B after B deletes session", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    await clients.b.disconnect({ topic, reason: "Ending session early" });
+    await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
+      `No matching session settled with topic: ${topic}`,
+    );
+    const promise = clients.a.session.ping(topic);
+    clock.tick(30_000);
+    await expect(promise).to.eventually.be.rejectedWith(
+      `JSON-RPC Request timeout after 30s: wc_sessionPing`,
     );
   });
 });
