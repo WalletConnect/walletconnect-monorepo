@@ -2,7 +2,7 @@ import "mocha";
 import * as chai from "chai";
 import { SessionTypes } from "@walletconnect/types";
 
-import { isValidSessionProposalPermissions } from "../src";
+import { validateSessionProposeParamsPermissions } from "../src";
 
 import {
   TEST_JSONRPC_PERMISSIONS,
@@ -10,7 +10,7 @@ import {
   TEST_SESSION_METADATA,
   TEST_SESSION_PERMISSIONS,
 } from "./shared";
-import { isValidSessionProposalMetadata } from "../dist/cjs";
+import { validateSessionProposeParamsMetadata } from "../dist/cjs";
 
 const TEST_INVALID_BLOCKCHAIN_PERMISSIONS = {
   ...TEST_SESSION_PERMISSIONS,
@@ -54,34 +54,38 @@ const TEST_INVALID_METADATA_ICONS = {
 };
 
 describe("Validators", () => {
-  it("isValidSessionProposalPermissions", () => {
-    chai.expect(() => isValidSessionProposalPermissions(TEST_SESSION_PERMISSIONS)).to.not.throw();
+  it("validateSessionProposeParamsPermissions", () => {
     chai
-      .expect(() => isValidSessionProposalPermissions(TEST_INVALID_BLOCKCHAIN_PERMISSIONS as any))
-      .to.throw("Missing or invalid blockchain permissions");
+      .expect(validateSessionProposeParamsPermissions(TEST_SESSION_PERMISSIONS))
+      .to.eql({ valid: true });
     chai
-      .expect(() => isValidSessionProposalPermissions(TEST_INVALID_JSONRPC_PERMISSIONS as any))
-      .to.throw("Missing or invalid jsonrpc permissions");
+      .expect(validateSessionProposeParamsPermissions(TEST_INVALID_BLOCKCHAIN_PERMISSIONS as any))
+      .to.eql({ valid: false, error: "Missing or invalid blockchain permissions" });
     chai
-      .expect(() =>
-        isValidSessionProposalPermissions(TEST_INVALID_NOTIFICATIONS_PERMISSIONS as any),
+      .expect(validateSessionProposeParamsPermissions(TEST_INVALID_JSONRPC_PERMISSIONS as any))
+      .to.eql({ valid: false, error: "Missing or invalid jsonrpc permissions" });
+    chai
+      .expect(
+        validateSessionProposeParamsPermissions(TEST_INVALID_NOTIFICATIONS_PERMISSIONS as any),
       )
-      .to.throw("Missing or invalid notification permissions");
+      .to.eql({ valid: false, error: "Missing or invalid notification permissions" });
   });
 
-  it("isValidSessionProposalMetadata", () => {
-    chai.expect(() => isValidSessionProposalMetadata(TEST_SESSION_METADATA)).to.not.throw();
+  it("validateSessionProposeParamsMetadata", () => {
     chai
-      .expect(() => isValidSessionProposalMetadata(TEST_INVALID_METADATA_NAME as any))
-      .to.throw("Missing or invalid metadata name");
+      .expect(validateSessionProposeParamsMetadata(TEST_SESSION_METADATA))
+      .to.eql({ valid: true });
     chai
-      .expect(() => isValidSessionProposalMetadata(TEST_INVALID_METADATA_DESC as any))
-      .to.throw("Missing or invalid metadata description");
+      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_NAME as any))
+      .to.eql({ valid: false, error: "Missing or invalid metadata name" });
     chai
-      .expect(() => isValidSessionProposalMetadata(TEST_INVALID_METADATA_URL as any))
-      .to.throw("Missing or invalid metadata url");
+      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_DESC as any))
+      .to.eql({ valid: false, error: "Missing or invalid metadata description" });
     chai
-      .expect(() => isValidSessionProposalMetadata(TEST_INVALID_METADATA_ICONS as any))
-      .to.throw("Missing or invalid metadata icons");
+      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_URL as any))
+      .to.eql({ valid: false, error: "Missing or invalid metadata url" });
+    chai
+      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_ICONS as any))
+      .to.eql({ valid: false, error: "Missing or invalid metadata icons" });
   });
 });

@@ -51,28 +51,26 @@ describe("Session", () => {
       `No matching pairing settled with topic: ${pairing.topic}`,
     );
   });
-  // FIXME: "Timeout of 2000ms exceeded. For async tests and hooks, ensure "done()" is called;"
-  // it("A proposes session with incorrect permissions", async () => {
-  //   const { setup, clients } = await setupClientsForTesting();
-  //   const promise = clients.a.connect({
-  //     metadata: setup.a.metadata,
-  //     // forcing typescript to ignore to inject incorrect permisssions
-  //     // @ts-ignore
-  //     permissions: { blockchain: setup.a.permissions.blockchain },
-  //   });
-  //   await expect(promise).to.eventually.be.rejectedWith("Session not approved");
-  // });
-  // FIXME: "Timeout of 2000ms exceeded. For async tests and hooks, ensure "done()" is called;"
-  // it("A proposes session with incorrect metadata", async () => {
-  //   const { setup, clients } = await setupClientsForTesting();
-  //   const promise = clients.a.connect({
-  //     // forcing typescript to ignore to inject incorrect permisssions
-  //     // @ts-ignore
-  //     metadata: { name: "" },
-  //     permissions: setup.a.permissions,
-  //   });
-  //   await expect(promise).to.eventually.be.rejectedWith("Incorrect Metadata");
-  // });
+  it("A proposes session with incorrect permissions", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const promise = clients.a.connect({
+      metadata: setup.a.metadata,
+      // forcing typescript to ignore to inject incorrect permisssions
+      // @ts-ignore
+      permissions: { blockchain: setup.a.permissions.blockchain },
+    });
+    await expect(promise).to.eventually.be.rejectedWith("Session not approved");
+  });
+  it("A proposes session with incorrect metadata", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const promise = clients.a.connect({
+      // forcing typescript to ignore to inject incorrect permisssions
+      // @ts-ignore
+      metadata: { name: "" },
+      permissions: setup.a.permissions,
+    });
+    await expect(promise).to.eventually.be.rejectedWith("Incorrect Metadata");
+  });
   it("A pings B with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     await testApproveSession(setup, clients);

@@ -17,7 +17,8 @@ import {
   sha256,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
-  isValidSessionProposal,
+  validateSessionProposeParams,
+  isValidationInvalid,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -28,7 +29,6 @@ import {
   isJsonRpcRequest,
   JsonRpcResponse,
   isJsonRpcError,
-  RequestArguments,
 } from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
@@ -101,7 +101,10 @@ export class Session extends ISession {
         payload,
       });
     }
-    this.client.relayer.publish(session.topic, payload, { relay: session.relay, encryptKeys });
+    await this.client.relayer.publish(session.topic, payload, {
+      relay: session.relay,
+      encryptKeys,
+    });
   }
 
   get length(): number {
@@ -116,24 +119,43 @@ export class Session extends ISession {
     return mapEntries(this.settled.entries, x => x.data);
   }
 
-  public async create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
-    this.logger.info(`Create Session`);
-    this.logger.trace({ type: "method", method: "create", params });
+  public create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
     return new Promise(async (resolve, reject) => {
-      const pending = await this.propose(params);
+      this.logger.info(`Create Session`);
+      this.logger.trace({ type: "method", method: "create", params });
+      const timeout = setTimeout(() => {
+        const errorMessage = `Session failed to settle after 5 minutes`;
+        this.logger.error(errorMessage);
+        reject(errorMessage);
+      }, 300_000);
+      let pending: SessionTypes.Pending;
+      try {
+        pending = await this.propose(params);
+      } catch (e) {
+        return reject(e);
+      }
       this.pending.on(
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) => {
           if (pending.topic !== updatedEvent.data.topic) return;
           if (isSessionResponded(updatedEvent.data)) {
             const outcome = updatedEvent.data.outcome;
+            clearTimeout(timeout);
             if (isSessionFailed(outcome)) {
-              await this.pending.delete(pending.topic, outcome.reason);
+              try {
+                await this.pending.delete(pending.topic, outcome.reason);
+              } catch (e) {
+                return reject(e);
+              }
               reject(new Error(outcome.reason));
             } else {
-              const pairing = await this.settled.get(outcome.topic);
-              await this.pending.delete(pending.topic, SESSION_REASONS.settled);
-              resolve(pairing);
+              try {
+                const pairing = await this.settled.get(outcome.topic);
+                await this.pending.delete(pending.topic, SESSION_REASONS.settled);
+                resolve(pairing);
+              } catch (e) {
+                reject(e);
+              }
             }
           }
         },
@@ -224,12 +246,12 @@ export class Session extends ISession {
       publicKey: session.self.publicKey,
     });
     const request = formatJsonRpcRequest(SESSION_JSONRPC.update, update);
-    this.send(session.topic, request);
+    await this.send(session.topic, request);
     return session;
   }
 
   public async request(params: SessionTypes.RequestParams): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const timeout = setTimeout(() => {
         const errorMessage = `JSON-RPC Request timeout after 30s: ${request.method}`;
@@ -249,7 +271,11 @@ export class Session extends ISession {
         }
         return resolve(response.result);
       });
-      this.send(params.topic, request, params.chainId);
+      try {
+        await this.send(params.topic, request, params.chainId);
+      } catch (e) {
+        return reject(e);
+      }
     });
   }
 
@@ -271,7 +297,7 @@ export class Session extends ISession {
     }
     const notification: SessionTypes.Notification = { type: params.type, data: params.data };
     const request = formatJsonRpcRequest(SESSION_JSONRPC.notification, notification);
-    this.send(params.topic, request);
+    await this.send(params.topic, request);
   }
 
   public on(event: string, listener: any): void {
@@ -295,7 +321,10 @@ export class Session extends ISession {
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Propose Session`);
     this.logger.trace({ type: "method", method: "propose", params });
-    isValidSessionProposal(params);
+    const paramsValidation = validateSessionProposeParams(params);
+    if (isValidationInvalid(paramsValidation)) {
+      throw new Error(paramsValidation.error);
+    }
     if (params.signal.method !== SESSION_SIGNAL_METHOD_PAIRING)
       throw new Error(`Session proposal signal unsupported`);
     const pairing = await this.client.pairing.settled.get(params.signal.params.topic);
@@ -403,7 +432,10 @@ export class Session extends ISession {
         typeof errorMessage === "undefined"
           ? formatJsonRpcResult(request.id, true)
           : formatJsonRpcError(request.id, errorMessage);
-      this.client.relayer.publish(pending.topic, response, { relay: pending.relay, encryptKeys });
+      await this.client.relayer.publish(pending.topic, response, {
+        relay: pending.relay,
+        encryptKeys,
+      });
     } else {
       this.logger.error(request.params.reason);
       await this.pending.update(topic, {
@@ -448,12 +480,12 @@ export class Session extends ISession {
           await this.settled.delete(session.topic, request.params.reason);
           break;
         case SESSION_JSONRPC.ping:
-          this.send(session.topic, formatJsonRpcResult(request.id, false));
+          await this.send(session.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
           errorMessage = `Unknown JSON-RPC Method Requested: ${request.method}`;
           this.logger.error(errorMessage);
-          this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
+          await this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
           break;
       }
     } else {
@@ -474,7 +506,7 @@ export class Session extends ISession {
       if (!session.permissions.jsonrpc.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
-        this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
+        await this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
         return;
       }
       this.onPayloadEvent(sessionPayloadEvent);
@@ -496,11 +528,11 @@ export class Session extends ISession {
         { publicKey: session.peer.publicKey },
       );
       const response = formatJsonRpcResult(request.id, true);
-      this.send(session.topic, response);
+      await this.send(session.topic, response);
     } catch (e) {
       this.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
-      this.send(session.topic, response);
+      await this.send(session.topic, response);
     }
   }
 
@@ -579,7 +611,10 @@ export class Session extends ISession {
           ? SESSION_JSONRPC.approve
           : SESSION_JSONRPC.reject;
         const request = formatJsonRpcRequest(method, pending.outcome);
-        this.client.relayer.publish(pending.topic, request, { relay: pending.relay, encryptKeys });
+        await this.client.relayer.publish(pending.topic, request, {
+          relay: pending.relay,
+          encryptKeys,
+        });
       }
     } else {
       this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
@@ -627,7 +662,7 @@ export class Session extends ISession {
     );
     this.settled.on(
       SUBSCRIPTION_EVENTS.deleted,
-      (deletedEvent: SubscriptionEvent.Deleted<SessionTypes.Settled>) => {
+      async (deletedEvent: SubscriptionEvent.Deleted<SessionTypes.Settled>) => {
         const session = deletedEvent.data;
         this.logger.info(`Emitting ${SESSION_EVENTS.deleted}`);
         this.logger.debug({ type: "event", event: SESSION_EVENTS.deleted, data: session });
@@ -635,7 +670,7 @@ export class Session extends ISession {
         const request = formatJsonRpcRequest(SESSION_JSONRPC.delete, {
           reason: deletedEvent.reason,
         });
-        this.send(session.topic, request);
+        await this.send(session.topic, request);
       },
     );
   }

@@ -5,6 +5,7 @@ import {
   PairingTypes,
   SessionTypes,
   SubscriptionEvent,
+  Validation,
 } from "@walletconnect/types";
 
 // -- pairing -------------------------------------------------- //
@@ -49,67 +50,95 @@ export function isSubscriptionUpdatedEvent<T = any>(
   return "update" in event;
 }
 
-export function isValidSessionProposalPermissions(
+export function validateSessionProposeParamsPermissions(
   permissions: SessionTypes.ProposedPermissions,
-): void {
-  isValidBlockchainPermissions(permissions.blockchain);
-  isValidJsonRpcPermissions(permissions.jsonrpc);
-  isValidNotificationPermissionsProposal(permissions.notifications);
+): Validation.Result {
+  const blockchainPermissionsValidation = validateBlockchainPermissions(permissions.blockchain);
+  if (isValidationInvalid(blockchainPermissionsValidation)) {
+    return blockchainPermissionsValidation;
+  }
+  const jsonRpcPermissionsValidation = validateJsonRpcPermissions(permissions.jsonrpc);
+  if (isValidationInvalid(jsonRpcPermissionsValidation)) {
+    return jsonRpcPermissionsValidation;
+  }
+  const notificationPermissionsValidation = validateNotificationPermissions(
+    permissions.notifications,
+  );
+  if (isValidationInvalid(notificationPermissionsValidation)) {
+    return notificationPermissionsValidation;
+  }
+  return formatValidResult();
 }
 
-export function isValidSessionProposalMetadata(metadata: SessionTypes.Metadata): void {
+export function validateSessionProposeParamsMetadata(
+  metadata: SessionTypes.Metadata,
+): Validation.Result {
   if (!isValidString(metadata.name)) {
-    throw new Error("Missing or invalid metadata name");
+    return formatInvalidResult("Missing or invalid metadata name");
   }
   if (!isValidString(metadata.description)) {
-    throw new Error("Missing or invalid metadata description");
+    return formatInvalidResult("Missing or invalid metadata description");
   }
   if (typeof metadata.url === "undefined" || !isValidUrl(metadata.url)) {
-    throw new Error("Missing or invalid metadata url");
+    return formatInvalidResult("Missing or invalid metadata url");
   }
-
   if (typeof metadata.icons === "undefined" || !isValidArray(metadata.icons, isValidUrl)) {
-    throw new Error("Missing or invalid metadata icons");
+    return formatInvalidResult("Missing or invalid metadata icons");
   }
+  return formatValidResult();
 }
 
-export function isValidSessionProposal(params: SessionTypes.ProposeParams) {
-  isValidSessionProposalPermissions(params.permissions);
-  isValidSessionProposalMetadata(params.metadata);
+export function validateSessionProposeParams(
+  params: SessionTypes.ProposeParams,
+): Validation.Result {
+  const permissionsValidation = validateSessionProposeParamsPermissions(params.permissions);
+  if (isValidationInvalid(permissionsValidation)) {
+    return permissionsValidation;
+  }
+  const metadataValidation = validateSessionProposeParamsMetadata(params.metadata);
+  if (isValidationInvalid(metadataValidation)) {
+    return metadataValidation;
+  }
+  return formatValidResult();
 }
 
 // -- permissions -------------------------------------------------- //
 
-export function isValidBlockchainPermissions(blockchain?: BlockchainTypes.Permissions): void {
+export function validateBlockchainPermissions(
+  blockchain?: BlockchainTypes.Permissions,
+): Validation.Result {
   if (
     typeof blockchain === "undefined" ||
     typeof blockchain.chainIds === "undefined" ||
     !isValidArray(blockchain.chainIds, isValidChainId)
   ) {
-    throw new Error("Missing or invalid blockchain permissions");
+    return formatInvalidResult("Missing or invalid blockchain permissions");
   }
+  return formatValidResult();
 }
 
-export function isValidJsonRpcPermissions(jsonrpc?: JsonRpcPermissions): void {
+export function validateJsonRpcPermissions(jsonrpc?: JsonRpcPermissions): Validation.Result {
   if (
     typeof jsonrpc === "undefined" ||
     typeof jsonrpc.methods === "undefined" ||
     !isValidArray(jsonrpc.methods, isValidString)
   ) {
-    throw new Error("Missing or invalid jsonrpc permissions");
+    return formatInvalidResult("Missing or invalid jsonrpc permissions");
   }
+  return formatValidResult();
 }
 
-export function isValidNotificationPermissionsProposal(
+export function validateNotificationPermissions(
   notifications: NotificationPermissions.Proposal,
-) {
+): Validation.Result {
   if (
     typeof notifications === "undefined" ||
     typeof notifications.types === "undefined" ||
     !isValidArray(notifications.types, isValidString)
   ) {
-    throw new Error("Missing or invalid notification permissions");
+    return formatInvalidResult("Missing or invalid notification permissions");
   }
+  return formatValidResult();
 }
 
 // -- misc -------------------------------------------------- //
@@ -148,4 +177,25 @@ export function isValidUrl(value: any) {
     }
   }
   return false;
+}
+
+// -- validation result ---------------------------------------- //
+
+export function isValidationInvalid(
+  validation: Validation.Result,
+): validation is Validation.Invalid {
+  return (
+    "valid" in validation &&
+    validation.valid === false &&
+    "error" in validation &&
+    typeof validation.error === "string"
+  );
+}
+
+export function formatValidResult(): Validation.Valid {
+  return { valid: true };
+}
+
+export function formatInvalidResult(error: string): Validation.Invalid {
+  return { valid: false, error };
 }

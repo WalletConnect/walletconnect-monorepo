@@ -65,3 +65,16 @@ export interface UriParameters {
   publicKey: string;
   relay: RelayTypes.ProtocolOptions;
 }
+
+export declare namespace Validation {
+  export interface Valid {
+    valid: true;
+  }
+
+  export interface Invalid {
+    valid: false;
+    error: string;
+  }
+
+  export type Result = Valid | Invalid;
+}
