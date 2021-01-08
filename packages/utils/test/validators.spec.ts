@@ -1,14 +1,16 @@
 import "mocha";
 import * as chai from "chai";
-import { SessionTypes } from "@walletconnect/types";
 
-import { validateSessionProposeParamsPermissions } from "../src";
+import { validateBlockchainState, validateSessionProposeParamsPermissions } from "../src";
 
 import {
+  TEST_BLOCKCHAIN_PERMISSIONS,
   TEST_JSONRPC_PERMISSIONS,
   TEST_NOTIFICATIONS_PERMISSIONS,
   TEST_SESSION_METADATA,
   TEST_SESSION_PERMISSIONS,
+  TEST_SESSION_STATE,
+  TEST_ETHEREUM_ACCOUNTS,
 } from "./shared";
 import { validateSessionProposeParamsMetadata } from "../dist/cjs";
 
@@ -53,6 +55,16 @@ const TEST_INVALID_METADATA_ICONS = {
   icons: ["image.png"],
 };
 
+const TEST_INVALID_STATE = {
+  ...TEST_SESSION_STATE,
+  accountIds: [TEST_ETHEREUM_ACCOUNTS[0]],
+};
+
+const TEST_MISMATCH_STATE = {
+  ...TEST_SESSION_STATE,
+  accountIds: [`${TEST_ETHEREUM_ACCOUNTS}@eip155:100`],
+};
+
 describe("Validators", () => {
   it("validateSessionProposeParamsPermissions", () => {
     chai
@@ -87,5 +99,18 @@ describe("Validators", () => {
     chai
       .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_ICONS as any))
       .to.eql({ valid: false, error: "Missing or invalid metadata icons" });
+  });
+
+  it("validBlockchainState", () => {
+    chai
+      .expect(validateBlockchainState(TEST_SESSION_STATE, TEST_BLOCKCHAIN_PERMISSIONS))
+      .to.eql({ valid: true });
+    chai
+      .expect(validateBlockchainState(TEST_INVALID_STATE, TEST_BLOCKCHAIN_PERMISSIONS))
+      .to.eql({ valid: false, error: "Missing or invalid state accountIds" });
+    chai.expect(validateBlockchainState(TEST_MISMATCH_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
+      valid: false,
+      error: `Invalid accountIds with mismatched chainIds: ${TEST_MISMATCH_STATE.accountIds[0]}`,
+    });
   });
 });

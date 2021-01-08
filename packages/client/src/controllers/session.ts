@@ -18,6 +18,7 @@ import {
   isSessionResponded,
   isSubscriptionUpdatedEvent,
   validateSessionProposeParams,
+  validateSessionRespondParams,
   isValidationInvalid,
 } from "@walletconnect/utils";
 import {
@@ -167,6 +168,10 @@ export class Session extends ISession {
   public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Respond Session`);
     this.logger.trace({ type: "method", method: "respond", params });
+    const paramsValidation = validateSessionRespondParams(params);
+    if (isValidationInvalid(paramsValidation)) {
+      throw new Error(paramsValidation.error);
+    }
     const { approved, proposal, response } = params;
     const { relay } = proposal;
     const self = generateKeyPair();

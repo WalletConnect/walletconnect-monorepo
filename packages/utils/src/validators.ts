@@ -102,6 +102,28 @@ export function validateSessionProposeParams(
   return formatValidResult();
 }
 
+export function validateSessionRespondParams(
+  params: SessionTypes.RespondParams,
+): Validation.Result {
+  if (params.approved) {
+    if (typeof params.response === "undefined") {
+      return formatInvalidResult("Missing response for approved session");
+    }
+    const stateValidation = validateBlockchainState(
+      params.response.state,
+      params.proposal.permissions.blockchain,
+    );
+    if (isValidationInvalid(stateValidation)) {
+      return stateValidation;
+    }
+    const metadataValidation = validateSessionProposeParamsMetadata(params.response.metadata);
+    if (isValidationInvalid(metadataValidation)) {
+      return metadataValidation;
+    }
+  }
+  return formatValidResult();
+}
+
 // -- permissions -------------------------------------------------- //
 
 export function validateBlockchainPermissions(
@@ -141,9 +163,41 @@ export function validateNotificationPermissions(
   return formatValidResult();
 }
 
+// -- state -------------------------------------------------- //
+
+export function validateBlockchainState(
+  state?: BlockchainTypes.State,
+  blockchain?: BlockchainTypes.Permissions,
+): Validation.Result {
+  if (
+    typeof blockchain === "undefined" ||
+    typeof blockchain.chainIds === "undefined" ||
+    !isValidArray(blockchain.chainIds, isValidChainId)
+  ) {
+    return formatInvalidResult("Missing or invalid blockchain permissions");
+  }
+  if (
+    typeof state === "undefined" ||
+    typeof state.accountIds === "undefined" ||
+    !isValidArray(state.accountIds, isValidAccountId)
+  ) {
+    return formatInvalidResult("Missing or invalid state accountIds");
+  }
+  const mismatch = state.accountIds.filter(accountId => {
+    const chainId = accountId.split("@")[1];
+    return !blockchain.chainIds.includes(chainId);
+  });
+  if (mismatch.length) {
+    return formatInvalidResult(
+      `Invalid accountIds with mismatched chainIds: ${mismatch.toString()}`,
+    );
+  }
+  return formatValidResult();
+}
+
 // -- misc -------------------------------------------------- //
 
-export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
+export function isValidArray(arr: any, itemCondition?: (item: any) => boolean): boolean {
   if (Array.isArray(arr)) {
     if (typeof itemCondition !== "undefined" && arr.length) {
       const matches = arr.filter(itemCondition);
@@ -155,11 +209,11 @@ export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
   return false;
 }
 
-export function isValidString(value: any) {
+export function isValidString(value: any): boolean {
   return typeof value === "string" && !!value.trim();
 }
 
-export function isValidChainId(value: any) {
+export function isValidChainId(value: any): boolean {
   if (isValidString(value) && value.includes(":")) {
     const split = value.split(":");
     return split.length === 2;
@@ -167,7 +221,17 @@ export function isValidChainId(value: any) {
   return false;
 }
 
-export function isValidUrl(value: any) {
+export function isValidAccountId(value: any): boolean {
+  if (isValidString(value) && value.includes("@")) {
+    const split = value.split("@");
+    if (split.length === 2) {
+      return !!split[0] && isValidChainId(split[1]);
+    }
+  }
+  return false;
+}
+
+export function isValidUrl(value: any): boolean {
   if (isValidString(value)) {
     try {
       const url = new URL(value);

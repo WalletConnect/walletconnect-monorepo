@@ -30,8 +30,12 @@ export const TEST_SESSION_METADATA = {
   icons: ["http://myapp.com/logo.png"],
 };
 
+export const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
+
+export const TEST_PERMISSIONS_CHAIN_IDS: string[] = [TEST_ETHEREUM_CHAIN_ID];
+
 export const TEST_BLOCKCHAIN_PERMISSIONS = {
-  chainIds: ["eip155:1"],
+  chainIds: TEST_PERMISSIONS_CHAIN_IDS,
 };
 
 export const TEST_JSONRPC_PERMISSIONS = {
@@ -46,4 +50,14 @@ export const TEST_SESSION_PERMISSIONS = {
   blockchain: TEST_BLOCKCHAIN_PERMISSIONS,
   jsonrpc: TEST_JSONRPC_PERMISSIONS,
   notifications: TEST_NOTIFICATIONS_PERMISSIONS,
+};
+
+export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
+
+export const TEST_SESSION_ACCOUNT_IDS = TEST_ETHEREUM_ACCOUNTS.map(
+  address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
+);
+
+export const TEST_SESSION_STATE = {
+  accountIds: TEST_SESSION_ACCOUNT_IDS,
 };

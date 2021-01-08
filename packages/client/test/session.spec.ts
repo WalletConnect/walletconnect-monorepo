@@ -152,7 +152,7 @@ describe("Session", function() {
       `Unauthorized Notification Type Requested: ${event.type}`,
     );
   });
-  it(" A fails to pings B after A deletes session", async () => {
+  it("A fails to pings B after A deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     await clients.a.disconnect({ topic, reason: "Ending session early" });
@@ -164,7 +164,7 @@ describe("Session", function() {
       `No matching session settled with topic: ${topic}`,
     );
   });
-  it(" A fails to pings B after B deletes session", async () => {
+  it("A fails to pings B after B deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     await clients.b.disconnect({ topic, reason: "Ending session early" });
