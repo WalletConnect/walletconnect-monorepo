@@ -21,9 +21,8 @@ describe("Pairing", () => {
     // setup
     const before = await setupClientsForTesting({ shared: { options: { storage } } });
     // pair
-    await testPairingWithoutSession(before.clients);
+    const topic = await testPairingWithoutSession(before.clients);
     // ping
-    const topic = before.clients.b.pairing.topics[0];
     await before.clients.a.pairing.ping(topic);
     await before.clients.b.pairing.ping(topic);
     // delete
@@ -33,5 +32,29 @@ describe("Pairing", () => {
     // ping
     await after.clients.a.pairing.ping(topic);
     await after.clients.b.pairing.ping(topic);
+  });
+  it("A pings B after A socket reconnects", async () => {
+    // setup
+    const { clients } = await setupClientsForTesting();
+    // pair
+    const topic = await testPairingWithoutSession(clients);
+    // ping
+    await clients.a.pairing.ping(topic);
+    // disconnect
+    await clients.a.relayer.provider.connection.close();
+    // ping
+    await clients.a.pairing.ping(topic);
+  });
+  it("A pings B after B socket reconnects", async () => {
+    // setup
+    const { clients } = await setupClientsForTesting();
+    // pair
+    const topic = await testPairingWithoutSession(clients);
+    // ping
+    await clients.a.pairing.ping(topic);
+    // disconnect
+    await clients.b.relayer.provider.connection.close();
+    // ping
+    await clients.a.pairing.ping(topic);
   });
 });

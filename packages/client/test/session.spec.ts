@@ -253,4 +253,28 @@ describe("Session", function() {
     await after.clients.a.session.ping(topic);
     await after.clients.b.session.ping(topic);
   });
+  it("A pings B after A socket reconnects", async () => {
+    // setup
+    const { setup, clients } = await setupClientsForTesting();
+    // connect
+    const topic = await testApproveSession(setup, clients);
+    // ping
+    await clients.a.session.ping(topic);
+    // disconnect
+    await clients.a.relayer.provider.connection.close();
+    // ping
+    await clients.a.session.ping(topic);
+  });
+  it("A pings B after B socket reconnects", async () => {
+    // setup
+    const { setup, clients } = await setupClientsForTesting();
+    // connect
+    const topic = await testApproveSession(setup, clients);
+    // ping
+    await clients.a.session.ping(topic);
+    // disconnect
+    await clients.b.relayer.provider.connection.close();
+    // ping
+    await clients.a.session.ping(topic);
+  });
 });

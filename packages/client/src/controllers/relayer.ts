@@ -33,12 +33,8 @@ export class Relayer extends IRelayer {
   constructor(public logger: Logger, provider?: string | IJsonRpcProvider) {
     super(logger);
     this.logger = generateChildLogger(logger, this.context);
-
     this.provider = this.setProvider(provider);
-    this.provider.on("payload", (payload: JsonRpcPayload) => this.onPayload(payload));
-    this.provider.on("connect", () => this.events.emit("connect"));
-    this.provider.on("disconnect", () => this.events.emit("disconnect"));
-    this.provider.on("error", e => this.events.emit("error", e));
+    this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
@@ -187,6 +183,13 @@ export class Relayer extends IRelayer {
     return typeof provider !== "string" && typeof provider !== "undefined"
       ? provider
       : new JsonRpcProvider(rpcUrl);
+  }
+
+  private registerEventListeners(): void {
+    this.provider.on("payload", (payload: JsonRpcPayload) => this.onPayload(payload));
+    this.provider.on("connect", () => this.events.emit("connect"));
+    this.provider.on("disconnect", () => this.events.emit("disconnect"));
+    this.provider.on("error", e => this.events.emit("error", e));
   }
 }
 
