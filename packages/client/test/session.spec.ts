@@ -61,19 +61,23 @@ describe("Session", () => {
   });
   it("A proposes session with invalid permissions", async () => {
     const { setup, clients } = await setupClientsForTesting();
+    const pairingTopic = await testPairingWithoutSession(clients);
     const permissions = { blockchain: setup.a.permissions.blockchain };
     const promise = clients.a.connect({
       metadata: setup.a.metadata,
       permissions: permissions as any,
+      pairing: { topic: pairingTopic },
     });
     await expect(promise).to.eventually.be.rejectedWith("Missing or invalid jsonrpc permissions");
   });
   it("A proposes session with invalid metadata", async () => {
     const { setup, clients } = await setupClientsForTesting();
+    const pairingTopic = await testPairingWithoutSession(clients);
     const metadata = { name: "" };
     const promise = clients.a.connect({
       metadata: metadata as any,
       permissions: setup.a.permissions,
+      pairing: { topic: pairingTopic },
     });
     await expect(promise).to.eventually.be.rejectedWith("Missing or invalid metadata name");
   });
