@@ -9,6 +9,7 @@ import {
   testRejectSession,
   setupClientsForTesting,
   testPairingWithoutSession,
+  TEST_ETHEREUM_ACCOUNTS,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
 
@@ -64,25 +65,81 @@ describe("Session", function() {
   });
   it("A proposes session with invalid permissions", async () => {
     const { setup, clients } = await setupClientsForTesting();
-    const pairingTopic = await testPairingWithoutSession(clients);
+    const pairing = { topic: await testPairingWithoutSession(clients) };
     const permissions = { blockchain: setup.a.permissions.blockchain };
     const promise = clients.a.connect({
       metadata: setup.a.metadata,
       permissions: permissions as any,
-      pairing: { topic: pairingTopic },
+      pairing,
     });
     await expect(promise).to.eventually.be.rejectedWith("Missing or invalid jsonrpc permissions");
   });
   it("A proposes session with invalid metadata", async () => {
     const { setup, clients } = await setupClientsForTesting();
-    const pairingTopic = await testPairingWithoutSession(clients);
+    const pairing = { topic: await testPairingWithoutSession(clients) };
     const metadata = { name: "" };
     const promise = clients.a.connect({
       metadata: metadata as any,
       permissions: setup.a.permissions,
-      pairing: { topic: pairingTopic },
+      pairing,
     });
     await expect(promise).to.eventually.be.rejectedWith("Missing or invalid metadata name");
+  });
+  it("B responds session with invalid state", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const pairing = { topic: await testPairingWithoutSession(clients) };
+    const response = {
+      metadata: setup.b.metadata,
+      state: {
+        accountIds: TEST_ETHEREUM_ACCOUNTS,
+      },
+    };
+    await Promise.all([
+      new Promise<void>(async (resolve, reject) => {
+        clients.a.connect({
+          metadata: setup.a.metadata,
+          permissions: setup.a.permissions,
+          pairing,
+        });
+        resolve();
+      }),
+      // Client B receives session proposal and rejects it
+      new Promise<void>(async (resolve, reject) => {
+        clients.b.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+          const promise = clients.b.approve({ proposal, response: response as any });
+          await expect(promise).to.eventually.be.rejectedWith(
+            "Missing or invalid state accountIds",
+          );
+          resolve();
+        });
+      }),
+    ]);
+  });
+  it("B responds session with invalid metadata", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const pairing = { topic: await testPairingWithoutSession(clients) };
+    const response = {
+      metadata: { name: "" },
+      state: setup.b.state,
+    };
+    await Promise.all([
+      new Promise<void>(async (resolve, reject) => {
+        clients.a.connect({
+          metadata: setup.a.metadata,
+          permissions: setup.a.permissions,
+          pairing,
+        });
+        resolve();
+      }),
+      // Client B receives session proposal and rejects it
+      new Promise<void>(async (resolve, reject) => {
+        clients.b.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+          const promise = clients.b.approve({ proposal, response: response as any });
+          await expect(promise).to.eventually.be.rejectedWith("Missing or invalid metadata name");
+          resolve();
+        });
+      }),
+    ]);
   });
   it("A pings B with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
