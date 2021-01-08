@@ -8,6 +8,8 @@ import {
   setupClientsForTesting,
   testPairingWithoutSession,
 } from "./shared";
+import { CLIENT_EVENTS } from "../src";
+import { SessionTypes } from "@walletconnect/types";
 
 describe("Session", () => {
   it("A proposes session and B approves", async () => {
@@ -82,5 +84,27 @@ describe("Session", () => {
     await testApproveSession(setup, clients);
     const topic = clients.b.session.topics[0];
     await clients.b.session.ping(topic);
+  });
+  it("B emits notification and A receives event", async () => {
+    const event = { type: "chainChanged", data: { chainId: "100" } };
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        clients.a.on(
+          CLIENT_EVENTS.session.notification,
+          (notificationEvent: SessionTypes.NotificationEvent) => {
+            if (notificationEvent.topic !== topic) return;
+            expect(notificationEvent.type).to.eql(event.type);
+            expect(notificationEvent.data).to.eql(event.data);
+            resolve();
+          },
+        );
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        await clients.b.notify({ topic, type: event.type, data: event.data });
+        resolve();
+      }),
+    ]);
   });
 });
