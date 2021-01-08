@@ -124,11 +124,17 @@ export class Session extends ISession {
       this.logger.info(`Create Session`);
       this.logger.trace({ type: "method", method: "create", params });
       const timeout = setTimeout(() => {
-        const errorMessage = `Session failed to settle after 5 minutes`;
+        const errorMessage = `Session failed to settle after 1 minute`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 300_000);
-      const pending = await this.propose(params);
+      }, 60_000);
+      let pending: SessionTypes.Pending;
+      try {
+        pending = await this.propose(params);
+      } catch (e) {
+        clearTimeout(timeout);
+        return reject(e);
+      }
       this.pending.on(
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Pending>) => {
@@ -137,12 +143,20 @@ export class Session extends ISession {
             const outcome = updatedEvent.data.outcome;
             clearTimeout(timeout);
             if (isSessionFailed(outcome)) {
-              await this.pending.delete(pending.topic, outcome.reason);
+              try {
+                await this.pending.delete(pending.topic, outcome.reason);
+              } catch (e) {
+                return reject(e);
+              }
               reject(new Error(outcome.reason));
             } else {
-              const pairing = await this.settled.get(outcome.topic);
-              await this.pending.delete(pending.topic, SESSION_REASONS.settled);
-              resolve(pairing);
+              try {
+                const pairing = await this.settled.get(outcome.topic);
+                await this.pending.delete(pending.topic, SESSION_REASONS.settled);
+                resolve(pairing);
+              } catch (e) {
+                return reject(e);
+              }
             }
           }
         },
@@ -261,6 +275,7 @@ export class Session extends ISession {
       try {
         await this.send(params.topic, request, params.chainId);
       } catch (e) {
+        clearTimeout(timeout);
         return reject(e);
       }
     });
@@ -312,8 +327,9 @@ export class Session extends ISession {
     if (isValidationInvalid(paramsValidation)) {
       throw new Error(paramsValidation.error);
     }
-    if (params.signal.method !== SESSION_SIGNAL_METHOD_PAIRING)
+    if (params.signal.method !== SESSION_SIGNAL_METHOD_PAIRING) {
       throw new Error(`Session proposal signal unsupported`);
+    }
     const pairing = await this.client.pairing.settled.get(params.signal.params.topic);
     const signal: SessionTypes.Signal = {
       method: SESSION_SIGNAL_METHOD_PAIRING,
@@ -344,8 +360,6 @@ export class Session extends ISession {
       proposal,
     };
     await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
-    const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, proposal);
-    await this.client.pairing.send(signal.params.topic, request);
     return pending;
   }
 
@@ -610,6 +624,9 @@ export class Session extends ISession {
       this.logger.info(`Emitting ${SESSION_EVENTS.proposed}`);
       this.logger.debug({ type: "event", event: SESSION_EVENTS.proposed, data: pending });
       this.events.emit(SESSION_EVENTS.proposed, pending);
+      // send proposal signal through existing pairing
+      const request = formatJsonRpcRequest(SESSION_JSONRPC.propose, pending.proposal);
+      await this.client.pairing.send(pending.proposal.signal.params.topic, request);
     }
   }
 

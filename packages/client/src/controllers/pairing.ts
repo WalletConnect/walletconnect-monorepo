@@ -124,11 +124,17 @@ export class Pairing extends IPairing {
       this.logger.debug(`Create Pairing`);
       this.logger.trace({ type: "method", method: "create", params });
       const timeout = setTimeout(() => {
-        const errorMessage = `Pairing failed to settle after 5 minutes`;
+        const errorMessage = `Pairing failed to settle after 1 minute`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 300_000);
-      const pending = await this.propose(params);
+      }, 60_000);
+      let pending: PairingTypes.Pending;
+      try {
+        pending = await this.propose(params);
+      } catch (e) {
+        clearTimeout(timeout);
+        return reject(e);
+      }
       this.pending.on(
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<PairingTypes.Pending>) => {
@@ -137,12 +143,20 @@ export class Pairing extends IPairing {
             const outcome = updatedEvent.data.outcome;
             clearTimeout(timeout);
             if (isPairingFailed(outcome)) {
-              await this.pending.delete(pending.topic, outcome.reason);
+              try {
+                await this.pending.delete(pending.topic, outcome.reason);
+              } catch (e) {
+                return reject(e);
+              }
               reject(new Error(outcome.reason));
             } else {
-              const pairing = await this.settled.get(outcome.topic);
-              await this.pending.delete(pending.topic, PAIRING_REASONS.settled);
-              resolve(pairing);
+              try {
+                const pairing = await this.settled.get(outcome.topic);
+                await this.pending.delete(pending.topic, PAIRING_REASONS.settled);
+                resolve(pairing);
+              } catch (e) {
+                return reject(e);
+              }
             }
           }
         },
@@ -249,6 +263,7 @@ export class Pairing extends IPairing {
       try {
         await this.send(params.topic, request);
       } catch (e) {
+        clearTimeout(timeout);
         return reject(e);
       }
     });
@@ -543,6 +558,7 @@ export class Pairing extends IPairing {
       this.logger.info(`Emitting ${PAIRING_EVENTS.proposed}`);
       this.logger.debug({ type: "event", event: PAIRING_EVENTS.proposed, data: pending });
       this.events.emit(PAIRING_EVENTS.proposed, pending);
+      // send proposal signal through uri offline
     }
   }
 
