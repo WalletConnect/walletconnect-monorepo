@@ -9,7 +9,8 @@ import {
   TEST_ETHEREUM_ACCOUNTS,
 } from "./shared";
 
-describe("Request", () => {
+describe("Request", function() {
+  this.timeout(35_000);
   it("A requests method and B responds result", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -24,7 +25,6 @@ describe("Request", () => {
     const response = formatJsonRpcError(1, "Something went wrong");
     await testJsonRpcRequest(setup, clients, topic, request, response);
   });
-  // FIXME: "Timeout of 2000ms exceeded. For async tests and hooks, ensure "done()" is called;"
   it("A requests unauthorized method and error is thrown", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -33,6 +33,16 @@ describe("Request", () => {
     const promise = clients.a.request({ topic, chainId, request });
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized JSON-RPC Method Requested: ${request.method}`,
+    );
+  });
+  it("A requests method and B fails to return response in time (30 secs)", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const request = { method: "eth_accounts" };
+    const chainId = setup.a.permissions.blockchain.chainIds[0];
+    const promise = clients.a.request({ topic, chainId, request });
+    await expect(promise).to.eventually.be.rejectedWith(
+      `JSON-RPC Request timeout after 30s: ${request.method}`,
     );
   });
 });
