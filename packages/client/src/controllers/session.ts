@@ -544,12 +544,15 @@ export class Session extends ISession {
     let update: SessionTypes.Update;
     if (typeof params.update.state !== "undefined") {
       const state = session.state;
-      if (participant.publicKey === session.permissions.state.controller.publicKey) {
-        state.accountIds = params.update.state.accountIds || state.accountIds;
+      if (participant.publicKey !== session.permissions.state.controller.publicKey) {
+        const errorMessage = `Unauthorized session update request`;
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
       }
+      state.accountIds = params.update.state.accountIds || state.accountIds;
       update = { state };
     } else {
-      const errorMessage = `Invalid ${this.context} update request params`;
+      const errorMessage = `Invalid session update request params`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }

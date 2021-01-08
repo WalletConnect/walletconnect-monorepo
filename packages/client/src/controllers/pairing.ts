@@ -496,12 +496,15 @@ export class Pairing extends IPairing {
     let update: PairingTypes.Update;
     if (typeof params.update.peer !== "undefined") {
       const metadata = params.update.peer.metadata as PairingTypes.Metadata;
-      if (pairing.peer.publicKey === participant.publicKey) {
-        pairing.peer.metadata = metadata;
+      if (pairing.peer.publicKey !== participant.publicKey) {
+        const errorMessage = `Unauthorized pairing update request`;
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
       }
+      pairing.peer.metadata = metadata;
       update = { peer: { metadata } };
     } else {
-      const errorMessage = `Invalid ${this.context} update request params`;
+      const errorMessage = `Invalid pairing update request params`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }

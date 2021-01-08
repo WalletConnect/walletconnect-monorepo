@@ -85,6 +85,31 @@ describe("Session", () => {
     const topic = clients.b.session.topics[0];
     await clients.b.session.ping(topic);
   });
+  it("B updates state accounts and A receives event", async () => {
+    const state = { accountIds: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        clients.a.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
+          if (session.topic !== topic) return;
+          expect(session.state).to.eql(state);
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        await clients.b.update({ topic, update: { state } });
+        resolve();
+      }),
+    ]);
+  });
+  it("A updates state accounts and error is thrown", async () => {
+    const state = { accountIds: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const promise = clients.a.update({ topic, update: { state } });
+    await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session update request`);
+  });
   it("B emits notification and A receives event", async () => {
     const event = { type: "chainChanged", data: { chainId: "100" } };
     const { setup, clients } = await setupClientsForTesting();
@@ -106,5 +131,14 @@ describe("Session", () => {
         resolve();
       }),
     ]);
+  });
+  it("A emits notification and error is thrown", async () => {
+    const event = { type: "chainChanged", data: { chainId: "100" } };
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const promise = clients.a.notify({ topic, type: event.type, data: event.data });
+    await expect(promise).to.eventually.be.rejectedWith(
+      `Unauthorized Notification Type Requested: ${event.type}`,
+    );
   });
 });
