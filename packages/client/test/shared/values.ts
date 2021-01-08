@@ -1,4 +1,7 @@
+import path from "path";
 import { ClientOptions, SessionTypes } from "@walletconnect/types";
+
+import { ROOT_DIR } from "../../../../ops/js/shared";
 
 // TODO: Relay Provider URL needs to be set from ops
 export const TEST_RELAYER_PROVIDER_URL = process.env.TEST_RELAYER_URL
@@ -9,6 +12,8 @@ export const TEST_CLIENT_OPTIONS: ClientOptions = {
   logger: "fatal",
   relayProvider: TEST_RELAYER_PROVIDER_URL,
 };
+
+export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");
 
 export const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
 

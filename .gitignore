@@ -30,3 +30,4 @@ zip
 .nyc_output
 tsconfig.tsbuildinfo
 config
+test.db

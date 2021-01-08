@@ -17,12 +17,7 @@ import {
   isSessionResponded,
   getPairingMetadata,
 } from "@walletconnect/utils";
-import {
-  JsonRpcPayload,
-  isJsonRpcRequest,
-  isJsonRpcError,
-  formatJsonRpcRequest,
-} from "@json-rpc-tools/utils";
+import { JsonRpcPayload, isJsonRpcRequest } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
 import { Pairing, Session, Relayer } from "./controllers";

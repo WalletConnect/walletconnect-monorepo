@@ -1,5 +1,5 @@
 import { ErrorResponse, RequestArguments } from "@json-rpc-tools/utils";
-import { IClient, SessionTypes, ClientOptions, SignalTypes } from "@walletconnect/types";
+import { IClient, SessionTypes, ClientOptions } from "@walletconnect/types";
 
 export interface InitializedClients {
   a: IClient;
@@ -16,16 +16,15 @@ export interface ClientSetup {
 export type ClientSetupMap = Record<string, ClientSetup>;
 export type InitializedSetup = Record<string, Required<ClientSetup>>;
 
-export interface SessionScenarioInitialized {
+export interface CientSetupInitialized {
   clients: InitializedClients;
   setup: InitializedSetup;
 }
 
-export interface SessionScenarioSetup {
+export interface ClientSetupOptions {
   clients?: InitializedClients;
   setup?: ClientSetupMap;
-  pairing?: SignalTypes.ParamsPairing;
-  scenario?: string;
+  shared?: ClientSetup;
 }
 
 export interface RequestScenarioOptions {

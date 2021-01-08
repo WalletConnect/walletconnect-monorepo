@@ -22,7 +22,9 @@
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
     "build": "run-s build:pre build:cjs build:umd",
-    "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
+    "test:pre": "rm -rf ./test/test.db",
+    "test:run": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
+    "test": "run-s test:pre test:run",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },

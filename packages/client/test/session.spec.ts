@@ -10,8 +10,10 @@ import {
   setupClientsForTesting,
   testPairingWithoutSession,
   TEST_ETHEREUM_ACCOUNTS,
+  TEST_CLIENT_DATABASE,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
+import { KeyValueStorage } from "keyvaluestorage";
 
 describe("Session", function() {
   this.timeout(30_000);
@@ -233,5 +235,22 @@ describe("Session", function() {
     await expect(promise).to.eventually.be.rejectedWith(
       `JSON-RPC Request timeout after 30s: wc_sessionPing`,
     );
+  });
+  it("clients ping each other after restart", async () => {
+    const storage = new KeyValueStorage({ database: TEST_CLIENT_DATABASE });
+    // setup
+    const before = await setupClientsForTesting({ shared: { options: { storage } } });
+    // connect
+    const topic = await testApproveSession(before.setup, before.clients);
+    // ping
+    await before.clients.a.session.ping(topic);
+    await before.clients.b.session.ping(topic);
+    // delete
+    delete before.clients;
+    // restart
+    const after = await setupClientsForTesting({ shared: { options: { storage } } });
+    // ping
+    await after.clients.a.session.ping(topic);
+    await after.clients.b.session.ping(topic);
   });
 });
