@@ -1,6 +1,6 @@
 import "mocha";
 
-import { setupClientsForTesting, testApproveSession } from "./shared";
+import { setupClientsForTesting } from "./shared";
 import { testPairingWithoutSession } from "./shared/pairing";
 
 describe("Pairing", () => {

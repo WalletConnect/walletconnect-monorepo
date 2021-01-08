@@ -1,9 +1,10 @@
 import "mocha";
-import { expect } from "chai";
 import Timestamp from "@pedrouid/timestamp";
 import { PairingTypes } from "@walletconnect/types";
 
 import { CLIENT_EVENTS, SESSION_JSONRPC, SUBSCRIPTION_EVENTS } from "../../src";
+
+import { expect } from "./chai";
 import { InitializedClients } from "./types";
 
 export async function testPairingWithoutSession(clients: InitializedClients): Promise<string> {

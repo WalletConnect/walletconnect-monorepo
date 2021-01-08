@@ -1,13 +1,11 @@
 import "mocha";
-import { use, expect } from "chai";
-import chaiAsPromised from "chai-as-promised";
 import Timestamp from "@pedrouid/timestamp";
-import { SessionTypes, PairingTypes, ClientOptions, SignalTypes } from "@walletconnect/types";
+import { SessionTypes, PairingTypes, SignalTypes } from "@walletconnect/types";
 
 import { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../../src";
-import { InitializedClients, InitializedSetup } from "./types";
 
-use(chaiAsPromised);
+import { expect } from "./chai";
+import { InitializedClients, InitializedSetup } from "./types";
 
 export async function testApproveSession(
   setup: InitializedSetup,
@@ -153,8 +151,6 @@ export async function testRejectSession(
         permissions: setup.a.permissions,
         pairing,
       });
-      // TODO: chai-as-promised assertions are not typed hence need to be ignored
-      // @ts-ignore
       await expect(promise).to.eventually.be.rejectedWith("Session not approved");
       resolve();
     }),

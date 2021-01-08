@@ -1,9 +1,8 @@
 import "mocha";
-import { expect } from "chai";
 
 import Client from "../src";
 
-import { TEST_CLIENT_OPTIONS } from "./shared";
+import { expect, TEST_CLIENT_OPTIONS } from "./shared";
 
 describe("Client", () => {
   it("instantiate successfully", async () => {

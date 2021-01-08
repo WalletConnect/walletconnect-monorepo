@@ -1,13 +1,13 @@
 import "mocha";
-import { expect } from "chai";
+import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 import {
+  expect,
   testJsonRpcRequest,
   setupClientsForTesting,
   testApproveSession,
   TEST_ETHEREUM_ACCOUNTS,
 } from "./shared";
-import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 describe("Request", () => {
   it("A requests method and B responds result", async () => {
@@ -31,8 +31,6 @@ describe("Request", () => {
   //   const request = { method: "cosmos_sign" };
   //   const chainId = setup.a.permissions.blockchain.chainIds[0];
   //   const promise = clients.a.request({ topic, chainId, request });
-  //   // TODO: chai-as-promised assertions are not typed hence need to be ignored
-  //   // @ts-ignore
   //   await expect(promise).to.eventually.be.rejectedWith(
   //     `Unauthorized JSON-RPC Method Requested: ${request.method}`,
   //   );

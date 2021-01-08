@@ -1,5 +1,6 @@
-import { SessionTypes, ClientOptions, SignalTypes } from "@walletconnect/types";
+import { Client } from "../../src";
 
+import { expect } from "./chai";
 import {
   TEST_CLIENT_OPTIONS,
   TEST_PERMISSIONS,
@@ -7,37 +8,12 @@ import {
   TEST_SESSION_STATE,
   TEST_APP_METADATA_B,
 } from "./values";
-
-import { Client } from "../../src";
-
-import { InitializedClients } from "./types";
-
-interface ClientSetup {
-  options?: ClientOptions;
-  state?: SessionTypes.State;
-  metadata?: SessionTypes.Metadata;
-  permissions?: SessionTypes.BasePermissions;
-}
-
-type ClientSetupMap = Record<string, ClientSetup>;
-type InitializedSetup = Record<string, Required<ClientSetup>>;
-
-interface SessionScenarioInitialized {
-  clients: InitializedClients;
-  setup: InitializedSetup;
-}
-
-interface SessionScenarioSetup {
-  clients?: InitializedClients;
-  setup?: ClientSetupMap;
-  pairing?: SignalTypes.ParamsPairing;
-  scenario?: string;
-}
-
-interface SessionScenarioResult {
-  topic: string;
-  clients: InitializedClients;
-}
+import {
+  ClientSetup,
+  ClientSetupMap,
+  SessionScenarioInitialized,
+  SessionScenarioSetup,
+} from "./types";
 
 export function generateClientSetup(
   label: string,

@@ -1,10 +1,13 @@
 import "mocha";
-import { expect } from "chai";
-
-import { testApproveSession, testRejectSession } from "./shared/session";
-import { setupClientsForTesting } from "./shared";
 import { generateRandomBytes32 } from "@walletconnect/utils";
-import { testPairingWithoutSession } from "./shared/pairing";
+
+import {
+  expect,
+  testApproveSession,
+  testRejectSession,
+  setupClientsForTesting,
+  testPairingWithoutSession,
+} from "./shared";
 
 describe("Session", () => {
   it("A proposes session and B approves", async () => {
@@ -44,8 +47,6 @@ describe("Session", () => {
       permissions: setup.a.permissions,
       pairing,
     });
-    // TODO: chai-as-promised assertions are not typed hence need to be ignored
-    // @ts-ignore
     await expect(promise).to.eventually.be.rejectedWith(
       `No matching pairing settled with topic: ${pairing.topic}`,
     );
@@ -59,8 +60,6 @@ describe("Session", () => {
   //     // @ts-ignore
   //     permissions: { blockchain: setup.a.permissions.blockchain },
   //   });
-  //   // TODO: chai-as-promised assertions are not typed hence need to be ignored
-  //   // @ts-ignore
   //   await expect(promise).to.eventually.be.rejectedWith("Session not approved");
   // });
   // FIXME: "Timeout of 2000ms exceeded. For async tests and hooks, ensure "done()" is called;"
@@ -72,8 +71,6 @@ describe("Session", () => {
   //     metadata: { name: "" },
   //     permissions: setup.a.permissions,
   //   });
-  //   // TODO: chai-as-promised assertions are not typed hence need to be ignored
-  //   // @ts-ignore
   //   await expect(promise).to.eventually.be.rejectedWith("Incorrect Metadata");
   // });
   it("A pings B with existing session", async () => {

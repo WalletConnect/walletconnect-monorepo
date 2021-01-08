@@ -1,5 +1,4 @@
 import "mocha";
-import { expect } from "chai";
 import Timestamp from "@pedrouid/timestamp";
 import { SessionTypes } from "@walletconnect/types";
 import {
@@ -11,6 +10,8 @@ import {
 } from "@json-rpc-tools/utils";
 
 import { CLIENT_EVENTS } from "../../src";
+
+import { expect } from "./chai";
 import { InitializedSetup, InitializedClients } from "./types";
 
 export async function testJsonRpcRequest(
@@ -53,8 +54,6 @@ export async function testJsonRpcRequest(
       time.start("request");
       if (isJsonRpcError(response)) {
         const promise = clients.a.request({ topic, chainId, request });
-        // TODO: chai-as-promised assertions are not typed hence need to be ignored
-        // @ts-ignore
         await expect(promise).to.eventually.be.rejectedWith(response.error.message);
         resolve();
         return;
