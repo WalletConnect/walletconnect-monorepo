@@ -2,7 +2,7 @@ import { JsonRpcPayload, RequestArguments } from "@json-rpc-tools/types";
 
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
-import { RelayTypes } from "./relay";
+import { RelayerTypes } from "./relayer";
 import { JsonRpcPermissions, SignalTypes } from "./misc";
 
 export declare namespace PairingTypes {
@@ -11,7 +11,7 @@ export declare namespace PairingTypes {
   }
 
   export interface ProposeParams {
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
   }
 
   export type CreateParams = ProposeParams;
@@ -22,7 +22,7 @@ export declare namespace PairingTypes {
 
   export interface Proposal {
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     proposer: Peer;
     signal: Signal;
     permissions: Permissions;
@@ -38,7 +38,7 @@ export declare namespace PairingTypes {
   export interface BasePending {
     status: PendingStatus;
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     self: CryptoTypes.Self;
     proposal: Proposal;
   }
@@ -60,7 +60,7 @@ export declare namespace PairingTypes {
   }
 
   export interface SettleParams {
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     peer: Peer;
     self: CryptoTypes.Self;
     permissions: Permissions;
@@ -96,7 +96,7 @@ export declare namespace PairingTypes {
 
   export interface Settled {
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
@@ -115,7 +115,7 @@ export declare namespace PairingTypes {
 
   export interface Success {
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     responder: Peer;
     expiry: number;
   }

@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { RelayTypes, IRelayer } from "@walletconnect/types";
+import { RelayerTypes, IRelayer } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
 import { encrypt, decrypt } from "@walletconnect/utils";
 import { utf8ToHex, hexToUtf8 } from "enc-utils";
@@ -37,6 +37,10 @@ export class Relayer extends IRelayer {
     this.registerEventListeners();
   }
 
+  get connected(): boolean {
+    return this.provider.connection.connected;
+  }
+
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
     await this.provider.connect();
@@ -45,7 +49,7 @@ export class Relayer extends IRelayer {
   public async publish(
     topic: string,
     payload: JsonRpcPayload,
-    opts?: RelayTypes.PublishOptions,
+    opts?: RelayerTypes.PublishOptions,
   ): Promise<void> {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
@@ -82,7 +86,7 @@ export class Relayer extends IRelayer {
   public async subscribe(
     topic: string,
     listener: (payload: JsonRpcPayload) => void,
-    opts?: RelayTypes.SubscribeOptions,
+    opts?: RelayerTypes.SubscribeOptions,
   ): Promise<string> {
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
@@ -119,7 +123,7 @@ export class Relayer extends IRelayer {
     }
   }
 
-  public async unsubscribe(id: string, opts?: RelayTypes.SubscribeOptions): Promise<void> {
+  public async unsubscribe(id: string, opts?: RelayerTypes.SubscribeOptions): Promise<void> {
     this.logger.debug(`Unsubscribing Topic`);
     this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
     try {

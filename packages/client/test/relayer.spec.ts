@@ -13,7 +13,7 @@ describe("Relayer", function() {
     await clients.a.session.ping(topic);
     // disconnect
     await clients.a.relayer.provider.connection.close();
-    expect(clients.a.relayer.provider.connection.connected).to.be.false;
+    expect(clients.a.relayer.connected).to.be.false;
     // ping
     await clients.a.session.ping(topic);
   });
@@ -26,7 +26,7 @@ describe("Relayer", function() {
     await clients.a.session.ping(topic);
     // disconnect
     await clients.b.relayer.provider.connection.close();
-    expect(clients.b.relayer.provider.connection.connected).to.be.false;
+    expect(clients.b.relayer.connected).to.be.false;
     // ping
     await clients.a.session.ping(topic);
   });

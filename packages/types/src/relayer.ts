@@ -3,7 +3,7 @@ import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@json-rpc-tools/types
 
 import { CryptoTypes } from "./crypto";
 
-export declare namespace RelayTypes {
+export declare namespace RelayerTypes {
   export interface ProtocolOptions {
     protocol: string;
     params?: any;
@@ -26,6 +26,8 @@ export abstract class IRelayer extends IEvents {
 
   public abstract context: string;
 
+  public abstract readonly connected: boolean;
+
   constructor(public logger: Logger, provider?: string | IJsonRpcProvider) {
     super();
   }
@@ -35,14 +37,14 @@ export abstract class IRelayer extends IEvents {
   public abstract publish(
     topic: string,
     payload: JsonRpcPayload,
-    opts?: RelayTypes.PublishOptions,
+    opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
 
   public abstract subscribe(
     topic: string,
     listener: (payload: JsonRpcPayload) => void,
-    opts?: RelayTypes.SubscribeOptions,
+    opts?: RelayerTypes.SubscribeOptions,
   ): Promise<string>;
 
-  public abstract unsubscribe(id: string, opts?: RelayTypes.SubscribeOptions): Promise<void>;
+  public abstract unsubscribe(id: string, opts?: RelayerTypes.SubscribeOptions): Promise<void>;
 }

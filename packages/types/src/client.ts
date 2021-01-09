@@ -2,7 +2,7 @@ import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
 
-import { IRelayer, RelayTypes } from "./relay";
+import { IRelayer, RelayerTypes } from "./relayer";
 import { IPairing } from "./pairing";
 import { ISession, SessionTypes } from "./session";
 import { SignalTypes } from "./misc";
@@ -60,7 +60,7 @@ export declare namespace ClientTypes {
   export interface ConnectParams {
     metadata: SessionTypes.Metadata;
     permissions: SessionTypes.BasePermissions;
-    relay?: RelayTypes.ProtocolOptions;
+    relay?: RelayerTypes.ProtocolOptions;
     pairing?: SignalTypes.ParamsPairing;
   }
 

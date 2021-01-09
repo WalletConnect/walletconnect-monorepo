@@ -2,7 +2,7 @@ import { JsonRpcPayload, RequestArguments } from "@json-rpc-tools/types";
 
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
-import { RelayTypes } from "./relay";
+import { RelayerTypes } from "./relayer";
 import { SignalTypes, BlockchainTypes, JsonRpcPermissions, NotificationPermissions } from "./misc";
 import { SubscriptionEvent } from "./subscription";
 
@@ -27,7 +27,7 @@ export declare namespace SessionTypes {
 
   export interface ProposeParams {
     signal: Signal;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     metadata: Metadata;
     permissions: ProposedPermissions;
     ttl?: number;
@@ -41,7 +41,7 @@ export declare namespace SessionTypes {
 
   export interface Proposal {
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     proposer: Peer;
     signal: Signal;
     permissions: ProposedPermissions;
@@ -57,7 +57,7 @@ export declare namespace SessionTypes {
   export interface BasePending {
     status: PendingStatus;
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     self: CryptoTypes.Self;
     proposal: Proposal;
   }
@@ -80,7 +80,7 @@ export declare namespace SessionTypes {
   }
 
   export interface SettleParams {
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     self: CryptoTypes.Self;
     peer: Peer;
     state: State;
@@ -130,7 +130,7 @@ export declare namespace SessionTypes {
 
   export interface Settled {
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
@@ -150,7 +150,7 @@ export declare namespace SessionTypes {
 
   export interface Success {
     topic: string;
-    relay: RelayTypes.ProtocolOptions;
+    relay: RelayerTypes.ProtocolOptions;
     responder: Peer;
     expiry: number;
     state: State;

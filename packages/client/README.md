@@ -241,7 +241,7 @@ export declare namespace ClientTypes {
   export interface ConnectParams {
     metadata: SessionTypes.Metadata;
     permissions: SessionTypes.BasePermissions;
-    relay?: RelayTypes.ProtocolOptions;
+    relay?: RelayerTypes.ProtocolOptions;
     pairing?: SignalTypes.ParamsPairing;
   }
 

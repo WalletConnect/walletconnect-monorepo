@@ -1,5 +1,5 @@
 import { CryptoTypes } from "./crypto";
-import { RelayTypes } from "./relay";
+import { RelayerTypes } from "./relayer";
 
 export declare namespace SignalTypes {
   export type Method = MethodPairing | MethodUri;
@@ -63,7 +63,7 @@ export interface UriParameters {
   version: number;
   topic: string;
   publicKey: string;
-  relay: RelayTypes.ProtocolOptions;
+  relay: RelayerTypes.ProtocolOptions;
 }
 
 export declare namespace Validation {
