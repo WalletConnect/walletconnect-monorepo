@@ -21,7 +21,6 @@
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
     "build": "run-s build:pre build:cjs build:umd",
-    "test": "tsdx test ./test",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
@@ -55,7 +54,6 @@
     "eslint-plugin-standard": "^4.0.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.19.1",
-    "tsdx": "^0.14.1",
     "typescript": "^3.7.5",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10"
