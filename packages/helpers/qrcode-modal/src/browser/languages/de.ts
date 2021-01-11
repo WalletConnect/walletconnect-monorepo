@@ -10,8 +10,6 @@ const de: TextMap = {
   mobile: "Mobile",
   copy_to_clipboard: "In die Zwischenablage kopieren",
   copied_to_clipboard: "In die Zwischenablage kopiert!",
-  show_more: "Zeig mehr",
-  show_less: "Zeige weniger",
 };
 
 export default de;

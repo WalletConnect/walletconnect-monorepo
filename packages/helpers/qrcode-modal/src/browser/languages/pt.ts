@@ -10,8 +10,6 @@ const pt: TextMap = {
   mobile: "Móvel",
   copy_to_clipboard: "Copiar",
   copied_to_clipboard: "Copiado!",
-  show_more: "Mostrar mais",
-  show_less: "Mostrar menos",
 };
 
 export default pt;

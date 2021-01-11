@@ -1,39 +1,31 @@
-import * as eccryptoJS from "eccrypto-js";
+import * as isoCrypto from "@pedrouid/iso-crypto";
+import * as encUtils from "enc-utils";
 import {
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
   IEncryptionPayload,
 } from "@walletconnect/types";
-import {
-  convertArrayBufferToBuffer,
-  convertUtf8ToBuffer,
-  convertBufferToUtf8,
-  convertBufferToHex,
-  convertHexToBuffer,
-  concatBuffers,
-  removeHexPrefix,
-  convertBufferToArrayBuffer,
-} from "@walletconnect/utils";
+import { convertArrayBufferToBuffer, convertBufferToArrayBuffer } from "@walletconnect/utils";
 
 export async function generateKey(length?: number): Promise<ArrayBuffer> {
   const _length = (length || 256) / 8;
-  const buffer: Buffer = eccryptoJS.randomBytes(_length);
-  const result = convertBufferToArrayBuffer(buffer);
+  const bytes = isoCrypto.randomBytes(_length);
+  const result = convertBufferToArrayBuffer(encUtils.arrayToBuffer(bytes));
 
   return result;
 }
 
-export async function verifyHmac(payload: IEncryptionPayload, key: Buffer): Promise<boolean> {
-  const cipherText: Buffer = convertHexToBuffer(payload.data);
-  const iv: Buffer = convertHexToBuffer(payload.iv);
-  const hmac: Buffer = convertHexToBuffer(payload.hmac);
-  const hmacHex: string = convertBufferToHex(hmac, true);
-  const unsigned: Buffer = concatBuffers(cipherText, iv);
-  const chmac: Buffer = await eccryptoJS.hmacSha256Sign(key, unsigned);
-  const chmacHex: string = convertBufferToHex(chmac, true);
+export async function verifyHmac(payload: IEncryptionPayload, key: Uint8Array): Promise<boolean> {
+  const cipherText = encUtils.hexToArray(payload.data);
+  const iv = encUtils.hexToArray(payload.iv);
+  const hmac = encUtils.hexToArray(payload.hmac);
+  const hmacHex: string = encUtils.arrayToHex(hmac, false);
+  const unsigned = encUtils.concatArrays(cipherText, iv);
+  const chmac = await isoCrypto.hmacSha256Sign(key, unsigned);
+  const chmacHex: string = encUtils.arrayToHex(chmac, false);
 
-  if (removeHexPrefix(hmacHex) === removeHexPrefix(chmacHex)) {
+  if (encUtils.removeHexPrefix(hmacHex) === encUtils.removeHexPrefix(chmacHex)) {
     return true;
   }
 
@@ -45,21 +37,21 @@ export async function encrypt(
   key: ArrayBuffer,
   providedIv?: ArrayBuffer,
 ): Promise<IEncryptionPayload> {
-  const _key: Buffer = convertArrayBufferToBuffer(key);
+  const _key = encUtils.bufferToArray(convertArrayBufferToBuffer(key));
 
   const ivArrayBuffer: ArrayBuffer = providedIv || (await generateKey(128));
-  const iv: Buffer = convertArrayBufferToBuffer(ivArrayBuffer);
-  const ivHex: string = convertBufferToHex(iv, true);
+  const iv = encUtils.bufferToArray(convertArrayBufferToBuffer(ivArrayBuffer));
+  const ivHex: string = encUtils.arrayToHex(iv, false);
 
   const contentString: string = JSON.stringify(data);
-  const content: Buffer = convertUtf8ToBuffer(contentString);
+  const content = encUtils.utf8ToArray(contentString);
 
-  const cipherText: Buffer = await eccryptoJS.aesCbcEncrypt(iv, _key, content);
-  const cipherTextHex: string = convertBufferToHex(cipherText, true);
+  const cipherText = await isoCrypto.aesCbcEncrypt(iv, _key, content);
+  const cipherTextHex: string = encUtils.arrayToHex(cipherText, false);
 
-  const unsigned: Buffer = concatBuffers(cipherText, iv);
-  const hmac: Buffer = await eccryptoJS.hmacSha256Sign(_key, unsigned);
-  const hmacHex: string = convertBufferToHex(hmac, true);
+  const unsigned = encUtils.concatArrays(cipherText, iv);
+  const hmac = await isoCrypto.hmacSha256Sign(_key, unsigned);
+  const hmacHex: string = encUtils.arrayToHex(hmac, false);
 
   return {
     data: cipherTextHex,
@@ -72,7 +64,7 @@ export async function decrypt(
   payload: IEncryptionPayload,
   key: ArrayBuffer,
 ): Promise<IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | null> {
-  const _key: Buffer = convertArrayBufferToBuffer(key);
+  const _key = encUtils.bufferToArray(convertArrayBufferToBuffer(key));
 
   if (!_key) {
     throw new Error("Missing key: required for decryption");
@@ -83,10 +75,10 @@ export async function decrypt(
     return null;
   }
 
-  const cipherText: Buffer = convertHexToBuffer(payload.data);
-  const iv: Buffer = convertHexToBuffer(payload.iv);
-  const buffer: Buffer = await eccryptoJS.aesCbcDecrypt(iv, _key, cipherText);
-  const utf8: string = convertBufferToUtf8(buffer);
+  const cipherText = encUtils.hexToArray(payload.data);
+  const iv = encUtils.hexToArray(payload.iv);
+  const buffer = await isoCrypto.aesCbcDecrypt(iv, _key, cipherText);
+  const utf8: string = encUtils.arrayToUtf8(buffer);
   let data: IJsonRpcRequest;
   try {
     data = JSON.parse(utf8);

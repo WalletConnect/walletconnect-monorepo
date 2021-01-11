@@ -328,8 +328,14 @@ declare module "@walletconnect/types" {
   export interface ICreateSessionOptions {
     chainId?: number;
   }
+  export abstract class IEvents {
+    public abstract on(event: string, listener: any): void;
+    public abstract once(event: string, listener: any): void;
+    public abstract off(event: string, listener: any): void;
+    public abstract removeListener(event: string, listener: any): void;
+  }
 
-  export interface IRpcConnection extends NodeJS.EventEmitter {
+  export interface IRpcConnection extends IEvents {
     connected: boolean;
 
     send(payload: any): Promise<any>;

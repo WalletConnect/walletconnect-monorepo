@@ -64,12 +64,12 @@
     "deepLink": "tpoutside:"
   },
   {
-    "name": "KyberSwap",
-    "shortName": "KyberSwap",
+    "name": "Ledger Live",
+    "shortName": "Ledger",
     "color": "rgb(255, 255, 255)",
-    "logo": "./logos/kyberswap.png",
-    "universalLink": "https://kyberswapnew.app.link",
-    "deepLink": "kyberswap:"
+    "logo": "./logos/ledgerlive.png",
+    "universalLink": "",
+    "deepLink": "ledgerlive:"
   },
   {
     "name": "Huobi Wallet",
@@ -102,6 +102,14 @@
     "logo": "./logos/nash.png",
     "universalLink": "https://nash.io/walletconnect",
     "deepLink": "nash:"
+  },
+  {
+    "name": "KyberSwap",
+    "shortName": "KyberSwap",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/kyberswap.png",
+    "universalLink": "https://kyberswapnew.app.link",
+    "deepLink": "kyberswap:"
   },
   {
     "name": "ZelCore",
@@ -168,11 +176,59 @@
     "deepLink": "rwallet:"
   },
   {
-    "name": "PeakDeFi Wallet",
-    "shortName": "PeakDeFi",
+    "name": "PEAKDEFI Wallet",
+    "shortName": "PEAKDEFI",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/peakdefi.png",
     "universalLink": "https://app.peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
+  },
+  {
+    "name": "AToken Wallet",
+    "shortName": "AToken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/atoken.png",
+    "universalLink": "https://www.atoken.com",
+    "deepLink": "atoken:"
+  },
+  {
+    "name": "Mozi Wallete",
+    "shortName": "Mozi",
+    "color": "rgb(0, 30, 89)",
+    "logo": "./logos/mozi.png",
+    "universalLink": "https://www.moziwallet.com",
+    "deepLink": "moziwallet:"
+  },
+  {
+    "name": "Eidoo",
+    "shortName": "Eidoo",
+    "color": "rgb(55, 179, 159)",
+    "logo": "./logos/eidoo.png",
+    "universalLink": "https://eidoo.io/crypto-wallet",
+    "deepLink": "eidoo:"
+  },
+  {
+    "name": "GK",
+    "shortName": "GK",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/gk.png",
+    "universalLink": "",
+    "deepLink": "gkwalletconnect:"
+  },
+  {
+    "name": "CYBAVO Wallet",
+    "shortName": "CYBAVO",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/cybavo.png",
+    "universalLink": "https://cdn.cybavo.com",
+    "deepLink": "cybavowallet:"
+  },
+  {
+    "name": "PlasmaPay",
+    "shortName": "PlasmaPay",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/plasmapay.png",
+    "universalLink": "https://plasmapay.com",
+    "deepLink": "plasmapay:"
   }
 ]

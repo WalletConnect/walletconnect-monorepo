@@ -381,6 +381,8 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 }
 
 .walletconnect-modal__footer {
+  display: flex;
+  justify-content: center;
   margin-top: 20px;
 }
 
@@ -394,6 +396,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   cursor: pointer;
   color: #898d97;
   font-size: 15px;
+  margin: 0 auto;
 }
 
 @media only screen and (max-width: 320px) {
@@ -455,6 +458,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   height: 42px;
   margin: 0;
   width: 42px;
+  background-size: cover !important;
   box-shadow: 0 4px 12px 0 rgba(37, 41, 46, 0.25);
 }
 

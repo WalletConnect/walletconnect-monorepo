@@ -10,8 +10,6 @@ const ko: TextMap = {
   mobile: "모바일",
   copy_to_clipboard: "클립보드에 복사",
   copied_to_clipboard: "클립보드에 복사되었습니다!",
-  show_more: "자세히 보기",
-  show_less: "간략히 보기",
 };
 
 export default ko;

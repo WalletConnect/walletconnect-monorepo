@@ -7,6 +7,4 @@ export interface TextMap {
   mobile: string;
   copy_to_clipboard: string;
   copied_to_clipboard: string;
-  show_more: string;
-  show_less: string;
 }
