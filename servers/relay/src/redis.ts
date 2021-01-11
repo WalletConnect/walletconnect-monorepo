@@ -9,7 +9,6 @@ import { Subscription, Notification, LegacySocketMessage } from "./types";
 import bluebird from "bluebird";
 import config from "./config";
 
-
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
@@ -26,18 +25,20 @@ export class RedisService {
   public async setMessage(params: RelayJsonRpc.PublishParams) {
     this.logger.debug(`Setting Message`);
     this.logger.trace({ type: "method", method: "setMessage", params });
-    let key =`message:${params.topic}`;
-    let val = `${createHash('sha256').update(params.message).digest('hex')}:${params.message}`;
+    const key = `message:${params.topic}`;
+    const val = `${createHash("sha256")
+      .update(params.message)
+      .digest("hex")}:${params.message}`;
     await this.client.saddAsync(key, val);
     await this.client.expireAsync(key, params.ttl);
   }
 
   public async getMessages(topic: string) {
     this.logger.debug(`Getting Message`);
-    this.logger.trace({ type: "method", method: "getMessage", topic});
-    let messages: Array<string> = [];
+    this.logger.trace({ type: "method", method: "getMessage", topic });
+    const messages: Array<string> = [];
     (await this.client.smembersAsync(`message:${topic}`)).map((m: string) => {
-      if (m != null ) {
+      if (m != null) {
         messages.push(m.split(":")[1]);
       }
     });
@@ -45,15 +46,22 @@ export class RedisService {
   }
 
   public async deleteMessage(topic: string, hash: string) {
-    let [cursor, result] = await this.client.sscanAsync(`message:${topic}`, "0", "MATCH", `${hash}:*`)
+    const [cursor, result] = await this.client.sscanAsync(
+      `message:${topic}`,
+      "0",
+      "MATCH",
+      `${hash}:*`,
+    );
     if (result) this.client.sremAsync(`message:${topic}`, result[0]);
   }
-
 
   public async setLegacyPublished(socketMessage: LegacySocketMessage) {
     this.logger.debug(`Setting Legacy Published`);
     this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
-    await this.client.lpushAsync(`request:${socketMessage.topic}`, safeJsonStringify(socketMessage));
+    await this.client.lpushAsync(
+      `request:${socketMessage.topic}`,
+      safeJsonStringify(socketMessage),
+    );
     const oneDay = 86400;
     await this.client.expireAsync(`request:${socketMessage.topic}`, oneDay);
   }
@@ -93,8 +101,10 @@ export class RedisService {
   }
 
   public async setPendingRequest(topic: string, id: number, message: string) {
-    let key =`pending:${id}`;
-    let val = `${topic}:${createHash('sha256').update(message).digest('hex')}`;
+    const key = `pending:${id}`;
+    const val = `${topic}:${createHash("sha256")
+      .update(message)
+      .digest("hex")}`;
     await this.client.setAsync(key, val);
     await this.client.expireAsync(key, config.REDIS_MAX_TTL);
   }
@@ -104,7 +114,7 @@ export class RedisService {
   }
 
   public async deletePendingRequest(id: number) {
-    await this.client.del(`pending:${id}`)
+    await this.client.del(`pending:${id}`);
   }
 
   // ---------- Private ----------------------------------------------- //

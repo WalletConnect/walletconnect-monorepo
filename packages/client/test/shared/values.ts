@@ -4,13 +4,13 @@ import { ClientOptions, SessionTypes } from "@walletconnect/types";
 import { ROOT_DIR } from "../../../../ops/js/shared";
 
 // TODO: Relay Provider URL needs to be set from ops
-export const TEST_RELAYER_PROVIDER_URL = process.env.TEST_RELAYER_URL
-  ? process.env.TEST_RELAYER_URL
+export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
+  ? process.env.TEST_RELAY_URL
   : "ws://localhost:5555";
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
   logger: "fatal",
-  relayProvider: TEST_RELAYER_PROVIDER_URL,
+  relayProvider: TEST_RELAY_URL,
 };
 
 export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");
