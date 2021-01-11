@@ -1,5 +1,5 @@
 import "mocha";
-import * as chai from "chai";
+import { expect } from "chai";
 
 import { validateBlockchainState, validateSessionProposeParamsPermissions } from "../src";
 
@@ -67,48 +67,49 @@ const TEST_MISMATCH_STATE = {
 
 describe("Validators", () => {
   it("validateSessionProposeParamsPermissions", () => {
-    chai
-      .expect(validateSessionProposeParamsPermissions(TEST_SESSION_PERMISSIONS))
-      .to.eql({ valid: true });
-    chai
-      .expect(validateSessionProposeParamsPermissions(TEST_INVALID_BLOCKCHAIN_PERMISSIONS as any))
-      .to.eql({ valid: false, error: "Missing or invalid blockchain permissions" });
-    chai
-      .expect(validateSessionProposeParamsPermissions(TEST_INVALID_JSONRPC_PERMISSIONS as any))
-      .to.eql({ valid: false, error: "Missing or invalid jsonrpc permissions" });
-    chai
-      .expect(
-        validateSessionProposeParamsPermissions(TEST_INVALID_NOTIFICATIONS_PERMISSIONS as any),
-      )
-      .to.eql({ valid: false, error: "Missing or invalid notification permissions" });
+    expect(validateSessionProposeParamsPermissions(TEST_SESSION_PERMISSIONS)).to.eql({
+      valid: true,
+    });
+    expect(
+      validateSessionProposeParamsPermissions(TEST_INVALID_BLOCKCHAIN_PERMISSIONS as any),
+    ).to.eql({ valid: false, error: "Missing or invalid blockchain permissions" });
+    expect(
+      validateSessionProposeParamsPermissions(TEST_INVALID_JSONRPC_PERMISSIONS as any),
+    ).to.eql({ valid: false, error: "Missing or invalid jsonrpc permissions" });
+    expect(
+      validateSessionProposeParamsPermissions(TEST_INVALID_NOTIFICATIONS_PERMISSIONS as any),
+    ).to.eql({ valid: false, error: "Missing or invalid notification permissions" });
   });
 
   it("validateSessionProposeParamsMetadata", () => {
-    chai
-      .expect(validateSessionProposeParamsMetadata(TEST_SESSION_METADATA))
-      .to.eql({ valid: true });
-    chai
-      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_NAME as any))
-      .to.eql({ valid: false, error: "Missing or invalid metadata name" });
-    chai
-      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_DESC as any))
-      .to.eql({ valid: false, error: "Missing or invalid metadata description" });
-    chai
-      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_URL as any))
-      .to.eql({ valid: false, error: "Missing or invalid metadata url" });
-    chai
-      .expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_ICONS as any))
-      .to.eql({ valid: false, error: "Missing or invalid metadata icons" });
+    expect(validateSessionProposeParamsMetadata(TEST_SESSION_METADATA)).to.eql({ valid: true });
+    expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_NAME as any)).to.eql({
+      valid: false,
+      error: "Missing or invalid metadata name",
+    });
+    expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_DESC as any)).to.eql({
+      valid: false,
+      error: "Missing or invalid metadata description",
+    });
+    expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_URL as any)).to.eql({
+      valid: false,
+      error: "Missing or invalid metadata url",
+    });
+    expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_ICONS as any)).to.eql({
+      valid: false,
+      error: "Missing or invalid metadata icons",
+    });
   });
 
   it("validBlockchainState", () => {
-    chai
-      .expect(validateBlockchainState(TEST_SESSION_STATE, TEST_BLOCKCHAIN_PERMISSIONS))
-      .to.eql({ valid: true });
-    chai
-      .expect(validateBlockchainState(TEST_INVALID_STATE, TEST_BLOCKCHAIN_PERMISSIONS))
-      .to.eql({ valid: false, error: "Missing or invalid state accountIds" });
-    chai.expect(validateBlockchainState(TEST_MISMATCH_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
+    expect(validateBlockchainState(TEST_SESSION_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
+      valid: true,
+    });
+    expect(validateBlockchainState(TEST_INVALID_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
+      valid: false,
+      error: "Missing or invalid state accountIds",
+    });
+    expect(validateBlockchainState(TEST_MISMATCH_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
       valid: false,
       error: `Invalid accountIds with mismatched chainIds: ${TEST_MISMATCH_STATE.accountIds[0]}`,
     });

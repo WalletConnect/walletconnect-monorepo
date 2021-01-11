@@ -1,5 +1,5 @@
 import "mocha";
-import * as chai from "chai";
+import { expect } from "chai";
 import { UriParameters } from "@walletconnect/types";
 import { safeJsonStringify } from "safe-json-utils";
 
@@ -23,14 +23,14 @@ const TEST_URI_STRING = `${TEST_URI_PARAMS.protocol}:${TEST_URI_PARAMS.topic}@${
 describe("URI", () => {
   it("formatUri", () => {
     const uri = formatUri(TEST_URI_PARAMS);
-    chai.expect(uri).to.eql(TEST_URI_STRING);
+    expect(uri).to.eql(TEST_URI_STRING);
   });
   it("parseUri", () => {
     const uriParams = parseUri(TEST_URI_STRING);
-    chai.expect(uriParams.protocol).to.eql(TEST_URI_PARAMS.protocol);
-    chai.expect(uriParams.version).to.eql(TEST_URI_PARAMS.version);
-    chai.expect(uriParams.topic).to.eql(TEST_URI_PARAMS.topic);
-    chai.expect(uriParams.publicKey).to.eql(TEST_URI_PARAMS.publicKey);
-    chai.expect(uriParams.relay).to.eql(TEST_URI_PARAMS.relay);
+    expect(uriParams.protocol).to.eql(TEST_URI_PARAMS.protocol);
+    expect(uriParams.version).to.eql(TEST_URI_PARAMS.version);
+    expect(uriParams.topic).to.eql(TEST_URI_PARAMS.topic);
+    expect(uriParams.publicKey).to.eql(TEST_URI_PARAMS.publicKey);
+    expect(uriParams.relay).to.eql(TEST_URI_PARAMS.relay);
   });
 });

@@ -11,6 +11,8 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
   // testing data points
   let pairingA: PairingTypes.Created | undefined;
   let pairingB: PairingTypes.Created | undefined;
+  let metadataA: PairingTypes.Metadata | undefined;
+  let metadataB: PairingTypes.Metadata | undefined;
 
   // timestamps & elapsed time
   const time = new Timestamp();
@@ -58,15 +60,30 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
         resolve();
       });
     }),
+    new Promise<void>(async (resolve, reject) => {
+      clients.a.on(CLIENT_EVENTS.pairing.updated, async (pairing: PairingTypes.Created) => {
+        clients.a.logger.warn(`TEST >> Pairing Updated`);
+        metadataB = pairing.peer.metadata;
+        resolve();
+      });
+    }),
+    new Promise<void>(async (resolve, reject) => {
+      clients.b.on(CLIENT_EVENTS.pairing.updated, async (pairing: PairingTypes.Created) => {
+        clients.b.logger.warn(`TEST >> Pairing Updated`);
+        metadataA = pairing.peer.metadata;
+        resolve();
+      });
+    }),
   ]);
 
   clients.b.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
-
   // pairing data
   expect(pairingA?.topic).to.eql(pairingB?.topic);
   expect(pairingA?.relay.protocol).to.eql(pairingB?.relay.protocol);
   expect(pairingA?.peer.publicKey).to.eql(pairingB?.self.publicKey);
   expect(pairingA?.self.publicKey).to.eql(pairingB?.peer.publicKey);
+  // pairing metadata
+  expect(metadataA).to.eql(metadataB);
   // jsonrpc permmissions
   expect(pairingA?.permissions.jsonrpc.methods).to.eql([SESSION_JSONRPC.propose]);
   expect(pairingA?.permissions.jsonrpc.methods).to.eql(pairingB?.permissions.jsonrpc.methods);

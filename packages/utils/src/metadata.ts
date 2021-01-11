@@ -15,10 +15,10 @@ export function getPairingType(type: string): string {
   }
 }
 
-export function getPairingMetadata(): PairingTypes.Metadata | null {
+export function getPairingMetadata(): PairingTypes.Metadata | undefined {
   const env = detectEnv.detect();
-  if (env === null) return null;
-  if (env.type === "bot" || env.type === "bot-device") return null;
+  if (env === null) return undefined;
+  if (env.type === "bot" || env.type === "bot-device") return undefined;
   return {
     type: getPairingType(env.type),
     platform: env.name,
@@ -27,11 +27,11 @@ export function getPairingMetadata(): PairingTypes.Metadata | null {
   };
 }
 
-export function getSessionMetadata(): SessionTypes.Metadata | null {
-  return WindowMetadata.getWindowMetadata();
+export function getSessionMetadata(): SessionTypes.Metadata | undefined {
+  return WindowMetadata.getWindowMetadata() || undefined;
 }
 
-export function getAppMetadataFromDid(did: string): SessionTypes.Metadata | null {
+export function getAppMetadataFromDid(did: string): SessionTypes.Metadata | undefined {
   return {} as SessionTypes.Metadata;
 }
 

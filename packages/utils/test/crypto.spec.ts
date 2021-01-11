@@ -1,5 +1,5 @@
 import "mocha";
-import * as chai from "chai";
+import { expect } from "chai";
 import * as eccies25519 from "ecies-25519";
 import * as encUtils from "enc-utils";
 import { safeJsonStringify } from "safe-json-utils";
@@ -25,11 +25,11 @@ const TEST_ENCRYPTED = TEST_IV + TEST_SELF.publicKey + TEST_MAC + TEST_CIPHERTEX
 describe("Crypto", () => {
   it("deriveSharedKey", async () => {
     const sharedKey = deriveSharedKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
-    chai.expect(sharedKey).to.eql(TEST_SHARED_KEY);
+    expect(sharedKey).to.eql(TEST_SHARED_KEY);
   });
   it("sha256", async () => {
     const hash = await sha256(TEST_SHARED_KEY);
-    chai.expect(hash).to.eql(TEST_HASHED_KEY);
+    expect(hash).to.eql(TEST_HASHED_KEY);
   });
   it("encrypt", async () => {
     const encrypted = await encrypt({
@@ -40,19 +40,19 @@ describe("Crypto", () => {
     });
     const deserialized = eccies25519.deserialize(encUtils.hexToArray(encrypted));
     const iv = encUtils.arrayToHex(deserialized.iv);
-    chai.expect(iv).to.eql(TEST_IV);
+    expect(iv).to.eql(TEST_IV);
     const publicKey = encUtils.arrayToHex(deserialized.publicKey);
-    chai.expect(publicKey).to.eql(TEST_SELF.publicKey);
+    expect(publicKey).to.eql(TEST_SELF.publicKey);
     const mac = encUtils.arrayToHex(deserialized.mac);
-    chai.expect(mac).to.eql(TEST_MAC);
+    expect(mac).to.eql(TEST_MAC);
     const ciphertext = encUtils.arrayToHex(deserialized.ciphertext);
-    chai.expect(ciphertext).to.eql(TEST_CIPHERTEXT);
+    expect(ciphertext).to.eql(TEST_CIPHERTEXT);
   });
   it("decrypt", async () => {
     const decrypted = await decrypt({
       encrypted: TEST_ENCRYPTED,
       sharedKey: TEST_SHARED_KEY,
     });
-    chai.expect(decrypted).to.eql(TEST_MESSAGE);
+    expect(decrypted).to.eql(TEST_MESSAGE);
   });
 });

@@ -7,7 +7,6 @@ import {
   ClientTypes,
   PairingTypes,
   SessionTypes,
-  UriParameters,
 } from "@walletconnect/types";
 import {
   isPairingFailed,
@@ -214,12 +213,10 @@ export class Client extends IClient {
   }
 
   protected async onPairingSettled(pairing: PairingTypes.Settled) {
-    if (typeof pairing.peer.metadata === "undefined") {
-      const metadata = getPairingMetadata();
-      if (!metadata) return;
-      const update: PairingTypes.Update = { peer: { metadata } };
-      this.pairing.update({ topic: pairing.topic, update });
-    }
+    const metadata = getPairingMetadata();
+    if (typeof metadata === "undefined") return;
+    const update: PairingTypes.Update = { peer: { metadata } };
+    this.pairing.update({ topic: pairing.topic, update });
   }
   // ---------- Private ----------------------------------------------- //
 

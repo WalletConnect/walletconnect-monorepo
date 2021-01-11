@@ -498,11 +498,7 @@ export class Pairing extends IPairing {
     let update: PairingTypes.Update;
     if (typeof params.update.peer !== "undefined") {
       const metadata = params.update.peer.metadata as PairingTypes.Metadata;
-      if (pairing.peer.publicKey !== participant.publicKey) {
-        const errorMessage = `Unauthorized pairing update request`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
-      }
+
       pairing.peer.metadata = metadata;
       update = { peer: { metadata } };
     } else {
@@ -510,7 +506,9 @@ export class Pairing extends IPairing {
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
-    await this.settled.update(pairing.topic, pairing);
+    if (participant.publicKey === pairing.self.publicKey) {
+      await this.settled.update(pairing.topic, pairing);
+    }
     return update;
   }
 
