@@ -1,17 +1,10 @@
 import "mocha";
 import { expect } from "chai";
 import JsonRpcProvider from "@json-rpc-tools/provider";
-import { RequestArguments } from "@json-rpc-tools/types";
 import { RELAY_JSONRPC, RelayJsonRpc } from "relay-provider";
 import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 
-// TODO: Relay Provider URL needs to be set from ops
-export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
-  ? process.env.TEST_RELAY_URL
-  : "ws://localhost:5555";
-
-const TEST_TOPIC = "f5d3f03946b6a2a3b22661fae1385cd1639bfb6f6c070115699b0a2ec1decd8c";
-const TEST_MESSAGE = "08ca02463e7c45383d43efaee4bbe33f700df0658e99726a755fd77f9a040988";
+import { TEST_RELAY_URL, TEST_TOPIC, TEST_MESSAGE } from "./shared";
 
 const TEST_PUB_REQUEST = formatJsonRpcRequest<RelayJsonRpc.PublishParams>(
   RELAY_JSONRPC.bridge.publish,
@@ -38,6 +31,7 @@ describe("JSON-RPC", () => {
 
     let subscriptionB: string;
 
+    let counter = 0;
     await Promise.all([
       new Promise<void>(async resolve => {
         subscriptionB = await providerB.request(TEST_SUB_REQUEST);
@@ -49,6 +43,9 @@ describe("JSON-RPC", () => {
       }),
       new Promise<void>(resolve => {
         providerB.on("message", ({ type, data }) => {
+          counter += 1;
+          //eslint-disable-next-line
+          // console.log("JSON-RPC", counter);
           expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
           if (subscriptionB) {
             expect(data.id).to.eql(subscriptionB);
@@ -71,6 +68,7 @@ describe("JSON-RPC", () => {
     let subscriptionB: string;
     let subscriptionC: string;
 
+    let counter = 0;
     await Promise.all([
       new Promise<void>(async resolve => {
         subscriptionB = await providerB.request(TEST_SUB_REQUEST);
@@ -86,6 +84,9 @@ describe("JSON-RPC", () => {
       }),
       new Promise<void>(resolve => {
         providerB.on("message", ({ type, data }) => {
+          counter += 1;
+          //eslint-disable-next-line
+          // console.log("JSON-RPC", counter);
           expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
           if (subscriptionB) {
             expect(data.id).to.eql(subscriptionB);
@@ -119,6 +120,7 @@ describe("JSON-RPC", () => {
 
     let subscriptionB: string;
 
+    let counter = 0;
     await Promise.all([
       new Promise<void>(async resolve => {
         subscriptionB = await providerB.request(TEST_SUB_REQUEST);
@@ -126,6 +128,9 @@ describe("JSON-RPC", () => {
       }),
       new Promise<void>(resolve => {
         providerB.on("message", ({ type, data }) => {
+          counter += 1;
+          //eslint-disable-next-line
+          // console.log("JSON-RPC", counter);
           expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
           if (subscriptionB) {
             expect(data.id).to.eql(subscriptionB);
