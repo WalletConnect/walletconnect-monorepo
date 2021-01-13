@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/qrcode-modal",
   "description": "QR Code Modal for WalletConnect",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
   "license": "LGPL-3.0",
@@ -27,9 +27,9 @@
     "build": "run-s build:pre build:cjs build:umd"
   },
   "dependencies": {
-    "@walletconnect/mobile-registry": "^2.0.0-alpha.17",
-    "@walletconnect/types": "^2.0.0-alpha.17",
-    "@walletconnect/utils": "^2.0.0-alpha.17",
+    "@walletconnect/mobile-registry": "^2.0.0-alpha.18",
+    "@walletconnect/types": "^2.0.0-alpha.18",
+    "@walletconnect/utils": "^2.0.0-alpha.18",
     "detect-browser": "^5.1.0",
     "preact": "^10.4.1",
     "qrcode": "^1.4.4",
