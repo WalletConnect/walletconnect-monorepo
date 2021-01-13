@@ -131,8 +131,8 @@ export function validateBlockchainPermissions(
 ): Validation.Result {
   if (
     typeof blockchain === "undefined" ||
-    typeof blockchain.chainIds === "undefined" ||
-    !isValidArray(blockchain.chainIds, isValidChainId)
+    typeof blockchain.chains === "undefined" ||
+    !isValidArray(blockchain.chains, isValidChainId)
   ) {
     return formatInvalidResult("Missing or invalid blockchain permissions");
   }
@@ -171,26 +171,24 @@ export function validateBlockchainState(
 ): Validation.Result {
   if (
     typeof blockchain === "undefined" ||
-    typeof blockchain.chainIds === "undefined" ||
-    !isValidArray(blockchain.chainIds, isValidChainId)
+    typeof blockchain.chains === "undefined" ||
+    !isValidArray(blockchain.chains, isValidChainId)
   ) {
     return formatInvalidResult("Missing or invalid blockchain permissions");
   }
   if (
     typeof state === "undefined" ||
-    typeof state.accountIds === "undefined" ||
-    !isValidArray(state.accountIds, isValidAccountId)
+    typeof state.accounts === "undefined" ||
+    !isValidArray(state.accounts, isValidAccountId)
   ) {
-    return formatInvalidResult("Missing or invalid state accountIds");
+    return formatInvalidResult("Missing or invalid state accounts");
   }
-  const mismatch = state.accountIds.filter(accountId => {
+  const mismatch = state.accounts.filter(accountId => {
     const chainId = accountId.split("@")[1];
-    return !blockchain.chainIds.includes(chainId);
+    return !blockchain.chains.includes(chainId);
   });
   if (mismatch.length) {
-    return formatInvalidResult(
-      `Invalid accountIds with mismatched chainIds: ${mismatch.toString()}`,
-    );
+    return formatInvalidResult(`Invalid accounts with mismatched chains: ${mismatch.toString()}`);
   }
   return formatValidResult();
 }

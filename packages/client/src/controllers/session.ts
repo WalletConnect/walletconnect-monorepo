@@ -187,7 +187,7 @@ export class Session extends ISession {
         };
         const expiry = Date.now() + proposal.ttl;
         const state: SessionTypes.State = {
-          accountIds: params.response.state.accountIds,
+          accounts: params.response.state.accounts,
         };
         const session = await this.settle({
           relay,
@@ -555,7 +555,7 @@ export class Session extends ISession {
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
-      state.accountIds = params.update.state.accountIds || state.accountIds;
+      state.accounts = params.update.state.accounts || state.accounts;
       update = { state };
     } else {
       const errorMessage = `Invalid session update request params`;

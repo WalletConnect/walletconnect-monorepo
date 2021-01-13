@@ -93,7 +93,7 @@ describe("Session", function() {
     const response = {
       metadata: setup.b.metadata,
       state: {
-        accountIds: TEST_ETHEREUM_ACCOUNTS,
+        accounts: TEST_ETHEREUM_ACCOUNTS,
       },
     };
     await Promise.all([
@@ -109,9 +109,7 @@ describe("Session", function() {
       new Promise<void>(async (resolve, reject) => {
         clients.b.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
           const promise = clients.b.approve({ proposal, response: response as any });
-          await expect(promise).to.eventually.be.rejectedWith(
-            "Missing or invalid state accountIds",
-          );
+          await expect(promise).to.eventually.be.rejectedWith("Missing or invalid state accounts");
           resolve();
         });
       }),
@@ -156,7 +154,7 @@ describe("Session", function() {
     await clients.b.session.ping(topic);
   });
   it("B updates state accounts and A receives event", async () => {
-    const state = { accountIds: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
+    const state = { accounts: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     await Promise.all([
@@ -174,7 +172,7 @@ describe("Session", function() {
     ]);
   });
   it("A updates state accounts and error is thrown", async () => {
-    const state = { accountIds: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
+    const state = { accounts: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const promise = clients.a.update({ topic, update: { state } });

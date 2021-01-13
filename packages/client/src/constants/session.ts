@@ -46,7 +46,7 @@ export const SESSION_EMPTY_PERMISSIONS = {
     methods: [],
   },
   blockchain: {
-    chainIds: [],
+    chains: [],
   },
   notifications: {
     types: [],
@@ -61,6 +61,6 @@ export const SESSION_EMPTY_RESPONSE = {
     icons: [],
   },
   state: {
-    accountIds: [],
+    accounts: [],
   },
 } as SessionTypes.Response;

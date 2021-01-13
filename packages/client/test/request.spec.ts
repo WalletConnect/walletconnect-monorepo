@@ -38,7 +38,7 @@ describe("Request", function() {
     const { setup, clients } = await setupClientsForTesting();
     const topic = generateRandomBytes32();
     const request = { method: "eth_accounts" };
-    const chainId = setup.a.permissions.blockchain.chainIds[0];
+    const chainId = setup.a.permissions.blockchain.chains[0];
     const promise = clients.a.request({ topic, chainId, request });
     await expect(promise).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
@@ -48,7 +48,7 @@ describe("Request", function() {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const request = { method: "random_method" };
-    const chainId = setup.a.permissions.blockchain.chainIds[0];
+    const chainId = setup.a.permissions.blockchain.chains[0];
     const promise = clients.a.request({ topic, chainId, request });
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized JSON-RPC Method Requested: ${request.method}`,
@@ -58,7 +58,7 @@ describe("Request", function() {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const request = { method: "eth_accounts" };
-    const chainId = setup.a.permissions.blockchain.chainIds[0];
+    const chainId = setup.a.permissions.blockchain.chains[0];
     const promise = clients.a.request({ topic, chainId, request });
     clock.tick(30_000);
     await expect(promise).to.eventually.be.rejectedWith(

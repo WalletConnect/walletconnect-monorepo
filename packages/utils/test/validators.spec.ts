@@ -17,7 +17,7 @@ import { validateSessionProposeParamsMetadata } from "../dist/cjs";
 const TEST_INVALID_BLOCKCHAIN_PERMISSIONS = {
   ...TEST_SESSION_PERMISSIONS,
   blockchain: {
-    chainIds: [1],
+    chains: [1],
   },
 };
 
@@ -57,12 +57,12 @@ const TEST_INVALID_METADATA_ICONS = {
 
 const TEST_INVALID_STATE = {
   ...TEST_SESSION_STATE,
-  accountIds: [TEST_ETHEREUM_ACCOUNTS[0]],
+  accounts: [TEST_ETHEREUM_ACCOUNTS[0]],
 };
 
 const TEST_MISMATCH_STATE = {
   ...TEST_SESSION_STATE,
-  accountIds: [`${TEST_ETHEREUM_ACCOUNTS}@eip155:100`],
+  accounts: [`${TEST_ETHEREUM_ACCOUNTS}@eip155:100`],
 };
 
 describe("Validators", () => {
@@ -107,11 +107,11 @@ describe("Validators", () => {
     });
     expect(validateBlockchainState(TEST_INVALID_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
       valid: false,
-      error: "Missing or invalid state accountIds",
+      error: "Missing or invalid state accounts",
     });
     expect(validateBlockchainState(TEST_MISMATCH_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
       valid: false,
-      error: `Invalid accountIds with mismatched chainIds: ${TEST_MISMATCH_STATE.accountIds[0]}`,
+      error: `Invalid accounts with mismatched chains: ${TEST_MISMATCH_STATE.accounts[0]}`,
     });
   });
 });

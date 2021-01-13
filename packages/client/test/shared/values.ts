@@ -17,7 +17,7 @@ export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "t
 
 export const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
 
-export const TEST_PERMISSIONS_CHAIN_IDS: string[] = [TEST_ETHEREUM_CHAIN_ID];
+export const TEST_PERMISSIONS_CHAINS: string[] = [TEST_ETHEREUM_CHAIN_ID];
 export const TEST_PERMISSIONS_JSONRPC_METHODS: string[] = [
   "eth_accounts",
   "eth_sendTransaction",
@@ -27,7 +27,7 @@ export const TEST_PERMISSIONS_JSONRPC_METHODS: string[] = [
 
 export const TEST_PERMISSIONS: SessionTypes.BasePermissions = {
   blockchain: {
-    chainIds: TEST_PERMISSIONS_CHAIN_IDS,
+    chains: TEST_PERMISSIONS_CHAINS,
   },
   jsonrpc: {
     methods: TEST_PERMISSIONS_JSONRPC_METHODS,
@@ -50,12 +50,12 @@ export const TEST_APP_METADATA_B: SessionTypes.Metadata = {
 
 export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
-export const TEST_SESSION_ACCOUNT_IDS = TEST_ETHEREUM_ACCOUNTS.map(
+export const TEST_SESSION_ACCOUNTS = TEST_ETHEREUM_ACCOUNTS.map(
   address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
 );
 
 export const TEST_SESSION_STATE = {
-  accountIds: TEST_SESSION_ACCOUNT_IDS,
+  accounts: TEST_SESSION_ACCOUNTS,
 };
 
 export const TEST_ETHEREUM_REQUEST = { method: "eth_accounts" };

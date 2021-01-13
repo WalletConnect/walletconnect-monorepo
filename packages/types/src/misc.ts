@@ -51,10 +51,10 @@ export declare namespace NotificationPermissions {
 
 export declare namespace BlockchainTypes {
   export interface Permissions {
-    chainIds: string[];
+    chains: string[];
   }
   export interface State {
-    accountIds: string[];
+    accounts: string[];
   }
 }
 

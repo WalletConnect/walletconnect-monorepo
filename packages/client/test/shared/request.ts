@@ -20,7 +20,7 @@ export async function testJsonRpcRequest(
   topic: string,
   request: RequestArguments,
   response: JsonRpcResponse,
-  chainId: string = setup.a.permissions.blockchain.chainIds[0],
+  chainId: string = setup.a.permissions.blockchain.chains[0],
 ): Promise<any> {
   // cache received result
   let result: any;

@@ -121,17 +121,15 @@ export async function testApproveSession(
   expect(sessionA?.peer.metadata).to.eql(setup.b.metadata);
   expect(sessionB?.peer.metadata).to.eql(setup.a.metadata);
   // blockchain state
-  expect(sessionA?.state.accountIds).to.eql(setup.b.state.accountIds);
-  expect(sessionA?.state.accountIds).to.eql(sessionB?.state.accountIds);
+  expect(sessionA?.state.accounts).to.eql(setup.b.state.accounts);
+  expect(sessionA?.state.accounts).to.eql(sessionB?.state.accounts);
   // blockchain permissions
   expect(sessionA?.permissions.state.controller.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionB?.permissions.state.controller.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionA?.permissions.notifications.controller.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionB?.permissions.notifications.controller.publicKey).to.eql(sessionB?.self.publicKey);
-  expect(sessionA?.permissions.blockchain.chainIds).to.eql(setup.b.permissions.blockchain.chainIds);
-  expect(sessionA?.permissions.blockchain.chainIds).to.eql(
-    sessionB?.permissions.blockchain.chainIds,
-  );
+  expect(sessionA?.permissions.blockchain.chains).to.eql(setup.b.permissions.blockchain.chains);
+  expect(sessionA?.permissions.blockchain.chains).to.eql(sessionB?.permissions.blockchain.chains);
   // jsonrpc permmissions
   expect(sessionA?.permissions.jsonrpc.methods).to.eql(setup.b.permissions.jsonrpc.methods);
   expect(sessionA?.permissions.jsonrpc.methods).to.eql(sessionB?.permissions.jsonrpc.methods);

@@ -53,7 +53,7 @@ const session = await client.connect({
   },
   permissions: {
     blockchain: {
-      chainIds: ["eip155:1"],
+      chains: ["eip155:1"],
     },
     jsonrpc: {
       methods: ["eth_sendTransaction", "personal_sign", "eth_signTypedData"],
@@ -102,7 +102,7 @@ client.pair({ uri });
 ```js
 function handleSessionUserApproval(approved: boolean, proposal: SessionTypes.Proposal) {
   if (userApproved) {
-    // if user approved then include response with accountIds matching the chainIds and wallet metadata
+    // if user approved then include response with accounts matching the chains and wallet metadata
     const response: SessionTypes.Response = {
       metadata: {
         name: "Test Wallet",
@@ -111,7 +111,7 @@ function handleSessionUserApproval(approved: boolean, proposal: SessionTypes.Pro
         icons: ["https://walletconnect.org/walletconnect-logo.png"],
       },
       state: {
-        accountIds: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"],
+        accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"],
       },
     }
     await client.approve({ proposal, response });
