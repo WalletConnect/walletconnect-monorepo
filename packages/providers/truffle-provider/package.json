@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/truffle-provider",
-  "version": "1.3.4-rc.1",
+  "version": "1.3.4-rc.2",
   "description": "WalletConnect Provider for Truffle",
   "scripts": {
     "clean": "rm -rf dist",
@@ -52,7 +52,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/web3-subprovider": "^1.3.4-rc.1",
+    "@walletconnect/web3-subprovider": "^1.3.4-rc.2",
     "web3-provider-engine": "16.0.1"
   }
 }
