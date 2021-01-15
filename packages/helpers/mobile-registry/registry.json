@@ -230,5 +230,13 @@
     "logo": "./logos/plasmapay.png",
     "universalLink": "https://plasmapay.com",
     "deepLink": "plasmapay:"
+  },
+  {
+    "name": "Talken Wallet",
+    "shortName": "Talken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/talken.png",
+    "universalLink": "talken.io",
+    "deepLink": "talken-wallet:"
   }
 ]
