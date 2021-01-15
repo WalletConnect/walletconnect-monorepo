@@ -2,30 +2,39 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 
-## Setup
+## Setup Server
 
-1. Bootstrap monorepo with all dependencies
+The following dependencies are required for relay server:
+
+- git
+- make
+- docker
+
+Then you need to enable the docker swarm:
 
 ```sh
-make bootstrap
+docker swarm init
 ```
 
-2. Build packages and development environment
+Finally you can setup the containers:
 
 ```sh
-make build
+make dev
 ```
 
-## Test
+## Test Client
 
-In parallel, run both the relay server and the client tests in two different terminals, respectively
+Client unit tests can be run against: local (dev), staging and production server
 
 ```sh
-## Relay Server
-make relay-start
-
-## Client Test
+# local (dev)
 make test-client
+
+# staging server
+make test-staging
+
+# production server
+make test-production
 ```
 
 ## License
