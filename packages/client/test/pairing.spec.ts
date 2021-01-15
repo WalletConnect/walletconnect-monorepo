@@ -3,7 +3,8 @@ import { KeyValueStorage } from "keyvaluestorage";
 
 import { setupClientsForTesting, testPairingWithoutSession, TEST_CLIENT_DATABASE } from "./shared";
 
-describe("Pairing", () => {
+describe("Pairing", function() {
+  this.timeout(30_000);
   it("A pings B with existing pairing", async () => {
     const { clients } = await setupClientsForTesting();
     await testPairingWithoutSession(clients);
