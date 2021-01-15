@@ -8,7 +8,7 @@ import {
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { mapToObj, objToMap } from "@walletconnect/utils";
+import { mapToObj } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
@@ -18,6 +18,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
 
   public events = new EventEmitter();
+
+  private cached: SubscriptionParams<Data>[] = [];
 
   constructor(
     public client: IClient,
@@ -49,6 +51,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async set(topic: string, data: Data, opts: SubscriptionOptions): Promise<void> {
+    await this.isEnabled();
     if (this.subscriptions.has(topic)) {
       this.update(topic, data);
     } else {
@@ -68,6 +71,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async get(topic: string): Promise<Data> {
+    await this.isEnabled();
     this.logger.debug(`Getting subscription`);
     this.logger.trace({ type: "method", method: "get", topic });
     const subscription = await this.getSubscription(topic);
@@ -75,6 +79,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async update(topic: string, update: Partial<Data>): Promise<void> {
+    await this.isEnabled();
     this.logger.debug(`Updating subscription`);
     this.logger.trace({ type: "method", method: "update", topic, update });
     const subscription = await this.getSubscription(topic);
@@ -92,6 +97,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   public async delete(topic: string, reason: string): Promise<void> {
+    await this.isEnabled();
+
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });
     const subscription = await this.getSubscription(topic);
@@ -140,13 +147,14 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     return this.getNestedContext(2).join(" ");
   }
 
-  private getStoreKey() {
-    const storeKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
+  private getStorageKey() {
+    const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
     const subscriptionContext = this.getNestedContext(2).join(":");
-    return `${storeKeyPrefix}//${subscriptionContext}`;
+    return `${storageKeyPrefix}//${subscriptionContext}`;
   }
 
   private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
+    await this.isEnabled();
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
       const errorMessage = `No matching ${this.getSubscriptionContext()} with topic: ${topic}`;
@@ -170,25 +178,32 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private async persist() {
-    await this.client.storage.setItem<SubscriptionEntries<Data>>(this.getStoreKey(), this.entries);
+    await this.client.storage.setItem<SubscriptionEntries<Data>>(
+      this.getStorageKey(),
+      this.entries,
+    );
   }
 
   private async restore() {
     try {
-      const subscriptions = await this.client.storage.getItem<SubscriptionEntries<Data>>(
-        this.getStoreKey(),
+      const persisted = await this.client.storage.getItem<SubscriptionEntries<Data>>(
+        this.getStorageKey(),
       );
-      if (typeof subscriptions === "undefined") return;
+      if (typeof persisted === "undefined") return;
+      if (!persisted.length) return;
       if (this.subscriptions.size) {
         const errorMessage = `Restore will override already set ${this.getSubscriptionContext()}`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
-      this.subscriptions = objToMap<SubscriptionParams<Data>>(subscriptions);
-      for (const [_, subscription] of this.subscriptions) {
-        const { topic, data, opts } = subscription;
-        await this.subscribeAndSet(topic, data, opts);
-      }
+      this.cached = Object.values(persisted);
+      await Promise.all(
+        this.cached.map(async subscription => {
+          const { topic, data, opts } = subscription;
+          await this.subscribeAndSet(topic, data, opts);
+        }),
+      );
+      await this.enable();
       this.logger.debug(`Successfully Restored subscriptions for ${this.getSubscriptionContext()}`);
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.entries });
     } catch (e) {
@@ -198,29 +213,45 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private async reset(): Promise<void> {
-    this.subscriptions = new Map<string, SubscriptionParams<Data>>();
-    await this.persist();
-  }
-
-  private async resubscribeAll(): Promise<void> {
-    const prevSubscriptions = Object.values(this.entries);
-    await this.reset();
+    await this.disable();
     await Promise.all(
-      prevSubscriptions.map(async subscription => {
+      this.cached.map(async subscription => {
         const { topic, data, opts } = subscription;
         await this.subscribeAndSet(topic, data, opts);
       }),
     );
-    await this.persist();
+    await this.enable();
   }
 
-  private async reconnect(): Promise<void> {
-    await this.client.relayer.init();
-    await this.resubscribeAll();
+  private async isEnabled(): Promise<void> {
+    if (!this.hasCached) return;
+    return new Promise(resolve => {
+      this.events.once("enabled", () => resolve());
+    });
+  }
+
+  private async enable(): Promise<void> {
+    this.cached = [];
+    this.events.emit("enabled");
+  }
+
+  private async disable(): Promise<void> {
+    this.halt();
+    this.events.emit("disabled");
+  }
+
+  get hasCached(): boolean {
+    return !!this.cached.length;
+  }
+
+  private halt() {
+    if (!this.hasCached) {
+      this.cached = Object.values(this.entries);
+    }
   }
 
   private registerEventListeners(): void {
-    this.client.relayer.on("disconnect", () => this.reconnect());
+    this.client.relayer.on("connect", () => this.reset());
     this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
       this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
       this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });
