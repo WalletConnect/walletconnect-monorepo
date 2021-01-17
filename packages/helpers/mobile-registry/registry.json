@@ -230,5 +230,13 @@
     "logo": "./logos/plasmapay.png",
     "universalLink": "https://plasmapay.com",
     "deepLink": "plasmapay:"
+  },
+  {
+		"name": "Ellipal",
+		"shortName": "Ellipal",
+		"color": "rgb(48, 124, 249)",
+		"logo": "./logos/ellipal.png",
+		"universalLink": "https://www.ellipal.com/",
+		"deepLink": "ellipal:"
   }
 ]
