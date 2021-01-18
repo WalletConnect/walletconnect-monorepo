@@ -48,6 +48,7 @@ class WalletConnectProvider extends ProviderEngine {
         bridge: this.bridge,
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
+        clientMeta: opts?.clientMeta,
       });
     this.rpc = opts.rpc || null;
     if (

@@ -80,7 +80,7 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
           url: "#",
           icons: ["https://walletconnect.org/walletconnect-logo.png"],
         }
-      : undefined;
+      : opts.clientMeta;
 
     this.bridge = opts.connector
       ? opts.connector.bridge
