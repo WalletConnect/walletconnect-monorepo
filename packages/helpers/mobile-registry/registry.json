@@ -8,14 +8,6 @@
     "deepLink": "rainbow:"
   },
   {
-    "name": "Coin98 Wallet",
-    "shortName": "Coin98",
-    "color": "rgb(39,39,39)",
-    "logo": "./logos/coin98.png",
-    "universalLink": "https://coin98.app",
-    "deepLink": "coin98:"
-  },
-  {
     "name": "Trust Wallet",
     "shortName": "Trust",
     "color": "rgb(51, 117, 187)",
@@ -240,11 +232,27 @@
     "deepLink": "plasmapay:"
   },
   {
+    "name": "BitPay Wallet",
+    "shortName": "BitPay",
+    "color": "rgb(26, 59, 139)",
+    "logo": "./logos/bitpay.png",
+    "universalLink": "https://bitpay.com/wallet",
+    "deepLink": "bitpay:"
+  },
+  {
     "name": "HaloDeFi Wallet",
     "shortName": "HaloDeFi",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/halodefi.png",
     "universalLink": "",
     "deepLink": "halodefiwallet:"
+  },
+  {
+    "name": "Coin98 Wallet",
+    "shortName": "Coin98",
+    "color": "rgb(39,39,39)",
+    "logo": "./logos/coin98.png",
+    "universalLink": "https://coin98.app",
+    "deepLink": "coin98:"
   }
 ]
