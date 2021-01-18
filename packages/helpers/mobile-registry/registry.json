@@ -188,7 +188,7 @@
     "shortName": "PEAKDEFI",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/peakdefi.png",
-    "universalLink": "https://app.peakdefi.com/download",
+    "universalLink": "https://peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
   },
   {
