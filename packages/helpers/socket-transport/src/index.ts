@@ -144,6 +144,8 @@ class SocketTransport implements ITransportLib {
     this._nextSocket.onopen = () => this._socketOpen();
 
     this._nextSocket.onerror = (event: Event) => this._socketError(event);
+
+    this._nextSocket.onclose = () => this._socketCreate();
   }
 
   private _socketOpen() {

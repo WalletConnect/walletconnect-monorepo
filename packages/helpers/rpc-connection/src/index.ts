@@ -34,6 +34,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
         bridge: this.bridge,
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
+        clientMeta: opts?.clientMeta,
       });
 
     if (this.wc.connected) {

@@ -89,7 +89,6 @@ class Connector implements IConnector {
 
   private _handshakeId = 0;
   private _handshakeTopic = "";
-  private _pending = false;
 
   // -- session ----------------------------------------------------- //
 
@@ -324,7 +323,7 @@ class Connector implements IConnector {
   }
 
   get pending() {
-    return this._pending;
+    return !!this._handshakeTopic;
   }
 
   get session() {
@@ -426,7 +425,6 @@ class Connector implements IConnector {
       };
     }
 
-    this._pending = true;
     await this.createSession(opts);
 
     return new Promise<ISessionStatus>(async (resolve, reject) => {
@@ -439,8 +437,6 @@ class Connector implements IConnector {
 
         resolve(payload.params[0]);
       });
-    }).finally(() => {
-      this._pending = false;
     });
   }
 
@@ -449,7 +445,7 @@ class Connector implements IConnector {
       throw new Error(ERROR_SESSION_CONNECTED);
     }
 
-    if (this._pending) {
+    if (this.pending) {
       return;
     }
 
@@ -865,6 +861,12 @@ class Connector implements IConnector {
     }
     if (this._connected) {
       this._connected = false;
+    }
+    if (this._handshakeId) {
+      this._handshakeId = 0;
+    }
+    if (this._handshakeTopic) {
+      this._handshakeTopic = "";
     }
     this._eventManager.trigger({
       event: "disconnect",
