@@ -256,6 +256,14 @@
     "deepLink": "coin98:"
   },
   {
+    "name": "Talken Wallet",
+    "shortName": "Talken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/talken.png",
+    "universalLink": "talken.io",
+    "deepLink": "talken-wallet:"
+  },
+  {
     "name": "Ellipal",
     "shortName": "Ellipal",
     "color": "rgb(48, 124, 249)",
