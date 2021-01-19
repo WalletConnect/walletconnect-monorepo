@@ -56,16 +56,19 @@ export class LegacyService {
 
   private async onSubscribeRequest(socketId: string, socketMessage: LegacySocketMessage) {
     const topic = socketMessage.topic;
-
+    this.logger.debug(`Subscribe Request Received`);
+    this.logger.trace({ type: "method", method: "onSubscribeRequest", socketMessage, socketId });
     const subscriber = { topic, socketId };
 
     await this.subscription.set(subscriber);
 
-    await this.pushPendingPublished(socketId, topic);
+    await this.pushCachedMessages(socketId, topic);
   }
 
   private async onPublishRequest(socketId: string, socketMessage: LegacySocketMessage) {
     const subscribers = await this.subscription.get(socketMessage.topic, socketId);
+    this.logger.debug(`Publish Request Received`);
+    this.logger.trace({ type: "method", method: "onPublishRequest", socketMessage, socketId });
 
     if (!socketMessage.silent) {
       await this.notification.push(socketMessage.topic);
@@ -82,14 +85,13 @@ export class LegacyService {
     }
   }
 
-  private async pushPendingPublished(socketId: string, topic: string) {
-    const pending = await this.redis.getLegacyPublished(topic);
-
-    if (pending && pending.length) {
+  private async pushCachedMessages(socketId: string, topic: string) {
+    const messages = await this.redis.getLegacyPublished(topic);
+    this.logger.debug(`Pushing Cached Messages`);
+    this.logger.trace({ type: "method", method: "pushCachedMessages", messages, socketId });
+    if (messages && messages.length) {
       await Promise.all(
-        pending.map((pendingMessage: LegacySocketMessage) =>
-          this.socketSend(socketId, pendingMessage),
-        ),
+        messages.map((message: LegacySocketMessage) => this.socketSend(socketId, message)),
       );
     }
   }
@@ -104,7 +106,7 @@ export class LegacyService {
       const message = safeJsonStringify(socketMessage);
       socket.send(message);
       this.logger.info(`Outgoing Legacy Socket Message`);
-      this.logger.debug({ type: "payload", direction: "outgoing", payload: socketMessage });
+      this.logger.debug({ type: "payload", direction: "outgoing", socketMessage, socketId });
     } else {
       await this.redis.setLegacyPublished(socketMessage);
     }
