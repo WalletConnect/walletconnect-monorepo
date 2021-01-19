@@ -49,7 +49,7 @@ export class WebSocketService {
       this.logger.debug({ type: "event", event: "connection", socketId });
       this.sockets.set(socketId, socket);
       socket.on("message", async data => {
-        const message = typeof data === "string" ? data : encUtils.bufferToUtf8(Buffer.from(data));
+        const message = data.toString();
         this.logger.debug(`Incoming WebSocket Message`);
         this.logger.trace({ type: "message", direction: "incoming", message });
 
