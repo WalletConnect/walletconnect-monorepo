@@ -2,6 +2,7 @@
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 project=walletconnect
 redisImage='redis:6-alpine'
+standAloneRedis="xredis'
 nginxImage='$(project)/nginx:$(BRANCH)'
 relayImage='$(project)/relay:$(BRANCH)'
 relayIndex=0
@@ -109,12 +110,6 @@ test-staging: build-lerna
 test-production: build-lerna
 	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
 
-watch:
-	npx lerna run watch --stream
-
-relay-logs:
-	docker service logs -f --raw dev_$(project)_relay$(relayIndex) --tail 500
-
 relay-watch:
 	npm run watch --prefix servers/relay
 
@@ -126,14 +121,6 @@ build-container-base: build-nginx
 		--build-arg BRANCH=$(BRANCH) \
 		-t "$(project)/relay:base" \
 		-f ops/relay.Dockerfile .
-	@echo "MAKE: Done with $@"
-	@echo
-
-build-container-dev: build-container-base
-	docker build \
-		--build-arg BRANCH=$(BRANCH) \
-		-t "$(project)/relay:dev" \
-		-f ops/relay.dev.Dockerfile .
 	@echo "MAKE: Done with $@"
 	@echo
 
@@ -156,26 +143,9 @@ build-nginx: pull
 	@echo  "MAKE: Done with $@"
 	@echo
 
-dev: build-container-dev
-	mkdir -p servers/relay/dist
-	RELAY_IMAGE=$(relayImage) \
-	NGINX_IMAGE=$(nginxImage) \
-	docker stack deploy \
-	-c ops/docker-compose.yml \
-	-c ops/docker-compose.dev.yml \
-	dev_$(project)
-	@echo  "MAKE: Done with $@"
-	@echo
-	$(MAKE) relay-logs
-
-dev-monitoring: build-container-dev
-	RELAY_IMAGE=$(relayImage) \
-	NGINX_IMAGE=$(nginxImage) \
-	docker stack deploy \
-	-c ops/docker-compose.yml \
-	-c ops/docker-compose.dev.yml \
-	-c ops/docker-compose.monitor.yml \
-	dev_$(project)
+dev:
+	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage)
+	$(MAKE) relay-start
 	@echo  "MAKE: Done with $@"
 	@echo
 
@@ -187,6 +157,7 @@ cloudflare: setup
 
 redeploy: 
 	$(MAKE) clean
+	$(MAKE) build
 	$(MAKE) down
 	$(MAKE) dev-monitoring
 
@@ -207,14 +178,15 @@ deploy-monitoring: setup cloudflare build
 	@echo  "MAKE: Done with $@"
 	@echo
 
-down: stop
+down: stop rm-redis
+
+rm-redis:
+	docker stop $(standAloneRedis)
 
 stop: 
 	docker stack rm $(project)
-	docker stack rm dev_$(project)
 	while [ -n "`docker network ls --quiet --filter label=com.docker.stack.namespace=$(project)`" ]; do echo -n '.' && sleep 1; done
 	@echo
-	while [ -n "`docker network ls --quiet --filter label=com.docker.stack.namespace=dev_$(project)`" ]; do echo -n '.' && sleep 1; done
 	@echo  "MAKE: Done with $@"
 	@echo
 
