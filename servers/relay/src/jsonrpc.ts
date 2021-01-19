@@ -124,7 +124,7 @@ export class JsonRpcService {
       return;
     }
     this.logger.debug(`Publish Request Received`);
-    this.logger.trace({ type: "method", method: "onPublishRequest", params });
+    this.logger.trace({ type: "method", method: "onPublishRequest", params, socketId });
     const subscriptions = this.subscription.get(params.topic, socketId);
 
     // TODO: assume all payloads are non-silent for now
@@ -144,7 +144,7 @@ export class JsonRpcService {
   private async onSubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseSubscribeRequest(request);
     this.logger.debug(`Subscribe Request Received`);
-    this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
+    this.logger.trace({ type: "method", method: "onSubscribeRequest", params, socketId });
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
@@ -153,7 +153,7 @@ export class JsonRpcService {
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseUnsubscribeRequest(request);
     this.logger.debug(`Unsubscribe Request Received`);
-    this.logger.trace({ type: "method", method: "onUnsubscribeRequest", params });
+    this.logger.trace({ type: "method", method: "onUnsubscribeRequest", params, socketId });
 
     this.subscription.remove(params.id);
 
@@ -161,9 +161,10 @@ export class JsonRpcService {
   }
 
   private async pushCachedMessages(subscription: Subscription) {
+    const { socketId } = subscription;
     const messages = await this.redis.getMessages(subscription.topic);
     this.logger.debug(`Pushing Cached Messages`);
-    this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
+    this.logger.trace({ type: "method", method: "pushCachedMessages", messages, socketId });
     if (messages && messages.length) {
       await Promise.all(
         messages.map((message: string) => {
@@ -200,7 +201,7 @@ export class JsonRpcService {
     if (socket.readyState === 1) {
       socket.send(safeJsonStringify(payload));
       this.logger.info(`Outgoing JSON-RPC Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", payload });
+      this.logger.debug({ type: "payload", direction: "outgoing", payload, socketId });
     } else {
       if (isJsonRpcRequest(payload)) {
         const params = payload.params;
