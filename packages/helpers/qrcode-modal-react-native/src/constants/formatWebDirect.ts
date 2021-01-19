@@ -7,10 +7,12 @@ export default function formatWebRedirect(): string {
     // eslint-disable-next-line functional/no-throw-statement
     throw new Error("formatDeepLinkHref may not be called on mobile platforms.");
   }
+  // @ts-ignore
   const redirectUrlQueryString = appendToQueryString(window.location.search, {
     walletconnect: true,
   });
   return encodeURIComponent(
+    // @ts-ignore
     `${window.location.origin}${window.location.pathname}${redirectUrlQueryString}`,
   );
 }

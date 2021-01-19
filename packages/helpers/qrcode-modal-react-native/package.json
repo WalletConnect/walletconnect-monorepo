@@ -1,0 +1,50 @@
+{
+  "name": "@walletconnect/qrcode-modal-react-native",
+  "version": "1.0.0-alpha.0",
+  "description": "React Native QR Code Modal for WalletConnect",
+  "main": "dist",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/WalletConnect/walletconnect-monorepo",
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "ethereum",
+    "jsonrpc",
+    "mobile",
+    "qrcode",
+    "web3",
+    "crypto",
+    "cryptocurrency",
+    "react-native",
+    "dapp"
+  ],
+  "author": "WalletConnect <walletconnect.org>",
+  "license": "LGPL-3.0",
+  "private": false,
+  "dependencies": {
+    "deepmerge": "^4.2.2",
+    "react-native-qrcode-svg": "^6.0.6",
+    "tinycolor2": "^1.4.2"
+  },
+  "scripts": {
+    "build": "rm -rf dist node_modules; yarn && yarn tsc && babel dist --out-dir dist && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.12.10",
+    "@babel/core": "^7.12.10",
+    "@babel/preset-env": "^7.12.11",
+    "@babel/preset-react": "^7.12.10",
+    "@types/better-sqlite3": "^5.4.1",
+    "@types/deepmerge": "^2.2.0",
+    "@types/node": "^14.14.21",
+    "@types/react": "^17.0.0",
+    "@types/react-native": "^0.63.45",
+    "@types/tinycolor2": "^1.4.2",
+    "@walletconnect/types": "^1.3.4",
+    "@walletconnect/utils": "^1.3.4",
+    "react": "16.13.1",
+    "react-native": "0.63.4",
+    "react-native-svg": "^12.1.0",
+    "typescript": "^4.1.3"
+  }
+}

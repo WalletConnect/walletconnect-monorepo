@@ -1,9 +1,9 @@
 import WalletConnect from "@walletconnect/client";
+import { useQrcodeModal } from "@walletconnect/qrcode-modal-react-native";
 import React from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
 
 import { expo } from "./app.json";
-import { useQrcodeModal } from "./src";
 
 const { scheme } = expo;
 

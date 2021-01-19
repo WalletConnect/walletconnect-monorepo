@@ -106,7 +106,7 @@ export default function QrcodeModal({
   }, []);
 
   const { height: windowHeight } = useWindowDimensions();
-  const ref = React.useRef<ScrollView>();
+  const ref: React.RefObject<ScrollView> = React.createRef();
   const height = windowHeight * 0.4;
   const width = height * 0.75;
   const logoWidth = width * 0.7;
@@ -140,6 +140,7 @@ export default function QrcodeModal({
   const onPressBottomTab = React.useCallback(() => {
     if (Platform.OS === "web") {
       try {
+        // @ts-ignore
         navigator.clipboard.writeText(uri);
         setDidCopyText(true);
       } catch (e) {
@@ -151,11 +152,10 @@ export default function QrcodeModal({
   }, [setShowQrcode, showQrcode, width, uri, setDidCopyText]);
 
   React.useEffect(() => {
-    /* scroll render sync */
-    ref.current.scrollTo({
+    ref.current?.scrollTo({
       x: showQrcode ? width : 0,
     });
-  }, [showQrcode]);
+  }, [ref, showQrcode]);
 
   const renderItem = React.useCallback(
     ({ item }): JSX.Element => {

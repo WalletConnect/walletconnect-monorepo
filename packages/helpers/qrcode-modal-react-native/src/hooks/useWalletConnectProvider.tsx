@@ -4,7 +4,7 @@ import { Linking, Platform } from 'react-native';
 import { WalletConnectProvider } from '../types';
 
 export type useWalletConnectProviderParams = {
-  readonly redirectUrl: string;
+  readonly redirectUrl: string | undefined;
 };
 
 export type useWalletConnectProviderResult = {
