@@ -52,7 +52,7 @@ build-container: ## builds relay docker image
 	docker build \
 		--build-arg BRANCH=$(BRANCH) \
 		-t $(relayImage) \
-		-f ops/relay.prod.Dockerfile .
+		-f ops/relay.Dockerfile .
 	@echo "MAKE: Done with $@"
 	@echo
 
