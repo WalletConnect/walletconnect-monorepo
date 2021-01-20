@@ -91,5 +91,23 @@ describe("Legacy", () => {
         });
       }),
     ]);
+
+    const socketC = new Socket(TEST_RELAY_URL);
+    await socketC.open();
+
+    await Promise.all([
+      new Promise<void>(resolve => {
+        socketC.send(sub);
+        resolve();
+      }),
+      new Promise<void>((resolve, reject) => {
+        setTimeout(() => {
+          resolve();
+        }, 100);
+        socketC.on("message", () => {
+          reject("Socket C received message after B");
+        });
+      }),
+    ]);
   });
 });
