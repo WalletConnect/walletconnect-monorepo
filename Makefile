@@ -121,7 +121,7 @@ redeploy: ## redeploys the prodution containers and rebuilds them
 	docker service update --force $(project)_relay1
 
 relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
-	docker service logs -f --raw --tail 100
+	docker service logs -f --raw --tail 100 $(project)_relay0
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis)
