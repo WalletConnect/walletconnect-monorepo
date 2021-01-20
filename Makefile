@@ -48,20 +48,6 @@ build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 	@echo  "MAKE: Done with $@"
 	@echo
 
-build: pull build-lerna ## builds docker images
-	@touch $(flags)/$@
-	@echo  "MAKE: Done with $@"
-	@echo
-
-test-client: build ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
-	npm run test --prefix packages/client
-
-test-staging: build-lerna ## tests client against staging.walletconnect.org
-	TEST_RELAY_URL=wss://staging.walletconnect.org npm run test --prefix packages/client
-
-test-production: build-lerna ## tests client against bridge.walletconnect.org
-	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
-
 build-container: ## builds relay docker image
 	docker build \
 		--build-arg BRANCH=$(BRANCH) \
@@ -78,6 +64,20 @@ build-nginx: ## builds nginx docker image
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
+
+build: pull build-container build-nginx build-lerna ## builds all the packages and the containers for the relay
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
+test-client: build ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
+	npm run test --prefix packages/client
+
+test-staging: build-lerna ## tests client against staging.walletconnect.org
+	TEST_RELAY_URL=wss://staging.walletconnect.org npm run test --prefix packages/client
+
+test-production: build-lerna ## tests client against bridge.walletconnect.org
+	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
 
 start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
