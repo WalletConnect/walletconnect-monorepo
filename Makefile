@@ -110,9 +110,6 @@ test-staging: build-lerna
 test-production: build-lerna
 	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
 
-relay-watch:
-	npm run watch --prefix servers/relay
-
 relay-start:
 	npm run start --prefix servers/relay
 
@@ -137,8 +134,8 @@ build-nginx: pull
 build-relay: build-container build-nginx
 
 dev:
-	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage)
-	$(MAKE) relay-start
+	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
+	npm run dev --prefix servers/relay
 	@echo  "MAKE: Done with $@"
 	@echo
 

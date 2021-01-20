@@ -22,8 +22,10 @@
   "scripts": {
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.json",
+    "dev": "run-p -l watch nodemon",
+    "nodemon": "nodemon -w ./dist",
     "watch": "tsc -p tsconfig.json --watch",
-    "build": "npm run clean && npm run compile",
+    "build": "run-s clean compile",
     "start": "npm run build && node ./dist",
     "test": "env TS_NODE_PROJECT=\"tsconfig.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
@@ -59,6 +61,8 @@
     "chai-http": "^4.3.0",
     "core-js": "^3.8.3",
     "mocha": "^8.2.1",
+    "nodemon": "^2.0.7",
+    "npm-run-all": "^4.1.5",
     "prettier": "^1.19.1",
     "ts-node": "^9.1.1",
     "typescript": "^3.7.5"
