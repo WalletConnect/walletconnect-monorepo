@@ -2,7 +2,7 @@
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 project=walletconnect
 redisImage='redis:6-alpine'
-standAloneRedis="xredis'
+standAloneRedis='xredis'
 nginxImage='$(project)/nginx:$(BRANCH)'
 relayImage='$(project)/relay:$(BRANCH)'
 relayIndex=0
@@ -96,7 +96,7 @@ build-lerna: bootstrap-lerna
 	@echo  "MAKE: Done with $@"
 	@echo
 
-build: pull build-lerna build-container
+build: pull build-lerna
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
@@ -116,23 +116,13 @@ relay-watch:
 relay-start:
 	npm run start --prefix servers/relay
 
-build-container-base: build-nginx
-	docker build \
-		--build-arg BRANCH=$(BRANCH) \
-		-t "$(project)/relay:base" \
-		-f ops/relay.Dockerfile .
-	@echo "MAKE: Done with $@"
-	@echo
-
-build-container-prod: build-container-base
+build-container:
 	docker build \
 		--build-arg BRANCH=$(BRANCH) \
 		-t $(relayImage) \
 		-f ops/relay.prod.Dockerfile .
 	@echo "MAKE: Done with $@"
 	@echo
-
-build-container: build-container-prod
 
 build-nginx: pull
 	docker build \
@@ -142,6 +132,9 @@ build-nginx: pull
 	@touch $(flags)/$@
 	@echo  "MAKE: Done with $@"
 	@echo
+
+
+build-relay: build-container build-nginx
 
 dev:
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage)
@@ -158,10 +151,12 @@ cloudflare: setup
 redeploy: 
 	$(MAKE) clean
 	$(MAKE) build
-	$(MAKE) down
+	$(MAKE) down # We should avoid using down since it doesn't make use of dockers switch in place capabilities
 	$(MAKE) dev-monitoring
 
-deploy: setup cloudflare build-container
+predeploy: setup cloudflare build-relay
+
+deploy: predeploy
 	RELAY_IMAGE=$(relayImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	PROJECT=$(project) \
@@ -169,7 +164,7 @@ deploy: setup cloudflare build-container
 	@echo  "MAKE: Done with $@"
 	@echo
 
-deploy-monitoring: setup cloudflare build
+deploy-monitoring: predeploy
 	RELAY_IMAGE=$(relayImage) \
 	NGINX_IMAGE=$(nginxImage) \
 	PROJECT=$(project) \
@@ -189,17 +184,6 @@ stop:
 	@echo
 	@echo  "MAKE: Done with $@"
 	@echo
-
-upgrade: setup
-	rm -f $(flags)/build*
-	$(MAKE) build
-	@echo  "MAKE: Done with $@"
-	@echo
-	git fetch origin $(BRANCH)
-	git merge origin/$(BRANCH)
-	docker service update --force $(project)_relay
-	docker service update --force $(project)_nginx
-	docker service update --force $(project)_redis
 
 reset:
 	$(MAKE) clean-all
