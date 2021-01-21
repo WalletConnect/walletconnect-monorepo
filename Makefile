@@ -56,6 +56,13 @@ build-container: ## builds relay docker image
 	@echo "MAKE: Done with $@"
 	@echo
 
+build-relay: ## builds the relay system local npm
+	npm install --prefix servers/relay
+	npm run build --prefix servers/relay
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
 build-nginx: ## builds nginx docker image
 	docker build \
 		-t $(nginxImage) \
@@ -81,9 +88,10 @@ test-production: build-lerna ## tests client against bridge.walletconnect.org
 
 start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
+	@echo  "MAKE: Done with $@"
+	@echo
 
-dev: start-redis ## runs relay on watch mode and shows logs
-	npm install --prefix servers/relay
+dev: build-relay start-redis ## runs relay on watch mode and shows logs
 	npm run dev --prefix servers/relay
 	@echo  "MAKE: Done with $@"
 	@echo
@@ -121,7 +129,7 @@ redeploy: ## redeploys the prodution containers and rebuilds them
 	docker service update --force $(project)_relay0
 	docker service update --force $(project)_relay1
 
-relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
+relay-logs: ## follows the relay0 container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay0
 
 rm-redis: ## stops the redis container
