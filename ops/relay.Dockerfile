@@ -7,3 +7,6 @@ WORKDIR /relay
 RUN cp -a /tmp/node_modules ./node_modules
 COPY ./servers/relay .
 RUN npm run build
+
+USER node
+CMD ["node", "/relay/dist"]

@@ -46,7 +46,7 @@ export class JsonRpcService {
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;
-    this.subscription = new SubscriptionService(this.logger, this.redis);
+    this.subscription = new SubscriptionService(this.logger, this.redis, this.ws);
     this.initialize();
   }
 
@@ -124,27 +124,19 @@ export class JsonRpcService {
       return;
     }
     this.logger.debug(`Publish Request Received`);
-    this.logger.trace({ type: "method", method: "onPublishRequest", params });
-    const subscriptions = this.subscription.get(params.topic, socketId);
+    this.logger.trace({ type: "method", method: "onPublishRequest", socketId, params });
 
-    // TODO: assume all payloads are non-silent for now
     await this.notification.push(params.topic);
     await this.redis.setMessage(params);
+    await this.searchSubscriptions(socketId, params);
 
-    if (subscriptions.length) {
-      await Promise.all(
-        subscriptions.map((subscriber: Subscription) => {
-          this.pushSubscription(subscriber, params.message);
-        }),
-      );
-    }
     this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
 
   private async onSubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseSubscribeRequest(request);
     this.logger.debug(`Subscribe Request Received`);
-    this.logger.trace({ type: "method", method: "onSubscribeRequest", params });
+    this.logger.trace({ type: "method", method: "onSubscribeRequest", socketId, params });
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
@@ -153,16 +145,34 @@ export class JsonRpcService {
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseUnsubscribeRequest(request);
     this.logger.debug(`Unsubscribe Request Received`);
-    this.logger.trace({ type: "method", method: "onUnsubscribeRequest", params });
+    this.logger.trace({ type: "method", method: "onUnsubscribeRequest", socketId, params });
 
     this.subscription.remove(params.id);
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
 
+  private async searchSubscriptions(socketId: string, params: RelayJsonRpc.PublishParams) {
+    this.logger.debug(`Searching subscriptions`);
+    this.logger.trace({ type: "method", method: "searchSubscriptions", socketId, params });
+    const subscriptions = this.subscription.get(params.topic, socketId);
+    this.logger.debug(`Found ${subscriptions.length} subscriptions`);
+    this.logger.trace({ type: "method", method: "searchSubscriptions", subscriptions });
+    if (subscriptions.length) {
+      await Promise.all(
+        subscriptions.map((subscriber: Subscription) => {
+          this.pushSubscription(subscriber, params.message);
+        }),
+      );
+    }
+  }
+
   private async pushCachedMessages(subscription: Subscription) {
-    const messages = await this.redis.getMessages(subscription.topic);
+    const { socketId } = subscription;
     this.logger.debug(`Pushing Cached Messages`);
+    this.logger.trace({ type: "method", method: "pushCachedMessages", socketId });
+    const messages = await this.redis.getMessages(subscription.topic);
+    this.logger.debug(`Found ${messages.length} cached messages`);
     this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
     if (messages && messages.length) {
       await Promise.all(
@@ -192,21 +202,21 @@ export class JsonRpcService {
     socketId: string,
     payload: JsonRpcRequest | JsonRpcResult | JsonRpcError,
   ) {
-    const socket = this.ws.sockets.get(socketId);
-    if (typeof socket === "undefined") {
-      // TODO: handle this error better
-      throw new Error("socket missing or invalid");
-    }
-    if (socket.readyState === 1) {
-      socket.send(safeJsonStringify(payload));
+    try {
+      this.ws.send(socketId, safeJsonStringify(payload));
       this.logger.info(`Outgoing JSON-RPC Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", payload });
-    } else {
-      if (isJsonRpcRequest(payload)) {
-        const params = payload.params;
-        if (isPublishParams(params)) {
-          await this.redis.setMessage(params);
-        }
+      this.logger.debug({ type: "payload", direction: "outgoing", payload, socketId });
+    } catch (e) {
+      this.onFailedPush(payload);
+    }
+  }
+
+  private async onFailedPush(
+    payload: JsonRpcRequest | JsonRpcResult | JsonRpcError,
+  ): Promise<void> {
+    if (isJsonRpcRequest(payload)) {
+      if (isPublishParams(payload.params)) {
+        await this.redis.setMessage(payload.params);
       }
     }
   }

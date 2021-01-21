@@ -1,7 +1,8 @@
+import { EventEmitter } from "events";
 import { Server } from "http";
 import WebSocket from "ws";
-import * as encUtils from "enc-utils";
 import { Logger } from "pino";
+import { safeJsonParse } from "safe-json-utils";
 import { isJsonRpcPayload } from "@json-rpc-tools/utils";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
@@ -11,7 +12,6 @@ import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
 import { generateRandomBytes32, isLegacySocketMessage } from "./utils";
 
-import { safeJsonParse } from "safe-json-utils";
 import { LegacyService } from "./legacy";
 
 export class WebSocketService {
@@ -20,6 +20,8 @@ export class WebSocketService {
   public legacy: LegacyService;
 
   public sockets = new Map<string, Socket>();
+
+  public events = new EventEmitter();
 
   public context = "websocket";
 
@@ -38,6 +40,47 @@ export class WebSocketService {
     this.initialize();
   }
 
+  public on(event: string, listener: any): void {
+    this.events.on(event, listener);
+  }
+
+  public once(event: string, listener: any): void {
+    this.events.once(event, listener);
+  }
+
+  public off(event: string, listener: any): void {
+    this.events.off(event, listener);
+  }
+
+  public removeListener(event: string, listener: any): void {
+    this.events.removeListener(event, listener);
+  }
+
+  public send(socketId: string, message: string) {
+    if (!this.isSocketConnected(socketId)) {
+      throw new Error(`Socket not active with socketId: ${socketId}`);
+    }
+    const socket = this.getSocket(socketId);
+    socket.send(message);
+  }
+
+  public getSocket(socketId: string): Socket {
+    const socket = this.sockets.get(socketId);
+    if (typeof socket === "undefined") {
+      throw new Error(`Socket not found with socketId: ${socketId}`);
+    }
+    return socket;
+  }
+
+  public isSocketConnected(socketId: string): boolean {
+    try {
+      const socket = this.getSocket(socketId);
+      return socket.readyState === 1;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
@@ -48,8 +91,9 @@ export class WebSocketService {
       this.logger.info(`New Socket Connected`);
       this.logger.debug({ type: "event", event: "connection", socketId });
       this.sockets.set(socketId, socket);
+      this.events.emit("socket_open", socketId);
       socket.on("message", async data => {
-        const message = typeof data === "string" ? data : encUtils.bufferToUtf8(Buffer.from(data));
+        const message = data.toString();
         this.logger.debug(`Incoming WebSocket Message`);
         this.logger.trace({ type: "message", direction: "incoming", message });
 
@@ -89,25 +133,37 @@ export class WebSocketService {
         }
         this.logger.error(e);
       });
+
+      socket.on("close", () => {
+        this.sockets.delete(socketId);
+        this.events.emit("socket_close", socketId);
+      });
     });
 
-    setInterval(
-      () => {
-        const sockets: any = this.server.clients;
-        sockets.forEach((socket: Socket) => {
-          if (socket.isAlive === false) {
-            return socket.terminate();
-          }
+    setInterval(() => this.clearInactiveSockets(), 10000);
+  }
 
-          function noop() {
-            // empty
-          }
+  private clearInactiveSockets() {
+    const socketIds = Array.from(this.sockets.keys());
+    socketIds.forEach((socketId: string) => {
+      const socket = this.sockets.get(socketId);
 
-          socket.isAlive = false;
-          socket.ping(noop);
-        });
-      },
-      10000, // 10 seconds
-    );
+      if (typeof socket === "undefined") {
+        return;
+      }
+      if (socket.isAlive === false) {
+        this.sockets.delete(socketId);
+        socket.terminate();
+        this.events.emit("socket_close", socketId);
+        return;
+      }
+
+      function noop() {
+        // empty
+      }
+
+      socket.isAlive = false;
+      socket.ping(noop);
+    });
   }
 }

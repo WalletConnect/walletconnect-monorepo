@@ -1,13 +1,13 @@
 import redis from "redis";
-import { createHash } from "crypto";
-import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
+import bluebird from "bluebird";
 import { RelayJsonRpc } from "relay-provider";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
+import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
-import { Subscription, Notification, LegacySocketMessage } from "./types";
-import bluebird from "bluebird";
 import config from "./config";
+import { sha256 } from "./utils";
+import { Subscription, Notification, LegacySocketMessage } from "./types";
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
@@ -23,14 +23,14 @@ export class RedisService {
   }
 
   public async setMessage(params: RelayJsonRpc.PublishParams) {
+    const { topic, message, ttl } = params;
     this.logger.debug(`Setting Message`);
     this.logger.trace({ type: "method", method: "setMessage", params });
-    const key = `message:${params.topic}`;
-    const val = `${createHash("sha256")
-      .update(params.message)
-      .digest("hex")}:${params.message}`;
+    const key = `message:${topic}`;
+    const hash = sha256(message);
+    const val = `${hash}:${message}`;
     await this.client.saddAsync(key, val);
-    await this.client.expireAsync(key, params.ttl);
+    await this.client.expireAsync(key, ttl);
   }
 
   public async getMessages(topic: string) {
@@ -55,25 +55,30 @@ export class RedisService {
     if (result) this.client.sremAsync(`message:${topic}`, result[0]);
   }
 
-  public async setLegacyPublished(socketMessage: LegacySocketMessage) {
-    this.logger.debug(`Setting Legacy Published`);
-    this.logger.trace({ type: "method", method: "setLegacyPublished", socketMessage });
-    await this.client.lpushAsync(
-      `request:${socketMessage.topic}`,
-      safeJsonStringify(socketMessage),
-    );
+  public async setLegacyCached(message: LegacySocketMessage) {
+    this.logger.debug(`Setting Legacy Cached`);
+    this.logger.trace({ type: "method", method: "setLegacyCached", message });
+    await this.client.lpushAsync(`legacy:${message.topic}`, safeJsonStringify(message));
     const oneDay = 86400;
-    await this.client.expireAsync(`request:${socketMessage.topic}`, oneDay);
+    await this.client.expireAsync(`legacy:${message.topic}`, oneDay);
   }
 
-  public async getLegacyPublished(topic: string) {
-    return this.client.lrangeAsync(`request:${topic}`, 0, -1).then((raw: any) => {
+  public async getLegacyCached(topic: string) {
+    return this.client.lrangeAsync(`legacy:${topic}`, 0, -1).then((raw: any) => {
       if (raw) {
-        const data: LegacySocketMessage[] = raw.map((message: string) => safeJsonParse(message));
-        this.client.del(`request:${topic}`);
+        const hashes: string[] = [];
+        const messages: LegacySocketMessage[] = [];
+        raw.forEach((data: string) => {
+          const hash = sha256(data);
+          if (hashes.includes(hash)) return;
+          hashes.push(hash);
+          const message = safeJsonParse(data);
+          messages.push(message);
+        });
+        this.client.del(`legacy:${topic}`);
         this.logger.debug(`Getting Legacy Published`);
-        this.logger.trace({ type: "method", method: "getLegacyPublished", topic, data });
-        return data;
+        this.logger.trace({ type: "method", method: "getLegacyCached", topic, messages });
+        return messages;
       }
       return;
     });
@@ -102,9 +107,8 @@ export class RedisService {
 
   public async setPendingRequest(topic: string, id: number, message: string) {
     const key = `pending:${id}`;
-    const val = `${topic}:${createHash("sha256")
-      .update(message)
-      .digest("hex")}`;
+    const hash = sha256(message);
+    const val = `${topic}:${hash}`;
     await this.client.setAsync(key, val);
     await this.client.expireAsync(key, config.REDIS_MAX_TTL);
   }
