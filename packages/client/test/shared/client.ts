@@ -44,7 +44,8 @@ export async function setupClientsForTesting(
   // init clients
   const clients = opts?.clients || {
     a: await Client.init(setup.a.options),
-    b: await Client.init(setup.a.options),
+    b: await Client.init(setup.b.options),
   };
+
   return { setup, clients };
 }

@@ -1,5 +1,6 @@
 import "mocha";
 import sinon from "sinon";
+import { KeyValueStorage } from "keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
 import { generateRandomBytes32 } from "@walletconnect/utils";
 
@@ -13,7 +14,6 @@ import {
   TEST_CLIENT_DATABASE,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
-import { KeyValueStorage } from "keyvaluestorage";
 
 describe("Session", function() {
   this.timeout(30_000);
