@@ -70,7 +70,7 @@ build: pull build-container build-nginx build-lerna ## builds all the packages a
 	@echo  "MAKE: Done with $@"
 	@echo
 
-test-client: build ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
+test-client: build-lerna ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
 	npm run test --prefix packages/client
 
 test-staging: build-lerna ## tests client against staging.walletconnect.org
@@ -83,6 +83,7 @@ start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
 
 dev: start-redis ## runs relay on watch mode and shows logs
+	npm install --prefix servers/relay
 	npm run dev --prefix servers/relay
 	@echo  "MAKE: Done with $@"
 	@echo
