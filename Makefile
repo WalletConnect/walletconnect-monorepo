@@ -79,6 +79,9 @@ test-staging: build-lerna ## tests client against staging.walletconnect.org
 test-production: build-lerna ## tests client against bridge.walletconnect.org
 	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
 
+test-relay: ## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before.
+	npm run test --prefix servers/relay
+	
 start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
 
