@@ -41,14 +41,25 @@ export class SubscriptionService {
     this.subscriptions = this.subscriptions.filter(sub => sub.id !== id);
   }
 
+  public removeSocket(socketId: string): void {
+    this.logger.debug(`Removing Socket Subscriptions`);
+    this.logger.trace({ type: "method", method: "removeSocket", socketId });
+    this.subscriptions = this.subscriptions.filter(sub => sub.socketId !== socketId);
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
+    this.registerEventListeners();
     setInterval(() => this.clearInactiveSubscriptions(), 5000);
   }
 
   private clearInactiveSubscriptions() {
     this.subscriptions = this.subscriptions.filter(sub => this.ws.isSocketConnected(sub.socketId));
+  }
+
+  private registerEventListeners() {
+    this.ws.on("socket_close", (socketId: string) => this.removeSocket(socketId));
   }
 }

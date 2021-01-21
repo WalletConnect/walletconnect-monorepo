@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import { Server } from "http";
 import WebSocket from "ws";
 import { Logger } from "pino";
@@ -20,6 +21,8 @@ export class WebSocketService {
 
   public sockets = new Map<string, Socket>();
 
+  public events = new EventEmitter();
+
   public context = "websocket";
 
   constructor(
@@ -35,6 +38,22 @@ export class WebSocketService {
     this.jsonrpc = new JsonRpcService(this.logger, this.redis, this, this.notification);
     this.legacy = new LegacyService(this.logger, this.redis, this, this.notification);
     this.initialize();
+  }
+
+  public on(event: string, listener: any): void {
+    this.events.on(event, listener);
+  }
+
+  public once(event: string, listener: any): void {
+    this.events.once(event, listener);
+  }
+
+  public off(event: string, listener: any): void {
+    this.events.off(event, listener);
+  }
+
+  public removeListener(event: string, listener: any): void {
+    this.events.removeListener(event, listener);
   }
 
   public send(socketId: string, message: string) {
@@ -72,6 +91,7 @@ export class WebSocketService {
       this.logger.info(`New Socket Connected`);
       this.logger.debug({ type: "event", event: "connection", socketId });
       this.sockets.set(socketId, socket);
+      this.events.emit("socket_open", socketId);
       socket.on("message", async data => {
         const message = data.toString();
         this.logger.debug(`Incoming WebSocket Message`);
@@ -113,6 +133,11 @@ export class WebSocketService {
         }
         this.logger.error(e);
       });
+
+      socket.on("close", () => {
+        this.sockets.delete(socketId);
+        this.events.emit("socket_close", socketId);
+      });
     });
 
     setInterval(() => this.clearInactiveSockets(), 10000);
@@ -128,7 +153,9 @@ export class WebSocketService {
       }
       if (socket.isAlive === false) {
         this.sockets.delete(socketId);
-        return socket.terminate();
+        socket.terminate();
+        this.events.emit("socket_close", socketId);
+        return;
       }
 
       function noop() {
