@@ -8,6 +8,7 @@ import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
+import config from "./config"
 
 export class HttpService {
   public app: FastifyInstance;
@@ -42,7 +43,7 @@ export class HttpService {
     });
 
     this.app.get("/hello", (req, res) => {
-      res.status(200).send(`Hello World, this is WalletConnect`);
+      res.status(200).send(`Hello World, this is WalletConnect v${config.VERSION}@${config.GITHASH}`);
     });
 
     this.app.post<PostSubscribeRequest>("/subscribe", async (req, res) => {

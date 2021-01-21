@@ -1,4 +1,7 @@
-FROM node:12-slim as builder
+ARG githash
+FROM node:12-slim
+ARG githash
+ENV GITHASH=${githash}
 COPY ./servers/relay/package.json /tmp
 COPY ./servers/relay/package-lock.json /tmp
 RUN npm ci --prefix /tmp

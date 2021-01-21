@@ -1,5 +1,8 @@
 ### Deploy configs
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+GITHASH=$(shell git rev-parse --short HEAD)
+REMOTE=$(shell git remote show origin -n | grep Push | cut -f6 -d' ')
+REMOTE_HASH=$(shell git ls-remote $(REMOTE) $(BRANCH) | head -n1 | cut -f1)
 project=walletconnect
 redisImage='redis:6-alpine'
 standAloneRedis='xredis'
@@ -50,7 +53,7 @@ build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 
 build-container: ## builds relay docker image
 	docker build \
-		--build-arg BRANCH=$(BRANCH) \
+		--build-arg githash=$(GITHASH) \
 		-t $(relayImage) \
 		-f ops/relay.Dockerfile .
 	@echo "MAKE: Done with $@"
@@ -136,7 +139,7 @@ relay-logs: ## follows the relay0 container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay0
 
 rm-redis: ## stops the redis container
-	docker stop $(standAloneRedis)
+	docker stop $(standAloneRedis) || true
 
 stop: rm-redis ## stops the whole docker stack
 	docker stack rm $(project)
