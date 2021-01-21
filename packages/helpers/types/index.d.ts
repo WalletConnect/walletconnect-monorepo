@@ -248,6 +248,7 @@ declare module "@walletconnect/types" {
     cryptoLib: ICryptoLib;
     connectorOpts: IWalletConnectOptions;
     transport?: ITransportLib;
+    namespacePrefix?: string;
     sessionStorage?: ISessionStorage;
     pushServerOpts?: IPushServerOptions;
   }

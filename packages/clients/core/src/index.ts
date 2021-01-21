@@ -110,6 +110,9 @@ class Connector implements IConnector {
   private _qrcodeModal: IQRCodeModal | undefined;
   private _qrcodeModalOptions: IQRCodeModalOptions | undefined;
 
+  // -- namespace prefix ----------------------------------------------------- //
+  private _namespacePrefix: string;
+
   // -- constructor ----------------------------------------------------- //
 
   constructor(opts: IConnectorOpts) {
@@ -118,6 +121,7 @@ class Connector implements IConnector {
     this._sessionStorage = opts.sessionStorage || new SessionStorage();
     this._qrcodeModal = opts.connectorOpts.qrcodeModal;
     this._qrcodeModalOptions = opts.connectorOpts.qrcodeModalOptions;
+    this._namespacePrefix = opts.namespacePrefix || "eth_";
 
     if (!opts.connectorOpts.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
@@ -607,7 +611,7 @@ class Connector implements IConnector {
     const parsedTx = parseTransactionData(tx);
 
     const request = this._formatRequest({
-      method: "eth_sendTransaction",
+      method: this._namespacePrefix + "sendTransaction",
       params: [parsedTx],
     });
 
@@ -623,7 +627,7 @@ class Connector implements IConnector {
     const parsedTx = parseTransactionData(tx);
 
     const request = this._formatRequest({
-      method: "eth_signTransaction",
+      method: this._namespacePrefix + "signTransaction",
       params: [parsedTx],
     });
 
@@ -637,7 +641,7 @@ class Connector implements IConnector {
     }
 
     const request = this._formatRequest({
-      method: "eth_sign",
+      method: this._namespacePrefix + "sign",
       params,
     });
 
@@ -667,7 +671,7 @@ class Connector implements IConnector {
     }
 
     const request = this._formatRequest({
-      method: "eth_signTypedData",
+      method: this._namespacePrefix + "signTypedData",
       params,
     });
 
@@ -715,12 +719,12 @@ class Connector implements IConnector {
     }
 
     switch (request.method) {
-      case "eth_accounts":
+      case this._namespacePrefix+"accounts":
         return this.accounts;
-      case "eth_chainId":
+      case this._namespacePrefix+"chainId":
         return convertNumberToHex(this.chainId);
-      case "eth_sendTransaction":
-      case "eth_signTransaction":
+      case this._namespacePrefix+"sendTransaction":
+      case this._namespacePrefix+"signTransaction":
         if (request.params) {
           request.params[0] = parseTransactionData(request.params[0]);
         }
