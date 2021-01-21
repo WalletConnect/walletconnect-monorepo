@@ -190,7 +190,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
         this.getStorageKey(),
       );
       if (typeof persisted === "undefined") return;
-      if (!persisted.length) return;
+      if (!Object.values(persisted).length) return;
       if (this.subscriptions.size) {
         const errorMessage = `Restore will override already set ${this.getSubscriptionContext()}`;
         this.logger.error(errorMessage);
