@@ -21,7 +21,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
         reservations:
           cpus: '0.4'
   relay1:
@@ -32,6 +32,6 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 0.5G
         reservations:
           cpus: '0.4'
