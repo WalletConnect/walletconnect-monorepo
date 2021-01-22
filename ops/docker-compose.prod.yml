@@ -21,7 +21,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 3G
         reservations:
           cpus: '0.4'
   relay1:
