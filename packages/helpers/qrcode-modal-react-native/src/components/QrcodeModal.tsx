@@ -152,10 +152,10 @@ export default function QrcodeModal({
   }, [setShowQrcode, showQrcode, width, uri, setDidCopyText]);
 
   React.useEffect(() => {
-    ref.current?.scrollTo({
+    !!ref.current && ref.current.scrollTo({
       x: showQrcode ? width : 0,
     });
-  }, [ref, showQrcode]);
+  }, [ref, showQrcode, width]);
 
   const renderItem = React.useCallback(
     ({ item }): JSX.Element => {

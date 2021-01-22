@@ -4,10 +4,12 @@ import React from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
 
 import { expo } from "./app.json";
+import { useIsConnected } from './src';
 
 const { scheme } = expo;
 
 const styles = StyleSheet.create({
+  separator: { height: 5 },
   center: { alignItems: "center", justifyContent: "center" },
 });
 
@@ -15,6 +17,7 @@ export default function App(): JSX.Element {
   const { qrcodeModal, renderQrcodeModal } = useQrcodeModal({
     redirectUrl: `${scheme}://`,
   });
+
   const connector = React.useMemo<WalletConnect>(() => {
     const wc = new WalletConnect({
       bridge: "https://bridge.walletconnect.org",
@@ -28,17 +31,15 @@ export default function App(): JSX.Element {
     });
     return wc;
   }, []);
-
-  const [connected, setConnected] = React.useState<boolean>(connector.connected);
+  const connected = useIsConnected(connector);
 
   const onPressOpen = React.useCallback(async () => {
     try {
       await connector.connect();
-      setConnected(true);
     } catch (e) {
       console.error(e);
     }
-  }, [setConnected]);
+  }, []);
 
   const onPressSignTransaction = React.useCallback(async () => {
     try {
@@ -56,6 +57,14 @@ export default function App(): JSX.Element {
     }
   }, [connector]);
 
+  const onPressDisconnect = React.useCallback(async () => {
+    try {
+      await connector.killSession();
+    } catch (e) {
+      console.error(e);
+    }
+  }, [connector]);
+
   return (
     <View style={[StyleSheet.absoluteFill, styles.center]}>
       {(!connected) ? (
@@ -63,7 +72,10 @@ export default function App(): JSX.Element {
       ) : (
         <>
           <Text>You're connected! Try signing a transaction:</Text>
+          <View style={styles.separator} />
           <Button onPress={onPressSignTransaction} title="Sign a Transaction" />
+          <View style={styles.separator} />
+          <Button onPress={onPressDisconnect} title="Disconnect" />
         </>
       )}
       {renderQrcodeModal()}
