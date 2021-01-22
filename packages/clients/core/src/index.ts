@@ -26,6 +26,7 @@ import {
   IQRCodeModalOptions,
 } from "@walletconnect/types";
 import {
+  parseMessageParams,
   parsePersonalSign,
   parseTransactionData,
   convertArrayBufferToHex,
@@ -636,6 +637,8 @@ class Connector implements IConnector {
       throw new Error(ERROR_SESSION_DISCONNECTED);
     }
 
+    params = parseMessageParams(params);
+
     const request = this._formatRequest({
       method: "eth_sign",
       params,
@@ -723,6 +726,11 @@ class Connector implements IConnector {
       case "eth_signTransaction":
         if (request.params) {
           request.params[0] = parseTransactionData(request.params[0]);
+        }
+        break;
+      case "eth_sign":
+        if (request.params) {
+          request.params = parseMessageParams(request.params);
         }
         break;
       case "personal_sign":

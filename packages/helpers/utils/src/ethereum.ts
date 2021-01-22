@@ -34,11 +34,18 @@ export const isValidAddress = (address?: string) => {
   }
 };
 
-export function parsePersonalSign(params: string[]): string[] {
-  if (!isEmptyArray(params) && !isHexString(params[0])) {
-    params[0] = convertUtf8ToHex(params[0]);
+export function parseMessageParams(params: string[], reversed?: boolean): string[] {
+  if (isEmptyArray(params)) return params;
+  const address = reversed ? params[1] : params[0];
+  let message = reversed ? params[0] : params[1];
+  if (!isHexString(message)) {
+    message = convertUtf8ToHex(params[0]);
   }
-  return params;
+  return reversed ? [message, address] : [address, message];
+}
+
+export function parsePersonalSign(params: string[]): string[] {
+  return parseMessageParams(params, true);
 }
 
 export function parseTransactionData(txData: Partial<ITxData>): Partial<ITxData> {
