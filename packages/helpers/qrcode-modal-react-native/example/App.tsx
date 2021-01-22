@@ -18,28 +18,27 @@ export default function App(): JSX.Element {
     redirectUrl: `${scheme}://`,
   });
 
-  const connector = React.useMemo<WalletConnect>(() => {
-    const wc = new WalletConnect({
-      bridge: "https://bridge.walletconnect.org",
-      qrcodeModal,
-      clientMeta: {
-        description: "React Native WalletConnect Example",
-        url: "https://walletconnect.org",
-        icons: ["https://walletconnect.org/walletconnect-logo.png"],
-        name: "WalletConnect",
-      },
-    });
-    return wc;
-  }, []);
+  const [connector, setConnector] = React.useState<WalletConnect | undefined>();
   const connected = useIsConnected(connector);
 
   const onPressOpen = React.useCallback(async () => {
     try {
-      await connector.connect();
+      const wc = new WalletConnect({
+        bridge: "https://bridge.walletconnect.org",
+        qrcodeModal,
+        clientMeta: {
+          description: "React Native WalletConnect Example",
+          url: "https://walletconnect.org",
+          icons: ["https://walletconnect.org/walletconnect-logo.png"],
+          name: "WalletConnect",
+        },
+      });
+      await wc.connect();
+      setConnector(wc);
     } catch (e) {
       console.error(e);
     }
-  }, []);
+  }, [setConnector]);
 
   const onPressSignTransaction = React.useCallback(async () => {
     try {
