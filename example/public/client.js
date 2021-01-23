@@ -68,16 +68,17 @@ function onSubscribe() {
   });
 }
 
-function signPersonalMessage() {
+function signMessage() {
   if (!connector) {
     throw new Error(`connector hasn't been created yet`);
   }
 
+  const address = connector.accounts[0];
   const msg = "Test message from WalletConnect example";
 
-  // send personal_sign request
+  // send eth_sign request
   connector
-    .signPersonalMessage([msg, connector.accounts[0]])
+    .signMessage([address, msg])
     .then(result => {
       // Returns message signature
       console.log(result); // eslint-disable-line

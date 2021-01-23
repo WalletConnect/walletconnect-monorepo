@@ -59,6 +59,9 @@ async function transferDai() {
     DAI.abi,
     new ethers.providers.Web3Provider(provider).getSigner(),
   );
-  const res = await contract.transfer(provider.accounts[0], ethers.utils.parseEther("1"));
+  const recipient = provider.accounts[0];
+  const amount = ethers.utils.parseEther("1");
+
+  const res = await contract.transfer(recipient, amount);
   console.log("res", res);
 }

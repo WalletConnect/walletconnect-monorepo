@@ -10,13 +10,19 @@ export class SignerConnection extends IJsonRpcConnection {
   private connector: IWCRpcConnection | undefined;
   private opts: IWCEthRpcConnectionOptions | undefined;
 
+  private registering = false;
+
   constructor(opts?: IWCEthRpcConnectionOptions) {
     super();
-    this.connector = this.register(opts);
+    this.opts = opts;
   }
 
   get connected(): boolean {
     return typeof this.connector !== "undefined" && this.connector.connected;
+  }
+
+  get connecting(): boolean {
+    return this.registering;
   }
 
   public on(event: string, listener: any) {
@@ -36,23 +42,7 @@ export class SignerConnection extends IJsonRpcConnection {
   }
 
   public async open(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (typeof this.connector === "undefined") {
-        this.connector = this.register(this.opts);
-      }
-      if (this.connector.wc === null) {
-        throw new Error("Connector missing or invalid");
-      }
-      this.connector.wc.on("disconnect", () => {
-        reject();
-      });
-      this.connector.wc.on("connect", () => {
-        this.onOpen(this.connector);
-        resolve();
-      });
-
-      this.connector.create();
-    });
+    this.register();
   }
 
   public async close() {
@@ -68,21 +58,48 @@ export class SignerConnection extends IJsonRpcConnection {
 
   public async send(payload: any) {
     if (typeof this.connector === "undefined") {
-      this.connector = this.register(this.opts);
+      this.connector = await this.register(this.opts);
     }
     this.connector.sendPayload(payload).then((res: any) => this.events.emit("payload", res));
   }
 
   // ---------- Private ----------------------------------------------- //
 
-  private register(opts?: IWCEthRpcConnectionOptions): IWCRpcConnection {
-    return new WCRpcConnection(opts);
+  private register(
+    opts: IWCEthRpcConnectionOptions | undefined = this.opts,
+  ): Promise<IWCRpcConnection> {
+    if (this.registering) {
+      return new Promise<any>((resolve, reject) => {
+        this.events.once("open", () => {
+          if (typeof this.connector === "undefined") {
+            return reject(new Error("Signer connection is missing or invalid"));
+          }
+          resolve(this.connector);
+        });
+      });
+    }
+    return new Promise((resolve, reject) => {
+      const connector = new WCRpcConnection(opts);
+      if (connector.wc === null) {
+        throw new Error("Connector missing or invalid");
+      }
+      connector.wc.on("disconnect", () => {
+        reject();
+      });
+      connector.wc.on("connect", () => {
+        this.onOpen(connector);
+        resolve(connector);
+      });
+
+      connector.create();
+    });
   }
 
   private onOpen(connector?: IWCRpcConnection) {
     if (connector) {
       this.connector = connector;
     }
+    this.registering = false;
     this.events.emit("open");
   }
 

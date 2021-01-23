@@ -77,7 +77,7 @@ function updateAction(title, action) {
 
 function onConnect(
   { accounts, chainId },
-  action = { label: "Sign Message", callback: signPersonalMessage },
+  action = { label: "Sign Message", callback: signMessage },
 ) {
   updateView({ accounts, chainId });
   updateAction(action.label, action.callback);

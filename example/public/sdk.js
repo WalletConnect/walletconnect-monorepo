@@ -61,16 +61,17 @@ function onSubscribe() {
   });
 }
 
-function signPersonalMessage() {
+function signMessage() {
   if (!provider) {
     throw new Error(`provider hasn't been created yet`);
   }
 
+  const address = provider.accounts[0];
   const msg = "Test message from WalletConnect example";
 
-  // send personal_sign request
+  // send eth_sign request
   provider
-    .send({ method: "personal_sign", params: [msg, provider.accounts[0]] })
+    .send({ method: "eth_sign", params: [address, msg] })
     .then(result => {
       // Returns message signature
       console.log(result); // eslint-disable-line
