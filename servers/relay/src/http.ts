@@ -2,13 +2,15 @@ import Helmet from "fastify-helmet";
 import pino, { Logger } from "pino";
 import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
 import fastify, { FastifyInstance } from "fastify";
+import client from "prom-client"
 
+import config from "./config"
+import register from "./metrics"
 import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
-import config from "./config"
 
 export class HttpService {
   public app: FastifyInstance;
@@ -20,6 +22,8 @@ export class HttpService {
 
   public context = "server";
 
+  private metrics;
+
   constructor(opts: HttpServiceOptions) {
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
@@ -28,6 +32,13 @@ export class HttpService {
     this.app = fastify({ logger });
     this.logger = generateChildLogger(logger, this.context);
     this.redis = new RedisService(this.logger);
+    this.metrics = {
+      hello: new client.Counter({
+          registers: [register],
+          name: 'relay_hello_counter',
+          help: 'shows how much the /hello has been called',
+      })
+    }
     this.initialize();
   }
 
@@ -42,9 +53,17 @@ export class HttpService {
       res.status(204).send();
     });
 
-    this.app.get("/hello", (req, res) => {
+    this.app.get("/hello", (_, res) => {
+      this.metrics.hello.inc();
       res.status(200).send(`Hello World, this is WalletConnect v${config.VERSION}@${config.GITHASH}`);
     });
+
+    this.app.get("/metrics", (_, res) => {
+      res.headers({"Content-Type": register.contentType})
+      register.metrics().then(result => {
+        res.status(200).send(result)
+      })
+    })
 
     this.app.post<PostSubscribeRequest>("/subscribe", async (req, res) => {
       try {
