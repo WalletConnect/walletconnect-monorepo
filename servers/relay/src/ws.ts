@@ -1,3 +1,4 @@
+import client, {Metric} from "prom-client";
 import { EventEmitter } from "events";
 import { Server } from "http";
 import WebSocket from "ws";
@@ -6,6 +7,7 @@ import { safeJsonParse } from "safe-json-utils";
 import { isJsonRpcPayload } from "@json-rpc-tools/utils";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
+import register from "./metrics";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
@@ -25,6 +27,8 @@ export class WebSocketService {
 
   public context = "websocket";
 
+  private metrics;
+
   constructor(
     server: Server,
     public logger: Logger,
@@ -37,6 +41,24 @@ export class WebSocketService {
     this.server = new WebSocket.Server({ server });
     this.jsonrpc = new JsonRpcService(this.logger, this.redis, this, this.notification);
     this.legacy = new LegacyService(this.logger, this.redis, this, this.notification);
+    this.metrics = {
+      newConnection: new client.Counter({
+        name: "relay_"+this.context+"_new_connections",
+        help: "Sum of opened ws connection",
+        registers: [register],
+      }),
+      closeConnection: new client.Counter({
+        name: "relay_"+this.context+"_closed_connections",
+        help: "Sum of closed ws connections",
+        registers: [register],
+      }),
+      totalMessages: new client.Counter({
+        name: "relay_"+this.context+"_messages_total",
+        help: "Total amount of messages",
+        registers: [register],
+      })
+    };
+
     this.initialize();
   }
 
@@ -88,11 +110,13 @@ export class WebSocketService {
 
     this.server.on("connection", (socket: Socket) => {
       const socketId = generateRandomBytes32();
+      this.metrics.newConnection.inc();
       this.logger.info(`New Socket Connected`);
       this.logger.debug({ type: "event", event: "connection", socketId });
       this.sockets.set(socketId, socket);
       this.events.emit("socket_open", socketId);
       socket.on("message", async data => {
+        this.metrics.totalMessages.inc();
         const message = data.toString();
         this.logger.debug(`Incoming WebSocket Message`);
         this.logger.trace({ type: "message", direction: "incoming", message });
@@ -135,6 +159,7 @@ export class WebSocketService {
       });
 
       socket.on("close", () => {
+        this.metrics.closeConnection.inc();
         this.sockets.delete(socketId);
         this.events.emit("socket_close", socketId);
       });
