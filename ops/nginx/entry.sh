@@ -6,7 +6,6 @@ manage_root_domain=${MANAGE_ROOT_DOMAIN:-true}
 email="${EMAIL:-noreply@gmail.com}"
 docker_containers="${SUBDOMAINS}"
 app_container_dns_name="${CONTAINER_NAME}"
-app_env="${APP_ENV:-development}"
 app_port="${APP_PORT:-5555}"
 app_qty="${APP_QTY:-5}"
 
@@ -18,7 +17,6 @@ USING ENVVARS:
 root_domain=$root_domain
 docker containers to proxy pass to (docker_containers)=$docker_containers
 cert email=$email
-app_env=$app_env
 app_port=$app_port
 app_qty=$app_qty
 "
