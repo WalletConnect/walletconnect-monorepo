@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - run: make dev
-      - run: make test-client
+      - run: make dev &
+      - run: sleep 30 && make test-client
       - run: make test-relay
