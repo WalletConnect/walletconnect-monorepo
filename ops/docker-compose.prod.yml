@@ -33,5 +33,3 @@ services:
       resources:
         limits:
           memory: 1G
-        reservations:
-          cpus: '0.4'
