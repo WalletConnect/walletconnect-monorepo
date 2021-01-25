@@ -1,32 +1,26 @@
-import { EventEmitter } from "events";
-import { Logger } from "pino";
-import {
-  IClient,
-  ISubscription,
-  SubscriptionEntries,
-  SubscriptionEvent,
-  SubscriptionOptions,
-  SubscriptionParams,
-} from "@walletconnect/types";
-import { mapToObj } from "@walletconnect/utils";
-import { JsonRpcPayload } from "@json-rpc-tools/utils";
+import { JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/utils";
 
-import { SUBSCRIPTION_EVENTS } from "../constants";
-import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
+const;
 
-export class Subscription<Data = any> extends ISubscription<Data> {
-  public subscriptions = new Map<string, SubscriptionParams<Data>>();
+export declare namespace JsonRpcHistory {
+  export interface Request {
+    topic: string;
+    request: JsonRpcRequest;
+    chainId?: string;
+  }
 
-  public events = new EventEmitter();
+  export interface Response {
+    topic: string;
+    response: JsonRpcResponse;
+    chainid?: string;
+  }
+}
 
-  private cached: SubscriptionParams<Data>[] = [];
+class JsonRpcHistory {
+  public requests = new Set<JsonRpcHistory.Request>();
+  public responses = new Set<JsonRpcHistory.Response>();
 
-  constructor(
-    public client: IClient,
-    public logger: Logger,
-    public context: string,
-    public encrypted: boolean,
-  ) {
+  constructor(public client: IClient, public logger: Logger, public context: string) {
     super(client, logger, context, encrypted);
     this.logger = generateChildLogger(logger, this.context);
 
@@ -198,7 +192,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       }
       this.cached = Object.values(persisted);
       await Promise.all(
-        this.cached.map(async (subscription) => {
+        this.cached.map(async subscription => {
           const { topic, data, opts } = subscription;
           await this.subscribeAndSet(topic, data, opts);
         }),
@@ -215,7 +209,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   private async reset(): Promise<void> {
     await this.disable();
     await Promise.all(
-      this.cached.map(async (subscription) => {
+      this.cached.map(async subscription => {
         const { topic, data, opts } = subscription;
         await this.subscribeAndSet(topic, data, opts);
       }),
@@ -225,7 +219,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private async isEnabled(): Promise<void> {
     if (!this.cached.length) return;
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.events.once("enabled", () => resolve());
     });
   }
@@ -253,11 +247,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: createdEvent });
       this.persist();
     });
-    this.events.on(SUBSCRIPTION_EVENTS.updated, (updatedEvent: SubscriptionEvent.Updated<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: updatedEvent });
-      this.persist();
-    });
+
     this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
       this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
       this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: deletedEvent });
