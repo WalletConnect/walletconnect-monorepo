@@ -47,7 +47,7 @@ export abstract class ISubscription<Data> extends IEvents {
 
   public abstract readonly topics: string[];
 
-  public abstract readonly entries: SubscriptionEntries<Data>;
+  public abstract readonly values: SubscriptionParams<Data>[];
 
   constructor(
     public client: IClient,

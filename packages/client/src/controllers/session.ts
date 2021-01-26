@@ -7,6 +7,7 @@ import {
   SessionTypes,
   SubscriptionEvent,
   CryptoTypes,
+  JsonRpcRecord,
 } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -33,6 +34,7 @@ import {
 } from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
+import { JsonRpcHistory } from "./history";
 import {
   SESSION_CONTEXT,
   SESSION_EVENTS,
@@ -47,6 +49,7 @@ import {
 export class Session extends ISession {
   public pending: Subscription<SessionTypes.Pending>;
   public settled: Subscription<SessionTypes.Settled>;
+  public history: JsonRpcHistory;
 
   public events = new EventEmitter();
 
@@ -67,6 +70,7 @@ export class Session extends ISession {
       SESSION_STATUS.settled,
       true,
     );
+    this.history = new JsonRpcHistory(client, this.logger);
     this.registerEventListeners();
   }
 
@@ -74,6 +78,7 @@ export class Session extends ISession {
     this.logger.trace(`Initialized`);
     await this.pending.init();
     await this.settled.init();
+    await this.history.init();
   }
 
   public async get(topic: string): Promise<SessionTypes.Settled> {
@@ -91,16 +96,21 @@ export class Session extends ISession {
       sharedKey: session.sharedKey,
       publicKey: session.self.publicKey,
     };
-    if (isJsonRpcRequest(payload) && !Object.values(SESSION_JSONRPC).includes(payload.method)) {
-      if (!session.permissions.jsonrpc.methods.includes(payload.method)) {
-        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${payload.method}`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
+    if (isJsonRpcRequest(payload)) {
+      if (!Object.values(SESSION_JSONRPC).includes(payload.method)) {
+        if (!session.permissions.jsonrpc.methods.includes(payload.method)) {
+          const errorMessage = `Unauthorized JSON-RPC Method Requested: ${payload.method}`;
+          this.logger.error(errorMessage);
+          throw new Error(errorMessage);
+        }
+        await this.history.set(topic, payload, chainId);
+        payload = formatJsonRpcRequest<SessionTypes.Payload>(SESSION_JSONRPC.payload, {
+          chainId,
+          payload,
+        });
       }
-      payload = formatJsonRpcRequest<SessionTypes.Payload>(SESSION_JSONRPC.payload, {
-        chainId,
-        payload,
-      });
+    } else {
+      await this.history.update(payload);
     }
     await this.client.relayer.publish(session.topic, payload, {
       relay: session.relay,
@@ -116,8 +126,8 @@ export class Session extends ISession {
     return this.settled.topics;
   }
 
-  get entries(): Record<string, SessionTypes.Settled> {
-    return mapEntries(this.settled.entries, x => x.data);
+  get values(): SessionTypes.Settled[] {
+    return this.settled.values.map(x => x.data);
   }
 
   public create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
@@ -581,6 +591,12 @@ export class Session extends ISession {
   // ---------- Private ----------------------------------------------- //
 
   private async onPayloadEvent(payloadEvent: SessionTypes.PayloadEvent) {
+    if (isJsonRpcRequest(payloadEvent.payload)) {
+      if (await this.history.exists(payloadEvent.payload.id)) return;
+      await this.history.set(payloadEvent.topic, payloadEvent.payload, payloadEvent.chainId);
+    } else {
+      await this.history.update(payloadEvent.payload);
+    }
     this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
     this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
     this.events.emit(SESSION_EVENTS.payload, payloadEvent);

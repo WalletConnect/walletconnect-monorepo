@@ -4,6 +4,7 @@ import { JsonRpcPayload, IEvents, RequestArguments } from "@json-rpc-tools/types
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
 import { ISubscription, SubscriptionEvent } from "./subscription";
+import { IJsonRpcHistory } from "./history";
 
 export abstract class ISequence<
   Pending,
@@ -21,12 +22,15 @@ export abstract class ISequence<
   public abstract pending: ISubscription<Pending>;
   // settled subscriptions
   public abstract settled: ISubscription<Settled>;
+  // jsonrpc history
+  public abstract history: IJsonRpcHistory;
+
   // returns settled subscriptions length
   public abstract readonly length: number;
   // returns settled subscriptions topics
   public abstract readonly topics: string[];
-  // returns settled subscriptions entries
-  public abstract readonly entries: Record<string, Settled>;
+  // returns settled subscriptions values
+  public abstract readonly values: Settled[];
 
   // describes sequence context
   protected abstract context: string;

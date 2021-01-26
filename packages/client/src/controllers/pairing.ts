@@ -7,6 +7,7 @@ import {
   IPairing,
   SubscriptionEvent,
   CryptoTypes,
+  JsonRpcRecord,
 } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -31,6 +32,7 @@ import {
 } from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
+import { JsonRpcHistory } from "./history";
 import {
   PAIRING_CONTEXT,
   PAIRING_EVENTS,
@@ -47,6 +49,7 @@ import {
 export class Pairing extends IPairing {
   public pending: Subscription<PairingTypes.Pending>;
   public settled: Subscription<PairingTypes.Settled>;
+  public history: JsonRpcHistory;
 
   public events = new EventEmitter();
 
@@ -67,6 +70,7 @@ export class Pairing extends IPairing {
       PAIRING_STATUS.settled,
       true,
     );
+    this.history = new JsonRpcHistory(client, this.logger);
     this.registerEventListeners();
   }
 
@@ -74,6 +78,7 @@ export class Pairing extends IPairing {
     this.logger.trace(`Initialized`);
     await this.pending.init();
     await this.settled.init();
+    await this.history.init();
   }
 
   public async get(topic: string): Promise<PairingTypes.Settled> {
@@ -91,15 +96,20 @@ export class Pairing extends IPairing {
       sharedKey: pairing.sharedKey,
       publicKey: pairing.self.publicKey,
     };
-    if (isJsonRpcRequest(payload) && !Object.values(PAIRING_JSONRPC).includes(payload.method)) {
-      if (!pairing.permissions.jsonrpc.methods.includes(payload.method)) {
-        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${payload.method}`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
+    if (isJsonRpcRequest(payload)) {
+      if (!Object.values(PAIRING_JSONRPC).includes(payload.method)) {
+        if (!pairing.permissions.jsonrpc.methods.includes(payload.method)) {
+          const errorMessage = `Unauthorized JSON-RPC Method Requested: ${payload.method}`;
+          this.logger.error(errorMessage);
+          throw new Error(errorMessage);
+        }
+        await this.history.set(topic, payload);
+        payload = formatJsonRpcRequest<PairingTypes.Payload>(PAIRING_JSONRPC.payload, {
+          payload,
+        });
       }
-      payload = formatJsonRpcRequest<PairingTypes.Payload>(PAIRING_JSONRPC.payload, {
-        payload,
-      });
+    } else {
+      await this.history.update(payload);
     }
     await this.client.relayer.publish(pairing.topic, payload, {
       relay: pairing.relay,
@@ -115,8 +125,8 @@ export class Pairing extends IPairing {
     return this.settled.topics;
   }
 
-  get entries(): Record<string, PairingTypes.Settled> {
-    return mapEntries(this.settled.entries, x => x.data);
+  get values(): PairingTypes.Settled[] {
+    return this.settled.values.map(x => x.data);
   }
 
   public create(params?: PairingTypes.CreateParams): Promise<PairingTypes.Settled> {
@@ -515,6 +525,12 @@ export class Pairing extends IPairing {
   // ---------- Private ----------------------------------------------- //
 
   private async onPayloadEvent(payloadEvent: PairingTypes.PayloadEvent) {
+    if (isJsonRpcRequest(payloadEvent.payload)) {
+      if (await this.history.exists(payloadEvent.payload.id)) return;
+      await this.history.set(payloadEvent.topic, payloadEvent.payload);
+    } else {
+      await this.history.update(payloadEvent.payload);
+    }
     this.logger.info(`Emitting ${PAIRING_EVENTS.payload}`);
     this.logger.debug({ type: "event", event: PAIRING_EVENTS.payload, data: payloadEvent });
     this.events.emit(PAIRING_EVENTS.payload, payloadEvent);
