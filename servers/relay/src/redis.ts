@@ -52,15 +52,14 @@ export class RedisService {
       "MATCH",
       `${hash}:*`,
       (err, res) => {
-        console.log(res)
         if (res) this.client.srem(`message:${topic}`, res[0])
       }
     )
   }
 
   public async setLegacyCached(message: LegacySocketMessage) {
-    this.logger.error(`Setting Legacy Cached`);
-    this.logger.error({ type: "method", method: "setLegacyCached", message });
+    this.logger.debug(`Setting Legacy Cached`);
+    this.logger.trace({ type: "method", method: "setLegacyCached", message });
     this.client.lpush([`legacy:${message.topic}`, safeJsonStringify(message)], (err, res) => {
       const sixHours = 21600;
       this.client.expire([`legacy:${message.topic}`, sixHours])
@@ -70,7 +69,6 @@ export class RedisService {
   public getLegacyCached(topic: string): Promise<Array<LegacySocketMessage>> {
     return new Promise((resolve, reject) => {
       this.client.lrange(`legacy:${topic}`, 0, -1, (err, raw: any) => {
-      this.logger.error({raw});
         const messages: LegacySocketMessage[] = [];
         raw.forEach((data: string) => {
           const message = safeJsonParse(data);
@@ -78,7 +76,7 @@ export class RedisService {
         });
         this.client.del(`legacy:${topic}`);
         this.logger.debug(`Getting Legacy Published`);
-        this.logger.error({ type: "method", method: "getLegacyCached", topic, messages });
+        this.logger.trace({ type: "method", method: "getLegacyCached", topic, messages });
         resolve(messages);
       });
     });
@@ -87,15 +85,10 @@ export class RedisService {
   public setNotification(notification: Notification) {
     this.logger.debug(`Setting Notification`);
     this.logger.trace({ type: "method", method: "setNotification", notification });
-    return this.client.lpush([
+    this.client.lpush([
       `notification:${notification.topic}`,
       safeJsonStringify(notification)
-    ],
-      (err, res) => {
-        this.logger.error({ method: "setNotification", res});
-        return res
-      }
-    );
+    ])
   }
 
   public getNotification(topic: string): Promise<Array<Notification>> {

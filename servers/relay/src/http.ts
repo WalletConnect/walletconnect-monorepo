@@ -74,7 +74,7 @@ export class HttpService {
         assertType(req.body, "topic");
         assertType(req.body, "webhook");
 
-        await this.redis.setNotification({
+        this.redis.setNotification({
           topic: req.body.topic,
           webhook: req.body.webhook,
         });
