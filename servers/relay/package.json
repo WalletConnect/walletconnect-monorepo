@@ -35,7 +35,6 @@
     "@pedrouid/pino-utils": "^1.0.1",
     "@types/pino": "^6.3.5",
     "axios": "^0.21.1",
-    "bluebird": "^3.5.5",
     "enc-utils": "^3.0.0",
     "fastify": "^3.10.1",
     "fastify-helmet": "^5.1.0",
@@ -50,7 +49,6 @@
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
-    "@types/bluebird": "^3.5.27",
     "@types/chai": "^4.2.14",
     "@types/chai-http": "^4.2.0",
     "@types/core-js": "^2.5.2",
