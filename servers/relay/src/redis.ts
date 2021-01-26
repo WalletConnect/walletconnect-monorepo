@@ -59,8 +59,8 @@ export class RedisService {
     this.logger.debug(`Setting Legacy Cached`);
     this.logger.trace({ type: "method", method: "setLegacyCached", message });
     await this.client.lpushAsync(`legacy:${message.topic}`, safeJsonStringify(message));
-    const oneDay = 86400;
-    await this.client.expireAsync(`legacy:${message.topic}`, oneDay);
+    const sixHours = 21600;
+    await this.client.expireAsync(`legacy:${message.topic}`, sixHours);
   }
 
   public async getLegacyCached(topic: string) {
