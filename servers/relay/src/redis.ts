@@ -25,8 +25,8 @@ export class RedisService {
     const key = `message:${topic}`;
     const hash = sha256(message);
     const val = `${hash}:${message}`;
-    this.client.sadd(key, val)
-    this.client.expire(key, ttl)
+    this.client.sadd(key, val);
+    this.client.expire(key, ttl);
   }
 
   public async getMessages(topic: string): Promise<Array<string>> {
@@ -34,27 +34,21 @@ export class RedisService {
     this.logger.trace({ type: "method", method: "getMessage", topic });
     const messages: Array<string> = [];
     return new Promise((resolve, reject) => {
-        this.client.smembers(`message:${topic}`, (err, res) => {
+      this.client.smembers(`message:${topic}`, (err, res) => {
         res.map((m: string) => {
           if (m != null) {
             messages.push(m.split(":")[1]);
           }
-        })
+        });
         resolve(messages);
       });
     });
   }
 
   public async deleteMessage(topic: string, hash: string) {
-    this.client.sscan(
-      `message:${topic}`,
-      "0",
-      "MATCH",
-      `${hash}:*`,
-      (err, res) => {
-        if (res) this.client.srem(`message:${topic}`, res[0])
-      }
-    )
+    this.client.sscan(`message:${topic}`, "0", "MATCH", `${hash}:*`, (err, res) => {
+      if (res) this.client.srem(`message:${topic}`, res[0]);
+    });
   }
 
   public async setLegacyCached(message: LegacySocketMessage) {
@@ -62,7 +56,7 @@ export class RedisService {
     this.logger.trace({ type: "method", method: "setLegacyCached", message });
     this.client.lpush([`legacy:${message.topic}`, safeJsonStringify(message)], (err, res) => {
       const sixHours = 21600;
-      this.client.expire([`legacy:${message.topic}`, sixHours])
+      this.client.expire([`legacy:${message.topic}`, sixHours]);
     });
   }
 
@@ -85,21 +79,18 @@ export class RedisService {
   public setNotification(notification: Notification) {
     this.logger.debug(`Setting Notification`);
     this.logger.trace({ type: "method", method: "setNotification", notification });
-    this.client.lpush([
-      `notification:${notification.topic}`,
-      safeJsonStringify(notification)
-    ])
+    this.client.lpush([`notification:${notification.topic}`, safeJsonStringify(notification)]);
   }
 
   public getNotification(topic: string): Promise<Array<Notification>> {
     return new Promise((resolve, reject) => {
-      return this.client.lrange([`notification:${topic}`, 0, -1], (err, raw) => {
-          const data = raw.map((item: string) => safeJsonParse(item));
-          this.logger.debug(`Getting Notification`);
-          this.logger.trace({ type: "method", method: "getNotification", topic, data });
-          resolve(data);
+      this.client.lrange([`notification:${topic}`, 0, -1], (err, raw: any) => {
+        const data = raw.map((item: string) => safeJsonParse(item));
+        this.logger.debug(`Getting Notification`);
+        this.logger.trace({ type: "method", method: "getNotification", topic, data });
+        resolve(data);
       });
-    })
+    });
   }
 
   public async setPendingRequest(topic: string, id: number, message: string) {
@@ -111,9 +102,9 @@ export class RedisService {
   }
 
   public async getPendingRequest(id: number): Promise<string> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       resolve(this.client.get(`pending:${id}`));
-    })
+    });
   }
 
   public async deletePendingRequest(id: number) {

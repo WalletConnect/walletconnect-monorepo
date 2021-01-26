@@ -12,4 +12,4 @@ COPY ./servers/relay .
 RUN npm run build
 
 USER node
-CMD node --nouse-idle-notification /relay/dist
+CMD node /relay/dist
