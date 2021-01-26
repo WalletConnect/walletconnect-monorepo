@@ -9,7 +9,7 @@ use(chaiHttp);
 
 describe("HTTP", () => {
   let api: AxiosInstance;
-  beforeEach(() => {
+  before(() => {
     api = axios.create({
       baseURL: TEST_RELAY_URL,
       timeout: 30000, // 30 secs
