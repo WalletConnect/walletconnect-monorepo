@@ -1,0 +1,50 @@
+apiVersion: 1
+
+providers:
+  - name: Container Stats
+    folder: ''
+    type: file
+    editable: true
+    allowUiUpdates: true
+    options:
+      path:  /etc/grafana/provisioning/dashboards/cadvisor.json
+
+  - name: Docker Metrics
+    folder: ''
+    type: file
+    editable: true
+    allowUiUpdates: true
+    options:
+      path:  /etc/grafana/provisioning/dashboards/dockermetrics.json
+
+  - name: Host Stats
+    folder: ''
+    type: file
+    editable: true
+    allowUiUpdates: true
+    options:
+      path:  /etc/grafana/provisioning/dashboards/hoststats.json
+
+  - name: Nginx Stats 
+    folder: ''
+    type: file
+    editable: true
+    allowUiUpdates: true
+    options:
+      path:  /etc/grafana/provisioning/dashboards/nginxstats.json
+
+  - name: Redis Stats
+    folder: ''
+    type: file
+    editable: true
+    allowUiUpdates: true
+    options:
+      path:  /etc/grafana/provisioning/dashboards/redisstats.json
+
+  - name: Relay
+    folder: ''
+    type: file
+    editable: true
+    allowUiUpdates: true
+    options:
+      path:  /etc/grafana/provisioning/dashboards/relay.json

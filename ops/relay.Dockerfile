@@ -1,5 +1,5 @@
 ARG githash
-FROM node:12-slim
+FROM node:14-slim
 ARG githash
 ENV GITHASH=${githash}
 COPY ./servers/relay/package.json /tmp
@@ -12,4 +12,4 @@ COPY ./servers/relay .
 RUN npm run build
 
 USER node
-CMD ["node", "/relay/dist"]
+CMD node --nouse-idle-notification /relay/dist

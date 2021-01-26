@@ -52,11 +52,6 @@ export class SubscriptionService {
   private initialize(): void {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
-    setInterval(() => this.clearInactiveSubscriptions(), 5000);
-  }
-
-  private clearInactiveSubscriptions() {
-    this.subscriptions = this.subscriptions.filter(sub => this.ws.isSocketConnected(sub.socketId));
   }
 
   private registerEventListeners() {
