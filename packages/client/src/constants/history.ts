@@ -4,4 +4,4 @@ export const HISTORY_EVENTS = {
   deleted: "history_deleted",
 };
 
-export const HISTORY_CONTEXT = "relayer";
+export const HISTORY_CONTEXT = "history";

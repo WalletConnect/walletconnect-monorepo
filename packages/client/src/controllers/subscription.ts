@@ -3,12 +3,10 @@ import { Logger } from "pino";
 import {
   IClient,
   ISubscription,
-  SubscriptionEntries,
   SubscriptionEvent,
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { mapToObj } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_EVENTS } from "../constants";
@@ -46,8 +44,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     return Array.from(this.subscriptions.keys());
   }
 
-  get entries(): SubscriptionEntries<Data> {
-    return mapToObj<SubscriptionParams<Data>>(this.subscriptions);
+  get values(): SubscriptionParams<Data>[] {
+    return Array.from(this.subscriptions.values());
   }
 
   public async set(topic: string, data: Data, opts: SubscriptionOptions): Promise<void> {
@@ -178,25 +176,25 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private async persist() {
-    await this.client.storage.setItem<SubscriptionEntries<Data>>(
+    await this.client.storage.setItem<SubscriptionParams<Data>[]>(
       this.getStorageKey(),
-      this.entries,
+      this.values,
     );
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getItem<SubscriptionEntries<Data>>(
+      const persisted = await this.client.storage.getItem<SubscriptionParams<Data>[]>(
         this.getStorageKey(),
       );
       if (typeof persisted === "undefined") return;
-      if (!Object.values(persisted).length) return;
+      if (!persisted.length) return;
       if (this.subscriptions.size) {
         const errorMessage = `Restore will override already set ${this.getSubscriptionContext()}`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
-      this.cached = Object.values(persisted);
+      this.cached = persisted;
       await Promise.all(
         this.cached.map(async subscription => {
           const { topic, data, opts } = subscription;
@@ -205,7 +203,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       );
       await this.enable();
       this.logger.debug(`Successfully Restored subscriptions for ${this.getSubscriptionContext()}`);
-      this.logger.trace({ type: "method", method: "restore", subscriptions: this.entries });
+      this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
     } catch (e) {
       this.logger.debug(`Failed to Restore subscriptions for ${this.getSubscriptionContext()}`);
       this.logger.error(e);
@@ -237,7 +235,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private async disable(): Promise<void> {
     if (!this.cached.length) {
-      this.cached = Object.values(this.entries);
+      this.cached = this.values;
     }
     this.events.emit("disabled");
   }

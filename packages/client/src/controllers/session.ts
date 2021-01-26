@@ -103,12 +103,12 @@ export class Session extends ISession {
           this.logger.error(errorMessage);
           throw new Error(errorMessage);
         }
+        await this.history.set(topic, payload, chainId);
         payload = formatJsonRpcRequest<SessionTypes.Payload>(SESSION_JSONRPC.payload, {
           chainId,
           payload,
         });
       }
-      await this.history.set(topic, payload, chainId);
     } else {
       await this.history.update(payload);
     }
@@ -126,8 +126,8 @@ export class Session extends ISession {
     return this.settled.topics;
   }
 
-  get entries(): Record<string, SessionTypes.Settled> {
-    return mapEntries(this.settled.entries, x => x.data);
+  get values(): SessionTypes.Settled[] {
+    return this.settled.values.map(x => x.data);
   }
 
   public create(params: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {
@@ -591,18 +591,10 @@ export class Session extends ISession {
   // ---------- Private ----------------------------------------------- //
 
   private async onPayloadEvent(payloadEvent: SessionTypes.PayloadEvent) {
-    let record: JsonRpcRecord | undefined;
-    try {
-      record = await this.history.get(payloadEvent.payload.id);
-    } catch (e) {
-      // ignore error
-    }
     if (isJsonRpcRequest(payloadEvent.payload)) {
-      if (typeof record !== "undefined") return;
+      if (await this.history.exists(payloadEvent.payload.id)) return;
       await this.history.set(payloadEvent.topic, payloadEvent.payload, payloadEvent.chainId);
     } else {
-      if (typeof record === "undefined") return;
-      if (typeof record.response !== "undefined") return;
       await this.history.update(payloadEvent.payload);
     }
     this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);

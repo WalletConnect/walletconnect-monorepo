@@ -103,11 +103,11 @@ export class Pairing extends IPairing {
           this.logger.error(errorMessage);
           throw new Error(errorMessage);
         }
+        await this.history.set(topic, payload);
         payload = formatJsonRpcRequest<PairingTypes.Payload>(PAIRING_JSONRPC.payload, {
           payload,
         });
       }
-      await this.history.set(topic, payload);
     } else {
       await this.history.update(payload);
     }
@@ -125,8 +125,8 @@ export class Pairing extends IPairing {
     return this.settled.topics;
   }
 
-  get entries(): Record<string, PairingTypes.Settled> {
-    return mapEntries(this.settled.entries, x => x.data);
+  get values(): PairingTypes.Settled[] {
+    return this.settled.values.map(x => x.data);
   }
 
   public create(params?: PairingTypes.CreateParams): Promise<PairingTypes.Settled> {
@@ -525,18 +525,10 @@ export class Pairing extends IPairing {
   // ---------- Private ----------------------------------------------- //
 
   private async onPayloadEvent(payloadEvent: PairingTypes.PayloadEvent) {
-    let record: JsonRpcRecord | undefined;
-    try {
-      record = await this.history.get(payloadEvent.payload.id);
-    } catch (e) {
-      // ignore error
-    }
     if (isJsonRpcRequest(payloadEvent.payload)) {
-      if (typeof record !== "undefined") return;
+      if (await this.history.exists(payloadEvent.payload.id)) return;
       await this.history.set(payloadEvent.topic, payloadEvent.payload);
     } else {
-      if (typeof record === "undefined") return;
-      if (typeof record.response !== "undefined") return;
       await this.history.update(payloadEvent.payload);
     }
     this.logger.info(`Emitting ${PAIRING_EVENTS.payload}`);

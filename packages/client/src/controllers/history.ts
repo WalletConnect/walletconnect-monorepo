@@ -53,10 +53,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record: JsonRpcRecord = {
       id: request.id,
       topic,
-      request: {
-        method: request.method,
-        params: request.params,
-      },
+      request: { method: request.method, params: request.params },
       chainId,
     };
 
@@ -68,14 +65,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     await this.isEnabled();
     this.logger.debug(`Updating JSON-RPC response history record`);
     this.logger.trace({ type: "method", method: "update", response });
-    if (this.records.has(response.id)) {
-      const errorMessage = `No record exists for ${this.getHistoryContext()} matching id: ${
-        response.id
-      }`;
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
-    }
+    if (!this.records.has(response.id)) return;
     const record = await this.getRecord(response.id);
+    if (this.isResponded(response.id)) return;
     record.response = isJsonRpcError(response) ? response.error : response.result;
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.updated, record);
@@ -95,6 +87,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record = await this.getRecord(id);
     this.records.delete(id);
     this.events.emit(HISTORY_EVENTS.deleted, record);
+  }
+
+  public async exists(id: number): Promise<boolean> {
+    await this.isEnabled();
+    return this.records.has(id);
   }
 
   public on(event: string, listener: any): void {
@@ -141,6 +138,12 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     return record;
   }
 
+  private async isResponded(id: number): Promise<boolean> {
+    await this.isEnabled();
+    const record = await this.getRecord(id);
+    return typeof record.response !== "undefined";
+  }
+
   private async persist() {
     await this.client.storage.setItem<JsonRpcRecord[]>(this.getStorageKey(), this.values);
   }
@@ -149,13 +152,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     try {
       const persisted = await this.client.storage.getItem<JsonRpcRecord[]>(this.getStorageKey());
       if (typeof persisted === "undefined") return;
-      if (!Object.values(persisted).length) return;
+      if (!persisted.length) return;
       if (this.records.size) {
         const errorMessage = `Restore will override already set ${this.getHistoryContext()}`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
-      this.cached = Object.values(persisted);
+      this.cached = persisted;
       await Promise.all(
         this.cached.map(async record => {
           this.records.set(record.id, record);
@@ -200,7 +203,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private registerEventListeners(): void {
-    this.client.relayer.on("connect", () => this.reset());
     this.events.on(HISTORY_EVENTS.created, (record: JsonRpcRecord) => {
       this.logger.info(`Emitting ${HISTORY_EVENTS.created}`);
       this.logger.debug({ type: "event", event: HISTORY_EVENTS.created, record });
