@@ -1,11 +1,11 @@
 {
   "expo": {
     "ios": {
-      "bundleIdentifier": "org.walletconnect.rnqr"
+      "bundleIdentifier": "org.walletconnect.example"
     },
     "android": {
-      "package": "org.walletconnect.rnqr"
+      "package": "org.walletconnect.example"
     },
-    "scheme": "myreactdapp"
+    "scheme": "example"
   }
 }

@@ -132,7 +132,7 @@ android {
     }
 
     defaultConfig {
-        applicationId 'org.walletconnect.rnqr'
+        applicationId 'org.walletconnect.example'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

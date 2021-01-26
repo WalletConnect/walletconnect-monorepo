@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.walletconnect.rnqr">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.walletconnect.example">
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
   <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
@@ -36,8 +36,8 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="myreactdapp"/>
-        <data android:scheme="org.walletconnect.rnqr"/>
+        <data android:scheme="example"/>
+        <data android:scheme="org.walletconnect.example"/>
       </intent-filter>
     </activity>
     <activity android:name="com.facebook.react.devsupport.DevSettingsActivity"/>

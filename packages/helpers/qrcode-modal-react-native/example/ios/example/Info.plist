@@ -59,8 +59,8 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myreactdapp</string>
-          <string>org.walletconnect.rnqr</string>
+          <string>example</string>
+          <string>org.walletconnect.example</string>
         </array>
       </dict>
     </array>

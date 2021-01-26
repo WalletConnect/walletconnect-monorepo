@@ -132,3 +132,11 @@ web-build/
 # @end expo-cli
 # Environment Variables (Store safe defaults in .env.example!)
 .env
+
+# Jest
+.snap
+
+
+# Hardhat
+artifacts/
+cache/
