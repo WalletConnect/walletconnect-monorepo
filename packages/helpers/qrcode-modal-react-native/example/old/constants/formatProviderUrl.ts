@@ -1,8 +1,8 @@
 import { Platform } from 'react-native';
 
-import { WalletProvider } from '../types';
+import { WalletConnectProvider } from '../types';
 
-export default function formatProviderUrl(provider: WalletProvider): string {
+export default function formatProviderUrl(provider: WalletConnectProvider): string {
   const { deepLink, universalLink } = provider;
   return `${Platform.OS === 'android' ? deepLink : universalLink}`;
 }
