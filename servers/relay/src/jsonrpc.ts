@@ -101,8 +101,6 @@ export class JsonRpcService {
     const result = await this.redis.getPendingRequest(response.id);
     if (result) {
       await this.redis.deletePendingRequest(response.id);
-      const [topic, messageHash] = result.split(":");
-      await this.redis.deleteMessage(topic, messageHash);
     }
   }
 
