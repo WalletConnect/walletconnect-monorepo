@@ -1,6 +1,7 @@
 export * from "./client";
 export * from "./pairing";
 export * from "./crypto";
+export * from "./history";
 export * from "./misc";
 export * from "./relayer";
 export * from "./sequence";

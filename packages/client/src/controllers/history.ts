@@ -1,29 +1,24 @@
-import { JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/utils";
+import { EventEmitter } from "events";
+import { Logger } from "pino";
+import { IClient, IJsonRpcHistory, JsonRpcRecord } from "@walletconnect/types";
+import { isJsonRpcError, JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/utils";
+import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
 
-const;
+import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
 
-export declare namespace JsonRpcHistory {
-  export interface Request {
-    topic: string;
-    request: JsonRpcRequest;
-    chainId?: string;
-  }
+export class JsonRpcHistory extends IJsonRpcHistory {
+  public records = new Map<number, JsonRpcRecord>();
 
-  export interface Response {
-    topic: string;
-    response: JsonRpcResponse;
-    chainid?: string;
-  }
-}
+  public events = new EventEmitter();
 
-class JsonRpcHistory {
-  public requests = new Set<JsonRpcHistory.Request>();
-  public responses = new Set<JsonRpcHistory.Response>();
+  public context: string = HISTORY_CONTEXT;
 
-  constructor(public client: IClient, public logger: Logger, public context: string) {
-    super(client, logger, context, encrypted);
+  private cached: JsonRpcRecord[] = [];
+
+  constructor(public client: IClient, public logger: Logger) {
+    super(client, logger);
+    this.client;
     this.logger = generateChildLogger(logger, this.context);
-
     this.registerEventListeners();
   }
 
@@ -32,80 +27,74 @@ class JsonRpcHistory {
     await this.restore();
   }
 
-  get length(): number {
-    return this.subscriptions.size;
+  get size(): number {
+    return this.records.size;
   }
 
-  get topics(): string[] {
-    return Array.from(this.subscriptions.keys());
+  get keys(): number[] {
+    return Array.from(this.records.keys());
   }
 
-  get entries(): SubscriptionEntries<Data> {
-    return mapToObj<SubscriptionParams<Data>>(this.subscriptions);
+  get values() {
+    return Array.from(this.records.values());
   }
 
-  public async set(topic: string, data: Data, opts: SubscriptionOptions): Promise<void> {
+  public async set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void> {
     await this.isEnabled();
-    if (this.subscriptions.has(topic)) {
-      this.update(topic, data);
-    } else {
-      this.logger.debug(`Setting subscription`);
-      this.logger.trace({ type: "method", method: "set", topic, data, opts });
-      if (this.encrypted && typeof opts.decryptKeys === "undefined") {
-        const errorMessage = `Decrypt params required for ${this.getSubscriptionContext()}`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
-      }
-      await this.subscribeAndSet(topic, data, opts);
-      this.events.emit(SUBSCRIPTION_EVENTS.created, {
-        topic,
-        data,
-      } as SubscriptionEvent.Created<Data>);
+    this.logger.debug(`Setting JSON-RPC request history record`);
+    this.logger.trace({ type: "method", method: "set", topic, request, chainId });
+    if (this.records.has(request.id)) {
+      const errorMessage = `Record already exists for ${this.getHistoryContext()} matching id: ${
+        request.id
+      }`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
     }
+    const record: JsonRpcRecord = {
+      id: request.id,
+      topic,
+      request: {
+        method: request.method,
+        params: request.params,
+      },
+      chainId,
+    };
+
+    this.records.set(record.id, record);
+    this.events.emit(HISTORY_EVENTS.created, record);
   }
 
-  public async get(topic: string): Promise<Data> {
+  public async update(response: JsonRpcResponse): Promise<void> {
     await this.isEnabled();
-    this.logger.debug(`Getting subscription`);
-    this.logger.trace({ type: "method", method: "get", topic });
-    const subscription = await this.getSubscription(topic);
-    return subscription.data;
+    this.logger.debug(`Updating JSON-RPC response history record`);
+    this.logger.trace({ type: "method", method: "update", response });
+    if (this.records.has(response.id)) {
+      const errorMessage = `No record exists for ${this.getHistoryContext()} matching id: ${
+        response.id
+      }`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    const record = await this.getRecord(response.id);
+    record.response = isJsonRpcError(response) ? response.error : response.result;
+    this.records.set(record.id, record);
+    this.events.emit(HISTORY_EVENTS.updated, record);
   }
 
-  public async update(topic: string, update: Partial<Data>): Promise<void> {
+  public async get(id: number): Promise<JsonRpcRecord> {
     await this.isEnabled();
-    this.logger.debug(`Updating subscription`);
-    this.logger.trace({ type: "method", method: "update", topic, update });
-    const subscription = await this.getSubscription(topic);
-    const data = { ...subscription.data, ...update };
-    this.subscriptions.set(topic, {
-      ...subscription,
-      topic,
-      data,
-    });
-    this.events.emit(SUBSCRIPTION_EVENTS.updated, {
-      topic,
-      data,
-      update,
-    } as SubscriptionEvent.Updated<Data>);
+    this.logger.debug(`Getting record`);
+    this.logger.trace({ type: "method", method: "get", id });
+    return this.getRecord(id);
   }
 
-  public async delete(topic: string, reason: string): Promise<void> {
+  public async delete(id: number): Promise<void> {
     await this.isEnabled();
-
-    this.logger.debug(`Deleting subscription`);
-    this.logger.trace({ type: "method", method: "delete", topic, reason });
-    const subscription = await this.getSubscription(topic);
-    this.subscriptions.delete(topic);
-    await this.client.relayer.unsubscribe(subscription.id, {
-      relay: subscription.opts.relay,
-      decryptKeys: subscription.opts.decryptKeys,
-    });
-    this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
-      topic,
-      data: subscription.data,
-      reason,
-    } as SubscriptionEvent.Deleted<Data>);
+    this.logger.debug(`Deleting record`);
+    this.logger.trace({ type: "method", method: "delete", id });
+    const record = await this.getRecord(id);
+    this.records.delete(id);
+    this.events.emit(HISTORY_EVENTS.deleted, record);
   }
 
   public on(event: string, listener: any): void {
@@ -124,12 +113,6 @@ class JsonRpcHistory {
     this.events.removeListener(event, listener);
   }
 
-  // ---------- Protected ----------------------------------------------- //
-
-  protected async onPayload(payloadEvent: SubscriptionEvent.Payload) {
-    this.events.emit(SUBSCRIPTION_EVENTS.payload, payloadEvent);
-  }
-
   // ---------- Private ----------------------------------------------- //
 
   private getNestedContext(length: number) {
@@ -137,71 +120,52 @@ class JsonRpcHistory {
     return nestedContext.slice(nestedContext.length - length, nestedContext.length);
   }
 
-  private getSubscriptionContext() {
+  private getHistoryContext() {
     return this.getNestedContext(2).join(" ");
   }
 
   private getStorageKey() {
     const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    const subscriptionContext = this.getNestedContext(2).join(":");
-    return `${storageKeyPrefix}//${subscriptionContext}`;
+    const recordContext = this.getNestedContext(2).join(":");
+    return `${storageKeyPrefix}//${recordContext}`;
   }
 
-  private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
+  private async getRecord(id: number): Promise<JsonRpcRecord> {
     await this.isEnabled();
-    const subscription = this.subscriptions.get(topic);
-    if (!subscription) {
-      const errorMessage = `No matching ${this.getSubscriptionContext()} with topic: ${topic}`;
+    const record = this.records.get(id);
+    if (!record) {
+      const errorMessage = `No matching ${this.getHistoryContext()} with id: ${id}`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
-    return subscription;
-  }
-
-  private async subscribeAndSet(
-    topic: string,
-    data: Data,
-    opts: SubscriptionOptions,
-  ): Promise<void> {
-    const id = await this.client.relayer.subscribe(
-      topic,
-      (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
-      opts,
-    );
-    this.subscriptions.set(topic, { id, topic, data, opts });
+    return record;
   }
 
   private async persist() {
-    await this.client.storage.setItem<SubscriptionEntries<Data>>(
-      this.getStorageKey(),
-      this.entries,
-    );
+    await this.client.storage.setItem<JsonRpcRecord[]>(this.getStorageKey(), this.values);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getItem<SubscriptionEntries<Data>>(
-        this.getStorageKey(),
-      );
+      const persisted = await this.client.storage.getItem<JsonRpcRecord[]>(this.getStorageKey());
       if (typeof persisted === "undefined") return;
       if (!Object.values(persisted).length) return;
-      if (this.subscriptions.size) {
-        const errorMessage = `Restore will override already set ${this.getSubscriptionContext()}`;
+      if (this.records.size) {
+        const errorMessage = `Restore will override already set ${this.getHistoryContext()}`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
       this.cached = Object.values(persisted);
       await Promise.all(
-        this.cached.map(async subscription => {
-          const { topic, data, opts } = subscription;
-          await this.subscribeAndSet(topic, data, opts);
+        this.cached.map(async record => {
+          this.records.set(record.id, record);
         }),
       );
       await this.enable();
-      this.logger.debug(`Successfully Restored subscriptions for ${this.getSubscriptionContext()}`);
-      this.logger.trace({ type: "method", method: "restore", subscriptions: this.entries });
+      this.logger.debug(`Successfully Restored records for ${this.getHistoryContext()}`);
+      this.logger.trace({ type: "method", method: "restore", records: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore subscriptions for ${this.getSubscriptionContext()}`);
+      this.logger.debug(`Failed to Restore records for ${this.getHistoryContext()}`);
       this.logger.error(e);
     }
   }
@@ -209,9 +173,8 @@ class JsonRpcHistory {
   private async reset(): Promise<void> {
     await this.disable();
     await Promise.all(
-      this.cached.map(async subscription => {
-        const { topic, data, opts } = subscription;
-        await this.subscribeAndSet(topic, data, opts);
+      this.cached.map(async record => {
+        this.records.set(record.id, record);
       }),
     );
     await this.enable();
@@ -231,26 +194,27 @@ class JsonRpcHistory {
 
   private async disable(): Promise<void> {
     if (!this.cached.length) {
-      this.cached = Object.values(this.entries);
+      this.cached = this.values;
     }
     this.events.emit("disabled");
   }
 
   private registerEventListeners(): void {
     this.client.relayer.on("connect", () => this.reset());
-    this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });
+    this.events.on(HISTORY_EVENTS.created, (record: JsonRpcRecord) => {
+      this.logger.info(`Emitting ${HISTORY_EVENTS.created}`);
+      this.logger.debug({ type: "event", event: HISTORY_EVENTS.created, record });
+      this.persist();
     });
-    this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: createdEvent });
+    this.events.on(HISTORY_EVENTS.updated, (record: JsonRpcRecord) => {
+      this.logger.info(`Emitting ${HISTORY_EVENTS.updated}`);
+      this.logger.debug({ type: "event", event: HISTORY_EVENTS.updated, record });
       this.persist();
     });
 
-    this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: deletedEvent });
+    this.events.on(HISTORY_EVENTS.deleted, (record: JsonRpcRecord) => {
+      this.logger.info(`Emitting ${HISTORY_EVENTS.deleted}`);
+      this.logger.debug({ type: "event", event: HISTORY_EVENTS.deleted, record });
       this.persist();
     });
   }

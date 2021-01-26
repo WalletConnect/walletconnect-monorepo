@@ -198,7 +198,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       }
       this.cached = Object.values(persisted);
       await Promise.all(
-        this.cached.map(async (subscription) => {
+        this.cached.map(async subscription => {
           const { topic, data, opts } = subscription;
           await this.subscribeAndSet(topic, data, opts);
         }),
@@ -215,7 +215,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   private async reset(): Promise<void> {
     await this.disable();
     await Promise.all(
-      this.cached.map(async (subscription) => {
+      this.cached.map(async subscription => {
         const { topic, data, opts } = subscription;
         await this.subscribeAndSet(topic, data, opts);
       }),
@@ -225,7 +225,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private async isEnabled(): Promise<void> {
     if (!this.cached.length) return;
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.events.once("enabled", () => resolve());
     });
   }
