@@ -1,3 +1,2 @@
-export { default as useQrcodeModal } from './useQrcodeModal';
-export { default as useWalletConnectProvider } from './useWalletConnectProvider';
-export { default as useWalletConnectProviders } from './useWalletConnectProviders';
+export { default as useWalletConnect } from './useWalletConnect';
+export { default as useWalletConnectContext } from './useWalletConnectContext';

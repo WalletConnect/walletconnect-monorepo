@@ -4,6 +4,14 @@ React Native QR Code Modal for WalletConnect
 
 For more details, read the [documentation](https://docs.walletconnect.org)
 
+## Installing
+
+```sh
+yarn add @walletconnect/qrcode-modal-react-native react-native-svg @react-native-async-storage/async-storage
+```
+
+## Usage
+
 ```typescript
 import WalletConnect from "@walletconnect/client";
 import { useQrcodeModal } from "@walletconnect/qrcode-modal-react-native";

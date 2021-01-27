@@ -1,1 +1,2 @@
-export { default as formatWebDirect } from './formatWebDirect';
+export { default as defaultRenderQrcodeModal } from './defaultRenderQrcodeModal';
+export { default as formatProviderUrl } from './formatProviderUrl';
