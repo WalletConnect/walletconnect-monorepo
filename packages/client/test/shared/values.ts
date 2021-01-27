@@ -60,3 +60,5 @@ export const TEST_SESSION_STATE = {
 
 export const TEST_ETHEREUM_REQUEST = { method: "eth_accounts" };
 export const TEST_ETHEREUM_RESULT = TEST_ETHEREUM_ACCOUNTS;
+
+export const TEST_RANDOM_REQUEST = { method: "random_method" };
