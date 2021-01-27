@@ -1,6 +1,6 @@
 import registry from '@walletconnect/mobile-registry/registry.json';
 import * as React from 'react';
-import { Platform } from 'react-native';
+import { Image, Platform } from 'react-native';
 
 import { WalletConnectContextValue, WalletProvider } from '../types';
 
@@ -24,6 +24,9 @@ const providers: readonly WalletProvider[] = registry
         logo.substring(1)
       }`,
   }));
+
+/* wc_prefetch */
+Promise.all(providers.map(({ logo }) => Image.prefetch(logo)));
 
 const defaultValue: Partial<WalletConnectContextValue> = Object.freeze({
   bridge: 'https://bridge.walletconnect.org',

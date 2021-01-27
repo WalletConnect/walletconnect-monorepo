@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as React from 'react';
-import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useWalletConnect, withWalletConnect } from '@walletconnect/qrcode-modal-react-native';
-
-import { expo } from './app.json';
 import { IAsyncStorage } from 'keyvaluestorage/dist/cjs/react-native/types';
+import * as React from 'react';
+import { Button, Platform, StyleSheet, View } from 'react-native';
+
+import { expo } from '../app.json';
 
 function App(): JSX.Element {
   const connector = useWalletConnect();
@@ -39,20 +39,13 @@ function App(): JSX.Element {
   }, [connector]);
   return (
     <View style={StyleSheet.absoluteFill}>
-      <SafeAreaView />
       <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
         {!connector.connected ? (
-          <TouchableOpacity onPress={connect}>
-            <Text>Connect</Text>
-          </TouchableOpacity>
+          <Button title="Connect" onPress={connect} />
         ) : (
           <>
-            <TouchableOpacity onPress={signTransaction}>
-              <Text>Sign Transaction</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={killSession}>
-              <Text>Kill Session</Text>
-            </TouchableOpacity>
+            <Button title="Sign Transaction" onPress={signTransaction} />
+            <Button title="Kill Session" onPress={killSession} />
           </>
         )}
       </View>

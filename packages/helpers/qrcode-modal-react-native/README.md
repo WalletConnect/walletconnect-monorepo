@@ -6,9 +6,13 @@ For more details, read the [documentation](https://docs.walletconnect.org)
 
 ## Installing
 
+To get started, install `@walletconnect/qrcode-modal-react-native`:
+
 ```sh
-yarn add @walletconnect/qrcode-modal-react-native react-native-svg @react-native-async-storage/async-storage
+yarn add @walletconnect/qrcode-modal-react-native
 ```
+
+> **Note:** This assumes you've already installed and linked [`react-native-svg`]() and a cross-platform storage engine such as [`@react-native-async-storage/async-storage`]().
 
 ## Usage
 

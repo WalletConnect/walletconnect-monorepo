@@ -4,6 +4,7 @@
         "cryptocurrency",
         "deepmerge",
         "keyvaluestorage",
+        "prefetch",
         "qrcode",
         "walletconnect"
     ]
