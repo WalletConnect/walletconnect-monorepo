@@ -1,7 +1,7 @@
 {
-  "name": "@walletconnect/qrcode-modal-react-native",
-  "version": "1.0.0-alpha.0",
-  "description": "React Native QR Code Modal for WalletConnect",
+  "name": "@walletconnect/react-native",
+  "version": "2.0.0-alpha.0",
+  "description": "WalletConnect for React Native",
   "main": "dist",
   "types": "dist/index.d.ts",
   "repository": "https://github.com/WalletConnect/walletconnect-monorepo",
