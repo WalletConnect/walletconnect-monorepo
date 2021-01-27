@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.13.3",
-    "@walletconnect/qrcode-modal-react-native": "../",
+    "@walletconnect/react-native": "../",
     "base-64": "1.0.0",
     "buffer": "6.0.3",
     "expo": "~40.0.0",

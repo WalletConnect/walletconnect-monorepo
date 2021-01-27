@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useWalletConnect, withWalletConnect } from '@walletconnect/qrcode-modal-react-native';
+import { useWalletConnect, withWalletConnect } from '@walletconnect/react-native';
 import { IAsyncStorage } from 'keyvaluestorage/dist/cjs/react-native/types';
 import * as React from 'react';
 import { Button, Platform, StyleSheet, View } from 'react-native';

@@ -8,7 +8,7 @@ For more details, check out the [documentation](https://docs.walletconnect.org).
 
 ## Installing
 
-To get started, install `@walletconnect/qrcode-modal-react-native`:
+To get started, install `@walletconnect/react-native`:
 
 ```sh
 yarn add @walletconnect/qrcode-modal-react-native
