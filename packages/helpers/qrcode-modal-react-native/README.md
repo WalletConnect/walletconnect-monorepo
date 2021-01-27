@@ -115,7 +115,7 @@ The [`useWalletConnect`](./src/hooks/useWalletConnect.ts) hook provides access t
 
 ```typescript
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useWalletConnect, withWalletConnect } from '@walletconnect/qrcode-modal-react-native';
+import { useWalletConnect, withWalletConnect } from '@walletconnect/react-native';
 import * as React from 'react';
 
 function App(): JSX.Element {
@@ -146,7 +146,7 @@ For example, you could choose to render a wallet selection using a `BottomSheet`
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomSheet from 'react-native-reanimated-bottom-sheet';
 import { Image, Text, TouchableOpacity } from 'react-native';
-import { useWalletConnect, withWalletConnect, RenderQrcodeModalProps, WalletProvider } from '@walletconnect/qrcode-modal-react-native';
+import { useWalletConnect, withWalletConnect, RenderQrcodeModalProps, WalletProvider } from '@walletconnect/react-native';
 import * as React from 'react';
 
 /* custom */
