@@ -103,10 +103,14 @@ export class Session extends ISession {
           throw new Error(errorMessage);
         }
         await this.history.set(topic, payload, chainId);
-        payload = formatJsonRpcRequest<SessionTypes.Payload>(SESSION_JSONRPC.payload, {
-          chainId,
-          payload,
-        });
+        payload = formatJsonRpcRequest<SessionTypes.Payload>(
+          SESSION_JSONRPC.payload,
+          {
+            chainId,
+            request: { method: payload.method, params: payload.params },
+          },
+          payload.id,
+        );
       }
     } else {
       await this.history.update(topic, payload);
@@ -509,23 +513,31 @@ export class Session extends ISession {
   }
 
   protected async onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
-    const { topic } = payloadEvent;
-    const request = payloadEvent.payload as JsonRpcRequest<SessionTypes.Payload>;
-    const { payload, chainId } = request.params;
-    const sessionPayloadEvent: SessionTypes.PayloadEvent = { topic, payload, chainId };
-    this.logger.debug(`Receiving Session payload`);
-    this.logger.trace({ type: "method", method: "onPayload", ...sessionPayloadEvent });
+    const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      const request = payload as JsonRpcRequest;
+      const { id, params } = payload as JsonRpcRequest<SessionTypes.Payload>;
+      const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const session = await this.settled.get(topic);
       if (!session.permissions.jsonrpc.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
-        await this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
-        return;
+        throw new Error(errorMessage);
       }
+      const sessionPayloadEvent: SessionTypes.PayloadEvent = {
+        topic,
+        payload: request,
+        chainId: params.chainId,
+      };
+      this.logger.debug(`Receiving Session payload`);
+      this.logger.trace({ type: "method", method: "onPayload", ...sessionPayloadEvent });
       this.onPayloadEvent(sessionPayloadEvent);
     } else {
+      const sessionPayloadEvent: SessionTypes.PayloadEvent = {
+        topic,
+        payload,
+      };
+      this.logger.debug(`Receiving Session payload`);
+      this.logger.trace({ type: "method", method: "onPayload", ...sessionPayloadEvent });
       this.onPayloadEvent(sessionPayloadEvent);
     }
   }

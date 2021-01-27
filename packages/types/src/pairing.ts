@@ -81,12 +81,14 @@ export declare namespace PairingTypes {
   export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };
 
   export type Update = MetadataUpdate;
+
   export interface Payload {
-    payload: JsonRpcPayload;
+    request: RequestArguments;
   }
 
-  export interface PayloadEvent extends Payload {
+  export interface PayloadEvent {
     topic: string;
+    payload: JsonRpcPayload;
   }
 
   export interface DeleteParams {

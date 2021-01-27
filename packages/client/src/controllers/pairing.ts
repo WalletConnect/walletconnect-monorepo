@@ -103,9 +103,13 @@ export class Pairing extends IPairing {
           throw new Error(errorMessage);
         }
         await this.history.set(topic, payload);
-        payload = formatJsonRpcRequest<PairingTypes.Payload>(PAIRING_JSONRPC.payload, {
-          payload,
-        });
+        payload = formatJsonRpcRequest<PairingTypes.Payload>(
+          PAIRING_JSONRPC.payload,
+          {
+            request: { method: payload.method, params: payload.params },
+          },
+          payload.id,
+        );
       }
     } else {
       await this.history.update(topic, payload);
@@ -460,23 +464,30 @@ export class Pairing extends IPairing {
   }
 
   protected async onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
-    const { topic } = payloadEvent;
-    const request = payloadEvent.payload as JsonRpcRequest<PairingTypes.Payload>;
-    const { payload } = request.params;
-    const pairingPayloadEvent: PairingTypes.PayloadEvent = { topic, payload };
-    this.logger.debug(`Receiving Pairing payload`);
-    this.logger.trace({ type: "method", method: "onPayload", ...pairingPayloadEvent });
+    const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      const request = payload as JsonRpcRequest;
+      const { id, params } = payload as JsonRpcRequest<PairingTypes.Payload>;
+      const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const pairing = await this.settled.get(topic);
       if (!pairing.permissions.jsonrpc.methods.includes(request.method)) {
         const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
         this.logger.error(errorMessage);
-        await this.send(pairing.topic, formatJsonRpcError(request.id, errorMessage));
-        return;
+        throw new Error(errorMessage);
       }
+      const pairingPayloadEvent: PairingTypes.PayloadEvent = {
+        topic,
+        payload: request,
+      };
+      this.logger.debug(`Receiving Pairing payload`);
+      this.logger.trace({ type: "method", method: "onPayload", ...pairingPayloadEvent });
       this.onPayloadEvent(pairingPayloadEvent);
     } else {
+      const pairingPayloadEvent: PairingTypes.PayloadEvent = {
+        topic,
+        payload,
+      };
+      this.logger.debug(`Receiving Pairing payload`);
+      this.logger.trace({ type: "method", method: "onPayload", ...pairingPayloadEvent });
       this.onPayloadEvent(pairingPayloadEvent);
     }
   }
