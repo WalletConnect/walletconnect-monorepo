@@ -102,6 +102,14 @@ dev: build-relay start-redis ## runs relay on watch mode and shows logs
 	@echo  "MAKE: Done with $@"
 	@echo
 
+ci:
+	printf "RELAY_URL=\nCERTBOT_EMAIL=\nCLOUDFLARE=false\n" > config
+	NODE_ENV=development $(MAKE) deploy
+	sleep 15
+	docker service logs --tail 100 $(project)_nginx
+	docker service logs --tail 100 $(project)_relay0
+	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
+
 cloudflare: config ## setups cloudflare API token secret
 	bash ops/cloudflare-secret.sh $(project)
 	@touch $(flags)/$@
