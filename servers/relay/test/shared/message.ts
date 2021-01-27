@@ -11,8 +11,11 @@ export interface TestJsonRpcPayloads {
   sub: JsonRpcRequest<RelayJsonRpc.SubscribeParams>;
 }
 
-export function getTestJsonRpc(message = TEST_MESSAGE): TestJsonRpcPayloads {
-  const topic = generateRandomBytes32();
+export function getTestJsonRpc(
+  message = TEST_MESSAGE,
+  overrideTopic?: string,
+): TestJsonRpcPayloads {
+  const topic = overrideTopic || generateRandomBytes32();
 
   const pub = formatJsonRpcRequest<RelayJsonRpc.PublishParams>(RELAY_JSONRPC.bridge.publish, {
     topic,

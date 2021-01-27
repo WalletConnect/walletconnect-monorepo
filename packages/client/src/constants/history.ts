@@ -1,7 +1,7 @@
 export const HISTORY_EVENTS = {
-  created: "history_created",
-  updated: "history_updated",
-  deleted: "history_deleted",
+  created: "record_created",
+  updated: "record_updated",
+  deleted: "record_deleted",
 };
 
 export const HISTORY_CONTEXT = "history";

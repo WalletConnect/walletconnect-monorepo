@@ -1,5 +1,6 @@
 import "mocha";
 import sinon from "sinon";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 import {
@@ -8,8 +9,9 @@ import {
   setupClientsForTesting,
   testApproveSession,
   TEST_ETHEREUM_ACCOUNTS,
+  TEST_ETHEREUM_REQUEST,
+  TEST_RANDOM_REQUEST,
 } from "./shared";
-import { generateRandomBytes32 } from "@walletconnect/utils";
 
 describe("Request", function() {
   this.timeout(30_000);
@@ -23,21 +25,21 @@ describe("Request", function() {
   it("A requests method and B responds result", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const request = { method: "eth_accounts" };
+    const request = TEST_ETHEREUM_REQUEST;
     const response = formatJsonRpcResult(1, TEST_ETHEREUM_ACCOUNTS);
     await testJsonRpcRequest(setup, clients, topic, request, response);
   });
   it("A requests method and B responds error", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const request = { method: "eth_accounts" };
+    const request = TEST_ETHEREUM_REQUEST;
     const response = formatJsonRpcError(1, "Something went wrong");
     await testJsonRpcRequest(setup, clients, topic, request, response);
   });
   it("A requests with invalid topic and error is thrown", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = generateRandomBytes32();
-    const request = { method: "eth_accounts" };
+    const request = TEST_ETHEREUM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
     const promise = clients.a.request({ topic, chainId, request });
     await expect(promise).to.eventually.be.rejectedWith(
@@ -47,7 +49,7 @@ describe("Request", function() {
   it("A requests unauthorized method and error is thrown", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const request = { method: "random_method" };
+    const request = TEST_RANDOM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
     const promise = clients.a.request({ topic, chainId, request });
     await expect(promise).to.eventually.be.rejectedWith(
@@ -57,7 +59,7 @@ describe("Request", function() {
   it("A requests method and B fails to return response in time (30 secs)", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const request = { method: "eth_accounts" };
+    const request = TEST_ETHEREUM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
     const promise = clients.a.request({ topic, chainId, request });
     clock.tick(30_000);

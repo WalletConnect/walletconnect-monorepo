@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 
-import { Socket, TEST_RELAY_URL } from "./shared";
+import { Counter, Socket, TEST_RELAY_URL } from "./shared";
 import { getTestLegacy } from "./shared/message";
 
 describe("Legacy", () => {
@@ -12,6 +12,8 @@ describe("Legacy", () => {
     await socketA.open();
     const socketB = new Socket(TEST_RELAY_URL);
     await socketB.open();
+
+    const counterB = new Counter();
 
     await Promise.all([
       new Promise<void>(resolve => {
@@ -24,11 +26,14 @@ describe("Legacy", () => {
       }),
       new Promise<void>(resolve => {
         socketB.on("message", message => {
+          counterB.add();
           expect(message).to.eql(pub);
           resolve();
         });
       }),
     ]);
+
+    expect(counterB.value).to.eql(1);
   });
   it("A can publish to B and C subscribed to same topic", async () => {
     const { pub, sub } = getTestLegacy();
@@ -39,6 +44,9 @@ describe("Legacy", () => {
     await socketB.open();
     const socketC = new Socket(TEST_RELAY_URL);
     await socketC.open();
+
+    const counterB = new Counter();
+    const counterC = new Counter();
 
     await Promise.all([
       new Promise<void>(resolve => {
@@ -55,18 +63,22 @@ describe("Legacy", () => {
       }),
       new Promise<void>(resolve => {
         socketB.on("message", message => {
+          counterB.add();
           expect(message).to.eql(pub);
           resolve();
         });
       }),
       new Promise<void>(resolve => {
         socketC.on("message", message => {
+          counterC.add();
           expect(message).to.eql(pub);
           resolve();
         });
       }),
     ]);
-    // await delay(10_000);
+
+    expect(counterB.value).to.eql(1);
+    expect(counterC.value).to.eql(1);
   });
   it("B can receive pending messages published while offline", async () => {
     const { pub, sub } = getTestLegacy();
@@ -79,6 +91,8 @@ describe("Legacy", () => {
     const socketB = new Socket(TEST_RELAY_URL);
     await socketB.open();
 
+    const counterB = new Counter();
+
     await Promise.all([
       new Promise<void>(resolve => {
         socketB.send(sub);
@@ -86,14 +100,19 @@ describe("Legacy", () => {
       }),
       new Promise<void>(resolve => {
         socketB.on("message", message => {
+          counterB.add();
           expect(message).to.eql(pub);
           resolve();
         });
       }),
     ]);
 
+    expect(counterB.value).to.eql(1);
+
     const socketC = new Socket(TEST_RELAY_URL);
     await socketC.open();
+
+    const counterC = new Counter();
 
     await Promise.all([
       new Promise<void>(resolve => {
@@ -105,9 +124,12 @@ describe("Legacy", () => {
           resolve();
         }, 100);
         socketC.on("message", () => {
+          counterC.add();
           reject("Socket C received message after B");
         });
       }),
     ]);
+
+    expect(counterC.value).to.eql(0);
   });
 });

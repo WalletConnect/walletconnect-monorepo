@@ -53,45 +53,59 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record: JsonRpcRecord = {
       id: request.id,
       topic,
-      request: { method: request.method, params: request.params },
+      request: { method: request.method, params: request.params || null },
       chainId,
     };
-
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.created, record);
   }
 
-  public async update(response: JsonRpcResponse): Promise<void> {
+  public async update(topic: string, response: JsonRpcResponse): Promise<void> {
     await this.isEnabled();
     this.logger.debug(`Updating JSON-RPC response history record`);
-    this.logger.trace({ type: "method", method: "update", response });
+    this.logger.trace({ type: "method", method: "update", topic, response });
     if (!this.records.has(response.id)) return;
     const record = await this.getRecord(response.id);
-    if (this.isResponded(response.id)) return;
-    record.response = isJsonRpcError(response) ? response.error : response.result;
+    if (record.topic !== topic) return;
+    if (typeof record.response !== "undefined") return;
+    record.response = isJsonRpcError(response)
+      ? { error: response.error }
+      : { result: response.result };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.updated, record);
   }
 
-  public async get(id: number): Promise<JsonRpcRecord> {
+  public async get(topic: string, id: number): Promise<JsonRpcRecord> {
     await this.isEnabled();
     this.logger.debug(`Getting record`);
-    this.logger.trace({ type: "method", method: "get", id });
-    return this.getRecord(id);
+    this.logger.trace({ type: "method", method: "get", topic, id });
+    const record = await this.getRecord(id);
+    if (record.topic !== topic) {
+      const errorMessage = `Mismatched topic for ${this.getHistoryContext()} with id: ${id}`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    return record;
   }
 
-  public async delete(id: number): Promise<void> {
+  public async delete(topic: string, id?: number): Promise<void> {
     await this.isEnabled();
     this.logger.debug(`Deleting record`);
     this.logger.trace({ type: "method", method: "delete", id });
-    const record = await this.getRecord(id);
-    this.records.delete(id);
-    this.events.emit(HISTORY_EVENTS.deleted, record);
+    this.values.forEach((record: JsonRpcRecord) => {
+      if (record.topic === topic) {
+        if (typeof id !== "undefined" && record.id !== id) return;
+        this.records.delete(record.id);
+        this.events.emit(HISTORY_EVENTS.deleted, record);
+      }
+    });
   }
 
-  public async exists(id: number): Promise<boolean> {
+  public async exists(topic: string, id: number): Promise<boolean> {
     await this.isEnabled();
-    return this.records.has(id);
+    if (!this.records.has(id)) return false;
+    const record = await this.getRecord(id);
+    return record.topic === topic;
   }
 
   public on(event: string, listener: any): void {
@@ -136,12 +150,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       throw new Error(errorMessage);
     }
     return record;
-  }
-
-  private async isResponded(id: number): Promise<boolean> {
-    await this.isEnabled();
-    const record = await this.getRecord(id);
-    return typeof record.response !== "undefined";
   }
 
   private async persist() {

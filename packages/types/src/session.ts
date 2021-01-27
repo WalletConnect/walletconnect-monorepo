@@ -105,12 +105,14 @@ export declare namespace SessionTypes {
   export type Update = StateUpdate;
 
   export interface Payload {
+    request: RequestArguments;
     chainId?: string;
-    payload: JsonRpcPayload;
   }
 
-  export interface PayloadEvent extends Payload {
+  export interface PayloadEvent {
     topic: string;
+    payload: JsonRpcPayload;
+    chainId?: string;
   }
 
   export interface Notification {

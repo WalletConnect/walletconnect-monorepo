@@ -23,6 +23,7 @@ export async function testJsonRpcRequest(
   chainId: string = setup.a.permissions.blockchain.chains[0],
 ): Promise<any> {
   // cache received result
+  let id: any;
   let result: any;
   // timestamps & elapsed time
   const time = new Timestamp();
@@ -39,9 +40,10 @@ export async function testJsonRpcRequest(
             payloadEvent.chainId === chainId
           ) {
             clients.b.logger.warn(`TEST >> JSON-RPC Request Received`);
+            id = payloadEvent.payload.id;
             await clients.b.respond({
               topic,
-              response: { ...response, id: payloadEvent.payload.id },
+              response: { ...response, id },
             });
             clients.b.logger.warn(`TEST >> JSON-RPC Response Sent`);
             resolve();
@@ -68,6 +70,32 @@ export async function testJsonRpcRequest(
   // log elapsed times
   clients.b.logger.warn(`TEST >> Request Elapsed Time: ${time.elapsed("request")}ms`);
 
+  // evaluate history
+  expect(clients.a.session.history.size).to.eql(1);
+  expect(clients.a.session.history.keys.length).to.eql(1);
+  expect(clients.a.session.history.values.length).to.eql(1);
+
+  const recordA = await clients.a.session.history.get(topic, id);
+  expect(recordA.topic).to.eql(topic);
+  expect(recordA.request.method).to.eql(request.method);
+  expect(recordA.request.params).to.eql(request.params || null);
+  expect(recordA.chainId).to.eql(chainId);
+  expect((recordA.response as any).result).to.eql((response as any).result);
+  expect((recordA.response as any).error).to.eql((response as any).error);
+
+  expect(clients.b.session.history.size).to.eql(1);
+  expect(clients.b.session.history.keys.length).to.eql(1);
+  expect(clients.b.session.history.values.length).to.eql(1);
+
+  const recordB = await clients.b.session.history.get(topic, id);
+  expect(recordB.topic).to.eql(topic);
+  expect(recordB.request.method).to.eql(request.method);
+  expect(recordB.request.params).to.eql(request.params || null);
+  expect(recordB.chainId).to.eql(chainId);
+  expect((recordB.response as any).result).to.eql((response as any).result);
+  expect((recordB.response as any).error).to.eql((response as any).error);
+
+  // evaluate result
   if (typeof result !== "undefined" && isJsonRpcResult(response)) {
     expect(result).to.eql(response.result);
   }
