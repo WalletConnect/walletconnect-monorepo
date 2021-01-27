@@ -2973,8 +2973,8 @@
   resolved "https://registry.yarnpkg.com/@walletconnect/mobile-registry/-/mobile-registry-1.3.4.tgz#374a4334beb05a85201f2d659ed9be69fe800c2c"
   integrity sha512-TiTs6rQmXLfOQq0/t1ajc59GX8XbqyoAHFRYeW6shsQuPz7lD8Z2+ERpjExNhyW07/x2rPnrap+WxAJWLGRUkA==
 
-"@walletconnect/qrcode-modal-react-native@../":
-  version "1.0.0-alpha.0"
+"@walletconnect/react-native@../":
+  version "2.0.0-alpha.0"
   dependencies:
     "@walletconnect/client" "^1.3.4"
     "@walletconnect/mobile-registry" "^1.3.4"
