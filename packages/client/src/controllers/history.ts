@@ -53,10 +53,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record: JsonRpcRecord = {
       id: request.id,
       topic,
-      request: { method: request.method, params: request.params },
+      request: { method: request.method, params: request.params || null },
       chainId,
     };
-
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.created, record);
   }
@@ -67,8 +66,10 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.trace({ type: "method", method: "update", response });
     if (!this.records.has(response.id)) return;
     const record = await this.getRecord(response.id);
-    if (this.isResponded(response.id)) return;
-    record.response = isJsonRpcError(response) ? response.error : response.result;
+    if (typeof record.response !== "undefined") return;
+    record.response = isJsonRpcError(response)
+      ? { error: response.error }
+      : { result: response.result };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.updated, record);
   }
@@ -136,12 +137,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       throw new Error(errorMessage);
     }
     return record;
-  }
-
-  private async isResponded(id: number): Promise<boolean> {
-    await this.isEnabled();
-    const record = await this.getRecord(id);
-    return typeof record.response !== "undefined";
   }
 
   private async persist() {

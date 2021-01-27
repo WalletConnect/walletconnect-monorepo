@@ -13,7 +13,7 @@ export interface JsonRpcRecord {
   topic: string;
   request: RequestArguments;
   chainId?: string;
-  response?: { result: any } | ErrorResponse;
+  response?: { result: any } | { error: ErrorResponse };
 }
 
 export abstract class IJsonRpcHistory extends IEvents {

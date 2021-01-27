@@ -14,7 +14,6 @@ import {
   generateKeyPair,
   generateRandomBytes32,
   isSessionFailed,
-  mapEntries,
   sha256,
   isSessionResponded,
   isSubscriptionUpdatedEvent,
@@ -591,11 +590,12 @@ export class Session extends ISession {
   // ---------- Private ----------------------------------------------- //
 
   private async onPayloadEvent(payloadEvent: SessionTypes.PayloadEvent) {
-    if (isJsonRpcRequest(payloadEvent.payload)) {
-      if (await this.history.exists(payloadEvent.payload.id)) return;
-      await this.history.set(payloadEvent.topic, payloadEvent.payload, payloadEvent.chainId);
+    const { topic, payload, chainId } = payloadEvent;
+    if (isJsonRpcRequest(payload)) {
+      if (await this.history.exists(payload.id)) return;
+      await this.history.set(topic, payload, chainId);
     } else {
-      await this.history.update(payloadEvent.payload);
+      await this.history.update(payload);
     }
     this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
     this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });

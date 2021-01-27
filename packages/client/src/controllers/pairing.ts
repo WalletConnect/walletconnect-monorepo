@@ -14,7 +14,6 @@ import {
   generateKeyPair,
   generateRandomBytes32,
   isPairingFailed,
-  mapEntries,
   sha256,
   isPairingResponded,
   formatUri,
@@ -525,11 +524,12 @@ export class Pairing extends IPairing {
   // ---------- Private ----------------------------------------------- //
 
   private async onPayloadEvent(payloadEvent: PairingTypes.PayloadEvent) {
-    if (isJsonRpcRequest(payloadEvent.payload)) {
-      if (await this.history.exists(payloadEvent.payload.id)) return;
-      await this.history.set(payloadEvent.topic, payloadEvent.payload);
+    const { topic, payload } = payloadEvent;
+    if (isJsonRpcRequest(payload)) {
+      if (await this.history.exists(payload.id)) return;
+      await this.history.set(topic, payload);
     } else {
-      await this.history.update(payloadEvent.payload);
+      await this.history.update(payload);
     }
     this.logger.info(`Emitting ${PAIRING_EVENTS.payload}`);
     this.logger.debug({ type: "event", event: PAIRING_EVENTS.payload, data: payloadEvent });
