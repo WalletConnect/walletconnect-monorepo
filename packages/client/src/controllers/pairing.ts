@@ -7,7 +7,6 @@ import {
   IPairing,
   SubscriptionEvent,
   CryptoTypes,
-  JsonRpcRecord,
 } from "@walletconnect/types";
 import {
   deriveSharedKey,
