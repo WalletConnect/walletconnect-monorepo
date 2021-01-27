@@ -1,5 +1,6 @@
 import "mocha";
 import sinon from "sinon";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 import {
@@ -9,7 +10,6 @@ import {
   testApproveSession,
   TEST_ETHEREUM_ACCOUNTS,
 } from "./shared";
-import { generateRandomBytes32 } from "@walletconnect/utils";
 
 describe("Request", function() {
   this.timeout(30_000);

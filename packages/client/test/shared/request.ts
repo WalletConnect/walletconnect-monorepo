@@ -71,10 +71,11 @@ export async function testJsonRpcRequest(
   clients.b.logger.warn(`TEST >> Request Elapsed Time: ${time.elapsed("request")}ms`);
 
   // evaluate history
+  expect(clients.a.session.history.size).to.eql(1);
   expect(clients.a.session.history.keys.length).to.eql(1);
   expect(clients.a.session.history.values.length).to.eql(1);
 
-  const recordA = await clients.a.session.history.get(id);
+  const recordA = await clients.a.session.history.get(topic, id);
   expect(recordA.topic).to.eql(topic);
   expect(recordA.request.method).to.eql(request.method);
   expect(recordA.request.params).to.eql(request.params || null);
@@ -82,10 +83,11 @@ export async function testJsonRpcRequest(
   expect((recordA.response as any).result).to.eql((response as any).result);
   expect((recordA.response as any).error).to.eql((response as any).error);
 
+  expect(clients.b.session.history.size).to.eql(1);
   expect(clients.b.session.history.keys.length).to.eql(1);
   expect(clients.b.session.history.values.length).to.eql(1);
 
-  const recordB = await clients.b.session.history.get(id);
+  const recordB = await clients.b.session.history.get(topic, id);
   expect(recordB.topic).to.eql(topic);
   expect(recordB.request.method).to.eql(request.method);
   expect(recordB.request.params).to.eql(request.params || null);

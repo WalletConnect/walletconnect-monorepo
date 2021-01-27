@@ -109,7 +109,7 @@ export class Session extends ISession {
         });
       }
     } else {
-      await this.history.update(payload);
+      await this.history.update(topic, payload);
     }
     await this.client.relayer.publish(session.topic, payload, {
       relay: session.relay,
@@ -592,10 +592,10 @@ export class Session extends ISession {
   private async onPayloadEvent(payloadEvent: SessionTypes.PayloadEvent) {
     const { topic, payload, chainId } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      if (await this.history.exists(payload.id)) return;
+      if (await this.history.exists(topic, payload.id)) return;
       await this.history.set(topic, payload, chainId);
     } else {
-      await this.history.update(payload);
+      await this.history.update(topic, payload);
     }
     this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
     this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
@@ -698,6 +698,7 @@ export class Session extends ISession {
         const request = formatJsonRpcRequest(SESSION_JSONRPC.delete, {
           reason: deletedEvent.reason,
         });
+        await this.history.delete(session.topic);
         await this.send(session.topic, request);
       },
     );

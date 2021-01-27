@@ -108,7 +108,7 @@ export class Pairing extends IPairing {
         });
       }
     } else {
-      await this.history.update(payload);
+      await this.history.update(topic, payload);
     }
     await this.client.relayer.publish(pairing.topic, payload, {
       relay: pairing.relay,
@@ -526,10 +526,10 @@ export class Pairing extends IPairing {
   private async onPayloadEvent(payloadEvent: PairingTypes.PayloadEvent) {
     const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      if (await this.history.exists(payload.id)) return;
+      if (await this.history.exists(topic, payload.id)) return;
       await this.history.set(topic, payload);
     } else {
-      await this.history.update(payload);
+      await this.history.update(topic, payload);
     }
     this.logger.info(`Emitting ${PAIRING_EVENTS.payload}`);
     this.logger.debug({ type: "event", event: PAIRING_EVENTS.payload, data: payloadEvent });
@@ -623,6 +623,7 @@ export class Pairing extends IPairing {
         const request = formatJsonRpcRequest(PAIRING_JSONRPC.delete, {
           reason: deletedEvent.reason,
         });
+        await this.history.delete(pairing.topic);
         await this.client.relayer.publish(pairing.topic, request, { relay: pairing.relay });
       },
     );
