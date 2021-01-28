@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IKeyValueStorage } from "keyvaluestorage";
+import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
@@ -12,6 +12,7 @@ export interface ClientOptions {
   storage?: IKeyValueStorage;
   relayProvider?: string | IJsonRpcProvider;
   overrideContext?: string;
+  storageOptions?:  KeyValueStorageOptions;
 }
 
 export abstract class IClient extends IEvents {
