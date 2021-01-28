@@ -147,6 +147,8 @@ relay-logs: ## follows the relay0 container logs. Doesn't work with 'make dev'
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true
 
+down: stop ## alias of stop
+
 stop: rm-redis ## stops the whole docker stack
 	docker stack rm $(project)
 	while [ -n "`docker network ls --quiet --filter label=com.docker.stack.namespace=$(project)`" ]; do echo -n '.' && sleep 1; done

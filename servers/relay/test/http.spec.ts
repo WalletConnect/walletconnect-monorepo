@@ -15,7 +15,8 @@ describe("HTTP", () => {
       httpsAgent: new Agent({
 		    rejectUnauthorized: false
 	    }),
-      baseURL: TEST_RELAY_URL,
+      // Axios sends GET instead of POST when using ws protocol
+      baseURL: TEST_RELAY_URL.replace("ws", "http"),
       timeout: 30000, // 30 secs
       headers: {
         Accept: "application/json",
