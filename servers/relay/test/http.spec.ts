@@ -2,6 +2,7 @@ import "mocha";
 import axios, { AxiosInstance } from "axios";
 import { use, expect } from "chai";
 import chaiHttp from "chai-http";
+import { Agent } from "https";
 
 import { TEST_RELAY_URL, TEST_TOPIC } from "./shared";
 
@@ -11,6 +12,9 @@ describe("HTTP", () => {
   let api: AxiosInstance;
   before(() => {
     api = axios.create({
+      httpsAgent: new Agent({
+		    rejectUnauthorized: false
+	    }),
       baseURL: TEST_RELAY_URL,
       timeout: 30000, // 30 secs
       headers: {

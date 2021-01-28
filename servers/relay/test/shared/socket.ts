@@ -57,7 +57,7 @@ export class Socket {
   private register(url = this.url): Promise<WebSocket> {
     this.url = url;
     return new Promise((resolve, reject) => {
-      const socket = new WebSocket(url);
+      const socket = new WebSocket(url, [], {rejectUnauthorized: false});
       socket.onopen = () => {
         this.onOpen(socket);
         resolve(socket);
