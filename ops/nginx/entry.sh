@@ -156,7 +156,6 @@ server {
     proxy_read_timeout      1800;
     proxy_send_timeout      1800;
     keepalive_timeout       1800;
-    add_header "Access-Control-Allow-Origin"  *;
     proxy_set_header        Host \$host;
     proxy_set_header        http_x_forwarded_for  \$remote_addr;
     set \$app_server        http://upstream_app;
