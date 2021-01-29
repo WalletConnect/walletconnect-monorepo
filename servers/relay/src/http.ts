@@ -2,10 +2,10 @@ import Helmet from "fastify-helmet";
 import pino, { Logger } from "pino";
 import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
 import fastify, { FastifyInstance } from "fastify";
-import client from "prom-client"
+import client from "prom-client";
 
-import config from "./config"
-import register from "./metrics"
+import config from "./config";
+import register from "./metrics";
 import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
@@ -34,11 +34,11 @@ export class HttpService {
     this.redis = new RedisService(this.logger);
     this.metrics = {
       hello: new client.Counter({
-          registers: [register],
-          name: 'relay_hello_counter',
-          help: 'shows how much the /hello has been called',
-      })
-    }
+        registers: [register],
+        name: "relay_hello_counter",
+        help: "shows how much the /hello has been called",
+      }),
+    };
     this.initialize();
   }
 
@@ -55,15 +55,17 @@ export class HttpService {
 
     this.app.get("/hello", (_, res) => {
       this.metrics.hello.inc();
-      res.status(200).send(`Hello World, this is WalletConnect v${config.VERSION}@${config.GITHASH}`);
+      res
+        .status(200)
+        .send(`Hello World, this is Relay Server v${config.VERSION}@${config.GITHASH}`);
     });
 
     this.app.get("/metrics", (_, res) => {
-      res.headers({"Content-Type": register.contentType})
+      res.headers({ "Content-Type": register.contentType });
       register.metrics().then(result => {
-        res.status(200).send(result)
-      })
-    })
+        res.status(200).send(result);
+      });
+    });
 
     this.app.post<PostSubscribeRequest>("/subscribe", async (req, res) => {
       try {
