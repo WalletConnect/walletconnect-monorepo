@@ -25,7 +25,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/types": "^1.5.8",
+    "@json-rpc-tools/types": "^1.5.9",
     "keyvaluestorage": "^0.6.0",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0"

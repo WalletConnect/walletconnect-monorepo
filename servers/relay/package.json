@@ -31,7 +31,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.5.8",
+    "@json-rpc-tools/utils": "^1.5.9",
     "@pedrouid/pino-utils": "^1.0.1",
     "@types/pino": "^6.3.5",
     "axios": "^0.21.1",

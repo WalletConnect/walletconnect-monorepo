@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - run: make dev &
-      - run: sleep 30 && make test-client
-      - run: make test-relay
+      - run: docker swarm init 2> /dev/null || true
+      - run: make ci
+      - name: Print logs
+        if: failure()
+        run: docker service logs --tail 200 walletconnect_nginx && docker service logs --tail walletconnect_relay0

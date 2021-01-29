@@ -89,7 +89,7 @@ test-staging: build-lerna ## tests client against staging.walletconnect.org
 test-production: build-lerna ## tests client against bridge.walletconnect.org
 	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
 
-test-relay: ## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before.
+test-relay: build-relay## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before.
 	npm run test --prefix servers/relay
 	
 start-redis: ## starts redis docker container for local development
@@ -101,6 +101,15 @@ dev: build-relay start-redis ## runs relay on watch mode and shows logs
 	npm run dev --prefix servers/relay
 	@echo  "MAKE: Done with $@"
 	@echo
+
+ci: ## runs tests in github actions
+	printf "RELAY_URL=\nCERTBOT_EMAIL=\nCLOUDFLARE=false\n" > config
+	NODE_ENV=development $(MAKE) deploy
+	sleep 15
+	docker service logs --tail 100 $(project)_nginx
+	docker service logs --tail 100 $(project)_relay0
+	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
+	TEST_RELAY_URL=wss://localhost $(MAKE) test-relay
 
 cloudflare: config ## setups cloudflare API token secret
 	bash ops/cloudflare-secret.sh $(project)
@@ -137,6 +146,8 @@ relay-logs: ## follows the relay0 container logs. Doesn't work with 'make dev'
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true
+
+down: stop ## alias of stop
 
 stop: rm-redis ## stops the whole docker stack
 	docker stack rm $(project)

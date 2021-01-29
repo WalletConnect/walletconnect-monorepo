@@ -2,6 +2,7 @@ import "mocha";
 import axios, { AxiosInstance } from "axios";
 import { use, expect } from "chai";
 import chaiHttp from "chai-http";
+import { Agent } from "https";
 
 import { TEST_RELAY_URL, TEST_TOPIC } from "./shared";
 
@@ -11,7 +12,11 @@ describe("HTTP", () => {
   let api: AxiosInstance;
   before(() => {
     api = axios.create({
-      baseURL: TEST_RELAY_URL,
+      httpsAgent: new Agent({
+		    rejectUnauthorized: false
+	    }),
+      // Axios sends GET instead of POST when using ws protocol
+      baseURL: TEST_RELAY_URL.replace("ws", "http"),
       timeout: 30000, // 30 secs
       headers: {
         Accept: "application/json",

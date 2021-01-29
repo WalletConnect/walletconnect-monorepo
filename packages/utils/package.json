@@ -26,7 +26,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.5.8",
+    "@json-rpc-tools/utils": "^1.5.9",
     "@walletconnect/types": "^2.0.0-alpha.19",
     "detect-browser": "^5.1.0",
     "ecies-25519": "^1.3.0",

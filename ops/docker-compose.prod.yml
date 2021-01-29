@@ -4,7 +4,7 @@ services:
   nginx:
     environment:
       DOMAIN_URL: ${RELAY_URL}
-      APP_ENV: production
+      APP_ENV: ${NODE_ENV:-production}
       EMAIL: ${CERTBOT_EMAIL}
       CONTAINER_NAME: relay
       APP_PORT: 5000
@@ -16,7 +16,7 @@ services:
   relay0:
     image: ${RELAY_IMAGE}
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       REDIS_URL: redis://redis:6379/0
     deploy:
       resources:
