@@ -1,4 +1,4 @@
-import client, {Metric} from "prom-client";
+import client, { Metric } from "prom-client";
 import { EventEmitter } from "events";
 import { Server } from "http";
 import WebSocket from "ws";
@@ -43,20 +43,20 @@ export class WebSocketService {
     this.legacy = new LegacyService(this.logger, this.redis, this, this.notification);
     this.metrics = {
       newConnection: new client.Counter({
-        name: "relay_"+this.context+"_new_connections",
+        name: "relay_" + this.context + "_new_connections",
         help: "Sum of opened ws connection",
         registers: [register],
       }),
       closeConnection: new client.Counter({
-        name: "relay_"+this.context+"_closed_connections",
+        name: "relay_" + this.context + "_closed_connections",
         help: "Sum of closed ws connections",
         registers: [register],
       }),
       totalMessages: new client.Counter({
-        name: "relay_"+this.context+"_messages_total",
+        name: "relay_" + this.context + "_messages_total",
         help: "Total amount of messages",
         registers: [register],
-      })
+      }),
     };
 
     this.initialize();
