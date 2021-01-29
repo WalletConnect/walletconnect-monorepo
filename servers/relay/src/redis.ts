@@ -98,8 +98,7 @@ export class RedisService {
     const key = `pending:${id}`;
     const hash = sha256(message);
     const val = `${topic}:${hash}`;
-    await this.client.set(key, val);
-    await this.client.expire(key, config.REDIS_MAX_TTL);
+    this.client.set(key, val, () => this.client.expire(key, config.REDIS_MAX_TTL));
   }
 
   public async getPendingRequest(id: number): Promise<string> {
