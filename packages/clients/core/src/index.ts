@@ -799,6 +799,12 @@ class Connector implements IConnector {
 
   protected _sendCallRequest(request: IJsonRpcRequest, options?: IRequestOptions): Promise<any> {
     this._sendRequest(request, options);
+
+    this._eventManager.trigger({
+      event: "call_request_sent",
+      params: [{ request, options }],
+    });
+
     if (isMobile() && signingMethods.includes(request.method)) {
       const mobileLinkUrl = getLocal(mobileLinkChoiceKey);
       if (mobileLinkUrl) {
