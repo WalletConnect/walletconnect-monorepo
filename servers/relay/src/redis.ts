@@ -7,6 +7,7 @@ import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 import config from "./config";
 import { sha256 } from "./utils";
 import { Notification, LegacySocketMessage } from "./types";
+import { SIX_HOURS } from "./constants";
 
 export class RedisService {
   public client: any = redis.createClient(config.redis);
@@ -77,8 +78,7 @@ export class RedisService {
         [`legacy:${message.topic}`, safeJsonStringify(message)],
         (err: Error, res) => {
           if (err) return reject(err);
-          const sixHours = 21600;
-          this.client.expire([`legacy:${message.topic}`, sixHours], (err: Error, res) => {
+          this.client.expire([`legacy:${message.topic}`, SIX_HOURS], (err: Error, res) => {
             if (err) return reject(err);
             resolve();
           });

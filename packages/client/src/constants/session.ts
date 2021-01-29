@@ -1,5 +1,7 @@
 import { SessionTypes, SignalTypes } from "@walletconnect/types";
 
+import { SEVEN_DAYS } from "./time";
+
 export const SESSION_JSONRPC = {
   propose: "wc_sessionPropose",
   approve: "wc_sessionApprove",
@@ -13,7 +15,7 @@ export const SESSION_JSONRPC = {
 
 export const SESSION_CONTEXT = "session";
 
-export const SESSION_DEFAULT_TTL = 604800; // 7 days
+export const SESSION_DEFAULT_TTL = SEVEN_DAYS;
 
 export const SESSION_SIGNAL_METHOD_PAIRING = "pairing" as SignalTypes.MethodPairing;
 

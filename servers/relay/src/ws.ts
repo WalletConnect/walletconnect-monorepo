@@ -15,6 +15,7 @@ import { Socket } from "./types";
 import { generateRandomBytes32, isLegacySocketMessage } from "./utils";
 
 import { LegacyService } from "./legacy";
+import { TEN_SECONDS } from "./constants";
 
 export class WebSocketService {
   public server: WebSocket.Server;
@@ -165,7 +166,7 @@ export class WebSocketService {
       });
     });
 
-    setInterval(() => this.clearInactiveSockets(), 10000);
+    setInterval(() => this.clearInactiveSockets(), TEN_SECONDS * 1000);
   }
 
   private clearInactiveSockets() {

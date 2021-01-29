@@ -4,6 +4,7 @@ import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 import { expect } from "chai";
 
 import { RedisService } from "../src/redis";
+import { ONE_DAY } from "../src/constants";
 
 import { TEST_MESSAGE, TEST_TOPIC } from "./shared";
 
@@ -14,18 +15,18 @@ describe("Redis", () => {
     redis = new RedisService(logger);
   });
   it("setMessage", async () => {
-    const ttl = 86400;
-    const response = await redis.setMessage({
+    const params = {
       topic: TEST_TOPIC,
       message: TEST_MESSAGE,
-      ttl,
-    });
+      ttl: ONE_DAY,
+    };
+    await redis.setMessage(params);
     const result = await new Promise((resolve, reject) => {
-      redis.client.ttl(`message:${TEST_TOPIC}`, (err, res) => {
+      redis.client.ttl(`message:${params.message}`, (err, res) => {
         if (err) return reject(err);
         resolve(res);
       });
     });
-    expect(result).to.be.eql(ttl);
+    expect(result).to.be.eql(params.ttl);
   });
 });
