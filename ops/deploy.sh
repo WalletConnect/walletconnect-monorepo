@@ -15,5 +15,9 @@ if [[ $monitoring != false ]]; then
   run="${run} -c ops/docker-compose.monitor.yml"
 fi
 
+if [[ $NODE_ENV == development ]]; then
+  run="${run} -c ops/docker-compose.ci.yml"
+fi
+
 printf "\nDeploy command: $run\n\n"
 exec $run

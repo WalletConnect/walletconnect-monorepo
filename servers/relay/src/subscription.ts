@@ -5,6 +5,7 @@ import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { Subscription } from "./types";
 import { generateRandomBytes32 } from "./utils";
+import { FIVE_SECONDS } from "./constants";
 
 export class SubscriptionService {
   public subscriptions: Subscription[] = [];
@@ -52,7 +53,7 @@ export class SubscriptionService {
   private initialize(): void {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
-    setInterval(() => this.clearInactiveSubscriptions(), 5000);
+    setInterval(() => this.clearInactiveSubscriptions(), FIVE_SECONDS * 1000);
   }
 
   private clearInactiveSubscriptions() {

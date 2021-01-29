@@ -1,4 +1,6 @@
-export const RELAYER_DEFAULT_PUBLISH_TTL = 86400; // 1 day
+import { SIX_HOURS } from "./time";
+
+export const RELAYER_DEFAULT_PUBLISH_TTL = SIX_HOURS;
 
 export const RELAYER_DEFAULT_PROTOCOL = "bridge";
 

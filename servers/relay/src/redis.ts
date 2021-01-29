@@ -1,5 +1,4 @@
 import redis from "redis";
-import bluebird from "bluebird";
 import { RelayJsonRpc } from "relay-provider";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
@@ -7,14 +6,12 @@ import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import config from "./config";
 import { sha256 } from "./utils";
-import { Subscription, Notification, LegacySocketMessage } from "./types";
-
-bluebird.promisifyAll(redis.RedisClient.prototype);
-bluebird.promisifyAll(redis.Multi.prototype);
+import { Notification, LegacySocketMessage } from "./types";
+import { SIX_HOURS } from "./constants";
 
 export class RedisService {
   public client: any = redis.createClient(config.redis);
-  public subs: Subscription[] = [];
+
   public context = "redis";
 
   constructor(public logger: Logger) {
@@ -22,103 +19,154 @@ export class RedisService {
     this.initialize();
   }
 
-  public async setMessage(params: RelayJsonRpc.PublishParams) {
-    const { topic, message, ttl } = params;
-    this.logger.debug(`Setting Message`);
-    this.logger.trace({ type: "method", method: "setMessage", params });
-    const key = `message:${topic}`;
-    const hash = sha256(message);
-    const val = `${hash}:${message}`;
-    await this.client.saddAsync(key, val);
-    await this.client.expireAsync(key, ttl);
-  }
-
-  public async getMessages(topic: string) {
-    this.logger.debug(`Getting Message`);
-    this.logger.trace({ type: "method", method: "getMessage", topic });
-    const messages: Array<string> = [];
-    (await this.client.smembersAsync(`message:${topic}`)).map((m: string) => {
-      if (m != null) {
-        messages.push(m.split(":")[1]);
-      }
+  public setMessage(params: RelayJsonRpc.PublishParams): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const { topic, message, ttl } = params;
+      this.logger.debug(`Setting Message`);
+      this.logger.trace({ type: "method", method: "setMessage", params });
+      const key = `message:${topic}`;
+      const hash = sha256(message);
+      const val = `${hash}:${message}`;
+      this.client.sadd(key, val, (err: Error, res) => {
+        if (err) return reject(err);
+        this.client.expire(key, ttl, (err: Error, res) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
     });
-    return messages;
   }
 
-  public async deleteMessage(topic: string, hash: string) {
-    const [cursor, result] = await this.client.sscanAsync(
-      `message:${topic}`,
-      "0",
-      "MATCH",
-      `${hash}:*`,
-    );
-    if (result) this.client.sremAsync(`message:${topic}`, result[0]);
+  public getMessages(topic: string): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      this.logger.debug(`Getting Message`);
+      this.logger.trace({ type: "method", method: "getMessage", topic });
+      this.client.smembers(`message:${topic}`, (err: Error, res) => {
+        if (err) return reject(err);
+        const messages: string[] = [];
+        res.map((m: string) => {
+          if (m != null) messages.push(m.split(":")[1]);
+        });
+        resolve(messages);
+      });
+    });
   }
 
-  public async setLegacyCached(message: LegacySocketMessage) {
-    this.logger.debug(`Setting Legacy Cached`);
-    this.logger.trace({ type: "method", method: "setLegacyCached", message });
-    await this.client.lpushAsync(`legacy:${message.topic}`, safeJsonStringify(message));
-    const sixHours = 21600;
-    await this.client.expireAsync(`legacy:${message.topic}`, sixHours);
+  public deleteMessage(topic: string, hash: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.logger.debug(`Deleting Message`);
+      this.logger.trace({ type: "method", method: "deleteMessage", topic });
+      this.client.sscan(`message:${topic}`, "0", "MATCH", `${hash}:*`, (err: Error, res) => {
+        if (err) return reject(err);
+        if (res) {
+          this.client.srem(`message:${topic}`, res[0], (err: Error, res) => {
+            if (err) return reject(err);
+            resolve();
+          });
+          return;
+        }
+        resolve();
+      });
+    });
   }
 
-  public async getLegacyCached(topic: string) {
-    return this.client.lrangeAsync(`legacy:${topic}`, 0, -1).then((raw: any) => {
-      if (raw) {
-        const hashes: string[] = [];
+  public setLegacyCached(message: LegacySocketMessage): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.logger.debug(`Setting Legacy Cached`);
+      this.logger.trace({ type: "method", method: "setLegacyCached", message });
+      this.client.lpush(
+        [`legacy:${message.topic}`, safeJsonStringify(message)],
+        (err: Error, res) => {
+          if (err) return reject(err);
+          this.client.expire([`legacy:${message.topic}`, SIX_HOURS], (err: Error, res) => {
+            if (err) return reject(err);
+            resolve();
+          });
+        },
+      );
+    });
+  }
+
+  public getLegacyCached(topic: string): Promise<LegacySocketMessage[]> {
+    return new Promise((resolve, reject) => {
+      this.client.lrange(`legacy:${topic}`, 0, -1, (err: Error, raw: any) => {
+        if (err) return reject(err);
         const messages: LegacySocketMessage[] = [];
         raw.forEach((data: string) => {
-          const hash = sha256(data);
-          if (hashes.includes(hash)) return;
-          hashes.push(hash);
           const message = safeJsonParse(data);
           messages.push(message);
         });
         this.client.del(`legacy:${topic}`);
         this.logger.debug(`Getting Legacy Published`);
         this.logger.trace({ type: "method", method: "getLegacyCached", topic, messages });
-        return messages;
-      }
-      return;
+        resolve(messages);
+      });
     });
   }
 
-  public setNotification(notification: Notification) {
-    this.logger.debug(`Setting Notification`);
-    this.logger.trace({ type: "method", method: "setNotification", notification });
-    return this.client.lpushAsync(
-      `notification:${notification.topic}`,
-      safeJsonStringify(notification),
-    );
+  public setNotification(notification: Notification): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.logger.debug(`Setting Notification`);
+      this.logger.trace({ type: "method", method: "setNotification", notification });
+      this.client.lpush(
+        [`notification:${notification.topic}`, safeJsonStringify(notification)],
+        err => {
+          if (err) return reject(err);
+          resolve();
+        },
+      );
+    });
   }
 
-  public getNotification(topic: string) {
-    return this.client.lrangeAsync(`notification:${topic}`, 0, -1).then((raw: any) => {
-      if (raw) {
+  public getNotification(topic: string): Promise<Notification[]> {
+    return new Promise((resolve, reject) => {
+      this.client.lrange([`notification:${topic}`, 0, -1], (err: Error, raw: any) => {
+        if (err) return reject(err);
         const data = raw.map((item: string) => safeJsonParse(item));
         this.logger.debug(`Getting Notification`);
         this.logger.trace({ type: "method", method: "getNotification", topic, data });
-        return data;
-      }
-      return;
+        resolve(data);
+      });
     });
   }
 
-  public async setPendingRequest(topic: string, id: number, message: string) {
-    const key = `pending:${id}`;
-    const hash = sha256(message);
-    const val = `${topic}:${hash}`;
-    await this.client.setAsync(key, val);
-    await this.client.expireAsync(key, config.REDIS_MAX_TTL);
+  public setPendingRequest(topic: string, id: number, message: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const key = `pending:${id}`;
+      const hash = sha256(message);
+      const val = `${topic}:${hash}`;
+      this.logger.debug(`Setting Pending Request`);
+      this.logger.trace({ type: "method", method: "setPendingRequest", topic, id, message });
+      this.client.set(key, val, err => {
+        if (err) return reject(err);
+        this.client.expire(key, config.REDIS_MAX_TTL, err => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+    });
   }
 
-  public async getPendingRequest(id: number) {
-    return this.client.getAsync(`pending:${id}`);
+  public getPendingRequest(id: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.get(`pending:${id}`, (err: Error, data) => {
+        if (err) return reject(err);
+        this.logger.debug(`Getting Pending Request`);
+        this.logger.trace({ type: "method", method: "getPendingRequest", id, data });
+        resolve(data);
+      });
+    });
   }
 
-  public async deletePendingRequest(id: number) {
-    await this.client.del(`pending:${id}`);
+  public deletePendingRequest(id: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.logger.debug(`Deleting Pending Request`);
+      this.logger.trace({ type: "method", method: "deletePendingRequest", id });
+      this.client.del(`pending:${id}`, err => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -126,9 +174,4 @@ export class RedisService {
   private initialize(): void {
     this.logger.trace(`Initialized`);
   }
-  /*
-  private setScan(): Array<string> {
-    this.ssetScan()
-  }
-  */
 }

@@ -192,8 +192,8 @@ export class JsonRpcService {
         },
       },
     );
-    this.redis.setPendingRequest(subscription.topic, request.id, message);
-    this.socketSend(subscription.socketId, request);
+    await this.redis.setPendingRequest(subscription.topic, request.id, message);
+    await this.socketSend(subscription.socketId, request);
   }
 
   private async socketSend(
