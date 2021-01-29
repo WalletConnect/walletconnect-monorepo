@@ -25,8 +25,9 @@ export class RedisService {
     const key = `message:${topic}`;
     const hash = sha256(message);
     const val = `${hash}:${message}`;
-    this.client.sadd(key, val);
-    this.client.expire(key, ttl);
+    this.client.sadd(key, val, (err, res) => {
+      if (!err) this.client.expire(key, ttl);
+    });
   }
 
   public async getMessages(topic: string): Promise<Array<string>> {
