@@ -22,11 +22,12 @@ describe("Redis", () => {
     };
     await redis.setMessage(params);
     const result = await new Promise((resolve, reject) => {
-      redis.client.ttl(`message:${params.message}`, (err, res) => {
+      redis.client.ttl(`message:${params.topic}`, (err, res) => {
         if (err) return reject(err);
         resolve(res);
       });
     });
-    expect(result).to.be.eql(params.ttl);
+    expect(result).to.be.equal(params.ttl);
+    expect(result).to.be.gte(params.ttl-1); // One second less
   });
 });
