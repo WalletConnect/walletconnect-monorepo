@@ -13,7 +13,6 @@ const WS = typeof global.WebSocket !== "undefined" ? global.WebSocket : require(
 // -- SocketTransport ------------------------------------------------------ //
 
 class SocketTransport implements ITransportLib {
-  private _initiating: boolean;
   private _url: string;
   private _netMonitor: INetworkMonitor | null;
   private _socket: WebSocket | null;
@@ -25,7 +24,6 @@ class SocketTransport implements ITransportLib {
   // -- constructor ----------------------------------------------------- //
 
   constructor(opts: ISocketTransportOptions) {
-    this._initiating = false;
     this._url = "";
     this._netMonitor = null;
     this._socket = null;
@@ -121,11 +119,9 @@ class SocketTransport implements ITransportLib {
   // -- private ---------------------------------------------------------- //
 
   private _socketCreate() {
-    if (this._initiating) {
+    if (this._nextSocket) {
       return;
     }
-
-    this._initiating = true;
 
     const url = this._url.startsWith("https")
       ? this._url.replace("https", "wss")
@@ -145,12 +141,14 @@ class SocketTransport implements ITransportLib {
 
     this._nextSocket.onerror = (event: Event) => this._socketError(event);
 
-    this._nextSocket.onclose = () => this._socketCreate();
+    this._nextSocket.onclose = () => {
+      this._nextSocket = null;
+      this._socketCreate();
+    };
   }
 
   private _socketOpen() {
     this._socketClose();
-    this._initiating = false;
     this._socket = this._nextSocket;
     this._nextSocket = null;
     this._queueSubscriptions();
