@@ -56,7 +56,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@json-rpc-tools/types": "^1.5.12",
+    "@json-rpc-tools/types": "^1.6.1",
     "@walletconnect/rpc-connection": "^1.3.5-rc.1",
     "@walletconnect/types": "^1.3.5-rc.1",
     "eventemitter3": "4.0.7"

@@ -27,7 +27,7 @@ describe("WalletConnectWeb3Provider", () => {
     });
 
     await Promise.all([
-      new Promise((resolve, reject) => {
+      new Promise<void>((resolve, reject) => {
         provider.wc.on("display_uri", (error, payload) => {
           if (error) {
             reject(error);
@@ -48,7 +48,7 @@ describe("WalletConnectWeb3Provider", () => {
           });
         });
       }),
-      new Promise(async resolve => {
+      new Promise<void>(async resolve => {
         const providerAccounts = await provider.enable();
         expect(providerAccounts).toEqual(TEST_SESSION_PARAMS.accounts);
 
