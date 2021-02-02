@@ -84,7 +84,7 @@
     "shortName": "Huobi",
     "color": "rgb(45,101,248)",
     "logo": "./logos/huobiwallet.png",
-    "universalLink": "https://www.huobiwallet.com",
+    "universalLink": "",
     "deepLink": "huobiwallet:"
   },
   {
