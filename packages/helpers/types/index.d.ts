@@ -99,6 +99,8 @@ declare module "@walletconnect/types" {
   }
 
   export interface ISocketTransportOptions {
+    protocol: string;
+    version: number;
     url: string;
     netMonitor?: INetworkMonitor;
     subscriptions?: string[];

@@ -5,6 +5,14 @@ import {
   ITransportLib,
   ISocketTransportOptions,
 } from "@walletconnect/types";
+import {
+  isBrowser,
+  getLocation,
+  getQueryString,
+  detectEnv,
+  appendToQueryString,
+} from "@walletconnect/utils";
+
 import NetworkMonitor from "./network";
 
 // @ts-ignore
@@ -13,6 +21,8 @@ const WS = typeof global.WebSocket !== "undefined" ? global.WebSocket : require(
 // -- SocketTransport ------------------------------------------------------ //
 
 class SocketTransport implements ITransportLib {
+  private _protocol: string;
+  private _version: number;
   private _url: string;
   private _netMonitor: INetworkMonitor | null;
   private _socket: WebSocket | null;
@@ -24,6 +34,8 @@ class SocketTransport implements ITransportLib {
   // -- constructor ----------------------------------------------------- //
 
   constructor(opts: ISocketTransportOptions) {
+    this._protocol = opts.protocol;
+    this._version = opts.version;
     this._url = "";
     this._netMonitor = null;
     this._socket = null;
@@ -123,11 +135,7 @@ class SocketTransport implements ITransportLib {
       return;
     }
 
-    const url = this._url.startsWith("https")
-      ? this._url.replace("https", "wss")
-      : this._url.startsWith("http")
-      ? this._url.replace("http", "ws")
-      : this._url;
+    const url = getWebSocketUrl(this._url, this._protocol, this._version);
 
     this._nextSocket = new WS(url);
 
@@ -232,6 +240,29 @@ class SocketTransport implements ITransportLib {
 
     this._queue = [];
   }
+}
+
+function getWebSocketUrl(_url: string, protocol: string, version: number): string {
+  const url = _url.startsWith("https")
+    ? _url.replace("https", "wss")
+    : _url.startsWith("http")
+    ? _url.replace("http", "ws")
+    : _url;
+  const splitUrl = url.split("?");
+  const params = isBrowser()
+    ? {
+        protocol,
+        version,
+        env: "browser",
+        host: getLocation()?.host || "",
+      }
+    : {
+        protocol,
+        version,
+        env: detectEnv()?.name || "",
+      };
+  const queryString = appendToQueryString(getQueryString(splitUrl[1] || ""), params);
+  return splitUrl[0] + "?" + queryString;
 }
 
 export default SocketTransport;

@@ -144,6 +144,8 @@ class Connector implements IConnector {
     this._transport =
       opts.transport ||
       new SocketTransport({
+        protocol: this.protocol,
+        version: this.version,
         url: this.bridge,
         subscriptions: [this.clientId],
       });
