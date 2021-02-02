@@ -294,5 +294,13 @@
     "logo": "./logos/alphawallet.png",
     "universalLink": "https://aw.app",
     "deepLink": ""
+  },
+  {
+    "name": "KEYRING PRO",
+    "shortName": "KEYRINGPRO",
+    "color": "rgb(255, 117, 26)",
+    "logo": "./logos/keyringpro.png",
+    "universalLink": "https://keyring.app",
+    "deepLink": "keyring:"
   }
 ]
