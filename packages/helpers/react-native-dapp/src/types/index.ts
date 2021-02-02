@@ -3,10 +3,10 @@ import { IWalletConnectOptions } from "@walletconnect/types";
 import { ReactNativeStorageOptions } from "keyvaluestorage";
 
 export enum ConnectorEvents {
-  CONNECT = 'connect',
-  CALL_REQUEST_SENT = 'call_request_sent',
-  SESSION_UPDATE = 'session_update',
-  DISCONNECT = 'disconnect',
+  CONNECT = "connect",
+  CALL_REQUEST_SENT = "call_request_sent",
+  SESSION_UPDATE = "session_update",
+  DISCONNECT = "disconnect",
 }
 
 export type WalletService = {

@@ -1,1 +1,1 @@
-export { default as WalletConnectProvider } from './WalletConnectProvider';
+export { default as WalletConnectProvider } from "./WalletConnectProvider";

@@ -1,1 +1,1 @@
-export { default as WalletConnectContext } from './WalletConnectContext';
+export { default as WalletConnectContext } from "./WalletConnectContext";

@@ -1,2 +1,2 @@
-export { default as useWalletConnect } from './useWalletConnect';
-export { default as useWalletConnectContext } from './useWalletConnectContext';
+export { default as useWalletConnect } from "./useWalletConnect";
+export { default as useWalletConnectContext } from "./useWalletConnectContext";

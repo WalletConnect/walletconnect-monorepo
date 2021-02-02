@@ -1,1 +1,1 @@
-export { default as withWalletConnect } from './withWalletConnect';
+export { default as withWalletConnect } from "./withWalletConnect";
