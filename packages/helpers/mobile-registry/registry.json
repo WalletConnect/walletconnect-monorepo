@@ -56,6 +56,14 @@
     "deepLink": "imtokenv2:"
   },
   {
+    "name": "BitKeep",
+    "shortName": "BitKeep",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/bitkeep.png",
+    "universalLink": "",
+    "deepLink": "bitkeep:"
+  },
+  {
     "name": "TokenPocket",
     "shortName": "TokenPocket",
     "color": "rgb(41, 128, 254)",
@@ -156,7 +164,7 @@
     "shortName": "SafePal",
     "color": "rgb(0, 128, 255)",
     "logo": "./logos/safepal.png",
-    "universalLink": "link.safepal.io",
+    "universalLink": "https://link.safepal.io",
     "deepLink": "safepalwallet:"
   },
   {
@@ -180,7 +188,7 @@
     "shortName": "PEAKDEFI",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/peakdefi.png",
-    "universalLink": "https://app.peakdefi.com/download",
+    "universalLink": "https://peakdefi.com/download",
     "deepLink": "peakdefiwallet:"
   },
   {
@@ -230,5 +238,61 @@
     "logo": "./logos/plasmapay.png",
     "universalLink": "https://plasmapay.com",
     "deepLink": "plasmapay:"
+  },
+  {
+    "name": "BitPay Wallet",
+    "shortName": "BitPay",
+    "color": "rgb(26, 59, 139)",
+    "logo": "./logos/bitpay.png",
+    "universalLink": "https://bitpay.com/wallet",
+    "deepLink": "bitpay:"
+  },
+  {
+    "name": "HaloDeFi Wallet",
+    "shortName": "HaloDeFi",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/halodefi.png",
+    "universalLink": "",
+    "deepLink": "halodefiwallet:"
+  },
+  {
+    "name": "Coin98 Wallet",
+    "shortName": "Coin98",
+    "color": "rgb(39,39,39)",
+    "logo": "./logos/coin98.png",
+    "universalLink": "https://coin98.app",
+    "deepLink": "coin98:"
+  },
+  {
+    "name": "Talken Wallet",
+    "shortName": "Talken",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/talken.png",
+    "universalLink": "https://talken.io",
+    "deepLink": "talken-wallet:"
+  },
+  {
+    "name": "Ellipal",
+    "shortName": "Ellipal",
+    "color": "rgb(48, 124, 249)",
+    "logo": "./logos/ellipal.png",
+    "universalLink": "https://www.ellipal.com/",
+    "deepLink": "ellipal:"
+  },
+  {
+    "name": "Aktionariat Wallet",
+    "shortName": "Aktionariat",
+    "color": "rgb(10, 20, 20)",
+    "logo": "./logos/aktionariat.png",
+    "universalLink": "https://aktionariat.com/app",
+    "deepLink": "aktionariat:"
+  },
+  {
+    "name": "AlphaWallet",
+    "shortName": "AlphaWallet",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/alphawallet.png",
+    "universalLink": "https://aw.app",
+    "deepLink": ""
   }
 ]

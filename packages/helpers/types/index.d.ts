@@ -298,6 +298,7 @@ declare module "@walletconnect/types" {
     qrcode?: boolean;
     chainId?: number;
     qrcodeModalOptions?: IQRCodeModalOptions;
+    clientMeta?: IClientMeta;
   }
 
   export interface IWCEthRpcConnectionOptions extends IWCRpcConnectionOptions {
