@@ -56,6 +56,14 @@
     "deepLink": "imtokenv2:"
   },
   {
+    "name": "BitKeep",
+    "shortName": "BitKeep",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/bitkeep.png",
+    "universalLink": "",
+    "deepLink": "bitkeep:"
+  },
+  {
     "name": "TokenPocket",
     "shortName": "TokenPocket",
     "color": "rgb(41, 128, 254)",
