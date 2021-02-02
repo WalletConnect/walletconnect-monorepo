@@ -260,7 +260,7 @@
     "shortName": "Talken",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/talken.png",
-    "universalLink": "talken.io",
+    "universalLink": "https://talken.io",
     "deepLink": "talken-wallet:"
   },
   {
