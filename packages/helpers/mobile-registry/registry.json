@@ -286,5 +286,13 @@
     "logo": "./logos/aktionariat.png",
     "universalLink": "https://aktionariat.com/app",
     "deepLink": "aktionariat:"
+  },
+  {
+    "name": "AlphaWallet",
+    "shortName": "AlphaWallet",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/alphawallet.png",
+    "universalLink": "https://aw.app",
+    "deepLink": ""
   }
 ]
