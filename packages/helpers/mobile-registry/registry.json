@@ -56,6 +56,14 @@
     "deepLink": "imtokenv2:"
   },
   {
+    "name": "BitKeep",
+    "shortName": "BitKeep",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/bitkeep.png",
+    "universalLink": "",
+    "deepLink": "bitkeep:"
+  },
+  {
     "name": "TokenPocket",
     "shortName": "TokenPocket",
     "color": "rgb(41, 128, 254)",
@@ -76,7 +84,7 @@
     "shortName": "Huobi",
     "color": "rgb(45,101,248)",
     "logo": "./logos/huobiwallet.png",
-    "universalLink": "https://www.huobiwallet.com",
+    "universalLink": "",
     "deepLink": "huobiwallet:"
   },
   {
@@ -156,7 +164,7 @@
     "shortName": "SafePal",
     "color": "rgb(0, 128, 255)",
     "logo": "./logos/safepal.png",
-    "universalLink": "link.safepal.io",
+    "universalLink": "https://link.safepal.io",
     "deepLink": "safepalwallet:"
   },
   {
@@ -260,7 +268,7 @@
     "shortName": "Talken",
     "color": "rgb(255, 255, 255)",
     "logo": "./logos/talken.png",
-    "universalLink": "talken.io",
+    "universalLink": "https://talken.io",
     "deepLink": "talken-wallet:"
   },
   {
@@ -270,5 +278,21 @@
     "logo": "./logos/ellipal.png",
     "universalLink": "https://www.ellipal.com/",
     "deepLink": "ellipal:"
+  },
+  {
+    "name": "Aktionariat Wallet",
+    "shortName": "Aktionariat",
+    "color": "rgb(10, 20, 20)",
+    "logo": "./logos/aktionariat.png",
+    "universalLink": "https://aktionariat.com/app",
+    "deepLink": "aktionariat:"
+  },
+  {
+    "name": "AlphaWallet",
+    "shortName": "AlphaWallet",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/alphawallet.png",
+    "universalLink": "https://aw.app",
+    "deepLink": ""
   }
 ]
