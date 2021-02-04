@@ -1,7 +1,8 @@
-import Helmet from "fastify-helmet";
+import fastify, { FastifyInstance } from "fastify";
+import helmet from "fastify-helmet";
+import ws from "fastify-websocket";
 import pino, { Logger } from "pino";
 import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
-import fastify, { FastifyInstance } from "fastify";
 import client from "prom-client";
 
 import config from "./config";
@@ -10,15 +11,15 @@ import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
-import { HttpServiceOptions, PostSubscribeRequest } from "./types";
+import { HttpServiceOptions, PostSubscribeRequest, Socket } from "./types";
 
 export class HttpService {
   public app: FastifyInstance;
   public logger: Logger;
   public redis: RedisService;
 
-  public ws: WebSocketService | undefined;
-  public notification: NotificationService | undefined;
+  public ws: WebSocketService;
+  public notification: NotificationService;
 
   public context = "server";
 
@@ -32,6 +33,8 @@ export class HttpService {
     this.app = fastify({ logger });
     this.logger = generateChildLogger(logger, this.context);
     this.redis = new RedisService(this.logger);
+    this.notification = new NotificationService(this.logger, this.redis);
+    this.ws = new WebSocketService(this.logger, this.redis, this.notification);
     this.metrics = {
       hello: new client.Counter({
         registers: [register],
@@ -47,7 +50,12 @@ export class HttpService {
   private initialize(): void {
     this.logger.trace(`Initialized`);
 
-    this.app.register(Helmet);
+    this.app.register(helmet);
+    this.app.register(ws);
+
+    this.app.get("/", { websocket: true }, connection => {
+      this.ws.addNewSocket(connection.socket as any);
+    });
 
     this.app.get("/health", (_, res) => {
       res.status(204).send();
@@ -83,11 +91,6 @@ export class HttpService {
       } catch (e) {
         res.status(400).send({ message: `Error: ${e.message}` });
       }
-    });
-
-    this.app.ready(() => {
-      this.notification = new NotificationService(this.logger, this.redis);
-      this.ws = new WebSocketService(this.app.server, this.logger, this.redis, this.notification);
     });
   }
 }

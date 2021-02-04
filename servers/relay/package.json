@@ -38,14 +38,14 @@
     "enc-utils": "^3.0.0",
     "fastify": "^3.10.1",
     "fastify-helmet": "^5.1.0",
+    "fastify-websocket": "^3.0.0",
     "pino": "^6.11.0",
     "pino-pretty": "^4.3.0",
     "prom-client": "^13.0.0",
     "redis": "^2.8.0",
     "relay-provider": "^1.2.0",
     "safe-json-utils": "^1.1.1",
-    "tslib": "^2.1.0",
-    "ws": "^7.4.2"
+    "tslib": "^2.1.0"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
