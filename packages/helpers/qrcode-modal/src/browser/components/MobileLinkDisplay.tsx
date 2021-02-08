@@ -30,7 +30,7 @@ function saveMobileLinkInfo(data: IMobileLinkInfo) {
 
 function getMobileRegistryEntry(name: string): IMobileRegistryEntry {
   return MOBILE_REGISTRY.filter((entry: IMobileRegistryEntry) =>
-    entry.name.toLowerCase().includes(name),
+    entry.name.toLowerCase().includes(name.toLowerCase()),
   )[0];
 }
 

@@ -56,12 +56,12 @@
     "deepLink": "imtokenv2:"
   },
   {
-    "name": "TokenPocket",
-    "shortName": "TokenPocket",
-    "color": "rgb(41, 128, 254)",
-    "logo": "./logos/tokenpocket.png",
-    "universalLink": "",
-    "deepLink": "tpoutside:"
+    "name": "ONTO",
+    "shortName": "ONTO",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/onto.png",
+    "universalLink": "https://onto.app",
+    "deepLink": "ontoprovider:"
   },
   {
     "name": "Ledger Live",
@@ -80,12 +80,12 @@
     "deepLink": "huobiwallet:"
   },
   {
-    "name": "MYKEY",
-    "shortName": "MYKEY",
-    "color": "rgb(255, 255, 255)",
-    "logo": "./logos/mykey.png",
-    "universalLink": "https://mykey.org",
-    "deepLink": "mykeywalletconnect:"
+    "name": "TokenPocket",
+    "shortName": "TokenPocket",
+    "color": "rgb(41, 128, 254)",
+    "logo": "./logos/tokenpocket.png",
+    "universalLink": "",
+    "deepLink": "tpoutside:"
   },
   {
     "name": "Math Wallet",
@@ -94,6 +94,14 @@
     "logo": "./logos/math.png",
     "universalLink": "https://www.mathwallet.org",
     "deepLink": "mathwallet:"
+  },
+  {
+    "name": "MYKEY",
+    "shortName": "MYKEY",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/mykey.png",
+    "universalLink": "https://mykey.org",
+    "deepLink": "mykeywalletconnect:"
   },
   {
     "name": "Nash",
@@ -142,14 +150,6 @@
     "logo": "./logos/flare.png",
     "universalLink": "https://flarewallet.io",
     "deepLink": "flare:"
-  },
-  {
-    "name": "ONTO",
-    "shortName": "ONTO",
-    "color": "rgb(255, 255, 255)",
-    "logo": "./logos/onto.png",
-    "universalLink": "https://onto.app",
-    "deepLink": "ontoprovider:"
   },
   {
     "name": "SafePal Wallet",
