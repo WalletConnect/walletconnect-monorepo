@@ -1,3 +1,52 @@
+import * as qs from "query-string";
+import { detect } from "detect-browser";
+import { getLocation, getNavigator } from "window-getters";
+
+// -- env -----------------------------------------------//
+
+export function isNode(): boolean {
+  const env = detect();
+  const result = env && env.name ? env.name.toLowerCase() === "node" : false;
+  return result;
+}
+
+export function isBrowser(): boolean {
+  const result = !isNode() && !!getNavigator();
+  return result;
+}
+
+// -- query -----------------------------------------------//
+
+export function appendToQueryString(queryString: string, newQueryParams: any): string {
+  let queryParams = qs.parse(queryString);
+
+  queryParams = { ...queryParams, ...newQueryParams };
+
+  queryString = qs.stringify(queryParams);
+
+  return queryString;
+}
+
+// -- rpcUrl ----------------------------------------------//
+
+export function formatRelayRpcUrl(protocol: string, version: number, url: string): string {
+  const splitUrl = url.split("?");
+  const params = isBrowser()
+    ? {
+        protocol,
+        version,
+        env: "browser",
+        host: getLocation()?.host || "",
+      }
+    : {
+        protocol,
+        version,
+        env: detect()?.name || "",
+      };
+  const queryString = appendToQueryString(splitUrl[1] || "", params);
+  return splitUrl[0] + "?" + queryString;
+}
+
 // -- assert ------------------------------------------------- //
 
 export function assertType(obj: any, key: string, type: string) {

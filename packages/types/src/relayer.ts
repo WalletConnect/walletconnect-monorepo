@@ -2,6 +2,7 @@ import { Logger } from "pino";
 import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
 
 import { CryptoTypes } from "./crypto";
+import { IClient } from "./client";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -28,7 +29,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connected: boolean;
 
-  constructor(public logger: Logger, provider?: string | IJsonRpcProvider) {
+  constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
     super();
   }
 

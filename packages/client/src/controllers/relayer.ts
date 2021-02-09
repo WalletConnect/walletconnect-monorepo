@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { RelayerTypes, IRelayer } from "@walletconnect/types";
+import { RelayerTypes, IRelayer, IClient } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
-import { encrypt, decrypt } from "@walletconnect/utils";
+import { encrypt, decrypt, formatRelayRpcUrl } from "@walletconnect/utils";
 import { utf8ToHex, hexToUtf8 } from "enc-utils";
 import {
   IJsonRpcProvider,
@@ -30,8 +30,8 @@ export class Relayer extends IRelayer {
 
   public context: string = RELAYER_CONTEXT;
 
-  constructor(public logger: Logger, provider?: string | IJsonRpcProvider) {
-    super(logger);
+  constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
+    super(client, logger);
     this.logger = generateChildLogger(logger, this.context);
     this.provider = this.setProvider(provider);
     this.registerEventListeners();
@@ -183,7 +183,11 @@ export class Relayer extends IRelayer {
   private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
     this.logger.debug(`Setting Relay Provider`);
     this.logger.trace({ type: "method", method: "setProvider", provider: provider?.toString() });
-    const rpcUrl = typeof provider === "string" ? provider : RELAYER_DEFAULT_RPC_URL;
+    const rpcUrl = formatRelayRpcUrl(
+      this.client.protocol,
+      this.client.version,
+      typeof provider === "string" ? provider : RELAYER_DEFAULT_RPC_URL,
+    );
     return typeof provider !== "string" && typeof provider !== "undefined"
       ? provider
       : new JsonRpcProvider(rpcUrl);
@@ -196,7 +200,7 @@ export class Relayer extends IRelayer {
       this.events.emit("disconnect");
       this.provider.connect();
     });
-    this.provider.on("error", (e) => this.events.emit("error", e));
+    this.provider.on("error", e => this.events.emit("error", e));
   }
 }
 

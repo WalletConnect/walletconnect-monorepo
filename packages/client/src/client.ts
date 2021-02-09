@@ -65,7 +65,7 @@ export class Client extends IClient {
     this.context = opts?.overrideContext || this.context;
     this.logger = generateChildLogger(logger, this.context);
 
-    this.relayer = new Relayer(this.logger, opts?.relayProvider);
+    this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
     this.storage = opts?.storage || new KeyValueStorage(CLIENT_STORAGE_OPTIONS);
 
     this.pairing = new Pairing(this, this.logger);

@@ -1,4 +1,4 @@
-import * as queryStringUtils from "query-string";
+import * as qs from "query-string";
 import { UriParameters } from "@walletconnect/types";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
@@ -7,7 +7,7 @@ import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 export function formatUri(params: UriParameters): string {
   return (
     `${params.protocol}:${params.topic}@${params.version}?` +
-    queryStringUtils.stringify({
+    qs.stringify({
       publicKey: params.publicKey,
       relay: safeJsonStringify(params.relay),
     })
@@ -27,7 +27,7 @@ export function parseUri(str: string): UriParameters {
 
   const queryString: string = typeof pathEnd !== "undefined" ? str.substr(pathEnd) : "";
 
-  const queryParams = queryStringUtils.parse(queryString);
+  const queryParams = qs.parse(queryString);
 
   const result = {
     protocol,
