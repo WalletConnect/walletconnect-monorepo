@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/utils",
-  "version": "1.3.6-rc.0",
+  "version": "1.3.6",
   "description": "Utility Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "@json-rpc-tools/utils": "1.6.1",
-    "@walletconnect/types": "^1.3.6-rc.0",
+    "@walletconnect/types": "^1.3.6",
     "bn.js": "4.11.8",
     "detect-browser": "5.1.0",
     "enc-utils": "3.0.0",
