@@ -34,6 +34,7 @@ class WalletConnectProvider extends ProviderEngine {
   public chainId = 1;
   public networkId = 1;
   public rpcUrl = "";
+  private enabled = false;
 
   constructor(opts: IWalletConnectProviderOptions) {
     super({ pollingInterval: opts.pollingInterval || 8000 });
@@ -78,6 +79,7 @@ class WalletConnectProvider extends ProviderEngine {
   // Connect with a wallet and return the addresses of all available
   // accounts.
   enable = async (): Promise<string[]> => {
+    this.enabled = true;
     const wc = await this.getWalletConnector();
     if (wc) {
       this.start();
@@ -137,6 +139,7 @@ class WalletConnectProvider extends ProviderEngine {
   }
 
   async close() {
+    this.enabled = false;
     const wc = await this.getWalletConnector({ disableSessionCreation: true });
     await wc.killSession();
     await this.onDisconnect();
@@ -215,7 +218,7 @@ class WalletConnectProvider extends ProviderEngine {
       const wc = this.wc;
       if (this.isConnecting) {
         this.onConnect((x: any) => resolve(x));
-      } else if (!wc.connected && !disableSessionCreation) {
+      } else if (!wc.connected && !disableSessionCreation && this.enabled) {
         this.isConnecting = true;
         const sessionRequestOpions = this.chainId ? { chainId: this.chainId } : undefined;
         wc.on("modal_closed", () => {
