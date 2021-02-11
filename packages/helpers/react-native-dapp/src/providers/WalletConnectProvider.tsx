@@ -168,7 +168,7 @@ export default function WalletConnectProvider({
           }
   
           const url = formatWalletServiceUrl(walletService);
-          return Linking.canOpenURL(url) && Linking.openURL(url);
+          return (await Linking.canOpenURL(url)) && Linking.openURL(url);
         }
       });
     
