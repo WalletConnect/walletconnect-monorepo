@@ -22,6 +22,7 @@ const SubscriptionsSubprovider = require("web3-provider-engine/subproviders/subs
 class WalletConnectProvider extends ProviderEngine {
   public bridge = "https://bridge.walletconnect.org";
   public qrcode = true;
+  public qrcodeModal = QRCodeModal;
   public qrcodeModalOptions: IQRCodeModalOptions | undefined = undefined;
   public rpc: IRPCMap | null = null;
   public infuraId = "";
@@ -46,7 +47,7 @@ class WalletConnectProvider extends ProviderEngine {
       opts.connector ||
       new WalletConnect({
         bridge: this.bridge,
-        qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+        qrcodeModal: this.qrcode ? (opts.qrcodeModal || this.qrcodeModal) : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
         clientMeta: opts?.clientMeta,
       });
