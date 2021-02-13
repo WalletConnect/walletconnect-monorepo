@@ -47,7 +47,7 @@ export default function WalletConnectProvider({
       : defaultRenderQrcodeModal
   ), [maybeRenderQrcodeModal]);
 
-  const open = React.useCallback(async (uri: string, cb: unknown): unknown => {
+  const open = React.useCallback(async (uri: string, cb: unknown): Promise<unknown> => {
     if (Platform.OS === 'android') {
       await Linking.openURL(uri);
     }
@@ -169,19 +169,21 @@ export default function WalletConnectProvider({
         maybeThrowError(error);
         if (Platform.OS === 'android') {
           const { peerMeta } = nextConnector;
-          const [maybeShortName] = `${peerMeta.name || ''}`.toLowerCase().split(/\s+/);
-          if (typeof maybeShortName === 'string' && !!maybeShortName.length) {
-            const { walletServices } = parentContext;
-            const [...maybeMatchingServices] = walletServices.filter(
-              ({ shortName }) => {
-                return `${shortName}`.toLowerCase() === maybeShortName;
-              },
-            );
-            if (maybeMatchingServices.length === 1) {
-              const [detectedWalletService] = maybeMatchingServices;
-              const url = formatWalletServiceUrl(detectedWalletService);
-              if (await Linking.canOpenURL(url)) {
-                return Linking.openURL(url);
+          if (!!peerMeta && typeof peerMeta === 'object') {
+            const [maybeShortName] = `${peerMeta.name || ''}`.toLowerCase().split(/\s+/);
+            if (typeof maybeShortName === 'string' && !!maybeShortName.length) {
+              const { walletServices } = parentContext;
+              const [...maybeMatchingServices] = (walletServices || []).filter(
+                ({ shortName }) => {
+                  return `${shortName}`.toLowerCase() === maybeShortName;
+                },
+              );
+              if (maybeMatchingServices.length === 1) {
+                const [detectedWalletService] = maybeMatchingServices;
+                const url = formatWalletServiceUrl(detectedWalletService);
+                if (await Linking.canOpenURL(url)) {
+                  return Linking.openURL(url);
+                }
               }
             }
           }
@@ -265,7 +267,7 @@ export default function WalletConnectProvider({
             setConnector(nextConnector);
             return nextConnector.connect(opts);
           },
-        },
+        } as WalletConnect,
       }
     }
     return {
