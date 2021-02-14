@@ -147,7 +147,7 @@ export class WebSocketService {
         this.logger.fatal(e);
         throw e;
       }
-      this.logger.error({"Socket Error": e.message});
+      this.logger.error({ "Socket Error": e.message });
     });
 
     socket.on("close", () => {
