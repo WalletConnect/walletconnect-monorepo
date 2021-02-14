@@ -143,10 +143,11 @@ export class WebSocketService {
     });
 
     socket.on("error", (e: Error) => {
-      if (!e.message.includes("Invalid Socket frame")) {
+      if (!e.message.includes("Invalid WebSocket frame")) {
+        this.logger.fatal(e);
         throw e;
       }
-      this.logger.error(e);
+      this.logger.error({"Socket Error": e.message});
     });
 
     socket.on("close", () => {
