@@ -375,4 +375,11 @@ declare module "@walletconnect/types" {
     universalLink: string;
     deepLink: string;
   }
+
+  export type IMobileRegistry = IMobileRegistryEntry[];
+
+  export interface IMobileLinkInfo {
+    name: string;
+    href: string;
+  }
 }
