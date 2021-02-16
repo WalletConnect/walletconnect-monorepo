@@ -7,8 +7,8 @@ services:
       APP_ENV: ${NODE_ENV:-production}
       EMAIL: ${CERTBOT_EMAIL}
       CONTAINER_NAME: relay
-      APP_PORT: 5000
-      APP_QTY: 2
+      APP_PORT: ${APP_PORT:-5000}
+      APP_QTY: ${APP_QTY:-1}
       CLOUDFLARE: ${CLOUDFLARE}
     depends_on:
       - relay
@@ -17,19 +17,7 @@ services:
     image: ${RELAY_IMAGE}
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      REDIS_URL: redis://redis:6379/0
     deploy:
       resources:
-        limits:
-          memory: 3G
         reservations:
-          cpus: '0.4'
-  relay1:
-    image: ${RELAY_IMAGE}
-    environment:
-      NODE_ENV: production
-      REDIS_URL: redis://redis:6379/0
-    deploy:
-      resources:
-        limits:
-          memory: 1G
+          cpus: '0.6'

@@ -104,8 +104,8 @@ dev: build-relay start-redis ## runs relay on watch mode and shows logs
 
 ci: ## runs tests in github actions
 	printf "RELAY_URL=\nCERTBOT_EMAIL=\nCLOUDFLARE=false\n" > config
-	CRYPTOGRAPHY_DONT_BUILD_RUST=1 NODE_ENV=development $(MAKE) deploy
-	sleep 15
+	APP_PORT=5555 NODE_ENV=development $(MAKE) deploy
+	sleep 20
 	docker service logs --tail 100 $(project)_nginx
 	docker service logs --tail 100 $(project)_relay0
 	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
