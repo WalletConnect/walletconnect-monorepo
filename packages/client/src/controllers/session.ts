@@ -607,7 +607,7 @@ export class Session extends ISession {
     try {
       exists = await this.history.exists(topic, payload.id);
     } catch (e) {
-      return true;
+      // skip error
     }
     return exists;
   }
