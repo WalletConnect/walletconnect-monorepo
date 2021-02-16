@@ -118,7 +118,7 @@ upstream upstream_app {
 EOF
   for i in $(seq 0 $((appQty - 1))); do
     if [[ $i == 0 ]]; then
-      echo "server $dockerContainerName$i:$port max_fails=1 fail_timeout=10s;" >> $configPath
+      echo "server $dockerContainerName$i:$port max_fails=2 fail_timeout=20s;" >> $configPath
     else
       echo "server $dockerContainerName$i:$port backup;" >> $configPath
     fi
@@ -166,9 +166,9 @@ server {
 
   location / {
     $ddosMitigation
-    proxy_read_timeout      1800;
-    proxy_send_timeout      1800;
-    keepalive_timeout       1800;
+    proxy_read_timeout      1800s;
+    proxy_send_timeout      1800s;
+    keepalive_timeout       1800s;
     proxy_set_header        Host \$host;
     proxy_set_header        http_x_forwarded_for  \$remote_addr;
     proxy_pass              http://upstream_app;
