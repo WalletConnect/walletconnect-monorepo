@@ -81,7 +81,7 @@ services:
     image: nginx/nginx-prometheus-exporter
     command:
       - -nginx.scrape-uri
-      - http://nginx:8080/stub_status
+      - http://nginx:8081/stub_status
 
   prometheus:
     image: quay.io/prometheus/prometheus

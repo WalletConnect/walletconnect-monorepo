@@ -11,7 +11,7 @@ import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
-import { HttpServiceOptions, PostSubscribeRequest, Socket } from "./types";
+import { HttpServiceOptions, PostSubscribeRequest } from "./types";
 
 export class HttpService {
   public app: FastifyInstance;
@@ -54,6 +54,12 @@ export class HttpService {
     this.app.register(ws);
 
     this.app.get("/", { websocket: true }, connection => {
+      connection.on('error', (e: Error) => {
+        if (!e.message.includes("Invalid WebSocket frame")) {
+          this.logger.fatal(e);
+          throw e;
+        }
+      })
       this.ws.addNewSocket(connection.socket as any);
     });
 
@@ -82,7 +88,7 @@ export class HttpService {
         assertType(req.body, "topic");
         assertType(req.body, "webhook");
 
-        await this.redis.setNotification({
+        this.redis.setNotification({
           topic: req.body.topic,
           webhook: req.body.webhook,
         });

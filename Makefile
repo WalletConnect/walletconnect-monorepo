@@ -104,8 +104,8 @@ dev: build-relay start-redis ## runs relay on watch mode and shows logs
 
 ci: ## runs tests in github actions
 	printf "RELAY_URL=\nCERTBOT_EMAIL=\nCLOUDFLARE=false\n" > config
-	NODE_ENV=development $(MAKE) deploy
-	sleep 15
+	APP_PORT=5555 NODE_ENV=development $(MAKE) deploy
+	sleep 20
 	docker service logs --tail 100 $(project)_nginx
 	docker service logs --tail 100 $(project)_relay0
 	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
@@ -139,7 +139,6 @@ deploy-monitoring: predeploy ## same as deploy but also has monitoring stack
 redeploy: clean predeploy ## redeploys the prodution containers and rebuilds them
 	docker service update --force --image $(nginxImage) $(project)_nginx
 	docker service update --force --image $(relayImage) $(project)_relay0
-	docker service update --force --image $(relayImage) $(project)_relay1
 
 relay-logs: ## follows the relay0 container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay0

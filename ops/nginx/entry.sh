@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Set default variables
 root_domain="${DOMAIN_URL:-localhost}"
+app_env="${APP:-development}"
 manage_root_domain=${MANAGE_ROOT_DOMAIN:-true}
 email="${EMAIL:-noreply@gmail.com}"
 docker_containers="${SUBDOMAINS}"
@@ -76,8 +77,8 @@ function configSubDomain () {
   makeCert "$fullDomain" $certDirectory
   cat - > "$SERVERS/$fullDomain.conf" <<EOF
 server {
-  listen  80;
-  listen [::]:80;
+  listen  8080;
+  listen [::]:8080;
   server_name $fullDomain;
   include /etc/nginx/letsencrypt.conf;
   location / {
@@ -85,13 +86,13 @@ server {
   }
 }
 server {
-  listen  443 ssl;
-  listen [::]:443 ssl;
+  listen  8443 ssl;
+  listen [::]:8443 ssl;
   ssl_certificate       $certDirectory/fullchain.pem;
   ssl_certificate_key   $certDirectory/privkey.pem;
   server_name $fullDomain;
   location / {
-		proxy_pass "http://$subDomain:$dockerPort";
+    proxy_pass "http://$subDomain:$dockerPort";
   }
 }
 EOF
@@ -117,7 +118,7 @@ upstream upstream_app {
 EOF
   for i in $(seq 0 $((appQty - 1))); do
     if [[ $i == 0 ]]; then
-      echo "server $dockerContainerName$i:$port max_fails=1 fail_timeout=1s;" >> $configPath
+      echo "server $dockerContainerName$i:$port max_fails=2 fail_timeout=20s;" >> $configPath
     else
       echo "server $dockerContainerName$i:$port backup;" >> $configPath
     fi
@@ -131,11 +132,22 @@ function configRootDomain () {
   certDirectory=$LETSENCRYPT/$domain
   mkdir -vp $certDirectory
   makeCert $domain $certDirectory
+
+  ddosMitigation=$(printf '
+    limit_req_zone $remote_addr zone=req_zone_one:100m rate=1000r/m;
+    limit_req zone=req_zone_one;
+    limit_except GET POST { deny all; }
+    ')
+  # Only add the DDoS protection in production mode
+  if [[ $app_env == "development" ]]; then
+    ddosMitigation=""
+  fi 
   configPath="$SERVERS/$domain.conf"
+
   cat - > $configPath <<EOF
 server {
-  listen 80;
-  listen [::]:80;
+  listen 8080;
+  listen [::]:8080;
   server_name $domain;
   include /etc/nginx/letsencrypt.conf;
   location / {
@@ -143,8 +155,8 @@ server {
   }
 }
 server {
-  listen 443 ssl;
-  listen [::]:443 ssl;
+  listen 8443 ssl;
+  listen [::]:8443 ssl;
   server_name $domain;
   # https://stackoverflow.com/questions/35744650/docker-network-nginx-resolver
   resolver 127.0.0.11 valid=5s ipv6=off;
@@ -153,13 +165,13 @@ server {
   ssl_certificate_key       $certDirectory/privkey.pem;
 
   location / {
-    proxy_read_timeout      1800;
-    proxy_send_timeout      1800;
-    keepalive_timeout       1800;
+    $ddosMitigation
+    proxy_read_timeout      1800s;
+    proxy_send_timeout      1800s;
+    keepalive_timeout       1800s;
     proxy_set_header        Host \$host;
     proxy_set_header        http_x_forwarded_for  \$remote_addr;
-    set \$app_server        http://upstream_app;
-    proxy_pass              \$app_server;
+    proxy_pass              http://upstream_app;
 
     # Websocket must have configs
     proxy_http_version      1.1;
