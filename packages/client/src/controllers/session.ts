@@ -722,7 +722,14 @@ export class Session extends ISession {
           reason: deletedEvent.reason,
         });
         await this.history.delete(session.topic);
-        await this.send(session.topic, request);
+        const encryptKeys: CryptoTypes.EncryptKeys = {
+          sharedKey: session.sharedKey,
+          publicKey: session.self.publicKey,
+        };
+        await this.client.relayer.publish(session.topic, request, {
+          relay: session.relay,
+          encryptKeys,
+        });
       },
     );
   }
