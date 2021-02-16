@@ -139,7 +139,6 @@ deploy-monitoring: predeploy ## same as deploy but also has monitoring stack
 redeploy: clean predeploy ## redeploys the prodution containers and rebuilds them
 	docker service update --force --image $(nginxImage) $(project)_nginx
 	docker service update --force --image $(relayImage) $(project)_relay0
-	docker service update --force --image $(relayImage) $(project)_relay1
 
 relay-logs: ## follows the relay0 container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay0
