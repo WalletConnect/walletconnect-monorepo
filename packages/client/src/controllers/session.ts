@@ -600,10 +600,22 @@ export class Session extends ISession {
 
   // ---------- Private ----------------------------------------------- //
 
+  private async shouldIgnorePayloadEvent(payloadEvent: SessionTypes.PayloadEvent) {
+    const { topic, payload } = payloadEvent;
+    if (!this.settled.subscriptions.has(topic)) return true;
+    let exists = false;
+    try {
+      exists = await this.history.exists(topic, payload.id);
+    } catch (e) {
+      return true;
+    }
+    return exists;
+  }
+
   private async onPayloadEvent(payloadEvent: SessionTypes.PayloadEvent) {
     const { topic, payload, chainId } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      if (await this.history.exists(topic, payload.id)) return;
+      if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
       await this.history.set(topic, payload, chainId);
     } else {
       await this.history.update(topic, payload);
