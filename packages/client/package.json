@@ -29,13 +29,13 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/provider": "^1.5.10",
-    "@json-rpc-tools/utils": "^1.5.10",
+    "@json-rpc-tools/provider": "^1.6.2",
+    "@json-rpc-tools/utils": "^1.6.2",
     "@pedrouid/pino-utils": "^1.0.1",
     "@walletconnect/types": "^2.0.0-alpha.23",
     "@walletconnect/utils": "^2.0.0-alpha.23",
     "enc-utils": "^3.0.0",
-    "keyvaluestorage": "^0.7.0",
+    "keyvaluestorage": "^0.7.1",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
     "relay-provider": "^1.2.0",
