@@ -188,7 +188,7 @@ class App extends React.Component<any, any> {
     if (typeof this.state.session !== "undefined") return;
     if (this.state.client.session.topics.length) {
       const session = await this.state.client.session.get(this.state.client.session.topics[0]);
-      const chains = session.state.accounts.map((account) => account.split("@")[1]);
+      const chains = session.state.accounts.map(account => account.split("@")[1]);
       this.setState({ accounts: session.state.accounts, chains });
       this.onSessionConnected(session);
     }
@@ -248,7 +248,7 @@ class App extends React.Component<any, any> {
     this.setState({ fetching: true });
     try {
       const arr = await Promise.all(
-        this.state.accounts.map(async (account) => {
+        this.state.accounts.map(async account => {
           const [address, chainId] = account.split("@");
           const assets = await apiGetAccountAssets(address, chainId);
           return { account, assets };
@@ -282,8 +282,7 @@ class App extends React.Component<any, any> {
 
     try {
       const address =
-        this.state.accounts.find((account) => account.split("@")[1] === chainId)?.split("@")[0] ||
-        "";
+        this.state.accounts.find(account => account.split("@")[1] === chainId)?.split("@")[0] || "";
       const account = `${address}@${chainId}`;
 
       // open modal
@@ -344,9 +343,7 @@ class App extends React.Component<any, any> {
       const hexMsg = encUtils.utf8ToHex(message, true);
 
       // get ethereum address
-      const address = this.state.accounts
-        .find((account) => account.endsWith(chainId))
-        ?.split("@")[0];
+      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
       if (address === undefined) throw new Error("Address is not valid");
 
       // personal_sign params
@@ -400,9 +397,7 @@ class App extends React.Component<any, any> {
       const message = JSON.stringify(eip712.example);
 
       // get ethereum address
-      const address = this.state.accounts
-        .find((account) => account.endsWith(chainId))
-        ?.split("@")[0];
+      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
       if (address === undefined) throw new Error("Address is not valid");
 
       // eth_signTypedData params
@@ -447,7 +442,7 @@ class App extends React.Component<any, any> {
   public handleChainSelectionClick = (chainId: string) => {
     const { chains } = this.state;
     if (chains.includes(chainId)) {
-      this.setState({ chains: chains.filter((x) => x !== chainId) });
+      this.setState({ chains: chains.filter(x => x !== chainId) });
     } else {
       this.setState({ chains: [...chains, chainId] });
     }
@@ -482,7 +477,7 @@ class App extends React.Component<any, any> {
               <SLanding center>
                 <Banner />
                 <h6>
-                  <span>{`Using v${process.env.REACT_APP_VERSION}`}</span>
+                  <span>{`Using v${process.env.REACT_APP_VERSION || "2.0.0-alpha"}`}</span>
                 </h6>
                 <SButtonContainer>
                   <h6>Select chains:</h6>
@@ -490,7 +485,7 @@ class App extends React.Component<any, any> {
                     <p>Testnets Only?</p>
                     <Toggle active={testNet} onClick={this.toggleTestNets} />
                   </SToggleContainer>
-                  {chainOptions.map((chainId) => (
+                  {chainOptions.map(chainId => (
                     <Blockchain
                       key={chainId}
                       chainId={chainId}
@@ -512,7 +507,7 @@ class App extends React.Component<any, any> {
               <SAccountsContainer>
                 <h3>Accounts</h3>
                 <SAccounts>
-                  {this.state.accounts.map((account) => {
+                  {this.state.accounts.map(account => {
                     const [address, chainId] = account.split("@");
                     return (
                       <Blockchain
