@@ -45,6 +45,20 @@ bootstrap-lerna: ## setups lerna for the monorepo management
 	@echo  "MAKE: Done with $@"
 	@echo
 
+build-react-app: ## builds the example react-app
+	npm install --prefix examples/react-app
+	npm run build --prefix examples/react-app
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
+build-react-wallet: ## builds the example react-wallet
+	npm install --prefix examples/react-wallet
+	npm run build --prefix examples/react-wallet
+	@touch $(flags)/$@
+	@echo  "MAKE: Done with $@"
+	@echo
+
 build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 	npx lerna run build
 	@touch $(flags)/$@
@@ -58,6 +72,7 @@ build-container: ## builds relay docker image
 		-f ops/relay.Dockerfile .
 	@echo "MAKE: Done with $@"
 	@echo
+
 
 build-relay: ## builds the relay system local npm
 	npm install --prefix servers/relay
