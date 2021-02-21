@@ -1,0 +1,72 @@
+{
+  "name": "walletconnect-v2-example-wallet",
+  "version": "2.0.0-alpha.26",
+  "private": true,
+  "keywords": [
+    "walletconnect",
+    "ethereum",
+    "web3",
+    "crypto"
+  ],
+  "author": "WalletConnect Labs <walletconnectlabs.com>",
+  "license": "LGPL-3.0",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect-labs/walletconnect-v2-monorepo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/issues"
+  },
+  "dependencies": {
+    "@json-rpc-tools/utils": "^1.6.1",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^12.0.0",
+    "@types/prop-types": "^15.7.3",
+    "@types/react": "^16.9.53",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-qr-reader": "^2.1.3",
+    "@types/styled-components": "^5.1.2",
+    "@walletconnect/client": "^2.0.0-alpha.26",
+    "@walletconnect/types": "^2.0.0-alpha.26",
+    "@walletconnect/utils": "^2.0.0-alpha.26",
+    "axios": "^0.21.1",
+    "blockies-ts": "^1.0.0",
+    "caip-wallet": "^1.6.4",
+    "keyvaluestorage": "^0.7.1",
+    "prop-types": "^15.7.2",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-qr-reader": "^2.2.1",
+    "react-scripts": "4.0.1",
+    "styled-components": "^5.2.0",
+    "typescript": "^4.0.3",
+    "web-vitals": "^0.2.4"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
