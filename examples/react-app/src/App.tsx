@@ -108,6 +108,7 @@ interface AppState {
   client: Client | undefined;
   session: SessionTypes.Created | undefined;
   testNet: boolean;
+  loading: boolean;
   fetching: boolean;
   chains: string[];
   pairings: string[];
@@ -123,6 +124,7 @@ const INITIAL_STATE: AppState = {
   client: undefined,
   session: undefined,
   testNet: true,
+  loading: false,
   fetching: false,
   chains: [],
   pairings: [],
@@ -143,14 +145,21 @@ class App extends React.Component<any, any> {
   }
 
   public init = async () => {
-    const client = await Client.init({
-      logger: DEFAULT_LOGGER,
-      relayProvider: DEFAULT_RELAY_PROVIDER,
-    });
+    this.setState({ loading: true });
 
-    this.setState({ client });
-    this.subscribeToEvents();
-    await this.checkConnectedSessions();
+    try {
+      const client = await Client.init({
+        logger: DEFAULT_LOGGER,
+        relayProvider: DEFAULT_RELAY_PROVIDER,
+      });
+
+      this.setState({ loading: false, client });
+      this.subscribeToEvents();
+      await this.checkConnectedSessions();
+    } catch (e) {
+      this.setState({ loading: false });
+      throw e;
+    }
   };
 
   public subscribeToEvents = () => {
@@ -465,66 +474,64 @@ class App extends React.Component<any, any> {
     }
   };
 
-  public render = () => {
-    const { balances, accounts, session, chains, testNet, fetching, modal } = this.state;
+  public renderContent = () => {
+    const { balances, accounts, chains, testNet, fetching } = this.state;
     const chainOptions = testNet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
+    return !accounts.length && !Object.keys(balances).length ? (
+      <SLanding center>
+        <Banner />
+        <h6>
+          <span>{`Using v${process.env.REACT_APP_VERSION || "2.0.0-alpha"}`}</span>
+        </h6>
+        <SButtonContainer>
+          <h6>Select chains:</h6>
+          <SToggleContainer>
+            <p>Testnets Only?</p>
+            <Toggle active={testNet} onClick={this.toggleTestNets} />
+          </SToggleContainer>
+          {chainOptions.map(chainId => (
+            <Blockchain
+              key={chainId}
+              chainId={chainId}
+              onClick={this.handleChainSelectionClick}
+              active={chains.includes(chainId)}
+            />
+          ))}
+          <SConnectButton left onClick={this.connect} fetching={fetching} disabled={!chains.length}>
+            {"Connect"}
+          </SConnectButton>
+        </SButtonContainer>
+      </SLanding>
+    ) : (
+      <SAccountsContainer>
+        <h3>Accounts</h3>
+        <SAccounts>
+          {this.state.accounts.map(account => {
+            const [address, chainId] = account.split("@");
+            return (
+              <Blockchain
+                key={account}
+                active={true}
+                fetching={fetching}
+                address={address}
+                chainId={chainId}
+                balances={balances}
+                actions={this.getEthereumActions()}
+              />
+            );
+          })}
+        </SAccounts>
+      </SAccountsContainer>
+    );
+  };
+
+  public render = () => {
+    const { loading, session, modal } = this.state;
     return (
       <SLayout>
         <Column maxWidth={1000} spanHeight>
           <Header disconnect={this.disconnect} session={session} />
-          <SContent>
-            {!accounts.length && !Object.keys(balances).length ? (
-              <SLanding center>
-                <Banner />
-                <h6>
-                  <span>{`Using v${process.env.REACT_APP_VERSION || "2.0.0-alpha"}`}</span>
-                </h6>
-                <SButtonContainer>
-                  <h6>Select chains:</h6>
-                  <SToggleContainer>
-                    <p>Testnets Only?</p>
-                    <Toggle active={testNet} onClick={this.toggleTestNets} />
-                  </SToggleContainer>
-                  {chainOptions.map(chainId => (
-                    <Blockchain
-                      key={chainId}
-                      chainId={chainId}
-                      onClick={this.handleChainSelectionClick}
-                      active={chains.includes(chainId)}
-                    />
-                  ))}
-                  <SConnectButton
-                    left
-                    onClick={this.connect}
-                    fetching={fetching}
-                    disabled={!chains.length}
-                  >
-                    {"Connect"}
-                  </SConnectButton>
-                </SButtonContainer>
-              </SLanding>
-            ) : (
-              <SAccountsContainer>
-                <h3>Accounts</h3>
-                <SAccounts>
-                  {this.state.accounts.map(account => {
-                    const [address, chainId] = account.split("@");
-                    return (
-                      <Blockchain
-                        key={account}
-                        active={true}
-                        fetching={fetching}
-                        address={address}
-                        chainId={chainId}
-                        balances={balances}
-                        actions={this.getEthereumActions()}
-                      />
-                    );
-                  })}
-                </SAccounts>
-              </SAccountsContainer>
-            )}
-          </SContent>
+          <SContent>{loading ? "Loading..." : this.renderContent()}</SContent>
         </Column>
         <Modal show={!!modal} closeModal={this.closeModal}>
           {this.renderModal()}

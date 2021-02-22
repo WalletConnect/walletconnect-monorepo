@@ -9,7 +9,7 @@ export const DEFAULT_TEST_CHAINS = Object.keys(config.eip155)
   .filter(x => !!config.eip155[x].testNet)
   .map(x => `eip155:${x}`);
 
-export const DEFAULT_RELAY_PROVIDER = "wss://bridge.walletconnect.org";
+export const DEFAULT_RELAY_PROVIDER = "wss://relay.walletconnect.org";
 
 export const DEFAULT_METHODS = jsonrpc.eip155.wallet.auth;
 
