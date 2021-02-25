@@ -31,6 +31,7 @@ import {
 
 import { Subscription } from "./subscription";
 import { JsonRpcHistory } from "./history";
+import { Timeout } from "./timeout";
 import {
   PAIRING_CONTEXT,
   PAIRING_EVENTS,
@@ -42,12 +43,14 @@ import {
   PAIRING_SIGNAL_METHOD_URI,
   SESSION_JSONRPC,
   PAIRING_DEFAULT_TTL,
+  TIMEOUT_EVENTS,
 } from "../constants";
 
 export class Pairing extends IPairing {
   public pending: Subscription<PairingTypes.Pending>;
   public settled: Subscription<PairingTypes.Settled>;
   public history: JsonRpcHistory;
+  public timeout: Timeout;
 
   public events = new EventEmitter();
 
@@ -69,6 +72,7 @@ export class Pairing extends IPairing {
       true,
     );
     this.history = new JsonRpcHistory(client, this.logger);
+    this.timeout = new Timeout(client, this.logger, this);
     this.registerEventListeners();
   }
 
@@ -77,6 +81,7 @@ export class Pairing extends IPairing {
     await this.pending.init();
     await this.settled.init();
     await this.history.init();
+    await this.timeout.init();
   }
 
   public async get(topic: string): Promise<PairingTypes.Settled> {
@@ -623,6 +628,7 @@ export class Pairing extends IPairing {
         const pairing = createdEvent.data;
         this.logger.info(`Emitting ${PAIRING_EVENTS.settled}`);
         this.logger.debug({ type: "event", event: PAIRING_EVENTS.settled, data: pairing });
+        this.timeout.set(pairing.topic, pairing.expiry);
         this.events.emit(PAIRING_EVENTS.settled, pairing);
       },
     );
@@ -646,8 +652,12 @@ export class Pairing extends IPairing {
           reason: deletedEvent.reason,
         });
         await this.history.delete(pairing.topic);
+        this.timeout.delete(pairing.topic);
         await this.client.relayer.publish(pairing.topic, request, { relay: pairing.relay });
       },
+    );
+    this.timeout.on(TIMEOUT_EVENTS.expired, ({ topic }) =>
+      this.delete({ topic, reason: "Expired" }),
     );
   }
 }

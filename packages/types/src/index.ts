@@ -7,3 +7,4 @@ export * from "./relayer";
 export * from "./sequence";
 export * from "./session";
 export * from "./subscription";
+export * from "./timeout";

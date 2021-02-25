@@ -1,22 +1,23 @@
 import { Logger } from "pino";
-import { JsonRpcPayload, IEvents, RequestArguments } from "@json-rpc-tools/types";
+import { JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
 
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
 import { ISubscription, SubscriptionEvent } from "./subscription";
 import { IJsonRpcHistory } from "./history";
+import { ITimeout } from "./timeout";
 
 export abstract class ISequence<
-  Pending,
-  Settled,
-  Update,
-  CreateParams,
-  RespondParams,
-  UpdateParams,
-  RequestParams,
-  DeleteParams,
-  ProposeParams,
-  SettleParams
+  Pending = any,
+  Settled = any,
+  Update = any,
+  CreateParams = any,
+  RespondParams = any,
+  UpdateParams = any,
+  RequestParams = any,
+  DeleteParams = any,
+  ProposeParams = any,
+  SettleParams = any
 > extends IEvents {
   // pending subscriptions
   public abstract pending: ISubscription<Pending>;
@@ -24,6 +25,8 @@ export abstract class ISequence<
   public abstract settled: ISubscription<Settled>;
   // jsonrpc history
   public abstract history: IJsonRpcHistory;
+  // settled timeout
+  public abstract timeout: ITimeout;
 
   // returns settled subscriptions length
   public abstract readonly length: number;
