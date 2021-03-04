@@ -24,7 +24,7 @@
     "url": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/issues"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.6.1",
+    "@json-rpc-tools/utils": "^1.6.4",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -40,7 +40,7 @@
     "@walletconnect/utils": "^2.0.0-alpha.26",
     "axios": "^0.21.1",
     "blockies-ts": "^1.0.0",
-    "caip-wallet": "^1.6.4",
+    "caip-wallet": "^1.6.6",
     "keyvaluestorage": "^0.7.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.1",
