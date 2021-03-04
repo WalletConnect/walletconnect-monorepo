@@ -64,20 +64,20 @@ export class JsonRpcService {
       this.logger.debug({ type: "payload", direction: "incoming", payload: request });
 
       switch (request.method) {
-        case RELAY_JSONRPC.bridge.publish:
+        case RELAY_JSONRPC.waku.publish:
           await this.onPublishRequest(
             socketId,
             request as JsonRpcRequest<RelayJsonRpc.PublishParams>,
           );
           break;
-        case RELAY_JSONRPC.bridge.subscribe:
+        case RELAY_JSONRPC.waku.subscribe:
           await this.onSubscribeRequest(
             socketId,
             request as JsonRpcRequest<RelayJsonRpc.SubscribeParams>,
           );
           break;
 
-        case RELAY_JSONRPC.bridge.unsubscribe:
+        case RELAY_JSONRPC.waku.unsubscribe:
           await this.onUnsubscribeRequest(
             socketId,
             request as JsonRpcRequest<RelayJsonRpc.UnsubscribeParams>,
@@ -183,7 +183,7 @@ export class JsonRpcService {
 
   private async pushSubscription(subscription: Subscription, message: string): Promise<void> {
     const request = formatJsonRpcRequest<RelayJsonRpc.SubscriptionParams>(
-      RELAY_JSONRPC.bridge.subscription,
+      RELAY_JSONRPC.waku.subscription,
       {
         id: subscription.id,
         data: {

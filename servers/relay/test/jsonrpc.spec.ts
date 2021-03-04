@@ -30,7 +30,7 @@ describe("JSON-RPC", () => {
       new Promise<void>(resolve => {
         providerB.on("message", ({ type, data }) => {
           counterB.add();
-          expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
+          expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionB) expect(data.id).to.eql(subscriptionB);
           expect(data.data.topic).to.eql(pub.params.topic);
           expect(data.data.message).to.eql(pub.params.message);
@@ -73,7 +73,7 @@ describe("JSON-RPC", () => {
       new Promise<void>(resolve => {
         providerB.on("message", ({ type, data }) => {
           counterB.add();
-          expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
+          expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionB) expect(data.id).to.eql(subscriptionB);
           expect(data.data.topic).to.eql(pub.params.topic);
           expect(data.data.message).to.eql(pub.params.message);
@@ -83,7 +83,7 @@ describe("JSON-RPC", () => {
       new Promise<void>(resolve => {
         providerC.on("message", ({ type, data }) => {
           counterC.add();
-          expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
+          expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionC) expect(data.id).to.eql(subscriptionC);
           expect(data.data.topic).to.eql(pub.params.topic);
           expect(data.data.message).to.eql(pub.params.message);
@@ -117,7 +117,7 @@ describe("JSON-RPC", () => {
       new Promise<void>(resolve => {
         providerB.on("message", ({ type, data }) => {
           counterB.add();
-          expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
+          expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionB) expect(data.id).to.eql(subscriptionB);
           expect(data.data.topic).to.eql(pub.params.topic);
           expect(data.data.message).to.eql(pub.params.message);
@@ -143,7 +143,7 @@ describe("JSON-RPC", () => {
       new Promise<void>(resolve => {
         providerC.on("message", ({ type, data }) => {
           counterC.add();
-          expect(type).to.eql(RELAY_JSONRPC.bridge.subscription);
+          expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionC) expect(data.id).to.eql(subscriptionC);
           expect(data.data.topic).to.eql(pub.params.topic);
           expect(data.data.message).to.eql(pub.params.message);
