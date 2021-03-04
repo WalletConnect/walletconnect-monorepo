@@ -1,4 +1,5 @@
 import { THIRTY_DAYS } from "../constants";
+import { RelayModes } from "../types";
 
 const GITHASH = process.env.GITHASH || "0000000";
 const VERSION = require("../../package.json").version || "0.0.0";
@@ -14,13 +15,15 @@ const redis = {
   url: process.env.REDIS_URL || "redis://localhost:6379/0",
   prefix: process.env.REDIS_PREFIX || "walletconnect-bridge",
 };
+const mode = (process.env.RELAY_MODE || "any") as RelayModes.All;
 
 export default {
-  env: env,
-  debug: debug,
+  env,
+  debug,
   port,
   host,
   redis,
+  mode,
   REDIS_MAX_TTL,
   GITHASH,
   VERSION,

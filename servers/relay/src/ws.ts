@@ -5,12 +5,18 @@ import { safeJsonParse } from "safe-json-utils";
 import { isJsonRpcPayload } from "@json-rpc-tools/utils";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
+import config from "./config";
 import register from "./metrics";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
 import { Socket } from "./types";
-import { generateRandomBytes32, isLegacySocketMessage } from "./utils";
+import {
+  generateRandomBytes32,
+  isJsonRpcDisabled,
+  isLegacyDisabled,
+  isLegacySocketMessage,
+} from "./utils";
 
 import { LegacyService } from "./legacy";
 import { TEN_SECONDS } from "./constants";
@@ -79,6 +85,8 @@ export class WebSocketService {
       throw new Error(`Socket not active with socketId: ${socketId}`);
     }
     const socket = this.getSocket(socketId);
+    this.logger.debug(`Outgoing Socket Message`);
+    this.logger.trace({ type: "message", direction: "outgoing", message });
     socket.send(message);
   }
 
@@ -112,29 +120,24 @@ export class WebSocketService {
       this.logger.debug(`Incoming Socket Message`);
       this.logger.trace({ type: "message", direction: "incoming", message });
 
-      let response: string;
       if (!message || !message.trim()) {
-        response = "Missing or invalid socket data";
-        this.logger.debug(`Outgoing Socket Message`);
-        this.logger.trace({ type: "message", direction: "outgoing", response });
-        socket.send(response);
-        return;
+        return this.send(socketId, "Missing or invalid socket data");
       }
       const payload = safeJsonParse(message);
       if (typeof payload === "string") {
-        response = "Socket message is invalid";
-        this.logger.debug(`Outgoing Socket Message`);
-        this.logger.trace({ type: "message", direction: "outgoing", response });
-        socket.send(response);
+        return this.send(socketId, "Socket message is invalid");
       } else if (isLegacySocketMessage(payload)) {
+        if (isLegacyDisabled(config.mode)) {
+          return this.send(socketId, "Legacy messages are disabled");
+        }
         this.legacy.onRequest(socketId, payload);
       } else if (isJsonRpcPayload(payload)) {
+        if (isJsonRpcDisabled(config.mode)) {
+          return this.send(socketId, "JSON-RPC messages are disabled");
+        }
         this.jsonrpc.onPayload(socketId, payload);
       } else {
-        response = "Socket message unsupported";
-        this.logger.debug(`Outgoing Socket Message`);
-        this.logger.trace({ type: "message", direction: "outgoing", response });
-        socket.send(response);
+        return this.send(socketId, "Socket message unsupported");
       }
     });
 
