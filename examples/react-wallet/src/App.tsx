@@ -111,9 +111,7 @@ class App extends React.Component<{}> {
         logger: DEFAULT_LOGGER,
         storage,
       });
-      const accounts = (
-        await Promise.all<string[]>(this.state.chains.map((chainId) => wallet.getAccounts(chainId)))
-      ).flat();
+      const accounts = await wallet.getAccounts();
       this.setState({ loading: false, storage, client, wallet, accounts });
       this.subscribeToEvents();
       await this.checkPersistedState();
@@ -145,7 +143,7 @@ class App extends React.Component<{}> {
       }
       console.log("EVENT", "session_proposal");
       const unsupportedChains = [];
-      proposal.permissions.blockchain.chains.forEach((chainId) => {
+      proposal.permissions.blockchain.chains.forEach(chainId => {
         if (this.state.chains.includes(chainId)) return;
         unsupportedChains.push(chainId);
       });
@@ -153,7 +151,7 @@ class App extends React.Component<{}> {
         return this.state.client.reject({ proposal });
       }
       const unsupportedMethods = [];
-      proposal.permissions.jsonrpc.methods.forEach((method) => {
+      proposal.permissions.jsonrpc.methods.forEach(method => {
         if (DEFAULT_METHODS.includes(method)) return;
         unsupportedMethods.push(method);
       });
@@ -212,7 +210,7 @@ class App extends React.Component<{}> {
       throw new Error("Client is not initialized");
     }
     const requests = this.state.client.session.history.values
-      .map((record) => {
+      .map(record => {
         if (typeof record.response !== "undefined") return undefined;
         const request: SessionTypes.PayloadEvent = {
           topic: record.topic,
@@ -221,7 +219,7 @@ class App extends React.Component<{}> {
         };
         return request;
       })
-      .filter((x) => typeof x !== "undefined");
+      .filter(x => typeof x !== "undefined");
     console.log(requests);
     const sessions = this.state.client.session.values;
     this.setState({ sessions, requests });
@@ -309,7 +307,7 @@ class App extends React.Component<{}> {
     if (typeof this.state.accounts === "undefined") {
       throw new Error("Accounts is undefined");
     }
-    const accounts = this.state.accounts.filter((account) => {
+    const accounts = this.state.accounts.filter(account => {
       const chainId = account.split("@")[1];
       return proposal.permissions.blockchain.chains.includes(chainId);
     });
@@ -347,7 +345,7 @@ class App extends React.Component<{}> {
 
   public removeFromPending = async (request: SessionTypes.PayloadEvent) => {
     this.setState({
-      requests: this.state.requests.filter((x) => x.payload.id !== request.payload.id),
+      requests: this.state.requests.filter(x => x.payload.id !== request.payload.id),
     });
   };
 
