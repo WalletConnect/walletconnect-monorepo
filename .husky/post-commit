@@ -25,5 +25,5 @@ rsync -auvq servers/relay/ ./
 rm -rf ./servers
 git add .
 git commit -m "Miroring master: $githash"
-git push -u origin master
+git push -u origin relay
 git checkout master
