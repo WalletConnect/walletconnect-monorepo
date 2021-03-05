@@ -5,7 +5,7 @@ import { IClient } from "./client";
 import { RelayerTypes } from "./relayer";
 
 export interface SubscriptionOptions extends RelayerTypes.SubscribeOptions {
-  relay: RelayerTypes.ProtocolOptions;
+  expiry?: number;
 }
 export interface SubscriptionParams<Data> {
   id: string;

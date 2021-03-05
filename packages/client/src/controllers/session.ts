@@ -398,7 +398,11 @@ export class Session extends ISession {
     const decryptKeys: CryptoTypes.DecryptKeys = {
       sharedKey,
     };
-    await this.settled.set(session.topic, session, { relay: session.relay, decryptKeys });
+    await this.settled.set(session.topic, session, {
+      relay: session.relay,
+      expiry: session.expiry,
+      decryptKeys,
+    });
     return session;
   }
 
