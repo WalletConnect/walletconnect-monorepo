@@ -19,9 +19,10 @@ if $noChanges; then
 fi
 
 git checkout relay
+rm -rf *
 git checkout master --quiet -- servers/relay
 git reset servers/relay
-rsync -auvq servers/relay/ ./
+mv servers/relay/* .
 rm -rf ./servers
 git add .
 git commit -m "Miroring master: $githash"
