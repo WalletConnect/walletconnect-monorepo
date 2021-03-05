@@ -5,4 +5,3 @@ export * from "./relayer";
 export * from "./session";
 export * from "./subscription";
 export * from "./time";
-export * from "./timeout";

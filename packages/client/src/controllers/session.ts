@@ -33,7 +33,6 @@ import {
 
 import { Subscription } from "./subscription";
 import { JsonRpcHistory } from "./history";
-import { Timeout } from "./timeout";
 import {
   SESSION_CONTEXT,
   SESSION_EVENTS,
@@ -43,14 +42,12 @@ import {
   SUBSCRIPTION_EVENTS,
   SESSION_SIGNAL_METHOD_PAIRING,
   SESSION_DEFAULT_TTL,
-  TIMEOUT_EVENTS,
 } from "../constants";
 
 export class Session extends ISession {
   public pending: Subscription<SessionTypes.Pending>;
   public settled: Subscription<SessionTypes.Settled>;
   public history: JsonRpcHistory;
-  public timeout: Timeout;
 
   public events = new EventEmitter();
 
@@ -72,7 +69,6 @@ export class Session extends ISession {
       true,
     );
     this.history = new JsonRpcHistory(client, this.logger);
-    this.timeout = new Timeout(client, this.logger, this);
     this.registerEventListeners();
   }
 
@@ -81,7 +77,6 @@ export class Session extends ISession {
     await this.pending.init();
     await this.settled.init();
     await this.history.init();
-    await this.timeout.init();
   }
 
   public async get(topic: string): Promise<SessionTypes.Settled> {
@@ -713,7 +708,6 @@ export class Session extends ISession {
         const session = updatedEvent.data;
         this.logger.info(`Emitting ${SESSION_EVENTS.updated}`);
         this.logger.debug({ type: "event", event: SESSION_EVENTS.updated, data: session });
-        this.timeout.set(session.topic, session.expiry);
         this.events.emit(SESSION_EVENTS.updated, session);
       },
     );
@@ -728,7 +722,6 @@ export class Session extends ISession {
           reason: deletedEvent.reason,
         });
         await this.history.delete(session.topic);
-        this.timeout.delete(session.topic);
         const encryptKeys: CryptoTypes.EncryptKeys = {
           sharedKey: session.sharedKey,
           publicKey: session.self.publicKey,
@@ -738,9 +731,6 @@ export class Session extends ISession {
           encryptKeys,
         });
       },
-    );
-    this.timeout.on(TIMEOUT_EVENTS.expired, ({ topic }) =>
-      this.delete({ topic, reason: "Expired" }),
     );
   }
 }

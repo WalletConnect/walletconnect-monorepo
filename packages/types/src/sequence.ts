@@ -5,7 +5,6 @@ import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
 import { ISubscription, SubscriptionEvent } from "./subscription";
 import { IJsonRpcHistory } from "./history";
-import { ITimeout } from "./timeout";
 
 export abstract class ISequence<
   Pending = any,
@@ -25,8 +24,6 @@ export abstract class ISequence<
   public abstract settled: ISubscription<Settled>;
   // jsonrpc history
   public abstract history: IJsonRpcHistory;
-  // settled timeout
-  public abstract timeout: ITimeout;
 
   // returns settled subscriptions length
   public abstract readonly length: number;
