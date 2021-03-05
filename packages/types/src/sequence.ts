@@ -7,16 +7,16 @@ import { ISubscription, SubscriptionEvent } from "./subscription";
 import { IJsonRpcHistory } from "./history";
 
 export abstract class ISequence<
-  Pending = any,
-  Settled = any,
-  Update = any,
-  CreateParams = any,
-  RespondParams = any,
-  UpdateParams = any,
-  RequestParams = any,
-  DeleteParams = any,
-  ProposeParams = any,
-  SettleParams = any
+  Pending,
+  Settled,
+  Update,
+  CreateParams,
+  RespondParams,
+  UpdateParams,
+  RequestParams,
+  DeleteParams,
+  ProposeParams,
+  SettleParams
 > extends IEvents {
   // pending subscriptions
   public abstract pending: ISubscription<Pending>;
