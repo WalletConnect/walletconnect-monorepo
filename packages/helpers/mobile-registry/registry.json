@@ -284,7 +284,7 @@
     "shortName": "Aktionariat",
     "color": "rgb(10, 20, 20)",
     "logo": "./logos/aktionariat.png",
-    "universalLink": "https://aktionariat.com/app",
+    "universalLink": "https://app.aktionariat.com",
     "deepLink": "aktionariat:"
   }
 ]
