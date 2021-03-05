@@ -17,13 +17,13 @@ export function getTestJsonRpc(
 ): TestJsonRpcPayloads {
   const topic = overrideTopic || generateRandomBytes32();
 
-  const pub = formatJsonRpcRequest<RelayJsonRpc.PublishParams>(RELAY_JSONRPC.bridge.publish, {
+  const pub = formatJsonRpcRequest<RelayJsonRpc.PublishParams>(RELAY_JSONRPC.waku.publish, {
     topic,
     message,
     ttl: 86400,
   });
 
-  const sub = formatJsonRpcRequest<RelayJsonRpc.SubscribeParams>(RELAY_JSONRPC.bridge.subscribe, {
+  const sub = formatJsonRpcRequest<RelayJsonRpc.SubscribeParams>(RELAY_JSONRPC.waku.subscribe, {
     topic,
   });
   return { pub, sub };

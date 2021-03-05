@@ -58,7 +58,7 @@ start-redis          starts redis docker container for local development
 stop                 stops the whole docker stack
 test-relay           runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before.
 test-client          runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
-test-production      tests client against bridge.walletconnect.org
+test-production      tests client against relay.walletconnect.org
 test-staging         tests client against staging.walletconnect.org
 
 ```

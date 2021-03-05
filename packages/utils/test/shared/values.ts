@@ -19,7 +19,7 @@ export const TEST_SHARED_KEY = "1b665e13f74b54aa2401bb8762b6fe06b3fdcf4c248ff0bd
 export const TEST_HASHED_KEY = "08ca02463e7c45383d43efaee4bbe33f700df0658e99726a755fd77f9a040988";
 
 export const TEST_RELAY_OPTIONS = {
-  protocol: "bridge",
+  protocol: "waku",
   params: {},
 };
 

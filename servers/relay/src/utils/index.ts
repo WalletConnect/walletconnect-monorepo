@@ -1,2 +1,2 @@
-export * from "./legacy";
 export * from "./misc";
+export * from "./validators";

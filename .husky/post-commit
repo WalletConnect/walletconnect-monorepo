@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+exit 0
+. "$(dirname "$0")/_/husky.sh"
+githash=$(git rev-parse --short HEAD)
+if [[ ! $(git rev-parse --abbrev-ref HEAD) == "master" ]]; then
+  exit 0
+fi
+changes=$(git diff --name-only HEAD HEAD~1)
+noChanges=true
+for file in $changes; do
+  if [[ $file =~ servers/relay/* ]]; then
+    echo "Found changes"
+    noChanges=false
+    break
+  fi
+done
+
+if $noChanges; then
+  exit 0
+fi
+
+git checkout --quiet relay
+rm -rf *
+git checkout master --quiet -- servers/relay
+git reset --quiet servers/relay
+mv servers/relay/* .
+rm -rf ./servers
+git add .
+git commit -m "Mirroring master@$githash"
+git push --quiet -u origin relay
+git checkout --quiet master

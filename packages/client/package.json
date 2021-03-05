@@ -29,8 +29,8 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/provider": "^1.6.3",
-    "@json-rpc-tools/utils": "^1.6.3",
+    "@json-rpc-tools/provider": "^1.6.4",
+    "@json-rpc-tools/utils": "^1.6.4",
     "@pedrouid/pino-utils": "^1.0.1",
     "@walletconnect/types": "^2.0.0-alpha.26",
     "@walletconnect/utils": "^2.0.0-alpha.26",
@@ -38,7 +38,7 @@
     "keyvaluestorage": "^0.7.1",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
-    "relay-provider": "^1.2.0",
+    "relay-provider": "^1.2.1",
     "safe-json-utils": "^1.1.1"
   },
   "devDependencies": {

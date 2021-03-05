@@ -101,8 +101,8 @@ test-client: build-lerna ## runs "./packages/client" tests against the locally r
 test-staging: build-lerna ## tests client against staging.walletconnect.org
 	TEST_RELAY_URL=wss://staging.walletconnect.org npm run test --prefix packages/client
 
-test-production: build-lerna ## tests client against bridge.walletconnect.org
-	TEST_RELAY_URL=wss://bridge.walletconnect.org npm run test --prefix packages/client
+test-production: build-lerna ## tests client against relay.walletconnect.org
+	TEST_RELAY_URL=wss://relay.walletconnect.org npm run test --prefix packages/client
 
 test-relay: build-relay## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before.
 	npm run test --prefix servers/relay

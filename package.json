@@ -33,7 +33,8 @@
     "npm-publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
     "publish:latest": "run-s pre-publish npm-publish:latest",
     "publish:next": "run-s pre-publish npm-publish:next",
-    "publish:experimental": "run-s pre-publish npm-publish:experimental"
+    "publish:experimental": "run-s pre-publish npm-publish:experimental",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
