@@ -1,15 +1,15 @@
 import WalletConnect from "@walletconnect/client";
-import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
-import { payloadId, signingMethods, parsePersonalSign } from "@walletconnect/utils";
+import QRCodeModal from "@walletconnect/qrcode-modal";
 import {
-  IRPCMap,
   IConnector,
   IJsonRpcRequest,
   IJsonRpcResponseSuccess,
-  IWalletConnectProviderOptions,
   IQRCodeModalOptions,
+  IRPCMap,
+  IWalletConnectProviderOptions,
 } from "@walletconnect/types";
+import { parsePersonalSign, payloadId, signingMethods } from "@walletconnect/utils";
 
 const ProviderEngine = require("web3-provider-engine");
 const CacheSubprovider = require("web3-provider-engine/subproviders/cache");
@@ -50,7 +50,6 @@ class WalletConnectProvider extends ProviderEngine {
         bridge: this.bridge,
         qrcodeModal: this.qrcode ? this.qrcodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
-        clientMeta: opts?.clientMeta,
       });
     this.rpc = opts.rpc || null;
     if (
@@ -130,7 +129,7 @@ class WalletConnectProvider extends ProviderEngine {
 
   triggerConnect = (result: any) => {
     if (this.connectCallbacks && this.connectCallbacks.length) {
-      this.connectCallbacks.forEach(callback => callback(result));
+      this.connectCallbacks.forEach((callback) => callback(result));
     }
   };
 
@@ -242,7 +241,7 @@ class WalletConnectProvider extends ProviderEngine {
               resolve(wc);
             });
           })
-          .catch(error => {
+          .catch((error) => {
             this.isConnecting = false;
             reject(error);
           });
@@ -258,7 +257,7 @@ class WalletConnectProvider extends ProviderEngine {
 
   async subscribeWalletConnector() {
     const wc = await this.getWalletConnector();
-    wc.on("disconnect", error => {
+    wc.on("disconnect", (error) => {
       if (error) {
         this.emit("error", error);
         return;
@@ -308,8 +307,8 @@ class WalletConnectProvider extends ProviderEngine {
       1: "mainnet",
       3: "ropsten",
       4: "rinkeby",
-      5: "goerli",
       42: "kovan",
+      5: "goerli",
     };
     const network = infuraNetworks[chainId];
     if (!rpcUrl) {
@@ -332,8 +331,8 @@ class WalletConnectProvider extends ProviderEngine {
   updateHttpConnection() {
     if (this.rpcUrl) {
       this.http = new HttpConnection(this.rpcUrl);
-      this.http.on("payload", payload => this.emit("payload", payload));
-      this.http.on("error", error => this.emit("error", error));
+      this.http.on("payload", (payload) => this.emit("payload", payload));
+      this.http.on("error", (error) => this.emit("error", error));
     }
   }
 

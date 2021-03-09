@@ -1,7 +1,7 @@
 import {
-  IJsonRpcResponseSuccess,
-  IJsonRpcResponseError,
   IJsonRpcErrorMessage,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
 } from "@walletconnect/types";
 
 export function promisify(

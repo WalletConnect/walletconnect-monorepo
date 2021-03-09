@@ -1,0 +1,52 @@
+{
+  "name": "walletconnect",
+  "version": "1.4.0",
+  "description": "WalletConnect SDK",
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "ethereum",
+    "jsonrpc",
+    "mobile",
+    "qrcode",
+    "web3",
+    "crypto",
+    "cryptocurrency",
+    "dapp"
+  ],
+  "author": "WalletConnect <walletconnect.org>",
+  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/",
+  "license": "LGPL-3.0",
+  "main": "dist/walletconnect.cjs.js",
+  "module": "dist/walletconnect.esm.js",
+  "browser": {
+    "./dist/walletconnect.cjs.js": "./dist/walletconnect.browser.cjs.js",
+    "./dist/walletconnect.esm.js": "./dist/walletconnect.browser.esm.js"
+  },
+  "preconstruct": {
+    "entrypoints": [
+      "index.ts"
+    ]
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.13.10",
+    "@walletconnect/3id-provider": "^1.4.0",
+    "@walletconnect/channel-provider": "^1.4.0",
+    "@walletconnect/client": "^1.4.0",
+    "@walletconnect/qrcode-modal": "^1.4.0",
+    "@walletconnect/starkware-provider": "^1.4.0",
+    "@walletconnect/types": "^1.4.0",
+    "@walletconnect/utils": "^1.4.0",
+    "@walletconnect/web3-provider": "^1.4.0"
+  }
+}

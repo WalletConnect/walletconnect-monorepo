@@ -1,13 +1,13 @@
-import * as encUtils from "enc-utils";
 import {
-  IJsonRpcSubscription,
-  IJsonRpcRequest,
-  IJsonRpcResponseSuccess,
-  IJsonRpcResponseError,
   IInternalEvent,
+  IJsonRpcRequest,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
+  IJsonRpcSubscription,
 } from "@walletconnect/types";
+import * as encUtils from "enc-utils";
 
-import { signingMethods, reservedEvents } from "./constants";
+import { reservedEvents, signingMethods } from "./constants";
 
 export function isEmptyString(value: string): boolean {
   return value === "" || (typeof value === "string" && value.trim() === "");

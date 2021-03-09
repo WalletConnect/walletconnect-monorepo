@@ -1,8 +1,4 @@
-import "mocha";
-import { expect } from "chai";
-
 import IsomorphicClient from "../../src";
-
 import { TEST_BRIDGE_URL, TEST_SESSION_PARAMS } from "./values";
 
 export async function connectTwoClients() {
@@ -13,13 +9,13 @@ export async function connectTwoClients() {
 
   await Promise.all([
     new Promise<void>((resolve, reject) => {
-      connectorA.on("connect", error => {
+      connectorA.on("connect", (error) => {
         if (error) {
           reject(error);
         }
-        expect(connectorA.connected).to.be.true;
-        expect(connectorA.accounts).to.eql(TEST_SESSION_PARAMS.accounts);
-        expect(connectorA.chainId).to.eql(TEST_SESSION_PARAMS.chainId);
+        expect(connectorA.connected).toBeTruthy();
+        expect(connectorA.accounts).toEqual(TEST_SESSION_PARAMS.accounts);
+        expect(connectorA.chainId).toEqual(TEST_SESSION_PARAMS.chainId);
         resolve();
       });
     }),
@@ -33,7 +29,7 @@ export async function connectTwoClients() {
         connectorB = new IsomorphicClient({ uri });
 
         // Subscribe to session requests
-        connectorB.on("session_request", error => {
+        connectorB.on("session_request", (error) => {
           if (error) {
             reject(error);
           }
@@ -42,9 +38,9 @@ export async function connectTwoClients() {
           }
           connectorB.approveSession(TEST_SESSION_PARAMS);
 
-          expect(connectorB.connected).to.be.true;
-          expect(connectorB.accounts).to.eql(TEST_SESSION_PARAMS.accounts);
-          expect(connectorB.chainId).to.eql(TEST_SESSION_PARAMS.chainId);
+          expect(connectorB.connected).toBeTruthy();
+          expect(connectorB.accounts).toEqual(TEST_SESSION_PARAMS.accounts);
+          expect(connectorB.chainId).toEqual(TEST_SESSION_PARAMS.chainId);
           resolve();
         });
       });
@@ -55,21 +51,21 @@ export async function connectTwoClients() {
         .then(() => {
           resolve();
         })
-        .catch(e => reject(e));
+        .catch((e) => reject(e));
     }),
   ]);
   if (typeof connectorB === "undefined") {
     throw new Error("Peer connector is undefined");
   }
-  expect(!!connectorA.connected).to.be.true;
-  expect(!!connectorA.clientId).to.be.true;
-  expect(connectorA.clientId).to.eql(connectorB.peerId);
-  expect(!!connectorA.peerId).to.be.true;
-  expect(connectorA.peerId).to.eql(connectorB.clientId);
-  expect(!!connectorB.connected).to.be.true;
-  expect(!!connectorB.clientId).to.be.true;
-  expect(connectorB.clientId).to.eql(connectorA.peerId);
-  expect(!!connectorB.peerId).to.be.true;
-  expect(connectorB.peerId).to.eql(connectorA.clientId);
+  expect(!!connectorA.connected).toBeTruthy();
+  expect(!!connectorA.clientId).toBeTruthy();
+  expect(connectorA.clientId).toEqual(connectorB.peerId);
+  expect(!!connectorA.peerId).toBeTruthy();
+  expect(connectorA.peerId).toEqual(connectorB.clientId);
+  expect(!!connectorB.connected).toBeTruthy();
+  expect(!!connectorB.clientId).toBeTruthy();
+  expect(connectorB.clientId).toEqual(connectorA.peerId);
+  expect(!!connectorB.peerId).toBeTruthy();
+  expect(connectorB.peerId).toEqual(connectorA.clientId);
   return connectorA.clientId;
 }

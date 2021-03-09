@@ -1,4 +1,4 @@
-import { NetworkEvent, INetworkEventEmitter, INetworkMonitor } from "@walletconnect/types";
+import { INetworkEventEmitter, INetworkMonitor, NetworkEvent } from "@walletconnect/types";
 
 // -- NetworkMonitor --------------------------------------------------------- //
 
@@ -16,8 +16,8 @@ class NetworkMonitor implements INetworkMonitor {
 
   public on(event: NetworkEvent, callback: () => void): void {
     this._eventEmitters.push({
-      event,
       callback,
+      event,
     });
   }
 

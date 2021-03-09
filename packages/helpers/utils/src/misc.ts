@@ -1,5 +1,5 @@
-import * as encUtils from "enc-utils";
 import * as jsonRpcUtils from "@json-rpc-tools/utils";
+import * as encUtils from "enc-utils";
 
 // -- Hex -------------------------------------------------- //
 

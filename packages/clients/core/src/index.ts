@@ -1,65 +1,66 @@
-import {
-  IConnector,
-  IConnectorOpts,
-  ICryptoLib,
-  ITransportLib,
-  ISessionStorage,
-  IEncryptionPayload,
-  ISocketMessage,
-  ISessionStatus,
-  ISessionError,
-  IJsonRpcResponseSuccess,
-  IJsonRpcResponseError,
-  IJsonRpcRequest,
-  ITxData,
-  IClientMeta,
-  IParseURIResult,
-  ISessionParams,
-  IUpdateChainParams,
-  IRequestOptions,
-  IInternalRequestOptions,
-  ICreateSessionOptions,
-  IQRCodeModal,
-  IPushSubscription,
-  IPushServerOptions,
-  IWalletConnectSession,
-  IQRCodeModalOptions,
-} from "@walletconnect/types";
-import {
-  parsePersonalSign,
-  parseTransactionData,
-  convertArrayBufferToHex,
-  convertHexToArrayBuffer,
-  getClientMeta,
-  payloadId,
-  uuid,
-  formatRpcError,
-  parseWalletConnectUri,
-  convertNumberToHex,
-  isJsonRpcResponseSuccess,
-  isJsonRpcResponseError,
-  isSilentPayload,
-  getLocal,
-  signingMethods,
-  mobileLinkChoiceKey,
-  isMobile,
-  removeLocal,
-} from "@walletconnect/utils";
 import SocketTransport from "@walletconnect/socket-transport";
 import {
+  IClientMeta,
+  IConnector,
+  IConnectorOpts,
+  ICreateSessionOptions,
+  ICryptoLib,
+  IEncryptionPayload,
+  IInternalRequestOptions,
+  IJsonRpcRequest,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
+  IParseURIResult,
+  IPushServerOptions,
+  IPushSubscription,
+  IQRCodeModal,
+  IQRCodeModalOptions,
+  IRequestOptions,
+  ISessionError,
+  ISessionParams,
+  ISessionStatus,
+  ISessionStorage,
+  ISocketMessage,
+  ITransportLib,
+  ITxData,
+  IUpdateChainParams,
+  IWalletConnectSession,
+} from "@walletconnect/types";
+import {
+  convertArrayBufferToHex,
+  convertHexToArrayBuffer,
+  convertNumberToHex,
+  formatRpcError,
+  getClientMeta,
+  getLocal,
+  isJsonRpcResponseError,
+  isJsonRpcResponseSuccess,
+  isMobile,
+  isSilentPayload,
+  mobileLinkChoiceKey,
+  parsePersonalSign,
+  parseTransactionData,
+  parseWalletConnectUri,
+  payloadId,
+  removeLocal,
+  signingMethods,
+  uuid,
+} from "@walletconnect/utils";
+
+import {
+  ERROR_INVALID_RESPONSE,
+  ERROR_INVALID_URI,
+  ERROR_MISSING_ERROR,
+  ERROR_MISSING_ID,
+  ERROR_MISSING_JSON_RPC,
+  ERROR_MISSING_METHOD,
+  ERROR_MISSING_REQUIRED,
+  ERROR_MISSING_RESULT,
+  ERROR_QRCODE_MODAL_NOT_PROVIDED,
+  ERROR_QRCODE_MODAL_USER_CLOSED,
   ERROR_SESSION_CONNECTED,
   ERROR_SESSION_DISCONNECTED,
   ERROR_SESSION_REJECTED,
-  ERROR_MISSING_JSON_RPC,
-  ERROR_MISSING_RESULT,
-  ERROR_MISSING_ERROR,
-  ERROR_MISSING_METHOD,
-  ERROR_MISSING_ID,
-  ERROR_INVALID_RESPONSE,
-  ERROR_INVALID_URI,
-  ERROR_MISSING_REQUIRED,
-  ERROR_QRCODE_MODAL_NOT_PROVIDED,
-  ERROR_QRCODE_MODAL_USER_CLOSED,
 } from "./errors";
 import EventManager from "./events";
 import SessionStorage from "./storage";
@@ -145,9 +146,9 @@ class Connector implements IConnector {
       opts.transport ||
       new SocketTransport({
         protocol: this.protocol,
-        version: this.version,
-        url: this.bridge,
         subscriptions: [this.clientId],
+        url: this.bridge,
+        version: this.version,
       });
 
     this._subscribeToInternalEvents();
@@ -330,17 +331,17 @@ class Connector implements IConnector {
 
   get session() {
     return {
-      connected: this.connected,
       accounts: this.accounts,
-      chainId: this.chainId,
       bridge: this.bridge,
-      key: this.key,
+      chainId: this.chainId,
       clientId: this.clientId,
       clientMeta: this.clientMeta,
-      peerId: this.peerId,
-      peerMeta: this.peerMeta,
+      connected: this.connected,
       handshakeId: this.handshakeId,
       handshakeTopic: this.handshakeTopic,
+      key: this.key,
+      peerId: this.peerId,
+      peerMeta: this.peerMeta,
     };
   }
 
@@ -365,8 +366,8 @@ class Connector implements IConnector {
 
   public on(event: string, callback: (error: Error | null, payload: any | null) => void): void {
     const eventEmitter = {
-      event,
       callback,
+      event,
     };
     this._eventManager.subscribe(eventEmitter);
   }
@@ -422,8 +423,8 @@ class Connector implements IConnector {
 
     if (this.connected) {
       return {
-        chainId: this.chainId,
         accounts: this.accounts,
+        chainId: this.chainId,
       };
     }
 
@@ -457,9 +458,9 @@ class Connector implements IConnector {
       method: "wc_sessionRequest",
       params: [
         {
+          chainId: opts && opts.chainId ? opts.chainId : null,
           peerId: this.clientId,
           peerMeta: this.clientMeta,
-          chainId: opts && opts.chainId ? opts.chainId : null,
         },
       ],
     });
@@ -488,13 +489,13 @@ class Connector implements IConnector {
     this.rpcUrl = sessionStatus.rpcUrl || "";
 
     const sessionParams: ISessionParams = {
+      accounts: this.accounts,
       approved: true,
       chainId: this.chainId,
       networkId: this.networkId,
-      accounts: this.accounts,
-      rpcUrl: this.rpcUrl,
       peerId: this.clientId,
       peerMeta: this.clientMeta,
+      rpcUrl: this.rpcUrl,
     };
 
     const response = {
@@ -511,10 +512,10 @@ class Connector implements IConnector {
       event: "connect",
       params: [
         {
+          accounts: this.accounts,
+          chainId: this.chainId,
           peerId: this.peerId,
           peerMeta: this.peerMeta,
-          chainId: this.chainId,
-          accounts: this.accounts,
         },
       ],
     });
@@ -529,8 +530,8 @@ class Connector implements IConnector {
       sessionError && sessionError.message ? sessionError.message : ERROR_SESSION_REJECTED;
 
     const response = this._formatResponse({
-      id: this.handshakeId,
       error: { message },
+      id: this.handshakeId,
     });
 
     this._sendResponse(response);
@@ -554,10 +555,10 @@ class Connector implements IConnector {
     this.rpcUrl = sessionStatus.rpcUrl || "";
 
     const sessionParams: ISessionParams = {
+      accounts: this.accounts,
       approved: true,
       chainId: this.chainId,
       networkId: this.networkId,
-      accounts: this.accounts,
       rpcUrl: this.rpcUrl,
     };
 
@@ -572,8 +573,8 @@ class Connector implements IConnector {
       event: "session_update",
       params: [
         {
-          chainId: this.chainId,
           accounts: this.accounts,
+          chainId: this.chainId,
         },
       ],
     });
@@ -585,10 +586,10 @@ class Connector implements IConnector {
     const message = sessionError ? sessionError.message : "Session Disconnected";
 
     const sessionParams: ISessionParams = {
+      accounts: null,
       approved: false,
       chainId: null,
       networkId: null,
-      accounts: null,
     };
 
     const request = this._formatRequest({
@@ -804,7 +805,7 @@ class Connector implements IConnector {
 
     this._eventManager.trigger({
       event: "call_request_sent",
-      params: [{ request, options }],
+      params: [{ options, request }],
     });
 
     if (isMobile() && signingMethods.includes(request.method)) {
@@ -910,10 +911,10 @@ class Connector implements IConnector {
             event: "connect",
             params: [
               {
+                accounts: this.accounts,
+                chainId: this.chainId,
                 peerId: this.peerId,
                 peerMeta: this.peerMeta,
-                chainId: this.chainId,
-                accounts: this.accounts,
               },
             ],
           });
@@ -929,8 +930,8 @@ class Connector implements IConnector {
             event: "session_update",
             params: [
               {
-                chainId: this.chainId,
                 accounts: this.accounts,
+                chainId: this.chainId,
               },
             ],
           });
@@ -1122,7 +1123,7 @@ class Connector implements IConnector {
       }
       const key = result.key;
 
-      return { handshakeTopic, bridge, key };
+      return { bridge, handshakeTopic, key };
     } else {
       throw new Error(ERROR_INVALID_URI);
     }
@@ -1211,11 +1212,11 @@ class Connector implements IConnector {
 
     const pushSubscription: IPushSubscription = {
       bridge: this.bridge,
+      language: pushServerOpts.language || "",
+      peerName: "",
+      token: pushServerOpts.token,
       topic: this.clientId,
       type: pushServerOpts.type,
-      token: pushServerOpts.token,
-      peerName: "",
-      language: pushServerOpts.language || "",
     };
 
     this.on("connect", async (error: Error | null, payload: any) => {
@@ -1230,12 +1231,12 @@ class Connector implements IConnector {
 
       try {
         const response = await fetch(`${pushServerOpts.url}/new`, {
-          method: "POST",
+          body: JSON.stringify(pushSubscription),
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(pushSubscription),
+          method: "POST",
         });
 
         const json = await response.json();

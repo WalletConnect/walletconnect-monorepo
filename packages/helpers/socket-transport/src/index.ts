@@ -1,16 +1,16 @@
 import {
-  ISocketMessage,
-  ITransportEvent,
   INetworkMonitor,
-  ITransportLib,
+  ISocketMessage,
   ISocketTransportOptions,
+  ITransportEvent,
+  ITransportLib,
 } from "@walletconnect/types";
 import {
-  isBrowser,
+  appendToQueryString,
+  detectEnv,
   getLocation,
   getQueryString,
-  detectEnv,
-  appendToQueryString,
+  isBrowser,
 } from "@walletconnect/utils";
 
 import NetworkMonitor from "./network";
@@ -108,24 +108,24 @@ class SocketTransport implements ITransportLib {
     }
 
     this._socketSend({
-      topic: topic,
-      type: "pub",
       payload: message,
       silent: !!silent,
+      topic: topic,
+      type: "pub",
     });
   }
 
   public subscribe(topic: string) {
     this._socketSend({
-      topic: topic,
-      type: "sub",
       payload: "",
       silent: true,
+      topic: topic,
+      type: "sub",
     });
   }
 
   public on(event: string, callback: (payload: any) => void) {
-    this._events.push({ event, callback });
+    this._events.push({ callback, event });
   }
 
   // -- private ---------------------------------------------------------- //
@@ -193,24 +193,24 @@ class SocketTransport implements ITransportLib {
     }
 
     this._socketSend({
-      topic: socketMessage.topic,
-      type: "ack",
       payload: "",
       silent: true,
+      topic: socketMessage.topic,
+      type: "ack",
     });
 
     if (this._socket && this._socket.readyState === 1) {
-      const events = this._events.filter(event => event.event === "message");
+      const events = this._events.filter((event) => event.event === "message");
       if (events && events.length) {
-        events.forEach(event => event.callback(socketMessage));
+        events.forEach((event) => event.callback(socketMessage));
       }
     }
   }
 
   private _socketError(e: Event) {
-    const events = this._events.filter(event => event.event === "error");
+    const events = this._events.filter((event) => event.event === "error");
     if (events && events.length) {
-      events.forEach(event => event.callback(e));
+      events.forEach((event) => event.callback(e));
     }
   }
 
@@ -219,10 +219,10 @@ class SocketTransport implements ITransportLib {
 
     subscriptions.forEach((topic: string) =>
       this._queue.push({
-        topic: topic,
-        type: "sub",
         payload: "",
         silent: true,
+        topic: topic,
+        type: "sub",
       }),
     );
 
@@ -251,15 +251,15 @@ function getWebSocketUrl(_url: string, protocol: string, version: number): strin
   const splitUrl = url.split("?");
   const params = isBrowser()
     ? {
-        protocol,
-        version,
         env: "browser",
         host: getLocation()?.host || "",
-      }
-    : {
         protocol,
         version,
+      }
+    : {
         env: detectEnv()?.name || "",
+        protocol,
+        version,
       };
   const queryString = appendToQueryString(getQueryString(splitUrl[1] || ""), params);
   return splitUrl[0] + "?" + queryString;

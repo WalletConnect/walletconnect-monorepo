@@ -1,6 +1,6 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
-import { IWCEthRpcConnectionOptions, IConnector } from "@walletconnect/types";
+import { IConnector, IWCEthRpcConnectionOptions } from "@walletconnect/types";
 
 const HookedWalletSubprovider = require("web3-provider-engine/subproviders/hooked-wallet");
 
@@ -75,10 +75,10 @@ class WalletConnectSubprovider extends HookedWalletSubprovider {
 
     const clientMeta = isNode()
       ? {
-          name: "wallet-connect-provider",
           description: "WalletConnect provider",
-          url: "#",
           icons: ["https://walletconnect.org/walletconnect-logo.png"],
+          name: "wallet-connect-provider",
+          url: "#",
         }
       : opts.clientMeta;
 

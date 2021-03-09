@@ -1,16 +1,15 @@
-import * as React from "react";
 import { isMobile } from "@walletconnect/browser-utils";
 import { IQRCodeModalOptions } from "@walletconnect/types";
+import * as React from "react";
 
+import { WALLETCONNECT_MODAL_ID } from "../constants";
+import { TextMap } from "../types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Header from "./Header";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import MobileLinkDisplay from "./MobileLinkDisplay";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import QRCodeDisplay from "./QRCodeDisplay";
-
-import { WALLETCONNECT_MODAL_ID } from "../constants";
-import { TextMap } from "../types";
 
 interface ModalProps {
   text: TextMap;
@@ -23,9 +22,9 @@ function Modal(props: ModalProps) {
   const mobile = isMobile();
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   const displayProps = {
+    qrcodeModalOptions: props.qrcodeModalOptions,
     text: props.text,
     uri: props.uri,
-    qrcodeModalOptions: props.qrcodeModalOptions,
   };
 
   return (

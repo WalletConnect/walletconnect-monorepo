@@ -1,12 +1,12 @@
 import * as isoCrypto from "@pedrouid/iso-crypto";
-import * as encUtils from "enc-utils";
 import {
-  IJsonRpcRequest,
-  IJsonRpcResponseSuccess,
-  IJsonRpcResponseError,
   IEncryptionPayload,
+  IJsonRpcRequest,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
 } from "@walletconnect/types";
 import { convertArrayBufferToBuffer, convertBufferToArrayBuffer } from "@walletconnect/utils";
+import * as encUtils from "enc-utils";
 
 export async function generateKey(length?: number): Promise<ArrayBuffer> {
   const _length = (length || 256) / 8;

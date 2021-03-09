@@ -1,17 +1,17 @@
 import {
-  isJsonRpcRequest,
-  isJsonRpcResponseSuccess,
-  isJsonRpcResponseError,
+  IEventEmitter,
+  IInternalEvent,
+  IJsonRpcRequest,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
+} from "@walletconnect/types";
+import {
   isInternalEvent,
+  isJsonRpcRequest,
+  isJsonRpcResponseError,
+  isJsonRpcResponseSuccess,
   isReservedEvent,
 } from "@walletconnect/utils";
-import {
-  IInternalEvent,
-  IJsonRpcResponseSuccess,
-  IJsonRpcResponseError,
-  IJsonRpcRequest,
-  IEventEmitter,
-} from "@walletconnect/types";
 
 // -- EventManager --------------------------------------------------------- //
 

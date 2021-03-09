@@ -1,6 +1,6 @@
-import { IWCRpcConnectionOptions } from "@walletconnect/types";
-import WCRpcConnection from "@walletconnect/rpc-connection";
 import { ChannelProvider } from "@connext/channel-provider";
+import WCRpcConnection from "@walletconnect/rpc-connection";
+import { IWCRpcConnectionOptions } from "@walletconnect/types";
 
 class WalletConnectChannelProvider extends ChannelProvider {
   constructor(opts?: IWCRpcConnectionOptions) {

@@ -1,8 +1,7 @@
-import EventEmitter from "eventemitter3";
 import { IJsonRpcConnection } from "@json-rpc-tools/types";
-
 import WCRpcConnection from "@walletconnect/rpc-connection";
 import { IWCEthRpcConnectionOptions, IWCRpcConnection } from "@walletconnect/types";
+import EventEmitter from "eventemitter3";
 
 export class SignerConnection extends IJsonRpcConnection {
   public events: any = new EventEmitter();

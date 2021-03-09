@@ -2,7 +2,7 @@
 import * as React from "react";
 
 import { WALLETCONNECT_LOGO_SVG_URL } from "../assets/logo";
-import { WALLETCONNECT_HEADER_TEXT, WALLETCONNECT_CLOSE_BUTTON_ID } from "../constants";
+import { WALLETCONNECT_CLOSE_BUTTON_ID, WALLETCONNECT_HEADER_TEXT } from "../constants";
 
 interface HeaderProps {
   onClose: any;

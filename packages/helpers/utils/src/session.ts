@@ -1,9 +1,10 @@
 import {
   IParseURIResult,
-  IRequiredParamsResult,
   IQueryParamsResult,
+  IRequiredParamsResult,
   IWalletConnectSession,
 } from "@walletconnect/types";
+
 import { parseQueryString } from "./url";
 
 export function isWalletConnectSession(object: any): object is IWalletConnectSession {
@@ -40,8 +41,8 @@ export function parseWalletConnectUri(str: string): IParseURIResult {
     const result = parseQueryString(queryString);
 
     const parameters: IQueryParamsResult = {
-      key: result.key || "",
       bridge: result.bridge || "",
+      key: result.key || "",
     };
 
     return parameters;

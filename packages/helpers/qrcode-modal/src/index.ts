@@ -1,7 +1,7 @@
 import { IQRCodeModalOptions } from "@walletconnect/types";
 
-import * as nodeLib from "./node";
 import * as browserLib from "./browser";
+import * as nodeLib from "./node";
 
 const isNode = () =>
   typeof process !== "undefined" &&
@@ -25,4 +25,4 @@ function close() {
   }
 }
 
-export default { open, close };
+export default { close, open };

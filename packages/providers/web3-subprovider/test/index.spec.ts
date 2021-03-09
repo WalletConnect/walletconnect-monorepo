@@ -1,6 +1,3 @@
-import "mocha";
-import { expect } from "chai";
-
 import WalletConnectWeb3Subprovider from "../src";
 
 describe("WalletConnectWeb3Subprovider", () => {
@@ -8,6 +5,6 @@ describe("WalletConnectWeb3Subprovider", () => {
     const provider = new WalletConnectWeb3Subprovider({
       bridge: "https://bridge.walletconnect.org",
     });
-    expect(!!provider).to.be.true;
+    expect(!!provider).toBeTruthy();
   });
 });

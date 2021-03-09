@@ -1,7 +1,4 @@
-import "mocha";
-import { expect } from "chai";
-
-import { IJsonRpcRequest, IEncryptionPayload } from "@walletconnect/types";
+import { IEncryptionPayload, IJsonRpcRequest } from "@walletconnect/types";
 import { convertHexToArrayBuffer } from "@walletconnect/utils";
 
 import * as IsoCrypto from "../src";
@@ -27,22 +24,22 @@ describe("IsoCrypto", () => {
     const key = convertHexToArrayBuffer(TEST_KEY);
     const iv = convertHexToArrayBuffer(TEST_IV);
     const result = await IsoCrypto.encrypt(request, key, iv);
-    expect(!!result).to.be.true;
+    expect(!!result).toBeTruthy();
     if (!result) return;
-    expect(result.data).to.eql(TEST_ENCRYPTION_PAYLOAD.data);
-    expect(result.hmac).to.eql(TEST_ENCRYPTION_PAYLOAD.hmac);
-    expect(result.iv).to.eql(TEST_ENCRYPTION_PAYLOAD.iv);
+    expect(result.data).toEqual(TEST_ENCRYPTION_PAYLOAD.data);
+    expect(result.hmac).toEqual(TEST_ENCRYPTION_PAYLOAD.hmac);
+    expect(result.iv).toEqual(TEST_ENCRYPTION_PAYLOAD.iv);
   });
 
   it("decrypt successfully", async () => {
     const payload = TEST_ENCRYPTION_PAYLOAD;
     const key = convertHexToArrayBuffer(TEST_KEY);
     const result = await IsoCrypto.decrypt(payload, key);
-    expect(!!result).to.be.true;
+    expect(!!result).toBeTruthy();
     if (!result) return;
-    expect((result as IJsonRpcRequest).id).to.eql(TEST_JSON_RPC_REQUEST.id);
-    expect((result as IJsonRpcRequest).jsonrpc).to.eql(TEST_JSON_RPC_REQUEST.jsonrpc);
-    expect((result as IJsonRpcRequest).method).to.eql(TEST_JSON_RPC_REQUEST.method);
-    expect((result as IJsonRpcRequest).params).to.eql(TEST_JSON_RPC_REQUEST.params);
+    expect((result as IJsonRpcRequest).id).toEqual(TEST_JSON_RPC_REQUEST.id);
+    expect((result as IJsonRpcRequest).jsonrpc).toEqual(TEST_JSON_RPC_REQUEST.jsonrpc);
+    expect((result as IJsonRpcRequest).method).toEqual(TEST_JSON_RPC_REQUEST.method);
+    expect((result as IJsonRpcRequest).params).toEqual(TEST_JSON_RPC_REQUEST.params);
   });
 });

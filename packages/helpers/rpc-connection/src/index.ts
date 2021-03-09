@@ -1,15 +1,15 @@
-import EventEmitter from "eventemitter3";
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
-import { isJsonRpcResponseError } from "@walletconnect/utils";
 import {
-  IWCRpcConnection,
-  IWCRpcConnectionOptions,
   IConnector,
   IJsonRpcResponseError,
   IJsonRpcResponseSuccess,
   IQRCodeModalOptions,
+  IWCRpcConnection,
+  IWCRpcConnectionOptions,
 } from "@walletconnect/types";
+import { isJsonRpcResponseError } from "@walletconnect/utils";
+import EventEmitter from "eventemitter3";
 
 class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
   public bridge = "https://bridge.walletconnect.org";
@@ -32,9 +32,9 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       opts?.connector ||
       new WalletConnect({
         bridge: this.bridge,
+        clientMeta: opts?.clientMeta,
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
-        clientMeta: opts?.clientMeta,
       });
 
     if (this.wc.connected) {
@@ -105,7 +105,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
       return Promise.resolve();
     }
     return new Promise((resolve, reject): void => {
-      this.on("error", err => {
+      this.on("error", (err) => {
         reject(err);
       });
 
@@ -131,9 +131,9 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     code = -32000,
   ): IJsonRpcResponseError {
     const errorPayload = {
+      error: { code, message },
       id: payload.id,
       jsonrpc: payload.jsonrpc,
-      error: { code, message },
     };
     this.emit("payload", errorPayload);
     return errorPayload;

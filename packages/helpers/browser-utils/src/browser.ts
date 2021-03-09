@@ -1,15 +1,14 @@
 import { IClientMeta } from "@walletconnect/types";
-
-import * as windowMetadata from "window-metadata";
-import * as windowGetters from "window-getters";
 import {
-  detect,
-  BrowserInfo,
   BotInfo,
+  BrowserInfo,
+  detect,
   NodeInfo,
-  SearchBotDeviceInfo,
   ReactNativeInfo,
+  SearchBotDeviceInfo,
 } from "detect-browser";
+import * as windowGetters from "window-getters";
+import * as windowMetadata from "window-metadata";
 
 export function detectEnv(
   userAgent?: string,

@@ -1,23 +1,20 @@
-import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions, IAppRegistry } from "@walletconnect/types";
 import {
-  isIOS,
   formatIOSMobile,
-  saveMobileLinkInfo,
+  formatMobileRegistry,
   getMobileLinkRegistry,
   getWalletRegistryUrl,
-  formatMobileRegistry,
 } from "@walletconnect/browser-utils";
+import { IAppRegistry, IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
+import * as React from "react";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
-
+import { TextMap } from "../types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalletButton from "./WalletButton";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalletIcon from "./WalletIcon";
-import { TextMap } from "../types";
 
 interface MobileLinkDisplayProps {
   qrcodeModalOptions?: IQRCodeModalOptions;
@@ -43,7 +40,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
       if (!ios) return;
       try {
         const url = getWalletRegistryUrl();
-        const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
+        const registry = (await fetch(url).then((x) => x.json())) as IAppRegistry;
         const _links = getMobileLinkRegistry(formatMobileRegistry(registry), whitelist);
 
         setLinks(_links);
@@ -78,8 +75,8 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
               const href = formatIOSMobile(props.uri, entry);
               const handleClickIOS = React.useCallback(() => {
                 saveMobileLinkInfo({
-                  name,
                   href,
+                  name,
                 });
               }, []);
               return !grid ? (
@@ -112,8 +109,8 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
             href={props.uri}
             onClick={React.useCallback(() => {
               saveMobileLinkInfo({
-                name: "Unknown",
                 href: props.uri,
+                name: "Unknown",
               });
             }, [])}
           />
@@ -128,7 +125,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
               const selected = page === pageNumber;
               return (
                 <a
-                  style={{ margin: "auto 10px", fontWeight: selected ? "bold" : "normal" }}
+                  style={{ fontWeight: selected ? "bold" : "normal", margin: "auto 10px" }}
                   onClick={() => setPage(pageNumber)}
                 >
                   {pageNumber}

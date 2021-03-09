@@ -1,12 +1,12 @@
 import Connector from "@walletconnect/core";
-import { IWalletConnectOptions, IPushServerOptions } from "@walletconnect/types";
 import * as cryptoLib from "@walletconnect/iso-crypto";
+import { IPushServerOptions, IWalletConnectOptions } from "@walletconnect/types";
 
 class WalletConnect extends Connector {
   constructor(connectorOpts: IWalletConnectOptions, pushServerOpts?: IPushServerOptions) {
     super({
-      cryptoLib,
       connectorOpts,
+      cryptoLib,
       pushServerOpts,
     });
   }

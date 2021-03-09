@@ -1,5 +1,5 @@
 import { IWalletConnectSession } from "@walletconnect/types";
-import { isWalletConnectSession, getLocal, setLocal, removeLocal } from "@walletconnect/utils";
+import { getLocal, isWalletConnectSession, removeLocal, setLocal } from "@walletconnect/utils";
 
 class SessionStorage {
   public storageId = "walletconnect";

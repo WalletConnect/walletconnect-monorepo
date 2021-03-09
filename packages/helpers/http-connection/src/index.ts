@@ -1,7 +1,7 @@
-import EventEmitter from "eventemitter3";
-import { XMLHttpRequest } from "xhr2-cookies";
 import { IError } from "@walletconnect/types";
 import { getFromWindow } from "@walletconnect/utils";
+import EventEmitter from "eventemitter3";
+import { XMLHttpRequest } from "xhr2-cookies";
 
 // -- global -------------------------------------------------------------- //
 
@@ -19,14 +19,14 @@ class HTTPConnection extends EventEmitter {
 
   formatError(payload: any, message: string, code = -1) {
     return {
-      error: { message, code },
+      error: { code, message },
       id: payload.id,
       jsonrpc: payload.jsonrpc,
     };
   }
 
   public send(payload: any, internal?: any): Promise<any> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       if (payload.method === "eth_subscribe") {
         const error = this.formatError(
           payload,
@@ -48,7 +48,7 @@ class HTTPConnection extends EventEmitter {
           } else {
             const { id, jsonrpc } = payload;
             const response = err
-              ? { id, jsonrpc, error: { message: err.message, code: err.code } }
+              ? { error: { code: err.code, message: err.message }, id, jsonrpc }
               : { id, jsonrpc, result };
             this.emit("payload", response);
             resolve(response);

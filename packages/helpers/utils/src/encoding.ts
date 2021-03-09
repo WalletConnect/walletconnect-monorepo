@@ -20,7 +20,8 @@ export function convertArrayBufferToNumber(arrBuf: ArrayBuffer): number {
 }
 
 export function concatArrayBuffers(...args: ArrayBuffer[]): ArrayBuffer {
-  return encUtils.hexToArray(args.map(b => encUtils.arrayToHex(new Uint8Array(b))).join("")).buffer;
+  return encUtils.hexToArray(args.map((b) => encUtils.arrayToHex(new Uint8Array(b))).join(""))
+    .buffer;
 }
 
 // -- Buffer ----------------------------------------------- //

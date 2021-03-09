@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { CARET_SVG_URL } from "../assets/caret";
 
 interface WalletButtonProps {

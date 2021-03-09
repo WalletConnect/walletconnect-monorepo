@@ -1,42 +1,33 @@
 {
-  "rules": {
-    "@typescript-eslint/ban-ts-ignore": ["off"],
-    "@typescript-eslint/camelcase": ["off"],
-    "@typescript-eslint/explicit-function-return-type": ["off"],
-    "@typescript-eslint/interface-name-prefix": ["off"],
-    "@typescript-eslint/no-explicit-any": ["off"],
-    "@typescript-eslint/no-unused-expressions": ["off"],
-    "@typescript-eslint/no-var-requires": ["off"],
-    "@typescript-eslint/no-use-before-define": ["off"],
-    "comma-dangle": ["error", "always-multiline"],
-    "no-async-promise-executor": ["off"],
-    "no-empty-pattern": ["off"],
-    "no-undef": ["error"],
-    "no-var": ["error"],
-    "object-curly-spacing": ["error", "always"],
-    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
-    "semi": ["error", "always"],
-    "spaced-comment": ["off"],
-    "no-prototype-builtins": ["off"],
-    "sort-keys": ["off"],
-    "space-before-function-paren": ["off"],
-    "indent": ["off"],
-    "no-console": ["error", { "allow": ["warn"] }]
-  },
-  "env": {
-    "browser": true,
-    "es6": true
-  },
   "extends": [
-    "standard",
-    "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended"
+    // Base config
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "prettier"
   ],
+  "ignorePatterns": ["dist/", "build/"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
     "sourceType": "module"
   },
-  "plugins": ["prettier", "@typescript-eslint"]
+  "plugins": ["simple-import-sort", "sort-keys-fix", "unused-imports"],
+  "rules": {
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/ban-types": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "args": "after-used",
+        "ignoreRestSiblings": true,
+        "vars": "all"
+      }
+    ],
+    "simple-import-sort/imports": "error",
+    "sort-keys-fix/sort-keys-fix": "error",
+    "unused-imports/no-unused-imports-ts": "error"
+  }
 }

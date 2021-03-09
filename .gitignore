@@ -1,8 +1,20 @@
-node_modules
-lerna-debug.log
+# ignore platform and editor files
 .DS_Store
-
-dist
-zip
 .idea
-.rts2_cache_*
+
+# ignore log output
+*.log
+
+# ignore all dotfiles except the whitelisted ones
+.*
+!.changeset
+!.github
+!.gitignore
+!.prettierignore
+!.prettierrc
+!.eslintignore
+!.eslintrc
+
+# ignore build output and dependencies
+dist/
+node_modules/

@@ -1,8 +1,8 @@
 import { BlockchainProvider } from "@json-rpc-tools/blockchain";
 import { BlockchainProviderConfig } from "@json-rpc-tools/types";
-import { IRPCMap, IWCEthRpcConnectionOptions } from "@walletconnect/types";
-import { stateMethods, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
+import { IRPCMap, IWCEthRpcConnectionOptions } from "@walletconnect/types";
+import { signingMethods, stateMethods } from "@walletconnect/utils";
 import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
 
 class WalletConnectEthereumProvider implements IEthereumProvider {
@@ -14,9 +14,11 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
     this.rpc = opts?.rpc;
     this.provider = this.setBlockchainProvider(opts);
   }
+
   public request(args: RequestArguments): Promise<unknown> {
     return this.provider.request(args);
   }
+
   public async enable(): Promise<ProviderAccounts> {
     await this.provider.connect();
     return this.provider.request({ method: "eth_accounts" });
@@ -25,12 +27,15 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
   public on(event: any, listener: any) {
     this.provider.on(event, listener);
   }
+
   public once(event: string, listener: any): void {
     this.provider.once(event, listener);
   }
+
   public removeListener(event: string, listener: any): void {
     this.provider.removeListener(event, listener);
   }
+
   public off(event: string, listener: any): void {
     this.provider.off(event, listener);
   }
@@ -47,8 +52,8 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
       1: "mainnet",
       3: "ropsten",
       4: "rinkeby",
-      5: "goerli",
       42: "kovan",
+      5: "goerli",
     };
     const network = infuraNetworks[chainId];
     if (this.rpc && this.rpc[chainId]) {
@@ -69,8 +74,8 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
       chainId: "eip155:" + chainId,
       routes: ["*"],
       signer: {
-        routes: [...stateMethods, ...signingMethods],
         connection: new SignerConnection(opts),
+        routes: [...stateMethods, ...signingMethods],
       },
     };
     const provider = new BlockchainProvider(rpcUrl, config);

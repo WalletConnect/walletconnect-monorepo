@@ -57,7 +57,7 @@ client.on("ready", async () => {
 });
 
 // Respond to ping messages to see if the bot is alive
-client.on("message", msg => {
+client.on("message", (msg) => {
   if (msg.content === "ping") {
     msg.reply("pong");
   }

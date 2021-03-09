@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@1.5.0/schema.json",
+  "changelog": ["@changesets/changelog-github", { "repo": "WalletConnect/walletconnect-monorepo" }],
+  "commit": false,
+  "linked": [],
+  "access": "public",
+  "baseBranch": "next",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@walletconnect/example"]
+}

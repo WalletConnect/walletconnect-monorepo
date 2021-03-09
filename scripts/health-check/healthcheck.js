@@ -27,8 +27,8 @@ class HealthChecker {
   fail(error) {
     const result = {
       alive: false,
-      error: error,
       durationSeconds: this.getDuration(),
+      error: error,
     };
     this.onFinish(result);
   }
@@ -107,8 +107,8 @@ class HealthChecker {
 
     // Use dummy chain parameters, as we are not really connected to any blockchain
     const approvalParams = {
-      chainId: 0,
       accounts: [],
+      chainId: 0,
       networkId: 0,
     };
 
@@ -195,16 +195,16 @@ class HealthChecker {
    * @param timeout Timeout in milliseconds
    */
   static async run(timeout, log) {
-    const checker = new Promise(resolve => {
+    const checker = new Promise((resolve) => {
       const checker = new HealthChecker(timeout, resolve, log);
       checker.start();
     });
 
-    const timeoutter = new Promise(resolve => {
+    const timeoutter = new Promise((resolve) => {
       setTimeout(resolve, timeout, {
         alive: false,
-        error: new Error(`Timeoutted in ${timeout} ms`),
         durationSeconds: timeout / 1000,
+        error: new Error(`Timeoutted in ${timeout} ms`),
       });
     });
 

@@ -1,10 +1,10 @@
+import { ITxData } from "@walletconnect/types";
+import { addHexPrefix, removeHexPrefix } from "enc-utils";
 import { keccak_256 } from "js-sha3";
 
-import { ITxData } from "@walletconnect/types";
-import { convertUtf8ToHex, convertNumberToHex, convertUtf8ToBuffer } from "./encoding";
-import { sanitizeHex, removeHexLeadingZeros } from "./misc";
-import { isEmptyArray, isHexString, isEmptyString } from "./validators";
-import { removeHexPrefix, addHexPrefix } from "enc-utils";
+import { convertNumberToHex, convertUtf8ToBuffer, convertUtf8ToHex } from "./encoding";
+import { removeHexLeadingZeros, sanitizeHex } from "./misc";
+import { isEmptyArray, isEmptyString, isHexString } from "./validators";
 
 export function toChecksumAddress(address: string): string {
   address = removeHexPrefix(address.toLowerCase());
@@ -62,18 +62,18 @@ export function parseTransactionData(txData: Partial<ITxData>): Partial<ITxData>
   }
 
   const txDataRPC = {
+    data: typeof txData.data === "undefined" ? "" : sanitizeHex(txData.data) || "0x",
     from: sanitizeHex(txData.from),
-    to: typeof txData.to === "undefined" ? "" : sanitizeHex(txData.to),
-    gasPrice: typeof txData.gasPrice === "undefined" ? "" : parseHexValues(txData.gasPrice),
     gas:
       typeof txData.gas === "undefined"
         ? typeof txData.gasLimit === "undefined"
           ? ""
           : parseHexValues(txData.gasLimit)
         : parseHexValues(txData.gas),
-    value: typeof txData.value === "undefined" ? "" : parseHexValues(txData.value),
+    gasPrice: typeof txData.gasPrice === "undefined" ? "" : parseHexValues(txData.gasPrice),
     nonce: typeof txData.nonce === "undefined" ? "" : parseHexValues(txData.nonce),
-    data: typeof txData.data === "undefined" ? "" : sanitizeHex(txData.data) || "0x",
+    to: typeof txData.to === "undefined" ? "" : sanitizeHex(txData.to),
+    value: typeof txData.value === "undefined" ? "" : parseHexValues(txData.value),
   };
 
   const prunable = ["gasPrice", "gas", "value", "nonce"];
