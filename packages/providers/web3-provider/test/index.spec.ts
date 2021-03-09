@@ -1,3 +1,6 @@
+import "mocha";
+import { expect } from "chai";
+
 import Web3 from "web3";
 import WalletConnect from "@walletconnect/client";
 
@@ -8,14 +11,15 @@ const TEST_SESSION_PARAMS = {
   chainId: 1,
 };
 
-describe("WalletConnectWeb3Provider", () => {
+describe("WalletConnectWeb3Provider", function() {
+  this.timeout(30_000);
   it("instantiate successfully", () => {
     const provider = new WalletConnectWeb3Provider({
       rpc: {
         1: "https://api.mycryptoapi.com/eth",
       },
     });
-    expect(provider).toBeTruthy();
+    expect(!!provider).to.be.true;
   });
 
   it("enable successfully", async () => {
@@ -50,15 +54,15 @@ describe("WalletConnectWeb3Provider", () => {
       }),
       new Promise<void>(async resolve => {
         const providerAccounts = await provider.enable();
-        expect(providerAccounts).toEqual(TEST_SESSION_PARAMS.accounts);
+        expect(providerAccounts).to.eql(TEST_SESSION_PARAMS.accounts);
 
         const web3 = new Web3(provider as any);
 
         const web3Accounts = await web3.eth.getAccounts();
-        expect(web3Accounts).toEqual(TEST_SESSION_PARAMS.accounts);
+        expect(web3Accounts).to.eql(TEST_SESSION_PARAMS.accounts);
 
         const web3ChainId = await web3.eth.getChainId();
-        expect(web3ChainId).toEqual(TEST_SESSION_PARAMS.chainId);
+        expect(web3ChainId).to.eql(TEST_SESSION_PARAMS.chainId);
 
         resolve();
       }),

@@ -1,15 +1,15 @@
 import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
+import { IMobileRegistryEntry, IQRCodeModalOptions, IAppRegistry } from "@walletconnect/types";
 import {
   isIOS,
   formatIOSMobile,
   saveMobileLinkInfo,
   getMobileLinkRegistry,
+  getWalletRegistryUrl,
+  formatMobileRegistry,
 } from "@walletconnect/utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
-
-import { MOBILE_REGISTRY } from "../assets/registry";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
@@ -34,12 +34,33 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
     props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
       ? props.qrcodeModalOptions.mobileLinks
       : undefined;
-  const links = getMobileLinkRegistry(MOBILE_REGISTRY, whitelist);
+
   const [page, setPage] = React.useState(1);
+  const [error, setError] = React.useState(false);
+  const [links, setLinks] = React.useState<IMobileRegistryEntry[]>([]);
+  React.useEffect(() => {
+    const initMobileLinks = async () => {
+      if (!ios) return;
+      try {
+        const url = getWalletRegistryUrl();
+        const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
+        const _links = getMobileLinkRegistry(formatMobileRegistry(registry), whitelist);
+
+        setLinks(_links);
+      } catch (e) {
+        console.error(e); // eslint-disable-line no-console
+        setError(true);
+      }
+    };
+    initMobileLinks();
+  }, []);
+
   const grid = links.length > GRID_MIN_COUNT;
   const pages = Math.ceil(links.length / LINKS_PER_PAGE);
   const range = [(page - 1) * LINKS_PER_PAGE + 1, page * LINKS_PER_PAGE];
-  const pageLinks = links.filter((_, index) => index + 1 >= range[0] && index + 1 <= range[1]);
+  const pageLinks = links.length
+    ? links.filter((_, index) => index + 1 >= range[0] && index + 1 <= range[1])
+    : [];
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
@@ -51,33 +72,39 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
         }`}
       >
         {ios ? (
-          pageLinks.map((entry: IMobileRegistryEntry) => {
-            const { color, name, shortName, logo } = entry;
-            const href = formatIOSMobile(props.uri, entry);
-            const handleClickIOS = React.useCallback(() => {
-              saveMobileLinkInfo({
-                name,
-                href,
-              });
-            }, []);
-            return !grid ? (
-              <WalletButton
-                color={color}
-                href={href}
-                name={name}
-                logo={logo}
-                onClick={handleClickIOS}
-              />
-            ) : (
-              <WalletIcon
-                color={color}
-                href={href}
-                name={shortName}
-                logo={logo}
-                onClick={handleClickIOS}
-              />
-            );
-          })
+          pageLinks.length ? (
+            pageLinks.map((entry: IMobileRegistryEntry) => {
+              const { color, name, shortName, logo } = entry;
+              const href = formatIOSMobile(props.uri, entry);
+              const handleClickIOS = React.useCallback(() => {
+                saveMobileLinkInfo({
+                  name,
+                  href,
+                });
+              }, []);
+              return !grid ? (
+                <WalletButton
+                  color={color}
+                  href={href}
+                  name={name}
+                  logo={logo}
+                  onClick={handleClickIOS}
+                />
+              ) : (
+                <WalletIcon
+                  color={color}
+                  href={href}
+                  name={shortName}
+                  logo={logo}
+                  onClick={handleClickIOS}
+                />
+              );
+            })
+          ) : (
+            <>
+              <p>{error ? `Something went wrong` : `Loading...`}</p>
+            </>
+          )
         ) : (
           <ConnectButton
             name={props.text.connect}

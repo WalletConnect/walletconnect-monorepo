@@ -55,7 +55,9 @@
     "@babel/preset-typescript": "7.8.3",
     "@babel/register": "7.8.3",
     "@types/deepmerge": "2.2.0",
-    "@types/jest": "22.2.3",
+    "@types/chai": "4.2.14",
+    "@types/jest": "^22.2.3",
+    "@types/mocha": "8.0.4",
     "@types/lodash.isnumber": "3.0.6",
     "@types/node": "12.12.14",
     "@types/react": "17.0.0",
@@ -64,7 +66,7 @@
     "react": "16.13.1",
     "react-native": "0.63.4",
     "react-native-svg": "12.1.0",
-    "typescript": "3.7.5"
+    "ts-node": "9.0.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

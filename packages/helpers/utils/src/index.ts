@@ -6,6 +6,7 @@ export * from "./local";
 export * from "./misc";
 export * from "./mobile";
 export * from "./payload";
+export * from "./registry";
 export * from "./session";
 export * from "./url";
 export * from "./validators";
