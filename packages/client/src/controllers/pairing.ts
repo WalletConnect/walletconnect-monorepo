@@ -365,7 +365,11 @@ export class Pairing extends IPairing {
     const decryptKeys: CryptoTypes.DecryptKeys = {
       sharedKey,
     };
-    await this.settled.set(pairing.topic, pairing, { relay: pairing.relay, decryptKeys });
+    await this.settled.set(pairing.topic, pairing, {
+      relay: pairing.relay,
+      expiry: pairing.expiry,
+      decryptKeys,
+    });
     return pairing;
   }
 

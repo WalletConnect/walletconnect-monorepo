@@ -9,13 +9,15 @@ import {
 } from "@walletconnect/types";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
-import { SUBSCRIPTION_EVENTS } from "../constants";
+import { SUBSCRIPTION_DEFAULT_TTL, SUBSCRIPTION_EVENTS } from "../constants";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
 
   public events = new EventEmitter();
+
+  private timeout = new Map<string, NodeJS.Timeout>();
 
   private cached: SubscriptionParams<Data>[] = [];
 
@@ -172,7 +174,37 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
       opts,
     );
+    const expiry = opts.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL;
     this.subscriptions.set(topic, { id, topic, data, opts });
+    this.setTimeout(topic, expiry);
+  }
+
+  private setTimeout(topic: string, expiry: number) {
+    if (this.timeout.has(topic)) return;
+    const ttl = expiry - Date.now();
+    if (ttl <= 0) {
+      this.onTimeout(topic);
+      return;
+    }
+    const timeout = setTimeout(() => this.onTimeout(topic), ttl);
+    this.timeout.set(topic, timeout);
+  }
+
+  public deleteTimeout(topic: string): void {
+    if (!this.timeout.has(topic)) return;
+    const timeout = this.timeout.get(topic);
+    if (typeof timeout === "undefined") return;
+    clearTimeout(timeout);
+  }
+
+  public resetTimeout(): void {
+    this.timeout.forEach(timeout => clearTimeout(timeout));
+    this.timeout.clear();
+  }
+
+  private onTimeout(topic: string): void {
+    this.deleteTimeout(topic);
+    this.delete(topic, "Expired");
   }
 
   private async persist() {
@@ -237,6 +269,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     if (!this.cached.length) {
       this.cached = this.values;
     }
+    this.resetTimeout();
     this.events.emit("disabled");
   }
 
