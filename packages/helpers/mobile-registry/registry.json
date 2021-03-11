@@ -238,5 +238,13 @@
     "logo": "https://walletconnect-website-next-elrypto1.vercel.app/api/logo/95501c1a07c8eb575cb28c753ab9044259546ebcefcd3645461086e49b671f5c",
     "universalLink": "https://talken.io",
     "deepLink": "talken-wallet:"
+  },
+  {
+    "name": "HashKey Me",
+    "shortName": "HashKey Me",
+    "color": "rgb(254, 142, 63)",
+    "logo": "./logos/hashkeyme.png",
+    "universalLink": "https://me.hashkey.com",
+    "deepLink": "hashme:"
   }
 ]
