@@ -66,3 +66,4 @@ test-staging         tests client against staging.walletconnect.org
 ## License
 
 LGPL-3.0
+
