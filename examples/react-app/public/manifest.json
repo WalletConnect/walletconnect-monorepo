@@ -1,6 +1,6 @@
 {
-  "short_name": "WalletConnect Example",
-  "name": "WalletConnect Example",
+  "short_name": "WalletConnect",
+  "name": "WalletConnect React App",
   "icons": [
     {
       "src": "favicon.ico",

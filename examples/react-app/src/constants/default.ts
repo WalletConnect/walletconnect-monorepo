@@ -15,8 +15,8 @@ export const DEFAULT_METHODS = ["eth_sendTransaction", "personal_sign", "eth_sig
 export const DEFAULT_LOGGER = "debug";
 
 export const DEFAULT_APP_METADATA = {
-  name: "Example App",
-  description: "Example App for WalletConnect",
+  name: "React App",
+  description: "React App for WalletConnect",
   url: "https://walletconnect.org/",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
