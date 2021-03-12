@@ -53,13 +53,13 @@ export class HttpService {
     this.app.register(helmet);
     this.app.register(ws);
 
-    this.app.get("/", { websocket: true }, connection => {
-      connection.on('error', (e: Error) => {
+    this.app.get("/", { websocket: true }, (connection) => {
+      connection.on("error", (e: Error) => {
         if (!e.message.includes("Invalid WebSocket frame")) {
           this.logger.fatal(e);
           throw e;
         }
-      })
+      });
       this.ws.addNewSocket(connection.socket as any);
     });
 
@@ -74,9 +74,13 @@ export class HttpService {
         .send(`Hello World, this is Relay Server v${config.VERSION}@${config.GITHASH}`);
     });
 
+    this.app.get("/mode", (_, res) => {
+      res.status(200).send(`RELAY_MODE: ${config.mode}`);
+    });
+
     this.app.get("/metrics", (_, res) => {
       res.headers({ "Content-Type": register.contentType });
-      register.metrics().then(result => {
+      register.metrics().then((result) => {
         res.status(200).send(result);
       });
     });
