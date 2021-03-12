@@ -16,8 +16,8 @@ export const DEFAULT_METHODS = jsonrpc.eip155.wallet.auth;
 export const DEFAULT_LOGGER = "debug";
 
 export const DEFAULT_APP_METADATA = {
-  name: "Example Wallet",
-  description: "Example Wallet for WalletConnect",
+  name: "React Wallet",
+  description: "React Wallet for WalletConnect",
   url: "https://walletconnect.org/",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };

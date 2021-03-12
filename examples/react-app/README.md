@@ -1,4 +1,4 @@
-# WalletConnect Example App
+# WalletConnect React App
 
 ## Develop
 
