@@ -1,7 +1,6 @@
 import { IMobileRegistryEntry, IAppRegistry, IAppEntry } from "@walletconnect/types";
 
-// TODO: needs to be changed before release
-const API_URL = "https://walletconnect-website-next-elrypto1.vercel.app/api";
+const API_URL = "https://registry.walletconnect.org/api/";
 
 export function getWalletRegistryUrl(): string {
   return API_URL + "/registry/wallets";

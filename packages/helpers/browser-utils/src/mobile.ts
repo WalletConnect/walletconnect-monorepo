@@ -1,7 +1,8 @@
 import { IMobileRegistryEntry, IMobileRegistry, IMobileLinkInfo } from "@walletconnect/types";
 
-import { mobileLinkChoiceKey } from "./constants";
 import { setLocal } from "./local";
+
+export const mobileLinkChoiceKey = "WALLETCONNECT_DEEPLINK_CHOICE";
 
 export function formatIOSMobile(uri: string, entry: IMobileRegistryEntry) {
   const encodedUri: string = encodeURIComponent(uri);

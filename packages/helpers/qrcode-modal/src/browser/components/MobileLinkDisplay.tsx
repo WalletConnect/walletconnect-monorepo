@@ -7,7 +7,7 @@ import {
   getMobileLinkRegistry,
   getWalletRegistryUrl,
   formatMobileRegistry,
-} from "@walletconnect/utils";
+} from "@walletconnect/browser-utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
