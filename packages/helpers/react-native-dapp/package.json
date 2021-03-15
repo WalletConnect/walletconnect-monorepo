@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/react-native-dapp",
-  "version": "1.4.0-alpha.0",
+  "version": "1.4.0-alpha.1",
   "description": "WalletConnect for React Native dapps",
   "scripts": {
     "clean": "rm -rf dist",
@@ -38,10 +38,10 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "dependencies": {
-    "@walletconnect/client": "^1.4.0-alpha.0",
-    "@walletconnect/mobile-registry": "^1.4.0-alpha.0",
-    "@walletconnect/types": "^1.4.0-alpha.0",
-    "@walletconnect/utils": "^1.4.0-alpha.0",
+    "@walletconnect/client": "^1.4.0-alpha.1",
+    "@walletconnect/mobile-registry": "^1.4.0-alpha.1",
+    "@walletconnect/types": "^1.4.0-alpha.1",
+    "@walletconnect/utils": "^1.4.0-alpha.1",
     "keyvaluestorage": "0.7.1",
     "react-native-qrcode-svg": "6.0.6",
     "use-deep-compare-effect": "1.6.1"

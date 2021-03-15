@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/starkware-provider",
-  "version": "1.4.0-alpha.0",
+  "version": "1.4.0-alpha.1",
   "description": "Starkware Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -58,9 +58,9 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/rpc-connection": "^1.4.0-alpha.0",
-    "@walletconnect/types": "^1.4.0-alpha.0",
-    "@walletconnect/utils": "^1.4.0-alpha.0",
+    "@walletconnect/rpc-connection": "^1.4.0-alpha.1",
+    "@walletconnect/types": "^1.4.0-alpha.1",
+    "@walletconnect/utils": "^1.4.0-alpha.1",
     "starkware-provider": "1.6.4"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
