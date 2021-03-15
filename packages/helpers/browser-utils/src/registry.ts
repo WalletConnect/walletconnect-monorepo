@@ -1,17 +1,17 @@
 import { IMobileRegistryEntry, IAppRegistry, IAppEntry } from "@walletconnect/types";
 
-const API_URL = "https://registry.walletconnect.org/api";
+const API_URL = "https://registry.walletconnect.org";
 
 export function getWalletRegistryUrl(): string {
-  return API_URL + "/registry/wallets";
+  return API_URL + "/data/wallets.json";
 }
 
-export function getAppRegistryUrl(): string {
-  return API_URL + "/registry/dapps";
+export function getDappRegistryUrl(): string {
+  return API_URL + "/data/dapps.json";
 }
 
 export function getAppLogoUrl(id): string {
-  return API_URL + "/logo/" + id + "?size=small";
+  return API_URL + "/logo/sm/" + id + ".jpeg";
 }
 
 export function formatMobileRegistryEntry(entry: IAppEntry): IMobileRegistryEntry {
