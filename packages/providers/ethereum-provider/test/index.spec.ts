@@ -1,3 +1,6 @@
+import "mocha";
+import { expect } from "chai";
+
 import WalletConnectEthereumProvider from "../src";
 
 describe("WalletConnectEthereumProvider", () => {
@@ -7,6 +10,6 @@ describe("WalletConnectEthereumProvider", () => {
         1: "https://api.mycryptoapi.com/eth",
       },
     });
-    expect(provider).toBeTruthy();
+    expect(!!provider).to.be.true;
   });
 });

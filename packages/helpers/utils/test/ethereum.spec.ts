@@ -1,3 +1,6 @@
+import "mocha";
+import { expect } from "chai";
+
 import { getAddress } from "@ethersproject/address";
 
 import * as ethereumUtils from "../src/ethereum";
@@ -9,12 +12,12 @@ describe("Ethereum Utils", () => {
     const input = TEST_ADDRESS;
     const expected = getAddress(input);
     const result = ethereumUtils.toChecksumAddress(input);
-    expect(result).toEqual(expected);
+    expect(result).to.eql(expected);
   });
   it("isValidAddress", async () => {
     const input = TEST_ADDRESS;
     const expected = true;
     const result = ethereumUtils.isValidAddress(input);
-    expect(result).toEqual(expected);
+    expect(result).to.eql(expected);
   });
 });

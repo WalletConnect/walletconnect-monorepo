@@ -1,5 +1,4 @@
 import * as encUtils from "enc-utils";
-import * as safeJsonUtils from "safe-json-utils";
 import * as jsonRpcUtils from "@json-rpc-tools/utils";
 
 // -- Hex -------------------------------------------------- //
@@ -19,12 +18,6 @@ export function removeHexPrefix(hex: string): string {
 export function removeHexLeadingZeros(hex: string): string {
   return encUtils.removeHexLeadingZeros(encUtils.addHexPrefix(hex));
 }
-
-// -- JSON -------------------------------------------------- //
-
-export const safeJsonParse = safeJsonUtils.safeJsonParse;
-
-export const safeJsonStringify = safeJsonUtils.safeJsonStringify;
 
 // -- id -------------------------------------------------- //
 
