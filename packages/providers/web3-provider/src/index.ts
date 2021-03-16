@@ -42,12 +42,13 @@ class WalletConnectProvider extends ProviderEngine {
       ? opts.connector.bridge
       : opts.bridge || "https://bridge.walletconnect.org";
     this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
+    this.qrcodeModal = opts.qrcodeModal || this.qrcodeModal;
     this.qrcodeModalOptions = opts.qrcodeModalOptions;
     this.wc =
       opts.connector ||
       new WalletConnect({
         bridge: this.bridge,
-        qrcodeModal: this.qrcode ? (opts.qrcodeModal || this.qrcodeModal) : undefined,
+        qrcodeModal: this.qrcode ? this.qrcodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
         clientMeta: opts?.clientMeta,
       });

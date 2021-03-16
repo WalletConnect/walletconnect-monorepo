@@ -217,7 +217,7 @@
   },
   {
     "name": "KEYRING PRO",
-    "shortName": "KEYRING PRO",
+    "shortName": "KEYRINGPRO",
     "color": "",
     "logo": "https://registry.walletconnect.org/logo/sm/0fa0f603076de79bbac9a4d47770186de8913da63c8a4070c500a783cddbd1e3.jpeg",
     "universalLink": "https://keyring.app",
@@ -228,7 +228,7 @@
     "shortName": "Aktionariat",
     "color": "rgb(10, 20, 20)",
     "logo": "https://registry.walletconnect.org/logo/sm/19ad8334f0f034f4176a95722b5746b539b47b37ce17a5abde4755956d05d44c.jpeg",
-    "universalLink": "https://aktionariat.com/app",
+    "universalLink": "https://app.aktionariat.com",
     "deepLink": "aktionariat:"
   },
   {
@@ -286,5 +286,13 @@
     "logo": "https://registry.walletconnect.org/logo/sm/13c6a06b733edf51784f669f508826b2ab0dc80122a8b5d25d84b17d94bbdf70.jpeg",
     "universalLink": "https://plasmapay.com/",
     "deepLink": "plasmapay:"
+  },
+  {
+    "name": "O3Wallet",
+    "shortName": "O3Wallet",
+    "color": "rgb(255,255,255)",
+    "logo": "https://registry.walletconnect.org/logo/sm/0aafbedfb8eb56dae59ecc37c9a5388509cf9c082635e3f752581cc7128a17c0.jpeg",
+    "universalLink": "https://o3.network",
+    "deepLink": "o3wallet:"
   }
 ]
