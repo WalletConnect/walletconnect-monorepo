@@ -3,7 +3,7 @@ import { expect } from "chai";
 
 import { formatRelayRpcUrl } from "../src";
 
-const TEST_DEFAULT_RPC_URL = "wss://staging.walletconnect.org";
+const TEST_DEFAULT_RPC_URL = "wss://relay.walletconnect.org";
 
 const API_KEY = "27e484dcd9e3efcfd25a83a78777cdf1";
 

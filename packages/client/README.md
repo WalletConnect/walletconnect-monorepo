@@ -26,7 +26,7 @@ This quick start example will describe how an integration should be followed for
 ```js
 import WalletConnectClient from "@walletconnect/client";
 
-const client = await WalletConnectClient.init({ relayProvider: "wss://staging.walletconnect.org" });
+const client = await WalletConnectClient.init({ relayProvider: "wss://relay.walletconnect.org" });
 ```
 
 2. Subscribe to pairing proposal event for sharing URI
@@ -69,7 +69,7 @@ const session = await client.connect({
 ```js
 import WalletConnectClient from "@walletconnect/client";
 
-const client = await WalletConnectClient.init({ relayProvider: "wss://staging.walletconnect.org" });
+const client = await WalletConnectClient.init({ relayProvider: "wss://relay.walletconnect.org" });
 ```
 
 2. Subscribe to session proposal event for user approval and session created when successful
