@@ -318,6 +318,7 @@ declare module "@walletconnect/types" {
 
   export interface IWalletConnectProviderOptions extends IWCEthRpcConnectionOptions {
     pollingInterval?: number;
+    qrcodeModal?: IQRCodeModal;
   }
 
   export interface IRequestOptions {
