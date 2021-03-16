@@ -286,5 +286,13 @@
     "logo": "https://registry.walletconnect.org/logo/sm/13c6a06b733edf51784f669f508826b2ab0dc80122a8b5d25d84b17d94bbdf70.jpeg",
     "universalLink": "https://plasmapay.com/",
     "deepLink": "plasmapay:"
+  },
+  {
+    "name": "O3Wallet",
+    "shortName": "O3Wallet",
+    "color": "rgb(255, 255, 255)",
+    "logo": "./logos/o3wallet.png",
+    "universalLink": "https://o3.network",
+    "deepLink": "o3wallet:"
   }
 ]
