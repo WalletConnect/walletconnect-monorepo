@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/ethereum-provider",
-  "version": "1.4.0-alpha.2",
+  "version": "1.4.0",
   "description": "Ethereum Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -59,9 +59,9 @@
   },
   "dependencies": {
     "@json-rpc-tools/blockchain": "^1.6.1",
-    "@walletconnect/signer-connection": "^1.4.0-alpha.2",
-    "@walletconnect/types": "^1.4.0-alpha.2",
-    "@walletconnect/utils": "^1.4.0-alpha.2",
+    "@walletconnect/signer-connection": "^1.4.0",
+    "@walletconnect/types": "^1.4.0",
+    "@walletconnect/utils": "^1.4.0",
     "eip1193-provider": "1.0.1",
     "eventemitter3": "4.0.7"
   },
