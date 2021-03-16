@@ -34,6 +34,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.org
 | @walletconnect/http-connection   | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fhttp-connection.svg)](https://badge.fury.io/js/%40walletconnect%2Fhttp-connection)     | HTTP Connection   |
 | @walletconnect/socket-transport  | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fsocket-transport.svg)](https://badge.fury.io/js/%40walletconnect%2Fsocket-transport)   | Socket Transport  |
 | @walletconnect/iso-crypto        | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fiso-crypto.svg)](https://badge.fury.io/js/%40walletconnect%2Fiso-crypto)               | Isomorphic Crypto |
+| @walletconnect/browser-utils     | [![npm version](https://badge.fury.io/js/%40walletconnect%2Fbrowser-utils.svg)](https://badge.fury.io/js/%40walletconnect%2Fbrowser-utils)         | Browser Utilities |
 
 ## Quick Start
 
