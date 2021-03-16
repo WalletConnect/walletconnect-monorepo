@@ -1,68 +1,25 @@
+import "mocha";
+import { expect } from "chai";
+
 import IsomorphicClient from "../src";
 
-const TEST_BRIDGE_URL = "https://bridge.walletconnect.org";
+import { connectTwoClients, TEST_BRIDGE_URL } from "./shared";
 
-const TEST_SESSION_PARAMS = {
-  accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"],
-  chainId: 1,
-};
-
-describe("IsomorphicClient", () => {
-  it("instantiate successfully", () => {
+describe("IsomorphicClient", function() {
+  this.timeout(30_000);
+  it("instantiate successfully", async () => {
     const connector = new IsomorphicClient({
       bridge: TEST_BRIDGE_URL,
     });
-    expect(connector).toBeTruthy();
-    expect(connector.bridge).toEqual(TEST_BRIDGE_URL);
+    // console.log("instantiate"); // eslint-disable-line no-console
+
+    expect(!!connector).to.be.true;
+    expect(connector.bridge).to.eql(TEST_BRIDGE_URL);
+    return;
   });
 
   it("connect two clients", async () => {
-    const connectorA = new IsomorphicClient({
-      bridge: TEST_BRIDGE_URL,
-    });
-
-    await Promise.all([
-      new Promise((resolve, reject) => {
-        connectorA.on("connect", error => {
-          if (error) {
-            reject(error);
-          }
-
-          expect(connectorA.connected).toBeTruthy();
-          expect(connectorA.accounts).toEqual(TEST_SESSION_PARAMS.accounts);
-          expect(connectorA.chainId).toEqual(TEST_SESSION_PARAMS.chainId);
-          resolve();
-        });
-      }),
-      new Promise((resolve, reject) => {
-        connectorA.on("display_uri", (error, payload) => {
-          if (error) {
-            reject(error);
-          }
-
-          const uri = payload.params[0];
-
-          const connectorB = new IsomorphicClient({ uri });
-
-          // Subscribe to session requests
-          connectorB.on("session_request", error => {
-            if (error) {
-              reject(error);
-            }
-
-            connectorB.approveSession(TEST_SESSION_PARAMS);
-
-            expect(connectorB.connected).toBeTruthy();
-            expect(connectorB.accounts).toEqual(TEST_SESSION_PARAMS.accounts);
-            expect(connectorB.chainId).toEqual(TEST_SESSION_PARAMS.chainId);
-            resolve();
-          });
-        });
-      }),
-      new Promise(resolve => {
-        connectorA.createSession();
-        resolve();
-      }),
-    ]);
+    const clientId = await connectTwoClients();
+    expect(!!clientId).to.be.true;
   });
 });

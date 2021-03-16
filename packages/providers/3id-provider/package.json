@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/3id-provider",
-  "version": "1.3.6",
+  "version": "1.4.0-alpha.2",
   "description": "3ID Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -8,7 +8,7 @@
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
     "build": "run-s build:pre build:cjs build:umd",
-    "test": "tsdx test ./test"
+    "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha -r ts-node/register ./test/**/*.spec.ts --exit"
   },
   "keywords": [
     "wallet",
@@ -46,19 +46,22 @@
     "@babel/preset-env": "7.8.3",
     "@babel/preset-typescript": "7.8.3",
     "@babel/register": "7.8.3",
-    "@types/jest": "22.2.3",
+    "@types/chai": "4.2.14",
+    "@types/jest": "^22.2.3",
+    "@types/mocha": "8.0.4",
     "@types/node": "12.12.14",
+    "chai": "4.2.0",
+    "mocha": "8.2.1",
     "npm-run-all": "4.1.5",
-    "tsdx": "0.12.3",
-    "typescript": "3.7.5",
+    "ts-node": "9.0.0",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
     "3id-provider": "1.6.1",
-    "@walletconnect/signer-connection": "^1.3.6",
-    "@walletconnect/types": "^1.3.6",
-    "@walletconnect/utils": "^1.3.6"
+    "@walletconnect/signer-connection": "^1.4.0-alpha.2",
+    "@walletconnect/types": "^1.4.0-alpha.2",
+    "@walletconnect/utils": "^1.4.0-alpha.2"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }

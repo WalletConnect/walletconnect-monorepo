@@ -1,10 +1,15 @@
 import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
-import { isIOS, mobileLinkChoiceKey, setLocal } from "@walletconnect/utils";
+import { IMobileRegistryEntry, IQRCodeModalOptions, IAppRegistry } from "@walletconnect/types";
+import {
+  isIOS,
+  formatIOSMobile,
+  saveMobileLinkInfo,
+  getMobileLinkRegistry,
+  getWalletRegistryUrl,
+  formatMobileRegistry,
+} from "@walletconnect/browser-utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
-
-import { MOBILE_REGISTRY } from "../assets/registry";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ConnectButton from "./ConnectButton";
@@ -14,42 +19,6 @@ import WalletButton from "./WalletButton";
 import WalletIcon from "./WalletIcon";
 import { TextMap } from "../types";
 
-function formatIOSMobile(uri: string, entry: IMobileRegistryEntry) {
-  const encodedUri: string = encodeURIComponent(uri);
-  return entry.universalLink
-    ? `${entry.universalLink}/wc?uri=${encodedUri}`
-    : entry.deepLink
-    ? `${entry.deepLink}${entry.deepLink.endsWith(":") ? "//" : "/"}wc?uri=${encodedUri}`
-    : "";
-}
-
-function saveMobileLinkInfo(data: IMobileLinkInfo) {
-  const focusUri = data.href.split("?")[0];
-  setLocal(mobileLinkChoiceKey, { ...data, href: focusUri });
-}
-
-function getMobileRegistryEntry(name: string): IMobileRegistryEntry {
-  return MOBILE_REGISTRY.filter((entry: IMobileRegistryEntry) =>
-    entry.name.toLowerCase().includes(name.toLowerCase()),
-  )[0];
-}
-
-function getMobileLinkRegistry(qrcodeModalOptions?: IQRCodeModalOptions) {
-  let links = MOBILE_REGISTRY;
-  if (
-    qrcodeModalOptions &&
-    qrcodeModalOptions.mobileLinks &&
-    qrcodeModalOptions.mobileLinks.length
-  ) {
-    links = qrcodeModalOptions.mobileLinks.map((name: string) => getMobileRegistryEntry(name));
-  }
-  return links;
-}
-
-interface IMobileLinkInfo {
-  name: string;
-  href: string;
-}
 interface MobileLinkDisplayProps {
   qrcodeModalOptions?: IQRCodeModalOptions;
   text: TextMap;
@@ -61,12 +30,37 @@ const LINKS_PER_PAGE = 12;
 
 function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   const ios = isIOS();
-  const links = getMobileLinkRegistry(props.qrcodeModalOptions);
+  const whitelist =
+    props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
+      ? props.qrcodeModalOptions.mobileLinks
+      : undefined;
+
   const [page, setPage] = React.useState(1);
+  const [error, setError] = React.useState(false);
+  const [links, setLinks] = React.useState<IMobileRegistryEntry[]>([]);
+  React.useEffect(() => {
+    const initMobileLinks = async () => {
+      if (!ios) return;
+      try {
+        const url = getWalletRegistryUrl();
+        const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
+        const _links = getMobileLinkRegistry(formatMobileRegistry(registry), whitelist);
+
+        setLinks(_links);
+      } catch (e) {
+        console.error(e); // eslint-disable-line no-console
+        setError(true);
+      }
+    };
+    initMobileLinks();
+  }, []);
+
   const grid = links.length > GRID_MIN_COUNT;
   const pages = Math.ceil(links.length / LINKS_PER_PAGE);
   const range = [(page - 1) * LINKS_PER_PAGE + 1, page * LINKS_PER_PAGE];
-  const pageLinks = links.filter((_, index) => index + 1 >= range[0] && index + 1 <= range[1]);
+  const pageLinks = links.length
+    ? links.filter((_, index) => index + 1 >= range[0] && index + 1 <= range[1])
+    : [];
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
@@ -78,33 +72,39 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
         }`}
       >
         {ios ? (
-          pageLinks.map((entry: IMobileRegistryEntry) => {
-            const { color, name, shortName, logo } = entry;
-            const href = formatIOSMobile(props.uri, entry);
-            const handleClickIOS = React.useCallback(() => {
-              saveMobileLinkInfo({
-                name,
-                href,
-              });
-            }, []);
-            return !grid ? (
-              <WalletButton
-                color={color}
-                href={href}
-                name={name}
-                logo={logo}
-                onClick={handleClickIOS}
-              />
-            ) : (
-              <WalletIcon
-                color={color}
-                href={href}
-                name={shortName}
-                logo={logo}
-                onClick={handleClickIOS}
-              />
-            );
-          })
+          pageLinks.length ? (
+            pageLinks.map((entry: IMobileRegistryEntry) => {
+              const { color, name, shortName, logo } = entry;
+              const href = formatIOSMobile(props.uri, entry);
+              const handleClickIOS = React.useCallback(() => {
+                saveMobileLinkInfo({
+                  name,
+                  href,
+                });
+              }, []);
+              return !grid ? (
+                <WalletButton
+                  color={color}
+                  href={href}
+                  name={name}
+                  logo={logo}
+                  onClick={handleClickIOS}
+                />
+              ) : (
+                <WalletIcon
+                  color={color}
+                  href={href}
+                  name={shortName}
+                  logo={logo}
+                  onClick={handleClickIOS}
+                />
+              );
+            })
+          ) : (
+            <>
+              <p>{error ? `Something went wrong` : `Loading...`}</p>
+            </>
+          )
         ) : (
           <ConnectButton
             name={props.text.connect}

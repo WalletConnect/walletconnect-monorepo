@@ -1118,7 +1118,7 @@ class Connector implements IConnector {
       const bridge = decodeURIComponent(result.bridge);
 
       if (!result.key) {
-        throw Error("Invalid or missing kkey parameter value");
+        throw Error("Invalid or missing key parameter value");
       }
       const key = result.key;
 

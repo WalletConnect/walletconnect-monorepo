@@ -24,5 +24,3 @@ export const signingMethods = [
 ];
 
 export const stateMethods = ["eth_accounts", "eth_chainId", "net_version"];
-
-export const mobileLinkChoiceKey = "WALLETCONNECT_DEEPLINK_CHOICE";
