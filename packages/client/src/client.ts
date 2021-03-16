@@ -175,6 +175,7 @@ export class Client extends IClient {
       approved: false,
       proposal: params.proposal,
       response: SESSION_EMPTY_RESPONSE,
+      reason: params.reason,
     });
     this.logger.debug(`Session Proposal Response Success`);
     this.logger.trace({ type: "method", method: "reject", pending });

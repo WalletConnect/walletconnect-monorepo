@@ -57,7 +57,7 @@ describe("Request", function() {
       `Unauthorized JSON-RPC Method Requested: ${request.method}`,
     );
   });
-  it("A requests method and B fails to return response in time (30 secs)", async () => {
+  it("A requests method and B fails to return response in time", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const request = TEST_ETHEREUM_REQUEST;

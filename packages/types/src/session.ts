@@ -78,6 +78,7 @@ export declare namespace SessionTypes {
     approved: boolean;
     proposal: Proposal;
     response: Response;
+    reason?: string;
   }
 
   export interface SettleParams {

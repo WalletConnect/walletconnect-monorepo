@@ -58,6 +58,7 @@ export declare namespace PairingTypes {
   export interface RespondParams {
     approved: boolean;
     proposal: Proposal;
+    reason?: string;
   }
 
   export interface SettleParams {

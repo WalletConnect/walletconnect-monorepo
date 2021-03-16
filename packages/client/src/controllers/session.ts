@@ -244,7 +244,7 @@ export class Session extends ISession {
         return pending;
       }
     } else {
-      const outcome = { reason: SESSION_REASONS.not_approved };
+      const outcome = { reason: params?.reason || SESSION_REASONS.not_approved };
       const pending: SessionTypes.Pending = {
         status: SESSION_STATUS.responded,
         topic: proposal.topic,

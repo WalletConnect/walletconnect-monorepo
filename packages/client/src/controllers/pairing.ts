@@ -228,7 +228,9 @@ export class Pairing extends IPairing {
         return pending;
       }
     } else {
-      const outcome: PairingTypes.Outcome = { reason: PAIRING_REASONS.not_approved };
+      const outcome: PairingTypes.Outcome = {
+        reason: params?.reason || PAIRING_REASONS.not_approved,
+      };
       const pending: PairingTypes.Pending = {
         status: PAIRING_STATUS.responded,
         topic: proposal.topic,

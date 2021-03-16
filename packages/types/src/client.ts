@@ -75,6 +75,7 @@ export declare namespace ClientTypes {
   }
   export interface RejectParams {
     proposal: SessionTypes.Proposal;
+    reason?: string;
   }
 
   export type UpdateParams = SessionTypes.UpdateParams;
