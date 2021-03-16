@@ -120,19 +120,24 @@ export class Client extends IClient {
     }
   }
 
-  public async pair(params: ClientTypes.PairParams): Promise<void> {
+  public async pair(params: ClientTypes.PairParams): Promise<string> {
     this.logger.debug(`Pairing`);
     this.logger.trace({ type: "method", method: "pair", params });
     const proposal = formatPairingProposal(params.uri);
     const pending = await this.pairing.respond({ approved: true, proposal });
-    if (!isPairingResponded(pending)) return;
+    if (!isPairingResponded(pending)) {
+      const errorMessage = "No Pairing Response found in pending proposal";
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
     if (isPairingFailed(pending.outcome)) {
       this.logger.debug(`Pairing Failure`);
       this.logger.trace({ type: "method", method: "pair", outcome: pending.outcome });
-      return;
+      throw new Error(pending.outcome.reason);
     }
     this.logger.debug(`Pairing Success`);
     this.logger.trace({ type: "method", method: "pair", pending });
+    return pending.outcome.topic;
   }
 
   public async approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled> {

@@ -3,7 +3,7 @@ import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
-import { IPairing } from "./pairing";
+import { IPairing, PairingTypes } from "./pairing";
 import { ISession, SessionTypes } from "./session";
 import { SignalTypes } from "./misc";
 
@@ -12,7 +12,7 @@ export interface ClientOptions {
   storage?: IKeyValueStorage;
   relayProvider?: string | IJsonRpcProvider;
   overrideContext?: string;
-  storageOptions?:  KeyValueStorageOptions;
+  storageOptions?: KeyValueStorageOptions;
 }
 
 export abstract class IClient extends IEvents {
@@ -36,7 +36,7 @@ export abstract class IClient extends IEvents {
   // for proposer to propose a session to a responder
   public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
   // for responder to receive a session proposal from a proposer
-  public abstract pair(params: ClientTypes.PairParams): Promise<void>;
+  public abstract pair(params: ClientTypes.PairParams): Promise<string>;
 
   // for responder to approve a session proposal
   public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
