@@ -1,9 +1,14 @@
 import "mocha";
 
-import { expect, testApproveSession, setupClientsForTesting } from "./shared";
+import {
+  expect,
+  testApproveSession,
+  setupClientsForTesting,
+  TEST_TIMEOUT_DURATION,
+} from "./shared";
 
 describe("Relayer", function() {
-  this.timeout(30_000);
+  this.timeout(TEST_TIMEOUT_DURATION);
   it("A pings B after A socket reconnects", async () => {
     // setup
     const { setup, clients } = await setupClientsForTesting();

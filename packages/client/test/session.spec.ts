@@ -12,11 +12,12 @@ import {
   testPairingWithoutSession,
   TEST_ETHEREUM_ACCOUNTS,
   TEST_CLIENT_DATABASE,
+  TEST_TIMEOUT_DURATION,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
 
 describe("Session", function() {
-  this.timeout(30_000);
+  this.timeout(TEST_TIMEOUT_DURATION);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {
     clock = sinon.useFakeTimers();
@@ -229,9 +230,9 @@ describe("Session", function() {
       `No matching session settled with topic: ${topic}`,
     );
     const promise = clients.a.session.ping(topic);
-    clock.tick(30_000);
+    clock.tick(TEST_TIMEOUT_DURATION);
     await expect(promise).to.eventually.be.rejectedWith(
-      `JSON-RPC Request timeout after 30s: wc_sessionPing`,
+      `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
     );
   });
   it("clients ping each other after restart", async () => {

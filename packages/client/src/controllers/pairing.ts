@@ -42,6 +42,7 @@ import {
   PAIRING_SIGNAL_METHOD_URI,
   SESSION_JSONRPC,
   PAIRING_DEFAULT_TTL,
+  FIVE_MINUTES,
 } from "../constants";
 
 export class Pairing extends IPairing {
@@ -83,9 +84,9 @@ export class Pairing extends IPairing {
     return this.settled.get(topic);
   }
 
-  public async ping(topic: string): Promise<void> {
+  public async ping(topic: string, timeout?: number): Promise<void> {
     const request = { method: PAIRING_JSONRPC.ping, params: {} };
-    return this.request({ topic, request });
+    return this.request({ topic, request, timeout });
   }
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
@@ -135,11 +136,12 @@ export class Pairing extends IPairing {
     return new Promise(async (resolve, reject) => {
       this.logger.debug(`Create Pairing`);
       this.logger.trace({ type: "method", method: "create", params });
+      const maxDuration = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const errorMessage = `Pairing failed to settle after 30 seconds`;
+        const errorMessage = `Pairing failed to settle after ${maxDuration / 1000} seconds`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 30_000);
+      }, maxDuration);
       let pending: PairingTypes.Pending;
       try {
         pending = await this.propose(params);
@@ -254,11 +256,12 @@ export class Pairing extends IPairing {
   public async request(params: PairingTypes.RequestParams): Promise<any> {
     return new Promise(async (resolve, reject) => {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
+      const maxDuration = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const errorMessage = `JSON-RPC Request timeout after 30s: ${request.method}`;
+        const errorMessage = `JSON-RPC Request timeout after ${maxDuration} seconds: ${request.method}`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 30_000);
+      }, maxDuration);
       this.events.on(PAIRING_EVENTS.payload, (payloadEvent: PairingTypes.PayloadEvent) => {
         if (params.topic !== payloadEvent.topic) return;
         if (isJsonRpcRequest(payloadEvent.payload)) return;

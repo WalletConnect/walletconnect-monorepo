@@ -45,7 +45,7 @@ export abstract class ISequence<
   // get settled subscription data
   public abstract get(topic: string): Promise<Settled>;
   // called by either to ping peer
-  public abstract ping(topic: string): Promise<void>;
+  public abstract ping(topic: string, timeout?: number): Promise<void>;
   // send JSON-RPC to settled subscription
   public abstract send(topic: string, payload: JsonRpcPayload): Promise<void>;
 

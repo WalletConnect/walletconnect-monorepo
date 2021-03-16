@@ -12,6 +12,7 @@ export declare namespace PairingTypes {
 
   export interface ProposeParams {
     relay: RelayerTypes.ProtocolOptions;
+    timeout?: number;
   }
 
   export type CreateParams = ProposeParams;
@@ -76,6 +77,7 @@ export declare namespace PairingTypes {
   export interface RequestParams {
     topic: string;
     request: RequestArguments;
+    timeout?: number;
   }
 
   export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };

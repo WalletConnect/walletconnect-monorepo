@@ -42,6 +42,7 @@ import {
   SUBSCRIPTION_EVENTS,
   SESSION_SIGNAL_METHOD_PAIRING,
   SESSION_DEFAULT_TTL,
+  FIVE_MINUTES,
 } from "../constants";
 
 export class Session extends ISession {
@@ -83,9 +84,9 @@ export class Session extends ISession {
     return this.settled.get(topic);
   }
 
-  public async ping(topic: string): Promise<void> {
+  public async ping(topic: string, timeout?: number): Promise<void> {
     const request = { method: SESSION_JSONRPC.ping, params: {} };
-    return this.request({ topic, request });
+    return this.request({ topic, request, timeout });
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
@@ -136,11 +137,12 @@ export class Session extends ISession {
     return new Promise(async (resolve, reject) => {
       this.logger.info(`Create Session`);
       this.logger.trace({ type: "method", method: "create", params });
+      const maxDuration = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const errorMessage = `Session failed to settle after 30 seconds`;
+        const errorMessage = `Session failed to settle after ${maxDuration / 1000} seconds`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 30_000);
+      }, maxDuration);
       let pending: SessionTypes.Pending;
       try {
         pending = await this.propose(params);
@@ -271,11 +273,14 @@ export class Session extends ISession {
   public async request(params: SessionTypes.RequestParams): Promise<any> {
     return new Promise(async (resolve, reject) => {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
+      const maxDuration = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const errorMessage = `JSON-RPC Request timeout after 30s: ${request.method}`;
+        const errorMessage = `JSON-RPC Request timeout after ${maxDuration / 1000} seconds: ${
+          request.method
+        }`;
         this.logger.error(errorMessage);
         reject(errorMessage);
-      }, 30_000);
+      }, maxDuration);
       this.events.on(SESSION_EVENTS.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
         if (params.topic !== payloadEvent.topic) return;
         if (isJsonRpcRequest(payloadEvent.payload)) return;

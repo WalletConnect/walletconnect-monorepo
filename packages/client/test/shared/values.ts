@@ -1,6 +1,8 @@
 import path from "path";
 import { ClientOptions, SessionTypes } from "@walletconnect/types";
 
+import { FIVE_MINUTES } from "../../src";
+
 import { ROOT_DIR } from "../../../../ops/js/shared";
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
@@ -61,3 +63,5 @@ export const TEST_ETHEREUM_REQUEST = { method: "eth_accounts" };
 export const TEST_ETHEREUM_RESULT = TEST_ETHEREUM_ACCOUNTS;
 
 export const TEST_RANDOM_REQUEST = { method: "random_method" };
+
+export const TEST_TIMEOUT_DURATION = FIVE_MINUTES * 1000;

@@ -6,6 +6,10 @@ export const ONE_DAY = 86400;
 
 export const SIX_HOURS = 21600;
 
+export const FIVE_MINUTES = 300;
+
+export const THIRTY_SECONDS = 30;
+
 export const TEN_SECONDS = 10;
 
 export const FIVE_SECONDS = 5;

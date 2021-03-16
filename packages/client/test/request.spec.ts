@@ -11,10 +11,11 @@ import {
   TEST_ETHEREUM_ACCOUNTS,
   TEST_ETHEREUM_REQUEST,
   TEST_RANDOM_REQUEST,
+  TEST_TIMEOUT_DURATION,
 } from "./shared";
 
 describe("Request", function() {
-  this.timeout(30_000);
+  this.timeout(TEST_TIMEOUT_DURATION);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {
     clock = sinon.useFakeTimers();
@@ -62,9 +63,9 @@ describe("Request", function() {
     const request = TEST_ETHEREUM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
     const promise = clients.a.request({ topic, chainId, request });
-    clock.tick(30_000);
+    clock.tick(TEST_TIMEOUT_DURATION);
     await expect(promise).to.eventually.be.rejectedWith(
-      `JSON-RPC Request timeout after 30s: ${request.method}`,
+      `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: ${request.method}`,
     );
   });
 });

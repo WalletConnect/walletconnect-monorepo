@@ -1,10 +1,15 @@
 import "mocha";
 import { KeyValueStorage } from "keyvaluestorage";
 
-import { setupClientsForTesting, testPairingWithoutSession, TEST_CLIENT_DATABASE } from "./shared";
+import {
+  setupClientsForTesting,
+  testPairingWithoutSession,
+  TEST_CLIENT_DATABASE,
+  TEST_TIMEOUT_DURATION,
+} from "./shared";
 
 describe("Pairing", function() {
-  this.timeout(30_000);
+  this.timeout(TEST_TIMEOUT_DURATION);
   it("A pings B with existing pairing", async () => {
     const { clients } = await setupClientsForTesting();
     await testPairingWithoutSession(clients);

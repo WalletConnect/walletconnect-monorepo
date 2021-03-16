@@ -31,6 +31,7 @@ export declare namespace SessionTypes {
     metadata: Metadata;
     permissions: ProposedPermissions;
     ttl?: number;
+    timeout?: number;
   }
 
   export type CreateParams = ProposeParams;
@@ -98,6 +99,7 @@ export declare namespace SessionTypes {
     topic: string;
     request: RequestArguments;
     chainId?: string;
+    timeout?: number;
   }
 
   export type StateUpdate = { state: Partial<BlockchainTypes.State> };
