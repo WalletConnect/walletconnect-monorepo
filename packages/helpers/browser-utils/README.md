@@ -1,3 +1,3 @@
 # WalletConnect Browser Utils
 
-Browser Utility Library for WalletConnect
+Browser Utilities for WalletConnect
