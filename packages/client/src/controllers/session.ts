@@ -207,7 +207,10 @@ export class Session extends ISession {
           relay,
           self,
           peer: proposal.proposer,
-          permissions: formatSettledPermissions(proposal.permissions, self.publicKey),
+          permissions: {
+            ...proposal.permissions,
+            controller: { publicKey: self.publicKey },
+          },
           ttl: proposal.ttl,
           expiry,
           state,
@@ -256,6 +259,18 @@ export class Session extends ISession {
       await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
       return pending;
     }
+  }
+
+  public async upgrade(params: SessionTypes.UpgradeParams): Promise<SessionTypes.Settled> {
+    this.logger.info(`Upgrade Session`);
+    this.logger.trace({ type: "method", method: "upgrade", params });
+    const session = await this.settled.get(params.topic);
+    await this.handleUpgrade(session, params, {
+      publicKey: session.self.publicKey,
+    });
+    const request = formatJsonRpcRequest(SESSION_JSONRPC.upgrade, params);
+    await this.send(session.topic, request);
+    return session;
   }
 
   public async update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
@@ -312,7 +327,7 @@ export class Session extends ISession {
   public async notify(params: SessionTypes.NotifyParams): Promise<void> {
     const session = await this.settled.get(params.topic);
     if (
-      session.self.publicKey !== session.permissions.notifications.controller.publicKey &&
+      session.self.publicKey !== session.permissions.controller.publicKey &&
       !session.permissions.notifications.types.includes(params.type)
     ) {
       const errorMessage = `Unauthorized Notification Type Requested: ${params.type}`;
@@ -429,10 +444,10 @@ export class Session extends ISession {
           relay: pending.relay,
           self: pending.self,
           peer: request.params.responder,
-          permissions: formatSettledPermissions(
-            pending.proposal.permissions,
-            request.params.responder.publicKey,
-          ),
+          permissions: {
+            ...pending.proposal.permissions,
+            controller: { publicKey: request.params.responder.publicKey },
+          },
           ttl: pending.proposal.ttl,
           expiry: request.params.expiry,
           state: request.params.state,
@@ -500,6 +515,9 @@ export class Session extends ISession {
         case SESSION_JSONRPC.update:
           await this.onUpdate(payloadEvent);
           break;
+        case SESSION_JSONRPC.upgrade:
+          await this.onUpgrade(payloadEvent);
+          break;
         case SESSION_JSONRPC.notification:
           await this.onNotification(payloadEvent);
           break;
@@ -559,7 +577,28 @@ export class Session extends ISession {
     try {
       await this.handleUpdate(
         session,
-        { topic, update: request.params },
+        { topic, ...request.params },
+        { publicKey: session.peer.publicKey },
+      );
+      const response = formatJsonRpcResult(request.id, true);
+      await this.send(session.topic, response);
+    } catch (e) {
+      this.logger.error(e);
+      const response = formatJsonRpcError(request.id, e.message);
+      await this.send(session.topic, response);
+    }
+  }
+
+  protected async onUpgrade(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
+    const { topic, payload } = payloadEvent;
+    this.logger.debug(`Receiving Session upgrade`);
+    this.logger.trace({ type: "method", method: "onUpgrade", topic, payload });
+    const request = payloadEvent.payload as JsonRpcRequest;
+    const session = await this.settled.get(payloadEvent.topic);
+    try {
+      await this.handleUpgrade(
+        session,
+        { topic, ...request.params },
         { publicKey: session.peer.publicKey },
       );
       const response = formatJsonRpcResult(request.id, true);
@@ -577,14 +616,14 @@ export class Session extends ISession {
     participant: { publicKey: string },
   ): Promise<SessionTypes.Update> {
     let update: SessionTypes.Update;
-    if (typeof params.update.state !== "undefined") {
+    if (typeof params.state !== "undefined") {
       const state = session.state;
-      if (participant.publicKey !== session.permissions.state.controller.publicKey) {
+      if (participant.publicKey !== session.permissions.controller.publicKey) {
         const errorMessage = `Unauthorized session update request`;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }
-      state.accounts = params.update.state.accounts || state.accounts;
+      state.accounts = params.state.accounts || state.accounts;
       update = { state };
     } else {
       const errorMessage = `Invalid session update request params`;
@@ -593,6 +632,51 @@ export class Session extends ISession {
     }
     await this.settled.update(session.topic, session);
     return update;
+  }
+
+  protected async handleUpgrade(
+    session: SessionTypes.Settled,
+    params: SessionTypes.UpgradeParams,
+    participant: { publicKey: string },
+  ): Promise<SessionTypes.Upgrade> {
+    if (participant.publicKey !== session.permissions.controller.publicKey) {
+      const errorMessage = `Unauthorized session permissions upgrade`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    const upgrade: SessionTypes.Upgrade = {
+      permissions: {
+        blockchain: {
+          chains: [
+            ...session.permissions.blockchain.chains,
+            ...(params.permissions.blockchain?.chains || []),
+          ],
+        },
+        jsonrpc: {
+          methods: [
+            ...session.permissions.jsonrpc.methods,
+            ...(params.permissions.jsonrpc?.methods || []),
+          ],
+        },
+        notifications: {
+          types: [
+            ...session.permissions.notifications?.types,
+            ...(params.permissions.notifications?.types || []),
+          ],
+        },
+      },
+    };
+    session = {
+      ...session,
+      permissions: {
+        blockchain: upgrade.permissions.blockchain || session.permissions.blockchain,
+        jsonrpc: upgrade.permissions.jsonrpc || session.permissions.jsonrpc,
+        notifications: upgrade.permissions.notifications || session.permissions.notifications,
+        controller: session.permissions.controller,
+      },
+    };
+    await this.settled.update(session.topic, session);
+    return upgrade;
   }
 
   protected async onNotification(event: SubscriptionEvent.Payload) {
@@ -751,12 +835,6 @@ function formatSettledPermissions(
   const controller: CryptoTypes.Participant = { publicKey: controllerPublicKey };
   return {
     ...permissions,
-    notifications: {
-      types: permissions.notifications.types,
-      controller,
-    },
-    state: {
-      controller,
-    },
+    controller: { publicKey: controllerPublicKey },
   };
 }

@@ -6,9 +6,15 @@ import { RelayerTypes } from "./relayer";
 import { JsonRpcPermissions, SignalTypes } from "./misc";
 
 export declare namespace PairingTypes {
-  export interface Permissions {
+  export interface BasePermissions {
     jsonrpc: JsonRpcPermissions;
   }
+  export type ProposedPermissions = BasePermissions;
+
+  export interface SettledPermissions extends ProposedPermissions {
+    controller: CryptoTypes.Participant;
+  }
+  export type Permissions = SettledPermissions;
 
   export interface ProposeParams {
     relay: RelayerTypes.ProtocolOptions;
@@ -26,7 +32,7 @@ export declare namespace PairingTypes {
     relay: RelayerTypes.ProtocolOptions;
     proposer: Peer;
     signal: Signal;
-    permissions: Permissions;
+    permissions: ProposedPermissions;
     ttl: number;
   }
 
@@ -65,14 +71,17 @@ export declare namespace PairingTypes {
     relay: RelayerTypes.ProtocolOptions;
     peer: Peer;
     self: CryptoTypes.Self;
-    permissions: Permissions;
+    permissions: SettledPermissions;
     ttl: number;
     expiry: number;
   }
 
-  export interface UpdateParams {
+  export interface UpgradeParams extends Upgrade {
     topic: string;
-    update: Update;
+  }
+
+  export interface UpdateParams extends Update {
+    topic: string;
   }
 
   export interface RequestParams {
@@ -81,9 +90,13 @@ export declare namespace PairingTypes {
     timeout?: number;
   }
 
-  export type MetadataUpdate = { peer: Omit<Peer, "publicKey"> };
+  export interface Upgrade {
+    permissions: Partial<Permissions>;
+  }
 
-  export type Update = MetadataUpdate;
+  export interface Update {
+    peer: Omit<Peer, "publicKey">;
+  }
 
   export interface Payload {
     request: RequestArguments;
@@ -105,7 +118,7 @@ export declare namespace PairingTypes {
     sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
-    permissions: Permissions;
+    permissions: SettledPermissions;
     expiry: number;
   }
 
@@ -135,11 +148,13 @@ export declare namespace PairingTypes {
 export abstract class IPairing extends ISequence<
   PairingTypes.Pending,
   PairingTypes.Settled,
+  PairingTypes.Upgrade,
   PairingTypes.Update,
   PairingTypes.CreateParams,
   PairingTypes.RespondParams,
-  PairingTypes.UpdateParams,
   PairingTypes.RequestParams,
+  PairingTypes.UpgradeParams,
+  PairingTypes.UpdateParams,
   PairingTypes.DeleteParams,
   PairingTypes.ProposeParams,
   PairingTypes.SettleParams

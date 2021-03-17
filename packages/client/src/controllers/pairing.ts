@@ -193,7 +193,10 @@ export class Pairing extends IPairing {
           relay: proposal.relay,
           self,
           peer: proposal.proposer,
-          permissions: proposal.permissions,
+          permissions: {
+            ...proposal.permissions,
+            controller: { publicKey: self.publicKey },
+          },
           ttl: proposal.ttl,
           expiry,
         });
@@ -242,6 +245,18 @@ export class Pairing extends IPairing {
       await this.pending.set(pending.topic, pending, { relay: pending.relay });
       return pending;
     }
+  }
+
+  public async upgrade(params: PairingTypes.UpgradeParams): Promise<PairingTypes.Settled> {
+    this.logger.info(`Upgrade Pairing`);
+    this.logger.trace({ type: "method", method: "upgrade", params });
+    const session = await this.settled.get(params.topic);
+    await this.handleUpgrade(session, params, {
+      publicKey: session.self.publicKey,
+    });
+    const request = formatJsonRpcRequest(SESSION_JSONRPC.upgrade, params);
+    await this.send(session.topic, request);
+    return session;
   }
 
   public async update(params: PairingTypes.UpdateParams): Promise<PairingTypes.Settled> {
@@ -326,7 +341,7 @@ export class Pairing extends IPairing {
       publicKey: proposer.publicKey,
       relay: relay,
     });
-    const permissions: PairingTypes.Permissions = {
+    const permissions: PairingTypes.ProposedPermissions = {
       jsonrpc: {
         methods: [SESSION_JSONRPC.propose],
       },
@@ -391,7 +406,10 @@ export class Pairing extends IPairing {
           relay: pending.relay,
           self: pending.self,
           peer: request.params.responder,
-          permissions: pending.proposal.permissions,
+          permissions: {
+            ...pending.proposal.permissions,
+            controller: { publicKey: request.params.responder.publicKey },
+          },
           ttl: pending.proposal.ttl,
           expiry: request.params.expiry,
         });
@@ -454,6 +472,9 @@ export class Pairing extends IPairing {
         case PAIRING_JSONRPC.update:
           await this.onUpdate(payloadEvent);
           break;
+        case PAIRING_JSONRPC.upgrade:
+          await this.onUpgrade(payloadEvent);
+          break;
         case PAIRING_JSONRPC.delete:
           await this.settled.delete(pairing.topic, request.params.reason);
           break;
@@ -508,7 +529,28 @@ export class Pairing extends IPairing {
     const pairing = await this.settled.get(payloadEvent.topic);
     try {
       const participant: CryptoTypes.Participant = { publicKey: pairing.peer.publicKey };
-      await this.handleUpdate(pairing, { topic, update: request.params }, participant);
+      await this.handleUpdate(pairing, { topic, ...request.params }, participant);
+      const response = formatJsonRpcResult(request.id, true);
+      await this.send(pairing.topic, response);
+    } catch (e) {
+      this.logger.error(e);
+      const response = formatJsonRpcError(request.id, e.message);
+      await this.send(pairing.topic, response);
+    }
+  }
+
+  protected async onUpgrade(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
+    const { topic, payload } = payloadEvent;
+    this.logger.debug(`Receiving Pairing upgrade`);
+    this.logger.trace({ type: "method", method: "onUpgrade", topic, payload });
+    const request = payloadEvent.payload as JsonRpcRequest;
+    const pairing = await this.settled.get(payloadEvent.topic);
+    try {
+      await this.handleUpgrade(
+        pairing,
+        { topic, ...request.params },
+        { publicKey: pairing.peer.publicKey },
+      );
       const response = formatJsonRpcResult(request.id, true);
       await this.send(pairing.topic, response);
     } catch (e) {
@@ -524,9 +566,8 @@ export class Pairing extends IPairing {
     participant: { publicKey: string },
   ): Promise<PairingTypes.Update> {
     let update: PairingTypes.Update;
-    if (typeof params.update.peer !== "undefined") {
-      const metadata = params.update.peer.metadata as PairingTypes.Metadata;
-
+    if (typeof params.peer !== "undefined") {
+      const metadata = params.peer.metadata as PairingTypes.Metadata;
       pairing.peer.metadata = metadata;
       update = { peer: { metadata } };
     } else {
@@ -540,6 +581,36 @@ export class Pairing extends IPairing {
     return update;
   }
 
+  protected async handleUpgrade(
+    pairing: PairingTypes.Settled,
+    params: PairingTypes.UpgradeParams,
+    participant: { publicKey: string },
+  ): Promise<PairingTypes.Upgrade> {
+    if (participant.publicKey !== pairing.permissions.controller.publicKey) {
+      const errorMessage = `Unauthorized pairing permissions upgrade`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    const upgrade: PairingTypes.Upgrade = {
+      permissions: {
+        jsonrpc: {
+          methods: [
+            ...pairing.permissions.jsonrpc.methods,
+            ...(params.permissions.jsonrpc?.methods || []),
+          ],
+        },
+      },
+    };
+    pairing = {
+      ...pairing,
+      permissions: {
+        jsonrpc: upgrade.permissions.jsonrpc || pairing.permissions.jsonrpc,
+        controller: pairing.permissions.controller,
+      },
+    };
+    await this.settled.update(pairing.topic, pairing);
+    return upgrade;
+  }
   // ---------- Private ----------------------------------------------- //
 
   private async shouldIgnorePayloadEvent(payloadEvent: PairingTypes.PayloadEvent) {

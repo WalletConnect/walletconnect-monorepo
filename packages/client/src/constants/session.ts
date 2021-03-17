@@ -7,6 +7,7 @@ export const SESSION_JSONRPC = {
   approve: "wc_sessionApprove",
   reject: "wc_sessionReject",
   update: "wc_sessionUpdate",
+  upgrade: "wc_sessionUpgrade",
   delete: "wc_sessionDelete",
   payload: "wc_sessionPayload",
   ping: "wc_sessionPing",

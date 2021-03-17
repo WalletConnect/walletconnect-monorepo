@@ -38,15 +38,8 @@ export interface JsonRpcPermissions {
   methods: string[];
 }
 
-export declare namespace NotificationPermissions {
-  export interface Proposal {
-    types: string[];
-  }
-
-  export interface Settled {
-    types: string[];
-    controller: CryptoTypes.Participant;
-  }
+export interface NotificationPermissions {
+  types: string[];
 }
 
 export declare namespace BlockchainTypes {

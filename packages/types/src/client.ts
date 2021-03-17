@@ -3,8 +3,8 @@ import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
-import { IPairing, PairingTypes } from "./pairing";
 import { ISession, SessionTypes } from "./session";
+import { IPairing } from "./pairing";
 import { SignalTypes } from "./misc";
 
 export interface ClientOptions {
@@ -42,17 +42,18 @@ export abstract class IClient extends IEvents {
   public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
   // for responder to reject a session proposal
   public abstract reject(params: ClientTypes.RejectParams): Promise<void>;
-
+  // for responder to upgrade session permissions
+  public abstract upgrade(params: ClientTypes.UpgradeParams): Promise<void>;
   // for responder to update session state
   public abstract update(params: ClientTypes.UpdateParams): Promise<void>;
-  // for either to send notifications
-  public abstract notify(params: ClientTypes.NotifyParams): Promise<void>;
 
   // for proposer to request JSON-RPC
   public abstract request(params: ClientTypes.RequestParams): Promise<any>;
   // for responder to respond JSON-RPC
   public abstract respond(params: ClientTypes.RespondParams): Promise<void>;
 
+  // for either to send notifications
+  public abstract notify(params: ClientTypes.NotifyParams): Promise<void>;
   // for either to disconnect a session
   public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
 }
@@ -78,9 +79,9 @@ export declare namespace ClientTypes {
     reason?: string;
   }
 
-  export type UpdateParams = SessionTypes.UpdateParams;
+  export type UpgradeParams = SessionTypes.UpgradeParams;
 
-  export type NotifyParams = SessionTypes.NotifyParams;
+  export type UpdateParams = SessionTypes.UpdateParams;
 
   export type RequestParams = SessionTypes.RequestParams;
 
@@ -88,6 +89,8 @@ export declare namespace ClientTypes {
     topic: string;
     response: JsonRpcResponse;
   }
+
+  export type NotifyParams = SessionTypes.NotifyParams;
 
   export type DisconnectParams = SessionTypes.DeleteParams;
 }

@@ -10,20 +10,17 @@ export declare namespace SessionTypes {
   export interface BasePermissions {
     jsonrpc: JsonRpcPermissions;
     blockchain: BlockchainTypes.Permissions;
+    notifications?: NotificationPermissions;
+  }
+  export interface ProposedPermissions extends BasePermissions {
+    notifications: NotificationPermissions;
   }
 
-  export interface StatePermissions {
+  export interface SettledPermissions extends ProposedPermissions {
     controller: CryptoTypes.Participant;
   }
 
-  export interface ProposedPermissions extends BasePermissions {
-    notifications: NotificationPermissions.Proposal;
-  }
-
-  export interface SettledPermissions extends BasePermissions {
-    notifications: NotificationPermissions.Settled;
-    state: StatePermissions;
-  }
+  export type Permissions = SettledPermissions;
 
   export interface ProposeParams {
     signal: Signal;
@@ -91,9 +88,12 @@ export declare namespace SessionTypes {
     expiry: number;
   }
 
-  export interface UpdateParams {
+  export interface UpgradeParams extends Upgrade {
     topic: string;
-    update: Update;
+  }
+
+  export interface UpdateParams extends Update {
+    topic: string;
   }
 
   export interface RequestParams {
@@ -103,9 +103,13 @@ export declare namespace SessionTypes {
     timeout?: number;
   }
 
-  export type StateUpdate = { state: Partial<BlockchainTypes.State> };
+  export interface Upgrade {
+    permissions: Partial<BasePermissions>;
+  }
 
-  export type Update = StateUpdate;
+  export interface Update {
+    state: Partial<BlockchainTypes.State>;
+  }
 
   export interface Payload {
     request: RequestArguments;
@@ -177,11 +181,13 @@ export declare namespace SessionTypes {
 export abstract class ISession extends ISequence<
   SessionTypes.Pending,
   SessionTypes.Settled,
+  SessionTypes.Upgrade,
   SessionTypes.Update,
   SessionTypes.CreateParams,
   SessionTypes.RespondParams,
-  SessionTypes.UpdateParams,
   SessionTypes.RequestParams,
+  SessionTypes.UpgradeParams,
+  SessionTypes.UpdateParams,
   SessionTypes.DeleteParams,
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams

@@ -124,10 +124,8 @@ export async function testApproveSession(
   expect(sessionA?.state.accounts).to.eql(setup.b.state.accounts);
   expect(sessionA?.state.accounts).to.eql(sessionB?.state.accounts);
   // blockchain permissions
-  expect(sessionA?.permissions.state.controller.publicKey).to.eql(sessionB?.self.publicKey);
-  expect(sessionB?.permissions.state.controller.publicKey).to.eql(sessionB?.self.publicKey);
-  expect(sessionA?.permissions.notifications.controller.publicKey).to.eql(sessionB?.self.publicKey);
-  expect(sessionB?.permissions.notifications.controller.publicKey).to.eql(sessionB?.self.publicKey);
+  expect(sessionA?.permissions.controller.publicKey).to.eql(sessionB?.self.publicKey);
+  expect(sessionB?.permissions.controller.publicKey).to.eql(sessionB?.self.publicKey);
   expect(sessionA?.permissions.blockchain.chains).to.eql(setup.b.permissions.blockchain.chains);
   expect(sessionA?.permissions.blockchain.chains).to.eql(sessionB?.permissions.blockchain.chains);
   // jsonrpc permmissions

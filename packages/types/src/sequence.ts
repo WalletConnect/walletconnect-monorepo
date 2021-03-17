@@ -9,11 +9,13 @@ import { IJsonRpcHistory } from "./history";
 export abstract class ISequence<
   Pending,
   Settled,
+  Upgrade,
   Update,
   CreateParams,
   RespondParams,
-  UpdateParams,
   RequestParams,
+  UpgradeParams,
+  UpdateParams,
   DeleteParams,
   ProposeParams,
   SettleParams
@@ -53,10 +55,14 @@ export abstract class ISequence<
   public abstract create(params?: CreateParams): Promise<Settled>;
   // called by responder
   public abstract respond(params: RespondParams): Promise<Pending>;
-  // called by either to update state
-  public abstract update(params: UpdateParams): Promise<Settled>;
+
   // called by proposer to request JSON-RPC
   public abstract request(params: RequestParams): Promise<any>;
+  // called by responder to upgrade permissions
+  public abstract upgrade(params: UpgradeParams): Promise<Settled>;
+
+  // called by either to update state
+  public abstract update(params: UpdateParams): Promise<Settled>;
   // called by either to terminate
   public abstract delete(params: DeleteParams): Promise<void>;
 
@@ -75,12 +81,19 @@ export abstract class ISequence<
   protected abstract onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
   // callback for incoming JSON-RPC payloads
   protected abstract onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for state update requests
+  // callback for state update payloads
   protected abstract onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
+  // callback for permission upgrade payloads
+  protected abstract onUpgrade(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
   // validates and processes state udpates
   protected abstract handleUpdate(
     settled: Settled,
     params: UpdateParams,
     participant: CryptoTypes.Participant,
   ): Promise<Update>;
+  protected abstract handleUpgrade(
+    settled: Settled,
+    params: UpgradeParams,
+    participant: CryptoTypes.Participant,
+  ): Promise<Upgrade>;
 }

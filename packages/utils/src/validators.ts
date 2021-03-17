@@ -151,7 +151,7 @@ export function validateJsonRpcPermissions(jsonrpc?: JsonRpcPermissions): Valida
 }
 
 export function validateNotificationPermissions(
-  notifications: NotificationPermissions.Proposal,
+  notifications: NotificationPermissions,
 ): Validation.Result {
   if (
     typeof notifications === "undefined" ||

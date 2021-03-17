@@ -167,7 +167,7 @@ describe("Session", function() {
         });
       }),
       new Promise<void>(async (resolve, reject) => {
-        await clients.b.update({ topic, update: { state } });
+        await clients.b.update({ topic, state });
         resolve();
       }),
     ]);
@@ -176,7 +176,7 @@ describe("Session", function() {
     const state = { accounts: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const promise = clients.a.update({ topic, update: { state } });
+    const promise = clients.a.update({ topic, state });
     await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session update request`);
   });
   it("B emits notification and A receives event", async () => {

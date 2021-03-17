@@ -181,12 +181,12 @@ export class Client extends IClient {
     this.logger.trace({ type: "method", method: "reject", pending });
   }
 
-  public async update(params: ClientTypes.UpdateParams): Promise<void> {
-    await this.session.update(params);
+  public async upgrade(params: ClientTypes.UpgradeParams): Promise<void> {
+    await this.session.upgrade(params);
   }
 
-  public async notify(params: ClientTypes.NotifyParams): Promise<void> {
-    await this.session.notify(params);
+  public async update(params: ClientTypes.UpdateParams): Promise<void> {
+    await this.session.update(params);
   }
 
   public async request(params: ClientTypes.RequestParams): Promise<any> {
@@ -195,6 +195,10 @@ export class Client extends IClient {
 
   public async respond(params: ClientTypes.RespondParams): Promise<void> {
     await this.session.send(params.topic, params.response);
+  }
+
+  public async notify(params: ClientTypes.NotifyParams): Promise<void> {
+    await this.session.notify(params);
   }
 
   public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
@@ -222,8 +226,7 @@ export class Client extends IClient {
   protected async onPairingSettled(pairing: PairingTypes.Settled) {
     const metadata = getPairingMetadata();
     if (typeof metadata === "undefined") return;
-    const update: PairingTypes.Update = { peer: { metadata } };
-    this.pairing.update({ topic: pairing.topic, update });
+    this.pairing.update({ topic: pairing.topic, peer: { metadata } });
   }
   // ---------- Private ----------------------------------------------- //
 

@@ -5,6 +5,7 @@ export const PAIRING_JSONRPC = {
   approve: "wc_pairingApprove",
   reject: "wc_pairingReject",
   update: "wc_pairingUpdate",
+  upgrade: "wc_pairingUpgrade",
   delete: "wc_pairingDelete",
   payload: "wc_pairingPayload",
   ping: "wc_pairingPing",
