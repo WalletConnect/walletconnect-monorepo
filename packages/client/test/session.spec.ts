@@ -13,8 +13,10 @@ import {
   TEST_ETHEREUM_ACCOUNTS,
   TEST_CLIENT_DATABASE,
   TEST_TIMEOUT_DURATION,
+  testJsonRpcRequest,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
+import { formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 describe("Session", function() {
   this.timeout(TEST_TIMEOUT_DURATION);
@@ -209,6 +211,51 @@ describe("Session", function() {
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized Notification Type Requested: ${event.type}`,
     );
+  });
+  it("B upgrades permissions and A receives event", async () => {
+    const chainId = "eip155:100";
+    const request = {
+      method: "personal_sign",
+      params: ["0xdeadbeaf", "0x9b2055d370f73ec7d8a03e965129118dc8f5bf83"],
+    };
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    // first - attempt sending request to chainId=eip155:100
+    const promise = clients.a.request({ topic, request, chainId });
+    await expect(promise).to.eventually.be.rejectedWith(
+      `Unauthorized Target ChainId Requested: ${chainId}`,
+    );
+    // second - upgrade permissions to include new chainId
+    await Promise.all([
+      new Promise<void>(async (resolve, reject) => {
+        clients.a.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
+          if (!session.permissions.blockchain.chains.includes(chainId)) {
+            return reject(new Error(`Updated session permissions missing new chainId: ${chainId}`));
+          }
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          await clients.b.upgrade({ topic, permissions: { blockchain: { chains: [chainId] } } });
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }),
+    ]);
+    // third - send request again with new chainId and respond
+    await testJsonRpcRequest(setup, clients, topic, request, formatJsonRpcResult(1, "0xdeadbeaf"));
+  });
+  it("A upgrades permissions and error is thrown", async () => {
+    const chainId = "eip155:100";
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const promise = clients.a.upgrade({
+      topic,
+      permissions: { blockchain: { chains: [chainId] } },
+    });
+    await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session permissions upgrade`);
   });
   it("A fails to pings B after A deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();

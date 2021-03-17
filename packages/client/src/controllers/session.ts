@@ -102,6 +102,14 @@ export class Session extends ISession {
           this.logger.error(errorMessage);
           throw new Error(errorMessage);
         }
+        if (
+          typeof chainId !== "undefined" &&
+          !session.permissions.blockchain.chains.includes(chainId)
+        ) {
+          const errorMessage = `Unauthorized Target ChainId Requested: ${chainId}`;
+          this.logger.error(errorMessage);
+          throw new Error(errorMessage);
+        }
         await this.history.set(topic, payload, chainId);
         payload = formatJsonRpcRequest<SessionTypes.Payload>(
           SESSION_JSONRPC.payload,
@@ -265,10 +273,9 @@ export class Session extends ISession {
     this.logger.info(`Upgrade Session`);
     this.logger.trace({ type: "method", method: "upgrade", params });
     const session = await this.settled.get(params.topic);
-    await this.handleUpgrade(session, params, {
-      publicKey: session.self.publicKey,
-    });
-    const request = formatJsonRpcRequest(SESSION_JSONRPC.upgrade, params);
+    const participant: CryptoTypes.Participant = { publicKey: session.self.publicKey };
+    const upgrade = await this.handleUpgrade(params.topic, params, participant);
+    const request = formatJsonRpcRequest(SESSION_JSONRPC.upgrade, upgrade);
     await this.send(session.topic, request);
     return session;
   }
@@ -277,9 +284,8 @@ export class Session extends ISession {
     this.logger.info(`Update Session`);
     this.logger.trace({ type: "method", method: "update", params });
     const session = await this.settled.get(params.topic);
-    const update = await this.handleUpdate(session, params, {
-      publicKey: session.self.publicKey,
-    });
+    const participant: CryptoTypes.Participant = { publicKey: session.self.publicKey };
+    const update = await this.handleUpdate(params.topic, params, participant);
     const request = formatJsonRpcRequest(SESSION_JSONRPC.update, update);
     await this.send(session.topic, request);
     return session;
@@ -575,11 +581,8 @@ export class Session extends ISession {
     const request = payloadEvent.payload as JsonRpcRequest;
     const session = await this.settled.get(payloadEvent.topic);
     try {
-      await this.handleUpdate(
-        session,
-        { topic, ...request.params },
-        { publicKey: session.peer.publicKey },
-      );
+      const participant: CryptoTypes.Participant = { publicKey: session.peer.publicKey };
+      await this.handleUpdate(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
       await this.send(session.topic, response);
     } catch (e) {
@@ -596,11 +599,8 @@ export class Session extends ISession {
     const request = payloadEvent.payload as JsonRpcRequest;
     const session = await this.settled.get(payloadEvent.topic);
     try {
-      await this.handleUpgrade(
-        session,
-        { topic, ...request.params },
-        { publicKey: session.peer.publicKey },
-      );
+      const participant: CryptoTypes.Participant = { publicKey: session.peer.publicKey };
+      await this.handleUpgrade(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
       await this.send(session.topic, response);
     } catch (e) {
@@ -611,10 +611,11 @@ export class Session extends ISession {
   }
 
   protected async handleUpdate(
-    session: SessionTypes.Settled,
-    params: SessionTypes.UpdateParams,
-    participant: { publicKey: string },
+    topic: string,
+    params: SessionTypes.Update,
+    participant: CryptoTypes.Participant,
   ): Promise<SessionTypes.Update> {
+    const session = await this.settled.get(topic);
     let update: SessionTypes.Update;
     if (typeof params.state !== "undefined") {
       const state = session.state;
@@ -635,46 +636,39 @@ export class Session extends ISession {
   }
 
   protected async handleUpgrade(
-    session: SessionTypes.Settled,
-    params: SessionTypes.UpgradeParams,
-    participant: { publicKey: string },
+    topic: string,
+    params: SessionTypes.Upgrade,
+    participant: CryptoTypes.Participant,
   ): Promise<SessionTypes.Upgrade> {
+    const session = await this.settled.get(topic);
+    let upgrade: SessionTypes.Upgrade = { permissions: {} };
     if (participant.publicKey !== session.permissions.controller.publicKey) {
       const errorMessage = `Unauthorized session permissions upgrade`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
-    const upgrade: SessionTypes.Upgrade = {
-      permissions: {
-        blockchain: {
-          chains: [
-            ...session.permissions.blockchain.chains,
-            ...(params.permissions.blockchain?.chains || []),
-          ],
-        },
-        jsonrpc: {
-          methods: [
-            ...session.permissions.jsonrpc.methods,
-            ...(params.permissions.jsonrpc?.methods || []),
-          ],
-        },
-        notifications: {
-          types: [
-            ...session.permissions.notifications?.types,
-            ...(params.permissions.notifications?.types || []),
-          ],
-        },
+    const permissions: Omit<SessionTypes.Permissions, "controller"> = {
+      blockchain: {
+        chains: [
+          ...session.permissions.blockchain.chains,
+          ...(params.permissions.blockchain?.chains || []),
+        ],
+      },
+      jsonrpc: {
+        methods: [
+          ...session.permissions.jsonrpc.methods,
+          ...(params.permissions.jsonrpc?.methods || []),
+        ],
+      },
+      notifications: {
+        types: [
+          ...session.permissions.notifications?.types,
+          ...(params.permissions.notifications?.types || []),
+        ],
       },
     };
-    session = {
-      ...session,
-      permissions: {
-        blockchain: upgrade.permissions.blockchain || session.permissions.blockchain,
-        jsonrpc: upgrade.permissions.jsonrpc || session.permissions.jsonrpc,
-        notifications: upgrade.permissions.notifications || session.permissions.notifications,
-        controller: session.permissions.controller,
-      },
-    };
+    upgrade = { permissions };
+    session.permissions = { ...permissions, controller: session.permissions.controller };
     await this.settled.update(session.topic, session);
     return upgrade;
   }
@@ -826,15 +820,4 @@ export class Session extends ISession {
       },
     );
   }
-}
-
-function formatSettledPermissions(
-  permissions: SessionTypes.ProposedPermissions,
-  controllerPublicKey: string,
-): SessionTypes.SettledPermissions {
-  const controller: CryptoTypes.Participant = { publicKey: controllerPublicKey };
-  return {
-    ...permissions,
-    controller: { publicKey: controllerPublicKey },
-  };
 }

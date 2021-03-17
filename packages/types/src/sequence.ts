@@ -87,13 +87,13 @@ export abstract class ISequence<
   protected abstract onUpgrade(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
   // validates and processes state udpates
   protected abstract handleUpdate(
-    settled: Settled,
-    params: UpdateParams,
+    topic: string,
+    update: Update,
     participant: CryptoTypes.Participant,
   ): Promise<Update>;
   protected abstract handleUpgrade(
-    settled: Settled,
-    params: UpgradeParams,
+    topic: string,
+    params: Upgrade,
     participant: CryptoTypes.Participant,
   ): Promise<Upgrade>;
 }
