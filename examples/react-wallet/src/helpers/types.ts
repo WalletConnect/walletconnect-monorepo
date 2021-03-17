@@ -40,7 +40,7 @@ export declare namespace Cards {
 
   export interface Request {
     type: "request";
-    data: { request: SessionTypes.PayloadEvent; peer: SessionTypes.Peer };
+    data: { requestEvent: SessionTypes.RequestEvent; peer: SessionTypes.Peer };
   }
 
   export interface Settings {

@@ -73,9 +73,9 @@ const SInput = styled(Input)`
 interface DefaultCardProps {
   accounts: string[];
   sessions: SessionTypes.Created[];
-  requests: SessionTypes.PayloadEvent[];
+  requests: SessionTypes.RequestEvent[];
   openSession: (session: SessionTypes.Created) => void;
-  openRequest: (request: SessionTypes.PayloadEvent) => Promise<void>;
+  openRequest: (requestEvent: SessionTypes.RequestEvent) => Promise<void>;
   openScanner: () => void;
   openSettings: () => void;
   onURI: (data: any) => void;
@@ -99,7 +99,7 @@ const DefaultCard = (props: DefaultCardProps) => {
         {!!accounts.length ? (
           <React.Fragment>
             <h6>{"Accounts"}</h6>
-            {accounts.map((account) => {
+            {accounts.map(account => {
               const [address, chainId] = account.split("@");
               return (
                 <Blockchain
@@ -114,7 +114,7 @@ const DefaultCard = (props: DefaultCardProps) => {
         {!!sessions.length ? (
           <React.Fragment>
             <h6>{"Sessions"}</h6>
-            {sessions.map((session) => (
+            {sessions.map(session => (
               <SSession key={session.topic} onClick={() => openSession(session)}>
                 <img src={session.peer.metadata.icons[0]} alt={session.peer.metadata.name} />
                 <div>{session.peer.metadata.name}</div>
@@ -123,13 +123,13 @@ const DefaultCard = (props: DefaultCardProps) => {
             {requests.length ? (
               <React.Fragment>
                 <h6>{"Requests"}</h6>
-                {requests.map((request) =>
-                  isJsonRpcRequest(request.payload) ? (
+                {requests.map(requestEvent =>
+                  isJsonRpcRequest(requestEvent.request) ? (
                     <Method
-                      key={`default:request:${request.payload.id}`}
-                      onClick={() => openRequest(request)}
+                      key={`default:request:${requestEvent.request.id}`}
+                      onClick={() => openRequest(requestEvent)}
                     >
-                      <div>{request.payload.method}</div>
+                      <div>{requestEvent.request.method}</div>
                     </Method>
                   ) : null,
                 )}
