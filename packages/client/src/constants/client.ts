@@ -12,8 +12,9 @@ export const CLIENT_EVENTS = {
     updated: "session_updated",
     created: "session_created",
     deleted: "session_deleted",
-    payload: "session_payload",
     notification: "session_notification",
+    request: "session_request",
+    response: "session_response",
   },
 };
 

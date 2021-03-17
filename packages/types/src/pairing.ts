@@ -1,4 +1,9 @@
-import { JsonRpcPayload, RequestArguments } from "@json-rpc-tools/types";
+import {
+  JsonRpcPayload,
+  JsonRpcRequest,
+  JsonRpcResponse,
+  RequestArguments,
+} from "@json-rpc-tools/types";
 
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
@@ -105,6 +110,14 @@ export declare namespace PairingTypes {
   export interface PayloadEvent {
     topic: string;
     payload: JsonRpcPayload;
+  }
+
+  export interface RequestEvent extends Omit<PayloadEvent, "payload"> {
+    request: JsonRpcRequest;
+  }
+
+  export interface ResponseEvent extends Omit<PayloadEvent, "payload"> {
+    response: JsonRpcResponse;
   }
 
   export interface DeleteParams {

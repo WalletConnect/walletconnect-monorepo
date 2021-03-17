@@ -16,7 +16,7 @@ import {
   isSessionResponded,
   getPairingMetadata,
 } from "@walletconnect/utils";
-import { JsonRpcPayload, isJsonRpcRequest } from "@json-rpc-tools/utils";
+import { JsonRpcPayload, isJsonRpcRequest, JsonRpcRequest } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
 import { Pairing, Session, Relayer } from "./controllers";
@@ -209,17 +209,15 @@ export class Client extends IClient {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async onPairingPayload(payload: JsonRpcPayload): Promise<void> {
-    if (isJsonRpcRequest(payload)) {
-      if (payload.method === SESSION_JSONRPC.propose) {
-        this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
-        this.logger.debug({
-          type: "event",
-          event: CLIENT_EVENTS.session.proposal,
-          data: payload.params,
-        });
-        this.events.emit(CLIENT_EVENTS.session.proposal, payload.params);
-      }
+  protected async onPairingRequest(request: JsonRpcRequest): Promise<void> {
+    if (request.method === SESSION_JSONRPC.propose) {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.session.proposal,
+        data: request.params,
+      });
+      this.events.emit(CLIENT_EVENTS.session.proposal, request.params);
     }
   }
 
@@ -285,8 +283,8 @@ export class Client extends IClient {
       });
       this.events.emit(CLIENT_EVENTS.pairing.deleted, pairing);
     });
-    this.pairing.on(PAIRING_EVENTS.payload, (payloadEvent: PairingTypes.PayloadEvent) => {
-      this.onPairingPayload(payloadEvent.payload);
+    this.pairing.on(PAIRING_EVENTS.request, (requestEvent: PairingTypes.RequestEvent) => {
+      this.onPairingRequest(requestEvent.request);
     });
     // Session Subscription Events
     this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {
@@ -313,14 +311,23 @@ export class Client extends IClient {
       this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.deleted, data: session });
       this.events.emit(CLIENT_EVENTS.session.deleted, session);
     });
-    this.session.on(SESSION_EVENTS.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.payload}`);
+    this.session.on(SESSION_EVENTS.request, (requestEvent: SessionTypes.RequestEvent) => {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.request}`);
       this.logger.debug({
         type: "event",
-        event: CLIENT_EVENTS.session.payload,
-        data: payloadEvent,
+        event: CLIENT_EVENTS.session.request,
+        data: requestEvent,
       });
-      this.events.emit(CLIENT_EVENTS.session.payload, payloadEvent);
+      this.events.emit(CLIENT_EVENTS.session.request, requestEvent);
+    });
+    this.session.on(SESSION_EVENTS.response, (responseEvent: SessionTypes.ResponseEvent) => {
+      this.logger.info(`Emitting ${CLIENT_EVENTS.session.response}`);
+      this.logger.debug({
+        type: "event",
+        event: CLIENT_EVENTS.session.response,
+        data: responseEvent,
+      });
+      this.events.emit(CLIENT_EVENTS.session.response, responseEvent);
     });
     this.session.on(
       SESSION_EVENTS.notification,

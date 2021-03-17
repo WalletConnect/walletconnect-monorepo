@@ -278,10 +278,9 @@ export class Pairing extends IPairing {
         this.logger.error(errorMessage);
         reject(errorMessage);
       }, maxDuration);
-      this.events.on(PAIRING_EVENTS.payload, (payloadEvent: PairingTypes.PayloadEvent) => {
-        if (params.topic !== payloadEvent.topic) return;
-        if (isJsonRpcRequest(payloadEvent.payload)) return;
-        const response = payloadEvent.payload;
+      this.events.on(PAIRING_EVENTS.response, (responseEvent: PairingTypes.ResponseEvent) => {
+        if (params.topic !== responseEvent.topic) return;
+        const response = responseEvent.response;
         if (response.id !== request.id) return;
         clearTimeout(timeout);
         if (isJsonRpcError(response)) {
@@ -625,9 +624,17 @@ export class Pairing extends IPairing {
     } else {
       await this.history.update(topic, payload);
     }
-    this.logger.info(`Emitting ${PAIRING_EVENTS.payload}`);
-    this.logger.debug({ type: "event", event: PAIRING_EVENTS.payload, data: payloadEvent });
-    this.events.emit(PAIRING_EVENTS.payload, payloadEvent);
+    if (isJsonRpcRequest(payload)) {
+      const requestEvent: PairingTypes.RequestEvent = { topic, request: payload };
+      this.logger.info(`Emitting ${PAIRING_EVENTS.request}`);
+      this.logger.debug({ type: "event", event: PAIRING_EVENTS.request, data: requestEvent });
+      this.events.emit(PAIRING_EVENTS.request, requestEvent);
+    } else {
+      const responseEvent: PairingTypes.ResponseEvent = { topic, response: payload };
+      this.logger.info(`Emitting ${PAIRING_EVENTS.response}`);
+      this.logger.debug({ type: "event", event: PAIRING_EVENTS.response, data: responseEvent });
+      this.events.emit(PAIRING_EVENTS.response, responseEvent);
+    }
   }
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {

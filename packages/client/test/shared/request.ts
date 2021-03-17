@@ -32,15 +32,11 @@ export async function testJsonRpcRequest(
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
       clients.b.on(
-        CLIENT_EVENTS.session.payload,
-        async (payloadEvent: SessionTypes.PayloadEvent) => {
-          if (
-            isJsonRpcRequest(payloadEvent.payload) &&
-            payloadEvent.topic === topic &&
-            payloadEvent.chainId === chainId
-          ) {
+        CLIENT_EVENTS.session.request,
+        async (requestEvent: SessionTypes.RequestEvent) => {
+          if (requestEvent.topic === topic && requestEvent.chainId === chainId) {
             clients.b.logger.warn(`TEST >> JSON-RPC Request Received`);
-            id = payloadEvent.payload.id;
+            id = requestEvent.request.id;
             await clients.b.respond({
               topic,
               response: { ...response, id },

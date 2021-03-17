@@ -28,13 +28,14 @@ export const SESSION_STATUS = {
 };
 
 export const SESSION_EVENTS = {
-  payload: "session_payload",
   proposed: "session_proposed",
   responded: "session_responded",
   settled: "session_settled",
   updated: "session_updated",
   deleted: "session_deleted",
   notification: "session_notification",
+  request: "session_request",
+  response: "session_response",
 };
 
 export const SESSION_REASONS = {

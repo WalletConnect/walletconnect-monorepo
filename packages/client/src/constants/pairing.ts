@@ -25,12 +25,13 @@ export const PAIRING_STATUS = {
 };
 
 export const PAIRING_EVENTS = {
-  payload: "pairing_payload",
   proposed: "pairing_proposed",
   responded: "pairing_responded",
   settled: "pairing_settled",
   updated: "pairing_updated",
   deleted: "pairing_deleted",
+  request: "pairing_request",
+  response: "pairing_response",
 };
 
 export const PAIRING_REASONS = {

@@ -302,10 +302,9 @@ export class Session extends ISession {
         this.logger.error(errorMessage);
         reject(errorMessage);
       }, maxDuration);
-      this.events.on(SESSION_EVENTS.payload, (payloadEvent: SessionTypes.PayloadEvent) => {
-        if (params.topic !== payloadEvent.topic) return;
-        if (isJsonRpcRequest(payloadEvent.payload)) return;
-        const response = payloadEvent.payload;
+      this.events.on(SESSION_EVENTS.response, (responseEvent: SessionTypes.ResponseEvent) => {
+        if (params.topic !== responseEvent.topic) return;
+        const response = responseEvent.response;
         if (response.id !== request.id) return;
         clearTimeout(timeout);
         if (isJsonRpcError(response)) {
@@ -707,9 +706,17 @@ export class Session extends ISession {
     } else {
       await this.history.update(topic, payload);
     }
-    this.logger.info(`Emitting ${SESSION_EVENTS.payload}`);
-    this.logger.debug({ type: "event", event: SESSION_EVENTS.payload, data: payloadEvent });
-    this.events.emit(SESSION_EVENTS.payload, payloadEvent);
+    if (isJsonRpcRequest(payload)) {
+      const requestEvent: SessionTypes.RequestEvent = { topic, request: payload, chainId };
+      this.logger.info(`Emitting ${SESSION_EVENTS.request}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.request, data: requestEvent });
+      this.events.emit(SESSION_EVENTS.request, requestEvent);
+    } else {
+      const responseEvent: SessionTypes.ResponseEvent = { topic, response: payload, chainId };
+      this.logger.info(`Emitting ${SESSION_EVENTS.response}`);
+      this.logger.debug({ type: "event", event: SESSION_EVENTS.response, data: responseEvent });
+      this.events.emit(SESSION_EVENTS.response, responseEvent);
+    }
   }
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
