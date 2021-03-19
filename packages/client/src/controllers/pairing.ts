@@ -197,6 +197,7 @@ export class Pairing extends IPairing {
             ...proposal.permissions,
             controller: { publicKey: self.publicKey },
           },
+          state: {},
           ttl: proposal.ttl,
           expiry,
         });
@@ -205,6 +206,7 @@ export class Pairing extends IPairing {
           relay: pairing.relay,
           responder,
           expiry,
+          state: {},
         };
         const pending: PairingTypes.Pending = {
           status: PAIRING_STATUS.responded,
@@ -379,6 +381,7 @@ export class Pairing extends IPairing {
       peer: params.peer,
       permissions: params.permissions,
       expiry: params.expiry,
+      state: params.state,
     };
     const decryptKeys: CryptoTypes.DecryptKeys = {
       sharedKey,
@@ -410,6 +413,7 @@ export class Pairing extends IPairing {
           },
           ttl: pending.proposal.ttl,
           expiry: request.params.expiry,
+          state: {},
         });
         await this.pending.update(topic, {
           status: PAIRING_STATUS.responded,
@@ -418,6 +422,7 @@ export class Pairing extends IPairing {
             relay: pairing.relay,
             responder: request.params.responder,
             expiry: pairing.expiry,
+            state: {},
           },
         });
       } catch (e) {
@@ -562,18 +567,21 @@ export class Pairing extends IPairing {
   ): Promise<PairingTypes.Update> {
     const pairing = await this.settled.get(topic);
     let update: PairingTypes.Update;
-    if (typeof params.peer !== "undefined") {
-      const metadata = params.peer.metadata as PairingTypes.Metadata;
-      pairing.peer.metadata = metadata;
-      update = { peer: { metadata } };
+    if (typeof params.state !== "undefined") {
+      const state = pairing.state;
+      if (participant.publicKey !== pairing.permissions.controller.publicKey) {
+        const errorMessage = `Unauthorized pairing update request`;
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      state.metadata = params.state.metadata || state.metadata;
+      update = { state };
     } else {
       const errorMessage = `Invalid pairing update request params`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
-    if (participant.publicKey === pairing.self.publicKey) {
-      await this.settled.update(pairing.topic, pairing);
-    }
+    await this.settled.update(pairing.topic, pairing);
     return update;
   }
 

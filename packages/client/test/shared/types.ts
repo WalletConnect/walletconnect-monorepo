@@ -1,5 +1,5 @@
 import { ErrorResponse, RequestArguments } from "@json-rpc-tools/utils";
-import { IClient, SessionTypes, ClientOptions } from "@walletconnect/types";
+import { IClient, SessionTypes, ClientOptions, AppMetadata } from "@walletconnect/types";
 
 export interface InitializedClients {
   a: IClient;
@@ -9,7 +9,6 @@ export interface InitializedClients {
 export interface ClientSetup {
   options?: ClientOptions;
   state?: SessionTypes.State;
-  metadata?: SessionTypes.Metadata;
   permissions?: SessionTypes.BasePermissions;
 }
 

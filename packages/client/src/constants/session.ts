@@ -57,14 +57,18 @@ export const SESSION_EMPTY_PERMISSIONS = {
   },
 } as SessionTypes.ProposedPermissions;
 
+export const SESSION_EMPTY_STATE = {
+  accounts: [],
+};
+
+export const SESSION_EMPTY_METADATA = {
+  name: "",
+  description: "",
+  url: "",
+  icons: [],
+};
+
 export const SESSION_EMPTY_RESPONSE = {
-  metadata: {
-    name: "",
-    description: "",
-    url: "",
-    icons: [],
-  },
-  state: {
-    accounts: [],
-  },
+  metadata: SESSION_EMPTY_METADATA,
+  state: SESSION_EMPTY_STATE,
 } as SessionTypes.Response;

@@ -1,18 +1,31 @@
 import * as qs from "query-string";
-import { detect } from "detect-browser";
-import { getLocation, getNavigator } from "window-getters";
+import { getWindowMetadata } from "window-metadata";
+import { getDocument, getLocation, getNavigator } from "window-getters";
+import { RelayClientMetadata, AppMetadata } from "@walletconnect/types";
 
 // -- env -----------------------------------------------//
 
 export function isNode(): boolean {
-  const env = detect();
-  const result = env && env.name ? env.name.toLowerCase() === "node" : false;
-  return result;
+  return (
+    typeof process !== "undefined" &&
+    typeof process.versions !== "undefined" &&
+    typeof process.versions.node !== "undefined"
+  );
+}
+
+export function isReactNative(): boolean {
+  return !getDocument() && !!getNavigator() && navigator.product === "ReactNative";
 }
 
 export function isBrowser(): boolean {
-  const result = !isNode() && !!getNavigator();
-  return result;
+  return !isNode() && !!getNavigator();
+}
+
+export function getEnvironment(): string {
+  if (isReactNative()) return "react-native";
+  if (isNode()) return "node";
+  if (isBrowser()) return "browser";
+  return "unknown";
 }
 
 // -- query -----------------------------------------------//
@@ -27,22 +40,27 @@ export function appendToQueryString(queryString: string, newQueryParams: any): s
   return queryString;
 }
 
+// -- metadata ----------------------------------------------//
+
+export function getAppMetadata(): AppMetadata | undefined {
+  return getWindowMetadata() || undefined;
+}
+
+export function getRelayClientMetadata(protocol: string, version: number): RelayClientMetadata {
+  const env = getEnvironment();
+
+  const metadata: RelayClientMetadata = { protocol, version, env };
+  if (env === "browser") {
+    metadata.host = getLocation()?.host || "";
+  }
+  return metadata;
+}
+
 // -- rpcUrl ----------------------------------------------//
 
 export function formatRelayRpcUrl(protocol: string, version: number, url: string): string {
   const splitUrl = url.split("?");
-  const params = isBrowser()
-    ? {
-        protocol,
-        version,
-        env: "browser",
-        host: getLocation()?.host || "",
-      }
-    : {
-        protocol,
-        version,
-        env: detect()?.name || "",
-      };
+  const params = getRelayClientMetadata(protocol, version);
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }

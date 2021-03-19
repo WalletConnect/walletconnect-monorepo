@@ -7,6 +7,7 @@ import {
   ClientTypes,
   PairingTypes,
   SessionTypes,
+  AppMetadata,
 } from "@walletconnect/types";
 import {
   isPairingFailed,
@@ -14,9 +15,9 @@ import {
   parseUri,
   isPairingResponded,
   isSessionResponded,
-  getPairingMetadata,
+  getAppMetadata,
 } from "@walletconnect/utils";
-import { JsonRpcPayload, isJsonRpcRequest, JsonRpcRequest } from "@json-rpc-tools/utils";
+import { JsonRpcRequest } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
 import { Pairing, Session, Relayer } from "./controllers";
@@ -30,6 +31,7 @@ import {
   RELAYER_DEFAULT_PROTOCOL,
   SESSION_EMPTY_PERMISSIONS,
   SESSION_EMPTY_RESPONSE,
+  SESSION_EMPTY_STATE,
   SESSION_EVENTS,
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_PAIRING,
@@ -50,6 +52,8 @@ export class Client extends IClient {
 
   public context: string = CLIENT_CONTEXT;
 
+  public metadata: AppMetadata | undefined;
+
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
     await client.initialize();
@@ -62,7 +66,10 @@ export class Client extends IClient {
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger }));
+
     this.context = opts?.overrideContext || this.context;
+    this.metadata = opts?.metadata || getAppMetadata();
+
     this.logger = generateChildLogger(logger, this.context);
 
     this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
@@ -101,10 +108,16 @@ export class Client extends IClient {
           ? await this.pairing.create()
           : await this.pairing.get(params.pairing.topic);
       this.logger.trace({ type: "method", method: "connect", pairing });
+      const metadata = params.metadata || this.metadata;
+      if (typeof metadata === "undefined") {
+        const errorMessage = "Missing or invalid app metadata provided";
+        this.logger.error(errorMessage);
+        throw new Error(errorMessage);
+      }
       const session = await this.session.create({
         signal: { method: SESSION_SIGNAL_METHOD_PAIRING, params: { topic: pairing.topic } },
         relay: params.relay || { protocol: RELAYER_DEFAULT_PROTOCOL },
-        metadata: params.metadata,
+        metadata,
         permissions: {
           ...params.permissions,
           notifications: SESSION_EMPTY_PERMISSIONS.notifications,
@@ -148,10 +161,17 @@ export class Client extends IClient {
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
+    const state = params.response.state || SESSION_EMPTY_STATE;
+    const metadata = params.response.metadata || this.metadata;
+    if (typeof metadata === "undefined") {
+      const errorMessage = "Missing or invalid app metadata provided";
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
     const pending = await this.session.respond({
       approved: true,
       proposal: params.proposal,
-      response: params.response || SESSION_EMPTY_RESPONSE,
+      response: { state, metadata },
     });
     if (!isSessionResponded(pending)) {
       const errorMessage = "No Session Response found in pending proposal";
@@ -222,9 +242,9 @@ export class Client extends IClient {
   }
 
   protected async onPairingSettled(pairing: PairingTypes.Settled) {
-    const metadata = getPairingMetadata();
-    if (typeof metadata === "undefined") return;
-    this.pairing.update({ topic: pairing.topic, peer: { metadata } });
+    if (pairing.permissions.controller.publicKey === pairing.self.publicKey) {
+      this.pairing.update({ topic: pairing.topic, state: { metadata: this.metadata } });
+    }
   }
   // ---------- Private ----------------------------------------------- //
 

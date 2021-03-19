@@ -243,7 +243,7 @@ export abstract class IClient extends IEvents {
 
 export declare namespace ClientTypes {
   export interface ConnectParams {
-    metadata: SessionTypes.Metadata;
+    metadata: AppMetadata;
     permissions: SessionTypes.BasePermissions;
     relay?: RelayerTypes.ProtocolOptions;
     pairing?: SignalTypes.ParamsPairing;

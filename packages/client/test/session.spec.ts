@@ -60,7 +60,6 @@ describe("Session", function() {
     const { setup, clients } = await setupClientsForTesting();
     const pairing = { topic: generateRandomBytes32() };
     const promise = clients.a.connect({
-      metadata: setup.a.metadata,
       permissions: setup.a.permissions,
       pairing,
     });
@@ -73,7 +72,6 @@ describe("Session", function() {
     const pairing = { topic: await testPairingWithoutSession(clients) };
     const permissions = { blockchain: setup.a.permissions.blockchain };
     const promise = clients.a.connect({
-      metadata: setup.a.metadata,
       permissions: permissions as any,
       pairing,
     });
@@ -94,7 +92,6 @@ describe("Session", function() {
     const { setup, clients } = await setupClientsForTesting();
     const pairing = { topic: await testPairingWithoutSession(clients) };
     const response = {
-      metadata: setup.b.metadata,
       state: {
         accounts: TEST_ETHEREUM_ACCOUNTS,
       },
@@ -102,7 +99,6 @@ describe("Session", function() {
     await Promise.all([
       new Promise<void>(async (resolve, reject) => {
         clients.a.connect({
-          metadata: setup.a.metadata,
           permissions: setup.a.permissions,
           pairing,
         });
@@ -128,7 +124,6 @@ describe("Session", function() {
     await Promise.all([
       new Promise<void>(async (resolve, reject) => {
         clients.a.connect({
-          metadata: setup.a.metadata,
           permissions: setup.a.permissions,
           pairing,
         });

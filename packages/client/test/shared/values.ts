@@ -1,5 +1,5 @@
 import path from "path";
-import { ClientOptions, SessionTypes } from "@walletconnect/types";
+import { ClientOptions, SessionTypes, AppMetadata } from "@walletconnect/types";
 
 import { FIVE_MINUTES } from "../../src";
 
@@ -35,14 +35,14 @@ export const TEST_PERMISSIONS: SessionTypes.BasePermissions = {
   },
 };
 
-export const TEST_APP_METADATA_A: SessionTypes.Metadata = {
+export const TEST_APP_METADATA_A: AppMetadata = {
   name: "App A (Proposer)",
   description: "Description of Proposer App run by client A",
   url: "https://walletconnect.org",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
-export const TEST_APP_METADATA_B: SessionTypes.Metadata = {
+export const TEST_APP_METADATA_B: AppMetadata = {
   name: "App B (Responder)",
   description: "Description of Responder App run by client B",
   url: "https://walletconnect.org",

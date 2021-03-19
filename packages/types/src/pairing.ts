@@ -8,7 +8,7 @@ import {
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayerTypes } from "./relayer";
-import { JsonRpcPermissions, SignalTypes } from "./misc";
+import { AppMetadata, JsonRpcPermissions, SignalTypes } from "./misc";
 
 export declare namespace PairingTypes {
   export interface BasePermissions {
@@ -30,7 +30,7 @@ export declare namespace PairingTypes {
 
   export type Signal = SignalTypes.Uri;
 
-  export type Peer = CryptoTypes.Peer<Metadata>;
+  export type Peer = CryptoTypes.Participant;
 
   export interface Proposal {
     topic: string;
@@ -76,6 +76,7 @@ export declare namespace PairingTypes {
     relay: RelayerTypes.ProtocolOptions;
     peer: Peer;
     self: CryptoTypes.Self;
+    state: State;
     permissions: SettledPermissions;
     ttl: number;
     expiry: number;
@@ -100,7 +101,7 @@ export declare namespace PairingTypes {
   }
 
   export interface Update {
-    peer: Omit<Peer, "publicKey">;
+    state: Partial<State>;
   }
 
   export interface Payload {
@@ -133,22 +134,17 @@ export declare namespace PairingTypes {
     peer: Peer;
     permissions: SettledPermissions;
     expiry: number;
+    state: State;
   }
 
   export type Created = Settled;
-
-  export interface Metadata {
-    type: string;
-    platform: string;
-    version: string;
-    os: string;
-  }
 
   export interface Success {
     topic: string;
     relay: RelayerTypes.ProtocolOptions;
     responder: Peer;
     expiry: number;
+    state: State;
   }
 
   export interface Failed {
@@ -156,6 +152,9 @@ export declare namespace PairingTypes {
   }
 
   export type Outcome = Failed | Success;
+  export interface State {
+    metadata?: AppMetadata;
+  }
 }
 
 export abstract class IPairing extends ISequence<

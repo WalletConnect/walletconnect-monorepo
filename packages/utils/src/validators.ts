@@ -1,4 +1,5 @@
 import {
+  AppMetadata,
   BlockchainTypes,
   JsonRpcPermissions,
   NotificationPermissions,
@@ -70,9 +71,7 @@ export function validateSessionProposeParamsPermissions(
   return formatValidResult();
 }
 
-export function validateSessionProposeParamsMetadata(
-  metadata: SessionTypes.Metadata,
-): Validation.Result {
+export function validateSessionProposeParamsMetadata(metadata: AppMetadata): Validation.Result {
   if (!isValidString(metadata.name)) {
     return formatInvalidResult("Missing or invalid metadata name");
   }

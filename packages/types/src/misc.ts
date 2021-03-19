@@ -59,6 +59,20 @@ export interface UriParameters {
   relay: RelayerTypes.ProtocolOptions;
 }
 
+export interface AppMetadata {
+  name: string;
+  description: string;
+  url: string;
+  icons: string[];
+}
+
+export interface RelayClientMetadata {
+  protocol: string;
+  version: number;
+  env: string;
+  host?: string;
+}
+
 export declare namespace Validation {
   export interface Valid {
     valid: true;

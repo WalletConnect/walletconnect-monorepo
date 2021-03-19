@@ -5,11 +5,12 @@ import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@json-rpc-tools/type
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 import { IPairing } from "./pairing";
-import { SignalTypes } from "./misc";
+import { SignalTypes, AppMetadata } from "./misc";
 
 export interface ClientOptions {
   logger?: string | Logger;
   storage?: IKeyValueStorage;
+  metadata?: AppMetadata;
   relayProvider?: string | IJsonRpcProvider;
   overrideContext?: string;
   storageOptions?: KeyValueStorageOptions;
@@ -28,6 +29,8 @@ export abstract class IClient extends IEvents {
   public abstract session: ISession;
 
   public abstract context: string;
+
+  public abstract metadata: AppMetadata | undefined;
 
   constructor(opts?: ClientOptions) {
     super();
@@ -60,8 +63,8 @@ export abstract class IClient extends IEvents {
 
 export declare namespace ClientTypes {
   export interface ConnectParams {
-    metadata: SessionTypes.Metadata;
     permissions: SessionTypes.BasePermissions;
+    metadata?: AppMetadata;
     relay?: RelayerTypes.ProtocolOptions;
     pairing?: SignalTypes.ParamsPairing;
   }
@@ -70,9 +73,14 @@ export declare namespace ClientTypes {
     uri: string;
   }
 
+  export interface Response {
+    state: SessionTypes.State;
+    metadata?: AppMetadata;
+  }
+
   export interface ApproveParams {
     proposal: SessionTypes.Proposal;
-    response: SessionTypes.Response;
+    response: Response;
   }
   export interface RejectParams {
     proposal: SessionTypes.Proposal;

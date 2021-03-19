@@ -1,6 +1,6 @@
 import "mocha";
 import Timestamp from "@pedrouid/timestamp";
-import { PairingTypes } from "@walletconnect/types";
+import { AppMetadata, PairingTypes } from "@walletconnect/types";
 
 import { CLIENT_EVENTS, SESSION_JSONRPC, SUBSCRIPTION_EVENTS } from "../../src";
 
@@ -11,8 +11,8 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
   // testing data points
   let pairingA: PairingTypes.Created | undefined;
   let pairingB: PairingTypes.Created | undefined;
-  let metadataA: PairingTypes.Metadata | undefined;
-  let metadataB: PairingTypes.Metadata | undefined;
+  let metadataA: AppMetadata | undefined;
+  let metadataB: AppMetadata | undefined;
 
   // timestamps & elapsed time
   const time = new Timestamp();
@@ -63,14 +63,14 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
     new Promise<void>(async (resolve, reject) => {
       clients.a.on(CLIENT_EVENTS.pairing.updated, async (pairing: PairingTypes.Created) => {
         clients.a.logger.warn(`TEST >> Pairing Updated`);
-        metadataB = pairing.peer.metadata;
+        pairingA = pairing;
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
       clients.b.on(CLIENT_EVENTS.pairing.updated, async (pairing: PairingTypes.Created) => {
         clients.b.logger.warn(`TEST >> Pairing Updated`);
-        metadataA = pairing.peer.metadata;
+        pairingB = pairing;
         resolve();
       });
     }),
@@ -82,8 +82,9 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
   expect(pairingA?.relay.protocol).to.eql(pairingB?.relay.protocol);
   expect(pairingA?.peer.publicKey).to.eql(pairingB?.self.publicKey);
   expect(pairingA?.self.publicKey).to.eql(pairingB?.peer.publicKey);
-  // pairing metadata
-  expect(metadataA).to.eql(metadataB);
+  // pairing state
+  expect(pairingA?.state.metadata).to.eql(clients.b.metadata);
+  expect(pairingA?.state.metadata).to.eql(pairingB?.state.metadata);
   // jsonrpc permmissions
   expect(pairingA?.permissions.jsonrpc.methods).to.eql([SESSION_JSONRPC.propose]);
   expect(pairingA?.permissions.jsonrpc.methods).to.eql(pairingB?.permissions.jsonrpc.methods);

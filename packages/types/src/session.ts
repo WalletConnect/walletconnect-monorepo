@@ -8,7 +8,13 @@ import {
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayerTypes } from "./relayer";
-import { SignalTypes, BlockchainTypes, JsonRpcPermissions, NotificationPermissions } from "./misc";
+import {
+  SignalTypes,
+  BlockchainTypes,
+  JsonRpcPermissions,
+  NotificationPermissions,
+  AppMetadata,
+} from "./misc";
 import { SubscriptionEvent } from "./subscription";
 
 export declare namespace SessionTypes {
@@ -30,7 +36,7 @@ export declare namespace SessionTypes {
   export interface ProposeParams {
     signal: Signal;
     relay: RelayerTypes.ProtocolOptions;
-    metadata: Metadata;
+    metadata: AppMetadata;
     permissions: ProposedPermissions;
     ttl?: number;
     timeout?: number;
@@ -40,7 +46,7 @@ export declare namespace SessionTypes {
 
   export type Signal = SignalTypes.Pairing;
 
-  export type Peer = Required<CryptoTypes.Peer<Metadata>>;
+  export type Peer = Required<CryptoTypes.Peer<AppMetadata>>;
 
   export interface Proposal {
     topic: string;
@@ -113,7 +119,7 @@ export declare namespace SessionTypes {
   }
 
   export interface Update {
-    state: Partial<BlockchainTypes.State>;
+    state: Partial<State>;
   }
 
   export interface Payload {
@@ -163,13 +169,6 @@ export declare namespace SessionTypes {
 
   export type Created = Settled;
 
-  export interface Metadata {
-    name: string;
-    description: string;
-    url: string;
-    icons: string[];
-  }
-
   export interface Success {
     topic: string;
     relay: RelayerTypes.ProtocolOptions;
@@ -187,7 +186,7 @@ export declare namespace SessionTypes {
 
   export interface Response {
     state: State;
-    metadata: Metadata;
+    metadata: AppMetadata;
   }
 }
 
