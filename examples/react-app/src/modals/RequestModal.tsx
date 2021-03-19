@@ -1,17 +1,9 @@
 import * as React from "react";
 
 import Loader from "../components/Loader";
+import { SContainer, STable, SRow, SKey, SValue } from "../components/shared";
 
-import {
-  SModalContainer,
-  SModalTitle,
-  SModalParagraph,
-  SContainer,
-  STable,
-  SRow,
-  SKey,
-  SValue,
-} from "./shared";
+import { SModalContainer, SModalTitle, SModalParagraph } from "./shared";
 
 interface RequestModalProps {
   pending: boolean;
@@ -36,7 +28,7 @@ const RequestModal = (props: RequestModalProps) => {
             {result.valid ? "Call Request Approved" : "Call Request Failed"}
           </SModalTitle>
           <STable>
-            {Object.keys(result).map((key) => (
+            {Object.keys(result).map(key => (
               <SRow key={key}>
                 <SKey>{key}</SKey>
                 <SValue>{result[key].toString()}</SValue>

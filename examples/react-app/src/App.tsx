@@ -35,6 +35,7 @@ import {
 import { fonts } from "./styles";
 import Toggle from "./components/Toggle";
 import RequestModal from "./modals/RequestModal";
+import PairingModal from "./modals/PairingModal";
 
 const SLayout = styled.div`
   position: relative;
@@ -155,7 +156,7 @@ class App extends React.Component<any, any> {
 
       this.setState({ loading: false, client });
       this.subscribeToEvents();
-      await this.checkConnectedSessions();
+      await this.checkPersistedState();
     } catch (e) {
       this.setState({ loading: false });
       throw e;
@@ -190,11 +191,14 @@ class App extends React.Component<any, any> {
     });
   };
 
-  public checkConnectedSessions = async () => {
+  public checkPersistedState = async () => {
     if (typeof this.state.client === "undefined") {
       throw new Error("WalletConnect is not initialized");
     }
+    // populates existing pairings to state
+    this.setState({ pairings: this.state.client.pairing.topics });
     if (typeof this.state.session !== "undefined") return;
+    // populates existing session to state (assume only the top one)
     if (this.state.client.session.topics.length) {
       const session = await this.state.client.session.get(this.state.client.session.topics[0]);
       const chains = session.state.accounts.map(account => account.split("@")[1]);
@@ -203,24 +207,35 @@ class App extends React.Component<any, any> {
     }
   };
 
-  public connect = async () => {
+  public connect = async (pairing?: { topic: string }) => {
     if (typeof this.state.client === "undefined") {
       throw new Error("WalletConnect is not initialized");
     }
+    console.log("connect", pairing);
+    if (this.state.modal === "pairing") {
+      this.closeModal();
+    }
+    try {
+      const session = await this.state.client.connect({
+        metadata: getSessionMetadata() || DEFAULT_APP_METADATA,
+        pairing,
+        permissions: {
+          blockchain: {
+            chains: this.state.chains,
+          },
+          jsonrpc: {
+            methods: DEFAULT_METHODS,
+          },
+        },
+      });
 
-    const session = await this.state.client.connect({
-      metadata: getSessionMetadata() || DEFAULT_APP_METADATA,
-      permissions: {
-        blockchain: {
-          chains: this.state.chains,
-        },
-        jsonrpc: {
-          methods: DEFAULT_METHODS,
-        },
-      },
-    });
+      this.onSessionConnected(session);
+    } catch (e) {
+      // ignore rejection
+    }
+
+    // close modal in case it was open
     QRCodeModal.close();
-    this.onSessionConnected(session);
   };
 
   public disconnect = async () => {
@@ -275,11 +290,23 @@ class App extends React.Component<any, any> {
     }
   };
 
+  public openPairingModal = () => this.setState({ modal: "pairing" });
+
   public openRequestModal = () => this.setState({ pending: true, modal: "request" });
 
   public openModal = (modal: string) => this.setState({ modal });
 
   public closeModal = () => this.setState({ modal: "" });
+
+  public onConnect = () => {
+    if (typeof this.state.client === "undefined") {
+      throw new Error("WalletConnect is not initialized");
+    }
+    if (this.state.client.pairing.topics.length) {
+      return this.openPairingModal();
+    }
+    this.connect();
+  };
 
   public testSendTransaction = async (chainId: string) => {
     if (typeof this.state.client === "undefined") {
@@ -467,6 +494,11 @@ class App extends React.Component<any, any> {
 
   public renderModal = () => {
     switch (this.state.modal) {
+      case "pairing":
+        if (typeof this.state.client === "undefined") {
+          throw new Error("WalletConnect is not initialized");
+        }
+        return <PairingModal pairings={this.state.client.pairing.values} connect={this.connect} />;
       case "request":
         return <RequestModal pending={this.state.pending} result={this.state.result} />;
       default:
@@ -497,7 +529,12 @@ class App extends React.Component<any, any> {
               active={chains.includes(chainId)}
             />
           ))}
-          <SConnectButton left onClick={this.connect} fetching={fetching} disabled={!chains.length}>
+          <SConnectButton
+            left
+            onClick={this.onConnect}
+            fetching={fetching}
+            disabled={!chains.length}
+          >
             {"Connect"}
           </SConnectButton>
         </SButtonContainer>
