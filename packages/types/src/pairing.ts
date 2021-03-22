@@ -32,10 +32,14 @@ export declare namespace PairingTypes {
 
   export type Peer = CryptoTypes.Participant;
 
+  export interface ProposedPeer extends Peer {
+    controller: boolean;
+  }
+
   export interface Proposal {
     topic: string;
     relay: RelayerTypes.ProtocolOptions;
-    proposer: Peer;
+    proposer: ProposedPeer;
     signal: Signal;
     permissions: ProposedPermissions;
     ttl: number;

@@ -189,13 +189,16 @@ export class Pairing extends IPairing {
           publicKey: self.publicKey,
         };
         const expiry = Date.now() + proposal.ttl;
+        const controller = proposal.proposer.controller
+          ? { publicKey: proposal.proposer.publicKey }
+          : { publicKey: self.publicKey };
         const pairing = await this.settle({
           relay: proposal.relay,
           self,
-          peer: proposal.proposer,
+          peer: { publicKey: proposal.proposer.publicKey },
           permissions: {
             ...proposal.permissions,
-            controller: { publicKey: self.publicKey },
+            controller,
           },
           state: {},
           ttl: proposal.ttl,
@@ -331,16 +334,22 @@ export class Pairing extends IPairing {
     const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
     const self = generateKeyPair();
-    const proposer: PairingTypes.Peer = {
+    const proposer: PairingTypes.ProposedPeer = {
       publicKey: self.publicKey,
+      controller: this.client.controller,
     };
     const uri = formatUri({
       protocol: this.client.protocol,
       version: this.client.version,
       topic: topic,
       publicKey: proposer.publicKey,
+      controller: proposer.controller,
       relay: relay,
     });
+    const signal: PairingTypes.Signal = {
+      method: PAIRING_SIGNAL_METHOD_URI,
+      params: { uri },
+    };
     const permissions: PairingTypes.ProposedPermissions = {
       jsonrpc: {
         methods: [SESSION_JSONRPC.propose],
@@ -350,10 +359,7 @@ export class Pairing extends IPairing {
       relay,
       topic,
       proposer,
-      signal: {
-        method: PAIRING_SIGNAL_METHOD_URI,
-        params: { uri },
-      },
+      signal,
       permissions,
       ttl: PAIRING_DEFAULT_TTL,
     };
@@ -403,13 +409,16 @@ export class Pairing extends IPairing {
     let errorMessage: string | undefined;
     if (!isPairingFailed(request.params)) {
       try {
+        const controller = pending.proposal.proposer.controller
+          ? { publicKey: pending.proposal.proposer.publicKey }
+          : { publicKey: request.params.responder.publicKey };
         const pairing = await this.settle({
           relay: pending.relay,
           self: pending.self,
-          peer: request.params.responder,
+          peer: { publicKey: request.params.responder.publicKey },
           permissions: {
             ...pending.proposal.permissions,
-            controller: { publicKey: request.params.responder.publicKey },
+            controller,
           },
           ttl: pending.proposal.ttl,
           expiry: request.params.expiry,

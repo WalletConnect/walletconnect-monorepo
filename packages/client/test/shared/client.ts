@@ -16,9 +16,10 @@ export function generateClientSetup(
 ): Required<ClientSetup> {
   const clientSetup = typeof clients !== "undefined" ? clients[label] : undefined;
   const metadata = label === "a" ? TEST_APP_METADATA_A : TEST_APP_METADATA_B;
-  const overrideContext = "client" + "_" + label.toUpperCase();
+  const controller = label === "a" ? false : true;
+  const name = "client" + "_" + label.toUpperCase();
   const defaultSetup = {
-    options: { ...TEST_CLIENT_OPTIONS, ...sharedSetup?.options, overrideContext, metadata },
+    options: { ...TEST_CLIENT_OPTIONS, ...sharedSetup?.options, name, metadata, controller },
     state: { ...TEST_SESSION_STATE, ...sharedSetup?.state },
     permissions: { ...TEST_PERMISSIONS, ...sharedSetup?.permissions },
   };

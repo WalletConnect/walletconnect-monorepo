@@ -48,10 +48,14 @@ export declare namespace SessionTypes {
 
   export type Peer = Required<CryptoTypes.Peer<AppMetadata>>;
 
+  export interface ProposedPeer extends Peer {
+    controller: boolean;
+  }
+
   export interface Proposal {
     topic: string;
     relay: RelayerTypes.ProtocolOptions;
-    proposer: Peer;
+    proposer: ProposedPeer;
     signal: Signal;
     permissions: ProposedPermissions;
     ttl: number;

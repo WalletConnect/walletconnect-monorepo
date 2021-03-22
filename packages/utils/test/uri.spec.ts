@@ -11,12 +11,13 @@ const TEST_URI_PARAMS: UriParameters = {
   version: 2,
   topic: TEST_PAIRING_TOPIC,
   publicKey: TEST_KEY_PAIRS["A"].publicKey,
+  controller: false,
   relay: TEST_RELAY_OPTIONS,
 };
 
 const TEST_URI_STRING = `${TEST_URI_PARAMS.protocol}:${TEST_URI_PARAMS.topic}@${
   TEST_URI_PARAMS.version
-}?publicKey=${TEST_URI_PARAMS.publicKey}&relay=${encodeURIComponent(
+}?controller=${TEST_URI_PARAMS.controller}&publicKey=${TEST_URI_PARAMS.publicKey}&relay=${encodeURIComponent(
   safeJsonStringify(TEST_URI_PARAMS.relay),
 )}`;
 
@@ -31,6 +32,7 @@ describe("URI", () => {
     expect(uriParams.version).to.eql(TEST_URI_PARAMS.version);
     expect(uriParams.topic).to.eql(TEST_URI_PARAMS.topic);
     expect(uriParams.publicKey).to.eql(TEST_URI_PARAMS.publicKey);
+    expect(uriParams.controller).to.eql(TEST_URI_PARAMS.controller);
     expect(uriParams.relay).to.eql(TEST_URI_PARAMS.relay);
   });
 });

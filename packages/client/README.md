@@ -194,7 +194,7 @@ export interface ClientOptions {
   logger?: string | Logger;
   storage?: IKeyValueStorage;
   relayProvider?: string | IJsonRpcProvider;
-  overrideContext?: string;
+  name?: string;
   storageOptions?: KeyValueStorageOptions;
 }
 

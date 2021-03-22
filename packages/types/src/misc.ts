@@ -57,6 +57,7 @@ export interface UriParameters {
   topic: string;
   publicKey: string;
   relay: RelayerTypes.ProtocolOptions;
+  controller: boolean;
 }
 
 export interface AppMetadata {

@@ -52,6 +52,7 @@ export class Client extends IClient {
 
   public context: string = CLIENT_CONTEXT;
 
+  public readonly controller: boolean;
   public metadata: AppMetadata | undefined;
 
   static async init(opts?: ClientOptions): Promise<Client> {
@@ -67,7 +68,8 @@ export class Client extends IClient {
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger }));
 
-    this.context = opts?.overrideContext || this.context;
+    this.context = opts?.name || this.context;
+    this.controller = opts?.controller || false;
     this.metadata = opts?.metadata || getAppMetadata();
 
     this.logger = generateChildLogger(logger, this.context);
@@ -137,7 +139,9 @@ export class Client extends IClient {
     this.logger.debug(`Pairing`);
     this.logger.trace({ type: "method", method: "pair", params });
     const proposal = formatPairingProposal(params.uri);
-    const pending = await this.pairing.respond({ approved: true, proposal });
+    const approved = proposal.proposer.controller !== this.controller;
+    const reason = approved ? undefined : "Responder is also controller";
+    const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
       const errorMessage = "No Pairing Response found in pending proposal";
       this.logger.error(errorMessage);
@@ -231,13 +235,23 @@ export class Client extends IClient {
 
   protected async onPairingRequest(request: JsonRpcRequest): Promise<void> {
     if (request.method === SESSION_JSONRPC.propose) {
+      const proposal = request.params as SessionTypes.Proposal;
+      if (proposal.proposer.controller === this.controller) {
+        await this.session.respond({
+          approved: false,
+          proposal,
+          response: SESSION_EMPTY_RESPONSE,
+          reason: "Responder is also controller",
+        });
+        return;
+      }
       this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
       this.logger.debug({
         type: "event",
         event: CLIENT_EVENTS.session.proposal,
-        data: request.params,
+        data: proposal,
       });
-      this.events.emit(CLIENT_EVENTS.session.proposal, request.params);
+      this.events.emit(CLIENT_EVENTS.session.proposal, proposal);
     }
   }
 
@@ -369,7 +383,7 @@ function formatPairingProposal(uri: string): PairingTypes.Proposal {
   return {
     topic: uriParams.topic,
     relay: uriParams.relay,
-    proposer: { publicKey: uriParams.publicKey },
+    proposer: { publicKey: uriParams.publicKey, controller: uriParams.controller },
     signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri } },
     permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
     ttl: PAIRING_DEFAULT_TTL,

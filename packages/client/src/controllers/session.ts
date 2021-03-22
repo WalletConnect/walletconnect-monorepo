@@ -211,13 +211,16 @@ export class Session extends ISession {
         const state: SessionTypes.State = {
           accounts: params.response.state.accounts,
         };
+        const controller = proposal.proposer.controller
+          ? { publicKey: proposal.proposer.publicKey }
+          : { publicKey: self.publicKey };
         const session = await this.settle({
           relay,
           self,
           peer: proposal.proposer,
           permissions: {
             ...proposal.permissions,
-            controller: { publicKey: self.publicKey },
+            controller,
           },
           ttl: proposal.ttl,
           expiry,
@@ -382,9 +385,10 @@ export class Session extends ISession {
     };
     const topic = generateRandomBytes32();
     const self = generateKeyPair();
-    const proposer: SessionTypes.Peer = {
+    const proposer: SessionTypes.ProposedPeer = {
       publicKey: self.publicKey,
       metadata: params.metadata,
+      controller: this.client.controller,
     };
     const proposal: SessionTypes.Proposal = {
       topic,
@@ -445,13 +449,16 @@ export class Session extends ISession {
     let errorMessage: string | undefined;
     if (!isSessionFailed(request.params)) {
       try {
+        const controller = pending.proposal.proposer.controller
+          ? { publicKey: pending.proposal.proposer.publicKey }
+          : { publicKey: request.params.responder.publicKey };
         const session = await this.settle({
           relay: pending.relay,
           self: pending.self,
           peer: request.params.responder,
           permissions: {
             ...pending.proposal.permissions,
-            controller: { publicKey: request.params.responder.publicKey },
+            controller,
           },
           ttl: pending.proposal.ttl,
           expiry: request.params.expiry,

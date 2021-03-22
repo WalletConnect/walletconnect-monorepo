@@ -8,11 +8,12 @@ import { IPairing } from "./pairing";
 import { SignalTypes, AppMetadata } from "./misc";
 
 export interface ClientOptions {
+  name?: string;
+  controller?: boolean;
+  metadata?: AppMetadata;
   logger?: string | Logger;
   storage?: IKeyValueStorage;
-  metadata?: AppMetadata;
   relayProvider?: string | IJsonRpcProvider;
-  overrideContext?: string;
   storageOptions?: KeyValueStorageOptions;
 }
 
@@ -30,6 +31,7 @@ export abstract class IClient extends IEvents {
 
   public abstract context: string;
 
+  public abstract readonly controller: boolean;
   public abstract metadata: AppMetadata | undefined;
 
   constructor(opts?: ClientOptions) {
