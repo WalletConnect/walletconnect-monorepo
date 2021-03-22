@@ -172,10 +172,13 @@ export class Client extends IClient {
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
+    const approved = params.proposal.proposer.controller !== this.controller;
+    const reason = approved ? undefined : "Responder is also controller";
     const pending = await this.session.respond({
-      approved: true,
+      approved,
       proposal: params.proposal,
       response: { state, metadata },
+      reason,
     });
     if (!isSessionResponded(pending)) {
       const errorMessage = "No Session Response found in pending proposal";
