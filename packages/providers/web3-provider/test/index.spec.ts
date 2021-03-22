@@ -11,24 +11,23 @@ const TEST_SESSION_PARAMS = {
   chainId: 1,
 };
 
+const TEST_PROVIDER_OPTS = {
+  qrcode: false,
+  bridge: "https://staging.walletconnect.org",
+  rpc: {
+    1: "https://api.mycryptoapi.com/eth",
+  },
+};
+
 describe("WalletConnectWeb3Provider", function() {
   this.timeout(30_000);
   it("instantiate successfully", () => {
-    const provider = new WalletConnectWeb3Provider({
-      rpc: {
-        1: "https://api.mycryptoapi.com/eth",
-      },
-    });
+    const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
     expect(!!provider).to.be.true;
   });
 
   it("enable successfully", async () => {
-    const provider = new WalletConnectWeb3Provider({
-      qrcode: false,
-      rpc: {
-        1: "https://api.mycryptoapi.com/eth",
-      },
-    });
+    const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
 
     await Promise.all([
       new Promise<void>((resolve, reject) => {
