@@ -31,11 +31,11 @@ const ProposalCard = (props: ProposalCardProps) => {
   const { methods } = proposal.permissions.jsonrpc;
   return (
     <Column>
-      <Peer peerMeta={proposal.proposer.metadata} />
+      <Peer metadata={proposal.proposer.metadata} />
       {!!chains.length ? (
         <React.Fragment>
           <h6>{"Chains"}</h6>
-          {chains.map((chainId) => {
+          {chains.map(chainId => {
             return <Blockchain key={`proposal:chainId:${chainId}`} chainId={chainId} />;
           })}
         </React.Fragment>
@@ -43,7 +43,7 @@ const ProposalCard = (props: ProposalCardProps) => {
       {!!methods.length ? (
         <React.Fragment>
           <h6>{"Methods"}</h6>
-          {methods.map((method) => (
+          {methods.map(method => (
             <Method key={`proposal:method:${method}`}>
               <div>{method}</div>
             </Method>

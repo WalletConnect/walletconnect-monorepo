@@ -4,7 +4,7 @@ import styled from "styled-components";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
-import { getSessionMetadata } from "@walletconnect/utils";
+import { getAppMetadata } from "@walletconnect/utils";
 import * as encUtils from "enc-utils";
 import { BigNumber } from "ethers";
 
@@ -217,7 +217,7 @@ class App extends React.Component<any, any> {
     }
     try {
       const session = await this.state.client.connect({
-        metadata: getSessionMetadata() || DEFAULT_APP_METADATA,
+        metadata: getAppMetadata() || DEFAULT_APP_METADATA,
         pairing,
         permissions: {
           blockchain: {

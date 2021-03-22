@@ -4,7 +4,7 @@ import KeyValueStorage from "keyvaluestorage";
 import Wallet from "caip-wallet";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import { JsonRpcResponse, formatJsonRpcError, formatJsonRpcRequest } from "@json-rpc-tools/utils";
-import { getSessionMetadata } from "@walletconnect/utils";
+import { getAppMetadata } from "@walletconnect/utils";
 import { SessionTypes } from "@walletconnect/types";
 
 import Card from "./components/Card";
@@ -102,6 +102,7 @@ class App extends React.Component<{}> {
       const storage = new KeyValueStorage();
       const wallet = await Wallet.init({ chains: this.state.chains, storage, mnemonic });
       const client = await Client.init({
+        controller: true,
         relayProvider: DEFAULT_RELAY_PROVIDER,
         logger: DEFAULT_LOGGER,
         storage,
@@ -306,7 +307,7 @@ class App extends React.Component<{}> {
     });
     const response = {
       state: { accounts },
-      metadata: getSessionMetadata() || DEFAULT_APP_METADATA,
+      metadata: getAppMetadata() || DEFAULT_APP_METADATA,
     };
     const session = await this.state.client.approve({ proposal, response });
     this.resetCard();
@@ -407,7 +408,7 @@ class App extends React.Component<{}> {
         <RequestCard
           chainId={requestEvent.chainId || chains[0]}
           requestEvent={requestEvent}
-          peerMeta={peer.metadata}
+          metadata={peer.metadata}
           approveRequest={this.approveRequest}
           rejectRequest={this.rejectRequest}
         />

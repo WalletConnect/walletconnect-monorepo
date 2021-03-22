@@ -33,11 +33,11 @@ const SessionCard = (props: SessionCardProps) => {
   return (
     <Column>
       <h6>{"App"}</h6>
-      <Peer peerMeta={session.peer.metadata} />
+      <Peer metadata={session.peer.metadata} />
       {!!accounts.length ? (
         <React.Fragment>
           <h6>{"Accounts"}</h6>
-          {accounts.map((account) => {
+          {accounts.map(account => {
             const [address, chainId] = account.split("@");
             return (
               <Blockchain key={`session:account:${account}`} chainId={chainId} address={address} />
@@ -48,7 +48,7 @@ const SessionCard = (props: SessionCardProps) => {
       {!!methods.length ? (
         <React.Fragment>
           <h6>{"Methods"}</h6>
-          {methods.map((method) => (
+          {methods.map(method => (
             <Method disable key={`session:method:${method}`}>
               <div>{method}</div>
             </Method>

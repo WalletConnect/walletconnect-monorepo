@@ -3,8 +3,8 @@ import styled from "styled-components";
 
 import { PairingTypes } from "@walletconnect/types";
 
-import { SRow, SKey, SValue } from "./shared";
 import { colors, fonts } from "../styles";
+import Peer from "./Peer";
 
 interface PairingProps {
   pairing: PairingTypes.Settled;
@@ -26,19 +26,14 @@ const SPairingTopic = styled.div`
 const Pairing = (props: PairingProps) => {
   const {
     topic,
-    peer: { metadata },
+    state: { metadata },
   } = props.pairing;
   return (
     <SPairingContainer onClick={props.onClick}>
       <SPairingTopic>{topic}</SPairingTopic>
       <div>
         {typeof metadata !== "undefined" ? (
-          Object.keys(metadata).map(key => (
-            <SRow key={`${topic}:metadata:${key}`}>
-              <SKey>{key}</SKey>
-              <SValue>{(metadata as any)[key]}</SValue>
-            </SRow>
-          ))
+          <Peer oneLiner metadata={metadata} />
         ) : (
           <div>{`Unknown`}</div>
         )}

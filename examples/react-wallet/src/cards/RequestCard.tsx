@@ -1,6 +1,6 @@
 import * as React from "react";
 import styled from "styled-components";
-import { SessionTypes } from "@walletconnect/types";
+import { AppMetadata, SessionTypes } from "@walletconnect/types";
 
 import Column from "../components/Column";
 import Button from "../components/Button";
@@ -34,13 +34,13 @@ const SActions = styled.div`
 interface RequestCardProps {
   chainId: string;
   requestEvent: SessionTypes.RequestEvent;
-  peerMeta: SessionTypes.Metadata;
+  metadata: AppMetadata;
   approveRequest: (requestEvent: SessionTypes.RequestEvent) => void;
   rejectRequest: (requestEvent: SessionTypes.RequestEvent) => void;
 }
 
 const RequestCard = (props: RequestCardProps) => {
-  const { chainId, requestEvent, peerMeta, approveRequest, rejectRequest } = props;
+  const { chainId, requestEvent, metadata, approveRequest, rejectRequest } = props;
   const params = getChainRequestRender(requestEvent.request, chainId);
   console.log("RENDER", "method", requestEvent.request.method);
   console.log("RENDER", "params", requestEvent.request.params);
@@ -49,7 +49,7 @@ const RequestCard = (props: RequestCardProps) => {
   return (
     <Column>
       <h6>{"App"}</h6>
-      <Peer oneLiner peerMeta={peerMeta} />
+      <Peer oneLiner metadata={metadata} />
       <h6>{"Chain"}</h6>
       <Blockchain key={`request:chain:${chainId}`} chainId={chainId} />
       {params.map(param => (
