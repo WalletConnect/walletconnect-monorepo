@@ -3,7 +3,6 @@ import styled from "styled-components";
 
 import { PairingTypes } from "@walletconnect/types";
 
-import { colors, fonts } from "../styles";
 import Peer from "./Peer";
 
 interface PairingProps {
@@ -13,24 +12,15 @@ interface PairingProps {
 
 const SPairingContainer = styled.div`
   width: 100%;
-  border: 2px solid rgb(${colors.dark});
-  border-radius: 8px;
-  padding: 10px;
   cursor: pointer;
-`;
-
-const SPairingTopic = styled.div`
-  font-size: ${fonts.size.tiny};
 `;
 
 const Pairing = (props: PairingProps) => {
   const {
-    topic,
     state: { metadata },
   } = props.pairing;
   return (
     <SPairingContainer onClick={props.onClick}>
-      <SPairingTopic>{topic}</SPairingTopic>
       <div>
         {typeof metadata !== "undefined" ? (
           <Peer oneLiner metadata={metadata} />

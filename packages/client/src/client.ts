@@ -140,7 +140,7 @@ export class Client extends IClient {
     this.logger.trace({ type: "method", method: "pair", params });
     const proposal = formatPairingProposal(params.uri);
     const approved = proposal.proposer.controller !== this.controller;
-    const reason = approved ? undefined : "Responder is also controller";
+    const reason = approved ? undefined : `Peer is also ${this.controller ? "" : "not "}controller`;
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
       const errorMessage = "No Pairing Response found in pending proposal";
@@ -240,11 +240,12 @@ export class Client extends IClient {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
+        const reason = `Peer is also ${this.controller ? "" : "not "}controller`;
         await this.session.respond({
           approved: false,
           proposal,
           response: SESSION_EMPTY_RESPONSE,
-          reason: "Responder is also controller",
+          reason,
         });
         return;
       }
