@@ -376,8 +376,8 @@ class WalletConnectProvider extends ProviderEngine {
     this.addProvider({
       handleRequest: async (payload: IJsonRpcRequest, next: any, end: any) => {
         try {
-          const { result } = await this.handleRequest(payload);
-          end(null, result);
+          const { error, result } = await this.handleRequest(payload);
+          end(error, result);
         } catch (error) {
           end(error);
         }
