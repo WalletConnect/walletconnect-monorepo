@@ -255,7 +255,8 @@ describe("Session", function() {
   it("A fails to pings B after A deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    await clients.a.disconnect({ topic, reason: "Ending session early" });
+    const reason = { code: 6000, message: "Ending session early" };
+    await clients.a.disconnect({ topic, reason });
     await expect(clients.a.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );
@@ -267,7 +268,8 @@ describe("Session", function() {
   it("A fails to pings B after B deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    await clients.b.disconnect({ topic, reason: "Ending session early" });
+    const reason = { code: 6000, message: "Ending session early" };
+    await clients.b.disconnect({ topic, reason });
     await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );

@@ -171,7 +171,7 @@ export class Session extends ISession {
               } catch (e) {
                 return reject(e);
               }
-              reject(new Error(outcome.reason));
+              reject(new Error(outcome.reason.message));
             } else {
               try {
                 const pairing = await this.settled.get(outcome.topic);
@@ -244,7 +244,7 @@ export class Session extends ISession {
         await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
         return pending;
       } catch (e) {
-        const reason = e.message;
+        const reason = { code: 5000, message: e.message };
         const outcome: SessionTypes.Outcome = { reason };
         const pending: SessionTypes.Pending = {
           status: SESSION_STATUS.responded,
@@ -479,7 +479,7 @@ export class Session extends ISession {
         errorMessage = e.message;
         await this.pending.update(topic, {
           status: SESSION_STATUS.responded,
-          outcome: { reason: e.message },
+          outcome: { reason: { code: 5000, message: e.message } },
         });
       }
       const response =
@@ -507,7 +507,8 @@ export class Session extends ISession {
     const pending = await this.pending.get(topic);
     if (!isSessionResponded(pending)) return;
     if (isJsonRpcError(response) && !isSessionFailed(pending.outcome)) {
-      await this.settled.delete(pending.outcome.topic, response.error.message);
+      const reason = { code: 4000, message: response.error.message };
+      await this.settled.delete(pending.outcome.topic, reason);
     }
     await this.pending.delete(payloadEvent.topic, SESSION_REASONS.acknowledged);
   }

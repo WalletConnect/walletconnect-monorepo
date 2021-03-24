@@ -14,6 +14,7 @@ import {
   JsonRpcPermissions,
   NotificationPermissions,
   AppMetadata,
+  Reason,
 } from "./misc";
 import { SubscriptionEvent } from "./subscription";
 
@@ -90,7 +91,7 @@ export declare namespace SessionTypes {
     approved: boolean;
     proposal: Proposal;
     response: Response;
-    reason?: string;
+    reason?: Reason;
   }
 
   export interface SettleParams {
@@ -157,7 +158,7 @@ export declare namespace SessionTypes {
   export type NotifyParams = NotificationEvent;
   export interface DeleteParams {
     topic: string;
-    reason: string;
+    reason: Reason;
   }
 
   export interface Settled {
@@ -181,7 +182,7 @@ export declare namespace SessionTypes {
     state: State;
   }
   export interface Failed {
-    reason: string;
+    reason: Reason;
   }
 
   export type Outcome = Failed | Success;

@@ -8,7 +8,7 @@ import {
 import { ISequence } from "./sequence";
 import { CryptoTypes } from "./crypto";
 import { RelayerTypes } from "./relayer";
-import { AppMetadata, JsonRpcPermissions, SignalTypes } from "./misc";
+import { AppMetadata, JsonRpcPermissions, Reason, SignalTypes } from "./misc";
 
 export declare namespace PairingTypes {
   export interface BasePermissions {
@@ -73,7 +73,7 @@ export declare namespace PairingTypes {
   export interface RespondParams {
     approved: boolean;
     proposal: Proposal;
-    reason?: string;
+    reason?: Reason;
   }
 
   export interface SettleParams {
@@ -127,7 +127,7 @@ export declare namespace PairingTypes {
 
   export interface DeleteParams {
     topic: string;
-    reason: string;
+    reason: Reason;
   }
 
   export interface Settled {
@@ -152,7 +152,7 @@ export declare namespace PairingTypes {
   }
 
   export interface Failed {
-    reason: string;
+    reason: Reason;
   }
 
   export type Outcome = Failed | Success;

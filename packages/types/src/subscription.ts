@@ -2,6 +2,7 @@ import { JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";
+import { Reason } from "./misc";
 import { RelayerTypes } from "./relayer";
 
 export interface SubscriptionOptions extends RelayerTypes.SubscribeOptions {
@@ -34,7 +35,7 @@ export declare namespace SubscriptionEvent {
   export interface Deleted<T> {
     topic: string;
     data: T;
-    reason: string;
+    reason: Reason;
   }
 }
 
@@ -66,7 +67,7 @@ export abstract class ISubscription<Data> extends IEvents {
 
   public abstract update(topic: string, update: Partial<Data>): Promise<void>;
 
-  public abstract delete(topic: string, reason: string): Promise<void>;
+  public abstract delete(topic: string, reason: Reason): Promise<void>;
 
   // ---------- Protected ----------------------------------------------- //
 

@@ -1,4 +1,3 @@
-import { CryptoTypes } from "./crypto";
 import { RelayerTypes } from "./relayer";
 
 export declare namespace SignalTypes {
@@ -85,4 +84,9 @@ export declare namespace Validation {
   }
 
   export type Result = Valid | Invalid;
+}
+
+export interface Reason {
+  code: number;
+  message: string;
 }

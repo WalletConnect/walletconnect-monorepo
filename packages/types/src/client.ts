@@ -5,7 +5,7 @@ import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@json-rpc-tools/type
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 import { IPairing } from "./pairing";
-import { SignalTypes, AppMetadata } from "./misc";
+import { SignalTypes, AppMetadata, Reason } from "./misc";
 
 export interface ClientOptions {
   name?: string;
@@ -86,7 +86,7 @@ export declare namespace ClientTypes {
   }
   export interface RejectParams {
     proposal: SessionTypes.Proposal;
-    reason?: string;
+    reason?: Reason;
   }
 
   export type UpgradeParams = SessionTypes.UpgradeParams;

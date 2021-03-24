@@ -3,6 +3,7 @@ import { Logger } from "pino";
 import {
   IClient,
   ISubscription,
+  Reason,
   SubscriptionEvent,
   SubscriptionOptions,
   SubscriptionParams,
@@ -96,7 +97,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     } as SubscriptionEvent.Updated<Data>);
   }
 
-  public async delete(topic: string, reason: string): Promise<void> {
+  public async delete(topic: string, reason: Reason): Promise<void> {
     await this.isEnabled();
 
     this.logger.debug(`Deleting subscription`);
@@ -204,7 +205,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private onTimeout(topic: string): void {
     this.deleteTimeout(topic);
-    this.delete(topic, "Expired");
+    this.delete(topic, { code: 3000, message: "Expired" });
   }
 
   private async persist() {

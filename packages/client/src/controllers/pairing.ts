@@ -162,7 +162,7 @@ export class Pairing extends IPairing {
               } catch (e) {
                 return reject(e);
               }
-              reject(new Error(outcome.reason));
+              reject(new Error(outcome.reason.message));
             } else {
               try {
                 const pairing = await this.settled.get(outcome.topic);
@@ -222,7 +222,7 @@ export class Pairing extends IPairing {
         await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       } catch (e) {
-        const reason = e.message;
+        const reason = { code: 5000, message: e.message };
         const outcome: PairingTypes.Outcome = { reason };
         const pending: PairingTypes.Pending = {
           status: PAIRING_STATUS.responded,
@@ -439,7 +439,7 @@ export class Pairing extends IPairing {
         errorMessage = e.message;
         await this.pending.update(topic, {
           status: PAIRING_STATUS.responded,
-          outcome: { reason: e.message },
+          outcome: { reason: { code: 5000, message: e.message } },
         });
       }
       const response =
@@ -464,7 +464,8 @@ export class Pairing extends IPairing {
     const pending = await this.pending.get(topic);
     if (!isPairingResponded(pending)) return;
     if (isJsonRpcError(response) && !isPairingFailed(pending.outcome)) {
-      await this.settled.delete(pending.outcome.topic, response.error.message);
+      const reason = { code: 4000, message: response.error.message };
+      await this.settled.delete(pending.outcome.topic, reason);
     }
     await this.pending.delete(topic, PAIRING_REASONS.acknowledged);
   }

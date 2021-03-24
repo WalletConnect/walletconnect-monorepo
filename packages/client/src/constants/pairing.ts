@@ -35,8 +35,8 @@ export const PAIRING_EVENTS = {
 };
 
 export const PAIRING_REASONS = {
-  settled: "Pairing settled",
-  not_approved: "Pairing not approved",
-  responded: "Pairing proposal responded",
-  acknowledged: "Pairing response acknowledged",
+  settled: { code: 1000, message: "Pairing settled" },
+  not_approved: { code: 1001, message: "Pairing not approved" },
+  responded: { code: 1002, message: "Pairing proposal responded" },
+  acknowledged: { code: 1003, message: "Pairing response acknowledged" },
 };

@@ -140,7 +140,9 @@ export class Client extends IClient {
     this.logger.trace({ type: "method", method: "pair", params });
     const proposal = formatPairingProposal(params.uri);
     const approved = proposal.proposer.controller !== this.controller;
-    const reason = approved ? undefined : `Peer is also ${this.controller ? "" : "not "}controller`;
+    const reason = approved
+      ? undefined
+      : { code: 2000, message: `Peer is also ${this.controller ? "" : "not "}controller` };
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
       const errorMessage = "No Pairing Response found in pending proposal";
@@ -150,7 +152,7 @@ export class Client extends IClient {
     if (isPairingFailed(pending.outcome)) {
       this.logger.debug(`Pairing Failure`);
       this.logger.trace({ type: "method", method: "pair", outcome: pending.outcome });
-      throw new Error(pending.outcome.reason);
+      throw new Error(pending.outcome.reason.message);
     }
     this.logger.debug(`Pairing Success`);
     this.logger.trace({ type: "method", method: "pair", pending });
@@ -173,7 +175,9 @@ export class Client extends IClient {
       throw new Error(errorMessage);
     }
     const approved = params.proposal.proposer.controller !== this.controller;
-    const reason = approved ? undefined : "Responder is also controller";
+    const reason = approved
+      ? undefined
+      : { code: 2000, message: `Peer is also ${this.controller ? "" : "not "}controller` };
     const pending = await this.session.respond({
       approved,
       proposal: params.proposal,
@@ -188,7 +192,7 @@ export class Client extends IClient {
     if (isSessionFailed(pending.outcome)) {
       this.logger.debug(`Session Proposal Approval Failure`);
       this.logger.trace({ type: "method", method: "approve", outcome: pending.outcome });
-      throw new Error(pending.outcome.reason);
+      throw new Error(pending.outcome.reason.message);
     }
     this.logger.debug(`Session Proposal Approval Success`);
     this.logger.trace({ type: "method", method: "approve", pending });
@@ -240,7 +244,10 @@ export class Client extends IClient {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
-        const reason = `Peer is also ${this.controller ? "" : "not "}controller`;
+        const reason = {
+          code: 2000,
+          message: `Peer is also ${this.controller ? "" : "not "}controller`,
+        };
         await this.session.respond({
           approved: false,
           proposal,
