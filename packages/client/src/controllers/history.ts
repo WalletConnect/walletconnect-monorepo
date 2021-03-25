@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { IClient, IJsonRpcHistory, JsonRpcRecord } from "@walletconnect/types";
+import { ERROR, getClientError } from "@walletconnect/utils";
 import { isJsonRpcError, JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/utils";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
 
-import { ERROR, getClientError } from "../constants/error";
 import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
 
 export class JsonRpcHistory extends IJsonRpcHistory {
@@ -55,7 +55,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record: JsonRpcRecord = {
       id: request.id,
       topic,
-      request: { method: request.method, params: request.params || undefined },
+      request: { method: request.method, params: request.params || null },
       chainId,
     };
     this.records.set(record.id, record);

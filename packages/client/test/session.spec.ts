@@ -250,7 +250,7 @@ describe("Session", function() {
       topic,
       permissions: { blockchain: { chains: [chainId] } },
     });
-    await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session permissions upgrade`);
+    await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session upgrade request`);
   });
   it("A fails to pings B after A deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();

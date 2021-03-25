@@ -18,6 +18,8 @@ import {
   isPairingResponded,
   formatUri,
   isSubscriptionUpdatedEvent,
+  ERROR,
+  getClientError,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -45,7 +47,6 @@ import {
   FIVE_MINUTES,
   THIRTY_SECONDS,
 } from "../constants";
-import { ERROR, getClientError } from "../constants/error";
 
 export class Pairing extends IPairing {
   public pending: Subscription<PairingTypes.Pending>;

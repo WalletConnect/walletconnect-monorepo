@@ -8,11 +8,11 @@ import {
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
+import { ERROR, getClientError } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_DEFAULT_TTL, SUBSCRIPTION_EVENTS } from "../constants";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
-import { ERROR, getClientError } from "../constants/error";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();

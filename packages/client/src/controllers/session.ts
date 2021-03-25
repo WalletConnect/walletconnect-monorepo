@@ -20,6 +20,8 @@ import {
   validateSessionProposeParams,
   validateSessionRespondParams,
   isValidationInvalid,
+  ERROR,
+  getClientError,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -45,7 +47,6 @@ import {
   FIVE_MINUTES,
   THIRTY_SECONDS,
 } from "../constants";
-import { ERROR, getClientError } from "../constants/error";
 
 export class Session extends ISession {
   public pending: Subscription<SessionTypes.Pending>;

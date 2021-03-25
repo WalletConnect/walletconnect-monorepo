@@ -16,6 +16,8 @@ import {
   isPairingResponded,
   isSessionResponded,
   getAppMetadata,
+  ERROR,
+  getClientError,
 } from "@walletconnect/utils";
 import { JsonRpcRequest } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
@@ -36,7 +38,6 @@ import {
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
-import { ERROR, getClientError } from "./constants/error";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -113,7 +114,7 @@ export class Client extends IClient {
       this.logger.trace({ type: "method", method: "connect", pairing });
       const metadata = params.metadata || this.metadata;
       if (typeof metadata === "undefined") {
-        const error = getClientError(ERROR.INVALID_APP_METADATA);
+        const error = getClientError(ERROR.MISSING_OR_INVALID, { name: "app metadata" });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
@@ -146,7 +147,7 @@ export class Client extends IClient {
       : getClientError(ERROR.MATCHING_CONTROLLER, { controller: this.controller });
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
-      const error = getClientError(ERROR.NO_MATCHING_PENDING_PAIRING);
+      const error = getClientError(ERROR.NO_MATCHING_RESPONSE, { context: "pairing" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -164,14 +165,14 @@ export class Client extends IClient {
     this.logger.debug(`Approving Session Proposal`);
     this.logger.trace({ type: "method", method: "approve", params });
     if (typeof params.response === "undefined") {
-      const error = getClientError(ERROR.MISSING_SESSION_RESPONSE);
+      const error = getClientError(ERROR.MISSING_RESPONSE, { context: "session" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
     const state = params.response.state || SESSION_EMPTY_STATE;
     const metadata = params.response.metadata || this.metadata;
     if (typeof metadata === "undefined") {
-      const error = getClientError(ERROR.INVALID_APP_METADATA);
+      const error = getClientError(ERROR.MISSING_OR_INVALID, { name: "app metadata" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -186,7 +187,7 @@ export class Client extends IClient {
       reason,
     });
     if (!isSessionResponded(pending)) {
-      const error = getClientError(ERROR.NO_MATCHING_PENDING_SESSION);
+      const error = getClientError(ERROR.NO_MATCHING_RESPONSE, { context: "session" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }

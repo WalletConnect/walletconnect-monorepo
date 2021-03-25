@@ -93,3 +93,21 @@ export function mapEntries<A = any, B = any>(
   });
   return res;
 }
+
+// -- enum ------------------------------------------------- //
+
+// source: https://github.com/microsoft/TypeScript/issues/3192#issuecomment-261720275
+export const enumify = <T extends { [index: string]: U }, U extends string>(x: T): T => x;
+
+// -- string ------------------------------------------------- //
+
+export function capitalizeWord(word: string) {
+  return word.trim().replace(/^\w/, c => c.toUpperCase());
+}
+
+export function capitalize(str: string) {
+  return str
+    .split(" ")
+    .map(w => capitalizeWord(w))
+    .join(" ");
+}
