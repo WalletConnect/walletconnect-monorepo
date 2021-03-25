@@ -311,7 +311,7 @@ export class Session extends ISession {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.JSON_RPC_REQUEST_TIMEOUT, {
+        const error = getError(ERROR.JSONRPC_REQUEST_TIMEOUT, {
           method: request.method,
           timeout: maxTimeout,
         });
@@ -555,7 +555,7 @@ export class Session extends ISession {
           await this.send(session.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
-          error = getError(ERROR.UNKNOWN_JSON_RPC_METHOD, { method: request.method });
+          error = getError(ERROR.UNKNOWN_JSONRPC_METHOD, { method: request.method });
           this.logger.error(error.message);
           await this.send(session.topic, formatJsonRpcError(request.id, error));
           break;
