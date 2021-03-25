@@ -46,6 +46,11 @@ export interface ErrorFormats {
 }
 
 export const ERROR_FORMATS: ErrorFormats = {
+  // 0
+  [ERROR.GENERIC]: (params: any) => ({
+    code: 0,
+    message: params.message,
+  }),
   // 1000
   [ERROR.NO_MATCHING_RESPONSE]: (params: any) => ({
     code: 1000,
@@ -179,10 +184,6 @@ export const ERROR_FORMATS: ErrorFormats = {
   [ERROR.UNKNOWN]: (params: any) => ({
     code: 9000,
     message: `Unknown error${params ? `: ${params.toString()}` : ""}`,
-  }),
-  [ERROR.GENERIC]: (params: any) => ({
-    code: 9001,
-    message: params.message,
   }),
 };
 
