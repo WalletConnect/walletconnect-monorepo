@@ -1,3 +1,4 @@
+import { ErrorResponse } from "@json-rpc-tools/types";
 import {
   AppMetadata,
   BlockchainTypes,
@@ -8,6 +9,8 @@ import {
   SubscriptionEvent,
   Validation,
 } from "@walletconnect/types";
+
+import { ERROR, getError } from "./error";
 
 // -- pairing -------------------------------------------------- //
 
@@ -73,16 +76,18 @@ export function validateSessionProposeParamsPermissions(
 
 export function validateSessionProposeParamsMetadata(metadata: AppMetadata): Validation.Result {
   if (!isValidString(metadata.name)) {
-    return formatInvalidResult("Missing or invalid metadata name");
+    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "metadata name" }));
   }
   if (!isValidString(metadata.description)) {
-    return formatInvalidResult("Missing or invalid metadata description");
+    return formatInvalidResult(
+      getError(ERROR.MISSING_OR_INVALID, { name: "metadata description" }),
+    );
   }
   if (typeof metadata.url === "undefined" || !isValidUrl(metadata.url)) {
-    return formatInvalidResult("Missing or invalid metadata url");
+    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "metadata url" }));
   }
   if (typeof metadata.icons === "undefined" || !isValidArray(metadata.icons, isValidUrl)) {
-    return formatInvalidResult("Missing or invalid metadata icons");
+    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "metadata icons" }));
   }
   return formatValidResult();
 }
@@ -106,7 +111,7 @@ export function validateSessionRespondParams(
 ): Validation.Result {
   if (params.approved) {
     if (typeof params.response === "undefined") {
-      return formatInvalidResult("Missing response for approved session");
+      return formatInvalidResult(getError(ERROR.MISSING_RESPONSE, { context: "session" }));
     }
     const stateValidation = validateBlockchainState(
       params.response.state,
@@ -133,7 +138,9 @@ export function validateBlockchainPermissions(
     typeof blockchain.chains === "undefined" ||
     !isValidArray(blockchain.chains, isValidChainId)
   ) {
-    return formatInvalidResult("Missing or invalid blockchain permissions");
+    return formatInvalidResult(
+      getError(ERROR.MISSING_OR_INVALID, { name: "blockchain permissions" }),
+    );
   }
   return formatValidResult();
 }
@@ -144,7 +151,7 @@ export function validateJsonRpcPermissions(jsonrpc?: JsonRpcPermissions): Valida
     typeof jsonrpc.methods === "undefined" ||
     !isValidArray(jsonrpc.methods, isValidString)
   ) {
-    return formatInvalidResult("Missing or invalid jsonrpc permissions");
+    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "jsonrpc permissions" }));
   }
   return formatValidResult();
 }
@@ -157,7 +164,9 @@ export function validateNotificationPermissions(
     typeof notifications.types === "undefined" ||
     !isValidArray(notifications.types, isValidString)
   ) {
-    return formatInvalidResult("Missing or invalid notification permissions");
+    return formatInvalidResult(
+      getError(ERROR.MISSING_OR_INVALID, { name: "notification permissions" }),
+    );
   }
   return formatValidResult();
 }
@@ -173,21 +182,23 @@ export function validateBlockchainState(
     typeof blockchain.chains === "undefined" ||
     !isValidArray(blockchain.chains, isValidChainId)
   ) {
-    return formatInvalidResult("Missing or invalid blockchain permissions");
+    return formatInvalidResult(
+      getError(ERROR.MISSING_OR_INVALID, { name: "blockchain permissions" }),
+    );
   }
   if (
     typeof state === "undefined" ||
     typeof state.accounts === "undefined" ||
     !isValidArray(state.accounts, isValidAccountId)
   ) {
-    return formatInvalidResult("Missing or invalid state accounts");
+    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "state accounts" }));
   }
-  const mismatch = state.accounts.filter(accountId => {
+  const mismatched = state.accounts.filter(accountId => {
     const chainId = accountId.split("@")[1];
     return !blockchain.chains.includes(chainId);
   });
-  if (mismatch.length) {
-    return formatInvalidResult(`Invalid accounts with mismatched chains: ${mismatch.toString()}`);
+  if (mismatched.length) {
+    return formatInvalidResult(getError(ERROR.MISMATCHED_ACCOUNTS, { mismatched }));
   }
   return formatValidResult();
 }
@@ -249,7 +260,8 @@ export function isValidationInvalid(
     "valid" in validation &&
     validation.valid === false &&
     "error" in validation &&
-    typeof validation.error === "string"
+    typeof validation.error.code === "number" &&
+    typeof validation.error.message === "string"
   );
 }
 
@@ -257,6 +269,6 @@ export function formatValidResult(): Validation.Valid {
   return { valid: true };
 }
 
-export function formatInvalidResult(error: string): Validation.Invalid {
+export function formatInvalidResult(error: ErrorResponse): Validation.Invalid {
   return { valid: false, error };
 }

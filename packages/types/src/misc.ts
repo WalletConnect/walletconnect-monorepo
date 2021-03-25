@@ -82,7 +82,7 @@ export declare namespace Validation {
 
   export interface Invalid {
     valid: false;
-    error: string;
+    error: ErrorResponse;
   }
 
   export type Result = Valid | Invalid;

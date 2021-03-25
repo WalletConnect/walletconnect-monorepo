@@ -8,7 +8,7 @@ import {
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR, getClientError } from "@walletconnect/utils";
+import { ERROR, getError } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_DEFAULT_TTL, SUBSCRIPTION_EVENTS } from "../constants";
@@ -60,7 +60,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.logger.debug(`Setting subscription`);
       this.logger.trace({ type: "method", method: "set", topic, data, opts });
       if (this.encrypted && typeof opts.decryptKeys === "undefined") {
-        const error = getClientError(ERROR.MISSING_DECRYPT_PARAMS, {
+        const error = getError(ERROR.MISSING_DECRYPT_PARAMS, {
           context: this.getSubscriptionContext(),
         });
         this.logger.error(error.message);
@@ -161,7 +161,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     await this.isEnabled();
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
-      const error = getClientError(ERROR.NO_MATCHING_TOPIC, {
+      const error = getError(ERROR.NO_MATCHING_TOPIC, {
         context: this.getSubscriptionContext(),
         topic,
       });
@@ -229,7 +229,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
-        const error = getClientError(ERROR.RESTORE_WILL_OVERRIDE, {
+        const error = getError(ERROR.RESTORE_WILL_OVERRIDE, {
           context: this.getSubscriptionContext(),
         });
         this.logger.error(error.message);

@@ -1,4 +1,4 @@
-import { Reason } from "@walletconnect/types";
+import { ErrorResponse } from "@json-rpc-tools/utils";
 
 import { capitalize, enumify } from "./misc";
 
@@ -28,19 +28,18 @@ export const ERROR = enumify({
   PROPOSAL_RESPONDED: "PROPOSAL_RESPONDED",
   RESPONSE_ACKNOWLEDGED: "RESPONSE_ACKNOWLEDGED",
   MATCHING_CONTROLLER: "MATCHING_CONTROLLER",
+  MISMATCHED_ACCOUNTS: "MISMATCHED_ACCOUNTS",
 });
 
-export type ClientError = Reason;
+export type ErrorType = keyof typeof ERROR;
 
-export type ClientErrorType = keyof typeof ERROR;
+export type ErrorFormatter = (params?: any) => ErrorResponse;
 
-export type ClientErrorFormat = (params?: any) => ClientError;
-
-export interface ClientErrorMap {
-  [type: string]: ClientErrorFormat;
+export interface ErrorFormats {
+  [type: string]: ErrorFormatter;
 }
 
-export const ERROR_MAP: ClientErrorMap = {
+export const ERROR_FORMATS: ErrorFormats = {
   [ERROR.UNKNOWN]: (params: any) => ({
     code: 9999,
     message: `Unknown error${params ? `: ${params.toString()}` : ""}`,
@@ -142,10 +141,14 @@ export const ERROR_MAP: ClientErrorMap = {
     code: 9999,
     message: `Peer is also ${params.controller ? "" : "not "}controller`,
   }),
+  [ERROR.MISMATCHED_ACCOUNTS]: (params: any) => ({
+    code: 9999,
+    message: `Invalid accounts with mismatched chains: ${params.mismatched.toString()}`,
+  }),
 };
 
-export function getClientError(type: ClientErrorType, params?: any): ClientError {
-  const formatError = ERROR_MAP[type];
-  if (typeof formatError === "undefined") return getClientError(ERROR.UNKNOWN, params);
-  return formatError(params);
+export function getError(type: ErrorType, params?: any): ErrorResponse {
+  const formatter = ERROR_FORMATS[type];
+  if (typeof formatter === "undefined") return getError(ERROR.UNKNOWN, params);
+  return formatter(params);
 }
