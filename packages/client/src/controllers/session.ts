@@ -7,6 +7,7 @@ import {
   SessionTypes,
   SubscriptionEvent,
   CryptoTypes,
+  Reason,
 } from "@walletconnect/types";
 import {
   deriveSharedKey,
@@ -37,7 +38,6 @@ import {
   SESSION_CONTEXT,
   SESSION_EVENTS,
   SESSION_JSONRPC,
-  SESSION_REASONS,
   SESSION_STATUS,
   SUBSCRIPTION_EVENTS,
   SESSION_SIGNAL_METHOD_PAIRING,
@@ -45,6 +45,7 @@ import {
   FIVE_MINUTES,
   THIRTY_SECONDS,
 } from "../constants";
+import { ERROR, getClientError } from "../constants/error";
 
 export class Session extends ISession {
   public pending: Subscription<SessionTypes.Pending>;
@@ -99,17 +100,19 @@ export class Session extends ISession {
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(SESSION_JSONRPC).includes(payload.method)) {
         if (!session.permissions.jsonrpc.methods.includes(payload.method)) {
-          const errorMessage = `Unauthorized JSON-RPC Method Requested: ${payload.method}`;
-          this.logger.error(errorMessage);
-          throw new Error(errorMessage);
+          const error = getClientError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+            method: payload.method,
+          });
+          this.logger.error(error.message);
+          throw new Error(error.message);
         }
         if (
           typeof chainId !== "undefined" &&
           !session.permissions.blockchain.chains.includes(chainId)
         ) {
-          const errorMessage = `Unauthorized Target ChainId Requested: ${chainId}`;
-          this.logger.error(errorMessage);
-          throw new Error(errorMessage);
+          const error = getClientError(ERROR.UNAUTHORIZED_TARGET_CHAIN, { chainId });
+          this.logger.error(error.message);
+          throw new Error(error.message);
         }
         await this.history.set(topic, payload, chainId);
         payload = formatJsonRpcRequest<SessionTypes.Payload>(
@@ -146,12 +149,15 @@ export class Session extends ISession {
     return new Promise(async (resolve, reject) => {
       this.logger.info(`Create Session`);
       this.logger.trace({ type: "method", method: "create", params });
-      const maxDuration = params?.timeout || FIVE_MINUTES * 1000;
+      const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const errorMessage = `Session failed to settle after ${maxDuration / 1000} seconds`;
-        this.logger.error(errorMessage);
-        reject(errorMessage);
-      }, maxDuration);
+        const error = getClientError(ERROR.SETTLE_TIMEOUT, {
+          context: this.context,
+          timeout: maxTimeout,
+        });
+        this.logger.error(error.message);
+        reject(error.message);
+      }, maxTimeout);
       let pending: SessionTypes.Pending;
       try {
         pending = await this.propose(params);
@@ -175,9 +181,10 @@ export class Session extends ISession {
               reject(new Error(outcome.reason.message));
             } else {
               try {
-                const pairing = await this.settled.get(outcome.topic);
-                await this.pending.delete(pending.topic, SESSION_REASONS.settled);
-                resolve(pairing);
+                const session = await this.settled.get(outcome.topic);
+                const reason = getClientError(ERROR.SETTLED, { context: this.context });
+                await this.pending.delete(pending.topic, reason);
+                resolve(session);
               } catch (e) {
                 return reject(e);
               }
@@ -245,7 +252,7 @@ export class Session extends ISession {
         await this.pending.set(pending.topic, pending, { relay: pending.relay, decryptKeys });
         return pending;
       } catch (e) {
-        const reason = { code: 5000, message: e.message };
+        const reason = getClientError(ERROR.GENERIC, { message: e.message });
         const outcome: SessionTypes.Outcome = { reason };
         const pending: SessionTypes.Pending = {
           status: SESSION_STATUS.responded,
@@ -259,7 +266,8 @@ export class Session extends ISession {
         return pending;
       }
     } else {
-      const outcome = { reason: params?.reason || SESSION_REASONS.not_approved };
+      const defaultReason = getClientError(ERROR.NOT_APPROVED, { context: this.context });
+      const outcome = { reason: params?.reason || defaultReason };
       const pending: SessionTypes.Pending = {
         status: SESSION_STATUS.responded,
         topic: proposal.topic,
@@ -298,14 +306,15 @@ export class Session extends ISession {
   public async request(params: SessionTypes.RequestParams): Promise<any> {
     return new Promise(async (resolve, reject) => {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
-      const maxDuration = params?.timeout || FIVE_MINUTES * 1000;
+      const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const errorMessage = `JSON-RPC Request timeout after ${maxDuration / 1000} seconds: ${
-          request.method
-        }`;
-        this.logger.error(errorMessage);
-        reject(errorMessage);
-      }, maxDuration);
+        const error = getClientError(ERROR.JSON_RPC_REQUEST_TIMEOUT, {
+          method: request.method,
+          timeout: maxTimeout,
+        });
+        this.logger.error(error.message);
+        reject(error.message);
+      }, maxTimeout);
       this.events.on(SESSION_EVENTS.response, (responseEvent: SessionTypes.ResponseEvent) => {
         if (params.topic !== responseEvent.topic) return;
         const response = responseEvent.response;
@@ -339,9 +348,9 @@ export class Session extends ISession {
       session.self.publicKey !== session.permissions.controller.publicKey &&
       !session.permissions.notifications.types.includes(params.type)
     ) {
-      const errorMessage = `Unauthorized Notification Type Requested: ${params.type}`;
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.UNAUTHORIZED_NOTIFICATION_TYPE, { type: params.type });
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     const notification: SessionTypes.Notification = { type: params.type, data: params.data };
     const request = formatJsonRpcRequest(SESSION_JSONRPC.notification, notification);
@@ -447,7 +456,7 @@ export class Session extends ISession {
       sharedKey: pairing.sharedKey,
       publicKey: pairing.self.publicKey,
     };
-    let errorMessage: string | undefined;
+    let error: Reason | undefined;
     if (!isSessionFailed(request.params)) {
       try {
         const controller = pending.proposal.proposer.controller
@@ -471,22 +480,22 @@ export class Session extends ISession {
             topic: session.topic,
             relay: session.relay,
             responder: session.peer,
-            expiry: pairing.expiry,
+            expiry: session.expiry,
             state: session.state,
           },
         });
       } catch (e) {
         this.logger.error(e);
-        errorMessage = e.message;
+        error = getClientError(ERROR.GENERIC, { message: e.message });
         await this.pending.update(topic, {
           status: SESSION_STATUS.responded,
-          outcome: { reason: { code: 5000, message: e.message } },
+          outcome: { reason: error },
         });
       }
       const response =
-        typeof errorMessage === "undefined"
+        typeof error === "undefined"
           ? formatJsonRpcResult(request.id, true)
-          : formatJsonRpcError(request.id, errorMessage);
+          : formatJsonRpcError(request.id, error);
       await this.client.relayer.publish(pending.topic, response, {
         relay: pending.relay,
         encryptKeys,
@@ -508,10 +517,10 @@ export class Session extends ISession {
     const pending = await this.pending.get(topic);
     if (!isSessionResponded(pending)) return;
     if (isJsonRpcError(response) && !isSessionFailed(pending.outcome)) {
-      const reason = { code: 4000, message: response.error.message };
-      await this.settled.delete(pending.outcome.topic, reason);
+      await this.settled.delete(pending.outcome.topic, response.error);
     }
-    await this.pending.delete(payloadEvent.topic, SESSION_REASONS.acknowledged);
+    const reason = getClientError(ERROR.RESPONSE_ACKNOWLEDGED, { context: this.context });
+    await this.pending.delete(topic, reason);
   }
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
@@ -521,7 +530,7 @@ export class Session extends ISession {
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const session = await this.settled.get(payloadEvent.topic);
-      let errorMessage = "";
+      let error: Reason | undefined;
       switch (request.method) {
         case SESSION_JSONRPC.payload:
           await this.onPayload(payloadEvent);
@@ -542,9 +551,9 @@ export class Session extends ISession {
           await this.send(session.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
-          errorMessage = `Unknown JSON-RPC Method Requested: ${request.method}`;
-          this.logger.error(errorMessage);
-          await this.send(session.topic, formatJsonRpcError(request.id, errorMessage));
+          error = getClientError(ERROR.UNKNOWN_JSON_RPC_METHOD, { method: request.method });
+          this.logger.error(error.message);
+          await this.send(session.topic, formatJsonRpcError(request.id, error));
           break;
       }
     } else {
@@ -559,9 +568,11 @@ export class Session extends ISession {
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const session = await this.settled.get(topic);
       if (!session.permissions.jsonrpc.methods.includes(request.method)) {
-        const errorMessage = `Unauthorized JSON-RPC Method Requested: ${request.method}`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
+        const error = getClientError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+          method: request.method,
+        });
+        this.logger.error(error.message);
+        throw new Error(error.message);
       }
       const sessionPayloadEvent: SessionTypes.PayloadEvent = {
         topic,
@@ -628,16 +639,16 @@ export class Session extends ISession {
     if (typeof params.state !== "undefined") {
       const state = session.state;
       if (participant.publicKey !== session.permissions.controller.publicKey) {
-        const errorMessage = `Unauthorized session update request`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
+        const error = getClientError(ERROR.UNAUTHORIZED_UPDATE_REQUEST, { context: this.context });
+        this.logger.error(error.message);
+        throw new Error(error.message);
       }
       state.accounts = params.state.accounts || state.accounts;
       update = { state };
     } else {
-      const errorMessage = `Invalid session update request params`;
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.INVALID_UPDATE_REQUEST, { context: this.context });
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     await this.settled.update(session.topic, session);
     return update;
@@ -651,9 +662,9 @@ export class Session extends ISession {
     const session = await this.settled.get(topic);
     let upgrade: SessionTypes.Upgrade = { permissions: {} };
     if (participant.publicKey !== session.permissions.controller.publicKey) {
-      const errorMessage = `Unauthorized session permissions upgrade`;
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.UNAUTHORIZED_UPGRADE_REQUEST, { context: this.context });
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     const permissions: Omit<SessionTypes.Permissions, "controller"> = {
       blockchain: {

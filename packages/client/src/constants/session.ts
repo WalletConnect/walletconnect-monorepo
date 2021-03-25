@@ -38,13 +38,6 @@ export const SESSION_EVENTS = {
   response: "session_response",
 };
 
-export const SESSION_REASONS = {
-  settled: { code: 1000, message: "Session settled" },
-  not_approved: { code: 1001, message: "Session not approved" },
-  responded: { code: 1002, message: "Session proposal responded" },
-  acknowledged: { code: 1003, message: "Session response acknowledged" },
-};
-
 export const SESSION_EMPTY_PERMISSIONS = {
   jsonrpc: {
     methods: [],

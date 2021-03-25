@@ -12,6 +12,7 @@ import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { SUBSCRIPTION_DEFAULT_TTL, SUBSCRIPTION_EVENTS } from "../constants";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
+import { ERROR, getClientError } from "../constants/error";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
@@ -59,9 +60,11 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.logger.debug(`Setting subscription`);
       this.logger.trace({ type: "method", method: "set", topic, data, opts });
       if (this.encrypted && typeof opts.decryptKeys === "undefined") {
-        const errorMessage = `Decrypt params required for ${this.getSubscriptionContext()}`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
+        const error = getClientError(ERROR.MISSING_DECRYPT_PARAMS, {
+          context: this.getSubscriptionContext(),
+        });
+        this.logger.error(error.message);
+        throw new Error(error.message);
       }
       await this.subscribeAndSet(topic, data, opts);
       this.events.emit(SUBSCRIPTION_EVENTS.created, {
@@ -158,9 +161,12 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     await this.isEnabled();
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
-      const errorMessage = `No matching ${this.getSubscriptionContext()} with topic: ${topic}`;
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.NO_MATCHING_TOPIC, {
+        context: this.getSubscriptionContext(),
+        topic,
+      });
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     return subscription;
   }
@@ -223,9 +229,11 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
-        const errorMessage = `Restore will override already set ${this.getSubscriptionContext()}`;
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
+        const error = getClientError(ERROR.RESTORE_WILL_OVERRIDE, {
+          context: this.getSubscriptionContext(),
+        });
+        this.logger.error(error.message);
+        throw new Error(error.message);
       }
       this.cached = persisted;
       await Promise.all(

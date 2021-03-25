@@ -36,6 +36,7 @@ import {
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
+import { ERROR, getClientError } from "./constants/error";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -112,9 +113,9 @@ export class Client extends IClient {
       this.logger.trace({ type: "method", method: "connect", pairing });
       const metadata = params.metadata || this.metadata;
       if (typeof metadata === "undefined") {
-        const errorMessage = "Missing or invalid app metadata provided";
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
+        const error = getClientError(ERROR.INVALID_APP_METADATA);
+        this.logger.error(error.message);
+        throw new Error(error.message);
       }
       const session = await this.session.create({
         signal: { method: SESSION_SIGNAL_METHOD_PAIRING, params: { topic: pairing.topic } },
@@ -142,12 +143,12 @@ export class Client extends IClient {
     const approved = proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : { code: 2000, message: `Peer is also ${this.controller ? "" : "not "}controller` };
+      : getClientError(ERROR.MATCHING_CONTROLLER, { controller: this.controller });
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
-      const errorMessage = "No Pairing Response found in pending proposal";
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.NO_MATCHING_PENDING_PAIRING);
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     if (isPairingFailed(pending.outcome)) {
       this.logger.debug(`Pairing Failure`);
@@ -163,21 +164,21 @@ export class Client extends IClient {
     this.logger.debug(`Approving Session Proposal`);
     this.logger.trace({ type: "method", method: "approve", params });
     if (typeof params.response === "undefined") {
-      const errorMessage = "Response is required for approved session proposals";
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.MISSING_SESSION_RESPONSE);
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     const state = params.response.state || SESSION_EMPTY_STATE;
     const metadata = params.response.metadata || this.metadata;
     if (typeof metadata === "undefined") {
-      const errorMessage = "Missing or invalid app metadata provided";
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.INVALID_APP_METADATA);
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     const approved = params.proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : { code: 2000, message: `Peer is also ${this.controller ? "" : "not "}controller` };
+      : getClientError(ERROR.MATCHING_CONTROLLER, { controller: this.controller });
     const pending = await this.session.respond({
       approved,
       proposal: params.proposal,
@@ -185,9 +186,9 @@ export class Client extends IClient {
       reason,
     });
     if (!isSessionResponded(pending)) {
-      const errorMessage = "No Session Response found in pending proposal";
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
+      const error = getClientError(ERROR.NO_MATCHING_PENDING_SESSION);
+      this.logger.error(error.message);
+      throw new Error(error.message);
     }
     if (isSessionFailed(pending.outcome)) {
       this.logger.debug(`Session Proposal Approval Failure`);
@@ -244,10 +245,7 @@ export class Client extends IClient {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
-        const reason = {
-          code: 2000,
-          message: `Peer is also ${this.controller ? "" : "not "}controller`,
-        };
+        const reason = getClientError(ERROR.MATCHING_CONTROLLER, { controller: this.controller });
         await this.session.respond({
           approved: false,
           proposal,
