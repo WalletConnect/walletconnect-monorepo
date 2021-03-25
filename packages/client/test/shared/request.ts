@@ -13,6 +13,7 @@ import { CLIENT_EVENTS } from "../../src";
 
 import { expect } from "./chai";
 import { InitializedSetup, InitializedClients } from "./types";
+import { TEST_TIMEOUT_DURATION } from "./values";
 
 export async function testJsonRpcRequest(
   setup: InitializedSetup,
@@ -51,12 +52,17 @@ export async function testJsonRpcRequest(
       clients.a.logger.warn(`TEST >> JSON-RPC Request Sent`);
       time.start("request");
       if (isJsonRpcError(response)) {
-        const promise = clients.a.request({ topic, chainId, request });
+        const promise = clients.a.request({
+          topic,
+          chainId,
+          request,
+          timeout: TEST_TIMEOUT_DURATION,
+        });
         await expect(promise).to.eventually.be.rejectedWith(response.error.message);
         resolve();
         return;
       }
-      result = await clients.a.request({ topic, chainId, request });
+      result = await clients.a.request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION });
       time.stop("request");
       clients.a.logger.warn(`TEST >> JSON-RPC Response Received`);
       resolve();

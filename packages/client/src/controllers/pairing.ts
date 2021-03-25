@@ -43,6 +43,7 @@ import {
   SESSION_JSONRPC,
   PAIRING_DEFAULT_TTL,
   FIVE_MINUTES,
+  THIRTY_SECONDS,
 } from "../constants";
 
 export class Pairing extends IPairing {
@@ -86,7 +87,7 @@ export class Pairing extends IPairing {
 
   public async ping(topic: string, timeout?: number): Promise<void> {
     const request = { method: PAIRING_JSONRPC.ping, params: {} };
-    return this.request({ topic, request, timeout });
+    return this.request({ topic, request, timeout: timeout || THIRTY_SECONDS * 1000 });
   }
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {

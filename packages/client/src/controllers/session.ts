@@ -43,6 +43,7 @@ import {
   SESSION_SIGNAL_METHOD_PAIRING,
   SESSION_DEFAULT_TTL,
   FIVE_MINUTES,
+  THIRTY_SECONDS,
 } from "../constants";
 
 export class Session extends ISession {
@@ -86,7 +87,7 @@ export class Session extends ISession {
 
   public async ping(topic: string, timeout?: number): Promise<void> {
     const request = { method: SESSION_JSONRPC.ping, params: {} };
-    return this.request({ topic, request, timeout });
+    return this.request({ topic, request, timeout: timeout || THIRTY_SECONDS * 1000 });
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {

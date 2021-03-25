@@ -42,7 +42,7 @@ describe("Request", function() {
     const topic = generateRandomBytes32();
     const request = TEST_ETHEREUM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
-    const promise = clients.a.request({ topic, chainId, request });
+    const promise = clients.a.request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION });
     await expect(promise).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );
@@ -52,7 +52,7 @@ describe("Request", function() {
     const topic = await testApproveSession(setup, clients);
     const request = TEST_RANDOM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
-    const promise = clients.a.request({ topic, chainId, request });
+    const promise = clients.a.request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION });
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized JSON-RPC Method Requested: ${request.method}`,
     );
@@ -62,7 +62,7 @@ describe("Request", function() {
     const topic = await testApproveSession(setup, clients);
     const request = TEST_ETHEREUM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
-    const promise = clients.a.request({ topic, chainId, request });
+    const promise = clients.a.request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION });
     clock.tick(TEST_TIMEOUT_DURATION);
     await expect(promise).to.eventually.be.rejectedWith(
       `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: ${request.method}`,

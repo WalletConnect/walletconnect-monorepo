@@ -15,12 +15,12 @@ describe("Relayer", function() {
     // connect
     const topic = await testApproveSession(setup, clients);
     // ping
-    await clients.a.session.ping(topic);
+    await clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     // disconnect
     await clients.a.relayer.provider.connection.close();
     expect(clients.a.relayer.connected).to.be.false;
     // ping
-    await clients.a.session.ping(topic);
+    await clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("A pings B after B socket reconnects", async () => {
     // setup
@@ -28,11 +28,11 @@ describe("Relayer", function() {
     // connect
     const topic = await testApproveSession(setup, clients);
     // ping
-    await clients.a.session.ping(topic);
+    await clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     // disconnect
     await clients.b.relayer.provider.connection.close();
     expect(clients.b.relayer.connected).to.be.false;
     // ping
-    await clients.a.session.ping(topic);
+    await clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
 });

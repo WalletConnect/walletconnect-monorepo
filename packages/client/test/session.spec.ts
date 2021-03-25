@@ -143,13 +143,13 @@ describe("Session", function() {
     const { setup, clients } = await setupClientsForTesting();
     await testApproveSession(setup, clients);
     const topic = clients.a.session.topics[0];
-    await clients.a.session.ping(topic);
+    await clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("B pings A with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     await testApproveSession(setup, clients);
     const topic = clients.b.session.topics[0];
-    await clients.b.session.ping(topic);
+    await clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("B updates state accounts and A receives event", async () => {
     const state = { accounts: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
@@ -216,7 +216,7 @@ describe("Session", function() {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     // first - attempt sending request to chainId=eip155:100
-    const promise = clients.a.request({ topic, request, chainId });
+    const promise = clients.a.request({ topic, request, chainId, timeout: TEST_TIMEOUT_DURATION });
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized Target ChainId Requested: ${chainId}`,
     );
@@ -260,7 +260,7 @@ describe("Session", function() {
     await expect(clients.a.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );
-    const promise = clients.a.session.ping(topic);
+    const promise = clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     await expect(promise).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );
@@ -273,7 +273,7 @@ describe("Session", function() {
     await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );
-    const promise = clients.a.session.ping(topic);
+    const promise = clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     clock.tick(TEST_TIMEOUT_DURATION);
     await expect(promise).to.eventually.be.rejectedWith(
       `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
@@ -286,14 +286,14 @@ describe("Session", function() {
     // connect
     const topic = await testApproveSession(before.setup, before.clients);
     // ping
-    await before.clients.a.session.ping(topic);
-    await before.clients.b.session.ping(topic);
+    await before.clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
+    await before.clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
     // delete
     delete before.clients;
     // restart
     const after = await setupClientsForTesting({ shared: { options: { storage } } });
     // ping
-    await after.clients.a.session.ping(topic);
-    await after.clients.b.session.ping(topic);
+    await after.clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
+    await after.clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
 });
