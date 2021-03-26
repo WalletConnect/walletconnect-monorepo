@@ -247,7 +247,7 @@ class App extends React.Component<any, any> {
     }
     await this.state.client.disconnect({
       topic: this.state.session.topic,
-      reason: "User disconnected session",
+      reason: { code: 6000, message: "User disconnected session" },
     });
   };
 

@@ -330,7 +330,7 @@ class App extends React.Component<{}> {
     }
     await this.state.client.disconnect({
       topic,
-      reason: "User disconnected session",
+      reason: { code: 6000, message: "User disconnected session" },
     });
     await this.resetCard();
   };
