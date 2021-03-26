@@ -9,6 +9,7 @@ import config from "./config";
 import register from "./metrics";
 import { assertType } from "./utils";
 import { RedisService } from "./redis";
+import { WakuService } from "./waku";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
@@ -17,6 +18,7 @@ export class HttpService {
   public app: FastifyInstance;
   public logger: Logger;
   public redis: RedisService;
+  public waku: WakuService;
 
   public ws: WebSocketService;
   public notification: NotificationService;
@@ -42,6 +44,7 @@ export class HttpService {
         help: "shows how much the /hello has been called",
       }),
     };
+    this.waku = new WakuService(this.logger, config.wakuUrl);
     this.initialize();
   }
 
@@ -53,7 +56,7 @@ export class HttpService {
     this.app.register(helmet);
     this.app.register(ws);
 
-    this.app.get("/", { websocket: true }, (connection) => {
+    this.app.get("/", { websocket: true }, connection => {
       connection.on("error", (e: Error) => {
         if (!e.message.includes("Invalid WebSocket frame")) {
           this.logger.fatal(e);
@@ -80,7 +83,7 @@ export class HttpService {
 
     this.app.get("/metrics", (_, res) => {
       res.headers({ "Content-Type": register.contentType });
-      register.metrics().then((result) => {
+      register.metrics().then(result => {
         res.status(200).send(result);
       });
     });
