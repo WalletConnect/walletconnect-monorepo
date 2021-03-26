@@ -8,7 +8,7 @@ import { arrayToHex } from "enc-utils";
 import { TEST_WAKU_URL } from "./shared";
 
 let testTopic = "my_topic_1";
-let testMessage = "0x1a2b3c4d5e6e";
+let testMessage = "1a2b3c4d5e6e";
 
 describe.only("Waku", () => {
   // We can use a single waku node with two WakuService
@@ -37,6 +37,6 @@ describe.only("Waku", () => {
     await wakuOne.postMessage(testTopic, testMessage);
     let messages = await wakuOne.getMessages([testTopic]);
     expect(messages.length).to.greaterThan(0);
-    expect("0x" + arrayToHex(messages[0].payload)).to.equal(testMessage);
+    expect(arrayToHex(messages[0].payload)).to.equal(testMessage);
   });
 });
