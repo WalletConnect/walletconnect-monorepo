@@ -3,38 +3,49 @@ import { ErrorResponse } from "@json-rpc-tools/utils";
 import { capitalize, enumify } from "./misc";
 
 export const ERROR = enumify({
-  UNKNOWN: "UNKNOWN",
+  // 0 (Generic)
   GENERIC: "GENERIC",
+  // 1000 (Internal)
   MISSING_OR_INVALID: "MISSING_OR_INVALID",
-  NO_MATCHING_RESPONSE: "NO_MATCHING_RESPONSE",
   MISSING_RESPONSE: "MISSING_RESPONSE",
+  MISSING_DECRYPT_PARAMS: "MISSING_DECRYPT_PARAMS",
+  INVALID_UPDATE_REQUEST: "INVALID_UPDATE_REQUEST",
   RECORD_ALREADY_EXISTS: "RECORD_ALREADY_EXISTS",
-  MISMATCHED_TOPIC: "MISMATCHED_TOPIC",
+  RESTORE_WILL_OVERRIDE: "RESTORE_WILL_OVERRIDE",
   NO_MATCHING_ID: "NO_MATCHING_ID",
   NO_MATCHING_TOPIC: "NO_MATCHING_TOPIC",
-  RESTORE_WILL_OVERRIDE: "RESTORE_WILL_OVERRIDE",
-  UNAUTHORIZED_JSON_RPC_METHOD: "UNAUTHORIZED_JSON_RPC_METHOD",
+  NO_MATCHING_RESPONSE: "NO_MATCHING_RESPONSE",
   UNKNOWN_JSONRPC_METHOD: "UNKNOWN_JSONRPC_METHOD",
-  SETTLE_TIMEOUT: "SETTLE_TIMEOUT",
-  JSONRPC_REQUEST_TIMEOUT: "JSONRPC_REQUEST_TIMEOUT",
-  UNAUTHORIZED_UPDATE_REQUEST: "UNAUTHORIZED_UPDATE_REQUEST",
-  INVALID_UPDATE_REQUEST: "INVALID_UPDATE_REQUEST",
-  UNAUTHORIZED_UPGRADE_REQUEST: "UNAUTHORIZED_UPGRADE_REQUEST",
-  UNAUTHORIZED_TARGET_CHAIN: "UNAUTHORIZED_TARGET_CHAIN",
-  UNAUTHORIZED_NOTIFICATION_TYPE: "UNAUTHORIZED_NOTIFICATION_TYPE",
-  MISSING_DECRYPT_PARAMS: "MISSING_DECRYPT_PARAMS",
+  MISMATCHED_TOPIC: "MISMATCHED_TOPIC",
+  MISMATCHED_ACCOUNTS: "MISMATCHED_ACCOUNTS",
   SETTLED: "SETTLED",
   NOT_APPROVED: "NOT_APPROVED",
   PROPOSAL_RESPONDED: "PROPOSAL_RESPONDED",
   RESPONSE_ACKNOWLEDGED: "RESPONSE_ACKNOWLEDGED",
-  MATCHING_CONTROLLER: "MATCHING_CONTROLLER",
-  MISMATCHED_ACCOUNTS: "MISMATCHED_ACCOUNTS",
+  // 2000 (Timeout)
+  SETTLE_TIMEOUT: "SETTLE_TIMEOUT",
+  JSONRPC_REQUEST_TIMEOUT: "JSONRPC_REQUEST_TIMEOUT",
+  // 3000 (Unauthorized)
+  UNAUTHORIZED_TARGET_CHAIN: "UNAUTHORIZED_TARGET_CHAIN",
+  UNAUTHORIZED_JSON_RPC_METHOD: "UNAUTHORIZED_JSON_RPC_METHOD",
+  UNAUTHORIZED_NOTIFICATION_TYPE: "UNAUTHORIZED_NOTIFICATION_TYPE",
+  UNAUTHORIZED_UPDATE_REQUEST: "UNAUTHORIZED_UPDATE_REQUEST",
+  UNAUTHORIZED_UPGRADE_REQUEST: "UNAUTHORIZED_UPGRADE_REQUEST",
+  UNAUTHORIZED_MATCHING_CONTROLLER: "UNAUTHORIZED_MATCHING_CONTROLLER",
+  // 4000 (EIP-1193)
+  USER_REJECTED_JSONRPC_REQUEST: "USER_REJECTED_JSONRPC_REQUEST",
+  JSONRPC_REQUEST_METHOD_UNSUPPORTED: "JSONRPC_REQUEST_METHOD_UNSUPPORTED",
+  DISCONNECTED_ALL_CHAINS: "DISCONNECTED_ALL_CHAINS",
+  DISCONNECTED_TARGET_CHAIN: "DISCONNECTED_TARGET_CHAIN",
+  // 5000 (CAIP-25)
   DISAPPROVED_CHAINS: "DISAPPROVED_CHAINS",
   DISAPPROVED_JSONRPC: "DISAPPROVED_JSONRPC",
   DISAPPROVED_NOTIFICATION: "DISAPPROVED_NOTIFICATION",
   UNSUPPORTED_CHAINS: "UNSUPPORTED_CHAINS",
   UNSUPPORTED_JSONRPC: "UNSUPPORTED_JSONRPC",
   UNSUPPORTED_NOTIFICATION: "UNSUPPORTED_NOTIFICATION",
+  // 9000 (Unknown)
+  UNKNOWN: "UNKNOWN",
 });
 
 export type ErrorType = keyof typeof ERROR;
@@ -46,49 +57,77 @@ export interface ErrorFormats {
 }
 
 export const ERROR_FORMATS: ErrorFormats = {
-  // 0
+  // 0 (Generic)
   [ERROR.GENERIC]: (params: any) => ({
     code: 0,
     message: params.message,
   }),
-  // 1000
-  [ERROR.NO_MATCHING_RESPONSE]: (params: any) => ({
+  // 1000 (Internal)
+  [ERROR.MISSING_OR_INVALID]: (params: any) => ({
     code: 1000,
-    message: `No response found in pending ${params.context} proposal`,
+    message: `Missing or invalid ${params.name}`,
   }),
   [ERROR.MISSING_RESPONSE]: (params: any) => ({
     code: 1001,
     message: `Response is required for approved ${params.context} proposals`,
   }),
-  [ERROR.RECORD_ALREADY_EXISTS]: (params: any) => ({
+  [ERROR.MISSING_DECRYPT_PARAMS]: (params: any) => ({
     code: 1002,
+    message: `Decrypt params required for ${params.context}`,
+  }),
+  [ERROR.INVALID_UPDATE_REQUEST]: (params: any) => ({
+    code: 1003,
+    message: `Invalid ${params.context} update request`,
+  }),
+  [ERROR.RECORD_ALREADY_EXISTS]: (params: any) => ({
+    code: 1100,
     message: `Record already exists for ${params.context} matching id: ${params.id}`,
   }),
-  [ERROR.MISMATCHED_TOPIC]: (params: any) => ({
-    code: 1003,
-    message: `Mismatched topic for ${params.context} with id: ${params.id}`,
+  [ERROR.RESTORE_WILL_OVERRIDE]: (params: any) => ({
+    code: 1200,
+    message: `Restore will override already set ${params.context}`,
   }),
   [ERROR.NO_MATCHING_ID]: (params: any) => ({
-    code: 1004,
+    code: 1300,
     message: `No matching ${params.context} with id: ${params.id}`,
   }),
   [ERROR.NO_MATCHING_TOPIC]: (params: any) => ({
-    code: 1005,
+    code: 1301,
     message: `No matching ${params.context} with topic: ${params.topic}`,
   }),
-  [ERROR.RESTORE_WILL_OVERRIDE]: (params: any) => ({
-    code: 1006,
-    message: `Restore will override already set ${params.context}`,
+  [ERROR.NO_MATCHING_RESPONSE]: (params: any) => ({
+    code: 1302,
+    message: `No response found in pending ${params.context} proposal`,
   }),
   [ERROR.UNKNOWN_JSONRPC_METHOD]: (params: any) => ({
-    code: 1007,
+    code: 1400,
     message: `Unknown JSON-RPC Method Requested: ${params.method}`,
   }),
-  [ERROR.MISSING_DECRYPT_PARAMS]: (params: any) => ({
-    code: 1008,
-    message: `Decrypt params required for ${params.context}`,
+  [ERROR.MISMATCHED_TOPIC]: (params: any) => ({
+    code: 1500,
+    message: `Mismatched topic for ${params.context} with id: ${params.id}`,
   }),
-  // 2000
+  [ERROR.MISMATCHED_ACCOUNTS]: (params: any) => ({
+    code: 1501,
+    message: `Invalid accounts with mismatched chains: ${params.mismatched.toString()}`,
+  }),
+  [ERROR.SETTLED]: (params: any) => ({
+    code: 1600,
+    message: `${capitalize(params.context)} settled`,
+  }),
+  [ERROR.NOT_APPROVED]: (params: any) => ({
+    code: 1601,
+    message: `${capitalize(params.context)} not approved`,
+  }),
+  [ERROR.PROPOSAL_RESPONDED]: (params: any) => ({
+    code: 1602,
+    message: `${capitalize(params.context)} proposal responded`,
+  }),
+  [ERROR.RESPONSE_ACKNOWLEDGED]: (params: any) => ({
+    code: 1603,
+    message: `${capitalize(params.context)} response acknowledge`,
+  }),
+  // 2000 (Timeout)
   [ERROR.SETTLE_TIMEOUT]: (params: any) => ({
     code: 2000,
     message: `${capitalize(params.context)} failed to settle after ${params.timeout /
@@ -98,7 +137,7 @@ export const ERROR_FORMATS: ErrorFormats = {
     code: 2001,
     message: `JSON-RPC Request timeout after ${params.timeout / 1000} seconds: ${params.method}`,
   }),
-  // 3000
+  // 3000 (Unauthorized)
   [ERROR.UNAUTHORIZED_TARGET_CHAIN]: (params: any) => ({
     code: 3000,
     message: `Unauthorized Target ChainId Requested: ${params.chainId}`,
@@ -119,68 +158,54 @@ export const ERROR_FORMATS: ErrorFormats = {
     code: 3004,
     message: `Unauthorized ${params.context} upgrade request`,
   }),
-  // 4000
-  [ERROR.SETTLED]: (params: any) => ({
-    code: 4000,
-    message: `${capitalize(params.context)} settled`,
+  [ERROR.UNAUTHORIZED_MATCHING_CONTROLLER]: (params: any) => ({
+    code: 3005,
+    message: `Unauthorized: peer is also ${params.controller ? "" : "not "}controller`,
   }),
-  [ERROR.NOT_APPROVED]: (params: any) => ({
+  // 4000 (EIP-1193)
+  [ERROR.USER_REJECTED_JSONRPC_REQUEST]: () => ({
     code: 4001,
-    message: `${capitalize(params.context)} not approved`,
+    message: "The requested account and/or method has not been authorized by the user.",
   }),
-  [ERROR.PROPOSAL_RESPONDED]: (params: any) => ({
-    code: 4002,
-    message: `${capitalize(params.context)} proposal responded`,
+  [ERROR.JSONRPC_REQUEST_METHOD_UNSUPPORTED]: (params: any) => ({
+    code: 4100,
+    message: `The requested method is not supported by this ${params.blockhain ||
+      "Ethereum"} provider.`,
   }),
-  [ERROR.RESPONSE_ACKNOWLEDGED]: (params: any) => ({
+  [ERROR.DISCONNECTED_ALL_CHAINS]: () => ({
+    code: 4900,
+    message: "The provider is disconnected from all chains.",
+  }),
+  [ERROR.DISCONNECTED_TARGET_CHAIN]: () => ({
     code: 4003,
-    message: `${capitalize(params.context)} response acknowledge`,
+    message: "The provider is disconnected from the specified chain.",
   }),
-  // 5000
-  [ERROR.MATCHING_CONTROLLER]: (params: any) => ({
-    code: 5000,
-    message: `Peer is also ${params.controller ? "" : "not "}controller`,
-  }),
-  // 6000
-  [ERROR.MISSING_OR_INVALID]: (params: any) => ({
-    code: 6000,
-    message: `Missing or invalid ${params.name}`,
-  }),
-  [ERROR.INVALID_UPDATE_REQUEST]: (params: any) => ({
-    code: 6001,
-    message: `Invalid ${params.context} update request`,
-  }),
-  [ERROR.MISMATCHED_ACCOUNTS]: (params: any) => ({
-    code: 6002,
-    message: `Invalid accounts with mismatched chains: ${params.mismatched.toString()}`,
-  }),
-  // 7000
+  // 5000 (CAIP-25)
   [ERROR.DISAPPROVED_CHAINS]: (params: any) => ({
-    code: 7000,
+    code: 5000,
     message: `User disapproved requested chains`,
   }),
   [ERROR.DISAPPROVED_JSONRPC]: (params: any) => ({
-    code: 7001,
+    code: 5001,
     message: `User disapproved requested json-rpc methods`,
   }),
   [ERROR.DISAPPROVED_NOTIFICATION]: (params: any) => ({
-    code: 7002,
+    code: 5002,
     message: `User disapproved requested notification types`,
   }),
-  // 8000
   [ERROR.UNSUPPORTED_CHAINS]: (params: any) => ({
-    code: 8000,
+    code: 5100,
     message: `Requested chains are not supported: ${params.chains.toString()}`,
   }),
   [ERROR.UNSUPPORTED_JSONRPC]: (params: any) => ({
-    code: 8001,
+    code: 5101,
     message: `Requested json-rpc methods are not supported: ${params.methods.toString()}`,
   }),
   [ERROR.UNSUPPORTED_NOTIFICATION]: (params: any) => ({
-    code: 8002,
+    code: 5102,
     message: `Requested notification types are not supported: ${params.types.toString()}`,
   }),
-  // 9000
+  // 9000 (Unknown)
   [ERROR.UNKNOWN]: (params: any) => ({
     code: 9000,
     message: `Unknown error${params ? `: ${params.toString()}` : ""}`,

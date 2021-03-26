@@ -144,7 +144,7 @@ export class Client extends IClient {
     const approved = proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : getError(ERROR.MATCHING_CONTROLLER, { controller: this.controller });
+      : getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, { controller: this.controller });
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
       const error = getError(ERROR.NO_MATCHING_RESPONSE, { context: "pairing" });
@@ -179,7 +179,7 @@ export class Client extends IClient {
     const approved = params.proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : getError(ERROR.MATCHING_CONTROLLER, { controller: this.controller });
+      : getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, { controller: this.controller });
     const pending = await this.session.respond({
       approved,
       proposal: params.proposal,
@@ -246,7 +246,9 @@ export class Client extends IClient {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
-        const reason = getError(ERROR.MATCHING_CONTROLLER, { controller: this.controller });
+        const reason = getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, {
+          controller: this.controller,
+        });
         await this.session.respond({
           approved: false,
           proposal,

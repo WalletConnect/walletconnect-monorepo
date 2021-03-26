@@ -74,19 +74,19 @@ describe("Validators", () => {
       validateSessionProposeParamsPermissions(TEST_INVALID_BLOCKCHAIN_PERMISSIONS as any),
     ).to.eql({
       valid: false,
-      error: { code: 6000, message: "Missing or invalid blockchain permissions" },
+      error: { code: 1000, message: "Missing or invalid blockchain permissions" },
     });
     expect(validateSessionProposeParamsPermissions(TEST_INVALID_JSONRPC_PERMISSIONS as any)).to.eql(
       {
         valid: false,
-        error: { code: 6000, message: "Missing or invalid jsonrpc permissions" },
+        error: { code: 1000, message: "Missing or invalid jsonrpc permissions" },
       },
     );
     expect(
       validateSessionProposeParamsPermissions(TEST_INVALID_NOTIFICATIONS_PERMISSIONS as any),
     ).to.eql({
       valid: false,
-      error: { code: 6000, message: "Missing or invalid notification permissions" },
+      error: { code: 1000, message: "Missing or invalid notification permissions" },
     });
   });
 
@@ -94,19 +94,19 @@ describe("Validators", () => {
     expect(validateSessionProposeParamsMetadata(TEST_SESSION_METADATA)).to.eql({ valid: true });
     expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_NAME as any)).to.eql({
       valid: false,
-      error: { code: 6000, message: "Missing or invalid metadata name" },
+      error: { code: 1000, message: "Missing or invalid metadata name" },
     });
     expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_DESC as any)).to.eql({
       valid: false,
-      error: { code: 6000, message: "Missing or invalid metadata description" },
+      error: { code: 1000, message: "Missing or invalid metadata description" },
     });
     expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_URL as any)).to.eql({
       valid: false,
-      error: { code: 6000, message: "Missing or invalid metadata url" },
+      error: { code: 1000, message: "Missing or invalid metadata url" },
     });
     expect(validateSessionProposeParamsMetadata(TEST_INVALID_METADATA_ICONS as any)).to.eql({
       valid: false,
-      error: { code: 6000, message: "Missing or invalid metadata icons" },
+      error: { code: 1000, message: "Missing or invalid metadata icons" },
     });
   });
 
@@ -116,12 +116,12 @@ describe("Validators", () => {
     });
     expect(validateBlockchainState(TEST_INVALID_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
       valid: false,
-      error: { code: 6000, message: "Missing or invalid state accounts" },
+      error: { code: 1000, message: "Missing or invalid state accounts" },
     });
     expect(validateBlockchainState(TEST_MISMATCH_STATE, TEST_BLOCKCHAIN_PERMISSIONS)).to.eql({
       valid: false,
       error: {
-        code: 6002,
+        code: 1501,
         message: `Invalid accounts with mismatched chains: ${TEST_MISMATCH_STATE.accounts[0]}`,
       },
     });
