@@ -8,7 +8,7 @@ import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { defaultRenderQrcodeModal, formatWalletServiceUrl } from '../constants';
 import { WalletConnectContext } from '../contexts';
-import { useWalletConnectContext } from '../hooks';
+import { useMobileRegistry, useWalletConnectContext } from '../hooks';
 import {
   ConnectorEvents,
   RenderQrcodeModalCallback,
@@ -33,6 +33,8 @@ export default function WalletConnectProvider({
   renderQrcodeModal: maybeRenderQrcodeModal,
   ...extras
 }: Partial<WalletConnectProviderProps>): JSX.Element {
+  const { error: walletServicesError, data: walletServices } = useMobileRegistry();
+
   const [state, setState] = React.useState<State>(defaultState);
   const parentContext = useWalletConnectContext();
 
@@ -174,7 +176,7 @@ export default function WalletConnectProvider({
             if (typeof maybeShortName === 'string' && !!maybeShortName.length) {
               const { walletServices } = parentContext;
               const [...maybeMatchingServices] = (walletServices || []).filter(
-                ({ shortName }) => {
+                ({ metadata: { shortName } }) => {
                   return `${shortName}`.toLowerCase() === maybeShortName;
                 },
               );
@@ -243,13 +245,13 @@ export default function WalletConnectProvider({
   const modalProps = React.useMemo((): RenderQrcodeModalProps => ({
     connectToWalletService,
     visible: state.visible,
-    walletServices: intermediateValue.walletServices,
+    walletServices,
     uri: state.uri,
     onDismiss,
   }), [
     state.visible,
     connectToWalletService,
-    intermediateValue,
+    walletServices,
     state.uri,
     onDismiss,
   ]);
@@ -259,10 +261,18 @@ export default function WalletConnectProvider({
       // Reset the connector.
       return {
         ...intermediateValue,
+        walletServices,
         connectToWalletService,
         connector: {
           ...connector,
           connect: async (opts?: ICreateSessionOptions) => {
+            if (!walletServices.length) {
+              // eslint-disable-next-line functional/no-throw-statement
+              throw new Error('Mobile registry not yet ready.');
+            } else if (walletServicesError) {
+              // eslint-disable-next-line functional/no-throw-statement
+              throw walletServicesError;
+            }
             const nextConnector = await createConnector(intermediateValue);
             setConnector(nextConnector);
             return nextConnector.connect(opts);
@@ -272,10 +282,19 @@ export default function WalletConnectProvider({
     }
     return {
       ...intermediateValue,
+      walletServices,
       connectToWalletService,
       connector,
     };
-  }, [intermediateValue, connectToWalletService, connector, state, setConnector]);
+  }, [
+    intermediateValue,
+    connectToWalletService,
+    connector,
+    state,
+    setConnector,
+    walletServices,
+    walletServicesError,
+  ]);
 
   return (
     <WalletConnectContext.Provider value={value}>
