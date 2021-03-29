@@ -9,7 +9,8 @@ const isNode = () =>
   typeof process.versions.node !== "undefined";
 
 function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
-  console.log(uri); // eslint-disable-line no-console
+  // eslint-disable-next-line no-console
+  console.log(uri);
   if (isNode()) {
     nodeLib.open(uri);
   } else {

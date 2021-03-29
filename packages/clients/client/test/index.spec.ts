@@ -11,8 +11,6 @@ describe("IsomorphicClient", function() {
     const connector = new IsomorphicClient({
       bridge: TEST_BRIDGE_URL,
     });
-    // console.log("instantiate"); // eslint-disable-line no-console
-
     expect(!!connector).to.be.true;
     expect(connector.bridge).to.eql(TEST_BRIDGE_URL);
     return;

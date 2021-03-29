@@ -10,7 +10,7 @@ type State = {
 
 const defaultState: State = Object.freeze({
   data: [],
-  error: null,
+  error: undefined,
   loading: true,
 });
 
@@ -20,14 +20,15 @@ export default function useMobileRegistry(): State {
   React.useEffect(() => {
     (async () => {
       try {
-        const result = await fetch('https://registry.walletconnect.org/data/wallets.json');
+        const result = await fetch("https://registry.walletconnect.org/data/wallets.json");
         const data = await result.json();
         setState({
           data: Object.values(data) as readonly WalletService[],
-          error: null,
+          error: undefined,
           loading: false,
         });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error);
         setState({ ...defaultState, error, loading: false });
       }
