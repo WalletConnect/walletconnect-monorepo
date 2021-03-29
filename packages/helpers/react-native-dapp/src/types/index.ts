@@ -10,12 +10,33 @@ export enum ConnectorEvents {
 }
 
 export type WalletService = {
+  readonly id: string;
   readonly name: string;
-  readonly shortName: string;
-  readonly color: string;
-  readonly logo: string;
-  readonly universalLink: string;
-  readonly deepLink: string;
+  readonly homepage: string;
+  readonly chains: readonly string[];
+  readonly app: {
+    readonly browser: string;
+    readonly ios: string;
+    readonly android: string;
+    readonly mac: string;
+    readonly windows: string;
+    readonly linux: string;
+  };
+  readonly mobile: {
+    readonly native: string;
+    readonly universal: string;
+  };
+  readonly desktop: {
+    readonly native: string;
+    readonly universal: string;
+  };
+  readonly metadata: {
+    readonly shortName: string;
+    readonly colors: {
+      readonly primary: string;
+      readonly secondary: string;
+    };
+  };
 };
 
 export type WalletConnectQrcodeModal = {

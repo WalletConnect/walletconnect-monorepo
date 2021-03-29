@@ -39,7 +39,6 @@
   },
   "dependencies": {
     "@walletconnect/client": "^1.4.0",
-    "@walletconnect/mobile-registry": "^1.4.0",
     "@walletconnect/types": "^1.4.0",
     "@walletconnect/utils": "^1.4.0",
     "keyvaluestorage": "0.7.1",

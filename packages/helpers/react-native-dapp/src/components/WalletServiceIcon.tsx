@@ -9,6 +9,7 @@ export type WalletServiceIconProps = {
   readonly height: number;
   readonly walletService: WalletService;
   readonly connectToWalletService: (walletService: WalletService) => unknown;
+  readonly size?: 'sm' | 'md' | 'lg'
 };
 
 const styles = StyleSheet.create({
@@ -32,7 +33,11 @@ export default function WalletServiceIcon({
   height,
   walletService,
   connectToWalletService,
+  size = 'md'
 }: WalletServiceIconProps): JSX.Element {
+  const uri = React.useMemo(() => (
+    `https://registry.walletconnect.org/logo/${size}/${walletService.id}.jpeg`
+  ), [walletService, size]);
   const onPress = React.useCallback(() => (
     connectToWalletService(walletService)
   ), [connectToWalletService, walletService]);
@@ -52,7 +57,7 @@ export default function WalletServiceIcon({
             height: height * 0.6,
           },
         ]}
-        source={{ uri: walletService.logo }}
+        source={{ uri }}
       />
       <Text
         style={[styles.title, styles.fullWidth]}
