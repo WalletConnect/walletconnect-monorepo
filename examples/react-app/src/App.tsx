@@ -4,7 +4,7 @@ import styled from "styled-components";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
-import { getAppMetadata } from "@walletconnect/utils";
+import { ERROR, getAppMetadata, getError } from "@walletconnect/utils";
 import * as encUtils from "enc-utils";
 import { BigNumber } from "ethers";
 
@@ -247,7 +247,7 @@ class App extends React.Component<any, any> {
     }
     await this.state.client.disconnect({
       topic: this.state.session.topic,
-      reason: { code: 6000, message: "User disconnected session" },
+      reason: getError(ERROR.USER_DISCONNECTED),
     });
   };
 

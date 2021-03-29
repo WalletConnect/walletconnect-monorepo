@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-v2-react-app",
-  "version": "2.0.0-alpha",
+  "version": "2.0.0-alpha.34",
   "private": true,
   "keywords": [
     "walletconnect",
@@ -38,10 +38,10 @@
     "@types/react": "^16.9.53",
     "@types/react-dom": "^16.9.8",
     "@types/styled-components": "^5.1.3",
-    "@walletconnect/client": "file:../../packages/client",
+    "@walletconnect/client": "^2.0.0-alpha.34",
     "@walletconnect/qrcode-modal": "^2.0.0-alpha.20",
-    "@walletconnect/types": "file:../../packages/types",
-    "@walletconnect/utils": "file:../../packages/utils",
+    "@walletconnect/types": "^2.0.0-alpha.34",
+    "@walletconnect/utils": "^2.0.0-alpha.34",
     "axios": "^0.21.1",
     "blockies-ts": "^1.0.0",
     "caip-api": "^1.4.6",

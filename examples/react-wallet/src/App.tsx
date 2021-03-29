@@ -4,7 +4,7 @@ import KeyValueStorage from "keyvaluestorage";
 import Wallet from "caip-wallet";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import { JsonRpcResponse, formatJsonRpcError, formatJsonRpcRequest } from "@json-rpc-tools/utils";
-import { getAppMetadata } from "@walletconnect/utils";
+import { ERROR, getAppMetadata, getError } from "@walletconnect/utils";
 import { SessionTypes } from "@walletconnect/types";
 
 import Card from "./components/Card";
@@ -330,7 +330,7 @@ class App extends React.Component<{}> {
     }
     await this.state.client.disconnect({
       topic,
-      reason: { code: 6000, message: "User disconnected session" },
+      reason: getError(ERROR.USER_DISCONNECTED),
     });
     await this.resetCard();
   };

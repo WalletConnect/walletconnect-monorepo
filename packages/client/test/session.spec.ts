@@ -2,7 +2,7 @@ import "mocha";
 import sinon from "sinon";
 import { KeyValueStorage } from "keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
-import { generateRandomBytes32 } from "@walletconnect/utils";
+import { ERROR, generateRandomBytes32, getError } from "@walletconnect/utils";
 
 import {
   expect,
@@ -255,7 +255,7 @@ describe("Session", function() {
   it("A fails to pings B after A deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const reason = { code: 6000, message: "Ending session early" };
+    const reason = getError(ERROR.USER_DISCONNECTED);
     await clients.a.disconnect({ topic, reason });
     await expect(clients.a.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
@@ -268,7 +268,7 @@ describe("Session", function() {
   it("A fails to pings B after B deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const reason = { code: 6000, message: "Ending session early" };
+    const reason = getError(ERROR.USER_DISCONNECTED);
     await clients.b.disconnect({ topic, reason });
     await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
