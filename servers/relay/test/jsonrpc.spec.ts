@@ -4,6 +4,8 @@ import JsonRpcProvider from "@json-rpc-tools/provider";
 import { RELAY_JSONRPC } from "relay-provider";
 
 import { TEST_RELAY_URL, getTestJsonRpc, Counter } from "./shared";
+import { JsonRpcPayload } from "@json-rpc-tools/types";
+import { formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 describe("JSON-RPC", () => {
   it("A can publish to B subscribed to same topic", async () => {
@@ -20,16 +22,27 @@ describe("JSON-RPC", () => {
 
     await Promise.all([
       new Promise<void>(async resolve => {
+        // subscribing to topics
         subscriptionB = await providerB.request(sub);
         resolve();
       }),
       new Promise<void>(resolve => {
+        // publishing to topics
         providerA.request(pub);
         resolve();
       }),
       new Promise<void>(resolve => {
+        // acknowledging received payloads
+        providerB.on("payload", (payload: JsonRpcPayload) => {
+          const response = formatJsonRpcResult(payload.id, true);
+          providerB.connection.send(response);
+          resolve();
+        });
+      }),
+      new Promise<void>(resolve => {
+        // evaluating incoming subscriptions
         providerB.on("message", ({ type, data }) => {
-          counterB.add();
+          counterB.tick();
           expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionB) expect(data.id).to.eql(subscriptionB);
           expect(data.data.topic).to.eql(pub.params.topic);
@@ -59,20 +72,32 @@ describe("JSON-RPC", () => {
 
     await Promise.all([
       new Promise<void>(async resolve => {
+        // subscribing to topics
         subscriptionB = await providerB.request(sub);
         resolve();
       }),
       new Promise<void>(async resolve => {
+        // subscribing to topics
         subscriptionC = await providerC.request(sub);
         resolve();
       }),
       new Promise<void>(resolve => {
+        // publishing to topics
         providerA.request(pub);
         resolve();
       }),
       new Promise<void>(resolve => {
+        // acknowledging received payloads
+        providerB.on("payload", (payload: JsonRpcPayload) => {
+          const response = formatJsonRpcResult(payload.id, true);
+          providerB.connection.send(response);
+          resolve();
+        });
+      }),
+      new Promise<void>(resolve => {
+        // evaluating incoming subscriptions
         providerB.on("message", ({ type, data }) => {
-          counterB.add();
+          counterB.tick();
           expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionB) expect(data.id).to.eql(subscriptionB);
           expect(data.data.topic).to.eql(pub.params.topic);
@@ -81,8 +106,17 @@ describe("JSON-RPC", () => {
         });
       }),
       new Promise<void>(resolve => {
+        // acknowledging received payloads
+        providerC.on("payload", (payload: JsonRpcPayload) => {
+          const response = formatJsonRpcResult(payload.id, true);
+          providerC.connection.send(response);
+          resolve();
+        });
+      }),
+      new Promise<void>(resolve => {
+        // evaluating incoming subscriptions
         providerC.on("message", ({ type, data }) => {
-          counterC.add();
+          counterC.tick();
           expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionC) expect(data.id).to.eql(subscriptionC);
           expect(data.data.topic).to.eql(pub.params.topic);
@@ -100,6 +134,7 @@ describe("JSON-RPC", () => {
     const providerA = new JsonRpcProvider(TEST_RELAY_URL);
     await providerA.connect();
 
+    // publishing to topics
     await providerA.request(pub);
 
     const providerB = new JsonRpcProvider(TEST_RELAY_URL);
@@ -111,12 +146,22 @@ describe("JSON-RPC", () => {
 
     await Promise.all([
       new Promise<void>(async resolve => {
+        // subscribing to topics
         subscriptionB = await providerB.request(sub);
         resolve();
       }),
       new Promise<void>(resolve => {
+        // acknowledging received payloads
+        providerB.on("payload", (payload: JsonRpcPayload) => {
+          const response = formatJsonRpcResult(payload.id, true);
+          providerB.connection.send(response);
+          resolve();
+        });
+      }),
+      new Promise<void>(resolve => {
+        // evaluating incoming subscriptions
         providerB.on("message", ({ type, data }) => {
-          counterB.add();
+          counterB.tick();
           expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionB) expect(data.id).to.eql(subscriptionB);
           expect(data.data.topic).to.eql(pub.params.topic);
@@ -137,12 +182,22 @@ describe("JSON-RPC", () => {
 
     await Promise.all([
       new Promise<void>(async resolve => {
+        // subscribing to topics
         subscriptionC = await providerC.request(sub);
         resolve();
       }),
       new Promise<void>(resolve => {
+        // acknowledging received payloads
+        providerC.on("payload", (payload: JsonRpcPayload) => {
+          const response = formatJsonRpcResult(payload.id, true);
+          providerC.connection.send(response);
+          resolve();
+        });
+      }),
+      new Promise<void>(resolve => {
+        // evaluating incoming subscriptions
         providerC.on("message", ({ type, data }) => {
-          counterC.add();
+          counterC.tick();
           expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
           if (subscriptionC) expect(data.id).to.eql(subscriptionC);
           expect(data.data.topic).to.eql(pub.params.topic);

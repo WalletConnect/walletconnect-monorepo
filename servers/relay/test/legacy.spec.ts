@@ -26,7 +26,7 @@ describe("Legacy", () => {
       }),
       new Promise<void>(resolve => {
         socketB.on("message", message => {
-          counterB.add();
+          counterB.tick();
           expect(message).to.eql(pub);
           resolve();
         });
@@ -63,14 +63,14 @@ describe("Legacy", () => {
       }),
       new Promise<void>(resolve => {
         socketB.on("message", message => {
-          counterB.add();
+          counterB.tick();
           expect(message).to.eql(pub);
           resolve();
         });
       }),
       new Promise<void>(resolve => {
         socketC.on("message", message => {
-          counterC.add();
+          counterC.tick();
           expect(message).to.eql(pub);
           resolve();
         });
@@ -100,7 +100,7 @@ describe("Legacy", () => {
       }),
       new Promise<void>(resolve => {
         socketB.on("message", message => {
-          counterB.add();
+          counterB.tick();
           expect(message).to.eql(pub);
           resolve();
         });
@@ -124,7 +124,7 @@ describe("Legacy", () => {
           resolve();
         }, 100);
         socketC.on("message", () => {
-          counterC.add();
+          counterC.tick();
           reject("Socket C received message after B");
         });
       }),

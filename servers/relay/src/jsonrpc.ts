@@ -28,6 +28,7 @@ import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { Subscription } from "./types";
+import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX } from "./constants";
 
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
@@ -35,6 +36,8 @@ import { WebSocketService } from "./ws";
 export class JsonRpcService {
   public subscription: SubscriptionService;
   public context = "jsonrpc";
+
+  private timeout = new Map<number, { counter: number; timeout: NodeJS.Timeout }>();
 
   constructor(
     public logger: Logger,
@@ -61,7 +64,7 @@ export class JsonRpcService {
   public async onRequest(socketId: string, request: JsonRpcRequest): Promise<void> {
     try {
       this.logger.info(`Incoming JSON-RPC Payload`);
-      this.logger.debug({ type: "payload", direction: "incoming", payload: request });
+      this.logger.debug({ type: "payload", direction: "incoming", payload: request, socketId });
 
       switch (request.method) {
         case RELAY_JSONRPC.waku.publish:
@@ -97,10 +100,10 @@ export class JsonRpcService {
 
   public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
     this.logger.info(`Incoming JSON-RPC Payload`);
-    this.logger.debug({ type: "payload", direction: "incoming", payload: response });
-    const result = await this.redis.getPendingRequest(response.id);
-    if (result) {
-      await this.redis.deletePendingRequest(response.id);
+    this.logger.debug({ type: "payload", direction: "incoming", payload: response, socketId });
+    const pending = await this.redis.getPendingRequest(response.id);
+    if (pending) {
+      this.onSubscriptionAcknowledged(socketId, response);
     }
   }
 
@@ -108,6 +111,10 @@ export class JsonRpcService {
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
+  }
+  private async onSubscriptionAcknowledged(socketId: string, payload: JsonRpcPayload) {
+    await this.redis.deletePendingRequest(payload.id);
+    this.deleteTimeout(payload.id);
   }
 
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
@@ -192,8 +199,14 @@ export class JsonRpcService {
         },
       },
     );
+
     await this.redis.setPendingRequest(subscription.topic, request.id, message);
-    await this.socketSend(subscription.socketId, request);
+    try {
+      await this.socketSend(subscription.socketId, request);
+      this.setTimeout(subscription.socketId, request);
+    } catch (e) {
+      throw e;
+    }
   }
 
   private async socketSend(
@@ -205,7 +218,8 @@ export class JsonRpcService {
       this.logger.info(`Outgoing JSON-RPC Payload`);
       this.logger.debug({ type: "payload", direction: "outgoing", payload, socketId });
     } catch (e) {
-      this.onFailedPush(payload);
+      await this.onFailedPush(payload);
+      throw e;
     }
   }
 
@@ -217,5 +231,36 @@ export class JsonRpcService {
         await this.redis.setMessage(payload.params);
       }
     }
+  }
+
+  private setTimeout(socketId: string, request: JsonRpcRequest) {
+    if (this.timeout.has(request.id)) return;
+    const timeout = setTimeout(() => this.onTimeout(socketId, request), JSONRPC_RETRIAL_TIMEOUT);
+    this.timeout.set(request.id, { counter: 1, timeout });
+  }
+
+  private async onTimeout(socketId: string, request: JsonRpcRequest) {
+    const record = this.timeout.get(request.id);
+    if (typeof record === "undefined") return;
+    const counter = record.counter + 1;
+    if (counter < JSONRPC_RETRIAL_MAX) {
+      try {
+        await this.socketSend(socketId, request);
+        this.timeout.set(request.id, { counter, timeout: record.timeout });
+      } catch (e) {
+        // ignore error and consider as acknowledged
+        await this.onSubscriptionAcknowledged(socketId, request);
+      }
+    } else {
+      // stop trying and consider as acknowledged
+      await this.onSubscriptionAcknowledged(socketId, request);
+    }
+  }
+
+  private deleteTimeout(id: number): void {
+    if (!this.timeout.has(id)) return;
+    const record = this.timeout.get(id);
+    if (typeof record === "undefined") return;
+    clearTimeout(record.timeout);
   }
 }
