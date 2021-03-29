@@ -197,21 +197,21 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.timeout.set(topic, timeout);
   }
 
-  public deleteTimeout(topic: string): void {
+  private deleteTimeout(topic: string): void {
     if (!this.timeout.has(topic)) return;
     const timeout = this.timeout.get(topic);
     if (typeof timeout === "undefined") return;
     clearTimeout(timeout);
   }
 
-  public resetTimeout(): void {
+  private resetTimeout(): void {
     this.timeout.forEach(timeout => clearTimeout(timeout));
     this.timeout.clear();
   }
 
   private onTimeout(topic: string): void {
     this.deleteTimeout(topic);
-    this.delete(topic, { code: 3000, message: "Expired" });
+    this.delete(topic, getError(ERROR.EXPIRED, { context: this.getSubscriptionContext() }));
   }
 
   private async persist() {
