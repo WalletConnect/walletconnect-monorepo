@@ -13,75 +13,96 @@ import {
   JsonRpcResult,
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
+import { hexToNumber } from "enc-utils";
 
-export interface WakuPeers {
-  multiaddr: string;
-  protocol: string;
-  connected: boolean;
-}
-
-export interface WakuMessage {
-  payload: Uint8Array;
-  contentTopic: number;
-  version: number;
-  proof: Uint8Array;
-}
+import config from "./config";
+import { WakuMessage, WakuPeers } from "./types";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
   public payloads = new Map<number, JsonRpcResult>();
+  public topic: string;
 
-  constructor(public logger: Logger, nodeUrl: string) {
+  constructor(public logger: Logger, nodeUrl: string, topic = config.wcTopic) {
     super(nodeUrl);
+    this.topic = topic;
     this.logger = generateChildLogger(logger, `${this.context}@${nodeUrl}`);
     this.initialize();
   }
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
-    this.open();
+    this.open().catch(console.error);
     this.on("payload", (payload: JsonRpcPayload) => {
       if (isJsonRpcError(payload)) {
         this.logger.error(payload.error);
       }
-      this.logger.trace({ method: "New Payload", payload });
+      this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
+    this.subscribe(this.topic);
   }
 
-  public async postMessage(topic: string, message: string) {
+  public async postMessage(payload: string, contentTopic?: number) {
+    let jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
+      this.topic,
+      {
+        payload,
+        contentTopic,
+      },
+    ]);
     this.logger.debug("Posting Waku Message");
-    this.logger.trace({ type: "method", method: "postMessages", topic, message });
-    this.send(
-      formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
-        topic,
-        {
-          payload: message,
-        },
-      ]),
-    );
+    this.logger.trace({ type: "method", method: "postMessages", payload: jsonPayload });
+    this.send(jsonPayload);
   }
-  public getMessages(topics: Array<string>): Promise<Array<WakuMessage>> {
-    let payload = formatJsonRpcRequest("get_waku_v2_relay_v1_messages", topics);
-    this.logger.debug("Getting Messages");
-    this.logger.trace({ type: "method", method: "getMessages", topics });
+
+  public getContentMessages(topic: number): Promise<Array<WakuMessage>> {
+    let payload = formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [topic]);
+    this.logger.debug("Getting Content Messages");
+    this.logger.trace({ type: "method", method: "getContentMessages", payload });
     this.send(payload);
     return new Promise((resolve, reject) => {
       this.on(payload.id.toString(), (response: JsonRpcResponse) => {
         if (isJsonRpcError(response)) {
-          this.logger.error(response.error);
           reject(response.error);
         }
         resolve((response as JsonRpcResult<Array<WakuMessage>>).result);
       });
     });
   }
-  public async subscribe(topics: Array<string>) {
-    let payload = formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [topics]);
-    this.logger.debug("Subscribing to Waku Topic");
-    this.logger.trace({ type: "method", method: "subscribe", topics });
+
+  public getMessages(): Promise<Array<WakuMessage>> {
+    let payload = formatJsonRpcRequest("get_waku_v2_relay_v1_messages", [this.topic]);
+    this.logger.debug("Getting Content Messages");
+    this.logger.trace({ type: "method", method: "getContentMessages", payload });
+    this.send(payload);
+    return new Promise((resolve, reject) => {
+      this.on(payload.id.toString(), (response: JsonRpcResponse) => {
+        if (isJsonRpcError(response)) {
+          reject(response.error);
+        }
+        resolve((response as JsonRpcResult<Array<WakuMessage>>).result);
+      });
+    });
+  }
+
+  public async contentSubscribe(contentFilters: number) {
+    let payload = formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
+      [{ topics: [contentFilters] }],
+      this.topic,
+    ]);
+    this.logger.debug("Subscribing to Waku ContentTopic");
+    this.logger.trace({ type: "method", method: "contentSubscribe", payload });
     this.send(payload);
   }
+
+  public async subscribe(topic: string) {
+    let payload = formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [[topic]]);
+    this.logger.debug("Subscribing to Waku Topic");
+    this.logger.trace({ type: "method", method: "subscribe", payload });
+    this.send(payload);
+  }
+
   public unsubscribe(topic: string) {
     this.send(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscriptions", [topic]));
   }

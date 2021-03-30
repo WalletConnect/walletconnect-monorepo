@@ -17,6 +17,7 @@ const redis = {
 };
 const mode = (process.env.RELAY_MODE || "any") as RelayModes.All;
 const wakuUrl = "http://127.0.0.1:8546";
+const wcTopic = "6d9b0b4b9994e8a6afbd3dc3ed983cd51c755afb27cd1dc7825ef59c134a39f7";
 
 export default {
   env,
@@ -26,6 +27,7 @@ export default {
   redis,
   mode,
   wakuUrl,
+  wcTopic,
   REDIS_MAX_TTL,
   GITHASH,
   VERSION,
