@@ -8,14 +8,15 @@ import { hexToBuffer, hexToBinary, hexToNumber, arrayToHex } from "enc-utils";
 import { generateRandomBytes32 } from "../src/utils";
 
 import { WAKU_TOPIC, TEST_WAKU_URL } from "./shared";
-
-let testMessage = "48656c6c6f20576f726c6421";
+import { JsonRpcResult } from "@json-rpc-tools/utils";
 
 describe("Waku", () => {
   // We can use a single waku node with two WakuService
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
   let contentTopic: number;
+  let testMessage: string;
+  let stringTopic: string;
   before(() => {
     wakuOne = new WakuService(pino(getDefaultLoggerOptions({ level: "trace" })), TEST_WAKU_URL);
     wakuTwo = new WakuService(
@@ -24,52 +25,56 @@ describe("Waku", () => {
     );
   });
   beforeEach(() => {
+    testMessage = generateRandomBytes32();
     contentTopic = hexToBuffer(generateRandomBytes32()).readUInt32BE();
+    stringTopic = generateRandomBytes32();
   });
   it("Waku node has peers", async () => {
     let peers = await wakuOne.getPeers();
     expect(peers.length).to.be.greaterThan(0);
   });
-  it("It polls for messages", async () => {});
-  it.only("Receives a message from waku", function(done) {
+  xit("Receives a content message from two waku with filter api", function(done) {
     this.timeout(10000);
     wakuTwo.contentSubscribe(contentTopic);
-    wakuOne.contentSubscribe(contentTopic);
     setTimeout(() => {
-      wakuOne.postMessage(testMessage, contentTopic);
-    }, 500);
+      wakuOne.postMessage(testMessage, stringTopic);
+    }, 250);
     setTimeout(() => {
       wakuTwo.getContentMessages(contentTopic).then(m => {
         console.log("Message: ", m);
-        done();
       });
-    }, 2000);
+    }, 500);
     setTimeout(() => {
-      wakuTwo.getMessages().then(m => {
+      wakuTwo.getMessages(wakuTwo.namespace).then(m => {
         console.log("Message two: ", m);
         done();
+        expect(m.length).to.greaterThan(0);
+        expect(arrayToHex(m[0].payload)).to.equal(testMessage);
       });
-    }, 2000);
-
-    /*
-    expect(true).to.be.true;
-    expect(messages.length).to.greaterThan(0);
-    expect(arrayToHex(messages[0].payload)).to.equal(testMessage);
-    */
+    }, 600);
   });
 
-  it("Multiple waku nodes", function(done) {
-    // TODO maybe conver these timeouts to a promise.all
-    this.timeout(5000);
-    wakuTwo.contentSubscribe(contentTopic);
-    setTimeout(async () => {
-      await wakuOne.postMessage(testMessage, contentTopic);
-    }, 500);
-    setTimeout(async () => {
-      let messages = await wakuTwo.getContentMessages(contentTopic);
-      expect(messages.length).to.be.greaterThan(0);
+  it("Receive message from two waku nodes with relay api", function(done) {
+    wakuTwo.subscribe(stringTopic);
+    setTimeout(() => {
+      wakuOne.postMessage(testMessage, stringTopic);
+    }, 20);
+    setTimeout(() => {
+      wakuTwo.getMessages(stringTopic).then(m => {
+        expect(m.length).to.be.greaterThan(0);
+        expect(arrayToHex(m[0].payload)).to.equal(testMessage);
+        done();
+      });
+    }, 100);
+  });
+  it.only("It polls for messages", function(done) {
+    setTimeout(() => {
+      wakuTwo.postMessage(testMessage, stringTopic);
+    }, 1000);
+    wakuOne.onNewTopicMessage(stringTopic, (messages: WakuMessage[]) => {
+      expect(messages.length).to.equal(1);
       expect(arrayToHex(messages[0].payload)).to.equal(testMessage);
       done();
-    }, 1000);
+    });
   });
 });
