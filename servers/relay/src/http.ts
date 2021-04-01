@@ -9,7 +9,6 @@ import config from "./config";
 import register from "./metrics";
 import { assertType } from "./utils";
 import { RedisService } from "./redis";
-import { WakuService } from "./waku";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
@@ -18,7 +17,6 @@ export class HttpService {
   public app: FastifyInstance;
   public logger: Logger;
   public redis: RedisService;
-  public waku: WakuService;
 
   public ws: WebSocketService;
   public notification: NotificationService;
@@ -44,7 +42,6 @@ export class HttpService {
         help: "shows how much the /hello has been called",
       }),
     };
-    this.waku = new WakuService(this.logger, config.wakuUrl);
     this.initialize();
   }
 

@@ -23,18 +23,21 @@ import {
   parseUnsubscribeRequest,
 } from "relay-provider";
 import { generateChildLogger } from "@pedrouid/pino-utils";
+import { arrayToHex } from "enc-utils";
 
 import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
-import { Subscription } from "./types";
+import { WakuMessage, Subscription } from "./types";
 import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX } from "./constants";
 
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
+import { WakuService } from "./waku";
 
 export class JsonRpcService {
   public subscription: SubscriptionService;
+  public waku: WakuService;
   public context = "jsonrpc";
 
   private timeout = new Map<number, { counter: number; timeout: NodeJS.Timeout }>();
@@ -48,6 +51,8 @@ export class JsonRpcService {
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
+    this.waku = new WakuService(this.logger, config.wakuUrl);
+
     this.notification = notification;
     this.subscription = new SubscriptionService(this.logger, this.redis, this.ws);
     this.initialize();
@@ -131,9 +136,12 @@ export class JsonRpcService {
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", socketId, params });
 
+    await this.waku.postMessage(params.message, params.topic);
     await this.notification.push(params.topic);
     await this.redis.setMessage(params);
     await this.searchSubscriptions(socketId, params);
+
+    await this.waku.postMessage(params.message, params.topic);
 
     this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
@@ -145,6 +153,27 @@ export class JsonRpcService {
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
+
+    await this.waku.onNewTopicMessage(params.topic, (messages: WakuMessage[]) => {
+      console.log("Received Messages in JSON-RPC", params.topic, arrayToHex(messages[0].payload));
+      messages.forEach(async (m: WakuMessage) => {
+        let data: RelayJsonRpc.PublishParams = {
+          topic: params.topic,
+          message: arrayToHex(m.payload),
+          ttl: config.REDIS_MAX_TTL,
+        };
+        let publishParams: RelayJsonRpc.PublishParams = {
+          topic: params.topic,
+          message: arrayToHex(m.payload),
+          ttl: config.REDIS_MAX_TTL,
+        };
+        await this.notification.push(params.topic);
+        await this.redis.setMessage(publishParams);
+        await this.searchSubscriptions(socketId, publishParams);
+
+        this.socketSend(socketId, formatJsonRpcResult(request.id, true));
+      });
+    });
   }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {

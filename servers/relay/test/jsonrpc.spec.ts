@@ -209,4 +209,44 @@ describe("JSON-RPC", () => {
 
     expect(counterC.value).to.eql(1);
   });
+  it.only("A can publish to B through two relays", async function(done) {
+    this.timeout(10000);
+    const { pub, sub } = getTestJsonRpc();
+    const providerA = new JsonRpcProvider(TEST_RELAY_URL);
+    await providerA.connect();
+    const providerB = new JsonRpcProvider(TEST_RELAY_URL.replace("5555", "5556"));
+    await providerB.connect();
+
+    let subscriptionB: string;
+
+    const counterB = new Counter();
+
+    setTimeout(async () => {
+      console.log("sending sub");
+      subscriptionB = await providerB.request(sub);
+    }, 500);
+    setTimeout(async () => {
+      console.log("sending pub");
+      providerA.request(pub);
+    }, 1000);
+    setTimeout(async () => {
+      console.log("received payload");
+      providerB.on("payload", (payload: JsonRpcPayload) => {
+        const response = formatJsonRpcResult(payload.id, true);
+        providerB.connection.send(response);
+      });
+    }, 1500);
+    setTimeout(async () => {
+      console.log("Sending message to A");
+      providerB.on("message", ({ type, data }) => {
+        counterB.tick();
+        expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
+        if (subscriptionB) expect(data.id).to.eql(subscriptionB);
+        expect(data.data.topic).to.eql(pub.params.topic);
+        expect(data.data.message).to.eql(pub.params.message);
+        expect(counterB.value).to.eql(1);
+        done();
+      });
+    }, 2000);
+  });
 });

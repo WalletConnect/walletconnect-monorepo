@@ -1,5 +1,5 @@
-import { Logger } from "pino";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+import pino, { Logger } from "pino";
+import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
 import {
   JsonRpcResponse,
   JsonRpcRequest,
@@ -13,6 +13,8 @@ import {
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
 import { hexToNumber } from "enc-utils";
+import { Socket } from "./types";
+import { WebSocketService } from "./ws";
 
 import config from "./config";
 import { WakuMessage, WakuPeers } from "./types";
@@ -23,12 +25,13 @@ interface ListenCallback {
 
 export class WakuService extends HttpConnection {
   public context = "waku";
-  public namespace: string;
   public topics: string[] = [];
 
-  constructor(public logger: Logger, nodeUrl: string, namespace = config.wcTopic) {
+  constructor(public logger: Logger, nodeUrl: string, public namespace = config.wcTopic) {
     super(nodeUrl);
     this.namespace = namespace;
+
+    pino(getDefaultLoggerOptions({ level: "error" }));
     this.logger = generateChildLogger(logger, `${this.context}@${nodeUrl}`);
     this.initialize();
   }
@@ -63,8 +66,11 @@ export class WakuService extends HttpConnection {
 
   public getMessages(topic: string): Promise<WakuMessage[]> {
     let payload = formatJsonRpcRequest("get_waku_v2_relay_v1_messages", [topic]);
+
+    /*
     this.logger.debug("Getting Messages");
     this.logger.trace({ type: "method", method: "getMessages", payload });
+    */
     this.send(payload);
     return new Promise((resolve, reject) => {
       this.once(payload.id.toString(), (response: JsonRpcResponse) => {
@@ -76,7 +82,7 @@ export class WakuService extends HttpConnection {
     });
   }
 
-  public async contentSubscribe(contentFilters: number) {
+  public async contentSubscribe(contentFilters: number): Promise<void> {
     let payload = formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
       [{ topics: [contentFilters] }],
       this.namespace,
@@ -84,6 +90,14 @@ export class WakuService extends HttpConnection {
     this.logger.debug("Subscribing to Waku ContentTopic");
     this.logger.trace({ type: "method", method: "contentSubscribe", payload });
     this.send(payload);
+    return new Promise((resolve, reject) => {
+      this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+        if (isJsonRpcError(response)) {
+          reject(response.error);
+        }
+        resolve();
+      });
+    });
   }
 
   public subscribe(topic: string): Promise<void> {
@@ -135,15 +149,15 @@ export class WakuService extends HttpConnection {
       if (isJsonRpcError(payload)) {
         this.logger.error(payload.error);
       }
-      this.logger.trace({ method: "New Response Payload", payload });
+      //this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
     setInterval(() => this.poll(), 500);
   }
 
   private poll() {
-    this.logger.debug("Polling all topics for messages");
-    this.logger.trace({ method: "poll", topics: this.topics });
+    this.logger.silent;
+    //this.logger.trace({ method: "poll", topics: this.topics });
     this.topics.forEach(async t => {
       try {
         let messages = await this.getMessages(t);

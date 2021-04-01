@@ -18,9 +18,9 @@ describe("Waku", () => {
   let testMessage: string;
   let stringTopic: string;
   before(() => {
-    wakuOne = new WakuService(pino(getDefaultLoggerOptions({ level: "trace" })), TEST_WAKU_URL);
+    wakuOne = new WakuService(pino(getDefaultLoggerOptions({ level: "error" })), TEST_WAKU_URL);
     wakuTwo = new WakuService(
-      pino(getDefaultLoggerOptions({ level: "trace" })),
+      pino(getDefaultLoggerOptions({ level: "error" })),
       TEST_WAKU_URL.replace("8546", "8547"),
     );
   });
@@ -33,7 +33,7 @@ describe("Waku", () => {
     let peers = await wakuOne.getPeers();
     expect(peers.length).to.be.greaterThan(0);
   });
-  xit("Receives a content message from two waku with filter api", function(done) {
+  xit("Receives a content message from two waku with filter api of waku", function(done) {
     this.timeout(10000);
     wakuTwo.contentSubscribe(contentTopic);
     setTimeout(() => {
@@ -54,7 +54,7 @@ describe("Waku", () => {
     }, 600);
   });
 
-  it("Receive message from two waku nodes with relay api", function(done) {
+  it("Receive message from two waku nodes with relay api of waku", function(done) {
     wakuTwo.subscribe(stringTopic);
     setTimeout(() => {
       wakuOne.postMessage(testMessage, stringTopic);
@@ -67,14 +67,14 @@ describe("Waku", () => {
       });
     }, 100);
   });
-  it.only("It polls for messages", function(done) {
-    setTimeout(() => {
-      wakuTwo.postMessage(testMessage, stringTopic);
-    }, 1000);
+  it("It polls for messages", function(done) {
     wakuOne.onNewTopicMessage(stringTopic, (messages: WakuMessage[]) => {
       expect(messages.length).to.equal(1);
       expect(arrayToHex(messages[0].payload)).to.equal(testMessage);
       done();
     });
+    setTimeout(() => {
+      wakuTwo.postMessage(testMessage, stringTopic);
+    }, 20);
   });
 });
