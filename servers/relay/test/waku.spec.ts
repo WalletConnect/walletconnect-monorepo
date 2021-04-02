@@ -3,8 +3,11 @@ import { assert, expect } from "chai";
 import pino from "pino";
 import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 import { WakuService } from "../src/waku";
+import { JsonRpcService } from "../src/jsonrpc";
 import { RedisService } from "../src/redis";
 import { WakuMessage } from "../src/types";
+import { NotificationService } from "../src/notification";
+import { WebSocketService } from "../src/ws";
 import { hexToBuffer, hexToBinary, hexToNumber, arrayToHex } from "enc-utils";
 import { generateRandomBytes32 } from "../src/utils";
 
@@ -14,15 +17,17 @@ import { JsonRpcResult } from "@json-rpc-tools/utils";
 describe("Waku", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
-  let redis: RedisService;
   let contentTopic: number;
   let testMessage: string;
   let stringTopic: string;
   before(() => {
     let logger = pino(getDefaultLoggerOptions({ level: "error" }));
-    redis = new RedisService(logger);
-    wakuOne = new WakuService(logger, redis, TEST_WAKU_URL);
-    wakuTwo = new WakuService(logger, redis, TEST_WAKU_URL.replace("8546", "8547"));
+    let redis = new RedisService(logger);
+    let notification = new NotificationService(logger, redis);
+    let ws = new WebSocketService(logger, redis, notification);
+    let jsonrpc = new JsonRpcService(logger, redis, ws, notification);
+    wakuOne = new WakuService(logger, jsonrpc, TEST_WAKU_URL);
+    wakuTwo = new WakuService(logger, jsonrpc, TEST_WAKU_URL.replace("8546", "8547"));
   });
   beforeEach(() => {
     testMessage = generateRandomBytes32();
@@ -49,36 +54,36 @@ describe("Waku", () => {
         console.log("Message two: ", m);
         done();
         expect(m.length).to.greaterThan(0);
-        expect(arrayToHex(m[0].payload)).to.equal(testMessage);
+        expect(m[0].payload).to.equal(testMessage);
       });
     }, 600);
   });
 
-  it("Receive message from two waku nodes with relay api of waku", function(done) {
+  it.only("Receive message from two waku nodes with relay api of waku", function(done) {
     wakuTwo.subscribe(stringTopic);
     setTimeout(() => {
       wakuOne.postMessage(testMessage, stringTopic);
-    }, 20);
+    }, 75);
     setTimeout(() => {
       wakuTwo.getMessages(stringTopic).then(m => {
         expect(m.length).to.be.greaterThan(0);
-        expect(arrayToHex(m[0].payload)).to.equal(testMessage);
+        expect(m[0].payload).to.equal(testMessage);
         done();
       });
-    }, 100);
+    }, 200);
   });
   it("It polls for messages", function(done) {
     this.timeout(5000);
     wakuOne.onNewTopicMessage(stringTopic, (messages: WakuMessage[]) => {
       expect(messages.length).to.equal(1);
-      expect(arrayToHex(messages[0].payload)).to.equal(testMessage);
+      expect(messages[0].payload).to.equal(testMessage);
       done();
     });
     setTimeout(() => {
       wakuTwo.postMessage(testMessage, stringTopic);
     }, 1000);
   });
-  it.only("Gets Historical waku messages from the waku store api", function(done) {
+  xit("Gets Historical waku messages from the waku store api", function(done) {
     let messages: string[] = new Array<string>(5);
     for (let i = 0; i < messages.length; i++) {
       messages[i] = generateRandomBytes32();

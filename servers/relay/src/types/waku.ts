@@ -11,6 +11,13 @@ export interface WakuMessage {
   proof: Uint8Array;
 }
 
+export interface WakuMessageResponse {
+  payload: Uint8Array;
+  contentTopic: number;
+  version: number;
+  proof: Uint8Array;
+}
+
 export interface Index {
   digest: string;
   receivedTime: number;

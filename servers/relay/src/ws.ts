@@ -10,7 +10,6 @@ import register from "./metrics";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
-import { WakuService } from "./waku";
 import { Socket } from "./types";
 import {
   generateRandomBytes32,

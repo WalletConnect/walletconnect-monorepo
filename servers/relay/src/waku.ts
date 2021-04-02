@@ -6,13 +6,14 @@ import {
   JsonRpcPayload,
   formatJsonRpcRequest,
   JsonRpcResult,
+  isJsonRpcResult,
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
 import { JsonRpcService } from "./jsonrpc";
 
 import config from "./config";
-import { WakuMessage, WakuPeers, PagingOptions } from "./types";
+import { WakuMessageResponse, WakuMessage, WakuPeers, PagingOptions } from "./types";
 
 interface ListenCallback {
   (messages: WakuMessage[]): void;
@@ -52,26 +53,12 @@ export class WakuService extends HttpConnection {
     this.send(payload);
     return new Promise((resolve, reject) => {
       this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+        if (isJsonRpcResult(response)) {
+          resolve(this.parseWakuMessage(response));
+        }
         if (isJsonRpcError(response)) {
           reject(response.error);
         }
-        let messages: WakuMessage[] = [];
-        (response as JsonRpcResult<
-          Array<{
-            payload: Uint8Array;
-            contentTopic: number;
-            version: number;
-            proof: Uint8Array;
-          }>
-        >).result.forEach(m => {
-          messages.push({
-            payload: arrayToHex(m.payload),
-            contentTopic: m.contentTopic,
-            version: m.version,
-            proof: m.proof,
-          });
-        });
-        resolve(messages);
       });
     });
   }
@@ -89,23 +76,9 @@ export class WakuService extends HttpConnection {
         if (isJsonRpcError(response)) {
           reject(response.error);
         }
-        let messages: WakuMessage[] = [];
-        (response as JsonRpcResult<
-          Array<{
-            payload: Uint8Array;
-            contentTopic: number;
-            version: number;
-            proof: Uint8Array;
-          }>
-        >).result.forEach(m => {
-          messages.push({
-            payload: arrayToHex(m.payload),
-            contentTopic: m.contentTopic,
-            version: m.version,
-            proof: m.proof,
-          });
-        });
-        resolve(messages);
+        if (isJsonRpcResult(response)) {
+          resolve(this.parseWakuMessage(response));
+        }
       });
     });
   }
@@ -190,18 +163,29 @@ export class WakuService extends HttpConnection {
       //this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
-    setInterval(() => this.poll(), 500);
+    setInterval(() => this.poll(), 10);
   }
 
+  private parseWakuMessage(result: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
+    let messages: WakuMessage[] = [];
+    result.result.forEach(m => {
+      messages.push({
+        payload: arrayToHex(m.payload),
+        contentTopic: m.contentTopic,
+        version: m.version,
+        proof: m.proof,
+      });
+    });
+    return messages;
+  }
   private poll() {
-    this.logger.silent;
     //this.logger.trace({ method: "poll", topics: this.topics });
-    this.topics.forEach(async t => {
+    this.topics.forEach(async topic => {
       try {
-        let messages = await this.getMessages(t);
+        let messages = await this.getMessages(topic);
         if (messages && messages.length) {
           this.logger.trace({ method: "poll", messages: messages });
-          this.events.emit(t, messages as WakuMessage[]);
+          this.events.emit(topic, messages);
         }
       } catch (e) {
         throw e;
