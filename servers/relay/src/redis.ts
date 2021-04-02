@@ -27,9 +27,9 @@ export class RedisService {
       const key = `message:${topic}`;
       const hash = sha256(message);
       const val = `${hash}:${message}`;
-      this.client.sadd(key, val, (err: Error, res) => {
+      this.client.sadd(key, val, (err: Error) => {
         if (err) return reject(err);
-        this.client.expire(key, ttl, (err: Error, res) => {
+        this.client.expire(key, ttl, (err: Error) => {
           if (err) return reject(err);
           resolve();
         });
@@ -37,11 +37,24 @@ export class RedisService {
     });
   }
 
+  public async getMessage(topic: string, hash: string): Promise<string> {
+    this.logger.debug(`Getting Message`);
+    this.logger.trace({ type: "method", method: "getMessage", topic });
+    return new Promise((resolve, reject) => {
+      this.sscan(`message:${topic}`, "MATCH", `${hash}:*`)
+        .then((result: string[]) => {
+          if (result.length) resolve(result[0].split(":")[1]);
+          resolve("");
+        })
+        .catch(reject);
+    });
+  }
+
   public getMessages(topic: string): Promise<string[]> {
     return new Promise((resolve, reject) => {
       this.logger.debug(`Getting Message`);
       this.logger.trace({ type: "method", method: "getMessage", topic });
-      this.client.smembers(`message:${topic}`, (err: Error, res) => {
+      this.client.smembers(`message:${topic}`, (err: Error, res: string[]) => {
         if (err) return reject(err);
         const messages: string[] = [];
         res.map((m: string) => {
@@ -56,17 +69,16 @@ export class RedisService {
     return new Promise((resolve, reject) => {
       this.logger.debug(`Deleting Message`);
       this.logger.trace({ type: "method", method: "deleteMessage", topic });
-      this.client.sscan(`message:${topic}`, "0", "MATCH", `${hash}:*`, (err: Error, res) => {
-        if (err) return reject(err);
-        if (res) {
-          this.client.srem(`message:${topic}`, res[0], (err: Error, res) => {
-            if (err) return reject(err);
-            resolve();
-          });
-          return;
-        }
-        resolve();
-      });
+      this.sscan(`message:${topic}`, "MATCH", `${hash}:*`)
+        .then((res: string[]) => {
+          if (res.length) {
+            this.client.srem(`message:${topic}`, res[0], (err: Error) => {
+              if (err) reject(err);
+              resolve();
+            });
+          }
+        })
+        .catch(reject);
     });
   }
 
@@ -173,5 +185,22 @@ export class RedisService {
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
+  }
+
+  // This function properly handles the cursor that redis returns in sscan.
+  // This is to make sure that all set members get read.
+  private sscan(key: string, match = "", pattern = ""): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      let messages: string[] = [];
+      let recursiveCallback = (err: Error, result: [string, string[]]) => {
+        if (err) return reject(err);
+        result[1].map((m: string) => {
+          if (m != null) messages.push(m);
+        });
+        if (result[0] == "0") resolve(messages);
+        this.client.sscan(key, result[0], match, pattern, recursiveCallback);
+      };
+      this.client.sscan(key, "0", match, pattern, recursiveCallback);
+    });
   }
 }
