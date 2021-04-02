@@ -5,7 +5,7 @@ export interface WakuPeers {
 }
 
 export interface WakuMessage {
-  payload: Uint8Array;
+  payload: string;
   contentTopic: number;
   version: number;
   proof: Uint8Array;

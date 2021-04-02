@@ -1,21 +1,15 @@
 import pino, { Logger } from "pino";
-import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
+import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   JsonRpcResponse,
-  JsonRpcRequest,
   isJsonRpcError,
-  isJsonRpcRequest,
   JsonRpcPayload,
-  formatJsonRpcResult,
   formatJsonRpcRequest,
-  formatJsonRpcError,
   JsonRpcResult,
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
-import { hexToNumber } from "enc-utils";
-import { Socket } from "./types";
-//import { JsonRpcService } from "./jsonrpc";
-import { RedisService } from "./redis";
+import { arrayToHex } from "enc-utils";
+import { JsonRpcService } from "./jsonrpc";
 
 import config from "./config";
 import { WakuMessage, WakuPeers, PagingOptions } from "./types";
@@ -28,19 +22,12 @@ export class WakuService extends HttpConnection {
   public context = "waku";
   public topics: string[] = [];
   public logger: Logger;
-  //public jsonrpc: JsonRpcService;
-  public redis: RedisService;
+  public jsonrpc: JsonRpcService;
   public namespace = config.wcTopic;
 
-  constructor(
-    logger: Logger,
-    //jsonrpc: JsonRpcService,
-    redis: RedisService,
-    nodeUrl: string,
-  ) {
+  constructor(logger: Logger, jsonrpc: JsonRpcService, nodeUrl: string) {
     super(nodeUrl);
-    //this.jsonrpc = jsonrpc;
-    this.redis = redis;
+    this.jsonrpc = jsonrpc;
     this.logger = generateChildLogger(logger, `${this.context}@${nodeUrl}`);
     this.initialize();
   }
@@ -68,7 +55,23 @@ export class WakuService extends HttpConnection {
         if (isJsonRpcError(response)) {
           reject(response.error);
         }
-        resolve((response as JsonRpcResult<WakuMessage[]>).result);
+        let messages: WakuMessage[] = [];
+        (response as JsonRpcResult<
+          Array<{
+            payload: Uint8Array;
+            contentTopic: number;
+            version: number;
+            proof: Uint8Array;
+          }>
+        >).result.forEach(m => {
+          messages.push({
+            payload: arrayToHex(m.payload),
+            contentTopic: m.contentTopic,
+            version: m.version,
+            proof: m.proof,
+          });
+        });
+        resolve(messages);
       });
     });
   }
@@ -86,7 +89,23 @@ export class WakuService extends HttpConnection {
         if (isJsonRpcError(response)) {
           reject(response.error);
         }
-        resolve((response as JsonRpcResult<WakuMessage[]>).result);
+        let messages: WakuMessage[] = [];
+        (response as JsonRpcResult<
+          Array<{
+            payload: Uint8Array;
+            contentTopic: number;
+            version: number;
+            proof: Uint8Array;
+          }>
+        >).result.forEach(m => {
+          messages.push({
+            payload: arrayToHex(m.payload),
+            contentTopic: m.contentTopic,
+            version: m.version,
+            proof: m.proof,
+          });
+        });
+        resolve(messages);
       });
     });
   }
