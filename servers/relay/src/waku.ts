@@ -14,10 +14,11 @@ import {
 import { HttpConnection } from "@json-rpc-tools/provider";
 import { hexToNumber } from "enc-utils";
 import { Socket } from "./types";
-import { WebSocketService } from "./ws";
+//import { JsonRpcService } from "./jsonrpc";
+import { RedisService } from "./redis";
 
 import config from "./config";
-import { WakuMessage, WakuPeers } from "./types";
+import { WakuMessage, WakuPeers, PagingOptions } from "./types";
 
 interface ListenCallback {
   (messages: WakuMessage[]): void;
@@ -26,12 +27,20 @@ interface ListenCallback {
 export class WakuService extends HttpConnection {
   public context = "waku";
   public topics: string[] = [];
+  public logger: Logger;
+  //public jsonrpc: JsonRpcService;
+  public redis: RedisService;
+  public namespace = config.wcTopic;
 
-  constructor(public logger: Logger, nodeUrl: string, public namespace = config.wcTopic) {
+  constructor(
+    logger: Logger,
+    //jsonrpc: JsonRpcService,
+    redis: RedisService,
+    nodeUrl: string,
+  ) {
     super(nodeUrl);
-    this.namespace = namespace;
-
-    pino(getDefaultLoggerOptions({ level: "error" }));
+    //this.jsonrpc = jsonrpc;
+    this.redis = redis;
     this.logger = generateChildLogger(logger, `${this.context}@${nodeUrl}`);
     this.initialize();
   }
@@ -118,6 +127,16 @@ export class WakuService extends HttpConnection {
   public unsubscribe(topic: string) {
     this.send(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscriptions", [topic]));
     this.topics = this.topics.filter(t => t !== topic);
+  }
+
+  // This won't work until the contenTopic is a string:
+  // https://github.com/status-im/nim-waku/issues/447
+  public getStoreMessages(topic: string) {
+    let pagingOptions: PagingOptions = {
+      pageSize: 10,
+      forward: true,
+    };
+    this.send(formatJsonRpcRequest("get_waku_v2_store_v1_message", [[0], [pagingOptions]]));
   }
 
   public async onNewTopicMessage(topic: string, cb: ListenCallback) {

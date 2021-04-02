@@ -10,3 +10,19 @@ export interface WakuMessage {
   version: number;
   proof: Uint8Array;
 }
+
+export interface Index {
+  digest: string;
+  receivedTime: number;
+}
+
+export interface PagingOptions {
+  pageSize: number;
+  cursor?: Index;
+  forward: boolean;
+}
+
+export interface StoreResponse {
+  messages: WakuMessage[];
+  pagingOptions?: PagingOptions;
+}
