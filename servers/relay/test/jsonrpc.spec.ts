@@ -5,7 +5,8 @@ import { RELAY_JSONRPC } from "relay-provider";
 
 import { TEST_RELAY_URL, getTestJsonRpc, Counter } from "./shared";
 import { JsonRpcPayload } from "@json-rpc-tools/types";
-import { formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { isJsonRpcRequest, isJsonRpcResult, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { generateRandomBytes32 } from "../src/utils";
 
 describe("JSON-RPC", () => {
   it("A can publish to B subscribed to same topic", async () => {
@@ -209,9 +210,9 @@ describe("JSON-RPC", () => {
 
     expect(counterC.value).to.eql(1);
   });
-  it.only("A can publish to B through two relays", async function(done) {
-    this.timeout(10000);
-    const { pub, sub } = getTestJsonRpc();
+  it.only("A can publish to B through Provider A to Provider B", async function() {
+    const { pub, sub } = getTestJsonRpc(generateRandomBytes32());
+
     const providerA = new JsonRpcProvider(TEST_RELAY_URL);
     await providerA.connect();
     const providerB = new JsonRpcProvider(TEST_RELAY_URL.replace("5555", "5556"));
@@ -221,32 +222,38 @@ describe("JSON-RPC", () => {
 
     const counterB = new Counter();
 
-    setTimeout(async () => {
-      console.log("sending sub");
-      subscriptionB = await providerB.request(sub);
-    }, 500);
-    setTimeout(async () => {
-      console.log("sending pub");
-      providerA.request(pub);
-    }, 1000);
-    setTimeout(async () => {
-      console.log("received payload");
-      providerB.on("payload", (payload: JsonRpcPayload) => {
-        const response = formatJsonRpcResult(payload.id, true);
-        providerB.connection.send(response);
-      });
-    }, 1500);
-    setTimeout(async () => {
-      console.log("Sending message to A");
-      providerB.on("message", ({ type, data }) => {
-        counterB.tick();
-        expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
-        if (subscriptionB) expect(data.id).to.eql(subscriptionB);
-        expect(data.data.topic).to.eql(pub.params.topic);
-        expect(data.data.message).to.eql(pub.params.message);
-        expect(counterB.value).to.eql(1);
-        done();
-      });
-    }, 2000);
+    await Promise.all([
+      new Promise<void>(async resolve => {
+        // subscribing to topics
+        subscriptionB = await providerB.request(sub);
+        resolve();
+      }),
+      new Promise<void>(resolve => {
+        // publishing to topics
+        providerA.request(pub);
+        resolve();
+      }),
+      new Promise<void>(resolve => {
+        // acknowledging received payloads
+        providerB.on("payload", (payload: JsonRpcPayload) => {
+          const response = formatJsonRpcResult(payload.id, true);
+          providerB.connection.send(response);
+          resolve();
+        });
+      }),
+      new Promise<void>(resolve => {
+        // evaluating incoming subscriptions
+        providerB.on("message", ({ type, data }) => {
+          counterB.tick();
+          expect(type).to.eql(RELAY_JSONRPC.waku.subscription);
+          if (subscriptionB) expect(data.id).to.eql(subscriptionB);
+          expect(data.data.topic).to.eql(pub.params.topic);
+          expect(data.data.message).to.eql(pub.params.message);
+          resolve();
+        });
+      }),
+    ]);
+
+    expect(counterB.value).to.eql(1);
   });
 });

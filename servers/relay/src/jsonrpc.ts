@@ -24,6 +24,8 @@ import {
 } from "relay-provider";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { arrayToHex } from "enc-utils";
+import { sha256 } from "./utils";
+import { SIX_HOURS } from "./constants";
 
 import config from "./config";
 import { RedisService } from "./redis";
@@ -51,9 +53,8 @@ export class JsonRpcService {
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
-    this.waku = new WakuService(this.logger, config.wakuUrl);
-
     this.notification = notification;
+    this.waku = new WakuService(this.logger, this, config.wakuUrl);
     this.subscription = new SubscriptionService(this.logger, this.redis, this.ws);
     this.initialize();
   }
@@ -133,17 +134,29 @@ export class JsonRpcService {
       );
       return;
     }
+
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", socketId, params });
+    let status = await this.onNewMessage(params, socketId);
 
-    await this.waku.postMessage(params.message, params.topic);
-    await this.notification.push(params.topic);
-    await this.redis.setMessage(params);
-    await this.searchSubscriptions(socketId, params);
+    this.socketSend(socketId, formatJsonRpcResult(request.id, status));
+  }
 
-    await this.waku.postMessage(params.message, params.topic);
+  private async onNewMessage(
+    params: RelayJsonRpc.PublishParams,
+    socketId = "0".repeat(64),
+  ): Promise<boolean> {
+    let message = await this.redis.getMessage(params.topic, sha256(params.message));
 
-    this.socketSend(socketId, formatJsonRpcResult(request.id, true));
+    if (!message) {
+      await this.notification.push(params.topic);
+      await this.redis.setMessage(params);
+      await this.searchSubscriptions(socketId, params);
+      await this.waku.postMessage(params.message, params.topic);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private async onSubscribeRequest(socketId: string, request: JsonRpcRequest) {
@@ -155,23 +168,13 @@ export class JsonRpcService {
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
 
     await this.waku.onNewTopicMessage(params.topic, (messages: WakuMessage[]) => {
-      console.log("Received Messages in JSON-RPC", params.topic, arrayToHex(messages[0].payload));
+      console.log("Received Waku Messages in JSON-RPC", params.topic, messages[0].payload);
       messages.forEach(async (m: WakuMessage) => {
-        let data: RelayJsonRpc.PublishParams = {
+        await this.onNewMessage({
           topic: params.topic,
-          message: arrayToHex(m.payload),
-          ttl: config.REDIS_MAX_TTL,
-        };
-        let publishParams: RelayJsonRpc.PublishParams = {
-          topic: params.topic,
-          message: arrayToHex(m.payload),
-          ttl: config.REDIS_MAX_TTL,
-        };
-        await this.notification.push(params.topic);
-        await this.redis.setMessage(publishParams);
-        await this.searchSubscriptions(socketId, publishParams);
-
-        this.socketSend(socketId, formatJsonRpcResult(request.id, true));
+          message: m.payload,
+          ttl: SIX_HOURS,
+        });
       });
     });
   }
@@ -181,6 +184,7 @@ export class JsonRpcService {
     this.logger.debug(`Unsubscribe Request Received`);
     this.logger.trace({ type: "method", method: "onUnsubscribeRequest", socketId, params });
 
+    this.waku.unsubscribe(this.subscription.get(params.id, socketId)[0].topic);
     this.subscription.remove(params.id);
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
