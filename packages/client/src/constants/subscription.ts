@@ -1,4 +1,4 @@
-import { THIRTY_DAYS } from "./time";
+import { THREE_WEEKS } from "./time";
 
 export const SUBSCRIPTION_EVENTS = {
   payload: "subscription_payload",
@@ -7,4 +7,4 @@ export const SUBSCRIPTION_EVENTS = {
   deleted: "subscription_deleted",
 };
 
-export const SUBSCRIPTION_DEFAULT_TTL = THIRTY_DAYS;
+export const SUBSCRIPTION_DEFAULT_TTL = THREE_WEEKS;

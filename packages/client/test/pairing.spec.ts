@@ -1,15 +1,27 @@
 import "mocha";
+import sinon from "sinon";
 import { KeyValueStorage } from "keyvaluestorage";
+import { PairingTypes } from "@walletconnect/types";
 
 import {
+  expect,
   setupClientsForTesting,
   testPairingWithoutSession,
   TEST_CLIENT_DATABASE,
+  TEST_PAIRING_TTL,
   TEST_TIMEOUT_DURATION,
 } from "./shared";
+import { CLIENT_EVENTS } from "../src";
 
 describe("Pairing", function() {
   this.timeout(TEST_TIMEOUT_DURATION);
+  let clock: sinon.SinonFakeTimers;
+  beforeEach(function() {
+    clock = sinon.useFakeTimers(Date.now());
+  });
+  afterEach(function() {
+    clock.restore();
+  });
   it("A pings B with existing pairing", async () => {
     const { clients } = await setupClientsForTesting();
     await testPairingWithoutSession(clients);
@@ -62,5 +74,23 @@ describe("Pairing", function() {
     await clients.b.relayer.provider.connection.close();
     // ping
     await clients.a.pairing.ping(topic, TEST_TIMEOUT_DURATION);
+  });
+  it("should expire after default period is elapsed", function() {
+    this.timeout(TEST_PAIRING_TTL);
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        // setup
+        const { clients } = await setupClientsForTesting();
+        // pair
+        const topic = await testPairingWithoutSession(clients);
+        clients.a.on(CLIENT_EVENTS.pairing.deleted, (pairing: PairingTypes.Settled) => {
+          expect(pairing.topic).to.eql(topic);
+          resolve();
+        });
+        clock.tick(TEST_PAIRING_TTL);
+      } catch (e) {
+        reject(e);
+      }
+    });
   });
 });

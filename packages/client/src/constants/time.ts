@@ -1,5 +1,7 @@
 export const THIRTY_DAYS = 2592000;
 
+export const THREE_WEEKS = 1814400;
+
 export const SEVEN_DAYS = 604800;
 
 export const ONE_DAY = 86400;

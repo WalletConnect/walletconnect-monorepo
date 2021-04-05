@@ -198,7 +198,7 @@ export class Pairing extends IPairing {
         const responder: PairingTypes.Peer = {
           publicKey: self.publicKey,
         };
-        const expiry = Date.now() + proposal.ttl;
+        const expiry = Date.now() + proposal.ttl * 1000;
         const controller = proposal.proposer.controller
           ? { publicKey: proposal.proposer.publicKey }
           : { publicKey: self.publicKey };

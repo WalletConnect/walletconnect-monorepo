@@ -14,6 +14,7 @@ import {
   TEST_CLIENT_DATABASE,
   TEST_TIMEOUT_DURATION,
   testJsonRpcRequest,
+  TEST_SESSION_TTL,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
 import { formatJsonRpcResult } from "@json-rpc-tools/utils";
@@ -22,7 +23,7 @@ describe("Session", function() {
   this.timeout(TEST_TIMEOUT_DURATION);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers(Date.now());
   });
   afterEach(function() {
     clock.restore();
@@ -295,5 +296,23 @@ describe("Session", function() {
     // ping
     await after.clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     await after.clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
+  });
+  it("should expire after default period is elapsed", function() {
+    this.timeout(TEST_SESSION_TTL);
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        // setup
+        const { setup, clients } = await setupClientsForTesting();
+        // connect
+        const topic = await testApproveSession(setup, clients);
+        clients.a.on(CLIENT_EVENTS.session.deleted, (session: SessionTypes.Settled) => {
+          expect(session.topic).to.eql(topic);
+          resolve();
+        });
+        clock.tick(TEST_SESSION_TTL);
+      } catch (e) {
+        reject(e);
+      }
+    });
   });
 });

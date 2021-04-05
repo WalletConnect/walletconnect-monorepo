@@ -18,7 +18,7 @@ describe("Request", function() {
   this.timeout(TEST_TIMEOUT_DURATION);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers(Date.now());
   });
   afterEach(function() {
     clock.restore();

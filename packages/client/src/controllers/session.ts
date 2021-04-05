@@ -218,7 +218,7 @@ export class Session extends ISession {
           publicKey: self.publicKey,
           metadata: response.metadata,
         };
-        const expiry = Date.now() + proposal.ttl;
+        const expiry = Date.now() + proposal.ttl * 1000;
         const state: SessionTypes.State = {
           accounts: params.response.state.accounts,
         };

@@ -181,7 +181,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
       opts,
     );
-    const expiry = opts.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL;
+
+    const expiry = opts.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
     this.subscriptions.set(topic, { id, topic, data, opts });
     this.setTimeout(topic, expiry);
   }

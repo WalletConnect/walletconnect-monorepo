@@ -1,5 +1,5 @@
 import { PairingTypes, SignalTypes } from "@walletconnect/types";
-import { THIRTY_DAYS } from "./time";
+import { THREE_WEEKS } from "./time";
 
 export const PAIRING_JSONRPC = {
   approve: "wc_pairingApprove",
@@ -13,7 +13,7 @@ export const PAIRING_JSONRPC = {
 
 export const PAIRING_CONTEXT = "pairing";
 
-export const PAIRING_DEFAULT_TTL = THIRTY_DAYS;
+export const PAIRING_DEFAULT_TTL = THREE_WEEKS;
 
 export const PAIRING_SIGNAL_METHOD_URI = "uri" as SignalTypes.MethodUri;
 
