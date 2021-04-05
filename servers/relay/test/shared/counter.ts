@@ -4,7 +4,7 @@ export class Counter {
   get value() {
     return this.count;
   }
-  public add() {
+  public tick() {
     this.count += 1;
   }
 }
