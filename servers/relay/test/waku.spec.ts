@@ -3,11 +3,7 @@ import { expect } from "chai";
 import pino from "pino";
 import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 import { WakuService } from "../src/waku";
-import { JsonRpcService } from "../src/jsonrpc";
-import { RedisService } from "../src/redis";
 import { WakuMessage } from "../src/types";
-import { NotificationService } from "../src/notification";
-import { WebSocketService } from "../src/ws";
 import { hexToBuffer } from "enc-utils";
 import { generateRandomBytes32 } from "../src/utils";
 
@@ -21,10 +17,6 @@ describe("Waku", () => {
   let stringTopic: string;
   before(() => {
     let logger = pino(getDefaultLoggerOptions({ level: "error" }));
-    let redis = new RedisService(logger);
-    let notification = new NotificationService(logger, redis);
-    let ws = new WebSocketService(logger, redis, notification);
-    let jsonrpc = new JsonRpcService(logger, redis, ws, notification);
     wakuOne = new WakuService(logger, TEST_WAKU_URL);
     wakuTwo = new WakuService(logger, TEST_WAKU_URL.replace("8546", "8547"));
   });
