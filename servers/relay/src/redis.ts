@@ -27,9 +27,9 @@ export class RedisService {
       const hash = sha256(message);
       const val = `${hash}:${message}`;
       this.client.sadd(key, val, (err: Error) => {
-        if (err) return reject(err);
+        if (err) reject(err);
         this.client.expire(key, ttl, (err: Error) => {
-          if (err) return reject(err);
+          if (err) reject(err);
           resolve();
         });
       });
@@ -53,7 +53,7 @@ export class RedisService {
       this.logger.debug(`Getting Message`);
       this.logger.trace({ type: "method", method: "getMessage", topic });
       this.client.smembers(`message:${topic}`, (err: Error, res: string[]) => {
-        if (err) return reject(err);
+        if (err) reject(err);
         const messages: string[] = [];
         res.map((m: string) => {
           if (m != null) messages.push(m.split(":")[1]);
@@ -87,9 +87,9 @@ export class RedisService {
       this.client.lpush(
         [`legacy:${message.topic}`, safeJsonStringify(message)],
         (err: Error, res) => {
-          if (err) return reject(err);
+          if (err) reject(err);
           this.client.expire([`legacy:${message.topic}`, SIX_HOURS], (err: Error, res) => {
-            if (err) return reject(err);
+            if (err) reject(err);
             resolve();
           });
         },
@@ -100,7 +100,7 @@ export class RedisService {
   public getLegacyCached(topic: string): Promise<LegacySocketMessage[]> {
     return new Promise((resolve, reject) => {
       this.client.lrange(`legacy:${topic}`, 0, -1, (err: Error, raw: any) => {
-        if (err) return reject(err);
+        if (err) reject(err);
         const messages: LegacySocketMessage[] = [];
         raw.forEach((data: string) => {
           const message = safeJsonParse(data);
@@ -120,8 +120,8 @@ export class RedisService {
       this.logger.trace({ type: "method", method: "setNotification", notification });
       this.client.lpush(
         [`notification:${notification.topic}`, safeJsonStringify(notification)],
-        err => {
-          if (err) return reject(err);
+        (err: Error) => {
+          if (err) reject(err);
           resolve();
         },
       );
@@ -131,7 +131,7 @@ export class RedisService {
   public getNotification(topic: string): Promise<Notification[]> {
     return new Promise((resolve, reject) => {
       this.client.lrange([`notification:${topic}`, 0, -1], (err: Error, raw: any) => {
-        if (err) return reject(err);
+        if (err) reject(err);
         const data = raw.map((item: string) => safeJsonParse(item));
         this.logger.debug(`Getting Notification`);
         this.logger.trace({ type: "method", method: "getNotification", topic, data });
@@ -147,10 +147,10 @@ export class RedisService {
       const val = `${topic}:${hash}`;
       this.logger.debug(`Setting Pending Request`);
       this.logger.trace({ type: "method", method: "setPendingRequest", topic, id, message });
-      this.client.set(key, val, err => {
-        if (err) return reject(err);
-        this.client.expire(key, config.REDIS_MAX_TTL, err => {
-          if (err) return reject(err);
+      this.client.set(key, val, (err: Error) => {
+        if (err) reject(err);
+        this.client.expire(key, config.REDIS_MAX_TTL, (err: Error) => {
+          if (err) reject(err);
           resolve();
         });
       });
@@ -159,8 +159,8 @@ export class RedisService {
 
   public getPendingRequest(id: number): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.client.get(`pending:${id}`, (err: Error, data) => {
-        if (err) return reject(err);
+      this.client.get(`pending:${id}`, (err: Error, data: string) => {
+        if (err) reject(err);
         this.logger.debug(`Getting Pending Request`);
         this.logger.trace({ type: "method", method: "getPendingRequest", id, data });
         resolve(data);
@@ -172,8 +172,8 @@ export class RedisService {
     return new Promise((resolve, reject) => {
       this.logger.debug(`Deleting Pending Request`);
       this.logger.trace({ type: "method", method: "deletePendingRequest", id });
-      this.client.del(`pending:${id}`, err => {
-        if (err) return reject(err);
+      this.client.del(`pending:${id}`, (err: Error) => {
+        if (err) reject(err);
         resolve();
       });
     });
@@ -191,7 +191,7 @@ export class RedisService {
     return new Promise((resolve, reject) => {
       let messages: string[] = [];
       let recursiveSscanCB = (err: Error, result: [string, string[]]) => {
-        if (err) return reject(err);
+        if (err) reject(err);
         result[1].map((m: string) => {
           if (m != null) messages.push(m);
         });
