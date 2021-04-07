@@ -11,7 +11,6 @@ import { SIX_HOURS } from "./constants";
 
 export class RedisService {
   public client: any = redis.createClient(config.redis);
-
   public context = "redis";
 
   constructor(public logger: Logger) {
@@ -43,8 +42,7 @@ export class RedisService {
     return new Promise((resolve, reject) => {
       this.sscan(`message:${topic}`, "MATCH", `${hash}:*`)
         .then((result: string[]) => {
-          if (result.length) resolve(result[0].split(":")[1]);
-          resolve("");
+          resolve(result[0]?.split(":")[1]);
         })
         .catch(reject);
     });

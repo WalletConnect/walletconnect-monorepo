@@ -147,11 +147,13 @@ export class JsonRpcService {
   ): Promise<boolean> {
     let message = await this.redis.getMessage(params.topic, sha256(params.message));
 
-    if (!message) {
+    if (message) {
       await this.notification.push(params.topic);
       await this.redis.setMessage(params);
       await this.searchSubscriptions(socketId, params);
       await this.waku.postMessage(params.message, params.topic);
+      // This setTimeout will be removed once the store api contentTopic
+      // is a string
       setTimeout(() => {
         this.waku.postMessage(params.message, params.topic);
       }, 2000);

@@ -47,6 +47,14 @@ describe("Redis", () => {
     await redis.setMessage(params);
     expect(await redis.getMessage(params.topic, sha256(params.message))).to.equal(params.message);
   });
+  it("Non-existing message is undefined", async () => {
+    const params = {
+      topic: TEST_TOPIC,
+      message: generateRandomBytes32(),
+      ttl: ONE_DAY,
+    };
+    expect(await redis.getMessage(params.topic, sha256(params.message))).to.be.undefined;
+  });
   it("Message gets deleted", async () => {
     for (var i = 0; i < 200; i++) {
       await redis.setMessage({
@@ -65,6 +73,6 @@ describe("Redis", () => {
       testMessage.message,
     );
     await redis.deleteMessage(TEST_TOPIC, sha256(testMessage.message));
-    expect(await redis.getMessage(testMessage.topic, sha256(testMessage.message))).to.equal("");
+    expect(await redis.getMessage(testMessage.topic, sha256(testMessage.message))).to.be.undefined;
   });
 });

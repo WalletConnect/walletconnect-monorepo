@@ -54,7 +54,7 @@ describe("Waku", () => {
     wakuTwo.subscribe(stringTopic);
     setTimeout(() => {
       wakuOne.postMessage(testMessage, stringTopic);
-    }, 75);
+    }, 100);
     setTimeout(() => {
       wakuTwo.getMessages(stringTopic).then(m => {
         expect(m.length).to.be.greaterThan(0);
