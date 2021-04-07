@@ -23,7 +23,6 @@ import {
   parseUnsubscribeRequest,
 } from "relay-provider";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { arrayToHex } from "enc-utils";
 import { sha256 } from "./utils";
 import { SIX_HOURS } from "./constants";
 
@@ -54,7 +53,7 @@ export class JsonRpcService {
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;
-    this.waku = new WakuService(this.logger, this, config.wakuUrl);
+    this.waku = new WakuService(this.logger, config.wakuUrl);
     this.subscription = new SubscriptionService(this.logger, this.redis, this.ws);
     this.initialize();
   }
@@ -168,7 +167,6 @@ export class JsonRpcService {
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
 
     await this.waku.onNewTopicMessage(params.topic, (messages: WakuMessage[]) => {
-      console.log("Received Waku Messages in JSON-RPC", params.topic, messages[0].payload);
       messages.forEach(async (m: WakuMessage) => {
         await this.onNewMessage({
           topic: params.topic,

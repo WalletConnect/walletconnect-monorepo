@@ -210,7 +210,7 @@ describe("JSON-RPC", () => {
 
     expect(counterC.value).to.eql(1);
   });
-  it.only("A can publish to B through Provider A to Provider B", async function() {
+  it("A can publish to B through Provider A to Provider B", async function() {
     const { pub, sub } = getTestJsonRpc(generateRandomBytes32());
 
     const providerA = new JsonRpcProvider(TEST_RELAY_URL);

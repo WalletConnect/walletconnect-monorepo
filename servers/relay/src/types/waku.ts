@@ -33,3 +33,7 @@ export interface StoreResponse {
   messages: WakuMessage[];
   pagingOptions?: PagingOptions;
 }
+
+export interface ListenCallback {
+  (messages: WakuMessage[]): void;
+}

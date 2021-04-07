@@ -1,4 +1,4 @@
-import pino, { Logger } from "pino";
+import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   JsonRpcResponse,
@@ -10,25 +10,24 @@ import {
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
-import { JsonRpcService } from "./jsonrpc";
 
 import config from "./config";
-import { WakuMessageResponse, WakuMessage, WakuPeers, PagingOptions } from "./types";
-
-interface ListenCallback {
-  (messages: WakuMessage[]): void;
-}
+import {
+  ListenCallback,
+  WakuMessageResponse,
+  WakuMessage,
+  WakuPeers,
+  PagingOptions,
+} from "./types";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
   public topics: string[] = [];
   public logger: Logger;
-  public jsonrpc: JsonRpcService;
   public namespace = config.wcTopic;
 
-  constructor(logger: Logger, jsonrpc: JsonRpcService, nodeUrl: string) {
+  constructor(logger: Logger, nodeUrl: string) {
     super(nodeUrl);
-    this.jsonrpc = jsonrpc;
     this.logger = generateChildLogger(logger, `${this.context}@${nodeUrl}`);
     this.initialize();
   }
@@ -160,10 +159,10 @@ export class WakuService extends HttpConnection {
       if (isJsonRpcError(payload)) {
         this.logger.error(payload.error);
       }
-      //this.logger.trace({ method: "New Response Payload", payload });
+      this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
-    setInterval(() => this.poll(), 10);
+    setInterval(() => this.poll(), 200);
   }
 
   private parseWakuMessage(result: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
@@ -179,7 +178,7 @@ export class WakuService extends HttpConnection {
     return messages;
   }
   private poll() {
-    //this.logger.trace({ method: "poll", topics: this.topics });
+    this.logger.trace({ method: "poll", topics: this.topics });
     this.topics.forEach(async topic => {
       try {
         let messages = await this.getMessages(topic);
