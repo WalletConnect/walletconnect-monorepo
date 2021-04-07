@@ -152,6 +152,10 @@ export class JsonRpcService {
       await this.redis.setMessage(params);
       await this.searchSubscriptions(socketId, params);
       await this.waku.postMessage(params.message, params.topic);
+      setTimeout(() => {
+        this.waku.postMessage(params.message, params.topic);
+      }, 2000);
+      await this.waku.postMessage(params.message, params.topic);
       return true;
     } else {
       return false;
