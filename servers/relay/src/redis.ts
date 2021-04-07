@@ -190,15 +190,15 @@ export class RedisService {
   private sscan(key: string, match = "", pattern = ""): Promise<string[]> {
     return new Promise((resolve, reject) => {
       let messages: string[] = [];
-      let recursiveCallback = (err: Error, result: [string, string[]]) => {
+      let recursiveSscanCB = (err: Error, result: [string, string[]]) => {
         if (err) return reject(err);
         result[1].map((m: string) => {
           if (m != null) messages.push(m);
         });
         if (result[0] == "0") resolve(messages);
-        this.client.sscan(key, result[0], match, pattern, recursiveCallback);
+        this.client.sscan(key, result[0], match, pattern, recursiveSscanCB);
       };
-      this.client.sscan(key, "0", match, pattern, recursiveCallback);
+      this.client.sscan(key, "0", match, pattern, recursiveSscanCB);
     });
   }
 }
