@@ -151,11 +151,6 @@ export class JsonRpcService {
       await this.redis.setMessage(params);
       await this.searchSubscriptions(socketId, params);
       await this.waku.postMessage(params.message, params.topic);
-      // This setTimeout will be removed once the store api contentTopic
-      // is a string
-      setTimeout(() => {
-        this.waku.postMessage(params.message, params.topic);
-      }, 2000);
       await this.waku.postMessage(params.message, params.topic);
       return true;
     } else {

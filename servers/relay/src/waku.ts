@@ -110,10 +110,12 @@ export class WakuService extends HttpConnection {
   }
 
   public async onNewTopicMessage(topic: string, cb: IMessageCB) {
-    this.subscribe(topic, result => {
-      if (isJsonRpcError(result)) cb(result as JsonRpcError, []);
+    this.subscribe(topic, response => {
+      if (isJsonRpcError(response)) cb(response as JsonRpcError, []);
       this.topics.push(topic);
-      this.events.on(topic, cb);
+      this.events.on(topic, (messages: WakuMessage[]) => {
+        cb(undefined, messages);
+      });
     });
   }
 
@@ -150,14 +152,14 @@ export class WakuService extends HttpConnection {
         contentTopic: m.contentTopic,
         version: m.version,
         proof: m.proof,
+        timestamp: m.timestamp,
       });
     });
     return messages;
   }
 
-  private request(payload: JsonRpcPayload): Promise<void> {
+  private async request(payload: JsonRpcPayload): Promise<void> {
     return this.send(payload).catch(e => {
-      console.log("SUP");
       this.events.emit("error", e);
       throw e;
     });
@@ -168,8 +170,9 @@ export class WakuService extends HttpConnection {
     this.topics.forEach(topic => {
       this.getMessages(topic, (err, messages) => {
         if (err) {
+          this.logger.error(err);
           this.events.emit("error", err);
-          throw e;
+          this.events.emit(topic, err);
         }
         if (messages && messages.length) {
           this.logger.trace({ method: "poll", messages: messages });
