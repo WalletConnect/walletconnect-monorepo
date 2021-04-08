@@ -29,7 +29,7 @@ import { SIX_HOURS } from "./constants";
 import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
-import { WakuMessage, Subscription } from "./types";
+import { IMessageCB, WakuMessage, Subscription } from "./types";
 import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX } from "./constants";
 
 import { SubscriptionService } from "./subscription";
@@ -146,8 +146,7 @@ export class JsonRpcService {
     socketId = "0".repeat(64),
   ): Promise<boolean> {
     let message = await this.redis.getMessage(params.topic, sha256(params.message));
-
-    if (message) {
+    if (!message) {
       await this.notification.push(params.topic);
       await this.redis.setMessage(params);
       await this.searchSubscriptions(socketId, params);
@@ -172,9 +171,10 @@ export class JsonRpcService {
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
 
-    await this.waku.onNewTopicMessage(params.topic, (messages: WakuMessage[]) => {
-      messages.forEach(async (m: WakuMessage) => {
-        await this.onNewMessage({
+    await this.waku.onNewTopicMessage(params.topic, (err, messages) => {
+      if (err) this.logger.error(err);
+      messages.forEach((m: WakuMessage) => {
+        this.onNewMessage({
           topic: params.topic,
           message: m.payload,
           ttl: SIX_HOURS,

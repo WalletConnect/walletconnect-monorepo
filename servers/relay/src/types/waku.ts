@@ -1,3 +1,4 @@
+import { JsonRpcResult, JsonRpcError } from "@json-rpc-tools/utils";
 export interface WakuPeers {
   multiaddr: string;
   protocol: string;
@@ -34,6 +35,10 @@ export interface StoreResponse {
   pagingOptions?: PagingOptions;
 }
 
-export interface ListenCallback {
-  (messages: WakuMessage[]): void;
+export interface IMessageCB {
+  (error: JsonRpcError | undefined, m: WakuMessage[]): void;
+}
+
+export interface IJsonRpcCB {
+  (result: JsonRpcError | JsonRpcResult): void;
 }

@@ -2,6 +2,7 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   JsonRpcResponse,
+  JsonRpcError,
   isJsonRpcError,
   JsonRpcPayload,
   formatJsonRpcRequest,
@@ -13,7 +14,8 @@ import { arrayToHex } from "enc-utils";
 
 import config from "./config";
 import {
-  ListenCallback,
+  IJsonRpcCB,
+  IMessageCB,
   WakuMessageResponse,
   WakuMessage,
   WakuPeers,
@@ -42,81 +44,58 @@ export class WakuService extends HttpConnection {
     ]);
     this.logger.debug("Posting Waku Message");
     this.logger.trace({ type: "method", method: "postMessages", payload: jsonPayload });
-    this.send(jsonPayload);
+    this.request(jsonPayload);
   }
 
-  public getContentMessages(topic: number): Promise<WakuMessage[]> {
+  public getContentMessages(topic: number, cb: IMessageCB) {
     let payload = formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [topic]);
     this.logger.debug("Getting Content Messages");
     this.logger.trace({ type: "method", method: "getContentMessages", payload });
-    this.send(payload);
-    return new Promise((resolve, reject) => {
-      this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-        if (isJsonRpcResult(response)) {
-          resolve(this.parseWakuMessage(response));
-        }
-        if (isJsonRpcError(response)) {
-          reject(response.error);
-        }
-      });
+    this.request(payload);
+    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcResult(response)
+        ? cb(undefined, this.parseWakuMessages(response))
+        : cb(response as JsonRpcError, []);
     });
   }
 
-  public getMessages(topic: string): Promise<WakuMessage[]> {
+  public getMessages(topic: string, cb: IMessageCB) {
     let payload = formatJsonRpcRequest("get_waku_v2_relay_v1_messages", [topic]);
-
-    /*
     this.logger.debug("Getting Messages");
     this.logger.trace({ type: "method", method: "getMessages", payload });
-    */
-    this.send(payload);
-    return new Promise((resolve, reject) => {
-      this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-        if (isJsonRpcError(response)) {
-          reject(response.error);
-        }
-        if (isJsonRpcResult(response)) {
-          resolve(this.parseWakuMessage(response));
-        }
-      });
+    this.request(payload);
+    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcResult(response)
+        ? cb(undefined, this.parseWakuMessages(response))
+        : cb(response as JsonRpcError, []);
     });
   }
 
-  public async contentSubscribe(contentFilters: number): Promise<void> {
+  public async contentSubscribe(contentFilters: number, cb: (err?: JsonRpcError) => void) {
     let payload = formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
       [{ topics: [contentFilters] }],
       this.namespace,
     ]);
     this.logger.debug("Subscribing to Waku ContentTopic");
     this.logger.trace({ type: "method", method: "contentSubscribe", payload });
-    this.send(payload);
-    return new Promise((resolve, reject) => {
-      this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-        if (isJsonRpcError(response)) {
-          reject(response.error);
-        }
-        resolve();
-      });
+    this.request(payload);
+    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcError(response) ? cb(response) : cb();
     });
   }
 
-  public subscribe(topic: string): Promise<void> {
+  public subscribe(topic: string, cb: IJsonRpcCB) {
     let payload = formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [[topic]]);
     this.logger.debug("Subscribing to Waku Topic");
     this.logger.trace({ type: "method", method: "subscribe", payload });
-    this.send(payload);
-    return new Promise((resolve, reject) => {
-      this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-        if (isJsonRpcError(response)) {
-          reject(response.error);
-        }
-        resolve();
-      });
+    this.request(payload);
+    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcError(response) ? cb(response) : cb(response as JsonRpcResult);
     });
   }
 
   public unsubscribe(topic: string) {
-    this.send(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscriptions", [topic]));
+    this.request(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscriptions", [topic]));
     this.topics = this.topics.filter(t => t !== topic);
   }
 
@@ -127,26 +106,24 @@ export class WakuService extends HttpConnection {
       pageSize: 10,
       forward: true,
     };
-    this.send(formatJsonRpcRequest("get_waku_v2_store_v1_message", [[0], [pagingOptions]]));
+    this.request(formatJsonRpcRequest("get_waku_v2_store_v1_message", [[0], [pagingOptions]]));
   }
 
-  public async onNewTopicMessage(topic: string, cb: ListenCallback) {
-    this.subscribe(topic).then(() => {
+  public async onNewTopicMessage(topic: string, cb: IMessageCB) {
+    this.subscribe(topic, result => {
+      if (isJsonRpcError(result)) cb(result as JsonRpcError, []);
       this.topics.push(topic);
       this.events.on(topic, cb);
     });
   }
 
-  public getPeers(): Promise<WakuPeers[]> {
+  public getPeers(cb: (err: JsonRpcError | undefined, p: WakuPeers[]) => void) {
     let payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
-    this.send(payload);
-    return new Promise((resolve, reject) => {
-      this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-        if (isJsonRpcError(response)) {
-          reject(response.error);
-        }
-        resolve((response as JsonRpcResult<WakuPeers[]>).result);
-      });
+    this.request(payload);
+    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcResult(response)
+        ? cb(undefined, (response as JsonRpcResult<WakuPeers[]>).result)
+        : cb(response as JsonRpcError, []);
     });
   }
 
@@ -165,7 +142,7 @@ export class WakuService extends HttpConnection {
     setInterval(() => this.poll(), 200);
   }
 
-  private parseWakuMessage(result: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
+  private parseWakuMessages(result: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
     let messages: WakuMessage[] = [];
     result.result.forEach(m => {
       messages.push({
@@ -177,18 +154,28 @@ export class WakuService extends HttpConnection {
     });
     return messages;
   }
+
+  private request(payload: JsonRpcPayload): Promise<void> {
+    return this.send(payload).catch(e => {
+      console.log("SUP");
+      this.events.emit("error", e);
+      throw e;
+    });
+  }
+
   private poll() {
     this.logger.trace({ method: "poll", topics: this.topics });
-    this.topics.forEach(async topic => {
-      try {
-        let messages = await this.getMessages(topic);
+    this.topics.forEach(topic => {
+      this.getMessages(topic, (err, messages) => {
+        if (err) {
+          this.events.emit("error", err);
+          throw e;
+        }
         if (messages && messages.length) {
           this.logger.trace({ method: "poll", messages: messages });
           this.events.emit(topic, messages);
         }
-      } catch (e) {
-        throw e;
-      }
+      });
     });
   }
 }

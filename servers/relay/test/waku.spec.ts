@@ -3,7 +3,7 @@ import { expect } from "chai";
 import pino from "pino";
 import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 import { WakuService } from "../src/waku";
-import { WakuMessage } from "../src/types";
+import { WakuMessage, WakuPeers } from "../src/types";
 import { hexToBuffer } from "enc-utils";
 import { generateRandomBytes32 } from "../src/utils";
 
@@ -26,22 +26,27 @@ describe("Waku", () => {
     stringTopic = generateRandomBytes32();
   });
   it("Waku node has peers", async () => {
-    let peers = await wakuOne.getPeers();
-    expect(peers.length).to.be.greaterThan(0);
+    wakuOne.getPeers((err, peers: WakuPeers[]) => {
+      expect(peers.length).to.be.greaterThan(0);
+    });
   });
   xit("Receives a content message from two waku with filter api of waku", function(done) {
     this.timeout(10000);
-    wakuTwo.contentSubscribe(contentTopic);
+    wakuTwo.contentSubscribe(contentTopic, err => {
+      expect(err).to.be.undefined;
+    });
     setTimeout(() => {
       wakuOne.postMessage(testMessage, stringTopic);
     }, 250);
     setTimeout(() => {
-      wakuTwo.getContentMessages(contentTopic).then(m => {
-        console.log("Message: ", m);
+      wakuTwo.getContentMessages(contentTopic, (err, m) => {
+        expect(err).to.be.undefined;
+        console.log("Message:", m);
       });
     }, 500);
     setTimeout(() => {
-      wakuTwo.getMessages(wakuTwo.namespace).then(m => {
+      wakuTwo.getMessages(wakuTwo.namespace, (err, m) => {
+        expect(err).to.be.undefined;
         console.log("Message two: ", m);
         done();
         expect(m.length).to.greaterThan(0);
@@ -51,12 +56,12 @@ describe("Waku", () => {
   });
 
   it("Receive message from two waku nodes with relay api of waku", function(done) {
-    wakuTwo.subscribe(stringTopic);
+    wakuTwo.subscribe(stringTopic, () => {});
     setTimeout(() => {
       wakuOne.postMessage(testMessage, stringTopic);
     }, 100);
     setTimeout(() => {
-      wakuTwo.getMessages(stringTopic).then(m => {
+      wakuTwo.getMessages(stringTopic, (err, m) => {
         expect(m.length).to.be.greaterThan(0);
         expect(m[0].payload).to.equal(testMessage);
         done();
@@ -64,7 +69,7 @@ describe("Waku", () => {
     }, 200);
   });
   it("It polls for messages", function(done) {
-    wakuOne.onNewTopicMessage(stringTopic, (messages: WakuMessage[]) => {
+    wakuOne.onNewTopicMessage(stringTopic, (err, messages) => {
       expect(messages.length).to.equal(1);
       expect(messages[0].payload).to.equal(testMessage);
       done();

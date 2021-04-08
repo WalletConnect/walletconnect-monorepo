@@ -12,7 +12,9 @@ const REDIS_MAX_TTL: number = process.env.REDIS_MAXTTL
   ? parseInt(process.env.REDIS_MAXTTL, 10)
   : THIRTY_DAYS;
 const redis = {
-  url: process.env.REDIS_URL || "redis://localhost:6379/0",
+  url:
+    process.env.REDIS_URL ||
+    `redis://localhost:6379/${process.env.REDIS_IDX ? process.env.REDIS_IDX : "0"}`,
   prefix: process.env.REDIS_PREFIX || "walletconnect-bridge",
 };
 const mode = (process.env.RELAY_MODE || "any") as RelayModes.All;
