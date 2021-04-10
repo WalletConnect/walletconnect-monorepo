@@ -34,12 +34,11 @@ export class WakuService extends HttpConnection {
     this.initialize();
   }
 
-  public async postMessage(payload: string, topic: string, contentTopic?: number) {
+  public async post(payload: string, topic: string) {
     let jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
       topic,
       {
         payload,
-        contentTopic,
       },
     ]);
     this.logger.debug("Posting Waku Message");
@@ -47,8 +46,21 @@ export class WakuService extends HttpConnection {
     this.request(jsonPayload);
   }
 
-  public getContentMessages(topic: number, cb: IMessageCB) {
-    let payload = formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [topic]);
+  public async postContent(payload: string, contentTopic: string) {
+    let jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
+      this.namespace,
+      {
+        payload,
+        contentTopic,
+      },
+    ]);
+    this.logger.debug("Posting Content Waku Message");
+    this.logger.trace({ type: "method", method: "postMessages", payload: jsonPayload });
+    this.request(jsonPayload);
+  }
+
+  public getContentMessages(content: string, cb: IMessageCB) {
+    let payload = formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [content]);
     this.logger.debug("Getting Content Messages");
     this.logger.trace({ type: "method", method: "getContentMessages", payload });
     this.request(payload);
@@ -71,7 +83,7 @@ export class WakuService extends HttpConnection {
     });
   }
 
-  public async contentSubscribe(contentFilters: number, cb: (err?: JsonRpcError) => void) {
+  public async contentSubscribe(contentFilters: string, cb?: (err?: JsonRpcError) => void) {
     let payload = formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
       [{ topics: [contentFilters] }],
       this.namespace,
@@ -80,18 +92,23 @@ export class WakuService extends HttpConnection {
     this.logger.trace({ type: "method", method: "contentSubscribe", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcError(response) ? cb(response) : cb();
+      if (cb) isJsonRpcError(response) ? cb(response) : cb();
     });
   }
 
-  public subscribe(topic: string, cb: IJsonRpcCB) {
+  public subscribe(topic = config.wcTopic, cb?: IJsonRpcCB) {
     let payload = formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [[topic]]);
     this.logger.debug("Subscribing to Waku Topic");
     this.logger.trace({ type: "method", method: "subscribe", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcError(response) ? cb(response) : cb(response as JsonRpcResult);
+      if (cb) isJsonRpcError(response) ? cb(response) : cb(response as JsonRpcResult);
     });
+  }
+
+  public contentUnsubscribe(topic: string) {
+    this.request(formatJsonRpcRequest("delete_waku_v2_filter_v1_subscriptions", [topic]));
+    this.topics = this.topics.filter(t => t !== topic);
   }
 
   public unsubscribe(topic: string) {
@@ -99,14 +116,22 @@ export class WakuService extends HttpConnection {
     this.topics = this.topics.filter(t => t !== topic);
   }
 
-  // This won't work until the contenTopic is a string:
-  // https://github.com/status-im/nim-waku/issues/447
-  public getStoreMessages(topic: string) {
+  public getStoreMessages(contentTopic: string, cb: IMessageCB) {
     let pagingOptions: PagingOptions = {
       pageSize: 10,
       forward: true,
     };
-    this.request(formatJsonRpcRequest("get_waku_v2_store_v1_message", [[0], [pagingOptions]]));
+    const payload = formatJsonRpcRequest("get_waku_v2_store_v1_messages", [
+      [contentTopic],
+      //pagingOptions,
+    ]);
+
+    this.request(payload);
+    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcError(response)
+        ? cb(response as JsonRpcError, [])
+        : cb(undefined, this.parseWakuMessages(response));
+    });
   }
 
   public async onNewTopicMessage(topic: string, cb: IMessageCB) {
@@ -128,6 +153,15 @@ export class WakuService extends HttpConnection {
         : cb(response as JsonRpcError, []);
     });
   }
+  public debug(cb: (err: JsonRpcError | undefined, p: string[]) => void) {
+    let payload = formatJsonRpcRequest("get_waku_v2_debug_v1_info", []);
+    this.request(payload);
+    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcResult(response)
+        ? cb(undefined, (response as JsonRpcResult<string[]>).result)
+        : cb(response as JsonRpcError, []);
+    });
+  }
 
   // ---------- Private ----------------------------------------------- //
 
@@ -141,6 +175,7 @@ export class WakuService extends HttpConnection {
       this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
+    //this.subscribe(config.wcTopic, () => {});
     setInterval(() => this.poll(), 200);
   }
 
@@ -152,7 +187,6 @@ export class WakuService extends HttpConnection {
         contentTopic: m.contentTopic,
         version: m.version,
         proof: m.proof,
-        timestamp: m.timestamp,
       });
     });
     return messages;
@@ -166,7 +200,21 @@ export class WakuService extends HttpConnection {
   }
 
   private poll() {
-    this.logger.trace({ method: "poll", topics: this.topics });
+    this.topics.forEach(topic => {
+      this.getMessages(topic, (err, messages) => {
+        if (err) {
+          this.logger.error(err);
+          this.events.emit("error", err);
+          this.events.emit(topic, err);
+        }
+        if (messages && messages.length) {
+          this.logger.trace({ method: "poll", messages: messages });
+          this.events.emit(topic, messages);
+        }
+      });
+    });
+  }
+  private pollContent() {
     this.topics.forEach(topic => {
       this.getMessages(topic, (err, messages) => {
         if (err) {

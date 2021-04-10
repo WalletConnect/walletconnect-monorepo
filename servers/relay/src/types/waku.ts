@@ -9,7 +9,6 @@ export interface WakuMessage {
   payload: string;
   contentTopic: string;
   version: number;
-  timestamp: string;
   proof: Uint8Array;
 }
 
@@ -17,7 +16,6 @@ export interface WakuMessageResponse {
   payload: Uint8Array;
   contentTopic: string;
   version: number;
-  timestamp: string;
   proof: Uint8Array;
 }
 
