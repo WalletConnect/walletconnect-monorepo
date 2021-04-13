@@ -62,8 +62,8 @@ export function getInfuraRpcUrl(chainId: number, infuraId?: string): string | un
 export function getRpcUrl(chainId: number, rpc: IRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
   const infuraUrl = getInfuraRpcUrl(chainId, rpc.infuraId);
-  if (rpc && rpc[chainId]) {
-    rpcUrl = rpc[chainId];
+  if (rpc && rpc.custom) {
+    rpcUrl = rpc.custom[chainId];
   } else if (infuraUrl) {
     rpcUrl = infuraUrl;
   }
