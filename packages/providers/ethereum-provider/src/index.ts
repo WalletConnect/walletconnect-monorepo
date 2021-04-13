@@ -1,38 +1,60 @@
-import { BlockchainProvider } from "@json-rpc-tools/blockchain";
-import { BlockchainProviderConfig } from "@json-rpc-tools/types";
-import { IRPCMap, IWCEthRpcConnectionOptions } from "@walletconnect/types";
-import { stateMethods, signingMethods } from "@walletconnect/utils";
+import EventEmitter from "eventemitter3";
+import { JsonRpcProvider } from "@json-rpc-tools/provider";
+import { IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
+import { getRpcUrl, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
 import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
 
 class WalletConnectEthereumProvider implements IEthereumProvider {
-  private infuraId: string | undefined;
-  private rpc: IRPCMap | undefined;
-  private provider: BlockchainProvider;
+  public events: any = new EventEmitter();
+
+  private rpc: IRpcConfig;
+  private signer: JsonRpcProvider;
+  private http: JsonRpcProvider | undefined;
+
   constructor(opts?: IWCEthRpcConnectionOptions) {
-    this.infuraId = opts?.infuraId;
-    this.rpc = opts?.rpc;
-    this.provider = this.setBlockchainProvider(opts);
+    this.rpc = { infuraId: opts?.infuraId, custom: opts?.rpc };
+    this.signer = new JsonRpcProvider(new SignerConnection(opts));
+    this.http = this.setHttpProvider(opts?.chainId || 1);
+    this.registerEventListeners();
   }
-  public request(args: RequestArguments): Promise<unknown> {
-    return this.provider.request(args);
+
+  public async request(args: RequestArguments): Promise<unknown> {
+    switch (args.method) {
+      case "eth_requestAccounts":
+        await this.signer.connect();
+        return (this.signer.connection as any).accounts;
+      case "eth_accounts":
+        return (this.signer.connection as any).accounts;
+      case "eth_chainId":
+        return (this.signer.connection as any).chainId;
+      default:
+        break;
+    }
+    if (signingMethods.includes(args.method)) {
+      return this.signer.request(args);
+    }
+    if (typeof this.http === "undefined") {
+      throw new Error(`Cannot request JSON-RPC method (${args.method}) without provided rpc url`);
+    }
+    return this.http.request(args);
   }
   public async enable(): Promise<ProviderAccounts> {
-    await this.provider.connect();
-    return this.provider.request({ method: "eth_accounts" });
+    const accounts = await this.request({ method: "eth_requestAccounts" });
+    return accounts as ProviderAccounts;
   }
 
   public on(event: any, listener: any) {
-    this.provider.on(event, listener);
+    this.events.on(event, listener);
   }
   public once(event: string, listener: any): void {
-    this.provider.once(event, listener);
+    this.events.once(event, listener);
   }
   public removeListener(event: string, listener: any): void {
-    this.provider.removeListener(event, listener);
+    this.events.removeListener(event, listener);
   }
   public off(event: string, listener: any): void {
-    this.provider.off(event, listener);
+    this.events.off(event, listener);
   }
 
   get isWalletConnect() {
@@ -41,40 +63,21 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
 
   // ---------- Private ----------------------------------------------- //
 
-  private getRpcUrl(chainId: number): string {
-    let rpcUrl: string | undefined;
-    const infuraNetworks = {
-      1: "mainnet",
-      3: "ropsten",
-      4: "rinkeby",
-      5: "goerli",
-      42: "kovan",
-    };
-    const network = infuraNetworks[chainId];
-    if (this.rpc && this.rpc[chainId]) {
-      rpcUrl = this.rpc[chainId];
-    } else if (network) {
-      rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`;
-    }
-    if (typeof rpcUrl === "undefined") {
-      throw new Error(`Missing rpc url for chainId: ${chainId}`);
-    }
-    return rpcUrl;
+  private registerEventListeners() {
+    this.signer.connection.on("accountsChanged", accounts => {
+      this.events.emit("accountsChanged", accounts);
+    });
+    this.signer.connection.on("chainChanged", chainId => {
+      this.http = this.setHttpProvider(chainId);
+      this.events.emit("chainChanged", chainId);
+    });
   }
 
-  private setBlockchainProvider(opts?: IWCEthRpcConnectionOptions): BlockchainProvider {
-    const chainId = opts?.chainId || 1;
-    const rpcUrl = this.getRpcUrl(chainId);
-    const config: BlockchainProviderConfig = {
-      chainId: "eip155:" + chainId,
-      routes: ["*"],
-      signer: {
-        routes: [...stateMethods, ...signingMethods],
-        connection: new SignerConnection(opts),
-      },
-    };
-    const provider = new BlockchainProvider(rpcUrl, config);
-    return provider;
+  private setHttpProvider(chainId: number): JsonRpcProvider | undefined {
+    const rpcUrl = getRpcUrl(chainId, this.rpc);
+    if (typeof rpcUrl === "undefined") return undefined;
+    const http = new JsonRpcProvider(rpcUrl);
+    return http;
   }
 }
 

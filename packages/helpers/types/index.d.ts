@@ -417,4 +417,9 @@ declare module "@walletconnect/types" {
   export type IAppRegistry = {
     [id: string]: IAppEntry;
   };
+
+  export interface IRpcConfig {
+    infuraId: string | undefined;
+    custom: IRPCMap | undefined;
+  }
 }
