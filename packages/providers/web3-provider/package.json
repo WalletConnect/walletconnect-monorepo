@@ -56,7 +56,9 @@
     "ts-node": "9.0.0",
     "web3": "1.2.8",
     "webpack": "4.41.5",
-    "webpack-cli": "3.3.10"
+    "webpack-cli": "3.3.10",
+    "ethers": "^5.1.0",
+    "hardhat": "^2.1.2"
   },
   "dependencies": {
     "@walletconnect/client": "^1.4.1",
