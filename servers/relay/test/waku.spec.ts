@@ -3,9 +3,7 @@ import { expect } from "chai";
 import pino from "pino";
 import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 import { WakuService } from "../src/waku";
-import config from "../src/config";
 import { WakuMessage, WakuPeers } from "../src/types";
-import { hexToBuffer } from "enc-utils";
 import { generateRandomBytes32 } from "../src/utils";
 
 import { TEST_WAKU_URL } from "./shared";
@@ -13,7 +11,7 @@ import { TEST_WAKU_URL } from "./shared";
 describe.only("Waku", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
-  let contentTopic: string;
+  let filterTopic: string;
   let testMessage: string;
   let topic: string;
   before(() => {
@@ -23,7 +21,7 @@ describe.only("Waku", () => {
   });
   beforeEach(() => {
     testMessage = generateRandomBytes32();
-    contentTopic = generateRandomBytes32();
+    filterTopic = generateRandomBytes32();
     topic = generateRandomBytes32();
   });
   it("Waku node has peers", async () => {
@@ -33,16 +31,16 @@ describe.only("Waku", () => {
     });
   });
   it("Receives a content message from two waku nodes with filter api of waku", function(done) {
-    wakuOne.contentSubscribe(contentTopic);
+    wakuOne.filterSubscribe(filterTopic);
     setTimeout(() => {
-      wakuTwo.postContent(testMessage, contentTopic);
+      wakuTwo.postFilterTopic(testMessage, filterTopic);
     }, 100);
     setTimeout(() => {
-      wakuOne.getContentMessages(contentTopic, (err, messages: WakuMessage[]) => {
+      wakuOne.getFilterTopicMessages(filterTopic, (err, messages: WakuMessage[]) => {
         expect(err).to.be.undefined;
         expect(messages.length).to.equal(1);
         expect(messages[0].payload).to.equal(testMessage);
-        expect(messages[0].contentTopic).to.equal(contentTopic);
+        expect(messages[0].filterTopic).to.equal(filterTopic);
         done();
       });
     }, 200);
@@ -73,15 +71,15 @@ describe.only("Waku", () => {
       wakuTwo.post(testMessage, topic);
     }, 750);
   });
-  it.only("It polls for content messages", function(done) {
-    wakuOne.onNewContentTopicMessage(contentTopic, (err, messages) => {
+  it("It polls for content messages", function(done) {
+    wakuOne.onNewFilterTopicMessage(filterTopic, (err, messages) => {
       expect(err).to.be.undefined;
       expect(messages.length).to.equal(1);
       expect(messages[0].payload).to.equal(testMessage);
       done();
     });
     setTimeout(() => {
-      wakuTwo.postContent(testMessage, contentTopic);
+      wakuTwo.postFilterTopic(testMessage, filterTopic);
     }, 750);
   });
 });

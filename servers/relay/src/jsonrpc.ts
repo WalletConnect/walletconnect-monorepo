@@ -165,7 +165,7 @@ export class JsonRpcService {
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
 
-    await this.waku.onNewTopicMessage(params.topic, (err, messages) => {
+    await this.waku.onNewFilterTopicMessage(params.topic, (err, messages) => {
       if (err) this.logger.error(err);
       messages.forEach((m: WakuMessage) => {
         this.onNewMessage({
