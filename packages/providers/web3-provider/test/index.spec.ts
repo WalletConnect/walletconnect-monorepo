@@ -7,6 +7,7 @@ import WalletConnect from "@walletconnect/client";
 import WalletConnectWeb3Provider from "../src";
 import { TestNetwork } from "./shared/TestNetwork";
 import { ethers } from "ethers";
+import { WalletTestClient } from "./shared/WalletTestClient";
 
 // const TEST_SESSION_PARAMS = {
 //   accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"],
@@ -47,52 +48,25 @@ describe("WalletConnectWeb3Provider", function() {
 
   it("enable successfully", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-
+    const wallet = new WalletTestClient(provider, {
+      chainId: TEST_SESSION_CHAIN_ID,
+      privateKey: TEST_SESSION_PRIVATE_KEY,
+    });
     await Promise.all([
-      new Promise<void>((resolve, reject) => {
-        provider.wc.on("display_uri", (error, payload) => {
-          if (error) {
-            reject(error);
-          }
-
-          const uri = payload.params[0];
-
-          const client = new WalletConnect({ uri });
-
-          client.on("session_request", error => {
-            if (error) {
-              reject(error);
-            }
-
-            client.approveSession({
-              accounts: [TEST_SESSION_WALLET.address],
-              chainId: TEST_SESSION_CHAIN_ID,
-            });
-
-            resolve();
-          });
-        });
-      }),
+      wallet.approveSession(),
       new Promise<void>(async resolve => {
-        try {
-          const providerAccounts = await provider.enable();
-          expect(providerAccounts).to.eql({
-            accounts: [TEST_SESSION_WALLET.address],
-            chainId: TEST_SESSION_CHAIN_ID,
-          });
+        const providerAccounts = await provider.enable();
+        expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
 
-          const web3 = new Web3(provider as any);
+        const web3 = new Web3(provider as any);
 
-          const web3Accounts = await web3.eth.getAccounts();
-          expect(web3Accounts).to.eql([TEST_SESSION_WALLET.address]);
+        const web3Accounts = await web3.eth.getAccounts();
+        expect(web3Accounts).to.eql([TEST_SESSION_WALLET.address]);
 
-          const web3ChainId = await web3.eth.getChainId();
-          expect(web3ChainId).to.eql(TEST_SESSION_CHAIN_ID);
+        const web3ChainId = await web3.eth.getChainId();
+        expect(web3ChainId).to.eql(TEST_SESSION_CHAIN_ID);
 
-          resolve();
-        } catch (error) {
-          console.log(error);
-        }
+        resolve();
       }),
     ]);
   });
