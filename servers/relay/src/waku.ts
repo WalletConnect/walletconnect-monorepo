@@ -18,6 +18,7 @@ import { IJsonRpcCB, IMessageCB, WakuMessageResponse, WakuMessage, WakuPeers } f
 export class WakuService extends HttpConnection {
   public context = "waku";
   public topics: string[] = [];
+  public contentTopics: string[] = [];
   public logger: Logger;
   public namespace = config.wcTopic;
 
@@ -54,7 +55,7 @@ export class WakuService extends HttpConnection {
 
   public getContentMessages(content: string, cb: IMessageCB) {
     let payload = formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [content]);
-    this.logger.debug("Getting Content Messages");
+    this.logger.trace("Getting Content Messages");
     this.logger.trace({ type: "method", method: "getContentMessages", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
@@ -119,6 +120,16 @@ export class WakuService extends HttpConnection {
     });
   }
 
+  public async onNewContentTopicMessage(contentTopic: string, cb: IMessageCB) {
+    this.contentSubscribe(contentTopic, response => {
+      if (response && isJsonRpcError(response)) cb(response as JsonRpcError, []);
+      this.contentTopics.push(contentTopic);
+      this.events.on(contentTopic, (messages: WakuMessage[]) => {
+        cb(undefined, messages);
+      });
+    });
+  }
+
   public getPeers(cb: (err: JsonRpcError | undefined, p: WakuPeers[]) => void) {
     let payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
     this.request(payload);
@@ -151,7 +162,7 @@ export class WakuService extends HttpConnection {
       this.events.emit(payload.id.toString(), payload);
     });
     this.subscribe(config.wcTopic);
-    setInterval(() => this.poll(), 200);
+    setInterval(() => this.pollContent(), 200);
   }
 
   private parseWakuMessagePayload(payload: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
@@ -196,15 +207,15 @@ export class WakuService extends HttpConnection {
     });
   }
   private pollContent() {
-    this.topics.forEach(topic => {
-      this.getMessages(topic, (err, messages) => {
+    this.contentTopics.forEach(topic => {
+      this.getContentMessages(topic, (err, messages) => {
         if (err) {
           this.logger.error(err);
           this.events.emit("error", err);
           this.events.emit(topic, err);
         }
         if (messages && messages.length) {
-          this.logger.trace({ method: "poll", messages: messages });
+          this.logger.trace({ method: "pollContent", messages: messages });
           this.events.emit(topic, messages);
         }
       });

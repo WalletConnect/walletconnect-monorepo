@@ -17,7 +17,7 @@ describe.only("Waku", () => {
   let testMessage: string;
   let topic: string;
   before(() => {
-    let logger = pino(getDefaultLoggerOptions({ level: "trace" }));
+    let logger = pino(getDefaultLoggerOptions({ level: "error" }));
     wakuOne = new WakuService(logger, TEST_WAKU_URL);
     wakuTwo = new WakuService(logger, TEST_WAKU_URL.replace("8546", "8547"));
   });
@@ -71,6 +71,17 @@ describe.only("Waku", () => {
     });
     setTimeout(() => {
       wakuTwo.post(testMessage, topic);
+    }, 750);
+  });
+  it.only("It polls for content messages", function(done) {
+    wakuOne.onNewContentTopicMessage(contentTopic, (err, messages) => {
+      expect(err).to.be.undefined;
+      expect(messages.length).to.equal(1);
+      expect(messages[0].payload).to.equal(testMessage);
+      done();
+    });
+    setTimeout(() => {
+      wakuTwo.postContent(testMessage, contentTopic);
     }, 750);
   });
 });
