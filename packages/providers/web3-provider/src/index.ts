@@ -1,7 +1,7 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
-import { payloadId, signingMethods, parsePersonalSign } from "@walletconnect/utils";
+import { payloadId, signingMethods, parsePersonalSign, getRpcUrl } from "@walletconnect/utils";
 import {
   IRPCMap,
   IConnector,
@@ -303,26 +303,11 @@ class WalletConnectProvider extends ProviderEngine {
     this.updateRpcUrl(this.chainId, rpcUrl || "");
   }
 
-  updateRpcUrl(chainId: number, rpcUrl = "") {
-    const infuraNetworks = {
-      1: "mainnet",
-      3: "ropsten",
-      4: "rinkeby",
-      5: "goerli",
-      42: "kovan",
-    };
-    const network = infuraNetworks[chainId];
-    if (!rpcUrl) {
-      if (this.rpc && this.rpc[chainId]) {
-        rpcUrl = this.rpc[chainId];
-      } else if (network) {
-        rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`;
-      }
-    }
+  updateRpcUrl(chainId: number, rpcUrl: string | undefined = "") {
+    const rpc = { infuraId: this.infuraId, custom: this.rpc || undefined };
+    rpcUrl = rpcUrl || getRpcUrl(chainId, rpc);
     if (rpcUrl) {
-      // Update rpcUrl
       this.rpcUrl = rpcUrl;
-      // Handle http update
       this.updateHttpConnection();
     } else {
       this.emit("error", new Error(`No RPC Url available for chainId: ${chainId}`));
