@@ -13,14 +13,7 @@ import { HttpConnection } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
 
 import config from "./config";
-import {
-  IJsonRpcCB,
-  IMessageCB,
-  WakuMessageResponse,
-  WakuMessage,
-  WakuPeers,
-  PagingOptions,
-} from "./types";
+import { IJsonRpcCB, IMessageCB, WakuMessageResponse, WakuMessage, WakuPeers } from "./types";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
@@ -34,7 +27,7 @@ export class WakuService extends HttpConnection {
     this.initialize();
   }
 
-  public async post(payload: string, topic: string) {
+  public async post(payload: string, topic = this.namespace) {
     let jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
       topic,
       {
@@ -46,9 +39,9 @@ export class WakuService extends HttpConnection {
     this.request(jsonPayload);
   }
 
-  public async postContent(payload: string, contentTopic: string) {
+  public async postContent(payload: string, contentTopic: string, topic = this.namespace) {
     let jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
-      this.namespace,
+      topic,
       {
         payload,
         contentTopic,
@@ -66,7 +59,7 @@ export class WakuService extends HttpConnection {
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcResult(response)
-        ? cb(undefined, this.parseWakuMessages(response))
+        ? cb(undefined, this.parseWakuMessagePayload(response))
         : cb(response as JsonRpcError, []);
     });
   }
@@ -78,7 +71,7 @@ export class WakuService extends HttpConnection {
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcResult(response)
-        ? cb(undefined, this.parseWakuMessages(response))
+        ? cb(undefined, this.parseWakuMessagePayload(response))
         : cb(response as JsonRpcError, []);
     });
   }
@@ -114,24 +107,6 @@ export class WakuService extends HttpConnection {
   public unsubscribe(topic: string) {
     this.request(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscriptions", [topic]));
     this.topics = this.topics.filter(t => t !== topic);
-  }
-
-  public getStoreMessages(contentTopic: string, cb: IMessageCB) {
-    let pagingOptions: PagingOptions = {
-      pageSize: 10,
-      forward: true,
-    };
-    const payload = formatJsonRpcRequest("get_waku_v2_store_v1_messages", [
-      [contentTopic],
-      //pagingOptions,
-    ]);
-
-    this.request(payload);
-    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcError(response)
-        ? cb(response as JsonRpcError, [])
-        : cb(undefined, this.parseWakuMessages(response));
-    });
   }
 
   public async onNewTopicMessage(topic: string, cb: IMessageCB) {
@@ -175,19 +150,25 @@ export class WakuService extends HttpConnection {
       this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
-    //this.subscribe(config.wcTopic, () => {});
+    this.subscribe(config.wcTopic);
     setInterval(() => this.poll(), 200);
   }
 
-  private parseWakuMessages(result: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
-    let messages: WakuMessage[] = [];
-    result.result.forEach(m => {
-      messages.push({
-        payload: arrayToHex(m.payload),
-        contentTopic: m.contentTopic,
-        version: m.version,
-        proof: m.proof,
-      });
+  private parseWakuMessagePayload(payload: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
+    const messages: WakuMessage[] = [];
+    const seenMessages = new Set();
+    payload.result.forEach(m => {
+      const stringPayload = arrayToHex(m.payload);
+      if (!seenMessages.has(stringPayload)) {
+        seenMessages.add(stringPayload);
+        messages.push({
+          payload: stringPayload,
+          contentTopic: m.contentTopic,
+          version: m.version,
+          proof: m.proof,
+          timestamp: m.timestamp,
+        });
+      }
     });
     return messages;
   }
