@@ -8,6 +8,7 @@ import WalletConnectWeb3Provider from "../src";
 import { TestNetwork } from "./shared/TestNetwork";
 import { ethers } from "ethers";
 import { WalletTestClient } from "./shared/WalletTestClient";
+import { ERC20Token__factory } from "./shared/utils/ERC20Token__factory";
 
 // const TEST_SESSION_PARAMS = {
 //   accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"],
@@ -46,7 +47,7 @@ describe("WalletConnectWeb3Provider", function() {
     expect(!!provider).to.be.true;
   });
 
-  it("enable successfully", async () => {
+  it("enable successfully web3", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
     const wallet = new WalletTestClient(provider, {
       chainId: TEST_SESSION_CHAIN_ID,
@@ -58,14 +59,72 @@ describe("WalletConnectWeb3Provider", function() {
         const providerAccounts = await provider.enable();
         expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
 
-        const web3 = new Web3(provider as any);
+        const web3Provider = new Web3(provider as any);
 
-        const web3Accounts = await web3.eth.getAccounts();
+        const web3Accounts = await web3Provider.eth.getAccounts();
         expect(web3Accounts).to.eql([TEST_SESSION_WALLET.address]);
 
-        const web3ChainId = await web3.eth.getChainId();
+        const web3ChainId = await web3Provider.eth.getChainId();
         expect(web3ChainId).to.eql(TEST_SESSION_CHAIN_ID);
 
+        resolve();
+      }),
+    ]);
+  });
+
+  it("enable successfully ethers", async () => {
+    const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
+    const wallet = new WalletTestClient(provider, {
+      chainId: TEST_SESSION_CHAIN_ID,
+      privateKey: TEST_SESSION_PRIVATE_KEY,
+    });
+    await Promise.all([
+      wallet.approveSession(),
+      new Promise<void>(async resolve => {
+        const providerAccounts = await provider.enable();
+        expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
+
+        const web3Provider = new ethers.providers.Web3Provider(provider);
+
+        const web3Accounts = await web3Provider.listAccounts();
+        expect(web3Accounts).to.eql([TEST_SESSION_WALLET.address]);
+
+        const web3Network = await web3Provider.getNetwork();
+
+        expect(web3Network.chainId).to.equal(TEST_SESSION_CHAIN_ID);
+
+        resolve();
+      }),
+    ]);
+  });
+
+  it("create contract ethers", async () => {
+    const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
+    const wallet = new WalletTestClient(provider, {
+      chainId: TEST_SESSION_CHAIN_ID,
+      privateKey: TEST_SESSION_PRIVATE_KEY,
+    });
+    await Promise.all([
+      wallet.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
+
+          const web3Provider = new ethers.providers.Web3Provider(provider);
+          const signer = await web3Provider.getSigner();
+          const erc20Factory = new ERC20Token__factory(signer);
+          const erc20 = await erc20Factory.deploy("The test token", "tst", 18);
+          await erc20.deployed();
+          const balanceToMint = ethers.utils.parseEther("500");
+          const mintTx = await erc20.mint(TEST_SESSION_WALLET.address, balanceToMint);
+          await mintTx.wait();
+          const tokenBalance = await erc20.balanceOf(TEST_SESSION_WALLET.address);
+          expect(tokenBalance.eq(balanceToMint)).to.be.true;
+          console.log(tokenBalance.toString());
+        } catch (error) {
+          console.log(error);
+        }
         resolve();
       }),
     ]);
