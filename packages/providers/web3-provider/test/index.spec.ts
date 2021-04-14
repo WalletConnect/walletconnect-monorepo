@@ -159,8 +159,8 @@ describe("WalletConnectWeb3Provider", function() {
           //   value: balanceToSend.toHexString(),
           //   from: providerAccounts[0],
           // });
-          // const signedTx = await signer.signTransaction(unsignedTx);
-          const signedTx = await provider.sendAsyncPromise("eth_signTransaction", [unsignedTx]); // ERROR Gives cant read from of undefined
+          const signedTx = await signer.signTransaction(unsignedTx); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
+          // const signedTx = await provider.sendAsyncPromise("eth_signTransaction", [unsignedTx]); // ERROR Does not resolve
           const broadcastTx = await provider.sendAsyncPromise("eth_sendRawTransaction", signedTx);
           await broadcastTx.wait();
           const balanceAfter = await web3Provider.getBalance(signer._address);
