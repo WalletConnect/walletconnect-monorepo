@@ -87,7 +87,7 @@ describe("Waku", () => {
       wakuTwo.postFilterTopic(testMessage, filterTopic);
     }, 750);
   });
-  it.only("Filter unsubscribe works", function(done) {
+  it("Filter unsubscribe works", function(done) {
     wakuOne.onNewFilterTopicMessage(filterTopic, () => {});
     setTimeout(() => {
       wakuOne.filterUnsubscribe(filterTopic);
