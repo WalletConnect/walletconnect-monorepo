@@ -154,14 +154,19 @@ describe("WalletConnectWeb3Provider", function() {
             value: balanceToSend.toHexString(),
             from: providerAccounts[0],
           };
-          // const test = await signer.checkTransaction(unsignedTx);
-          const signedTx = await signer.signTransaction(unsignedTx);
+          // const unsignedTx = signer.populateTransaction({
+          //   to: randomWallet.address,
+          //   value: balanceToSend.toHexString(),
+          //   from: providerAccounts[0],
+          // });
+          // const signedTx = await signer.signTransaction(unsignedTx);
+          const signedTx = await provider.sendAsyncPromise("eth_signTransaction", [unsignedTx]); // ERROR Gives cant read from of undefined
           const broadcastTx = await provider.sendAsyncPromise("eth_sendRawTransaction", signedTx);
           await broadcastTx.wait();
           const balanceAfter = await web3Provider.getBalance(signer._address);
           expect(balanceToSend.eq(balanceAfter)).to.be.true;
         } catch (error) {
-          console.log(error);
+          const testing = "JUST FOR TEST";
         }
         resolve();
       }),

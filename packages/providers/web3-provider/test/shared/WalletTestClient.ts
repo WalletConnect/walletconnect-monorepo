@@ -34,6 +34,7 @@ export class WalletTestClient {
         if (error) {
           reject(error);
         }
+
         if (payload.method === "eth_sendTransaction") {
           try {
             let transactionObject: ethers.providers.TransactionRequest = {
