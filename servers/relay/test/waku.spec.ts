@@ -88,6 +88,7 @@ describe("Waku", () => {
     }, 750);
   });
   it("Filter unsubscribe works", function(done) {
+    wakuOne.logger.level = "silent";
     wakuOne.onNewFilterTopicMessage(filterTopic, () => {});
     setTimeout(() => {
       wakuOne.filterUnsubscribe(filterTopic);
