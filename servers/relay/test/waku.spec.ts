@@ -30,7 +30,7 @@ describe.only("Waku", () => {
       expect(peers.length).to.be.greaterThan(0);
     });
   });
-  it("Receives a content message from two waku nodes with filter api of waku", function(done) {
+  it("Receives a filter message on Waku A from Waku B using filter api", function(done) {
     wakuOne.filterSubscribe(contentTopic);
     setTimeout(() => {
       wakuTwo.post(testMessage, contentTopic);

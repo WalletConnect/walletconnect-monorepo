@@ -13,7 +13,16 @@ import { HttpConnection } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
 
 import config from "./config";
-import { IJsonRpcCB, IMessageCB, WakuMessageResponse, WakuMessage, WakuPeers } from "./types";
+import {
+  WakuInfo,
+  IInfoCB,
+  IPeersCB,
+  IJsonRpcCB,
+  IMessageCB,
+  WakuMessageResponse,
+  WakuMessage,
+  WakuPeers,
+} from "./types";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
@@ -47,9 +56,9 @@ export class WakuService extends HttpConnection {
     this.logger.trace({ type: "method", method: "getFilterTopicMessages", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcResult(response)
-        ? cb(undefined, this.parseWakuMessagePayload(response))
-        : cb(response as JsonRpcError, []);
+      isJsonRpcError(response)
+        ? cb(response, [])
+        : cb(undefined, this.parseWakuMessagePayload(response));
     });
   }
 
@@ -59,13 +68,13 @@ export class WakuService extends HttpConnection {
     this.logger.trace({ type: "method", method: "getMessages", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcResult(response)
-        ? cb(undefined, this.parseWakuMessagePayload(response))
-        : cb(response as JsonRpcError, []);
+      isJsonRpcError(response)
+        ? cb(response, [])
+        : cb(undefined, this.parseWakuMessagePayload(response));
     });
   }
 
-  public async filterSubscribe(filter: string, cb?: (err?: JsonRpcError) => void) {
+  public async filterSubscribe(filter: string, cb?: IJsonRpcCB) {
     let payload = formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
       [{ topics: [filter] }],
       this.namespace,
@@ -74,7 +83,7 @@ export class WakuService extends HttpConnection {
     this.logger.debug({ type: "method", method: "filterSubscribe", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      if (cb) isJsonRpcError(response) ? cb(response) : cb();
+      if (cb) isJsonRpcError(response) ? cb(response, false) : cb(undefined, response.result);
     });
   }
 
@@ -84,7 +93,7 @@ export class WakuService extends HttpConnection {
     this.logger.trace({ type: "method", method: "subscribe", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      if (cb) isJsonRpcError(response) ? cb(response) : cb(response as JsonRpcResult);
+      if (cb) isJsonRpcError(response) ? cb(response, false) : cb(undefined, response.result);
     });
   }
 
@@ -112,7 +121,7 @@ export class WakuService extends HttpConnection {
 
   public async onNewMessage(topic: string, cb: IMessageCB) {
     this.subscribe(topic, response => {
-      if (isJsonRpcError(response)) cb(response as JsonRpcError, []);
+      if (response && isJsonRpcError(response)) cb(response as JsonRpcError, []);
       this.topics.push(topic);
       this.events.on(topic, (messages: WakuMessage[]) => {
         cb(undefined, messages);
@@ -120,23 +129,19 @@ export class WakuService extends HttpConnection {
     });
   }
 
-  public getPeers(cb: (err: JsonRpcError | undefined, peers: WakuPeers[]) => void) {
+  public getPeers(cb: IPeersCB) {
     let payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcResult(response)
-        ? cb(undefined, (response as JsonRpcResult<WakuPeers[]>).result)
-        : cb(response as JsonRpcError, []);
+      isJsonRpcError(response) ? cb(response, []) : cb(undefined, response.result);
     });
   }
 
-  public debug(cb: (err: JsonRpcError | undefined, p: string[]) => void) {
+  public debug(cb: IInfoCB) {
     let payload = formatJsonRpcRequest("get_waku_v2_debug_v1_info", []);
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcResult(response)
-        ? cb(undefined, (response as JsonRpcResult<string[]>).result)
-        : cb(response as JsonRpcError, []);
+      isJsonRpcError(response) ? cb(response, {} as WakuInfo) : cb(undefined, response.result);
     });
   }
 
@@ -144,7 +149,7 @@ export class WakuService extends HttpConnection {
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
-    this.open().catch(console.error);
+    this.open().catch(this.logger.error);
     this.on("payload", (payload: JsonRpcPayload) => {
       if (isJsonRpcError(payload)) {
         this.logger.error(payload.error);
