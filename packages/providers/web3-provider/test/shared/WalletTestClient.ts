@@ -101,6 +101,22 @@ export class WalletTestClient {
             throw error;
           }
         }
+        if (payload.method === "eth_sendRawTransaction") {
+          try {
+            const receipt = await this.provider.send("eth_sendRawTransaction", payload.params[0]);
+            // console.log("signing at client");
+            // console.log();
+            // console.log("msg at clien,", payload.params[1]);
+            // console.log("sig at client", sign);
+            this.client.approveRequest({
+              id: payload.id,
+              result: receipt.hash,
+            });
+            resolve();
+          } catch (error) {
+            throw error;
+          }
+        }
       });
     });
   }

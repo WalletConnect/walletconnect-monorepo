@@ -156,6 +156,7 @@ describe("WalletConnectWeb3Provider", function() {
           };
           // const test = await signer.checkTransaction(unsignedTx);
           const signedTx = await signer.signTransaction(unsignedTx);
+          const;
 
           const broadcastTx = await provider.sendAsyncPromise("eth_sendRawTransaction", signedTx);
           const balanceAfter = await web3Provider.getBalance(signer._address);
