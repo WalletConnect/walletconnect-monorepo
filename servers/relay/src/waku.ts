@@ -101,14 +101,14 @@ export class WakuService extends HttpConnection {
   }
 
   public filterUnsubscribe(filterTopic: string) {
-    this.request(formatJsonRpcRequest("delete_waku_v2_filter_v1_subscriptions", [filterTopic]));
+    this.request(
+      formatJsonRpcRequest("delete_waku_v2_filter_v1_subscription", [[{ topics: [filterTopic] }]]),
+    );
     this.filterTopics = this.filterTopics.filter(t => t !== filterTopic);
-    const listeners = this.events.listeners(filterTopic);
-    //this.events.removeListener(filter, )
   }
 
   public unsubscribe(topic: string) {
-    this.request(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscriptions", [topic]));
+    this.request(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscription", [[topic]]));
     this.topics = this.topics.filter(t => t !== topic);
   }
 
@@ -126,7 +126,6 @@ export class WakuService extends HttpConnection {
     this.filterSubscribe(filterTopic, response => {
       if (response && isJsonRpcError(response)) cb(response as JsonRpcError, []);
       this.filterTopics.push(filterTopic);
-      console.log("Waiting for filterTopic", filterTopic);
       this.events.on(filterTopic, (messages: WakuMessage[]) => {
         cb(undefined, messages);
       });

@@ -87,4 +87,21 @@ describe("Waku", () => {
       wakuTwo.postFilterTopic(testMessage, filterTopic);
     }, 750);
   });
+  it.only("Filter unsubscribe works", function(done) {
+    wakuOne.onNewFilterTopicMessage(filterTopic, () => {});
+    setTimeout(() => {
+      wakuOne.filterUnsubscribe(filterTopic);
+    }, 100);
+    setTimeout(() => {
+      expect(wakuOne.filterTopics).not.include(filterTopic);
+      wakuOne.getFilterTopicMessages(filterTopic, (err, messages) => {
+        expect(err).to.exist;
+        expect(err?.error.message).to.equal("get_waku_v2_filter_v1_messages raised an exception");
+        // https://github.com/pedrouid/json-rpc-tools/pull/2
+        //expect(err.error.data).to.equal(`Not subscribed to content topic: ${filterTopic}`);
+        expect(messages).to.be.empty;
+        done();
+      });
+    }, 200);
+  });
 });
