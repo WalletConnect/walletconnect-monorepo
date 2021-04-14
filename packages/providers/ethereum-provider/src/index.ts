@@ -1,6 +1,6 @@
 import EventEmitter from "eventemitter3";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
+import { IConnector, IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
 import { getRpcUrl, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
 import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
@@ -19,7 +19,11 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
   }
 
-  public async request(args: RequestArguments): Promise<unknown> {
+  get connector(): IConnector {
+    return (this.signer.connection as any).connector as IConnector;
+  }
+
+  public async request<T = unknown>(args: RequestArguments): Promise<T> {
     switch (args.method) {
       case "eth_requestAccounts":
         await this.signer.connect();

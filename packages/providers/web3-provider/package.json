@@ -47,7 +47,7 @@
     "@babel/preset-typescript": "7.8.3",
     "@babel/register": "7.8.3",
     "@types/chai": "4.2.14",
-    "@types/jest": "^22.2.3",
+    "@types/jest": "22.2.3",
     "@types/mocha": "8.0.4",
     "@types/node": "12.12.14",
     "chai": "4.2.0",
@@ -57,8 +57,8 @@
     "web3": "1.2.8",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10",
-    "ethers": "^5.1.0",
-    "hardhat": "^2.1.2"
+    "ethers": "5.1.0",
+    "hardhat": "2.1.2"
   },
   "dependencies": {
     "@walletconnect/client": "^1.4.1",
