@@ -5,7 +5,7 @@ import { RELAY_JSONRPC } from "relay-provider";
 
 import { TEST_RELAY_URL, getTestJsonRpc, Counter } from "./shared";
 import { JsonRpcPayload } from "@json-rpc-tools/types";
-import { isJsonRpcRequest, isJsonRpcResult, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { formatJsonRpcResult } from "@json-rpc-tools/utils";
 import { generateRandomBytes32 } from "../src/utils";
 
 describe("JSON-RPC", () => {

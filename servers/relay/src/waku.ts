@@ -40,7 +40,7 @@ export class WakuService extends HttpConnection {
     this.request(jsonPayload);
   }
 
-  public async postFilterTopic(payload: string, contentTopic: string, topic = this.namespace) {
+  public postFilterTopic(payload: string, contentTopic: string, topic = this.namespace) {
     let jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
       topic,
       {
@@ -49,7 +49,7 @@ export class WakuService extends HttpConnection {
       },
     ]);
     this.logger.debug("Posting FilterTopic Waku Message");
-    this.logger.trace({ type: "method", method: "postMessages", payload: jsonPayload });
+    this.logger.debug({ type: "method", method: "postMessages", payload: jsonPayload });
     this.request(jsonPayload);
   }
 
@@ -83,7 +83,7 @@ export class WakuService extends HttpConnection {
       this.namespace,
     ]);
     this.logger.debug("Subscribing to Waku FilterTopicTopic");
-    this.logger.trace({ type: "method", method: "filterSubscribe", payload });
+    this.logger.debug({ type: "method", method: "filterSubscribe", payload });
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       if (cb) isJsonRpcError(response) ? cb(response) : cb();
@@ -100,9 +100,11 @@ export class WakuService extends HttpConnection {
     });
   }
 
-  public filterUnsubscribe(topic: string) {
-    this.request(formatJsonRpcRequest("delete_waku_v2_filter_v1_subscriptions", [topic]));
-    this.topics = this.topics.filter(t => t !== topic);
+  public filterUnsubscribe(filterTopic: string) {
+    this.request(formatJsonRpcRequest("delete_waku_v2_filter_v1_subscriptions", [filterTopic]));
+    this.filterTopics = this.filterTopics.filter(t => t !== filterTopic);
+    const listeners = this.events.listeners(filterTopic);
+    //this.events.removeListener(filter, )
   }
 
   public unsubscribe(topic: string) {
@@ -124,6 +126,7 @@ export class WakuService extends HttpConnection {
     this.filterSubscribe(filterTopic, response => {
       if (response && isJsonRpcError(response)) cb(response as JsonRpcError, []);
       this.filterTopics.push(filterTopic);
+      console.log("Waiting for filterTopic", filterTopic);
       this.events.on(filterTopic, (messages: WakuMessage[]) => {
         cb(undefined, messages);
       });
@@ -192,31 +195,21 @@ export class WakuService extends HttpConnection {
   }
 
   private poll() {
-    this.topics.forEach(topic => {
-      this.getMessages(topic, (err, messages) => {
-        if (err) {
-          this.logger.error(err);
-          this.events.emit("error", err);
-          this.events.emit(topic, err);
-        }
-        if (messages && messages.length) {
-          this.logger.trace({ method: "poll", messages: messages });
-          this.events.emit(topic, messages);
-        }
-      });
-    });
-    this.filterTopics.forEach(topic => {
-      this.getFilterTopicMessages(topic, (err, messages) => {
-        if (err) {
-          this.logger.error(err);
-          this.events.emit("error", err);
-          this.events.emit(topic, err);
-        }
-        if (messages && messages.length) {
-          this.logger.trace({ method: "pollFilterTopic", messages: messages });
-          this.events.emit(topic, messages);
-        }
-      });
+    this.filterTopics.forEach(filterTopic => {
+      this.getFilterTopicMessages(
+        filterTopic,
+        (err: JsonRpcError | undefined, messages: WakuMessage[]) => {
+          if (err) {
+            this.logger.error(err);
+            this.events.emit("error", err);
+            this.events.emit(filterTopic, err);
+          }
+          if (messages.length) {
+            this.logger.trace({ method: "pollFilterTopic", messages: messages });
+            this.events.emit(filterTopic, messages);
+          }
+        },
+      );
     });
   }
 }

@@ -8,7 +8,7 @@ import { generateRandomBytes32 } from "../src/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
-describe.only("Waku", () => {
+describe("Waku", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
   let filterTopic: string;
@@ -60,7 +60,12 @@ describe.only("Waku", () => {
       });
     }, 200);
   });
-  it("It polls for messages", function(done) {
+  // We aren't doing global topic polling anymore
+  // But polling for global topic to see if we missed a filter message
+  // could be an alternative to using the store to get historical message
+  // The problem with that is that there is a potential that a lot of messages
+  // need to get filtered in search for the specific filterTopic
+  xit("It polls for messages", function(done) {
     wakuOne.onNewTopicMessage(topic, (err, messages) => {
       expect(err).to.be.undefined;
       expect(messages.length).to.equal(1);
@@ -71,7 +76,7 @@ describe.only("Waku", () => {
       wakuTwo.post(testMessage, topic);
     }, 750);
   });
-  it("It polls for content messages", function(done) {
+  it("It polls for filter messages", function(done) {
     wakuOne.onNewFilterTopicMessage(filterTopic, (err, messages) => {
       expect(err).to.be.undefined;
       expect(messages.length).to.equal(1);
