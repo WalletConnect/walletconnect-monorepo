@@ -78,7 +78,7 @@ export class WakuService extends HttpConnection {
     });
   }
 
-  public subscribe(topic = config.wcTopic, cb?: IJsonRpcCB) {
+  public subscribe(topic = this.namespace, cb?: IJsonRpcCB) {
     let payload = formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [[topic]]);
     this.logger.debug("Subscribing to Waku Topic");
     this.logger.trace({ type: "method", method: "subscribe", payload });
@@ -152,7 +152,7 @@ export class WakuService extends HttpConnection {
       this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
-    this.subscribe(config.wcTopic);
+    this.subscribe(this.namespace);
     setInterval(() => this.poll(), 200);
   }
 
