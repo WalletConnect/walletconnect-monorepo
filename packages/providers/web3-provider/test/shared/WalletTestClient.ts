@@ -71,14 +71,30 @@ export class WalletTestClient {
         }
         if (payload.method === "eth_sign") {
           try {
-            console.log("signing at client");
-            console.log();
-            console.log("msg at clien,", payload.params[1]);
             const sign = await this.signer.signMessage(payload.params[1]);
-            console.log("sig at client", sign);
+            // console.log("signing at client");
+            // console.log();
+            // console.log("msg at clien,", payload.params[1]);
+            // console.log("sig at client", sign);
             this.client.approveRequest({
               id: payload.id,
               result: sign,
+            });
+            resolve();
+          } catch (error) {
+            throw error;
+          }
+        }
+        if (payload.method === "eth_signTransaction") {
+          try {
+            const signedTx = await this.signer.signTransaction(payload.params[0]);
+            // console.log("signing at client");
+            // console.log();
+            // console.log("msg at clien,", payload.params[1]);
+            // console.log("sig at client", sign);
+            this.client.approveRequest({
+              id: payload.id,
+              result: signedTx,
             });
             resolve();
           } catch (error) {
