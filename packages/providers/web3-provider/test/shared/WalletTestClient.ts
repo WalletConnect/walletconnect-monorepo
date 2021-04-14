@@ -12,6 +12,7 @@ export class WalletTestClient {
   readonly provider: WalletConnectWeb3Provider;
   readonly signer: ethers.Wallet;
   readonly chainId: number;
+  // readonly wallet: ethers.Wallet;
   client?: WalletConnect;
 
   constructor(provider: WalletConnectWeb3Provider, opts: Partial<WalletClientOpts>) {
@@ -29,7 +30,6 @@ export class WalletTestClient {
       await this.approveSession();
       if (!this.client) throw Error("Client(session) needs to be initiated first");
       this.client.on("call_request", async (error, payload) => {
-        console.log(payload);
         if (!this.client) throw Error("Client(session) needs to be initiated first");
         if (error) {
           reject(error);
@@ -69,32 +69,48 @@ export class WalletTestClient {
             });
           }
         }
+        if (payload.method === "eth_sign") {
+          try {
+            console.log("signing at client");
+            console.log();
+            console.log("msg at clien,", payload.params[1]);
+            const sign = await this.signer.signMessage(payload.params[1]);
+            console.log("sig at client", sign);
+            this.client.approveRequest({
+              id: payload.id,
+              result: sign,
+            });
+            resolve();
+          } catch (error) {
+            throw error;
+          }
+        }
       });
     });
   }
 
-  listen() {
-    return new Promise<void>(async (resolve, reject) => {
-      if (!this.client) throw Error("Client(session) needs to be initiated first");
-      this.client.on("session_request", error => {
-        if (!this.client) throw Error("Client(session) needs to be initiated first");
-        if (error) {
-          reject(error);
-        }
-        this.client.approveSession({
-          accounts: [this.signer.address],
-          chainId: this.chainId,
-        });
-      });
+  // listen() {
+  //   return new Promise<void>(async (resolve, reject) => {
+  //     if (!this.client) throw Error("Client(session) needs to be initiated first");
+  //     this.client.on("session_request", error => {
+  //       if (!this.client) throw Error("Client(session) needs to be initiated first");
+  //       if (error) {
+  //         reject(error);
+  //       }
+  //       this.client.approveSession({
+  //         accounts: [this.signer.address],
+  //         chainId: this.chainId,
+  //       });
+  //     });
 
-      this.client.on("disconnect", async (error, payload) => {
-        if (error) {
-          reject(error);
-        }
-        resolve();
-      });
-    });
-  }
+  //     this.client.on("disconnect", async error => {
+  //       if (error) {
+  //         reject(error);
+  //       }
+  //       resolve();
+  //     });
+  //   });
+  // }
 
   approveSession() {
     return new Promise<void>((resolve, reject) => {

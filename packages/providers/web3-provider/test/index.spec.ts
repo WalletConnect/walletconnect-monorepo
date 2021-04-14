@@ -9,6 +9,7 @@ import { TestNetwork } from "./shared/TestNetwork";
 import { ethers } from "ethers";
 import { WalletTestClient } from "./shared/WalletTestClient";
 import { ERC20Token__factory } from "./shared/utils/ERC20Token__factory";
+import { hexlify } from "@ethersproject/bytes";
 
 // const TEST_SESSION_PARAMS = {
 //   accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"],
@@ -121,9 +122,48 @@ describe("WalletConnectWeb3Provider", function() {
           await mintTx.wait();
           const tokenBalance = await erc20.balanceOf(TEST_SESSION_WALLET.address);
           expect(tokenBalance.eq(balanceToMint)).to.be.true;
-          console.log(tokenBalance.toString());
+        } catch (error) {
+          expect(error).to.be.false;
+        }
+        resolve();
+      }),
+    ]);
+  });
+
+  it("create sign ethers", async () => {
+    const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
+    const wallet = new WalletTestClient(provider, {
+      chainId: TEST_SESSION_CHAIN_ID,
+      privateKey: TEST_SESSION_PRIVATE_KEY,
+    });
+    await Promise.all([
+      wallet.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
+
+          const web3Provider = new ethers.providers.Web3Provider(provider);
+          const signer = await web3Provider.getSigner();
+          const msg = "Hello world";
+          console.log("Msg");
+          const msg2 = ethers.utils.keccak256(
+            "0x\x19Ethereum Signed Message:\n" + msg.length + msg,
+          );
+          console.log(msg2);
+          const signature = await signer.signMessage(msg2);
+          console.log("signature", signature);
+          const verify = ethers.utils.verifyMessage(msg, signature);
+          console.log("verify", verify);
+
+          console.log("test2");
+          const testWallet = new ethers.Wallet(TEST_SESSION_PRIVATE_KEY);
+          const sig2 = await testWallet.signMessage(msg);
+          const add2 = ethers.utils.verifyMessage(msg, sig2);
+          console.log("add2, ", add2);
         } catch (error) {
           console.log(error);
+          expect(error).to.be.false;
         }
         resolve();
       }),
