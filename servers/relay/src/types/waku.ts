@@ -7,7 +7,7 @@ export interface WakuPeers {
 
 export interface WakuMessage {
   payload: string;
-  filterTopic: string;
+  contentTopic: string;
   version: number;
   proof: Uint8Array;
   timestamp: number;

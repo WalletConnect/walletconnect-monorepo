@@ -150,12 +150,12 @@ export class JsonRpcService {
       await this.notification.push(params.topic);
       await this.redis.setMessage(params);
       await this.searchSubscriptions(socketId, params);
-      this.waku.postFilterTopic(params.message, params.topic);
+      this.waku.post(params.message, params.topic);
       setTimeout(() => {
         // We can avoid posting a second time by just calling the relay get messages
         // api on the receiving nodes since the the global topic is already being
         // subcribed to.
-        this.waku.postFilterTopic(params.message, params.topic);
+        this.waku.post(params.message, params.topic);
       }, 1000);
       return true;
     } else {
@@ -171,7 +171,7 @@ export class JsonRpcService {
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
 
-    await this.waku.onNewFilterTopicMessage(params.topic, (err, messages) => {
+    await this.waku.onNewFilterMessage(params.topic, (err, messages) => {
       if (err) this.logger.error(err);
       messages.forEach((m: WakuMessage) => {
         this.onNewMessage({

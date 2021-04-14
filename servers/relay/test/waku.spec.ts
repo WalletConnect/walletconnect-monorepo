@@ -8,10 +8,10 @@ import { generateRandomBytes32 } from "../src/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
-describe("Waku", () => {
+describe.only("Waku", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
-  let filterTopic: string;
+  let contentTopic: string;
   let testMessage: string;
   let topic: string;
   before(() => {
@@ -21,7 +21,7 @@ describe("Waku", () => {
   });
   beforeEach(() => {
     testMessage = generateRandomBytes32();
-    filterTopic = generateRandomBytes32();
+    contentTopic = generateRandomBytes32();
     topic = generateRandomBytes32();
   });
   it("Waku node has peers", async () => {
@@ -31,25 +31,25 @@ describe("Waku", () => {
     });
   });
   it("Receives a content message from two waku nodes with filter api of waku", function(done) {
-    wakuOne.filterSubscribe(filterTopic);
+    wakuOne.filterSubscribe(contentTopic);
     setTimeout(() => {
-      wakuTwo.postFilterTopic(testMessage, filterTopic);
+      wakuTwo.post(testMessage, contentTopic);
     }, 100);
     setTimeout(() => {
-      wakuOne.getFilterTopicMessages(filterTopic, (err, messages: WakuMessage[]) => {
+      wakuOne.getFilterMessages(contentTopic, (err, messages: WakuMessage[]) => {
         expect(err).to.be.undefined;
         expect(messages.length).to.equal(1);
         expect(messages[0].payload).to.equal(testMessage);
-        expect(messages[0].filterTopic).to.equal(filterTopic);
+        expect(messages[0].contentTopic).to.equal(contentTopic);
         done();
       });
     }, 200);
   });
 
-  it("Receive message from two waku nodes with relay api of waku", function(done) {
+  it("Receive message on Waku A from Waku B using relay api", function(done) {
     wakuOne.subscribe(topic);
     setTimeout(() => {
-      wakuTwo.post(testMessage, topic);
+      wakuTwo.post(testMessage, "", topic);
     }, 100);
     setTimeout(() => {
       wakuOne.getMessages(topic, (err, m) => {
@@ -64,42 +64,42 @@ describe("Waku", () => {
   // But polling for global topic to see if we missed a filter message
   // could be an alternative to using the store to get historical message
   // The problem with that is that there is a potential that a lot of messages
-  // need to get filtered in search for the specific filterTopic
+  // need to get filtered in search for the specific filter
   xit("It polls for messages", function(done) {
-    wakuOne.onNewTopicMessage(topic, (err, messages) => {
+    wakuOne.onNewMessage(topic, (err, messages) => {
       expect(err).to.be.undefined;
       expect(messages.length).to.equal(1);
       expect(messages[0].payload).to.equal(testMessage);
       done();
     });
     setTimeout(() => {
-      wakuTwo.post(testMessage, topic);
+      wakuTwo.post(testMessage, "", topic);
     }, 750);
   });
   it("It polls for filter messages", function(done) {
-    wakuOne.onNewFilterTopicMessage(filterTopic, (err, messages) => {
+    wakuOne.onNewFilterMessage(contentTopic, (err, messages) => {
       expect(err).to.be.undefined;
       expect(messages.length).to.equal(1);
       expect(messages[0].payload).to.equal(testMessage);
       done();
     });
     setTimeout(() => {
-      wakuTwo.postFilterTopic(testMessage, filterTopic);
+      wakuTwo.post(testMessage, contentTopic);
     }, 750);
   });
   it("Filter unsubscribe works", function(done) {
     wakuOne.logger.level = "silent";
-    wakuOne.onNewFilterTopicMessage(filterTopic, () => {});
+    wakuOne.onNewFilterMessage(contentTopic, () => {});
     setTimeout(() => {
-      wakuOne.filterUnsubscribe(filterTopic);
+      wakuOne.filterUnsubscribe(contentTopic);
     }, 100);
     setTimeout(() => {
-      expect(wakuOne.filterTopics).not.include(filterTopic);
-      wakuOne.getFilterTopicMessages(filterTopic, (err, messages) => {
+      expect(wakuOne.filterTopics).not.include(contentTopic);
+      wakuOne.getFilterMessages(contentTopic, (err, messages) => {
         expect(err).to.exist;
         expect(err?.error.message).to.equal("get_waku_v2_filter_v1_messages raised an exception");
         // https://github.com/pedrouid/json-rpc-tools/pull/2
-        //expect(err.error.data).to.equal(`Not subscribed to content topic: ${filterTopic}`);
+        //expect(err.error.data).to.equal(`Not subscribed to content topic: ${filter}`);
         expect(messages).to.be.empty;
         done();
       });
