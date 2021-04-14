@@ -8,21 +8,13 @@ import {
   formatJsonRpcRequest,
   JsonRpcResult,
   isJsonRpcResult,
+  JsonRpcRequest,
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
 
 import config from "./config";
-import {
-  WakuInfo,
-  IInfoCB,
-  IPeersCB,
-  IJsonRpcCB,
-  IMessageCB,
-  WakuMessageResponse,
-  WakuMessage,
-  WakuPeers,
-} from "./types";
+import { WakuInfo, IWakuCB, WakuMessageResponse, WakuMessage, WakuPeers } from "./types";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
@@ -50,86 +42,55 @@ export class WakuService extends HttpConnection {
     this.request(jsonPayload);
   }
 
-  public getFilterMessages(filter: string, cb: IMessageCB) {
-    let payload = formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [filter]);
-    this.logger.trace("Getting FilterTopic Messages");
-    this.logger.trace({ type: "method", method: "getFilterTopicMessages", payload });
-    this.request(payload);
-    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcError(response)
-        ? cb(response, [])
-        : cb(undefined, this.parseWakuMessagePayload(response));
-    });
+  public getFilterMessages(filter: string, cb: IWakuCB.Message) {
+    this.get(formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [filter]), cb);
   }
 
-  public getMessages(topic: string, cb: IMessageCB) {
-    let payload = formatJsonRpcRequest("get_waku_v2_relay_v1_messages", [topic]);
-    this.logger.debug("Getting Messages");
-    this.logger.trace({ type: "method", method: "getMessages", payload });
-    this.request(payload);
-    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      isJsonRpcError(response)
-        ? cb(response, [])
-        : cb(undefined, this.parseWakuMessagePayload(response));
-    });
+  public getMessages(topic: string, cb: IWakuCB.Message) {
+    this.get(formatJsonRpcRequest("get_waku_v2_relay_v1_messages", [topic]), cb);
   }
 
-  public async filterSubscribe(filter: string, cb?: IJsonRpcCB) {
-    let payload = formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
-      [{ topics: [filter] }],
-      this.namespace,
-    ]);
-    this.logger.debug("Subscribing to Waku FilterTopicTopic");
-    this.logger.debug({ type: "method", method: "filterSubscribe", payload });
-    this.request(payload);
-    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      if (cb) isJsonRpcError(response) ? cb(response, false) : cb(undefined, response.result);
-    });
+  public async filterSubscribe(filter: string, cb?: IWakuCB.Rpc) {
+    this.sub(
+      formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
+        [{ topics: [filter] }],
+        this.namespace,
+      ]),
+      cb,
+    );
   }
 
-  public subscribe(topic = this.namespace, cb?: IJsonRpcCB) {
-    let payload = formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [[topic]]);
-    this.logger.debug("Subscribing to Waku Topic");
-    this.logger.trace({ type: "method", method: "subscribe", payload });
-    this.request(payload);
-    this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-      if (cb) isJsonRpcError(response) ? cb(response, false) : cb(undefined, response.result);
-    });
+  public subscribe(topic = this.namespace, cb?: IWakuCB.Rpc) {
+    this.sub(formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [[topic]]), cb);
   }
 
   public filterUnsubscribe(filterTopic: string) {
-    this.request(
+    this.unsub(
       formatJsonRpcRequest("delete_waku_v2_filter_v1_subscription", [[{ topics: [filterTopic] }]]),
     );
     this.filterTopics = this.filterTopics.filter(t => t !== filterTopic);
   }
 
   public unsubscribe(topic: string) {
-    this.request(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscription", [[topic]]));
+    this.unsub(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscription", [[topic]]));
     this.topics = this.topics.filter(t => t !== topic);
   }
 
-  public async onNewFilterMessage(filterTopic: string, cb: IMessageCB) {
+  public async onNewFilterMessage(filterTopic: string, cb: IWakuCB.Message) {
     this.filterSubscribe(filterTopic, response => {
-      if (response && isJsonRpcError(response)) cb(response as JsonRpcError, []);
+      this.onnew(filterTopic, response, cb);
       this.filterTopics.push(filterTopic);
-      this.events.on(filterTopic, (messages: WakuMessage[]) => {
-        cb(undefined, messages);
-      });
     });
   }
 
-  public async onNewMessage(topic: string, cb: IMessageCB) {
+  public async onNewMessage(topic: string, cb: IWakuCB.Message) {
     this.subscribe(topic, response => {
-      if (response && isJsonRpcError(response)) cb(response as JsonRpcError, []);
+      this.onnew(topic, response, cb);
       this.topics.push(topic);
-      this.events.on(topic, (messages: WakuMessage[]) => {
-        cb(undefined, messages);
-      });
     });
   }
 
-  public getPeers(cb: IPeersCB) {
+  public getPeers(cb: IWakuCB.Peers) {
     let payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
@@ -137,7 +98,7 @@ export class WakuService extends HttpConnection {
     });
   }
 
-  public debug(cb: IInfoCB) {
+  public debug(cb: IWakuCB.Info) {
     let payload = formatJsonRpcRequest("get_waku_v2_debug_v1_info", []);
     this.request(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
@@ -184,6 +145,39 @@ export class WakuService extends HttpConnection {
     return this.send(payload).catch(e => {
       this.events.emit("error", e);
       throw e;
+    });
+  }
+
+  private get(request: JsonRpcRequest, cb: IWakuCB.Message) {
+    this.logger.trace("Getting Messages");
+    this.logger.trace({ type: "method", method: "get", request });
+    this.request(request);
+    this.once(request.id.toString(), (response: JsonRpcResponse) => {
+      isJsonRpcError(response)
+        ? cb(response, [])
+        : cb(undefined, this.parseWakuMessagePayload(response));
+    });
+  }
+
+  private sub(request: JsonRpcRequest, cb?: IWakuCB.Rpc) {
+    this.logger.debug("Subscribing to Waku");
+    this.logger.debug({ type: "method", method: "filterSubscribe", request });
+    this.request(request);
+    this.once(request.id.toString(), (response: JsonRpcResponse) => {
+      if (cb) isJsonRpcError(response) ? cb(response, false) : cb(undefined, response.result);
+    });
+  }
+
+  private unsub(request: JsonRpcRequest) {
+    this.logger.debug("Subscribing to Waku");
+    this.logger.trace({ type: "method", method: "unsub", request });
+    this.request(request);
+  }
+
+  private onnew(topic: string, response: JsonRpcResponse | undefined, cb: IWakuCB.Message) {
+    if (response && isJsonRpcError(response)) cb(response, []);
+    this.events.on(topic, (messages: WakuMessage[]) => {
+      cb(undefined, messages);
     });
   }
 
