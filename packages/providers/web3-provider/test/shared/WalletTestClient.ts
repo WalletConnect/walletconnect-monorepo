@@ -1,7 +1,8 @@
-import WalletConnect from "@walletconnect/client";
-import WalletConnectWeb3Provider from "../../src";
 import { ethers } from "ethers";
+import WalletConnect from "@walletconnect/client";
+import { IConnector } from "@walletconnect/types";
 
+import WalletConnectWeb3Provider from "../../src";
 export interface WalletClientOpts {
   privateKey: string;
   chainId: number;
@@ -13,7 +14,7 @@ export class WalletTestClient {
   readonly signer: ethers.Wallet;
   readonly chainId: number;
   // readonly wallet: ethers.Wallet;
-  client?: WalletConnect;
+  client?: IConnector;
 
   constructor(provider: WalletConnectWeb3Provider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
