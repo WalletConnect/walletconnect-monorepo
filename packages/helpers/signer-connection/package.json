@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/signer-connection",
-  "version": "1.4.1",
+  "version": "1.4.2-rc.0",
   "description": "Signer Connection for WalletConnect Providers",
   "scripts": {
     "clean": "rm -rf dist",
@@ -61,9 +61,9 @@
   "dependencies": {
     "@json-rpc-tools/types": "^1.7.1",
     "@json-rpc-tools/utils": "^1.7.1",
-    "@walletconnect/client": "^1.4.1",
-    "@walletconnect/rpc-connection": "^1.4.1",
-    "@walletconnect/types": "^1.4.1",
+    "@walletconnect/client": "^1.4.2-rc.0",
+    "@walletconnect/rpc-connection": "^1.4.2-rc.0",
+    "@walletconnect/types": "^1.4.2-rc.0",
     "eventemitter3": "4.0.7"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
