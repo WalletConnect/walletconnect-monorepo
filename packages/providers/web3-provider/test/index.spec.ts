@@ -8,7 +8,7 @@ import WalletConnectWeb3Provider from "../src";
 import { TestNetwork } from "./shared/TestNetwork";
 import { ethers } from "ethers";
 import { WalletTestClient } from "./shared/WalletTestClient";
-import { ERC20Token__factory } from "./shared/utils/ERC20Token__factory";
+import { ERC20Token__factory, _abi, _bytecode } from "./shared/utils/ERC20Token__factory";
 import { hexlify } from "@ethersproject/bytes";
 
 // const TEST_SESSION_PARAMS = {
@@ -100,7 +100,52 @@ describe("WalletConnectWeb3Provider", function() {
     ]);
   });
 
-  it("create contract ethers", async () => {
+  it("create contract web3", async () => {
+    const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
+    const wallet = new WalletTestClient(provider, {
+      chainId: TEST_SESSION_CHAIN_ID,
+      privateKey: TEST_SESSION_PRIVATE_KEY,
+    });
+    await Promise.all([
+      wallet.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
+
+          const web3Provider = new Web3(provider as any);
+          const erc20Factory = new web3Provider.eth.Contract(JSON.parse(JSON.stringify(_abi)));
+          const erc20 = await erc20Factory
+            .deploy({ data: _bytecode, arguments: ["The test token", "tst", 18] })
+            .send({ from: providerAccounts[0] });
+
+          // console.log("erc29", erc20);
+          const balanceToMint = ethers.utils.parseEther("500");
+          await new Promise<void>((resolve, reject) => {
+            erc20.methods
+              .mint(providerAccounts[0], balanceToMint.toHexString())
+              .send({ from: providerAccounts[0] })
+              .on("receipt", function() {
+                resolve();
+              })
+              .on("error", function(error, receipt) {
+                // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
+                reject(error);
+              });
+          });
+
+          const balance = await erc20.methods
+            .balanceOf(providerAccounts[0])
+            .call({ from: providerAccounts[0] });
+          expect(balanceToMint.toString() === balance).to.be.true;
+        } catch (error) {
+          expect(error).to.be.false;
+        }
+        resolve();
+      }),
+    ]);
+  });
+  xit("create contract ethers", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
     const wallet = new WalletTestClient(provider, {
       chainId: TEST_SESSION_CHAIN_ID,
@@ -174,45 +219,34 @@ describe("WalletConnectWeb3Provider", function() {
   //   ]);
   // });
 
-  // it("create sign ethers", async () => {
-  //   const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-  //   const wallet = new WalletTestClient(provider, {
-  //     chainId: TEST_SESSION_CHAIN_ID,
-  //     privateKey: TEST_SESSION_PRIVATE_KEY,
-  //   });
-  //   await Promise.all([
-  //     wallet.approveSessionAndRequest(),
-  //     new Promise<void>(async resolve => {
-  //       try {
-  //         const providerAccounts = await provider.enable();
-  //         expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
+  // Unresolved test weird one because there are two methods (eth_sign and personal_sign) with the same history
+  xit("create sign ethers", async () => {
+    const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
+    const wallet = new WalletTestClient(provider, {
+      chainId: TEST_SESSION_CHAIN_ID,
+      privateKey: TEST_SESSION_PRIVATE_KEY,
+    });
+    await Promise.all([
+      wallet.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([TEST_SESSION_WALLET.address]);
 
-  //         const web3Provider = new ethers.providers.Web3Provider(provider);
-  //         const signer = await web3Provider.getSigner();
-  //         const msg = "Hello world";
-  //         console.log("Msg");
-  //         const msg2 = ethers.utils.keccak256(
-  //           "0x\x19Ethereum Signed Message:\n" + msg.length + msg,
-  //         );
-  //         console.log(msg2);
-  //         const signature = await signer.signMessage(msg2);
-  //         console.log("signature", signature);
-  //         const verify = ethers.utils.verifyMessage(msg, signature);
-  //         console.log("verify", verify);
+          const web3Provider = new ethers.providers.Web3Provider(provider);
+          const signer = await web3Provider.getSigner();
+          const msg = "Hello world";
 
-  //         console.log("test2");
-  //         const testWallet = new ethers.Wallet(TEST_SESSION_PRIVATE_KEY);
-  //         const sig2 = await testWallet.signMessage(msg);
-  //         const add2 = ethers.utils.verifyMessage(msg, sig2);
-  //         console.log("add2, ", add2);
-  //       } catch (error) {
-  //         console.log(error);
-  //         expect(error).to.be.false;
-  //       }
-  //       resolve();
-  //     }),
-  //   ]);
-  // });
+          const signature = await signer.signMessage(msg);
+          const verify = ethers.utils.verifyMessage(msg, signature);
+          expect(verify).eq(providerAccounts[0]);
+        } catch (error) {
+          const test = "Only here as breakpoint to test execution.";
+        }
+        resolve();
+      }),
+    ]);
+  });
 
   it("closes test-network", async () => {
     await testNetwork.close();
