@@ -104,7 +104,10 @@ export class WalletTestClient {
         }
         if (payload.method === "eth_sendRawTransaction") {
           try {
-            const receipt = await this.provider.send("eth_sendRawTransaction", payload.params[0]);
+            const receipt = await this.provider.sendTransaction(
+              "eth_sendRawTransaction",
+              payload.params[0],
+            );
             // console.log("signing at client");
             // console.log();
             // console.log("msg at clien,", payload.params[1]);
