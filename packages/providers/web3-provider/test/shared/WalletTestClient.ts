@@ -148,7 +148,7 @@ export class WalletTestClient {
 
   approveSession() {
     return new Promise<void>((resolve, reject) => {
-      this.provider.wc.on("display_uri", (error, payload) => {
+      this.provider.connector.on("display_uri", (error, payload) => {
         if (error) {
           reject(error);
         }

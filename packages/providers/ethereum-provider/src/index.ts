@@ -26,7 +26,9 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
     switch (args.method) {
       case "eth_requestAccounts":
-        await this.signer.connect();
+        if (!this.signer.connection.connected) {
+          await this.signer.connect();
+        }
         return (this.signer.connection as any).accounts;
       case "eth_accounts":
         return (this.signer.connection as any).accounts;
@@ -43,12 +45,13 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
     }
     return this.http.request(args);
   }
+
   public async enable(): Promise<ProviderAccounts> {
     const accounts = await this.request({ method: "eth_requestAccounts" });
     return accounts as ProviderAccounts;
   }
 
-  public on(event: any, listener: any) {
+  public on(event: any, listener: any): void {
     this.events.on(event, listener);
   }
   public once(event: string, listener: any): void {

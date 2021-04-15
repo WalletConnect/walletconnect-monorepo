@@ -60,7 +60,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "1.6.4",
+    "@json-rpc-tools/utils": "1.7.1",
     "@walletconnect/browser-utils": "^1.4.1",
     "@walletconnect/types": "^1.4.1",
     "bn.js": "4.11.8",

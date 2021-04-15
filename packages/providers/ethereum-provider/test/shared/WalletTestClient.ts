@@ -159,10 +159,8 @@ export class WalletTestClient {
           if (error) {
             reject(error);
           }
-          this.client.approveSession({
-            accounts: [this.signer.address],
-            chainId: this.chainId,
-          });
+          const session = { accounts: [this.signer.address], chainId: this.chainId };
+          this.client.approveSession(session);
           resolve();
         });
       });

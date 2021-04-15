@@ -1,8 +1,9 @@
 import EventEmitter from "eventemitter3";
 import { IJsonRpcConnection } from "@json-rpc-tools/types";
+import { formatJsonRpcError } from "@json-rpc-tools/utils";
 
 import WCRpcConnection from "@walletconnect/rpc-connection";
-import { IWCEthRpcConnectionOptions, IWCRpcConnection } from "@walletconnect/types";
+import { IConnector, IWCEthRpcConnectionOptions, IWCRpcConnection } from "@walletconnect/types";
 
 export class SignerConnection extends IJsonRpcConnection {
   public events: any = new EventEmitter();
@@ -11,20 +12,27 @@ export class SignerConnection extends IJsonRpcConnection {
   public chainId = 1;
 
   private pending = false;
-  private connector: IWCRpcConnection | undefined;
+  private rpc: IWCRpcConnection | undefined;
   private opts: IWCEthRpcConnectionOptions | undefined;
 
   constructor(opts?: IWCEthRpcConnectionOptions) {
     super();
-    this.connector = this.register(opts);
+    this.opts = opts;
+    this.chainId = opts?.chainId || this.chainId;
+    this.rpc = this.register(opts);
   }
 
   get connected(): boolean {
-    return typeof this.connector !== "undefined" && this.connector.connected;
+    return typeof this.rpc !== "undefined" && this.rpc.connected;
   }
 
   get connecting(): boolean {
     return this.pending;
+  }
+
+  get connector(): IConnector {
+    this.rpc = this.register(this.opts);
+    return this.rpc.connector;
   }
 
   public on(event: string, listener: any) {
@@ -46,53 +54,63 @@ export class SignerConnection extends IJsonRpcConnection {
   public async open(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.pending = true;
-      if (typeof this.connector === "undefined") {
-        this.connector = this.register(this.opts);
+      if (typeof this.rpc === "undefined") {
+        this.rpc = this.register(this.opts);
       }
-      if (this.connector.wc === null) {
+      if (this.rpc.connector === null) {
         throw new Error("Connector missing or invalid");
       }
-      this.connector.wc.on("disconnect", () => {
+      this.rpc.connector.on("disconnect", err => {
+        if (err) return reject(err);
         this.onClose();
         reject();
       });
-      this.connector.wc.on("connect", () => {
-        this.onOpen(this.connector);
+      this.rpc.connector.on("connect", (err, payload) => {
+        if (err) return reject(err);
+        const { accounts, chainId } = payload.params[0];
+        this.accounts = accounts;
+        this.chainId = chainId;
+        this.onOpen(this.rpc);
         resolve();
       });
 
-      this.connector.create();
+      this.rpc.create();
     });
   }
 
   public async close() {
-    if (typeof this.connector === "undefined") {
+    if (typeof this.rpc === "undefined") {
       return;
     }
-    if (this.connector.wc === null) {
+    if (this.rpc.connector === null) {
       throw new Error("Connector missing or invalid");
     }
-    await this.connector.wc.killSession();
+    await this.rpc.connector.killSession();
     this.onClose();
   }
 
   public async send(payload: any) {
-    if (typeof this.connector === "undefined") {
-      this.connector = this.register(this.opts);
+    if (typeof this.rpc === "undefined") {
+      this.rpc = this.register(this.opts);
+      if (!this.connected) await this.open();
     }
-    this.connector.sendPayload(payload).then((res: any) => this.events.emit("payload", res));
+    this.rpc
+      .sendPayload(payload)
+      .then((res: any) => this.events.emit("payload", res))
+      .catch(e => this.events.emit("payload", formatJsonRpcError(payload.id, e.message)));
   }
 
   // ---------- Private ----------------------------------------------- //
 
   private register(opts?: IWCEthRpcConnectionOptions): IWCRpcConnection {
+    this.opts = opts || this.opts;
     return new WCRpcConnection(opts);
   }
 
-  private onOpen(connector?: IWCRpcConnection) {
+  private onOpen(rpc?: IWCRpcConnection) {
     this.pending = false;
-    if (connector) {
-      this.connector = connector;
+    if (rpc) {
+      this.rpc = rpc;
     }
     this.events.emit("open");
     this.registerUpdateEvents();
@@ -100,15 +118,15 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private onClose() {
     this.pending = false;
-    if (this.connector) {
-      this.connector = undefined;
+    if (this.rpc) {
+      this.rpc = undefined;
     }
     this.events.emit("close");
   }
 
   private registerUpdateEvents() {
-    if (!this.connector || this.connector.wc === null) return;
-    this.connector.wc.on("session_update", (error, payload) => {
+    if (!this.rpc || this.rpc.connector === null) return;
+    this.rpc.connector.on("session_update", (error, payload) => {
       const { accounts, chainId } = payload.params[0];
       if (!this.accounts || (accounts && this.accounts !== accounts)) {
         this.accounts = accounts;
