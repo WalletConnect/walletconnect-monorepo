@@ -8,7 +8,7 @@ import { generateRandomBytes32 } from "../src/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
-describe.only("Waku", () => {
+describe("Waku", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
   let contentTopic: string;
@@ -98,8 +98,7 @@ describe.only("Waku", () => {
       wakuOne.getFilterMessages(contentTopic, (err, messages) => {
         expect(err).to.exist;
         expect(err?.error.message).to.equal("get_waku_v2_filter_v1_messages raised an exception");
-        // https://github.com/pedrouid/json-rpc-tools/pull/2
-        //expect(err.error.data).to.equal(`Not subscribed to content topic: ${filter}`);
+        expect(err?.error.data).to.equal(`Not subscribed to content topic: ${contentTopic}`);
         expect(messages).to.be.empty;
         done();
       });

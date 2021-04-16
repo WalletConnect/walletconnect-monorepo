@@ -39,7 +39,7 @@ export class WakuService extends HttpConnection {
     ]);
     this.logger.debug("Posting Waku Message");
     this.logger.trace({ type: "method", method: "post", payload: jsonPayload });
-    this.request(jsonPayload);
+    this.send(jsonPayload);
   }
 
   public getFilterMessages(filter: string, cb: IWakuCB.Message) {
@@ -92,7 +92,7 @@ export class WakuService extends HttpConnection {
 
   public getPeers(cb: IWakuCB.Peers) {
     let payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
-    this.request(payload);
+    this.send(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response) ? cb(response, []) : cb(undefined, response.result);
     });
@@ -100,7 +100,7 @@ export class WakuService extends HttpConnection {
 
   public debug(cb: IWakuCB.Info) {
     let payload = formatJsonRpcRequest("get_waku_v2_debug_v1_info", []);
-    this.request(payload);
+    this.send(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response) ? cb(response, {} as WakuInfo) : cb(undefined, response.result);
     });
@@ -141,17 +141,10 @@ export class WakuService extends HttpConnection {
     return messages;
   }
 
-  private async request(payload: JsonRpcPayload): Promise<void> {
-    return this.send(payload).catch(e => {
-      this.events.emit("error", e);
-      throw e;
-    });
-  }
-
   private get(request: JsonRpcRequest, cb: IWakuCB.Message) {
     this.logger.trace("Getting Messages");
     this.logger.trace({ type: "method", method: "get", request });
-    this.request(request);
+    this.send(request);
     this.once(request.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response)
         ? cb(response, [])
@@ -162,7 +155,7 @@ export class WakuService extends HttpConnection {
   private sub(request: JsonRpcRequest, cb?: IWakuCB.Rpc) {
     this.logger.debug("Subscribing to Waku");
     this.logger.debug({ type: "method", method: "filterSubscribe", request });
-    this.request(request);
+    this.send(request);
     this.once(request.id.toString(), (response: JsonRpcResponse) => {
       if (cb) isJsonRpcError(response) ? cb(response, false) : cb(undefined, response.result);
     });
@@ -171,32 +164,24 @@ export class WakuService extends HttpConnection {
   private unsub(request: JsonRpcRequest) {
     this.logger.debug("Subscribing to Waku");
     this.logger.trace({ type: "method", method: "unsub", request });
-    this.request(request);
+    this.send(request);
   }
 
   private onnew(topic: string, response: JsonRpcResponse | undefined, cb: IWakuCB.Message) {
     if (response && isJsonRpcError(response)) cb(response, []);
-    this.events.on(topic, (messages: WakuMessage[]) => {
+    this.on(topic, (messages: WakuMessage[]) => {
       cb(undefined, messages);
     });
   }
 
   private poll() {
     this.filterTopics.forEach(filterTopic => {
-      this.getFilterMessages(
-        filterTopic,
-        (err: JsonRpcError | undefined, messages: WakuMessage[]) => {
-          if (err) {
-            this.logger.error(err);
-            this.events.emit("error", err);
-            this.events.emit(filterTopic, err);
-          }
-          if (messages.length) {
-            this.logger.trace({ method: "pollFilterTopic", messages: messages });
-            this.events.emit(filterTopic, messages);
-          }
-        },
-      );
+      this.getFilterMessages(filterTopic, (_, messages: WakuMessage[]) => {
+        if (messages.length) {
+          this.logger.trace({ method: "pollFilterTopic", messages: messages });
+          this.events.emit(filterTopic, messages);
+        }
+      });
     });
   }
 }
