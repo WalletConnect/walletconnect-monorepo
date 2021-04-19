@@ -1,8 +1,13 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { IClient, IJsonRpcHistory, JsonRpcRecord } from "@walletconnect/types";
+import { IClient, IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
 import { ERROR, getError } from "@walletconnect/utils";
-import { isJsonRpcError, JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/utils";
+import {
+  formatJsonRpcRequest,
+  isJsonRpcError,
+  JsonRpcRequest,
+  JsonRpcResponse,
+} from "@json-rpc-tools/utils";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
 
 import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
@@ -38,6 +43,20 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   get values() {
     return Array.from(this.records.values());
+  }
+
+  get pending(): RequestEvent[] {
+    const requests: RequestEvent[] = [];
+    this.values.forEach(record => {
+      if (typeof record.response !== "undefined") return;
+      const requestEvent: RequestEvent = {
+        topic: record.topic,
+        request: formatJsonRpcRequest(record.request.method, record.request.params, record.id),
+        chainId: record.chainId,
+      };
+      return requests.push(requestEvent);
+    });
+    return requests;
   }
 
   public async set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void> {
