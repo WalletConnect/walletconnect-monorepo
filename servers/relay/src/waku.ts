@@ -2,19 +2,17 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   JsonRpcResponse,
-  JsonRpcError,
   isJsonRpcError,
   JsonRpcPayload,
   formatJsonRpcRequest,
   JsonRpcResult,
-  isJsonRpcResult,
   JsonRpcRequest,
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
 
 import config from "./config";
-import { WakuInfo, IWakuCB, WakuMessageResponse, WakuMessage, WakuPeers } from "./types";
+import { WakuInfo, IWakuCB, WakuMessageResponse, WakuMessage } from "./types";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
@@ -169,14 +167,15 @@ export class WakuService extends HttpConnection {
 
   private onnew(topic: string, response: JsonRpcResponse | undefined, cb: IWakuCB.Message) {
     if (response && isJsonRpcError(response)) cb(response, []);
-    this.on(topic, (messages: WakuMessage[]) => {
-      cb(undefined, messages);
-    });
+    this.on(topic, (messages: WakuMessage[]) => cb(undefined, messages));
   }
 
   private poll() {
     this.filterTopics.forEach(filterTopic => {
-      this.getFilterMessages(filterTopic, (_, messages: WakuMessage[]) => {
+      this.getFilterMessages(filterTopic, (err, messages: WakuMessage[]) => {
+        if (err && err.error.data === `Not subscribed to content topic: ${filterTopic}`) {
+          this.filterSubscribe(filterTopic);
+        }
         if (messages.length) {
           this.logger.trace({ method: "pollFilterTopic", messages: messages });
           this.events.emit(filterTopic, messages);
