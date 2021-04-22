@@ -2,17 +2,27 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   JsonRpcResponse,
+  JsonRpcError,
   isJsonRpcError,
   JsonRpcPayload,
   formatJsonRpcRequest,
   JsonRpcResult,
   JsonRpcRequest,
+  isJsonRpcResult,
 } from "@json-rpc-tools/utils";
 import { HttpConnection } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
 
 import config from "./config";
-import { WakuInfo, IWakuCB, WakuMessageResponse, WakuMessage } from "./types";
+import {
+  WakuInfo,
+  Index,
+  PagingOptions,
+  IWakuCB,
+  StoreResponse,
+  WakuMessageResponse,
+  WakuMessage,
+} from "./types";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
@@ -74,6 +84,37 @@ export class WakuService extends HttpConnection {
     this.topics = this.topics.filter(t => t !== topic);
   }
 
+  public getStoreMessages(contentTopic: string, cb: IWakuCB.Message) {
+    let recursiveStoreCall = async (pagingOptions?: PagingOptions): Promise<WakuMessage[]> => {
+      console.log("");
+      console.log("Paging Options", pagingOptions);
+      const method = "get_waku_v2_store_v1_messages";
+      let payload = pagingOptions
+        ? formatJsonRpcRequest(method, [[contentTopic], pagingOptions])
+        : formatJsonRpcRequest(method, [[contentTopic]]);
+
+      await this.send(payload);
+
+      let val: JsonRpcResult<StoreResponse> = await new Promise(resolve => {
+        this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+          console.log("SUP", response);
+          if (isJsonRpcResult(response)) resolve(response);
+          if (isJsonRpcResult(response)) resolve(response);
+        });
+      });
+      return this.parseWakuMessagePayload(val.result.messages);
+    };
+
+    let p: PagingOptions | undefined = {
+      pageSize: 1,
+      forward: false,
+    };
+    p = undefined;
+    recursiveStoreCall(p).then((messages: WakuMessage[]) => {
+      cb(undefined, messages);
+    });
+  }
+
   public async onNewFilterMessage(filterTopic: string, cb: IWakuCB.Message) {
     this.filterSubscribe(filterTopic, response => {
       this.onnew(filterTopic, response, cb);
@@ -120,10 +161,10 @@ export class WakuService extends HttpConnection {
     setInterval(() => this.poll(), 200);
   }
 
-  private parseWakuMessagePayload(payload: JsonRpcResult<WakuMessageResponse[]>): WakuMessage[] {
+  private parseWakuMessagePayload(payload: WakuMessageResponse[]): WakuMessage[] {
     const messages: WakuMessage[] = [];
     const seenMessages = new Set();
-    payload.result.forEach(m => {
+    payload.forEach(m => {
       const stringPayload = arrayToHex(m.payload);
       if (!seenMessages.has(stringPayload)) {
         seenMessages.add(stringPayload);
@@ -146,7 +187,7 @@ export class WakuService extends HttpConnection {
     this.once(request.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response)
         ? cb(response, [])
-        : cb(undefined, this.parseWakuMessagePayload(response));
+        : cb(undefined, this.parseWakuMessagePayload(response.result as WakuMessageResponse[]));
     });
   }
 

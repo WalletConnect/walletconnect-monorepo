@@ -36,7 +36,7 @@ export interface PagingOptions {
 }
 
 export interface StoreResponse {
-  messages: WakuMessage[];
+  messages: WakuMessageResponse[];
   pagingOptions?: PagingOptions;
 }
 

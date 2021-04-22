@@ -104,4 +104,35 @@ describe("Waku", () => {
       });
     }, 200);
   });
+  it.only("Gets a single store messages", function(done) {
+    this.timeout(10000);
+    wakuOne.post(testMessage, contentTopic);
+    setTimeout(() => {
+      wakuOne.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
+        expect(err).to.be.undefined;
+        expect(messages.length).to.equal(1);
+        expect(messages[0].payload).to.equal(testMessage);
+        expect(messages[0].contentTopic).to.equal(contentTopic);
+        done();
+      });
+    }, 1000);
+  });
+  xit("Gets multiple store messages", function(done) {
+    let allMessages: string[] = [];
+    this.timeout(10000);
+    for (var i = 0; i < 501; i++) {
+      allMessages.push(generateRandomBytes32());
+      wakuOne.post(allMessages[allMessages.length - 1], contentTopic);
+    }
+    setTimeout(() => {
+      wakuOne.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
+        console.log("TEST LENGTH", err, messages.length);
+        let receivedMessages = messages.map(m => m.payload);
+        expect(err).to.be.undefined;
+        expect(messages.length).to.equal(allMessages.length);
+        expect(receivedMessages).to.have.members(allMessages);
+        done();
+      });
+    }, 5000);
+  });
 });
