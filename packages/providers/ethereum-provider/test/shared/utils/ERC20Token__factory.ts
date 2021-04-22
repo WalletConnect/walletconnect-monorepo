@@ -18,13 +18,13 @@ export class ERC20Token__factory extends ContractFactory {
     symbol: string,
     decimals: BigNumberish,
     overrides?: Overrides
-  ): Promise<ERC20Token> {
+  ): Promise<Contract> {
     return super.deploy(
       name,
       symbol,
       decimals,
       overrides || {}
-    ) as Promise<ERC20Token>;
+    ) as Promise<Contract>;
   }
   getDeployTransaction(
     name: string,
@@ -34,17 +34,17 @@ export class ERC20Token__factory extends ContractFactory {
   ): TransactionRequest {
     return super.getDeployTransaction(name, symbol, decimals, overrides || {});
   }
-  attach(address: string): ERC20Token {
-    return super.attach(address) as ERC20Token;
+  attach(address: string): Contract {
+    return super.attach(address) as Contract;
   }
-  connect(signer: Signer): ERC20Token__factory {
-    return super.connect(signer) as ERC20Token__factory;
+  connect(signer: Signer): ContractFactory {
+    return super.connect(signer) as ContractFactory;
   }
   static connect(
     address: string,
     signerOrProvider: Signer | Provider
-  ): ERC20Token {
-    return new Contract(address, _abi, signerOrProvider) as ERC20Token;
+  ): Contract {
+    return new Contract(address, _abi, signerOrProvider) as Contract;
   }
 }
 

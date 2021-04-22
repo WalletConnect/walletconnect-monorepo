@@ -2,20 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import {
-  ethers,
-  EventFilter,
-  Signer,
-  BigNumber,
-  BigNumberish,
-  PopulatedTransaction,
-} from "ethers";
-import {
-  Contract,
-  ContractTransaction,
-  Overrides,
-  CallOverrides,
-} from "@ethersproject/contracts";
+import { ethers, EventFilter, Signer, BigNumber, BigNumberish, PopulatedTransaction } from "ethers";
+import { Contract, ContractTransaction, Overrides, CallOverrides } from "@ethersproject/contracts";
 import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
@@ -53,109 +41,58 @@ interface ERC20TokenInterface extends ethers.utils.Interface {
   };
 
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "approve",
-    values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "totalSupply",
-    values?: undefined
-  ): string;
+  encodeFunctionData(functionFragment: "approve", values: [string, BigNumberish]): string;
+  encodeFunctionData(functionFragment: "totalSupply", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "transferFrom",
-    values: [string, string, BigNumberish]
+    values: [string, string, BigNumberish],
   ): string;
   encodeFunctionData(
     functionFragment: "canImplementInterfaceForAddress",
-    values: [BytesLike, string]
+    values: [BytesLike, string],
   ): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "increaseAllowance",
-    values: [string, BigNumberish]
-  ): string;
+  encodeFunctionData(functionFragment: "increaseAllowance", values: [string, BigNumberish]): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "mint",
-    values: [string, BigNumberish]
-  ): string;
+  encodeFunctionData(functionFragment: "mint", values: [string, BigNumberish]): string;
   encodeFunctionData(functionFragment: "burn", values: [BigNumberish]): string;
   encodeFunctionData(functionFragment: "isPauser", values: [string]): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "renouncePauser",
-    values?: undefined
-  ): string;
+  encodeFunctionData(functionFragment: "renouncePauser", values?: undefined): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "renounceOwnership",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "burnFrom",
-    values: [string, BigNumberish]
-  ): string;
+  encodeFunctionData(functionFragment: "renounceOwnership", values?: undefined): string;
+  encodeFunctionData(functionFragment: "burnFrom", values: [string, BigNumberish]): string;
   encodeFunctionData(functionFragment: "addPauser", values: [string]): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "isOwner", values?: undefined): string;
   encodeFunctionData(functionFragment: "symbol", values?: undefined): string;
   encodeFunctionData(functionFragment: "addMinter", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "renounceMinter",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "decreaseAllowance",
-    values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "transfer",
-    values: [string, BigNumberish]
-  ): string;
+  encodeFunctionData(functionFragment: "renounceMinter", values?: undefined): string;
+  encodeFunctionData(functionFragment: "decreaseAllowance", values: [string, BigNumberish]): string;
+  encodeFunctionData(functionFragment: "transfer", values: [string, BigNumberish]): string;
   encodeFunctionData(functionFragment: "isMinter", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "allowance",
-    values: [string, string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "transferOwnership",
-    values: [string]
-  ): string;
+  encodeFunctionData(functionFragment: "allowance", values: [string, string]): string;
+  encodeFunctionData(functionFragment: "transferOwnership", values: [string]): string;
 
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "totalSupply",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "transferFrom",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "totalSupply", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "transferFrom", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "canImplementInterfaceForAddress",
-    data: BytesLike
+    data: BytesLike,
   ): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "increaseAllowance",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "increaseAllowance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "isPauser", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "renouncePauser",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "renouncePauser", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "renounceOwnership",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "renounceOwnership", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "burnFrom", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "addPauser", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
@@ -163,21 +100,12 @@ interface ERC20TokenInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "isOwner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "addMinter", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "renounceMinter",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "decreaseAllowance",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "renounceMinter", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "decreaseAllowance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "transfer", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "isMinter", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "transferOwnership",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "transferOwnership", data: BytesLike): Result;
 
   events: {
     "Paused(address)": EventFragment;
@@ -203,27 +131,27 @@ interface ERC20TokenInterface extends ethers.utils.Interface {
 }
 
 export class ERC20Token extends Contract {
-  connect(signerOrProvider: Signer | Provider | string): this;
-  attach(addressOrName: string): this;
-  deployed(): Promise<this>;
+  connect(signerOrProvider: Signer | Provider | string): Contract;
+  attach(addressOrName: string): Contract;
+  deployed(): Promise<Contract>;
 
-  on(event: EventFilter | string, listener: Listener): this;
-  once(event: EventFilter | string, listener: Listener): this;
-  addListener(eventName: EventFilter | string, listener: Listener): this;
-  removeAllListeners(eventName: EventFilter | string): this;
-  removeListener(eventName: any, listener: Listener): this;
+  on(event: EventFilter | string, listener: Listener): any;
+  once(event: EventFilter | string, listener: Listener): any;
+  addListener(eventName: EventFilter | string, listener: Listener): Contract;
+  removeAllListeners(eventName: EventFilter | string): any;
+  removeListener(eventName: any, listener: Listener): any;
 
   interface: ERC20TokenInterface;
 
   functions: {
     name(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
 
     "name()"(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
@@ -231,23 +159,23 @@ export class ERC20Token extends Contract {
     approve(
       spender: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     "approve(address,uint256)"(
       spender: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     totalSupply(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: BigNumber;
     }>;
 
     "totalSupply()"(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: BigNumber;
     }>;
@@ -256,20 +184,20 @@ export class ERC20Token extends Contract {
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     "transferFrom(address,address,uint256)"(
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     canImplementInterfaceForAddress(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
@@ -277,19 +205,19 @@ export class ERC20Token extends Contract {
     "canImplementInterfaceForAddress(bytes32,address)"(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
 
     decimals(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: number;
     }>;
 
     "decimals()"(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: number;
     }>;
@@ -297,63 +225,53 @@ export class ERC20Token extends Contract {
     increaseAllowance(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     "increaseAllowance(address,uint256)"(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     unpause(overrides?: Overrides): Promise<ContractTransaction>;
 
     "unpause()"(overrides?: Overrides): Promise<ContractTransaction>;
 
-    mint(
-      to: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    mint(to: string, value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
     "mint(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
-    burn(
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    burn(value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
-    "burn(uint256)"(
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    "burn(uint256)"(value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
     isPauser(
       account: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
 
     "isPauser(address)"(
       account: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
 
     paused(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
 
     "paused()"(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
@@ -364,14 +282,14 @@ export class ERC20Token extends Contract {
 
     balanceOf(
       owner: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: BigNumber;
     }>;
 
     "balanceOf(address)"(
       owner: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: BigNumber;
     }>;
@@ -383,74 +301,62 @@ export class ERC20Token extends Contract {
     burnFrom(
       from: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     "burnFrom(address,uint256)"(
       from: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
-    addPauser(
-      account: string,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    addPauser(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
-    "addPauser(address)"(
-      account: string,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    "addPauser(address)"(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
     pause(overrides?: Overrides): Promise<ContractTransaction>;
 
     "pause()"(overrides?: Overrides): Promise<ContractTransaction>;
 
     owner(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
 
     "owner()"(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
 
     isOwner(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
 
     "isOwner()"(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
 
     symbol(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
 
     "symbol()"(
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: string;
     }>;
 
-    addMinter(
-      account: string,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    addMinter(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
-    "addMinter(address)"(
-      account: string,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    "addMinter(address)"(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
     renounceMinter(overrides?: Overrides): Promise<ContractTransaction>;
 
@@ -459,37 +365,33 @@ export class ERC20Token extends Contract {
     decreaseAllowance(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     "decreaseAllowance(address,uint256)"(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
-    transfer(
-      to: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    transfer(to: string, value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
     "transfer(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
 
     isMinter(
       account: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
 
     "isMinter(address)"(
       account: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: boolean;
     }>;
@@ -497,7 +399,7 @@ export class ERC20Token extends Contract {
     allowance(
       owner: string,
       spender: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: BigNumber;
     }>;
@@ -505,19 +407,16 @@ export class ERC20Token extends Contract {
     "allowance(address,address)"(
       owner: string,
       spender: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<{
       0: BigNumber;
     }>;
 
-    transferOwnership(
-      newOwner: string,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
+    transferOwnership(newOwner: string, overrides?: Overrides): Promise<ContractTransaction>;
 
     "transferOwnership(address)"(
       newOwner: string,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<ContractTransaction>;
   };
 
@@ -528,13 +427,13 @@ export class ERC20Token extends Contract {
   approve(
     spender: string,
     value: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   "approve(address,uint256)"(
     spender: string,
     value: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
@@ -545,26 +444,26 @@ export class ERC20Token extends Contract {
     from: string,
     to: string,
     value: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   "transferFrom(address,address,uint256)"(
     from: string,
     to: string,
     value: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   canImplementInterfaceForAddress(
     interfaceHash: BytesLike,
     arg1: string,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<string>;
 
   "canImplementInterfaceForAddress(bytes32,address)"(
     interfaceHash: BytesLike,
     arg1: string,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<string>;
 
   decimals(overrides?: CallOverrides): Promise<number>;
@@ -574,47 +473,34 @@ export class ERC20Token extends Contract {
   increaseAllowance(
     spender: string,
     addedValue: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   "increaseAllowance(address,uint256)"(
     spender: string,
     addedValue: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   unpause(overrides?: Overrides): Promise<ContractTransaction>;
 
   "unpause()"(overrides?: Overrides): Promise<ContractTransaction>;
 
-  mint(
-    to: string,
-    value: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  mint(to: string, value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
   "mint(address,uint256)"(
     to: string,
     value: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
-  burn(
-    value: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  burn(value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
-  "burn(uint256)"(
-    value: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  "burn(uint256)"(value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
   isPauser(account: string, overrides?: CallOverrides): Promise<boolean>;
 
-  "isPauser(address)"(
-    account: string,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
+  "isPauser(address)"(account: string, overrides?: CallOverrides): Promise<boolean>;
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
@@ -626,36 +512,23 @@ export class ERC20Token extends Contract {
 
   balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  "balanceOf(address)"(
-    owner: string,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
+  "balanceOf(address)"(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   renounceOwnership(overrides?: Overrides): Promise<ContractTransaction>;
 
   "renounceOwnership()"(overrides?: Overrides): Promise<ContractTransaction>;
 
-  burnFrom(
-    from: string,
-    value: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  burnFrom(from: string, value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
   "burnFrom(address,uint256)"(
     from: string,
     value: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
-  addPauser(
-    account: string,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  addPauser(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
-  "addPauser(address)"(
-    account: string,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  "addPauser(address)"(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
   pause(overrides?: Overrides): Promise<ContractTransaction>;
 
@@ -673,15 +546,9 @@ export class ERC20Token extends Contract {
 
   "symbol()"(overrides?: CallOverrides): Promise<string>;
 
-  addMinter(
-    account: string,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  addMinter(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
-  "addMinter(address)"(
-    account: string,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  "addMinter(address)"(account: string, overrides?: Overrides): Promise<ContractTransaction>;
 
   renounceMinter(overrides?: Overrides): Promise<ContractTransaction>;
 
@@ -690,54 +557,40 @@ export class ERC20Token extends Contract {
   decreaseAllowance(
     spender: string,
     subtractedValue: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   "decreaseAllowance(address,uint256)"(
     spender: string,
     subtractedValue: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
-  transfer(
-    to: string,
-    value: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  transfer(to: string, value: BigNumberish, overrides?: Overrides): Promise<ContractTransaction>;
 
   "transfer(address,uint256)"(
     to: string,
     value: BigNumberish,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   isMinter(account: string, overrides?: CallOverrides): Promise<boolean>;
 
-  "isMinter(address)"(
-    account: string,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
+  "isMinter(address)"(account: string, overrides?: CallOverrides): Promise<boolean>;
 
-  allowance(
-    owner: string,
-    spender: string,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
+  allowance(owner: string, spender: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   "allowance(address,address)"(
     owner: string,
     spender: string,
-    overrides?: CallOverrides
+    overrides?: CallOverrides,
   ): Promise<BigNumber>;
 
-  transferOwnership(
-    newOwner: string,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
+  transferOwnership(newOwner: string, overrides?: Overrides): Promise<ContractTransaction>;
 
   "transferOwnership(address)"(
     newOwner: string,
-    overrides?: Overrides
+    overrides?: Overrides,
   ): Promise<ContractTransaction>;
 
   callStatic: {
@@ -745,16 +598,12 @@ export class ERC20Token extends Contract {
 
     "name()"(overrides?: CallOverrides): Promise<string>;
 
-    approve(
-      spender: string,
-      value: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
+    approve(spender: string, value: BigNumberish, overrides?: CallOverrides): Promise<boolean>;
 
     "approve(address,uint256)"(
       spender: string,
       value: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
@@ -765,26 +614,26 @@ export class ERC20Token extends Contract {
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     "transferFrom(address,address,uint256)"(
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     canImplementInterfaceForAddress(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<string>;
 
     "canImplementInterfaceForAddress(bytes32,address)"(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<string>;
 
     decimals(overrides?: CallOverrides): Promise<number>;
@@ -794,44 +643,34 @@ export class ERC20Token extends Contract {
     increaseAllowance(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     "increaseAllowance(address,uint256)"(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     unpause(overrides?: CallOverrides): Promise<void>;
 
     "unpause()"(overrides?: CallOverrides): Promise<void>;
 
-    mint(
-      to: string,
-      value: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
+    mint(to: string, value: BigNumberish, overrides?: CallOverrides): Promise<boolean>;
 
     "mint(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     burn(value: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
-    "burn(uint256)"(
-      value: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    "burn(uint256)"(value: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     isPauser(account: string, overrides?: CallOverrides): Promise<boolean>;
 
-    "isPauser(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
+    "isPauser(address)"(account: string, overrides?: CallOverrides): Promise<boolean>;
 
     paused(overrides?: CallOverrides): Promise<boolean>;
 
@@ -843,33 +682,23 @@ export class ERC20Token extends Contract {
 
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    "balanceOf(address)"(
-      owner: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    "balanceOf(address)"(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
     "renounceOwnership()"(overrides?: CallOverrides): Promise<void>;
 
-    burnFrom(
-      from: string,
-      value: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    burnFrom(from: string, value: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     "burnFrom(address,uint256)"(
       from: string,
       value: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<void>;
 
     addPauser(account: string, overrides?: CallOverrides): Promise<void>;
 
-    "addPauser(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    "addPauser(address)"(account: string, overrides?: CallOverrides): Promise<void>;
 
     pause(overrides?: CallOverrides): Promise<void>;
 
@@ -889,10 +718,7 @@ export class ERC20Token extends Contract {
 
     addMinter(account: string, overrides?: CallOverrides): Promise<void>;
 
-    "addMinter(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    "addMinter(address)"(account: string, overrides?: CallOverrides): Promise<void>;
 
     renounceMinter(overrides?: CallOverrides): Promise<void>;
 
@@ -901,55 +727,38 @@ export class ERC20Token extends Contract {
     decreaseAllowance(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     "decreaseAllowance(address,uint256)"(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
-    transfer(
-      to: string,
-      value: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
+    transfer(to: string, value: BigNumberish, overrides?: CallOverrides): Promise<boolean>;
 
     "transfer(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<boolean>;
 
     isMinter(account: string, overrides?: CallOverrides): Promise<boolean>;
 
-    "isMinter(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
+    "isMinter(address)"(account: string, overrides?: CallOverrides): Promise<boolean>;
 
-    allowance(
-      owner: string,
-      spender: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    allowance(owner: string, spender: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     "allowance(address,address)"(
       owner: string,
       spender: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
-    transferOwnership(
-      newOwner: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    transferOwnership(newOwner: string, overrides?: CallOverrides): Promise<void>;
 
-    "transferOwnership(address)"(
-      newOwner: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    "transferOwnership(address)"(newOwner: string, overrides?: CallOverrides): Promise<void>;
   };
 
   filters: {
@@ -967,33 +776,23 @@ export class ERC20Token extends Contract {
 
     Transfer(from: string | null, to: string | null, value: null): EventFilter;
 
-    Approval(
-      owner: string | null,
-      spender: string | null,
-      value: null
-    ): EventFilter;
+    Approval(owner: string | null, spender: string | null, value: null): EventFilter;
 
-    OwnershipTransferred(
-      previousOwner: string | null,
-      newOwner: string | null
-    ): EventFilter;
+    OwnershipTransferred(previousOwner: string | null, newOwner: string | null): EventFilter;
   };
 
+  // @ts-ignore
   estimateGas: {
     name(overrides?: CallOverrides): Promise<BigNumber>;
 
     "name()"(overrides?: CallOverrides): Promise<BigNumber>;
 
-    approve(
-      spender: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    approve(spender: string, value: BigNumberish, overrides?: Overrides): Promise<BigNumber>;
 
     "approve(address,uint256)"(
       spender: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1004,26 +803,26 @@ export class ERC20Token extends Contract {
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     "transferFrom(address,address,uint256)"(
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     canImplementInterfaceForAddress(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     "canImplementInterfaceForAddress(bytes32,address)"(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1033,44 +832,34 @@ export class ERC20Token extends Contract {
     increaseAllowance(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     "increaseAllowance(address,uint256)"(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     unpause(overrides?: Overrides): Promise<BigNumber>;
 
     "unpause()"(overrides?: Overrides): Promise<BigNumber>;
 
-    mint(
-      to: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    mint(to: string, value: BigNumberish, overrides?: Overrides): Promise<BigNumber>;
 
     "mint(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     burn(value: BigNumberish, overrides?: Overrides): Promise<BigNumber>;
 
-    "burn(uint256)"(
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    "burn(uint256)"(value: BigNumberish, overrides?: Overrides): Promise<BigNumber>;
 
     isPauser(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    "isPauser(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    "isPauser(address)"(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -1082,33 +871,23 @@ export class ERC20Token extends Contract {
 
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    "balanceOf(address)"(
-      owner: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    "balanceOf(address)"(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceOwnership(overrides?: Overrides): Promise<BigNumber>;
 
     "renounceOwnership()"(overrides?: Overrides): Promise<BigNumber>;
 
-    burnFrom(
-      from: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    burnFrom(from: string, value: BigNumberish, overrides?: Overrides): Promise<BigNumber>;
 
     "burnFrom(address,uint256)"(
       from: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     addPauser(account: string, overrides?: Overrides): Promise<BigNumber>;
 
-    "addPauser(address)"(
-      account: string,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    "addPauser(address)"(account: string, overrides?: Overrides): Promise<BigNumber>;
 
     pause(overrides?: Overrides): Promise<BigNumber>;
 
@@ -1128,10 +907,7 @@ export class ERC20Token extends Contract {
 
     addMinter(account: string, overrides?: Overrides): Promise<BigNumber>;
 
-    "addMinter(address)"(
-      account: string,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    "addMinter(address)"(account: string, overrides?: Overrides): Promise<BigNumber>;
 
     renounceMinter(overrides?: Overrides): Promise<BigNumber>;
 
@@ -1140,55 +916,38 @@ export class ERC20Token extends Contract {
     decreaseAllowance(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     "decreaseAllowance(address,uint256)"(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
-    transfer(
-      to: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    transfer(to: string, value: BigNumberish, overrides?: Overrides): Promise<BigNumber>;
 
     "transfer(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<BigNumber>;
 
     isMinter(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    "isMinter(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    "isMinter(address)"(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    allowance(
-      owner: string,
-      spender: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    allowance(owner: string, spender: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     "allowance(address,address)"(
       owner: string,
       spender: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<BigNumber>;
 
-    transferOwnership(
-      newOwner: string,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    transferOwnership(newOwner: string, overrides?: Overrides): Promise<BigNumber>;
 
-    "transferOwnership(address)"(
-      newOwner: string,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    "transferOwnership(address)"(newOwner: string, overrides?: Overrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -1199,13 +958,13 @@ export class ERC20Token extends Contract {
     approve(
       spender: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     "approve(address,uint256)"(
       spender: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     totalSupply(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -1216,26 +975,26 @@ export class ERC20Token extends Contract {
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     "transferFrom(address,address,uint256)"(
       from: string,
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     canImplementInterfaceForAddress(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     "canImplementInterfaceForAddress(bytes32,address)"(
       interfaceHash: BytesLike,
       arg1: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     decimals(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -1245,50 +1004,34 @@ export class ERC20Token extends Contract {
     increaseAllowance(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     "increaseAllowance(address,uint256)"(
       spender: string,
       addedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     unpause(overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "unpause()"(overrides?: Overrides): Promise<PopulatedTransaction>;
 
-    mint(
-      to: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    mint(to: string, value: BigNumberish, overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "mint(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
-    burn(
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    burn(value: BigNumberish, overrides?: Overrides): Promise<PopulatedTransaction>;
 
-    "burn(uint256)"(
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    "burn(uint256)"(value: BigNumberish, overrides?: Overrides): Promise<PopulatedTransaction>;
 
-    isPauser(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    isPauser(account: string, overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    "isPauser(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    "isPauser(address)"(account: string, overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -1298,15 +1041,9 @@ export class ERC20Token extends Contract {
 
     "renouncePauser()"(overrides?: Overrides): Promise<PopulatedTransaction>;
 
-    balanceOf(
-      owner: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    balanceOf(owner: string, overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    "balanceOf(address)"(
-      owner: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    "balanceOf(address)"(owner: string, overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     renounceOwnership(overrides?: Overrides): Promise<PopulatedTransaction>;
 
@@ -1315,24 +1052,18 @@ export class ERC20Token extends Contract {
     burnFrom(
       from: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     "burnFrom(address,uint256)"(
       from: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
-    addPauser(
-      account: string,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    addPauser(account: string, overrides?: Overrides): Promise<PopulatedTransaction>;
 
-    "addPauser(address)"(
-      account: string,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    "addPauser(address)"(account: string, overrides?: Overrides): Promise<PopulatedTransaction>;
 
     pause(overrides?: Overrides): Promise<PopulatedTransaction>;
 
@@ -1350,15 +1081,9 @@ export class ERC20Token extends Contract {
 
     "symbol()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    addMinter(
-      account: string,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    addMinter(account: string, overrides?: Overrides): Promise<PopulatedTransaction>;
 
-    "addMinter(address)"(
-      account: string,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    "addMinter(address)"(account: string, overrides?: Overrides): Promise<PopulatedTransaction>;
 
     renounceMinter(overrides?: Overrides): Promise<PopulatedTransaction>;
 
@@ -1367,57 +1092,44 @@ export class ERC20Token extends Contract {
     decreaseAllowance(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
     "decreaseAllowance(address,uint256)"(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
-    transfer(
-      to: string,
-      value: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    transfer(to: string, value: BigNumberish, overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "transfer(address,uint256)"(
       to: string,
       value: BigNumberish,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
 
-    isMinter(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    isMinter(account: string, overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    "isMinter(address)"(
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    "isMinter(address)"(account: string, overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     allowance(
       owner: string,
       spender: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
     "allowance(address,address)"(
       owner: string,
       spender: string,
-      overrides?: CallOverrides
+      overrides?: CallOverrides,
     ): Promise<PopulatedTransaction>;
 
-    transferOwnership(
-      newOwner: string,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
+    transferOwnership(newOwner: string, overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "transferOwnership(address)"(
       newOwner: string,
-      overrides?: Overrides
+      overrides?: Overrides,
     ): Promise<PopulatedTransaction>;
   };
 }

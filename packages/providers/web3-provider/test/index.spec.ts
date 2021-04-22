@@ -160,7 +160,7 @@ describe("WalletConnectWeb3Provider", function() {
 
           const web3Provider = new ethers.providers.Web3Provider(provider);
           const signer = await web3Provider.getSigner();
-          const erc20Factory = new ERC20Token__factory(signer);
+          const erc20Factory = new ERC20Token__factory(signer as any);
           const erc20 = await erc20Factory.deploy("The test token", "tst", 18);
           await erc20.deployed();
           const balanceToMint = ethers.utils.parseEther("500");
