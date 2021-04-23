@@ -3,7 +3,7 @@ import * as chai from "chai";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { formatJsonRpcResult } from "@json-rpc-tools/utils";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { IClient, PairingTypes, RequestEvent, SessionTypes } from "@walletconnect/types";
+import { IClient, RequestEvent, SessionTypes } from "@walletconnect/types";
 
 import { SignerConnection, SIGNER_EVENTS } from "../src";
 
@@ -18,16 +18,12 @@ const TEST_JSONRPC_RESULT = "it worked";
 const TEST_CHAINS = [];
 const TEST_METHODS = [TEST_JSONRPC_METHOD];
 
-const TEST_APP_NAME = "client_app";
-
 const TEST_APP_METADATA = {
   name: "Test App",
   description: "Test App for WalletConnect",
   url: "https://walletconnect.org/",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
-
-const TEST_WALLET_NAME = "client_wallet";
 
 const TEST_WALLET_METADATA = {
   name: "Test Wallet",
@@ -37,22 +33,19 @@ const TEST_WALLET_METADATA = {
 };
 
 async function setup() {
-  const clientA = await Client.init({
-    relayProvider: TEST_RELAY_URL,
-    metadata: TEST_APP_METADATA,
-    name: TEST_APP_NAME,
-  });
   const connection = new SignerConnection({
     chains: TEST_CHAINS,
     methods: TEST_METHODS,
-    client: clientA,
+    client: {
+      relayProvider: TEST_RELAY_URL,
+      metadata: TEST_APP_METADATA,
+    },
   });
   const provider = new JsonRpcProvider(connection);
   const clientB = await Client.init({
     controller: true,
     relayProvider: TEST_RELAY_URL,
     metadata: TEST_WALLET_METADATA,
-    name: TEST_WALLET_NAME,
   });
   return { provider, wallet: clientB };
 }
