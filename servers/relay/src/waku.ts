@@ -16,7 +16,6 @@ import { arrayToHex } from "enc-utils";
 import config from "./config";
 import {
   WakuInfo,
-  Index,
   PagingOptions,
   IWakuCB,
   StoreResponse,
@@ -61,7 +60,7 @@ export class WakuService extends HttpConnection {
   public async filterSubscribe(filter: string, cb?: IWakuCB.Rpc) {
     this.sub(
       formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
-        [{ topics: [filter] }],
+        [{ contentTopics: [filter] }],
         this.namespace,
       ]),
       cb,
@@ -74,7 +73,9 @@ export class WakuService extends HttpConnection {
 
   public filterUnsubscribe(filterTopic: string) {
     this.unsub(
-      formatJsonRpcRequest("delete_waku_v2_filter_v1_subscription", [[{ topics: [filterTopic] }]]),
+      formatJsonRpcRequest("delete_waku_v2_filter_v1_subscription", [
+        [{ contentTopics: [filterTopic] }],
+      ]),
     );
     this.filterTopics = this.filterTopics.filter(t => t !== filterTopic);
   }
