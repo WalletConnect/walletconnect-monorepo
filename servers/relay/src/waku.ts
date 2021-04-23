@@ -37,7 +37,7 @@ export class WakuService extends HttpConnection {
   }
 
   public async post(payload: string, contentTopic: string, topic = this.namespace) {
-    let jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
+    const jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
       topic,
       {
         payload,
@@ -86,13 +86,13 @@ export class WakuService extends HttpConnection {
   }
 
   public getStoreMessages(contentTopic: string, cb: IWakuCB.Message) {
-    let recursiveStoreCall = async (
+    const recursiveStoreCall = async (
       currentCursor: PagingOptions = {
         pageSize: 100,
         forward: true,
       },
     ): Promise<WakuMessageResponse[]> => {
-      let payload = currentCursor
+      const payload = currentCursor
         ? formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[contentTopic], currentCursor])
         : formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[contentTopic]]);
       await this.send(payload);
@@ -129,7 +129,7 @@ export class WakuService extends HttpConnection {
   }
 
   public getPeers(cb: IWakuCB.Peers) {
-    let payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
+    const payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
     this.send(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response) ? cb(response, []) : cb(undefined, response.result);
@@ -137,7 +137,7 @@ export class WakuService extends HttpConnection {
   }
 
   public debug(cb: IWakuCB.Info) {
-    let payload = formatJsonRpcRequest("get_waku_v2_debug_v1_info", []);
+    const payload = formatJsonRpcRequest("get_waku_v2_debug_v1_info", []);
     this.send(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response) ? cb(response, {} as WakuInfo) : cb(undefined, response.result);
