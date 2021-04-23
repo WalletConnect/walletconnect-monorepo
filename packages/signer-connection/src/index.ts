@@ -37,7 +37,6 @@ export class SignerConnection extends IJsonRpcConnection {
   private session: SessionTypes.Settled | undefined;
 
   private client: IClient | undefined;
-  private opts: ClientOptions | undefined;
   private initializing = false;
 
   constructor(opts?: SignerConnectionOpts) {
@@ -101,8 +100,11 @@ export class SignerConnection extends IJsonRpcConnection {
       this.client = await this.register();
       if (!this.connected) await this.open();
     }
+    if (typeof this.session === "undefined") {
+      throw new Error("Signer connection is missing session");
+    }
     this.client
-      .request(payload)
+      .request({ topic: this.session.topic, request: payload })
       .then((result: any) => this.events.emit("payload", formatJsonRpcResult(payload.id, result)))
       .catch(e => this.events.emit("payload", formatJsonRpcError(payload.id, e.message)));
   }
@@ -110,6 +112,9 @@ export class SignerConnection extends IJsonRpcConnection {
   // ---------- Private ----------------------------------------------- //
 
   private async register(opts?: IClient | ClientOptions): Promise<IClient> {
+    if (typeof this.client !== "undefined") {
+      return this.client;
+    }
     if (this.initializing) {
       return new Promise((resolve, reject) => {
         this.events.once(SIGNER_EVENTS.init, () => {
@@ -122,11 +127,13 @@ export class SignerConnection extends IJsonRpcConnection {
     }
     if (isClient(opts)) {
       this.client = opts;
+      this.registerEventListeners();
       return this.client;
     }
     this.initializing = true;
     this.client = await Client.init(opts);
     this.initializing = false;
+    this.registerEventListeners();
     this.events.emit(SIGNER_EVENTS.init);
     return this.client;
   }
@@ -137,7 +144,6 @@ export class SignerConnection extends IJsonRpcConnection {
       this.session = session;
     }
     this.events.emit("open");
-    this.registerEventListeners();
   }
 
   private onClose() {
@@ -159,7 +165,8 @@ export class SignerConnection extends IJsonRpcConnection {
       this.onClose();
     });
     this.client.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
-      this.events.emit(SIGNER_EVENTS.uri, { uri: proposal.signal.params.uri });
+      const uri = proposal.signal.params.uri;
+      this.events.emit(SIGNER_EVENTS.uri, { uri });
     });
   }
 }

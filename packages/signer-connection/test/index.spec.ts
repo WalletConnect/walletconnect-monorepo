@@ -1,7 +1,9 @@
+import "mocha";
+import * as chai from "chai";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { formatJsonRpcResult } from "@json-rpc-tools/utils";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { PairingTypes, RequestEvent, SessionTypes } from "@walletconnect/types";
+import { IClient, PairingTypes, RequestEvent, SessionTypes } from "@walletconnect/types";
 
 import { SignerConnection, SIGNER_EVENTS } from "../src";
 
@@ -16,12 +18,16 @@ const TEST_JSONRPC_RESULT = "it worked";
 const TEST_CHAINS = [];
 const TEST_METHODS = [TEST_JSONRPC_METHOD];
 
+const TEST_APP_NAME = "client_app";
+
 const TEST_APP_METADATA = {
   name: "Test App",
   description: "Test App for WalletConnect",
   url: "https://walletconnect.org/",
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
+
+const TEST_WALLET_NAME = "client_wallet";
 
 const TEST_WALLET_METADATA = {
   name: "Test Wallet",
@@ -30,65 +36,75 @@ const TEST_WALLET_METADATA = {
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
-describe("@walletconnect/signer-connection", () => {
-  it("should connect and respond", async () => {
-    const provider = new JsonRpcProvider(
-      new SignerConnection({
-        chains: TEST_CHAINS,
-        methods: TEST_METHODS,
-        client: {
-          relayProvider: TEST_RELAY_URL,
-          metadata: TEST_APP_METADATA,
-        },
-      }),
-    );
-    const client = await Client.init({
-      relayProvider: TEST_RELAY_URL,
-      metadata: TEST_WALLET_METADATA,
-    });
-    // connect
-    await Promise.all([
-      new Promise<void>((resolve, reject) => {
-        provider.connection.on(SIGNER_EVENTS.uri, async ({ uri }) => {
-          console.log(uri); // eslint-disable-line no-console
-          await client.pair({ uri });
-          resolve();
-        });
-      }),
-      new Promise<void>((resolve, reject) => {
-        client.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
-          await client.approve({ proposal, response: { state: { accounts: [] } } });
-          resolve();
-        });
-      }),
-      new Promise<void>(async (resolve, reject) => {
-        const session = await provider.connect();
+async function setup() {
+  const clientA = await Client.init({
+    relayProvider: TEST_RELAY_URL,
+    metadata: TEST_APP_METADATA,
+    name: TEST_APP_NAME,
+  });
+  const connection = new SignerConnection({
+    chains: TEST_CHAINS,
+    methods: TEST_METHODS,
+    client: clientA,
+  });
+  const provider = new JsonRpcProvider(connection);
+  const clientB = await Client.init({
+    controller: true,
+    relayProvider: TEST_RELAY_URL,
+    metadata: TEST_WALLET_METADATA,
+    name: TEST_WALLET_NAME,
+  });
+  return { provider, wallet: clientB };
+}
+
+async function testConnect(provider: JsonRpcProvider, wallet: IClient) {
+  let topic = "";
+  // auto-pair
+  provider.connection.on(SIGNER_EVENTS.uri, async ({ uri }) => {
+    await wallet.pair({ uri });
+  });
+  // connect
+  await Promise.all([
+    new Promise<void>((resolve, reject) => {
+      wallet.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+        await wallet.approve({ proposal, response: { state: { accounts: [] } } });
         resolve();
-      }),
-    ]);
-    // request
-    await Promise.all([
-      new Promise<void>((resolve, reject) => {
-        client.on(CLIENT_EVENTS.session.request, async (requestEvent: RequestEvent) => {
-          if (requestEvent.request.method === TEST_JSONRPC_METHOD) {
-            await client.respond({
-              topic: requestEvent.topic,
-              response: formatJsonRpcResult(requestEvent.request.id, TEST_JSONRPC_RESULT),
-            });
-            resolve();
-          } else {
-            reject("UNKNOWN METHOD");
-          }
-        });
-      }),
-      new Promise<void>(async (resolve, reject) => {
-        const result = await provider.request(TEST_JSONRPC_REQUEST);
-        if (result === TEST_JSONRPC_RESULT) {
-          resolve();
-        } else {
-          reject("UNKNOWN RESULT");
-        }
-      }),
-    ]);
+      });
+    }),
+    new Promise<void>(async (resolve, reject) => {
+      await provider.connect();
+      resolve();
+    }),
+    new Promise<void>(async (resolve, reject) => {
+      wallet.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
+        topic = session.topic;
+        resolve();
+      });
+    }),
+  ]);
+  return topic;
+}
+
+async function testRequest(provider: JsonRpcProvider, wallet: IClient, topic: string) {
+  // auto-respond
+  wallet.on(CLIENT_EVENTS.session.request, async (requestEvent: RequestEvent) => {
+    chai.expect(requestEvent.request.method).to.eql(TEST_JSONRPC_METHOD);
+    await wallet.respond({
+      topic: requestEvent.topic,
+      response: formatJsonRpcResult(requestEvent.request.id, TEST_JSONRPC_RESULT),
+    });
+  });
+  //request
+  const result = await provider.request(TEST_JSONRPC_REQUEST);
+  return result;
+}
+
+describe("@walletconnect/signer-connection", () => {
+  it("should connect and request", async () => {
+    const { provider, wallet } = await setup();
+    const topic = await testConnect(provider, wallet);
+    chai.expect(!!topic).to.be.true;
+    const result = await testRequest(provider, wallet, topic);
+    chai.expect(result).to.eql(TEST_JSONRPC_RESULT);
   });
 });

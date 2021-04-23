@@ -68,7 +68,7 @@ export class Client extends IClient {
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger }));
+        : pino(getDefaultLoggerOptions({ level: opts?.logger || "error" }));
 
     this.context = opts?.name || this.context;
     this.controller = opts?.controller || false;
