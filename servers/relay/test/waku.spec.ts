@@ -133,4 +133,5 @@ describe.only("Waku", () => {
       });
     }, 200);
   });
+  it("Can get historical content topic messages that arrived before a subcription", function(done) {});
 });

@@ -87,38 +87,26 @@ export class WakuService extends HttpConnection {
 
   public getStoreMessages(contentTopic: string, cb: IWakuCB.Message) {
     let recursiveStoreCall = async (
-      pagingOptions: PagingOptions = {
+      currentCursor: PagingOptions = {
         pageSize: 100,
         forward: true,
       },
     ): Promise<WakuMessageResponse[]> => {
-      // We do the ternary operator because the json-rpc server can't handle null (undefined) in place
-      // of a missing object. pagingOptions is an object.
-      let payload = pagingOptions
-        ? formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[contentTopic], pagingOptions])
+      let payload = currentCursor
+        ? formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[contentTopic], currentCursor])
         : formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[contentTopic]]);
-
       await this.send(payload);
-      // I used a promise here because before I confirmed the existen of a bug in
-      // waku store I wasn't sure if the events where being triggered in the correct
-      // order and Iw as getting incorrect responses from the server. The promise
-      // can be removed for similarity with the rest of this file.
-      // TODO remove promise and use even callback only
-      let { result }: JsonRpcResult<StoreResponse> = await new Promise(resolve => {
-        this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-          if (isJsonRpcResult(response)) resolve(response);
-          if (isJsonRpcError(response)) cb(response, []);
-        });
-      });
-
-      if (result.pagingOptions?.pageSize == 0 || !result.pagingOptions) {
-        return result.messages;
-      }
-      let newMessages = await recursiveStoreCall(result.pagingOptions);
-      result.messages.forEach(m => {
-        newMessages.push(m);
-      });
-      return newMessages;
+      let { pagingOptions, messages } = (
+        await new Promise<JsonRpcResult<StoreResponse>>(resolve => {
+          this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+            if (isJsonRpcResult(response)) resolve(response);
+            if (isJsonRpcError(response)) cb(response, []);
+          });
+        })
+      ).result;
+      if (pagingOptions?.pageSize == 0 || !pagingOptions) return messages;
+      (await recursiveStoreCall(pagingOptions)).forEach(m => messages.push(m));
+      return messages;
     };
 
     recursiveStoreCall().then((messages: WakuMessageResponse[]) => {
