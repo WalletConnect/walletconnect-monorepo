@@ -8,7 +8,7 @@ import { generateRandomBytes32 } from "../src/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
-describe("Waku", () => {
+describe.only("Waku", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
   let contentTopic: string;
@@ -104,8 +104,7 @@ describe("Waku", () => {
       });
     }, 200);
   });
-  it.only("Gets a single store messages", function(done) {
-    this.timeout(10000);
+  it("Gets a single store messages", function(done) {
     wakuOne.post(testMessage, contentTopic);
     setTimeout(() => {
       wakuOne.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
@@ -115,24 +114,23 @@ describe("Waku", () => {
         expect(messages[0].contentTopic).to.equal(contentTopic);
         done();
       });
-    }, 1000);
+    }, 200);
   });
-  xit("Gets multiple store messages", function(done) {
+  it("Gets multiple random quantity store messages", function(done) {
     let allMessages: string[] = [];
-    this.timeout(10000);
-    for (var i = 0; i < 501; i++) {
+    let totalMessages = Math.floor(Math.random() * 150) + 100;
+    for (var i = 0; i < totalMessages; i++) {
       allMessages.push(generateRandomBytes32());
       wakuOne.post(allMessages[allMessages.length - 1], contentTopic);
     }
     setTimeout(() => {
       wakuOne.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
-        console.log("TEST LENGTH", err, messages.length);
         let receivedMessages = messages.map(m => m.payload);
         expect(err).to.be.undefined;
         expect(messages.length).to.equal(allMessages.length);
         expect(receivedMessages).to.have.members(allMessages);
         done();
       });
-    }, 5000);
+    }, 200);
   });
 });
