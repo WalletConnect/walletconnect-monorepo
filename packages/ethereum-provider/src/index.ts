@@ -24,16 +24,11 @@ export const infuraNetworks = {
   42: "kovan",
 };
 
-interface EthereumRpcConfig {
+export interface EthereumRpcConfig {
   infuraId?: string;
   custom?: {
     [chainId: number]: string;
   };
-}
-
-export function isSigningMethod(method: string, methods = signingMethods) {
-  if (method.startsWith("eth_signTypedData")) return true;
-  return methods.includes(method);
 }
 
 export function getInfuraRpcUrl(chainId: number, infuraId?: string): string | undefined {
@@ -56,7 +51,7 @@ export function getRpcUrl(chainId: number, rpc?: EthereumRpcConfig): string | un
   return rpcUrl;
 }
 
-interface EthereumProviderOptions {
+export interface EthereumProviderOptions {
   chainId: number;
   methods?: string[];
   rpc?: EthereumRpcConfig;
@@ -97,7 +92,7 @@ class EthereumProvider implements IEthereumProvider {
       default:
         break;
     }
-    if (isSigningMethod(args.method)) {
+    if (args.method.startsWith("eth_signTypedData") || this.methods.includes(args.method)) {
       return this.signer.request(args);
     }
     if (typeof this.http === "undefined") {
