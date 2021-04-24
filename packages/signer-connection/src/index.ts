@@ -4,27 +4,26 @@ import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { ERROR, getError } from "@walletconnect/utils";
-import {
-  AppMetadata,
-  ClientOptions,
-  IClient,
-  PairingTypes,
-  SessionTypes,
-} from "@walletconnect/types";
+import { ClientOptions, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
 
-function isClient(opts?: IClient | ClientOptions): opts is IClient {
+export function isClient(opts?: SignerConnectionClientOpts): opts is IClient {
   return typeof opts !== "undefined" && typeof (opts as IClient).context !== "undefined";
 }
 
 export const SIGNER_EVENTS = {
   init: "signer_init",
   uri: "signer_uri",
+  created: "signer_created",
+  deleted: "signer_deleted",
+  update: "signer_update",
+  notification: "signer_notification",
 };
 
+export type SignerConnectionClientOpts = IClient | ClientOptions;
 export interface SignerConnectionOpts {
   chains?: string[];
   methods?: string[];
-  client?: IClient | ClientOptions;
+  client?: SignerConnectionClientOpts;
 }
 
 export class SignerConnection extends IJsonRpcConnection {
@@ -111,7 +110,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async register(opts?: IClient | ClientOptions): Promise<IClient> {
+  private async register(opts?: SignerConnectionClientOpts): Promise<IClient> {
     if (typeof this.client !== "undefined") {
       return this.client;
     }
@@ -156,13 +155,30 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private registerEventListeners() {
     if (typeof this.client === "undefined") return;
-    this.client.on(CLIENT_EVENTS.session.updated, session => {
+    this.client.on(CLIENT_EVENTS.session.created, (session: SessionTypes.Settled) => {
       if (!this.session || this.session?.topic !== session.topic) return;
       this.session = session;
+      this.events.emit(SIGNER_EVENTS.created, session);
     });
-    this.client.on(CLIENT_EVENTS.session.deleted, session => {
+    this.client.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
+      if (!this.session || this.session?.topic !== session.topic) return;
+      this.session = session;
+      this.events.emit(SIGNER_EVENTS.update, session);
+    });
+    this.client.on(
+      CLIENT_EVENTS.session.notification,
+      (notification: SessionTypes.NotificationEvent) => {
+        if (!this.session || this.session?.topic !== notification.topic) return;
+        this.events.emit(SIGNER_EVENTS.notification, {
+          type: notification.type,
+          data: notification.data,
+        });
+      },
+    );
+    this.client.on(CLIENT_EVENTS.session.deleted, (session: SessionTypes.Settled) => {
       if (!this.session || this.session?.topic !== session.topic) return;
       this.onClose();
+      this.events.emit(SIGNER_EVENTS.deleted, session);
     });
     this.client.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
       const uri = proposal.signal.params.uri;
