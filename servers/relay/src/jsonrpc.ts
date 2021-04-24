@@ -29,7 +29,7 @@ import { SIX_HOURS } from "./constants";
 import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
-import { IMessageCB, WakuMessage, Subscription } from "./types";
+import { IWakuCB, WakuMessage, Subscription } from "./types";
 import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX } from "./constants";
 
 import { SubscriptionService } from "./subscription";
@@ -151,12 +151,6 @@ export class JsonRpcService {
       await this.redis.setMessage(params);
       await this.searchSubscriptions(socketId, params);
       this.waku.post(params.message, params.topic);
-      setTimeout(() => {
-        // We can avoid posting a second time by just calling the relay get messages
-        // api on the receiving nodes since the the global topic is already being
-        // subcribed to.
-        this.waku.post(params.message, params.topic);
-      }, 1000);
       return true;
     } else {
       return false;
@@ -170,17 +164,27 @@ export class JsonRpcService {
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
+    this.wakuMessageCaller(params.topic);
+  }
 
-    await this.waku.onNewFilterMessage(params.topic, (err, messages) => {
+  private wakuMessageCaller(topic: string) {
+    const wakuMsgHandler: IWakuCB.Message = (err, messages) => {
       if (err) this.logger.error(err);
       messages.forEach((m: WakuMessage) => {
         this.onNewMessage({
-          topic: params.topic,
+          topic: topic,
           message: m.payload,
           ttl: SIX_HOURS,
         });
       });
-    });
+    };
+    for (var i = 1; i < 3; i++) {
+      let time = i * 1000;
+      setTimeout(() => {
+        this.waku.getStoreMessages(topic, wakuMsgHandler);
+      }, time);
+    }
+    this.waku.onNewFilterMessage(topic, wakuMsgHandler);
   }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {

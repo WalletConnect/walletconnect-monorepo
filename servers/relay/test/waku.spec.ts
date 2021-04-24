@@ -63,22 +63,6 @@ describe.only("Waku", () => {
       });
     }, 200);
   });
-  // We aren't doing global topic polling anymore
-  // But polling for global topic to see if we missed a filter message
-  // could be an alternative to using the store to get historical message
-  // The problem with that is that there is a potential that a lot of messages
-  // need to get filtered in search for the specific filter
-  xit("It polls for messages", function(done) {
-    wakuOne.onNewMessage(topic, (err, messages) => {
-      expect(err).to.be.undefined;
-      expect(messages.length).to.equal(1);
-      expect(messages[0].payload).to.equal(testMessage);
-      done();
-    });
-    setTimeout(() => {
-      wakuTwo.post(testMessage, "", topic);
-    }, 750);
-  });
   it("It polls for filter messages", function(done) {
     wakuOne.onNewFilterMessage(contentTopic, (err, messages) => {
       expect(err).to.be.undefined;
@@ -124,10 +108,10 @@ describe.only("Waku", () => {
     let totalMessages = Math.floor(Math.random() * 150) + 100;
     for (var i = 0; i < totalMessages; i++) {
       allMessages.push(generateRandomBytes32());
-      wakuOne.post(allMessages[allMessages.length - 1], contentTopic);
+      wakuTwo.post(allMessages[allMessages.length - 1], contentTopic);
     }
     setTimeout(() => {
-      wakuOne.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
+      wakuTwo.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
         let receivedMessages = messages.map(m => m.payload);
         expect(err).to.be.undefined;
         expect(messages.length).to.equal(allMessages.length);
@@ -136,5 +120,4 @@ describe.only("Waku", () => {
       });
     }, 200);
   });
-  it("Can get historical content topic messages that arrived before a subcription", function(done) {});
 });

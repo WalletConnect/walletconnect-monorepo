@@ -44,8 +44,8 @@ export class WakuService extends HttpConnection {
         contentTopic,
       },
     ]);
-    this.logger.debug("Posting Waku Message");
-    this.logger.trace({ type: "method", method: "post", payload: jsonPayload });
+    this.logger.info("Posting Waku Message");
+    this.logger.debug({ type: "method", method: "post", payload: jsonPayload });
     this.send(jsonPayload);
   }
 
@@ -88,7 +88,7 @@ export class WakuService extends HttpConnection {
   public getStoreMessages(contentTopic: string, cb: IWakuCB.Message) {
     const recursiveStoreCall = async (
       currentCursor: PagingOptions = {
-        pageSize: 100, // Having a larger page size reduces the amount of libp2p connections between nodes
+        pageSize: 100,
         forward: true,
       },
     ): Promise<WakuMessageResponse[]> => {
@@ -209,6 +209,8 @@ export class WakuService extends HttpConnection {
   }
 
   private poll() {
+    // SHould the filterTopics list be removed once the subscription is also removed?
+    // I think it should
     this.filterTopics.forEach(filterTopic => {
       this.getFilterMessages(filterTopic, (err, messages: WakuMessage[]) => {
         if (err && err.error.data === `Not subscribed to content topic: ${filterTopic}`) {
