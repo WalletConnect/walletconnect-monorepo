@@ -88,7 +88,7 @@ export class WakuService extends HttpConnection {
   public getStoreMessages(contentTopic: string, cb: IWakuCB.Message) {
     const recursiveStoreCall = async (
       currentCursor: PagingOptions = {
-        pageSize: 100,
+        pageSize: 100, // Having a larger page size reduces the amount of libp2p connections between nodes
         forward: true,
       },
     ): Promise<WakuMessageResponse[]> => {
@@ -96,14 +96,12 @@ export class WakuService extends HttpConnection {
         ? formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[{ contentTopic }], currentCursor])
         : formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[{ contentTopic }]]);
       await this.send(payload);
-      let { pagingOptions, messages } = (
-        await new Promise<JsonRpcResult<StoreResponse>>(resolve => {
-          this.once(payload.id.toString(), (response: JsonRpcResponse) => {
-            if (isJsonRpcResult(response)) resolve(response);
-            if (isJsonRpcError(response)) cb(response, []);
-          });
-        })
-      ).result;
+      let { pagingOptions, messages } = await new Promise<StoreResponse>(resolve => {
+        this.once(payload.id.toString(), (response: JsonRpcResponse) => {
+          if (isJsonRpcResult(response)) resolve(response.result as StoreResponse);
+          if (isJsonRpcError(response)) cb(response, []);
+        });
+      });
       if (pagingOptions?.pageSize == 0 || !pagingOptions) return messages;
       (await recursiveStoreCall(pagingOptions)).forEach(m => messages.push(m));
       return messages;

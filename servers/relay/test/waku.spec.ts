@@ -24,6 +24,9 @@ describe.only("Waku", () => {
     contentTopic = generateRandomBytes32();
     topic = generateRandomBytes32();
   });
+  afterEach(() => {
+    wakuOne.logger.level = "error";
+  });
   it("Waku node has peers", async () => {
     wakuOne.getPeers((err, peers: WakuPeers[]) => {
       expect(err).to.be.undefined;
