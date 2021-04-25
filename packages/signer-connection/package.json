@@ -22,6 +22,7 @@
     "build:umd": "webpack",
     "build": "run-s build:pre build:cjs build:umd",
     "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
+    "test:watch": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 3000 --exit -r ts-node/register --watch --watch-files . ./test/**/*.spec.ts",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
@@ -58,6 +59,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-standard": "^4.0.1",
+    "ethereum-test-network": "^0.1.1",
     "mocha": "^8.2.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.19.1",
