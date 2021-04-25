@@ -4,6 +4,11 @@
   "version": "2.0.0-alpha.38",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WalletConnect-Labs/walletconnect-v2-monorepo",
+    "directory": "packages/ethereum-provider"
+  },
   "license": "LGPL-3.0",
   "main": "dist/cjs/index.js",
   "types": "dist/cjs/index.d.ts",
