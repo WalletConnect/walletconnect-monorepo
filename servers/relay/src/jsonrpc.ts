@@ -179,10 +179,9 @@ export class JsonRpcService {
       });
     };
     for (var i = 1; i < 3; i++) {
-      let time = i * 1000;
       setTimeout(() => {
         this.waku.getStoreMessages(topic, wakuMsgHandler);
-      }, time);
+      }, i * 1500);
     }
     this.waku.onNewFilterMessage(topic, wakuMsgHandler);
   }
