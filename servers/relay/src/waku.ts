@@ -2,11 +2,9 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import {
   JsonRpcResponse,
-  JsonRpcError,
   isJsonRpcError,
   JsonRpcPayload,
   formatJsonRpcRequest,
-  JsonRpcResult,
   JsonRpcRequest,
   isJsonRpcResult,
 } from "@json-rpc-tools/utils";
@@ -22,6 +20,7 @@ import {
   WakuMessageResponse,
   WakuMessage,
 } from "./types";
+import { WAKU_POLLING_INTERVAL, WAKU_DEFAULT_PAGE_SIZE } from "./constants";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
@@ -88,7 +87,7 @@ export class WakuService extends HttpConnection {
   public getStoreMessages(contentTopic: string, cb: IWakuCB.Message) {
     const recursiveStoreCall = async (
       currentCursor: PagingOptions = {
-        pageSize: 100,
+        pageSize: WAKU_DEFAULT_PAGE_SIZE,
         forward: true,
       },
     ): Promise<WakuMessageResponse[]> => {
@@ -145,17 +144,15 @@ export class WakuService extends HttpConnection {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.logger.trace(`Initialized`);
     this.open().catch(this.logger.error);
     this.on("payload", (payload: JsonRpcPayload) => {
-      if (isJsonRpcError(payload)) {
-        this.logger.error(payload.error);
-      }
+      if (isJsonRpcError(payload)) this.logger.error(payload.error);
       this.logger.trace({ method: "New Response Payload", payload });
       this.events.emit(payload.id.toString(), payload);
     });
     this.subscribe(this.namespace);
-    setInterval(() => this.poll(), 200);
+    setInterval(() => this.poll(), WAKU_POLLING_INTERVAL);
+    this.logger.trace(`Initialized`);
   }
 
   private parseWakuMessagePayload(payload: WakuMessageResponse[]): WakuMessage[] {
@@ -189,8 +186,8 @@ export class WakuService extends HttpConnection {
   }
 
   private sub(request: JsonRpcRequest, cb?: IWakuCB.Rpc) {
-    this.logger.debug("Subscribing to Waku");
-    this.logger.debug({ type: "method", method: "filterSubscribe", request });
+    this.logger.debug("Subscribing to topic");
+    this.logger.debug({ type: "method", method: "sub", request });
     this.send(request);
     this.once(request.id.toString(), (response: JsonRpcResponse) => {
       if (cb) isJsonRpcError(response) ? cb(response, false) : cb(undefined, response.result);
@@ -198,7 +195,7 @@ export class WakuService extends HttpConnection {
   }
 
   private unsub(request: JsonRpcRequest) {
-    this.logger.debug("Subscribing to Waku");
+    this.logger.debug(`Unsubscribe from topic`);
     this.logger.trace({ type: "method", method: "unsub", request });
     this.send(request);
   }
@@ -209,16 +206,14 @@ export class WakuService extends HttpConnection {
   }
 
   private poll() {
-    // SHould the filterTopics list be removed once the subscription is also removed?
-    // I think it should
-    this.filterTopics.forEach(filterTopic => {
-      this.getFilterMessages(filterTopic, (err, messages: WakuMessage[]) => {
-        if (err && err.error.data === `Not subscribed to content topic: ${filterTopic}`) {
-          this.filterSubscribe(filterTopic);
+    this.filterTopics.forEach(filter => {
+      this.getFilterMessages(filter, (err, messages: WakuMessage[]) => {
+        if (err && err.error.data === `Not subscribed to content topic: ${filter}`) {
+          this.filterSubscribe(filter);
         }
         if (messages.length) {
           this.logger.trace({ method: "pollFilterTopic", messages: messages });
-          this.events.emit(filterTopic, messages);
+          this.events.emit(filter, messages);
         }
       });
     });

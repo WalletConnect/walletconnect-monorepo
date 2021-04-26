@@ -5,6 +5,7 @@ import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 import { WakuService } from "../src/waku";
 import { WakuMessage, WakuPeers } from "../src/types";
 import { generateRandomBytes32 } from "../src/utils";
+import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
@@ -73,6 +74,25 @@ describe("Waku", () => {
     setTimeout(() => {
       wakuTwo.post(testMessage, contentTopic);
     }, 750);
+  });
+  it("It can resubcribe to polling topics", function(done) {
+    wakuOne.logger.level = "silent";
+    wakuOne.onNewFilterMessage(contentTopic, (err, messages) => {
+      expect(err).to.be.undefined;
+      expect(messages.length).to.equal(1);
+      expect(messages[0].payload).to.equal(testMessage);
+      done();
+    });
+    setTimeout(() => {
+      wakuOne.send(
+        formatJsonRpcRequest("delete_waku_v2_filter_v1_subscription", [
+          [{ contentTopics: [contentTopic] }],
+        ]),
+      );
+    }, 100);
+    setTimeout(() => {
+      wakuTwo.post(testMessage, contentTopic);
+    }, 600);
   });
   it("Filter unsubscribe works", function(done) {
     wakuOne.logger.level = "silent";
