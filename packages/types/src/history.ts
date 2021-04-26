@@ -6,7 +6,9 @@ import {
   RequestArguments,
 } from "@json-rpc-tools/types";
 import { Logger } from "pino";
+
 import { IClient } from "./client";
+import { RequestEvent } from "./misc";
 
 export interface JsonRpcRecord {
   id: number;
@@ -26,6 +28,8 @@ export abstract class IJsonRpcHistory extends IEvents {
   public abstract readonly keys: number[];
 
   public abstract readonly values: JsonRpcRecord[];
+
+  public abstract readonly pending: RequestEvent[];
 
   constructor(public client: IClient, public logger: Logger) {
     super();

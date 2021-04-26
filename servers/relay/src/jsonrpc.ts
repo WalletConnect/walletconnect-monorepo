@@ -10,7 +10,6 @@ import {
   JsonRpcResult,
   JsonRpcPayload,
   METHOD_NOT_FOUND,
-  payloadId,
 } from "@json-rpc-tools/utils";
 import { Logger } from "pino";
 import { safeJsonStringify } from "safe-json-utils";
@@ -93,13 +92,13 @@ export class JsonRpcService {
           break;
 
         default:
-          this.socketSend(socketId, formatJsonRpcError(payloadId(), getError(METHOD_NOT_FOUND)));
+          this.socketSend(socketId, formatJsonRpcError(request.id, getError(METHOD_NOT_FOUND)));
           return;
       }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
-      this.socketSend(socketId, formatJsonRpcError(payloadId(), e.message));
+      this.socketSend(socketId, formatJsonRpcError(request.id, e.message));
     }
   }
 
@@ -129,7 +128,7 @@ export class JsonRpcService {
       this.logger.error(errorMessage);
       this.socketSend(
         socketId,
-        formatJsonRpcError(payloadId(), `requested ttl is above ${config.REDIS_MAX_TTL} seconds`),
+        formatJsonRpcError(request.id, `requested ttl is above ${config.REDIS_MAX_TTL} seconds`),
       );
       return;
     }

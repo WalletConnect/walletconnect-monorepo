@@ -1,4 +1,4 @@
-import { ErrorResponse } from "@json-rpc-tools/types";
+import { ErrorResponse, JsonRpcRequest } from "@json-rpc-tools/types";
 
 import { RelayerTypes } from "./relayer";
 
@@ -89,3 +89,9 @@ export declare namespace Validation {
 }
 
 export type Reason = ErrorResponse;
+
+export interface RequestEvent {
+  topic: string;
+  request: JsonRpcRequest;
+  chainId?: string;
+}

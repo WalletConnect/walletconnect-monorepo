@@ -3,7 +3,7 @@ import styled from "styled-components";
 import KeyValueStorage from "keyvaluestorage";
 import Wallet from "caip-wallet";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
-import { JsonRpcResponse, formatJsonRpcError, formatJsonRpcRequest } from "@json-rpc-tools/utils";
+import { JsonRpcResponse, formatJsonRpcError } from "@json-rpc-tools/utils";
 import { ERROR, getAppMetadata, getError } from "@walletconnect/utils";
 import { SessionTypes } from "@walletconnect/types";
 
@@ -203,18 +203,7 @@ class App extends React.Component<{}> {
     if (typeof this.state.client === "undefined") {
       throw new Error("Client is not initialized");
     }
-    const requests = this.state.client.session.history.values
-      .map(record => {
-        if (typeof record.response !== "undefined") return undefined;
-        const requestEvent: SessionTypes.RequestEvent = {
-          topic: record.topic,
-          request: formatJsonRpcRequest(record.request.method, record.request.params, record.id),
-          chainId: record.chainId,
-        };
-        return requestEvent;
-      })
-      .filter(x => typeof x !== "undefined");
-    console.log(requests);
+    const requests = this.state.client.session.history.pending;
     const sessions = this.state.client.session.values;
     this.setState({ sessions, requests });
   };
