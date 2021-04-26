@@ -20,6 +20,7 @@ async function formatQRCodeImage(data: string) {
 interface QRCodeDisplayProps {
   text: TextMap;
   uri: string;
+  navigate?: boolean;
 }
 
 function QRCodeDisplay(props: QRCodeDisplayProps) {
@@ -48,6 +49,7 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
         {props.text.scan_qrcode_with_wallet}
       </p>
+      {props.navigate && <iframe src={props.uri} width="0" height="0"></iframe>}
       <div dangerouslySetInnerHTML={{ __html: svg }}></div>
       <div className="walletconnect-modal__footer">
         <a onClick={copyToClipboard}>{props.text.copy_to_clipboard}</a>

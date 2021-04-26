@@ -25,6 +25,7 @@ function Modal(props: ModalProps) {
   const displayProps = {
     text: props.text,
     uri: props.uri,
+    navigate: props.qrcodeModalOptions ? props.qrcodeModalOptions.navigate : true,
     qrcodeModalOptions: props.qrcodeModalOptions,
   };
 
