@@ -8,7 +8,7 @@ import { JsonRpcPayload } from "@json-rpc-tools/types";
 import { formatJsonRpcResult } from "@json-rpc-tools/utils";
 import { generateRandomBytes32 } from "../src/utils";
 
-describe("JSON-RPC", () => {
+describe.only("JSON-RPC", () => {
   it("A can publish to B subscribed to same topic", async () => {
     const { pub, sub } = getTestJsonRpc();
 

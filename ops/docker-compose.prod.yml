@@ -1,23 +1,36 @@
 version: '3.7'
 
+volumes:
+  caddy_data:
+  caddy_conf:
+
 services:
-  nginx:
+  caddy:
     environment:
-      DOMAIN_URL: ${RELAY_URL}
-      APP_ENV: ${NODE_ENV:-production}
+      DOMAIN: ${RELAY_URL:-localhost}
       EMAIL: ${CERTBOT_EMAIL}
-      CONTAINER_NAME: relay
-      APP_PORT: ${APP_PORT:-5000}
-      APP_QTY: ${APP_QTY:-1}
-      CLOUDFLARE: ${CLOUDFLARE}
+      CLOUDFLARE_TOKEN: ${CLOUDFLARE}
+      UPSTREAM_NAME: ${UPSTREAM_NAME:-relay}
+      UPSTREAM_PORT: ${UPSTREAM_PORT:-5555}
+      LOG_LEVEL: ERROR
+      SWARM_TASK_SLOT: "{{.Task.Slot}}"
+    volumes:
+      - caddy_data:/data
+      - caddy_conf:/config
     depends_on:
       - relay
+    deploy:
+      replicas: 3
 
-  relay0:
+  relay:
     image: ${RELAY_IMAGE}
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: ${NODE_ENV:-development}
+      RELAY_MODE: ${RELAY_MODE:-any}
     deploy:
+      replicas: 3
+    deploy:
+      replicas: 1
       resources:
         reservations:
           cpus: '0.6'

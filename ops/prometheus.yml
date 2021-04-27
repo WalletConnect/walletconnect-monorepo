@@ -1,4 +1,4 @@
-
+o
 global:
   scrape_interval: 5s
   scrape_timeout: 5s
@@ -11,11 +11,10 @@ scrape_configs:
   static_configs:
   - targets: [ "172.18.0.1:9323" ]
 
-- job_name: nginx_exporter
+- job_name: caddy
   metrics_path: /metrics
-  scheme: http
   static_configs:
-  - targets: [ "nginx_exporter:9113" ]
+  - targets: [ "caddy:9321" ]
 
 - job_name: node_exporter
   static_configs:
@@ -32,4 +31,14 @@ scrape_configs:
 - job_name: relay
   metrics_path: /metrics
   static_configs:
-  - targets: ['relay0:5000']
+  - targets: ['relay:5000']
+
+- job_name: waku
+  metrics_path: /metrics
+  static_configs:
+  - targets: ['waku:9001']
+
+- job_name: store
+  metrics_path: /metrics
+  static_configs:
+  - targets: ['store:9001']

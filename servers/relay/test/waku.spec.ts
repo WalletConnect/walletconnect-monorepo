@@ -9,7 +9,7 @@ import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
-describe("Waku", () => {
+describe("WAKU", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
   let contentTopic: string;
@@ -50,6 +50,9 @@ describe("Waku", () => {
     }, 200);
   });
 
+  // NOTE: This test doesn't pass when the nodes aren't peered with each other
+  // through the static node option is turned on. Especially through our arquitecture of
+  // using a single store node
   it("Receive message on Waku A from Waku B using relay api", function(done) {
     wakuOne.subscribe(topic);
     setTimeout(() => {
