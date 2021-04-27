@@ -5,9 +5,11 @@ import { TestNetwork } from "ethereum-test-network";
 import { expect } from "chai";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { IClient, RequestEvent, SessionTypes } from "@walletconnect/types";
+import { ethers } from "ethers";
 
 const CHAIN_ID = 123;
 const PORT = 8545;
+const BLOCKCHAIN = "eip155";
 const RPC_URL = `http://localhost:${PORT}`;
 const DEFAULT_GENESIS_ACCOUNTS = [
   {
@@ -15,6 +17,7 @@ const DEFAULT_GENESIS_ACCOUNTS = [
     privateKey: "0xa3dac6ca0b1c61f5f0a0b3a0acf93c9a52fd94e8e33d243d3b3a8b8c5dc37f0b", // 0xaaE062157B53077da1414ec3579b4CBdF7a4116f
   },
 ];
+const wallet = new ethers.Wallet(DEFAULT_GENESIS_ACCOUNTS[0].privateKey);
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
@@ -57,7 +60,7 @@ describe("@walletconnect/ethereum-provider", () => {
   });
 
   it("Test enable", async () => {
-    const wallet = await Client.init({
+    const walletClient = await Client.init({
       controller: true,
       relayProvider: TEST_RELAY_URL,
       metadata: TEST_WALLET_METADATA,
@@ -74,15 +77,21 @@ describe("@walletconnect/ethereum-provider", () => {
         metadata: TEST_APP_METADATA,
       },
     });
+
     // auto-pair
-    provider.signer.connection.on(SIGNER_EVENTS.uri, ({ uri }) => wallet.pair({ uri }));
+    provider.signer.connection.on(SIGNER_EVENTS.uri, ({ uri }) => walletClient.pair({ uri }));
     // connect
     let accounts: string[] = [];
 
     await Promise.all([
       new Promise<void>((resolve, reject) => {
-        wallet.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
-          await wallet.approve({ proposal, response: { state: { accounts: [] } } });
+        walletClient.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+          await walletClient.approve({
+            proposal,
+            response: {
+              state: { accounts: [`${wallet.address}@${BLOCKCHAIN}:${"SOMETHINGWRONG"}`] },
+            },
+          });
           resolve();
         });
       }),
@@ -93,7 +102,13 @@ describe("@walletconnect/ethereum-provider", () => {
     ]);
     // eslint-disable-next-line no-console
     console.log(accounts);
-    // console.log(provider.accounts);
-    expect(accounts.length > 0, "Accounts is array and more then 0");
+    expect(
+      accounts[0].split("@")[0] === wallet.address,
+      "Returned account address is equal to test address",
+    ); // TODO Fails because of this, TypeError: Cannot read property 'split' of undefined
   });
 });
+
+function formatEIP155(address: string, blockchain: string, chainId: number) {
+  return `${address}@${blockchain}:${chainId}`;
+}
