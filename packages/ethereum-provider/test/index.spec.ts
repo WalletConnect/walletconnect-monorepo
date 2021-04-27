@@ -1,6 +1,6 @@
 import "mocha";
 import EthereumProvider from "./../src/index";
-import { SignerConnection } from "@walletconnect/signer-connection";
+import { SignerConnection, SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { TestNetwork } from "ethereum-test-network";
 import { expect } from "chai";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
@@ -57,33 +57,43 @@ describe("@walletconnect/ethereum-provider", () => {
   });
 
   it("Test enable", async () => {
-    try {
-      const clientB = await Client.init({
-        controller: true,
-        relayProvider: TEST_RELAY_URL,
-        metadata: TEST_WALLET_METADATA,
-      });
-      const signer = new SignerConnection({
-        chains: [CHAIN_ID.toString()],
-        client: clientB,
-      });
-      const provider = new EthereumProvider({
-        rpc: {
-          custom: {
-            [CHAIN_ID]: RPC_URL,
-          },
+    const wallet = await Client.init({
+      controller: true,
+      relayProvider: TEST_RELAY_URL,
+      metadata: TEST_WALLET_METADATA,
+    });
+    const provider = new EthereumProvider({
+      chainId: CHAIN_ID,
+      rpc: {
+        custom: {
+          [CHAIN_ID]: RPC_URL,
         },
-        chainId: CHAIN_ID,
-        methods: ["eth_requestAccounts"],
-        client: clientB,
-      });
-      await provider.connect();
-      const accounts = await provider.enable();
-      console.log(accounts);
-      // console.log(provider.accounts);
-      expect(accounts.length > 0, "Accounts is array and more then 0");
-    } catch (error) {
-      console.log(error);
-    }
+      },
+      client: {
+        relayProvider: TEST_RELAY_URL,
+        metadata: TEST_APP_METADATA,
+      },
+    });
+    // auto-pair
+    provider.signer.connection.on(SIGNER_EVENTS.uri, ({ uri }) => wallet.pair({ uri }));
+    // connect
+    let accounts: string[] = [];
+
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        wallet.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+          await wallet.approve({ proposal, response: { state: { accounts: [] } } });
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        accounts = await provider.enable();
+        resolve();
+      }),
+    ]);
+    // eslint-disable-next-line no-console
+    console.log(accounts);
+    // console.log(provider.accounts);
+    expect(accounts.length > 0, "Accounts is array and more then 0");
   });
 });
