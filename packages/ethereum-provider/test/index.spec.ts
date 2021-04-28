@@ -6,6 +6,7 @@ import { expect } from "chai";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { IClient, RequestEvent, SessionTypes } from "@walletconnect/types";
 import { ethers } from "ethers";
+import { abi, bytecode } from "./shared/erc20";
 
 const CHAIN_ID = 123;
 const PORT = 8545;
@@ -100,10 +101,99 @@ describe("@walletconnect/ethereum-provider", () => {
         resolve();
       }),
     ]);
-    expect(
-      accounts[0].split("@")[0] === wallet.address,
-      "Returned account address is equal to test address",
+    expect(accounts[0], "Returned account address is equal to test address").to.be.eq(
+      wallet.address,
     ); // TODO Fails because of this, TypeError: Cannot read property 'split' of undefined
+  });
+
+  it("Ethers eth_sendTransaction", async () => {
+    const walletClient = await Client.init({
+      controller: true,
+      relayProvider: TEST_RELAY_URL,
+      metadata: TEST_WALLET_METADATA,
+    });
+    const provider = new EthereumProvider({
+      chainId: CHAIN_ID,
+      rpc: {
+        custom: {
+          [CHAIN_ID]: RPC_URL,
+        },
+      },
+      client: {
+        relayProvider: TEST_RELAY_URL,
+        metadata: TEST_APP_METADATA,
+      },
+    });
+
+    // auto-pair
+    provider.signer.connection.on(SIGNER_EVENTS.uri, ({ uri }) => walletClient.pair({ uri }));
+    // connect
+    let accounts: string[] = [];
+
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        walletClient.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+          await walletClient.approve({
+            proposal,
+            response: {
+              state: { accounts: [`${wallet.address}@${BLOCKCHAIN}:${CHAIN_ID}`] },
+            },
+          });
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        accounts = await provider.enable();
+        resolve();
+      }),
+    ]);
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        walletClient.on(
+          CLIENT_EVENTS.session.request,
+          async (requestEvent: SessionTypes.RequestEvent) => {
+            if (requestEvent.request.method === "eth_sendTransaction") {
+              const signer = wallet.connect(new ethers.providers.JsonRpcProvider(RPC_URL));
+              const tx = requestEvent.request.params[0];
+              const sendtTx = await signer.sendTransaction({
+                from: tx.from,
+                data: tx.data,
+                gasLimit: tx.gas,
+                chainId: CHAIN_ID,
+                to: tx.to ? tx.to : undefined,
+              });
+              await sendtTx.wait();
+              await walletClient.respond({
+                topic: requestEvent.topic,
+                response: {
+                  result: sendtTx.hash,
+                  id: requestEvent.request.id,
+                  jsonrpc: requestEvent.request.jsonrpc,
+                },
+              });
+              resolve();
+            }
+          },
+        );
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        const web3provider = new ethers.providers.Web3Provider(provider);
+        const signer = web3provider.getSigner(accounts[0]);
+        const factory = new ethers.ContractFactory(abi, bytecode, signer);
+        const erc20 = await factory.deploy("Walletconnect token", "WCT", 18);
+        await erc20.deployed();
+        const balanceToMint = ethers.utils.parseEther("500");
+        const mintTx = await erc20.mint(accounts[0], balanceToMint);
+        await mintTx.wait();
+        const tokenBalance = await erc20.balanceOf(accounts[0]);
+        expect(tokenBalance.toString()).to.be.eq(balanceToMint.toString());
+        resolve();
+      }),
+    ]);
+
+    expect(accounts[0], "Returned account address is equal to test address").to.be.eq(
+      wallet.address,
+    );
   });
 });
 
