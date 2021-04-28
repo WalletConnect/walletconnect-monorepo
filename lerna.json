@@ -1,0 +1,6 @@
+{
+  "version": "1.4.2-rc.1",
+  "packages": [
+    "packages/**/*"
+  ]
+}
