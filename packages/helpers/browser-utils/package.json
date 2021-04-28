@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/browser-utils",
-  "version": "1.4.1",
+  "version": "1.4.2-rc.1",
   "description": "Browser Utilities for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -48,7 +48,7 @@
     "@babel/register": "7.8.3",
     "@ethersproject/address": "5.0.0-beta.135",
     "@types/chai": "4.2.14",
-    "@types/jest": "^22.2.3",
+    "@types/jest": "22.2.3",
     "@types/lodash.isnumber": "3.0.6",
     "@types/mocha": "8.0.4",
     "@types/node": "12.12.14",
@@ -60,7 +60,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.4.1",
+    "@walletconnect/types": "^1.4.2-rc.1",
     "detect-browser": "5.2.0",
     "safe-json-utils": "1.0.0",
     "window-getters": "1.0.0",

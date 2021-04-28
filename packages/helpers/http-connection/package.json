@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/http-connection",
-  "version": "1.4.1",
+  "version": "1.4.2-rc.1",
   "description": "Http Connection for WalletConnect Providers",
   "scripts": {
     "clean": "rm -rf dist",
@@ -47,7 +47,7 @@
     "@babel/preset-typescript": "7.8.3",
     "@babel/register": "7.8.3",
     "@types/chai": "4.2.14",
-    "@types/jest": "^22.2.3",
+    "@types/jest": "22.2.3",
     "@types/lodash.isnumber": "3.0.6",
     "@types/mocha": "8.0.4",
     "@types/node": "14.6.3",
@@ -59,8 +59,8 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.4.1",
-    "@walletconnect/utils": "^1.4.1",
+    "@walletconnect/types": "^1.4.2-rc.1",
+    "@walletconnect/utils": "^1.4.2-rc.1",
     "eventemitter3": "4.0.7",
     "xhr2-cookies": "1.1.0"
   },

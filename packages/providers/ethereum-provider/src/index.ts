@@ -1,6 +1,6 @@
 import EventEmitter from "eventemitter3";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
+import { IConnector, IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
 import { getRpcUrl, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
 import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
@@ -19,10 +19,14 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
   }
 
-  public async request(args: RequestArguments): Promise<unknown> {
+  get connector(): IConnector {
+    return (this.signer.connection as any).connector as IConnector;
+  }
+
+  public async request<T = unknown>(args: RequestArguments): Promise<T> {
     switch (args.method) {
       case "eth_requestAccounts":
-        await this.signer.connect();
+        await this.connect();
         return (this.signer.connection as any).accounts;
       case "eth_accounts":
         return (this.signer.connection as any).accounts;
@@ -39,12 +43,25 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
     }
     return this.http.request(args);
   }
+
   public async enable(): Promise<ProviderAccounts> {
     const accounts = await this.request({ method: "eth_requestAccounts" });
     return accounts as ProviderAccounts;
   }
 
-  public on(event: any, listener: any) {
+  public async connect(): Promise<void> {
+    if (!this.signer.connection.connected) {
+      await this.signer.connect();
+    }
+  }
+
+  public async disconnect(): Promise<void> {
+    if (this.signer.connection.connected) {
+      await this.signer.disconnect();
+    }
+  }
+
+  public on(event: any, listener: any): void {
     this.events.on(event, listener);
   }
   public once(event: string, listener: any): void {

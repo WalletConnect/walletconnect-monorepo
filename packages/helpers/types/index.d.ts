@@ -350,12 +350,19 @@ declare module "@walletconnect/types" {
   export interface IWCRpcConnection extends IRpcConnection {
     bridge: string;
     qrcode: boolean;
-    wc: IConnector | null;
+    qrcodeModalOptions: IQRCodeModalOptions | undefined;
+    wc: IConnector;
+    chainId: number;
     connected: boolean;
+    connector: IConnector;
 
     create(chainId?: number): void;
+    open(): Promise<void>;
+    close(): Promise<void>;
+    onOpen(): void;
     onClose(): void;
     onError(payload: any, message: string, code?: number): void;
+    send(payload: any): Promise<any>;
     sendPayload(payload: any): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError>;
   }
 

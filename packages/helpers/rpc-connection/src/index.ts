@@ -25,8 +25,9 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     this.bridge = opts?.connector
       ? opts.connector.bridge
       : opts?.bridge || "https://bridge.walletconnect.org";
+
     this.qrcode = typeof opts?.qrcode === "undefined" || opts.qrcode !== false;
-    this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : 1;
+    this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : this.chainId;
     this.qrcodeModalOptions = opts?.qrcodeModalOptions;
     this.wc =
       opts?.connector ||
@@ -47,7 +48,8 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     return this.wc;
   }
 
-  public create(): void {
+  public create(chainId?: number): void {
+    this.chainId = chainId || this.chainId;
     if (!this.wc.connected) {
       this.wc
         .createSession({ chainId: this.chainId })
@@ -99,7 +101,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     this.removeAllListeners();
   }
 
-  public open(): Promise<void> {
+  public async open(): Promise<void> {
     if (this.connected) {
       this.onOpen();
       return Promise.resolve();
@@ -139,6 +141,14 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     return errorPayload;
   }
 
+  public async send(payload: any): Promise<any> {
+    const response = await this.sendPayload(payload);
+    if (isJsonRpcResponseError(response)) {
+      throw new Error(response.error.message || "Failed or Rejected Request");
+    }
+    return response.result;
+  }
+
   public async sendPayload(payload: any): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
     if (!this.wc || !this.wc.connected) {
       return this.onError(payload, "WalletConnect Not Connected");
@@ -148,14 +158,6 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
     } catch (error) {
       return this.onError(payload, error.message);
     }
-  }
-
-  public async send(payload: any): Promise<any> {
-    const response = await this.sendPayload(payload);
-    if (isJsonRpcResponseError(response)) {
-      throw new Error(response.error.message || "Failed or Rejected Request");
-    }
-    return response.result;
   }
 }
 
