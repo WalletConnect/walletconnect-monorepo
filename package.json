@@ -17,9 +17,10 @@
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
+  "workspaces": ["packages/*"],
   "scripts": {
     "clean": "lerna clean --yes",
-    "bootstrap": "lerna bootstrap --hoist",
+    "bootstrap": "lerna bootstrap",
     "lint": "lerna run lint",
     "build": "lerna run build",
     "test": "lerna run test",
