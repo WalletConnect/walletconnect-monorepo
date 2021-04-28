@@ -1,0 +1,99 @@
+version: "3.7"
+
+volumes:
+  grafana:
+  prometheus:
+
+networks:
+  default:
+
+services:
+  nginx:
+    image: ${NGINX_IMAGE}
+    environment:
+      SUBDOMAINS: "grafana:3000"
+    depends_on:
+      - grafana
+    volumes:
+      - ./nginx/exporter.conf:/etc/nginx/servers/exporter.conf
+
+  cadvisor:
+    image: gcr.io/google-containers/cadvisor:latest
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+  redis_exporter:
+    image: oliver006/redis_exporter
+    command:
+      - '--redis.addr=redis://redis:6379'
+
+  node_exporter:
+     image: quay.io/prometheus/node-exporter
+     volumes:
+       - /:/host:ro,rslave
+     command:
+       # https://github.com/prometheus/node_exporter#collectors
+       - '--path.rootfs=/host'
+       - '--no-collector.arp'
+       - '--no-collector.bcache'
+       - '--no-collector.bonding'
+       - '--no-collector.conntrack'
+       - '--collector.cpu'
+       - '--collector.cpufreq'
+       - '--collector.diskstats'
+       - '--no-collector.edac'
+       - '--no-collector.entropy'
+       - '--no-collector.filefd'
+       - '--collector.filesystem'
+       - '--no-collector.hwmon'
+       - '--no-collector.infiniband'
+       - '--collector.ipvs'
+       - '--collector.loadavg'
+       - '--no-collector.mdadm'
+       - '--collector.meminfo'
+       - '--no-collector.netclass'
+       - '--no-collector.netdev'
+       - '--collector.netstat'
+       - '--no-collector.nfs'
+       - '--no-collector.nfsd'
+       - '--no-collector.powersupplyclass'
+       - '--no-collector.pressure'
+       - '--no-collector.rapl'
+       - '--no-collector.schedstat'
+       - '--no-collector.sockstat'
+       - '--no-collector.softnet'
+       - '--collector.stat'
+       - '--no-collector.textfile'
+       - '--no-collector.thermal_zone'
+       - '--no-collector.time'
+       - '--no-collector.timex'
+       - '--no-collector.udp_queues'
+       - '--no-collector.uname'
+       - '--collector.vmstat'
+       - '--no-collector.xfs'
+       - '--no-collector.zfs'
+
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter
+    command:
+      - -nginx.scrape-uri
+      - http://nginx:8081/stub_status
+
+  prometheus:
+    image: quay.io/prometheus/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana:/var/lib/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+    depends_on:
+      - prometheus

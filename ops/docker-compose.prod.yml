@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+  nginx:
+    environment:
+      DOMAIN_URL: ${RELAY_URL}
+      APP_ENV: ${NODE_ENV:-production}
+      EMAIL: ${CERTBOT_EMAIL}
+      CONTAINER_NAME: relay
+      APP_PORT: ${APP_PORT:-5000}
+      APP_QTY: ${APP_QTY:-1}
+      CLOUDFLARE: ${CLOUDFLARE}
+    depends_on:
+      - relay
+
+  relay0:
+    image: ${RELAY_IMAGE}
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.6'

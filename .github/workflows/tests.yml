@@ -1,0 +1,15 @@
+name: Tests
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: docker swarm init 2> /dev/null || true
+      - run: make ci
+      - name: Print logs
+        if: failure()
+        run: docker service logs --tail 200 walletconnect_nginx && docker service logs --tail 200 walletconnect_relay0

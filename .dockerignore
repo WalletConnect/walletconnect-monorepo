@@ -1,0 +1,12 @@
+**/node_modules
+./node_modules
+.git
+**/dist
+LICENSE.md
+README.md
+Makefile
+nix
+.makeFlags
+*.log
+*.rts2_cache_cjs
+*.db
