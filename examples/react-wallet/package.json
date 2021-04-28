@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-v2-react-wallet",
-  "version": "2.0.0-alpha.41",
+  "version": "2.0.0-alpha.42",
   "private": true,
   "keywords": [
     "walletconnect",
@@ -35,9 +35,9 @@
     "@types/react-dom": "^16.9.8",
     "@types/react-qr-reader": "^2.1.3",
     "@types/styled-components": "^5.1.2",
-    "@walletconnect/client": "^2.0.0-alpha.41",
-    "@walletconnect/types": "^2.0.0-alpha.41",
-    "@walletconnect/utils": "^2.0.0-alpha.41",
+    "@walletconnect/client": "^2.0.0-alpha.42",
+    "@walletconnect/types": "^2.0.0-alpha.42",
+    "@walletconnect/utils": "^2.0.0-alpha.42",
     "axios": "^0.21.1",
     "blockies-ts": "^1.0.0",
     "caip-wallet": "^1.6.6",
