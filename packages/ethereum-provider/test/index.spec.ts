@@ -100,8 +100,6 @@ describe("@walletconnect/ethereum-provider", () => {
         resolve();
       }),
     ]);
-    // eslint-disable-next-line no-console
-    console.log(accounts);
     expect(
       accounts[0].split("@")[0] === wallet.address,
       "Returned account address is equal to test address",

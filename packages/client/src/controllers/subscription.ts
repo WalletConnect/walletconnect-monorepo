@@ -11,7 +11,13 @@ import {
 import { ERROR, getError } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
-import { SUBSCRIPTION_DEFAULT_TTL, SUBSCRIPTION_EVENTS } from "../constants";
+import {
+  CLIENT_BEAT_INTERVAL,
+  CLIENT_EVENTS,
+  RELAYER_EVENTS,
+  SUBSCRIPTION_DEFAULT_TTL,
+  SUBSCRIPTION_EVENTS,
+} from "../constants";
 import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
@@ -108,8 +114,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     const subscription = await this.getSubscription(topic);
     this.subscriptions.delete(topic);
     await this.client.relayer.unsubscribe(subscription.id, {
-      relay: subscription.opts.relay,
-      decryptKeys: subscription.opts.decryptKeys,
+      relay: subscription.relay,
+      decryptKeys: subscription.decryptKeys,
     });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
       topic,
@@ -183,7 +189,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     );
 
     const expiry = opts.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
-    this.subscriptions.set(topic, { id, topic, data, opts });
+    this.subscriptions.set(topic, { id, topic, data, ...opts, expiry });
     this.setTimeout(topic, expiry);
   }
 
@@ -194,6 +200,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.onTimeout(topic);
       return;
     }
+    if (ttl > CLIENT_BEAT_INTERVAL) return;
     const timeout = setTimeout(() => this.onTimeout(topic), ttl);
     this.timeout.set(topic, timeout);
   }
@@ -213,6 +220,12 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   private onTimeout(topic: string): void {
     this.deleteTimeout(topic);
     this.delete(topic, getError(ERROR.EXPIRED, { context: this.getSubscriptionContext() }));
+  }
+
+  private checkSubscriptions(): void {
+    this.subscriptions.forEach(subscription =>
+      this.setTimeout(subscription.topic, subscription.expiry),
+    );
   }
 
   private async persist() {
@@ -239,7 +252,12 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.cached = persisted;
       await Promise.all(
         this.cached.map(async subscription => {
-          const { topic, data, opts } = subscription;
+          const { topic, data } = subscription;
+          const opts = {
+            relay: subscription.relay,
+            decryptKeys: subscription.decryptKeys,
+            expiry: subscription.expiry,
+          };
           await this.subscribeAndSet(topic, data, opts);
         }),
       );
@@ -256,7 +274,12 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     await this.disable();
     await Promise.all(
       this.cached.map(async subscription => {
-        const { topic, data, opts } = subscription;
+        const { topic, data } = subscription;
+        const opts = {
+          relay: subscription.relay,
+          decryptKeys: subscription.decryptKeys,
+          expiry: subscription.expiry,
+        };
         await this.subscribeAndSet(topic, data, opts);
       }),
     );
@@ -284,7 +307,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   }
 
   private registerEventListeners(): void {
-    this.client.relayer.on("connect", () => this.reset());
+    this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
+    this.client.relayer.on(RELAYER_EVENTS.connect, () => this.reset());
     this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
       this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
       this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });

@@ -25,6 +25,7 @@ import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-uti
 import { Pairing, Session, Relayer } from "./controllers";
 import {
   CLIENT_CONTEXT,
+  CLIENT_BEAT_INTERVAL,
   CLIENT_EVENTS,
   CLIENT_STORAGE_OPTIONS,
   PAIRING_DEFAULT_TTL,
@@ -280,6 +281,7 @@ export class Client extends IClient {
       await this.relayer.init();
       await this.pairing.init();
       await this.session.init();
+      this.setBeatInterval();
       this.registerEventListeners();
       this.logger.info(`Client Initilization Success`);
     } catch (e) {
@@ -287,6 +289,10 @@ export class Client extends IClient {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  private setBeatInterval() {
+    setInterval(() => this.events.emit(CLIENT_EVENTS.beat), CLIENT_BEAT_INTERVAL);
   }
 
   private registerEventListeners(): void {
