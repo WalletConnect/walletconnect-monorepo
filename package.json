@@ -15,7 +15,7 @@
     "dapp"
   ],
   "author": "WalletConnect Labs <walletconnectlabs.com>",
-  "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
+  "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
   "scripts": {
     "clean": "lerna clean --yes",
@@ -38,10 +38,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect-labs/walletconnect-v2-monorepo.git"
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/issues"
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
     "husky": "^5.2.0",
