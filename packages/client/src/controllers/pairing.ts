@@ -731,7 +731,7 @@ export class Pairing extends IPairing {
     this.settled.on(
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<PairingTypes.Settled>) => {
-        const pairing = createdEvent.data;
+        const { data: pairing } = createdEvent;
         this.logger.info(`Emitting ${PAIRING_EVENTS.settled}`);
         this.logger.debug({ type: "event", event: PAIRING_EVENTS.settled, data: pairing });
         this.events.emit(PAIRING_EVENTS.settled, pairing);
@@ -740,22 +740,20 @@ export class Pairing extends IPairing {
     this.settled.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<PairingTypes.Settled>) => {
-        const pairing = updatedEvent.data;
+        const { data: pairing, update } = updatedEvent;
         this.logger.info(`Emitting ${PAIRING_EVENTS.updated}`);
-        this.logger.debug({ type: "event", event: PAIRING_EVENTS.updated, data: pairing });
-        this.events.emit(PAIRING_EVENTS.updated, pairing);
+        this.logger.debug({ type: "event", event: PAIRING_EVENTS.updated, data: pairing, update });
+        this.events.emit(PAIRING_EVENTS.updated, pairing, update);
       },
     );
     this.settled.on(
       SUBSCRIPTION_EVENTS.deleted,
       async (deletedEvent: SubscriptionEvent.Deleted<PairingTypes.Settled>) => {
-        const pairing = deletedEvent.data;
+        const { data: pairing, reason } = deletedEvent;
         this.logger.info(`Emitting ${PAIRING_EVENTS.deleted}`);
-        this.logger.debug({ type: "event", event: PAIRING_EVENTS.deleted, data: pairing });
-        this.events.emit(PAIRING_EVENTS.deleted, pairing);
-        const request = formatJsonRpcRequest(PAIRING_JSONRPC.delete, {
-          reason: deletedEvent.reason,
-        });
+        this.logger.debug({ type: "event", event: PAIRING_EVENTS.deleted, data: pairing, reason });
+        this.events.emit(PAIRING_EVENTS.deleted, pairing, reason);
+        const request = formatJsonRpcRequest(PAIRING_JSONRPC.delete, { reason });
         await this.history.delete(pairing.topic);
         await this.client.relayer.publish(pairing.topic, request, { relay: pairing.relay });
       },

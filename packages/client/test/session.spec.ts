@@ -17,7 +17,7 @@ import {
   TEST_SESSION_TTL,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
-import { formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { ErrorResponse, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 describe("Session", function() {
   this.timeout(TEST_TIMEOUT_DURATION);
@@ -305,10 +305,14 @@ describe("Session", function() {
         const { setup, clients } = await setupClientsForTesting();
         // connect
         const topic = await testApproveSession(setup, clients);
-        clients.a.on(CLIENT_EVENTS.session.deleted, (session: SessionTypes.Settled) => {
-          expect(session.topic).to.eql(topic);
-          resolve();
-        });
+        clients.a.on(
+          CLIENT_EVENTS.session.deleted,
+          (session: SessionTypes.Settled, reason: ErrorResponse) => {
+            expect(reason).to.eql(getError(ERROR.EXPIRED, { context: "Session Settled" }));
+            expect(session.topic).to.eql(topic);
+            resolve();
+          },
+        );
         clock.tick(TEST_SESSION_TTL);
       } catch (e) {
         reject(e);

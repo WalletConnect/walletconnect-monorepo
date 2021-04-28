@@ -14,8 +14,8 @@ export const SIGNER_EVENTS = {
   init: "signer_init",
   uri: "signer_uri",
   created: "signer_created",
+  updated: "signer_updated",
   deleted: "signer_deleted",
-  update: "signer_update",
   notification: "signer_notification",
 };
 
@@ -163,7 +163,7 @@ export class SignerConnection extends IJsonRpcConnection {
     this.client.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
       if (this.session && this.session?.topic !== session.topic) return;
       this.session = session;
-      this.events.emit(SIGNER_EVENTS.update, session);
+      this.events.emit(SIGNER_EVENTS.updated, session);
     });
     this.client.on(
       CLIENT_EVENTS.session.notification,

@@ -300,8 +300,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.persist();
     });
     this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: deletedEvent });
+      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.deleted}`);
+      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.deleted, data: deletedEvent });
       this.persist();
     });
   }

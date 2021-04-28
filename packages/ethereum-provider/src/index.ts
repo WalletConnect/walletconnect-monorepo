@@ -141,7 +141,7 @@ class EthereumProvider implements IEthereumProvider {
       this.setChainId(session.permissions.blockchain.chains);
       this.setAccounts(session.state.accounts);
     });
-    this.signer.connection.on(SIGNER_EVENTS.update, (session: SessionTypes.Settled) => {
+    this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Settled) => {
       const chain = `eip155:${this.chainId}`;
       if (!session.permissions.blockchain.chains.includes(chain)) {
         this.setChainId(session.permissions.blockchain.chains);
