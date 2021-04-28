@@ -1,8 +1,0 @@
-node_modules
-lerna-debug.log
-.DS_Store
-
-dist
-zip
-.idea
-.rts2_cache_*
