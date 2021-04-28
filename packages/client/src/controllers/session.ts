@@ -848,5 +848,8 @@ export class Session extends ISession {
         });
       },
     );
+    this.settled.on(SUBSCRIPTION_EVENTS.sync, () => this.events.emit(SESSION_EVENTS.sync));
+    this.settled.on(SUBSCRIPTION_EVENTS.enabled, () => this.events.emit(SESSION_EVENTS.enabled));
+    this.settled.on(SUBSCRIPTION_EVENTS.disabled, () => this.events.emit(SESSION_EVENTS.disabled));
   }
 }

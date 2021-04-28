@@ -233,6 +233,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.getStorageKey(),
       this.values,
     );
+    this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
@@ -289,13 +290,13 @@ export class Subscription<Data = any> extends ISubscription<Data> {
   private async isEnabled(): Promise<void> {
     if (!this.cached.length) return;
     return new Promise(resolve => {
-      this.events.once("enabled", () => resolve());
+      this.events.once(SUBSCRIPTION_EVENTS.enabled, () => resolve());
     });
   }
 
   private async enable(): Promise<void> {
     this.cached = [];
-    this.events.emit("enabled");
+    this.events.emit(SUBSCRIPTION_EVENTS.enabled);
   }
 
   private async disable(): Promise<void> {
@@ -303,7 +304,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.cached = this.values;
     }
     this.resetTimeout();
-    this.events.emit("disabled");
+    this.events.emit(SUBSCRIPTION_EVENTS.disabled);
   }
 
   private registerEventListeners(): void {

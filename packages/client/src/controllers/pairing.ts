@@ -758,5 +758,8 @@ export class Pairing extends IPairing {
         await this.client.relayer.publish(pairing.topic, request, { relay: pairing.relay });
       },
     );
+    this.settled.on(SUBSCRIPTION_EVENTS.sync, () => this.events.emit(PAIRING_EVENTS.sync));
+    this.settled.on(SUBSCRIPTION_EVENTS.enabled, () => this.events.emit(PAIRING_EVENTS.enabled));
+    this.settled.on(SUBSCRIPTION_EVENTS.disabled, () => this.events.emit(PAIRING_EVENTS.disabled));
   }
 }
