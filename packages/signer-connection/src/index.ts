@@ -156,19 +156,19 @@ export class SignerConnection extends IJsonRpcConnection {
   private registerEventListeners() {
     if (typeof this.client === "undefined") return;
     this.client.on(CLIENT_EVENTS.session.created, (session: SessionTypes.Settled) => {
-      if (!this.session || this.session?.topic !== session.topic) return;
+      if (this.session && this.session?.topic !== session.topic) return;
       this.session = session;
       this.events.emit(SIGNER_EVENTS.created, session);
     });
     this.client.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
-      if (!this.session || this.session?.topic !== session.topic) return;
+      if (this.session && this.session?.topic !== session.topic) return;
       this.session = session;
       this.events.emit(SIGNER_EVENTS.update, session);
     });
     this.client.on(
       CLIENT_EVENTS.session.notification,
       (notification: SessionTypes.NotificationEvent) => {
-        if (!this.session || this.session?.topic !== notification.topic) return;
+        if (this.session && this.session?.topic !== notification.topic) return;
         this.events.emit(SIGNER_EVENTS.notification, {
           type: notification.type,
           data: notification.data,
@@ -176,7 +176,8 @@ export class SignerConnection extends IJsonRpcConnection {
       },
     );
     this.client.on(CLIENT_EVENTS.session.deleted, (session: SessionTypes.Settled) => {
-      if (!this.session || this.session?.topic !== session.topic) return;
+      if (!this.session) return;
+      if (this.session && this.session?.topic !== session.topic) return;
       this.onClose();
       this.events.emit(SIGNER_EVENTS.deleted, session);
     });

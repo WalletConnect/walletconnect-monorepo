@@ -89,7 +89,7 @@ describe("@walletconnect/ethereum-provider", () => {
           await walletClient.approve({
             proposal,
             response: {
-              state: { accounts: [`${wallet.address}@${BLOCKCHAIN}:${"SOMETHINGWRONG"}`] },
+              state: { accounts: [`${wallet.address}@${BLOCKCHAIN}:${CHAIN_ID}`] },
             },
           });
           resolve();
