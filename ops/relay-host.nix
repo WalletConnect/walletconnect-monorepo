@@ -1,6 +1,7 @@
-{pkgs, config, hostIp, ...}:
+{pkgs, config, ...}:
+
 {
-  virtualisation.docker.package = (import ../servers/relay/nix/sources.nix).nixpkgs.docker_20_10;
+  virtualisation.docker.package = (import (import ../servers/relay/nix/sources.nix).nixpkgs {}).docker_20_10;
   boot.kernel.sysctl = {
     "fs.file-max" = "1000000";
     "fs.nr_open" = "1048576";
@@ -20,7 +21,7 @@
   };
   services.fail2ban = {
     enable = true;
-    ignoreIP = [ ip "127.0.0.1" ];
+    ignoreIP = [ "127.0.0.1" ];
   };
   nix = {
     binaryCaches = [
