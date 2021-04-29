@@ -8,6 +8,7 @@ redisImage=redis:6-alpine
 standAloneRedis=xredis
 caddyImage=$(project)/caddy:$(BRANCH)
 relayImage=$(project)/relay:$(BRANCH)
+wakuImage=$(project)/waku:master
 
 ## Environment variables used by the compose files
 include setup
@@ -15,6 +16,7 @@ export $(shell sed 's/=.*//' setup)
 export PROJECT = $(project)
 export RELAY_IMAGE=$(relayImage)
 export CADDY_IMAGE=$(caddyImage)
+export WAKU_IMAGE=$(wakuImage)
 
 ### Makefile internal coordination
 logg_end=@echo "MAKE: Done with $@"; echo

@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.9'
 
 volumes:
   caddy_data:
@@ -13,14 +13,13 @@ services:
       UPSTREAM_NAME: ${UPSTREAM_NAME:-relay}
       UPSTREAM_PORT: ${UPSTREAM_PORT:-5555}
       LOG_LEVEL: ERROR
-      SWARM_TASK_SLOT: "{{.Task.Slot}}"
     volumes:
       - caddy_data:/data
       - caddy_conf:/config
     depends_on:
       - relay
     deploy:
-      replicas: 3
+      replicas: 1
 
   relay:
     image: ${RELAY_IMAGE}
@@ -28,9 +27,7 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       RELAY_MODE: ${RELAY_MODE:-any}
     deploy:
-      replicas: 3
+      replicas: 1
+  waku:
     deploy:
       replicas: 1
-      resources:
-        reservations:
-          cpus: '0.6'

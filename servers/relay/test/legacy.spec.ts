@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { Counter, Socket, TEST_RELAY_URL } from "./shared";
 import { getTestLegacy } from "./shared/message";
 
-describe.only("LEGACY", () => {
+describe("LEGACY", () => {
   it("A can publish to B subscribed to same topic", async () => {
     const { pub, sub } = getTestLegacy();
 

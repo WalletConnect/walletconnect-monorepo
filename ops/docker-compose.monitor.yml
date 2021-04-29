@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.9"
 
 volumes:
   grafana:
@@ -23,11 +23,11 @@ services:
       - '--redis.addr=redis://redis:6379'
 
   node_exporter:
-     image: quay.io/prometheus/node-exporter
-     volumes:
-       - /:/host:ro,rslave
-     command:
-       # https://github.com/prometheus/node_exporter#collectors
+    image: quay.io/prometheus/node-exporter
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      # https://github.com/prometheus/node_exporter#collectors
        - '--path.rootfs=/host'
        - '--no-collector.arp'
        - '--no-collector.bcache'

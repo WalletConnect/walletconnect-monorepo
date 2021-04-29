@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.9'
 
 networks:
   default:
@@ -6,6 +6,7 @@ networks:
 volumes:
   redis:
   store:
+  wakuids:
 
 services:
   caddy:
@@ -28,23 +29,31 @@ services:
     volumes:
       - redis:/data
 
+  waku:
+    image: ${WAKU_IMAGE}
+    hostname: "waku.{{.Task.Slot}}"
+    command:
+      - --peerpersist=true
+      - --topics=6d9b0b4b9994e8a6afbd3dc3ed983cd51c755afb27cd1dc7825ef59c134a39f7
+      - --rpc-address=0.0.0.0
+      - --rpc-port=8546
+      - --metrics-server=true
+      - --metrics-server-address=0.0.0.0
+      - --metrics-server-port=9001
+      - --rpc=true
+      - --relay=true
+      - --filter=true
+      - --store=true
+      - --staticnode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
+      - --filternode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
+      - --storenode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
+
   relay:
     image: ${RELAY_IMAGE}
     environment:
       NODE_ENV: development
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: "redis://redis:6379/{{.Task.Slot}}"
+      WAKU_URL: "http://waku.{{.Task.Slot}}:8546"
     depends_on:
       - redis
-
-  store:
-    image: sebohe/waku:master
-    volumes:
-      - store:/store
-    command:
-      - --nodekey=1107ad8e44fe7dc924bb9d388d588832cdc4273efb2623e8609c8085d0d2154c
-      - --peerpersist=true
-      - --relay=true
-      - --store=true
-      - --filter=true
-      - --dbpath=/store
-      - --topics=6d9b0b4b9994e8a6afbd3dc3ed983cd51c755afb27cd1dc7825ef59c134a39f7
+      - waku
