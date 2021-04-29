@@ -21,6 +21,7 @@ import {
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_DEFAULT_RPC_URL,
   RELAYER_DEFAULT_PUBLISH_TTL,
+  RELAYER_EVENTS,
 } from "../constants";
 
 export class Relayer extends IRelayer {
@@ -195,12 +196,12 @@ export class Relayer extends IRelayer {
 
   private registerEventListeners(): void {
     this.provider.on("payload", (payload: JsonRpcPayload) => this.onPayload(payload));
-    this.provider.on("connect", () => this.events.emit("connect"));
+    this.provider.on("connect", () => this.events.emit(RELAYER_EVENTS.connect));
     this.provider.on("disconnect", () => {
-      this.events.emit("disconnect");
+      this.events.emit(RELAYER_EVENTS.disconnect);
       this.provider.connect();
     });
-    this.provider.on("error", e => this.events.emit("error", e));
+    this.provider.on("error", e => this.events.emit(RELAYER_EVENTS.error, e));
   }
 }
 

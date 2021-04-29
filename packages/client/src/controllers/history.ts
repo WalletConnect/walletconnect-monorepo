@@ -181,6 +181,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private async persist() {
     await this.client.storage.setItem<JsonRpcRecord[]>(this.getStorageKey(), this.values);
+    this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
@@ -223,20 +224,20 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   private async isEnabled(): Promise<void> {
     if (!this.cached.length) return;
     return new Promise(resolve => {
-      this.events.once("enabled", () => resolve());
+      this.events.once(HISTORY_EVENTS.enabled, () => resolve());
     });
   }
 
   private async enable(): Promise<void> {
     this.cached = [];
-    this.events.emit("enabled");
+    this.events.emit(HISTORY_EVENTS.enabled);
   }
 
   private async disable(): Promise<void> {
     if (!this.cached.length) {
       this.cached = this.values;
     }
-    this.events.emit("disabled");
+    this.events.emit(HISTORY_EVENTS.disabled);
   }
 
   private registerEventListeners(): void {

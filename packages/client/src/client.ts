@@ -19,12 +19,13 @@ import {
   ERROR,
   getError,
 } from "@walletconnect/utils";
-import { JsonRpcRequest } from "@json-rpc-tools/utils";
+import { ErrorResponse, JsonRpcRequest } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 
 import { Pairing, Session, Relayer } from "./controllers";
 import {
   CLIENT_CONTEXT,
+  CLIENT_BEAT_INTERVAL,
   CLIENT_EVENTS,
   CLIENT_STORAGE_OPTIONS,
   PAIRING_DEFAULT_TTL,
@@ -280,6 +281,7 @@ export class Client extends IClient {
       await this.relayer.init();
       await this.pairing.init();
       await this.session.init();
+      this.setBeatInterval();
       this.registerEventListeners();
       this.logger.info(`Client Initilization Success`);
     } catch (e) {
@@ -287,6 +289,10 @@ export class Client extends IClient {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  private setBeatInterval() {
+    setInterval(() => this.events.emit(CLIENT_EVENTS.beat), CLIENT_BEAT_INTERVAL);
   }
 
   private registerEventListeners(): void {
@@ -311,24 +317,32 @@ export class Client extends IClient {
       this.events.emit(CLIENT_EVENTS.pairing.created, pairing);
       this.onPairingSettled(pairing);
     });
-    this.pairing.on(PAIRING_EVENTS.updated, (pairing: PairingTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.updated}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.pairing.updated,
-        data: pairing,
-      });
-      this.events.emit(CLIENT_EVENTS.pairing.updated, pairing);
-    });
-    this.pairing.on(PAIRING_EVENTS.deleted, (pairing: PairingTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.deleted}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.pairing.deleted,
-        data: pairing,
-      });
-      this.events.emit(CLIENT_EVENTS.pairing.deleted, pairing);
-    });
+    this.pairing.on(
+      PAIRING_EVENTS.updated,
+      (pairing: PairingTypes.Settled, update: Partial<PairingTypes.Settled>) => {
+        this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.updated}`);
+        this.logger.debug({
+          type: "event",
+          event: CLIENT_EVENTS.pairing.updated,
+          data: pairing,
+          update,
+        });
+        this.events.emit(CLIENT_EVENTS.pairing.updated, pairing, update);
+      },
+    );
+    this.pairing.on(
+      PAIRING_EVENTS.deleted,
+      (pairing: PairingTypes.Settled, reason: ErrorResponse) => {
+        this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.deleted}`);
+        this.logger.debug({
+          type: "event",
+          event: CLIENT_EVENTS.pairing.deleted,
+          data: pairing,
+          reason,
+        });
+        this.events.emit(CLIENT_EVENTS.pairing.deleted, pairing, reason);
+      },
+    );
     this.pairing.on(PAIRING_EVENTS.request, (requestEvent: PairingTypes.RequestEvent) => {
       this.onPairingRequest(requestEvent.request);
     });
@@ -347,16 +361,32 @@ export class Client extends IClient {
       this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.created, data: session });
       this.events.emit(CLIENT_EVENTS.session.created, session);
     });
-    this.session.on(SESSION_EVENTS.updated, (session: SessionTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.updated}`);
-      this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.updated, data: session });
-      this.events.emit(CLIENT_EVENTS.session.updated, session);
-    });
-    this.session.on(SESSION_EVENTS.deleted, (session: SessionTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.deleted}`);
-      this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.deleted, data: session });
-      this.events.emit(CLIENT_EVENTS.session.deleted, session);
-    });
+    this.session.on(
+      SESSION_EVENTS.updated,
+      (session: SessionTypes.Settled, update: Partial<SessionTypes.Settled>) => {
+        this.logger.info(`Emitting ${CLIENT_EVENTS.session.updated}`);
+        this.logger.debug({
+          type: "event",
+          event: CLIENT_EVENTS.session.updated,
+          data: session,
+          update,
+        });
+        this.events.emit(CLIENT_EVENTS.session.updated, session, update);
+      },
+    );
+    this.session.on(
+      SESSION_EVENTS.deleted,
+      (session: SessionTypes.Settled, reason: ErrorResponse) => {
+        this.logger.info(`Emitting ${CLIENT_EVENTS.session.deleted}`);
+        this.logger.debug({
+          type: "event",
+          event: CLIENT_EVENTS.session.deleted,
+          data: session,
+          reason,
+        });
+        this.events.emit(CLIENT_EVENTS.session.deleted, session, reason);
+      },
+    );
     this.session.on(SESSION_EVENTS.request, (requestEvent: SessionTypes.RequestEvent) => {
       this.logger.info(`Emitting ${CLIENT_EVENTS.session.request}`);
       this.logger.debug({
