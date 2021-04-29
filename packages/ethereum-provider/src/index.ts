@@ -8,7 +8,10 @@ import {
 } from "@walletconnect/signer-connection";
 import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
 
-export const signingMethods = [
+export const signerMethods = [
+  "eth_requestAccounts",
+  "eth_accounts",
+  "eth_chainId",
   "eth_sendTransaction",
   "eth_signTransaction",
   "eth_sign",
@@ -64,12 +67,12 @@ class EthereumProvider implements IEthereumProvider {
   private rpc: EthereumRpcConfig | undefined;
 
   public chainId = 1;
-  public methods = signingMethods;
+  public methods = signerMethods;
 
   public accounts: string[] = [];
 
-  private signer: JsonRpcProvider;
-  private http: JsonRpcProvider | undefined;
+  public signer: JsonRpcProvider;
+  public http: JsonRpcProvider | undefined;
 
   constructor(opts?: EthereumProviderOptions) {
     this.rpc = opts?.rpc;
@@ -107,15 +110,11 @@ class EthereumProvider implements IEthereumProvider {
   }
 
   public async connect(): Promise<void> {
-    if (!this.signer.connection.connected) {
-      await this.signer.connect();
-    }
+    await this.signer.connect();
   }
 
   public async disconnect(): Promise<void> {
-    if (this.signer.connection.connected) {
-      await this.signer.disconnect();
-    }
+    await this.signer.disconnect();
   }
 
   public on(event: any, listener: any): void {
@@ -142,7 +141,7 @@ class EthereumProvider implements IEthereumProvider {
       this.setChainId(session.permissions.blockchain.chains);
       this.setAccounts(session.state.accounts);
     });
-    this.signer.connection.on(SIGNER_EVENTS.update, (session: SessionTypes.Settled) => {
+    this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Settled) => {
       const chain = `eip155:${this.chainId}`;
       if (!session.permissions.blockchain.chains.includes(chain)) {
         this.setChainId(session.permissions.blockchain.chains);

@@ -1,9 +1,14 @@
 {
   "name": "@walletconnect/ethereum-provider",
   "description": "Ethereum Provider for WalletConnect Protocol",
-  "version": "2.0.0-alpha.38",
+  "version": "2.0.0-alpha.42",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WalletConnect-Labs/walletconnect-v2-monorepo",
+    "directory": "packages/ethereum-provider"
+  },
   "license": "LGPL-3.0",
   "main": "dist/cjs/index.js",
   "types": "dist/cjs/index.d.ts",
@@ -22,6 +27,7 @@
     "build:umd": "webpack",
     "build": "run-s build:pre build:cjs build:umd",
     "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
+    "test:watch": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 3000 --exit -r ts-node/register --watch --watch-files . ./test/**/*.spec.ts",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
@@ -29,10 +35,10 @@
     "@json-rpc-tools/provider": "^1.7.2",
     "@json-rpc-tools/types": "^1.7.2",
     "@json-rpc-tools/utils": "^1.7.2",
-    "@walletconnect/client": "^2.0.0-alpha.38",
-    "@walletconnect/signer-connection": "^2.0.0-alpha.38",
-    "@walletconnect/types": "^2.0.0-alpha.38",
-    "@walletconnect/utils": "^2.0.0-alpha.38",
+    "@walletconnect/client": "^2.0.0-alpha.42",
+    "@walletconnect/signer-connection": "^2.0.0-alpha.42",
+    "@walletconnect/types": "^2.0.0-alpha.42",
+    "@walletconnect/utils": "^2.0.0-alpha.42",
     "eip1193-provider": "^1.0.1"
   },
   "devDependencies": {
@@ -60,6 +66,8 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-standard": "^4.0.1",
+    "ethereum-test-network": "^0.1.1",
+    "ethers": "^5.1.4",
     "mocha": "^8.2.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.19.1",

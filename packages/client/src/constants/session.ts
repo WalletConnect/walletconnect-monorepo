@@ -36,6 +36,9 @@ export const SESSION_EVENTS = {
   notification: "session_notification",
   request: "session_request",
   response: "session_response",
+  enabled: "session_enabled",
+  disabled: "session_disabled",
+  sync: "session_sync",
 };
 
 export const SESSION_EMPTY_PERMISSIONS = {

@@ -8,11 +8,12 @@ import { RelayerTypes } from "./relayer";
 export interface SubscriptionOptions extends RelayerTypes.SubscribeOptions {
   expiry?: number;
 }
-export interface SubscriptionParams<Data> {
+
+export interface SubscriptionParams<Data> extends SubscriptionOptions {
   id: string;
   topic: string;
   data: Data;
-  opts: SubscriptionOptions;
+  expiry: number;
 }
 
 export declare namespace SubscriptionEvent {

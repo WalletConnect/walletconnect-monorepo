@@ -814,7 +814,7 @@ export class Session extends ISession {
     this.settled.on(
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<SessionTypes.Settled>) => {
-        const session = createdEvent.data;
+        const { data: session } = createdEvent;
         this.logger.info(`Emitting ${SESSION_EVENTS.settled}`);
         this.logger.debug({ type: "event", event: SESSION_EVENTS.settled, data: session });
         this.events.emit(SESSION_EVENTS.settled, session);
@@ -823,22 +823,20 @@ export class Session extends ISession {
     this.settled.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Settled>) => {
-        const session = updatedEvent.data;
+        const { data: session, update } = updatedEvent;
         this.logger.info(`Emitting ${SESSION_EVENTS.updated}`);
-        this.logger.debug({ type: "event", event: SESSION_EVENTS.updated, data: session });
-        this.events.emit(SESSION_EVENTS.updated, session);
+        this.logger.debug({ type: "event", event: SESSION_EVENTS.updated, data: session, update });
+        this.events.emit(SESSION_EVENTS.updated, session, update);
       },
     );
     this.settled.on(
       SUBSCRIPTION_EVENTS.deleted,
       async (deletedEvent: SubscriptionEvent.Deleted<SessionTypes.Settled>) => {
-        const session = deletedEvent.data;
+        const { data: session, reason } = deletedEvent;
         this.logger.info(`Emitting ${SESSION_EVENTS.deleted}`);
-        this.logger.debug({ type: "event", event: SESSION_EVENTS.deleted, data: session });
-        this.events.emit(SESSION_EVENTS.deleted, session);
-        const request = formatJsonRpcRequest(SESSION_JSONRPC.delete, {
-          reason: deletedEvent.reason,
-        });
+        this.logger.debug({ type: "event", event: SESSION_EVENTS.deleted, data: session, reason });
+        this.events.emit(SESSION_EVENTS.deleted, session, reason);
+        const request = formatJsonRpcRequest(SESSION_JSONRPC.delete, { reason });
         await this.history.delete(session.topic);
         const encryptKeys: CryptoTypes.EncryptKeys = {
           sharedKey: session.sharedKey,
@@ -850,5 +848,8 @@ export class Session extends ISession {
         });
       },
     );
+    this.settled.on(SUBSCRIPTION_EVENTS.sync, () => this.events.emit(SESSION_EVENTS.sync));
+    this.settled.on(SUBSCRIPTION_EVENTS.enabled, () => this.events.emit(SESSION_EVENTS.enabled));
+    this.settled.on(SUBSCRIPTION_EVENTS.disabled, () => this.events.emit(SESSION_EVENTS.disabled));
   }
 }
