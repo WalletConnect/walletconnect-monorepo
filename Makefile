@@ -19,7 +19,7 @@ export CADDY_IMAGE=$(caddyImage)
 export WAKU_IMAGE=$(wakuImage)
 
 ### Makefile internal coordination
-logg_end=@echo "MAKE: Done with $@"; echo
+log_end=@echo "MAKE: Done with $@"; echo
 flags=.makeFlags
 VPATH=$(flags):build
 $(shell mkdir -p $(flags))
@@ -53,13 +53,29 @@ bootstrap-lerna: ## setups lerna for the monorepo management
 	@touch $(flags)/$@
 	$(log_end)
 
+build-react-app: ## builds the example react-app
+	npm install --prefix examples/react-app
+	npm run build --prefix examples/react-app
+	@touch $(flags)/$@
+	$(log_end)
+
+build-react-wallet: ## builds the example react-wallet
+	npm install --prefix examples/react-wallet
+	npm run build --prefix examples/react-wallet
+	@touch $(flags)/$@
+	$(log_end)
+
+build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
+	npx lerna run build
+	@touch $(flags)/$@
+	$(log_end)
+
 nix-volume:
 	docker volume create nix-store
 	$(log_end)
 
 build-relay-dockerized: nix-volume ## builds relay docker image
 	mkdir -p build
-	git archive --format=tar.gz -o build/relay.tar.gz --prefix=relay/ HEAD
 	docker run --name builder --rm \
 		-v nix-store:/nix \
 		-v $(shell pwd):/src \
@@ -69,9 +85,11 @@ build-relay-dockerized: nix-volume ## builds relay docker image
 		--run "nix-build \
 			--attr docker \
 			--verbose \
-			&& cp -L result /src/build"
-	$(eval srcImage = $(shell docker load -i build/result | awk '{print $$3}'))
-	docker tag $(srcImage) $(relayImage)
+			&& cp -L result /src/build/$@"
+	docker load -i build/$@ \
+		| awk '{print $$NF}' \
+		| tee build/$@-img \
+		| xargs -I {} docker tag {} $(relayImage)
 	$(log_end)
 
 build-relay: ## builds the relay system local npm
@@ -117,6 +135,12 @@ test-relay: build-relay## runs "./servers/relay" tests against the locally runni
 
 start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
+	$(log_end)
+
+dev: build-relay start-redis ## runs relay on watch mode and shows logs
+	npm run dev --prefix servers/relay
+	@echo  "MAKE: Done with $@"
+	@echo
 	$(log_end)
 
 ci: ## runs tests in github actions
