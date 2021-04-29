@@ -8,7 +8,7 @@ redisImage=redis:6-alpine
 standAloneRedis=xredis
 caddyImage=$(project)/caddy:$(BRANCH)
 relayImage=$(project)/relay:$(BRANCH)
-wakuImage=$(project)/waku:master
+wakuImage=$(project)/waku:walletconnect
 
 ## Environment variables used by the compose files
 include setup
