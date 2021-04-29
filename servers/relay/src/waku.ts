@@ -92,8 +92,15 @@ export class WakuService extends HttpConnection {
       },
     ): Promise<WakuMessageResponse[]> => {
       const payload = currentCursor
-        ? formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[{ contentTopic }], currentCursor])
-        : formatJsonRpcRequest("get_waku_v2_store_v1_messages", [[{ contentTopic }]]);
+        ? formatJsonRpcRequest("get_waku_v2_store_v1_messages", [
+            this.namespace,
+            [{ contentTopic }],
+            currentCursor,
+          ])
+        : formatJsonRpcRequest("get_waku_v2_store_v1_messages", [
+            this.namespace,
+            [{ contentTopic }],
+          ]);
       await this.send(payload);
       let { pagingOptions, messages } = await new Promise<StoreResponse>(resolve => {
         this.once(payload.id.toString(), (response: JsonRpcResponse) => {
