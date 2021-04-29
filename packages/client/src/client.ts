@@ -346,6 +346,7 @@ export class Client extends IClient {
     this.pairing.on(PAIRING_EVENTS.request, (requestEvent: PairingTypes.RequestEvent) => {
       this.onPairingRequest(requestEvent.request);
     });
+    this.session.on(PAIRING_EVENTS.sync, () => this.events.emit(CLIENT_EVENTS.pairing.sync));
     // Session Subscription Events
     this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {
       this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
@@ -417,6 +418,7 @@ export class Client extends IClient {
         this.events.emit(CLIENT_EVENTS.session.notification, notificationEvent);
       },
     );
+    this.session.on(SESSION_EVENTS.sync, () => this.events.emit(CLIENT_EVENTS.session.sync));
   }
 }
 

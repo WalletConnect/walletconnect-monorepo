@@ -11,6 +11,7 @@ export const CLIENT_EVENTS = {
     updated: "pairing_updated",
     created: "pairing_created",
     deleted: "pairing_deleted",
+    sync: "pairing_sync",
   },
   session: {
     proposal: "session_proposal",
@@ -20,6 +21,7 @@ export const CLIENT_EVENTS = {
     notification: "session_notification",
     request: "session_request",
     response: "session_response",
+    sync: "session_sync",
   },
 };
 
