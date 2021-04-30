@@ -141,6 +141,7 @@ build-docker-caddy: ## ## builds the caddy docker image with nix
 	$(log_end)
 
 build-containers: build-docker-relay-dockerized build-docker-caddy-dockerized
+build-containers: build-docker-relay build-docker-caddy
 
 build: dirs build-containers bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
 	$(log_end)
@@ -192,9 +193,9 @@ redeploy: clean predeploy ## redeploys the prodution containers and rebuilds the
 relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay
 
-cachix: clean build ## pushes docker images to cachix
-	cachix push walletconnect build/build-relay
-	cachix push walletconnect build/build-caddy
+cachix: clean build-docker-relay build-docker-caddy ## pushes docker images to cachix
+	cachix push walletconnect build/build-docker-relay
+	cachix push walletconnect build/build-docker-caddy
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true
