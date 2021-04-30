@@ -141,7 +141,7 @@ build-docker-caddy: ## ## builds the caddy docker image with nix
 	$(log_end)
 
 build-containers: build-docker-relay-dockerized build-docker-caddy-dockerized
-build-containers: build-docker-relay build-docker-caddy
+#build-containers: build-docker-relay build-docker-caddy
 
 build: dirs build-containers bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
 	$(log_end)
