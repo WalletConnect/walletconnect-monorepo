@@ -33,7 +33,7 @@ dirs:
 	mkdir -p build
 	mkdir -p $(flags)
 
-pull: ## downloads docker images
+pull: ## pulls docker images
 	docker pull $(redisImage)
 	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
@@ -74,7 +74,7 @@ build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 	@touch $(flags)/$@
 	$(log_end)
 
-build-relay: ## builds the relay system local npm
+build-relay: ## builds the relay using system npm
 	npm install --prefix servers/relay
 	npm run build --prefix servers/relay
 	$(log_end)
@@ -83,7 +83,7 @@ nix-volume:
 	docker volume create nix-store
 	$(log_end)
 
-build-docker-relay-dockerized: nix-volume ## builds relay docker image
+build-docker-relay-dockerized: nix-volume ## builds relay docker image inside of docker
 	mkdir -p build
 	docker run --name builder --rm \
 		-v nix-store:/nix \
@@ -100,7 +100,7 @@ build-docker-relay-dockerized: nix-volume ## builds relay docker image
 		| xargs -I {} docker tag {} $(relayImage)
 	$(log_end)
 
-build-docker-caddy-dockerized: nix-volume ## builds relay docker image
+build-docker-caddy-dockerized: nix-volume ## builds caddy docker image inside of docker
 	mkdir -p build
 	docker run --name builder --rm \
 		-v nix-store:/nix \
@@ -118,7 +118,7 @@ build-docker-caddy-dockerized: nix-volume ## builds relay docker image
 		| xargs -I {} docker tag {} $(caddyImage)
 	$(log_end)
 
-build-docker-relay: ## builds the relay system local npm
+build-docker-relay: ## builds the relay docker image with nix
 	nix-build \
 		-o build/$@ \
 		--attr docker \
@@ -129,7 +129,7 @@ build-docker-relay: ## builds the relay system local npm
 		| xargs -I {} docker tag {} $(relayImage)
 	$(log_end)
 
-build-docker-caddy: ## builds caddy docker image
+build-docker-caddy: ## ## builds the caddy docker image with nix
 	nix-build \
 		https://github.com/sbc64/nix-caddy/archive/master.tar.gz \
 		-o build/$@ \
@@ -142,7 +142,7 @@ build-docker-caddy: ## builds caddy docker image
 
 build-containers: build-docker-relay build-docker-caddy
 
-build: dirs build-containers ## builds all the packages and the containers for the relay
+build: dirs build-containers bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
 	$(log_end)
 
 test-client: build-lerna ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
@@ -177,11 +177,11 @@ ci: predeploy ## runs tests in github actions
 	docker service logs --tail 100 $(project)_relay
 	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
 
-deploy: predeploy ## same as deploy but also has monitoring stack
+deploy: predeploy ## deploys the docker swarm for the relay
 	bash ops/deploy.sh
 	$(log_end)
 
-deploy-no-monitoring: predeploy ## same as deploy but also has monitoring stack
+deploy-no-monitoring: predeploy ## same as deploy but without the monitoring
 	MONITORING=false bash ops/deploy.sh
 	$(log_end)
 
@@ -192,7 +192,7 @@ redeploy: clean predeploy ## redeploys the prodution containers and rebuilds the
 relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay
 
-cachix: clean build
+cachix: clean build ## pushes docker images to cachix
 	cachix push walletconnect build/build-relay
 	cachix push walletconnect build/build-caddy
 
@@ -207,8 +207,9 @@ stop: rm-redis ## stops the whole docker stack
 	@echo
 	$(log_end)
 
-reset: clean ## removes setup
+reset: ## removes all build artifacts
 	rm -f setup
+	rm -rf build
 	$(log_end)
 
 clean: ## removes all build outputs
