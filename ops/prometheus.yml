@@ -36,8 +36,3 @@ scrape_configs:
   metrics_path: /metrics
   static_configs:
   - targets: ['waku:9001']
-
-- job_name: store
-  metrics_path: /metrics
-  static_configs:
-  - targets: ['store:9001']

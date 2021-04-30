@@ -1,13 +1,13 @@
 {
 	email {env.EMAIL}
 	admin 127.0.0.1:2019
-  order rate_limit before reverse_proxy
+	order rate_limit before reverse_proxy
 }
 {env.DOMAIN} {
-  # This rate_limit option is tighly coupled with Cloudflare.
-  # If we don't use the cloudflare proxy we won't get
-  # a X-Forwaded-For header, making rate limiting useless
-  rate_limit {header.X-Forwarded-For} 2r/s 100000
+	# This rate_limit option is tighly coupled with Cloudflare.
+	# If we don't use the cloudflare proxy we won't get
+	# a X-Forwaded-For header, making rate limiting useless
+	rate_limit {header.X-Forwarded-For} 4r/s 100000
 	log {
 		output stdout
 		format json
