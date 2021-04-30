@@ -8,7 +8,7 @@ import { TEST_RELAY_URL, TEST_TOPIC } from "./shared";
 
 use(chaiHttp);
 
-describe.only("HTTP", () => {
+describe("HTTP", () => {
   let api: AxiosInstance;
   before(() => {
     api = axios.create({

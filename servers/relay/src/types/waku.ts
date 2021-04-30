@@ -59,5 +59,3 @@ export declare namespace IWakuCB {
   export type Info = IInfoCB;
   export type All = Message | Peers | Rpc | Info;
 }
-
-export type CBHandler = (response: JsonRpcResponse, cb: IWakuCB.All) => void;
