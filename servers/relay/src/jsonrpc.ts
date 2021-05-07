@@ -27,7 +27,7 @@ import { sha256 } from "./utils";
 import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
-import { IWakuCB, WakuMessage, Subscription } from "./types";
+import { WakuMessage, Subscription } from "./types";
 import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX, SIX_HOURS } from "./constants";
 
 import { SubscriptionService } from "./subscription";
@@ -113,8 +113,14 @@ export class JsonRpcService {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
+    this.registerEventListeners();
     this.logger.trace(`Initialized`);
   }
+
+  private registerEventListeners(): void {
+    this.waku.on("message", ({ topic, messages }) => this.onWakuMessage(topic, messages));
+  }
+
   private async onSubscriptionAcknowledged(socketId: string, payload: JsonRpcPayload) {
     await this.redis.deletePendingRequest(payload.id);
     this.deleteTimeout(payload.id);
@@ -162,28 +168,27 @@ export class JsonRpcService {
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
-    this.wakuMessageCaller(params.topic);
+    await this.waku.subscribe(params.topic);
   }
 
-  private wakuMessageCaller(topic: string) {
-    const wakuMsgHandler: IWakuCB.Message = (err, messages) => {
-      if (err) this.logger.error(err);
-      if (!messages) return;
-      messages.forEach((m: WakuMessage) => {
-        this.onNewMessage({
-          topic: topic,
-          message: m.payload,
-          ttl: SIX_HOURS,
-        });
+  private onWakuMessage(topic: string, messages: WakuMessage[]) {
+    messages.forEach((m: WakuMessage) => {
+      this.onNewMessage({
+        topic: topic,
+        message: m.payload,
+        ttl: SIX_HOURS,
       });
-    };
-    for (let i = 1; i < 3; i++) {
-      setTimeout(() => {
-        this.waku.getStoreMessages(topic, wakuMsgHandler);
-      }, i * 1500);
-    }
-    this.waku.onNewFilterMessage(topic, wakuMsgHandler);
+    });
   }
+
+  // private wakuMessageCaller(topic: string) {
+  //   for (let i = 1; i < 3; i++) {
+  //     setTimeout(() => {
+  //       this.waku.getStoreMessages(topic, wakuMsgHandler);
+  //     }, i * 1500);
+  //   }
+  //   this.waku.onNewFilterMessage(topic, wakuMsgHandler);
+  // }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseUnsubscribeRequest(request);

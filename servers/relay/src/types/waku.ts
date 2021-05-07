@@ -16,7 +16,7 @@ export interface WakuMessage {
   timestamp: number;
 }
 
-export interface WakuMessageResponse {
+export interface WakuMessagesResult {
   payload: Uint8Array;
   contentTopic: string;
   version: number;
@@ -36,26 +36,6 @@ export interface PagingOptions {
 }
 
 export interface StoreResponse {
-  messages: WakuMessageResponse[];
+  messages: WakuMessagesResult[];
   pagingOptions?: PagingOptions;
-}
-
-export interface IMessageCB {
-  (error: JsonRpcError | undefined, m?: WakuMessage[]): void;
-}
-export interface IPeersCB {
-  (err: JsonRpcError | undefined, peers?: WakuPeers[]): void;
-}
-export interface IJsonRpcCB {
-  (result: JsonRpcError | undefined, okay?: boolean): void;
-}
-export interface IInfoCB {
-  (error: JsonRpcError | undefined, value?: WakuInfo): void;
-}
-export declare namespace IWakuCB {
-  export type Message = IMessageCB;
-  export type Peers = IPeersCB;
-  export type Rpc = IJsonRpcCB;
-  export type Info = IInfoCB;
-  export type All = Message | Peers | Rpc | Info;
 }
