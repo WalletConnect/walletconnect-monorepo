@@ -114,7 +114,7 @@ export class Crypto implements ICrypto {
 
   // ---------- Private ----------------------------------------------- //
 
-  private joinKeys(keyA: string, keyB: string): string {
+  private concatKeys(keyA: string, keyB: string): string {
     return arrayToHex(concatArrays(hexToArray(keyA), hexToArray(keyB)));
   }
 
@@ -124,7 +124,7 @@ export class Crypto implements ICrypto {
   }
 
   private async setKeyPair(keyPair: CryptoTypes.KeyPair): Promise<string> {
-    const keys = this.joinKeys(keyPair.publicKey, keyPair.privateKey);
+    const keys = this.concatKeys(keyPair.publicKey, keyPair.privateKey);
     await this.keychain.set(keyPair.publicKey, keys);
     return keyPair.publicKey;
   }
@@ -139,7 +139,7 @@ export class Crypto implements ICrypto {
     overrideTopic?: string,
   ): Promise<string> {
     const topic = overrideTopic || (await sha256(encryptKeys.sharedKey));
-    const keys = this.joinKeys(encryptKeys.sharedKey, encryptKeys.publicKey);
+    const keys = this.concatKeys(encryptKeys.sharedKey, encryptKeys.publicKey);
     await this.keychain.set(topic, keys);
     return topic;
   }
