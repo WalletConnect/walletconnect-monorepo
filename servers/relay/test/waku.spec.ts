@@ -35,7 +35,7 @@ describe("WAKU", () => {
     });
   });
   it("Receives a filter message on Waku A from Waku B using filter api", function(done) {
-    wakuOne.filterSubscribe(contentTopic);
+    wakuOne.subscribe(contentTopic);
     setTimeout(() => {
       wakuTwo.post(testMessage, contentTopic);
     }, 100);
@@ -101,7 +101,7 @@ describe("WAKU", () => {
     wakuOne.logger.level = "silent";
     wakuOne.onNewFilterMessage(contentTopic, () => {});
     setTimeout(() => {
-      wakuOne.filterUnsubscribe(contentTopic);
+      wakuOne.unsubscribe(contentTopic);
     }, 100);
     setTimeout(() => {
       expect(wakuOne.filterTopics).not.include(contentTopic);

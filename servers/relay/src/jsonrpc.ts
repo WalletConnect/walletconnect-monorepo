@@ -23,13 +23,12 @@ import {
 } from "relay-provider";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { sha256 } from "./utils";
-import { SIX_HOURS } from "./constants";
 
 import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { IWakuCB, WakuMessage, Subscription } from "./types";
-import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX } from "./constants";
+import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX, SIX_HOURS } from "./constants";
 
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
@@ -135,7 +134,7 @@ export class JsonRpcService {
 
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", socketId, params });
-    let status = await this.onNewMessage(params, socketId);
+    const status = await this.onNewMessage(params, socketId);
 
     this.socketSend(socketId, formatJsonRpcResult(request.id, status));
   }
@@ -144,7 +143,7 @@ export class JsonRpcService {
     params: RelayJsonRpc.PublishParams,
     socketId = "0".repeat(64),
   ): Promise<boolean> {
-    let message = await this.redis.getMessage(params.topic, sha256(params.message));
+    const message = await this.redis.getMessage(params.topic, sha256(params.message));
     if (!message) {
       await this.notification.push(params.topic);
       await this.redis.setMessage(params);
@@ -169,6 +168,7 @@ export class JsonRpcService {
   private wakuMessageCaller(topic: string) {
     const wakuMsgHandler: IWakuCB.Message = (err, messages) => {
       if (err) this.logger.error(err);
+      if (!messages) return;
       messages.forEach((m: WakuMessage) => {
         this.onNewMessage({
           topic: topic,
@@ -177,7 +177,7 @@ export class JsonRpcService {
         });
       });
     };
-    for (var i = 1; i < 3; i++) {
+    for (let i = 1; i < 3; i++) {
       setTimeout(() => {
         this.waku.getStoreMessages(topic, wakuMsgHandler);
       }, i * 1500);
@@ -190,7 +190,7 @@ export class JsonRpcService {
     this.logger.debug(`Unsubscribe Request Received`);
     this.logger.trace({ type: "method", method: "onUnsubscribeRequest", socketId, params });
 
-    this.waku.filterUnsubscribe(this.subscription.get(params.id, socketId)[0].topic);
+    this.waku.unsubscribe(this.subscription.get(params.id, socketId)[0].topic);
     this.subscription.remove(params.id);
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));

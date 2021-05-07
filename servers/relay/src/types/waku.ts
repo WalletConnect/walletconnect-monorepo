@@ -41,16 +41,16 @@ export interface StoreResponse {
 }
 
 export interface IMessageCB {
-  (error: JsonRpcError | undefined, m: WakuMessage[]): void;
+  (error: JsonRpcError | undefined, m?: WakuMessage[]): void;
 }
 export interface IPeersCB {
-  (err: JsonRpcError | undefined, peers: WakuPeers[]): void;
+  (err: JsonRpcError | undefined, peers?: WakuPeers[]): void;
 }
 export interface IJsonRpcCB {
-  (result: JsonRpcError | undefined, okay: boolean): void;
+  (result: JsonRpcError | undefined, okay?: boolean): void;
 }
 export interface IInfoCB {
-  (error: JsonRpcError | undefined, value: WakuInfo): void;
+  (error: JsonRpcError | undefined, value?: WakuInfo): void;
 }
 export declare namespace IWakuCB {
   export type Message = IMessageCB;
