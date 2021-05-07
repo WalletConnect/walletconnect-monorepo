@@ -20,7 +20,7 @@ import {
   WakuMessageResponse,
   WakuMessage,
 } from "./types";
-import { WAKU_POLLING_INTERVAL, WAKU_DEFAULT_PAGE_SIZE } from "./constants";
+import { WAKU_JSONRPC, WAKU_POLLING_INTERVAL, WAKU_DEFAULT_PAGE_SIZE } from "./constants";
 
 export class WakuService extends HttpConnection {
   public context = "waku";
@@ -36,7 +36,8 @@ export class WakuService extends HttpConnection {
   }
 
   public async post(payload: string, contentTopic: string, topic = this.namespace) {
-    const jsonPayload = formatJsonRpcRequest("post_waku_v2_relay_v1_message", [
+    const method = WAKU_JSONRPC.post.relay.message;
+    const jsonPayload = formatJsonRpcRequest(method, [
       topic,
       {
         payload,
@@ -49,38 +50,34 @@ export class WakuService extends HttpConnection {
   }
 
   public getFilterMessages(filter: string, cb: IWakuCB.Message) {
-    this.get(formatJsonRpcRequest("get_waku_v2_filter_v1_messages", [filter]), cb);
+    const method = WAKU_JSONRPC.get.filter.messages;
+    this.get(formatJsonRpcRequest(method, [filter]), cb);
   }
 
   public getMessages(topic: string, cb: IWakuCB.Message) {
-    this.get(formatJsonRpcRequest("get_waku_v2_relay_v1_messages", [topic]), cb);
+    const method = WAKU_JSONRPC.get.relay.messages;
+    this.get(formatJsonRpcRequest(method, [topic]), cb);
   }
 
   public async filterSubscribe(filter: string, cb?: IWakuCB.Rpc) {
-    this.sub(
-      formatJsonRpcRequest("post_waku_v2_filter_v1_subscription", [
-        [{ contentTopics: [filter] }],
-        this.namespace,
-      ]),
-      cb,
-    );
+    const method = WAKU_JSONRPC.post.filter.subscription;
+    this.sub(formatJsonRpcRequest(method, [[{ contentTopics: [filter] }], this.namespace]), cb);
   }
 
   public subscribe(topic = this.namespace, cb?: IWakuCB.Rpc) {
-    this.sub(formatJsonRpcRequest("post_waku_v2_relay_v1_subscriptions", [[topic]]), cb);
+    const method = WAKU_JSONRPC.post.relay.subscriptions;
+    this.sub(formatJsonRpcRequest(method, [[topic]]), cb);
   }
 
   public filterUnsubscribe(filterTopic: string) {
-    this.unsub(
-      formatJsonRpcRequest("delete_waku_v2_filter_v1_subscription", [
-        [{ contentTopics: [filterTopic] }],
-      ]),
-    );
+    const method = WAKU_JSONRPC.delete.filter.subscription;
+    this.unsub(formatJsonRpcRequest(method, [[{ contentTopics: [filterTopic] }]]));
     this.filterTopics = this.filterTopics.filter(t => t !== filterTopic);
   }
 
   public unsubscribe(topic: string) {
-    this.unsub(formatJsonRpcRequest("delete_waku_v2_relay_v1_subscription", [[topic]]));
+    const method = WAKU_JSONRPC.delete.relay.subscription;
+    this.unsub(formatJsonRpcRequest(method, [[topic]]));
     this.topics = this.topics.filter(t => t !== topic);
   }
 
@@ -91,18 +88,13 @@ export class WakuService extends HttpConnection {
         forward: true,
       },
     ): Promise<WakuMessageResponse[]> => {
-      const payload = currentCursor
-        ? formatJsonRpcRequest("get_waku_v2_store_v1_messages", [
-            this.namespace,
-            [{ contentTopic }],
-            currentCursor,
-          ])
-        : formatJsonRpcRequest("get_waku_v2_store_v1_messages", [
-            this.namespace,
-            [{ contentTopic }],
-          ]);
+      const method = WAKU_JSONRPC.get.store.messages;
+      const params = currentCursor
+        ? [this.namespace, [{ contentTopic }], currentCursor]
+        : [this.namespace, [{ contentTopic }]];
+      const payload = formatJsonRpcRequest(method, params);
       await this.send(payload);
-      let { pagingOptions, messages } = await new Promise<StoreResponse>(resolve => {
+      const { pagingOptions, messages } = await new Promise<StoreResponse>(resolve => {
         this.once(payload.id.toString(), (response: JsonRpcResponse) => {
           if (isJsonRpcResult(response)) resolve(response.result as StoreResponse);
           if (isJsonRpcError(response)) cb(response, []);
@@ -133,7 +125,8 @@ export class WakuService extends HttpConnection {
   }
 
   public getPeers(cb: IWakuCB.Peers) {
-    const payload = formatJsonRpcRequest("get_waku_v2_admin_v1_peers", []);
+    const method = WAKU_JSONRPC.get.admin.peers;
+    const payload = formatJsonRpcRequest(method, []);
     this.send(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response) ? cb(response, []) : cb(undefined, response.result);
@@ -141,7 +134,8 @@ export class WakuService extends HttpConnection {
   }
 
   public debug(cb: IWakuCB.Info) {
-    const payload = formatJsonRpcRequest("get_waku_v2_debug_v1_info", []);
+    const method = WAKU_JSONRPC.get.debug.info;
+    const payload = formatJsonRpcRequest(method, []);
     this.send(payload);
     this.once(payload.id.toString(), (response: JsonRpcResponse) => {
       isJsonRpcError(response) ? cb(response, {} as WakuInfo) : cb(undefined, response.result);
