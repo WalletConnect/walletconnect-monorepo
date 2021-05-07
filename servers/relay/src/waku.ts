@@ -71,12 +71,13 @@ export class WakuService extends IEvents {
   public async subscribe(topic: string) {
     const method = WAKU_JSONRPC.post.filter.subscription;
     const params = [[{ contentTopics: [topic] }], this.namespace];
-    // for (let i = 1; i < 3; i++) {
-    //   setTimeout(() => {
-    //     this.getStoreMessages(topic, ne);
-    //   }, i * 1500);
-    // }
     await this.provider.request({ method, params });
+    for (let i = 1; i < 3; i++) {
+      setTimeout(async () => {
+        const messages = await this.getStoreMessages(topic);
+        this.events.emit("message", { topic, messages });
+      }, i * 1500);
+    }
   }
 
   public async unsubscribe(topic: string) {
@@ -156,7 +157,6 @@ export class WakuService extends IEvents {
     this.events.on("message", ({ topic, messages }) => {
       if (messages && messages.length) {
         this.logger.trace({ method: "pollFilterTopic", messages: messages });
-        this.events.emit(topic, messages);
         this.events.emit("message", { topic, messages });
       }
     });

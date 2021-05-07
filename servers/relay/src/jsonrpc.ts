@@ -28,7 +28,12 @@ import config from "./config";
 import { RedisService } from "./redis";
 import { NotificationService } from "./notification";
 import { WakuMessage, Subscription } from "./types";
-import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX, SIX_HOURS } from "./constants";
+import {
+  JSONRPC_RETRIAL_TIMEOUT,
+  JSONRPC_RETRIAL_MAX,
+  SIX_HOURS,
+  EMPTY_SOCKET_ID,
+} from "./constants";
 
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
@@ -147,7 +152,7 @@ export class JsonRpcService {
 
   private async onNewMessage(
     params: RelayJsonRpc.PublishParams,
-    socketId = "0".repeat(64),
+    socketId = EMPTY_SOCKET_ID,
   ): Promise<boolean> {
     const message = await this.redis.getMessage(params.topic, sha256(params.message));
     if (!message) {
