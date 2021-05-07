@@ -1,5 +1,5 @@
 {
-  "name": "walletconnect-v2-react-wallet",
+  "name": "walletconnect-react-wallet",
   "version": "2.0.0-alpha.42",
   "private": true,
   "keywords": [
@@ -18,10 +18,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect-labs/walletconnect-v2-monorepo.git"
+    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect-labs/walletconnect-v2-monorepo/issues"
+    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "dependencies": {
     "@json-rpc-tools/utils": "^1.7.2",
