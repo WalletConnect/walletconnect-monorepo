@@ -3,7 +3,7 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { RelayerTypes, IRelayer, IClient } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
-import { encrypt, decrypt, formatRelayRpcUrl } from "@walletconnect/utils";
+import { decrypt, formatRelayRpcUrl } from "@walletconnect/utils";
 import { utf8ToHex, hexToUtf8 } from "enc-utils";
 import {
   IJsonRpcProvider,
@@ -57,12 +57,8 @@ export class Relayer extends IRelayer {
     try {
       const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
       const msg = safeJsonStringify(payload);
-      const message = opts?.encryptKeys
-        ? await encrypt({
-            ...opts.encryptKeys,
-            message: msg,
-          })
-        : utf8ToHex(msg);
+      const hasKeys = await this.client.crypto.hasKeys(topic);
+      const message = hasKeys ? await this.client.crypto.encrypt(topic, msg) : utf8ToHex(msg);
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request: RequestArguments<RelayJsonRpc.PublishParams> = {
         method: jsonRpc.publish,
@@ -104,13 +100,9 @@ export class Relayer extends IRelayer {
       this.logger.debug({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
       this.events.on(id, async ({ message }) => {
+        const hasKeys = await this.client.crypto.hasKeys(topic);
         const payload = safeJsonParse(
-          opts?.decryptKeys
-            ? await decrypt({
-                ...opts.decryptKeys,
-                encrypted: message,
-              })
-            : hexToUtf8(message),
+          hasKeys ? await this.client.crypto.decrypt(topic, message) : hexToUtf8(message),
         );
         listener(payload);
       });

@@ -1,4 +1,5 @@
 export * from "./client";
+export * from "./crypto";
 export * from "./history";
 export * from "./pairing";
 export * from "./relayer";

@@ -51,12 +51,7 @@ export abstract class ISubscription<Data> extends IEvents {
 
   public abstract readonly values: SubscriptionParams<Data>[];
 
-  constructor(
-    public client: IClient,
-    public logger: Logger,
-    public context: string,
-    public encrypted: boolean,
-  ) {
+  constructor(public client: IClient, public logger: Logger, public context: string) {
     super();
   }
 

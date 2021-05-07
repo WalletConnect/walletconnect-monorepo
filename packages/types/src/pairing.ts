@@ -133,7 +133,6 @@ export declare namespace PairingTypes {
   export interface Settled {
     topic: string;
     relay: RelayerTypes.ProtocolOptions;
-    sharedKey: string;
     self: CryptoTypes.Self;
     peer: Peer;
     permissions: SettledPermissions;
