@@ -29,7 +29,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.7.2",
+    "@json-rpc-tools/utils": "^1.7.4",
     "axios": "^0.21.1",
     "bluebird": "^3.5.5",
     "enc-utils": "^3.0.0",

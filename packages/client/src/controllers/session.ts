@@ -43,6 +43,7 @@ import {
   SESSION_DEFAULT_TTL,
   FIVE_MINUTES,
   THIRTY_SECONDS,
+  RELAYER_DEFAULT_PROTOCOL,
 } from "../constants";
 
 export class Session extends ISession {
@@ -94,24 +95,27 @@ export class Session extends ISession {
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
-    const sequence = await this.settled.get(topic);
+    const settled = await this.settled.get(topic);
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(this.config.jsonrpc).includes(payload.method)) {
-        if (!sequence.permissions.jsonrpc.methods.includes(payload.method)) {
+        if (!settled.permissions.jsonrpc.methods.includes(payload.method)) {
           const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
             method: payload.method,
           });
           this.logger.error(error.message);
           throw new Error(error.message);
         }
+        // TODO: session-specific (start)
         if (
           typeof chainId !== "undefined" &&
-          !sequence.permissions.blockchain.chains.includes(chainId)
+          typeof chainId === "string" &&
+          !settled.permissions.blockchain.chains.includes(chainId)
         ) {
           const error = getError(ERROR.UNAUTHORIZED_TARGET_CHAIN, { chainId });
           this.logger.error(error.message);
           throw new Error(error.message);
         }
+        // TODO: session-specific (end)
         await this.history.set(topic, payload, chainId);
         payload = formatJsonRpcRequest<SessionTypes.Request>(
           this.config.jsonrpc.payload,
@@ -125,8 +129,8 @@ export class Session extends ISession {
     } else {
       await this.history.update(topic, payload);
     }
-    await this.client.relayer.publish(sequence.topic, payload, {
-      relay: sequence.relay,
+    await this.client.relayer.publish(settled.topic, payload, {
+      relay: settled.relay,
     });
   }
 
@@ -178,10 +182,10 @@ export class Session extends ISession {
               reject(new Error(outcome.reason.message));
             } else {
               try {
-                const sequence = await this.settled.get(outcome.topic);
+                const settled = await this.settled.get(outcome.topic);
                 const reason = getError(ERROR.SETTLED, { context: this.context });
                 await this.pending.delete(pending.topic, reason);
-                resolve(sequence);
+                resolve(settled);
               } catch (e) {
                 return reject(e);
               }
@@ -195,55 +199,67 @@ export class Session extends ISession {
   public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Respond ${this.context}`);
     this.logger.trace({ type: "method", method: "respond", params });
+    // TODO: session-specific (start)
     const paramsValidation = validateSessionRespondParams(params);
     if (isValidationInvalid(paramsValidation)) {
       this.logger.error(paramsValidation.error.message);
       throw new Error(paramsValidation.error.message);
     }
+    // TODO: session-specific (end)
     const { approved, proposal, response } = params;
-    const { relay } = proposal;
+    const { relay, ttl } = proposal;
     const self = {
       publicKey: await this.client.crypto.generateKeyPair(),
+      // TODO: session-specific (next-line)
       metadata: params.response.metadata,
     };
+    // TODO: session-specific (next-line)
     const pairing = await this.client.pairing.get(proposal.signal.params.topic);
+    // TODO: session-specific (next-line)
     await this.client.crypto.generateSharedKey(pairing.self, pairing.peer, proposal.topic);
     if (approved) {
       try {
         const responder: SessionTypes.Participant = {
           publicKey: self.publicKey,
+          // TODO: session-specific (next-line)
           metadata: response.metadata,
         };
         const expiry = Date.now() + proposal.ttl * 1000;
         const state: SessionTypes.State = {
           accounts: params.response.state.accounts,
         };
+        const peer: SessionTypes.Participant = {
+          publicKey: proposal.proposer.publicKey,
+          // TODO: session-specific (next-line)
+          metadata: proposal.proposer.metadata,
+        };
         const controller = proposal.proposer.controller
-          ? { publicKey: proposal.proposer.publicKey }
+          ? { publicKey: peer.publicKey }
           : { publicKey: self.publicKey };
-        const sequence = await this.settle({
+        const permissions: SessionTypes.Permissions = {
+          ...proposal.permissions,
+          controller,
+        };
+        const settled = await this.settle({
           relay,
           self,
-          peer: proposal.proposer,
-          permissions: {
-            ...proposal.permissions,
-            controller,
-          },
-          ttl: proposal.ttl,
+          peer,
+          permissions,
+          ttl,
           expiry,
           state,
         });
         const outcome: SessionTypes.Outcome = {
-          topic: sequence.topic,
-          relay: sequence.relay,
-          state: sequence.state,
+          topic: settled.topic,
+          relay,
+          state,
           responder,
           expiry,
         };
         const pending: SessionTypes.Pending = {
           status: this.config.status.responded,
           topic: proposal.topic,
-          relay: proposal.relay,
+          relay,
           self,
           proposal,
           outcome,
@@ -256,7 +272,7 @@ export class Session extends ISession {
         const pending: SessionTypes.Pending = {
           status: this.config.status.responded,
           topic: proposal.topic,
-          relay: proposal.relay,
+          relay,
           self,
           proposal,
           outcome,
@@ -270,7 +286,7 @@ export class Session extends ISession {
       const pending: SessionTypes.Pending = {
         status: this.config.status.responded,
         topic: proposal.topic,
-        relay: proposal.relay,
+        relay,
         self,
         proposal,
         outcome,
@@ -283,23 +299,23 @@ export class Session extends ISession {
   public async upgrade(params: SessionTypes.UpgradeParams): Promise<SessionTypes.Settled> {
     this.logger.info(`Upgrade ${this.context}`);
     this.logger.trace({ type: "method", method: "upgrade", params });
-    const sequence = await this.settled.get(params.topic);
-    const participant: CryptoTypes.Participant = { publicKey: sequence.self.publicKey };
+    const settled = await this.settled.get(params.topic);
+    const participant: CryptoTypes.Participant = { publicKey: settled.self.publicKey };
     const upgrade = await this.handleUpgrade(params.topic, params, participant);
     const request = formatJsonRpcRequest(this.config.jsonrpc.upgrade, upgrade);
-    await this.send(sequence.topic, request);
-    return sequence;
+    await this.send(settled.topic, request);
+    return settled;
   }
 
   public async update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
     this.logger.info(`Update ${this.context}`);
     this.logger.trace({ type: "method", method: "update", params });
-    const sequence = await this.settled.get(params.topic);
-    const participant: CryptoTypes.Participant = { publicKey: sequence.self.publicKey };
+    const settled = await this.settled.get(params.topic);
+    const participant: CryptoTypes.Participant = { publicKey: settled.self.publicKey };
     const update = await this.handleUpdate(params.topic, params, participant);
     const request = formatJsonRpcRequest(this.config.jsonrpc.update, update);
-    await this.send(sequence.topic, request);
-    return sequence;
+    await this.send(settled.topic, request);
+    return settled;
   }
 
   public async request(params: SessionTypes.RequestParams): Promise<any> {
@@ -341,11 +357,12 @@ export class Session extends ISession {
     this.settled.delete(params.topic, params.reason);
   }
 
+  // TODO: session-specific (start)
   public async notify(params: SessionTypes.NotifyParams): Promise<void> {
-    const sequence = await this.settled.get(params.topic);
+    const settled = await this.settled.get(params.topic);
     if (
-      sequence.self.publicKey !== sequence.permissions.controller.publicKey &&
-      !sequence.permissions.notifications.types.includes(params.type)
+      settled.self.publicKey !== settled.permissions.controller.publicKey &&
+      !settled.permissions.notifications.types.includes(params.type)
     ) {
       const error = getError(ERROR.UNAUTHORIZED_NOTIFICATION_TYPE, { type: params.type });
       this.logger.error(error.message);
@@ -355,6 +372,7 @@ export class Session extends ISession {
     const request = formatJsonRpcRequest(this.config.jsonrpc.notification, notification);
     await this.send(params.topic, request);
   }
+  // TODO: session-specific (end)
 
   public on(event: string, listener: any): void {
     this.events.on(event, listener);
@@ -377,6 +395,7 @@ export class Session extends ISession {
   protected async propose(params: SessionTypes.ProposeParams): Promise<SessionTypes.Pending> {
     this.logger.info(`Propose ${this.context}`);
     this.logger.trace({ type: "method", method: "propose", params });
+    // TODO: session-specific (start)
     const paramsValidation = validateSessionProposeParams(params);
     if (isValidationInvalid(paramsValidation)) {
       this.logger.error(paramsValidation.error.message);
@@ -385,28 +404,36 @@ export class Session extends ISession {
     if (params.signal.method !== SESSION_SIGNAL_METHOD_PAIRING) {
       throw new Error(`Session proposal signal unsupported`);
     }
+    // TODO: session-specific (end)
+    const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
+    const topic = generateRandomBytes32();
+    const self = {
+      publicKey: await this.client.crypto.generateKeyPair(),
+      // TODO: session-specific (next-line)
+      metadata: params.metadata,
+    };
+    const proposer: SessionTypes.ProposedPeer = {
+      publicKey: self.publicKey,
+      // TODO: session-specific (next-line)
+      metadata: self.metadata,
+      controller: this.client.controller,
+    };
+    // TODO: session-specific (start)
     const pairing = await this.client.pairing.settled.get(params.signal.params.topic);
     const signal: SessionTypes.Signal = {
       method: SESSION_SIGNAL_METHOD_PAIRING,
       params: { topic: pairing.topic },
     };
-    const topic = generateRandomBytes32();
-    const self = {
-      publicKey: await this.client.crypto.generateKeyPair(),
-      metadata: params.metadata,
-    };
-    const proposer: SessionTypes.ProposedPeer = {
-      publicKey: self.publicKey,
-      metadata: self.metadata,
-      controller: this.client.controller,
-    };
+    const permissions = params.permissions;
+    const ttl = params.ttl || SESSION_DEFAULT_TTL;
+    // TODO: session-specific (end)
     const proposal: SessionTypes.Proposal = {
       topic,
-      relay: params.relay,
+      relay,
       proposer,
       signal,
-      permissions: params.permissions,
-      ttl: params.ttl || SESSION_DEFAULT_TTL,
+      permissions,
+      ttl,
     };
     const pending: SessionTypes.Pending = {
       status: this.config.status.proposed,
@@ -415,6 +442,7 @@ export class Session extends ISession {
       self,
       proposal,
     };
+    // TODO: session-specific (next-line)
     await this.client.crypto.generateSharedKey(pairing.self, pairing.peer, proposal.topic);
     await this.pending.set(pending.topic, pending, { relay: pending.relay });
     return pending;
@@ -424,7 +452,7 @@ export class Session extends ISession {
     this.logger.info(`Settle ${this.context}`);
     this.logger.trace({ type: "method", method: "settle", params });
     const topic = await this.client.crypto.generateSharedKey(params.self, params.peer);
-    const sequence: SessionTypes.Settled = {
+    const settled: SessionTypes.Settled = {
       topic,
       relay: params.relay,
       self: params.self,
@@ -433,11 +461,11 @@ export class Session extends ISession {
       expiry: params.expiry,
       state: params.state,
     };
-    await this.settled.set(sequence.topic, sequence, {
-      relay: sequence.relay,
-      expiry: sequence.expiry,
+    await this.settled.set(settled.topic, settled, {
+      relay: settled.relay,
+      expiry: settled.expiry,
     });
-    return sequence;
+    return settled;
   }
 
   protected async onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
@@ -445,33 +473,41 @@ export class Session extends ISession {
     this.logger.info(`Receiving ${this.context} response`);
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<SessionTypes.Outcome>;
+    const outcome = request.params;
     const pending = await this.pending.get(topic);
     let error: ErrorResponse | undefined;
-    if (!isSessionFailed(request.params)) {
+    if (!isSessionFailed(outcome)) {
       try {
         const controller = pending.proposal.proposer.controller
           ? { publicKey: pending.proposal.proposer.publicKey }
-          : { publicKey: request.params.responder.publicKey };
-        const sequence = await this.settle({
+          : { publicKey: outcome.responder.publicKey };
+        const peer: SessionTypes.Participant = {
+          publicKey: outcome.responder.publicKey,
+          // TODO: session-specific (next-line)
+          metadata: outcome.responder.metadata,
+        };
+        const state: SessionTypes.State = outcome.state;
+        const permissions: SessionTypes.Permissions = {
+          ...pending.proposal.permissions,
+          controller,
+        };
+        const settled = await this.settle({
           relay: pending.relay,
           self: pending.self,
-          peer: request.params.responder,
-          permissions: {
-            ...pending.proposal.permissions,
-            controller,
-          },
+          peer,
+          permissions,
           ttl: pending.proposal.ttl,
-          expiry: request.params.expiry,
-          state: request.params.state,
+          expiry: outcome.expiry,
+          state,
         });
         await this.pending.update(topic, {
           status: this.config.status.responded,
           outcome: {
-            topic: sequence.topic,
-            relay: sequence.relay,
-            responder: sequence.peer,
-            expiry: sequence.expiry,
-            state: sequence.state,
+            topic: settled.topic,
+            relay: settled.relay,
+            responder: settled.peer,
+            expiry: settled.expiry,
+            state: settled.state,
           },
         });
       } catch (e) {
@@ -490,10 +526,10 @@ export class Session extends ISession {
         relay: pending.relay,
       });
     } else {
-      this.logger.error(request.params.reason);
+      this.logger.error(outcome.reason);
       await this.pending.update(topic, {
         status: this.config.status.responded,
-        outcome: { reason: request.params.reason },
+        outcome: { reason: outcome.reason },
       });
     }
   }
@@ -518,7 +554,7 @@ export class Session extends ISession {
     this.logger.trace({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
-      const sequence = await this.settled.get(payloadEvent.topic);
+      const settled = await this.settled.get(payloadEvent.topic);
       let error: ErrorResponse | undefined;
       switch (request.method) {
         case this.config.jsonrpc.payload:
@@ -534,15 +570,15 @@ export class Session extends ISession {
           await this.onNotification(payloadEvent);
           break;
         case this.config.jsonrpc.delete:
-          await this.settled.delete(sequence.topic, request.params.reason);
+          await this.settled.delete(settled.topic, request.params.reason);
           break;
         case this.config.jsonrpc.ping:
-          await this.send(sequence.topic, formatJsonRpcResult(request.id, false));
+          await this.send(settled.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
           error = getError(ERROR.UNKNOWN_JSONRPC_METHOD, { method: request.method });
           this.logger.error(error.message);
-          await this.send(sequence.topic, formatJsonRpcError(request.id, error));
+          await this.send(settled.topic, formatJsonRpcError(request.id, error));
           break;
       }
     } else {
@@ -555,30 +591,43 @@ export class Session extends ISession {
     if (isJsonRpcRequest(payload)) {
       const { id, params } = payload as JsonRpcRequest<SessionTypes.Request>;
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
-      const sequence = await this.settled.get(topic);
-      if (!sequence.permissions.jsonrpc.methods.includes(request.method)) {
+      const settled = await this.settled.get(topic);
+      if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
         const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
           method: request.method,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
-      const sequencePayloadEvent: SessionTypes.PayloadEvent = {
+      // TODO: session-specific (start)
+      const { chainId } = params;
+      if (
+        typeof chainId !== "undefined" &&
+        typeof chainId === "string" &&
+        !settled.permissions.blockchain.chains.includes(chainId)
+      ) {
+        const error = getError(ERROR.UNAUTHORIZED_TARGET_CHAIN, { chainId });
+        this.logger.error(error.message);
+        throw new Error(error.message);
+      }
+      // TODO: session-specific (end)
+      const settledPayloadEvent: SessionTypes.PayloadEvent = {
         topic,
         payload: request,
+        // TODO: session-specific (next-line)
         chainId: params.chainId,
       };
       this.logger.debug(`Receiving ${this.context} payload`);
-      this.logger.trace({ type: "method", method: "onPayload", ...sequencePayloadEvent });
-      this.onPayloadEvent(sequencePayloadEvent);
+      this.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
+      this.onPayloadEvent(settledPayloadEvent);
     } else {
-      const sequencePayloadEvent: SessionTypes.PayloadEvent = {
+      const settledPayloadEvent: SessionTypes.PayloadEvent = {
         topic,
         payload,
       };
       this.logger.debug(`Receiving ${this.context} payload`);
-      this.logger.trace({ type: "method", method: "onPayload", ...sequencePayloadEvent });
-      this.onPayloadEvent(sequencePayloadEvent);
+      this.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
+      this.onPayloadEvent(settledPayloadEvent);
     }
   }
 
@@ -587,16 +636,16 @@ export class Session extends ISession {
     this.logger.debug(`Receiving ${this.context} update`);
     this.logger.trace({ type: "method", method: "onUpdate", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
-    const sequence = await this.settled.get(payloadEvent.topic);
+    const settled = await this.settled.get(payloadEvent.topic);
     try {
-      const participant: CryptoTypes.Participant = { publicKey: sequence.peer.publicKey };
+      const participant: CryptoTypes.Participant = { publicKey: settled.peer.publicKey };
       await this.handleUpdate(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
-      await this.send(sequence.topic, response);
+      await this.send(settled.topic, response);
     } catch (e) {
       this.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
-      await this.send(sequence.topic, response);
+      await this.send(settled.topic, response);
     }
   }
 
@@ -605,16 +654,16 @@ export class Session extends ISession {
     this.logger.debug(`Receiving ${this.context} upgrade`);
     this.logger.trace({ type: "method", method: "onUpgrade", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
-    const sequence = await this.settled.get(payloadEvent.topic);
+    const settled = await this.settled.get(payloadEvent.topic);
     try {
-      const participant: CryptoTypes.Participant = { publicKey: sequence.peer.publicKey };
+      const participant: CryptoTypes.Participant = { publicKey: settled.peer.publicKey };
       await this.handleUpgrade(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
-      await this.send(sequence.topic, response);
+      await this.send(settled.topic, response);
     } catch (e) {
       this.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
-      await this.send(sequence.topic, response);
+      await this.send(settled.topic, response);
     }
   }
 
@@ -623,15 +672,16 @@ export class Session extends ISession {
     params: SessionTypes.Update,
     participant: CryptoTypes.Participant,
   ): Promise<SessionTypes.Update> {
-    const sequence = await this.settled.get(topic);
+    const settled = await this.settled.get(topic);
     let update: SessionTypes.Update;
     if (typeof params.state !== "undefined") {
-      const state = sequence.state;
-      if (participant.publicKey !== sequence.permissions.controller.publicKey) {
+      const state = settled.state;
+      if (participant.publicKey !== settled.permissions.controller.publicKey) {
         const error = getError(ERROR.UNAUTHORIZED_UPDATE_REQUEST, { context: this.context });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
+      // TODO: session-specific (next-line)
       state.accounts = params.state.accounts || state.accounts;
       update = { state };
     } else {
@@ -639,7 +689,7 @@ export class Session extends ISession {
       this.logger.error(error.message);
       throw new Error(error.message);
     }
-    await this.settled.update(sequence.topic, sequence);
+    await this.settled.update(settled.topic, settled);
     return update;
   }
 
@@ -648,39 +698,42 @@ export class Session extends ISession {
     params: SessionTypes.Upgrade,
     participant: CryptoTypes.Participant,
   ): Promise<SessionTypes.Upgrade> {
-    const sequence = await this.settled.get(topic);
+    const settled = await this.settled.get(topic);
     let upgrade: SessionTypes.Upgrade = { permissions: {} };
-    if (participant.publicKey !== sequence.permissions.controller.publicKey) {
+    if (participant.publicKey !== settled.permissions.controller.publicKey) {
       const error = getError(ERROR.UNAUTHORIZED_UPGRADE_REQUEST, { context: this.context });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
     const permissions: Omit<SessionTypes.Permissions, "controller"> = {
-      blockchain: {
-        chains: [
-          ...sequence.permissions.blockchain.chains,
-          ...(params.permissions.blockchain?.chains || []),
-        ],
-      },
       jsonrpc: {
         methods: [
-          ...sequence.permissions.jsonrpc.methods,
+          ...settled.permissions.jsonrpc.methods,
           ...(params.permissions.jsonrpc?.methods || []),
+        ],
+      },
+      // TODO: session-specific (start)
+      blockchain: {
+        chains: [
+          ...settled.permissions.blockchain.chains,
+          ...(params.permissions.blockchain?.chains || []),
         ],
       },
       notifications: {
         types: [
-          ...sequence.permissions.notifications?.types,
+          ...settled.permissions.notifications?.types,
           ...(params.permissions.notifications?.types || []),
         ],
       },
+      // TODO: session-specific (end)
     };
     upgrade = { permissions };
-    sequence.permissions = { ...permissions, controller: sequence.permissions.controller };
-    await this.settled.update(sequence.topic, sequence);
+    settled.permissions = { ...permissions, controller: settled.permissions.controller };
+    await this.settled.update(settled.topic, settled);
     return upgrade;
   }
 
+  // TODO: session-specific (start)
   protected async onNotification(event: SubscriptionEvent.Payload) {
     const notification = (event.payload as JsonRpcRequest<SessionTypes.Notification>).params;
     const notificationEvent: SessionTypes.NotificationEvent = {
@@ -692,6 +745,7 @@ export class Session extends ISession {
     this.logger.debug({ type: "event", event: this.config.events.notification, notificationEvent });
     this.events.emit(this.config.events.notification, notificationEvent);
   }
+  // TODO: session-specific (end)
 
   // ---------- Private ----------------------------------------------- //
 
@@ -753,7 +807,6 @@ export class Session extends ISession {
       this.logger.debug({ type: "event", event: this.config.events.responded, data: pending });
       this.events.emit(this.config.events.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
-        const pairing = await this.client.pairing.get(pending.proposal.signal.params.topic);
         const method = !isSessionFailed(pending.outcome)
           ? this.config.jsonrpc.approve
           : this.config.jsonrpc.reject;
@@ -767,8 +820,10 @@ export class Session extends ISession {
       this.logger.debug({ type: "event", event: this.config.events.proposed, data: pending });
       this.events.emit(this.config.events.proposed, pending);
       // send proposal signal through existing pairing
+      // TODO: session-specific (start)
       const request = formatJsonRpcRequest(this.config.jsonrpc.propose, pending.proposal);
       await this.client.pairing.send(pending.proposal.signal.params.topic, request);
+      // TODO: session-specific (end)
     }
   }
 
@@ -794,42 +849,42 @@ export class Session extends ISession {
     this.settled.on(
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<SessionTypes.Settled>) => {
-        const { data: sequence } = createdEvent;
+        const { data: settled } = createdEvent;
         this.logger.info(`Emitting ${this.config.events.settled}`);
-        this.logger.debug({ type: "event", event: this.config.events.settled, data: sequence });
-        this.events.emit(this.config.events.settled, sequence);
+        this.logger.debug({ type: "event", event: this.config.events.settled, data: settled });
+        this.events.emit(this.config.events.settled, settled);
       },
     );
     this.settled.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<SessionTypes.Settled>) => {
-        const { data: sequence, update } = updatedEvent;
+        const { data: settled, update } = updatedEvent;
         this.logger.info(`Emitting ${this.config.events.updated}`);
         this.logger.debug({
           type: "event",
           event: this.config.events.updated,
-          data: sequence,
+          data: settled,
           update,
         });
-        this.events.emit(this.config.events.updated, sequence, update);
+        this.events.emit(this.config.events.updated, settled, update);
       },
     );
     this.settled.on(
       SUBSCRIPTION_EVENTS.deleted,
       async (deletedEvent: SubscriptionEvent.Deleted<SessionTypes.Settled>) => {
-        const { data: sequence, reason } = deletedEvent;
+        const { data: settled, reason } = deletedEvent;
         this.logger.info(`Emitting ${this.config.events.deleted}`);
         this.logger.debug({
           type: "event",
           event: this.config.events.deleted,
-          data: sequence,
+          data: settled,
           reason,
         });
-        this.events.emit(this.config.events.deleted, sequence, reason);
+        this.events.emit(this.config.events.deleted, settled, reason);
         const request = formatJsonRpcRequest(this.config.jsonrpc.delete, { reason });
-        await this.history.delete(sequence.topic);
-        await this.client.relayer.publish(sequence.topic, request, {
-          relay: sequence.relay,
+        await this.history.delete(settled.topic);
+        await this.client.relayer.publish(settled.topic, request, {
+          relay: settled.relay,
         });
       },
     );

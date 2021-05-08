@@ -16,7 +16,7 @@ export declare namespace PairingTypes {
 
   export type ProposedPermissions = SequenceTypes.ProposedPermissions;
 
-  export type SettledPermissions = SequenceTypes.ProposedPermissions;
+  export type SettledPermissions = SequenceTypes.SettledPermissions;
 
   export type Permissions = SequenceTypes.Permissions;
 
