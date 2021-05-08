@@ -2,6 +2,14 @@ import { SequenceTypes, ISequence } from "./sequence";
 import { AppMetadata, SignalTypes } from "./misc";
 
 export declare namespace PairingTypes {
+  export type Status = SequenceTypes.Status;
+
+  export type JsonRpc = Omit<SequenceTypes.JsonRpc, "propose">;
+
+  export type Events = SequenceTypes.Events;
+
+  export type Config = SequenceTypes.Config<Events, JsonRpc, Status>;
+
   export type Relay = SequenceTypes.Relay;
 
   export type BasePermissions = SequenceTypes.BasePermissions;
@@ -79,6 +87,7 @@ export declare namespace PairingTypes {
 }
 
 export abstract class IPairing extends ISequence<
+  PairingTypes.Config,
   PairingTypes.Pending,
   PairingTypes.Settled,
   PairingTypes.Upgrade,

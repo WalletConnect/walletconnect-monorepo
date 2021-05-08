@@ -1,26 +1,22 @@
-import {
-  JsonRpcPayload,
-  JsonRpcRequest,
-  JsonRpcResponse,
-  RequestArguments,
-} from "@json-rpc-tools/types";
+import { JsonRpcPayload, JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/types";
 
 import { ISequence, SequenceTypes } from "./sequence";
 import { CryptoTypes } from "./crypto";
-import { RelayerTypes } from "./relayer";
-import {
-  SignalTypes,
-  BlockchainTypes,
-  JsonRpcPermissions,
-  NotificationPermissions,
-  AppMetadata,
-  Reason,
-} from "./misc";
+import { SignalTypes, BlockchainTypes, NotificationPermissions, AppMetadata } from "./misc";
 import { SubscriptionEvent } from "./subscription";
 
 export declare namespace SessionTypes {
-  export type Relay = SequenceTypes.Relay;
+  export type Status = SequenceTypes.Status;
+  export interface JsonRpc extends SequenceTypes.JsonRpc {
+    notification: string;
+  }
+  export interface Events extends SequenceTypes.Events {
+    notification: string;
+  }
 
+  export type Config = SequenceTypes.Config<Events, JsonRpc, Status>;
+
+  export type Relay = SequenceTypes.Relay;
   export interface BasePermissions extends SequenceTypes.BasePermissions {
     blockchain: BlockchainTypes.Permissions;
     notifications?: NotificationPermissions;
@@ -142,6 +138,7 @@ export declare namespace SessionTypes {
 }
 
 export abstract class ISession extends ISequence<
+  SessionTypes.Config,
   SessionTypes.Pending,
   SessionTypes.Settled,
   SessionTypes.Upgrade,

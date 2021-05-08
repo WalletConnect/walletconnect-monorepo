@@ -15,6 +15,41 @@ import { AppMetadata, JsonRpcPermissions, Reason, SignalTypes } from "./misc";
 import { RelayerTypes } from "./relayer";
 
 export declare namespace SequenceTypes {
+  export interface Status {
+    proposed: string;
+    responded: string;
+    pending: string;
+    settled: string;
+  }
+  export interface Events {
+    proposed: string;
+    responded: string;
+    settled: string;
+    updated: string;
+    deleted: string;
+    request: string;
+    response: string;
+    enabled: string;
+    disabled: string;
+    sync: string;
+  }
+  export interface JsonRpc {
+    propose: string;
+    approve: string;
+    reject: string;
+    update: string;
+    upgrade: string;
+    delete: string;
+    payload: string;
+    ping: string;
+  }
+
+  export interface Config<E = Events, J = JsonRpc, S = Status> {
+    events: E;
+    jsonrpc: J;
+    status: S;
+  }
+
   export type Relay = RelayerTypes.ProtocolOptions;
   export interface BasePermissions {
     jsonrpc: JsonRpcPermissions;
@@ -169,6 +204,7 @@ export declare namespace SequenceTypes {
 }
 
 export abstract class ISequence<
+  Config = SequenceTypes.Config,
   Pending = SequenceTypes.Pending,
   Settled = SequenceTypes.Settled,
   Upgrade = SequenceTypes.Upgrade,
@@ -199,6 +235,9 @@ export abstract class ISequence<
 
   // describes sequence context
   protected abstract context: string;
+
+  // describes sequence config
+  protected abstract config: Config;
 
   constructor(public client: IClient, public logger: Logger) {
     super();
