@@ -99,7 +99,7 @@ export class Pairing extends IPairing {
           throw new Error(error.message);
         }
         await this.history.set(topic, payload);
-        payload = formatJsonRpcRequest<PairingTypes.Payload>(
+        payload = formatJsonRpcRequest<PairingTypes.Request>(
           PAIRING_JSONRPC.payload,
           {
             request: { method: payload.method, params: payload.params },
@@ -184,7 +184,7 @@ export class Pairing extends IPairing {
     const self = { publicKey: await this.client.crypto.generateKeyPair() };
     if (approved) {
       try {
-        const responder: PairingTypes.Peer = {
+        const responder: PairingTypes.Participant = {
           publicKey: self.publicKey,
         };
         const expiry = Date.now() + proposal.ttl * 1000;
@@ -503,7 +503,7 @@ export class Pairing extends IPairing {
   protected async onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      const { id, params } = payload as JsonRpcRequest<PairingTypes.Payload>;
+      const { id, params } = payload as JsonRpcRequest<PairingTypes.Request>;
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const pairing = await this.settled.get(topic);
       if (!pairing.permissions.jsonrpc.methods.includes(request.method)) {

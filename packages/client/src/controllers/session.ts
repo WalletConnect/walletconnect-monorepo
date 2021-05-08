@@ -107,7 +107,7 @@ export class Session extends ISession {
           throw new Error(error.message);
         }
         await this.history.set(topic, payload, chainId);
-        payload = formatJsonRpcRequest<SessionTypes.Payload>(
+        payload = formatJsonRpcRequest<SessionTypes.Request>(
           SESSION_JSONRPC.payload,
           {
             chainId,
@@ -196,12 +196,15 @@ export class Session extends ISession {
     }
     const { approved, proposal, response } = params;
     const { relay } = proposal;
-    const self = { publicKey: await this.client.crypto.generateKeyPair() };
+    const self = {
+      publicKey: await this.client.crypto.generateKeyPair(),
+      metadata: params.response.metadata,
+    };
     const pairing = await this.client.pairing.get(proposal.signal.params.topic);
     await this.client.crypto.generateSharedKey(pairing.self, pairing.peer, proposal.topic);
     if (approved) {
       try {
-        const responder: SessionTypes.Peer = {
+        const responder: SessionTypes.Participant = {
           publicKey: self.publicKey,
           metadata: response.metadata,
         };
@@ -382,10 +385,13 @@ export class Session extends ISession {
       params: { topic: pairing.topic },
     };
     const topic = generateRandomBytes32();
-    const self = { publicKey: await this.client.crypto.generateKeyPair() };
+    const self = {
+      publicKey: await this.client.crypto.generateKeyPair(),
+      metadata: params.metadata,
+    };
     const proposer: SessionTypes.ProposedPeer = {
       publicKey: self.publicKey,
-      metadata: params.metadata,
+      metadata: self.metadata,
       controller: this.client.controller,
     };
     const proposal: SessionTypes.Proposal = {
@@ -541,7 +547,7 @@ export class Session extends ISession {
   protected async onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      const { id, params } = payload as JsonRpcRequest<SessionTypes.Payload>;
+      const { id, params } = payload as JsonRpcRequest<SessionTypes.Request>;
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const session = await this.settled.get(topic);
       if (!session.permissions.jsonrpc.methods.includes(request.method)) {
