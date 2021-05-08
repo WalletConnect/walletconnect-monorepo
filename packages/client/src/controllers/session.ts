@@ -106,11 +106,7 @@ export class Session extends ISession {
           throw new Error(error.message);
         }
         // TODO: session-specific (start)
-        if (
-          typeof chainId !== "undefined" &&
-          typeof chainId === "string" &&
-          !settled.permissions.blockchain.chains.includes(chainId)
-        ) {
+        if (chainId && !settled.permissions.blockchain.chains.includes(chainId)) {
           const error = getError(ERROR.UNAUTHORIZED_TARGET_CHAIN, { chainId });
           this.logger.error(error.message);
           throw new Error(error.message);
@@ -601,11 +597,7 @@ export class Session extends ISession {
       }
       // TODO: session-specific (start)
       const { chainId } = params;
-      if (
-        typeof chainId !== "undefined" &&
-        typeof chainId === "string" &&
-        !settled.permissions.blockchain.chains.includes(chainId)
-      ) {
+      if (chainId && !settled.permissions.blockchain.chains.includes(chainId)) {
         const error = getError(ERROR.UNAUTHORIZED_TARGET_CHAIN, { chainId });
         this.logger.error(error.message);
         throw new Error(error.message);
