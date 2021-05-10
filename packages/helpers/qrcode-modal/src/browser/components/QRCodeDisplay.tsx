@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as React from "react";
 import QRCode from "qrcode";
+import copy from "copy-to-clipboard";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Notification from "./Notification";
@@ -33,14 +34,14 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
   }, []);
 
   const copyToClipboard = () => {
-    const tmp = document.createElement("input");
-    tmp.value = props.uri;
-    document.body.appendChild(tmp);
-    tmp.select();
-    document.execCommand("copy");
-    tmp.remove();
-    setNotification(props.text.copied_to_clipboard);
-    setInterval(() => setNotification(""), 1200);
+    const success = copy(props.uri);
+    if (success) {
+      setNotification(props.text.copied_to_clipboard);
+      setInterval(() => setNotification(""), 1200);
+    } else {
+      setNotification("Error");
+      setInterval(() => setNotification(""), 1200);
+    }
   };
 
   return (
