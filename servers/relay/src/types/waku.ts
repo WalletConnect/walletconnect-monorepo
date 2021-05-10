@@ -1,4 +1,3 @@
-import { JsonRpcResponse, JsonRpcResult, JsonRpcError } from "@json-rpc-tools/utils";
 export interface WakuPeers {
   multiaddr: string;
   protocol: string;

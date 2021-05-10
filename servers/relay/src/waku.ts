@@ -65,14 +65,17 @@ export class WakuService extends IEvents {
     const params = [topic];
     const result = await this.provider.request({ method, params });
     const messages = this.parseWakuMessageResult(result);
+    this.logger.debug({ type: "method", method: "getMessages", messages });
     this.events.emit("message", { topic, messages });
   }
 
   public async subscribe(topic: string) {
     const method = WAKU_JSONRPC.post.filter.subscription;
+    //const params = [[{ contentTopics: topic }], this.namespace];
     const params = [[{ contentTopics: [topic] }], this.namespace];
     await this.provider.request({ method, params });
-    for (let i = 1; i < 3; i++) {
+    this.topics.push(topic);
+    for (let i = 1; i < 5; i++) {
       setTimeout(async () => {
         const messages = await this.getStoreMessages(topic);
         this.events.emit("message", { topic, messages });
@@ -96,15 +99,15 @@ export class WakuService extends IEvents {
     messages: WakuMessage[] = [],
   ): Promise<WakuMessage[]> {
     const method = WAKU_JSONRPC.get.store.messages;
-    const params = pagingOptions
-      ? [this.namespace, [{ contentTopic: topic }], pagingOptions]
-      : [this.namespace, [{ contentTopic: topic }]];
+    //const params = [this.namespace, [{ contentTopic: topic }], pagingOptions];
+    const params = [this.namespace, [{ contentTopic: topic }], pagingOptions];
     const result = await this.provider.request({ method, params });
     pagingOptions = result.pagingOptions;
     messages = [...messages, ...this.parseWakuMessageResult(result.messages)];
+    this.logger.debug({ type: "method", method: "getStoreMessages", pagingOptions });
+    this.logger.trace({ type: "messages", messages });
     if (pagingOptions?.pageSize == 0 || !pagingOptions) return messages;
-    messages = [...messages, ...(await this.getStoreMessages(topic, pagingOptions))];
-    return messages;
+    return [...messages, ...(await this.getStoreMessages(topic, pagingOptions))];
   }
 
   public async getPeers() {
@@ -156,7 +159,7 @@ export class WakuService extends IEvents {
     this.topics.forEach(topic => this.getMessages(topic));
     this.events.on("message", ({ topic, messages }) => {
       if (messages && messages.length) {
-        this.logger.trace({ method: "pollFilterTopic", messages: messages });
+        this.logger.trace({ method: "poll", messages: messages });
         this.events.emit("message", { topic, messages });
       }
     });

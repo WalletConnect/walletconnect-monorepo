@@ -3,52 +3,37 @@ import { expect } from "chai";
 import pino from "pino";
 import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
 import { WakuService } from "../src/waku";
-import { WakuMessage, WakuPeers } from "../src/types";
 import { generateRandomBytes32 } from "../src/utils";
-import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
-describe("WAKU", () => {
+describe.only("WAKU", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
-  let contentTopic: string;
   let testMessage: string;
   let topic: string;
   before(() => {
-    let logger = pino(getDefaultLoggerOptions({ level: "error" }));
+    let logger = pino(getDefaultLoggerOptions({ level: "trace" }));
     wakuOne = new WakuService(logger, TEST_WAKU_URL);
     wakuTwo = new WakuService(logger, TEST_WAKU_URL.replace("8546", "8547"));
   });
   beforeEach(() => {
     testMessage = generateRandomBytes32();
-    contentTopic = generateRandomBytes32();
     topic = generateRandomBytes32();
   });
   afterEach(() => {
-    wakuOne.logger.level = "error";
+    //wakuOne.logger.level = "error";
   });
-  it("Waku node has peers", async () => {
-    wakuOne.getPeers((err, peers: WakuPeers[]) => {
-      expect(err).to.be.undefined;
-      expect(peers.length).to.be.greaterThan(0);
+  it("Receives a filter message on Waku A from Waku B using filter api", async function(done) {
+    await wakuOne.subscribe(topic);
+    await wakuTwo.post(testMessage, topic);
+    wakuOne.on("message", event => {
+      console.log(event);
+      expect(event.messages).to.include(topic);
+      done();
     });
   });
-  it("Receives a filter message on Waku A from Waku B using filter api", function(done) {
-    wakuOne.subscribe(contentTopic);
-    setTimeout(() => {
-      wakuTwo.post(testMessage, contentTopic);
-    }, 100);
-    setTimeout(() => {
-      wakuOne.getFilterMessages(contentTopic, (err, messages: WakuMessage[]) => {
-        expect(err).to.be.undefined;
-        expect(messages.length).to.equal(1);
-        expect(messages[0].payload).to.equal(testMessage);
-        expect(messages[0].contentTopic).to.equal(contentTopic);
-        done();
-      });
-    }, 200);
-  });
+  /*
 
   // NOTE: This test doesn't pass when the nodes aren't peered with each other
   // through the static node option is turned on. Especially through our arquitecture of
@@ -114,33 +99,23 @@ describe("WAKU", () => {
       });
     }, 200);
   });
-  it("Gets a single store messages", function(done) {
-    wakuOne.post(testMessage, contentTopic);
-    setTimeout(() => {
-      wakuOne.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
-        expect(err).to.be.undefined;
-        expect(messages.length).to.equal(1);
-        expect(messages[0].payload).to.equal(testMessage);
-        expect(messages[0].contentTopic).to.equal(contentTopic);
-        done();
-      });
-    }, 200);
+  */
+  it("Gets a single store messages", async function() {
+    await wakuOne.post(testMessage, topic);
+    let result = await wakuOne.getStoreMessages(topic);
+    expect(result.length).to.equal(1);
+    expect(result[0].payload).to.equal(testMessage);
   });
-  it("Gets multiple random quantity store messages", function(done) {
+  it("Gets multiple random quantity store messages", async function() {
     let allMessages: string[] = [];
     let totalMessages = Math.floor(Math.random() * 150) + 100;
     for (var i = 0; i < totalMessages; i++) {
       allMessages.push(generateRandomBytes32());
-      wakuTwo.post(allMessages[allMessages.length - 1], contentTopic);
+      await wakuTwo.post(allMessages[allMessages.length - 1], topic);
     }
-    setTimeout(() => {
-      wakuTwo.getStoreMessages(contentTopic, (err, messages: WakuMessage[]) => {
-        let receivedMessages = messages.map(m => m.payload);
-        expect(err).to.be.undefined;
-        expect(messages.length).to.equal(allMessages.length);
-        expect(receivedMessages).to.have.members(allMessages);
-        done();
-      });
-    }, 200);
+    let result = await wakuOne.getStoreMessages(topic);
+    let receivedMessages = result.map(m => m.payload);
+    expect(receivedMessages.length).to.equal(allMessages.length);
+    expect(receivedMessages).to.have.members(allMessages);
   });
 });
