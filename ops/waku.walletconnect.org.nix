@@ -1,7 +1,6 @@
 {config, pkgs ? <nixpkgs>, tag ? "master", ... }:
 let
   image="walletconnect/waku";
-  tag=tag;
   wakuP2P = 60000;
   volumePath = "/mnt/waku-store";
   waku = pkgs.dockerTools.pullImage {
@@ -39,7 +38,7 @@ in {
         "${volumePath}:/store"
       ];
       cmd = [
-        "--tpc-port=${toString wakuP2P}"
+        "--tpc=${toString wakuP2P}"
         "--udp-port=${toString wakuP2P}"
         "--nodekey=1107ad8e44fe7dc924bb9d388d588832cdc4273efb2623e8609c8085d0d2154c"
         "--peerpersist=true"
