@@ -39,13 +39,16 @@ import {
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
+import { Crypto, KeyChain } from "./controllers/crypto";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
 
   public events = new EventEmitter();
+
   public logger: Logger;
+  public crypto: Crypto;
 
   public relayer: Relayer;
   public storage: IKeyValueStorage;
@@ -75,11 +78,14 @@ export class Client extends IClient {
     this.controller = opts?.controller || false;
     this.metadata = opts?.metadata || getAppMetadata();
 
+    const storage =
+      opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
+
     this.logger = generateChildLogger(logger, this.context);
+    this.crypto = new Crypto(this, opts?.keychain || new KeyChain(this, storage));
 
     this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
-    this.storage =
-      opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
+    this.storage = storage;
 
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);

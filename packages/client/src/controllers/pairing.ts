@@ -7,14 +7,10 @@ import {
   IPairing,
   SubscriptionEvent,
   CryptoTypes,
-  Reason,
 } from "@walletconnect/types";
 import {
-  deriveSharedKey,
-  generateKeyPair,
   generateRandomBytes32,
   isPairingFailed,
-  sha256,
   isPairingResponded,
   formatUri,
   isSubscriptionUpdatedEvent,
@@ -65,13 +61,11 @@ export class Pairing extends IPairing {
       client,
       this.logger,
       PAIRING_STATUS.pending,
-      false,
     );
     this.settled = new Subscription<PairingTypes.Settled>(
       client,
       this.logger,
       PAIRING_STATUS.settled,
-      true,
     );
     this.history = new JsonRpcHistory(client, this.logger);
     this.registerEventListeners();
@@ -95,10 +89,6 @@ export class Pairing extends IPairing {
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
     const pairing = await this.settled.get(topic);
-    const encryptKeys: CryptoTypes.EncryptKeys = {
-      sharedKey: pairing.sharedKey,
-      publicKey: pairing.self.publicKey,
-    };
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(PAIRING_JSONRPC).includes(payload.method)) {
         if (!pairing.permissions.jsonrpc.methods.includes(payload.method)) {
@@ -122,7 +112,6 @@ export class Pairing extends IPairing {
     }
     await this.client.relayer.publish(pairing.topic, payload, {
       relay: pairing.relay,
-      encryptKeys,
     });
   }
 
@@ -192,7 +181,7 @@ export class Pairing extends IPairing {
     this.logger.debug(`Respond Pairing`);
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, proposal } = params;
-    const self = generateKeyPair();
+    const self = { publicKey: await this.client.crypto.generateKeyPair() };
     if (approved) {
       try {
         const responder: PairingTypes.Peer = {
@@ -345,7 +334,7 @@ export class Pairing extends IPairing {
     this.logger.trace({ type: "method", method: "propose", params });
     const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
-    const self = generateKeyPair();
+    const self = { publicKey: await this.client.crypto.generateKeyPair() };
     const proposer: PairingTypes.ProposedPeer = {
       publicKey: self.publicKey,
       controller: this.client.controller,
@@ -389,25 +378,19 @@ export class Pairing extends IPairing {
   protected async settle(params: PairingTypes.SettleParams): Promise<PairingTypes.Settled> {
     this.logger.debug(`Settle Pairing`);
     this.logger.trace({ type: "method", method: "settle", params });
-    const sharedKey = deriveSharedKey(params.self.privateKey, params.peer.publicKey);
-    const topic = await sha256(sharedKey);
+    const topic = await this.client.crypto.generateSharedKey(params.self, params.peer);
     const pairing: PairingTypes.Settled = {
       topic,
       relay: params.relay,
-      sharedKey,
       self: params.self,
       peer: params.peer,
       permissions: params.permissions,
       expiry: params.expiry,
       state: params.state,
     };
-    const decryptKeys: CryptoTypes.DecryptKeys = {
-      sharedKey,
-    };
     await this.settled.set(pairing.topic, pairing, {
       relay: pairing.relay,
       expiry: pairing.expiry,
-      decryptKeys,
     });
     return pairing;
   }

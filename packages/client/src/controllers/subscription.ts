@@ -29,13 +29,8 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private cached: SubscriptionParams<Data>[] = [];
 
-  constructor(
-    public client: IClient,
-    public logger: Logger,
-    public context: string,
-    public encrypted: boolean,
-  ) {
-    super(client, logger, context, encrypted);
+  constructor(public client: IClient, public logger: Logger, public context: string) {
+    super(client, logger, context);
     this.logger = generateChildLogger(logger, this.context);
 
     this.registerEventListeners();
@@ -65,13 +60,6 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     } else {
       this.logger.debug(`Setting subscription`);
       this.logger.trace({ type: "method", method: "set", topic, data, opts });
-      if (this.encrypted && typeof opts.decryptKeys === "undefined") {
-        const error = getError(ERROR.MISSING_DECRYPT_PARAMS, {
-          context: this.getSubscriptionContext(),
-        });
-        this.logger.error(error.message);
-        throw new Error(error.message);
-      }
       await this.subscribeAndSet(topic, data, opts);
       this.events.emit(SUBSCRIPTION_EVENTS.created, {
         topic,
@@ -115,7 +103,6 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.subscriptions.delete(topic);
     await this.client.relayer.unsubscribe(subscription.id, {
       relay: subscription.relay,
-      decryptKeys: subscription.decryptKeys,
     });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
       topic,
@@ -256,7 +243,6 @@ export class Subscription<Data = any> extends ISubscription<Data> {
           const { topic, data } = subscription;
           const opts = {
             relay: subscription.relay,
-            decryptKeys: subscription.decryptKeys,
             expiry: subscription.expiry,
           };
           await this.subscribeAndSet(topic, data, opts);
@@ -278,7 +264,6 @@ export class Subscription<Data = any> extends ISubscription<Data> {
         const { topic, data } = subscription;
         const opts = {
           relay: subscription.relay,
-          decryptKeys: subscription.decryptKeys,
           expiry: subscription.expiry,
         };
         await this.subscribeAndSet(topic, data, opts);

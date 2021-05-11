@@ -15,6 +15,7 @@ export const ERROR = enumify({
   NO_MATCHING_ID: "NO_MATCHING_ID",
   NO_MATCHING_TOPIC: "NO_MATCHING_TOPIC",
   NO_MATCHING_RESPONSE: "NO_MATCHING_RESPONSE",
+  NO_MATCHING_KEY: "NO_MATCHING_KEY",
   UNKNOWN_JSONRPC_METHOD: "UNKNOWN_JSONRPC_METHOD",
   MISMATCHED_TOPIC: "MISMATCHED_TOPIC",
   MISMATCHED_ACCOUNTS: "MISMATCHED_ACCOUNTS",
@@ -111,6 +112,10 @@ export const ERROR_FORMATS: ErrorFormats = {
   [ERROR.NO_MATCHING_RESPONSE]: (params?: any) => ({
     code: 1302,
     message: `No response found in pending ${params?.context || defaultParams.context} proposal`,
+  }),
+  [ERROR.NO_MATCHING_KEY]: (params?: any) => ({
+    code: 1303,
+    message: `No matching key with tag: ${params?.tag}`,
   }),
   [ERROR.UNKNOWN_JSONRPC_METHOD]: (params?: any) => ({
     code: 1400,
