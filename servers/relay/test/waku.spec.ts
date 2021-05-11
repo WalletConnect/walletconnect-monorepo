@@ -13,7 +13,7 @@ describe.only("WAKU", () => {
   let testMessage: string;
   let topic: string;
   before(() => {
-    let logger = pino(getDefaultLoggerOptions({ level: "trace" }));
+    let logger = pino(getDefaultLoggerOptions({ level: "error" }));
     wakuOne = new WakuService(logger, TEST_WAKU_URL);
     wakuTwo = new WakuService(logger, TEST_WAKU_URL.replace("8546", "8547"));
   });
@@ -22,96 +22,44 @@ describe.only("WAKU", () => {
     topic = generateRandomBytes32();
   });
   afterEach(() => {
-    //wakuOne.logger.level = "error";
+    wakuOne.logger.level = "error";
   });
-  it("Receives a filter message on Waku A from Waku B using filter api", async function(done) {
-    await wakuOne.subscribe(topic);
+  it("Receives a filter message on Waku A from Waku B", async () => {
+    await wakuOne.subAndGetHistorical(topic);
     await wakuTwo.post(testMessage, topic);
-    wakuOne.on("message", event => {
-      console.log(event);
-      expect(event.messages).to.include(topic);
-      done();
-    });
-  });
-  /*
-
-  // NOTE: This test doesn't pass when the nodes aren't peered with each other
-  // through the static node option is turned on. Especially through our arquitecture of
-  // using a single store node
-  it("Receive message on Waku A from Waku B using relay api", function(done) {
-    wakuOne.subscribe(topic);
-    setTimeout(() => {
-      wakuTwo.post(testMessage, "", topic);
-    }, 100);
-    setTimeout(() => {
-      wakuOne.getMessages(topic, (err, m) => {
-        expect(err).to.be.undefined;
-        expect(m.length).to.be.greaterThan(0);
-        expect(m[0].payload).to.equal(testMessage);
-        done();
+    await new Promise<void>(resolve => {
+      wakuOne.on("message", event => {
+        let receivedPayloads = event.messages.map(m => m.payload);
+        expect(receivedPayloads).to.include(testMessage);
+        resolve();
       });
-    }, 200);
-  });
-  it("It polls for filter messages", function(done) {
-    wakuOne.onNewFilterMessage(contentTopic, (err, messages) => {
-      expect(err).to.be.undefined;
-      expect(messages.length).to.equal(1);
-      expect(messages[0].payload).to.equal(testMessage);
-      done();
     });
-    setTimeout(() => {
-      wakuTwo.post(testMessage, contentTopic);
-    }, 750);
   });
-  it("It can resubcribe to polling topics", function(done) {
-    wakuOne.logger.level = "silent";
-    wakuOne.onNewFilterMessage(contentTopic, (err, messages) => {
-      expect(err).to.be.undefined;
-      expect(messages.length).to.equal(1);
-      expect(messages[0].payload).to.equal(testMessage);
-      done();
-    });
+  it("Polls a filter message on Waku A from Waku B", async () => {
+    await wakuOne.subscribe(topic);
     setTimeout(() => {
-      wakuOne.send(
-        formatJsonRpcRequest("delete_waku_v2_filter_v1_subscription", [
-          [{ contentTopics: [contentTopic] }],
-        ]),
-      );
-    }, 100);
-    setTimeout(() => {
-      wakuTwo.post(testMessage, contentTopic);
-    }, 600);
-  });
-  it("Filter unsubscribe works", function(done) {
-    wakuOne.logger.level = "silent";
-    wakuOne.onNewFilterMessage(contentTopic, () => {});
-    setTimeout(() => {
-      wakuOne.unsubscribe(contentTopic);
-    }, 100);
-    setTimeout(() => {
-      expect(wakuOne.filterTopics).not.include(contentTopic);
-      wakuOne.getFilterMessages(contentTopic, (err, messages) => {
-        expect(err).to.exist;
-        expect(err?.error.message).to.equal("get_waku_v2_filter_v1_messages raised an exception");
-        expect(err?.error.data).to.equal(`Not subscribed to content topic: ${contentTopic}`);
-        expect(messages).to.be.empty;
-        done();
+      wakuTwo.post(testMessage, topic);
+    }, 1000);
+    await new Promise<void>(resolve => {
+      wakuOne.on("message", event => {
+        let receivedPayloads = event.messages.map(m => m.payload);
+        expect(receivedPayloads).to.include(testMessage);
+        resolve();
       });
-    }, 200);
+    });
   });
-  */
-  it("Gets a single store messages", async function() {
-    await wakuOne.post(testMessage, topic);
+  it("Gets a single store messages", async () => {
+    await wakuTwo.post(testMessage, topic);
     let result = await wakuOne.getStoreMessages(topic);
     expect(result.length).to.equal(1);
     expect(result[0].payload).to.equal(testMessage);
   });
-  it("Gets multiple random quantity store messages", async function() {
+  it("Gets multiple random quantity store messages", async () => {
     let allMessages: string[] = [];
     let totalMessages = Math.floor(Math.random() * 150) + 100;
     for (var i = 0; i < totalMessages; i++) {
       allMessages.push(generateRandomBytes32());
-      await wakuTwo.post(allMessages[allMessages.length - 1], topic);
+      await wakuOne.post(allMessages[allMessages.length - 1], topic);
     }
     let result = await wakuOne.getStoreMessages(topic);
     let receivedMessages = result.map(m => m.payload);

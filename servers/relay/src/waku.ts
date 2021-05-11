@@ -11,6 +11,7 @@ import {
   WAKU_POLLING_INTERVAL,
   WAKU_DEFAULT_PAGE_SIZE,
   WAKU_CONTEXT,
+  WAKU_STORE_CALL_REPEATS,
   WAKU_PUBSUB_TOPIC,
 } from "./constants";
 
@@ -60,32 +61,36 @@ export class WakuService extends IEvents {
     await this.provider.request({ method, params });
   }
 
-  public async getMessages(topic: string) {
+  public async getMessages(topic: string): Promise<WakuMessage[]> {
     const method = WAKU_JSONRPC.get.filter.messages;
     const params = [topic];
     const result = await this.provider.request({ method, params });
     const messages = this.parseWakuMessageResult(result);
-    this.logger.debug({ type: "method", method: "getMessages", messages });
-    this.events.emit("message", { topic, messages });
+    this.logger.trace({ type: "method", topic, method: "getMessages", messages });
+    return messages;
   }
 
   public async subscribe(topic: string) {
     const method = WAKU_JSONRPC.post.filter.subscription;
-    //const params = [[{ contentTopics: topic }], this.namespace];
-    const params = [[{ contentTopics: [topic] }], this.namespace];
+    const params = [[{ contentTopic: topic }], this.namespace];
+    this.logger.debug({ type: "method", method: "subscribe", params });
     await this.provider.request({ method, params });
     this.topics.push(topic);
-    for (let i = 1; i < 5; i++) {
+  }
+
+  public async subAndGetHistorical(topic: string) {
+    await this.subscribe(topic);
+    for (let i = 1; i < WAKU_STORE_CALL_REPEATS; i++) {
       setTimeout(async () => {
         const messages = await this.getStoreMessages(topic);
         this.events.emit("message", { topic, messages });
-      }, i * 1500);
+      }, i * WAKU_POLLING_INTERVAL);
     }
   }
 
   public async unsubscribe(topic: string) {
     const method = WAKU_JSONRPC.delete.filter.subscription;
-    const params = [[{ contentTopics: [topic] }]];
+    const params = [[{ contentTopic: topic }]];
     await this.provider.request({ method, params });
     this.topics = this.topics.filter(t => t !== topic);
   }
@@ -99,7 +104,6 @@ export class WakuService extends IEvents {
     messages: WakuMessage[] = [],
   ): Promise<WakuMessage[]> {
     const method = WAKU_JSONRPC.get.store.messages;
-    //const params = [this.namespace, [{ contentTopic: topic }], pagingOptions];
     const params = [this.namespace, [{ contentTopic: topic }], pagingOptions];
     const result = await this.provider.request({ method, params });
     pagingOptions = result.pagingOptions;
@@ -108,16 +112,6 @@ export class WakuService extends IEvents {
     this.logger.trace({ type: "messages", messages });
     if (pagingOptions?.pageSize == 0 || !pagingOptions) return messages;
     return [...messages, ...(await this.getStoreMessages(topic, pagingOptions))];
-  }
-
-  public async getPeers() {
-    const method = WAKU_JSONRPC.get.admin.peers;
-    await this.provider.request({ method });
-  }
-
-  public async debug() {
-    const method = WAKU_JSONRPC.get.debug.info;
-    await this.provider.request({ method });
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -156,8 +150,8 @@ export class WakuService extends IEvents {
   }
 
   private poll() {
-    this.topics.forEach(topic => this.getMessages(topic));
-    this.events.on("message", ({ topic, messages }) => {
+    this.topics.forEach(async topic => {
+      const messages = await this.getMessages(topic);
       if (messages && messages.length) {
         this.logger.trace({ method: "poll", messages: messages });
         this.events.emit("message", { topic, messages });
