@@ -1,13 +1,12 @@
 {config, pkgs ? <nixpkgs>, tag ? "master", ... }:
 let
-  image="walletconnect/waku";
   wakuP2P = 60000;
   volumePath = "/mnt/waku-store";
   waku = pkgs.dockerTools.pullImage {
-        imageName = image;
-        finalImageTag = tag;
-        imageDigest = "sha256:fe01e0c11fce793f2b80eba3e5c7a0d1976c9b30be790c33af8a50fe261714ff";
-        sha256 = "000003zq2v6rrhizgb9nvhczl87lcfphq9601wcprdika2jz7qh8";
+    imageName = "walletconnect/waku";
+    finalImageTag = tag;
+    imageDigest = "sha256:fe01e0c11fce793f2b80eba3e5c7a0d1976c9b30be790c33af8a50fe261714ff";
+    sha256 = "000003zq2v6rrhizgb9nvhczl87lcfphq9601wcprdika2jz7qh8";
   };
 in {
   networking = {
@@ -30,7 +29,7 @@ in {
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {
     "store-waku" = {
-      image = image +":" + tag;
+      image = waku.imageName + ":" + waku.finalImageTag;
       ports = [
         ''${toString wakuP2P}:${toString wakuP2P}''
       ];
