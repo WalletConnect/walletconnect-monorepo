@@ -80,12 +80,10 @@ export class WakuService extends IEvents {
 
   public async subAndGetHistorical(topic: string) {
     await this.subscribe(topic);
-    for (let i = 1; i < WAKU_STORE_CALL_REPEATS; i++) {
-      setTimeout(async () => {
-        const messages = await this.getStoreMessages(topic);
-        this.events.emit("message", { topic, messages });
-      }, i * WAKU_POLLING_INTERVAL);
-    }
+    setTimeout(async () => {
+      const messages = await this.getStoreMessages(topic);
+      this.events.emit("message", { topic, messages });
+    }, WAKU_POLLING_INTERVAL);
   }
 
   public async unsubscribe(topic: string) {

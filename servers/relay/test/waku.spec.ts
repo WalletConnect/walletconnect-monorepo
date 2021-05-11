@@ -7,7 +7,7 @@ import { generateRandomBytes32 } from "../src/utils";
 
 import { TEST_WAKU_URL } from "./shared";
 
-describe.only("WAKU", () => {
+describe("WAKU", () => {
   let wakuOne: WakuService;
   let wakuTwo: WakuService;
   let testMessage: string;

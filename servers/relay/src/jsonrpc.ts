@@ -173,7 +173,7 @@ export class JsonRpcService {
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
     await this.pushCachedMessages({ id, topic: params.topic, socketId });
-    await this.waku.subscribe(params.topic);
+    await this.waku.subAndGetHistorical(params.topic);
   }
 
   private onWakuMessage(topic: string, messages: WakuMessage[]) {
@@ -185,15 +185,6 @@ export class JsonRpcService {
       });
     });
   }
-
-  // private wakuMessageCaller(topic: string) {
-  //   for (let i = 1; i < 3; i++) {
-  //     setTimeout(() => {
-  //       this.waku.getStoreMessages(topic, wakuMsgHandler);
-  //     }, i * 1500);
-  //   }
-  //   this.waku.onNewFilterMessage(topic, wakuMsgHandler);
-  // }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseUnsubscribeRequest(request);
