@@ -111,7 +111,7 @@ export async function testRelayProvider(relayProvider: string) {
     total: time.get("total"),
   };
 
-  return { success: true, test };
+  return { success: true, legacy: false, test };
 }
 
 const connectorParams = {
@@ -135,12 +135,12 @@ export async function testLegacyBridge(relayProvider: string) {
         if (error) {
           reject(error);
         }
+        time.stop("session");
         resolve();
       });
     }),
     new Promise<void>((resolve, reject) => {
       connectorA.on("display_uri", (error, payload) => {
-        time.start("session");
         if (error) {
           reject(error);
         }
@@ -155,12 +155,12 @@ export async function testLegacyBridge(relayProvider: string) {
             throw new Error("Peer connector is undefined");
           }
           connectorB.approveSession(connectorParams);
-          time.stop("session");
           resolve();
         });
       });
     }),
     new Promise<void>(async (resolve, reject) => {
+      time.start("session");
       await connectorA.createSession(connectorParams);
       resolve();
     }),
@@ -201,5 +201,5 @@ export async function testLegacyBridge(relayProvider: string) {
     throw new Error("Incorrect result when checking");
   }
 
-  return { success: true, test };
+  return { success: true, legacy: true, test };
 }
