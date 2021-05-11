@@ -6,7 +6,7 @@ import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-uti
 import config from "./config";
 import { assertType } from "./utils";
 import { HttpServiceOptions, PostTestRequest } from "./types";
-import { testRelayProvider } from "./test";
+import { testRelayProvider, testLegacyBridge } from "./test";
 
 export class HttpService {
   public app: FastifyInstance;
@@ -44,10 +44,12 @@ export class HttpService {
     this.app.post<PostTestRequest>("/test", async (req, res) => {
       try {
         assertType(req, "body", "object");
-
+        testLegacyBridge;
         assertType(req.body, "relayProvider");
 
-        const result = await testRelayProvider(req.body.relayProvider);
+        const result = req.body?.legacy
+          ? await testLegacyBridge(req.body.relayProvider)
+          : await testRelayProvider(req.body.relayProvider);
 
         res.status(200).send(result);
       } catch (e) {

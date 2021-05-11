@@ -1,8 +1,9 @@
-import { Client, CLIENT_EVENTS } from "@walletconnect/client";
+import ClientV1 from "clientv1";
+import { Client as ClientV2, CLIENT_EVENTS } from "clientv2";
 import Timestamp from "@pedrouid/timestamp";
 
-import { PairingTypes, SessionTypes, AppMetadata } from "@walletconnect/types";
 import { formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { PairingTypes, SessionTypes, AppMetadata } from "walletconnect-types-v2";
 
 const chainId = "eip155:1";
 const method = "personal_sign";
@@ -31,11 +32,13 @@ const state: SessionTypes.State = {
   accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De@eip155:1"],
 };
 
+let received: any = undefined;
+
 export async function testRelayProvider(relayProvider: string) {
   // setup clients
   const clients = {
-    a: await Client.init({ name: "A", relayProvider, metadata }),
-    b: await Client.init({ name: "B", relayProvider, metadata, controller: true }),
+    a: await ClientV2.init({ name: "A", relayProvider, metadata }),
+    b: await ClientV2.init({ name: "B", relayProvider, metadata, controller: true }),
   };
 
   // timestamps & elapsed time
@@ -72,8 +75,6 @@ export async function testRelayProvider(relayProvider: string) {
     throw new Error("Missing or invalid topic when checking");
   }
 
-  let received: any = undefined;
-
   // request & respond a JSON-RPC request
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
@@ -109,6 +110,96 @@ export async function testRelayProvider(relayProvider: string) {
     request: time.get("request"),
     total: time.get("total"),
   };
+
+  return { success: true, test };
+}
+
+const connectorParams = {
+  accounts: ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"],
+  chainId: 1,
+};
+
+export async function testLegacyBridge(relayProvider: string) {
+  const connectorA = new ClientV1({
+    bridge: relayProvider,
+    clientMeta: metadata,
+  });
+  let connectorB: ClientV1 | undefined;
+
+  const time = new Timestamp();
+  time.start("total");
+
+  await Promise.all([
+    new Promise<void>((resolve, reject) => {
+      connectorA.on("connect", error => {
+        if (error) {
+          reject(error);
+        }
+        resolve();
+      });
+    }),
+    new Promise<void>((resolve, reject) => {
+      connectorA.on("display_uri", (error, payload) => {
+        time.start("session");
+        if (error) {
+          reject(error);
+        }
+        const uri = payload.params[0];
+        connectorB = new ClientV1({ uri });
+
+        connectorB.on("session_request", error => {
+          if (error) {
+            reject(error);
+          }
+          if (typeof connectorB === "undefined") {
+            throw new Error("Peer connector is undefined");
+          }
+          connectorB.approveSession(connectorParams);
+          time.stop("session");
+          resolve();
+        });
+      });
+    }),
+    new Promise<void>(async (resolve, reject) => {
+      await connectorA.createSession(connectorParams);
+      resolve();
+    }),
+  ]);
+
+  if (typeof connectorB === "undefined") {
+    throw new Error("Peer connector is undefined");
+  }
+
+  // request & respond a JSON-RPC request
+  await Promise.all([
+    new Promise<void>(async (resolve, reject) => {
+      connectorB?.on(request.method, (error, payload) => {
+        if (error) {
+          throw error;
+        }
+        if (payload) connectorB?.approveRequest({ id: 1, result });
+        resolve();
+      });
+    }),
+    new Promise<void>(async (resolve, reject) => {
+      time.start("request");
+      received = await connectorA.sendCustomRequest({ id: 1, ...request });
+      time.stop("request");
+      resolve();
+    }),
+  ]);
+
+  time.stop("total");
+
+  const test = {
+    session: time.get("session"),
+    request: time.get("request"),
+    total: time.get("total"),
+  };
+
+  if (!received || received !== result) {
+    throw new Error("Incorrect result when checking");
+  }
 
   return { success: true, test };
 }
