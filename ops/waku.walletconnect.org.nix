@@ -38,7 +38,7 @@ in {
         "${volumePath}:/store"
       ];
       cmd = [
-        "--tpc=${toString wakuP2P}"
+        "--tcp-port=${toString wakuP2P}"
         "--udp-port=${toString wakuP2P}"
         "--nodekey=1107ad8e44fe7dc924bb9d388d588832cdc4273efb2623e8609c8085d0d2154c"
         "--peerpersist=true"
