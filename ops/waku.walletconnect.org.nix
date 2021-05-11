@@ -29,7 +29,7 @@ in {
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {
     "store-waku" = {
-      image = waku.imageName + ":" + waku.finalImageTag;
+      image = waku.imageName + ":" + waku.imageTag;
       ports = [
         ''${toString wakuP2P}:${toString wakuP2P}''
       ];
