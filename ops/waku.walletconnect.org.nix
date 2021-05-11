@@ -1,7 +1,7 @@
-{config, pkgs ? <nixpkgs>, ... }:
+{config, pkgs ? <nixpkgs>, tag ? "master", ... }:
 let
   image="walletconnect/waku";
-  tag="master";
+  tag=tag;
   wakuP2P = 60000;
   volumePath = "/mnt/waku-store";
   waku = pkgs.dockerTools.pullImage {
@@ -31,7 +31,7 @@ in {
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {
     "store-waku" = {
-      image = "walletconnect/waku:master";
+      image = image +":" + tag;
       ports = [
         ''${toString wakuP2P}:${toString wakuP2P}''
       ];
