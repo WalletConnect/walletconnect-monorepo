@@ -4,6 +4,7 @@ import { generateChildLogger } from "@pedrouid/pino-utils";
 import { IJsonRpcProvider, IEvents } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
+import { Subscription } from "./types";
 
 import { PagingOptions, WakuMessagesResult, WakuMessage } from "./types";
 import {
@@ -12,19 +13,26 @@ import {
   WAKU_DEFAULT_PAGE_SIZE,
   WAKU_CONTEXT,
   WAKU_PUBSUB_TOPIC,
+  EMPTY_SOCKET_ID,
 } from "./constants";
 
 export class WakuService extends IEvents {
   public events = new EventEmitter();
   public context = WAKU_CONTEXT;
-  public topics: string[] = [];
+  public subscription: Subscription[] = [];
   public logger: Logger;
   public namespace = WAKU_PUBSUB_TOPIC;
-
   public provider: IJsonRpcProvider;
 
-  constructor(logger: Logger, nodeUrl: string) {
+  private manageSubs = false;
+
+  constructor(logger: Logger, nodeUrl: string, subscription?: Subscription[]) {
     super();
+    if (subscription) {
+      this.subscription = subscription;
+    } else {
+      this.manageSubs = true;
+    }
     this.provider = new JsonRpcProvider(nodeUrl);
     this.logger = generateChildLogger(logger, this.context);
     this.initialize();
@@ -73,8 +81,9 @@ export class WakuService extends IEvents {
     const method = WAKU_JSONRPC.post.filter.subscription;
     const params = [[{ contentTopic: topic }], this.namespace];
     this.logger.debug({ type: "method", method: "subscribe", params });
+    if (this.manageSubs)
+      this.subscription.push({ topic, id: EMPTY_SOCKET_ID, socketId: EMPTY_SOCKET_ID });
     await this.provider.request({ method, params });
-    this.topics.push(topic);
   }
 
   public async subAndGetHistorical(topic: string) {
@@ -85,11 +94,12 @@ export class WakuService extends IEvents {
     }, WAKU_POLLING_INTERVAL);
   }
 
-  public async unsubscribe(topic: string) {
+  public async unsubscribe(subscription: string) {
     const method = WAKU_JSONRPC.delete.filter.subscription;
-    const params = [[{ contentTopic: topic }]];
+    const params = [[{ contentTopic: subscription }]];
+    if (this.manageSubs)
+      this.subscription = this.subscription.filter(({ topic }) => topic !== subscription);
     await this.provider.request({ method, params });
-    this.topics = this.topics.filter(t => t !== topic);
   }
 
   public async getStoreMessages(
@@ -118,6 +128,7 @@ export class WakuService extends IEvents {
     this.registerNamespace();
     setInterval(() => this.poll(), WAKU_POLLING_INTERVAL);
     this.logger.trace(`Initialized`);
+    this.logger.debug({ manageSubs: this.manageSubs });
   }
 
   private registerNamespace() {
@@ -147,7 +158,7 @@ export class WakuService extends IEvents {
   }
 
   private poll() {
-    this.topics.forEach(async topic => {
+    this.subscription.forEach(async ({ topic }) => {
       const messages = await this.getMessages(topic);
       if (messages && messages.length) {
         this.logger.trace({ method: "poll", messages: messages });

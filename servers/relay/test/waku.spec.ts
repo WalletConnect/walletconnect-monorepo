@@ -13,16 +13,13 @@ describe("WAKU", () => {
   let testMessage: string;
   let topic: string;
   before(() => {
-    let logger = pino(getDefaultLoggerOptions({ level: "error" }));
+    let logger = pino(getDefaultLoggerOptions({ level: "trace" }));
     wakuOne = new WakuService(logger, TEST_WAKU_URL);
     wakuTwo = new WakuService(logger, TEST_WAKU_URL.replace("8546", "8547"));
   });
   beforeEach(() => {
     testMessage = generateRandomBytes32();
     topic = generateRandomBytes32();
-  });
-  afterEach(() => {
-    wakuOne.logger.level = "error";
   });
   it("Receives a filter message on Waku A from Waku B", async () => {
     await wakuOne.subAndGetHistorical(topic);
@@ -35,7 +32,7 @@ describe("WAKU", () => {
       });
     });
   });
-  it("Polls a filter message on Waku A from Waku B", async () => {
+  it.only("Polls a filter message on Waku A from Waku B", async () => {
     await wakuOne.subscribe(topic);
     setTimeout(() => {
       wakuTwo.post(testMessage, topic);
@@ -56,10 +53,10 @@ describe("WAKU", () => {
   });
   it("Gets multiple random quantity store messages", async () => {
     let allMessages: string[] = [];
-    let totalMessages = Math.floor(Math.random() * 150) + 100;
+    let totalMessages = Math.floor(Math.random() * 150) + 20;
     for (var i = 0; i < totalMessages; i++) {
       allMessages.push(generateRandomBytes32());
-      await wakuOne.post(allMessages[allMessages.length - 1], topic);
+      await wakuTwo.post(allMessages[allMessages.length - 1], topic);
     }
     let result = await wakuOne.getStoreMessages(topic);
     let receivedMessages = result.map(m => m.payload);

@@ -56,8 +56,8 @@ export class JsonRpcService {
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;
-    this.waku = new WakuService(this.logger, config.wakuUrl);
-    this.subscription = new SubscriptionService(this.logger, this.redis, this.ws);
+    this.subscription = new SubscriptionService(this.logger, this.ws);
+    this.waku = new WakuService(this.logger, config.wakuUrl, this.subscription.subscriptions);
     this.initialize();
   }
 

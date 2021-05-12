@@ -23,7 +23,7 @@ export class LegacyService {
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;
-    this.subscription = new SubscriptionService(this.logger, this.redis, this.ws);
+    this.subscription = new SubscriptionService(this.logger, this.ws);
     this.initialize();
   }
 
