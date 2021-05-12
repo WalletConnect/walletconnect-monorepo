@@ -191,7 +191,7 @@ export class JsonRpcService {
     this.logger.debug(`Unsubscribe Request Received`);
     this.logger.trace({ type: "method", method: "onUnsubscribeRequest", socketId, params });
 
-    this.waku.unsubscribe(this.subscription.get(params.id, socketId)[0].topic);
+    //this.waku.unsubscribe(this.subscription.get(params.id, socketId)[0].topic);
     this.subscription.remove(params.id);
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
