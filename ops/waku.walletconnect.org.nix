@@ -5,7 +5,7 @@ let
   waku = pkgs.dockerTools.pullImage {
     imageName = "walletconnect/waku";
     finalImageTag = tag;
-    imageDigest = "sha256:fe01e0c11fce793f2b80eba3e5c7a0d1976c9b30be790c33af8a50fe261714ff";
+    imageDigest = "sha256:9ac7f4ea9db6db567c1637fa292a738f7bb178b80c";
     sha256 = "000003zq2v6rrhizgb9nvhczl87lcfphq9601wcprdika2jz7qh8";
   };
 in {
@@ -40,15 +40,18 @@ in {
         "--tcp-port=${toString wakuP2P}"
         "--udp-port=${toString wakuP2P}"
         "--nodekey=1107ad8e44fe7dc924bb9d388d588832cdc4273efb2623e8609c8085d0d2154c"
-        "--peerpersist=true"
+        "--persist-peers=true"
         "--keep-alive=true"
         "--rpc=false"
         "--relay=true"
         "--store=true"
         "--persist-messages=true"
         "--filter=true"
-        "--dbpath=/store"
+        "--db-path=/store"
         "--topics=6d9b0b4b9994e8a6afbd3dc3ed983cd51c755afb27cd1dc7825ef59c134a39f7"
+        "--metrics-server=true"
+        "--metrics-server-address=127.0.0.1"
+        "--metrics-server-port=8008"
       ];
     };
   };
