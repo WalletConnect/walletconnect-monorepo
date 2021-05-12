@@ -33,17 +33,16 @@ services:
     image: ${WAKU_IMAGE}
     hostname: "waku.{{.Task.Slot}}"
     command:
-      - --peerpersist=true
       - --topics=6d9b0b4b9994e8a6afbd3dc3ed983cd51c755afb27cd1dc7825ef59c134a39f7
       - --rpc-address=0.0.0.0
       - --rpc-port=8546
+      - --keep-alive=true
+      - --peerpersist=true
       - --metrics-server=true
       - --metrics-server-address=0.0.0.0
       - --metrics-server-port=9001
       - --rpc=true
-      - --relay=true
       - --filter=true
-      - --store=true
       - --staticnode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
       - --filternode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
       - --storenode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn

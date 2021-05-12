@@ -19,7 +19,7 @@ services:
     depends_on:
       - relay
     deploy:
-      replicas: 3
+      replicas: 1
 
   relay:
     image: ${RELAY_IMAGE}
@@ -27,7 +27,7 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       RELAY_MODE: ${RELAY_MODE:-any}
     deploy:
-      replicas: 3
+      replicas: 1
   waku:
     deploy:
-      replicas: 3
+      replicas: 1
