@@ -88,5 +88,5 @@ export async function testRelayProvider(url: string) {
     total: time.get("total"),
   };
 
-  return { success: true, legacy: false, test };
+  return { success: true, test };
 }

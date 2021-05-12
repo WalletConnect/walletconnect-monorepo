@@ -91,5 +91,5 @@ export async function testLegacyProvider(url: string) {
     throw new Error("Incorrect result when checking");
   }
 
-  return { success: true, legacy: true, test };
+  return { success: true, test };
 }

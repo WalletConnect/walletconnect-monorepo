@@ -46,11 +46,11 @@ export class HttpService {
         assertType(req, "query", "object");
         assertType(req.query, "url");
 
-        this.logger.info(req.query);
-
         const { url } = req.query;
         const legacy = req.query?.legacy === "true";
         const mode = legacy ? "legacy" : "jsonrpc";
+
+        this.logger.info(`Testing Relay provider at ${url} with ${mode} mode`);
 
         if (!(await isServerAvailable(url))) {
           res.status(400).send({ message: `Relay provider at ${url} is not available` });
@@ -65,7 +65,7 @@ export class HttpService {
         }
 
         const result = legacy ? await testLegacyProvider(url) : await testRelayProvider(url);
-        res.status(200).send(result);
+        res.status(200).send({ mode, ...result });
       } catch (e) {
         res.status(400).send({ message: `Error: ${e.message}` });
       }
