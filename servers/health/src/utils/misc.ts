@@ -6,12 +6,17 @@ export function assertType(obj: any, key: string, type = "string") {
   }
 }
 
+export function getHttpUrl(url) {
+  return url.replace("wss", "https");
+}
+
 export async function isInvalidServer(server) {
   try {
     return (
-      (await axios.get(`${server.endsWith("/") ? server : `${server}/`}health`)).status !== 204
+      (await axios.get(`${getHttpUrl(server)}${server.endsWith("/") ? "" : "/"}health`)).status !==
+      204
     );
   } catch (e) {
-    throw new Error("Sever validation error");
+    throw new Error(`Sever validation error at ${server}`);
   }
 }
