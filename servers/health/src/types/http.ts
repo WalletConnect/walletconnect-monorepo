@@ -5,9 +5,9 @@ export interface HttpServiceOptions {
   logger?: string | Logger;
 }
 
-export interface PostTestRequest extends RequestGenericInterface {
-  Body: {
-    relayProvider: string;
-    legacy?: boolean;
+export interface GetTestRequest extends RequestGenericInterface {
+  Querystring: {
+    url: string;
+    legacy?: string;
   };
 }

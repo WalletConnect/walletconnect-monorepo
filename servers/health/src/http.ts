@@ -5,8 +5,8 @@ import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-uti
 
 import config from "./config";
 import { assertType } from "./utils";
-import { HttpServiceOptions, PostTestRequest } from "./types";
-import { testRelayProvider, testLegacyBridge } from "./test";
+import { HttpServiceOptions, GetTestRequest } from "./types";
+import { isServerAvailable, testRelayProvider, testLegacyProvider, isModeSupported } from "./tests";
 
 export class HttpService {
   public app: FastifyInstance;
@@ -41,16 +41,30 @@ export class HttpService {
         .send(`Hello World, this is Health Server v${config.VERSION}@${config.GITHASH}`);
     });
 
-    this.app.post<PostTestRequest>("/test", async (req, res) => {
+    this.app.get<GetTestRequest>("/test", async (req, res) => {
       try {
-        assertType(req, "body", "object");
-        testLegacyBridge;
-        assertType(req.body, "relayProvider");
+        assertType(req, "query", "object");
+        assertType(req.query, "url");
 
-        const result = req.body?.legacy
-          ? await testLegacyBridge(req.body.relayProvider)
-          : await testRelayProvider(req.body.relayProvider);
+        this.logger.info(req.query);
 
+        const { url } = req.query;
+        const legacy = req.query?.legacy === "true";
+        const mode = legacy ? "legacy" : "jsonrpc";
+
+        if (!(await isServerAvailable(url))) {
+          res.status(400).send({ message: `Relay provider at ${url} is not available` });
+          return;
+        }
+
+        if (!(await isModeSupported(url, mode))) {
+          res
+            .status(400)
+            .send({ message: `Relay provider at ${url} does not support ${mode} mode` });
+          return;
+        }
+
+        const result = legacy ? await testLegacyProvider(url) : await testRelayProvider(url);
         res.status(200).send(result);
       } catch (e) {
         res.status(400).send({ message: `Error: ${e.message}` });
