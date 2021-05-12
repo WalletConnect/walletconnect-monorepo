@@ -119,9 +119,9 @@ const connectorParams = {
   chainId: 1,
 };
 
-export async function testLegacyBridge(relayProvider: string) {
+export async function testLegacyBridge(bridgeProvider: string) {
   const connectorA = new ClientV1({
-    bridge: relayProvider,
+    bridge: bridgeProvider,
     clientMeta: metadata,
   });
   let connectorB: ClientV1 | undefined;

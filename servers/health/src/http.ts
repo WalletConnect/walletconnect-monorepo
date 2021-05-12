@@ -4,7 +4,7 @@ import pino, { Logger } from "pino";
 import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
 
 import config from "./config";
-import { assertType } from "./utils";
+import { assertType, isInvalidServer } from "./utils";
 import { HttpServiceOptions, PostTestRequest } from "./types";
 import { testRelayProvider, testLegacyBridge } from "./test";
 
@@ -44,8 +44,11 @@ export class HttpService {
     this.app.post<PostTestRequest>("/test", async (req, res) => {
       try {
         assertType(req, "body", "object");
-        testLegacyBridge;
         assertType(req.body, "relayProvider");
+
+        if (await isInvalidServer(req.body.relayProvider)) {
+          throw new Error("Invalid relay or bridge");
+        }
 
         const result = req.body?.legacy
           ? await testLegacyBridge(req.body.relayProvider)

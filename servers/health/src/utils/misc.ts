@@ -1,5 +1,4 @@
-import * as crypto from "crypto";
-import * as encUtils from "enc-utils";
+import axios from "axios";
 
 export function assertType(obj: any, key: string, type = "string") {
   if (!obj[key] || typeof obj[key] !== type) {
@@ -7,13 +6,12 @@ export function assertType(obj: any, key: string, type = "string") {
   }
 }
 
-export function generateRandomBytes32(): string {
-  return encUtils.bufferToHex(crypto.randomBytes(32));
-}
-
-export function sha256(data: string): string {
-  return crypto
-    .createHash("sha256")
-    .update(data)
-    .digest("hex");
+export async function isInvalidServer(server) {
+  try {
+    return (
+      (await axios.get(`${server.endsWith("/") ? server : `${server}/`}health`)).status !== 204
+    );
+  } catch (e) {
+    throw new Error("Sever validation error");
+  }
 }
