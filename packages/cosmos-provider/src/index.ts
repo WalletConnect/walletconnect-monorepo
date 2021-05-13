@@ -71,11 +71,6 @@ class CosmosProvider {
     return this.http.request(args);
   }
 
-  public async enable(): Promise<string[]> {
-    const accounts = await this.request({ method: "eth_requestAccounts" });
-    return accounts as string[];
-  }
-
   public async connect(): Promise<void> {
     await this.signer.connect();
   }
@@ -156,7 +151,7 @@ class CosmosProvider {
       .filter(x => this.isCompatibleChainId(x))
       .map(x => this.parseChainId(x));
     if (compatible.length) {
-      this.chains = chains;
+      this.chains = compatible;
       this.events.emit(providerEvents.changed.chains, this.chains);
     }
   }

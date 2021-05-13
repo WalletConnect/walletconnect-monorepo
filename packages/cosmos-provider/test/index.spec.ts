@@ -6,10 +6,13 @@ import { SessionTypes } from "@walletconnect/types";
 
 import CosmosProvider from "./../src/index";
 
-const CHAIN_ID = "cosmos:cosmoshub-4";
+const NAMESPACE = "cosmos";
+const CHAIN_ID = "cosmoshub-4";
 const RPC_URL = `https://rpc.cosmos.network/`;
 
-const wallet = {} as any;
+const wallet = {
+  address: "cosmos1t2uflqwqe0fsj0shcfkrvpukewcw40yjj6hdc0",
+} as any;
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
@@ -37,7 +40,7 @@ const TEST_WALLET_METADATA = {
 };
 
 describe("@walletconnect/cosmos-provider", () => {
-  it("Test enable", async () => {
+  it("Test connect", async () => {
     const walletClient = await Client.init({
       controller: true,
       relayProvider: TEST_RELAY_URL,
@@ -64,17 +67,17 @@ describe("@walletconnect/cosmos-provider", () => {
     await Promise.all([
       new Promise<void>((resolve, reject) => {
         walletClient.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+          const response = { state: { accounts: [`${wallet.address}@${NAMESPACE}:${CHAIN_ID}`] } };
           await walletClient.approve({
             proposal,
-            response: {
-              state: { accounts: [`${wallet.address}@${CHAIN_ID}`] },
-            },
+            response,
           });
           resolve();
         });
       }),
       new Promise<void>(async (resolve, reject) => {
-        accounts = await provider.enable();
+        await provider.connect();
+        accounts = provider.accounts;
         resolve();
       }),
     ]);
