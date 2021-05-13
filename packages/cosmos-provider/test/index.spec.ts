@@ -1,24 +1,15 @@
 import "mocha";
 import { expect } from "chai";
-import { ethers } from "ethers";
-import { TestNetwork } from "ethereum-test-network";
-import { SignerConnection, SIGNER_EVENTS } from "@walletconnect/signer-connection";
+import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { IClient, RequestEvent, SessionTypes } from "@walletconnect/types";
+import { SessionTypes } from "@walletconnect/types";
 
-import EthereumProvider from "./../src/index";
+import CosmosProvider from "./../src/index";
 
-const CHAIN_ID = 123;
-const PORT = 8545;
-const BLOCKCHAIN = "eip155";
-const RPC_URL = `http://localhost:${PORT}`;
-const DEFAULT_GENESIS_ACCOUNTS = [
-  {
-    balance: "0x295BE96E64066972000000",
-    privateKey: "0xa3dac6ca0b1c61f5f0a0b3a0acf93c9a52fd94e8e33d243d3b3a8b8c5dc37f0b", // 0xaaE062157B53077da1414ec3579b4CBdF7a4116f
-  },
-];
-const wallet = new ethers.Wallet(DEFAULT_GENESIS_ACCOUNTS[0].privateKey);
+const CHAIN_ID = "cosmos:cosmoshub-4";
+const RPC_URL = `https://rpc.cosmos.network/`;
+
+const wallet = {} as any;
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
@@ -28,7 +19,7 @@ const TEST_JSONRPC_METHOD = "test_method";
 const TEST_JSONRPC_REQUEST = { method: TEST_JSONRPC_METHOD, params: [] };
 const TEST_JSONRPC_RESULT = "it worked";
 
-const TEST_CHAINS = [];
+const TEST_CHAINS = [CHAIN_ID];
 const TEST_METHODS = [TEST_JSONRPC_METHOD];
 
 const TEST_APP_METADATA = {
@@ -45,29 +36,15 @@ const TEST_WALLET_METADATA = {
   icons: ["https://walletconnect.org/walletconnect-logo.png"],
 };
 
-describe("@walletconnect/ethereum-provider", () => {
-  let testnetwork: TestNetwork;
-
-  before(async () => {
-    testnetwork = await TestNetwork.init({
-      chainId: CHAIN_ID,
-      port: PORT,
-      genesisAccounts: DEFAULT_GENESIS_ACCOUNTS,
-    });
-  });
-
-  after(async () => {
-    await testnetwork.close();
-  });
-
+describe("@walletconnect/cosmos-provider", () => {
   it("Test enable", async () => {
     const walletClient = await Client.init({
       controller: true,
       relayProvider: TEST_RELAY_URL,
       metadata: TEST_WALLET_METADATA,
     });
-    const provider = new EthereumProvider({
-      chainId: CHAIN_ID,
+    const provider = new CosmosProvider({
+      chains: TEST_CHAINS,
       rpc: {
         custom: {
           [CHAIN_ID]: RPC_URL,
@@ -90,7 +67,7 @@ describe("@walletconnect/ethereum-provider", () => {
           await walletClient.approve({
             proposal,
             response: {
-              state: { accounts: [`${wallet.address}@${BLOCKCHAIN}:${CHAIN_ID}`] },
+              state: { accounts: [`${wallet.address}@${CHAIN_ID}`] },
             },
           });
           resolve();
@@ -107,7 +84,3 @@ describe("@walletconnect/ethereum-provider", () => {
     ); // TODO Fails because of this, TypeError: Cannot read property 'split' of undefined
   });
 });
-
-function formatEIP155(address: string, blockchain: string, chainId: number) {
-  return `${address}@${blockchain}:${chainId}`;
-}
