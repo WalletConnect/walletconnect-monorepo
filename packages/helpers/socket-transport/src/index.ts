@@ -33,7 +33,7 @@ class SocketTransport implements ITransportLib {
 
   // -- constructor ----------------------------------------------------- //
 
-  constructor(opts: ISocketTransportOptions) {
+  constructor(private opts: ISocketTransportOptions) {
     this._protocol = opts.protocol;
     this._version = opts.version;
     this._url = "";
@@ -150,8 +150,10 @@ class SocketTransport implements ITransportLib {
     this._nextSocket.onerror = (event: Event) => this._socketError(event);
 
     this._nextSocket.onclose = () => {
-      this._nextSocket = null;
-      this._socketCreate();
+      setTimeout(() => {
+        this._nextSocket = null;
+        this._socketCreate();
+      }, 500);
     };
   }
 
@@ -226,7 +228,7 @@ class SocketTransport implements ITransportLib {
       }),
     );
 
-    this._subscriptions = [];
+    this._subscriptions = this.opts.subscriptions || [];
   }
 
   private _setToQueue(socketMessage: ISocketMessage) {
