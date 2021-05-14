@@ -234,10 +234,10 @@ export abstract class ISequence<
   public abstract readonly values: Settled[];
 
   // describes sequence context
-  protected abstract context: string;
+  public abstract context: string;
 
   // describes sequence config
-  protected abstract config: Config;
+  public abstract config: Config;
 
   constructor(public client: IClient, public logger: Logger) {
     super();

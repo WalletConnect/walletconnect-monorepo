@@ -4,6 +4,7 @@ import {
   BlockchainTypes,
   JsonRpcPermissions,
   NotificationPermissions,
+  SequenceTypes,
   PairingTypes,
   SessionTypes,
   SubscriptionEvent,
@@ -11,6 +12,24 @@ import {
 } from "@walletconnect/types";
 
 import { ERROR, getError } from "./error";
+
+// -- sequence -------------------------------------------------- //
+
+export function isSequenceRespondedStatus(
+  status: SequenceTypes.PendingStatus,
+): status is SequenceTypes.RespondedStatus {
+  return status === "responded";
+}
+
+export function isSequenceResponded(
+  pending: SequenceTypes.Pending,
+): pending is SequenceTypes.RespondedPending {
+  return isSequenceRespondedStatus(pending.status) && "outcome" in pending;
+}
+
+export function isSequenceFailed(outcome: SequenceTypes.Outcome): outcome is SequenceTypes.Failed {
+  return "reason" in outcome;
+}
 
 // -- pairing -------------------------------------------------- //
 

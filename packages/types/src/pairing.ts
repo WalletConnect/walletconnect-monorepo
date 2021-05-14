@@ -4,7 +4,7 @@ import { AppMetadata, SignalTypes } from "./misc";
 export declare namespace PairingTypes {
   export type Status = SequenceTypes.Status;
 
-  export type JsonRpc = Omit<SequenceTypes.JsonRpc, "propose">;
+  export type JsonRpc = SequenceTypes.JsonRpc;
 
   export type Events = SequenceTypes.Events;
 

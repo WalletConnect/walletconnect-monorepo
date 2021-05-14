@@ -53,9 +53,9 @@ export class Session extends ISession {
 
   public events = new EventEmitter();
 
-  protected context: string = SESSION_CONTEXT;
+  public context: string = SESSION_CONTEXT;
 
-  protected config = {
+  public config = {
     status: SESSION_STATUS,
     events: SESSION_EVENTS,
     jsonrpc: SESSION_JSONRPC,
