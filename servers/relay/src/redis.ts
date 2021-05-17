@@ -39,7 +39,7 @@ export class RedisService {
   public async getMessage(topic: string, hash: string): Promise<string> {
     this.logger.debug(`Getting Message`);
     this.logger.trace({ type: "method", method: "getMessage", topic });
-    return this.sscan(`message:${topic}`, "MATCH", `${hash}:*`)[0]?.split(":")[1];
+    return (await this.sscan(`message:${topic}`, "MATCH", `${hash}:*`))[0]?.split(":")[1];
   }
 
   public getMessages(topic: string): Promise<string[]> {
@@ -58,10 +58,10 @@ export class RedisService {
   }
 
   public deleteMessage(topic: string, hash: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       this.logger.debug(`Deleting Message`);
       this.logger.trace({ type: "method", method: "deleteMessage", topic });
-      const res = this.sscan(`message:${topic}`, "MATCH", `${hash}:*`);
+      const res = await this.sscan(`message:${topic}`, "MATCH", `${hash}:*`);
       if (res.length) {
         this.client.srem(`message:${topic}`, res[0], (err: Error) => {
           if (err) reject(err);
@@ -176,37 +176,29 @@ export class RedisService {
     this.logger.trace(`Initialized`);
   }
 
-  // This function properly handles the cursor that redis returns in sscan.
-  // This is to make sure that all set members get read.
-  private sscan(key: string, match = "", pattern = ""): string[] {
-    interface cbFn {
-      (err: Error, result: [string, string[]]): string[];
-    }
-    const recursiveSscanCB: cbFn = (err, result) => {
-      let messages: string[] = [];
-      if (err) return messages;
-      result[1].map((m: string) => {
-        if (m != null) messages.push(m);
-      });
-      console.log("IDX", result[0]);
-      if (result[0] == "0") return messages;
-      return this.client.sscan(key, result[0], match, pattern, recursiveSscanCB);
-    };
-    this.client.sscan(key, "0", match, pattern, recursiveSscanCB);
-    return [];
-  }
-  private sscan2(key: string, match = "", pattern = ""): Promise<string[]> {
+  private sscanAsync(
+    key: string,
+    match: string,
+    pattern: string,
+    cursor: string,
+  ): Promise<[string, string[]]> {
     return new Promise((resolve, reject) => {
-      const messages: string[] = [];
-      const recursiveSscanCB = (err: Error, result: [string, string[]]) => {
+      this.client.sscan(key, cursor, match, pattern, (err: Error, result: [string, string[]]) => {
         if (err) reject(err);
-        result[1].map((m: string) => {
-          if (m != null) messages.push(m);
-        });
-        if (result[0] == "0") resolve(messages);
-        this.client.sscan(key, result[0], match, pattern, recursiveSscanCB);
-      };
-      this.client.sscan(key, "0", match, pattern, recursiveSscanCB);
+        resolve(result);
+      });
     });
+  }
+
+  private async sscan(key: string, match = "", pattern = "", cursor = "0"): Promise<string[]> {
+    const messages: string[] = [];
+    let [nextCursor, values] = await this.sscanAsync(key, match, pattern, cursor);
+    values.forEach((m: string) => {
+      if (m != null) messages.push(m);
+    });
+    if (nextCursor == "0") {
+      return messages;
+    }
+    return [...messages, ...(await this.sscan(key, match, pattern, nextCursor))];
   }
 }

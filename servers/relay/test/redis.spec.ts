@@ -31,7 +31,7 @@ describe("Redis", () => {
     expect(result).to.be.equal(params.ttl);
     expect(result).to.be.gte(params.ttl - 1); // One second less
   });
-  it.only("Gets a single message from redis", async () => {
+  it("Gets a single message from redis", async () => {
     for (var i = 0; i < 5000; i++) {
       await redis.setMessage({
         topic: TEST_TOPIC,
