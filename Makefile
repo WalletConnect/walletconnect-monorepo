@@ -35,6 +35,7 @@ dirs:
 
 pull: ## pulls docker images
 	docker pull $(redisImage)
+	docker pull $(wakuImage)
 	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
