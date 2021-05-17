@@ -5,7 +5,7 @@ let
   waku = pkgs.dockerTools.pullImage {
     imageName = "walletconnect/waku";
     finalImageTag = tag;
-    imageDigest = "sha256:9ac7f4ea9db6db567c1637fa292a738f7bb178b80c";
+    imageDigest = "sha256:241191a639cf65a0f20fe0ca8a33ea69f733b9dd64df066765fb2245405bf53b";
     sha256 = "000003zq2v6rrhizgb9nvhczl87lcfphq9601wcprdika2jz7qh8";
   };
 in {
