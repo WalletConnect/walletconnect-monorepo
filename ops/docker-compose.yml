@@ -37,7 +37,7 @@ services:
       - --rpc-address=0.0.0.0
       - --rpc-port=8546
       - --keep-alive=true
-      - --peerpersist=true
+      - --persist-peers=true
       - --metrics-server=true
       - --metrics-server-address=0.0.0.0
       - --metrics-server-port=9001
