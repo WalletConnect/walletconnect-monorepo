@@ -22,7 +22,7 @@ describe("Pairing", function() {
   afterEach(function() {
     clock.restore();
   });
-  it.only("A pings B with existing pairing", async () => {
+  it("A pings B with existing pairing", async () => {
     const { clients } = await setupClientsForTesting();
     await testPairingWithoutSession(clients);
     const topic = clients.a.pairing.topics[0];

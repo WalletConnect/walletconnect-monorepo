@@ -4,7 +4,6 @@ import { generateChildLogger } from "@pedrouid/pino-utils";
 import { WebSocketService } from "./ws";
 import { Subscription } from "./types";
 import { generateRandomBytes32 } from "./utils";
-import { FIVE_SECONDS } from "./constants";
 import { HttpService } from "./http";
 import { SERVER_EVENTS } from "./constants/http";
 import { SOCKET_EVENTS } from "./constants/ws";

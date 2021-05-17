@@ -15,11 +15,12 @@ import {
   EMPTY_SOCKET_ID,
 } from "./constants";
 import { HttpService } from "./http";
+import { SubscriptionService } from "./subscription";
 
 export class WakuService extends IEvents {
   public events = new EventEmitter();
   public context = WAKU_CONTEXT;
-  public subscription: Subscription[] = [];
+  public subscription: SubscriptionService;
   public server: HttpService;
   public logger: Logger;
   public namespace = WAKU_PUBSUB_TOPIC;
@@ -27,13 +28,14 @@ export class WakuService extends IEvents {
 
   private manageSubs = false;
 
-  constructor(server: HttpService, logger: Logger, nodeUrl: string, subscription?: Subscription[]) {
+  constructor(
+    server: HttpService,
+    logger: Logger,
+    nodeUrl: string,
+    subscription: SubscriptionService,
+  ) {
     super();
-    if (subscription) {
-      this.subscription = subscription;
-    } else {
-      this.manageSubs = true;
-    }
+    this.subscription = subscription;
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
     this.provider = new JsonRpcProvider(nodeUrl);
@@ -89,8 +91,6 @@ export class WakuService extends IEvents {
     const method = WAKU_JSONRPC.post.filter.subscription;
     const params = [[{ contentTopic: topic }], this.namespace];
     this.logger.debug({ type: "method", method: "subscribe", params });
-    if (this.manageSubs)
-      this.subscription.push({ topic, id: EMPTY_SOCKET_ID, socketId: EMPTY_SOCKET_ID });
     if (!this.connected) return;
     await this.provider.request({ method, params });
   }
@@ -106,8 +106,6 @@ export class WakuService extends IEvents {
   public async unsubscribe(subscription: string) {
     const method = WAKU_JSONRPC.delete.filter.subscription;
     const params = [[{ contentTopic: subscription }]];
-    if (this.manageSubs)
-      this.subscription = this.subscription.filter(({ topic }) => topic !== subscription);
     if (!this.connected) return;
     await this.provider.request({ method, params });
   }
@@ -178,7 +176,7 @@ export class WakuService extends IEvents {
   }
 
   private poll() {
-    this.subscription.forEach(async ({ topic }) => {
+    this.subscription.subscriptions.forEach(async ({ topic }) => {
       const messages = await this.getMessages(topic);
       if (messages && messages.length) {
         this.logger.trace({ method: "poll", messages: messages });

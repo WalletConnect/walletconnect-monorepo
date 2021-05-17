@@ -60,12 +60,7 @@ export class JsonRpcService {
     this.ws = ws;
     this.notification = notification;
     this.subscription = new SubscriptionService(this.server, this.logger, this.ws);
-    this.waku = new WakuService(
-      this.server,
-      this.logger,
-      config.wakuUrl,
-      this.subscription.subscriptions,
-    );
+    this.waku = new WakuService(this.server, this.logger, config.wakuUrl, this.subscription);
     this.initialize();
   }
 
