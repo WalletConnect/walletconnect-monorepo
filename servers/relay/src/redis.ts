@@ -39,13 +39,7 @@ export class RedisService {
   public async getMessage(topic: string, hash: string): Promise<string> {
     this.logger.debug(`Getting Message`);
     this.logger.trace({ type: "method", method: "getMessage", topic });
-    return new Promise((resolve, reject) => {
-      this.sscan(`message:${topic}`, "MATCH", `${hash}:*`)
-        .then((result: string[]) => {
-          resolve(result[0]?.split(":")[1]);
-        })
-        .catch(reject);
-    });
+    return this.sscan(`message:${topic}`, "MATCH", `${hash}:*`)[0]?.split(":")[1];
   }
 
   public getMessages(topic: string): Promise<string[]> {
@@ -67,16 +61,13 @@ export class RedisService {
     return new Promise((resolve, reject) => {
       this.logger.debug(`Deleting Message`);
       this.logger.trace({ type: "method", method: "deleteMessage", topic });
-      this.sscan(`message:${topic}`, "MATCH", `${hash}:*`)
-        .then((res: string[]) => {
-          if (res.length) {
-            this.client.srem(`message:${topic}`, res[0], (err: Error) => {
-              if (err) reject(err);
-              resolve();
-            });
-          }
-        })
-        .catch(reject);
+      const res = this.sscan(`message:${topic}`, "MATCH", `${hash}:*`);
+      if (res.length) {
+        this.client.srem(`message:${topic}`, res[0], (err: Error) => {
+          if (err) reject(err);
+          resolve();
+        });
+      }
     });
   }
 
@@ -187,7 +178,24 @@ export class RedisService {
 
   // This function properly handles the cursor that redis returns in sscan.
   // This is to make sure that all set members get read.
-  private sscan(key: string, match = "", pattern = ""): Promise<string[]> {
+  private sscan(key: string, match = "", pattern = ""): string[] {
+    interface cbFn {
+      (err: Error, result: [string, string[]]): string[];
+    }
+    const recursiveSscanCB: cbFn = (err, result) => {
+      let messages: string[] = [];
+      if (err) return messages;
+      result[1].map((m: string) => {
+        if (m != null) messages.push(m);
+      });
+      console.log("IDX", result[0]);
+      if (result[0] == "0") return messages;
+      return this.client.sscan(key, result[0], match, pattern, recursiveSscanCB);
+    };
+    this.client.sscan(key, "0", match, pattern, recursiveSscanCB);
+    return [];
+  }
+  private sscan2(key: string, match = "", pattern = ""): Promise<string[]> {
     return new Promise((resolve, reject) => {
       const messages: string[] = [];
       const recursiveSscanCB = (err: Error, result: [string, string[]]) => {

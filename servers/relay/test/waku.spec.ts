@@ -14,8 +14,8 @@ describe("WAKU", () => {
   let topic: string;
   before(() => {
     let logger = pino(getDefaultLoggerOptions({ level: "trace" }));
-    wakuOne = new WakuService(logger, TEST_WAKU_URL);
-    wakuTwo = new WakuService(logger, TEST_WAKU_URL.replace("8546", "8547"));
+    //wakuOne = new WakuService(logger, TEST_WAKU_URL);
+    //wakuTwo = new WakuService(logger, TEST_WAKU_URL.replace("8546", "8547"));
   });
   beforeEach(() => {
     testMessage = generateRandomBytes32();
@@ -32,7 +32,7 @@ describe("WAKU", () => {
       });
     });
   });
-  it.only("Polls a filter message on Waku A from Waku B", async () => {
+  it("Polls a filter message on Waku A from Waku B", async () => {
     await wakuOne.subscribe(topic);
     setTimeout(() => {
       wakuTwo.post(testMessage, topic);
