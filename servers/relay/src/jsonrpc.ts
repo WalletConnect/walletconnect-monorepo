@@ -38,6 +38,7 @@ import {
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
 import { WakuService } from "./waku";
+import { HttpService } from "./http";
 
 export class JsonRpcService {
   public subscription: SubscriptionService;
@@ -47,17 +48,24 @@ export class JsonRpcService {
   private timeout = new Map<number, { counter: number; timeout: NodeJS.Timeout }>();
 
   constructor(
+    public server: HttpService,
     public logger: Logger,
     public redis: RedisService,
     public ws: WebSocketService,
     public notification: NotificationService,
   ) {
+    this.server = server;
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;
-    this.subscription = new SubscriptionService(this.logger, this.ws);
-    this.waku = new WakuService(this.logger, config.wakuUrl, this.subscription.subscriptions);
+    this.subscription = new SubscriptionService(this.server, this.logger, this.ws);
+    this.waku = new WakuService(
+      this.server,
+      this.logger,
+      config.wakuUrl,
+      this.subscription.subscriptions,
+    );
     this.initialize();
   }
 

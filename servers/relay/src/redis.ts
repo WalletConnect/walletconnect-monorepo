@@ -6,8 +6,8 @@ import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import config from "./config";
 import { sha256 } from "./utils";
-import { Notification, LegacySocketMessage } from "./types";
 import { SIX_HOURS } from "./constants";
+import { Notification, LegacySocketMessage } from "./types";
 
 export class RedisService {
   public client: any = redis.createClient(config.redis);
@@ -189,8 +189,8 @@ export class RedisService {
   // This is to make sure that all set members get read.
   private sscan(key: string, match = "", pattern = ""): Promise<string[]> {
     return new Promise((resolve, reject) => {
-      let messages: string[] = [];
-      let recursiveSscanCB = (err: Error, result: [string, string[]]) => {
+      const messages: string[] = [];
+      const recursiveSscanCB = (err: Error, result: [string, string[]]) => {
         if (err) reject(err);
         result[1].map((m: string) => {
           if (m != null) messages.push(m);

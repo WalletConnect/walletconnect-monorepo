@@ -4,9 +4,8 @@ import { generateChildLogger } from "@pedrouid/pino-utils";
 import { IJsonRpcProvider, IEvents } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { arrayToHex } from "enc-utils";
-import { Subscription } from "./types";
+import { Subscription, PagingOptions, WakuMessagesResult, WakuMessage } from "./types";
 
-import { PagingOptions, WakuMessagesResult, WakuMessage } from "./types";
 import {
   WAKU_JSONRPC,
   WAKU_POLLING_INTERVAL,
@@ -15,27 +14,34 @@ import {
   WAKU_PUBSUB_TOPIC,
   EMPTY_SOCKET_ID,
 } from "./constants";
+import { HttpService } from "./http";
 
 export class WakuService extends IEvents {
   public events = new EventEmitter();
   public context = WAKU_CONTEXT;
   public subscription: Subscription[] = [];
+  public server: HttpService;
   public logger: Logger;
   public namespace = WAKU_PUBSUB_TOPIC;
   public provider: IJsonRpcProvider;
 
   private manageSubs = false;
 
-  constructor(logger: Logger, nodeUrl: string, subscription?: Subscription[]) {
+  constructor(server: HttpService, logger: Logger, nodeUrl: string, subscription?: Subscription[]) {
     super();
     if (subscription) {
       this.subscription = subscription;
     } else {
       this.manageSubs = true;
     }
-    this.provider = new JsonRpcProvider(nodeUrl);
+    this.server = server;
     this.logger = generateChildLogger(logger, this.context);
+    this.provider = new JsonRpcProvider(nodeUrl);
     this.initialize();
+  }
+
+  get connected() {
+    return this.provider.connection.connected;
   }
 
   public on(event: string, listener: any): void {
@@ -65,12 +71,14 @@ export class WakuService extends IEvents {
     ];
     this.logger.info("Posting Waku Message");
     this.logger.debug({ type: "method", method: "post", payload: { method, params } });
+    if (!this.connected) return;
     await this.provider.request({ method, params });
   }
 
   public async getMessages(topic: string): Promise<WakuMessage[]> {
     const method = WAKU_JSONRPC.get.filter.messages;
     const params = [topic];
+    if (!this.connected) return [];
     const result = await this.provider.request({ method, params });
     const messages = this.parseWakuMessageResult(result);
     this.logger.trace({ type: "method", topic, method: "getMessages", messages });
@@ -83,6 +91,7 @@ export class WakuService extends IEvents {
     this.logger.debug({ type: "method", method: "subscribe", params });
     if (this.manageSubs)
       this.subscription.push({ topic, id: EMPTY_SOCKET_ID, socketId: EMPTY_SOCKET_ID });
+    if (!this.connected) return;
     await this.provider.request({ method, params });
   }
 
@@ -99,6 +108,7 @@ export class WakuService extends IEvents {
     const params = [[{ contentTopic: subscription }]];
     if (this.manageSubs)
       this.subscription = this.subscription.filter(({ topic }) => topic !== subscription);
+    if (!this.connected) return;
     await this.provider.request({ method, params });
   }
 
@@ -112,6 +122,7 @@ export class WakuService extends IEvents {
   ): Promise<WakuMessage[]> {
     const method = WAKU_JSONRPC.get.store.messages;
     const params = [this.namespace, [{ contentTopic: topic }], pagingOptions];
+    if (!this.connected) return [];
     const result = await this.provider.request({ method, params });
     pagingOptions = result.pagingOptions;
     messages = [...messages, ...this.parseWakuMessageResult(result.messages)];
@@ -124,17 +135,26 @@ export class WakuService extends IEvents {
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.provider.connect();
+    this.connectProvider();
     this.registerNamespace();
     setInterval(() => this.poll(), WAKU_POLLING_INTERVAL);
     this.logger.trace(`Initialized`);
     this.logger.debug({ manageSubs: this.manageSubs });
   }
 
+  private async connectProvider(): Promise<void> {
+    try {
+      await this.provider.connect();
+    } catch (e) {
+      // do nothing
+    }
+  }
+
   private registerNamespace() {
     const method = WAKU_JSONRPC.post.relay.subscriptions;
     const topic = this.namespace;
     const params = [[topic]];
+    if (!this.connected) return;
     this.provider.request({ method, params });
   }
 

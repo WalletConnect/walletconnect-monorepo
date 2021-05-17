@@ -7,6 +7,7 @@ import { NotificationService } from "./notification";
 import { RedisService } from "./redis";
 import { LegacySocketMessage, Subscription } from "./types";
 import { WebSocketService } from "./ws";
+import { HttpService } from "./http";
 
 export class LegacyService {
   public subscription: SubscriptionService;
@@ -14,16 +15,18 @@ export class LegacyService {
   public context = "legacy";
 
   constructor(
+    public server: HttpService,
     public logger: Logger,
     public redis: RedisService,
     public ws: WebSocketService,
     public notification: NotificationService,
   ) {
+    this.server = server;
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;
-    this.subscription = new SubscriptionService(this.logger, this.ws);
+    this.subscription = new SubscriptionService(this.server, this.logger, this.ws);
     this.initialize();
   }
 

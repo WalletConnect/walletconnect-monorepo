@@ -64,7 +64,9 @@ export class HttpService {
           return;
         }
 
-        const result = legacy ? await testLegacyProvider(url) : await testRelayProvider(url);
+        const result = legacy
+          ? await testLegacyProvider(url)
+          : await testRelayProvider(url, req.query.url2);
         res.status(200).send({ mode, ...result });
       } catch (e) {
         res.status(400).send({ message: `Error: ${e.message}` });

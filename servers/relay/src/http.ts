@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import fastify, { FastifyInstance } from "fastify";
 import helmet from "fastify-helmet";
 import ws from "fastify-websocket";
@@ -12,8 +13,11 @@ import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
+import { SERVER_BEAT_INTERVAL, SERVER_EVENTS } from "./constants/http";
 
 export class HttpService {
+  public events = new EventEmitter();
+
   public app: FastifyInstance;
   public logger: Logger;
   public redis: RedisService;
@@ -33,8 +37,8 @@ export class HttpService {
     this.app = fastify({ logger });
     this.logger = generateChildLogger(logger, this.context);
     this.redis = new RedisService(this.logger);
-    this.notification = new NotificationService(this.logger, this.redis);
-    this.ws = new WebSocketService(this.logger, this.redis, this.notification);
+    this.notification = new NotificationService(this, this.logger, this.redis);
+    this.ws = new WebSocketService(this, this.logger, this.redis, this.notification);
     this.metrics = {
       hello: new client.Counter({
         registers: [register],
@@ -45,11 +49,31 @@ export class HttpService {
     this.initialize();
   }
 
+  public on(event: string, listener: any): void {
+    this.events.on(event, listener);
+  }
+
+  public once(event: string, listener: any): void {
+    this.events.once(event, listener);
+  }
+
+  public off(event: string, listener: any): void {
+    this.events.off(event, listener);
+  }
+
+  public removeListener(event: string, listener: any): void {
+    this.events.removeListener(event, listener);
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
+    this.registerApi();
+    this.setBeatInterval();
+  }
 
+  private registerApi() {
     this.app.register(helmet);
     this.app.register(ws);
 
@@ -102,5 +126,9 @@ export class HttpService {
         res.status(400).send({ message: `Error: ${e.message}` });
       }
     });
+  }
+
+  private setBeatInterval() {
+    setInterval(() => this.events.emit(SERVER_EVENTS.beat), SERVER_BEAT_INTERVAL);
   }
 }
