@@ -31,6 +31,7 @@ import { JSONRPC_RETRIAL_TIMEOUT, JSONRPC_RETRIAL_MAX } from "./constants";
 
 import { SubscriptionService } from "./subscription";
 import { WebSocketService } from "./ws";
+import { HttpService } from "./http";
 
 export class JsonRpcService {
   public subscription: SubscriptionService;
@@ -39,16 +40,18 @@ export class JsonRpcService {
   private timeout = new Map<number, { counter: number; timeout: NodeJS.Timeout }>();
 
   constructor(
+    public server: HttpService,
     public logger: Logger,
     public redis: RedisService,
     public ws: WebSocketService,
     public notification: NotificationService,
   ) {
+    this.server = server;
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
     this.notification = notification;
-    this.subscription = new SubscriptionService(this.logger, this.redis, this.ws);
+    this.subscription = new SubscriptionService(this.server, this.logger, this.redis, this.ws);
     this.initialize();
   }
 
@@ -111,6 +114,7 @@ export class JsonRpcService {
   private initialize(): void {
     this.logger.trace(`Initialized`);
   }
+
   private async onSubscriptionAcknowledged(socketId: string, payload: JsonRpcPayload) {
     await this.redis.deletePendingRequest(payload.id);
     this.deleteTimeout(payload.id);
