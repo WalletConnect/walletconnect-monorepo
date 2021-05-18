@@ -1,36 +1,40 @@
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
-import { WebSocketService } from "./ws";
 import { Subscription } from "./types";
 import { generateRandomBytes32 } from "./utils";
 import { HttpService } from "./http";
-import { SERVER_EVENTS } from "./constants/http";
-import { SOCKET_EVENTS } from "./constants/ws";
+import {
+  WEBSOCKET_EVENTS,
+  SERVER_EVENTS,
+  SUBSCRIPTION_CONTEXT,
+  SUBSCRIPTION_EVENTS,
+} from "./constants";
 
 export class SubscriptionService {
   public subscriptions: Subscription[] = [];
 
-  public context = "subscription";
+  public context = SUBSCRIPTION_CONTEXT;
 
-  constructor(public server: HttpService, public logger: Logger, public ws: WebSocketService) {
+  constructor(public server: HttpService, public logger: Logger) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
-    this.ws = ws;
     this.initialize();
   }
 
-  public set(subscription: Omit<Subscription, "id">): string {
+  public set(partial: Omit<Subscription, "id">, legacy?: boolean): string {
     const id = generateRandomBytes32();
     this.logger.debug(`Setting Subscription`);
-    this.logger.trace({ type: "method", method: "set", topic: subscription.topic });
-    this.subscriptions.push({ ...subscription, id });
+    this.logger.trace({ type: "method", method: "set", topic: partial.topic });
+    const subscription = { ...partial, id, legacy };
+    this.subscriptions.push(subscription);
+    this.server.events.emit(SUBSCRIPTION_EVENTS.added, subscription);
     return id;
   }
 
-  public get(topic: string, senderSocketId: string): Subscription[] {
+  public get(topic: string, senderSocketId: string, legacy?: boolean): Subscription[] {
     const subscriptions = this.subscriptions.filter(
-      sub => sub.topic === topic && sub.socketId !== senderSocketId,
+      sub => sub.topic === topic && sub.socketId !== senderSocketId && !!sub.legacy === !!legacy,
     );
     this.logger.debug(`Getting Subscriptions`);
     this.logger.trace({ type: "method", method: "get", topic, subscriptions });
@@ -41,6 +45,7 @@ export class SubscriptionService {
     this.logger.debug(`Removing Subscription`);
     this.logger.trace({ type: "method", method: "remove", id });
     this.subscriptions = this.subscriptions.filter(sub => sub.id !== id);
+    this.server.events.emit(SUBSCRIPTION_EVENTS.removed, id);
   }
 
   public removeSocket(socketId: string): void {
@@ -57,11 +62,15 @@ export class SubscriptionService {
   }
 
   private clearInactiveSubscriptions() {
-    this.subscriptions = this.subscriptions.filter(sub => this.ws.isSocketConnected(sub.socketId));
+    this.subscriptions = this.subscriptions.filter(sub =>
+      this.server.ws.isSocketConnected(sub.socketId),
+    );
   }
 
   private registerEventListeners() {
     this.server.on(SERVER_EVENTS.beat, () => this.clearInactiveSubscriptions());
-    this.ws.on(SOCKET_EVENTS.close, (socketId: string) => this.removeSocket(socketId));
+    this.server.events.on(WEBSOCKET_EVENTS.close, (socketId: string) =>
+      this.removeSocket(socketId),
+    );
   }
 }

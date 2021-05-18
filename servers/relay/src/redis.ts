@@ -6,12 +6,12 @@ import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import config from "./config";
 import { sha256 } from "./utils";
-import { SIX_HOURS } from "./constants";
+import { REDIS_CONTEXT, SIX_HOURS } from "./constants";
 import { Notification, LegacySocketMessage } from "./types";
 
 export class RedisService {
   public client: any = redis.createClient(config.redis);
-  public context = "redis";
+  public context = REDIS_CONTEXT;
 
   constructor(public logger: Logger) {
     this.logger = generateChildLogger(logger, this.context);
@@ -192,7 +192,7 @@ export class RedisService {
 
   private async sscan(key: string, match = "", pattern = "", cursor = "0"): Promise<string[]> {
     const messages: string[] = [];
-    let [nextCursor, values] = await this.sscanAsync(key, match, pattern, cursor);
+    const [nextCursor, values] = await this.sscanAsync(key, match, pattern, cursor);
     values.forEach((m: string) => {
       if (m != null) messages.push(m);
     });

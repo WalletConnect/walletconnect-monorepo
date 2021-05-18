@@ -1,70 +1,40 @@
-import EventEmitter from "events";
 import {
   formatJsonRpcError,
-  formatJsonRpcRequest,
   formatJsonRpcResult,
   getError,
   isJsonRpcRequest,
-  JsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
-  JsonRpcResult,
   JsonRpcPayload,
   METHOD_NOT_FOUND,
 } from "@json-rpc-tools/utils";
 import { Logger } from "pino";
-import { safeJsonStringify } from "safe-json-utils";
 import {
   RELAY_JSONRPC,
   RelayJsonRpc,
-  isPublishParams,
   parsePublishRequest,
   parseSubscribeRequest,
   parseUnsubscribeRequest,
 } from "relay-provider";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { sha256 } from "./utils";
 
 import config from "./config";
-import { RedisService } from "./redis";
-import { NotificationService } from "./notification";
-import { WakuMessage, Subscription } from "./types";
+import { HttpService } from "./http";
+import { Subscription } from "./types";
 import {
-  JSONRPC_RETRIAL_TIMEOUT,
-  JSONRPC_RETRIAL_MAX,
-  SIX_HOURS,
+  JSONRPC_CONTEXT,
   EMPTY_SOCKET_ID,
   JSONRPC_EVENTS,
+  MESSAGE_EVENTS,
+  SUBSCRIPTION_EVENTS,
 } from "./constants";
 
-import { SubscriptionService } from "./subscription";
-import { WebSocketService } from "./ws";
-import { WakuService } from "./waku";
-import { HttpService } from "./http";
-
 export class JsonRpcService {
-  public events = new EventEmitter();
+  public context = JSONRPC_CONTEXT;
 
-  public subscription: SubscriptionService;
-  public waku: WakuService;
-  public context = "jsonrpc";
-
-  private timeout = new Map<number, { counter: number; timeout: NodeJS.Timeout }>();
-
-  constructor(
-    public server: HttpService,
-    public logger: Logger,
-    public redis: RedisService,
-    public ws: WebSocketService,
-    public notification: NotificationService,
-  ) {
+  constructor(public server: HttpService, public logger: Logger) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
-    this.redis = redis;
-    this.ws = ws;
-    this.notification = notification;
-    this.subscription = new SubscriptionService(this.server, this.logger, this.ws);
-    this.waku = new WakuService(this.server, this.logger, config.wakuUrl, this.subscription);
     this.initialize();
   }
 
@@ -103,23 +73,20 @@ export class JsonRpcService {
           break;
 
         default:
-          this.socketSend(socketId, formatJsonRpcError(request.id, getError(METHOD_NOT_FOUND)));
+          this.server.ws.send(socketId, formatJsonRpcError(request.id, getError(METHOD_NOT_FOUND)));
           return;
       }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
-      this.socketSend(socketId, formatJsonRpcError(request.id, e.message));
+      this.server.ws.send(socketId, formatJsonRpcError(request.id, e.message));
     }
   }
 
   public async onResponse(socketId: string, response: JsonRpcResponse): Promise<void> {
     this.logger.info(`Incoming JSON-RPC Payload`);
     this.logger.debug({ type: "payload", direction: "incoming", payload: response, socketId });
-    const pending = await this.redis.getPendingRequest(response.id);
-    if (pending) {
-      this.onSubscriptionAcknowledged(socketId, response);
-    }
+    await this.server.message.ackMessage(response.id);
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -130,29 +97,16 @@ export class JsonRpcService {
   }
 
   private registerEventListeners(): void {
-    this.events.on(
-      JSONRPC_EVENTS.publish,
-      (params: RelayJsonRpc.PublishParams, socketId = EMPTY_SOCKET_ID) =>
-        this.onNewMessage(params, socketId),
+    this.server.events.on(
+      MESSAGE_EVENTS.added,
+      async (params: RelayJsonRpc.PublishParams, socketId = EMPTY_SOCKET_ID) =>
+        await this.checkActiveSubscriptions(socketId, params),
     );
-    this.events.on(JSONRPC_EVENTS.subscribe, async (subscription: Subscription) =>
-      this.onNewSubscription(subscription),
-    );
-
-    this.waku.on("message", ({ topic, messages }) => {
-      messages.forEach((m: WakuMessage) => {
-        this.onNewMessage({
-          topic: topic,
-          message: m.payload,
-          ttl: SIX_HOURS,
-        });
-      });
+    this.server.events.on(SUBSCRIPTION_EVENTS.added, async (subscription: Subscription) => {
+      if (!subscription.legacy) {
+        await this.checkCachedMessages(subscription);
+      }
     });
-  }
-
-  private async onSubscriptionAcknowledged(socketId: string, payload: JsonRpcPayload) {
-    await this.redis.deletePendingRequest(payload.id);
-    this.deleteTimeout(payload.id);
   }
 
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
@@ -160,73 +114,49 @@ export class JsonRpcService {
     if (params.ttl > config.REDIS_MAX_TTL) {
       const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`;
       this.logger.error(errorMessage);
-      this.socketSend(
+      this.server.ws.send(
         socketId,
         formatJsonRpcError(request.id, `requested ttl is above ${config.REDIS_MAX_TTL} seconds`),
       );
       return;
     }
-
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", socketId, params });
-    this.events.emit(JSONRPC_EVENTS.publish, params, socketId);
-
-    this.socketSend(socketId, formatJsonRpcResult(request.id, true));
-  }
-
-  private async onNewMessage(
-    params: RelayJsonRpc.PublishParams,
-    socketId = EMPTY_SOCKET_ID,
-  ): Promise<boolean> {
-    const message = await this.redis.getMessage(params.topic, sha256(params.message));
-    if (!message) {
-      await this.notification.push(params.topic);
-      await this.redis.setMessage(params);
-      await this.checkActiveSubscriptions(socketId, params);
-      this.waku.post(params.message, params.topic);
-      return true;
-    } else {
-      return false;
-    }
+    await this.server.message.setMessage(params, socketId);
+    this.server.ws.send(socketId, formatJsonRpcResult(request.id, true));
+    this.server.events.emit(JSONRPC_EVENTS.publish, params, socketId);
   }
 
   private async onSubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseSubscribeRequest(request);
     this.logger.debug(`Subscribe Request Received`);
     this.logger.trace({ type: "method", method: "onSubscribeRequest", socketId, params });
-    const id = this.subscription.set({ topic: params.topic, socketId });
-    await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
+    const id = this.server.subscription.set({ topic: params.topic, socketId });
+    await this.server.ws.send(socketId, formatJsonRpcResult(request.id, id));
     const subscription = { id, topic: params.topic, socketId };
-    this.events.emit(JSONRPC_EVENTS.subscribe, subscription);
-  }
-
-  private async onNewSubscription(subscription: Subscription): Promise<void> {
-    await this.checkCachedMessages(subscription);
-    await this.waku.subAndGetHistorical(subscription.topic);
+    this.server.events.emit(JSONRPC_EVENTS.subscribe, subscription);
   }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
     const params = parseUnsubscribeRequest(request);
     this.logger.debug(`Unsubscribe Request Received`);
     this.logger.trace({ type: "method", method: "onUnsubscribeRequest", socketId, params });
-
-    //this.waku.unsubscribe(this.subscription.get(params.id, socketId)[0].topic);
-    this.subscription.remove(params.id);
-
-    await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
-    this.events.emit(JSONRPC_EVENTS.unsubscribe, params.id);
+    this.server.subscription.remove(params.id);
+    await this.server.ws.send(socketId, formatJsonRpcResult(request.id, true));
+    this.server.events.emit(JSONRPC_EVENTS.unsubscribe, params.id);
   }
 
   private async checkActiveSubscriptions(socketId: string, params: RelayJsonRpc.PublishParams) {
     this.logger.debug(`Checking Active subscriptions`);
     this.logger.trace({ type: "method", method: "checkActiveSubscriptions", socketId, params });
-    const subscriptions = this.subscription.get(params.topic, socketId);
+    const { topic, message } = params;
+    const subscriptions = this.server.subscription.get(topic, socketId);
     this.logger.debug(`Found ${subscriptions.length} subscriptions`);
     this.logger.trace({ type: "method", method: "checkActiveSubscriptions", subscriptions });
     if (subscriptions.length) {
       await Promise.all(
-        subscriptions.map((subscriber: Subscription) => {
-          this.pushSubscription(subscriber, params.message);
+        subscriptions.map(async (subscription: Subscription) => {
+          await this.server.message.pushMessage(subscription, message);
         }),
       );
     }
@@ -236,91 +166,15 @@ export class JsonRpcService {
     const { socketId } = subscription;
     this.logger.debug(`Checking Cached Messages`);
     this.logger.trace({ type: "method", method: "checkCachedMessages", socketId });
-    const messages = await this.redis.getMessages(subscription.topic);
+    const messages = await this.server.message.getMessages(subscription.topic);
     this.logger.debug(`Found ${messages.length} cached messages`);
     this.logger.trace({ type: "method", method: "checkCachedMessages", messages });
     if (messages && messages.length) {
       await Promise.all(
-        messages.map((message: string) => {
-          this.pushSubscription(subscription, message);
+        messages.map(async (message: string) => {
+          await this.server.message.pushMessage(subscription, message);
         }),
       );
     }
-  }
-
-  private async pushSubscription(subscription: Subscription, message: string): Promise<void> {
-    const request = formatJsonRpcRequest<RelayJsonRpc.SubscriptionParams>(
-      RELAY_JSONRPC.waku.subscription,
-      {
-        id: subscription.id,
-        data: {
-          topic: subscription.topic,
-          message,
-        },
-      },
-    );
-
-    await this.redis.setPendingRequest(subscription.topic, request.id, message);
-    try {
-      await this.socketSend(subscription.socketId, request);
-      this.setTimeout(subscription.socketId, request);
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  private async socketSend(
-    socketId: string,
-    payload: JsonRpcRequest | JsonRpcResult | JsonRpcError,
-  ) {
-    try {
-      this.ws.send(socketId, safeJsonStringify(payload));
-      this.logger.info(`Outgoing JSON-RPC Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", payload, socketId });
-    } catch (e) {
-      await this.onFailedPush(payload);
-      throw e;
-    }
-  }
-
-  private async onFailedPush(
-    payload: JsonRpcRequest | JsonRpcResult | JsonRpcError,
-  ): Promise<void> {
-    if (isJsonRpcRequest(payload)) {
-      if (isPublishParams(payload.params)) {
-        await this.redis.setMessage(payload.params);
-      }
-    }
-  }
-
-  private setTimeout(socketId: string, request: JsonRpcRequest) {
-    if (this.timeout.has(request.id)) return;
-    const timeout = setTimeout(() => this.onTimeout(socketId, request), JSONRPC_RETRIAL_TIMEOUT);
-    this.timeout.set(request.id, { counter: 1, timeout });
-  }
-
-  private async onTimeout(socketId: string, request: JsonRpcRequest) {
-    const record = this.timeout.get(request.id);
-    if (typeof record === "undefined") return;
-    const counter = record.counter + 1;
-    if (counter < JSONRPC_RETRIAL_MAX) {
-      try {
-        await this.socketSend(socketId, request);
-        this.timeout.set(request.id, { counter, timeout: record.timeout });
-      } catch (e) {
-        // ignore error and consider as acknowledged
-        await this.onSubscriptionAcknowledged(socketId, request);
-      }
-    } else {
-      // stop trying and consider as acknowledged
-      await this.onSubscriptionAcknowledged(socketId, request);
-    }
-  }
-
-  private deleteTimeout(id: number): void {
-    if (!this.timeout.has(id)) return;
-    const record = this.timeout.get(id);
-    if (typeof record === "undefined") return;
-    clearTimeout(record.timeout);
   }
 }
