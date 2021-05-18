@@ -17,7 +17,7 @@ const redis = {
   prefix: process.env.REDIS_PREFIX || "walletconnect-bridge",
 };
 const mode = (process.env.RELAY_MODE || "any") as RelayModes.All;
-const wakuUrl = process.env.NETWORK_URL || `http://127.0.0.1:8546`;
+const wakuUrl = process.env.WAKU_URL || `http://127.0.0.1:8546`;
 
 export default {
   env,
