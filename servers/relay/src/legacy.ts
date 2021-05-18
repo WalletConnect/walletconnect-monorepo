@@ -1,3 +1,4 @@
+import EventEmitter from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { safeJsonStringify } from "safe-json-utils";
@@ -8,8 +9,11 @@ import { RedisService } from "./redis";
 import { LegacySocketMessage, Subscription } from "./types";
 import { WebSocketService } from "./ws";
 import { HttpService } from "./http";
+import { EMPTY_SOCKET_ID, LEGACY_EVENTS } from "./constants";
 
 export class LegacyService {
+  public events = new EventEmitter();
+
   public subscription: SubscriptionService;
 
   public context = "legacy";
@@ -55,17 +59,33 @@ export class LegacyService {
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
+    this.registerEventListeners();
+  }
+
+  private registerEventListeners() {
+    this.events.on(LEGACY_EVENTS.publish, (socketId: string, message: LegacySocketMessage) =>
+      this.onNewMessage(message, socketId),
+    );
+    this.events.on(LEGACY_EVENTS.subscribe, (socketId: string, topic: string) =>
+      this.onNewSubscription(socketId, topic),
+    );
   }
 
   private async onPublishRequest(socketId: string, message: LegacySocketMessage) {
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", socketId, message });
+    this.events.emit(LEGACY_EVENTS.publish, socketId, message);
+  }
 
+  private async onNewMessage(
+    message: LegacySocketMessage,
+    socketId = EMPTY_SOCKET_ID,
+  ): Promise<boolean> {
     if (!message.silent) {
       await this.notification.push(message.topic);
     }
-
-    await this.searchSubscriptions(socketId, message);
+    await this.checkActiveSubscriptions(socketId, message);
+    return true;
   }
 
   private async onSubscribeRequest(socketId: string, message: LegacySocketMessage) {
@@ -75,16 +95,19 @@ export class LegacyService {
     const subscriber = { topic, socketId };
 
     this.subscription.set(subscriber);
-
-    await this.pushCachedMessages(socketId, topic);
+    this.events.emit(LEGACY_EVENTS.subscribe, socketId, message);
   }
 
-  private async searchSubscriptions(socketId: string, message: LegacySocketMessage) {
-    this.logger.debug(`Searching subscriptions`);
-    this.logger.trace({ type: "method", method: "searchSubscriptions", socketId, message });
+  private async onNewSubscription(socketId: string, topic: string): Promise<void> {
+    await this.checkCachedMessages(socketId, topic);
+  }
+
+  private async checkActiveSubscriptions(socketId: string, message: LegacySocketMessage) {
+    this.logger.debug(`Checking Active subscriptions`);
+    this.logger.trace({ type: "method", method: "checkActiveSubscriptions", socketId, message });
     const subscriptions = this.subscription.get(message.topic, socketId);
     this.logger.debug(`Found ${subscriptions.length} subscriptions`);
-    this.logger.trace({ type: "method", method: "searchSubscriptions", subscriptions });
+    this.logger.trace({ type: "method", method: "checkActiveSubscriptions", subscriptions });
     if (subscriptions.length) {
       await Promise.all(
         subscriptions.map((subscriber: Subscription) =>
@@ -96,12 +119,12 @@ export class LegacyService {
     }
   }
 
-  private async pushCachedMessages(socketId: string, topic: string) {
-    this.logger.debug(`Pushing Cached Messages`);
-    this.logger.trace({ type: "method", method: "pushCachedMessages", socketId, topic });
+  private async checkCachedMessages(socketId: string, topic: string) {
+    this.logger.debug(`Checking Cached Messages`);
+    this.logger.trace({ type: "method", method: "checkCachedMessages", socketId, topic });
     const messages = await this.redis.getLegacyCached(topic);
     this.logger.debug(`Found ${messages.length} cached messages`);
-    this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
+    this.logger.trace({ type: "method", method: "checkCachedMessages", messages });
     if (messages && messages.length) {
       await Promise.all(
         messages.map((message: LegacySocketMessage) => this.pushSubscription(socketId, message)),

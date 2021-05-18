@@ -1,3 +1,4 @@
+import EventEmitter from "events";
 import {
   formatJsonRpcError,
   formatJsonRpcRequest,
@@ -33,6 +34,7 @@ import {
   JSONRPC_RETRIAL_MAX,
   SIX_HOURS,
   EMPTY_SOCKET_ID,
+  JSONRPC_EVENTS,
 } from "./constants";
 
 import { SubscriptionService } from "./subscription";
@@ -41,6 +43,8 @@ import { WakuService } from "./waku";
 import { HttpService } from "./http";
 
 export class JsonRpcService {
+  public events = new EventEmitter();
+
   public subscription: SubscriptionService;
   public waku: WakuService;
   public context = "jsonrpc";
@@ -126,7 +130,24 @@ export class JsonRpcService {
   }
 
   private registerEventListeners(): void {
-    this.waku.on("message", ({ topic, messages }) => this.onWakuMessage(topic, messages));
+    this.events.on(
+      JSONRPC_EVENTS.publish,
+      (params: RelayJsonRpc.PublishParams, socketId = EMPTY_SOCKET_ID) =>
+        this.onNewMessage(params, socketId),
+    );
+    this.events.on(JSONRPC_EVENTS.subscribe, async (subscription: Subscription) =>
+      this.onNewSubscription(subscription),
+    );
+
+    this.waku.on("message", ({ topic, messages }) => {
+      messages.forEach((m: WakuMessage) => {
+        this.onNewMessage({
+          topic: topic,
+          message: m.payload,
+          ttl: SIX_HOURS,
+        });
+      });
+    });
   }
 
   private async onSubscriptionAcknowledged(socketId: string, payload: JsonRpcPayload) {
@@ -148,9 +169,9 @@ export class JsonRpcService {
 
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", socketId, params });
-    const status = await this.onNewMessage(params, socketId);
+    this.events.emit(JSONRPC_EVENTS.publish, params, socketId);
 
-    this.socketSend(socketId, formatJsonRpcResult(request.id, status));
+    this.socketSend(socketId, formatJsonRpcResult(request.id, true));
   }
 
   private async onNewMessage(
@@ -161,7 +182,7 @@ export class JsonRpcService {
     if (!message) {
       await this.notification.push(params.topic);
       await this.redis.setMessage(params);
-      await this.searchSubscriptions(socketId, params);
+      await this.checkActiveSubscriptions(socketId, params);
       this.waku.post(params.message, params.topic);
       return true;
     } else {
@@ -175,18 +196,13 @@ export class JsonRpcService {
     this.logger.trace({ type: "method", method: "onSubscribeRequest", socketId, params });
     const id = this.subscription.set({ topic: params.topic, socketId });
     await this.socketSend(socketId, formatJsonRpcResult(request.id, id));
-    await this.pushCachedMessages({ id, topic: params.topic, socketId });
-    await this.waku.subAndGetHistorical(params.topic);
+    const subscription = { id, topic: params.topic, socketId };
+    this.events.emit(JSONRPC_EVENTS.subscribe, subscription);
   }
 
-  private onWakuMessage(topic: string, messages: WakuMessage[]) {
-    messages.forEach((m: WakuMessage) => {
-      this.onNewMessage({
-        topic: topic,
-        message: m.payload,
-        ttl: SIX_HOURS,
-      });
-    });
+  private async onNewSubscription(subscription: Subscription): Promise<void> {
+    await this.checkCachedMessages(subscription);
+    await this.waku.subAndGetHistorical(subscription.topic);
   }
 
   private async onUnsubscribeRequest(socketId: string, request: JsonRpcRequest) {
@@ -198,14 +214,15 @@ export class JsonRpcService {
     this.subscription.remove(params.id);
 
     await this.socketSend(socketId, formatJsonRpcResult(request.id, true));
+    this.events.emit(JSONRPC_EVENTS.unsubscribe, params.id);
   }
 
-  private async searchSubscriptions(socketId: string, params: RelayJsonRpc.PublishParams) {
-    this.logger.debug(`Searching subscriptions`);
-    this.logger.trace({ type: "method", method: "searchSubscriptions", socketId, params });
+  private async checkActiveSubscriptions(socketId: string, params: RelayJsonRpc.PublishParams) {
+    this.logger.debug(`Checking Active subscriptions`);
+    this.logger.trace({ type: "method", method: "checkActiveSubscriptions", socketId, params });
     const subscriptions = this.subscription.get(params.topic, socketId);
     this.logger.debug(`Found ${subscriptions.length} subscriptions`);
-    this.logger.trace({ type: "method", method: "searchSubscriptions", subscriptions });
+    this.logger.trace({ type: "method", method: "checkActiveSubscriptions", subscriptions });
     if (subscriptions.length) {
       await Promise.all(
         subscriptions.map((subscriber: Subscription) => {
@@ -215,13 +232,13 @@ export class JsonRpcService {
     }
   }
 
-  private async pushCachedMessages(subscription: Subscription) {
+  private async checkCachedMessages(subscription: Subscription) {
     const { socketId } = subscription;
-    this.logger.debug(`Pushing Cached Messages`);
-    this.logger.trace({ type: "method", method: "pushCachedMessages", socketId });
+    this.logger.debug(`Checking Cached Messages`);
+    this.logger.trace({ type: "method", method: "checkCachedMessages", socketId });
     const messages = await this.redis.getMessages(subscription.topic);
     this.logger.debug(`Found ${messages.length} cached messages`);
-    this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
+    this.logger.trace({ type: "method", method: "checkCachedMessages", messages });
     if (messages && messages.length) {
       await Promise.all(
         messages.map((message: string) => {
