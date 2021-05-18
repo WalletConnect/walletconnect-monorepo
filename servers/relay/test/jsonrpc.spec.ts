@@ -215,7 +215,7 @@ describe("JSON-RPC", () => {
 
     const providerA = new JsonRpcProvider(TEST_RELAY_URL);
     await providerA.connect();
-    const providerB = new JsonRpcProvider(TEST_RELAY_URL.replace("5555", "5556"));
+    const providerB = new JsonRpcProvider(TEST_RELAY_URL);
     await providerB.connect();
 
     let subscriptionB: string;
@@ -259,10 +259,10 @@ describe("JSON-RPC", () => {
   it("C can receive pending messages published on other providers while offline", async function() {
     this.timeout(5000);
     const { pub, sub } = getTestJsonRpc(generateRandomBytes32());
-    const providerA = new JsonRpcProvider(TEST_RELAY_URL.replace("5555", "5556"));
+    const providerA = new JsonRpcProvider(TEST_RELAY_URL);
     await providerA.connect();
     await providerA.request(pub);
-    const providerB = new JsonRpcProvider(TEST_RELAY_URL.replace("5555", "5556"));
+    const providerB = new JsonRpcProvider(TEST_RELAY_URL);
     await providerB.connect();
     let subscriptionB: string;
     const counterB = new Counter();
@@ -326,7 +326,7 @@ describe("JSON-RPC", () => {
         ]);
         expect(counterC.value).to.eql(1);
         resolve();
-      }, 2500);
+      }, 500);
     });
   });
 });

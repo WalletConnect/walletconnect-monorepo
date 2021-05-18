@@ -97,6 +97,7 @@ export class LegacyService {
     this.subscription.set(subscriber);
     this.events.emit(LEGACY_EVENTS.subscribe, socketId, message);
   }
+
   private async onNewSubscription(socketId: string, topic: string): Promise<void> {
     await this.checkCachedMessages(socketId, topic);
   }
