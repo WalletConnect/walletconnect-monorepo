@@ -161,6 +161,7 @@ export declare namespace SequenceTypes {
     topic: string;
     request: RequestArguments;
     timeout?: number;
+    chainId?: string;
   }
 
   export interface Upgrade<Per = Permissions> {

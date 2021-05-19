@@ -23,7 +23,7 @@ export abstract class IEngine<
   constructor(public controller: ISequence) {}
 
   public abstract ping(topic: string, timeout?: number): Promise<void>;
-  public abstract send(topic: string, payload: JsonRpcPayload): Promise<void>;
+  public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
   public abstract create(params?: CreateParams): Promise<Settled>;
   public abstract respond(params: RespondParams): Promise<Pending>;
   public abstract upgrade(params: UpgradeParams): Promise<Settled>;

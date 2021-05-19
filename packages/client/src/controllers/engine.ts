@@ -44,7 +44,7 @@ export class Engine extends IEngine {
     return this.request({ topic, request, timeout: timeout || THIRTY_SECONDS * 1000 });
   }
 
-  public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
+  public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     const settled = await this.sequence.settled.get(topic);
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(this.sequence.config.jsonrpc).includes(payload.method)) {
@@ -56,11 +56,14 @@ export class Engine extends IEngine {
           throw new Error(error.message);
         }
         await this.sequence.history.set(topic, payload);
+        const params = {
+          chainId,
+          request: { method: payload.method, params: payload.params },
+        };
+        if (!params.chainId) delete params.chainId;
         payload = formatJsonRpcRequest<SequenceTypes.Request>(
           this.sequence.config.jsonrpc.payload,
-          {
-            request: { method: payload.method, params: payload.params },
-          },
+          params,
           payload.id,
         );
       }
@@ -271,7 +274,7 @@ export class Engine extends IEngine {
         },
       );
       try {
-        await this.send(params.topic, request);
+        await this.send(params.topic, request, params?.chainId);
       } catch (e) {
         clearTimeout(timeout);
         return reject(e);

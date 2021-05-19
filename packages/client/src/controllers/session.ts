@@ -8,7 +8,12 @@ import {
   isValidationInvalid,
   ERROR,
 } from "@walletconnect/utils";
-import { JsonRpcPayload, formatJsonRpcRequest, isJsonRpcRequest } from "@json-rpc-tools/utils";
+import {
+  JsonRpcPayload,
+  formatJsonRpcRequest,
+  isJsonRpcRequest,
+  RequestArguments,
+} from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
 import { JsonRpcHistory } from "./history";
@@ -76,14 +81,9 @@ export class Session extends ISession {
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     if (isJsonRpcRequest(payload)) {
-      const settled = await this.settled.get(topic);
-      if (chainId && !settled.permissions.blockchain.chains.includes(chainId)) {
-        const error = ERROR.UNAUTHORIZED_TARGET_CHAIN.format({ chainId });
-        this.logger.error(error.message);
-        throw new Error(error.message);
-      }
+      await this.validateChainId(topic, chainId);
     }
-    return this.engine.send(topic, payload);
+    return this.engine.send(topic, payload, chainId);
   }
 
   get length(): number {
@@ -128,6 +128,7 @@ export class Session extends ISession {
   }
 
   public async request(params: SessionTypes.RequestParams): Promise<any> {
+    await this.validateChainId(params.topic, params.chainId);
     return this.engine.request(params);
   }
 
@@ -153,6 +154,15 @@ export class Session extends ISession {
 
   public removeListener(event: string, listener: any): void {
     this.events.removeListener(event, listener);
+  }
+
+  public async validateChainId(topic: string, chainId?: string) {
+    const settled = await this.settled.get(topic);
+    if (chainId && !settled.permissions.blockchain.chains.includes(chainId)) {
+      const error = ERROR.UNAUTHORIZED_TARGET_CHAIN.format({ chainId });
+      this.logger.error(error.message);
+      throw new Error(error.message);
+    }
   }
 
   public async validateProposal(params?: SessionTypes.ProposeParams) {
