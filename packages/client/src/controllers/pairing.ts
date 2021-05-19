@@ -15,7 +15,6 @@ import {
   formatUri,
   isSubscriptionUpdatedEvent,
   ERROR,
-  getError,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -92,7 +91,7 @@ export class Pairing extends IPairing {
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(PAIRING_JSONRPC).includes(payload.method)) {
         if (!pairing.permissions.jsonrpc.methods.includes(payload.method)) {
-          const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+          const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
             method: payload.method,
           });
           this.logger.error(error.message);
@@ -133,7 +132,7 @@ export class Pairing extends IPairing {
       this.logger.trace({ type: "method", method: "create", params });
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.SETTLE_TIMEOUT, {
+        const error = ERROR.SETTLE_TIMEOUT.format({
           context: this.context,
           timeout: maxTimeout,
         });
@@ -164,7 +163,7 @@ export class Pairing extends IPairing {
             } else {
               try {
                 const pairing = await this.settled.get(outcome.topic);
-                const reason = getError(ERROR.SETTLED, { context: this.context });
+                const reason = ERROR.SETTLED.format({ context: this.context });
                 await this.pending.delete(pending.topic, reason);
                 resolve(pairing);
               } catch (e) {
@@ -221,7 +220,7 @@ export class Pairing extends IPairing {
         await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       } catch (e) {
-        const reason = getError(ERROR.GENERIC, { message: e.message });
+        const reason = ERROR.GENERIC.format({ message: e.message });
         const outcome: PairingTypes.Outcome = { reason };
         const pending: PairingTypes.Pending = {
           status: PAIRING_STATUS.responded,
@@ -235,7 +234,7 @@ export class Pairing extends IPairing {
         return pending;
       }
     } else {
-      const defaultReason = getError(ERROR.NOT_APPROVED, { context: this.context });
+      const defaultReason = ERROR.NOT_APPROVED.format({ context: this.context });
       const outcome: PairingTypes.Outcome = { reason: params?.reason || defaultReason };
       const pending: PairingTypes.Pending = {
         status: PAIRING_STATUS.responded,
@@ -277,7 +276,7 @@ export class Pairing extends IPairing {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.JSONRPC_REQUEST_TIMEOUT, {
+        const error = ERROR.JSONRPC_REQUEST_TIMEOUT.format({
           method: request.method,
           timeout: maxTimeout,
         });
@@ -431,7 +430,7 @@ export class Pairing extends IPairing {
         });
       } catch (e) {
         this.logger.error(e);
-        error = getError(ERROR.GENERIC, { message: e.message });
+        error = ERROR.GENERIC.format({ message: e.message });
         await this.pending.update(topic, {
           status: PAIRING_STATUS.responded,
           outcome: { reason: error },
@@ -461,7 +460,7 @@ export class Pairing extends IPairing {
     if (isJsonRpcError(response) && !isPairingFailed(pending.outcome)) {
       await this.settled.delete(pending.outcome.topic, response.error);
     }
-    const reason = getError(ERROR.RESPONSE_ACKNOWLEDGED, { context: this.context });
+    const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.context });
     await this.pending.delete(topic, reason);
   }
 
@@ -490,7 +489,7 @@ export class Pairing extends IPairing {
           await this.send(pairing.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
-          error = getError(ERROR.UNKNOWN_JSONRPC_METHOD, { method: request.method });
+          error = ERROR.UNKNOWN_JSONRPC_METHOD.format({ method: request.method });
           this.logger.error(error.message);
           await this.send(pairing.topic, formatJsonRpcError(request.id, error));
           break;
@@ -507,7 +506,7 @@ export class Pairing extends IPairing {
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const pairing = await this.settled.get(topic);
       if (!pairing.permissions.jsonrpc.methods.includes(request.method)) {
-        const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+        const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
           method: request.method,
         });
         this.logger.error(error.message);
@@ -577,14 +576,14 @@ export class Pairing extends IPairing {
     if (typeof params.state !== "undefined") {
       const state = pairing.state;
       if (participant.publicKey !== pairing.permissions.controller.publicKey) {
-        const error = getError(ERROR.UNAUTHORIZED_UPDATE_REQUEST, { context: this.context });
+        const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({ context: this.context });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       state.metadata = params.state.metadata || state.metadata;
       update = { state };
     } else {
-      const error = getError(ERROR.INVALID_UPDATE_REQUEST, { context: this.context });
+      const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.context });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -600,7 +599,7 @@ export class Pairing extends IPairing {
     const pairing = await this.settled.get(topic);
     let upgrade: PairingTypes.Upgrade = { permissions: {} };
     if (participant.publicKey !== pairing.permissions.controller.publicKey) {
-      const error = getError(ERROR.UNAUTHORIZED_UPGRADE_REQUEST, { context: this.context });
+      const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({ context: this.context });
       this.logger.error(error.message);
       throw new Error(error.message);
     }

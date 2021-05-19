@@ -17,7 +17,6 @@ import {
   isSessionResponded,
   getAppMetadata,
   ERROR,
-  getError,
 } from "@walletconnect/utils";
 import { ErrorResponse, JsonRpcRequest } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
@@ -121,7 +120,7 @@ export class Client extends IClient {
       this.logger.trace({ type: "method", method: "connect", pairing });
       const metadata = params.metadata || this.metadata;
       if (typeof metadata === "undefined") {
-        const error = getError(ERROR.MISSING_OR_INVALID, { name: "app metadata" });
+        const error = ERROR.MISSING_OR_INVALID.format({ name: "app metadata" });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
@@ -151,10 +150,10 @@ export class Client extends IClient {
     const approved = proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, { controller: this.controller });
+      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
-      const error = getError(ERROR.NO_MATCHING_RESPONSE, { context: "pairing" });
+      const error = ERROR.NO_MATCHING_RESPONSE.format({ context: "pairing" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -172,21 +171,21 @@ export class Client extends IClient {
     this.logger.debug(`Approving Session Proposal`);
     this.logger.trace({ type: "method", method: "approve", params });
     if (typeof params.response === "undefined") {
-      const error = getError(ERROR.MISSING_RESPONSE, { context: "session" });
+      const error = ERROR.MISSING_RESPONSE.format({ context: "session" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
     const state = params.response.state || SESSION_EMPTY_STATE;
     const metadata = params.response.metadata || this.metadata;
     if (typeof metadata === "undefined") {
-      const error = getError(ERROR.MISSING_OR_INVALID, { name: "app metadata" });
+      const error = ERROR.MISSING_OR_INVALID.format({ name: "app metadata" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
     const approved = params.proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, { controller: this.controller });
+      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
     const pending = await this.session.respond({
       approved,
       proposal: params.proposal,
@@ -194,7 +193,7 @@ export class Client extends IClient {
       reason,
     });
     if (!isSessionResponded(pending)) {
-      const error = getError(ERROR.NO_MATCHING_RESPONSE, { context: "session" });
+      const error = ERROR.NO_MATCHING_RESPONSE.format({ context: "session" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -253,7 +252,7 @@ export class Client extends IClient {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
-        const reason = getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, {
+        const reason = ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({
           controller: this.controller,
         });
         await this.session.respond({

@@ -2,7 +2,7 @@ import "mocha";
 import sinon from "sinon";
 import { KeyValueStorage } from "keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
-import { ERROR, generateRandomBytes32, getError } from "@walletconnect/utils";
+import { ERROR, generateRandomBytes32 } from "@walletconnect/utils";
 
 import {
   expect,
@@ -256,7 +256,7 @@ describe("Session", function() {
   it("A fails to pings B after A deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const reason = getError(ERROR.USER_DISCONNECTED);
+    const reason = ERROR.USER_DISCONNECTED.format();
     await clients.a.disconnect({ topic, reason });
     await expect(clients.a.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
@@ -269,7 +269,7 @@ describe("Session", function() {
   it("A fails to pings B after B deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const reason = getError(ERROR.USER_DISCONNECTED);
+    const reason = ERROR.USER_DISCONNECTED.format();
     await clients.b.disconnect({ topic, reason });
     await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
@@ -308,7 +308,7 @@ describe("Session", function() {
         clients.a.on(
           CLIENT_EVENTS.session.deleted,
           (session: SessionTypes.Settled, reason: ErrorResponse) => {
-            expect(reason).to.eql(getError(ERROR.EXPIRED, { context: "Session Settled" }));
+            expect(reason).to.eql(ERROR.EXPIRED.format({ context: "Session Settled" }));
             expect(session.topic).to.eql(topic);
             resolve();
           },
