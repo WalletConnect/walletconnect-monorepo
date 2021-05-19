@@ -4,7 +4,6 @@ import {
   ERROR,
   mapToObj,
   objToMap,
-  getError,
   generateKeyPair,
   deriveSharedKey,
   encrypt,
@@ -38,7 +37,7 @@ export class KeyChain implements IKeyChain {
   public async get(tag: string, opts?: any): Promise<string> {
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
-      throw new Error(getError(ERROR.NO_MATCHING_KEY, { tag }).message);
+      throw new Error(ERROR.NO_MATCHING_KEY.format({ tag }).message);
     }
     return key;
   }

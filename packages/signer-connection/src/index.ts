@@ -3,7 +3,7 @@ import { IJsonRpcConnection } from "@json-rpc-tools/types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { ERROR, getError } from "@walletconnect/utils";
+import { ERROR } from "@walletconnect/utils";
 import { ClientOptions, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
 
 export function isClient(opts?: SignerConnectionClientOpts): opts is IClient {
@@ -89,7 +89,7 @@ export class SignerConnection extends IJsonRpcConnection {
     const client = await this.register();
     await client.disconnect({
       topic: this.session.topic,
-      reason: getError(ERROR.USER_DISCONNECTED),
+      reason: ERROR.USER_DISCONNECTED.format(),
     });
     this.onClose();
   }

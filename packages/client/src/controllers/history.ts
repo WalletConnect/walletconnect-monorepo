@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { IClient, IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
-import { ERROR, getError } from "@walletconnect/utils";
+import { ERROR } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
   isJsonRpcError,
@@ -64,7 +64,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.debug(`Setting JSON-RPC request history record`);
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
     if (this.records.has(request.id)) {
-      const error = getError(ERROR.RECORD_ALREADY_EXISTS, {
+      const error = ERROR.RECORD_ALREADY_EXISTS.format({
         context: this.getHistoryContext(),
         id: request.id,
       });
@@ -102,7 +102,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.trace({ type: "method", method: "get", topic, id });
     const record = await this.getRecord(id);
     if (record.topic !== topic) {
-      const error = getError(ERROR.MISMATCHED_TOPIC, {
+      const error = ERROR.MISMATCHED_TOPIC.format({
         context: this.getHistoryContext(),
         id,
       });
@@ -169,7 +169,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     await this.isEnabled();
     const record = this.records.get(id);
     if (!record) {
-      const error = getError(ERROR.NO_MATCHING_ID, {
+      const error = ERROR.NO_MATCHING_ID.format({
         context: this.getHistoryContext(),
         id,
       });
@@ -190,7 +190,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {
-        const error = getError(ERROR.RESTORE_WILL_OVERRIDE, {
+        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
           context: this.getHistoryContext(),
         });
         this.logger.error(error.message);
