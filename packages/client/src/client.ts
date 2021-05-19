@@ -284,6 +284,7 @@ export class Client extends IClient {
   private async initialize(): Promise<any> {
     this.logger.trace(`Initialized`);
     try {
+      await this.crypto.init();
       await this.relayer.init();
       await this.pairing.init();
       await this.session.init();
