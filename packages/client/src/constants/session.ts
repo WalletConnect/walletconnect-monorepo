@@ -2,7 +2,7 @@ import { SessionTypes, SignalTypes } from "@walletconnect/types";
 
 import { SEVEN_DAYS } from "./time";
 
-export const SESSION_JSONRPC = {
+export const SESSION_JSONRPC: SessionTypes.JsonRpc = {
   propose: "wc_sessionPropose",
   approve: "wc_sessionApprove",
   reject: "wc_sessionReject",
@@ -27,18 +27,18 @@ export const SESSION_STATUS = {
   settled: "settled",
 };
 
-export const SESSION_EVENTS = {
+export const SESSION_EVENTS: SessionTypes.Events = {
   proposed: "session_proposed",
   responded: "session_responded",
   settled: "session_settled",
   updated: "session_updated",
   deleted: "session_deleted",
-  notification: "session_notification",
   request: "session_request",
   response: "session_response",
   enabled: "session_enabled",
   disabled: "session_disabled",
   sync: "session_sync",
+  notification: "session_notification",
 };
 
 export const SESSION_EMPTY_PERMISSIONS = {
