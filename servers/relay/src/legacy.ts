@@ -51,7 +51,8 @@ export class LegacyService {
     );
     this.server.events.on(
       LEGACY_EVENTS.subscribe,
-      async (socketId: string, topic: string) => await this.checkCachedMessages(socketId, topic),
+      async (socketId: string, message: LegacySocketMessage) =>
+        await this.checkCachedMessages(socketId, message.topic),
     );
   }
 
