@@ -9,10 +9,17 @@ import {
 
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
-import { ISubscription, SubscriptionEvent } from "./subscription";
+import { ISubscription } from "./subscription";
 import { IJsonRpcHistory } from "./history";
-import { AppMetadata, JsonRpcPermissions, Reason, SignalTypes } from "./misc";
+import {
+  AppMetadata,
+  JsonRpcPermissions,
+  NotificationPermissions,
+  Reason,
+  SignalTypes,
+} from "./misc";
 import { RelayerTypes } from "./relayer";
+import { IEngine } from "./engine";
 
 export declare namespace SequenceTypes {
   export interface Status {
@@ -32,6 +39,7 @@ export declare namespace SequenceTypes {
     enabled: string;
     disabled: string;
     sync: string;
+    notification: string;
   }
   export interface JsonRpc {
     propose: string;
@@ -42,6 +50,7 @@ export declare namespace SequenceTypes {
     delete: string;
     payload: string;
     ping: string;
+    notification: string;
   }
 
   export interface Config<E = Events, J = JsonRpc, S = Status> {
@@ -53,8 +62,11 @@ export declare namespace SequenceTypes {
   export type Relay = RelayerTypes.ProtocolOptions;
   export interface BasePermissions {
     jsonrpc: JsonRpcPermissions;
+    notifications?: NotificationPermissions;
   }
-  export type ProposedPermissions = BasePermissions;
+  export interface ProposedPermissions extends BasePermissions {
+    notifications: NotificationPermissions;
+  }
 
   export interface SettledPermissions extends ProposedPermissions {
     controller: CryptoTypes.Participant;
@@ -64,13 +76,20 @@ export declare namespace SequenceTypes {
   export interface ProposeParams {
     relay: Relay;
     timeout?: number;
+    signal?: Signal;
+    ttl?: number;
+    permissions?: ProposedPermissions;
+    metadata?: AppMetadata;
   }
 
   export type CreateParams = ProposeParams;
 
   export type Signal = SignalTypes.Base;
 
-  export type Participant = CryptoTypes.Participant;
+  export interface Participant extends CryptoTypes.Participant {
+    metadata?: AppMetadata;
+  }
+
   export interface ProposedPeer extends Participant {
     controller: boolean;
   }
@@ -117,6 +136,7 @@ export declare namespace SequenceTypes {
     approved: boolean;
     proposal: Pro;
     reason?: Reason;
+    response?: Response;
   }
 
   export interface SettleParams<S = State, Par = Participant, Per = Permissions> {
@@ -198,9 +218,30 @@ export declare namespace SequenceTypes {
   }
 
   export type Outcome<S = State, Par = Participant> = Failed | Success<S, Par>;
-  export interface State {
+
+  export type State = any;
+
+  export interface Response {
+    state?: State;
     metadata?: AppMetadata;
   }
+
+  export interface DefaultSignalParams<P = ProposedPeer> {
+    topic: string;
+    relay: Relay;
+    proposer: P;
+  }
+
+  export interface Notification {
+    type: string;
+    data: any;
+  }
+
+  export interface NotificationEvent extends Notification {
+    topic: string;
+  }
+
+  export type NotifyParams = NotificationEvent;
 }
 
 export abstract class ISequence<
@@ -217,7 +258,11 @@ export abstract class ISequence<
   DeleteParams = SequenceTypes.DeleteParams,
   ProposeParams = SequenceTypes.ProposeParams,
   SettleParams = SequenceTypes.SettleParams,
-  Participant = SequenceTypes.Participant
+  NotifyParams = SequenceTypes.NotifyParams,
+  Participant = SequenceTypes.Participant,
+  Signal = SequenceTypes.Signal,
+  DefaultSignalParams = SequenceTypes.DefaultSignalParams,
+  ProposedPermissions = SequenceTypes.ProposedPermissions
 > extends IEvents {
   // pending subscriptions
   public abstract pending: ISubscription<Pending>;
@@ -239,6 +284,24 @@ export abstract class ISequence<
   // describes sequence config
   public abstract config: Config;
 
+  // sequence protocol engine
+  public abstract engine: IEngine<
+    Pending,
+    Settled,
+    Upgrade,
+    Update,
+    CreateParams,
+    RespondParams,
+    RequestParams,
+    UpgradeParams,
+    UpdateParams,
+    DeleteParams,
+    ProposeParams,
+    SettleParams,
+    NotifyParams,
+    Participant
+  >;
+
   constructor(public client: IClient, public logger: Logger) {
     super();
   }
@@ -248,9 +311,10 @@ export abstract class ISequence<
 
   // get settled subscription data
   public abstract get(topic: string): Promise<Settled>;
+
   // called by either to ping peer
   public abstract ping(topic: string, timeout?: number): Promise<void>;
-  // send JSON-RPC to settled subscription
+  // called by either to send JSON-RPC
   public abstract send(topic: string, payload: JsonRpcPayload): Promise<void>;
 
   // called by proposer
@@ -267,35 +331,12 @@ export abstract class ISequence<
   public abstract update(params: UpdateParams): Promise<Settled>;
   // called by either to terminate
   public abstract delete(params: DeleteParams): Promise<void>;
+  // called by either to notify
+  public abstract notify(params: NotifyParams): Promise<void>;
 
-  // ---------- Protected ----------------------------------------------- //
-
-  // called by proposer (internally)
-  protected abstract propose(params?: ProposeParams): Promise<Pending>;
-  // called by both (internally)
-  protected abstract settle(params: SettleParams): Promise<Settled>;
-
-  // callback for proposed subscriptions payloads
-  protected abstract onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for responded subscriptions payloads
-  protected abstract onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for settled subscriptions payloads
-  protected abstract onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for incoming JSON-RPC payloads
-  protected abstract onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for state update payloads
-  protected abstract onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // callback for permission upgrade payloads
-  protected abstract onUpgrade(payloadEvent: SubscriptionEvent.Payload): Promise<void>;
-  // validates and processes state udpates
-  protected abstract handleUpdate(
-    topic: string,
-    update: Update,
-    participant: Participant,
-  ): Promise<Update>;
-  protected abstract handleUpgrade(
-    topic: string,
-    params: Upgrade,
-    participant: Participant,
-  ): Promise<Upgrade>;
+  // default callbacks for sequence engine
+  public abstract validateProposal(params?: ProposeParams): Promise<void>;
+  public abstract getDefaultSignal(params: DefaultSignalParams): Promise<Signal>;
+  public abstract getDefaultTTL(): Promise<number>;
+  public abstract getDefaultPermissions(): Promise<ProposedPermissions>;
 }

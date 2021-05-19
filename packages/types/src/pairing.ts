@@ -81,9 +81,17 @@ export declare namespace PairingTypes {
 
   export type Outcome = SequenceTypes.Outcome;
 
-  export interface State extends SequenceTypes.State {
+  export interface State {
     metadata?: AppMetadata;
   }
+
+  export type DefaultSignalParams = SequenceTypes.DefaultSignalParams<ProposedPeer>;
+
+  export type Notification = SequenceTypes.Notification;
+
+  export type NotificationEvent = SequenceTypes.NotificationEvent;
+
+  export type NotifyParams = SequenceTypes.NotifyParams;
 }
 
 export abstract class IPairing extends ISequence<
@@ -100,5 +108,9 @@ export abstract class IPairing extends ISequence<
   PairingTypes.DeleteParams,
   PairingTypes.ProposeParams,
   PairingTypes.SettleParams,
-  PairingTypes.Participant
+  PairingTypes.NotifyParams,
+  PairingTypes.Participant,
+  PairingTypes.Signal,
+  PairingTypes.DefaultSignalParams,
+  PairingTypes.ProposedPermissions
 > {}

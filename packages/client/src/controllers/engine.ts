@@ -1,12 +1,17 @@
 import merge from "lodash.merge";
-import { SequenceTypes, ISequence, SubscriptionEvent, CryptoTypes } from "@walletconnect/types";
+import {
+  SequenceTypes,
+  ISequence,
+  SubscriptionEvent,
+  IEngine,
+  SessionTypes,
+} from "@walletconnect/types";
 import {
   generateRandomBytes32,
   isSequenceFailed,
   isSequenceResponded,
   isSubscriptionUpdatedEvent,
   ERROR,
-  getError,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -27,31 +32,32 @@ import {
   THIRTY_SECONDS,
 } from "../constants";
 
-export class Engine {
-  constructor(public parent: ISequence) {
-    this.parent = parent;
+export class Engine extends IEngine {
+  constructor(public sequence: ISequence) {
+    super(sequence);
+    this.sequence = sequence;
     this.registerEventListeners();
   }
 
   public async ping(topic: string, timeout?: number): Promise<void> {
-    const request = { method: this.parent.config.jsonrpc.ping, params: {} };
+    const request = { method: this.sequence.config.jsonrpc.ping, params: {} };
     return this.request({ topic, request, timeout: timeout || THIRTY_SECONDS * 1000 });
   }
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
-    const settled = await this.parent.settled.get(topic);
+    const settled = await this.sequence.settled.get(topic);
     if (isJsonRpcRequest(payload)) {
-      if (!Object.values(this.parent.config.jsonrpc).includes(payload.method)) {
+      if (!Object.values(this.sequence.config.jsonrpc).includes(payload.method)) {
         if (!settled.permissions.jsonrpc.methods.includes(payload.method)) {
-          const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+          const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
             method: payload.method,
           });
-          this.parent.logger.error(error.message);
+          this.sequence.logger.error(error.message);
           throw new Error(error.message);
         }
-        await this.parent.history.set(topic, payload);
+        await this.sequence.history.set(topic, payload);
         payload = formatJsonRpcRequest<SequenceTypes.Request>(
-          this.parent.config.jsonrpc.payload,
+          this.sequence.config.jsonrpc.payload,
           {
             request: { method: payload.method, params: payload.params },
           },
@@ -59,36 +65,36 @@ export class Engine {
         );
       }
     } else {
-      await this.parent.history.update(topic, payload);
+      await this.sequence.history.update(topic, payload);
     }
-    await this.parent.client.relayer.publish(settled.topic, payload, {
+    await this.sequence.client.relayer.publish(settled.topic, payload, {
       relay: settled.relay,
     });
   }
 
   get length(): number {
-    return this.parent.settled.length;
+    return this.sequence.settled.length;
   }
 
   get topics(): string[] {
-    return this.parent.settled.topics;
+    return this.sequence.settled.topics;
   }
 
   get values(): SequenceTypes.Settled[] {
-    return this.parent.settled.values.map(x => x.data);
+    return this.sequence.settled.values.map(x => x.data);
   }
 
   public create(params?: SequenceTypes.CreateParams): Promise<SequenceTypes.Settled> {
     return new Promise(async (resolve, reject) => {
-      this.parent.logger.debug(`Create ${this.parent.context}`);
-      this.parent.logger.trace({ type: "method", method: "create", params });
+      this.sequence.logger.debug(`Create ${this.sequence.context}`);
+      this.sequence.logger.trace({ type: "method", method: "create", params });
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.SETTLE_TIMEOUT, {
-          context: this.parent.context,
+        const error = ERROR.SETTLE_TIMEOUT.format({
+          context: this.sequence.context,
           timeout: maxTimeout,
         });
-        this.parent.logger.error(error.message);
+        this.sequence.logger.error(error.message);
         reject(error.message);
       }, maxTimeout);
       let pending: SequenceTypes.Pending;
@@ -98,7 +104,7 @@ export class Engine {
         clearTimeout(timeout);
         return reject(e);
       }
-      this.parent.pending.on(
+      this.sequence.pending.on(
         SUBSCRIPTION_EVENTS.updated,
         async (updatedEvent: SubscriptionEvent.Updated<SequenceTypes.Pending>) => {
           if (pending.topic !== updatedEvent.data.topic) return;
@@ -107,16 +113,16 @@ export class Engine {
             clearTimeout(timeout);
             if (isSequenceFailed(outcome)) {
               try {
-                await this.parent.pending.delete(pending.topic, outcome.reason);
+                await this.sequence.pending.delete(pending.topic, outcome.reason);
               } catch (e) {
                 return reject(e);
               }
               reject(new Error(outcome.reason.message));
             } else {
               try {
-                const settled = await this.parent.settled.get(outcome.topic);
-                const reason = getError(ERROR.SETTLED, { context: this.parent.context });
-                await this.parent.pending.delete(pending.topic, reason);
+                const settled = await this.sequence.settled.get(outcome.topic);
+                const reason = ERROR.SETTLED.format({ context: this.sequence.context });
+                await this.sequence.pending.delete(pending.topic, reason);
                 resolve(settled);
               } catch (e) {
                 return reject(e);
@@ -129,21 +135,29 @@ export class Engine {
   }
 
   public async respond(params: SequenceTypes.RespondParams): Promise<SequenceTypes.Pending> {
-    this.parent.logger.debug(`Respond ${this.parent.context}`);
-    this.parent.logger.trace({ type: "method", method: "respond", params });
-    const { approved, proposal } = params;
+    this.sequence.logger.debug(`Respond ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "respond", params });
+    const { approved, proposal, response } = params;
     const { relay, ttl } = proposal;
-    const self = { publicKey: await this.parent.client.crypto.generateKeyPair() };
+    const self = {
+      publicKey: await this.sequence.client.crypto.generateKeyPair(),
+      metadata: response?.metadata,
+    };
+    if (!self.metadata) delete self.metadata;
     if (approved) {
       try {
         const responder: SequenceTypes.Participant = {
           publicKey: self.publicKey,
+          metadata: response?.metadata,
         };
+        if (!responder.metadata) delete responder.metadata;
         const expiry = Date.now() + proposal.ttl * 1000;
         const state: SequenceTypes.State = {};
         const peer: SequenceTypes.Participant = {
           publicKey: proposal.proposer.publicKey,
+          metadata: proposal.proposer.metadata,
         };
+        if (!peer.metadata) delete peer.metadata;
         const controller = proposal.proposer.controller
           ? { publicKey: peer.publicKey }
           : { publicKey: self.publicKey };
@@ -168,63 +182,63 @@ export class Engine {
           expiry,
         };
         const pending: SequenceTypes.Pending = {
-          status: this.parent.config.status.responded as SequenceTypes.RespondedStatus,
+          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
           topic: proposal.topic,
           relay,
           self,
           proposal,
           outcome,
         };
-        await this.parent.pending.set(pending.topic, pending, { relay: pending.relay });
+        await this.sequence.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       } catch (e) {
-        const reason = getError(ERROR.GENERIC, { message: e.message });
+        const reason = ERROR.GENERIC.format({ message: e.message });
         const outcome: SequenceTypes.Outcome = { reason };
         const pending: SequenceTypes.Pending = {
-          status: this.parent.config.status.responded as SequenceTypes.RespondedStatus,
+          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
           topic: proposal.topic,
           relay,
           self,
           proposal,
           outcome,
         };
-        await this.parent.pending.set(pending.topic, pending, { relay: pending.relay });
+        await this.sequence.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       }
     } else {
-      const defaultReason = getError(ERROR.NOT_APPROVED, { context: this.parent.context });
+      const defaultReason = ERROR.NOT_APPROVED.format({ context: this.sequence.context });
       const outcome: SequenceTypes.Outcome = { reason: params?.reason || defaultReason };
       const pending: SequenceTypes.Pending = {
-        status: this.parent.config.status.responded as SequenceTypes.RespondedStatus,
+        status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
         topic: proposal.topic,
         relay,
         self,
         proposal,
         outcome,
       };
-      await this.parent.pending.set(pending.topic, pending, { relay: pending.relay });
+      await this.sequence.pending.set(pending.topic, pending, { relay: pending.relay });
       return pending;
     }
   }
 
   public async upgrade(params: SequenceTypes.UpgradeParams): Promise<SequenceTypes.Settled> {
-    this.parent.logger.info(`Upgrade ${this.parent.context}`);
-    this.parent.logger.trace({ type: "method", method: "upgrade", params });
-    const settled = await this.parent.settled.get(params.topic);
-    const participant: CryptoTypes.Participant = { publicKey: settled.self.publicKey };
+    this.sequence.logger.info(`Upgrade ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "upgrade", params });
+    const settled = await this.sequence.settled.get(params.topic);
+    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
     const upgrade = await this.handleUpgrade(params.topic, params, participant);
-    const request = formatJsonRpcRequest(this.parent.config.jsonrpc.upgrade, upgrade);
+    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.upgrade, upgrade);
     await this.send(settled.topic, request);
     return settled;
   }
 
   public async update(params: SequenceTypes.UpdateParams): Promise<SequenceTypes.Settled> {
-    this.parent.logger.debug(`Update ${this.parent.context}`);
-    this.parent.logger.trace({ type: "method", method: "update", params });
-    const settled = await this.parent.settled.get(params.topic);
-    const participant: CryptoTypes.Participant = { publicKey: settled.self.publicKey };
+    this.sequence.logger.debug(`Update ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "update", params });
+    const settled = await this.sequence.settled.get(params.topic);
+    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
     const update = await this.handleUpdate(params.topic, params, participant);
-    const request = formatJsonRpcRequest(this.parent.config.jsonrpc.update, update);
+    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.update, update);
     await this.send(settled.topic, request);
     return settled;
   }
@@ -234,15 +248,15 @@ export class Engine {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.JSONRPC_REQUEST_TIMEOUT, {
+        const error = ERROR.JSONRPC_REQUEST_TIMEOUT.format({
           method: request.method,
           timeout: maxTimeout,
         });
-        this.parent.logger.error(error.message);
+        this.sequence.logger.error(error.message);
         reject(error.message);
       }, maxTimeout);
-      this.parent.events.on(
-        this.parent.config.events.response,
+      this.sequence.events.on(
+        this.sequence.config.events.response,
         (responseEvent: SequenceTypes.ResponseEvent) => {
           if (params.topic !== responseEvent.topic) return;
           const response = responseEvent.response;
@@ -250,7 +264,7 @@ export class Engine {
           clearTimeout(timeout);
           if (isJsonRpcError(response)) {
             const errorMessage = response.error.message;
-            this.parent.logger.error(errorMessage);
+            this.sequence.logger.error(errorMessage);
             return reject(new Error(errorMessage));
           }
           return resolve(response.result);
@@ -266,64 +280,72 @@ export class Engine {
   }
 
   public async delete(params: SequenceTypes.DeleteParams): Promise<void> {
-    this.parent.logger.debug(`Delete ${this.parent.context}`);
-    this.parent.logger.trace({ type: "method", method: "delete", params });
-    await this.parent.settled.delete(params.topic, params.reason);
+    this.sequence.logger.debug(`Delete ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "delete", params });
+    await this.sequence.settled.delete(params.topic, params.reason);
   }
 
-  public on(event: string, listener: any): void {
-    this.parent.events.on(event, listener);
-  }
-
-  public once(event: string, listener: any): void {
-    this.parent.events.once(event, listener);
-  }
-
-  public off(event: string, listener: any): void {
-    this.parent.events.off(event, listener);
-  }
-
-  public removeListener(event: string, listener: any): void {
-    this.parent.events.removeListener(event, listener);
+  public async notify(params: SequenceTypes.NotifyParams): Promise<void> {
+    const settled = await this.sequence.settled.get(params.topic);
+    if (
+      settled.self.publicKey !== settled.permissions.controller.publicKey &&
+      !settled.permissions.notifications.types.includes(params.type)
+    ) {
+      const error = ERROR.UNAUTHORIZED_NOTIFICATION_TYPE.format({ type: params.type });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    const notification: SequenceTypes.Notification = { type: params.type, data: params.data };
+    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.notification, notification);
+    await this.send(params.topic, request);
   }
 
   // ---------- Protected ----------------------------------------------- //
 
   public async propose(params?: SequenceTypes.ProposeParams): Promise<SequenceTypes.Pending> {
-    this.parent.logger.debug(`Propose ${this.parent.context}`);
-    this.parent.logger.trace({ type: "method", method: "propose", params });
+    this.sequence.logger.debug(`Propose ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "propose", params });
+    await this.sequence.validateProposal(params);
     const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
-    const topic = (params as any).topic || generateRandomBytes32();
-    const self = (params as any).self || {
-      publicKey: await this.parent.client.crypto.generateKeyPair(),
+    const topic = generateRandomBytes32();
+    const self: SequenceTypes.Participant = {
+      publicKey: await this.sequence.client.crypto.generateKeyPair(),
+      metadata: params?.metadata,
     };
+    if (!self.metadata) delete self.metadata;
     const proposer: SequenceTypes.ProposedPeer = {
       publicKey: self.publicKey,
-      controller: this.parent.client.controller,
+      controller: this.sequence.client.controller,
+      metadata: self.metadata,
     };
+    if (!proposer.metadata) delete proposer.metadata;
+    const signal =
+      params?.signal || (await this.sequence.getDefaultSignal({ topic, relay, proposer }));
+    const permissions = params?.permissions || (await this.sequence.getDefaultPermissions());
+    const ttl = params?.ttl || (await this.sequence.getDefaultTTL());
     const proposal: SequenceTypes.Proposal = {
       relay,
       topic,
       proposer,
-      signal: (params as any).signal,
-      permissions: (params as any).permissions,
-      ttl: (params as any).ttl,
+      signal,
+      permissions,
+      ttl,
     };
     const pending: SequenceTypes.Pending = {
-      status: this.parent.config.status.proposed as SequenceTypes.ProposedStatus,
+      status: this.sequence.config.status.proposed as SequenceTypes.ProposedStatus,
       topic: proposal.topic,
       relay: proposal.relay,
       self,
       proposal,
     };
-    await this.parent.pending.set(pending.topic, pending, { relay });
+    await this.sequence.pending.set(pending.topic, pending, { relay });
     return pending;
   }
 
   public async settle(params: SequenceTypes.SettleParams): Promise<SequenceTypes.Settled> {
-    this.parent.logger.debug(`Settle ${this.parent.context}`);
-    this.parent.logger.trace({ type: "method", method: "settle", params });
-    const topic = await this.parent.client.crypto.generateSharedKey(params.self, params.peer);
+    this.sequence.logger.debug(`Settle ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "settle", params });
+    const topic = await this.sequence.client.crypto.generateSharedKey(params.self, params.peer);
     const settled: SequenceTypes.Settled = {
       topic,
       relay: params.relay,
@@ -333,7 +355,7 @@ export class Engine {
       expiry: params.expiry,
       state: params.state,
     };
-    await this.parent.settled.set(settled.topic, settled, {
+    await this.sequence.settled.set(settled.topic, settled, {
       relay: settled.relay,
       expiry: settled.expiry,
     });
@@ -342,18 +364,22 @@ export class Engine {
 
   public async onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.parent.logger.debug(`Receiving ${this.parent.context} response`);
-    this.parent.logger.trace({ type: "method", method: "onResponse", topic, payload });
+    this.sequence.logger.debug(`Receiving ${this.sequence.context} response`);
+    this.sequence.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<SequenceTypes.Outcome>;
     const outcome = request.params;
-    const pending = await this.parent.pending.get(topic);
+    const pending = await this.sequence.pending.get(topic);
     let error: ErrorResponse | undefined;
     if (!isSequenceFailed(outcome)) {
       try {
         const controller = pending.proposal.proposer.controller
           ? { publicKey: pending.proposal.proposer.publicKey }
           : { publicKey: outcome.responder.publicKey };
-        const peer: SequenceTypes.Participant = { publicKey: outcome.responder.publicKey };
+        const peer: SequenceTypes.Participant = {
+          publicKey: outcome.responder.publicKey,
+          metadata: outcome.responder.metadata,
+        };
+        if (!peer.metadata) delete peer.metadata;
         const state: SequenceTypes.State = {};
         const permissions: SequenceTypes.Permissions = {
           ...pending.proposal.permissions,
@@ -368,8 +394,8 @@ export class Engine {
           expiry: outcome.expiry,
           state,
         });
-        await this.parent.pending.update(topic, {
-          status: this.parent.config.status.responded as SequenceTypes.RespondedStatus,
+        await this.sequence.pending.update(topic, {
+          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
           outcome: {
             topic: settled.topic,
             relay: settled.relay,
@@ -379,10 +405,10 @@ export class Engine {
           },
         });
       } catch (e) {
-        this.parent.logger.error(e);
-        error = getError(ERROR.GENERIC, { message: e.message });
-        await this.parent.pending.update(topic, {
-          status: this.parent.config.status.responded as SequenceTypes.RespondedStatus,
+        this.sequence.logger.error(e);
+        error = ERROR.GENERIC.format({ message: e.message });
+        await this.sequence.pending.update(topic, {
+          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
           outcome: { reason: error },
         });
       }
@@ -390,13 +416,13 @@ export class Engine {
         typeof error === "undefined"
           ? formatJsonRpcResult(request.id, true)
           : formatJsonRpcError(request.id, error);
-      await this.parent.client.relayer.publish(pending.topic, response, {
+      await this.sequence.client.relayer.publish(pending.topic, response, {
         relay: pending.relay,
       });
     } else {
-      this.parent.logger.error(outcome.reason);
-      await this.parent.pending.update(topic, {
-        status: this.parent.config.status.responded as SequenceTypes.RespondedStatus,
+      this.sequence.logger.error(outcome.reason);
+      await this.sequence.pending.update(topic, {
+        status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
         outcome: { reason: outcome.reason },
       });
     }
@@ -404,45 +430,48 @@ export class Engine {
 
   public async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.parent.logger.debug(`Receiving ${this.parent.context} acknowledge`);
-    this.parent.logger.trace({ type: "method", method: "onAcknowledge", topic, payload });
+    this.sequence.logger.debug(`Receiving ${this.sequence.context} acknowledge`);
+    this.sequence.logger.trace({ type: "method", method: "onAcknowledge", topic, payload });
     const response = payload as JsonRpcResponse;
-    const pending = await this.parent.pending.get(topic);
+    const pending = await this.sequence.pending.get(topic);
     if (!isSequenceResponded(pending)) return;
     if (isJsonRpcError(response) && !isSequenceFailed(pending.outcome)) {
-      await this.parent.settled.delete(pending.outcome.topic, response.error);
+      await this.sequence.settled.delete(pending.outcome.topic, response.error);
     }
-    const reason = getError(ERROR.RESPONSE_ACKNOWLEDGED, { context: this.parent.context });
-    await this.parent.pending.delete(topic, reason);
+    const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.sequence.context });
+    await this.sequence.pending.delete(topic, reason);
   }
 
   public async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.parent.logger.debug(`Receiving ${this.parent.context} message`);
-    this.parent.logger.trace({ type: "method", method: "onMessage", topic, payload });
+    this.sequence.logger.debug(`Receiving ${this.sequence.context} message`);
+    this.sequence.logger.trace({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
-      const settled = await this.parent.settled.get(payloadEvent.topic);
+      const settled = await this.sequence.settled.get(payloadEvent.topic);
       let error: ErrorResponse | undefined;
       switch (request.method) {
-        case this.parent.config.jsonrpc.payload:
+        case this.sequence.config.jsonrpc.payload:
           await this.onPayload(payloadEvent);
           break;
-        case this.parent.config.jsonrpc.update:
+        case this.sequence.config.jsonrpc.update:
           await this.onUpdate(payloadEvent);
           break;
-        case this.parent.config.jsonrpc.upgrade:
+        case this.sequence.config.jsonrpc.upgrade:
           await this.onUpgrade(payloadEvent);
           break;
-        case this.parent.config.jsonrpc.delete:
-          await this.parent.settled.delete(settled.topic, request.params.reason);
+        case this.sequence.config.jsonrpc.notification:
+          await this.onNotification(payloadEvent);
           break;
-        case this.parent.config.jsonrpc.ping:
+        case this.sequence.config.jsonrpc.delete:
+          await this.sequence.settled.delete(settled.topic, request.params.reason);
+          break;
+        case this.sequence.config.jsonrpc.ping:
           await this.send(settled.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
-          error = getError(ERROR.UNKNOWN_JSONRPC_METHOD, { method: request.method });
-          this.parent.logger.error(error.message);
+          error = ERROR.UNKNOWN_JSONRPC_METHOD.format({ method: request.method });
+          this.sequence.logger.error(error.message);
           await this.send(settled.topic, formatJsonRpcError(request.id, error));
           break;
       }
@@ -456,45 +485,45 @@ export class Engine {
     if (isJsonRpcRequest(payload)) {
       const { id, params } = payload as JsonRpcRequest<SequenceTypes.Request>;
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
-      const settled = await this.parent.settled.get(topic);
+      const settled = await this.sequence.settled.get(topic);
       if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
-        const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+        const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
           method: request.method,
         });
-        this.parent.logger.error(error.message);
+        this.sequence.logger.error(error.message);
         throw new Error(error.message);
       }
       const settledPayloadEvent: SequenceTypes.PayloadEvent = {
         topic,
         payload: request,
       };
-      this.parent.logger.debug(`Receiving ${this.parent.context} payload`);
-      this.parent.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
+      this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
+      this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
       this.onPayloadEvent(settledPayloadEvent);
     } else {
       const settledPayloadEvent: SequenceTypes.PayloadEvent = {
         topic,
         payload,
       };
-      this.parent.logger.debug(`Receiving ${this.parent.context} payload`);
-      this.parent.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
+      this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
+      this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
       this.onPayloadEvent(settledPayloadEvent);
     }
   }
 
   public async onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.parent.logger.debug(`Receiving ${this.parent.context} update`);
-    this.parent.logger.trace({ type: "method", method: "onUpdate", topic, payload });
+    this.sequence.logger.debug(`Receiving ${this.sequence.context} update`);
+    this.sequence.logger.trace({ type: "method", method: "onUpdate", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
-    const settled = await this.parent.settled.get(payloadEvent.topic);
+    const settled = await this.sequence.settled.get(payloadEvent.topic);
     try {
-      const participant: CryptoTypes.Participant = { publicKey: settled.peer.publicKey };
+      const participant: SequenceTypes.Participant = { publicKey: settled.peer.publicKey };
       await this.handleUpdate(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
       await this.send(settled.topic, response);
     } catch (e) {
-      this.parent.logger.error(e);
+      this.sequence.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
       await this.send(settled.topic, response);
     }
@@ -502,80 +531,92 @@ export class Engine {
 
   public async onUpgrade(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.parent.logger.debug(`Receiving ${this.parent.context} upgrade`);
-    this.parent.logger.trace({ type: "method", method: "onUpgrade", topic, payload });
+    this.sequence.logger.debug(`Receiving ${this.sequence.context} upgrade`);
+    this.sequence.logger.trace({ type: "method", method: "onUpgrade", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
-    const settled = await this.parent.settled.get(payloadEvent.topic);
+    const settled = await this.sequence.settled.get(payloadEvent.topic);
     try {
-      const participant: CryptoTypes.Participant = { publicKey: settled.peer.publicKey };
+      const participant: SequenceTypes.Participant = { publicKey: settled.peer.publicKey };
       await this.handleUpgrade(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
       await this.send(settled.topic, response);
     } catch (e) {
-      this.parent.logger.error(e);
+      this.sequence.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
       await this.send(settled.topic, response);
     }
   }
 
+  protected async onNotification(event: SubscriptionEvent.Payload) {
+    const notification = (event.payload as JsonRpcRequest<SessionTypes.Notification>).params;
+    const notificationEvent: SessionTypes.NotificationEvent = {
+      topic: event.topic,
+      type: notification.type,
+      data: notification.data,
+    };
+    this.sequence.logger.info(`Emitting ${this.sequence.config.events.notification}`);
+    this.sequence.logger.debug({
+      type: "event",
+      event: this.sequence.config.events.notification,
+      notificationEvent,
+    });
+    this.sequence.events.emit(this.sequence.config.events.notification, notificationEvent);
+  }
+
   public async handleUpdate(
     topic: string,
     params: SequenceTypes.Update,
-    participant: CryptoTypes.Participant,
+    participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Update> {
-    const settled = await this.parent.settled.get(topic);
+    const settled = await this.sequence.settled.get(topic);
     let update: SequenceTypes.Update;
     if (typeof params.state !== "undefined") {
-      let state = settled.state;
       if (participant.publicKey !== settled.permissions.controller.publicKey) {
-        const error = getError(ERROR.UNAUTHORIZED_UPDATE_REQUEST, { context: this.parent.context });
-        this.parent.logger.error(error.message);
+        const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({
+          context: this.sequence.context,
+        });
+        this.sequence.logger.error(error.message);
         throw new Error(error.message);
       }
-      state = merge(state, params.state);
-      update = { state };
+      settled.state = merge(settled.state, params.state);
+      update = { state: settled.state };
     } else {
-      const error = getError(ERROR.INVALID_UPDATE_REQUEST, { context: this.parent.context });
-      this.parent.logger.error(error.message);
+      const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.sequence.context });
+      this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    await this.parent.settled.update(settled.topic, settled);
+    await this.sequence.settled.update(settled.topic, settled);
     return update;
   }
 
   public async handleUpgrade(
     topic: string,
     params: SequenceTypes.Upgrade,
-    participant: CryptoTypes.Participant,
+    participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Upgrade> {
-    const settled = await this.parent.settled.get(topic);
+    const settled = await this.sequence.settled.get(topic);
     let upgrade: SequenceTypes.Upgrade = { permissions: {} };
     if (participant.publicKey !== settled.permissions.controller.publicKey) {
-      const error = getError(ERROR.UNAUTHORIZED_UPGRADE_REQUEST, { context: this.parent.context });
-      this.parent.logger.error(error.message);
+      const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({
+        context: this.sequence.context,
+      });
+      this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    const permissions: Omit<SequenceTypes.Permissions, "controller"> = {
-      jsonrpc: {
-        methods: [
-          ...settled.permissions.jsonrpc.methods,
-          ...(params.permissions.jsonrpc?.methods || []),
-        ],
-      },
-    };
-    upgrade = { permissions };
-    settled.permissions = { ...permissions, controller: settled.permissions.controller };
-    await this.parent.settled.update(settled.topic, settled);
+    const persisted = { controller: settled.permissions.controller };
+    settled.permissions = merge(settled.permissions, params.permissions, persisted);
+    upgrade = { permissions: settled.permissions };
+    await this.sequence.settled.update(settled.topic, settled);
     return upgrade;
   }
   // ---------- Private ----------------------------------------------- //
 
   private async shouldIgnorePayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
     const { topic, payload } = payloadEvent;
-    if (!this.parent.settled.subscriptions.has(topic)) return true;
+    if (!this.sequence.settled.subscriptions.has(topic)) return true;
     let exists = false;
     try {
-      exists = await this.parent.history.exists(topic, payload.id);
+      exists = await this.sequence.history.exists(topic, payload.id);
     } catch (e) {
       // skip error
     }
@@ -586,36 +627,36 @@ export class Engine {
     const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
       if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
-      await this.parent.history.set(topic, payload);
+      await this.sequence.history.set(topic, payload);
     } else {
-      await this.parent.history.update(topic, payload);
+      await this.sequence.history.update(topic, payload);
     }
     if (isJsonRpcRequest(payload)) {
       const requestEvent: SequenceTypes.RequestEvent = { topic, request: payload };
-      this.parent.logger.info(`Emitting ${this.parent.config.events.request}`);
-      this.parent.logger.debug({
+      this.sequence.logger.info(`Emitting ${this.sequence.config.events.request}`);
+      this.sequence.logger.debug({
         type: "event",
-        event: this.parent.config.events.request,
+        event: this.sequence.config.events.request,
         data: requestEvent,
       });
-      this.parent.events.emit(this.parent.config.events.request, requestEvent);
+      this.sequence.events.emit(this.sequence.config.events.request, requestEvent);
     } else {
       const responseEvent: SequenceTypes.ResponseEvent = { topic, response: payload };
-      this.parent.logger.info(`Emitting ${this.parent.config.events.response}`);
-      this.parent.logger.debug({
+      this.sequence.logger.info(`Emitting ${this.sequence.config.events.response}`);
+      this.sequence.logger.debug({
         type: "event",
-        event: this.parent.config.events.response,
+        event: this.sequence.config.events.response,
         data: responseEvent,
       });
-      this.parent.events.emit(this.parent.config.events.response, responseEvent);
+      this.sequence.events.emit(this.sequence.config.events.response, responseEvent);
     }
   }
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
       switch (event.payload.method) {
-        case this.parent.config.jsonrpc.approve:
-        case this.parent.config.jsonrpc.reject:
+        case this.sequence.config.jsonrpc.approve:
+        case this.sequence.config.jsonrpc.reject:
           this.onResponse(event);
           break;
         default:
@@ -633,105 +674,109 @@ export class Engine {
   ) {
     const pending = event.data;
     if (isSequenceResponded(pending)) {
-      this.parent.logger.info(`Emitting ${this.parent.config.events.responded}`);
-      this.parent.logger.debug({
+      this.sequence.logger.info(`Emitting ${this.sequence.config.events.responded}`);
+      this.sequence.logger.debug({
         type: "event",
-        event: this.parent.config.events.responded,
+        event: this.sequence.config.events.responded,
         data: pending,
       });
-      this.parent.events.emit(this.parent.config.events.responded, pending);
+      this.sequence.events.emit(this.sequence.config.events.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
         const method = !isSequenceFailed(pending.outcome)
-          ? this.parent.config.jsonrpc.approve
-          : this.parent.config.jsonrpc.reject;
+          ? this.sequence.config.jsonrpc.approve
+          : this.sequence.config.jsonrpc.reject;
         const request = formatJsonRpcRequest(method, pending.outcome);
-        await this.parent.client.relayer.publish(pending.topic, request, {
+        await this.sequence.client.relayer.publish(pending.topic, request, {
           relay: pending.relay,
         });
       }
     } else {
-      this.parent.logger.info(`Emitting ${this.parent.config.events.proposed}`);
-      this.parent.logger.debug({
+      this.sequence.logger.info(`Emitting ${this.sequence.config.events.proposed}`);
+      this.sequence.logger.debug({
         type: "event",
-        event: this.parent.config.events.proposed,
+        event: this.sequence.config.events.proposed,
         data: pending,
       });
-      this.parent.events.emit(this.parent.config.events.proposed, pending);
+      this.sequence.events.emit(this.sequence.config.events.proposed, pending);
       // send proposal signal through uri offlline
     }
   }
 
   private registerEventListeners(): void {
     // Pending Subscription Events
-    this.parent.pending.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
-      this.onPendingPayloadEvent(payloadEvent),
+    this.sequence.pending.on(
+      SUBSCRIPTION_EVENTS.payload,
+      (payloadEvent: SubscriptionEvent.Payload) => this.onPendingPayloadEvent(payloadEvent),
     );
-    this.parent.pending.on(
+    this.sequence.pending.on(
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<SequenceTypes.Pending>) =>
         this.onPendingStatusEvent(createdEvent),
     );
-    this.parent.pending.on(
+    this.sequence.pending.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<SequenceTypes.Pending>) =>
         this.onPendingStatusEvent(updatedEvent),
     );
     // Settled Subscription Events
-    this.parent.settled.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) =>
-      this.onMessage(payloadEvent),
+    this.sequence.settled.on(
+      SUBSCRIPTION_EVENTS.payload,
+      (payloadEvent: SubscriptionEvent.Payload) => this.onMessage(payloadEvent),
     );
-    this.parent.settled.on(
+    this.sequence.settled.on(
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<SequenceTypes.Settled>) => {
         const { data: settled } = createdEvent;
-        this.parent.logger.info(`Emitting ${this.parent.config.events.settled}`);
-        this.parent.logger.debug({
+        this.sequence.logger.info(`Emitting ${this.sequence.config.events.settled}`);
+        this.sequence.logger.debug({
           type: "event",
-          event: this.parent.config.events.settled,
+          event: this.sequence.config.events.settled,
           data: settled,
         });
-        this.parent.events.emit(this.parent.config.events.settled, settled);
+        this.sequence.events.emit(this.sequence.config.events.settled, settled);
       },
     );
-    this.parent.settled.on(
+    this.sequence.settled.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<SequenceTypes.Settled>) => {
         const { data: settled, update } = updatedEvent;
-        this.parent.logger.info(`Emitting ${this.parent.config.events.updated}`);
-        this.parent.logger.debug({
+        this.sequence.logger.info(`Emitting ${this.sequence.config.events.updated}`);
+        this.sequence.logger.debug({
           type: "event",
-          event: this.parent.config.events.updated,
+          event: this.sequence.config.events.updated,
           data: settled,
           update,
         });
-        this.parent.events.emit(this.parent.config.events.updated, settled, update);
+        this.sequence.events.emit(this.sequence.config.events.updated, settled, update);
       },
     );
-    this.parent.settled.on(
+    this.sequence.settled.on(
       SUBSCRIPTION_EVENTS.deleted,
       async (deletedEvent: SubscriptionEvent.Deleted<SequenceTypes.Settled>) => {
         const { data: settled, reason } = deletedEvent;
-        this.parent.logger.info(`Emitting ${this.parent.config.events.deleted}`);
-        this.parent.logger.debug({
+        this.sequence.logger.info(`Emitting ${this.sequence.config.events.deleted}`);
+        this.sequence.logger.debug({
           type: "event",
-          event: this.parent.config.events.deleted,
+          event: this.sequence.config.events.deleted,
           data: settled,
           reason,
         });
-        this.parent.events.emit(this.parent.config.events.deleted, settled, reason);
-        const request = formatJsonRpcRequest(this.parent.config.jsonrpc.delete, { reason });
-        await this.parent.history.delete(settled.topic);
-        await this.parent.client.relayer.publish(settled.topic, request, { relay: settled.relay });
+        this.sequence.events.emit(this.sequence.config.events.deleted, settled, reason);
+        const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.delete, { reason });
+        await this.sequence.history.delete(settled.topic);
+        await this.sequence.client.relayer.publish(settled.topic, request, {
+          relay: settled.relay,
+        });
       },
     );
-    this.parent.settled.on(SUBSCRIPTION_EVENTS.sync, () =>
-      this.parent.events.emit(this.parent.config.events.sync),
+    this.sequence.settled.on(SUBSCRIPTION_EVENTS.sync, () =>
+      this.sequence.events.emit(this.sequence.config.events.sync),
     );
-    this.parent.settled.on(SUBSCRIPTION_EVENTS.enabled, () =>
-      this.parent.events.emit(this.parent.config.events.enabled),
+    this.sequence.settled.on(SUBSCRIPTION_EVENTS.enabled, () =>
+      this.sequence.events.emit(this.sequence.config.events.enabled),
     );
-    this.parent.settled.on(SUBSCRIPTION_EVENTS.disabled, () =>
-      this.parent.events.emit(this.parent.config.events.disabled),
+    this.sequence.settled.on(SUBSCRIPTION_EVENTS.disabled, () =>
+      this.sequence.events.emit(this.sequence.config.events.disabled),
     );
   }
 }

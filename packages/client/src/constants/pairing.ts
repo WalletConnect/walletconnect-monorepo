@@ -10,6 +10,7 @@ export const PAIRING_JSONRPC: PairingTypes.JsonRpc = {
   delete: "wc_pairingDelete",
   payload: "wc_pairingPayload",
   ping: "wc_pairingPing",
+  notification: "wc_pairingNotification",
 };
 
 export const PAIRING_CONTEXT = "pairing";
@@ -36,4 +37,5 @@ export const PAIRING_EVENTS: PairingTypes.Events = {
   enabled: "pairing_enabled",
   disabled: "pairing_disabled",
   sync: "pairing_sync",
+  notification: "pairing_notification",
 };

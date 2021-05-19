@@ -1,48 +1,22 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import {
-  PairingTypes,
-  IClient,
-  IPairing,
-  SubscriptionEvent,
-  CryptoTypes,
-} from "@walletconnect/types";
-import {
-  generateRandomBytes32,
-  isPairingFailed,
-  isPairingResponded,
-  formatUri,
-  isSubscriptionUpdatedEvent,
-  ERROR,
-  getError,
-} from "@walletconnect/utils";
-import {
-  JsonRpcPayload,
-  JsonRpcRequest,
-  JsonRpcResponse,
-  formatJsonRpcError,
-  formatJsonRpcRequest,
-  formatJsonRpcResult,
-  isJsonRpcError,
-  isJsonRpcRequest,
-  ErrorResponse,
-} from "@json-rpc-tools/utils";
+import { PairingTypes, IClient, IPairing, SequenceTypes } from "@walletconnect/types";
+import { formatUri } from "@walletconnect/utils";
+import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
 import { JsonRpcHistory } from "./history";
+import { Engine } from "./engine";
 import {
   PAIRING_CONTEXT,
   PAIRING_EVENTS,
   PAIRING_JSONRPC,
   PAIRING_STATUS,
-  SUBSCRIPTION_EVENTS,
-  RELAYER_DEFAULT_PROTOCOL,
   PAIRING_SIGNAL_METHOD_URI,
   SESSION_JSONRPC,
   PAIRING_DEFAULT_TTL,
 } from "../constants";
-import { Engine } from "./engine";
 
 export class Pairing extends IPairing {
   public pending: Subscription<PairingTypes.Pending>;
@@ -59,7 +33,7 @@ export class Pairing extends IPairing {
     jsonrpc: PAIRING_JSONRPC,
   };
 
-  private engine: Engine;
+  public engine: Engine;
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
@@ -76,7 +50,6 @@ export class Pairing extends IPairing {
     );
     this.history = new JsonRpcHistory(client, this.logger);
     this.engine = new Engine(this);
-    this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
@@ -134,6 +107,10 @@ export class Pairing extends IPairing {
     return this.engine.delete(params);
   }
 
+  public async notify(params: PairingTypes.NotificationEvent): Promise<void> {
+    return this.engine.notify(params);
+  }
+
   public on(event: string, listener: any): void {
     this.events.on(event, listener);
   }
@@ -150,20 +127,11 @@ export class Pairing extends IPairing {
     this.events.removeListener(event, listener);
   }
 
-  // ---------- Protected ----------------------------------------------- //
+  public async validateProposal(params?: PairingTypes.ProposeParams) {
+    // nothing to validate
+  }
 
-  protected async propose(params?: PairingTypes.ProposeParams): Promise<PairingTypes.Pending> {
-    // TODO: abstract this inside engine
-    const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
-    const topic = (params as any).topic || generateRandomBytes32();
-    const self = (params as any).self || {
-      publicKey: await this.client.crypto.generateKeyPair(),
-    };
-    const proposer: PairingTypes.ProposedPeer = {
-      publicKey: self.publicKey,
-      controller: this.client.controller,
-    };
-    // TODO: pairing-specific (start)
+  public async getDefaultSignal({ topic, relay, proposer }: PairingTypes.DefaultSignalParams) {
     const uri = formatUri({
       protocol: this.client.protocol,
       version: this.client.version,
@@ -176,17 +144,22 @@ export class Pairing extends IPairing {
       method: PAIRING_SIGNAL_METHOD_URI,
       params: { uri },
     };
+    return signal;
+  }
+
+  public async getDefaultTTL() {
+    return PAIRING_DEFAULT_TTL;
+  }
+
+  public async getDefaultPermissions() {
     const permissions: PairingTypes.ProposedPermissions = {
       jsonrpc: {
         methods: [SESSION_JSONRPC.propose],
       },
+      notifications: {
+        types: [],
+      },
     };
-    const ttl = PAIRING_DEFAULT_TTL;
-    // TODO: pairing-specific (end)
-    return this.engine.propose({ ...params, signal, permissions, ttl } as any);
-  }
-
-  protected async settle(params: PairingTypes.SettleParams): Promise<PairingTypes.Settled> {
-    return this.engine.settle(params);
+    return permissions;
   }
 }

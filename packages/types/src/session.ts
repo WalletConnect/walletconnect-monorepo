@@ -7,19 +7,17 @@ import { SubscriptionEvent } from "./subscription";
 
 export declare namespace SessionTypes {
   export type Status = SequenceTypes.Status;
-  export interface JsonRpc extends SequenceTypes.JsonRpc {
-    notification: string;
-  }
-  export interface Events extends SequenceTypes.Events {
-    notification: string;
-  }
+
+  export type JsonRpc = SequenceTypes.JsonRpc;
+
+  export type Events = SequenceTypes.Events;
 
   export type Config = SequenceTypes.Config<Events, JsonRpc, Status>;
 
   export type Relay = SequenceTypes.Relay;
+  
   export interface BasePermissions extends SequenceTypes.BasePermissions {
     blockchain: BlockchainTypes.Permissions;
-    notifications?: NotificationPermissions;
   }
   export interface ProposedPermissions extends BasePermissions {
     notifications: NotificationPermissions;
@@ -120,21 +118,18 @@ export declare namespace SessionTypes {
 
   export type State = BlockchainTypes.State;
 
-  export interface Notification {
-    type: string;
-    data: any;
-  }
-
-  export interface NotificationEvent extends Notification {
-    topic: string;
-  }
-
-  export type NotifyParams = NotificationEvent;
-
   export interface Response {
     state: State;
     metadata: AppMetadata;
   }
+
+  export type DefaultSignalParams = SequenceTypes.DefaultSignalParams<ProposedPeer>;
+
+  export type Notification = SequenceTypes.Notification;
+
+  export type NotificationEvent = SequenceTypes.NotificationEvent;
+
+  export type NotifyParams = SequenceTypes.NotifyParams;
 }
 
 export abstract class ISession extends ISequence<
@@ -151,11 +146,11 @@ export abstract class ISession extends ISequence<
   SessionTypes.DeleteParams,
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams,
-  SessionTypes.Participant
+  SessionTypes.NotifyParams,
+  SessionTypes.Participant,
+  SessionTypes.Signal,
+  SessionTypes.DefaultSignalParams,
+  SessionTypes.ProposedPermissions
 > {
   public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
-
-  public abstract notify(params: SessionTypes.NotifyParams): Promise<void>;
-
-  protected abstract onNotification(event: SubscriptionEvent.Payload): Promise<void>;
 }

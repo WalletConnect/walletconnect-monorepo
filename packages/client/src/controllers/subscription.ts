@@ -8,7 +8,7 @@ import {
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR, getError } from "@walletconnect/utils";
+import { ERROR } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import {
@@ -154,7 +154,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     await this.isEnabled();
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
-      const error = getError(ERROR.NO_MATCHING_TOPIC, {
+      const error = ERROR.NO_MATCHING_TOPIC.format({
         context: this.getSubscriptionContext(),
         topic,
       });
@@ -206,7 +206,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private onTimeout(topic: string): void {
     this.deleteTimeout(topic);
-    this.delete(topic, getError(ERROR.EXPIRED, { context: this.getSubscriptionContext() }));
+    this.delete(topic, ERROR.EXPIRED.format({ context: this.getSubscriptionContext() }));
   }
 
   private checkSubscriptions(): void {
@@ -231,7 +231,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
-        const error = getError(ERROR.RESTORE_WILL_OVERRIDE, {
+        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
           context: this.getSubscriptionContext(),
         });
         this.logger.error(error.message);

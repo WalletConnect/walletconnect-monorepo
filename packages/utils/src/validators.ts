@@ -11,7 +11,7 @@ import {
   Validation,
 } from "@walletconnect/types";
 
-import { ERROR, getError } from "./error";
+import { ERROR } from "./error";
 
 // -- sequence -------------------------------------------------- //
 
@@ -95,18 +95,16 @@ export function validateSessionProposeParamsPermissions(
 
 export function validateSessionProposeParamsMetadata(metadata: AppMetadata): Validation.Result {
   if (!isValidString(metadata.name)) {
-    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "metadata name" }));
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "metadata name" }));
   }
   if (!isValidString(metadata.description)) {
-    return formatInvalidResult(
-      getError(ERROR.MISSING_OR_INVALID, { name: "metadata description" }),
-    );
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "metadata description" }));
   }
   if (typeof metadata.url === "undefined" || !isValidUrl(metadata.url)) {
-    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "metadata url" }));
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "metadata url" }));
   }
   if (typeof metadata.icons === "undefined" || !isValidArray(metadata.icons, isValidUrl)) {
-    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "metadata icons" }));
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "metadata icons" }));
   }
   return formatValidResult();
 }
@@ -130,7 +128,7 @@ export function validateSessionRespondParams(
 ): Validation.Result {
   if (params.approved) {
     if (typeof params.response === "undefined") {
-      return formatInvalidResult(getError(ERROR.MISSING_RESPONSE, { context: "session" }));
+      return formatInvalidResult(ERROR.MISSING_RESPONSE.format({ context: "session" }));
     }
     const stateValidation = validateBlockchainState(
       params.response.state,
@@ -157,9 +155,7 @@ export function validateBlockchainPermissions(
     typeof blockchain.chains === "undefined" ||
     !isValidArray(blockchain.chains, isValidChainId)
   ) {
-    return formatInvalidResult(
-      getError(ERROR.MISSING_OR_INVALID, { name: "blockchain permissions" }),
-    );
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "blockchain permissions" }));
   }
   return formatValidResult();
 }
@@ -170,7 +166,7 @@ export function validateJsonRpcPermissions(jsonrpc?: JsonRpcPermissions): Valida
     typeof jsonrpc.methods === "undefined" ||
     !isValidArray(jsonrpc.methods, isValidString)
   ) {
-    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "jsonrpc permissions" }));
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "jsonrpc permissions" }));
   }
   return formatValidResult();
 }
@@ -184,7 +180,7 @@ export function validateNotificationPermissions(
     !isValidArray(notifications.types, isValidString)
   ) {
     return formatInvalidResult(
-      getError(ERROR.MISSING_OR_INVALID, { name: "notification permissions" }),
+      ERROR.MISSING_OR_INVALID.format({ name: "notification permissions" }),
     );
   }
   return formatValidResult();
@@ -201,23 +197,21 @@ export function validateBlockchainState(
     typeof blockchain.chains === "undefined" ||
     !isValidArray(blockchain.chains, isValidChainId)
   ) {
-    return formatInvalidResult(
-      getError(ERROR.MISSING_OR_INVALID, { name: "blockchain permissions" }),
-    );
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "blockchain permissions" }));
   }
   if (
     typeof state === "undefined" ||
     typeof state.accounts === "undefined" ||
     !isValidArray(state.accounts, isValidAccountId)
   ) {
-    return formatInvalidResult(getError(ERROR.MISSING_OR_INVALID, { name: "state accounts" }));
+    return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "state accounts" }));
   }
   const mismatched = state.accounts.filter(accountId => {
     const chainId = accountId.split("@")[1];
     return !blockchain.chains.includes(chainId);
   });
   if (mismatched.length) {
-    return formatInvalidResult(getError(ERROR.MISMATCHED_ACCOUNTS, { mismatched }));
+    return formatInvalidResult(ERROR.MISMATCHED_ACCOUNTS.format({ mismatched }));
   }
   return formatValidResult();
 }
