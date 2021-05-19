@@ -32,7 +32,7 @@ describe("Redis", () => {
     expect(result).to.be.gte(params.ttl - 1); // One second less
   });
   it("Gets a single message from redis", async () => {
-    for (var i = 0; i < 5000; i++) {
+    for (var i = 0; i < 250; i++) {
       await redis.setMessage({
         topic: TEST_TOPIC,
         message: generateRandomBytes32(),
