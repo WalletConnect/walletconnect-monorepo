@@ -7,13 +7,18 @@ import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-uti
 import client from "prom-client";
 
 import config from "./config";
-import register from "./metrics";
 import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
-import { SERVER_BEAT_INTERVAL, SERVER_CONTEXT, SERVER_EVENTS } from "./constants";
+import {
+  METRICS_DURACTION_BUCKETS,
+  METRICS_PREFIX,
+  SERVER_BEAT_INTERVAL,
+  SERVER_CONTEXT,
+  SERVER_EVENTS,
+} from "./constants";
 import { SubscriptionService } from "./subscription";
 import { NetworkService } from "./network";
 import { MessageService } from "./message";
@@ -33,7 +38,7 @@ export class HttpService {
 
   public context = SERVER_CONTEXT;
 
-  private metrics;
+  public metrics;
 
   constructor(opts: HttpServiceOptions) {
     const logger =
@@ -42,19 +47,14 @@ export class HttpService {
         : pino(getDefaultLoggerOptions({ level: opts?.logger }));
     this.app = fastify({ logger });
     this.logger = generateChildLogger(logger, this.context);
+    this.metrics = this.setMetrics();
     this.redis = new RedisService(this.logger);
     this.ws = new WebSocketService(this, this.logger);
     this.network = new NetworkService(this, this.logger, config.wakuUrl);
     this.message = new MessageService(this, this.logger);
     this.subscription = new SubscriptionService(this, this.logger);
     this.notification = new NotificationService(this, this.logger);
-    this.metrics = {
-      hello: new client.Counter({
-        registers: [register],
-        name: "relay_hello_counter",
-        help: "shows how much the /hello has been called",
-      }),
-    };
+
     this.initialize();
   }
 
@@ -112,8 +112,8 @@ export class HttpService {
     });
 
     this.app.get("/metrics", (_, res) => {
-      res.headers({ "Content-Type": register.contentType });
-      register.metrics().then(result => {
+      res.headers({ "Content-Type": this.metrics.register.contentType });
+      this.metrics.register.metrics().then(result => {
         res.status(200).send(result);
       });
     });
@@ -132,6 +132,25 @@ export class HttpService {
         res.status(400).send({ message: `Error: ${e.message}` });
       }
     });
+  }
+
+  private setMetrics() {
+    const register = new client.Registry();
+
+    client.collectDefaultMetrics({
+      prefix: METRICS_PREFIX,
+      register,
+      gcDurationBuckets: METRICS_DURACTION_BUCKETS,
+    });
+    const metrics = {
+      register,
+      hello: new client.Counter({
+        registers: [register],
+        name: `${this.context}_hello_counter`,
+        help: "shows how much the /hello has been called",
+      }),
+    };
+    return metrics;
   }
 
   private setBeatInterval() {

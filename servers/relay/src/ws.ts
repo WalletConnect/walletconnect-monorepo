@@ -5,7 +5,6 @@ import { isJsonRpcPayload, JsonRpcPayload } from "@json-rpc-tools/utils";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import config from "./config";
-import register from "./metrics";
 import { JsonRpcService } from "./jsonrpc";
 import { LegacySocketMessage, Socket } from "./types";
 import {
@@ -35,19 +34,19 @@ export class WebSocketService {
     this.legacy = new LegacyService(this.server, this.logger);
     this.metrics = {
       newConnection: new client.Counter({
-        name: "relay_" + this.context + "_new_connections",
+        name: `${this.server.context}_${this.context}_new_connections`,
         help: "Sum of opened ws connection",
-        registers: [register],
+        registers: [this.server.metrics.register],
       }),
       closeConnection: new client.Counter({
-        name: "relay_" + this.context + "_closed_connections",
+        name: `${this.server.context}_${this.context}_closed_connections`,
         help: "Sum of closed ws connections",
-        registers: [register],
+        registers: [this.server.metrics.register],
       }),
       totalMessages: new client.Counter({
-        name: "relay_" + this.context + "_messages_total",
+        name: `${this.server.context}_${this.context}_messages_total`,
         help: "Total amount of messages",
-        registers: [register],
+        registers: [this.server.metrics.register],
       }),
     };
 
