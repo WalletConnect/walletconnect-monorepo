@@ -134,15 +134,15 @@ export class Crypto implements ICrypto {
   }
 
   private async setEncryptionKeys(
-    encryptKeys: CryptoTypes.EncryptKeys,
+    encryptionKeys: CryptoTypes.EncryptionKeys,
     overrideTopic?: string,
   ): Promise<string> {
-    const topic = overrideTopic || (await sha256(encryptKeys.sharedKey));
-    const keys = this.concatKeys(encryptKeys.sharedKey, encryptKeys.publicKey);
+    const topic = overrideTopic || (await sha256(encryptionKeys.sharedKey));
+    const keys = this.concatKeys(encryptionKeys.sharedKey, encryptionKeys.publicKey);
     await this.keychain.set(topic, keys);
     return topic;
   }
-  private async getEncryptionKeys(topic: string): Promise<CryptoTypes.EncryptKeys> {
+  private async getEncryptionKeys(topic: string): Promise<CryptoTypes.EncryptionKeys> {
     const [sharedKey, publicKey] = this.splitKeys(await this.keychain.get(topic));
     return { sharedKey, publicKey };
   }
