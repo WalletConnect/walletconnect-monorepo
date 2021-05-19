@@ -20,6 +20,8 @@ import {
 
 import { LegacyService } from "./legacy";
 import { TEN_SECONDS } from "./constants";
+import { HttpService } from "./http";
+import { SOCKET_EVENTS } from "./constants/ws";
 
 export class WebSocketService {
   public jsonrpc: JsonRpcService;
@@ -34,15 +36,23 @@ export class WebSocketService {
   private metrics;
 
   constructor(
+    public server: HttpService,
     public logger: Logger,
     public redis: RedisService,
     public notification: NotificationService,
   ) {
+    this.server = server;
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.notification = this.notification;
-    this.jsonrpc = new JsonRpcService(this.logger, this.redis, this, this.notification);
-    this.legacy = new LegacyService(this.logger, this.redis, this, this.notification);
+    this.jsonrpc = new JsonRpcService(
+      this.server,
+      this.logger,
+      this.redis,
+      this,
+      this.notification,
+    );
+    this.legacy = new LegacyService(this.server, this.logger, this.redis, this, this.notification);
     this.metrics = {
       newConnection: new client.Counter({
         name: "relay_" + this.context + "_new_connections",
@@ -113,7 +123,7 @@ export class WebSocketService {
     this.logger.info(`New Socket Connected`);
     this.logger.debug({ type: "event", event: "connection", socketId });
     this.sockets.set(socketId, socket);
-    this.events.emit("socket_open", socketId);
+    this.events.emit(SOCKET_EVENTS.open, socketId);
     socket.on("message", async data => {
       this.metrics.totalMessages.inc();
       const message = data.toString();
@@ -156,7 +166,7 @@ export class WebSocketService {
     socket.on("close", () => {
       this.metrics.closeConnection.inc();
       this.sockets.delete(socketId);
-      this.events.emit("socket_close", socketId);
+      this.events.emit(SOCKET_EVENTS.close, socketId);
     });
   }
 
@@ -178,7 +188,7 @@ export class WebSocketService {
       if (socket.isAlive === false) {
         this.sockets.delete(socketId);
         socket.terminate();
-        this.events.emit("socket_close", socketId);
+        this.events.emit(SOCKET_EVENTS.close, socketId);
         return;
       }
 

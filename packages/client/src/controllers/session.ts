@@ -17,7 +17,6 @@ import {
   validateSessionRespondParams,
   isValidationInvalid,
   ERROR,
-  getError,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -99,7 +98,7 @@ export class Session extends ISession {
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(this.config.jsonrpc).includes(payload.method)) {
         if (!settled.permissions.jsonrpc.methods.includes(payload.method)) {
-          const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+          const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
             method: payload.method,
           });
           this.logger.error(error.message);
@@ -107,7 +106,7 @@ export class Session extends ISession {
         }
         // TODO: session-specific (start)
         if (chainId && !settled.permissions.blockchain.chains.includes(chainId)) {
-          const error = getError(ERROR.UNAUTHORIZED_TARGET_CHAIN, { chainId });
+          const error = ERROR.UNAUTHORIZED_TARGET_CHAIN.format({ chainId });
           this.logger.error(error.message);
           throw new Error(error.message);
         }
@@ -148,7 +147,7 @@ export class Session extends ISession {
       this.logger.trace({ type: "method", method: "create", params });
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.SETTLE_TIMEOUT, {
+        const error = ERROR.SETTLE_TIMEOUT.format({
           context: this.context,
           timeout: maxTimeout,
         });
@@ -179,7 +178,7 @@ export class Session extends ISession {
             } else {
               try {
                 const settled = await this.settled.get(outcome.topic);
-                const reason = getError(ERROR.SETTLED, { context: this.context });
+                const reason = ERROR.SETTLED.format({ context: this.context });
                 await this.pending.delete(pending.topic, reason);
                 resolve(settled);
               } catch (e) {
@@ -263,7 +262,7 @@ export class Session extends ISession {
         await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       } catch (e) {
-        const reason = getError(ERROR.GENERIC, { message: e.message });
+        const reason = ERROR.GENERIC.format({ message: e.message });
         const outcome: SessionTypes.Outcome = { reason };
         const pending: SessionTypes.Pending = {
           status: this.config.status.responded,
@@ -277,7 +276,7 @@ export class Session extends ISession {
         return pending;
       }
     } else {
-      const defaultReason = getError(ERROR.NOT_APPROVED, { context: this.context });
+      const defaultReason = ERROR.NOT_APPROVED.format({ context: this.context });
       const outcome = { reason: params?.reason || defaultReason };
       const pending: SessionTypes.Pending = {
         status: this.config.status.responded,
@@ -319,7 +318,7 @@ export class Session extends ISession {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.JSONRPC_REQUEST_TIMEOUT, {
+        const error = ERROR.JSONRPC_REQUEST_TIMEOUT.format({
           method: request.method,
           timeout: maxTimeout,
         });
@@ -360,7 +359,7 @@ export class Session extends ISession {
       settled.self.publicKey !== settled.permissions.controller.publicKey &&
       !settled.permissions.notifications.types.includes(params.type)
     ) {
-      const error = getError(ERROR.UNAUTHORIZED_NOTIFICATION_TYPE, { type: params.type });
+      const error = ERROR.UNAUTHORIZED_NOTIFICATION_TYPE.format({ type: params.type });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -508,7 +507,7 @@ export class Session extends ISession {
         });
       } catch (e) {
         this.logger.error(e);
-        error = getError(ERROR.GENERIC, { message: e.message });
+        error = ERROR.GENERIC.format({ message: e.message });
         await this.pending.update(topic, {
           status: this.config.status.responded,
           outcome: { reason: error },
@@ -540,7 +539,7 @@ export class Session extends ISession {
     if (isJsonRpcError(response) && !isSessionFailed(pending.outcome)) {
       await this.settled.delete(pending.outcome.topic, response.error);
     }
-    const reason = getError(ERROR.RESPONSE_ACKNOWLEDGED, { context: this.context });
+    const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.context });
     await this.pending.delete(topic, reason);
   }
 
@@ -572,7 +571,7 @@ export class Session extends ISession {
           await this.send(settled.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
-          error = getError(ERROR.UNKNOWN_JSONRPC_METHOD, { method: request.method });
+          error = ERROR.UNKNOWN_JSONRPC_METHOD.format({ method: request.method });
           this.logger.error(error.message);
           await this.send(settled.topic, formatJsonRpcError(request.id, error));
           break;
@@ -589,7 +588,7 @@ export class Session extends ISession {
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const settled = await this.settled.get(topic);
       if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
-        const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+        const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
           method: request.method,
         });
         this.logger.error(error.message);
@@ -598,7 +597,7 @@ export class Session extends ISession {
       // TODO: session-specific (start)
       const { chainId } = params;
       if (chainId && !settled.permissions.blockchain.chains.includes(chainId)) {
-        const error = getError(ERROR.UNAUTHORIZED_TARGET_CHAIN, { chainId });
+        const error = ERROR.UNAUTHORIZED_TARGET_CHAIN.format({ chainId });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
@@ -669,7 +668,7 @@ export class Session extends ISession {
     if (typeof params.state !== "undefined") {
       const state = settled.state;
       if (participant.publicKey !== settled.permissions.controller.publicKey) {
-        const error = getError(ERROR.UNAUTHORIZED_UPDATE_REQUEST, { context: this.context });
+        const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({ context: this.context });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
@@ -677,7 +676,7 @@ export class Session extends ISession {
       state.accounts = params.state.accounts || state.accounts;
       update = { state };
     } else {
-      const error = getError(ERROR.INVALID_UPDATE_REQUEST, { context: this.context });
+      const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.context });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -693,7 +692,7 @@ export class Session extends ISession {
     const settled = await this.settled.get(topic);
     let upgrade: SessionTypes.Upgrade = { permissions: {} };
     if (participant.publicKey !== settled.permissions.controller.publicKey) {
-      const error = getError(ERROR.UNAUTHORIZED_UPGRADE_REQUEST, { context: this.context });
+      const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({ context: this.context });
       this.logger.error(error.message);
       throw new Error(error.message);
     }

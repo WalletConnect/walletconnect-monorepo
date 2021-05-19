@@ -29,5 +29,4 @@ zip
 .rts2_cache_*
 .nyc_output
 tsconfig.tsbuildinfo
-config
 test.db

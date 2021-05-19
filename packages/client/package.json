@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/client",
   "description": "Client for WalletConnect Protocol",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.2",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
@@ -29,11 +29,11 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/provider": "^1.7.4",
-    "@json-rpc-tools/utils": "^1.7.4",
+    "@json-rpc-tools/provider": "^1.7.6",
+    "@json-rpc-tools/utils": "^1.7.6",
     "@pedrouid/pino-utils": "^1.0.1",
-    "@walletconnect/types": "^2.0.0-beta.1",
-    "@walletconnect/utils": "^2.0.0-beta.1",
+    "@walletconnect/types": "^2.0.0-beta.2",
+    "@walletconnect/utils": "^2.0.0-beta.2",
     "enc-utils": "^3.0.0",
     "keyvaluestorage": "^0.7.1",
     "pino": "^6.7.0",

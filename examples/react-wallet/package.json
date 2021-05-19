@@ -24,7 +24,7 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.7.2",
+    "@json-rpc-tools/utils": "^1.7.6",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",

@@ -6,13 +6,22 @@ import { WebSocketService } from "./ws";
 import { Subscription } from "./types";
 import { generateRandomBytes32 } from "./utils";
 import { FIVE_SECONDS } from "./constants";
+import { HttpService } from "./http";
+import { SERVER_EVENTS } from "./constants/http";
+import { SOCKET_EVENTS } from "./constants/ws";
 
 export class SubscriptionService {
   public subscriptions: Subscription[] = [];
 
   public context = "subscription";
 
-  constructor(public logger: Logger, public redis: RedisService, public ws: WebSocketService) {
+  constructor(
+    public server: HttpService,
+    public logger: Logger,
+    public redis: RedisService,
+    public ws: WebSocketService,
+  ) {
+    this.server = server;
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.ws = ws;
@@ -53,7 +62,6 @@ export class SubscriptionService {
   private initialize(): void {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
-    setInterval(() => this.clearInactiveSubscriptions(), FIVE_SECONDS * 1000);
   }
 
   private clearInactiveSubscriptions() {
@@ -61,6 +69,7 @@ export class SubscriptionService {
   }
 
   private registerEventListeners() {
-    this.ws.on("socket_close", (socketId: string) => this.removeSocket(socketId));
+    this.server.on(SERVER_EVENTS.beat, () => this.clearInactiveSubscriptions());
+    this.ws.on(SOCKET_EVENTS.close, (socketId: string) => this.removeSocket(socketId));
   }
 }
