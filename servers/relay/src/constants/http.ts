@@ -1,5 +1,7 @@
 import { FIVE_SECONDS } from "./time";
 
+export const SERVER_CONTEXT = "server";
+
 export const SERVER_EVENTS = {
   beat: "server_beat",
 };

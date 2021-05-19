@@ -13,7 +13,10 @@ import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
-import { SERVER_BEAT_INTERVAL, SERVER_EVENTS } from "./constants/http";
+import { SERVER_BEAT_INTERVAL, SERVER_CONTEXT, SERVER_EVENTS } from "./constants";
+import { SubscriptionService } from "./subscription";
+import { NetworkService } from "./network";
+import { MessageService } from "./message";
 
 export class HttpService {
   public events = new EventEmitter();
@@ -23,9 +26,12 @@ export class HttpService {
   public redis: RedisService;
 
   public ws: WebSocketService;
+  public network: NetworkService;
+  public message: MessageService;
+  public subscription: SubscriptionService;
   public notification: NotificationService;
 
-  public context = "server";
+  public context = SERVER_CONTEXT;
 
   private metrics;
 
@@ -37,8 +43,11 @@ export class HttpService {
     this.app = fastify({ logger });
     this.logger = generateChildLogger(logger, this.context);
     this.redis = new RedisService(this.logger);
-    this.notification = new NotificationService(this, this.logger, this.redis);
-    this.ws = new WebSocketService(this, this.logger, this.redis, this.notification);
+    this.ws = new WebSocketService(this, this.logger);
+    this.network = new NetworkService(this, this.logger, config.wakuUrl);
+    this.message = new MessageService(this, this.logger);
+    this.subscription = new SubscriptionService(this, this.logger);
+    this.notification = new NotificationService(this, this.logger);
     this.metrics = {
       hello: new client.Counter({
         registers: [register],
@@ -116,10 +125,7 @@ export class HttpService {
         assertType(req.body, "topic");
         assertType(req.body, "webhook");
 
-        this.redis.setNotification({
-          topic: req.body.topic,
-          webhook: req.body.webhook,
-        });
+        await this.notification.register(req.body.topic, req.body.webhook);
 
         res.status(200).send({ success: true });
       } catch (e) {

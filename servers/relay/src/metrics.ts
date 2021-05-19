@@ -1,5 +1,7 @@
 import client from "prom-client";
 
+import { METRICS_PREFIX, METRICS_DURACTION_BUCKETS } from "./constants";
+
 const register = new client.Registry();
 // Just leaving this here as an example of how to register
 // a metric to a register.
@@ -7,9 +9,9 @@ const register = new client.Registry();
 //register.registerMetric(a)
 
 client.collectDefaultMetrics({
-  prefix: "relay_",
+  prefix: METRICS_PREFIX,
   register,
-  gcDurationBuckets: [0.1, 1, 5],
+  gcDurationBuckets: METRICS_DURACTION_BUCKETS,
 });
 
 export default register;

@@ -1,16 +1,13 @@
-import client from "prom-client";
-import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { safeJsonParse } from "safe-json-utils";
-import { isJsonRpcPayload } from "@json-rpc-tools/utils";
+import client from "prom-client";
+import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
+import { isJsonRpcPayload, JsonRpcPayload } from "@json-rpc-tools/utils";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import config from "./config";
 import register from "./metrics";
-import { RedisService } from "./redis";
-import { NotificationService } from "./notification";
 import { JsonRpcService } from "./jsonrpc";
-import { Socket } from "./types";
+import { LegacySocketMessage, Socket } from "./types";
 import {
   generateRandomBytes32,
   isJsonRpcDisabled,
@@ -19,39 +16,23 @@ import {
 } from "./utils";
 
 import { LegacyService } from "./legacy";
-import { TEN_SECONDS } from "./constants";
 import { HttpService } from "./http";
-import { SOCKET_EVENTS } from "./constants/ws";
+import { SERVER_EVENTS, WEBSOCKET_CONTEXT, WEBSOCKET_EVENTS } from "./constants";
 
 export class WebSocketService {
   public jsonrpc: JsonRpcService;
   public legacy: LegacyService;
   public sockets = new Map<string, Socket>();
 
-  public events = new EventEmitter();
-
-  public context = "websocket";
+  public context = WEBSOCKET_CONTEXT;
 
   private metrics;
 
-  constructor(
-    public server: HttpService,
-    public logger: Logger,
-    public redis: RedisService,
-    public notification: NotificationService,
-  ) {
+  constructor(public server: HttpService, public logger: Logger) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
-    this.redis = redis;
-    this.notification = this.notification;
-    this.jsonrpc = new JsonRpcService(
-      this.server,
-      this.logger,
-      this.redis,
-      this,
-      this.notification,
-    );
-    this.legacy = new LegacyService(this.server, this.logger, this.redis, this, this.notification);
+    this.jsonrpc = new JsonRpcService(this.server, this.logger);
+    this.legacy = new LegacyService(this.server, this.logger);
     this.metrics = {
       newConnection: new client.Counter({
         name: "relay_" + this.context + "_new_connections",
@@ -73,26 +54,11 @@ export class WebSocketService {
     this.initialize();
   }
 
-  public on(event: string, listener: any): void {
-    this.events.on(event, listener);
-  }
-
-  public once(event: string, listener: any): void {
-    this.events.once(event, listener);
-  }
-
-  public off(event: string, listener: any): void {
-    this.events.off(event, listener);
-  }
-
-  public removeListener(event: string, listener: any): void {
-    this.events.removeListener(event, listener);
-  }
-
-  public send(socketId: string, message: string) {
+  public send(socketId: string, msg: string | JsonRpcPayload | LegacySocketMessage) {
     if (!this.isSocketConnected(socketId)) {
       throw new Error(`Socket not active with socketId: ${socketId}`);
     }
+    const message = typeof msg === "string" ? msg : safeJsonStringify(msg);
     const socket = this.getSocket(socketId);
     this.logger.debug(`Outgoing Socket Message`);
     this.logger.trace({ type: "message", direction: "outgoing", message });
@@ -122,7 +88,7 @@ export class WebSocketService {
     this.logger.info(`New Socket Connected`);
     this.logger.debug({ type: "event", event: "connection", socketId });
     this.sockets.set(socketId, socket);
-    this.events.emit(SOCKET_EVENTS.open, socketId);
+    this.server.events.emit(WEBSOCKET_EVENTS.open, socketId);
     socket.on("message", async data => {
       this.metrics.totalMessages.inc();
       const message = data.toString();
@@ -165,7 +131,7 @@ export class WebSocketService {
     socket.on("close", () => {
       this.metrics.closeConnection.inc();
       this.sockets.delete(socketId);
-      this.events.emit(SOCKET_EVENTS.close, socketId);
+      this.server.events.emit(WEBSOCKET_EVENTS.close, socketId);
     });
   }
 
@@ -173,7 +139,11 @@ export class WebSocketService {
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
-    setInterval(() => this.clearInactiveSockets(), TEN_SECONDS * 1000);
+    this.registerEventListeners();
+  }
+
+  private registerEventListeners() {
+    this.server.events.on(SERVER_EVENTS.beat, () => this.clearInactiveSockets());
   }
 
   private clearInactiveSockets() {
@@ -187,7 +157,7 @@ export class WebSocketService {
       if (socket.isAlive === false) {
         this.sockets.delete(socketId);
         socket.terminate();
-        this.events.emit(SOCKET_EVENTS.close, socketId);
+        this.server.events.emit(WEBSOCKET_EVENTS.close, socketId);
         return;
       }
 
