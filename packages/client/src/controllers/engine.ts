@@ -152,7 +152,7 @@ export class Engine extends IEngine {
         };
         if (!responder.metadata) delete responder.metadata;
         const expiry = Date.now() + proposal.ttl * 1000;
-        const state: SequenceTypes.State = {};
+        const state: SequenceTypes.State = response?.state || {};
         const peer: SequenceTypes.Participant = {
           publicKey: proposal.proposer.publicKey,
           metadata: proposal.proposer.metadata,
@@ -380,7 +380,7 @@ export class Engine extends IEngine {
           metadata: outcome.responder.metadata,
         };
         if (!peer.metadata) delete peer.metadata;
-        const state: SequenceTypes.State = {};
+        const state: SequenceTypes.State = outcome.state || {};
         const permissions: SequenceTypes.Permissions = {
           ...pending.proposal.permissions,
           controller,
