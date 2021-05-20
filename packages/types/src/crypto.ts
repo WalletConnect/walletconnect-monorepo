@@ -1,5 +1,3 @@
-import { IEvents } from "@json-rpc-tools/types";
-import { Logger } from "pino";
 import { IClient } from "./client";
 
 export declare namespace CryptoTypes {
@@ -7,32 +5,23 @@ export declare namespace CryptoTypes {
     publicKey: string;
   }
 
-  export type Self = Participant;
-
-  export interface Peer<M = any> extends Participant {
-    metadata?: M;
-  }
-
   export interface KeyPair {
     privateKey: string;
     publicKey: string;
   }
 
-  export interface EncryptKeys {
+  export interface EncryptionKeys {
     sharedKey: string;
     publicKey: string;
     iv?: string;
   }
 
-  export interface EncryptParams extends EncryptKeys {
+  export interface EncryptParams extends EncryptionKeys {
     message: string;
   }
 
-  export interface DecryptKeys {
+  export interface DecryptParams {
     sharedKey: string;
-  }
-
-  export interface DecryptParams extends DecryptKeys {
     encrypted: string;
   }
 }
