@@ -68,8 +68,8 @@ export class Relayer extends IRelayer {
           ttl: opts?.ttl || RELAYER_DEFAULT_PUBLISH_TTL,
         },
       };
-      this.logger.info(`Outgoing Relay Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", request });
+      this.logger.debug(`Outgoing Relay Payload`);
+      this.logger.trace({ type: "payload", direction: "outgoing", request });
       await this.provider.request(request);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", request });
@@ -96,8 +96,8 @@ export class Relayer extends IRelayer {
           topic,
         },
       };
-      this.logger.info(`Outgoing Relay Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", request });
+      this.logger.debug(`Outgoing Relay Payload`);
+      this.logger.trace({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
       this.events.on(id, async ({ message }) => {
         const hasKeys = await this.client.crypto.hasKeys(topic);
@@ -128,8 +128,8 @@ export class Relayer extends IRelayer {
           id,
         },
       };
-      this.logger.info(`Outgoing Relay Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", request });
+      this.logger.debug(`Outgoing Relay Payload`);
+      this.logger.trace({ type: "payload", direction: "outgoing", request });
 
       await this.provider.request(request);
       this.events.removeAllListeners(id);
@@ -161,8 +161,8 @@ export class Relayer extends IRelayer {
   // ---------- Private ----------------------------------------------- //
 
   private onPayload(payload: JsonRpcPayload) {
-    this.logger.info(`Incoming Relay Payload`);
-    this.logger.debug({ type: "payload", direction: "incoming", payload });
+    this.logger.debug(`Incoming Relay Payload`);
+    this.logger.trace({ type: "payload", direction: "incoming", payload });
     if (isJsonRpcRequest(payload)) {
       if (payload.method.endsWith("_subscription")) {
         const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;

@@ -242,19 +242,22 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private registerEventListeners(): void {
     this.events.on(HISTORY_EVENTS.created, (record: JsonRpcRecord) => {
-      this.logger.info(`Emitting ${HISTORY_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: HISTORY_EVENTS.created, record });
+      const eventName = HISTORY_EVENTS.created;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, record });
       this.persist();
     });
     this.events.on(HISTORY_EVENTS.updated, (record: JsonRpcRecord) => {
-      this.logger.info(`Emitting ${HISTORY_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: HISTORY_EVENTS.updated, record });
+      const eventName = HISTORY_EVENTS.updated;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, record });
       this.persist();
     });
 
     this.events.on(HISTORY_EVENTS.deleted, (record: JsonRpcRecord) => {
-      this.logger.info(`Emitting ${HISTORY_EVENTS.deleted}`);
-      this.logger.debug({ type: "event", event: HISTORY_EVENTS.deleted, record });
+      const eventName = HISTORY_EVENTS.deleted;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, record });
       this.persist();
     });
   }
