@@ -1,7 +1,7 @@
 import { PairingTypes, SignalTypes } from "@walletconnect/types";
 import { THIRTY_DAYS } from "./time";
 
-export const PAIRING_JSONRPC = {
+export const PAIRING_JSONRPC: PairingTypes.JsonRpc = {
   approve: "wc_pairingApprove",
   reject: "wc_pairingReject",
   update: "wc_pairingUpdate",
@@ -24,7 +24,7 @@ export const PAIRING_STATUS = {
   settled: "settled",
 };
 
-export const PAIRING_EVENTS = {
+export const PAIRING_EVENTS: PairingTypes.Events = {
   proposed: "pairing_proposed",
   responded: "pairing_responded",
   settled: "pairing_settled",

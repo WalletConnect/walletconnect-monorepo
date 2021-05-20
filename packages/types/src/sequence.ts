@@ -1,24 +1,223 @@
 import { Logger } from "pino";
-import { JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
+import {
+  JsonRpcPayload,
+  IEvents,
+  RequestArguments,
+  JsonRpcRequest,
+  JsonRpcResponse,
+} from "@json-rpc-tools/types";
 
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
 import { ISubscription, SubscriptionEvent } from "./subscription";
 import { IJsonRpcHistory } from "./history";
+import { AppMetadata, JsonRpcPermissions, Reason, SignalTypes } from "./misc";
+import { RelayerTypes } from "./relayer";
+
+export declare namespace SequenceTypes {
+  export interface Status {
+    proposed: string;
+    responded: string;
+    pending: string;
+    settled: string;
+  }
+  export interface Events {
+    proposed: string;
+    responded: string;
+    settled: string;
+    updated: string;
+    deleted: string;
+    request: string;
+    response: string;
+    enabled: string;
+    disabled: string;
+    sync: string;
+  }
+  export interface JsonRpc {
+    propose: string;
+    approve: string;
+    reject: string;
+    update: string;
+    upgrade: string;
+    delete: string;
+    payload: string;
+    ping: string;
+  }
+
+  export interface Config<E = Events, J = JsonRpc, S = Status> {
+    events: E;
+    jsonrpc: J;
+    status: S;
+  }
+
+  export type Relay = RelayerTypes.ProtocolOptions;
+  export interface BasePermissions {
+    jsonrpc: JsonRpcPermissions;
+  }
+  export type ProposedPermissions = BasePermissions;
+
+  export interface SettledPermissions extends ProposedPermissions {
+    controller: CryptoTypes.Participant;
+  }
+  export type Permissions = SettledPermissions;
+
+  export interface ProposeParams {
+    relay: Relay;
+    timeout?: number;
+  }
+
+  export type CreateParams = ProposeParams;
+
+  export type Signal = SignalTypes.Base;
+
+  export type Participant = CryptoTypes.Participant;
+  export interface ProposedPeer extends Participant {
+    controller: boolean;
+  }
+
+  export interface Proposal<S = Signal, Par = ProposedPeer, Per = ProposedPermissions> {
+    topic: string;
+    relay: Relay;
+    proposer: Par;
+    signal: S;
+    permissions: Per;
+    ttl: number;
+  }
+
+  export type ProposedStatus = "proposed";
+
+  export type RespondedStatus = "responded";
+
+  export type PendingStatus = ProposedStatus | RespondedStatus;
+
+  export interface BasePending<Par = Participant, Pro = Proposal> {
+    status: PendingStatus;
+    topic: string;
+    relay: Relay;
+    self: Par;
+    proposal: Pro;
+  }
+
+  export interface ProposedPending<Par = Participant, Pro = Proposal>
+    extends BasePending<Par, Pro> {
+    status: ProposedStatus;
+  }
+
+  export interface RespondedPending<Par = Participant, Pro = Proposal, S = State>
+    extends BasePending<Par, Pro> {
+    status: RespondedStatus;
+    outcome: Outcome<S, Par>;
+  }
+
+  export type Pending<Par = Participant, Pro = Proposal, S = State> =
+    | ProposedPending<Par, Pro>
+    | RespondedPending<Par, Pro, S>;
+
+  export interface RespondParams<Pro = Proposal> {
+    approved: boolean;
+    proposal: Pro;
+    reason?: Reason;
+  }
+
+  export interface SettleParams<S = State, Par = Participant, Per = Permissions> {
+    relay: Relay;
+    peer: Par;
+    self: Par;
+    state: S;
+    permissions: Per;
+    ttl: number;
+    expiry: number;
+  }
+
+  export interface UpgradeParams<Per = Permissions> extends Upgrade<Per> {
+    topic: string;
+  }
+
+  export interface UpdateParams<S = State> extends Update<S> {
+    topic: string;
+  }
+
+  export interface RequestParams {
+    topic: string;
+    request: RequestArguments;
+    timeout?: number;
+  }
+
+  export interface Upgrade<Per = Permissions> {
+    permissions: Partial<Per>;
+  }
+
+  export interface Update<S = State> {
+    state: Partial<S>;
+  }
+
+  export interface Request {
+    request: RequestArguments;
+  }
+
+  export interface PayloadEvent {
+    topic: string;
+    payload: JsonRpcPayload;
+  }
+
+  export interface RequestEvent extends Omit<PayloadEvent, "payload"> {
+    request: JsonRpcRequest;
+  }
+
+  export interface ResponseEvent extends Omit<PayloadEvent, "payload"> {
+    response: JsonRpcResponse;
+  }
+
+  export interface DeleteParams {
+    topic: string;
+    reason: Reason;
+  }
+
+  export interface Settled<S = State, Par = Participant, Per = Permissions> {
+    topic: string;
+    relay: Relay;
+    self: Par;
+    peer: Par;
+    permissions: Per;
+    expiry: number;
+    state: S;
+  }
+
+  export type Created<S = State, Par = Participant, Per = Permissions> = Settled<S, Par, Per>;
+
+  export interface Success<S = State, Par = Participant> {
+    topic: string;
+    relay: Relay;
+    responder: Par;
+    expiry: number;
+    state: S;
+  }
+
+  export interface Failed {
+    reason: Reason;
+  }
+
+  export type Outcome<S = State, Par = Participant> = Failed | Success<S, Par>;
+  export interface State {
+    metadata?: AppMetadata;
+  }
+}
 
 export abstract class ISequence<
-  Pending,
-  Settled,
-  Upgrade,
-  Update,
-  CreateParams,
-  RespondParams,
-  RequestParams,
-  UpgradeParams,
-  UpdateParams,
-  DeleteParams,
-  ProposeParams,
-  SettleParams
+  Config = SequenceTypes.Config,
+  Pending = SequenceTypes.Pending,
+  Settled = SequenceTypes.Settled,
+  Upgrade = SequenceTypes.Upgrade,
+  Update = SequenceTypes.Update,
+  CreateParams = SequenceTypes.CreateParams,
+  RespondParams = SequenceTypes.RespondParams,
+  RequestParams = SequenceTypes.RequestParams,
+  UpgradeParams = SequenceTypes.UpgradeParams,
+  UpdateParams = SequenceTypes.UpdateParams,
+  DeleteParams = SequenceTypes.DeleteParams,
+  ProposeParams = SequenceTypes.ProposeParams,
+  SettleParams = SequenceTypes.SettleParams,
+  Participant = SequenceTypes.Participant
 > extends IEvents {
   // pending subscriptions
   public abstract pending: ISubscription<Pending>;
@@ -36,6 +235,9 @@ export abstract class ISequence<
 
   // describes sequence context
   protected abstract context: string;
+
+  // describes sequence config
+  protected abstract config: Config;
 
   constructor(public client: IClient, public logger: Logger) {
     super();
@@ -89,11 +291,11 @@ export abstract class ISequence<
   protected abstract handleUpdate(
     topic: string,
     update: Update,
-    participant: CryptoTypes.Participant,
+    participant: Participant,
   ): Promise<Update>;
   protected abstract handleUpgrade(
     topic: string,
     params: Upgrade,
-    participant: CryptoTypes.Participant,
+    participant: Participant,
   ): Promise<Upgrade>;
 }

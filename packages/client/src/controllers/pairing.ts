@@ -15,7 +15,6 @@ import {
   formatUri,
   isSubscriptionUpdatedEvent,
   ERROR,
-  getError,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -54,18 +53,24 @@ export class Pairing extends IPairing {
 
   protected context: string = PAIRING_CONTEXT;
 
+  protected config = {
+    status: PAIRING_STATUS,
+    events: PAIRING_EVENTS,
+    jsonrpc: PAIRING_JSONRPC,
+  };
+
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
     this.logger = generateChildLogger(logger, this.context);
     this.pending = new Subscription<PairingTypes.Pending>(
       client,
       this.logger,
-      PAIRING_STATUS.pending,
+      this.config.status.pending,
     );
     this.settled = new Subscription<PairingTypes.Settled>(
       client,
       this.logger,
-      PAIRING_STATUS.settled,
+      this.config.status.settled,
     );
     this.history = new JsonRpcHistory(client, this.logger);
     this.registerEventListeners();
@@ -83,24 +88,24 @@ export class Pairing extends IPairing {
   }
 
   public async ping(topic: string, timeout?: number): Promise<void> {
-    const request = { method: PAIRING_JSONRPC.ping, params: {} };
+    const request = { method: this.config.jsonrpc.ping, params: {} };
     return this.request({ topic, request, timeout: timeout || THIRTY_SECONDS * 1000 });
   }
 
   public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
-    const pairing = await this.settled.get(topic);
+    const settled = await this.settled.get(topic);
     if (isJsonRpcRequest(payload)) {
-      if (!Object.values(PAIRING_JSONRPC).includes(payload.method)) {
-        if (!pairing.permissions.jsonrpc.methods.includes(payload.method)) {
-          const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+      if (!Object.values(this.config.jsonrpc).includes(payload.method)) {
+        if (!settled.permissions.jsonrpc.methods.includes(payload.method)) {
+          const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
             method: payload.method,
           });
           this.logger.error(error.message);
           throw new Error(error.message);
         }
         await this.history.set(topic, payload);
-        payload = formatJsonRpcRequest<PairingTypes.Payload>(
-          PAIRING_JSONRPC.payload,
+        payload = formatJsonRpcRequest<PairingTypes.Request>(
+          this.config.jsonrpc.payload,
           {
             request: { method: payload.method, params: payload.params },
           },
@@ -110,8 +115,8 @@ export class Pairing extends IPairing {
     } else {
       await this.history.update(topic, payload);
     }
-    await this.client.relayer.publish(pairing.topic, payload, {
-      relay: pairing.relay,
+    await this.client.relayer.publish(settled.topic, payload, {
+      relay: settled.relay,
     });
   }
 
@@ -129,11 +134,11 @@ export class Pairing extends IPairing {
 
   public create(params?: PairingTypes.CreateParams): Promise<PairingTypes.Settled> {
     return new Promise(async (resolve, reject) => {
-      this.logger.debug(`Create Pairing`);
+      this.logger.debug(`Create ${this.context}`);
       this.logger.trace({ type: "method", method: "create", params });
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.SETTLE_TIMEOUT, {
+        const error = ERROR.SETTLE_TIMEOUT.format({
           context: this.context,
           timeout: maxTimeout,
         });
@@ -163,10 +168,10 @@ export class Pairing extends IPairing {
               reject(new Error(outcome.reason.message));
             } else {
               try {
-                const pairing = await this.settled.get(outcome.topic);
-                const reason = getError(ERROR.SETTLED, { context: this.context });
+                const settled = await this.settled.get(outcome.topic);
+                const reason = ERROR.SETTLED.format({ context: this.context });
                 await this.pending.delete(pending.topic, reason);
-                resolve(pairing);
+                resolve(settled);
               } catch (e) {
                 return reject(e);
               }
@@ -178,42 +183,48 @@ export class Pairing extends IPairing {
   }
 
   public async respond(params: PairingTypes.RespondParams): Promise<PairingTypes.Pending> {
-    this.logger.debug(`Respond Pairing`);
+    this.logger.debug(`Respond ${this.context}`);
     this.logger.trace({ type: "method", method: "respond", params });
     const { approved, proposal } = params;
+    const { relay, ttl } = proposal;
     const self = { publicKey: await this.client.crypto.generateKeyPair() };
     if (approved) {
       try {
-        const responder: PairingTypes.Peer = {
+        const responder: PairingTypes.Participant = {
           publicKey: self.publicKey,
         };
         const expiry = Date.now() + proposal.ttl * 1000;
+        const state: PairingTypes.State = {};
+        const peer: PairingTypes.Participant = {
+          publicKey: proposal.proposer.publicKey,
+        };
         const controller = proposal.proposer.controller
-          ? { publicKey: proposal.proposer.publicKey }
+          ? { publicKey: peer.publicKey }
           : { publicKey: self.publicKey };
-        const pairing = await this.settle({
-          relay: proposal.relay,
+        const permissions: PairingTypes.Permissions = {
+          ...proposal.permissions,
+          controller,
+        };
+        const settled = await this.settle({
+          relay,
           self,
-          peer: { publicKey: proposal.proposer.publicKey },
-          permissions: {
-            ...proposal.permissions,
-            controller,
-          },
-          state: {},
-          ttl: proposal.ttl,
+          peer,
+          permissions,
+          state,
+          ttl,
           expiry,
         });
         const outcome: PairingTypes.Outcome = {
-          topic: pairing.topic,
-          relay: pairing.relay,
+          topic: settled.topic,
+          relay,
+          state,
           responder,
           expiry,
-          state: {},
         };
         const pending: PairingTypes.Pending = {
-          status: PAIRING_STATUS.responded,
+          status: this.config.status.responded,
           topic: proposal.topic,
-          relay: proposal.relay,
+          relay,
           self,
           proposal,
           outcome,
@@ -221,12 +232,12 @@ export class Pairing extends IPairing {
         await this.pending.set(pending.topic, pending, { relay: pending.relay });
         return pending;
       } catch (e) {
-        const reason = getError(ERROR.GENERIC, { message: e.message });
+        const reason = ERROR.GENERIC.format({ message: e.message });
         const outcome: PairingTypes.Outcome = { reason };
         const pending: PairingTypes.Pending = {
-          status: PAIRING_STATUS.responded,
+          status: this.config.status.responded,
           topic: proposal.topic,
-          relay: proposal.relay,
+          relay,
           self,
           proposal,
           outcome,
@@ -235,12 +246,12 @@ export class Pairing extends IPairing {
         return pending;
       }
     } else {
-      const defaultReason = getError(ERROR.NOT_APPROVED, { context: this.context });
+      const defaultReason = ERROR.NOT_APPROVED.format({ context: this.context });
       const outcome: PairingTypes.Outcome = { reason: params?.reason || defaultReason };
       const pending: PairingTypes.Pending = {
-        status: PAIRING_STATUS.responded,
+        status: this.config.status.responded,
         topic: proposal.topic,
-        relay: proposal.relay,
+        relay,
         self,
         proposal,
         outcome,
@@ -251,25 +262,25 @@ export class Pairing extends IPairing {
   }
 
   public async upgrade(params: PairingTypes.UpgradeParams): Promise<PairingTypes.Settled> {
-    this.logger.info(`Upgrade Pairing`);
+    this.logger.info(`Upgrade ${this.context}`);
     this.logger.trace({ type: "method", method: "upgrade", params });
-    const pairing = await this.settled.get(params.topic);
-    const participant: CryptoTypes.Participant = { publicKey: pairing.self.publicKey };
+    const settled = await this.settled.get(params.topic);
+    const participant: CryptoTypes.Participant = { publicKey: settled.self.publicKey };
     const upgrade = await this.handleUpgrade(params.topic, params, participant);
-    const request = formatJsonRpcRequest(PAIRING_JSONRPC.upgrade, upgrade);
-    await this.send(pairing.topic, request);
-    return pairing;
+    const request = formatJsonRpcRequest(this.config.jsonrpc.upgrade, upgrade);
+    await this.send(settled.topic, request);
+    return settled;
   }
 
   public async update(params: PairingTypes.UpdateParams): Promise<PairingTypes.Settled> {
-    this.logger.debug(`Update Pairing`);
+    this.logger.debug(`Update ${this.context}`);
     this.logger.trace({ type: "method", method: "update", params });
-    const pairing = await this.settled.get(params.topic);
-    const participant: CryptoTypes.Participant = { publicKey: pairing.self.publicKey };
+    const settled = await this.settled.get(params.topic);
+    const participant: CryptoTypes.Participant = { publicKey: settled.self.publicKey };
     const update = await this.handleUpdate(params.topic, params, participant);
-    const request = formatJsonRpcRequest(PAIRING_JSONRPC.update, update);
-    await this.send(pairing.topic, request);
-    return pairing;
+    const request = formatJsonRpcRequest(this.config.jsonrpc.update, update);
+    await this.send(settled.topic, request);
+    return settled;
   }
 
   public async request(params: PairingTypes.RequestParams): Promise<any> {
@@ -277,14 +288,14 @@ export class Pairing extends IPairing {
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
-        const error = getError(ERROR.JSONRPC_REQUEST_TIMEOUT, {
+        const error = ERROR.JSONRPC_REQUEST_TIMEOUT.format({
           method: request.method,
           timeout: maxTimeout,
         });
         this.logger.error(error.message);
         reject(error.message);
       }, maxTimeout);
-      this.events.on(PAIRING_EVENTS.response, (responseEvent: PairingTypes.ResponseEvent) => {
+      this.events.on(this.config.events.response, (responseEvent: PairingTypes.ResponseEvent) => {
         if (params.topic !== responseEvent.topic) return;
         const response = responseEvent.response;
         if (response.id !== request.id) return;
@@ -306,7 +317,7 @@ export class Pairing extends IPairing {
   }
 
   public async delete(params: PairingTypes.DeleteParams): Promise<void> {
-    this.logger.debug(`Delete Pairing`);
+    this.logger.debug(`Delete ${this.context}`);
     this.logger.trace({ type: "method", method: "delete", params });
     await this.settled.delete(params.topic, params.reason);
   }
@@ -330,7 +341,7 @@ export class Pairing extends IPairing {
   // ---------- Protected ----------------------------------------------- //
 
   protected async propose(params?: PairingTypes.ProposeParams): Promise<PairingTypes.Pending> {
-    this.logger.debug(`Propose Pairing`);
+    this.logger.debug(`Propose ${this.context}`);
     this.logger.trace({ type: "method", method: "propose", params });
     const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
@@ -339,6 +350,7 @@ export class Pairing extends IPairing {
       publicKey: self.publicKey,
       controller: this.client.controller,
     };
+    // TODO: pairing-specific (start)
     const uri = formatUri({
       protocol: this.client.protocol,
       version: this.client.version,
@@ -356,16 +368,18 @@ export class Pairing extends IPairing {
         methods: [SESSION_JSONRPC.propose],
       },
     };
+    const ttl = PAIRING_DEFAULT_TTL;
+    // TODO: pairing-specific (end)
     const proposal: PairingTypes.Proposal = {
       relay,
       topic,
       proposer,
       signal,
       permissions,
-      ttl: PAIRING_DEFAULT_TTL,
+      ttl,
     };
     const pending: PairingTypes.Pending = {
-      status: PAIRING_STATUS.proposed,
+      status: this.config.status.proposed,
       topic: proposal.topic,
       relay: proposal.relay,
       self,
@@ -376,10 +390,10 @@ export class Pairing extends IPairing {
   }
 
   protected async settle(params: PairingTypes.SettleParams): Promise<PairingTypes.Settled> {
-    this.logger.debug(`Settle Pairing`);
+    this.logger.debug(`Settle ${this.context}`);
     this.logger.trace({ type: "method", method: "settle", params });
     const topic = await this.client.crypto.generateSharedKey(params.self, params.peer);
-    const pairing: PairingTypes.Settled = {
+    const settled: PairingTypes.Settled = {
       topic,
       relay: params.relay,
       self: params.self,
@@ -388,52 +402,56 @@ export class Pairing extends IPairing {
       expiry: params.expiry,
       state: params.state,
     };
-    await this.settled.set(pairing.topic, pairing, {
-      relay: pairing.relay,
-      expiry: pairing.expiry,
+    await this.settled.set(settled.topic, settled, {
+      relay: settled.relay,
+      expiry: settled.expiry,
     });
-    return pairing;
+    return settled;
   }
 
   protected async onResponse(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug(`Receiving Pairing response`);
+    this.logger.debug(`Receiving ${this.context} response`);
     this.logger.trace({ type: "method", method: "onResponse", topic, payload });
     const request = payload as JsonRpcRequest<PairingTypes.Outcome>;
+    const outcome = request.params;
     const pending = await this.pending.get(topic);
     let error: ErrorResponse | undefined;
-    if (!isPairingFailed(request.params)) {
+    if (!isPairingFailed(outcome)) {
       try {
         const controller = pending.proposal.proposer.controller
           ? { publicKey: pending.proposal.proposer.publicKey }
-          : { publicKey: request.params.responder.publicKey };
-        const pairing = await this.settle({
+          : { publicKey: outcome.responder.publicKey };
+        const peer: PairingTypes.Participant = { publicKey: outcome.responder.publicKey };
+        const state: PairingTypes.State = {};
+        const permissions: PairingTypes.Permissions = {
+          ...pending.proposal.permissions,
+          controller,
+        };
+        const settled = await this.settle({
           relay: pending.relay,
           self: pending.self,
-          peer: { publicKey: request.params.responder.publicKey },
-          permissions: {
-            ...pending.proposal.permissions,
-            controller,
-          },
+          peer,
+          permissions,
           ttl: pending.proposal.ttl,
-          expiry: request.params.expiry,
-          state: {},
+          expiry: outcome.expiry,
+          state,
         });
         await this.pending.update(topic, {
-          status: PAIRING_STATUS.responded,
+          status: this.config.status.responded,
           outcome: {
-            topic: pairing.topic,
-            relay: pairing.relay,
-            responder: request.params.responder,
-            expiry: pairing.expiry,
-            state: {},
+            topic: settled.topic,
+            relay: settled.relay,
+            responder: outcome.responder,
+            expiry: settled.expiry,
+            state: settled.state,
           },
         });
       } catch (e) {
         this.logger.error(e);
-        error = getError(ERROR.GENERIC, { message: e.message });
+        error = ERROR.GENERIC.format({ message: e.message });
         await this.pending.update(topic, {
-          status: PAIRING_STATUS.responded,
+          status: this.config.status.responded,
           outcome: { reason: error },
         });
       }
@@ -441,19 +459,21 @@ export class Pairing extends IPairing {
         typeof error === "undefined"
           ? formatJsonRpcResult(request.id, true)
           : formatJsonRpcError(request.id, error);
-      await this.client.relayer.publish(pending.topic, response, { relay: pending.relay });
+      await this.client.relayer.publish(pending.topic, response, {
+        relay: pending.relay,
+      });
     } else {
-      this.logger.error(request.params.reason);
+      this.logger.error(outcome.reason);
       await this.pending.update(topic, {
-        status: PAIRING_STATUS.responded,
-        outcome: { reason: request.params.reason },
+        status: this.config.status.responded,
+        outcome: { reason: outcome.reason },
       });
     }
   }
 
   protected async onAcknowledge(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug(`Receiving Pairing acknowledge`);
+    this.logger.debug(`Receiving ${this.context} acknowledge`);
     this.logger.trace({ type: "method", method: "onAcknowledge", topic, payload });
     const response = payload as JsonRpcResponse;
     const pending = await this.pending.get(topic);
@@ -461,38 +481,38 @@ export class Pairing extends IPairing {
     if (isJsonRpcError(response) && !isPairingFailed(pending.outcome)) {
       await this.settled.delete(pending.outcome.topic, response.error);
     }
-    const reason = getError(ERROR.RESPONSE_ACKNOWLEDGED, { context: this.context });
+    const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.context });
     await this.pending.delete(topic, reason);
   }
 
   protected async onMessage(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug(`Receiving Pairing message`);
+    this.logger.debug(`Receiving ${this.context} message`);
     this.logger.trace({ type: "method", method: "onMessage", topic, payload });
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
-      const pairing = await this.settled.get(payloadEvent.topic);
+      const settled = await this.settled.get(payloadEvent.topic);
       let error: ErrorResponse | undefined;
       switch (request.method) {
-        case PAIRING_JSONRPC.payload:
+        case this.config.jsonrpc.payload:
           await this.onPayload(payloadEvent);
           break;
-        case PAIRING_JSONRPC.update:
+        case this.config.jsonrpc.update:
           await this.onUpdate(payloadEvent);
           break;
-        case PAIRING_JSONRPC.upgrade:
+        case this.config.jsonrpc.upgrade:
           await this.onUpgrade(payloadEvent);
           break;
-        case PAIRING_JSONRPC.delete:
-          await this.settled.delete(pairing.topic, request.params.reason);
+        case this.config.jsonrpc.delete:
+          await this.settled.delete(settled.topic, request.params.reason);
           break;
-        case PAIRING_JSONRPC.ping:
-          await this.send(pairing.topic, formatJsonRpcResult(request.id, false));
+        case this.config.jsonrpc.ping:
+          await this.send(settled.topic, formatJsonRpcResult(request.id, false));
           break;
         default:
-          error = getError(ERROR.UNKNOWN_JSONRPC_METHOD, { method: request.method });
+          error = ERROR.UNKNOWN_JSONRPC_METHOD.format({ method: request.method });
           this.logger.error(error.message);
-          await this.send(pairing.topic, formatJsonRpcError(request.id, error));
+          await this.send(settled.topic, formatJsonRpcError(request.id, error));
           break;
       }
     } else {
@@ -503,67 +523,67 @@ export class Pairing extends IPairing {
   protected async onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
-      const { id, params } = payload as JsonRpcRequest<PairingTypes.Payload>;
+      const { id, params } = payload as JsonRpcRequest<PairingTypes.Request>;
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
-      const pairing = await this.settled.get(topic);
-      if (!pairing.permissions.jsonrpc.methods.includes(request.method)) {
-        const error = getError(ERROR.UNAUTHORIZED_JSON_RPC_METHOD, {
+      const settled = await this.settled.get(topic);
+      if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
+        const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
           method: request.method,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
-      const pairingPayloadEvent: PairingTypes.PayloadEvent = {
+      const settledPayloadEvent: PairingTypes.PayloadEvent = {
         topic,
         payload: request,
       };
-      this.logger.debug(`Receiving Pairing payload`);
-      this.logger.trace({ type: "method", method: "onPayload", ...pairingPayloadEvent });
-      this.onPayloadEvent(pairingPayloadEvent);
+      this.logger.debug(`Receiving ${this.context} payload`);
+      this.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
+      this.onPayloadEvent(settledPayloadEvent);
     } else {
-      const pairingPayloadEvent: PairingTypes.PayloadEvent = {
+      const settledPayloadEvent: PairingTypes.PayloadEvent = {
         topic,
         payload,
       };
-      this.logger.debug(`Receiving Pairing payload`);
-      this.logger.trace({ type: "method", method: "onPayload", ...pairingPayloadEvent });
-      this.onPayloadEvent(pairingPayloadEvent);
+      this.logger.debug(`Receiving ${this.context} payload`);
+      this.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
+      this.onPayloadEvent(settledPayloadEvent);
     }
   }
 
   protected async onUpdate(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug(`Receiving Pairing update`);
+    this.logger.debug(`Receiving ${this.context} update`);
     this.logger.trace({ type: "method", method: "onUpdate", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
-    const pairing = await this.settled.get(payloadEvent.topic);
+    const settled = await this.settled.get(payloadEvent.topic);
     try {
-      const participant: CryptoTypes.Participant = { publicKey: pairing.peer.publicKey };
+      const participant: CryptoTypes.Participant = { publicKey: settled.peer.publicKey };
       await this.handleUpdate(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
-      await this.send(pairing.topic, response);
+      await this.send(settled.topic, response);
     } catch (e) {
       this.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
-      await this.send(pairing.topic, response);
+      await this.send(settled.topic, response);
     }
   }
 
   protected async onUpgrade(payloadEvent: SubscriptionEvent.Payload): Promise<void> {
     const { topic, payload } = payloadEvent;
-    this.logger.debug(`Receiving Pairing upgrade`);
+    this.logger.debug(`Receiving ${this.context} upgrade`);
     this.logger.trace({ type: "method", method: "onUpgrade", topic, payload });
     const request = payloadEvent.payload as JsonRpcRequest;
-    const pairing = await this.settled.get(payloadEvent.topic);
+    const settled = await this.settled.get(payloadEvent.topic);
     try {
-      const participant: CryptoTypes.Participant = { publicKey: pairing.peer.publicKey };
+      const participant: CryptoTypes.Participant = { publicKey: settled.peer.publicKey };
       await this.handleUpgrade(topic, request.params, participant);
       const response = formatJsonRpcResult(request.id, true);
-      await this.send(pairing.topic, response);
+      await this.send(settled.topic, response);
     } catch (e) {
       this.logger.error(e);
       const response = formatJsonRpcError(request.id, e.message);
-      await this.send(pairing.topic, response);
+      await this.send(settled.topic, response);
     }
   }
 
@@ -572,23 +592,24 @@ export class Pairing extends IPairing {
     params: PairingTypes.Update,
     participant: CryptoTypes.Participant,
   ): Promise<PairingTypes.Update> {
-    const pairing = await this.settled.get(topic);
+    const settled = await this.settled.get(topic);
     let update: PairingTypes.Update;
     if (typeof params.state !== "undefined") {
-      const state = pairing.state;
-      if (participant.publicKey !== pairing.permissions.controller.publicKey) {
-        const error = getError(ERROR.UNAUTHORIZED_UPDATE_REQUEST, { context: this.context });
+      const state = settled.state;
+      if (participant.publicKey !== settled.permissions.controller.publicKey) {
+        const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({ context: this.context });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
+      // TODO: pairing-specific (next-line)
       state.metadata = params.state.metadata || state.metadata;
       update = { state };
     } else {
-      const error = getError(ERROR.INVALID_UPDATE_REQUEST, { context: this.context });
+      const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.context });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
-    await this.settled.update(pairing.topic, pairing);
+    await this.settled.update(settled.topic, settled);
     return update;
   }
 
@@ -597,24 +618,24 @@ export class Pairing extends IPairing {
     params: PairingTypes.Upgrade,
     participant: CryptoTypes.Participant,
   ): Promise<PairingTypes.Upgrade> {
-    const pairing = await this.settled.get(topic);
+    const settled = await this.settled.get(topic);
     let upgrade: PairingTypes.Upgrade = { permissions: {} };
-    if (participant.publicKey !== pairing.permissions.controller.publicKey) {
-      const error = getError(ERROR.UNAUTHORIZED_UPGRADE_REQUEST, { context: this.context });
+    if (participant.publicKey !== settled.permissions.controller.publicKey) {
+      const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({ context: this.context });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
     const permissions: Omit<PairingTypes.Permissions, "controller"> = {
       jsonrpc: {
         methods: [
-          ...pairing.permissions.jsonrpc.methods,
+          ...settled.permissions.jsonrpc.methods,
           ...(params.permissions.jsonrpc?.methods || []),
         ],
       },
     };
     upgrade = { permissions };
-    pairing.permissions = { ...permissions, controller: pairing.permissions.controller };
-    await this.settled.update(pairing.topic, pairing);
+    settled.permissions = { ...permissions, controller: settled.permissions.controller };
+    await this.settled.update(settled.topic, settled);
     return upgrade;
   }
   // ---------- Private ----------------------------------------------- //
@@ -641,22 +662,22 @@ export class Pairing extends IPairing {
     }
     if (isJsonRpcRequest(payload)) {
       const requestEvent: PairingTypes.RequestEvent = { topic, request: payload };
-      this.logger.info(`Emitting ${PAIRING_EVENTS.request}`);
-      this.logger.debug({ type: "event", event: PAIRING_EVENTS.request, data: requestEvent });
-      this.events.emit(PAIRING_EVENTS.request, requestEvent);
+      this.logger.info(`Emitting ${this.config.events.request}`);
+      this.logger.debug({ type: "event", event: this.config.events.request, data: requestEvent });
+      this.events.emit(this.config.events.request, requestEvent);
     } else {
       const responseEvent: PairingTypes.ResponseEvent = { topic, response: payload };
-      this.logger.info(`Emitting ${PAIRING_EVENTS.response}`);
-      this.logger.debug({ type: "event", event: PAIRING_EVENTS.response, data: responseEvent });
-      this.events.emit(PAIRING_EVENTS.response, responseEvent);
+      this.logger.info(`Emitting ${this.config.events.response}`);
+      this.logger.debug({ type: "event", event: this.config.events.response, data: responseEvent });
+      this.events.emit(this.config.events.response, responseEvent);
     }
   }
 
   private async onPendingPayloadEvent(event: SubscriptionEvent.Payload) {
     if (isJsonRpcRequest(event.payload)) {
       switch (event.payload.method) {
-        case PAIRING_JSONRPC.approve:
-        case PAIRING_JSONRPC.reject:
+        case this.config.jsonrpc.approve:
+        case this.config.jsonrpc.reject:
           this.onResponse(event);
           break;
         default:
@@ -674,20 +695,22 @@ export class Pairing extends IPairing {
   ) {
     const pending = event.data;
     if (isPairingResponded(pending)) {
-      this.logger.info(`Emitting ${PAIRING_EVENTS.responded}`);
-      this.logger.debug({ type: "event", event: PAIRING_EVENTS.responded, data: pending });
-      this.events.emit(PAIRING_EVENTS.responded, pending);
+      this.logger.info(`Emitting ${this.config.events.responded}`);
+      this.logger.debug({ type: "event", event: this.config.events.responded, data: pending });
+      this.events.emit(this.config.events.responded, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
         const method = !isPairingFailed(pending.outcome)
-          ? PAIRING_JSONRPC.approve
-          : PAIRING_JSONRPC.reject;
+          ? this.config.jsonrpc.approve
+          : this.config.jsonrpc.reject;
         const request = formatJsonRpcRequest(method, pending.outcome);
-        await this.client.relayer.publish(pending.topic, request, { relay: pending.relay });
+        await this.client.relayer.publish(pending.topic, request, {
+          relay: pending.relay,
+        });
       }
     } else {
-      this.logger.info(`Emitting ${PAIRING_EVENTS.proposed}`);
-      this.logger.debug({ type: "event", event: PAIRING_EVENTS.proposed, data: pending });
-      this.events.emit(PAIRING_EVENTS.proposed, pending);
+      this.logger.info(`Emitting ${this.config.events.proposed}`);
+      this.logger.debug({ type: "event", event: this.config.events.proposed, data: pending });
+      this.events.emit(this.config.events.proposed, pending);
       // send proposal signal through uri offlline
     }
   }
@@ -714,35 +737,49 @@ export class Pairing extends IPairing {
     this.settled.on(
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<PairingTypes.Settled>) => {
-        const { data: pairing } = createdEvent;
-        this.logger.info(`Emitting ${PAIRING_EVENTS.settled}`);
-        this.logger.debug({ type: "event", event: PAIRING_EVENTS.settled, data: pairing });
-        this.events.emit(PAIRING_EVENTS.settled, pairing);
+        const { data: settled } = createdEvent;
+        this.logger.info(`Emitting ${this.config.events.settled}`);
+        this.logger.debug({ type: "event", event: this.config.events.settled, data: settled });
+        this.events.emit(this.config.events.settled, settled);
       },
     );
     this.settled.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<PairingTypes.Settled>) => {
-        const { data: pairing, update } = updatedEvent;
-        this.logger.info(`Emitting ${PAIRING_EVENTS.updated}`);
-        this.logger.debug({ type: "event", event: PAIRING_EVENTS.updated, data: pairing, update });
-        this.events.emit(PAIRING_EVENTS.updated, pairing, update);
+        const { data: settled, update } = updatedEvent;
+        this.logger.info(`Emitting ${this.config.events.updated}`);
+        this.logger.debug({
+          type: "event",
+          event: this.config.events.updated,
+          data: settled,
+          update,
+        });
+        this.events.emit(this.config.events.updated, settled, update);
       },
     );
     this.settled.on(
       SUBSCRIPTION_EVENTS.deleted,
       async (deletedEvent: SubscriptionEvent.Deleted<PairingTypes.Settled>) => {
-        const { data: pairing, reason } = deletedEvent;
-        this.logger.info(`Emitting ${PAIRING_EVENTS.deleted}`);
-        this.logger.debug({ type: "event", event: PAIRING_EVENTS.deleted, data: pairing, reason });
-        this.events.emit(PAIRING_EVENTS.deleted, pairing, reason);
-        const request = formatJsonRpcRequest(PAIRING_JSONRPC.delete, { reason });
-        await this.history.delete(pairing.topic);
-        await this.client.relayer.publish(pairing.topic, request, { relay: pairing.relay });
+        const { data: settled, reason } = deletedEvent;
+        this.logger.info(`Emitting ${this.config.events.deleted}`);
+        this.logger.debug({
+          type: "event",
+          event: this.config.events.deleted,
+          data: settled,
+          reason,
+        });
+        this.events.emit(this.config.events.deleted, settled, reason);
+        const request = formatJsonRpcRequest(this.config.jsonrpc.delete, { reason });
+        await this.history.delete(settled.topic);
+        await this.client.relayer.publish(settled.topic, request, { relay: settled.relay });
       },
     );
-    this.settled.on(SUBSCRIPTION_EVENTS.sync, () => this.events.emit(PAIRING_EVENTS.sync));
-    this.settled.on(SUBSCRIPTION_EVENTS.enabled, () => this.events.emit(PAIRING_EVENTS.enabled));
-    this.settled.on(SUBSCRIPTION_EVENTS.disabled, () => this.events.emit(PAIRING_EVENTS.disabled));
+    this.settled.on(SUBSCRIPTION_EVENTS.sync, () => this.events.emit(this.config.events.sync));
+    this.settled.on(SUBSCRIPTION_EVENTS.enabled, () =>
+      this.events.emit(this.config.events.enabled),
+    );
+    this.settled.on(SUBSCRIPTION_EVENTS.disabled, () =>
+      this.events.emit(this.config.events.disabled),
+    );
   }
 }
