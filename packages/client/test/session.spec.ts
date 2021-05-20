@@ -274,11 +274,17 @@ describe("Session", function() {
     await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );
-    const promise = clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
+    clients.a.session
+      .ping(topic, TEST_TIMEOUT_DURATION)
+      .then(() => {
+        throw new Error("Should not resolve");
+      })
+      .catch(e => {
+        expect(e.message).to.equal(
+          `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
+        );
+      });
     clock.tick(TEST_TIMEOUT_DURATION);
-    await expect(promise).to.eventually.be.rejectedWith(
-      `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
-    );
   });
   it("clients ping each other after restart", async () => {
     const storage = new KeyValueStorage({ database: TEST_CLIENT_DATABASE });

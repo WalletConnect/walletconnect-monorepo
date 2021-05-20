@@ -49,15 +49,9 @@ export class Engine extends IEngine {
     const settled = await this.sequence.settled.get(topic);
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(this.sequence.config.jsonrpc).includes(payload.method)) {
-        if (!settled.permissions.jsonrpc.methods.includes(payload.method)) {
-          const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
-            method: payload.method,
-          });
-          this.sequence.logger.error(error.message);
-          throw new Error(error.message);
-        }
-        await this.sequence.history.set(topic, payload);
+        await this.isJsonRpcAuthorized(topic, settled.self, payload);
         await this.sequence.validateRequest({ topic, request: payload, chainId });
+        await this.sequence.history.set(topic, payload, chainId);
         const params = {
           chainId,
           request: { method: payload.method, params: payload.params },
@@ -227,17 +221,6 @@ export class Engine extends IEngine {
     }
   }
 
-  public async upgrade(params: SequenceTypes.UpgradeParams): Promise<SequenceTypes.Settled> {
-    this.sequence.logger.debug(`Upgrade ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "upgrade", params });
-    const settled = await this.sequence.settled.get(params.topic);
-    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
-    const upgrade = await this.handleUpgrade(params.topic, params, participant);
-    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.upgrade, upgrade);
-    await this.send(settled.topic, request);
-    return settled;
-  }
-
   public async update(params: SequenceTypes.UpdateParams): Promise<SequenceTypes.Settled> {
     this.sequence.logger.debug(`Update ${this.sequence.context}`);
     this.sequence.logger.trace({ type: "method", method: "update", params });
@@ -249,9 +232,24 @@ export class Engine extends IEngine {
     return settled;
   }
 
+  public async upgrade(params: SequenceTypes.UpgradeParams): Promise<SequenceTypes.Settled> {
+    this.sequence.logger.debug(`Upgrade ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "upgrade", params });
+    const settled = await this.sequence.settled.get(params.topic);
+    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
+    const upgrade = await this.handleUpgrade(params.topic, params, participant);
+    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.upgrade, upgrade);
+    await this.send(settled.topic, request);
+    return settled;
+  }
+
   public async request(params: SequenceTypes.RequestParams): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      await this.sequence.validateRequest(params);
+      try {
+        await this.sequence.validateRequest(params);
+      } catch (e) {
+        return reject(e);
+      }
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
@@ -294,14 +292,7 @@ export class Engine extends IEngine {
 
   public async notify(params: SequenceTypes.NotifyParams): Promise<void> {
     const settled = await this.sequence.settled.get(params.topic);
-    if (
-      settled.self.publicKey !== settled.permissions.controller.publicKey &&
-      !settled.permissions.notifications.types.includes(params.type)
-    ) {
-      const error = ERROR.UNAUTHORIZED_NOTIFICATION_TYPE.format({ type: params.type });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
+    await this.isNotificationAuthorized(params.topic, settled.self, params.type);
     const notification: SequenceTypes.Notification = { type: params.type, data: params.data };
     const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.notification, notification);
     await this.send(params.topic, request);
@@ -474,7 +465,7 @@ export class Engine extends IEngine {
           await this.sequence.settled.delete(settled.topic, request.params.reason);
           break;
         case this.sequence.config.jsonrpc.ping:
-          await this.send(settled.topic, formatJsonRpcResult(request.id, false));
+          await this.send(settled.topic, formatJsonRpcResult(request.id, true));
           break;
         default:
           error = ERROR.UNKNOWN_JSONRPC_METHOD.format({ method: request.method });
@@ -494,13 +485,7 @@ export class Engine extends IEngine {
       const { chainId } = params;
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const settled = await this.sequence.settled.get(topic);
-      if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
-        const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
-          method: request.method,
-        });
-        this.sequence.logger.error(error.message);
-        throw new Error(error.message);
-      }
+      await this.isJsonRpcAuthorized(topic, settled.peer, request);
       await this.sequence.validateRequest({ topic, request, chainId });
       const settledPayloadEvent: SequenceTypes.PayloadEvent = {
         topic,
@@ -559,6 +544,8 @@ export class Engine extends IEngine {
 
   protected async onNotification(event: SubscriptionEvent.Payload) {
     const notification = (event.payload as JsonRpcRequest<SessionTypes.Notification>).params;
+    const settled = await this.sequence.settled.get(event.topic);
+    await this.isNotificationAuthorized(event.topic, settled.peer, notification.type);
     const notificationEvent: SessionTypes.NotificationEvent = {
       topic: event.topic,
       type: notification.type,
@@ -581,13 +568,7 @@ export class Engine extends IEngine {
     const settled = await this.sequence.settled.get(topic);
     let update: SequenceTypes.Update;
     if (typeof params.state !== "undefined") {
-      if (participant.publicKey !== settled.permissions.controller.publicKey) {
-        const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({
-          context: this.sequence.context,
-        });
-        this.sequence.logger.error(error.message);
-        throw new Error(error.message);
-      }
+      await this.isParticipantAuthorized(topic, participant);
       settled.state = merge(settled.state, params.state);
       update = { state: settled.state };
     } else {
@@ -605,21 +586,65 @@ export class Engine extends IEngine {
     participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Upgrade> {
     const settled = await this.sequence.settled.get(topic);
-    let upgrade: SequenceTypes.Upgrade = { permissions: {} };
+    let upgrade: SequenceTypes.Upgrade;
+    if (typeof params.permissions !== "undefined") {
+      await this.isParticipantAuthorized(topic, participant);
+      const persisted = { controller: settled.permissions.controller };
+      settled.permissions = merge(settled.permissions, params.permissions, persisted);
+      upgrade = { permissions: settled.permissions };
+    } else {
+      const error = ERROR.INVALID_UPGRADE_REQUEST.format({ context: this.sequence.context });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    await this.sequence.settled.update(settled.topic, settled);
+    return upgrade;
+  }
+  // ---------- Private ----------------------------------------------- //
+
+  private async isParticipantAuthorized(topic: string, participant: SequenceTypes.Participant) {
+    const settled = await this.sequence.settled.get(topic);
     if (participant.publicKey !== settled.permissions.controller.publicKey) {
-      const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({
+      const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({
         context: this.sequence.context,
       });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    const persisted = { controller: settled.permissions.controller };
-    settled.permissions = merge(settled.permissions, params.permissions, persisted);
-    upgrade = { permissions: settled.permissions };
-    await this.sequence.settled.update(settled.topic, settled);
-    return upgrade;
   }
-  // ---------- Private ----------------------------------------------- //
+
+  private async isJsonRpcAuthorized(
+    topic: string,
+    participant: SequenceTypes.Participant,
+    request: JsonRpcRequest,
+  ) {
+    const settled = await this.sequence.settled.get(topic);
+    if (participant.publicKey === settled.permissions.controller.publicKey) return;
+    if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
+      const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
+        method: request.method,
+      });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
+  }
+
+  private async isNotificationAuthorized(
+    topic: string,
+    participant: SequenceTypes.Participant,
+    type: string,
+  ) {
+    const settled = await this.sequence.settled.get(topic);
+    if (participant.publicKey === settled.permissions.controller.publicKey) return;
+    if (
+      settled.self.publicKey !== settled.permissions.controller.publicKey &&
+      !settled.permissions.notifications.types.includes(type)
+    ) {
+      const error = ERROR.UNAUTHORIZED_NOTIFICATION_TYPE.format({ type });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
+  }
 
   private async shouldIgnorePayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
     const { topic, payload } = payloadEvent;
@@ -634,15 +659,15 @@ export class Engine extends IEngine {
   }
 
   private async onPayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
-    const { topic, payload } = payloadEvent;
+    const { topic, payload, chainId } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
       if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
-      await this.sequence.history.set(topic, payload);
+      await this.sequence.history.set(topic, payload, chainId);
     } else {
       await this.sequence.history.update(topic, payload);
     }
     if (isJsonRpcRequest(payload)) {
-      const requestEvent: SequenceTypes.RequestEvent = { topic, request: payload };
+      const requestEvent: SequenceTypes.RequestEvent = { topic, request: payload, chainId };
       this.sequence.logger.info(`Emitting ${this.sequence.config.events.request}`);
       this.sequence.logger.debug({
         type: "event",
@@ -651,7 +676,7 @@ export class Engine extends IEngine {
       });
       this.sequence.events.emit(this.sequence.config.events.request, requestEvent);
     } else {
-      const responseEvent: SequenceTypes.ResponseEvent = { topic, response: payload };
+      const responseEvent: SequenceTypes.ResponseEvent = { topic, response: payload, chainId };
       this.sequence.logger.info(`Emitting ${this.sequence.config.events.response}`);
       this.sequence.logger.debug({
         type: "event",

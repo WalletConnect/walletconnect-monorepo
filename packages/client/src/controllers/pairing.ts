@@ -59,15 +59,15 @@ export class Pairing extends IPairing {
     await this.history.init();
   }
 
-  public async get(topic: string): Promise<PairingTypes.Settled> {
+  public get(topic: string): Promise<PairingTypes.Settled> {
     return this.settled.get(topic);
   }
 
-  public async ping(topic: string, timeout?: number): Promise<void> {
+  public ping(topic: string, timeout?: number): Promise<void> {
     return this.engine.ping(topic, timeout);
   }
 
-  public async send(topic: string, payload: JsonRpcPayload): Promise<void> {
+  public send(topic: string, payload: JsonRpcPayload): Promise<void> {
     return this.engine.send(topic, payload);
   }
 
@@ -87,27 +87,27 @@ export class Pairing extends IPairing {
     return this.engine.create(params);
   }
 
-  public async respond(params: PairingTypes.RespondParams): Promise<PairingTypes.Pending> {
+  public respond(params: PairingTypes.RespondParams): Promise<PairingTypes.Pending> {
     return this.engine.respond(params);
   }
 
-  public async upgrade(params: PairingTypes.UpgradeParams): Promise<PairingTypes.Settled> {
+  public upgrade(params: PairingTypes.UpgradeParams): Promise<PairingTypes.Settled> {
     return this.engine.upgrade(params);
   }
 
-  public async update(params: PairingTypes.UpdateParams): Promise<PairingTypes.Settled> {
+  public update(params: PairingTypes.UpdateParams): Promise<PairingTypes.Settled> {
     return this.engine.update(params);
   }
 
-  public async request(params: PairingTypes.RequestParams): Promise<any> {
+  public request(params: PairingTypes.RequestParams): Promise<any> {
     return this.engine.request(params);
   }
 
-  public async delete(params: PairingTypes.DeleteParams): Promise<void> {
+  public delete(params: PairingTypes.DeleteParams): Promise<void> {
     return this.engine.delete(params);
   }
 
-  public async notify(params: PairingTypes.NotificationEvent): Promise<void> {
+  public notify(params: PairingTypes.NotificationEvent): Promise<void> {
     return this.engine.notify(params);
   }
 

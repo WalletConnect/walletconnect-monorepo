@@ -10,6 +10,7 @@ export const ERROR_TYPE = enumify({
   MISSING_RESPONSE: "MISSING_RESPONSE",
   MISSING_DECRYPT_PARAMS: "MISSING_DECRYPT_PARAMS",
   INVALID_UPDATE_REQUEST: "INVALID_UPDATE_REQUEST",
+  INVALID_UPGRADE_REQUEST: "INVALID_UPGRADE_REQUEST",
   RECORD_ALREADY_EXISTS: "RECORD_ALREADY_EXISTS",
   RESTORE_WILL_OVERRIDE: "RESTORE_WILL_OVERRIDE",
   NO_MATCHING_ID: "NO_MATCHING_ID",
@@ -122,6 +123,16 @@ export const ERROR: Record<ErrorType, Error> = {
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.INVALID_UPDATE_REQUEST].code,
       message: ERROR[ERROR_TYPE.INVALID_UPDATE_REQUEST].stringify(params),
+    }),
+  },
+  [ERROR_TYPE.INVALID_UPGRADE_REQUEST]: {
+    type: ERROR_TYPE.INVALID_UPGRADE_REQUEST,
+    code: 1004,
+    stringify: (params?: any) =>
+      `Invalid ${params?.context || defaultParams.context} upgrade request`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.INVALID_UPGRADE_REQUEST].code,
+      message: ERROR[ERROR_TYPE.INVALID_UPGRADE_REQUEST].stringify(params),
     }),
   },
   [ERROR_TYPE.RECORD_ALREADY_EXISTS]: {

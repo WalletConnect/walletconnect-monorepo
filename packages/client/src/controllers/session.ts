@@ -64,15 +64,15 @@ export class Session extends ISession {
     await this.history.init();
   }
 
-  public async get(topic: string): Promise<SessionTypes.Settled> {
+  public get(topic: string): Promise<SessionTypes.Settled> {
     return this.settled.get(topic);
   }
 
-  public async ping(topic: string, timeout?: number): Promise<void> {
+  public ping(topic: string, timeout?: number): Promise<void> {
     return this.engine.ping(topic, timeout);
   }
 
-  public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
+  public send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     return this.engine.send(topic, payload, chainId);
   }
 
@@ -92,33 +92,29 @@ export class Session extends ISession {
     return this.engine.create(params) as any;
   }
 
-  public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
-    // register pending proposal key from pairing topic
-    const pairing = await this.client.pairing.get(params.proposal.signal.params.topic);
-    await this.client.crypto.generateSharedKey(pairing.self, pairing.peer, params.proposal.topic);
-    // TODO: fix type casting as any
+  public respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
     return this.engine.respond(params as any) as any;
   }
 
-  public async upgrade(params: SessionTypes.UpgradeParams): Promise<SessionTypes.Settled> {
+  public upgrade(params: SessionTypes.UpgradeParams): Promise<SessionTypes.Settled> {
     // TODO: fix type casting as any
     return this.engine.upgrade(params as any) as any;
   }
 
-  public async update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
+  public update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
     // TODO: fix type casting as any
     return this.engine.update(params as any) as any;
   }
 
-  public async request(params: SessionTypes.RequestParams): Promise<any> {
+  public request(params: SessionTypes.RequestParams): Promise<any> {
     return this.engine.request(params);
   }
 
-  public async delete(params: SessionTypes.DeleteParams): Promise<void> {
+  public delete(params: SessionTypes.DeleteParams): Promise<void> {
     return this.engine.delete(params);
   }
 
-  public async notify(params: SessionTypes.NotificationEvent): Promise<void> {
+  public notify(params: SessionTypes.NotificationEvent): Promise<void> {
     return this.engine.notify(params);
   }
 
@@ -202,11 +198,11 @@ export class Session extends ISession {
       jsonrpc: {
         methods: [],
       },
-      blockchain: {
-        chains: [],
-      },
       notifications: {
         types: [],
+      },
+      blockchain: {
+        chains: [],
       },
     };
   }
