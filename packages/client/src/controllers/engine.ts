@@ -551,13 +551,10 @@ export class Engine extends IEngine {
       type: notification.type,
       data: notification.data,
     };
-    this.sequence.logger.info(`Emitting ${this.sequence.config.events.notification}`);
-    this.sequence.logger.debug({
-      type: "event",
-      event: this.sequence.config.events.notification,
-      notificationEvent,
-    });
-    this.sequence.events.emit(this.sequence.config.events.notification, notificationEvent);
+    const eventName = this.sequence.config.events.notification;
+    this.sequence.logger.info(`Emitting ${eventName}`);
+    this.sequence.logger.debug({ type: "event", event: eventName, notificationEvent });
+    this.sequence.events.emit(eventName, notificationEvent);
   }
 
   public async handleUpdate(
@@ -668,22 +665,16 @@ export class Engine extends IEngine {
     }
     if (isJsonRpcRequest(payload)) {
       const requestEvent: SequenceTypes.RequestEvent = { topic, request: payload, chainId };
-      this.sequence.logger.info(`Emitting ${this.sequence.config.events.request}`);
-      this.sequence.logger.debug({
-        type: "event",
-        event: this.sequence.config.events.request,
-        data: requestEvent,
-      });
-      this.sequence.events.emit(this.sequence.config.events.request, requestEvent);
+      const eventName = this.sequence.config.events.request;
+      this.sequence.logger.info(`Emitting ${eventName}`);
+      this.sequence.logger.debug({ type: "event", event: eventName, data: requestEvent });
+      this.sequence.events.emit(eventName, requestEvent);
     } else {
       const responseEvent: SequenceTypes.ResponseEvent = { topic, response: payload, chainId };
-      this.sequence.logger.info(`Emitting ${this.sequence.config.events.response}`);
-      this.sequence.logger.debug({
-        type: "event",
-        event: this.sequence.config.events.response,
-        data: responseEvent,
-      });
-      this.sequence.events.emit(this.sequence.config.events.response, responseEvent);
+      const eventName = this.sequence.config.events.response;
+      this.sequence.logger.info(`Emitting ${eventName}`);
+      this.sequence.logger.debug({ type: "event", event: eventName, data: responseEvent });
+      this.sequence.events.emit(eventName, responseEvent);
     }
   }
 
@@ -721,13 +712,10 @@ export class Engine extends IEngine {
       }
     }
     if (isSequenceResponded(pending)) {
-      this.sequence.logger.info(`Emitting ${this.sequence.config.events.responded}`);
-      this.sequence.logger.debug({
-        type: "event",
-        event: this.sequence.config.events.responded,
-        data: pending,
-      });
-      this.sequence.events.emit(this.sequence.config.events.responded, pending);
+      const eventName = this.sequence.config.events.responded;
+      this.sequence.logger.info(`Emitting ${eventName}`);
+      this.sequence.logger.debug({ type: "event", event: eventName, data: pending });
+      this.sequence.events.emit(eventName, pending);
       if (!isSubscriptionUpdatedEvent(event)) {
         const method = !isSequenceFailed(pending.outcome)
           ? this.sequence.config.jsonrpc.approve
@@ -738,13 +726,10 @@ export class Engine extends IEngine {
         });
       }
     } else {
-      this.sequence.logger.info(`Emitting ${this.sequence.config.events.proposed}`);
-      this.sequence.logger.debug({
-        type: "event",
-        event: this.sequence.config.events.proposed,
-        data: pending,
-      });
-      this.sequence.events.emit(this.sequence.config.events.proposed, pending);
+      const eventName = this.sequence.config.events.proposed;
+      this.sequence.logger.info(`Emitting ${eventName}`);
+      this.sequence.logger.debug({ type: "event", event: eventName, data: pending });
+      this.sequence.events.emit(eventName, pending);
       if (isSignalTypePairing(pending.proposal.signal)) {
         // send proposal signal through existing pairing
         const request = formatJsonRpcRequest(
@@ -781,41 +766,30 @@ export class Engine extends IEngine {
       SUBSCRIPTION_EVENTS.created,
       (createdEvent: SubscriptionEvent.Created<SequenceTypes.Settled>) => {
         const { data: settled } = createdEvent;
-        this.sequence.logger.info(`Emitting ${this.sequence.config.events.settled}`);
-        this.sequence.logger.debug({
-          type: "event",
-          event: this.sequence.config.events.settled,
-          data: settled,
-        });
-        this.sequence.events.emit(this.sequence.config.events.settled, settled);
+        const eventName = this.sequence.config.events.settled;
+        this.sequence.logger.info(`Emitting ${eventName}`);
+        this.sequence.logger.debug({ type: "event", event: eventName, data: settled });
+        this.sequence.events.emit(eventName, settled);
       },
     );
     this.sequence.settled.on(
       SUBSCRIPTION_EVENTS.updated,
       (updatedEvent: SubscriptionEvent.Updated<SequenceTypes.Settled>) => {
         const { data: settled, update } = updatedEvent;
-        this.sequence.logger.info(`Emitting ${this.sequence.config.events.updated}`);
-        this.sequence.logger.debug({
-          type: "event",
-          event: this.sequence.config.events.updated,
-          data: settled,
-          update,
-        });
-        this.sequence.events.emit(this.sequence.config.events.updated, settled, update);
+        const eventName = this.sequence.config.events.updated;
+        this.sequence.logger.info(`Emitting ${eventName}`);
+        this.sequence.logger.debug({ type: "event", event: eventName, data: settled, update });
+        this.sequence.events.emit(eventName, settled, update);
       },
     );
     this.sequence.settled.on(
       SUBSCRIPTION_EVENTS.deleted,
       async (deletedEvent: SubscriptionEvent.Deleted<SequenceTypes.Settled>) => {
         const { data: settled, reason } = deletedEvent;
-        this.sequence.logger.info(`Emitting ${this.sequence.config.events.deleted}`);
-        this.sequence.logger.debug({
-          type: "event",
-          event: this.sequence.config.events.deleted,
-          data: settled,
-          reason,
-        });
-        this.sequence.events.emit(this.sequence.config.events.deleted, settled, reason);
+        const eventName = this.sequence.config.events.deleted;
+        this.sequence.logger.info(`Emitting ${eventName}`);
+        this.sequence.logger.debug({ type: "event", event: eventName, data: settled, reason });
+        this.sequence.events.emit(eventName, settled, reason);
         const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.delete, { reason });
         await this.sequence.history.delete(settled.topic);
         await this.sequence.client.relayer.publish(settled.topic, request, {

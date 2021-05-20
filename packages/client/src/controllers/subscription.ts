@@ -296,22 +296,26 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
     this.client.relayer.on(RELAYER_EVENTS.connect, () => this.reset());
     this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });
+      const eventName = SUBSCRIPTION_EVENTS.payload;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: payloadEvent });
     });
     this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: createdEvent });
+      const eventName = SUBSCRIPTION_EVENTS.created;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: createdEvent });
       this.persist();
     });
     this.events.on(SUBSCRIPTION_EVENTS.updated, (updatedEvent: SubscriptionEvent.Updated<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: updatedEvent });
+      const eventName = SUBSCRIPTION_EVENTS.updated;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: updatedEvent });
       this.persist();
     });
     this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.deleted}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.deleted, data: deletedEvent });
+      const eventName = SUBSCRIPTION_EVENTS.deleted;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
       this.persist();
     });
   }
