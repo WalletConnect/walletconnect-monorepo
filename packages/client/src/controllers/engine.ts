@@ -568,7 +568,13 @@ export class Engine extends IEngine {
       throw new Error(error.message);
     }
     const settled = await this.sequence.settled.get(topic);
-    await this.isParticipantAuthorized(topic, participant);
+    if (participant.publicKey !== settled.permissions.controller.publicKey) {
+      const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({
+        context: this.sequence.context,
+      });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
     const fixed = {};
     const update: SequenceTypes.Update = { state: params.state };
     settled.state = merge(settled.state, update.state, fixed);
@@ -587,7 +593,13 @@ export class Engine extends IEngine {
       throw new Error(error.message);
     }
     const settled = await this.sequence.settled.get(topic);
-    await this.isParticipantAuthorized(topic, participant);
+    if (participant.publicKey !== settled.permissions.controller.publicKey) {
+      const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({
+        context: this.sequence.context,
+      });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
     const fixed = { controller: settled.permissions.controller };
     const upgrade: SequenceTypes.Upgrade = { permissions: params.permissions };
     settled.permissions = merge(settled.permissions, upgrade.permissions, fixed);
@@ -595,17 +607,6 @@ export class Engine extends IEngine {
     return upgrade;
   }
   // ---------- Private ----------------------------------------------- //
-
-  private async isParticipantAuthorized(topic: string, participant: SequenceTypes.Participant) {
-    const settled = await this.sequence.settled.get(topic);
-    if (participant.publicKey !== settled.permissions.controller.publicKey) {
-      const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({
-        context: this.sequence.context,
-      });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-  }
 
   private async isJsonRpcAuthorized(
     topic: string,
