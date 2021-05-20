@@ -23,7 +23,7 @@ describe("Request", function() {
   afterEach(function() {
     clock.restore();
   });
-  it("A requests method and B responds result", async () => {
+  it.only("A requests method and B responds result", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const request = TEST_ETHEREUM_REQUEST;

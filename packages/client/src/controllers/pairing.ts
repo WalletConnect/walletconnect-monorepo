@@ -127,7 +127,15 @@ export class Pairing extends IPairing {
     this.events.removeListener(event, listener);
   }
 
-  public async validateProposal(params?: PairingTypes.ProposeParams) {
+  public async validateRespond(params?: PairingTypes.RespondParams) {
+    // nothing to validate
+  }
+
+  public async validateRequest(params?: PairingTypes.RequestParams) {
+    // nothing to validate
+  }
+
+  public async validatePropose(params?: PairingTypes.ProposeParams) {
     // nothing to validate
   }
 

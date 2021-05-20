@@ -9,9 +9,20 @@ import {
   SessionTypes,
   SubscriptionEvent,
   Validation,
+  SignalTypes,
 } from "@walletconnect/types";
 
 import { ERROR } from "./error";
+
+// -- signal -------------------------------------------------- //
+
+export function isSignalTypePairing(signal: SignalTypes.Base): signal is SignalTypes.Pairing {
+  return signal.method === "pairing";
+}
+
+export function isSignalTypeUri(signal: SignalTypes.Base): signal is SignalTypes.Uri {
+  return signal.method === "uri";
+}
 
 // -- sequence -------------------------------------------------- //
 

@@ -61,7 +61,6 @@ export class Session extends ISession {
     );
     this.history = new JsonRpcHistory(client, this.logger);
     this.engine = new Engine(this);
-    this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
@@ -80,9 +79,6 @@ export class Session extends ISession {
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
-    if (isJsonRpcRequest(payload)) {
-      await this.validateChainId(topic, chainId);
-    }
     return this.engine.send(topic, payload, chainId);
   }
 
@@ -103,13 +99,6 @@ export class Session extends ISession {
   }
 
   public async respond(params: SessionTypes.RespondParams): Promise<SessionTypes.Pending> {
-    this.logger.info(`Respond ${this.context}`);
-    this.logger.trace({ type: "method", method: "respond", params });
-    const paramsValidation = validateSessionRespondParams(params);
-    if (isValidationInvalid(paramsValidation)) {
-      this.logger.error(paramsValidation.error.message);
-      throw new Error(paramsValidation.error.message);
-    }
     // register pending proposal key from pairing topic
     const pairing = await this.client.pairing.get(params.proposal.signal.params.topic);
     await this.client.crypto.generateSharedKey(pairing.self, pairing.peer, params.proposal.topic);
@@ -128,7 +117,6 @@ export class Session extends ISession {
   }
 
   public async request(params: SessionTypes.RequestParams): Promise<any> {
-    await this.validateChainId(params.topic, params.chainId);
     return this.engine.request(params);
   }
 
@@ -156,7 +144,26 @@ export class Session extends ISession {
     this.events.removeListener(event, listener);
   }
 
-  public async validateChainId(topic: string, chainId?: string) {
+  public async validateRespond(params?: SessionTypes.RespondParams) {
+    if (typeof params === "undefined") {
+      const error = ERROR.MISSING_OR_INVALID.format({ name: "respond params" });
+      this.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    const paramsValidation = validateSessionRespondParams(params);
+    if (isValidationInvalid(paramsValidation)) {
+      this.logger.error(paramsValidation.error.message);
+      throw new Error(paramsValidation.error.message);
+    }
+  }
+
+  public async validateRequest(params?: SessionTypes.RequestParams) {
+    if (typeof params === "undefined") {
+      const error = ERROR.MISSING_OR_INVALID.format({ name: "request params" });
+      this.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    const { topic, chainId } = params;
     const settled = await this.settled.get(topic);
     if (chainId && !settled.permissions.blockchain.chains.includes(chainId)) {
       const error = ERROR.UNAUTHORIZED_TARGET_CHAIN.format({ chainId });
@@ -165,7 +172,7 @@ export class Session extends ISession {
     }
   }
 
-  public async validateProposal(params?: SessionTypes.ProposeParams) {
+  public async validatePropose(params?: SessionTypes.ProposeParams) {
     if (typeof params === "undefined") {
       const error = ERROR.MISSING_OR_INVALID.format({ name: "propose params" });
       this.logger.error(error.message);
@@ -208,26 +215,5 @@ export class Session extends ISession {
         types: [],
       },
     };
-  }
-  // ---------- Private ----------------------------------------------- //
-  private registerEventListeners() {
-    this.events.on(this.config.events.proposed, async (pending: SessionTypes.Pending) => {
-      // send proposal signal through existing pairing
-      const request = formatJsonRpcRequest(this.config.jsonrpc.propose, pending.proposal);
-      await this.client.pairing.send(pending.proposal.signal.params.topic, request);
-    });
-    this.pending.on(
-      SUBSCRIPTION_EVENTS.created,
-      async (createdEvent: SubscriptionEvent.Created<SessionTypes.Pending>) => {
-        // register pending proposal key from pairing topic
-        const pending = createdEvent.data;
-        const pairing = await this.client.pairing.settled.get(pending.proposal.signal.params.topic);
-        await this.client.crypto.generateSharedKey(
-          pairing.self,
-          pairing.peer,
-          pending.proposal.topic,
-        );
-      },
-    );
   }
 }

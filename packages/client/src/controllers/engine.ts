@@ -8,6 +8,7 @@ import {
 } from "@walletconnect/types";
 import {
   generateRandomBytes32,
+  isSignalTypePairing,
   isSequenceFailed,
   isSequenceResponded,
   isSubscriptionUpdatedEvent,
@@ -56,6 +57,7 @@ export class Engine extends IEngine {
           throw new Error(error.message);
         }
         await this.sequence.history.set(topic, payload);
+        await this.sequence.validateRequest({ topic, request: payload, chainId });
         const params = {
           chainId,
           request: { method: payload.method, params: payload.params },
@@ -140,6 +142,7 @@ export class Engine extends IEngine {
   public async respond(params: SequenceTypes.RespondParams): Promise<SequenceTypes.Pending> {
     this.sequence.logger.debug(`Respond ${this.sequence.context}`);
     this.sequence.logger.trace({ type: "method", method: "respond", params });
+    await this.sequence.validateRespond(params);
     const { approved, proposal, response } = params;
     const { relay, ttl } = proposal;
     const self = {
@@ -248,6 +251,7 @@ export class Engine extends IEngine {
 
   public async request(params: SequenceTypes.RequestParams): Promise<any> {
     return new Promise(async (resolve, reject) => {
+      await this.sequence.validateRequest(params);
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
       const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
       const timeout = setTimeout(() => {
@@ -308,7 +312,7 @@ export class Engine extends IEngine {
   public async propose(params?: SequenceTypes.ProposeParams): Promise<SequenceTypes.Pending> {
     this.sequence.logger.debug(`Propose ${this.sequence.context}`);
     this.sequence.logger.trace({ type: "method", method: "propose", params });
-    await this.sequence.validateProposal(params);
+    await this.sequence.validatePropose(params);
     const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
     const topic = generateRandomBytes32();
     const self: SequenceTypes.Participant = {
@@ -487,6 +491,7 @@ export class Engine extends IEngine {
     const { topic, payload } = payloadEvent;
     if (isJsonRpcRequest(payload)) {
       const { id, params } = payload as JsonRpcRequest<SequenceTypes.Request>;
+      const { chainId } = params;
       const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
       const settled = await this.sequence.settled.get(topic);
       if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
@@ -496,9 +501,11 @@ export class Engine extends IEngine {
         this.sequence.logger.error(error.message);
         throw new Error(error.message);
       }
+      await this.sequence.validateRequest({ topic, request, chainId });
       const settledPayloadEvent: SequenceTypes.PayloadEvent = {
         topic,
         payload: request,
+        chainId,
       };
       this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
       this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
@@ -676,6 +683,18 @@ export class Engine extends IEngine {
       | SubscriptionEvent.Updated<SequenceTypes.Pending>,
   ) {
     const pending = event.data;
+    if (isSignalTypePairing(pending.proposal.signal)) {
+      if (!(await this.sequence.client.crypto.hasKeys(pending.proposal.topic))) {
+        const pairing = await this.sequence.client.pairing.settled.get(
+          pending.proposal.signal.params.topic,
+        );
+        await this.sequence.client.crypto.generateSharedKey(
+          pairing.self,
+          pairing.peer,
+          pending.proposal.topic,
+        );
+      }
+    }
     if (isSequenceResponded(pending)) {
       this.sequence.logger.info(`Emitting ${this.sequence.config.events.responded}`);
       this.sequence.logger.debug({
@@ -701,7 +720,14 @@ export class Engine extends IEngine {
         data: pending,
       });
       this.sequence.events.emit(this.sequence.config.events.proposed, pending);
-      // send proposal signal through uri offlline
+      if (isSignalTypePairing(pending.proposal.signal)) {
+        // send proposal signal through existing pairing
+        const request = formatJsonRpcRequest(
+          this.sequence.config.jsonrpc.propose,
+          pending.proposal,
+        );
+        await this.sequence.client.pairing.send(pending.proposal.signal.params.topic, request);
+      }
     }
   }
 

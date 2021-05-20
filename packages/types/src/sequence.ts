@@ -174,11 +174,13 @@ export declare namespace SequenceTypes {
 
   export interface Request {
     request: RequestArguments;
+    chainId?: string;
   }
 
   export interface PayloadEvent {
     topic: string;
     payload: JsonRpcPayload;
+    chainId?: string;
   }
 
   export interface RequestEvent extends Omit<PayloadEvent, "payload"> {
@@ -335,8 +337,12 @@ export abstract class ISequence<
   // called by either to notify
   public abstract notify(params: NotifyParams): Promise<void>;
 
+  // validator callbacks for sequence engine
+  public abstract validateRespond(params?: RespondParams): Promise<void>;
+  public abstract validateRequest(params?: RequestParams): Promise<void>;
+  public abstract validatePropose(params?: ProposeParams): Promise<void>;
+
   // default callbacks for sequence engine
-  public abstract validateProposal(params?: ProposeParams): Promise<void>;
   public abstract getDefaultSignal(params: DefaultSignalParams): Promise<Signal>;
   public abstract getDefaultTTL(): Promise<number>;
   public abstract getDefaultPermissions(): Promise<ProposedPermissions>;

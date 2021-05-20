@@ -20,7 +20,7 @@ export abstract class IEngine<
   NotifyParams = SequenceTypes.NotifyParams,
   Participant = SequenceTypes.Participant
 > {
-  constructor(public controller: ISequence) {}
+  constructor(public sequence: ISequence) {}
 
   public abstract ping(topic: string, timeout?: number): Promise<void>;
   public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
