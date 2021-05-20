@@ -10,6 +10,7 @@ export const ERROR_TYPE = enumify({
   MISSING_RESPONSE: "MISSING_RESPONSE",
   MISSING_DECRYPT_PARAMS: "MISSING_DECRYPT_PARAMS",
   INVALID_UPDATE_REQUEST: "INVALID_UPDATE_REQUEST",
+  INVALID_UPGRADE_REQUEST: "INVALID_UPGRADE_REQUEST",
   RECORD_ALREADY_EXISTS: "RECORD_ALREADY_EXISTS",
   RESTORE_WILL_OVERRIDE: "RESTORE_WILL_OVERRIDE",
   NO_MATCHING_ID: "NO_MATCHING_ID",
@@ -47,6 +48,7 @@ export const ERROR_TYPE = enumify({
   UNSUPPORTED_CHAINS: "UNSUPPORTED_CHAINS",
   UNSUPPORTED_JSONRPC: "UNSUPPORTED_JSONRPC",
   UNSUPPORTED_NOTIFICATION: "UNSUPPORTED_NOTIFICATION",
+  UNSUPPORTED_SIGNAL: "UNSUPPORTED_SIGNAL",
   USER_DISCONNECTED: "USER_DISCONNECTED",
   // 9000 (Unknown)
   UNKNOWN: "UNKNOWN",
@@ -121,6 +123,16 @@ export const ERROR: Record<ErrorType, Error> = {
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.INVALID_UPDATE_REQUEST].code,
       message: ERROR[ERROR_TYPE.INVALID_UPDATE_REQUEST].stringify(params),
+    }),
+  },
+  [ERROR_TYPE.INVALID_UPGRADE_REQUEST]: {
+    type: ERROR_TYPE.INVALID_UPGRADE_REQUEST,
+    code: 1004,
+    stringify: (params?: any) =>
+      `Invalid ${params?.context || defaultParams.context} upgrade request`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.INVALID_UPGRADE_REQUEST].code,
+      message: ERROR[ERROR_TYPE.INVALID_UPGRADE_REQUEST].stringify(params),
     }),
   },
   [ERROR_TYPE.RECORD_ALREADY_EXISTS]: {
@@ -448,6 +460,17 @@ export const ERROR: Record<ErrorType, Error> = {
       message: ERROR[ERROR_TYPE.UNSUPPORTED_NOTIFICATION].stringify(params),
     }),
   },
+  [ERROR_TYPE.UNSUPPORTED_SIGNAL]: {
+    type: ERROR_TYPE.UNSUPPORTED_SIGNAL,
+    code: 5103,
+    stringify: (params?: any) =>
+      `Proposed ${params?.context || defaultParams.context} signal is unsupported`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.UNSUPPORTED_SIGNAL].code,
+      message: ERROR[ERROR_TYPE.UNSUPPORTED_SIGNAL].stringify(params),
+    }),
+  },
+
   [ERROR_TYPE.USER_DISCONNECTED]: {
     type: ERROR_TYPE.USER_DISCONNECTED,
     code: 5900,

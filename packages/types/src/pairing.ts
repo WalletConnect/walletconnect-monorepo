@@ -4,7 +4,7 @@ import { AppMetadata, SignalTypes } from "./misc";
 export declare namespace PairingTypes {
   export type Status = SequenceTypes.Status;
 
-  export type JsonRpc = Omit<SequenceTypes.JsonRpc, "propose">;
+  export type JsonRpc = SequenceTypes.JsonRpc;
 
   export type Events = SequenceTypes.Events;
 
@@ -81,9 +81,17 @@ export declare namespace PairingTypes {
 
   export type Outcome = SequenceTypes.Outcome;
 
-  export interface State extends SequenceTypes.State {
+  export interface State {
     metadata?: AppMetadata;
   }
+
+  export type DefaultSignalParams = SequenceTypes.DefaultSignalParams<ProposedPeer>;
+
+  export type Notification = SequenceTypes.Notification;
+
+  export type NotificationEvent = SequenceTypes.NotificationEvent;
+
+  export type NotifyParams = SequenceTypes.NotifyParams;
 }
 
 export abstract class IPairing extends ISequence<
@@ -92,6 +100,8 @@ export abstract class IPairing extends ISequence<
   PairingTypes.Settled,
   PairingTypes.Upgrade,
   PairingTypes.Update,
+  PairingTypes.State,
+  PairingTypes.Permissions,
   PairingTypes.CreateParams,
   PairingTypes.RespondParams,
   PairingTypes.RequestParams,
@@ -100,5 +110,9 @@ export abstract class IPairing extends ISequence<
   PairingTypes.DeleteParams,
   PairingTypes.ProposeParams,
   PairingTypes.SettleParams,
-  PairingTypes.Participant
+  PairingTypes.NotifyParams,
+  PairingTypes.Participant,
+  PairingTypes.Signal,
+  PairingTypes.DefaultSignalParams,
+  PairingTypes.ProposedPermissions
 > {}

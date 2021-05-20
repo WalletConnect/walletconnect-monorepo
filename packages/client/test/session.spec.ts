@@ -142,14 +142,12 @@ describe("Session", function() {
   });
   it("A pings B with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
-    await testApproveSession(setup, clients);
-    const topic = clients.a.session.topics[0];
+    const topic = await testApproveSession(setup, clients);
     await clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("B pings A with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
-    await testApproveSession(setup, clients);
-    const topic = clients.b.session.topics[0];
+    const topic = await testApproveSession(setup, clients);
     await clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("B updates state accounts and A receives event", async () => {
@@ -208,15 +206,17 @@ describe("Session", function() {
       `Unauthorized Notification Type Requested: ${event.type}`,
     );
   });
+  // FIXME: chainId is leaking to TEST_PERMISSIONS and breaking following tests
+  //
   it("B upgrades permissions and A receives event", async () => {
-    const chainId = "eip155:100";
+    const chainId = "eip155:300";
     const request = {
       method: "personal_sign",
       params: ["0xdeadbeaf", "0x9b2055d370f73ec7d8a03e965129118dc8f5bf83"],
     };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    // first - attempt sending request to chainId=eip155:100
+    // first - attempt sending request to new chainId
     const promise = clients.a.request({ topic, request, chainId, timeout: TEST_TIMEOUT_DURATION });
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized Target ChainId Requested: ${chainId}`,
@@ -244,12 +244,11 @@ describe("Session", function() {
     await testJsonRpcRequest(setup, clients, topic, request, formatJsonRpcResult(1, "0xdeadbeaf"));
   });
   it("A upgrades permissions and error is thrown", async () => {
-    const chainId = "eip155:100";
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const promise = clients.a.upgrade({
       topic,
-      permissions: { blockchain: { chains: [chainId] } },
+      permissions: { blockchain: { chains: ["eip155:123"] } },
     });
     await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session upgrade request`);
   });
@@ -274,11 +273,17 @@ describe("Session", function() {
     await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
     );
-    const promise = clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
+    clients.a.session
+      .ping(topic, TEST_TIMEOUT_DURATION)
+      .then(() => {
+        throw new Error("Should not resolve");
+      })
+      .catch(e => {
+        expect(e.message).to.equal(
+          `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
+        );
+      });
     clock.tick(TEST_TIMEOUT_DURATION);
-    await expect(promise).to.eventually.be.rejectedWith(
-      `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
-    );
   });
   it("clients ping each other after restart", async () => {
     const storage = new KeyValueStorage({ database: TEST_CLIENT_DATABASE });
