@@ -134,6 +134,38 @@ export class Session extends ISession {
     this.events.removeListener(event, listener);
   }
 
+  public async mergeUpdate(topic: string, update: SessionTypes.Update) {
+    const settled = await this.settled.get(topic);
+    const state = {
+      accounts: update.state?.accounts || settled.state.accounts,
+    };
+    return state;
+  }
+  public async mergeUpgrade(topic: string, upgrade: SessionTypes.Upgrade) {
+    const settled = await this.settled.get(topic);
+    const permissions = {
+      jsonrpc: {
+        methods: [
+          ...settled.permissions.jsonrpc.methods,
+          ...(upgrade.permissions.jsonrpc?.methods || []),
+        ],
+      },
+      notifications: {
+        types: [
+          ...settled.permissions.notifications?.types,
+          ...(upgrade.permissions.notifications?.types || []),
+        ],
+      },
+      blockchain: {
+        chains: [
+          ...settled.permissions.blockchain?.chains,
+          ...(upgrade.permissions.blockchain?.chains || []),
+        ],
+      },
+      controller: settled.permissions.controller,
+    };
+    return permissions;
+  }
   public async validateRespond(params?: SessionTypes.RespondParams) {
     if (typeof params === "undefined") {
       const error = ERROR.MISSING_OR_INVALID.format({ name: "respond params" });

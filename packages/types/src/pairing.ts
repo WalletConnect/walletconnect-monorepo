@@ -100,6 +100,8 @@ export abstract class IPairing extends ISequence<
   PairingTypes.Settled,
   PairingTypes.Upgrade,
   PairingTypes.Update,
+  PairingTypes.State,
+  PairingTypes.Permissions,
   PairingTypes.CreateParams,
   PairingTypes.RespondParams,
   PairingTypes.RequestParams,

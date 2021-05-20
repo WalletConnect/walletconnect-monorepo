@@ -1,4 +1,3 @@
-import merge from "lodash.merge";
 import {
   SequenceTypes,
   ISequence,
@@ -559,10 +558,10 @@ export class Engine extends IEngine {
 
   public async handleUpdate(
     topic: string,
-    params: SequenceTypes.Update,
+    update: SequenceTypes.Update,
     participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Update> {
-    if (typeof params.state === "undefined") {
+    if (typeof update.state === "undefined") {
       const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.sequence.context });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
@@ -575,19 +574,17 @@ export class Engine extends IEngine {
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    const fixed = {};
-    const update: SequenceTypes.Update = { state: params.state };
-    settled.state = merge(settled.state, update.state, fixed);
+    settled.state = await this.sequence.mergeUpdate(topic, update);
     await this.sequence.settled.update(settled.topic, settled);
     return update;
   }
 
   public async handleUpgrade(
     topic: string,
-    params: SequenceTypes.Upgrade,
+    upgrade: SequenceTypes.Upgrade,
     participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Upgrade> {
-    if (typeof params.permissions === "undefined") {
+    if (typeof upgrade.permissions === "undefined") {
       const error = ERROR.INVALID_UPGRADE_REQUEST.format({ context: this.sequence.context });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
@@ -600,9 +597,7 @@ export class Engine extends IEngine {
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    const fixed = { controller: settled.permissions.controller };
-    const upgrade: SequenceTypes.Upgrade = { permissions: params.permissions };
-    settled.permissions = merge(settled.permissions, upgrade.permissions, fixed);
+    settled.permissions = await this.sequence.mergeUpgrade(topic, upgrade);
     await this.sequence.settled.update(settled.topic, settled);
     return upgrade;
   }

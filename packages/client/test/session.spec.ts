@@ -208,41 +208,41 @@ describe("Session", function() {
   });
   // FIXME: chainId is leaking to TEST_PERMISSIONS and breaking following tests
   //
-  // it("B upgrades permissions and A receives event", async () => {
-  //   const chainId = "eip155:300";
-  //   const request = {
-  //     method: "personal_sign",
-  //     params: ["0xdeadbeaf", "0x9b2055d370f73ec7d8a03e965129118dc8f5bf83"],
-  //   };
-  //   const { setup, clients } = await setupClientsForTesting();
-  //   const topic = await testApproveSession(setup, clients);
-  //   // first - attempt sending request to new chainId
-  //   const promise = clients.a.request({ topic, request, chainId, timeout: TEST_TIMEOUT_DURATION });
-  //   await expect(promise).to.eventually.be.rejectedWith(
-  //     `Unauthorized Target ChainId Requested: ${chainId}`,
-  //   );
-  //   // second - upgrade permissions to include new chainId
-  //   await Promise.all([
-  //     new Promise<void>(async (resolve, reject) => {
-  //       clients.a.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
-  //         if (!session.permissions.blockchain.chains.includes(chainId)) {
-  //           return reject(new Error(`Updated session permissions missing new chainId: ${chainId}`));
-  //         }
-  //         resolve();
-  //       });
-  //     }),
-  //     new Promise<void>(async (resolve, reject) => {
-  //       try {
-  //         await clients.b.upgrade({ topic, permissions: { blockchain: { chains: [chainId] } } });
-  //         resolve();
-  //       } catch (e) {
-  //         reject(e);
-  //       }
-  //     }),
-  //   ]);
-  //   // third - send request again with new chainId and respond
-  //   await testJsonRpcRequest(setup, clients, topic, request, formatJsonRpcResult(1, "0xdeadbeaf"));
-  // });
+  it("B upgrades permissions and A receives event", async () => {
+    const chainId = "eip155:300";
+    const request = {
+      method: "personal_sign",
+      params: ["0xdeadbeaf", "0x9b2055d370f73ec7d8a03e965129118dc8f5bf83"],
+    };
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    // first - attempt sending request to new chainId
+    const promise = clients.a.request({ topic, request, chainId, timeout: TEST_TIMEOUT_DURATION });
+    await expect(promise).to.eventually.be.rejectedWith(
+      `Unauthorized Target ChainId Requested: ${chainId}`,
+    );
+    // second - upgrade permissions to include new chainId
+    await Promise.all([
+      new Promise<void>(async (resolve, reject) => {
+        clients.a.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
+          if (!session.permissions.blockchain.chains.includes(chainId)) {
+            return reject(new Error(`Updated session permissions missing new chainId: ${chainId}`));
+          }
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          await clients.b.upgrade({ topic, permissions: { blockchain: { chains: [chainId] } } });
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }),
+    ]);
+    // third - send request again with new chainId and respond
+    await testJsonRpcRequest(setup, clients, topic, request, formatJsonRpcResult(1, "0xdeadbeaf"));
+  });
   it("A upgrades permissions and error is thrown", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);

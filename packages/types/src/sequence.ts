@@ -253,6 +253,8 @@ export abstract class ISequence<
   Settled = SequenceTypes.Settled,
   Upgrade = SequenceTypes.Upgrade,
   Update = SequenceTypes.Update,
+  State = SequenceTypes.State,
+  Permissions = SequenceTypes.Permissions,
   CreateParams = SequenceTypes.CreateParams,
   RespondParams = SequenceTypes.RespondParams,
   RequestParams = SequenceTypes.RequestParams,
@@ -318,7 +320,7 @@ export abstract class ISequence<
   // called by either to ping peer
   public abstract ping(topic: string, timeout?: number): Promise<void>;
   // called by either to send JSON-RPC
-  public abstract send(topic: string, payload: JsonRpcPayload): Promise<void>;
+  public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
 
   // called by proposer
   public abstract create(params?: CreateParams): Promise<Settled>;
@@ -336,6 +338,10 @@ export abstract class ISequence<
   public abstract delete(params: DeleteParams): Promise<void>;
   // called by either to notify
   public abstract notify(params: NotifyParams): Promise<void>;
+
+  // merge callbacks for sequence engine
+  public abstract mergeUpdate(topic: string, update: Update): Promise<State>;
+  public abstract mergeUpgrade(topic: string, upgrade: Upgrade): Promise<Permissions>;
 
   // validator callbacks for sequence engine
   public abstract validateRespond(params?: RespondParams): Promise<void>;

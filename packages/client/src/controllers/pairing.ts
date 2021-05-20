@@ -127,6 +127,33 @@ export class Pairing extends IPairing {
     this.events.removeListener(event, listener);
   }
 
+  public async mergeUpdate(topic: string, update: PairingTypes.Update) {
+    const settled = await this.settled.get(topic);
+    const state = {
+      metadata: update.state.metadata || settled.state.metadata,
+    };
+    return state;
+  }
+  public async mergeUpgrade(topic: string, upgrade: PairingTypes.Upgrade) {
+    const settled = await this.settled.get(topic);
+    const permissions = {
+      jsonrpc: {
+        methods: [
+          ...settled.permissions.jsonrpc.methods,
+          ...(upgrade.permissions.jsonrpc?.methods || []),
+        ],
+      },
+      notifications: {
+        types: [
+          ...settled.permissions.notifications?.types,
+          ...(upgrade.permissions.notifications?.types || []),
+        ],
+      },
+      controller: settled.permissions.controller,
+    };
+    return permissions;
+  }
+
   public async validateRespond(params?: PairingTypes.RespondParams) {
     // nothing to validate
   }

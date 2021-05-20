@@ -137,6 +137,8 @@ export abstract class ISession extends ISequence<
   SessionTypes.Settled,
   SessionTypes.Upgrade,
   SessionTypes.Update,
+  SessionTypes.State,
+  SessionTypes.Permissions,
   SessionTypes.CreateParams,
   SessionTypes.RespondParams,
   SessionTypes.RequestParams,
@@ -150,6 +152,4 @@ export abstract class ISession extends ISequence<
   SessionTypes.Signal,
   SessionTypes.DefaultSignalParams,
   SessionTypes.ProposedPermissions
-> {
-  public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
-}
+> {}
