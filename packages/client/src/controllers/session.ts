@@ -1,19 +1,14 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { IClient, ISession, SessionTypes, SubscriptionEvent } from "@walletconnect/types";
+import { IClient, ISession, SessionTypes } from "@walletconnect/types";
 import {
   validateSessionProposeParams,
   validateSessionRespondParams,
   isValidationInvalid,
   ERROR,
 } from "@walletconnect/utils";
-import {
-  JsonRpcPayload,
-  formatJsonRpcRequest,
-  isJsonRpcRequest,
-  RequestArguments,
-} from "@json-rpc-tools/utils";
+import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import { Subscription } from "./subscription";
 import { JsonRpcHistory } from "./history";
@@ -24,7 +19,6 @@ import {
   SESSION_STATUS,
   SESSION_SIGNAL_METHOD_PAIRING,
   SESSION_DEFAULT_TTL,
-  SUBSCRIPTION_EVENTS,
 } from "../constants";
 import { Engine } from "./engine";
 

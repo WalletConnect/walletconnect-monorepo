@@ -228,7 +228,7 @@ export class Engine extends IEngine {
   }
 
   public async upgrade(params: SequenceTypes.UpgradeParams): Promise<SequenceTypes.Settled> {
-    this.sequence.logger.info(`Upgrade ${this.sequence.context}`);
+    this.sequence.logger.debug(`Upgrade ${this.sequence.context}`);
     this.sequence.logger.trace({ type: "method", method: "upgrade", params });
     const settled = await this.sequence.settled.get(params.topic);
     const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };

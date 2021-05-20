@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { PairingTypes, IClient, IPairing, SequenceTypes } from "@walletconnect/types";
+import { PairingTypes, IClient, IPairing } from "@walletconnect/types";
 import { formatUri } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
