@@ -562,17 +562,16 @@ export class Engine extends IEngine {
     params: SequenceTypes.Update,
     participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Update> {
-    const settled = await this.sequence.settled.get(topic);
-    let update: SequenceTypes.Update;
-    if (typeof params.state !== "undefined") {
-      await this.isParticipantAuthorized(topic, participant);
-      settled.state = merge(settled.state, params.state);
-      update = { state: settled.state };
-    } else {
+    if (typeof params.state === "undefined") {
       const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.sequence.context });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
+    const settled = await this.sequence.settled.get(topic);
+    await this.isParticipantAuthorized(topic, participant);
+    const fixed = {};
+    const update: SequenceTypes.Update = { state: params.state };
+    settled.state = merge(settled.state, update.state, fixed);
     await this.sequence.settled.update(settled.topic, settled);
     return update;
   }
@@ -582,18 +581,16 @@ export class Engine extends IEngine {
     params: SequenceTypes.Upgrade,
     participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Upgrade> {
-    const settled = await this.sequence.settled.get(topic);
-    let upgrade: SequenceTypes.Upgrade;
-    if (typeof params.permissions !== "undefined") {
-      await this.isParticipantAuthorized(topic, participant);
-      const persisted = { controller: settled.permissions.controller };
-      settled.permissions = merge(settled.permissions, params.permissions, persisted);
-      upgrade = { permissions: settled.permissions };
-    } else {
+    if (typeof params.permissions === "undefined") {
       const error = ERROR.INVALID_UPGRADE_REQUEST.format({ context: this.sequence.context });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
+    const settled = await this.sequence.settled.get(topic);
+    await this.isParticipantAuthorized(topic, participant);
+    const fixed = { controller: settled.permissions.controller };
+    const upgrade: SequenceTypes.Upgrade = { permissions: params.permissions };
+    settled.permissions = merge(settled.permissions, upgrade.permissions, fixed);
     await this.sequence.settled.update(settled.topic, settled);
     return upgrade;
   }

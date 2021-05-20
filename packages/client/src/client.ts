@@ -351,7 +351,7 @@ export class Client extends IClient {
     this.session.on(
       SESSION_EVENTS.updated,
       (session: SessionTypes.Settled, update: Partial<SessionTypes.Settled>) => {
-        const eventName = CLIENT_EVENTS.session.created;
+        const eventName = CLIENT_EVENTS.session.updated;
         this.logger.info(`Emitting ${eventName}`);
         this.logger.debug({ type: "event", event: eventName, data: session, update });
         this.events.emit(eventName, session, update);
