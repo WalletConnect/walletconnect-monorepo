@@ -8,7 +8,7 @@ redisImage=redis:6-alpine
 standAloneRedis=xredis
 caddyImage=$(project)/caddy:$(BRANCH)
 relayImage=$(project)/relay:$(BRANCH)
-wakuImage=$(project)/waku:walletconnect
+wakuImage=$(project)/waku:$(BRANCH)
 
 ## Environment variables used by the compose files
 include setup
@@ -35,7 +35,6 @@ dirs:
 
 pull: ## pulls docker images
 	docker pull $(redisImage)
-	docker pull $(wakuImage)
 	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
@@ -141,8 +140,20 @@ build-docker-caddy: ## ## builds the caddy docker image with nix
 		| xargs -I {} docker tag {} $(caddyImage)
 	$(log_end)
 
+build-docker-waku:
+	nix-build \
+		./ops/waku-docker.nix \
+		-o build/$@ \
+		--attr docker \
+		--argstr tag $(wakuTag)
+	docker load -i build/$@ \
+		| awk '{print $$NF}' \
+		| tee build/$@-img \
+		| xargs -I {} docker tag {} $(wakuImage)
+	$(log_end)
+
 #build-containers: build-docker-relay-dockerized build-docker-caddy-dockerized
-build-containers: build-docker-relay build-docker-caddy
+build-containers: build-docker-relay build-docker-caddy build-docker-waku
 
 build: dirs build-containers bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
 	$(log_end)
@@ -197,6 +208,7 @@ relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
 cachix: clean build-docker-relay build-docker-caddy ## pushes docker images to cachix
 	cachix push walletconnect build/build-docker-relay
 	cachix push walletconnect build/build-docker-caddy
+	cachix push walletconnect build/build-docker-waku
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true

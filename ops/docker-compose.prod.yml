@@ -11,7 +11,7 @@ services:
       EMAIL: ${CERTBOT_EMAIL}
       CLOUDFLARE_TOKEN: ${CLOUDFLARE_TOKEN}
       UPSTREAM_NAME: ${UPSTREAM_NAME:-relay}
-      UPSTREAM_PORT: ${UPSTREAM_PORT:-5000}
+      UPSTREAM_PORT: ${UPSTREAM_PORT:-5555}
       LOG_LEVEL: ERROR
     volumes:
       - caddy_data:/data
@@ -24,7 +24,7 @@ services:
   relay:
     image: ${RELAY_IMAGE}
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: ${NODE_ENV:-development}
       RELAY_MODE: ${RELAY_MODE:-any}
     deploy:
       replicas: 1

@@ -13,7 +13,7 @@ services:
     image: ${CADDY_IMAGE}
     deploy:
       mode: replicated
-    # This port format is needed to get real ip address of the client
+    # Port mode must be mode: host to allow access to the external ip
     ports:
       - target: 80
         published: 80
@@ -29,30 +29,26 @@ services:
     volumes:
       - redis:/data
 
+  store:
+    image: ${WAKU_IMAGE}
+    environment:
+      STORE: 1
+    volumes:
+      - store:/store
+
   waku:
     image: ${WAKU_IMAGE}
     hostname: "waku.{{.Task.Slot}}"
-    command:
-      - --topics=6d9b0b4b9994e8a6afbd3dc3ed983cd51c755afb27cd1dc7825ef59c134a39f7
-      - --rpc-address=0.0.0.0
-      - --rpc-port=8546
-      - --keep-alive=true
-      - --persist-peers=true
-      - --metrics-server=true
-      - --metrics-server-address=0.0.0.0
-      - --metrics-server-port=9001
-      - --rpc=true
-      - --filter=true
-      - --staticnode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
-      - --filternode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
-      - --storenode=/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn
+    depends_on:
+      - store
+
 
   relay:
     image: ${RELAY_IMAGE}
     environment:
       NODE_ENV: development
       REDIS_URL: "redis://redis:6379/{{.Task.Slot}}"
-      WAKU_URL: "http://waku.{{.Task.Slot}}:8546"
+      WAKU_URL: "http://waku.{{.Task.Slot}}:8545"
     depends_on:
       - redis
       - waku
