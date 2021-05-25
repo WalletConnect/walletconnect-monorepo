@@ -3,7 +3,7 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { RelayerTypes, IRelayer, IClient } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
-import { decrypt, formatRelayRpcUrl } from "@walletconnect/utils";
+import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { utf8ToHex, hexToUtf8 } from "enc-utils";
 import {
   IJsonRpcProvider,

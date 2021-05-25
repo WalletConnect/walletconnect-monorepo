@@ -6,6 +6,7 @@
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
   "main": "dist/cjs/index.js",
+  "browser": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
   "unpkg": "dist/umd/index.min.js",
   "files": [
@@ -21,7 +22,8 @@
     "help": "tsc --help",
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
-    "build": "run-s build:pre build:cjs build:umd",
+    "build:esm": "npx tsc -p tsconfig.esm.json",
+    "build": "run-s build:pre build:cjs build:esm build:umd",
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
     "test": "run-s test:pre test:run",
@@ -29,8 +31,8 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/provider": "^1.7.6",
-    "@json-rpc-tools/utils": "^1.7.6",
+    "@json-rpc-tools/provider": "^2.0.0-beta.1",
+    "@json-rpc-tools/utils": "^2.0.0-beta.1",
     "@pedrouid/pino-utils": "^1.0.1",
     "@walletconnect/types": "^2.0.0-beta.5",
     "@walletconnect/utils": "^2.0.0-beta.5",
