@@ -31,8 +31,8 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/provider": "^2.0.0-beta.1",
-    "@json-rpc-tools/utils": "^2.0.0-beta.1",
+    "@json-rpc-tools/provider": "^2.0.0-beta.2",
+    "@json-rpc-tools/utils": "^2.0.0-beta.2",
     "@pedrouid/pino-utils": "^1.0.1",
     "@walletconnect/types": "^2.0.0-beta.7",
     "@walletconnect/utils": "^2.0.0-beta.7",

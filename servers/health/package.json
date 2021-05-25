@@ -35,7 +35,7 @@
     "@types/pino": "^6.3.5",
     "axios": "^0.21.1",
     "clientv1": "npm:@walletconnect/client@^1.4.1",
-    "clientv2": "npm:@walletconnect/client@^2.0.0-beta.1",
+    "clientv2": "npm:@walletconnect/client@^2.0.0-beta.2",
     "enc-utils": "^3.0.0",
     "fastify": "^3.10.1",
     "fastify-helmet": "^5.1.0",
@@ -62,6 +62,6 @@
     "ts-node": "^9.1.1",
     "typescript": "^3.7.5",
     "walletconnect-types-v1": "npm:@walletconnect/types@^1.4.1",
-    "walletconnect-types-v2": "npm:@walletconnect/types@^2.0.0-beta.1"
+    "walletconnect-types-v2": "npm:@walletconnect/types@^2.0.0-beta.2"
   }
 }
