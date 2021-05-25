@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/signer-connection",
   "description": "Signer Connection for WalletConnect Protocol",
-  "version": "2.0.0-beta.4",
+  "version": "2.0.0-beta.5",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
@@ -29,9 +29,9 @@
   "dependencies": {
     "@json-rpc-tools/types": "^1.7.6",
     "@json-rpc-tools/utils": "^1.7.6",
-    "@walletconnect/client": "^2.0.0-beta.4",
-    "@walletconnect/types": "^2.0.0-beta.4",
-    "@walletconnect/utils": "^2.0.0-beta.4"
+    "@walletconnect/client": "^2.0.0-beta.5",
+    "@walletconnect/types": "^2.0.0-beta.5",
+    "@walletconnect/utils": "^2.0.0-beta.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
