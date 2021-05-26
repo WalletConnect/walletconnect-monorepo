@@ -1,9 +1,6 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import Web3Provider from "@walletconnect/web3-provider";
-import ChannelProvider from "@walletconnect/channel-provider";
-import StarkwareProvider from "@walletconnect/starkware-provider";
-import ThreeIdProvider from "@walletconnect/3id-provider";
 import { isNode } from "@walletconnect/utils";
 import {
   IWalletConnectSDKOptions,
@@ -57,21 +54,21 @@ class WalletConnectSDK {
     if (!this.connector) {
       throw new Error("No connector available - please call connect() first");
     }
-    return new ChannelProvider({ ...opts, connector: this.connector });
+    throw new Error("Deprecated");
   }
 
   public getStarkwareProvider(opts: IWalletConnectStarkwareProviderOptions) {
     if (!this.connector) {
       throw new Error("No connector available - please call connect() first");
     }
-    return new StarkwareProvider({ ...opts, connector: this.connector });
+    throw new Error("Deprecated");
   }
 
   public getThreeIdProvider(opts?: IWCRpcConnectionOptions) {
     if (!this.connector) {
       throw new Error("No connector available - please call connect() first");
     }
-    return new ThreeIdProvider({ ...opts, connector: this.connector });
+    throw new Error("Deprecated");
   }
 }
 
