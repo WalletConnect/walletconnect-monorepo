@@ -144,8 +144,7 @@ build-docker-waku:
 	nix-build \
 		./ops/waku-docker.nix \
 		-o build/$@ \
-		--attr docker \
-		--argstr tag $(wakuTag)
+		--attr docker
 	docker load -i build/$@ \
 		| awk '{print $$NF}' \
 		| tee build/$@-img \

@@ -39,9 +39,6 @@ services:
   waku:
     image: ${WAKU_IMAGE}
     hostname: "waku.{{.Task.Slot}}"
-    depends_on:
-      - store
-
 
   relay:
     image: ${RELAY_IMAGE}
@@ -49,6 +46,3 @@ services:
       NODE_ENV: development
       REDIS_URL: "redis://redis:6379/{{.Task.Slot}}"
       WAKU_URL: "http://waku.{{.Task.Slot}}:8545"
-    depends_on:
-      - redis
-      - waku

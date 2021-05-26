@@ -80,5 +80,3 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - grafana:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-    depends_on:
-      - prometheus

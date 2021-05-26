@@ -23,8 +23,6 @@ export class NetworkService {
   public namespace = NETWORK_PUBSUB_TOPIC;
   public provider: IJsonRpcProvider | undefined;
 
-  private manageSubs = false;
-
   constructor(server: HttpService, logger: Logger, nodeUrl: string) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
@@ -65,7 +63,6 @@ export class NetworkService {
   private initialize(): void {
     this.connectProvider();
     this.logger.trace(`Initialized`);
-    this.logger.debug({ manageSubs: this.manageSubs });
   }
 
   private async connectProvider(): Promise<void> {
@@ -111,10 +108,13 @@ export class NetworkService {
     },
     messages: WakuMessage[] = [],
   ): Promise<WakuMessage[]> {
+    const startTime: number = (Date.now() - NETWORK_POLLING_INTERVAL * 2) / 1000;
+    const endTime: number = Date.now() / 1000;
     const method = WAKU_JSONRPC.get.store.messages;
     const params = [this.namespace, [], pagingOptions];
     if (typeof this.provider === "undefined") return [];
     if (!this.connected) return [];
+    this.logger.trace({ type: "method", method: "getStoreMessages", params, pagingOptions });
     const result = await this.provider.request({ method, params });
     pagingOptions = result.pagingOptions;
     messages = [...messages, ...this.parseWakuMessageResult(result.messages)];
@@ -127,7 +127,7 @@ export class NetworkService {
   private parseWakuMessageResult(result: WakuMessagesResult[]): WakuMessage[] {
     const messages: WakuMessage[] = [];
     const seenMessages = new Set();
-    result.forEach(m => {
+    result.forEach((m) => {
       const stringPayload = arrayToHex(m.payload);
       if (!seenMessages.has(stringPayload)) {
         seenMessages.add(stringPayload);
@@ -147,7 +147,7 @@ export class NetworkService {
     const messages = await this.getMessages();
     if (messages && messages.length) {
       this.logger.trace({ method: "poll", messages });
-      messages.forEach(m =>
+      messages.forEach((m) =>
         this.server.events.emit(NETWORK_EVENTS.message, m.contentTopic, m.payload),
       );
     }

@@ -16,8 +16,6 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_conf:/config
-    depends_on:
-      - relay
     deploy:
       replicas: 1
 
