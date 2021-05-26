@@ -61,7 +61,7 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@pedrouid/iso-crypto": "^1.0.0",
+    "@pedrouid/iso-crypto": "^2.0.0-beta.3",
     "@walletconnect/types": "^1.4.2-rc.2",
     "@walletconnect/utils": "^1.4.2-rc.2"
   },

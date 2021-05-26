@@ -1,5 +1,6 @@
 import EventEmitter from "eventemitter3";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
+import { HttpConnection } from "@json-rpc-tools/http-connection";
 import { IConnector, IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
 import { getRpcUrl, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
@@ -93,7 +94,7 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
   private setHttpProvider(chainId: number): JsonRpcProvider | undefined {
     const rpcUrl = getRpcUrl(chainId, this.rpc);
     if (typeof rpcUrl === "undefined") return undefined;
-    const http = new JsonRpcProvider(rpcUrl);
+    const http = new JsonRpcProvider(new HttpConnection(rpcUrl));
     return http;
   }
 }
