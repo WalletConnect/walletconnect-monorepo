@@ -53,24 +53,11 @@ export class NetworkService {
   }
 
   public async subscribe(topic: string) {
-    const method = WAKU_JSONRPC.post.filter.subscription;
-    const params = [[{ contentTopic: topic }], this.namespace];
-    this.logger.debug({ type: "method", method: "subscribe", params });
-    if (typeof this.provider === "undefined") return;
-    if (!this.connected) return;
-    await this.provider.request({ method, params });
-    setTimeout(async () => {
-      const messages = await this.getStoreMessages(topic);
-      messages.forEach(m => this.server.events.emit(NETWORK_EVENTS.message, topic, m.payload));
-    }, NETWORK_POLLING_INTERVAL);
+    // noop
   }
 
-  public async unsubscribe(subscription: string) {
-    const method = WAKU_JSONRPC.delete.filter.subscription;
-    const params = [[{ contentTopic: subscription }]];
-    if (typeof this.provider === "undefined") return;
-    if (!this.connected) return;
-    await this.provider.request({ method, params });
+  public async unsubscribe(topic: string) {
+    // noop
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -117,19 +104,7 @@ export class NetworkService {
     this.provider.request({ method, params });
   }
 
-  private async getMessages(topic: string): Promise<WakuMessage[]> {
-    const method = WAKU_JSONRPC.get.filter.messages;
-    const params = [topic];
-    if (typeof this.provider === "undefined") return [];
-    if (!this.connected) return [];
-    const result = await this.provider.request({ method, params });
-    const messages = this.parseWakuMessageResult(result);
-    this.logger.trace({ type: "method", topic, method: "getMessages", messages });
-    return messages;
-  }
-
-  private async getStoreMessages(
-    topic: string,
+  private async getMessages(
     pagingOptions: PagingOptions = {
       pageSize: NETWORK_DEFAULT_PAGE_SIZE,
       forward: true,
@@ -137,16 +112,16 @@ export class NetworkService {
     messages: WakuMessage[] = [],
   ): Promise<WakuMessage[]> {
     const method = WAKU_JSONRPC.get.store.messages;
-    const params = [this.namespace, [{ contentTopic: topic }], pagingOptions];
+    const params = [this.namespace, [], pagingOptions];
     if (typeof this.provider === "undefined") return [];
     if (!this.connected) return [];
     const result = await this.provider.request({ method, params });
     pagingOptions = result.pagingOptions;
     messages = [...messages, ...this.parseWakuMessageResult(result.messages)];
-    this.logger.debug({ type: "method", method: "getStoreMessages", pagingOptions });
+    this.logger.debug({ type: "method", method: "getMessages", pagingOptions });
     this.logger.trace({ type: "messages", messages });
     if (pagingOptions?.pageSize == 0 || !pagingOptions) return messages;
-    return [...messages, ...(await this.getStoreMessages(topic, pagingOptions))];
+    return [...messages, ...(await this.getMessages(pagingOptions))];
   }
 
   private parseWakuMessageResult(result: WakuMessagesResult[]): WakuMessage[] {
@@ -168,14 +143,14 @@ export class NetworkService {
     return messages;
   }
 
-  private poll() {
-    this.server.subscription.subscriptions.forEach(async ({ topic }) => {
-      const messages = await this.getMessages(topic);
-      if (messages && messages.length) {
-        this.logger.trace({ method: "poll", messages });
-        messages.forEach(m => this.server.events.emit(NETWORK_EVENTS.message, topic, m.payload));
-      }
-    });
+  private async poll() {
+    const messages = await this.getMessages();
+    if (messages && messages.length) {
+      this.logger.trace({ method: "poll", messages });
+      messages.forEach(m =>
+        this.server.events.emit(NETWORK_EVENTS.message, m.contentTopic, m.payload),
+      );
+    }
   }
 
   private setJsonRpcProvider(nodeUrl: string): JsonRpcProvider | undefined {
