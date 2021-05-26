@@ -14,6 +14,7 @@ import {
   RequestArguments,
 } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
+import { WsConnection } from "@json-rpc-tools/ws-connection";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import {
@@ -183,7 +184,7 @@ export class Relayer extends IRelayer {
     );
     return typeof provider !== "string" && typeof provider !== "undefined"
       ? provider
-      : new JsonRpcProvider(rpcUrl);
+      : new JsonRpcProvider(new WsConnection(rpcUrl));
   }
 
   private registerEventListeners(): void {
