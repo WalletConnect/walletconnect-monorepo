@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { HttpConnection } from "@json-rpc-tools/http-connection";
 import { SessionTypes } from "@walletconnect/types";
