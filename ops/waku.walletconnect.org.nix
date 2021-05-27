@@ -2,12 +2,7 @@
 let
   wakuP2P = 60000;
   volumePath = "/mnt/waku-store";
-  waku = pkgs.dockerTools.pullImage {
-    imageName = "walletconnect/waku";
-    finalImageTag = tag;
-    imageDigest = "sha256:241191a639cf65a0f20fe0ca8a33ea69f733b9dd64df066765fb2245405bf53b";
-    sha256 = "000003zq2v6rrhizgb9nvhczl87lcfphq9601wcprdika2jz7qh8";
-  };
+  statusImage = (import ./waku-docker.nix {}).statusImage;
 in {
   networking = {
     firewall = {
@@ -48,7 +43,7 @@ in {
         "--persist-messages=true"
         "--filter=true"
         "--db-path=/store"
-        "--topics=6d9b0b4b9994e8a6afbd3dc3ed983cd51c755afb27cd1dc7825ef59c134a39f7"
+        "--topics=/waku/2/walletconnect/2/jsonrpc"
         "--metrics-server=true"
         "--metrics-server-address=127.0.0.1"
         "--metrics-server-port=8008"
