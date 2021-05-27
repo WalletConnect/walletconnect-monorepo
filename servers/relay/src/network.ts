@@ -4,6 +4,7 @@ import { IJsonRpcProvider } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
 import { HttpConnection } from "@json-rpc-tools/http-connection";
 import { arrayToHex } from "enc-utils";
+import { isFloat } from "./utils";
 import { PagingOptions, WakuMessagesResult, WakuMessage, Subscription } from "./types";
 
 import {
@@ -81,6 +82,7 @@ export class NetworkService {
   private onConnect() {
     this.registerNamespace();
     this.registerEventListeners();
+    this.getStoreMessages();
     setInterval(() => this.poll(), NETWORK_POLLING_INTERVAL);
   }
 
@@ -102,27 +104,37 @@ export class NetworkService {
     this.provider.request({ method, params });
   }
 
-  private async getMessages(
+  private async getMessages(topic = this.namespace): Promise<WakuMessage[]> {
+    const method = WAKU_JSONRPC.get.relay.messages;
+    const params = [topic];
+    if (typeof this.provider === "undefined") return [];
+    if (!this.connected) return [];
+    const result = await this.provider.request({ method, params });
+    const messages = this.parseWakuMessageResult(result);
+    this.logger.trace({ type: "method", topic, method: "getMessages", messages });
+    return messages;
+  }
+
+  private async getStoreMessages(
     pagingOptions: PagingOptions = {
       pageSize: NETWORK_DEFAULT_PAGE_SIZE,
       forward: true,
     },
     messages: WakuMessage[] = [],
   ): Promise<WakuMessage[]> {
-    const startTime: number = (Date.now() - NETWORK_POLLING_INTERVAL * 2) / 1000;
-    const endTime: number = Date.now() / 1000;
+    const startTime: number = 0.001;
+    let endTime: number = Date.now() / 1000;
+    if (isFloat(endTime)) endTime += 0.001;
     const method = WAKU_JSONRPC.get.store.messages;
-    const params = [this.namespace, [], pagingOptions];
+    const params = [this.namespace, [], startTime, endTime, pagingOptions];
     if (typeof this.provider === "undefined") return [];
     if (!this.connected) return [];
-    this.logger.trace({ type: "method", method: "getStoreMessages", params, pagingOptions });
+    this.logger.debug({ type: "method", method: "getStoreMessages", params });
     const result = await this.provider.request({ method, params });
     pagingOptions = result.pagingOptions;
     messages = [...messages, ...this.parseWakuMessageResult(result.messages)];
-    this.logger.debug({ type: "method", method: "getMessages", pagingOptions });
-    this.logger.trace({ type: "messages", messages });
     if (pagingOptions?.pageSize == 0 || !pagingOptions) return messages;
-    return [...messages, ...(await this.getMessages(pagingOptions))];
+    return [...messages, ...(await this.getStoreMessages(pagingOptions))];
   }
 
   private parseWakuMessageResult(result: WakuMessagesResult[]): WakuMessage[] {
