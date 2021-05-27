@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-react-wallet",
-  "version": "2.0.0-alpha.42",
+  "version": "2.0.0-beta.9",
   "private": true,
   "keywords": [
     "walletconnect",
@@ -24,7 +24,7 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.7.6",
+    "@json-rpc-tools/utils": "^2.0.0-beta.3",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -35,9 +35,9 @@
     "@types/react-dom": "^16.9.8",
     "@types/react-qr-reader": "^2.1.3",
     "@types/styled-components": "^5.1.2",
-    "@walletconnect/client": "^2.0.0-alpha.42",
-    "@walletconnect/types": "^2.0.0-alpha.42",
-    "@walletconnect/utils": "^2.0.0-alpha.42",
+    "@walletconnect/client": "^2.0.0-beta.9",
+    "@walletconnect/types": "^2.0.0-beta.9",
+    "@walletconnect/utils": "^2.0.0-beta.9",
     "axios": "^0.21.1",
     "blockies-ts": "^1.0.0",
     "caip-wallet": "^1.6.6",

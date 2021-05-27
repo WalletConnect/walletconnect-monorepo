@@ -4,13 +4,43 @@ import {
   BlockchainTypes,
   JsonRpcPermissions,
   NotificationPermissions,
+  SequenceTypes,
   PairingTypes,
   SessionTypes,
   SubscriptionEvent,
   Validation,
+  SignalTypes,
 } from "@walletconnect/types";
 
 import { ERROR } from "./error";
+
+// -- signal -------------------------------------------------- //
+
+export function isSignalTypePairing(signal: SignalTypes.Base): signal is SignalTypes.Pairing {
+  return signal.method === "pairing";
+}
+
+export function isSignalTypeUri(signal: SignalTypes.Base): signal is SignalTypes.Uri {
+  return signal.method === "uri";
+}
+
+// -- sequence -------------------------------------------------- //
+
+export function isSequenceRespondedStatus(
+  status: SequenceTypes.PendingStatus,
+): status is SequenceTypes.RespondedStatus {
+  return status === "responded";
+}
+
+export function isSequenceResponded(
+  pending: SequenceTypes.Pending,
+): pending is SequenceTypes.RespondedPending {
+  return isSequenceRespondedStatus(pending.status) && "outcome" in pending;
+}
+
+export function isSequenceFailed(outcome: SequenceTypes.Outcome): outcome is SequenceTypes.Failed {
+  return "reason" in outcome;
+}
 
 // -- pairing -------------------------------------------------- //
 

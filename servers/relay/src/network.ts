@@ -2,6 +2,7 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { IJsonRpcProvider } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
+import { HttpConnection } from "@json-rpc-tools/http-connection";
 import { arrayToHex } from "enc-utils";
 import { PagingOptions, WakuMessagesResult, WakuMessage, Subscription } from "./types";
 
@@ -127,7 +128,7 @@ export class NetworkService {
   private parseWakuMessageResult(result: WakuMessagesResult[]): WakuMessage[] {
     const messages: WakuMessage[] = [];
     const seenMessages = new Set();
-    result.forEach((m) => {
+    result.forEach(m => {
       const stringPayload = arrayToHex(m.payload);
       if (!seenMessages.has(stringPayload)) {
         seenMessages.add(stringPayload);
@@ -147,7 +148,7 @@ export class NetworkService {
     const messages = await this.getMessages();
     if (messages && messages.length) {
       this.logger.trace({ method: "poll", messages });
-      messages.forEach((m) =>
+      messages.forEach(m =>
         this.server.events.emit(NETWORK_EVENTS.message, m.contentTopic, m.payload),
       );
     }
@@ -156,7 +157,7 @@ export class NetworkService {
   private setJsonRpcProvider(nodeUrl: string): JsonRpcProvider | undefined {
     let provider: JsonRpcProvider | undefined;
     try {
-      provider = new JsonRpcProvider(nodeUrl);
+      provider = new JsonRpcProvider(new HttpConnection(nodeUrl));
     } catch (e) {
       // do nothing
     }

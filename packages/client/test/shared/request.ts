@@ -3,7 +3,6 @@ import Timestamp from "@pedrouid/timestamp";
 import { SessionTypes } from "@walletconnect/types";
 import {
   isJsonRpcError,
-  isJsonRpcRequest,
   isJsonRpcResult,
   JsonRpcResponse,
   RequestArguments,
@@ -13,7 +12,7 @@ import { CLIENT_EVENTS } from "../../src";
 
 import { expect } from "./chai";
 import { InitializedSetup, InitializedClients } from "./types";
-import { TEST_TIMEOUT_DURATION } from "./values";
+import { TEST_TIMEOUT_SAFEGUARD, TEST_TIMEOUT_DURATION } from "./values";
 
 export async function testJsonRpcRequest(
   setup: InitializedSetup,
@@ -32,40 +31,57 @@ export async function testJsonRpcRequest(
   // request & respond a JSON-RPC request
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject("Took too long to receive request");
+      }, TEST_TIMEOUT_SAFEGUARD);
       clients.b.on(
         CLIENT_EVENTS.session.request,
         async (requestEvent: SessionTypes.RequestEvent) => {
           if (requestEvent.topic === topic && requestEvent.chainId === chainId) {
-            clients.b.logger.warn(`TEST >> JSON-RPC Request Received`);
-            id = requestEvent.request.id;
-            await clients.b.respond({
-              topic,
-              response: { ...response, id },
-            });
-            clients.b.logger.warn(`TEST >> JSON-RPC Response Sent`);
-            resolve();
+            clearTimeout(timeout);
+            try {
+              clients.b.logger.warn(`TEST >> JSON-RPC Request Received`);
+              id = requestEvent.request.id;
+              await clients.b.respond({
+                topic,
+                response: { ...response, id },
+              });
+              clients.b.logger.warn(`TEST >> JSON-RPC Response Sent`);
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
           }
         },
       );
     }),
     new Promise<void>(async (resolve, reject) => {
-      clients.a.logger.warn(`TEST >> JSON-RPC Request Sent`);
       time.start("request");
-      if (isJsonRpcError(response)) {
-        const promise = clients.a.request({
+      try {
+        clients.a.logger.warn(`TEST >> JSON-RPC Request Sent`);
+        if (isJsonRpcError(response)) {
+          const promise = clients.a.request({
+            topic,
+            chainId,
+            request,
+            timeout: TEST_TIMEOUT_DURATION,
+          });
+          await expect(promise).to.eventually.be.rejectedWith(response.error.message);
+          resolve();
+          return;
+        }
+        result = await clients.a.request({
           topic,
           chainId,
           request,
           timeout: TEST_TIMEOUT_DURATION,
         });
-        await expect(promise).to.eventually.be.rejectedWith(response.error.message);
+        clients.a.logger.warn(`TEST >> JSON-RPC Response Received`);
         resolve();
-        return;
+      } catch (e) {
+        reject(e);
       }
-      result = await clients.a.request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION });
       time.stop("request");
-      clients.a.logger.warn(`TEST >> JSON-RPC Response Received`);
-      resolve();
     }),
   ]);
 

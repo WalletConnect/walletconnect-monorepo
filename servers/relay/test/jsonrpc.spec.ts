@@ -1,6 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 import JsonRpcProvider from "@json-rpc-tools/provider";
+import WsConnection from "@json-rpc-tools/ws-connection";
 import { RELAY_JSONRPC } from "relay-provider";
 
 import { TEST_RELAY_URL, getTestJsonRpc, Counter } from "./shared";
@@ -12,9 +13,9 @@ describe("JSON-RPC", () => {
   it("A can publish to B subscribed to same topic", async () => {
     const { pub, sub } = getTestJsonRpc();
 
-    const providerA = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerA.connect();
-    const providerB = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerB.connect();
 
     let subscriptionB: string;
@@ -58,11 +59,11 @@ describe("JSON-RPC", () => {
   it("A can publish to B and C subscribed to same topic", async () => {
     const { pub, sub } = getTestJsonRpc();
 
-    const providerA = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerA.connect();
-    const providerB = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerB.connect();
-    const providerC = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerC = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerC.connect();
 
     let subscriptionB: string;
@@ -132,13 +133,13 @@ describe("JSON-RPC", () => {
   it("B can receive pending messages published while offline", async () => {
     const { pub, sub } = getTestJsonRpc();
 
-    const providerA = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerA.connect();
 
     // publishing to topics
     await providerA.request(pub);
 
-    const providerB = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerB.connect();
 
     let subscriptionB: string;
@@ -174,7 +175,7 @@ describe("JSON-RPC", () => {
 
     expect(counterB.value).to.eql(1);
 
-    const providerC = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerC = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerC.connect();
 
     let subscriptionC: string;
@@ -213,9 +214,9 @@ describe("JSON-RPC", () => {
   it("A can publish to B through Provider A to Provider B", async function() {
     const { pub, sub } = getTestJsonRpc(generateRandomBytes32());
 
-    const providerA = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerA.connect();
-    const providerB = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerB.connect();
 
     let subscriptionB: string;
@@ -259,10 +260,10 @@ describe("JSON-RPC", () => {
   it("C can receive pending messages published on other providers while offline", async function() {
     this.timeout(5000);
     const { pub, sub } = getTestJsonRpc(generateRandomBytes32());
-    const providerA = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerA.connect();
     await providerA.request(pub);
-    const providerB = new JsonRpcProvider(TEST_RELAY_URL);
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerB.connect();
     let subscriptionB: string;
     const counterB = new Counter();
@@ -297,7 +298,7 @@ describe("JSON-RPC", () => {
 
     return new Promise(resolve => {
       setTimeout(async () => {
-        const providerC = new JsonRpcProvider(TEST_RELAY_URL);
+        const providerC = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
         await providerC.connect();
         let subscriptionC: string;
         const counterC = new Counter();

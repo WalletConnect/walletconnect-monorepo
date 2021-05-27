@@ -15,7 +15,7 @@ import {
 } from "./shared";
 
 describe("Request", function() {
-  this.timeout(TEST_TIMEOUT_DURATION);
+  this.timeout(TEST_TIMEOUT_DURATION + 100);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {
     clock = sinon.useFakeTimers(Date.now());
@@ -62,10 +62,18 @@ describe("Request", function() {
     const topic = await testApproveSession(setup, clients);
     const request = TEST_ETHEREUM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
-    const promise = clients.a.request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION });
+    clients.a
+      .request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION })
+      .then(() => {
+        throw new Error("Should not receive result");
+      })
+      .catch(e => {
+        expect(e.message).to.equal(
+          `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: ${
+            request.method
+          }`,
+        );
+      });
     clock.tick(TEST_TIMEOUT_DURATION);
-    await expect(promise).to.eventually.be.rejectedWith(
-      `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: ${request.method}`,
-    );
   });
 });
