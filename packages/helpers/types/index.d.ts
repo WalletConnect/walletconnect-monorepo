@@ -239,6 +239,7 @@ declare module "@walletconnect/types" {
   export interface IWalletConnectOptions {
     bridge?: string;
     uri?: string;
+    storageId?: string;
     session?: IWalletConnectSession;
     storage?: ISessionStorage;
     clientMeta?: IClientMeta;
@@ -299,6 +300,7 @@ declare module "@walletconnect/types" {
     bridge?: string;
     qrcode?: boolean;
     chainId?: number;
+    storageId?: string;
     qrcodeModalOptions?: IQRCodeModalOptions;
     clientMeta?: IClientMeta;
   }
