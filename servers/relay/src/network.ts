@@ -15,6 +15,7 @@ import {
   NETWORK_PUBSUB_TOPIC,
   NETWORK_EVENTS,
   SUBSCRIPTION_EVENTS,
+  NETWORK_RECONNECT_INTERVAL,
 } from "./constants";
 import { HttpService } from "./http";
 
@@ -22,13 +23,14 @@ export class NetworkService {
   public context = NETWORK_CONTEXT;
   public server: HttpService;
   public logger: Logger;
+  public nodeUrl: string;
   public namespace = NETWORK_PUBSUB_TOPIC;
   public provider: IJsonRpcProvider | undefined;
 
   constructor(server: HttpService, logger: Logger, nodeUrl: string) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
-    this.provider = this.setJsonRpcProvider(nodeUrl);
+    this.nodeUrl = nodeUrl;
     this.initialize();
   }
 
@@ -64,18 +66,25 @@ export class NetworkService {
 
   private initialize(): void {
     this.connectProvider();
+    const connectInterval = setInterval(() => {
+      if (this.connected) {
+        clearInterval(connectInterval);
+      } else {
+        this.connectProvider();
+      }
+    }, NETWORK_RECONNECT_INTERVAL);
     this.logger.trace(`Initialized`);
   }
 
   private async connectProvider(): Promise<void> {
+    this.provider = this.setJsonRpcProvider();
     if (typeof this.provider === "undefined") return;
     try {
       await this.provider.connect();
       if (!this.connected) return;
       this.onConnect();
     } catch (e) {
-      console.error(e); // eslint-disable-line
-      this.provider = undefined;
+      this.logger.error({ type: "method", method: "connectProvider", error: e.message });
     }
   }
 
@@ -166,12 +175,12 @@ export class NetworkService {
     }
   }
 
-  private setJsonRpcProvider(nodeUrl: string): JsonRpcProvider | undefined {
+  private setJsonRpcProvider(): JsonRpcProvider | undefined {
     let provider: JsonRpcProvider | undefined;
     try {
-      provider = new JsonRpcProvider(new HttpConnection(nodeUrl));
+      provider = new JsonRpcProvider(new HttpConnection(this.nodeUrl));
     } catch (e) {
-      // do nothing
+      this.logger.error({ type: "method", method: "setJsonRpcProvider", error: e.message });
     }
     return provider;
   }
