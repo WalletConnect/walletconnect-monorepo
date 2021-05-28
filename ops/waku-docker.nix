@@ -1,25 +1,25 @@
 {
   pkgs ? import (import ../servers/relay/nix/sources.nix).nixpkgs {},
-  tag ? "master"
+  tag ? "walletconnect"
 }:
 let
   statusImage = pkgs.dockerTools.pullImage {
     imageName = "walletconnect/waku";
     finalImageTag = tag;
     imageDigest = "sha256:84996a5107a67c2d2edd44fa00125107a36b674fa3dab3582f8ab36f688cafef";
-    sha256 = "0szhcrhbz71fcnnl1py745jvf3mxh3mnd1k6zwgq2l6z3diy057a";
+    sha256 = "0ljhvvnhbdadk9bxp74rdbqcshmsw525wprbakfgzfdn6smml608";
   };
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
     set -e
     wakuWC=$(${dnsutils}/bin/dig +short waku.walletconnect.org | ${coreutils}/bin/tr -d '\n')
     replicas=$${REPLICAS:-1}
-    peersArgs=""
+    peerArgs=""
     for p in $PEERS; do
       peersArgs="$peersArgs --staticnode=$p"
-    fi;
+    done
 
-    peersArgs="$peersArgs --staticnode=$STORE"
+    peerArgs="$peerArgs --staticnode=$STORE"
 
     run="/usr/bin/wakunode \
       --keep-alive=true \
@@ -32,7 +32,7 @@ let
       --relay=true \
       --store=true \
       --db-path=/store \
-      $PEERS
+      $peerArgs
     "
 
     printf "\n\nCommand: $run\n\n"

@@ -3,7 +3,7 @@ pkgs ? import (import ./servers/relay/nix/sources.nix).nixpkgs {}
 , githash ? ""
 }:
 let
-  nodejs = pkgs.nodejs-16_x;
+  nodejs = pkgs.nodejs-14_x;
   nodeEnv = import ./servers/relay/node-env.nix {
     inherit pkgs nodejs;
     inherit (pkgs) stdenv lib python2 runCommand writeTextFile;

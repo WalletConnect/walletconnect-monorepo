@@ -29,16 +29,12 @@ services:
     volumes:
       - redis:/data
 
-  store:
-    image: ${WAKU_IMAGE}
-    environment:
-      STORE: 1
-    volumes:
-      - store:/store
-
   waku:
     image: ${WAKU_IMAGE}
     hostname: "waku.{{.Task.Slot}}"
+    environment:
+      STORE: "/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn"
+      PEERS: ""
 
   relay:
     image: ${RELAY_IMAGE}
