@@ -12,16 +12,51 @@ let
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
     set -e
+
+    if [[ ! -e /key/nodekey ]]; then
+      # https://stackoverflow.com/a/34329799
+      ${coreutils}/bin/od  -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /key/nodekey
+    fi
+
+    /usr/bin/wakunode --nodekey=$(cat /key/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
+    PID=$!
+    sleep 5
+
     wakuWC=$(${dnsutils}/bin/dig +short waku.walletconnect.org | ${coreutils}/bin/tr -d '\n')
-    replicas=$${REPLICAS:-1}
-    peerArgs=""
-    for p in $PEERS; do
-      peersArgs="$peersArgs --staticnode=$p"
+    echo $SWARM_PEERS
+    while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
+      sleep 1
+    done
+    peerIPs=$(${dnsutils}/bin/dig +short $SWARM_PEERS)
+    echo "SUP $peerIPs"
+    peersArgs=""
+    for ip in $peerIPs; do
+      echo "IP $ip"
+      while [ true ]; do
+         ${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545
+         result=$(${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545)
+         echo "Result $result"
+         multiaddr=$(echo -n $result | ${jq}/bin/jq -r '.result.listenStr')
+         echo "Multiaddr $multiaddr"
+         if [[ -n $multiaddr ]]; then
+           multiaddr=$(sed "s/0\.0\.0\.0/$ip/g" <<< $multiaddr)
+           peersArgs="$peersArgs --staticnode=$multiaddr"
+           break
+         fi
+         sleep 3
+         echo -n .
+      done
     done
 
-    peerArgs="$peerArgs --staticnode=$STORE"
+
+    echo "PID $PID"
+    kill $PID
+    peersArgs="$peersArgs --staticnode=$STORE"
+
+    echo "ALL $peersArgs"
 
     run="/usr/bin/wakunode \
+      --nodekey=$(cat /key/nodekey) \
       --keep-alive=true \
       --rpc=true \
       --rpc-address=0.0.0.0 \
@@ -32,9 +67,8 @@ let
       --relay=true \
       --store=true \
       --db-path=/store \
-      $peerArgs
+      $peersArgs
     "
-
     printf "\n\nCommand: $run\n\n"
     exec $run
 
