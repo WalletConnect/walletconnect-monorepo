@@ -29,8 +29,8 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/types": "^2.0.0-beta.5",
-    "@json-rpc-tools/utils": "^2.0.0-beta.5",
+    "@json-rpc-tools/types": "^2.0.0-beta.9",
+    "@json-rpc-tools/utils": "^2.0.0-beta.9",
     "@walletconnect/client": "^2.0.0-beta.9",
     "@walletconnect/types": "^2.0.0-beta.9",
     "@walletconnect/utils": "^2.0.0-beta.9"
@@ -43,7 +43,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.1",
     "@babel/register": "^7.12.1",
-    "@json-rpc-tools/provider": "^2.0.0-beta.5",
+    "@json-rpc-tools/provider": "^2.0.0-beta.9",
     "@types/chai": "^4.2.14",
     "@types/jest": "^22.2.3",
     "@types/mocha": "^8.0.4",

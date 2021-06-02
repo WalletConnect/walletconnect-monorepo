@@ -31,10 +31,10 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/http-connection": "^2.0.0-beta.5",
-    "@json-rpc-tools/provider": "^2.0.0-beta.5",
-    "@json-rpc-tools/utils": "^2.0.0-beta.5",
-    "@json-rpc-tools/ws-connection": "^2.0.0-beta.5",
+    "@json-rpc-tools/http-connection": "^2.0.0-beta.9",
+    "@json-rpc-tools/provider": "^2.0.0-beta.9",
+    "@json-rpc-tools/utils": "^2.0.0-beta.9",
+    "@json-rpc-tools/ws-connection": "^2.0.0-beta.9",
     "@pedrouid/pino-utils": "^1.0.1",
     "@types/pino": "^6.3.5",
     "axios": "^0.21.1",
