@@ -7,8 +7,7 @@ volumes:
   redis:
   store:
   waku:
-    external:
-      name: 'waku-{{.Task.Slot}}'
+    name: 'waku-{{.Task.Slot}}'
 
 services:
   caddy:

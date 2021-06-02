@@ -6,7 +6,7 @@ export const NETWORK_DEFAULT_PAGE_SIZE = 500; // The smaller the page the more l
 
 export const NETWORK_STORE_CALL_REPEATS = 3;
 
-export const NETWORK_PUBSUB_TOPIC = "/waku/2/walletconnect/2/jsonrpc";
+export const NETWORK_PUBSUB_TOPIC = "/waku/2/walletconnect/proto";
 
 export const NETWORK_CONTEXT = "network";
 

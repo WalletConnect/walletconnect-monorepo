@@ -43,7 +43,7 @@ in {
         "--persist-messages=true"
         "--filter=true"
         "--db-path=/store"
-        "--topics=/waku/2/walletconnect/2/jsonrpc"
+        "--topics=/waku/2/walletconnect/proto"
         "--metrics-server=true"
         "--metrics-server-address=127.0.0.1"
         "--metrics-server-port=8008"
