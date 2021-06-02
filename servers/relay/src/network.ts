@@ -71,12 +71,13 @@ export class NetworkService {
     if (typeof this.provider === "undefined") return;
     try {
       await this.provider.connect();
-      console.log("CONNECTED", this.connected);
-      if (!this.connected) return;
+      if (!this.connected) {
+        this.provider.disconnect();
+        return;
+      }
       this.onConnect();
     } catch (e) {
-      this.provider.disconnect();
-      this.logger.error({ "Connection Error": e.message });
+      this.logger.error({ "Provider Error": e.message });
     }
   }
 
@@ -152,8 +153,9 @@ export class NetworkService {
       return await this.provider.request(payload);
     } catch (e) {
       this.logger.error({ "Request Error": e });
-      if (e.includes("ECONNREFUSED") || e.includes("Not connected")) {
-        this.logger.info("Attempting to reconnect");
+      if (e.includes("get_waku_v2_relay_v1_messages")) {
+        this.provider?.disconnect();
+        this.logger.info("Attempting to reconnect...");
         this.reconnectProvider();
       }
       return;
