@@ -23,14 +23,13 @@ export class NetworkService {
   public context = NETWORK_CONTEXT;
   public server: HttpService;
   public logger: Logger;
-  public nodeUrl: string;
   public namespace = NETWORK_PUBSUB_TOPIC;
   public provider: IJsonRpcProvider | undefined;
 
   constructor(server: HttpService, logger: Logger, nodeUrl: string) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
-    this.nodeUrl = nodeUrl;
+    this.provider = this.setJsonRpcProvider(nodeUrl);
     this.initialize();
   }
 
@@ -38,7 +37,7 @@ export class NetworkService {
     return this.provider?.connection.connected;
   }
 
-  public async publish(topic: string, payload: string) {
+  public publish(topic: string, payload: string) {
     const method = WAKU_JSONRPC.post.relay.message;
     const params = [
       this.namespace,
@@ -49,9 +48,7 @@ export class NetworkService {
     ];
     this.logger.info("Posting Waku Message");
     this.logger.debug({ type: "method", method: "post", payload: { method, params } });
-    if (typeof this.provider === "undefined") return;
-    if (!this.connected) return;
-    await this.provider.request({ method, params });
+    this.request({ method, params });
   }
 
   public async subscribe(topic: string) {
@@ -64,8 +61,26 @@ export class NetworkService {
 
   // ---------- Private ----------------------------------------------- //
 
-  private initialize(): void {
-    this.connectProvider();
+  private async initialize(): Promise<void> {
+    await this.connectProvider();
+    if (!this.provider?.connection.connected) this.reconnectProvider();
+    this.logger.debug(`Initialized`);
+  }
+
+  private async connectProvider(): Promise<void> {
+    if (typeof this.provider === "undefined") return;
+    try {
+      await this.provider.connect();
+      console.log("CONNECTED", this.connected);
+      if (!this.connected) return;
+      this.onConnect();
+    } catch (e) {
+      this.provider.disconnect();
+      this.logger.error({ "Connection Error": e.message });
+    }
+  }
+
+  private reconnectProvider(): void {
     const connectInterval = setInterval(() => {
       if (this.connected) {
         clearInterval(connectInterval);
@@ -73,19 +88,6 @@ export class NetworkService {
         this.connectProvider();
       }
     }, NETWORK_RECONNECT_INTERVAL);
-    this.logger.trace(`Initialized`);
-  }
-
-  private async connectProvider(): Promise<void> {
-    this.provider = this.setJsonRpcProvider();
-    if (typeof this.provider === "undefined") return;
-    try {
-      await this.provider.connect();
-      if (!this.connected) return;
-      this.onConnect();
-    } catch (e) {
-      this.logger.error({ type: "method", method: "connectProvider", error: e.message });
-    }
   }
 
   private onConnect() {
@@ -107,18 +109,14 @@ export class NetworkService {
     const method = WAKU_JSONRPC.post.relay.subscriptions;
     const topic = this.namespace;
     const params = [[topic]];
-
-    if (typeof this.provider === "undefined") return;
-    if (!this.connected) return;
-    this.provider.request({ method, params });
+    this.request({ method, params });
   }
 
   private async getMessages(topic = this.namespace): Promise<WakuMessage[]> {
     const method = WAKU_JSONRPC.get.relay.messages;
     const params = [topic];
-    if (typeof this.provider === "undefined") return [];
-    if (!this.connected) return [];
-    const result = await this.provider.request({ method, params });
+    const result = await this.request({ method, params });
+    if (!result) return [];
     const messages = this.parseWakuMessageResult(result);
     this.logger.trace({ type: "method", topic, method: "getMessages", messages });
     return messages;
@@ -139,11 +137,27 @@ export class NetworkService {
     if (typeof this.provider === "undefined") return [];
     if (!this.connected) return [];
     this.logger.debug({ type: "method", method: "getStoreMessages", params });
-    const result = await this.provider.request({ method, params });
+    const result = await this.request({ method, params });
+    if (!result) return [];
     pagingOptions = result.pagingOptions;
     messages = [...messages, ...this.parseWakuMessageResult(result.messages)];
     if (pagingOptions?.pageSize == 0 || !pagingOptions) return messages;
     return [...messages, ...(await this.getStoreMessages(pagingOptions))];
+  }
+
+  private async request(payload: { method; params }): Promise<any> {
+    try {
+      if (typeof this.provider === "undefined") throw "Provider not defined";
+      if (!this.connected) throw "Not connected";
+      return await this.provider.request(payload);
+    } catch (e) {
+      this.logger.error({ "Request Error": e });
+      if (e.includes("ECONNREFUSED") || e.includes("Not connected")) {
+        this.logger.info("Attempting to reconnect");
+        this.reconnectProvider();
+      }
+      return;
+    }
   }
 
   private parseWakuMessageResult(result: WakuMessagesResult[]): WakuMessage[] {
@@ -175,12 +189,12 @@ export class NetworkService {
     }
   }
 
-  private setJsonRpcProvider(): JsonRpcProvider | undefined {
+  private setJsonRpcProvider(nodeUrl: string): JsonRpcProvider | undefined {
     let provider: JsonRpcProvider | undefined;
     try {
-      provider = new JsonRpcProvider(new HttpConnection(this.nodeUrl));
+      provider = new JsonRpcProvider(new HttpConnection(nodeUrl));
     } catch (e) {
-      this.logger.error({ type: "method", method: "setJsonRpcProvider", error: e.message });
+      this.logger.error({ "Setting RpcProvider Error": e.message });
     }
     return provider;
   }
