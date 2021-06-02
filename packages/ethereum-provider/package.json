@@ -34,10 +34,10 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/http-connection": "^2.0.0-beta.3",
-    "@json-rpc-tools/provider": "^2.0.0-beta.3",
-    "@json-rpc-tools/types": "^2.0.0-beta.3",
-    "@json-rpc-tools/utils": "^2.0.0-beta.3",
+    "@json-rpc-tools/http-connection": "^2.0.0-beta.9",
+    "@json-rpc-tools/provider": "^2.0.0-beta.9",
+    "@json-rpc-tools/types": "^2.0.0-beta.9",
+    "@json-rpc-tools/utils": "^2.0.0-beta.9",
     "@walletconnect/client": "^2.0.0-beta.9",
     "@walletconnect/signer-connection": "^2.0.0-beta.9",
     "@walletconnect/types": "^2.0.0-beta.9",
