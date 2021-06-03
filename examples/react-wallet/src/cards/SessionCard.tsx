@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import Peer from "../components/Peer";
 import Blockchain from "../components/Blockchain";
 import Method from "../components/Method";
+import { ChainNamespaces } from "../helpers";
 
 const SActions = styled.div`
   margin: 0;
@@ -20,13 +21,14 @@ const SActions = styled.div`
 `;
 
 interface SessionCardProps {
+  chainData: ChainNamespaces;
   session: SessionTypes.Created;
   resetCard: () => void;
   disconnect: (topic: string) => void;
 }
 
 const SessionCard = (props: SessionCardProps) => {
-  const { session, resetCard, disconnect } = props;
+  const { chainData, session, resetCard, disconnect } = props;
 
   const { accounts } = session.state;
   const { methods } = session.permissions.jsonrpc;
@@ -40,7 +42,12 @@ const SessionCard = (props: SessionCardProps) => {
           {accounts.map(account => {
             const [address, chainId] = account.split("@");
             return (
-              <Blockchain key={`session:account:${account}`} chainId={chainId} address={address} />
+              <Blockchain
+                key={`session:account:${account}`}
+                chainData={chainData}
+                chainId={chainId}
+                address={address}
+              />
             );
           })}
         </React.Fragment>

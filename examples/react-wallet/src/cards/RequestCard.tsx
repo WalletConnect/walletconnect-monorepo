@@ -8,6 +8,7 @@ import Blockchain from "../components/Blockchain";
 
 import { getChainRequestRender } from "../chains";
 import Peer from "../components/Peer";
+import { ChainNamespaces } from "../helpers";
 
 const SValue = styled.div`
   font-family: monospace;
@@ -32,6 +33,7 @@ const SActions = styled.div`
 `;
 
 interface RequestCardProps {
+  chainData: ChainNamespaces;
   chainId: string;
   requestEvent: SessionTypes.RequestEvent;
   metadata: AppMetadata;
@@ -40,7 +42,7 @@ interface RequestCardProps {
 }
 
 const RequestCard = (props: RequestCardProps) => {
-  const { chainId, requestEvent, metadata, approveRequest, rejectRequest } = props;
+  const { chainData, chainId, requestEvent, metadata, approveRequest, rejectRequest } = props;
   const params = getChainRequestRender(requestEvent.request, chainId);
   console.log("RENDER", "method", requestEvent.request.method);
   console.log("RENDER", "params", requestEvent.request.params);
@@ -51,7 +53,7 @@ const RequestCard = (props: RequestCardProps) => {
       <h6>{"App"}</h6>
       <Peer oneLiner metadata={metadata} />
       <h6>{"Chain"}</h6>
-      <Blockchain key={`request:chain:${chainId}`} chainId={chainId} />
+      <Blockchain key={`request:chain:${chainId}`} chainData={chainData} chainId={chainId} />
       {params.map(param => (
         <React.Fragment key={param.label}>
           <h6>{param.label}</h6>

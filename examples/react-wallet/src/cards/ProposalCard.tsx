@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import Peer from "../components/Peer";
 import Blockchain from "../components/Blockchain";
 import Method from "../components/Method";
+import { ChainNamespaces } from "../helpers";
 
 const SActions = styled.div`
   margin: 0;
@@ -20,13 +21,14 @@ const SActions = styled.div`
 `;
 
 interface ProposalCardProps {
+  chainData: ChainNamespaces;
   proposal: SessionTypes.Proposal;
   approveSession: (proposal: SessionTypes.Proposal) => Promise<void>;
   rejectSession: (proposal: SessionTypes.Proposal) => Promise<void>;
 }
 
 const ProposalCard = (props: ProposalCardProps) => {
-  const { proposal, approveSession, rejectSession } = props;
+  const { chainData, proposal, approveSession, rejectSession } = props;
   const { chains } = proposal.permissions.blockchain;
   const { methods } = proposal.permissions.jsonrpc;
   return (
@@ -36,7 +38,13 @@ const ProposalCard = (props: ProposalCardProps) => {
         <React.Fragment>
           <h6>{"Chains"}</h6>
           {chains.map(chainId => {
-            return <Blockchain key={`proposal:chainId:${chainId}`} chainId={chainId} />;
+            return (
+              <Blockchain
+                key={`proposal:chainId:${chainId}`}
+                chainData={chainData}
+                chainId={chainId}
+              />
+            );
           })}
         </React.Fragment>
       ) : null}

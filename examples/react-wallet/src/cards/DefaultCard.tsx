@@ -10,6 +10,7 @@ import Blockchain from "../components/Blockchain";
 import Method from "../components/Method";
 
 import settingsIcon from "../assets/settings.svg";
+import { ChainNamespaces } from "../helpers";
 
 const SSection = styled.div`
   width: 100%;
@@ -71,6 +72,7 @@ const SInput = styled(Input)`
 `;
 
 interface DefaultCardProps {
+  chainData: ChainNamespaces;
   accounts: string[];
   sessions: SessionTypes.Created[];
   requests: SessionTypes.RequestEvent[];
@@ -83,6 +85,7 @@ interface DefaultCardProps {
 
 const DefaultCard = (props: DefaultCardProps) => {
   const {
+    chainData,
     accounts,
     sessions,
     requests,
@@ -104,6 +107,7 @@ const DefaultCard = (props: DefaultCardProps) => {
               return (
                 <Blockchain
                   key={`default:account:${account}`}
+                  chainData={chainData}
                   chainId={chainId}
                   address={address}
                 />

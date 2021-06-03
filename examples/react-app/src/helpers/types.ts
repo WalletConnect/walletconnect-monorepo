@@ -1,4 +1,4 @@
-import { ChainConfig } from "caip-api";
+import { ChainsMap } from "caip-api";
 
 export interface AssetData {
   symbol: string;
@@ -136,13 +136,17 @@ export interface ChainRequestRender {
   value: string;
 }
 
-export interface ChainMetadata extends ChainConfig {
+export interface ChainMetadata {
+  name?: string;
   logo: string;
   rgb: string;
 }
 
 export interface NamespaceMetadata {
   [reference: string]: ChainMetadata;
+}
+export interface ChainNamespaces {
+  [namespace: string]: ChainsMap;
 }
 
 export interface AccountAction {
