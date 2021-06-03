@@ -25,6 +25,17 @@ VPATH=$(flags):build
 $(shell mkdir -p $(flags))
 .PHONY: help clean clean-all reset
 
+
+dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/src -w /src nixos/nix nix-shell -p bash --run
+dockerLoad=docker load -i build/$@ \
+		| awk '{print $$NF}' \
+		| tee build/$@-img \
+		| xargs -I {} docker tag {}
+buildRelay=nix-build --attr docker --argstr githash $(GITHASH) && cp -f -L result build/$@
+caddySrc=https://github.com/sbc64/nix-caddy/archive/master.tar.gz
+buildCaddy=nix-build  $(caddySrc) --attr docker && cp -f -L result build/$@
+buildWaku=nix-build ./ops/waku-docker.nix --attr docker && cp -f -L result build/$@
+
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
 help: ## Show this help
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -35,6 +46,7 @@ dirs:
 
 pull: ## pulls docker images
 	docker pull $(redisImage)
+	docker pull nixos/nix
 	@touch $(flags)/$@
 	@echo "MAKE: Done with $@"
 	@echo
@@ -83,78 +95,36 @@ nix-volume:
 	docker volume create nix-store
 	$(log_end)
 
-build-docker-relay-dockerized: nix-volume ## builds relay docker image inside of docker
-	mkdir -p build
-	docker run --name builder --rm \
-		-v nix-store:/nix \
-		-v $(shell pwd):/src \
-		-w /src \
-		nixos/nix nix-shell \
-		-p bash \
-		--run "nix-build \
-			--attr docker \
-			&& cp -L result /src/build/$@"
-	docker load -i build/$@ \
-		| awk '{print $$NF}' \
-		| tee build/$@-img \
-		| xargs -I {} docker tag {} $(relayImage)
+build-img-relay: dirs nix-volume ## builds relay docker image inside of docker
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildRelay)"
+else
+	$(buildRelay)
+endif
+	$(dockerLoad) $(relayImage)
 	$(log_end)
 
-build-docker-caddy-dockerized: nix-volume ## builds caddy docker image inside of docker
-	mkdir -p build
-	docker run --name builder --rm \
-		-v nix-store:/nix \
-		-v $(shell pwd):/src \
-		-w /src \
-		nixos/nix nix-shell \
-		-p bash \
-		--run "nix-build \
-			https://github.com/sbc64/nix-caddy/archive/master.tar.gz \
-			--attr docker \
-			&& cp -L result /src/build/$@"
-	docker load -i build/$@ \
-		| awk '{print $$NF}' \
-		| tee build/$@-img \
-		| xargs -I {} docker tag {} $(caddyImage)
+build-img-caddy: dirs nix-volume ## builds caddy docker image inside of docker
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildCaddy)"
+else
+	$(buildCaddy)
+endif
+	$(dockerLoad) $(caddyImage)
 	$(log_end)
 
-build-docker-relay: ## builds the relay docker image with nix
-	nix-build \
-		-o build/$@ \
-		--attr docker \
-		--argstr githash $(GITHASH)
-	docker load -i build/$@ \
-		| awk '{print $$NF}' \
-		| tee build/$@-img \
-		| xargs -I {} docker tag {} $(relayImage)
+build-img-waku: dirs nix-volume ## builds caddy docker image inside of docker
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildWaku)"
+else
+	$(buildWaku)
+endif
+	$(dockerLoad) $(wakuImage)
 	$(log_end)
 
-build-docker-caddy: ## ## builds the caddy docker image with nix
-	nix-build \
-		https://github.com/sbc64/nix-caddy/archive/master.tar.gz \
-		-o build/$@ \
-		--attr docker
-	docker load -i build/$@ \
-		| awk '{print $$NF}' \
-		| tee build/$@-img \
-		| xargs -I {} docker tag {} $(caddyImage)
-	$(log_end)
+build-images: build-img-relay build-img-caddy build-img-waku
 
-build-docker-waku:
-	nix-build \
-		./ops/waku-docker.nix \
-		-o build/$@ \
-		--attr docker
-	docker load -i build/$@ \
-		| awk '{print $$NF}' \
-		| tee build/$@-img \
-		| xargs -I {} docker tag {} $(wakuImage)
-	$(log_end)
-
-#build-containers: build-docker-relay-dockerized build-docker-caddy-dockerized
-build-containers: build-docker-relay build-docker-caddy build-docker-waku
-
-build: dirs build-containers bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
+build: dirs build-images bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
 	$(log_end)
 
 test-client: build-lerna ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
@@ -173,7 +143,7 @@ start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
 	$(log_end)
 
-predeploy: dirs setup pull build-containers 
+predeploy: dirs setup pull build-images 
 
 dev: predeploy ## runs relay on watch mode and shows logs
 	RELAY_URL=localhost bash ops/deploy.sh
@@ -204,10 +174,10 @@ redeploy: clean predeploy ## redeploys the prodution containers and rebuilds the
 relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay
 
-cachix: clean build-containers ## pushes docker images to cachix
-	cachix push walletconnect build/build-docker-relay
-	cachix push walletconnect build/build-docker-caddy
-	cachix push walletconnect build/build-docker-waku
+cachix: clean dirs ## pushes docker images to cachix
+	cachix push walletconnect $(shell $(buildRelay))
+	cachix push walletconnect $(shell $(buildWaku))
+	cachix push walletconnect $(shell $(buildCaddy))
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true
