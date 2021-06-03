@@ -37,7 +37,7 @@ services:
       - waku:/key
     environment:
       SWARM_PEERS: "tasks.{{.Service.Name}}"
-      STORE: "/ip4/159.89.5.60/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn"
+      STORE: "/ip4/138.197.189.151/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn"
 
   relay:
     image: ${RELAY_IMAGE}

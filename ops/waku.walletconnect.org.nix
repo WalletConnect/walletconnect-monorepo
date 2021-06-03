@@ -11,11 +11,6 @@ in {
       allowedUDPPorts = [ wakuP2P ];
     };
   };
-  services.fail2ban = {
-    enable = true;
-    ignoreIP = [ "127.0.0.1" ];
-  };
-
   fileSystems."${volumePath}" = { 
     device = "/dev/disk/by-uuid/a18cf05c-88b1-461f-8a05-7fd0c8dc0e35";
     fsType = "ext4";

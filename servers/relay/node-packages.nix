@@ -31,49 +31,49 @@ let
         sha512 = "WEezM1FWztfbzqIUbsDzFRVMxSoLy3HugVcux6KDDtTqzPsLE8NDRHfXvev66aH1i2oOKKar3/XDjbvh/OUBdg==";
       };
     };
-    "@json-rpc-tools/http-connection-2.0.0-beta.3" = {
+    "@json-rpc-tools/http-connection-2.0.0-beta.9" = {
       name = "_at_json-rpc-tools_slash_http-connection";
       packageName = "@json-rpc-tools/http-connection";
-      version = "2.0.0-beta.3";
+      version = "2.0.0-beta.9";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/http-connection/-/http-connection-2.0.0-beta.3.tgz";
-        sha512 = "DxFvcmSXJG0dlaASGCVj1IULC6uVrfm7QFQqYInwgAKs89/upatwVV0+xET1U17Frpvs/MqFqBPKnw05HgAJ4g==";
+        url = "https://registry.npmjs.org/@json-rpc-tools/http-connection/-/http-connection-2.0.0-beta.9.tgz";
+        sha512 = "WHS31bPPUOFokqFpk3oM8KfOdJufuglGpH3y07Q6h1M4n4Xr9vRK50CjUmQgeB3nx2/9XGn3K3HuMBl7N1JalQ==";
       };
     };
-    "@json-rpc-tools/provider-2.0.0-beta.3" = {
+    "@json-rpc-tools/provider-2.0.0-beta.9" = {
       name = "_at_json-rpc-tools_slash_provider";
       packageName = "@json-rpc-tools/provider";
-      version = "2.0.0-beta.3";
+      version = "2.0.0-beta.9";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/provider/-/provider-2.0.0-beta.3.tgz";
-        sha512 = "5SC19yzaFhvynykpXb9be8rlS0V2dB6WXjY5KvcYqmOC3SpVwCoR8LleImRbZ1NKop0zqUJdGyhQZz1PtF1cKA==";
+        url = "https://registry.npmjs.org/@json-rpc-tools/provider/-/provider-2.0.0-beta.9.tgz";
+        sha512 = "kG/jXgQNQKyhNRokOw2qiYOxpcziKoYkpc/rvP9bJvU9krq5ONdVejMgFKtuW3PzcWp/T60UO0M7IF6vhsQtUA==";
       };
     };
-    "@json-rpc-tools/types-2.0.0-beta.3" = {
+    "@json-rpc-tools/types-2.0.0-beta.9" = {
       name = "_at_json-rpc-tools_slash_types";
       packageName = "@json-rpc-tools/types";
-      version = "2.0.0-beta.3";
+      version = "2.0.0-beta.9";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/types/-/types-2.0.0-beta.3.tgz";
-        sha512 = "mwcPU4d5H8o7HbEWlPVEUnKmJXc97ZrEpePD9sg4XiW5Xjmh6r3wy6DpB3M5YJDIHoHwq86r0Az8VcVdxgWKmg==";
+        url = "https://registry.npmjs.org/@json-rpc-tools/types/-/types-2.0.0-beta.9.tgz";
+        sha512 = "AZr9Tz9vFNOnHbLdNFHlynnta1bb9qyEdtoUuT/I9HlHqnkRKjqowZFGvclRUaaNLbJ8ioLFBavxAkJav1efwA==";
       };
     };
-    "@json-rpc-tools/utils-2.0.0-beta.3" = {
+    "@json-rpc-tools/utils-2.0.0-beta.9" = {
       name = "_at_json-rpc-tools_slash_utils";
       packageName = "@json-rpc-tools/utils";
-      version = "2.0.0-beta.3";
+      version = "2.0.0-beta.9";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/utils/-/utils-2.0.0-beta.3.tgz";
-        sha512 = "RkHqgmO3YfJco49ZCFl/4+ivYLcoyGLCg8ZTYVesDnXbYI0LBrhxFufsZaTjlateY+slSXXntaMCGgHDkP9vTQ==";
+        url = "https://registry.npmjs.org/@json-rpc-tools/utils/-/utils-2.0.0-beta.9.tgz";
+        sha512 = "1xHR+17i1glogCK1UquH6In/ls308YsRadBEVaHBmNsypqFG2lZz210p2WzwNJEFbQW7/krhWV8+6N+beTJkiA==";
       };
     };
-    "@json-rpc-tools/ws-connection-2.0.0-beta.3" = {
+    "@json-rpc-tools/ws-connection-2.0.0-beta.9" = {
       name = "_at_json-rpc-tools_slash_ws-connection";
       packageName = "@json-rpc-tools/ws-connection";
-      version = "2.0.0-beta.3";
+      version = "2.0.0-beta.9";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/ws-connection/-/ws-connection-2.0.0-beta.3.tgz";
-        sha512 = "cDAlcFTOZFI9y0TzgNFth1CJYqNG56+2v14+VrBflaWU89XhVmbzd3hEtwh0ejoHsmh3JLrETUlErMxfnR9xcg==";
+        url = "https://registry.npmjs.org/@json-rpc-tools/ws-connection/-/ws-connection-2.0.0-beta.9.tgz";
+        sha512 = "kCVHO+YR5e9GEz5aDVestgszxrN11xHGhKFtjEv5pFAQggiRsh8vjOuVnu7mrxQ+s1NKd0RCESuLxXEWeLMm7g==";
       };
     };
     "@pedrouid/environment-1.0.1" = {
@@ -3326,11 +3326,11 @@ let
       sources."@fastify/forwarded-1.0.0"
       sources."@fastify/proxy-addr-3.0.0"
       sources."@hapi/bourne-2.0.0"
-      sources."@json-rpc-tools/http-connection-2.0.0-beta.3"
-      sources."@json-rpc-tools/provider-2.0.0-beta.3"
-      sources."@json-rpc-tools/types-2.0.0-beta.3"
-      sources."@json-rpc-tools/utils-2.0.0-beta.3"
-      sources."@json-rpc-tools/ws-connection-2.0.0-beta.3"
+      sources."@json-rpc-tools/http-connection-2.0.0-beta.9"
+      sources."@json-rpc-tools/provider-2.0.0-beta.9"
+      sources."@json-rpc-tools/types-2.0.0-beta.9"
+      sources."@json-rpc-tools/utils-2.0.0-beta.9"
+      sources."@json-rpc-tools/ws-connection-2.0.0-beta.9"
       sources."@pedrouid/environment-1.0.1"
       sources."@pedrouid/pino-utils-1.0.1"
       sources."@sindresorhus/is-0.14.0"
