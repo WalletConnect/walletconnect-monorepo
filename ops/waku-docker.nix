@@ -1,6 +1,6 @@
 {
   pkgs ? import (import ../servers/relay/nix/sources.nix).nixpkgs {},
-  tag ? "walletconnect"
+  tag ? "master"
 }:
 let
   statusImage = pkgs.dockerTools.pullImage {
@@ -24,10 +24,9 @@ let
 
     /usr/bin/wakunode --nodekey=$(cat /key/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
     PID=$!
-    sleep 15 # wait for rpc server to start
+    sleep 20 # wait for rpc server to start
 
     wakuWC=$(${dnsutils}/bin/dig +short waku.walletconnect.org | ${coreutils}/bin/tr -d '\n')
-    echo $SWARM_PEERS
     while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
       sleep 1
     done
@@ -39,7 +38,6 @@ let
       while [ true ]; do
          ${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545
          result=$(${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545)
-         echo "Result $result"
          multiaddr=$(echo -n $result | ${jq}/bin/jq -r '.result.listenStr')
          echo "Multiaddr $multiaddr"
          if [[ -n $multiaddr ]]; then
@@ -53,7 +51,6 @@ let
     done
 
 
-    echo "PID $PID"
     kill $PID
     peersArgs="$peersArgs --staticnode=$STORE"
 
@@ -71,6 +68,7 @@ let
       --relay=true \
       --store=true \
       --db-path=/store \
+      --storenode=$STORE \
       $peersArgs
     "
     printf "\n\nCommand: $run\n\n"

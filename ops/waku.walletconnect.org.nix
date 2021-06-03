@@ -1,4 +1,4 @@
-{config, pkgs ? <nixpkgs>, tag ? "master", ... }:
+{config, pkgs ? <nixpkgs>, ... }:
 let
   wakuP2P = 60000;
   volumePath = "/mnt/waku-store";
@@ -14,7 +14,7 @@ in {
   fileSystems."${volumePath}" = { 
     device = "/dev/disk/by-uuid/a18cf05c-88b1-461f-8a05-7fd0c8dc0e35";
     fsType = "ext4";
- };
+  };
 
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {
