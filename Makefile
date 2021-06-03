@@ -204,7 +204,7 @@ redeploy: clean predeploy ## redeploys the prodution containers and rebuilds the
 relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
 	docker service logs -f --raw --tail 100 $(project)_relay
 
-cachix: clean build-docker-relay build-docker-caddy ## pushes docker images to cachix
+cachix: clean build-containers ## pushes docker images to cachix
 	cachix push walletconnect build/build-docker-relay
 	cachix push walletconnect build/build-docker-caddy
 	cachix push walletconnect build/build-docker-waku
