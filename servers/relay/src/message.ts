@@ -59,12 +59,8 @@ export class MessageService {
     );
 
     await this.server.redis.setPendingRequest(subscription.topic, request.id, message);
-    try {
-      await this.server.ws.send(subscription.socketId, request);
-      this.setTimeout(subscription.socketId, request);
-    } catch (e) {
-      throw e;
-    }
+    const success = this.server.ws.send(subscription.socketId, request);
+    if (success) this.setTimeout(subscription.socketId, request);
   }
 
   public async ackMessage(id: number): Promise<void> {
@@ -100,11 +96,11 @@ export class MessageService {
     if (typeof record === "undefined") return;
     const counter = record.counter + 1;
     if (counter < MESSAGE_RETRIAL_MAX) {
-      try {
-        await this.server.ws.send(socketId, request);
+      const success = this.server.ws.send(socketId, request);
+      if (success) {
         this.timeout.set(request.id, { counter, timeout: record.timeout });
-      } catch (e) {
-        // ignore error and consider as acknowledged
+      } else {
+        // if failed considered acknowledged
         await this.ackMessage(request.id);
       }
     } else {

@@ -102,11 +102,11 @@ export class LegacyService {
   }
 
   private async pushSubscription(socketId: string, message: LegacySocketMessage) {
-    try {
-      this.server.ws.send(socketId, safeJsonStringify(message));
+    const success = this.server.ws.send(socketId, safeJsonStringify(message));
+    if (success) {
       this.logger.info(`Outgoing Legacy Socket Message`);
       this.logger.debug({ type: "payload", direction: "outgoing", socketId, message });
-    } catch (e) {
+    } else {
       await this.server.redis.setLegacyCached(message);
     }
   }

@@ -132,7 +132,7 @@ export class JsonRpcService {
     this.logger.debug(`Subscribe Request Received`);
     this.logger.trace({ type: "method", method: "onSubscribeRequest", socketId, params });
     const id = this.server.subscription.set({ topic: params.topic, socketId });
-    await this.server.ws.send(socketId, formatJsonRpcResult(request.id, id));
+    this.server.ws.send(socketId, formatJsonRpcResult(request.id, id));
     const subscription = { id, topic: params.topic, socketId };
     this.server.events.emit(JSONRPC_EVENTS.subscribe, subscription);
   }
@@ -142,7 +142,7 @@ export class JsonRpcService {
     this.logger.debug(`Unsubscribe Request Received`);
     this.logger.trace({ type: "method", method: "onUnsubscribeRequest", socketId, params });
     this.server.subscription.remove(params.id);
-    await this.server.ws.send(socketId, formatJsonRpcResult(request.id, true));
+    this.server.ws.send(socketId, formatJsonRpcResult(request.id, true));
     this.server.events.emit(JSONRPC_EVENTS.unsubscribe, params.id);
   }
 
