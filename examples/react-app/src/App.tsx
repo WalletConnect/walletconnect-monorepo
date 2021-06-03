@@ -154,15 +154,11 @@ class App extends React.Component<any, any> {
     this.setState({ loading: true });
 
     try {
-      console.log("chainData", this.state.chainData);
       await this.loadChainData();
-      console.log("chainData", this.state.chainData);
-
       const client = await Client.init({
         logger: DEFAULT_LOGGER,
         relayProvider: DEFAULT_RELAY_PROVIDER,
       });
-
       this.setState({ loading: false, client });
       this.subscribeToEvents();
       await this.checkPersistedState();
@@ -212,8 +208,9 @@ class App extends React.Component<any, any> {
       async (proposal: PairingTypes.Proposal) => {
         const { uri } = proposal.signal.params;
         this.setState({ uri });
+        console.log("EVENT", "QR Code Modal open");
         QRCodeModal.open(uri, () => {
-          console.log("Modal callback");
+          console.log("EVENT", "QR Code Modal closed");
         });
       },
     );

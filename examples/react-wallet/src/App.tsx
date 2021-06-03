@@ -229,7 +229,7 @@ class App extends React.Component<{}> {
           throw new Error("Wallet is not initialized");
         }
         // tslint:disable-next-line
-        console.log("EVENT", CLIENT_EVENTS.session.request, requestEvent.request);
+        console.log("EVENT", "session_request", requestEvent.request);
         const chainId = requestEvent.chainId || this.state.chains[0];
         const [namespace] = chainId.split(":");
         try {
