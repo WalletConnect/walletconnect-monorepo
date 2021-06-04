@@ -288,8 +288,8 @@ class App extends React.Component<any, any> {
   };
 
   public resetApp = async () => {
-    const { client } = this.state;
-    this.setState({ ...INITIAL_STATE, client });
+    const { client, chainData } = this.state;
+    this.setState({ ...INITIAL_STATE, client, chainData });
   };
 
   public toggleTestNets = () => this.setState({ testNet: !this.state.testNet });

@@ -3,7 +3,7 @@ import styled from "styled-components";
 import KeyValueStorage from "keyvaluestorage";
 import Wallet from "caip-wallet";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
-import { JsonRpcResponse, formatJsonRpcError } from "@json-rpc-tools/utils";
+import { JsonRpcResponse, formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
 import { SessionTypes } from "@walletconnect/types";
 import { apiGetChainNamespace, apiGetChainJsonRpc, ChainsMap, ChainJsonRpc } from "caip-api";
@@ -127,6 +127,7 @@ class App extends React.Component<{}> {
       this.subscribeToEvents();
       await this.checkPersistedState();
     } catch (e) {
+      console.error(e);
       this.setState({ loading: false });
       throw e;
     }
@@ -152,6 +153,7 @@ class App extends React.Component<{}> {
         try {
           chains = await apiGetChainNamespace(namespace);
         } catch (e) {
+          console.error(e);
           // ignore error
         }
         if (typeof chains !== "undefined") {
@@ -171,6 +173,7 @@ class App extends React.Component<{}> {
         try {
           rpc = await apiGetChainJsonRpc(namespace);
         } catch (e) {
+          console.error(e);
           // ignore error
         }
         if (typeof rpc !== "undefined") {
@@ -188,7 +191,8 @@ class App extends React.Component<{}> {
   };
 
   public resetApp = async () => {
-    this.setState({ ...INITIAL_STATE });
+    const { chainData, jsonrpc } = this.state;
+    this.setState({ ...INITIAL_STATE, chainData, jsonrpc });
   };
 
   public subscribeToEvents = () => {
@@ -240,10 +244,12 @@ class App extends React.Component<{}> {
           if (requiresApproval) {
             this.setState({ requests: [...this.state.requests, requestEvent] });
           } else {
-            const response = await this.state.wallet.request(requestEvent.request, { chainId });
+            const result = await this.state.wallet.request(requestEvent.request, { chainId });
+            const response = formatJsonRpcResult(requestEvent.request.id, result);
             await this.respondRequest(requestEvent.topic, response);
           }
         } catch (e) {
+          console.error(e);
           const response = formatJsonRpcError(requestEvent.request.id, e.message);
           await this.respondRequest(requestEvent.topic, response);
         }
@@ -416,17 +422,17 @@ class App extends React.Component<{}> {
         throw new Error("Wallet is not initialized");
       }
       const chainId = requestEvent.chainId || this.state.chains[0];
-      const response = await this.state.wallet.request(requestEvent.request as any, { chainId });
+
+      const result = await this.state.wallet.request(requestEvent.request as any, { chainId });
+      const response = formatJsonRpcResult(requestEvent.request.id, result);
       this.state.client.respond({
         topic: requestEvent.topic,
         response,
       });
-    } catch (error) {
-      console.error(error);
-      this.state.client.respond({
-        topic: requestEvent.topic,
-        response: formatJsonRpcError(requestEvent.request.id, "Failed or Rejected Request"),
-      });
+    } catch (e) {
+      console.error(e);
+      const response = formatJsonRpcError(requestEvent.request.id, e.message);
+      this.state.client.respond({ topic: requestEvent.topic, response });
     }
 
     await this.removeFromPending(requestEvent);
@@ -437,10 +443,13 @@ class App extends React.Component<{}> {
     if (typeof this.state.client === "undefined") {
       throw new Error("Client is not initialized");
     }
-    this.state.client.respond({
-      topic: requestEvent.topic,
-      response: formatJsonRpcError(requestEvent.request.id, "Failed or Rejected Request"),
-    });
+    const error = ERROR.JSONRPC_REQUEST_METHOD_REJECTED.format();
+    const response = {
+      id: requestEvent.request.id,
+      jsonrpc: requestEvent.request.jsonrpc,
+      error,
+    };
+    this.state.client.respond({ topic: requestEvent.topic, response });
     await this.removeFromPending(requestEvent);
     await this.resetCard();
   };
