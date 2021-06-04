@@ -6,8 +6,9 @@ import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import config from "./config";
 import { sha256 } from "./utils";
-import { Notification, LegacySocketMessage } from "./types";
+import { HttpService } from "./http";
 import { SIX_HOURS } from "./constants";
+import { Notification, LegacySocketMessage } from "./types";
 
 export class RedisService {
   public client: any = redis.createClient(config.redis);

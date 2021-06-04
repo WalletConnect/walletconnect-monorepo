@@ -1,6 +1,5 @@
 import { BigNumber, BigNumberish, providers, utils } from "ethers";
 import * as encUtils from "enc-utils";
-import { getChainConfig } from "caip-api";
 import { TypedDataUtils } from "eth-sig-util";
 import * as ethUtil from "ethereumjs-util";
 
@@ -9,7 +8,7 @@ import { eip1271 } from "./eip1271";
 export function capitalize(string: string): string {
   return string
     .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 }
 
@@ -23,7 +22,7 @@ export function ellipseText(text = "", maxLength = 9999): string {
   const result =
     text
       .split(" ")
-      .filter((word) => {
+      .filter(word => {
         currentLength += word.length;
         if (ellipse || currentLength >= _maxLength) {
           ellipse = true;
@@ -138,10 +137,8 @@ export async function verifySignature(
   address: string,
   sig: string,
   hash: string,
-  chainId: number,
+  rpcUrl: string,
 ): Promise<boolean> {
-  const chainConfig = getChainConfig(`eip155:${chainId}`);
-  const rpcUrl = `https://${chainConfig.rpcUrl}`;
   const provider = new providers.JsonRpcProvider(rpcUrl);
   const bytecode = await provider.getCode(address);
   if (!bytecode || bytecode === "0x" || bytecode === "0x0" || bytecode === "0x00") {

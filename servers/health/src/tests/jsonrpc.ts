@@ -6,14 +6,20 @@ import { PairingTypes, SessionTypes } from "walletconnect-types-v2";
 import { metadata, permissions, state, chainId, request, result } from "../constants";
 import { getWsUrl } from "../utils";
 
-export async function testRelayProvider(url: string) {
+export async function testRelayProvider(url: string, url2?: string) {
   // client opts
-  const opts = { relayProvider: getWsUrl(url), metadata };
+  const clientAOpts = { name: "A", relayProvider: getWsUrl(url), metadata };
+  const clientBOpts = {
+    ...clientAOpts,
+    name: "B",
+    relayProvider: typeof url2 !== "undefined" ? getWsUrl(url2) : clientAOpts.relayProvider,
+    controller: true,
+  };
 
   // setup clients
   const clients = {
-    a: await ClientV2.init({ name: "A", ...opts }),
-    b: await ClientV2.init({ name: "B", ...opts, controller: true }),
+    a: await ClientV2.init(clientAOpts),
+    b: await ClientV2.init(clientBOpts),
   };
 
   // timestamps & elapsed time

@@ -40,6 +40,6 @@ export abstract class IJsonRpcHistory extends IEvents {
   public abstract set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void>;
   public abstract update(topic: string, response: JsonRpcResponse): Promise<void>;
   public abstract get(topic: string, id: number): Promise<JsonRpcRecord>;
-  public abstract delete(topic: string, id: number): Promise<void>;
+  public abstract delete(topic: string, id?: number): Promise<void>;
   public abstract exists(topic: string, id: number): Promise<boolean>;
 }

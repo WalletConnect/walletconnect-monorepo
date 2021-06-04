@@ -3,7 +3,7 @@ import { IJsonRpcConnection } from "@json-rpc-tools/types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { ERROR, getError } from "@walletconnect/utils";
+import { ERROR } from "@walletconnect/utils";
 import { ClientOptions, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
 
 export function isClient(opts?: SignerConnectionClientOpts): opts is IClient {
@@ -89,12 +89,12 @@ export class SignerConnection extends IJsonRpcConnection {
     const client = await this.register();
     await client.disconnect({
       topic: this.session.topic,
-      reason: getError(ERROR.USER_DISCONNECTED),
+      reason: ERROR.USER_DISCONNECTED.format(),
     });
     this.onClose();
   }
 
-  public async send(payload: any) {
+  public async send(payload: any, context?: any) {
     if (typeof this.client === "undefined") {
       this.client = await this.register();
       if (!this.connected) await this.open();
@@ -103,7 +103,7 @@ export class SignerConnection extends IJsonRpcConnection {
       throw new Error("Signer connection is missing session");
     }
     this.client
-      .request({ topic: this.session.topic, request: payload })
+      .request({ topic: this.session.topic, request: payload, chainId: context?.chainId })
       .then((result: any) => this.events.emit("payload", formatJsonRpcResult(payload.id, result)))
       .catch(e => this.events.emit("payload", formatJsonRpcError(payload.id, e.message)));
   }

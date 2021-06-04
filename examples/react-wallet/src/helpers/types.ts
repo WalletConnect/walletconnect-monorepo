@@ -1,5 +1,5 @@
 import { SessionTypes } from "@walletconnect/types";
-import { ChainConfig } from "caip-wallet";
+import { ChainsMap } from "caip-api";
 
 import { AppState } from "../App";
 
@@ -13,13 +13,18 @@ export interface AppEvents {
   update: (state: AppState, setState: any) => Promise<void>;
 }
 
-export interface ChainMetadata extends ChainConfig {
+export interface ChainMetadata {
+  name?: string;
   logo: string;
   rgb: string;
 }
 
 export interface NamespaceMetadata {
   [reference: string]: ChainMetadata;
+}
+
+export interface ChainNamespaces {
+  [namespace: string]: ChainsMap;
 }
 
 export declare namespace Cards {
@@ -40,7 +45,7 @@ export declare namespace Cards {
 
   export interface Request {
     type: "request";
-    data: { requestEvent: SessionTypes.RequestEvent; peer: SessionTypes.Peer };
+    data: { requestEvent: SessionTypes.RequestEvent; peer: SessionTypes.Participant };
   }
 
   export interface Settings {

@@ -1,11 +1,12 @@
 {
   "name": "@walletconnect/types",
   "description": "Typings for WalletConnect Protocol",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.10",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
   "main": "dist/cjs/index.js",
+  "browser": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
   "unpkg": "dist/umd/index.min.js",
   "files": [
@@ -20,12 +21,13 @@
     "build:pre": "run-s clean",
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:umd": "webpack",
-    "build": "run-s build:pre build:cjs build:umd",
+    "build:esm": "npx tsc -p tsconfig.esm.json",
+    "build": "run-s build:pre build:cjs build:esm build:umd",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/types": "^1.7.2",
+    "@json-rpc-tools/types": "^2.0.0-beta.9",
     "keyvaluestorage": "^0.7.1",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0"

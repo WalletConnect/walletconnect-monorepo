@@ -8,7 +8,7 @@ import {
   SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR, getError } from "@walletconnect/utils";
+import { ERROR } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
 import {
@@ -154,7 +154,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     await this.isEnabled();
     const subscription = this.subscriptions.get(topic);
     if (!subscription) {
-      const error = getError(ERROR.NO_MATCHING_TOPIC, {
+      const error = ERROR.NO_MATCHING_TOPIC.format({
         context: this.getSubscriptionContext(),
         topic,
       });
@@ -206,7 +206,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private onTimeout(topic: string): void {
     this.deleteTimeout(topic);
-    this.delete(topic, getError(ERROR.EXPIRED, { context: this.getSubscriptionContext() }));
+    this.delete(topic, ERROR.EXPIRED.format({ context: this.getSubscriptionContext() }));
   }
 
   private checkSubscriptions(): void {
@@ -231,7 +231,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
-        const error = getError(ERROR.RESTORE_WILL_OVERRIDE, {
+        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
           context: this.getSubscriptionContext(),
         });
         this.logger.error(error.message);
@@ -296,22 +296,26 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
     this.client.relayer.on(RELAYER_EVENTS.connect, () => this.reset());
     this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });
+      const eventName = SUBSCRIPTION_EVENTS.payload;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: payloadEvent });
     });
     this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: createdEvent });
+      const eventName = SUBSCRIPTION_EVENTS.created;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: createdEvent });
       this.persist();
     });
     this.events.on(SUBSCRIPTION_EVENTS.updated, (updatedEvent: SubscriptionEvent.Updated<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: updatedEvent });
+      const eventName = SUBSCRIPTION_EVENTS.updated;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: updatedEvent });
       this.persist();
     });
     this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.deleted}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.deleted, data: deletedEvent });
+      const eventName = SUBSCRIPTION_EVENTS.deleted;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
       this.persist();
     });
   }

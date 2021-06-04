@@ -17,7 +17,6 @@ import {
   isSessionResponded,
   getAppMetadata,
   ERROR,
-  getError,
 } from "@walletconnect/utils";
 import { ErrorResponse, JsonRpcRequest } from "@json-rpc-tools/utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
@@ -121,7 +120,7 @@ export class Client extends IClient {
       this.logger.trace({ type: "method", method: "connect", pairing });
       const metadata = params.metadata || this.metadata;
       if (typeof metadata === "undefined") {
-        const error = getError(ERROR.MISSING_OR_INVALID, { name: "app metadata" });
+        const error = ERROR.MISSING_OR_INVALID.format({ name: "app metadata" });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
@@ -151,10 +150,10 @@ export class Client extends IClient {
     const approved = proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, { controller: this.controller });
+      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
-      const error = getError(ERROR.NO_MATCHING_RESPONSE, { context: "pairing" });
+      const error = ERROR.NO_MATCHING_RESPONSE.format({ context: "pairing" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -172,21 +171,21 @@ export class Client extends IClient {
     this.logger.debug(`Approving Session Proposal`);
     this.logger.trace({ type: "method", method: "approve", params });
     if (typeof params.response === "undefined") {
-      const error = getError(ERROR.MISSING_RESPONSE, { context: "session" });
+      const error = ERROR.MISSING_RESPONSE.format({ context: "session" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
     const state = params.response.state || SESSION_EMPTY_STATE;
     const metadata = params.response.metadata || this.metadata;
     if (typeof metadata === "undefined") {
-      const error = getError(ERROR.MISSING_OR_INVALID, { name: "app metadata" });
+      const error = ERROR.MISSING_OR_INVALID.format({ name: "app metadata" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
     const approved = params.proposal.proposer.controller !== this.controller;
     const reason = approved
       ? undefined
-      : getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, { controller: this.controller });
+      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
     const pending = await this.session.respond({
       approved,
       proposal: params.proposal,
@@ -194,7 +193,7 @@ export class Client extends IClient {
       reason,
     });
     if (!isSessionResponded(pending)) {
-      const error = getError(ERROR.NO_MATCHING_RESPONSE, { context: "session" });
+      const error = ERROR.NO_MATCHING_RESPONSE.format({ context: "session" });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
@@ -253,7 +252,7 @@ export class Client extends IClient {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
-        const reason = getError(ERROR.UNAUTHORIZED_MATCHING_CONTROLLER, {
+        const reason = ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({
           controller: this.controller,
         });
         await this.session.respond({
@@ -264,13 +263,10 @@ export class Client extends IClient {
         });
         return;
       }
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.session.proposal,
-        data: proposal,
-      });
-      this.events.emit(CLIENT_EVENTS.session.proposal, proposal);
+      const eventName = CLIENT_EVENTS.session.proposal;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: proposal });
+      this.events.emit(eventName, proposal);
     }
   }
 
@@ -284,6 +280,7 @@ export class Client extends IClient {
   private async initialize(): Promise<any> {
     this.logger.trace(`Initialized`);
     try {
+      await this.crypto.init();
       await this.relayer.init();
       await this.pairing.init();
       await this.session.init();
@@ -304,49 +301,35 @@ export class Client extends IClient {
   private registerEventListeners(): void {
     // Pairing Subscription Events
     this.pairing.on(PAIRING_EVENTS.proposed, (pending: PairingTypes.Pending) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.proposal}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.pairing.proposal,
-        data: pending.proposal,
-      });
-      this.events.emit(CLIENT_EVENTS.pairing.proposal, pending.proposal);
+      const eventName = CLIENT_EVENTS.pairing.proposal;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: pending.proposal });
+      this.events.emit(eventName, pending.proposal);
     });
 
     this.pairing.on(PAIRING_EVENTS.settled, (pairing: PairingTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.created}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.pairing.created,
-        data: pairing,
-      });
-      this.events.emit(CLIENT_EVENTS.pairing.created, pairing);
+      const eventName = CLIENT_EVENTS.pairing.created;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: pairing });
+      this.events.emit(eventName, pairing);
       this.onPairingSettled(pairing);
     });
     this.pairing.on(
       PAIRING_EVENTS.updated,
       (pairing: PairingTypes.Settled, update: Partial<PairingTypes.Settled>) => {
-        this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.updated}`);
-        this.logger.debug({
-          type: "event",
-          event: CLIENT_EVENTS.pairing.updated,
-          data: pairing,
-          update,
-        });
-        this.events.emit(CLIENT_EVENTS.pairing.updated, pairing, update);
+        const eventName = CLIENT_EVENTS.pairing.updated;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: pairing, update });
+        this.events.emit(eventName, pairing, update);
       },
     );
     this.pairing.on(
       PAIRING_EVENTS.deleted,
       (pairing: PairingTypes.Settled, reason: ErrorResponse) => {
-        this.logger.info(`Emitting ${CLIENT_EVENTS.pairing.deleted}`);
-        this.logger.debug({
-          type: "event",
-          event: CLIENT_EVENTS.pairing.deleted,
-          data: pairing,
-          reason,
-        });
-        this.events.emit(CLIENT_EVENTS.pairing.deleted, pairing, reason);
+        const eventName = CLIENT_EVENTS.pairing.deleted;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: pairing, reason });
+        this.events.emit(eventName, pairing, reason);
       },
     );
     this.pairing.on(PAIRING_EVENTS.request, (requestEvent: PairingTypes.RequestEvent) => {
@@ -354,73 +337,54 @@ export class Client extends IClient {
     });
     // Session Subscription Events
     this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.proposal}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.session.proposal,
-        data: pending.proposal,
-      });
-      this.events.emit(CLIENT_EVENTS.session.proposal, pending.proposal);
+      const eventName = CLIENT_EVENTS.session.proposal;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: pending.proposal });
+      this.events.emit(eventName, pending.proposal);
     });
     this.session.on(SESSION_EVENTS.settled, (session: SessionTypes.Settled) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.created}`);
-      this.logger.debug({ type: "event", event: CLIENT_EVENTS.session.created, data: session });
-      this.events.emit(CLIENT_EVENTS.session.created, session);
+      const eventName = CLIENT_EVENTS.session.created;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: session });
+      this.events.emit(eventName, session);
     });
     this.session.on(
       SESSION_EVENTS.updated,
       (session: SessionTypes.Settled, update: Partial<SessionTypes.Settled>) => {
-        this.logger.info(`Emitting ${CLIENT_EVENTS.session.updated}`);
-        this.logger.debug({
-          type: "event",
-          event: CLIENT_EVENTS.session.updated,
-          data: session,
-          update,
-        });
-        this.events.emit(CLIENT_EVENTS.session.updated, session, update);
+        const eventName = CLIENT_EVENTS.session.updated;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: session, update });
+        this.events.emit(eventName, session, update);
       },
     );
     this.session.on(
       SESSION_EVENTS.deleted,
       (session: SessionTypes.Settled, reason: ErrorResponse) => {
-        this.logger.info(`Emitting ${CLIENT_EVENTS.session.deleted}`);
-        this.logger.debug({
-          type: "event",
-          event: CLIENT_EVENTS.session.deleted,
-          data: session,
-          reason,
-        });
-        this.events.emit(CLIENT_EVENTS.session.deleted, session, reason);
+        const eventName = CLIENT_EVENTS.session.deleted;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: session, reason });
+        this.events.emit(eventName, session, reason);
       },
     );
     this.session.on(SESSION_EVENTS.request, (requestEvent: SessionTypes.RequestEvent) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.request}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.session.request,
-        data: requestEvent,
-      });
-      this.events.emit(CLIENT_EVENTS.session.request, requestEvent);
+      const eventName = CLIENT_EVENTS.session.request;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: requestEvent });
+      this.events.emit(eventName, requestEvent);
     });
     this.session.on(SESSION_EVENTS.response, (responseEvent: SessionTypes.ResponseEvent) => {
-      this.logger.info(`Emitting ${CLIENT_EVENTS.session.response}`);
-      this.logger.debug({
-        type: "event",
-        event: CLIENT_EVENTS.session.response,
-        data: responseEvent,
-      });
-      this.events.emit(CLIENT_EVENTS.session.response, responseEvent);
+      const eventName = CLIENT_EVENTS.session.response;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: responseEvent });
+      this.events.emit(eventName, responseEvent);
     });
     this.session.on(
       SESSION_EVENTS.notification,
       (notificationEvent: SessionTypes.NotificationEvent) => {
-        this.logger.info(`Emitting ${CLIENT_EVENTS.session.notification}`);
-        this.logger.debug({
-          type: "event",
-          event: CLIENT_EVENTS.session.notification,
-          data: notificationEvent,
-        });
-        this.events.emit(CLIENT_EVENTS.session.notification, notificationEvent);
+        const eventName = CLIENT_EVENTS.session.notification;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: notificationEvent });
+        this.events.emit(eventName, notificationEvent);
       },
     );
   }
@@ -433,7 +397,10 @@ function formatPairingProposal(uri: string): PairingTypes.Proposal {
     relay: uriParams.relay,
     proposer: { publicKey: uriParams.publicKey, controller: uriParams.controller },
     signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri } },
-    permissions: { jsonrpc: { methods: [SESSION_JSONRPC.propose] } },
+    permissions: {
+      jsonrpc: { methods: [SESSION_JSONRPC.propose] },
+      notifications: { types: [] },
+    },
     ttl: PAIRING_DEFAULT_TTL,
   };
 }

@@ -4,8 +4,9 @@ import styled from "styled-components";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
-import { ERROR, getAppMetadata, getError } from "@walletconnect/utils";
+import { ERROR, getAppMetadata } from "@walletconnect/utils";
 import * as encUtils from "enc-utils";
+import { apiGetChainNamespace, ChainsMap } from "caip-api";
 import { BigNumber } from "ethers";
 
 import Banner from "./components/Banner";
@@ -22,6 +23,7 @@ import {
   DEFAULT_METHODS,
   DEFAULT_RELAY_PROVIDER,
   DEFAULT_TEST_CHAINS,
+  DEFAULT_CHAINS,
 } from "./constants";
 import {
   apiGetAccountAssets,
@@ -31,6 +33,7 @@ import {
   verifySignature,
   AccountBalances,
   formatTestTransaction,
+  ChainNamespaces,
 } from "./helpers";
 import { fonts } from "./styles";
 import Toggle from "./components/Toggle";
@@ -119,6 +122,7 @@ interface AppState {
   accounts: string[];
   result: any | undefined;
   balances: AccountBalances;
+  chainData: ChainNamespaces;
 }
 
 const INITIAL_STATE: AppState = {
@@ -135,6 +139,7 @@ const INITIAL_STATE: AppState = {
   accounts: [],
   result: undefined,
   balances: {},
+  chainData: {},
 };
 
 class App extends React.Component<any, any> {
@@ -149,11 +154,11 @@ class App extends React.Component<any, any> {
     this.setState({ loading: true });
 
     try {
+      await this.loadChainData();
       const client = await Client.init({
         logger: DEFAULT_LOGGER,
         relayProvider: DEFAULT_RELAY_PROVIDER,
       });
-
       this.setState({ loading: false, client });
       this.subscribeToEvents();
       await this.checkPersistedState();
@@ -162,6 +167,36 @@ class App extends React.Component<any, any> {
       throw e;
     }
   };
+
+  public getAllNamespaces() {
+    const namespaces: string[] = [];
+    DEFAULT_CHAINS.forEach(chainId => {
+      const [namespace] = chainId.split(":");
+      if (!namespaces.includes(namespace)) {
+        namespaces.push(namespace);
+      }
+    });
+    return namespaces;
+  }
+
+  public async loadChainData(): Promise<void> {
+    const namespaces = this.getAllNamespaces();
+    const chainData: ChainNamespaces = {};
+    await Promise.all(
+      namespaces.map(async namespace => {
+        let chains: ChainsMap | undefined;
+        try {
+          chains = await apiGetChainNamespace(namespace);
+        } catch (e) {
+          // ignore error
+        }
+        if (typeof chains !== "undefined") {
+          chainData[namespace] = chains;
+        }
+      }),
+    );
+    this.setState({ chainData });
+  }
 
   public subscribeToEvents = () => {
     if (typeof this.state.client === "undefined") {
@@ -173,8 +208,9 @@ class App extends React.Component<any, any> {
       async (proposal: PairingTypes.Proposal) => {
         const { uri } = proposal.signal.params;
         this.setState({ uri });
+        console.log("EVENT", "QR Code Modal open");
         QRCodeModal.open(uri, () => {
-          console.log("Modal callback");
+          console.log("EVENT", "QR Code Modal closed");
         });
       },
     );
@@ -247,13 +283,13 @@ class App extends React.Component<any, any> {
     }
     await this.state.client.disconnect({
       topic: this.state.session.topic,
-      reason: getError(ERROR.USER_DISCONNECTED),
+      reason: ERROR.USER_DISCONNECTED.format(),
     });
   };
 
   public resetApp = async () => {
-    const { client } = this.state;
-    this.setState({ ...INITIAL_STATE, client });
+    const { client, chainData } = this.state;
+    this.setState({ ...INITIAL_STATE, client, chainData });
   };
 
   public toggleTestNets = () => this.setState({ testNet: !this.state.testNet });
@@ -398,12 +434,20 @@ class App extends React.Component<any, any> {
         },
       });
 
-      //  get chainId
-      const chainRef = Number(chainId.split(":")[1]);
+      //  split chainId
+      const [namespace, reference] = chainId.split(":");
+
+      const chainData = this.state.chainData[namespace][reference];
+
+      if (typeof chainData === "undefined") {
+        throw new Error(`Missing chain data for chainId: ${chainId}`);
+      }
+
+      const rpcUrl = chainData.rpc[0];
 
       // verify signature
       const hash = hashPersonalMessage(message);
-      const valid = await verifySignature(address, result, hash, chainRef);
+      const valid = await verifySignature(address, result, hash, rpcUrl);
 
       // format displayed result
       const formattedResult = {
@@ -452,12 +496,20 @@ class App extends React.Component<any, any> {
         },
       });
 
-      //  get chainId
-      const chainRef = Number(chainId.split(":")[1]);
+      //  split chainId
+      const [namespace, reference] = chainId.split(":");
+
+      const chainData = this.state.chainData[namespace][reference];
+
+      if (typeof chainData === "undefined") {
+        throw new Error(`Missing chain data for chainId: ${chainId}`);
+      }
+
+      const rpcUrl = chainData.rpc[0];
 
       // verify signature
       const hash = hashPersonalMessage(message);
-      const valid = await verifySignature(address, result, hash, chainRef);
+      const valid = await verifySignature(address, result, hash, rpcUrl);
 
       // format displayed result
       const formattedResult = {
@@ -507,7 +559,7 @@ class App extends React.Component<any, any> {
   };
 
   public renderContent = () => {
-    const { balances, accounts, chains, testNet, fetching } = this.state;
+    const { balances, accounts, chains, chainData, testNet, fetching } = this.state;
     const chainOptions = testNet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
     return !accounts.length && !Object.keys(balances).length ? (
       <SLanding center>
@@ -525,6 +577,7 @@ class App extends React.Component<any, any> {
             <Blockchain
               key={chainId}
               chainId={chainId}
+              chainData={chainData}
               onClick={this.handleChainSelectionClick}
               active={chains.includes(chainId)}
             />
@@ -549,6 +602,7 @@ class App extends React.Component<any, any> {
               <Blockchain
                 key={account}
                 active={true}
+                chainData={chainData}
                 fetching={fetching}
                 address={address}
                 chainId={chainId}

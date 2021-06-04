@@ -4,11 +4,13 @@ import { generateChildLogger } from "@pedrouid/pino-utils";
 
 import { RedisService } from "./redis";
 import { Notification } from "./types";
+import { HttpService } from "./http";
 
 export class NotificationService {
   public context = "notification";
 
-  constructor(public logger: Logger, public redis: RedisService) {
+  constructor(public server: HttpService, public logger: Logger, public redis: RedisService) {
+    this.server = server;
     this.logger = generateChildLogger(logger, this.context);
     this.redis = redis;
     this.initialize();

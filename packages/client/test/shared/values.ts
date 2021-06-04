@@ -10,7 +10,7 @@ export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   : "ws://localhost:5555";
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
-  logger: "debug",
+  logger: "fatal",
   relayProvider: TEST_RELAY_URL,
 };
 
@@ -64,6 +64,7 @@ export const TEST_ETHEREUM_RESULT = TEST_ETHEREUM_ACCOUNTS;
 
 export const TEST_RANDOM_REQUEST = { method: "random_method" };
 
+export const TEST_TIMEOUT_SAFEGUARD = 1000;
 export const TEST_TIMEOUT_DURATION = THIRTY_SECONDS * 1000;
 export const TEST_PAIRING_TTL = PAIRING_DEFAULT_TTL * 1000;
 export const TEST_SESSION_TTL = SESSION_DEFAULT_TTL * 1000;

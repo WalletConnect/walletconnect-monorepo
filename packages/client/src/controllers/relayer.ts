@@ -3,7 +3,7 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { RelayerTypes, IRelayer, IClient } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
-import { decrypt, formatRelayRpcUrl } from "@walletconnect/utils";
+import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { utf8ToHex, hexToUtf8 } from "enc-utils";
 import {
   IJsonRpcProvider,
@@ -14,6 +14,7 @@ import {
   RequestArguments,
 } from "@json-rpc-tools/utils";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
+import { WsConnection } from "@json-rpc-tools/ws-connection";
 import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
 
 import {
@@ -68,8 +69,8 @@ export class Relayer extends IRelayer {
           ttl: opts?.ttl || RELAYER_DEFAULT_PUBLISH_TTL,
         },
       };
-      this.logger.info(`Outgoing Relay Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", request });
+      this.logger.debug(`Outgoing Relay Payload`);
+      this.logger.trace({ type: "payload", direction: "outgoing", request });
       await this.provider.request(request);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", request });
@@ -96,8 +97,8 @@ export class Relayer extends IRelayer {
           topic,
         },
       };
-      this.logger.info(`Outgoing Relay Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", request });
+      this.logger.debug(`Outgoing Relay Payload`);
+      this.logger.trace({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
       this.events.on(id, async ({ message }) => {
         const hasKeys = await this.client.crypto.hasKeys(topic);
@@ -128,8 +129,8 @@ export class Relayer extends IRelayer {
           id,
         },
       };
-      this.logger.info(`Outgoing Relay Payload`);
-      this.logger.debug({ type: "payload", direction: "outgoing", request });
+      this.logger.debug(`Outgoing Relay Payload`);
+      this.logger.trace({ type: "payload", direction: "outgoing", request });
 
       await this.provider.request(request);
       this.events.removeAllListeners(id);
@@ -161,8 +162,8 @@ export class Relayer extends IRelayer {
   // ---------- Private ----------------------------------------------- //
 
   private onPayload(payload: JsonRpcPayload) {
-    this.logger.info(`Incoming Relay Payload`);
-    this.logger.debug({ type: "payload", direction: "incoming", payload });
+    this.logger.debug(`Incoming Relay Payload`);
+    this.logger.trace({ type: "payload", direction: "incoming", payload });
     if (isJsonRpcRequest(payload)) {
       if (payload.method.endsWith("_subscription")) {
         const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
@@ -183,7 +184,7 @@ export class Relayer extends IRelayer {
     );
     return typeof provider !== "string" && typeof provider !== "undefined"
       ? provider
-      : new JsonRpcProvider(rpcUrl);
+      : new JsonRpcProvider(new WsConnection(rpcUrl));
   }
 
   private registerEventListeners(): void {

@@ -4,7 +4,6 @@ import {
   ERROR,
   mapToObj,
   objToMap,
-  getError,
   generateKeyPair,
   deriveSharedKey,
   encrypt,
@@ -38,7 +37,7 @@ export class KeyChain implements IKeyChain {
   public async get(tag: string, opts?: any): Promise<string> {
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
-      throw new Error(getError(ERROR.NO_MATCHING_KEY, { tag }).message);
+      throw new Error(ERROR.NO_MATCHING_KEY.format({ tag }).message);
     }
     return key;
   }
@@ -135,15 +134,15 @@ export class Crypto implements ICrypto {
   }
 
   private async setEncryptionKeys(
-    encryptKeys: CryptoTypes.EncryptKeys,
+    encryptionKeys: CryptoTypes.EncryptionKeys,
     overrideTopic?: string,
   ): Promise<string> {
-    const topic = overrideTopic || (await sha256(encryptKeys.sharedKey));
-    const keys = this.concatKeys(encryptKeys.sharedKey, encryptKeys.publicKey);
+    const topic = overrideTopic || (await sha256(encryptionKeys.sharedKey));
+    const keys = this.concatKeys(encryptionKeys.sharedKey, encryptionKeys.publicKey);
     await this.keychain.set(topic, keys);
     return topic;
   }
-  private async getEncryptionKeys(topic: string): Promise<CryptoTypes.EncryptKeys> {
+  private async getEncryptionKeys(topic: string): Promise<CryptoTypes.EncryptionKeys> {
     const [sharedKey, publicKey] = this.splitKeys(await this.keychain.get(topic));
     return { sharedKey, publicKey };
   }

@@ -8,6 +8,7 @@ export interface HttpServiceOptions {
 export interface GetTestRequest extends RequestGenericInterface {
   Querystring: {
     url: string;
+    url2?: string;
     legacy?: string;
   };
 }
