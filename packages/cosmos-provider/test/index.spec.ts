@@ -1,5 +1,6 @@
 import "mocha";
 import { expect } from "chai";
+// import { CosmosWallet } from "cosmos-wallet";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { SessionTypes } from "@walletconnect/types";
