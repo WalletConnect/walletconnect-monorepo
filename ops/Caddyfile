@@ -32,7 +32,7 @@ grafana.{env.DOMAIN} {
     file_server
     templates
   }
-	handle_path /grafana* {
+	handle_path /dash* {
 	  reverse_proxy grafana:3000
 	}
 	tls {
