@@ -24,10 +24,10 @@
 	reverse_proxy {env.UPSTREAM_NAME}:{env.UPSTREAM_PORT}
 }
 
-stats.{env.DOMAIN} {
+grafana.{env.DOMAIN} {
   handle {
     header Access-Control-Allow-Methods "POST, GET, OPTIONS"
-    header Access-Control-Allow-Origin stats.{env.DOMAIN}
+    header Access-Control-Allow-Origin grafana.{env.DOMAIN}
     root * /www
     file_server
     templates
