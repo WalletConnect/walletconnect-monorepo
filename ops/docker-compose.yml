@@ -42,6 +42,7 @@ services:
   relay:
     image: ${RELAY_IMAGE}
     environment:
+      PORT: ${RELAY_PORT}
       NODE_ENV: development
       REDIS_URL: "redis://redis:6379/{{.Task.Slot}}"
       WAKU_URL: "http://waku.{{.Task.Slot}}:8545"

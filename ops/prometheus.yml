@@ -13,7 +13,7 @@ scrape_configs:
 - job_name: caddy
   metrics_path: /metrics
   static_configs:
-  - targets: [ "caddy:9321" ]
+  - targets: [ "tasks.caddy:9321" ]
 
 - job_name: node_exporter
   static_configs:
@@ -30,9 +30,9 @@ scrape_configs:
 - job_name: relay
   metrics_path: /metrics
   static_configs:
-  - targets: ['relay:5000']
+  - targets: ['tasks.relay:5000']
 
 - job_name: waku
   metrics_path: /metrics
   static_configs:
-  - targets: ['waku:9001']
+  - targets: ['tasks.waku:9001']

@@ -30,6 +30,7 @@ stats.{env.DOMAIN} {
     header Access-Control-Allow-Origin stats.{env.DOMAIN}
     root * /www
     file_server
+    templates
   }
 	handle_path /grafana* {
 	  reverse_proxy grafana:3000
