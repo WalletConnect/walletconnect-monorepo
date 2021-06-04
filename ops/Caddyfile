@@ -24,11 +24,19 @@
 	reverse_proxy {env.UPSTREAM_NAME}:{env.UPSTREAM_PORT}
 }
 
-grafana.{env.DOMAIN} {
+stats.{env.DOMAIN} {
+  handle {
+    header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    header Access-Control-Allow-Origin stats.{env.DOMAIN}
+    root * /www
+    file_server
+  }
+	handle_path /grafana* {
+	  reverse_proxy grafana:3000
+	}
 	tls {
 		dns cloudflare {env.CLOUDFLARE_TOKEN}
 	}
-	reverse_proxy grafana:3000
 }
 
 :9321 {
