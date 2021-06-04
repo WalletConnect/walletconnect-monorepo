@@ -1,4 +1,15 @@
 <html>
-<h1> Hello </h1>
-<iframe src="https://grafana.{{ env "DOMAIN" }}/grafana/d-solo/-N6xbVpGk/docker-monitoring?orgId=1&refresh=10s&from=1622752679852&to=1622763479852&panelId=1" width="450" height="200" frameborder="0"></iframe>
+<head>
+<style>
+h1 {text-align: center;}
+div {text-align: center;}
+</style>
+</head>
+<body>
+<h1> Stats for {{ env "DOMAIN" }} </h1>
+<div>
+<iframe src="https://grafana.staging.walletconnect.org/grafana/d-solo/X7XNjCBGz/relay?orgId=1&amp;refresh=10s&amp;panelId=2" width="900" height="500" frameborder="0"></iframe>
+<iframe src="https://grafana.staging.walletconnect.org/grafana/d-solo/s1RNfVtMk/docker-engine-metrics-2?orgId=1&panelId=25" width="900" height="500" frameborder="0"></iframe>
+</div>
+</body>
 </html>

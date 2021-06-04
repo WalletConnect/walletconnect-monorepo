@@ -10,11 +10,6 @@ scrape_configs:
   static_configs:
   - targets: [ "172.18.0.1:9323" ]
 
-- job_name: caddy
-  metrics_path: /metrics
-  static_configs:
-  - targets: [ "tasks.caddy:9321" ]
-
 - job_name: node_exporter
   static_configs:
   - targets: ['node_exporter:9100']
@@ -27,12 +22,23 @@ scrape_configs:
   static_configs:
   - targets: ['redis_exporter:9121']
 
+- job_name: caddy
+  metrics_path: /metrics
+  dns_sd_configs:
+    - names: [ "tasks.caddy" ]
+      type: 'A'
+      port: 9321
+
 - job_name: relay
   metrics_path: /metrics
-  static_configs:
-  - targets: ['tasks.relay:5000']
+  dns_sd_configs:
+    - names: [ "tasks.relay" ]
+      type: 'A'
+      port: 5000
 
 - job_name: waku
   metrics_path: /metrics
-  static_configs:
-  - targets: ['tasks.waku:9001']
+  dns_sd_configs:
+    - names: [ "tasks.waku" ]
+      type: 'A'
+      port: 9001
