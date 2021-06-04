@@ -7,6 +7,7 @@ import {
   SIGNER_EVENTS,
   SignerConnectionClientOpts,
 } from "@walletconnect/signer-connection";
+import HttpConnection from "@json-rpc-tools/http-connection";
 
 export const signerMethods = ["cosmos_getAccounts", "cosmos_signDirect", "cosmos_signAmino"];
 
@@ -130,7 +131,7 @@ class CosmosProvider {
   private setHttpProvider(chains: string[]): JsonRpcProvider | undefined {
     const rpcUrl = getRpcUrl(chains[0], this.rpc);
     if (typeof rpcUrl === "undefined") return undefined;
-    const http = new JsonRpcProvider(rpcUrl);
+    const http = new JsonRpcProvider(new HttpConnection(rpcUrl));
     return http;
   }
 
