@@ -16,6 +16,9 @@ jobs:
         with:
           name: walletconnect
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
       - run: |
           docker version
           docker swarm init 2> /dev/null || true
