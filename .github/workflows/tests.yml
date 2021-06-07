@@ -23,6 +23,6 @@ jobs:
       - name: Print logs
         if: failure()
         run: docker service logs --tail 200 walletconnect_caddy && docker service logs --tail 200 walletconnect_relay
-      - run: |
-          echo '${{ secrets.CACHIX_AUTH_TOKEN }}'
-          CACHIX_AUTH_TOKEN=${{ secrets.CACHIX_AUTH_TOKEN }} make cachix
+      - run: make cachix
+        env: 
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
