@@ -32,7 +32,7 @@ dockerLoad=docker load -i build/$@ \
 		| tee build/$@-img \
 		| xargs -I {} docker tag {}
 buildRelay=nix-build --attr docker --argstr githash $(GITHASH) && cp -f -L result build/$@
-caddySrc=https://github.com/sbc64/nix-caddy/archive/master.tar.gz
+caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/master.tar.gz
 buildCaddy=nix-build  $(caddySrc) --attr docker && cp -f -L result build/$@
 buildWaku=nix-build ./ops/waku-docker.nix --attr docker && cp -f -L result build/$@
 
@@ -52,10 +52,10 @@ pull: ## pulls docker images
 	@echo
 
 setup: ## configures domain and certbot email
-	@read -p 'Relay URL domain: ' relay; \
-	echo "export RELAY_URL="$$relay > setup
+	@read -p 'Relay URL domain [localhost]: ' relay; \
+	echo "export RELAY_URL="$${relay:-localhost} > setup
 	@read -p 'Email for SSL certificate (default noreply@gmail.com): ' email; \
-	echo "export CERTBOT_EMAIL="$$email >> setup
+	echo "export CERTBOT_EMAIL="$${email:-noreply@gmail.com} >> setup
 	@read -p 'Paste your cloudflare API token: ' cf; \
 	echo "export CLOUDFLARE_TOKEN="$${cf} >> setup
 	@echo ${RELAY_URL}
@@ -143,31 +143,31 @@ start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
 	$(log_end)
 
-predeploy: dirs setup pull build-images 
+predeploy: dirs pull build-images 
 
-dev: predeploy ## runs relay on watch mode and shows logs
+dev: setup predeploy ## runs relay on watch mode and shows logs
 	RELAY_URL=localhost bash ops/deploy.sh
 	@echo  "MAKE: Done with $@"
 	@echo
 	$(log_end)
 
 ci: predeploy ## runs tests in github actions
-	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=\nexport CLOUDFLARE_CERT=false\n" > setup
+	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	NODE_ENV=development $(MAKE) deploy
 	sleep 15
 	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
 	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
 
-deploy: predeploy ## deploys the docker swarm for the relay
+deploy: setup predeploy ## deploys the docker swarm for the relay
 	bash ops/deploy.sh
 	$(log_end)
 
-deploy-no-monitoring: predeploy ## same as deploy but without the monitoring
+deploy-no-monitoring: setup predeploy ## same as deploy but without the monitoring
 	MONITORING=false bash ops/deploy.sh
 	$(log_end)
 
-redeploy: clean predeploy ## redeploys the prodution containers and rebuilds them
+redeploy: setup clean predeploy ## redeploys the prodution containers and rebuilds them
 	docker service update --force --image $(caddyImage) $(project)_caddy
 	docker service update --force --image $(relayImage) $(project)_relay
 

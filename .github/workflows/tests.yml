@@ -8,7 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - run: docker swarm init 2> /dev/null || true
+      - uses: docker-practice/actions-setup-docker@20.10
+      - run: |
+          docker version
+          docker swarm init 2> /dev/null || true
       - run: make ci
       - name: Print logs
         if: failure()
