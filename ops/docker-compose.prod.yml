@@ -18,7 +18,7 @@ services:
       - caddy_conf:/config
       - ./stats.html:/www/index.html
     deploy:
-      replicas: 4
+      replicas: ${REPLICAS:-4}
 
   relay:
     image: ${RELAY_IMAGE}
@@ -26,7 +26,7 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       RELAY_MODE: ${RELAY_MODE:-any}
     deploy:
-      replicas: 4
+      replicas: ${REPLICAS:-4}
   waku:
     deploy:
-      replicas: 4
+      replicas: ${REPLICAS:-4}
