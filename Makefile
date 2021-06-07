@@ -153,7 +153,7 @@ dev: setup predeploy ## runs relay on watch mode and shows logs
 
 ci: predeploy ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
-	NODE_ENV=development $(MAKE) deploy
+	REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
 	sleep 15
 	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
