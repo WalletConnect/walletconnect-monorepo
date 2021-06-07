@@ -59,6 +59,8 @@ let
     run="/usr/bin/wakunode \
       --nodekey=$(cat /key/nodekey) \
       --keep-alive=true \
+      --swap=false \
+      --rln-relay=true \
       --rpc=true \
       --rpc-address=0.0.0.0 \
       --persist-peers=true \
