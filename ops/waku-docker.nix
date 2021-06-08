@@ -24,7 +24,7 @@ let
 
     /usr/bin/wakunode --nodekey=$(cat /key/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
     PID=$!
-    sleep 20 # wait for rpc server to start
+    sleep 10 # wait for rpc server to start
 
     wakuWC=$(${dnsutils}/bin/dig +short waku.walletconnect.org | ${coreutils}/bin/tr -d '\n')
     while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
