@@ -175,13 +175,13 @@ let
         sha512 = "Lwh0lzzqT5Pqh6z61P3c3P5nm6fzQK/MMHl9UKeneAeInVflBSz1O2EkX6gM6xfJd7FBXBY5purtLx7fUiZ7Hw==";
       };
     };
-    "@types/node-14.17.2" = {
+    "@types/node-14.17.3" = {
       name = "_at_types_slash_node";
       packageName = "@types/node";
-      version = "14.17.2";
+      version = "14.17.3";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@types/node/-/node-14.17.2.tgz";
-        sha512 = "sld7b/xmFum66AAKuz/rp/CUO8+98fMpyQ3SBfzzBNGMd/1iHBTAg9oyAvcYlAj46bpc74r91jSw2iFdnx29nw==";
+        url = "https://registry.npmjs.org/@types/node/-/node-14.17.3.tgz";
+        sha512 = "e6ZowgGJmTuXa3GyaPbTGxX17tnThl2aSSizrFthQ7m9uLGZBXiGhgE55cjRZTF5kjZvYn9EOPOMljdjwbflxw==";
       };
     };
     "@types/pino-6.3.8" = {
@@ -904,6 +904,15 @@ let
         sha1 = "df3ae199acadfb7d440aaae0b29e2272b24ec619";
       };
     };
+    "denque-1.5.0" = {
+      name = "denque";
+      packageName = "denque";
+      version = "1.5.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/denque/-/denque-1.5.0.tgz";
+        sha512 = "CYiCSgIF1p6EUByQPlGkKnP1M9g0ZV3qMIrqMqZqdwazygIA/YP2vrbcyl1h/WppKJTdl1F85cXIle+394iDAQ==";
+      };
+    };
     "diff-4.0.2" = {
       name = "diff";
       packageName = "diff";
@@ -929,15 +938,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/dot-prop/-/dot-prop-5.3.0.tgz";
         sha512 = "QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==";
-      };
-    };
-    "double-ended-queue-2.1.0-0" = {
-      name = "double-ended-queue";
-      packageName = "double-ended-queue";
-      version = "2.1.0-0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/double-ended-queue/-/double-ended-queue-2.1.0-0.tgz";
-        sha1 = "103d3527fd31528f40188130c841efdd78264e5c";
       };
     };
     "duplexer3-0.1.4" = {
@@ -2497,13 +2497,13 @@ let
         sha512 = "cMhu7c/8rdhkHXWsY+osBhfSy0JikwpHK/5+imo+LpeasTF8ouErHrlYkwT0++njiyuDvc7OFY5T3ukvZ8qmFQ==";
       };
     };
-    "redis-2.8.0" = {
+    "redis-3.1.2" = {
       name = "redis";
       packageName = "redis";
-      version = "2.8.0";
+      version = "3.1.2";
       src = fetchurl {
-        url = "https://registry.npmjs.org/redis/-/redis-2.8.0.tgz";
-        sha512 = "M1OkonEQwtRmZv4tEWF2VgpG0JWJ8Fv1PhlgT5+B+uNq2cA3Rt1Yt/ryoR+vQNOQcIEgdCdfH0jr3bDpihAw1A==";
+        url = "https://registry.npmjs.org/redis/-/redis-3.1.2.tgz";
+        sha512 = "grn5KoZLr/qrRQVwoSkmzdbw6pwF+/rwODtrOr6vuBRiR/f3rjSTGupbF90Zpqm2oenix8Do6RV7pYEkGwlKkw==";
       };
     };
     "redis-commands-1.7.0" = {
@@ -2515,13 +2515,22 @@ let
         sha512 = "nJWqw3bTFy21hX/CPKHth6sfhZbdiHP6bTawSgQBlKOVRG7EZkfHbbHwQJnrE4vsQf0CMNE+3gJ4Fmm16vdVlQ==";
       };
     };
-    "redis-parser-2.6.0" = {
+    "redis-errors-1.2.0" = {
+      name = "redis-errors";
+      packageName = "redis-errors";
+      version = "1.2.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/redis-errors/-/redis-errors-1.2.0.tgz";
+        sha1 = "eb62d2adb15e4eaf4610c04afe1529384250abad";
+      };
+    };
+    "redis-parser-3.0.0" = {
       name = "redis-parser";
       packageName = "redis-parser";
-      version = "2.6.0";
+      version = "3.0.0";
       src = fetchurl {
-        url = "https://registry.npmjs.org/redis-parser/-/redis-parser-2.6.0.tgz";
-        sha1 = "52ed09dacac108f1a631c07e9b69941e7a19504b";
+        url = "https://registry.npmjs.org/redis-parser/-/redis-parser-3.0.0.tgz";
+        sha1 = "b66d828cdcafe6b4b8a428a7def4c6bcac31c8b4";
       };
     };
     "registry-auth-token-4.2.1" = {
@@ -3369,7 +3378,7 @@ let
       sources."@types/cookiejar-2.1.2"
       sources."@types/core-js-2.5.4"
       sources."@types/mocha-8.2.2"
-      sources."@types/node-14.17.2"
+      sources."@types/node-14.17.3"
       sources."@types/pino-6.3.8"
       sources."@types/pino-pretty-4.7.0"
       sources."@types/pino-std-serializers-2.4.1"
@@ -3477,9 +3486,9 @@ let
       sources."defer-to-connect-1.1.3"
       sources."define-properties-1.1.3"
       sources."delayed-stream-1.0.0"
+      sources."denque-1.5.0"
       sources."diff-5.0.0"
       sources."dot-prop-5.3.0"
-      sources."double-ended-queue-2.1.0-0"
       sources."duplexer3-0.1.4"
       sources."emoji-regex-8.0.0"
       sources."enc-utils-3.0.0"
@@ -3681,9 +3690,10 @@ let
       sources."read-pkg-3.0.0"
       sources."readable-stream-3.6.0"
       sources."readdirp-3.5.0"
-      sources."redis-2.8.0"
+      sources."redis-3.1.2"
       sources."redis-commands-1.7.0"
-      sources."redis-parser-2.6.0"
+      sources."redis-errors-1.2.0"
+      sources."redis-parser-3.0.0"
       sources."registry-auth-token-4.2.1"
       sources."registry-url-5.1.0"
       sources."relay-provider-2.0.0-beta.0"
