@@ -19,10 +19,6 @@
     "vm.min_free_kbytes" = "65536";
     "vm.swappiness" = "0";
   };
-  services.fail2ban = {
-    enable = true;
-    ignoreIP = [ "127.0.0.1" ];
-  };
   nix = {
     binaryCaches = [
       "https://walletconnect.cachix.org"
