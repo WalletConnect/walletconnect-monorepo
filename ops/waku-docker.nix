@@ -7,11 +7,11 @@ let
     imageName = "walletconnect/waku";
     finalImageTag = tag;
     # docker image inspect walletconnect/waku:walletconnect --format "{{index .RepoDigests 0}}" | cut -d "@" -f2
-    imageDigest = "sha256:9dbebf8d9e3fb43c550c36a0d55413b45feb25d765bc36627638c4c9d5e3677c";
+    imageDigest = "sha256:f6afa100413076638b63c84f3172fea0e0eafddb48e2d9f211ab85ab451ab20f";
     # If you can find out how to get the RIGHT tar file you can use 
     # nix-hash --type sha256 --flat --base32 pmjdag6jmsm6vm8lcfrbwaa63ccx44zy-docker-image-walletconnect-waku-walletconnect.tar
-    # to get the value of sha156
-    sha256 = "1jhvri4c5rggd01cirswq9axrjr18gaw3p5icdnz9yph4rd8az1z";
+    # to get the value of sha256
+    sha256 = "0d5myzg5jjnkjv4qsdkjxb5mkzrwiqdr6jzcvccd3xhl4cimai73";
   };
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
