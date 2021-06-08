@@ -3,9 +3,10 @@ import styled from "styled-components";
 import KeyValueStorage from "keyvaluestorage";
 import Wallet from "caip-wallet";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
-import { JsonRpcResponse, formatJsonRpcError } from "@json-rpc-tools/utils";
+import { JsonRpcResponse, formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
 import { SessionTypes } from "@walletconnect/types";
+import { apiGetChainNamespace, apiGetChainJsonRpc, ChainsMap, ChainJsonRpc } from "caip-api";
 
 import Card from "./components/Card";
 import Scanner, { ScannerValidation } from "./components/Scanner";
@@ -19,11 +20,19 @@ import SettingsCard from "./cards/SettingsCard";
 import {
   DEFAULT_APP_METADATA,
   DEFAULT_TEST_CHAINS,
+  DEFAULT_CHAINS,
   DEFAULT_LOGGER,
   DEFAULT_METHODS,
   DEFAULT_RELAY_PROVIDER,
 } from "./constants";
-import { Cards, isProposalCard, isRequestCard, isSessionCard, isSettingsCard } from "./helpers";
+import {
+  Cards,
+  ChainNamespaces,
+  isProposalCard,
+  isRequestCard,
+  isSessionCard,
+  isSettingsCard,
+} from "./helpers";
 
 const SContainer = styled.div`
   display: flex;
@@ -62,6 +71,8 @@ export interface AppState {
   loading: boolean;
   scanner: boolean;
   chains: string[];
+  chainData: ChainNamespaces;
+  jsonrpc: Record<string, ChainJsonRpc>;
   accounts: string[];
   sessions: SessionTypes.Created[];
   requests: SessionTypes.RequestEvent[];
@@ -76,6 +87,8 @@ export const INITIAL_STATE: AppState = {
   loading: false,
   scanner: false,
   chains: DEFAULT_TEST_CHAINS,
+  chainData: {},
+  jsonrpc: {},
   accounts: [],
   sessions: [],
   requests: [],
@@ -99,6 +112,8 @@ class App extends React.Component<{}> {
   public init = async (mnemonic?: string) => {
     this.setState({ loading: true });
     try {
+      await this.loadChainData();
+      await this.loadChainJsonRpc();
       const storage = new KeyValueStorage();
       const wallet = await Wallet.init({ chains: this.state.chains, storage, mnemonic });
       const client = await Client.init({
@@ -112,10 +127,63 @@ class App extends React.Component<{}> {
       this.subscribeToEvents();
       await this.checkPersistedState();
     } catch (e) {
+      console.error(e);
       this.setState({ loading: false });
       throw e;
     }
   };
+
+  public getAllNamespaces() {
+    const namespaces: string[] = [];
+    DEFAULT_CHAINS.forEach(chainId => {
+      const [namespace] = chainId.split(":");
+      if (!namespaces.includes(namespace)) {
+        namespaces.push(namespace);
+      }
+    });
+    return namespaces;
+  }
+
+  public async loadChainData(): Promise<void> {
+    const namespaces = this.getAllNamespaces();
+    const chainData: ChainNamespaces = {};
+    await Promise.all(
+      namespaces.map(async namespace => {
+        let chains: ChainsMap | undefined;
+        try {
+          chains = await apiGetChainNamespace(namespace);
+        } catch (e) {
+          console.error(e);
+          // ignore error
+        }
+        if (typeof chains !== "undefined") {
+          chainData[namespace] = chains;
+        }
+      }),
+    );
+    this.setState({ chainData });
+  }
+
+  public async loadChainJsonRpc(): Promise<void> {
+    const namespaces = this.getAllNamespaces();
+    const jsonrpc: Record<string, ChainJsonRpc> = {};
+    await Promise.all(
+      namespaces.map(async namespace => {
+        let rpc: ChainJsonRpc | undefined;
+        try {
+          rpc = await apiGetChainJsonRpc(namespace);
+        } catch (e) {
+          console.error(e);
+          // ignore error
+        }
+        if (typeof rpc !== "undefined") {
+          jsonrpc[namespace] = rpc;
+        }
+      }),
+    );
+
+    this.setState({ jsonrpc });
+  }
 
   public importMnemonic = async (mnemonic: string) => {
     this.resetApp();
@@ -123,7 +191,8 @@ class App extends React.Component<{}> {
   };
 
   public resetApp = async () => {
-    this.setState({ ...INITIAL_STATE });
+    const { chainData, jsonrpc } = this.state;
+    this.setState({ ...INITIAL_STATE, chainData, jsonrpc });
   };
 
   public subscribeToEvents = () => {
@@ -164,18 +233,23 @@ class App extends React.Component<{}> {
           throw new Error("Wallet is not initialized");
         }
         // tslint:disable-next-line
-        console.log("EVENT", CLIENT_EVENTS.session.request, requestEvent.request);
+        console.log("EVENT", "session_request", requestEvent.request);
         const chainId = requestEvent.chainId || this.state.chains[0];
+        const [namespace] = chainId.split(":");
         try {
           // TODO: needs improvement
-          const requiresApproval = this.state.wallet.auth[chainId].assert(requestEvent.request);
+          const requiresApproval = this.state.jsonrpc[namespace].methods.sign.includes(
+            requestEvent.request.method,
+          );
           if (requiresApproval) {
             this.setState({ requests: [...this.state.requests, requestEvent] });
           } else {
-            const response = await this.state.wallet.resolve(requestEvent.request, chainId);
+            const result = await this.state.wallet.request(requestEvent.request, { chainId });
+            const response = formatJsonRpcResult(requestEvent.request.id, result);
             await this.respondRequest(requestEvent.topic, response);
           }
         } catch (e) {
+          console.error(e);
           const response = formatJsonRpcError(requestEvent.request.id, e.message);
           await this.respondRequest(requestEvent.topic, response);
         }
@@ -348,17 +422,17 @@ class App extends React.Component<{}> {
         throw new Error("Wallet is not initialized");
       }
       const chainId = requestEvent.chainId || this.state.chains[0];
-      const response = await this.state.wallet.approve(requestEvent.request as any, chainId);
+
+      const result = await this.state.wallet.request(requestEvent.request as any, { chainId });
+      const response = formatJsonRpcResult(requestEvent.request.id, result);
       this.state.client.respond({
         topic: requestEvent.topic,
         response,
       });
-    } catch (error) {
-      console.error(error);
-      this.state.client.respond({
-        topic: requestEvent.topic,
-        response: formatJsonRpcError(requestEvent.request.id, "Failed or Rejected Request"),
-      });
+    } catch (e) {
+      console.error(e);
+      const response = formatJsonRpcError(requestEvent.request.id, e.message);
+      this.state.client.respond({ topic: requestEvent.topic, response });
     }
 
     await this.removeFromPending(requestEvent);
@@ -369,10 +443,13 @@ class App extends React.Component<{}> {
     if (typeof this.state.client === "undefined") {
       throw new Error("Client is not initialized");
     }
-    this.state.client.respond({
-      topic: requestEvent.topic,
-      response: formatJsonRpcError(requestEvent.request.id, "Failed or Rejected Request"),
-    });
+    const error = ERROR.JSONRPC_REQUEST_METHOD_REJECTED.format();
+    const response = {
+      id: requestEvent.request.id,
+      jsonrpc: requestEvent.request.jsonrpc,
+      error,
+    };
+    this.state.client.respond({ topic: requestEvent.topic, response });
     await this.removeFromPending(requestEvent);
     await this.resetCard();
   };
@@ -380,12 +457,13 @@ class App extends React.Component<{}> {
   // ---- Render --------------------------------------------------------------//
 
   public renderCard = () => {
-    const { accounts, sessions, chains, requests, card } = this.state;
+    const { chainData, accounts, sessions, chains, requests, card } = this.state;
     let content: JSX.Element | undefined;
     if (isProposalCard(card)) {
       const { proposal } = card.data;
       content = (
         <ProposalCard
+          chainData={chainData}
           proposal={proposal}
           approveSession={this.approveSession}
           rejectSession={this.rejectSession}
@@ -395,6 +473,7 @@ class App extends React.Component<{}> {
       const { requestEvent, peer } = card.data;
       content = (
         <RequestCard
+          chainData={chainData}
           chainId={requestEvent.chainId || chains[0]}
           requestEvent={requestEvent}
           metadata={peer.metadata}
@@ -405,7 +484,12 @@ class App extends React.Component<{}> {
     } else if (isSessionCard(card)) {
       const { session } = card.data;
       content = (
-        <SessionCard session={session} resetCard={this.resetCard} disconnect={this.disconnect} />
+        <SessionCard
+          chainData={chainData}
+          session={session}
+          resetCard={this.resetCard}
+          disconnect={this.disconnect}
+        />
       );
     } else if (isSettingsCard(card)) {
       const { mnemonic, chains } = card.data;
@@ -413,6 +497,7 @@ class App extends React.Component<{}> {
     } else {
       content = (
         <DefaultCard
+          chainData={chainData}
           accounts={accounts}
           sessions={sessions}
           requests={requests}

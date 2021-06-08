@@ -1,5 +1,6 @@
 import React, { PropsWithChildren, FC } from "react";
 import styled from "styled-components";
+import { ChainData } from "caip-api";
 
 import Asset from "./Asset";
 import Button from "./Button";
@@ -7,7 +8,13 @@ import Column from "./Column";
 import Loader from "./Loader";
 
 import { getChainMetadata } from "../chains";
-import { AccountAction, ellipseAddress, AccountBalances, ChainMetadata } from "../helpers";
+import {
+  AccountAction,
+  ellipseAddress,
+  AccountBalances,
+  ChainMetadata,
+  ChainNamespaces,
+} from "../helpers";
 import { fonts } from "../styles";
 
 interface AccountStyleProps {
@@ -75,6 +82,7 @@ const SBlockchainChildrenContainer = styled(SFullWidthContainer)`
 `;
 
 interface BlockchainProps {
+  chainData: ChainNamespaces;
   fetching?: boolean;
   active?: boolean;
   chainId: string;
@@ -84,36 +92,55 @@ interface BlockchainProps {
   actions?: AccountAction[];
 }
 
+interface BlockchainDisplayData {
+  data: ChainData;
+  meta: ChainMetadata;
+}
+
+function getBlockchainDisplayData(
+  chainId: string,
+  chainData: ChainNamespaces,
+): BlockchainDisplayData | undefined {
+  const [namespace, reference] = chainId.split(":");
+  let meta: ChainMetadata;
+  try {
+    meta = getChainMetadata(chainId);
+  } catch (e) {
+    return undefined;
+  }
+  const data: ChainData = chainData[namespace][reference];
+  if (typeof data === "undefined") return undefined;
+  return { data, meta };
+}
+
 const Blockchain: FC<PropsWithChildren<BlockchainProps>> = (
   props: PropsWithChildren<BlockchainProps>,
 ) => {
-  const { fetching, chainId, address, onClick, active, balances, actions } = props;
-  let chainMeta: ChainMetadata;
-  try {
-    chainMeta = getChainMetadata(chainId);
-  } catch (e) {
-    return null;
-  }
+  const { chainData, fetching, chainId, address, onClick, active, balances, actions } = props;
+  if (!Object.keys(chainData).length) return null;
+  const chain = getBlockchainDisplayData(chainId, chainData);
+  if (typeof chain === "undefined") return null;
+  const name = chain.meta.name || chain.data.name;
   const account = typeof address !== "undefined" ? `${address}@${chainId}` : undefined;
   const assets =
     typeof account !== "undefined" && typeof balances !== "undefined" ? balances[account] : [];
   return (
     <React.Fragment>
       <SAccount
-        rgb={chainMeta.rgb}
+        rgb={chain.meta.rgb}
         onClick={() => onClick && onClick(props.chainId)}
         className={active ? "active" : ""}
       >
         <SChain>
-          <img src={chainMeta.logo} alt={chainMeta.name} />
-          <p>{chainMeta.name}</p>
+          <img src={chain.meta.logo} alt={name} />
+          <p>{name}</p>
         </SChain>
         {!!address && <p>{ellipseAddress(address)}</p>}
         <SBlockchainChildrenContainer>
           {fetching ? (
             <Column center>
               <SContainer>
-                <Loader rgb={`rgb(${chainMeta.rgb})`} />
+                <Loader rgb={`rgb(${chain.meta.rgb})`} />
               </SContainer>
             </Column>
           ) : (
@@ -122,7 +149,7 @@ const Blockchain: FC<PropsWithChildren<BlockchainProps>> = (
                 <SFullWidthContainer>
                   <h6>Balances</h6>
                   <Column center>
-                    {assets.map((asset) => (
+                    {assets.map(asset => (
                       <Asset key={asset.symbol} asset={asset} />
                     ))}
                   </Column>
@@ -131,11 +158,11 @@ const Blockchain: FC<PropsWithChildren<BlockchainProps>> = (
               {!!actions && actions.length ? (
                 <SFullWidthContainer>
                   <h6>Methods</h6>
-                  {actions.map((action) => (
+                  {actions.map(action => (
                     <SAction
                       key={action.method}
                       left
-                      rgb={chainMeta.rgb}
+                      rgb={chain.meta.rgb}
                       onClick={() => action.callback(chainId)}
                     >
                       {action.method}

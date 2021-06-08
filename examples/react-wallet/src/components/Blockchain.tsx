@@ -1,8 +1,9 @@
 import * as React from "react";
 import styled from "styled-components";
+import { ChainData } from "caip-api";
 
 import { getChainMetadata } from "../chains";
-import { ChainMetadata, ellipseAddress } from "../helpers";
+import { ChainMetadata, ChainNamespaces, ellipseAddress } from "../helpers";
 
 interface AccountStyleProps {
   rgb: string;
@@ -38,24 +39,44 @@ const SChain = styled.div`
 `;
 
 interface BlockchainProps {
+  chainData: ChainNamespaces;
   chainId: string;
   address?: string;
 }
 
-const Blockchain = (props: BlockchainProps) => {
-  const { chainId, address } = props;
-  let chainMeta: ChainMetadata;
+interface BlockchainDisplayData {
+  data: ChainData;
+  meta: ChainMetadata;
+}
+
+function getBlockchainDisplayData(
+  chainId: string,
+  chainData: ChainNamespaces,
+): BlockchainDisplayData | undefined {
+  const [namespace, reference] = chainId.split(":");
+  let meta: ChainMetadata;
   try {
-    chainMeta = getChainMetadata(chainId);
+    meta = getChainMetadata(chainId);
   } catch (e) {
-    return null;
+    return undefined;
   }
+  const data: ChainData = chainData[namespace][reference];
+  if (typeof data === "undefined") return undefined;
+  return { data, meta };
+}
+
+const Blockchain = (props: BlockchainProps) => {
+  const { chainData, chainId, address } = props;
+  if (!Object.keys(chainData).length) return null;
+  const chain = getBlockchainDisplayData(chainId, chainData);
+  if (typeof chain === "undefined") return null;
+  const name = chain.meta.name || chain.data.name;
   return (
     <React.Fragment>
-      <SAccount rgb={chainMeta.rgb}>
+      <SAccount rgb={chain.meta.rgb}>
         <SChain>
-          <img src={chainMeta.logo} alt={chainMeta.name} />
-          <p>{chainMeta.name}</p>
+          <img src={chain.meta.logo} alt={name} />
+          <p>{name}</p>
         </SChain>
         {!!address && <p>{ellipseAddress(address)}</p>}
       </SAccount>

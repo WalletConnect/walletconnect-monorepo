@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import { AssetData, GasPrices, ParsedTx } from "./types";
 
-const api: AxiosInstance = axios.create({
+const ethereumApi: AxiosInstance = axios.create({
   baseURL: "https://ethereum-api.xyz",
   timeout: 30000, // 30 secs
   headers: {
@@ -12,7 +12,9 @@ const api: AxiosInstance = axios.create({
 
 export async function apiGetAccountAssets(address: string, chainId: string): Promise<AssetData[]> {
   const ethChainId = chainId.split(":")[1];
-  const response = await api.get(`/account-assets?address=${address}&chainId=${ethChainId}`);
+  const response = await ethereumApi.get(
+    `/account-assets?address=${address}&chainId=${ethChainId}`,
+  );
   const { result } = response.data;
   return result;
 }
@@ -22,20 +24,22 @@ export async function apiGetAccountTransactions(
   chainId: string,
 ): Promise<ParsedTx[]> {
   const ethChainId = chainId.split(":")[1];
-  const response = await api.get(`/account-transactions?address=${address}&chainId=${ethChainId}`);
+  const response = await ethereumApi.get(
+    `/account-transactions?address=${address}&chainId=${ethChainId}`,
+  );
   const { result } = response.data;
   return result;
 }
 
 export const apiGetAccountNonce = async (address: string, chainId: string): Promise<number> => {
   const ethChainId = chainId.split(":")[1];
-  const response = await api.get(`/account-nonce?address=${address}&chainId=${ethChainId}`);
+  const response = await ethereumApi.get(`/account-nonce?address=${address}&chainId=${ethChainId}`);
   const { result } = response.data;
   return result;
 };
 
 export const apiGetGasPrices = async (): Promise<GasPrices> => {
-  const response = await api.get(`/gas-prices`);
+  const response = await ethereumApi.get(`/gas-prices`);
   const { result } = response.data;
   return result;
 };
