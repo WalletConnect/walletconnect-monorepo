@@ -32,6 +32,8 @@ in {
         "--nodekey=1107ad8e44fe7dc924bb9d388d588832cdc4273efb2623e8609c8085d0d2154c"
         "--persist-peers=true"
         "--keep-alive=true"
+        "--swap=false"
+        "--rln-relay=false"
         "--rpc=false"
         "--relay=true"
         "--store=true"

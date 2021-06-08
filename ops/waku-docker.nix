@@ -26,7 +26,6 @@ let
     PID=$!
     sleep 10 # wait for rpc server to start
 
-    wakuWC=$(${dnsutils}/bin/dig +short waku.walletconnect.org | ${coreutils}/bin/tr -d '\n')
     while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
       sleep 1
     done
@@ -60,7 +59,7 @@ let
       --nodekey=$(cat /key/nodekey) \
       --keep-alive=true \
       --swap=false \
-      --rln-relay=true \
+      --rln-relay=false \
       --rpc=true \
       --rpc-address=0.0.0.0 \
       --persist-peers=true \
