@@ -32,7 +32,6 @@ dockerLoad=docker load -i build/$@ \
 		| tee build/$@-img \
 		| xargs -I {} docker tag {}
 buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && cp -f -L result build/$@
-buildHealth=nix-build --attr health --argstr githash $(GITHASH) && cp -f -L result build/$@
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/master.tar.gz
 buildCaddy=nix-build  $(caddySrc) --attr docker && cp -f -L result build/$@
 buildWaku=nix-build ./ops/waku-docker.nix --attr docker && cp -f -L result build/$@
@@ -101,15 +100,6 @@ ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildRelay)"
 else
 	$(buildRelay)
-endif
-	$(dockerLoad) $(relayImage)
-	$(log_end)
-
-build-img-health: dirs nix-volume ## builds relay docker image inside of docker
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildHealth)"
-else
-	$(buildHealth)
 endif
 	$(dockerLoad) $(relayImage)
 	$(log_end)
@@ -188,7 +178,6 @@ cachix: clean dirs ## pushes docker images to cachix
 	cachix push walletconnect $(shell $(buildRelay))
 	cachix push walletconnect $(shell $(buildWaku))
 	cachix push walletconnect $(shell $(buildCaddy))
-	cachix push walletconnect $(shell $(buildHealth))
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true
