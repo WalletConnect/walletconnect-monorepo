@@ -51,6 +51,7 @@ class WalletConnectProvider extends ProviderEngine {
         qrcodeModal: this.qrcode ? this.qrcodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
         storageId: opts?.storageId,
+        signingMethods: opts?.signingMethods,
         clientMeta: opts?.clientMeta,
       });
     this.rpc = opts.rpc || null;

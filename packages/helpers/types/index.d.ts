@@ -240,6 +240,7 @@ declare module "@walletconnect/types" {
     bridge?: string;
     uri?: string;
     storageId?: string;
+    signingMethods?: string[];
     session?: IWalletConnectSession;
     storage?: ISessionStorage;
     clientMeta?: IClientMeta;
@@ -301,6 +302,7 @@ declare module "@walletconnect/types" {
     qrcode?: boolean;
     chainId?: number;
     storageId?: string;
+    signingMethods?: string[];
     qrcodeModalOptions?: IQRCodeModalOptions;
     clientMeta?: IClientMeta;
   }

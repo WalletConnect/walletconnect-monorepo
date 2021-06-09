@@ -9,7 +9,7 @@ export interface WalletClientOpts {
   rpcURL: string;
 }
 
-export class WalletTestClient {
+export class WalletClient {
   readonly provider: WalletConnectWeb3Provider;
   readonly signer: ethers.Wallet;
   readonly chainId: number;

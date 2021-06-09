@@ -36,6 +36,7 @@ class WCRpcConnection extends EventEmitter implements IWCRpcConnection {
         qrcodeModal: this.qrcode ? QRCodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
         storageId: opts?.storageId,
+        signingMethods: opts?.signingMethods,
         clientMeta: opts?.clientMeta,
       });
 
