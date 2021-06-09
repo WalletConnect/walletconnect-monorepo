@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@pedrouid/pino-utils": "^1.0.1",
+    "@pedrouid/timestamp": "^1.0.0",
     "@types/pino": "^6.3.5",
     "axios": "^0.21.1",
     "clientv1": "npm:@walletconnect/client@^1.4.1",

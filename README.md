@@ -8,7 +8,7 @@ The following dependencies are required for relay server:
 
 - git
 - make
-- docker
+- docker version 20.10
 
 To setup the local redis and relay server you can run:
 
@@ -66,4 +66,3 @@ test-staging         tests client against staging.walletconnect.org
 ## License
 
 LGPL-3.0
-

@@ -2,31 +2,16 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
 import { safeJsonStringify } from "safe-json-utils";
 
-import { SubscriptionService } from "./subscription";
-import { NotificationService } from "./notification";
-import { RedisService } from "./redis";
 import { LegacySocketMessage, Subscription } from "./types";
-import { WebSocketService } from "./ws";
 import { HttpService } from "./http";
+import { LEGACY_CONTEXT, LEGACY_MESSAGE_TYPE, LEGACY_EVENTS } from "./constants";
 
 export class LegacyService {
-  public subscription: SubscriptionService;
+  public context = LEGACY_CONTEXT;
 
-  public context = "legacy";
-
-  constructor(
-    public server: HttpService,
-    public logger: Logger,
-    public redis: RedisService,
-    public ws: WebSocketService,
-    public notification: NotificationService,
-  ) {
+  constructor(public server: HttpService, public logger: Logger) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
-    this.redis = redis;
-    this.ws = ws;
-    this.notification = notification;
-    this.subscription = new SubscriptionService(this.server, this.logger, this.redis, this.ws);
     this.initialize();
   }
 
@@ -36,10 +21,10 @@ export class LegacyService {
 
     try {
       switch (message.type) {
-        case "pub":
+        case LEGACY_MESSAGE_TYPE.pub:
           await this.onPublishRequest(socketId, message);
           break;
-        case "sub":
+        case LEGACY_MESSAGE_TYPE.sub:
           await this.onSubscribeRequest(socketId, message);
           break;
         default:
@@ -55,17 +40,26 @@ export class LegacyService {
 
   private initialize(): void {
     this.logger.trace(`Initialized`);
+    this.registerEventListeners();
+  }
+
+  private registerEventListeners() {
+    this.server.events.on(
+      LEGACY_EVENTS.publish,
+      async (socketId: string, message: LegacySocketMessage) =>
+        await this.checkActiveSubscriptions(socketId, message),
+    );
+    this.server.events.on(
+      LEGACY_EVENTS.subscribe,
+      async (socketId: string, message: LegacySocketMessage) =>
+        await this.checkCachedMessages(socketId, message.topic),
+    );
   }
 
   private async onPublishRequest(socketId: string, message: LegacySocketMessage) {
     this.logger.debug(`Publish Request Received`);
     this.logger.trace({ type: "method", method: "onPublishRequest", socketId, message });
-
-    if (!message.silent) {
-      await this.notification.push(message.topic);
-    }
-
-    await this.searchSubscriptions(socketId, message);
+    this.server.events.emit(LEGACY_EVENTS.publish, socketId, message);
   }
 
   private async onSubscribeRequest(socketId: string, message: LegacySocketMessage) {
@@ -73,18 +67,16 @@ export class LegacyService {
     this.logger.debug(`Subscribe Request Received`);
     this.logger.trace({ type: "method", method: "onSubscribeRequest", socketId, message });
     const subscriber = { topic, socketId };
-
-    this.subscription.set(subscriber);
-
-    await this.pushCachedMessages(socketId, topic);
+    this.server.subscription.set(subscriber, true);
+    this.server.events.emit(LEGACY_EVENTS.subscribe, socketId, message);
   }
 
-  private async searchSubscriptions(socketId: string, message: LegacySocketMessage) {
-    this.logger.debug(`Searching subscriptions`);
-    this.logger.trace({ type: "method", method: "searchSubscriptions", socketId, message });
-    const subscriptions = this.subscription.get(message.topic, socketId);
+  private async checkActiveSubscriptions(socketId: string, message: LegacySocketMessage) {
+    this.logger.debug(`Checking Active subscriptions`);
+    this.logger.trace({ type: "method", method: "checkActiveSubscriptions", socketId, message });
+    const subscriptions = this.server.subscription.get(message.topic, socketId, true);
     this.logger.debug(`Found ${subscriptions.length} subscriptions`);
-    this.logger.trace({ type: "method", method: "searchSubscriptions", subscriptions });
+    this.logger.trace({ type: "method", method: "checkActiveSubscriptions", subscriptions });
     if (subscriptions.length) {
       await Promise.all(
         subscriptions.map((subscriber: Subscription) =>
@@ -92,16 +84,16 @@ export class LegacyService {
         ),
       );
     } else {
-      await this.redis.setLegacyCached(message);
+      await this.server.redis.setLegacyCached(message);
     }
   }
 
-  private async pushCachedMessages(socketId: string, topic: string) {
-    this.logger.debug(`Pushing Cached Messages`);
-    this.logger.trace({ type: "method", method: "pushCachedMessages", socketId, topic });
-    const messages = await this.redis.getLegacyCached(topic);
+  private async checkCachedMessages(socketId: string, topic: string) {
+    this.logger.debug(`Checking Cached Messages`);
+    this.logger.trace({ type: "method", method: "checkCachedMessages", socketId, topic });
+    const messages = await this.server.redis.getLegacyCached(topic);
     this.logger.debug(`Found ${messages.length} cached messages`);
-    this.logger.trace({ type: "method", method: "pushCachedMessages", messages });
+    this.logger.trace({ type: "method", method: "checkCachedMessages", messages });
     if (messages && messages.length) {
       await Promise.all(
         messages.map((message: LegacySocketMessage) => this.pushSubscription(socketId, message)),
@@ -109,21 +101,13 @@ export class LegacyService {
     }
   }
 
-  private async pushSubscription(socketId: string, message: LegacySocketMessage): Promise<void> {
-    this.socketSend(socketId, message);
-  }
-
-  private async socketSend(socketId: string, message: LegacySocketMessage) {
-    try {
-      this.ws.send(socketId, safeJsonStringify(message));
+  private async pushSubscription(socketId: string, message: LegacySocketMessage) {
+    const success = this.server.ws.send(socketId, safeJsonStringify(message));
+    if (success) {
       this.logger.info(`Outgoing Legacy Socket Message`);
       this.logger.debug({ type: "payload", direction: "outgoing", socketId, message });
-    } catch (e) {
-      await this.onFailedPush(message);
+    } else {
+      await this.server.redis.setLegacyCached(message);
     }
-  }
-
-  private async onFailedPush(message: LegacySocketMessage): Promise<void> {
-    await this.redis.setLegacyCached(message);
   }
 }

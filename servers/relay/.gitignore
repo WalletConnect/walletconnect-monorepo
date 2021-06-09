@@ -29,6 +29,3 @@ zip
 .nyc_output
 tsconfig.tsbuildinfo
 test.db
-setup
-result
-ops/grafana/grafana.ini
