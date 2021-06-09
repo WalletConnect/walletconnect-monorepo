@@ -38,225 +38,225 @@ describe("WCEthereumProvider", function() {
   this.timeout(30_000);
   let testNetwork: TestNetwork;
 
-  // before(async () => {
-  //   testNetwork = await TestNetwork.init({
-  //     chainId: CHAIN_ID,
-  //     port: PORT,
-  //     genesisAccounts: DEFAULT_GENESIS_ACCOUNTS,
-  //   });
-  // });
+  before(async () => {
+    testNetwork = await TestNetwork.init({
+      chainId: CHAIN_ID,
+      port: PORT,
+      genesisAccounts: DEFAULT_GENESIS_ACCOUNTS,
+    });
+  });
 
-  // after(async () => {
-  //   await testNetwork.close();
-  // });
+  after(async () => {
+    await testNetwork.close();
+  });
 
-  // it("instantiate successfully", () => {
-  //   const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
-  //   expect(!!provider).to.be.true;
-  // });
+  it("instantiate successfully", () => {
+    const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+    expect(!!provider).to.be.true;
+  });
 
-  // it("enable successfully web3", async () => {
-  //   const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
-  //   const walletClient = new WalletClient(provider, {
-  //     chainId: CHAIN_ID,
-  //     privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-  //   });
-  //   await Promise.all([
-  //     walletClient.approveSession(),
-  //     new Promise<void>(async resolve => {
-  //       const providerAccounts = await provider.enable();
-  //       expect(providerAccounts).to.eql([wallet.address]);
+  it("enable successfully web3", async () => {
+    const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+    const walletClient = new WalletClient(provider, {
+      chainId: CHAIN_ID,
+      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+    });
+    await Promise.all([
+      walletClient.approveSession(),
+      new Promise<void>(async resolve => {
+        const providerAccounts = await provider.enable();
+        expect(providerAccounts).to.eql([wallet.address]);
 
-  //       const web3Provider = new Web3(provider as any);
+        const web3Provider = new Web3(provider as any);
 
-  //       const web3Accounts = await web3Provider.eth.getAccounts();
-  //       expect(web3Accounts).to.eql([wallet.address]);
+        const web3Accounts = await web3Provider.eth.getAccounts();
+        expect(web3Accounts).to.eql([wallet.address]);
 
-  //       const web3ChainId = await web3Provider.eth.getChainId();
-  //       expect(web3ChainId).to.eql(CHAIN_ID);
+        const web3ChainId = await web3Provider.eth.getChainId();
+        expect(web3ChainId).to.eql(CHAIN_ID);
 
-  //       resolve();
-  //     }),
-  //   ]);
-  // });
+        resolve();
+      }),
+    ]);
+  });
 
-  // it("enable successfully ethers", async () => {
-  //   const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
-  //   const walletClient = new WalletClient(provider, {
-  //     chainId: CHAIN_ID,
-  //     privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-  //   });
-  //   await Promise.all([
-  //     walletClient.approveSession(),
-  //     new Promise<void>(async resolve => {
-  //       const providerAccounts = await provider.enable();
-  //       expect(providerAccounts).to.eql([wallet.address]);
+  it("enable successfully ethers", async () => {
+    const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+    const walletClient = new WalletClient(provider, {
+      chainId: CHAIN_ID,
+      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+    });
+    await Promise.all([
+      walletClient.approveSession(),
+      new Promise<void>(async resolve => {
+        const providerAccounts = await provider.enable();
+        expect(providerAccounts).to.eql([wallet.address]);
 
-  //       const web3Provider = new ethers.providers.Web3Provider(provider);
+        const web3Provider = new ethers.providers.Web3Provider(provider);
 
-  //       const web3Accounts = await web3Provider.listAccounts();
-  //       expect(web3Accounts).to.eql([wallet.address]);
+        const web3Accounts = await web3Provider.listAccounts();
+        expect(web3Accounts).to.eql([wallet.address]);
 
-  //       const web3Network = await web3Provider.getNetwork();
+        const web3Network = await web3Provider.getNetwork();
 
-  //       expect(web3Network.chainId).to.equal(CHAIN_ID);
+        expect(web3Network.chainId).to.equal(CHAIN_ID);
 
-  //       resolve();
-  //     }),
-  //   ]);
-  // });
+        resolve();
+      }),
+    ]);
+  });
 
-  // it("create contract ethers", async () => {
-  //   const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
-  //   const walletClient = new WalletClient(provider, {
-  //     chainId: CHAIN_ID,
-  //     privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-  //   });
-  //   await Promise.all([
-  //     walletClient.approveSessionAndRequest(),
-  //     new Promise<void>(async resolve => {
-  //       try {
-  //         const providerAccounts = await provider.enable();
-  //         expect(providerAccounts).to.eql([wallet.address]);
+  it.skip("create contract ethers", async () => {
+    const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+    const walletClient = new WalletClient(provider, {
+      chainId: CHAIN_ID,
+      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+    });
+    await Promise.all([
+      walletClient.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([wallet.address]);
 
-  //         const web3Provider = new ethers.providers.Web3Provider(provider);
-  //         const signer = await web3Provider.getSigner();
-  //         const erc20Factory = new ERC20Token__factory(signer);
-  //         const erc20 = await erc20Factory.deploy("The test token", "tst", 18);
-  //         await erc20.deployed();
-  //         const balanceToMint = ethers.utils.parseEther("500");
-  //         const mintTx = await erc20.mint(wallet.address, balanceToMint);
-  //         await mintTx.wait();
-  //         const tokenBalance = await erc20.balanceOf(wallet.address);
-  //         expect(tokenBalance.eq(balanceToMint)).to.be.true;
-  //       } catch (error) {
-  //         // console.log(error);
-  //         // expect(error).to.be.false;
-  //       }
-  //       resolve();
-  //     }),
-  //   ]);
-  // });
+          const web3Provider = new ethers.providers.Web3Provider(provider);
+          const signer = await web3Provider.getSigner();
+          const erc20Factory = new ERC20Token__factory(signer);
+          const erc20 = await erc20Factory.deploy("The test token", "tst", 18);
+          await erc20.deployed();
+          const balanceToMint = ethers.utils.parseEther("500");
+          const mintTx = await erc20.mint(wallet.address, balanceToMint);
+          await mintTx.wait();
+          const tokenBalance = await erc20.balanceOf(wallet.address);
+          expect(tokenBalance.eq(balanceToMint)).to.be.true;
+        } catch (error) {
+          // console.log(error);
+          // expect(error).to.be.false;
+        }
+        resolve();
+      }),
+    ]);
+  });
 
-  // it("create contract web3", async () => {
-  //   const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
-  //   const walletClient = new WalletClient(provider, {
-  //     chainId: CHAIN_ID,
-  //     privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-  //   });
-  //   await Promise.all([
-  //     walletClient.approveSessionAndRequest(),
-  //     new Promise<void>(async resolve => {
-  //       try {
-  //         const providerAccounts = await provider.enable();
-  //         expect(providerAccounts).to.eql([wallet.address]);
+  it.skip("create contract web3", async () => {
+    const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+    const walletClient = new WalletClient(provider, {
+      chainId: CHAIN_ID,
+      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+    });
+    await Promise.all([
+      walletClient.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([wallet.address]);
 
-  //         const web3Provider = new Web3(provider as any);
-  //         const erc20Factory = new web3Provider.eth.Contract(JSON.parse(JSON.stringify(_abi)));
-  //         const erc20 = await erc20Factory
-  //           .deploy({ data: _bytecode, arguments: ["The test token", "tst", 18] })
-  //           .send({ from: providerAccounts[0] });
+          const web3Provider = new Web3(provider as any);
+          const erc20Factory = new web3Provider.eth.Contract(JSON.parse(JSON.stringify(_abi)));
+          const erc20 = await erc20Factory
+            .deploy({ data: _bytecode, arguments: ["The test token", "tst", 18] })
+            .send({ from: providerAccounts[0] });
 
-  //         const balanceToMint = ethers.utils.parseEther("500");
-  //         await new Promise<void>((resolve, reject) => {
-  //           erc20.methods
-  //             .mint(providerAccounts[0], balanceToMint.toHexString())
-  //             .send({ from: providerAccounts[0] })
-  //             .on("receipt", function() {
-  //               resolve();
-  //             })
-  //             .on("error", function(error, receipt) {
-  //               // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
-  //               reject(error);
-  //             });
-  //         });
+          const balanceToMint = ethers.utils.parseEther("500");
+          await new Promise<void>((resolve, reject) => {
+            erc20.methods
+              .mint(providerAccounts[0], balanceToMint.toHexString())
+              .send({ from: providerAccounts[0] })
+              .on("receipt", function() {
+                resolve();
+              })
+              .on("error", function(error, receipt) {
+                // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
+                reject(error);
+              });
+          });
 
-  //         const balance = await erc20.methods
-  //           .balanceOf(providerAccounts[0])
-  //           .call({ from: providerAccounts[0] });
-  //         expect(balanceToMint.toString() === balance).to.be.true;
-  //       } catch (error) {
-  //         expect(error).to.be.false;
-  //       }
-  //       resolve();
-  //     }),
-  //   ]);
-  // });
+          const balance = await erc20.methods
+            .balanceOf(providerAccounts[0])
+            .call({ from: providerAccounts[0] });
+          expect(balanceToMint.toString() === balance).to.be.true;
+        } catch (error) {
+          expect(error).to.be.false;
+        }
+        resolve();
+      }),
+    ]);
+  });
 
-  // it.skip("sign transaction ethers", async () => {
-  //   const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
-  //   const walletClient = new WalletClient(provider, {
-  //     chainId: CHAIN_ID,
-  //     privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-  //   });
-  //   await Promise.all([
-  //     walletClient.approveSessionAndRequest(),
-  //     new Promise<void>(async resolve => {
-  //       try {
-  //         const providerAccounts = await provider.enable();
-  //         expect(providerAccounts).to.eql([wallet.address]);
+  it.skip("sign transaction ethers", async () => {
+    const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+    const walletClient = new WalletClient(provider, {
+      chainId: CHAIN_ID,
+      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+    });
+    await Promise.all([
+      walletClient.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([wallet.address]);
 
-  //         const web3Provider = new ethers.providers.Web3Provider(provider);
-  //         const signer = await web3Provider.getSigner();
-  //         // const balanceBefore = await web3Provider.getBalance(providerAccounts[0]);
-  //         const randomWallet = ethers.Wallet.createRandom();
-  //         const balanceToSend = ethers.utils.parseEther("3");
-  //         const unsignedTx = {
-  //           to: randomWallet.address,
-  //           value: balanceToSend.toHexString(),
-  //           from: providerAccounts[0],
-  //         };
-  //         // const unsignedTx = signer.populateTransaction({
-  //         //   to: randomWallet.address,
-  //         //   value: balanceToSend.toHexString(),
-  //         //   from: providerAccounts[0],
-  //         // });
-  //         const signedTx = await signer.signTransaction(unsignedTx); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
-  //         // const signedTx = await provider.sendAsyncPromise("eth_signTransaction", [unsignedTx]); // ERROR Does not resolve
-  //         const txhash = await provider.request({
-  //           method: "eth_sendRawTransaction",
-  //           params: [signedTx],
-  //         });
-  //         expect(txhash).to.be.true;
-  //         const balanceAfter = await web3Provider.getBalance(signer._address);
-  //         expect(balanceToSend.eq(balanceAfter)).to.be.true;
-  //       } catch (error) {
-  //         // const testing = "JUST FOR TEST";
-  //       }
-  //       resolve();
-  //     }),
-  //   ]);
-  // });
+          const web3Provider = new ethers.providers.Web3Provider(provider);
+          const signer = await web3Provider.getSigner();
+          // const balanceBefore = await web3Provider.getBalance(providerAccounts[0]);
+          const randomWallet = ethers.Wallet.createRandom();
+          const balanceToSend = ethers.utils.parseEther("3");
+          const unsignedTx = {
+            to: randomWallet.address,
+            value: balanceToSend.toHexString(),
+            from: providerAccounts[0],
+          };
+          // const unsignedTx = signer.populateTransaction({
+          //   to: randomWallet.address,
+          //   value: balanceToSend.toHexString(),
+          //   from: providerAccounts[0],
+          // });
+          const signedTx = await signer.signTransaction(unsignedTx); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
+          // const signedTx = await provider.sendAsyncPromise("eth_signTransaction", [unsignedTx]); // ERROR Does not resolve
+          const txhash = await provider.request({
+            method: "eth_sendRawTransaction",
+            params: [signedTx],
+          });
+          expect(txhash).to.be.true;
+          const balanceAfter = await web3Provider.getBalance(signer._address);
+          expect(balanceToSend.eq(balanceAfter)).to.be.true;
+        } catch (error) {
+          // const testing = "JUST FOR TEST";
+        }
+        resolve();
+      }),
+    ]);
+  });
 
-  // it.skip("create sign ethers", async () => {
-  //   const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
-  //   const walletClient = new WalletClient(provider, {
-  //     chainId: CHAIN_ID,
-  //     privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-  //   });
-  //   await Promise.all([
-  //     walletClient.approveSessionAndRequest(),
-  //     new Promise<void>(async resolve => {
-  //       try {
-  //         const providerAccounts = await provider.enable();
-  //         expect(providerAccounts).to.eql([wallet.address]);
+  it.skip("create sign ethers", async () => {
+    const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+    const walletClient = new WalletClient(provider, {
+      chainId: CHAIN_ID,
+      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+    });
+    await Promise.all([
+      walletClient.approveSessionAndRequest(),
+      new Promise<void>(async resolve => {
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([wallet.address]);
 
-  //         const web3Provider = new ethers.providers.Web3Provider(provider);
-  //         const signer = await web3Provider.getSigner();
-  //         const msg = "Hello world";
-  //         const msg2 = ethers.utils.keccak256(
-  //           "0x\x19Ethereum Signed Message:\n" + msg.length + msg,
-  //         );
-  //         const signature = await signer.signMessage(msg2);
-  //         const verify = ethers.utils.verifyMessage(msg, signature);
-  //         const testWallet = new ethers.Wallet(DEFAULT_GENESIS_ACCOUNTS[0].privateKey);
-  //         const sig2 = await testWallet.signMessage(msg);
-  //         const add2 = ethers.utils.verifyMessage(msg, sig2);
-  //       } catch (error) {
-  //         expect(error).to.be.false;
-  //       }
-  //       resolve();
-  //     }),
-  //   ]);
-  // });
+          const web3Provider = new ethers.providers.Web3Provider(provider);
+          const signer = await web3Provider.getSigner();
+          const msg = "Hello world";
+          const msg2 = ethers.utils.keccak256(
+            "0x\x19Ethereum Signed Message:\n" + msg.length + msg,
+          );
+          const signature = await signer.signMessage(msg2);
+          const verify = ethers.utils.verifyMessage(msg, signature);
+          const testWallet = new ethers.Wallet(DEFAULT_GENESIS_ACCOUNTS[0].privateKey);
+          const sig2 = await testWallet.signMessage(msg);
+          const add2 = ethers.utils.verifyMessage(msg, sig2);
+        } catch (error) {
+          expect(error).to.be.false;
+        }
+        resolve();
+      }),
+    ]);
+  });
 });
