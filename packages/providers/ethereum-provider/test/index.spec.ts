@@ -60,6 +60,7 @@ describe("WCEthereumProvider", function() {
     const walletClient = new WalletClient(provider, {
       chainId: CHAIN_ID,
       privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+      rpcURL: RPC_URL,
     });
     await Promise.all([
       walletClient.approveSession(),
@@ -85,32 +86,38 @@ describe("WCEthereumProvider", function() {
     const walletClient = new WalletClient(provider, {
       chainId: CHAIN_ID,
       privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+      rpcURL: RPC_URL,
     });
     await Promise.all([
       walletClient.approveSession(),
       new Promise<void>(async resolve => {
-        const providerAccounts = await provider.enable();
-        expect(providerAccounts).to.eql([wallet.address]);
+        try {
+          const providerAccounts = await provider.enable();
+          expect(providerAccounts).to.eql([wallet.address]);
 
-        const web3Provider = new ethers.providers.Web3Provider(provider);
+          const web3Provider = new ethers.providers.Web3Provider(provider);
 
-        const web3Accounts = await web3Provider.listAccounts();
-        expect(web3Accounts).to.eql([wallet.address]);
+          const web3Accounts = await web3Provider.listAccounts();
+          expect(web3Accounts).to.eql([wallet.address]);
 
-        const web3Network = await web3Provider.getNetwork();
+          const web3Network = await web3Provider.getNetwork();
 
-        expect(web3Network.chainId).to.equal(CHAIN_ID);
+          expect(web3Network.chainId).to.equal(CHAIN_ID);
 
-        resolve();
+          resolve();
+        } catch (error) {
+          expect(error).to.be.false;
+        }
       }),
     ]);
   });
 
-  it.skip("create contract ethers", async () => {
+  it("create contract ethers", async () => {
     const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
     const walletClient = new WalletClient(provider, {
       chainId: CHAIN_ID,
       privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+      rpcURL: RPC_URL,
     });
     await Promise.all([
       walletClient.approveSessionAndRequest(),
@@ -143,6 +150,7 @@ describe("WCEthereumProvider", function() {
     const walletClient = new WalletClient(provider, {
       chainId: CHAIN_ID,
       privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+      rpcURL: RPC_URL,
     });
     await Promise.all([
       walletClient.approveSessionAndRequest(),
@@ -173,7 +181,7 @@ describe("WCEthereumProvider", function() {
 
           const balance = await erc20.methods
             .balanceOf(providerAccounts[0])
-            .call({ from: providerAccounts[0] });
+            .call({ from: providerAccounts[0], gas: 80000 }); // REVIEW 'Errors encountered in param 0: Invalid value null supplied to : RpcCallRequest/gas: QUANTITY | undefined, Invalid value null supplied to : RpcCallRequest/gasPrice: QUANTITY | undefined'
           expect(balanceToMint.toString() === balance).to.be.true;
         } catch (error) {
           expect(error).to.be.false;
@@ -188,6 +196,7 @@ describe("WCEthereumProvider", function() {
     const walletClient = new WalletClient(provider, {
       chainId: CHAIN_ID,
       privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+      rpcURL: RPC_URL,
     });
     await Promise.all([
       walletClient.approveSessionAndRequest(),
@@ -233,6 +242,7 @@ describe("WCEthereumProvider", function() {
     const walletClient = new WalletClient(provider, {
       chainId: CHAIN_ID,
       privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+      rpcURL: RPC_URL,
     });
     await Promise.all([
       walletClient.approveSessionAndRequest(),
