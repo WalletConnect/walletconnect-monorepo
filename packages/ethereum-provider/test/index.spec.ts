@@ -46,10 +46,10 @@ const TEST_WALLET_METADATA = {
 };
 
 describe("@walletconnect/ethereum-provider", () => {
-  let testnetwork: TestNetwork;
+  let testNetwork: TestNetwork;
 
   before(async () => {
-    testnetwork = await TestNetwork.init({
+    testNetwork = await TestNetwork.init({
       chainId: CHAIN_ID,
       port: PORT,
       genesisAccounts: DEFAULT_GENESIS_ACCOUNTS,
@@ -57,7 +57,7 @@ describe("@walletconnect/ethereum-provider", () => {
   });
 
   after(async () => {
-    await testnetwork.close();
+    await testNetwork.close();
   });
 
   it("Test enable", async () => {
