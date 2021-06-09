@@ -31,7 +31,8 @@ dockerLoad=docker load -i build/$@ \
 		| awk '{print $$NF}' \
 		| tee build/$@-img \
 		| xargs -I {} docker tag {}
-buildRelay=nix-build --attr docker --argstr githash $(GITHASH) && cp -f -L result build/$@
+buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && cp -f -L result build/$@
+buildHealth=nix-build --attr health --argstr githash $(GITHASH) && cp -f -L result build/$@
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/master.tar.gz
 buildCaddy=nix-build  $(caddySrc) --attr docker && cp -f -L result build/$@
 buildWaku=nix-build ./ops/waku-docker.nix --attr docker && cp -f -L result build/$@
@@ -100,6 +101,15 @@ ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildRelay)"
 else
 	$(buildRelay)
+endif
+	$(dockerLoad) $(relayImage)
+	$(log_end)
+
+build-img-health: dirs nix-volume ## builds relay docker image inside of docker
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildHealth)"
+else
+	$(buildHealth)
 endif
 	$(dockerLoad) $(relayImage)
 	$(log_end)
