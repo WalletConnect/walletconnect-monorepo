@@ -1,6 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 import { CosmosWallet } from "cosmos-wallet";
+import Long from "long";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { AccountData, coins, makeSignDoc, makeAuthInfoBytes } from "@cosmjs/proto-signing";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
@@ -79,6 +80,7 @@ function stringifySignDoc(signDoc: any) {
     ...signDoc,
     bodyBytes: toHex(signDoc.bodyBytes),
     authInfoBytes: toHex(signDoc.authInfoBytes),
+    accountNumber: signDoc.accountNumber.toString(16),
   };
 }
 
@@ -87,6 +89,7 @@ function parseSignDoc(signDoc: any) {
     ...signDoc,
     bodyBytes: fromHex(signDoc.bodyBytes),
     authInfoBytes: fromHex(signDoc.authInfoBytes),
+    accountNumber: new Long(signDoc.accountNumber),
   };
 }
 
@@ -217,9 +220,9 @@ describe("@walletconnect/cosmos-provider", () => {
     expect(!!directResult).to.be.true;
     expect((directResult as any).signature.signature).to.eql(TEST_COSMOS_DIRECT_SIGNATURE);
 
-    // cosmos_signDirect
+    // cosmos_signAmino
     const aminoResult = await provider.request({
-      method: "cosmos_signDirect",
+      method: "cosmos_signAmino",
       params: { signerAddress: TEST_COSMOS_ADDRESS, signDoc: TEST_COSMOS_INPUTS.amino },
     });
 
