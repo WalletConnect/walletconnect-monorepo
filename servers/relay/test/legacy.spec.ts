@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { Counter, Socket, TEST_RELAY_URL } from "./shared";
 import { getTestLegacy } from "./shared/message";
 
-describe("Legacy", () => {
+describe("LEGACY", () => {
   it("A can publish to B subscribed to same topic", async () => {
     const { pub, sub } = getTestLegacy();
 
@@ -85,17 +85,14 @@ describe("Legacy", () => {
 
     const socketA = new Socket(TEST_RELAY_URL);
     await socketA.open();
-
     await socketA.send(pub);
-
     const socketB = new Socket(TEST_RELAY_URL);
     await socketB.open();
-
     const counterB = new Counter();
 
     await Promise.all([
-      new Promise<void>(resolve => {
-        socketB.send(sub);
+      new Promise<void>(async resolve => {
+        await socketB.send(sub);
         resolve();
       }),
       new Promise<void>(resolve => {
@@ -108,28 +105,5 @@ describe("Legacy", () => {
     ]);
 
     expect(counterB.value).to.eql(1);
-
-    const socketC = new Socket(TEST_RELAY_URL);
-    await socketC.open();
-
-    const counterC = new Counter();
-
-    await Promise.all([
-      new Promise<void>(resolve => {
-        socketC.send(sub);
-        resolve();
-      }),
-      new Promise<void>((resolve, reject) => {
-        setTimeout(() => {
-          resolve();
-        }, 100);
-        socketC.on("message", () => {
-          counterC.tick();
-          reject("Socket C received message after B");
-        });
-      }),
-    ]);
-
-    expect(counterC.value).to.eql(0);
   });
 });

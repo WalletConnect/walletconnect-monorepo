@@ -27,7 +27,7 @@
     "watch": "tsc -p tsconfig.json --watch",
     "build": "run-s clean compile",
     "start": "npm run build && node ./dist",
-    "test": "env TS_NODE_PROJECT=\"tsconfig.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
+    "test": "env TS_NODE_PROJECT=\"tsconfig.json\" mocha --timeout 10000 --exit -r ts-node/register ./test/**/*.spec.ts",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
@@ -45,7 +45,7 @@
     "pino": "^6.11.0",
     "pino-pretty": "^4.3.0",
     "prom-client": "^13.0.0",
-    "redis": "^2.8.0",
+    "redis": "^3.1.2",
     "relay-provider": "^2.0.0-beta.0",
     "safe-json-utils": "^1.1.1",
     "tslib": "^2.1.0"
@@ -59,7 +59,7 @@
     "@types/node": "^14.14.21",
     "@types/redis": "^2.8.13",
     "@types/ws": "^6.0.1",
-    "chai": "^4.2.0",
+    "chai": "^4.3.4",
     "chai-http": "^4.3.0",
     "core-js": "^3.8.3",
     "mocha": "^8.2.1",

@@ -17,3 +17,7 @@ export function sha256(data: string): string {
     .update(data)
     .digest("hex");
 }
+
+export function isFloat(num: number): boolean {
+  return num % 1 != 0;
+}

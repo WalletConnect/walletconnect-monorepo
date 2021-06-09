@@ -25,13 +25,13 @@ providers:
     options:
       path:  /etc/grafana/provisioning/dashboards/hoststats.json
 
-  - name: Nginx Stats 
+  - name: Caddy Stats 
     folder: ''
     type: file
     editable: true
     allowUiUpdates: true
     options:
-      path:  /etc/grafana/provisioning/dashboards/nginxstats.json
+      path:  /etc/grafana/provisioning/dashboards/caddy.json
 
   - name: Redis Stats
     folder: ''
