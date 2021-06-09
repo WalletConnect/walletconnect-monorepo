@@ -188,6 +188,7 @@ cachix: clean dirs ## pushes docker images to cachix
 	cachix push walletconnect $(shell $(buildRelay))
 	cachix push walletconnect $(shell $(buildWaku))
 	cachix push walletconnect $(shell $(buildCaddy))
+	cachix push walletconnect $(shell $(buildHealth))
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true

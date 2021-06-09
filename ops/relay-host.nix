@@ -1,7 +1,7 @@
 {pkgs, config, ...}:
 
 {
-  virtualisation.docker.package = (import (import ../servers/relay/nix/sources.nix).nixpkgs {}).docker_20_10;
+  virtualisation.docker.package = (import (import ./nix/sources.nix).nixpkgs {}).docker_20_10;
   boot.kernel.sysctl = {
     "fs.file-max" = "1000000";
     "fs.nr_open" = "1048576";
