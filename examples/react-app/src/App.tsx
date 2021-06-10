@@ -622,7 +622,7 @@ class App extends React.Component<any, any> {
         method: "cosmos_signDirect",
         address,
         valid,
-        result,
+        result: result.signature.signature,
       };
 
       // display result
@@ -689,7 +689,7 @@ class App extends React.Component<any, any> {
         method: "cosmos_signAmino",
         address,
         valid,
-        result,
+        result: result.signature.signature,
       };
 
       // display result
