@@ -76,6 +76,15 @@ let
         sha512 = "cNwP4QapAls+xATU8zLLqPYa9qCbgwEyWEK7vE1oH91b3LfbUYwHtiWZ1+rv0X/mh/9cWNTo2Oi2Sah/QX0WwA==";
       };
     };
+    "@json-rpc-tools/utils-1.7.6" = {
+      name = "_at_json-rpc-tools_slash_utils";
+      packageName = "@json-rpc-tools/utils";
+      version = "1.7.6";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@json-rpc-tools/utils/-/utils-1.7.6.tgz";
+        sha512 = "HjA8x/U/Q78HRRe19yh8HVKoZ+Iaoo3YZjakJYxR+rw52NHo6jM+VE9b8+7ygkCFXl/EHID5wh/MkXaE/jGyYw==";
+      };
+    };
     "@json-rpc-tools/utils-2.0.0-beta.10" = {
       name = "_at_json-rpc-tools_slash_utils";
       packageName = "@json-rpc-tools/utils";
@@ -292,13 +301,13 @@ let
         sha512 = "Lwh0lzzqT5Pqh6z61P3c3P5nm6fzQK/MMHl9UKeneAeInVflBSz1O2EkX6gM6xfJd7FBXBY5purtLx7fUiZ7Hw==";
       };
     };
-    "@types/node-14.17.2" = {
+    "@types/node-14.17.3" = {
       name = "_at_types_slash_node";
       packageName = "@types/node";
-      version = "14.17.2";
+      version = "14.17.3";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@types/node/-/node-14.17.2.tgz";
-        sha512 = "sld7b/xmFum66AAKuz/rp/CUO8+98fMpyQ3SBfzzBNGMd/1iHBTAg9oyAvcYlAj46bpc74r91jSw2iFdnx29nw==";
+        url = "https://registry.npmjs.org/@types/node/-/node-14.17.3.tgz";
+        sha512 = "e6ZowgGJmTuXa3GyaPbTGxX17tnThl2aSSizrFthQ7m9uLGZBXiGhgE55cjRZTF5kjZvYn9EOPOMljdjwbflxw==";
       };
     };
     "@types/pino-6.3.8" = {
@@ -1543,13 +1552,13 @@ let
         sha512 = "qOo9F+dMUmC2Lcb4BbVvnKJxTPjCm+RRpe4gDuGrzkL7mEVl/djYSu2OdQ2Pa302N4oqkSg9ir6jaLWJ2USVpQ==";
       };
     };
-    "find-my-way-4.1.0" = {
+    "find-my-way-4.2.0" = {
       name = "find-my-way";
       packageName = "find-my-way";
-      version = "4.1.0";
+      version = "4.2.0";
       src = fetchurl {
-        url = "https://registry.npmjs.org/find-my-way/-/find-my-way-4.1.0.tgz";
-        sha512 = "UBD94MdO6cBi6E97XA0fBA9nwqw+xG5x1TYIPHats33gEi/kNqy7BWHAWx8QHCQQRSU5Txc0JiD8nzba39gvMQ==";
+        url = "https://registry.npmjs.org/find-my-way/-/find-my-way-4.2.0.tgz";
+        sha512 = "tCQamHBhGztfthDYuWxg6wvBJx7ei56+hxuPf5T5EnEekKk2rpBInN8i5/BvjxFvH50EdS09wCaPeY7FXtasDw==";
       };
     };
     "find-up-5.0.0" = {
@@ -1957,13 +1966,13 @@ let
         sha1 = "fa78bf5d2e6913c911ce9f819ee5146bb6d844e9";
       };
     };
-    "ipaddr.js-2.0.0" = {
+    "ipaddr.js-2.0.1" = {
       name = "ipaddr.js";
       packageName = "ipaddr.js";
-      version = "2.0.0";
+      version = "2.0.1";
       src = fetchurl {
-        url = "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-2.0.0.tgz";
-        sha512 = "S54H9mIj0rbxRIyrDMEuuER86LdlgUg9FSeZ8duQb6CUG2iRrA36MYVQBSprTF/ZeAwvyQ5mDGuNvIPM0BIl3w==";
+        url = "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-2.0.1.tgz";
+        sha512 = "1qTgH9NG+IIJ4yfKs2e6Pp1bZg8wbDbKHT21HrLIeYBTRLgMYKnMTPAuI3Lcs61nfx5h1xlXnbJtH1kX5/d/ng==";
       };
     };
     "is-arrayish-0.2.1" = {
@@ -4046,7 +4055,7 @@ let
         ];
       })
       sources."@json-rpc-tools/types-1.7.6"
-      sources."@json-rpc-tools/utils-1.6.1"
+      sources."@json-rpc-tools/utils-1.7.6"
       (sources."@json-rpc-tools/ws-connection-2.0.0-beta.10" // {
         dependencies = [
           sources."@json-rpc-tools/types-2.0.0-beta.10"
@@ -4075,7 +4084,7 @@ let
       sources."@types/cookiejar-2.1.2"
       sources."@types/core-js-2.5.4"
       sources."@types/mocha-8.2.2"
-      sources."@types/node-14.17.2"
+      sources."@types/node-14.17.3"
       sources."@types/pino-6.3.8"
       sources."@types/pino-pretty-4.7.0"
       sources."@types/pino-std-serializers-2.4.1"
@@ -4089,7 +4098,11 @@ let
       sources."@walletconnect/iso-crypto-1.4.1"
       sources."@walletconnect/socket-transport-1.4.1"
       sources."@walletconnect/types-1.4.1"
-      sources."@walletconnect/utils-1.4.1"
+      (sources."@walletconnect/utils-1.4.1" // {
+        dependencies = [
+          sources."@json-rpc-tools/utils-1.6.1"
+        ];
+      })
       sources."abbrev-1.1.1"
       sources."abstract-logging-2.0.1"
       sources."aes-js-3.1.2"
@@ -4271,7 +4284,7 @@ let
       sources."fastq-1.11.0"
       sources."file-uri-to-path-1.0.0"
       sources."fill-range-7.0.1"
-      sources."find-my-way-4.1.0"
+      sources."find-my-way-4.2.0"
       sources."find-up-5.0.0"
       sources."flat-5.0.2"
       sources."flatstr-1.0.12"
@@ -4323,7 +4336,7 @@ let
       sources."inherits-2.0.4"
       sources."ini-1.3.8"
       sources."ip-regex-2.1.0"
-      sources."ipaddr.js-2.0.0"
+      sources."ipaddr.js-2.0.1"
       sources."is-arrayish-0.2.1"
       sources."is-bigint-1.0.2"
       sources."is-binary-path-2.1.0"
