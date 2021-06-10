@@ -1,6 +1,12 @@
 import "mocha";
 import { expect } from "chai";
-import { CosmosWallet } from "cosmos-wallet";
+import {
+  CosmosWallet,
+  formatDirectSignDoc,
+  parseSignDocValues,
+  stringifyAccountDataValues,
+  stringifySignDocValues,
+} from "cosmos-wallet";
 import Long from "long";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { AccountData, coins, makeSignDoc, makeAuthInfoBytes } from "@cosmjs/proto-signing";
@@ -75,43 +81,14 @@ export const TEST_COSMOS_DIRECT_SIGNATURE =
 export const TEST_COSMOS_AMINO_SIGNATURE =
   "AnTrXtS2lr9CBwhTpRa8ZlKcVR9PeIXGaTpvodyJU05QvRKVjIkQfOZl5JhdkfxCY+a6rhwCOYVcbKQTJlMw4w==";
 
-function stringifySignDoc(signDoc: any) {
-  return {
-    ...signDoc,
-    bodyBytes: toHex(signDoc.bodyBytes),
-    authInfoBytes: toHex(signDoc.authInfoBytes),
-    accountNumber: signDoc.accountNumber.toString(16),
-  };
-}
-
-function parseSignDoc(signDoc: any) {
-  return {
-    ...signDoc,
-    bodyBytes: fromHex(signDoc.bodyBytes),
-    authInfoBytes: fromHex(signDoc.authInfoBytes),
-    accountNumber: new Long(signDoc.accountNumber),
-  };
-}
-
-function generateDirectSignDoc() {
-  const { fee, pubkey, gasLimit, accountNumber, sequence, bodyBytes } = TEST_COSMOS_INPUTS.direct;
-  const authInfoBytes = makeAuthInfoBytes([pubkey as any], fee, gasLimit, sequence);
-  const signDoc = makeSignDoc(fromHex(bodyBytes), authInfoBytes, CHAIN_ID, accountNumber);
-  return stringifySignDoc(signDoc);
-}
-
-function stringifyAccount(account: AccountData) {
-  return { ...account, pubkey: toHex(account.pubkey) };
-}
-
 async function getAccounts(wallet: CosmosWallet) {
-  return (await wallet.getAccounts()).map(stringifyAccount);
+  return (await wallet.getAccounts()).map(stringifyAccountDataValues);
 }
 
 async function signDirect(wallet: CosmosWallet, signerAddress: string, signDoc: any) {
-  const result = await wallet.signDirect(signerAddress, parseSignDoc(signDoc));
+  const result = await wallet.signDirect(signerAddress, parseSignDocValues(signDoc));
   return {
-    signed: stringifySignDoc(result.signed),
+    signed: stringifySignDocValues(result.signed),
     signature: result.signature,
   };
 }
@@ -213,9 +190,19 @@ describe("@walletconnect/cosmos-provider", () => {
     expect((accountsResult as any)[0].pubkey).to.eql(TEST_COSMOS_KEYPAIR.publicKey);
 
     // cosmos_signDirect
+    const { fee, pubkey, gasLimit, accountNumber, sequence, bodyBytes } = TEST_COSMOS_INPUTS.direct;
+    const signDoc = formatDirectSignDoc(
+      fee,
+      pubkey,
+      gasLimit,
+      accountNumber,
+      sequence,
+      bodyBytes,
+      CHAIN_ID,
+    );
     const directResult = await provider.request({
       method: "cosmos_signDirect",
-      params: { signerAddress: TEST_COSMOS_ADDRESS, signDoc: generateDirectSignDoc() },
+      params: { signerAddress: TEST_COSMOS_ADDRESS, signDoc: stringifySignDocValues(signDoc) },
     });
     expect(!!directResult).to.be.true;
     expect((directResult as any).signature.signature).to.eql(TEST_COSMOS_DIRECT_SIGNATURE);
