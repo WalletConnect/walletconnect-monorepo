@@ -22,8 +22,10 @@ import {
   DEFAULT_TEST_CHAINS,
   DEFAULT_CHAINS,
   DEFAULT_LOGGER,
-  DEFAULT_METHODS,
+  DEFAULT_EIP155_METHODS,
+  DEFAULT_COSMOS_METHODS,
   DEFAULT_RELAY_PROVIDER,
+  DEFAULT_MAIN_CHAINS,
 } from "./constants";
 import {
   Cards,
@@ -70,6 +72,7 @@ export interface AppState {
   wallet: Wallet | undefined;
   loading: boolean;
   scanner: boolean;
+  testnet: boolean;
   chains: string[];
   chainData: ChainNamespaces;
   jsonrpc: Record<string, ChainJsonRpc>;
@@ -86,6 +89,7 @@ export const INITIAL_STATE: AppState = {
   wallet: undefined,
   loading: false,
   scanner: false,
+  testnet: true,
   chains: DEFAULT_TEST_CHAINS,
   chainData: {},
   jsonrpc: {},
@@ -106,16 +110,16 @@ class App extends React.Component<{}> {
     };
   }
   public componentDidMount() {
-    this.init();
+    this.init(this.state.chains);
   }
 
-  public init = async (mnemonic?: string) => {
-    this.setState({ loading: true });
+  public init = async (chains: string[], mnemonic?: string) => {
+    this.setState({ chains, loading: true });
     try {
       await this.loadChainData();
       await this.loadChainJsonRpc();
       const storage = new KeyValueStorage();
-      const wallet = await Wallet.init({ chains: this.state.chains, storage, mnemonic });
+      const wallet = await Wallet.init({ chains, storage, mnemonic });
       const client = await Client.init({
         controller: true,
         relayProvider: DEFAULT_RELAY_PROVIDER,
@@ -187,7 +191,15 @@ class App extends React.Component<{}> {
 
   public importMnemonic = async (mnemonic: string) => {
     this.resetApp();
-    this.init(mnemonic);
+    this.init(this.state.chains, mnemonic);
+  };
+
+  public toggleTestnets = () => {
+    this.resetApp();
+    const testnet = !this.state.testnet;
+    this.setState({ testnet });
+    const chains = testnet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
+    this.init(chains);
   };
 
   public resetApp = async () => {
@@ -207,6 +219,13 @@ class App extends React.Component<{}> {
         throw new Error("Client is not initialized");
       }
       console.log("EVENT", "session_proposal");
+      const supportedNamespaces: string[] = [];
+      this.state.chains.forEach(chainId => {
+        const [namespace] = chainId.split(":");
+        if (!supportedNamespaces.includes(namespace)) {
+          supportedNamespaces.push(namespace);
+        }
+      });
       const unsupportedChains = [];
       proposal.permissions.blockchain.chains.forEach(chainId => {
         if (this.state.chains.includes(chainId)) return;
@@ -217,7 +236,11 @@ class App extends React.Component<{}> {
       }
       const unsupportedMethods = [];
       proposal.permissions.jsonrpc.methods.forEach(method => {
-        if (DEFAULT_METHODS.includes(method)) return;
+        if (
+          (supportedNamespaces.includes("eip155") && DEFAULT_EIP155_METHODS.includes(method)) ||
+          (supportedNamespaces.includes("cosmos") && DEFAULT_COSMOS_METHODS.includes(method))
+        )
+          return;
         unsupportedMethods.push(method);
       });
       if (unsupportedMethods.length) {
