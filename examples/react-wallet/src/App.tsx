@@ -22,8 +22,10 @@ import {
   DEFAULT_TEST_CHAINS,
   DEFAULT_CHAINS,
   DEFAULT_LOGGER,
-  DEFAULT_METHODS,
+  DEFAULT_EIP155_METHODS,
+  DEFAULT_COSMOS_METHODS,
   DEFAULT_RELAY_PROVIDER,
+  DEFAULT_MAIN_CHAINS,
 } from "./constants";
 import {
   Cards,
@@ -70,6 +72,7 @@ export interface AppState {
   wallet: Wallet | undefined;
   loading: boolean;
   scanner: boolean;
+  testnet: boolean;
   chains: string[];
   chainData: ChainNamespaces;
   jsonrpc: Record<string, ChainJsonRpc>;
@@ -86,6 +89,7 @@ export const INITIAL_STATE: AppState = {
   wallet: undefined,
   loading: false,
   scanner: false,
+  testnet: true,
   chains: DEFAULT_TEST_CHAINS,
   chainData: {},
   jsonrpc: {},
@@ -106,16 +110,17 @@ class App extends React.Component<{}> {
     };
   }
   public componentDidMount() {
-    this.init();
+    this.init(this.state.chains);
   }
 
-  public init = async (mnemonic?: string) => {
-    this.setState({ loading: true });
+  public init = async (chains: string[], mnemonic?: string) => {
+    console.log("loading true");
+    this.setState({ chains, loading: true });
     try {
       await this.loadChainData();
       await this.loadChainJsonRpc();
       const storage = new KeyValueStorage();
-      const wallet = await Wallet.init({ chains: this.state.chains, storage, mnemonic });
+      const wallet = await Wallet.init({ chains, storage, mnemonic });
       const client = await Client.init({
         controller: true,
         relayProvider: DEFAULT_RELAY_PROVIDER,
@@ -123,11 +128,13 @@ class App extends React.Component<{}> {
         storage,
       });
       const accounts = await wallet.getAccounts();
+      console.log("loading false");
       this.setState({ loading: false, storage, client, wallet, accounts });
       this.subscribeToEvents();
       await this.checkPersistedState();
     } catch (e) {
       console.error(e);
+      console.log("loading false");
       this.setState({ loading: false });
       throw e;
     }
@@ -186,13 +193,37 @@ class App extends React.Component<{}> {
   }
 
   public importMnemonic = async (mnemonic: string) => {
-    this.resetApp();
-    this.init(mnemonic);
+    await this.resetApp();
+    await this.init(this.state.chains, mnemonic);
+  };
+
+  public toggleTestnets = async () => {
+    await this.resetApp();
+    const testnet = !this.state.testnet;
+    this.setState({ testnet });
+    const chains = testnet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
+    await this.init(chains);
   };
 
   public resetApp = async () => {
-    const { chainData, jsonrpc } = this.state;
-    this.setState({ ...INITIAL_STATE, chainData, jsonrpc });
+    console.log("loading true");
+    this.setState({ loading: true });
+    try {
+      const { chainData, jsonrpc } = this.state;
+      await Promise.all(
+        this.state.sessions.map(session =>
+          this.state.client?.disconnect({
+            topic: session.topic,
+            reason: ERROR.USER_DISCONNECTED.format(),
+          }),
+        ),
+      );
+      console.log("loading false");
+      this.setState({ ...INITIAL_STATE, loading: false, chainData, jsonrpc });
+    } catch (e) {
+      console.log("loading false");
+      this.setState({ loading: false });
+    }
   };
 
   public subscribeToEvents = () => {
@@ -207,6 +238,13 @@ class App extends React.Component<{}> {
         throw new Error("Client is not initialized");
       }
       console.log("EVENT", "session_proposal");
+      const supportedNamespaces: string[] = [];
+      this.state.chains.forEach(chainId => {
+        const [namespace] = chainId.split(":");
+        if (!supportedNamespaces.includes(namespace)) {
+          supportedNamespaces.push(namespace);
+        }
+      });
       const unsupportedChains = [];
       proposal.permissions.blockchain.chains.forEach(chainId => {
         if (this.state.chains.includes(chainId)) return;
@@ -215,9 +253,13 @@ class App extends React.Component<{}> {
       if (unsupportedChains.length) {
         return this.state.client.reject({ proposal });
       }
-      const unsupportedMethods = [];
+      const unsupportedMethods: string[] = [];
       proposal.permissions.jsonrpc.methods.forEach(method => {
-        if (DEFAULT_METHODS.includes(method)) return;
+        if (
+          (supportedNamespaces.includes("eip155") && DEFAULT_EIP155_METHODS.includes(method)) ||
+          (supportedNamespaces.includes("cosmos") && DEFAULT_COSMOS_METHODS.includes(method))
+        )
+          return;
         unsupportedMethods.push(method);
       });
       if (unsupportedMethods.length) {
@@ -237,10 +279,16 @@ class App extends React.Component<{}> {
         const chainId = requestEvent.chainId || this.state.chains[0];
         const [namespace] = chainId.split(":");
         try {
+          console.log(
+            "this.state.jsonrpc[namespace].methods.sign",
+            this.state.jsonrpc[namespace].methods.sign,
+          );
           // TODO: needs improvement
           const requiresApproval = this.state.jsonrpc[namespace].methods.sign.includes(
             requestEvent.request.method,
           );
+          console.log("requestEvent.request.method", requestEvent.request.method);
+          console.log("requiresApproval", requiresApproval);
           if (requiresApproval) {
             this.setState({ requests: [...this.state.requests, requestEvent] });
           } else {
@@ -457,7 +505,7 @@ class App extends React.Component<{}> {
   // ---- Render --------------------------------------------------------------//
 
   public renderCard = () => {
-    const { chainData, accounts, sessions, chains, requests, card } = this.state;
+    const { testnet, chainData, accounts, sessions, chains, requests, card } = this.state;
     let content: JSX.Element | undefined;
     if (isProposalCard(card)) {
       const { proposal } = card.data;
@@ -493,7 +541,15 @@ class App extends React.Component<{}> {
       );
     } else if (isSettingsCard(card)) {
       const { mnemonic, chains } = card.data;
-      content = <SettingsCard mnemonic={mnemonic} chains={chains} resetCard={this.resetCard} />;
+      content = (
+        <SettingsCard
+          mnemonic={mnemonic}
+          testnet={testnet}
+          chains={chains}
+          toggleTestnets={this.toggleTestnets}
+          resetCard={this.resetCard}
+        />
+      );
     } else {
       content = (
         <DefaultCard

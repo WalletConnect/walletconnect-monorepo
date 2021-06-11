@@ -24,6 +24,60 @@ export function getChainRequestRender(request: JsonRpcRequest): ChainRequestRend
   let params = [{ label: "Method", value: request.method }];
 
   switch (request.method) {
+    case "cosmos_signDirect":
+      params = [
+        ...params,
+        {
+          label: "SignerAddress",
+          value: request.params.signerAddress,
+        },
+        {
+          label: "ChainId",
+          value: request.params.signDoc.chainId,
+        },
+        {
+          label: "AccountNumber",
+          value: request.params.signDoc.accountNumber,
+        },
+        {
+          label: "AuthInfo",
+          value: request.params.signDoc.authInfoBytes,
+        },
+        {
+          label: "Body",
+          value: request.params.signDoc.bodyBytes,
+        },
+      ];
+      break;
+    case "cosmos_signAmino":
+      params = [
+        ...params,
+        {
+          label: "SignerAddress",
+          value: request.params.signerAddress,
+        },
+        {
+          label: "ChainId",
+          value: request.params.signDoc.chain_id,
+        },
+        {
+          label: "AccountNumber",
+          value: request.params.signDoc.account_number,
+        },
+        {
+          label: "Messages",
+          value: JSON.stringify(request.params.signDoc.msgs, null, "\t"),
+        },
+        {
+          label: "Sequence",
+          value: request.params.signDoc.sequence,
+        },
+        {
+          label: "Memo",
+          value: request.params.signDoc.memo,
+        },
+      ];
+      break;
     default:
       params = [
         ...params,
