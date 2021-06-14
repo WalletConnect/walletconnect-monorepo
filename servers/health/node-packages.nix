@@ -67,15 +67,6 @@ let
         sha512 = "kySvzJTKTxBMD2B81hFrDXWONrLf97mNqBp7G0fyJfEZFjzFEniDc2nYewMTrvQJ5c1gdaFVqPxx27/4JU2kFA==";
       };
     };
-    "@json-rpc-tools/utils-1.6.1" = {
-      name = "_at_json-rpc-tools_slash_utils";
-      packageName = "@json-rpc-tools/utils";
-      version = "1.6.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/utils/-/utils-1.6.1.tgz";
-        sha512 = "cNwP4QapAls+xATU8zLLqPYa9qCbgwEyWEK7vE1oH91b3LfbUYwHtiWZ1+rv0X/mh/9cWNTo2Oi2Sah/QX0WwA==";
-      };
-    };
     "@json-rpc-tools/utils-1.7.6" = {
       name = "_at_json-rpc-tools_slash_utils";
       packageName = "@json-rpc-tools/utils";
@@ -112,15 +103,6 @@ let
         sha512 = "HaW78NszGzRZd9SeoI3JD11JqY+lubnaOx7Pewj5pfjqWXOEATpeKIFb9Z4t2WBUK2iryiXX3lzWwmYWgUL0Ug==";
       };
     };
-    "@pedrouid/iso-crypto-1.1.0" = {
-      name = "_at_pedrouid_slash_iso-crypto";
-      packageName = "@pedrouid/iso-crypto";
-      version = "1.1.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@pedrouid/iso-crypto/-/iso-crypto-1.1.0.tgz";
-        sha512 = "twi+tW67XT0BSOv4rsegnGo4TQMhfFswS/GY3KhrjFiNw3z9x+cMkfO+itNe1JZghQxsxHuhifvfsnG814g1hQ==";
-      };
-    };
     "@pedrouid/iso-crypto-2.0.0-beta.5" = {
       name = "_at_pedrouid_slash_iso-crypto";
       packageName = "@pedrouid/iso-crypto";
@@ -128,15 +110,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/@pedrouid/iso-crypto/-/iso-crypto-2.0.0-beta.5.tgz";
         sha512 = "fAoQunzXXyI1zwSe1bpFdyLPizvn5jAGwzgdAnkM9QF6lCHHwczF72+jMb5NWHliPLgYXydRah46vcfI6VtQuw==";
-      };
-    };
-    "@pedrouid/iso-random-1.2.1" = {
-      name = "_at_pedrouid_slash_iso-random";
-      packageName = "@pedrouid/iso-random";
-      version = "1.2.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@pedrouid/iso-random/-/iso-random-1.2.1.tgz";
-        sha512 = "C35NqYMmLsg61WDiEup4OwjRhgfZIcK4BL+Qg49xowHUJ+f7/LFZCO+TGuQqoXFAj1beKIOpUN33f0fqV7zneQ==";
       };
     };
     "@pedrouid/iso-random-2.0.0-beta.5" = {
@@ -382,76 +355,31 @@ let
         sha512 = "sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==";
       };
     };
-    "@walletconnect/browser-utils-1.4.1" = {
-      name = "_at_walletconnect_slash_browser-utils";
-      packageName = "@walletconnect/browser-utils";
-      version = "1.4.1";
+    "@walletconnect/client-2.0.0-beta.11" = {
+      name = "_at_walletconnect_slash_client";
+      packageName = "@walletconnect/client";
+      version = "2.0.0-beta.11";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/browser-utils/-/browser-utils-1.4.1.tgz";
-        sha512 = "ONrkPSI/27o1Wj8kUwE0uUZFk0GDCDQBJy614GsrhcwuQwJEW/B+nXPQ+Ca/4WvQySM5hWVHp1gO1kozSUkh3A==";
+        url = "https://registry.npmjs.org/@walletconnect/client/-/client-2.0.0-beta.11.tgz";
+        sha512 = "CVx6o5MPMv6kZaUVP7s7ZByCKViXn6sUACDrZ8V47BJF3M1v1VaZ3xNOHZ1kgEK+n1NAzPJFeZdYJ8PcCvjNVA==";
       };
     };
-    "@walletconnect/core-1.4.1" = {
-      name = "_at_walletconnect_slash_core";
-      packageName = "@walletconnect/core";
-      version = "1.4.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/core/-/core-1.4.1.tgz";
-        sha512 = "NzWvhk4akI2uhORUxMDMS/8yAdfp+nzvb5QdTE0eTD0WOrK16qAfYLSU/IjFc2J2lqhuPVxfO2XV7QoxgCXfwA==";
-      };
-    };
-    "@walletconnect/iso-crypto-1.4.1" = {
-      name = "_at_walletconnect_slash_iso-crypto";
-      packageName = "@walletconnect/iso-crypto";
-      version = "1.4.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/iso-crypto/-/iso-crypto-1.4.1.tgz";
-        sha512 = "rzfqM/DFhzNxBriMCU4DOarPkH+Brgll+2a2YeO6zHgMlwZtBKi5mMgzBwbDC3XygOvKbcRTB9G9hr8uYn+i5g==";
-      };
-    };
-    "@walletconnect/socket-transport-1.4.1" = {
-      name = "_at_walletconnect_slash_socket-transport";
-      packageName = "@walletconnect/socket-transport";
-      version = "1.4.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/socket-transport/-/socket-transport-1.4.1.tgz";
-        sha512 = "/5Mhu4bu3tS52LqTlmmjx5x/N89XqbuT0YMobvQ+k/m+VqSeBDntqIjwBt7XiFlCbrUTq3/yTajavGFxWFB6pA==";
-      };
-    };
-    "@walletconnect/types-1.4.1" = {
+    "@walletconnect/types-2.0.0-beta.11" = {
       name = "_at_walletconnect_slash_types";
       packageName = "@walletconnect/types";
-      version = "1.4.1";
+      version = "2.0.0-beta.11";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/types/-/types-1.4.1.tgz";
-        sha512 = "lzS9NbXjVb5N+W/UnCZAflxjLtYepUi4ev1IeFozSvr/cWxAhEe/sjixe7WEIpYklW27kfBhKccMH/KjUoRC7w==";
+        url = "https://registry.npmjs.org/@walletconnect/types/-/types-2.0.0-beta.11.tgz";
+        sha512 = "v/KvfE0SVwdVJPD07qgcMtR8KVlnzgVPEsqQTPH/KoDcgObGo+sq9wf3IVrf4Rhwr8LeRALKuEFz4FLWyvnEmQ==";
       };
     };
-    "@walletconnect/types-2.0.0-beta.10" = {
-      name = "_at_walletconnect_slash_types";
-      packageName = "@walletconnect/types";
-      version = "2.0.0-beta.10";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/types/-/types-2.0.0-beta.10.tgz";
-        sha512 = "rDS/utK2vcM34wOU90lPcuHkXTmOSU8bD5zZLSoT7GURheYFUca/eIlHQIhzEBENGkW5lcYLWkNhJavNgzrQgw==";
-      };
-    };
-    "@walletconnect/utils-1.4.1" = {
+    "@walletconnect/utils-2.0.0-beta.11" = {
       name = "_at_walletconnect_slash_utils";
       packageName = "@walletconnect/utils";
-      version = "1.4.1";
+      version = "2.0.0-beta.11";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/utils/-/utils-1.4.1.tgz";
-        sha512 = "JrVjcXmWVcU02fmVNZFBpJ48f84qyar24CF7szGv+k9ZxvU9J7XkM+Fic4790Dt3DaWhOzS9/eBUa+BEZcBbNw==";
-      };
-    };
-    "@walletconnect/utils-2.0.0-beta.10" = {
-      name = "_at_walletconnect_slash_utils";
-      packageName = "@walletconnect/utils";
-      version = "2.0.0-beta.10";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/utils/-/utils-2.0.0-beta.10.tgz";
-        sha512 = "ZwFpPr1bjalrFCAG3+dnmgKqhQPdTYT8c/cD5sygHCi1sVoE+IdObcRZqXWhHNEKkVq/e/7G8MDrGRNFFMUUeQ==";
+        url = "https://registry.npmjs.org/@walletconnect/utils/-/utils-2.0.0-beta.11.tgz";
+        sha512 = "EX6WSU6uURcSVryUQJpZTK6P7teSDRxL16QVveF5GTPfAHXpZbDcQhP4z0bRIPvnWba4UJu+8m9Fr97l9hEtmg==";
       };
     };
     "abbrev-1.1.1" = {
@@ -715,15 +643,6 @@ let
         sha512 = "1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==";
       };
     };
-    "bn.js-4.11.8" = {
-      name = "bn.js";
-      packageName = "bn.js";
-      version = "4.11.8";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/bn.js/-/bn.js-4.11.8.tgz";
-        sha512 = "ItfYfPLkWHUjckQCk8xC+LwxgK8NYcXywGigJgSwOP8Y2iyWT4f2vsZnoOXTTbo+o5yXmIUJ4gn5538SO5S3gA==";
-      };
-    };
     "boxen-4.2.0" = {
       name = "boxen";
       packageName = "boxen";
@@ -920,24 +839,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/cli-boxes/-/cli-boxes-2.2.1.tgz";
         sha512 = "y4coMcylgSCdVinjiDBuR8PCC2bLjyGTwEmPb9NHR/QaNU6EUOXcTY/s6VjGMD6ENSEaeQYHCY0GNGS5jfMwPw==";
-      };
-    };
-    "clientv1-npm:@walletconnect/client@1.4.1" = {
-      name = "clientv1";
-      packageName = "clientv1";
-      version = "npm:@walletconnect/client@1.4.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/client/-/client-1.4.1.tgz";
-        sha512 = "JRW+9+j9LwszY76/WcIumEiLmhX7eidorH9SFFmI2pFfbrhB6KLe87FaA106kxwZUyWKOLZ6jVV4d1urYSdEwA==";
-      };
-    };
-    "clientv2-npm:@walletconnect/client@2.0.0-beta.10" = {
-      name = "clientv2";
-      packageName = "clientv2";
-      version = "npm:@walletconnect/client@2.0.0-beta.10";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/client/-/client-2.0.0-beta.10.tgz";
-        sha512 = "H6wZ9LAc53Y7PfNtyq6cXlGBGTHC78/bbcqzPbW/433se1SGuZ+NQU/lod/Bf+GU2BxpfZfpPkxbRIb3B7NXCg==";
       };
     };
     "cliui-7.0.4" = {
@@ -1246,15 +1147,6 @@ let
         sha1 = "84c6e159b81904fdca59a0ef44cd870d31250f9a";
       };
     };
-    "detect-browser-5.2.0" = {
-      name = "detect-browser";
-      packageName = "detect-browser";
-      version = "5.2.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/detect-browser/-/detect-browser-5.2.0.tgz";
-        sha512 = "tr7XntDAu50BVENgQfajMLzacmSe34D+qZc4zjnniz0ZVuw/TZcLcyxHQjYpJTM36sGEkZZlYLnIM1hH7alTMA==";
-      };
-    };
     "detect-libc-1.0.3" = {
       name = "detect-libc";
       packageName = "detect-libc";
@@ -1550,6 +1442,15 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/fill-range/-/fill-range-7.0.1.tgz";
         sha512 = "qOo9F+dMUmC2Lcb4BbVvnKJxTPjCm+RRpe4gDuGrzkL7mEVl/djYSu2OdQ2Pa302N4oqkSg9ir6jaLWJ2USVpQ==";
+      };
+    };
+    "filter-obj-1.1.0" = {
+      name = "filter-obj";
+      packageName = "filter-obj";
+      version = "1.1.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/filter-obj/-/filter-obj-1.1.0.tgz";
+        sha1 = "9b311112bc6c6127a16e016c6c5d7f19e0805c5b";
       };
     };
     "find-my-way-4.2.0" = {
@@ -2252,15 +2153,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/joycon/-/joycon-2.2.5.tgz";
         sha512 = "YqvUxoOcVPnCp0VU1/56f+iKSdvIRJYPznH22BdXV3xMk75SFXhWeJkZ8C9XxUWt1b5x2X1SxuFygW1U0FmkEQ==";
-      };
-    };
-    "js-sha3-0.8.0" = {
-      name = "js-sha3";
-      packageName = "js-sha3";
-      version = "0.8.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/js-sha3/-/js-sha3-0.8.0.tgz";
-        sha512 = "gF1cRrHhIzNfToc802P800N8PpXS+evLLXfsVpowqmAFR9uwbi89WvXg2QspOmXL8QL86J4T1EpFu+yUkwJY3Q==";
       };
     };
     "js-yaml-4.0.0" = {
@@ -2992,13 +2884,13 @@ let
         sha512 = "M528Hph6wsSVOBiYUnGf+K/7w0hNshs/duGsNXPUCLH5XAqjEtiPGwNONLV0tBH8NoGb0mvD5JubnUTrujKDTg==";
       };
     };
-    "query-string-6.13.5" = {
+    "query-string-6.14.1" = {
       name = "query-string";
       packageName = "query-string";
-      version = "6.13.5";
+      version = "6.14.1";
       src = fetchurl {
-        url = "https://registry.npmjs.org/query-string/-/query-string-6.13.5.tgz";
-        sha512 = "svk3xg9qHR39P3JlHuD7g3nRnyay5mHbrPctEBDUxUkHRifPHXJDhBUycdCC0NBjXoDf44Gb+IsOZL1Uwn8M/Q==";
+        url = "https://registry.npmjs.org/query-string/-/query-string-6.14.1.tgz";
+        sha512 = "XDxAeVmpfu1/6IjyT/gXHOl+S0vQ9owggJ30hhWKdHAsNPOcasn5o9BW0eejZqL2e4vMjhAxoW3jVHcD6mbcYw==";
       };
     };
     "queue-microtask-1.2.3" = {
@@ -3170,15 +3062,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz";
         sha512 = "rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==";
-      };
-    };
-    "safe-json-utils-1.0.0" = {
-      name = "safe-json-utils";
-      packageName = "safe-json-utils";
-      version = "1.0.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/safe-json-utils/-/safe-json-utils-1.0.0.tgz";
-        sha512 = "n0hJm6BgX8wk3G+AS8MOQnfcA8dfE6ZMUfwkHUNx69YxPlU3HDaZTHXWto35Z+C4mOjK1odlT95WutkGC+0Idw==";
       };
     };
     "safe-json-utils-1.1.1" = {
@@ -3685,13 +3568,13 @@ let
         sha512 = "hPlt7ZACERQGf03M253ytLY3dHbGNGrAq9qIHWUY9XHYl1z7wYngSr3OQ5xmui8o2AaxsONxIzjafLUiWBo1Fg==";
       };
     };
-    "tslib-2.2.0" = {
+    "tslib-2.3.0" = {
       name = "tslib";
       packageName = "tslib";
-      version = "2.2.0";
+      version = "2.3.0";
       src = fetchurl {
-        url = "https://registry.npmjs.org/tslib/-/tslib-2.2.0.tgz";
-        sha512 = "gS9GVHRU+RGn5KQM2rllAlR3dU6m7AcpJKdtH8gFvQiC4Otgk98XnmMU+nZenHt/+VhnBPWwgrJsyrdcw6i23w==";
+        url = "https://registry.npmjs.org/tslib/-/tslib-2.3.0.tgz";
+        sha512 = "N82ooyxVNm6h1riLCoyS9e3fuJ3AMG2zIZs2Gd1ATcSFjSA23Q0fzjjZeh0jbJvWVDZ0cJT8yaNNaaXHzueNjg==";
       };
     };
     "tunnel-agent-0.6.0" = {
@@ -3811,24 +3694,6 @@ let
         sha512 = "DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==";
       };
     };
-    "walletconnect-types-v1-npm:@walletconnect/types@1.4.1" = {
-      name = "walletconnect-types-v1";
-      packageName = "walletconnect-types-v1";
-      version = "npm:@walletconnect/types@1.4.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/types/-/types-1.4.1.tgz";
-        sha512 = "lzS9NbXjVb5N+W/UnCZAflxjLtYepUi4ev1IeFozSvr/cWxAhEe/sjixe7WEIpYklW27kfBhKccMH/KjUoRC7w==";
-      };
-    };
-    "walletconnect-types-v2-npm:@walletconnect/types@2.0.0-beta.10" = {
-      name = "walletconnect-types-v2";
-      packageName = "walletconnect-types-v2";
-      version = "npm:@walletconnect/types@2.0.0-beta.10";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/types/-/types-2.0.0-beta.10.tgz";
-        sha512 = "rDS/utK2vcM34wOU90lPcuHkXTmOSU8bD5zZLSoT7GURheYFUca/eIlHQIhzEBENGkW5lcYLWkNhJavNgzrQgw==";
-      };
-    };
     "which-1.3.1" = {
       name = "which";
       packageName = "which";
@@ -3874,15 +3739,6 @@ let
         sha512 = "NsmoXalsWVDMGupxZ5R08ka9flZjjiLvHVAWYOKtiKM8ujtZWr9cRffak+uSE48+Ob8ObalXpwyeUiyDD6QFgg==";
       };
     };
-    "window-getters-1.0.0" = {
-      name = "window-getters";
-      packageName = "window-getters";
-      version = "1.0.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/window-getters/-/window-getters-1.0.0.tgz";
-        sha512 = "xyvEFq3x+7dCA7NFhqOmTMk0fPmmAzCUYL2svkw2LGBaXXQLRP0lFnfXHzysri9WZNMkzp/FD1u0w2Qc7Co+JA==";
-      };
-    };
     "window-getters-1.0.1" = {
       name = "window-getters";
       packageName = "window-getters";
@@ -3890,15 +3746,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/window-getters/-/window-getters-1.0.1.tgz";
         sha512 = "cojBfDeV58XEurDgj+rre15c7dvu27bWCPlOIpwQgreOsw6qQk0UGDR1hi7ZHKw5+L0AENUNNWGG2h4yr2Y3hQ==";
-      };
-    };
-    "window-metadata-1.0.0" = {
-      name = "window-metadata";
-      packageName = "window-metadata";
-      version = "1.0.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/window-metadata/-/window-metadata-1.0.0.tgz";
-        sha512 = "eYoXsZ9X4J+6xZgbHhNAatSR5bCtT409q8B+2Ol9ySx7qsdtgVZcNfox4qszFmKlGsFtT2b1Tcmcy69bRMObcg==";
       };
     };
     "window-metadata-1.0.1" = {
@@ -3944,15 +3791,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/write-file-atomic/-/write-file-atomic-3.0.3.tgz";
         sha512 = "AvHcyZ5JnSfq3ioSyjrBkH9yW4m7Ayk8/9My/DD9onKeu/94fwrMocemO2QAJFAlnnDN+ZDS+ZjAR5ua1/PV/Q==";
-      };
-    };
-    "ws-7.3.0" = {
-      name = "ws";
-      packageName = "ws";
-      version = "7.3.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/ws/-/ws-7.3.0.tgz";
-        sha512 = "iFtXzngZVXPGgpTlP1rBqsUK82p9tKqsWRPg5L56egiljujJT3vGAYnHANvFxBieXrTFavhzhxW52jnaWV+w2w==";
       };
     };
     "ws-7.4.6" = {
@@ -4051,7 +3889,6 @@ let
         dependencies = [
           sources."@json-rpc-tools/types-2.0.0-beta.10"
           sources."@json-rpc-tools/utils-2.0.0-beta.10"
-          sources."safe-json-utils-1.1.1"
         ];
       })
       sources."@json-rpc-tools/types-1.7.6"
@@ -4060,13 +3897,11 @@ let
         dependencies = [
           sources."@json-rpc-tools/types-2.0.0-beta.10"
           sources."@json-rpc-tools/utils-2.0.0-beta.10"
-          sources."safe-json-utils-1.1.1"
-          sources."ws-7.4.6"
         ];
       })
       sources."@pedrouid/environment-1.0.1"
-      sources."@pedrouid/iso-crypto-1.1.0"
-      sources."@pedrouid/iso-random-1.2.1"
+      sources."@pedrouid/iso-crypto-2.0.0-beta.5"
+      sources."@pedrouid/iso-random-2.0.0-beta.5"
       sources."@pedrouid/pino-utils-1.0.1"
       sources."@pedrouid/timestamp-1.0.0"
       sources."@sindresorhus/is-0.14.0"
@@ -4093,14 +3928,21 @@ let
       sources."@types/superagent-3.8.7"
       sources."@types/ws-6.0.4"
       sources."@ungap/promise-all-settled-1.1.2"
-      sources."@walletconnect/browser-utils-1.4.1"
-      sources."@walletconnect/core-1.4.1"
-      sources."@walletconnect/iso-crypto-1.4.1"
-      sources."@walletconnect/socket-transport-1.4.1"
-      sources."@walletconnect/types-1.4.1"
-      (sources."@walletconnect/utils-1.4.1" // {
+      (sources."@walletconnect/client-2.0.0-beta.11" // {
         dependencies = [
-          sources."@json-rpc-tools/utils-1.6.1"
+          sources."@json-rpc-tools/types-2.0.0-beta.10"
+          sources."@json-rpc-tools/utils-2.0.0-beta.10"
+        ];
+      })
+      (sources."@walletconnect/types-2.0.0-beta.11" // {
+        dependencies = [
+          sources."@json-rpc-tools/types-2.0.0-beta.10"
+        ];
+      })
+      (sources."@walletconnect/utils-2.0.0-beta.11" // {
+        dependencies = [
+          sources."@json-rpc-tools/types-2.0.0-beta.10"
+          sources."@json-rpc-tools/utils-2.0.0-beta.10"
         ];
       })
       sources."abbrev-1.1.1"
@@ -4152,7 +3994,6 @@ let
       sources."binary-extensions-2.2.0"
       sources."bindings-1.5.0"
       sources."bl-4.1.0"
-      sources."bn.js-4.11.8"
       (sources."boxen-4.2.0" // {
         dependencies = [
           sources."ansi-regex-5.0.0"
@@ -4190,18 +4031,6 @@ let
       sources."chownr-2.0.0"
       sources."ci-info-2.0.0"
       sources."cli-boxes-2.2.1"
-      sources."clientv1-npm:@walletconnect/client@1.4.1"
-      (sources."clientv2-npm:@walletconnect/client@2.0.0-beta.10" // {
-        dependencies = [
-          sources."@json-rpc-tools/types-2.0.0-beta.10"
-          sources."@json-rpc-tools/utils-2.0.0-beta.10"
-          sources."@walletconnect/types-2.0.0-beta.10"
-          sources."@walletconnect/utils-2.0.0-beta.10"
-          sources."safe-json-utils-1.1.1"
-          sources."window-getters-1.0.1"
-          sources."window-metadata-1.0.1"
-        ];
-      })
       (sources."cliui-7.0.4" // {
         dependencies = [
           sources."ansi-regex-5.0.0"
@@ -4248,17 +4077,11 @@ let
       sources."define-properties-1.1.3"
       sources."delayed-stream-1.0.0"
       sources."delegates-1.0.0"
-      sources."detect-browser-5.2.0"
       sources."detect-libc-1.0.3"
       sources."diff-5.0.0"
       sources."dot-prop-5.3.0"
       sources."duplexer3-0.1.4"
-      (sources."ecies-25519-2.0.0-beta.4" // {
-        dependencies = [
-          sources."@pedrouid/iso-crypto-2.0.0-beta.5"
-          sources."@pedrouid/iso-random-2.0.0-beta.5"
-        ];
-      })
+      sources."ecies-25519-2.0.0-beta.4"
       sources."emoji-regex-7.0.3"
       sources."enc-utils-3.0.0"
       sources."end-of-stream-1.4.4"
@@ -4284,6 +4107,7 @@ let
       sources."fastq-1.11.0"
       sources."file-uri-to-path-1.0.0"
       sources."fill-range-7.0.1"
+      sources."filter-obj-1.1.0"
       sources."find-my-way-4.2.0"
       sources."find-up-5.0.0"
       sources."flat-5.0.2"
@@ -4366,17 +4190,12 @@ let
       sources."isexe-2.0.0"
       sources."jmespath-0.15.0"
       sources."joycon-2.2.5"
-      sources."js-sha3-0.8.0"
       sources."js-yaml-4.0.0"
       sources."json-buffer-3.0.0"
       sources."json-parse-better-errors-1.0.2"
       sources."json-schema-traverse-0.4.1"
       sources."keyv-3.1.0"
-      (sources."keyvaluestorage-0.7.1" // {
-        dependencies = [
-          sources."safe-json-utils-1.1.1"
-        ];
-      })
+      sources."keyvaluestorage-0.7.1"
       sources."keyvaluestorage-interface-1.0.0"
       sources."latest-version-5.1.0"
       sources."leven-2.1.0"
@@ -4485,7 +4304,7 @@ let
       sources."punycode-2.1.1"
       sources."pupa-2.1.1"
       sources."qs-6.10.1"
-      sources."query-string-6.13.5"
+      sources."query-string-6.14.1"
       sources."queue-microtask-1.2.3"
       sources."quick-format-unescaped-4.0.3"
       sources."randombytes-2.1.0"
@@ -4511,7 +4330,7 @@ let
       sources."reusify-1.0.4"
       sources."rfdc-1.3.0"
       sources."safe-buffer-5.2.1"
-      sources."safe-json-utils-1.0.0"
+      sources."safe-json-utils-1.1.1"
       sources."safe-regex2-2.0.0"
       sources."secure-json-parse-2.4.0"
       sources."semver-7.3.5"
@@ -4576,7 +4395,7 @@ let
           sources."diff-4.0.2"
         ];
       })
-      sources."tslib-2.2.0"
+      sources."tslib-2.3.0"
       sources."tunnel-agent-0.6.0"
       sources."type-detect-4.0.8"
       sources."type-fest-0.8.1"
@@ -4600,12 +4419,6 @@ let
       sources."url-parse-lax-3.0.0"
       sources."util-deprecate-1.0.2"
       sources."validate-npm-package-license-3.0.4"
-      sources."walletconnect-types-v1-npm:@walletconnect/types@1.4.1"
-      (sources."walletconnect-types-v2-npm:@walletconnect/types@2.0.0-beta.10" // {
-        dependencies = [
-          sources."@json-rpc-tools/types-2.0.0-beta.10"
-        ];
-      })
       sources."which-2.0.2"
       sources."which-boxed-primitive-1.0.2"
       sources."wide-align-1.1.3"
@@ -4618,8 +4431,8 @@ let
           sources."strip-ansi-6.0.0"
         ];
       })
-      sources."window-getters-1.0.0"
-      sources."window-metadata-1.0.0"
+      sources."window-getters-1.0.1"
+      sources."window-metadata-1.0.1"
       sources."workerpool-6.1.0"
       (sources."wrap-ansi-7.0.0" // {
         dependencies = [
@@ -4632,7 +4445,7 @@ let
       })
       sources."wrappy-1.0.2"
       sources."write-file-atomic-3.0.3"
-      sources."ws-7.3.0"
+      sources."ws-7.4.6"
       sources."xdg-basedir-4.0.0"
       sources."y18n-5.0.8"
       sources."yallist-4.0.0"
