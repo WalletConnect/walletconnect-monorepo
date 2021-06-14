@@ -1,7 +1,7 @@
 import Timestamp from "@pedrouid/timestamp";
 import { formatJsonRpcResult } from "@json-rpc-tools/utils";
-import { Client as ClientV2, CLIENT_EVENTS } from "clientv2";
-import { PairingTypes, SessionTypes } from "walletconnect-types-v2";
+import { Client, CLIENT_EVENTS } from "@walletconnect/client";
+import { PairingTypes, SessionTypes } from "@walletconnect/types";
 
 import { metadata, permissions, state, chainId, request, result } from "../constants";
 import { getWsUrl } from "../utils";
@@ -18,8 +18,8 @@ export async function testRelayProvider(url: string, url2?: string) {
 
   // setup clients
   const clients = {
-    a: await ClientV2.init(clientAOpts),
-    b: await ClientV2.init(clientBOpts),
+    a: await Client.init(clientAOpts),
+    b: await Client.init(clientBOpts),
   };
 
   // timestamps & elapsed time
