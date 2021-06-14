@@ -18,10 +18,6 @@ with pkgs; let
         ln -s ${nodeDependencies}/lib/node_modules ./node_modules
       '';
       installPhase = ''
-        echo DICK
-        ls 
-        ls node_modules
-        echo BUTT
         ${myNodejs}/bin/npm run compile
         ln -s ${nodeDependencies}/lib/node_modules $out/node_modules
         cp -r dist/ $out/
