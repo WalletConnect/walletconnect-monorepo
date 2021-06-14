@@ -32,7 +32,8 @@ dockerLoad=docker load -i build/$@ \
 		| tee build/$@-img \
 		| xargs -I {} docker tag {}
 buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && cp -f -L result build/$@
-caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/master.tar.gz
+caddyVersion=v2.4.2
+caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
 buildCaddy=nix-build  $(caddySrc) --attr docker && cp -f -L result build/$@
 buildWaku=nix-build ./ops/waku-docker.nix --attr docker && cp -f -L result build/$@
 
