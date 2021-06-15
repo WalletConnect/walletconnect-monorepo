@@ -34,6 +34,12 @@ const TEST_PROVIDER_OPTS = {
   },
 };
 
+const TEST_WALLET_CLIENT_OPTS = {
+  chainId: CHAIN_ID,
+  rpcUrl: RPC_URL,
+  privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
+};
+
 describe("WalletConnectWeb3Provider", function() {
   this.timeout(30_000);
 
@@ -58,10 +64,7 @@ describe("WalletConnectWeb3Provider", function() {
 
   it("enable successfully web3", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-    const walletClient = new WalletClient(provider, {
-      chainId: CHAIN_ID,
-      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-    });
+    const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
     await Promise.all([
       walletClient.approveSession(),
       new Promise<void>(async resolve => {

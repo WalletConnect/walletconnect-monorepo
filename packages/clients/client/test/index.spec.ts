@@ -20,4 +20,9 @@ describe("IsomorphicClient", function() {
     const clientId = await connectTwoClients();
     expect(!!clientId).to.be.true;
   });
+
+  it("connect two clients (with preferred chainId)", async () => {
+    const clientId = await connectTwoClients({ chainId: 123 });
+    expect(!!clientId).to.be.true;
+  });
 });

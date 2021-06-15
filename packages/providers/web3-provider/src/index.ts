@@ -33,7 +33,6 @@ class WalletConnectProvider extends ProviderEngine {
   public connectCallbacks: any[] = [];
   public accounts: string[] = [];
   public chainId = 1;
-  public networkId = 1;
   public rpcUrl = "";
 
   constructor(opts: IWalletConnectProviderOptions) {
@@ -62,8 +61,7 @@ class WalletConnectProvider extends ProviderEngine {
       throw new Error("Missing one of the required parameters: rpc or infuraId");
     }
     this.infuraId = opts.infuraId || "";
-    this.chainId = typeof opts.chainId !== "undefined" ? opts.chainId : 1;
-    this.networkId = this.chainId;
+    this.chainId = opts?.chainId || this.chainId;
     this.initialize();
   }
 
@@ -166,7 +164,7 @@ class WalletConnectProvider extends ProviderEngine {
           result = wc.chainId;
           break;
         case "net_version":
-          result = wc.networkId || wc.chainId;
+          result = wc.chainId;
           break;
         case "eth_uninstallFilter":
           this.sendAsync(payload, (_: any) => _);
@@ -221,11 +219,10 @@ class WalletConnectProvider extends ProviderEngine {
         this.onConnect((x: any) => resolve(x));
       } else if (!wc.connected && !disableSessionCreation) {
         this.isConnecting = true;
-        const sessionRequestOpions = this.chainId ? { chainId: this.chainId } : undefined;
         wc.on("modal_closed", () => {
           reject(new Error("User closed modal"));
         });
-        wc.createSession(sessionRequestOpions)
+        wc.createSession({ chainId: this.chainId })
           .then(() => {
             wc.on("connect", (error, payload) => {
               if (error) {

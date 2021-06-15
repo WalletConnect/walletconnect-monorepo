@@ -6,13 +6,14 @@ import WalletConnectWeb3Provider from "../../src";
 export interface WalletClientOpts {
   privateKey: string;
   chainId: number;
-  rpcURL: string;
+  rpcUrl: string;
 }
 
 export class WalletClient {
   readonly provider: WalletConnectWeb3Provider;
   readonly signer: ethers.Wallet;
   readonly chainId: number;
+  readonly rpcUrl: string;
   // readonly wallet: ethers.Wallet;
   client?: IConnector;
 
@@ -21,9 +22,9 @@ export class WalletClient {
     const wallet = opts.privateKey
       ? new ethers.Wallet(opts.privateKey)
       : ethers.Wallet.createRandom();
-    this.chainId = opts.chainId ? opts.chainId : 123;
-    const rpcURL = opts.rpcURL ? opts.rpcURL : "http://localhost:8545";
-    this.signer = wallet.connect(new ethers.providers.JsonRpcProvider(rpcURL));
+    this.chainId = opts?.chainId || 123;
+    this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
+    this.signer = wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
   }
 
   approveSessionAndRequest() {
@@ -157,10 +158,13 @@ export class WalletClient {
         }
         const uri = payload.params[0];
         this.client = new WalletConnect({ uri });
-        this.client.on("session_request", error => {
+        this.client.on("session_request", (error, payload) => {
           if (!this.client) throw Error("Client(session) needs to be initiated first");
           if (error) {
             reject(error);
+          }
+          if (payload.params[0].chainId !== this.chainId) {
+            return reject(new Error("Invalid chainid for session request"));
           }
           this.client.approveSession({
             accounts: [this.signer.address],
