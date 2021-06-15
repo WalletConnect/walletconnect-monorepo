@@ -4,6 +4,7 @@ import styled from "styled-components";
 import Column from "../components/Column";
 import Button from "../components/Button";
 import { colors } from "../styles";
+import Toggle from "../components/Toggle";
 
 const SWarning = styled.div`
   text-align: justify;
@@ -34,18 +35,23 @@ const SActions = styled.div`
 
 interface SettingsCardProps {
   mnemonic: string;
+  testnet: boolean;
   chains: string[];
+  toggleTestnets: () => void;
   resetCard: () => void;
 }
 
 const SettingsCard = (props: SettingsCardProps) => {
-  const { mnemonic, resetCard } = props;
+  const { mnemonic, testnet, toggleTestnets, resetCard } = props;
 
   return (
     <Column>
       <h6>{"Settings"}</h6>
       <SWarning>{`Warning: this wallet was designed for developer purposes only. Browsers are dangerous!!`}</SWarning>
       <SWarning>{`Please make sure you know what you are doing when importing or exporting a mnemonic.`}</SWarning>
+      <h6>{"Testnets"}</h6>
+      <Toggle active={testnet} onClick={toggleTestnets} />
+      <p>{`Toggling this will restart the wallet`}</p>
       <h6>{"Mnemonic"}</h6>
       <SValue>{mnemonic}</SValue>
       <SActions>

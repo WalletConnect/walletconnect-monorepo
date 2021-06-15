@@ -7,6 +7,7 @@ import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
 import * as encUtils from "enc-utils";
 import { apiGetChainNamespace, ChainsMap } from "caip-api";
+import { formatDirectSignDoc, stringifySignDocValues } from "cosmos-wallet";
 import { BigNumber } from "ethers";
 
 import Banner from "./components/Banner";
@@ -20,7 +21,8 @@ import {
   DEFAULT_APP_METADATA,
   DEFAULT_MAIN_CHAINS,
   DEFAULT_LOGGER,
-  DEFAULT_METHODS,
+  DEFAULT_EIP155_METHODS,
+  DEFAULT_COSMOS_METHODS,
   DEFAULT_RELAY_PROVIDER,
   DEFAULT_TEST_CHAINS,
   DEFAULT_CHAINS,
@@ -111,7 +113,7 @@ const SAccounts = styled(SFullWidthContainer)`
 interface AppState {
   client: Client | undefined;
   session: SessionTypes.Created | undefined;
-  testNet: boolean;
+  testnet: boolean;
   loading: boolean;
   fetching: boolean;
   chains: string[];
@@ -128,7 +130,7 @@ interface AppState {
 const INITIAL_STATE: AppState = {
   client: undefined,
   session: undefined,
-  testNet: true,
+  testnet: true,
   loading: false,
   fetching: false,
   chains: [],
@@ -252,15 +254,35 @@ class App extends React.Component<any, any> {
       this.closeModal();
     }
     try {
+      const chains = this.state.chains;
+      const supportedNamespaces: string[] = [];
+      chains.forEach(chainId => {
+        const [namespace] = chainId.split(":");
+        if (!supportedNamespaces.includes(namespace)) {
+          supportedNamespaces.push(namespace);
+        }
+      });
+      const methods: string[] = supportedNamespaces
+        .map(namespace => {
+          switch (namespace) {
+            case "eip155":
+              return DEFAULT_EIP155_METHODS;
+            case "cosmos":
+              return DEFAULT_COSMOS_METHODS;
+            default:
+              throw new Error(`No default methods for namespace: ${namespace}`);
+          }
+        })
+        .flat();
       const session = await this.state.client.connect({
         metadata: getAppMetadata() || DEFAULT_APP_METADATA,
         pairing,
         permissions: {
           blockchain: {
-            chains: this.state.chains,
+            chains,
           },
           jsonrpc: {
-            methods: DEFAULT_METHODS,
+            methods,
           },
         },
       });
@@ -292,7 +314,7 @@ class App extends React.Component<any, any> {
     this.setState({ ...INITIAL_STATE, client, chainData });
   };
 
-  public toggleTestNets = () => this.setState({ testNet: !this.state.testNet });
+  public toggleTestnets = () => this.setState({ testnet: !this.state.testnet });
 
   public onSessionConnected = async (session: SessionTypes.Settled) => {
     this.setState({ session });
@@ -527,6 +549,157 @@ class App extends React.Component<any, any> {
     }
   };
 
+  public testSignDirect = async (chainId: string) => {
+    if (typeof this.state.client === "undefined") {
+      throw new Error("WalletConnect is not initialized");
+    }
+    if (typeof this.state.session === "undefined") {
+      throw new Error("Session is not connected");
+    }
+
+    try {
+      // test direct sign doc inputs
+      const inputs = {
+        fee: [{ amount: "2000", denom: "ucosm" }],
+        pubkey: "AgSEjOuOr991QlHCORRmdE5ahVKeyBrmtgoYepCpQGOW",
+        gasLimit: 200000,
+        accountNumber: 1,
+        sequence: 1,
+        bodyBytes:
+          "0a90010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e6412700a2d636f736d6f7331706b707472653766646b6c366766727a6c65736a6a766878686c63337234676d6d6b38727336122d636f736d6f7331717970717870713971637273737a673270767871367273307a716733797963356c7a763778751a100a0575636f736d120731323334353637",
+        authInfoBytes:
+          "0a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21034f04181eeba35391b858633a765c4a0c189697b40d216354d50890d350c7029012040a020801180112130a0d0a0575636f736d12043230303010c09a0c",
+      };
+
+      // split chainId
+      const [namespace, reference] = chainId.split(":");
+
+      // format sign doc
+      const signDoc = formatDirectSignDoc(
+        inputs.fee,
+        inputs.pubkey,
+        inputs.gasLimit,
+        inputs.accountNumber,
+        inputs.sequence,
+        inputs.bodyBytes,
+        reference,
+      );
+
+      // get ethereum address
+      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
+      if (address === undefined) throw new Error("Address is not valid");
+
+      // cosmos_signDirect params
+      const params = {
+        signerAddress: address,
+        signDoc: stringifySignDocValues(signDoc),
+      };
+
+      // open modal
+      this.openRequestModal();
+
+      // send message
+      const result = await this.state.client.request({
+        topic: this.state.session.topic,
+        chainId,
+        request: {
+          method: "cosmos_signDirect",
+          params,
+        },
+      });
+
+      const chainData = this.state.chainData[namespace][reference];
+
+      if (typeof chainData === "undefined") {
+        throw new Error(`Missing chain data for chainId: ${chainId}`);
+      }
+
+      // TODO: check if valid
+      const valid = true;
+
+      // format displayed result
+      const formattedResult = {
+        method: "cosmos_signDirect",
+        address,
+        valid,
+        result: result.signature.signature,
+      };
+
+      // display result
+      this.setState({ pending: false, result: formattedResult || null });
+    } catch (error) {
+      console.error(error);
+      this.setState({ pending: false, result: null });
+    }
+  };
+
+  public testSignAmino = async (chainId: string) => {
+    if (typeof this.state.client === "undefined") {
+      throw new Error("WalletConnect is not initialized");
+    }
+    if (typeof this.state.session === "undefined") {
+      throw new Error("Session is not connected");
+    }
+
+    try {
+      // split chainId
+      const [namespace, reference] = chainId.split(":");
+
+      // test amino sign doc
+      const signDoc = {
+        msgs: [],
+        fee: { amount: [], gas: "23" },
+        chain_id: "foochain",
+        memo: "hello, world",
+        account_number: "7",
+        sequence: "54",
+      };
+
+      // get ethereum address
+      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
+      if (address === undefined) throw new Error("Address is not valid");
+
+      // cosmos_signAmino params
+      const params = { signerAddress: address, signDoc };
+
+      // open modal
+      this.openRequestModal();
+
+      // send message
+      const result = await this.state.client.request({
+        topic: this.state.session.topic,
+        chainId,
+        request: {
+          method: "cosmos_signAmino",
+          params,
+        },
+      });
+
+      const chainData = this.state.chainData[namespace][reference];
+
+      if (typeof chainData === "undefined") {
+        throw new Error(`Missing chain data for chainId: ${chainId}`);
+      }
+
+      // TODO: check if valid
+      const valid = true;
+
+      // format displayed result
+      const formattedResult = {
+        method: "cosmos_signAmino",
+        address,
+        valid,
+        result: result.signature.signature,
+      };
+
+      // display result
+      this.setState({ pending: false, result: formattedResult || null });
+    } catch (error) {
+      console.error(error);
+      this.setState({ pending: false, result: null });
+    }
+  };
+
   public handleChainSelectionClick = (chainId: string) => {
     const { chains } = this.state;
     if (chains.includes(chainId)) {
@@ -536,11 +709,30 @@ class App extends React.Component<any, any> {
     }
   };
 
+  public getBlockchainActions = (chainId: string) => {
+    const [namespace] = chainId.split(":");
+    switch (namespace) {
+      case "eip155":
+        return this.getEthereumActions();
+      case "cosmos":
+        return this.getCosmosActions();
+      default:
+        break;
+    }
+  };
+
   public getEthereumActions = (): AccountAction[] => {
     return [
       { method: "eth_sendTransaction", callback: this.testSendTransaction },
       { method: "personal_sign", callback: this.testSignPersonalMessage },
       { method: "eth_signTypedData", callback: this.testSignTypedData },
+    ];
+  };
+
+  public getCosmosActions = (): AccountAction[] => {
+    return [
+      { method: "cosmos_signDirect", callback: this.testSignDirect },
+      { method: "cosmos_signAmino", callback: this.testSignAmino },
     ];
   };
 
@@ -559,8 +751,8 @@ class App extends React.Component<any, any> {
   };
 
   public renderContent = () => {
-    const { balances, accounts, chains, chainData, testNet, fetching } = this.state;
-    const chainOptions = testNet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
+    const { balances, accounts, chains, chainData, testnet, fetching } = this.state;
+    const chainOptions = testnet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
     return !accounts.length && !Object.keys(balances).length ? (
       <SLanding center>
         <Banner />
@@ -571,7 +763,7 @@ class App extends React.Component<any, any> {
           <h6>Select chains:</h6>
           <SToggleContainer>
             <p>Testnets Only?</p>
-            <Toggle active={testNet} onClick={this.toggleTestNets} />
+            <Toggle active={testnet} onClick={this.toggleTestnets} />
           </SToggleContainer>
           {chainOptions.map(chainId => (
             <Blockchain
@@ -607,7 +799,7 @@ class App extends React.Component<any, any> {
                 address={address}
                 chainId={chainId}
                 balances={balances}
-                actions={this.getEthereumActions()}
+                actions={this.getBlockchainActions(chainId)}
               />
             );
           })}

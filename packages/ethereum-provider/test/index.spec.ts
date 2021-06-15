@@ -1,11 +1,12 @@
 import "mocha";
-import EthereumProvider from "./../src/index";
-import { SignerConnection, SIGNER_EVENTS } from "@walletconnect/signer-connection";
-import { TestNetwork } from "ethereum-test-network";
 import { expect } from "chai";
+import { ethers } from "ethers";
+import { TestNetwork } from "ethereum-test-network";
+import { SignerConnection, SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { IClient, RequestEvent, SessionTypes } from "@walletconnect/types";
-import { ethers } from "ethers";
+
+import EthereumProvider from "./../src/index";
 
 const CHAIN_ID = 123;
 const PORT = 8545;
@@ -45,10 +46,10 @@ const TEST_WALLET_METADATA = {
 };
 
 describe("@walletconnect/ethereum-provider", () => {
-  let testnetwork: TestNetwork;
+  let testNetwork: TestNetwork;
 
   before(async () => {
-    testnetwork = await TestNetwork.init({
+    testNetwork = await TestNetwork.init({
       chainId: CHAIN_ID,
       port: PORT,
       genesisAccounts: DEFAULT_GENESIS_ACCOUNTS,
@@ -56,7 +57,7 @@ describe("@walletconnect/ethereum-provider", () => {
   });
 
   after(async () => {
-    await testnetwork.close();
+    await testNetwork.close();
   });
 
   it("Test enable", async () => {

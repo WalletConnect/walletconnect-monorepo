@@ -1,121 +1,75 @@
-import { EventEmitter } from "events";
+import EventEmitter from "eventemitter3";
 import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { HttpConnection } from "@json-rpc-tools/http-connection";
+import { RequestArguments } from "@json-rpc-tools/utils";
 import { SessionTypes } from "@walletconnect/types";
 import {
   SignerConnection,
   SIGNER_EVENTS,
   SignerConnectionClientOpts,
 } from "@walletconnect/signer-connection";
-import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
+import HttpConnection from "@json-rpc-tools/http-connection";
 
-export const signerMethods = [
-  "eth_requestAccounts",
-  "eth_accounts",
-  "eth_chainId",
-  "eth_sendTransaction",
-  "eth_signTransaction",
-  "eth_sign",
-  "eth_signTypedData",
-  "personal_sign",
-];
-
-export const infuraNetworks = {
-  1: "mainnet",
-  3: "ropsten",
-  4: "rinkeby",
-  5: "goerli",
-  42: "kovan",
-};
+export const signerMethods = ["cosmos_getAccounts", "cosmos_signDirect", "cosmos_signAmino"];
 
 export const providerEvents = {
   changed: {
-    chain: "chainChanged",
+    chains: "chainsChanged",
     accounts: "accountsChanged",
   },
 };
 
-export interface EthereumRpcConfig {
-  infuraId?: string;
+export interface CosmosRpcConfig {
   custom?: {
-    [chainId: number]: string;
+    [chainId: string]: string;
   };
 }
 
-export function getInfuraRpcUrl(chainId: number, infuraId?: string): string | undefined {
+export function getRpcUrl(chainId: string, rpc?: CosmosRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
-  const network = infuraNetworks[chainId];
-  if (network) {
-    rpcUrl = `https://${network}.infura.io/v3/${infuraId}`;
-  }
-  return rpcUrl;
-}
-
-export function getRpcUrl(chainId: number, rpc?: EthereumRpcConfig): string | undefined {
-  let rpcUrl: string | undefined;
-  const infuraUrl = getInfuraRpcUrl(chainId, rpc?.infuraId);
   if (rpc && rpc.custom) {
     rpcUrl = rpc.custom[chainId];
-  } else if (infuraUrl) {
-    rpcUrl = infuraUrl;
   }
   return rpcUrl;
 }
 
-export interface EthereumProviderOptions {
-  chainId: number;
+export interface CosmosProviderOptions {
+  chains: string[];
   methods?: string[];
-  rpc?: EthereumRpcConfig;
+  rpc?: CosmosRpcConfig;
   client?: SignerConnectionClientOpts;
 }
 
-class EthereumProvider implements IEthereumProvider {
+class CosmosProvider {
   public events: any = new EventEmitter();
 
-  private rpc: EthereumRpcConfig | undefined;
+  private rpc: CosmosRpcConfig | undefined;
 
-  public namespace = "eip155";
-  public chainId = 1;
-  public methods = signerMethods;
+  public namespace = "cosmos";
+  public chains: string[] = [];
+  public methods: string[] = signerMethods;
 
   public accounts: string[] = [];
 
   public signer: JsonRpcProvider;
   public http: JsonRpcProvider | undefined;
 
-  constructor(opts?: EthereumProviderOptions) {
+  constructor(opts?: CosmosProviderOptions) {
     this.rpc = opts?.rpc;
-    this.chainId = opts?.chainId || this.chainId;
+    this.chains = opts?.chains || this.chains;
     this.methods = opts?.methods ? [...opts?.methods, ...this.methods] : this.methods;
     this.signer = this.setSignerProvider(opts?.client);
-    this.http = this.setHttpProvider(this.chainId);
+    this.http = this.setHttpProvider(this.chains);
     this.registerEventListeners();
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
-    switch (args.method) {
-      case "eth_requestAccounts":
-        await this.connect();
-        return this.accounts as any;
-      case "eth_accounts":
-        return this.accounts as any;
-      case "eth_chainId":
-        return this.chainId as any;
-      default:
-        break;
-    }
-    if (args.method.startsWith("eth_signTypedData") || this.methods.includes(args.method)) {
-      return this.signer.request(args, { chainId: this.chainId });
+    if (this.methods.includes(args.method)) {
+      return this.signer.request(args);
     }
     if (typeof this.http === "undefined") {
       throw new Error(`Cannot request JSON-RPC method (${args.method}) without provided rpc url`);
     }
     return this.http.request(args);
-  }
-
-  public async enable(): Promise<ProviderAccounts> {
-    const accounts = await this.request({ method: "eth_requestAccounts" });
-    return accounts as ProviderAccounts;
   }
 
   public async connect(): Promise<void> {
@@ -151,10 +105,7 @@ class EthereumProvider implements IEthereumProvider {
       this.setAccounts(session.state.accounts);
     });
     this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Settled) => {
-      const chain = this.formatChainId(this.chainId);
-      if (!session.permissions.blockchain.chains.includes(chain)) {
-        this.setChainId(session.permissions.blockchain.chains);
-      }
+      this.setChainId(session.permissions.blockchain.chains);
       if (session.state.accounts !== this.accounts) {
         this.setAccounts(session.state.accounts);
       }
@@ -165,20 +116,20 @@ class EthereumProvider implements IEthereumProvider {
         this.events.emit(notification.type, notification.data);
       },
     );
-    this.events.on(providerEvents.changed.chain, chainId => this.setHttpProvider(chainId));
+    this.events.on(providerEvents.changed.chains, chains => this.setHttpProvider(chains));
   }
 
   private setSignerProvider(client?: SignerConnectionClientOpts) {
     const connection = new SignerConnection({
-      chains: [this.formatChainId(this.chainId)],
+      chains: this.chains.map(x => this.formatChainId(x)),
       methods: this.methods,
       client,
     });
     return new JsonRpcProvider(connection);
   }
 
-  private setHttpProvider(chainId: number): JsonRpcProvider | undefined {
-    const rpcUrl = getRpcUrl(chainId, this.rpc);
+  private setHttpProvider(chains: string[]): JsonRpcProvider | undefined {
+    const rpcUrl = getRpcUrl(chains[0], this.rpc);
     if (typeof rpcUrl === "undefined") return undefined;
     const http = new JsonRpcProvider(new HttpConnection(rpcUrl));
     return http;
@@ -188,28 +139,30 @@ class EthereumProvider implements IEthereumProvider {
     return chainId.startsWith(`${this.namespace}:`);
   }
 
-  private formatChainId(chainId: number): string {
+  private formatChainId(chainId: string): string {
     return `${this.namespace}:${chainId}`;
   }
 
-  private parseChainId(chainId: string): number {
-    return Number(chainId.split(":")[1]);
+  private parseChainId(chainId: string): string {
+    return chainId.split(":")[1];
   }
 
   private setChainId(chains: string[]) {
-    const compatible = chains.filter(x => this.isCompatibleChainId(x));
+    const compatible = chains
+      .filter(x => this.isCompatibleChainId(x))
+      .map(x => this.parseChainId(x));
     if (compatible.length) {
-      this.chainId = this.parseChainId(compatible[0]);
-      this.events.emit(providerEvents.changed.chain, this.chainId);
+      this.chains = compatible;
+      this.events.emit(providerEvents.changed.chains, this.chains);
     }
   }
 
   private setAccounts(accounts: string[]) {
     this.accounts = accounts
-      .filter(x => this.parseChainId(x.split("@")[1]) === this.chainId)
+      .filter(x => this.chains.includes(this.parseChainId(x.split("@")[1])))
       .map(x => x.split("@")[0]);
     this.events.emit(providerEvents.changed.accounts, this.accounts);
   }
 }
 
-export default EthereumProvider;
+export default CosmosProvider;

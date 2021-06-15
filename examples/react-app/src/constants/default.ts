@@ -4,6 +4,7 @@ export const DEFAULT_MAIN_CHAINS = [
   "eip155:10",
   "eip155:100",
   "eip155:137",
+  "cosmos:cosmoshub-4",
 ];
 
 export const DEFAULT_TEST_CHAINS = [
@@ -18,7 +19,9 @@ export const DEFAULT_CHAINS = [...DEFAULT_MAIN_CHAINS, ...DEFAULT_TEST_CHAINS];
 
 export const DEFAULT_RELAY_PROVIDER = "wss://relay.walletconnect.org";
 
-export const DEFAULT_METHODS = ["eth_sendTransaction", "personal_sign", "eth_signTypedData"];
+export const DEFAULT_EIP155_METHODS = ["eth_sendTransaction", "personal_sign", "eth_signTypedData"];
+
+export const DEFAULT_COSMOS_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
 
 export const DEFAULT_LOGGER = "debug";
 
