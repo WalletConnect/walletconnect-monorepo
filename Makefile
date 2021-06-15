@@ -64,9 +64,8 @@ setup: ## configures domain and certbot email
 	$(log_end)
 
 bootstrap-lerna: ## setups lerna for the monorepo management
-	npm i
-	npx lerna link
-	npx lerna bootstrap
+	npm i --dev
+	npm run bootstrap
 	@touch $(flags)/$@
 	$(log_end)
 
@@ -83,7 +82,7 @@ build-react-wallet: ## builds the example react-wallet
 	$(log_end)
 
 build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
-	npx lerna run build
+	npm run build
 	@touch $(flags)/$@
 	$(log_end)
 
