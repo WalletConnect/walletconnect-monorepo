@@ -43,7 +43,7 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "devDependencies": {
-    "lerna": "^3.20.2",
+    "lerna": "^4.0.0",
     "npm-run-all": "^4.1.5"
   }
 }

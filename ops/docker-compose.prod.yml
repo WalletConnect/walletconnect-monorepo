@@ -14,8 +14,6 @@ services:
       UPSTREAM_PORT: ${UPSTREAM_PORT:-5000}
       LOG_LEVEL: ERROR
     volumes:
-      - caddy_data:/data
-      - caddy_conf:/config
       - ./stats.html:/www/index.html
     deploy:
       replicas: ${REPLICAS:-4}

@@ -1,5 +1,5 @@
 {
-  pkgs ? import (import ../servers/relay/nix/sources.nix).nixpkgs {},
+  pkgs ? import (import ./nix/sources.nix).nixpkgs {},
   tag ? "master"
 }:
 let

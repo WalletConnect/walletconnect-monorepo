@@ -1,4 +1,4 @@
-import { SessionTypes, AppMetadata } from "walletconnect-types-v2";
+import { SessionTypes, AppMetadata } from "@walletconnect/types";
 
 export const chainRef = 1;
 export const chainId = `eip155:${chainRef}`;

@@ -31,8 +31,9 @@ dockerLoad=docker load -i build/$@ \
 		| awk '{print $$NF}' \
 		| tee build/$@-img \
 		| xargs -I {} docker tag {}
-buildRelay=nix-build --attr docker --argstr githash $(GITHASH) && cp -f -L result build/$@
-caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/master.tar.gz
+buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && cp -f -L result build/$@
+caddyVersion=v2.4.2
+caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
 buildCaddy=nix-build  $(caddySrc) --attr docker && cp -f -L result build/$@
 buildWaku=nix-build ./ops/waku-docker.nix --attr docker && cp -f -L result build/$@
 
@@ -63,9 +64,8 @@ setup: ## configures domain and certbot email
 	$(log_end)
 
 bootstrap-lerna: ## setups lerna for the monorepo management
-	npm i
-	npx lerna link
-	npx lerna bootstrap
+	npm i --dev
+	npm run bootstrap
 	@touch $(flags)/$@
 	$(log_end)
 
@@ -82,7 +82,7 @@ build-react-wallet: ## builds the example react-wallet
 	$(log_end)
 
 build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
-	npx lerna run build
+	npm run build
 	@touch $(flags)/$@
 	$(log_end)
 

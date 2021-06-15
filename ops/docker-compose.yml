@@ -5,9 +5,10 @@ networks:
 
 volumes:
   redis:
-  store:
   waku:
     name: 'waku-{{.Task.Slot}}'
+  caddy_data:
+  caddy_conf:
 
 services:
   caddy:
@@ -23,6 +24,8 @@ services:
         published: 443
         mode: ingress
     volumes:
+      - caddy_data:/data
+      - caddy_conf:/config
       - ./Caddyfile:/Caddyfile
 
   redis:
