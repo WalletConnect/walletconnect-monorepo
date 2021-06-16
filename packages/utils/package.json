@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/utils",
   "description": "Utilities for WalletConnect Protocol",
-  "version": "2.0.0-beta.11",
+  "version": "2.0.0-beta.12",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@json-rpc-tools/utils": "^2.0.0-beta.10",
-    "@walletconnect/types": "^2.0.0-beta.11",
+    "@walletconnect/types": "^2.0.0-beta.12",
     "ecies-25519": "^2.0.0-beta.5",
     "enc-utils": "^3.0.0",
     "query-string": "^6.13.5",
