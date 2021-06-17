@@ -3,6 +3,9 @@ source setup
 
 monitoring=${MONITORING:-true} # this makes a bash string, not a boolean
 port=${UPSTREAM_PORT:-5000}
+export RELAY_IMAGE=$(cat ./build/build-img-relay-img)
+export CADDY_IMAGE=$(cat ./build/build-img-caddy-img)
+export WAKU_IMAGE=$(cat ./build/build-img-waku-img)
 
 run="docker stack deploy $PROJECT -c ops/docker-compose.yml -c ops/docker-compose.prod.yml "
 

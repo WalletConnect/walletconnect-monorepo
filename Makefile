@@ -6,17 +6,11 @@ REMOTE_HASH=$(shell git ls-remote $(REMOTE) $(BRANCH) | head -n1 | cut -f1)
 project=walletconnect
 redisImage=redis:6-alpine
 standAloneRedis=xredis
-caddyImage=$(project)/caddy:$(BRANCH)
-relayImage=$(project)/relay:$(BRANCH)
-wakuImage=$(project)/waku:$(BRANCH)
 
 ## Environment variables used by the compose files
 include setup
+export PROJECT=$(project)
 export $(shell sed 's/=.*//' setup)
-export PROJECT = $(project)
-export RELAY_IMAGE=$(relayImage)
-export CADDY_IMAGE=$(caddyImage)
-export WAKU_IMAGE=$(wakuImage)
 
 ### Makefile internal coordination
 log_end=@echo "MAKE: Done with $@"; echo
@@ -29,13 +23,13 @@ $(shell mkdir -p $(flags))
 dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/src -w /src nixos/nix nix-shell -p bash --run
 dockerLoad=docker load -i build/$@ \
 		| awk '{print $$NF}' \
-		| tee build/$@-img \
-		| xargs -I {} docker tag {}
-buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && cp -f -L result build/$@
+		| tee build/$@-img
+copyResult=cp -f -L result build/$@
+buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && $(copyResult)
 caddyVersion=v2.4.2
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
-buildCaddy=nix-build  $(caddySrc) --attr docker && cp -f -L result build/$@
-buildWaku=nix-build ./ops/waku-docker.nix --attr docker && cp -f -L result build/$@
+buildCaddy=nix-build $(caddySrc) --attr docker && $(copyResult)
+buildWaku=nix-build ./ops/waku-docker.nix --attr docker && $(copyResult)
 
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
 help: ## Show this help
@@ -87,7 +81,7 @@ build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 	$(log_end)
 
 build-relay: ## builds the relay using system npm
-	npm install --prefix servers/relay
+	npm install --also=dev --prefix servers/relay
 	npm run build --prefix servers/relay
 	$(log_end)
 
@@ -101,7 +95,7 @@ ifeq (, $(shell which nix))
 else
 	$(buildRelay)
 endif
-	$(dockerLoad) $(relayImage)
+	$(dockerLoad)
 	$(log_end)
 
 build-img-caddy: dirs nix-volume ## builds caddy docker image inside of docker
@@ -110,7 +104,7 @@ ifeq (, $(shell which nix))
 else
 	$(buildCaddy)
 endif
-	$(dockerLoad) $(caddyImage)
+	$(dockerLoad)
 	$(log_end)
 
 build-img-waku: dirs nix-volume ## builds caddy docker image inside of docker
@@ -119,7 +113,7 @@ ifeq (, $(shell which nix))
 else
 	$(buildWaku)
 endif
-	$(dockerLoad) $(wakuImage)
+	$(dockerLoad)
 	$(log_end)
 
 build-images: build-img-relay build-img-caddy build-img-waku
@@ -136,7 +130,7 @@ test-staging: build-lerna ## tests client against staging.walletconnect.org
 test-production: build-lerna ## tests client against relay.walletconnect.org
 	TEST_RELAY_URL=wss://relay.walletconnect.org npm run test --prefix packages/client
 
-test-relay: ## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before. Also needs waku nodes running locally
+test-relay: build-relay ## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before. Also needs waku nodes running locally
 	npm run test --prefix servers/relay
 
 start-redis: ## starts redis docker container for local development
@@ -145,21 +139,22 @@ start-redis: ## starts redis docker container for local development
 
 predeploy: dirs pull build-images 
 
-dev: setup predeploy ## runs relay on watch mode and shows logs
-	RELAY_URL=localhost bash ops/deploy.sh
+dev: predeploy ## runs relay on watch mode and shows logs
+	REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
 	@echo  "MAKE: Done with $@"
 	@echo
 	$(log_end)
 
 ci: predeploy ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
-	REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
+	$(MAKE) dev
 	sleep 15
 	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
 	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
+	TEST_RELAY_URL=wss://localhost $(MAKE) test-relay
 
-deploy: setup predeploy ## deploys the docker swarm for the relay
+deploy: setup predeploy ## Deploys the docker swarm for the relay
 	bash ops/deploy.sh
 	$(log_end)
 
@@ -171,7 +166,7 @@ redeploy: setup clean predeploy ## redeploys the prodution containers and rebuil
 	docker service update --force --image $(caddyImage) $(project)_caddy
 	docker service update --force --image $(relayImage) $(project)_relay
 
-relay-logs: ## follows the relay container logs. Doesn't work with 'make dev'
+relay-logs: ## follows the relay container logs.
 	docker service logs -f --raw --tail 100 $(project)_relay
 
 cachix: clean dirs ## pushes docker images to cachix

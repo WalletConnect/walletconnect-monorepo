@@ -7,11 +7,11 @@ let
     imageName = "walletconnect/waku";
     finalImageTag = tag;
     # docker image inspect walletconnect/waku:walletconnect --format "{{index .RepoDigests 0}}" | cut -d "@" -f2
-    imageDigest = "sha256:f6afa100413076638b63c84f3172fea0e0eafddb48e2d9f211ab85ab451ab20f";
+    imageDigest = "sha256:ee091297d9b24cd7ab16789a50af789b4faaacd6d12fb99a671f54ec6f615266";
     # If you can find out how to get the RIGHT tar file you can use 
     # nix-hash --type sha256 --flat --base32 pmjdag6jmsm6vm8lcfrbwaa63ccx44zy-docker-image-walletconnect-waku-walletconnect.tar
     # to get the value of sha256
-    sha256 = "0d5myzg5jjnkjv4qsdkjxb5mkzrwiqdr6jzcvccd3xhl4cimai73";
+    sha256 = "07gb4h390gqxy3980p4xyn7fg56cp7xqsglm903rb28rjbpmygxq";
   };
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
@@ -19,7 +19,7 @@ let
 
     if [[ ! -e /key/nodekey ]]; then
       # https://stackoverflow.com/a/34329799
-      ${coreutils}/bin/od  -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /key/nodekey
+      ${coreutils}/bin/od -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /key/nodekey
     fi
 
     /usr/bin/wakunode --nodekey=$(cat /key/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
@@ -50,6 +50,7 @@ let
     done
 
 
+    echo "Stopping last waku with PID: $PID"
     kill $PID
     peersArgs="$peersArgs --staticnode=$STORE"
 
