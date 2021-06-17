@@ -8,7 +8,6 @@ redisImage=redis:6-alpine
 standAloneRedis=xredis
 
 ## Environment variables used by the compose files
-include setup
 export PROJECT=$(project)
 export $(shell sed 's/=.*//' setup)
 
@@ -17,8 +16,7 @@ log_end=@echo "MAKE: Done with $@"; echo
 flags=.makeFlags
 VPATH=$(flags):build
 $(shell mkdir -p $(flags))
-.PHONY: help clean clean-all reset
-
+.PHONY: help clean clean-all reset build
 
 dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/src -w /src nixos/nix nix-shell -p bash --run
 dockerLoad=docker load -i build/$@ \
@@ -42,9 +40,8 @@ dirs:
 pull: ## pulls docker images
 	docker pull $(redisImage)
 	docker pull nixos/nix
-	@touch $(flags)/$@
-	@echo "MAKE: Done with $@"
-	@echo
+	touch $(flags)/$@
+	$(log_end)
 
 setup: ## configures domain and certbot email
 	@read -p 'Relay URL domain [localhost]: ' relay; \
@@ -53,31 +50,29 @@ setup: ## configures domain and certbot email
 	echo "export CERTBOT_EMAIL="$${email:-noreply@gmail.com} >> setup
 	@read -p 'Paste your cloudflare API token: ' cf; \
 	echo "export CLOUDFLARE_TOKEN="$${cf} >> setup
-	@echo ${RELAY_URL}
-	@touch $(flags)/$@
 	$(log_end)
 
 bootstrap-lerna: ## setups lerna for the monorepo management
 	npm i --dev
 	npm run bootstrap
-	@touch $(flags)/$@
+	touch $(flags)/$@
 	$(log_end)
 
 build-react-app: ## builds the example react-app
 	npm install --prefix examples/react-app
 	npm run build --prefix examples/react-app
-	@touch $(flags)/$@
+	touch $(flags)/$@
 	$(log_end)
 
 build-react-wallet: ## builds the example react-wallet
 	npm install --prefix examples/react-wallet
 	npm run build --prefix examples/react-wallet
-	@touch $(flags)/$@
+	touch $(flags)/$@
 	$(log_end)
 
 build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 	npm run build
-	@touch $(flags)/$@
+	touch $(flags)/$@
 	$(log_end)
 
 build-relay: ## builds the relay using system npm
@@ -138,6 +133,7 @@ start-redis: ## starts redis docker container for local development
 	$(log_end)
 
 predeploy: dirs pull build-images 
+	touch $(flags)/$@
 
 dev: predeploy ## runs relay on watch mode and shows logs
 	REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
@@ -145,7 +141,7 @@ dev: predeploy ## runs relay on watch mode and shows logs
 	@echo
 	$(log_end)
 
-ci: predeploy ## runs tests in github actions
+ci: ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	$(MAKE) dev
 	sleep 15
