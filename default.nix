@@ -13,6 +13,9 @@ with pkgs; let
       src = pkgs.nix-gitignore.gitignoreSourcePure [ 
         "**/test"
         "Makefile"
+        "result"
+        "dist"
+        "node_modules"
         ./.gitignore
       ] path;
       buildInputs = [ myNodejs ];
