@@ -7,12 +7,10 @@ with pkgs; let
     libtool = if pkgs.stdenv.isDarwin then pkgs.darwin.cctools else null;
   };
 
-  ignoreList = "result\nsetup\n*.log\nbuild\ndist\n.env\nnode_modules\nlogs";
-
   nodeAppDerivation = { path, pkgjson, nodeDependencies }: pkgs.stdenv.mkDerivation {
       pname = builtins.replaceStrings [ "@" "/" ] [ "_at_" "_slash_" ] pkgjson.name;
       version = "v${pkgjson.version}";
-      src = pkgs.nix-gitignore.gitignoreSourcePure ignoreList path;
+      src = pkgs.nix-gitignore.gitignoreSourcePure ./.gitignore path;
       buildInputs = [ myNodejs ];
       buildPhase = ''
         export HOME=$TMP
