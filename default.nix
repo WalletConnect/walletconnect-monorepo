@@ -10,7 +10,11 @@ with pkgs; let
   nodeAppDerivation = { path, pkgjson, nodeDependencies }: pkgs.stdenv.mkDerivation {
       pname = builtins.replaceStrings [ "@" "/" ] [ "_at_" "_slash_" ] pkgjson.name;
       version = "v${pkgjson.version}";
-      src = pkgs.nix-gitignore.gitignoreSourcePure ./.gitignore path;
+      src = pkgs.nix-gitignore.gitignoreSourcePure [ 
+        "**/test"
+        "Makefile"
+        ./.gitignore
+      ] path;
       buildInputs = [ myNodejs ];
       buildPhase = ''
         export HOME=$TMP
