@@ -33,7 +33,7 @@ with pkgs; let
   relayApp = nodeAppDerivation { 
     pkgjson = builtins.fromJSON (builtins.readFile ./servers/relay/package.json);
     nodeDependencies = (callPackage ./servers/relay/node-packages.nix {
-      inherit nodeEnv fetchurl fetchgit nix-gitignore stdenv lib;
+      inherit nodeEnv;
     }).nodeDependencies;
     path = ./servers/relay;
   };
@@ -41,7 +41,7 @@ with pkgs; let
   healthApp = nodeAppDerivation { 
     pkgjson = builtins.fromJSON (builtins.readFile ./servers/health/package.json);
     nodeDependencies = (callPackage ./servers/health/node-packages.nix {
-      inherit nodeEnv fetchurl fetchgit nix-gitignore stdenv lib;
+      inherit nodeEnv;
     }).nodeDependencies;
     path = ./servers/health;
   };
