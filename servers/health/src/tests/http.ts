@@ -1,12 +1,15 @@
 import axios from "axios";
-
+import https from "https";
+import { isLocalhostUrl } from "@walletconnect/client/node_modules/@json-rpc-tools/utils";
 import { getHttpUrl } from "../utils";
 
 export async function isServerAvailable(url: string): Promise<boolean> {
   let isAlive = false;
   try {
     const httpUrl = getHttpUrl(url);
-    const res = await axios.get(`${httpUrl}/health`);
+    const res = await axios.get(`${httpUrl}/health`, {
+      httpsAgent: new https.Agent({ rejectUnauthorized: isLocalhostUrl(httpUrl) }),
+    });
     if (typeof res !== "undefined" && res.status === 204) {
       isAlive = true;
     }
@@ -20,7 +23,9 @@ export async function isModeSupported(url: string, mode: string): Promise<boolea
   let isSupported = false;
   try {
     const httpUrl = getHttpUrl(url);
-    const res = await axios.get(`${httpUrl}/mode`);
+    const res = await axios.get(`${httpUrl}/mode`, {
+      httpsAgent: new https.Agent({ rejectUnauthorized: isLocalhostUrl(httpUrl) }),
+    });
     if (typeof res !== "undefined") {
       if (res.data.includes("any")) {
         isSupported = true;
