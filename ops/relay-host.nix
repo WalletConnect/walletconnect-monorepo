@@ -1,7 +1,13 @@
 {pkgs, config, ...}:
 
 {
-  virtualisation.docker.package = (import (import ./nix/sources.nix).nixpkgs {}).docker_20_10;
+  virtualisation.docker = {
+    package = (import (import ./nix/sources.nix).nixpkgs {}).docker_20_10;
+    enable = true;
+    liveRestore = false;
+    enableOnBoot = true;
+    autoPrune.enable = true;
+  };
   boot.kernel.sysctl = {
     "fs.file-max" = "1000000";
     "fs.nr_open" = "1048576";
