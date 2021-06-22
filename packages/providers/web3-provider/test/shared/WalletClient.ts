@@ -19,16 +19,12 @@ export class WalletClient {
 
   constructor(provider: WalletConnectWeb3Provider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
-    console.log(opts); // eslint-disable-line
     const wallet = opts.privateKey
       ? new ethers.Wallet(opts.privateKey)
       : ethers.Wallet.createRandom();
     this.chainId = opts?.chainId || 123;
-    console.log(this.chainId); // eslint-disable-line
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
-    console.log(this.rpcUrl); // eslint-disable-line
     this.signer = wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
-    console.log(this.signer); // eslint-disable-line
   }
 
   approveSessionAndRequest() {
@@ -37,122 +33,77 @@ export class WalletClient {
       if (!this.client) throw Error("Client(session) needs to be initiated first");
       this.client.on("call_request", async (error, payload) => {
         if (!this.client) throw Error("Client(session) needs to be initiated first");
+
         if (error) {
           reject(error);
         }
 
-        if (payload.method === "eth_sendTransaction") {
-          try {
-            let transactionObject: ethers.providers.TransactionRequest = {
-              from: payload.params[0].from,
-              data: payload.params[0].data,
-              chainId: this.chainId,
-            };
-            if (payload.params[0].gas) {
-              transactionObject = {
-                ...transactionObject,
-                gasLimit: payload.params[0].gas,
-              };
-            }
-            if (payload.params[0].to) {
-              transactionObject = {
-                ...transactionObject,
-                to: payload.params[0].to,
-              };
-            }
-            const tx = await this.signer.sendTransaction(transactionObject);
-            await tx.wait();
-            this.client.approveRequest({
-              id: payload.id,
-              result: tx.hash,
-            });
-            resolve();
-          } catch (error) {
-            await this.client.rejectRequest({
-              id: payload.id,
-              error: {
-                message: "message" in error ? error.message : JSON.stringify(error),
-              },
-            });
-          }
-        }
-        if (payload.method === "eth_sign") {
-          try {
-            const sign = await this.signer.signMessage(payload.params[1]);
-            // console.log("signing at client");
-            // console.log();
-            // console.log("msg at clien,", payload.params[1]);
-            // console.log("sig at client", sign);
-            this.client.approveRequest({
-              id: payload.id,
-              result: sign,
-            });
-            resolve();
-          } catch (error) {
-            throw error;
-          }
-        }
-        if (payload.method === "eth_signTransaction") {
-          try {
-            const signedTx = await this.signer.signTransaction(payload.params[0]);
-            // console.log("signing at client");
-            // console.log();
-            // console.log("msg at clien,", payload.params[1]);
-            // console.log("sig at client", sign);
-            this.client.approveRequest({
-              id: payload.id,
-              result: signedTx,
-            });
-            resolve();
-          } catch (error) {
-            throw error;
-          }
-        }
-        if (payload.method === "eth_sendRawTransaction") {
-          try {
-            const receipt = await this.provider.sendTransaction(
-              "eth_sendRawTransaction",
-              payload.params[0],
-            );
-            // console.log("signing at client");
-            // console.log();
-            // console.log("msg at clien,", payload.params[1]);
-            // console.log("sig at client", sign);
-            this.client.approveRequest({
-              id: payload.id,
-              result: receipt.hash,
-            });
-            resolve();
-          } catch (error) {
-            throw error;
-          }
+        try {
+          const result = await this.resolveRequest(payload);
+          this.client.approveRequest({ id: payload.id, result });
+          resolve(result);
+        } catch (e) {
+          const errorMessage = e.message || e.toString();
+          this.client.rejectRequest({ id: payload.id, error: { message: errorMessage } });
+          reject(e);
         }
       });
     });
   }
 
-  // listen() {
-  //   return new Promise<void>(async (resolve, reject) => {
-  //     if (!this.client) throw Error("Client(session) needs to be initiated first");
-  //     this.client.on("session_request", error => {
-  //       if (!this.client) throw Error("Client(session) needs to be initiated first");
-  //       if (error) {
-  //         reject(error);
-  //       }
-  //       this.client.approveSession({
-  //         accounts: [this.signer.address],
-  //         chainId: this.chainId,
-  //       });
-  //     });
+  parseTxParams = payload => {
+    let txParams: ethers.providers.TransactionRequest = {
+      from: payload.params[0].from,
+      data: payload.params[0].data,
+      chainId: this.chainId,
+    };
+    if (payload.params[0].gas) {
+      txParams = {
+        ...txParams,
+        gasLimit: payload.params[0].gas,
+      };
+    }
+    if (payload.params[0].to) {
+      txParams = {
+        ...txParams,
+        to: payload.params[0].to,
+      };
+    }
+    return txParams;
+  };
 
-  //     this.client.on("disconnect", async error => {
-  //       if (error) {
-  //         reject(error);
-  //       }
-  //       resolve();
-  //     });
-  //   });
-  // }
+  resolveRequest = async payload => {
+    let result: any;
+
+    switch (payload.method) {
+      case "eth_sendTransaction":
+        //  eslint-disable-next-line no-case-declarations
+        const tx = await this.signer.sendTransaction(this.parseTxParams(payload));
+        await tx.wait();
+        result = tx.hash;
+        break;
+      case "eth_signTransaction":
+        result = await this.signer.signTransaction(payload.params[0]);
+        break;
+      case "eth_sendRawTransaction":
+        //  eslint-disable-next-line no-case-declarations
+        const receipt = await this.provider.sendTransaction(
+          "eth_sendRawTransaction",
+          payload.params[0],
+        );
+        result = receipt.hash;
+        break;
+      case "eth_sign":
+        result = await this.signer.signMessage(payload.params[1]);
+        break;
+      case "personal_sign":
+        result = await this.signer.signMessage(payload.params[0]);
+        break;
+      default:
+        break;
+    }
+    return result;
+  };
 
   approveSession() {
     return new Promise<void>((resolve, reject) => {
