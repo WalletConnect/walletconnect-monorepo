@@ -65,22 +65,38 @@ describe("WCEthereumProvider", function() {
     it("enable", async () => {
       const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
       const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
+      const providerAccounts = await walletClient.approveSession();
+      expect(providerAccounts).to.eql([wallet.address]);
+
+      const web3 = new Web3(provider as any);
+
+      const accounts = await web3.eth.getAccounts();
+      expect(accounts).to.eql([wallet.address]);
+
+      const chainId = await web3.eth.getChainId();
+      expect(chainId).to.eql(CHAIN_ID);
+    });
+
+    it.skip("send transaction", async () => {
+      const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+      const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
       await Promise.all([
-        walletClient.approveSession(),
+        walletClient.approveSessionAndRequest(),
         new Promise<void>(async resolve => {
-          const providerAccounts = await provider.enable();
-
-          expect(providerAccounts).to.eql([wallet.address]);
-
-          const web3 = new Web3(provider as any);
-
-          const accounts = await web3.eth.getAccounts();
-          expect(accounts).to.eql([wallet.address]);
-
-          const chainId = await web3.eth.getChainId();
-          expect(chainId).to.eql(CHAIN_ID);
-
-          resolve();
+          try {
+            const web3 = new Web3(provider as any);
+            const balanceBefore = await web3.eth.getBalance(wallet.address);
+            const tx = await web3.eth.sendTransaction({
+              from: wallet.address,
+              to: wallet.address,
+              value: "0x01",
+            });
+            expect(!!tx.transactionHash).to.be.true;
+            const balanceAfter = await web3.eth.getBalance(wallet.address);
+            expect(balanceBefore === balanceAfter).to.be.false;
+          } catch (e) {
+            throw new Error(e);
+          }
         }),
       ]);
     });
@@ -92,20 +108,17 @@ describe("WCEthereumProvider", function() {
         walletClient.approveSessionAndRequest(),
         new Promise<void>(async resolve => {
           try {
-            const providerAccounts = await provider.enable();
-            expect(providerAccounts).to.eql([wallet.address]);
-
             const web3 = new Web3(provider as any);
             const erc20Factory = new web3.eth.Contract(JSON.parse(JSON.stringify(_abi)));
             const erc20 = await erc20Factory
               .deploy({ data: _bytecode, arguments: ["The test token", "tst", 18] })
-              .send({ from: providerAccounts[0] });
+              .send({ from: wallet.address });
 
             const balanceToMint = ethers.utils.parseEther("500");
             await new Promise<void>((resolve, reject) => {
               erc20.methods
-                .mint(providerAccounts[0], balanceToMint.toHexString())
-                .send({ from: providerAccounts[0] })
+                .mint(wallet.address, balanceToMint.toHexString())
+                .send({ from: wallet.address })
                 .on("receipt", function() {
                   resolve();
                 })
@@ -116,8 +129,8 @@ describe("WCEthereumProvider", function() {
             });
 
             const balance = await erc20.methods
-              .balanceOf(providerAccounts[0])
-              .call({ from: providerAccounts[0], gas: 80000 }); // REVIEW 'Errors encountered in param 0: Invalid value null supplied to : RpcCallRequest/gas: QUANTITY | undefined, Invalid value null supplied to : RpcCallRequest/gasPrice: QUANTITY | undefined'
+              .balanceOf(wallet.address)
+              .call({ from: wallet.address, gas: 80000 }); // REVIEW 'Errors encountered in param 0: Invalid value null supplied to : RpcCallRequest/gas: QUANTITY | undefined, Invalid value null supplied to : RpcCallRequest/gasPrice: QUANTITY | undefined'
             expect(balanceToMint.toString() === balance).to.be.true;
           } catch (error) {
             expect(error).to.be.false;
@@ -132,36 +145,50 @@ describe("WCEthereumProvider", function() {
     it("enable", async () => {
       const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
       const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
-      await Promise.all([
-        walletClient.approveSession(),
-        new Promise<void>(async resolve => {
-          const providerAccounts = await provider.enable();
-          expect(providerAccounts).to.eql([wallet.address]);
+      const providerAccounts = await walletClient.approveSession();
+      expect(providerAccounts).to.eql([wallet.address]);
 
-          const web3Provider = new ethers.providers.Web3Provider(provider);
+      const web3Provider = new ethers.providers.Web3Provider(provider);
 
-          const accounts = await web3Provider.listAccounts();
-          expect(accounts).to.eql([wallet.address]);
+      const accounts = await web3Provider.listAccounts();
+      expect(accounts).to.eql([wallet.address]);
 
-          const network = await web3Provider.getNetwork();
+      const network = await web3Provider.getNetwork();
 
-          expect(network.chainId).to.equal(CHAIN_ID);
-
-          resolve();
-        }),
-      ]);
+      expect(network.chainId).to.equal(CHAIN_ID);
     });
-
-    it("create contract", async () => {
+    it.skip("send transaction", async () => {
       const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
       const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
       await Promise.all([
         walletClient.approveSessionAndRequest(),
         new Promise<void>(async resolve => {
           try {
-            const providerAccounts = await provider.enable();
-            expect(providerAccounts).to.eql([wallet.address]);
-
+            const web3Provider = new ethers.providers.Web3Provider(provider);
+            const balanceBefore = await web3Provider.getBalance(wallet.address);
+            const signer = web3Provider.getSigner();
+            const tx = await signer.sendTransaction({
+              from: wallet.address,
+              to: wallet.address,
+              value: "0x01",
+            });
+            await tx.wait();
+            expect(!!tx.hash).to.be.true;
+            const balanceAfter = await web3Provider.getBalance(wallet.address);
+            expect(balanceBefore.toHexString() === balanceAfter.toHexString()).to.be.false;
+          } catch (e) {
+            throw new Error(e);
+          }
+        }),
+      ]);
+    });
+    it.skip("create contract", async () => {
+      const provider = new WCEthereumProvider(TEST_PROVIDER_OPTS);
+      const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
+      await Promise.all([
+        walletClient.approveSessionAndRequest(),
+        new Promise<void>(async resolve => {
+          try {
             const web3Provider = new ethers.providers.Web3Provider(provider);
             const web3Network = await web3Provider.getNetwork();
             console.log("web3Network", web3Network); // eslint-disable-line
@@ -193,23 +220,20 @@ describe("WCEthereumProvider", function() {
         walletClient.approveSessionAndRequest(),
         new Promise<void>(async resolve => {
           try {
-            const providerAccounts = await provider.enable();
-            expect(providerAccounts).to.eql([wallet.address]);
-
             const web3Provider = new ethers.providers.Web3Provider(provider);
             const signer = await web3Provider.getSigner();
-            // const balanceBefore = await web3Provider.getBalance(providerAccounts[0]);
+            // const balanceBefore = await web3Provider.getBalance(wallet.address);
             const randomWallet = ethers.Wallet.createRandom();
             const balanceToSend = ethers.utils.parseEther("3");
             const unsignedTx = {
               to: randomWallet.address,
               value: balanceToSend.toHexString(),
-              from: providerAccounts[0],
+              from: wallet.address,
             };
             // const unsignedTx = signer.populateTransaction({
             //   to: randomWallet.address,
             //   value: balanceToSend.toHexString(),
-            //   from: providerAccounts[0],
+            //   from: wallet.address,
             // });
             const signedTx = await signer.signTransaction(unsignedTx); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
             // const signedTx = await provider.sendAsyncPromise("eth_signTransaction", [unsignedTx]); // ERROR Does not resolve
@@ -235,9 +259,6 @@ describe("WCEthereumProvider", function() {
         walletClient.approveSessionAndRequest(),
         new Promise<void>(async resolve => {
           try {
-            const providerAccounts = await provider.enable();
-            expect(providerAccounts).to.eql([wallet.address]);
-
             const web3Provider = new ethers.providers.Web3Provider(provider);
             const signer = await web3Provider.getSigner();
             const msg = "Hello world";

@@ -106,7 +106,7 @@ export class WalletClient {
   };
 
   approveSession() {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<string[]>(async (resolve, reject) => {
       this.provider.connector.on("display_uri", (error, payload) => {
         if (error) {
           reject(error);
@@ -123,9 +123,10 @@ export class WalletClient {
           }
           const session = { accounts: [this.signer.address], chainId: this.chainId };
           this.client.approveSession(session);
-          resolve();
         });
       });
+      const accounts = await this.provider.enable();
+      resolve(accounts);
     });
   }
 }
