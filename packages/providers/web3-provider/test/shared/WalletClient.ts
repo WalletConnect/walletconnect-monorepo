@@ -14,17 +14,21 @@ export class WalletClient {
   readonly signer: ethers.Wallet;
   readonly chainId: number;
   readonly rpcUrl: string;
-  // readonly wallet: ethers.Wallet;
+
   client?: IConnector;
 
   constructor(provider: WalletConnectWeb3Provider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
+    console.log(opts); // eslint-disable-line
     const wallet = opts.privateKey
       ? new ethers.Wallet(opts.privateKey)
       : ethers.Wallet.createRandom();
     this.chainId = opts?.chainId || 123;
+    console.log(this.chainId); // eslint-disable-line
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
+    console.log(this.rpcUrl); // eslint-disable-line
     this.signer = wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
+    console.log(this.signer); // eslint-disable-line
   }
 
   approveSessionAndRequest() {
@@ -166,10 +170,8 @@ export class WalletClient {
           if (payload.params[0].chainId !== this.chainId) {
             return reject(new Error("Invalid chainid for session request"));
           }
-          this.client.approveSession({
-            accounts: [this.signer.address],
-            chainId: this.chainId,
-          });
+          const session = { accounts: [this.signer.address], chainId: this.chainId };
+          this.client.approveSession(session);
           resolve();
         });
       });

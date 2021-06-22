@@ -87,10 +87,7 @@ describe("WalletConnectWeb3Provider", function() {
 
   it("enable successfully ethers", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-    const walletClient = new WalletClient(provider, {
-      chainId: CHAIN_ID,
-      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-    });
+    const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
     await Promise.all([
       walletClient.approveSession(),
       new Promise<void>(async resolve => {
@@ -111,12 +108,9 @@ describe("WalletConnectWeb3Provider", function() {
     ]);
   });
 
-  it.skip("create contract web3", async () => {
+  it("create contract web3", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-    const walletClient = new WalletClient(provider, {
-      chainId: CHAIN_ID,
-      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-    });
+    const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
     await Promise.all([
       walletClient.approveSessionAndRequest(),
       new Promise<void>(async resolve => {
@@ -159,10 +153,7 @@ describe("WalletConnectWeb3Provider", function() {
 
   it.skip("create contract ethers", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-    const walletClient = new WalletClient(provider, {
-      chainId: CHAIN_ID,
-      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-    });
+    const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
     await Promise.all([
       walletClient.approveSessionAndRequest(),
       new Promise<void>(async resolve => {
@@ -191,10 +182,7 @@ describe("WalletConnectWeb3Provider", function() {
 
   it.skip("sign transaction ethers", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-    const walletClient = new WalletClient(provider, {
-      chainId: CHAIN_ID,
-      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-    });
+    const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
     await Promise.all([
       walletClient.approveSessionAndRequest(),
       new Promise<void>(async resolve => {
@@ -234,10 +222,7 @@ describe("WalletConnectWeb3Provider", function() {
   // Unresolved test weird one because there are two methods (eth_sign and personal_sign) with the same history
   it.skip("create sign ethers", async () => {
     const provider = new WalletConnectWeb3Provider(TEST_PROVIDER_OPTS);
-    const walletClient = new WalletClient(provider, {
-      chainId: CHAIN_ID,
-      privateKey: DEFAULT_GENESIS_ACCOUNTS[0].privateKey,
-    });
+    const walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
     await Promise.all([
       walletClient.approveSessionAndRequest(),
       new Promise<void>(async resolve => {

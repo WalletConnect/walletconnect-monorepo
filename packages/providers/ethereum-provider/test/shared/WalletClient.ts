@@ -6,24 +6,29 @@ import WCEthereumProvider from "../../src";
 export interface WalletClientOpts {
   privateKey: string;
   chainId: number;
-  rpcURL: string;
+  rpcUrl: string;
 }
 
 export class WalletClient {
   readonly provider: WCEthereumProvider;
   readonly signer: ethers.Wallet;
   readonly chainId: number;
-  // readonly wallet: ethers.Wallet;
+  readonly rpcUrl: string;
+
   client?: IConnector;
 
   constructor(provider: WCEthereumProvider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
+    console.log(opts); // eslint-disable-line
     const wallet = opts.privateKey
       ? new ethers.Wallet(opts.privateKey)
       : ethers.Wallet.createRandom();
-    this.chainId = opts.chainId ? opts.chainId : 123;
-    const rpcURL = opts.rpcURL ? opts.rpcURL : "http://localhost:8545";
-    this.signer = wallet.connect(new ethers.providers.JsonRpcProvider(rpcURL));
+    this.chainId = opts?.chainId || 123;
+    console.log(this.chainId); // eslint-disable-line
+    this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
+    console.log(this.rpcUrl); // eslint-disable-line
+    this.signer = wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
+    console.log(this.signer); // eslint-disable-line
   }
 
   approveSessionAndRequest() {
@@ -154,10 +159,13 @@ export class WalletClient {
         }
         const uri = payload.params[0];
         this.client = new WalletConnect({ uri });
-        this.client.on("session_request", error => {
+        this.client.on("session_request", (error, payload) => {
           if (!this.client) throw Error("Client(session) needs to be initiated first");
           if (error) {
             reject(error);
+          }
+          if (payload.params[0].chainId !== this.chainId) {
+            return reject(new Error("Invalid chainid for session request"));
           }
           const session = { accounts: [this.signer.address], chainId: this.chainId };
           this.client.approveSession(session);
