@@ -28,7 +28,7 @@ const wallet = new ethers.Wallet(DEFAULT_GENESIS_ACCOUNTS[0].privateKey);
 const TEST_PROVIDER_OPTS = {
   chainId: CHAIN_ID,
   qrcode: false,
-  bridge: "https://bridge.walletconnect.org",
+  bridge: "https://polygon.bridge.walletconnect.org",
   rpc: {
     [CHAIN_ID]: RPC_URL,
   },

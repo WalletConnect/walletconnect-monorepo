@@ -61,8 +61,8 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@json-rpc-tools/types": "^2.0.0-beta.3",
-    "@json-rpc-tools/utils": "^2.0.0-beta.3",
+    "@json-rpc-tools/types": "^2.0.0-beta.11",
+    "@json-rpc-tools/utils": "^2.0.0-beta.11",
     "@walletconnect/client": "^1.5.0-rc.3",
     "@walletconnect/rpc-connection": "^1.5.0-rc.3",
     "@walletconnect/types": "^1.5.0-rc.3",
