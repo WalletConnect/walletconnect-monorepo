@@ -2,19 +2,20 @@
 	email {env.EMAIL}
 	admin 127.0.0.1:2019
 	order rate_limit before reverse_proxy
+	acme_dns cloudflare {env.CLOUDFLARE_TOKEN}
 }
 {env.DOMAIN} {
 	# This rate_limit option is tighly coupled with Cloudflare.
 	# If we don't use the cloudflare proxy we won't get
 	# a X-Forwaded-For header, making rate limiting useless
-	rate_limit {header.X-Forwarded-For} 4r/s 100000
+	tls {
+		dns cloudflare {env.CLOUDFLARE_TOKEN}
+	}
+	#rate_limit {header.X-Forwarded-For} 10r/s 100000
 	log {
 		output stdout
 		format json
 		level {env.LOG_LEVEL}
-	}
-	tls {
-		dns cloudflare {env.CLOUDFLARE_TOKEN}
 	}
 	@websockets {
 		header Connection *Upgrade*
@@ -25,15 +26,16 @@
 }
 
 grafana.{env.DOMAIN} {
-  handle {
-    header Access-Control-Allow-Methods "GET"
-    header Access-Control-Allow-Origin grafana.{env.DOMAIN}
-    root * /www
-    file_server
-    templates
-  }
+	handle {
+		header Access-Control-Allow-Methods "GET"
+		header Access-Control-Allow-Origin grafana.{env.DOMAIN}
+		root * /www
+		file_server
+		templates
+	}
+
 	handle_path /dash* {
-	  reverse_proxy grafana:3000
+		reverse_proxy grafana:3000
 	}
 	tls {
 		dns cloudflare {env.CLOUDFLARE_TOKEN}
