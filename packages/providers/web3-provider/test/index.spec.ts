@@ -76,13 +76,16 @@ describe("WalletConnectWeb3Provider", function() {
     });
     it("enable", async () => {
       const accounts = await web3.eth.getAccounts();
+      console.log("accounts", accounts); // eslint-disable-line
       expect(accounts).to.eql([address]);
 
       const chainId = await web3.eth.getChainId();
+      console.log("chainId", chainId); // eslint-disable-line
       expect(chainId).to.eql(CHAIN_ID);
     });
-    it.skip("send transaction", async () => {
+    it("send transaction", async () => {
       const balanceBefore = await web3.eth.getBalance(address);
+      console.log("balanceBefore", balanceBefore); // eslint-disable-line
       const tx = await web3.eth.sendTransaction({
         from: address,
         to: address,
@@ -90,6 +93,7 @@ describe("WalletConnectWeb3Provider", function() {
       });
       expect(!!tx.transactionHash).to.be.true;
       const balanceAfter = await web3.eth.getBalance(address);
+      console.log("balanceAfter", balanceAfter); // eslint-disable-line
       expect(balanceBefore === balanceAfter).to.be.false;
     });
     it.skip("create contract", async () => {
