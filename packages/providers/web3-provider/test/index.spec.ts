@@ -113,6 +113,12 @@ describe("WalletConnectProvider", function() {
       const tokenBalanceB = await erc20.methods.balanceOf(receiverAddress).call();
       expect(tokenBalanceB).to.eql(utils.parseEther("1").toString());
     });
+    it.skip("revert call", () => {
+      // TODO: write test
+    });
+    it.skip("revert tx", () => {
+      // TODO: write test
+    });
     it.skip("estimate gas", async () => {
       const ethTransferGas = await web3.eth.estimateGas(TEST_ETH_TRANSFER);
       // FIXME: returning 21001 instead of 21000
@@ -185,6 +191,12 @@ describe("WalletConnectProvider", function() {
       // expect(tokenBalanceA.toString()).to.eql(utils.parseEther("1").toString());
       const tokenBalanceB = await erc20.balanceOf(receiverAddress);
       expect(tokenBalanceB.toString()).to.eql(utils.parseEther("1").toString());
+    });
+    it.skip("revert call", () => {
+      // TODO: write test
+    });
+    it.skip("revert tx", () => {
+      // TODO: write test
     });
     it.skip("estimate gas", async () => {
       const ethTransferGas = await web3Provider.estimateGas(TEST_ETH_TRANSFER);
