@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ethers, utils } from "ethers";
 import WalletConnect from "@walletconnect/client";
 import { IConnector } from "@walletconnect/types";
 
@@ -76,6 +76,7 @@ export class WalletClient {
         if (error) {
           throw error;
         }
+
         try {
           let result: any;
 
@@ -87,7 +88,9 @@ export class WalletClient {
               result = tx.hash;
               break;
             case "eth_signTransaction":
-              result = await this.signer.signTransaction(payload.params[0]);
+              //  eslint-disable-next-line no-case-declarations
+              const txParams = await this.signer.populateTransaction(this.parseTxParams(payload));
+              result = await this.signer.signTransaction(txParams);
               break;
             case "eth_sendRawTransaction":
               //  eslint-disable-next-line no-case-declarations
@@ -95,10 +98,14 @@ export class WalletClient {
               result = receipt.hash;
               break;
             case "eth_sign":
-              result = await this.signer.signMessage(payload.params[1]);
+              //  eslint-disable-next-line no-case-declarations
+              const ethMsg = payload.params[1];
+              result = await this.signer.signMessage(utils.arrayify(ethMsg));
               break;
             case "personal_sign":
-              result = await this.signer.signMessage(payload.params[0]);
+              //  eslint-disable-next-line no-case-declarations
+              const personalMsg = payload.params[0];
+              result = await this.signer.signMessage(utils.arrayify(personalMsg));
               break;
             default:
               throw new Error(`Method not supported: ${payload.method}`);

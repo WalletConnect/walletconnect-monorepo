@@ -139,14 +139,16 @@ describe("WalletConnectProvider", function() {
     });
     it.skip("sign transaction", async () => {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
-      // FIXME: never resolves and times out
       const signedTx = await web3.eth.signTransaction(TEST_ETH_TRANSFER);
-      const broadcastTx = await web3.eth.sendSignedTransaction(signedTx.raw);
+      const broadcastTx = await provider.request({
+        method: "eth_sendRawTransaction",
+        params: [signedTx],
+      });
       expect(!!broadcastTx).to.be.true;
       const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
       expect(balanceAfter.lt(balanceBefore)).to.be.true;
     });
-    it.skip("sign message", async () => {
+    it("sign message", async () => {
       const msg = "Hello world";
       const signature = await web3.eth.sign(msg, walletAddress);
       // FIXME: needs to be handled because of inconsistency between eth_sign and personal_sign
@@ -242,7 +244,7 @@ describe("WalletConnectProvider", function() {
       const balanceAfter = await web3Provider.getBalance(walletAddress);
       expect(balanceAfter.lt(balanceBefore)).to.be.true;
     });
-    it.skip("sign message", async () => {
+    it("sign message", async () => {
       const signer = web3Provider.getSigner();
       const msg = "Hello world";
       const signature = await signer.signMessage(msg);
