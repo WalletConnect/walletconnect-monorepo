@@ -49,6 +49,7 @@ const TEST_ETH_TRANSFER = {
   from: ACCOUNTS.a.address,
   to: ACCOUNTS.b.address,
   value: utils.parseEther("1").toHexString(),
+  data: "0x",
 };
 
 describe("WalletConnectProvider", function() {
@@ -128,7 +129,13 @@ describe("WalletConnectProvider", function() {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
       await web3.eth.sendTransaction(TEST_ETH_TRANSFER);
       const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
-      expect(balanceAfter.lt(balanceBefore)).to.be.true;
+      expect(
+        balanceAfter.lt(balanceBefore),
+        "balanceAfter " +
+          balanceAfter.toString() +
+          " less than balanceBefore: " +
+          balanceBefore.toString(),
+      ).to.be.true;
     });
     it.skip("sign transaction", async () => {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
@@ -176,7 +183,7 @@ describe("WalletConnectProvider", function() {
       await erc20.deployed();
       const balanceToMint = utils.parseEther("2");
       const mintTx = await erc20.mint(walletAddress, balanceToMint);
-      await mintTx.wait();
+      await mintTx.wait(2);
       const tokenBalance = await erc20.balanceOf(walletAddress);
       expect(tokenBalance.toString()).to.eql(balanceToMint.toString());
       const tokenTransferGas = await erc20.estimateGas.transfer(
@@ -185,10 +192,9 @@ describe("WalletConnectProvider", function() {
       );
       expect(tokenTransferGas.toString()).to.eql("52437");
       const transferTx = await erc20.transfer(receiverAddress, utils.parseEther("1"));
-      await transferTx.wait();
-      // FIXME: balance A is still 2 after transferring 1
-      // const tokenBalanceA = await erc20.balanceOf(walletAddress);
-      // expect(tokenBalanceA.toString()).to.eql(utils.parseEther("1").toString());
+      await transferTx.wait(2);
+      const tokenBalanceA = await erc20.balanceOf(walletAddress);
+      expect(tokenBalanceA.toString()).to.eql(utils.parseEther("1").toString());
       const tokenBalanceB = await erc20.balanceOf(receiverAddress);
       expect(tokenBalanceB.toString()).to.eql(utils.parseEther("1").toString());
     });
@@ -203,21 +209,31 @@ describe("WalletConnectProvider", function() {
       // FIXME: returning 21001 instead of 21000
       expect(ethTransferGas.toString()).to.eql("21000");
     });
-    it.skip("send transaction", async () => {
+    it("send transaction", async () => {
       const balanceBefore = await web3Provider.getBalance(walletAddress);
       const signer = web3Provider.getSigner();
+
       const transferTx = await signer.sendTransaction(TEST_ETH_TRANSFER);
-      await transferTx.wait();
+      await transferTx.wait(2);
+
       expect(!!transferTx.hash).to.be.true;
       const balanceAfter = await web3Provider.getBalance(walletAddress);
-      expect(balanceAfter.lt(balanceBefore)).to.be.true;
+      expect(
+        balanceAfter.lt(balanceBefore),
+        "balanceAfter " +
+          balanceAfter.toString() +
+          " less than balanceBefore: " +
+          balanceBefore.toString(),
+      ).to.be.true;
     });
     it.skip("sign transaction", async () => {
-      const signer = web3Provider.getSigner();
       const balanceBefore = await web3Provider.getBalance(walletAddress);
       // FIXME: ethers does not support signTransaction but also does not resolve sendAsyncPromise
-      const signedTx = await signer.signTransaction(TEST_ETH_TRANSFER); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
-      // const signedTx = await provider.sendAsyncPromise("eth_signTransaction", [unsignedTx]); // ERROR Does not resolve
+      // const signedTx = await signer.signTransaction(TEST_ETH_TRANSFER); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
+      const signedTx = await provider.request({
+        method: "eth_signTransaction",
+        params: [TEST_ETH_TRANSFER],
+      });
       const broadcastTx = await provider.request({
         method: "eth_sendRawTransaction",
         params: [signedTx],

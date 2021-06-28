@@ -76,7 +76,6 @@ export class WalletClient {
         if (error) {
           throw error;
         }
-
         try {
           let result: any;
 
