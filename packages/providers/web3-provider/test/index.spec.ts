@@ -203,14 +203,23 @@ describe("WalletConnectProvider", function() {
       // FIXME: returning 21001 instead of 21000
       expect(ethTransferGas.toString()).to.eql("21000");
     });
-    it.skip("send transaction", async () => {
+    it("send transaction", async () => {
       const balanceBefore = await web3Provider.getBalance(walletAddress);
       const signer = web3Provider.getSigner();
+
       const transferTx = await signer.sendTransaction(TEST_ETH_TRANSFER);
-      await transferTx.wait();
+
+      await transferTx.wait(2);
+
       expect(!!transferTx.hash).to.be.true;
       const balanceAfter = await web3Provider.getBalance(walletAddress);
-      expect(balanceAfter.lt(balanceBefore)).to.be.true;
+      expect(
+        balanceAfter.lt(balanceBefore),
+        "balanceAfter " +
+          balanceAfter.toString() +
+          " less then balanceBefore: " +
+          balanceBefore.toString(),
+      ).to.be.true;
     });
     it.skip("sign transaction", async () => {
       const signer = web3Provider.getSigner();
