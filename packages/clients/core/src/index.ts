@@ -376,6 +376,10 @@ class Connector implements IConnector {
     this._eventManager.subscribe(eventEmitter);
   }
 
+  public off(event: string): void {
+    this._eventManager.unsubscribe(event);
+  }
+
   public async createInstantRequest(instantRequest: Partial<IJsonRpcRequest>): Promise<void> {
     this._key = await this._generateKey();
 

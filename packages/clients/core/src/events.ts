@@ -26,6 +26,10 @@ class EventManager {
     this._eventEmitters.push(eventEmitter);
   }
 
+  public unsubscribe(event: string) {
+    this._eventEmitters = this._eventEmitters.filter(x => x.event !== event);
+  }
+
   public trigger(
     payload: IJsonRpcRequest | IJsonRpcResponseSuccess | IJsonRpcResponseError | IInternalEvent,
   ): void {

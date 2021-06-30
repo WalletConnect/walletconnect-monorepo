@@ -6,7 +6,7 @@ import { getRpcUrl, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
 import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
 
-class WalletConnectEthereumProvider implements IEthereumProvider {
+class WalletConnectProvider implements IEthereumProvider {
   public events: any = new EventEmitter();
 
   private rpc: IRpcConfig;
@@ -20,8 +20,24 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
   }
 
+  get connected(): boolean {
+    return (this.signer.connection as SignerConnection).connected;
+  }
+
   get connector(): IConnector {
-    return (this.signer.connection as any).connector as IConnector;
+    return (this.signer.connection as SignerConnection).connector;
+  }
+
+  get accounts(): string[] {
+    return (this.signer.connection as SignerConnection).accounts;
+  }
+
+  get chainId(): number {
+    return (this.signer.connection as SignerConnection).chainId;
+  }
+
+  get rpcUrl(): string {
+    return (this.http?.connection as HttpConnection).url || "";
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
@@ -99,4 +115,4 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
   }
 }
 
-export default WalletConnectEthereumProvider;
+export default WalletConnectProvider;
