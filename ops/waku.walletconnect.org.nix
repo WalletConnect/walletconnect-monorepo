@@ -2,7 +2,7 @@
 let
   wakuP2P = 60000;
   volumePath = "/mnt/waku-store";
-  statusImage = (import ./waku-docker.nix {}).statusImage;
+  wakuDocker = (import ./waku-docker.nix {});
 in {
   networking = {
     firewall = {
@@ -19,17 +19,16 @@ in {
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {
     "store-waku" = {
-      image = statusImage.imageName + ":" + statusImage.imageTag;
-      ports = [
-        ''${toString wakuP2P}:${toString wakuP2P}''
-      ];
-      volumes = [
+      image = wakuDocker.imageName + ":" + wakuDocker.imageTag;
+      ports = [ ''${toString wakuP2P}:${toString wakuP2P}'' ];
+      volumes = [ 
         "${volumePath}:/store"
+        "/root/nodekey:/key"
       ];
       cmd = [
         "--tcp-port=${toString wakuP2P}"
         "--udp-port=${toString wakuP2P}"
-        "--nodekey=1107ad8e44fe7dc924bb9d388d588832cdc4273efb2623e8609c8085d0d2154c"
+        "--nodekey=$(${pks.coretuils}/bin/cat /key/nodekey)"
         "--persist-peers=true"
         "--keep-alive=true"
         "--swap=false"
