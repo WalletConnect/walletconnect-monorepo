@@ -9,22 +9,47 @@ export interface WalletClientOpts {
 }
 
 export class WalletClient {
-  public readonly provider: any;
-  public readonly signer: ethers.Wallet;
-  public readonly chainId: number;
-  public readonly rpcUrl: string;
+  public provider: any;
+  public signer: ethers.Wallet;
+  public chainId: number;
+  public rpcUrl: string;
 
   public client?: IConnector;
 
   constructor(provider: any, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
-    const wallet = opts.privateKey
-      ? new ethers.Wallet(opts.privateKey)
-      : ethers.Wallet.createRandom();
     this.chainId = opts?.chainId || 123;
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
-    this.signer = wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
+    this.signer = this.getWallet(opts.privateKey);
     this.initialize();
+  }
+
+  public changeAccount(privateKey: string) {
+    this.signer = this.getWallet(privateKey);
+    this.updateSession();
+  }
+
+  public changeChain(chainId: number, rpcUrl: string) {
+    this.setChain(chainId, rpcUrl);
+    this.updateSession();
+  }
+
+  private setChain(chainId: number, rpcUrl: string) {
+    if (this.chainId !== chainId) {
+      this.chainId = chainId;
+    }
+    if (this.rpcUrl !== rpcUrl) {
+      this.rpcUrl = rpcUrl;
+      this.signer = this.signer.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
+    }
+  }
+
+  private getWallet(privateKey?: string) {
+    const wallet =
+      typeof privateKey !== "undefined"
+        ? new ethers.Wallet(privateKey)
+        : ethers.Wallet.createRandom();
+    return wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
   }
 
   private parseTxParams = payload => {
@@ -48,6 +73,16 @@ export class WalletClient {
     return txParams;
   };
 
+  private getSession() {
+    return { accounts: [this.signer.address], chainId: this.chainId };
+  }
+
+  private updateSession() {
+    if (typeof this.client !== "undefined") {
+      this.client.updateSession(this.getSession());
+    }
+  }
+
   private initialize() {
     this.provider.connector.on("display_uri", (error, payload) => {
       if (error) {
@@ -65,8 +100,7 @@ export class WalletClient {
         if (payload.params[0].chainId !== this.chainId) {
           throw new Error("Invalid chainid for session request");
         }
-        const session = { accounts: [this.signer.address], chainId: this.chainId };
-        this.client.approveSession(session);
+        this.client.approveSession(this.getSession());
       });
 
       // subscribe to call request and resolve JSON-RPC payloads
