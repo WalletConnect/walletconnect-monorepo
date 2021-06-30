@@ -19,7 +19,6 @@ services:
       replicas: ${REPLICAS:-1}
 
   relay:
-    image: ${RELAY_IMAGE}
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       RELAY_MODE: ${RELAY_MODE:-any}

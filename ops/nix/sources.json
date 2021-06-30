@@ -11,6 +11,18 @@
         "url": "https://github.com/nmattia/niv/archive/af958e8057f345ee1aca714c1247ef3ba1c15f5e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "nix-nim-waku": {
+        "branch": "main",
+        "description": null,
+        "homepage": null,
+        "owner": "sbc64",
+        "repo": "nix-nim-waku",
+        "rev": "0249241a6e33f327e63b7ea554ef60bf69109784",
+        "sha256": "017yzfiz4n5dq33j03lwnqnii6jl08frz4yzqby9yzz0gsm5hy1q",
+        "type": "tarball",
+        "url": "https://github.com/sbc64/nix-nim-waku/archive/0249241a6e33f327e63b7ea554ef60bf69109784.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "nixos-unstable",
         "description": "Nix Packages collection",

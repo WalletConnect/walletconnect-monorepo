@@ -27,7 +27,7 @@ buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && $(copyResult)
 caddyVersion=v2.4.2
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
 buildCaddy=nix-build $(caddySrc) --attr docker && $(copyResult)
-buildWaku=nix-build ./ops/waku-docker.nix --attr docker && $(copyResult)
+buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
 
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
 help: ## Show this help
