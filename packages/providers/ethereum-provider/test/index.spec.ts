@@ -75,60 +75,102 @@ describe("WalletConnectProvider", function() {
     walletAddress = walletClient.signer.address;
     receiverAddress = ACCOUNTS.b.address;
     expect(walletAddress).to.eql(ACCOUNTS.a.address);
+    const providerAccounts = await provider.enable();
+    expect(providerAccounts).to.eql([walletAddress]);
   });
   after(async () => {
     await testNetwork.close();
   });
-  it("enabled", async () => {
-    const providerAccounts = await provider.enable();
-    expect(providerAccounts).to.eql([walletAddress]);
-  });
-  it.skip("chainChanged", async () => {
+  it("chainChanged", async () => {
     // change to Kovan
     await Promise.all([
-      new Promise<void>(resolve => {
-        provider.on("chainChanged", chainId => {
-          console.log("chainChanged", "chainId", chainId); // eslint-disable-line
-          expect(chainId).to.eql(42);
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          await walletClient.changeChain(42, "https://kovan.poa.network");
           resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }),
+
+      new Promise<void>((resolve, reject) => {
+        provider.on("chainChanged", chainId => {
+          try {
+            expect(chainId).to.eql(42);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
         });
       }),
-      walletClient.changeChain(42, "https://kovan.poa.network"),
     ]);
     // change back to testNetwork
     await Promise.all([
-      new Promise<void>(resolve => {
-        provider.on("chainChanged", chainId => {
-          console.log("chainChanged", "chainId", chainId); // eslint-disable-line
-          expect(chainId).to.eql(CHAIN_ID);
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          await walletClient.changeChain(CHAIN_ID, RPC_URL);
           resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }),
+
+      new Promise<void>((resolve, reject) => {
+        provider.on("chainChanged", chainId => {
+          try {
+            expect(chainId).to.eql(CHAIN_ID);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
         });
       }),
-      walletClient.changeChain(CHAIN_ID, RPC_URL),
     ]);
   });
-  it.skip("accountsChanged", async () => {
-    // change to account C
+  it("accountsChanged", async () => {
+    // change to account c
     await Promise.all([
-      new Promise<void>(resolve => {
-        provider.on("accountsChanged", accounts => {
-          console.log("accountsChanged", "accounts", accounts); // eslint-disable-line
-          expect(accounts[0]).to.eql(ACCOUNTS.c.address);
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          await walletClient.changeAccount(ACCOUNTS.c.privateKey);
           resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }),
+
+      new Promise<void>((resolve, reject) => {
+        provider.on("accountsChanged", accounts => {
+          try {
+            expect(accounts[0]).to.eql(ACCOUNTS.c.address);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
         });
       }),
-      walletClient.changeAccount(ACCOUNTS.c.privateKey),
     ]);
-    // change back to account A
+    // change back to account a
     await Promise.all([
-      new Promise<void>(resolve => {
-        provider.on("accountsChanged", accounts => {
-          console.log("accountsChanged", "accounts", accounts); // eslint-disable-line
-          expect(accounts[0]).to.eql(ACCOUNTS.a.address);
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          await walletClient.changeAccount(ACCOUNTS.a.privateKey);
           resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }),
+
+      new Promise<void>((resolve, reject) => {
+        provider.on("accountsChanged", accounts => {
+          try {
+            expect(accounts[0]).to.eql(ACCOUNTS.a.address);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
         });
       }),
-      walletClient.changeAccount(ACCOUNTS.a.privateKey),
     ]);
   });
   describe("Web3", () => {

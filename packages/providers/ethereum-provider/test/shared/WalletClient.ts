@@ -24,14 +24,14 @@ export class WalletClient {
     this.initialize();
   }
 
-  public changeAccount(privateKey: string) {
+  public async changeAccount(privateKey: string) {
     this.signer = this.getWallet(privateKey);
-    this.updateSession();
+    await this.updateSession();
   }
 
-  public changeChain(chainId: number, rpcUrl: string) {
+  public async changeChain(chainId: number, rpcUrl: string) {
     this.setChain(chainId, rpcUrl);
-    this.updateSession();
+    await this.updateSession();
   }
 
   private setChain(chainId: number, rpcUrl: string) {
@@ -77,9 +77,9 @@ export class WalletClient {
     return { accounts: [this.signer.address], chainId: this.chainId };
   }
 
-  private updateSession() {
+  private async updateSession() {
     if (typeof this.client !== "undefined") {
-      this.client.updateSession(this.getSession());
+      await this.client.updateSession(this.getSession());
     }
   }
 
