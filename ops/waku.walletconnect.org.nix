@@ -27,7 +27,7 @@ in {
       cmd = [
         "--tcp-port=${toString wakuP2P}"
         "--udp-port=${toString wakuP2P}"
-        "--nodekey=$(cat ${volumePath}/nodekey)"
+        "--nodekey=${builtins.readFile "${volumePath}/nodekey"}"
         "--persist-peers=true"
         "--keep-alive=true"
         "--swap=false"
