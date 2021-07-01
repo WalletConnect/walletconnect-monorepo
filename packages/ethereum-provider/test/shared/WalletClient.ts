@@ -1,27 +1,46 @@
 import { ethers, utils } from "ethers";
-import WalletConnect from "@walletconnect/client";
-import { IConnector } from "@walletconnect/types";
+import Client, { CLIENT_EVENTS } from "@walletconnect/client";
+import { AppMetadata, IClient, SessionTypes } from "@walletconnect/types";
+import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
+import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
+
+import EthereumProvider from "../../src";
 
 export interface WalletClientOpts {
   privateKey: string;
   chainId: number;
   rpcUrl: string;
+  relayProvider: string;
+  metadata: AppMetadata;
 }
 
 export class WalletClient {
-  public provider: any;
+  public provider: EthereumProvider;
   public signer: ethers.Wallet;
   public chainId: number;
   public rpcUrl: string;
+  public relayProvider?: string;
+  public metadata?: AppMetadata;
 
-  public client?: IConnector;
+  public client?: IClient;
+  public topic?: string;
 
-  constructor(provider: any, opts: Partial<WalletClientOpts>) {
+  static async init(
+    provider: EthereumProvider,
+    opts: Partial<WalletClientOpts>,
+  ): Promise<WalletClient> {
+    const walletClient = new WalletClient(provider, opts);
+    await walletClient.initialize();
+    return walletClient;
+  }
+
+  constructor(provider: EthereumProvider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
     this.chainId = opts?.chainId || 123;
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
+    this.relayProvider = opts?.relayProvider || "ws://localhost:5555";
+    this.metadata = opts?.metadata;
     this.signer = this.getWallet(opts.privateKey);
-    this.initialize();
   }
 
   public async changeAccount(privateKey: string) {
@@ -73,88 +92,132 @@ export class WalletClient {
     return txParams;
   };
 
-  private getSession() {
-    return { accounts: [this.signer.address], chainId: this.chainId };
+  private getSessionState() {
+    const account = `${this.signer.address}@eip155:${this.chainId}`;
+    return { accounts: [account] };
   }
 
   private async updateSession() {
-    if (typeof this.client !== "undefined") {
-      await this.client.updateSession(this.getSession());
-    }
+    if (typeof this.client === "undefined") return;
+    if (typeof this.topic === "undefined") return;
+    await this.client.update({ topic: this.topic, state: this.getSessionState() });
   }
 
-  private initialize() {
-    this.provider.connector.on("display_uri", (error, payload) => {
-      if (error) {
-        throw error;
+  private async initialize() {
+    const opts = {
+      controller: true,
+      relayProvider: this.relayProvider,
+      metadata: this.metadata,
+    };
+    console.log("[initialize]", "opts", opts); // eslint-disable-line no-console
+    this.client = await Client.init(opts);
+    this.registerEventListeners();
+  }
+
+  private registerEventListeners() {
+    console.log("[registerEventListeners]"); // eslint-disable-line no-console
+    if (typeof this.client === "undefined") {
+      throw new Error("Client not inititialized");
+    }
+
+    // auto-pair
+    this.provider.signer.on(SIGNER_EVENTS.uri, async ({ uri }) => {
+      console.log("[SIGNER_EVENTS.uri]", "uri", uri); // eslint-disable-line no-console
+      console.log("[SIGNER_EVENTS.uri]", "!!this.client", !!this.client); // eslint-disable-line no-console
+
+      if (typeof this.client === "undefined") {
+        throw new Error("Client not inititialized");
       }
-      // connect wallet client when provider displays URI
-      this.client = new WalletConnect({ uri: payload.params[0] });
+      await this.client.pair({ uri });
+    });
 
-      // subscribe to session request and approve automatically
-      this.client.on("session_request", (error, payload) => {
-        if (!this.client) throw Error("Client(session) needs to be initiated first");
-        if (error) {
-          throw error;
-        }
-        if (payload.params[0].chainId !== this.chainId) {
-          throw new Error("Invalid chainid for session request");
-        }
-        this.client.approveSession(this.getSession());
-      });
+    // auto-approve
+    this.client.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+      console.log("[session.proposal]", "proposal", proposal); // eslint-disable-line no-console
+      console.log("[session.proposal]", "!!this.client", !!this.client); // eslint-disable-line no-console
 
-      // subscribe to call request and resolve JSON-RPC payloads
-      this.client.on("call_request", async (error, payload) => {
-        if (!this.client) throw Error("Client(session) needs to be initiated first");
+      if (typeof this.client === "undefined") {
+        throw new Error("Client not inititialized");
+      }
+      const response = { state: this.getSessionState() };
+      const session = await this.client.approve({ proposal, response });
+      this.topic = session.topic;
+    });
 
-        if (error) {
-          throw error;
+    // auto-respond
+    this.client.on(
+      CLIENT_EVENTS.session.request,
+      async (requestEvent: SessionTypes.RequestEvent) => {
+        console.log("[session.request]", "requestEvent", requestEvent); // eslint-disable-line no-console
+        console.log("[session.request]", "!!this.client", !!this.client); // eslint-disable-line no-console
+
+        if (typeof this.client === "undefined") {
+          throw new Error("Client not inititialized");
         }
+        const { topic, chainId, request } = requestEvent;
+
+        // ignore if unmatched topic
+        if (topic !== this.topic) return;
 
         try {
+          // reject if no present target chainId
+          if (typeof chainId === "undefined") {
+            throw new Error("Missing target chainId");
+          }
+          const [_, chainRef] = chainId.split(":");
+          // reject if unmatched chainId
+          if (parseInt(chainRef, 10) !== this.chainId) {
+            throw new Error(
+              `Target chainId (${chainRef}) does not match active chainId (${this.chainId})`,
+            );
+          }
+
           let result: any;
 
-          switch (payload.method) {
+          switch (request.method) {
             case "eth_sendTransaction":
               //  eslint-disable-next-line no-case-declarations
-              const tx = await this.signer.sendTransaction(this.parseTxParams(payload));
+              const tx = await this.signer.sendTransaction(this.parseTxParams(request));
               await tx.wait();
               result = tx.hash;
               break;
             case "eth_signTransaction":
               //  eslint-disable-next-line no-case-declarations
-              const txParams = await this.signer.populateTransaction(this.parseTxParams(payload));
+              const txParams = await this.signer.populateTransaction(this.parseTxParams(request));
               result = await this.signer.signTransaction(txParams);
               break;
             case "eth_sendRawTransaction":
               //  eslint-disable-next-line no-case-declarations
-              const receipt = await this.signer.provider.sendTransaction(payload.params[0]);
+              const receipt = await this.signer.provider.sendTransaction(request.params[0]);
               result = receipt.hash;
               break;
             case "eth_sign":
               //  eslint-disable-next-line no-case-declarations
-              const ethMsg = payload.params[1];
+              const ethMsg = request.params[1];
               result = await this.signer.signMessage(utils.arrayify(ethMsg));
               break;
             case "personal_sign":
               //  eslint-disable-next-line no-case-declarations
-              const personalMsg = payload.params[0];
+              const personalMsg = request.params[0];
               result = await this.signer.signMessage(utils.arrayify(personalMsg));
               break;
             default:
-              throw new Error(`Method not supported: ${payload.method}`);
+              throw new Error(`Method not supported: ${request.method}`);
           }
 
+          // reject if undefined result
           if (typeof result === "undefined") {
             throw new Error("Result was undefined");
           }
 
-          this.client.approveRequest({ id: payload.id, result });
+          const response = formatJsonRpcResult(request.id, result);
+          await this.client.respond({ topic, response });
         } catch (e) {
           const message = e.message || e.toString();
-          this.client.rejectRequest({ id: payload.id, error: { message } });
+          const response = formatJsonRpcError(request.id, message);
+          await this.client.respond({ topic, response });
         }
-      });
-    });
+      },
+    );
   }
 }
