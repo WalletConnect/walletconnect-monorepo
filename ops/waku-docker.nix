@@ -1,6 +1,7 @@
 {
   pkgs ? import (import ./nix/sources.nix).nixpkgs {},
-  wakunode ? import (import ./nix/sources.nix)."nix-nim-waku" {},
+  #wakunode ? import (import ./nix/sources.nix)."nix-nim-waku" {},
+  wakunode ? import ../../nix-nim-waku/default.nix {},
 }:
 let
   entry-script = with pkgs; writeScript "entry-script.sh" ''
@@ -8,12 +9,12 @@ let
     set -e
     export PATH=$PATH:${coreutils}/bin
 
-    if [[ ! -e /key/nodekey ]]; then
+    if [[ ! -e /mnt/nodekey ]]; then
       # https://stackoverflow.com/a/34329799
-      od -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /key/nodekey
+      od -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /mnt/nodekey
     fi
 
-    ${wakunode}/bin/wakunode --nodekey=$(cat /key/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
+    ${wakunode}/bin/wakunode --nodekey=$(cat /mnt/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
     PID=$!
     sleep 10 # wait for rpc server to start
 
@@ -48,7 +49,7 @@ let
     echo "ALL $peersArgs"
 
     run="${wakunode}/bin/wakunode \
-      --nodekey=$(${coreutils}/bin/cat /key/nodekey) \
+      --nodekey=$(${coreutils}/bin/cat /mnt/nodekey) \
       --keep-alive=true \
       --swap=false \
       --rln-relay=false \
@@ -68,7 +69,7 @@ let
     exec $run
 
   '';
-in pkgs.dockerTools.buildImage {
+in pkgs.dockerTools.buildLayeredImage {
   name =  "wakunode";
   contents = wakunode;
   created = "now";

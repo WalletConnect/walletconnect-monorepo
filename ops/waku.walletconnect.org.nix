@@ -23,12 +23,11 @@ in {
       ports = [ ''${toString wakuP2P}:${toString wakuP2P}'' ];
       volumes = [ 
         "${volumePath}:/store"
-        "/root/nodekey:/key"
       ];
       cmd = [
         "--tcp-port=${toString wakuP2P}"
         "--udp-port=${toString wakuP2P}"
-        "--nodekey=$(${pks.coretuils}/bin/cat /key/nodekey)"
+        "--nodekey=$(cat ${volumePath}/nodekey)"
         "--persist-peers=true"
         "--keep-alive=true"
         "--swap=false"

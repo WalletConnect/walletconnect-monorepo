@@ -37,7 +37,7 @@ services:
     image: ${WAKU_IMAGE}
     hostname: "waku.{{.Task.Slot}}"
     volumes:
-      - waku:/key
+      - waku:/mnt
     environment:
       SWARM_PEERS: "tasks.{{.Service.Name}}"
       STORE: "/ip4/138.197.189.151/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn"
