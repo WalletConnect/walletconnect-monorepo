@@ -1,7 +1,7 @@
 {
   pkgs ? import (import ./nix/sources.nix).nixpkgs {},
-  #wakunode ? import (import ./nix/sources.nix)."nix-nim-waku" {},
-  wakunode ? import ../../nix-nim-waku/default.nix {},
+  wakunode ? import (import ./nix/sources.nix)."nix-nim-waku" {},
+  #wakunode ? import ../../nix-nim-waku/default.nix {}, # this is for local dev imports
 }:
 let
   entry-script = with pkgs; writeScript "entry-script.sh" ''
