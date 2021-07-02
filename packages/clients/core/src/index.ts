@@ -769,6 +769,10 @@ class Connector implements IConnector {
     }
   }
 
+  public transportClose() {
+    this._transport.close();
+  }
+
   // -- private --------------------------------------------------------- //
 
   protected async _sendRequest(
@@ -890,7 +894,7 @@ class Connector implements IConnector {
       params: [{ message }],
     });
     this._removeStorageSession();
-    this._transport.close();
+    this.transportClose();
   }
 
   private _handleSessionResponse(errorMsg: string, sessionParams?: ISessionParams) {
