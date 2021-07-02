@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/signer-connection",
-  "version": "1.5.0-rc.5",
+  "version": "1.5.0-rc.6",
   "description": "Signer Connection for WalletConnect Providers",
   "scripts": {
     "clean": "rm -rf dist",
@@ -63,9 +63,9 @@
   "dependencies": {
     "@json-rpc-tools/types": "^2.0.0-beta.11",
     "@json-rpc-tools/utils": "^2.0.0-beta.11",
-    "@walletconnect/client": "^1.5.0-rc.5",
-    "@walletconnect/qrcode-modal": "^1.5.0-rc.5",
-    "@walletconnect/types": "^1.5.0-rc.5",
+    "@walletconnect/client": "^1.5.0-rc.6",
+    "@walletconnect/qrcode-modal": "^1.5.0-rc.6",
+    "@walletconnect/types": "^1.5.0-rc.6",
     "eventemitter3": "4.0.7"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
