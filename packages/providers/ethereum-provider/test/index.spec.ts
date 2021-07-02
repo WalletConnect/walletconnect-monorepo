@@ -188,24 +188,29 @@ describe("WalletConnectProvider", function() {
     });
     it("ERC20 contract", async () => {
       const erc20Factory = new web3.eth.Contract(JSON.parse(JSON.stringify(_abi)));
+      // deploy token
       const erc20 = await erc20Factory
         .deploy({ data: _bytecode, arguments: ["The test token", "tst", 18] })
         .send({ from: walletAddress });
+      // mint token balance
       const balanceToMint = utils.parseEther("2");
       const mintTx = erc20.methods.mint(walletAddress, balanceToMint.toHexString());
       await mintTx.send({ from: walletAddress });
+      // check token balance
       const balance = await erc20.methods.balanceOf(walletAddress).call();
       expect(BigNumber.from(balance).toString()).to.eql(balanceToMint.toString());
       const transferTx = erc20.methods.transfer(
         receiverAddress,
         utils.parseEther("1").toHexString(),
       );
+      // estimate token transfer
       const tokenTransferGas = await transferTx.estimateGas({ from: walletAddress });
       expect(tokenTransferGas.toString()).to.eql("52437");
+      // transfer token
       await transferTx.send({ from: walletAddress });
-      // FIXME: balance A is still 2 after transferring 1
-      // const tokenBalanceA = await erc20.methods.balanceOf(walletAddress).call();
-      // expect(tokenBalanceA).to.eql(utils.parseEther("1").toString());
+      // check token balance changes
+      const tokenBalanceA = await erc20.methods.balanceOf(walletAddress).call();
+      expect(tokenBalanceA).to.eql(utils.parseEther("1").toString());
       const tokenBalanceB = await erc20.methods.balanceOf(receiverAddress).call();
       expect(tokenBalanceB).to.eql(utils.parseEther("1").toString());
     });
@@ -259,20 +264,26 @@ describe("WalletConnectProvider", function() {
     it("ERC20 contract", async () => {
       const signer = web3Provider.getSigner();
       const erc20Factory = new ERC20Token__factory(signer as any);
+      // deploy token
       const erc20 = await erc20Factory.deploy("The test token", "tst", 18);
       await erc20.deployed();
+      // mint token balance
       const balanceToMint = utils.parseEther("2");
       const mintTx = await erc20.mint(walletAddress, balanceToMint);
       await mintTx.wait(2);
+      // check token balance
       const tokenBalance = await erc20.balanceOf(walletAddress);
       expect(tokenBalance.toString()).to.eql(balanceToMint.toString());
+      // estimate token transfer
       const tokenTransferGas = await erc20.estimateGas.transfer(
         receiverAddress,
         utils.parseEther("1"),
       );
       expect(tokenTransferGas.toString()).to.eql("52437");
+      // transfer token
       const transferTx = await erc20.transfer(receiverAddress, utils.parseEther("1"));
       await transferTx.wait(2);
+      // check token balance changes
       const tokenBalanceA = await erc20.balanceOf(walletAddress);
       expect(tokenBalanceA.toString()).to.eql(utils.parseEther("1").toString());
       const tokenBalanceB = await erc20.balanceOf(receiverAddress);
