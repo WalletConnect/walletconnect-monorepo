@@ -61,7 +61,7 @@
   "dependencies": {
     "@walletconnect/types": "^1.4.1",
     "@walletconnect/utils": "^1.4.1",
-    "ws": "7.3.0"
+    "ws": "7.4.6"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
