@@ -17,6 +17,7 @@ with pkgs; let
         "dist"
         "node_modules"
         "ops"
+        ".git"
         ./.gitignore
       ] path;
       buildInputs = [ myNodejs ];
