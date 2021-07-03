@@ -54,7 +54,6 @@ with pkgs; let
 in {
   relay = pkgs.dockerTools.buildLayeredImage {
     name = "relay";
-    created = "now";
     config = {
       Cmd = [ "${myNodejs}/bin/node" "${relayApp}/dist" ];
       Env = [
@@ -64,7 +63,6 @@ in {
   };
   health = pkgs.dockerTools.buildLayeredImage {
     name = "health";
-    created = "now";
     config = {
       Cmd = [ "${myNodejs}/bin/node" "${healthApp}/dist" ];
     };
