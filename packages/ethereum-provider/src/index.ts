@@ -160,12 +160,10 @@ class EthereumProvider implements IEthereumProvider {
 
   private registerEventListeners() {
     this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Settled) => {
-      console.log("[on]", "SIGNER_EVENTS.created", session); // eslint-disable-line no-console
       this.setChainId(session.permissions.blockchain.chains);
       this.setAccounts(session.state.accounts);
     });
     this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Settled) => {
-      console.log("[on]", "SIGNER_EVENTS.updated", session); // eslint-disable-line no-console
       const chain = this.formatChainId(this.chainId);
       if (!session.permissions.blockchain.chains.includes(chain)) {
         this.setChainId(session.permissions.blockchain.chains);
@@ -223,11 +221,11 @@ class EthereumProvider implements IEthereumProvider {
   }
 
   private setAccounts(accounts: string[]) {
-    console.log("[setChainId]", "accounts", accounts); // eslint-disable-line no-console
+    console.log("[setAccounts]", "accounts", accounts); // eslint-disable-line no-console
     this.accounts = accounts
       .filter(x => this.parseChainId(x.split("@")[1]) === this.chainId)
       .map(x => x.split("@")[0]);
-    console.log("[setChainId]", "this.accounts", this.accounts); // eslint-disable-line no-console
+    console.log("[setAccounts]", "this.accounts", this.accounts); // eslint-disable-line no-console
     this.events.emit(providerEvents.changed.accounts, this.accounts);
   }
 }

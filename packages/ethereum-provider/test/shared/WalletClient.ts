@@ -1,6 +1,6 @@
 import { ethers, utils } from "ethers";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
-import { AppMetadata, IClient, SessionTypes } from "@walletconnect/types";
+import { ClientOptions, IClient, SessionTypes } from "@walletconnect/types";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
 
@@ -10,27 +10,25 @@ export interface WalletClientOpts {
   privateKey: string;
   chainId: number;
   rpcUrl: string;
-  relayProvider: string;
-  metadata: AppMetadata;
 }
+
+export type WalletClientAsyncOpts = WalletClientOpts & ClientOptions;
 
 export class WalletClient {
   public provider: EthereumProvider;
   public signer: ethers.Wallet;
   public chainId: number;
   public rpcUrl: string;
-  public relayProvider?: string;
-  public metadata?: AppMetadata;
 
   public client?: IClient;
   public topic?: string;
 
   static async init(
     provider: EthereumProvider,
-    opts: Partial<WalletClientOpts>,
+    opts: Partial<WalletClientAsyncOpts>,
   ): Promise<WalletClient> {
     const walletClient = new WalletClient(provider, opts);
-    await walletClient.initialize();
+    await walletClient.initialize(opts);
     return walletClient;
   }
 
@@ -38,8 +36,6 @@ export class WalletClient {
     this.provider = provider;
     this.chainId = opts?.chainId || 123;
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
-    this.relayProvider = opts?.relayProvider || "ws://localhost:5555";
-    this.metadata = opts?.metadata;
     this.signer = this.getWallet(opts.privateKey);
   }
 
@@ -103,25 +99,22 @@ export class WalletClient {
     await this.client.update({ topic: this.topic, state: this.getSessionState() });
   }
 
-  private async initialize() {
-    const opts = {
-      controller: true,
-      relayProvider: this.relayProvider,
-      metadata: this.metadata,
-    };
+  private async initialize(opts?: ClientOptions) {
     console.log("[initialize]", "opts", opts); // eslint-disable-line no-console
-    this.client = await Client.init(opts);
+    this.client = await Client.init({ ...opts, controller: true });
+    console.log("[initialize]", "!!this.client", !!this.client); // eslint-disable-line no-console
     this.registerEventListeners();
   }
 
   private registerEventListeners() {
-    console.log("[registerEventListeners]"); // eslint-disable-line no-console
+    console.log("[registerEventListeners]", "typeof this.client", typeof this.client); // eslint-disable-line no-console
+    console.log("[registerEventListeners]", "typeof this.provider", typeof this.provider); // eslint-disable-line no-console
     if (typeof this.client === "undefined") {
       throw new Error("Client not inititialized");
     }
 
     // auto-pair
-    this.provider.signer.on(SIGNER_EVENTS.uri, async ({ uri }) => {
+    this.provider.signer.connection.on(SIGNER_EVENTS.uri, async ({ uri }) => {
       console.log("[SIGNER_EVENTS.uri]", "uri", uri); // eslint-disable-line no-console
       console.log("[SIGNER_EVENTS.uri]", "!!this.client", !!this.client); // eslint-disable-line no-console
 

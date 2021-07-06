@@ -35,6 +35,8 @@ export class SignerConnection extends IJsonRpcConnection {
   private pending = false;
   private session: SessionTypes.Settled | undefined;
 
+  private opts: SignerConnectionClientOpts | undefined;
+
   private client: IClient | undefined;
   private initializing = false;
 
@@ -43,7 +45,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
     this.chains = opts?.chains || [];
     this.methods = opts?.methods || [];
-    this.register(opts?.client);
+    this.opts = opts?.client;
   }
 
   get connected(): boolean {
@@ -71,15 +73,38 @@ export class SignerConnection extends IJsonRpcConnection {
   }
 
   public async open(): Promise<void> {
-    this.pending = true;
-    const client = await this.register();
-    this.session = await client.connect({
-      permissions: {
-        blockchain: { chains: this.chains },
-        jsonrpc: { methods: this.methods },
-      },
-    });
-    this.onOpen();
+    console.log("[open]", "this.pending", this.pending); // eslint-disable-line
+    if (this.pending) {
+      return new Promise((resolve, reject) => {
+        this.events.once("open", () => {
+          this.events.once("open_error", error => {
+            reject(error);
+          });
+          if (typeof this.client === "undefined") {
+            return reject(new Error("Client not initialized"));
+          }
+          resolve();
+        });
+      });
+    }
+    try {
+      this.pending = true;
+      console.log("[open]", "this.register", "before"); // eslint-disable-line
+      const client = await this.register();
+      console.log("[open]", "this.register", "after"); // eslint-disable-line
+      console.log("[open]", "client.connect", "before"); // eslint-disable-line
+      this.session = await client.connect({
+        permissions: {
+          blockchain: { chains: this.chains },
+          jsonrpc: { methods: this.methods },
+        },
+      });
+      console.log("[open]", "client.connect", "after"); // eslint-disable-line
+      this.onOpen();
+    } catch (e) {
+      this.events.emit("open_error", e);
+      throw e;
+    }
   }
 
   public async close() {
@@ -110,12 +135,20 @@ export class SignerConnection extends IJsonRpcConnection {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async register(opts?: SignerConnectionClientOpts): Promise<IClient> {
+  private async register(
+    opts: SignerConnectionClientOpts | undefined = this.opts,
+  ): Promise<IClient> {
+    console.log("[register]", "opts", opts); // eslint-disable-line
     if (typeof this.client !== "undefined") {
       return this.client;
     }
+    console.log("[register]", "this.initializing", this.initializing); // eslint-disable-line
+
     if (this.initializing) {
       return new Promise((resolve, reject) => {
+        this.events.once("register_error", error => {
+          reject(error);
+        });
         this.events.once(SIGNER_EVENTS.init, () => {
           if (typeof this.client === "undefined") {
             return reject(new Error("Client not initialized"));
@@ -124,17 +157,25 @@ export class SignerConnection extends IJsonRpcConnection {
         });
       });
     }
+    console.log("[register]", "isClient(opts)", isClient(opts)); // eslint-disable-line
     if (isClient(opts)) {
       this.client = opts;
       this.registerEventListeners();
       return this.client;
     }
-    this.initializing = true;
-    this.client = await Client.init(opts);
-    this.initializing = false;
-    this.registerEventListeners();
-    this.events.emit(SIGNER_EVENTS.init);
-    return this.client;
+    try {
+      this.initializing = true;
+      console.log("[register]", "Client.init", "before"); // eslint-disable-line
+      this.client = await Client.init(opts);
+      console.log("[register]", "Client.init", "after"); // eslint-disable-line
+      this.initializing = false;
+      this.registerEventListeners();
+      this.events.emit(SIGNER_EVENTS.init);
+      return this.client;
+    } catch (e) {
+      this.events.emit("register_error", e);
+      throw e;
+    }
   }
 
   private onOpen(session?: SessionTypes.Settled) {
@@ -158,17 +199,20 @@ export class SignerConnection extends IJsonRpcConnection {
     this.client.on(CLIENT_EVENTS.session.created, (session: SessionTypes.Settled) => {
       if (this.session && this.session?.topic !== session.topic) return;
       this.session = session;
+      console.log("[on]", "SIGNER_EVENTS.created", session); // eslint-disable-line no-console
       this.events.emit(SIGNER_EVENTS.created, session);
     });
     this.client.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
       if (this.session && this.session?.topic !== session.topic) return;
       this.session = session;
+      console.log("[on]", "SIGNER_EVENTS.updated", session); // eslint-disable-line no-console
       this.events.emit(SIGNER_EVENTS.updated, session);
     });
     this.client.on(
       CLIENT_EVENTS.session.notification,
       (notification: SessionTypes.NotificationEvent) => {
         if (this.session && this.session?.topic !== notification.topic) return;
+        console.log("[on]", "SIGNER_EVENTS.notification", notification); // eslint-disable-line no-console
         this.events.emit(SIGNER_EVENTS.notification, {
           type: notification.type,
           data: notification.data,
@@ -179,10 +223,13 @@ export class SignerConnection extends IJsonRpcConnection {
       if (!this.session) return;
       if (this.session && this.session?.topic !== session.topic) return;
       this.onClose();
+      console.log("[on]", "SIGNER_EVENTS.deleted", session); // eslint-disable-line no-console
+
       this.events.emit(SIGNER_EVENTS.deleted, session);
     });
     this.client.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
       const uri = proposal.signal.params.uri;
+      console.log("[on]", "SIGNER_EVENTS.uri", uri); // eslint-disable-line no-console
       this.events.emit(SIGNER_EVENTS.uri, { uri });
     });
   }
