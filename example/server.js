@@ -2,7 +2,7 @@ const path = require('path')
 const express = require('express')
 const open = require('open')
 
-const PORT = 8060
+const PORT = 8080
 const ROOT_PATH = path.join(__dirname, '../')
 const STATIC_PATH = path.join(ROOT_PATH, 'example/public')
 
