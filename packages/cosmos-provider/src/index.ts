@@ -62,9 +62,11 @@ class CosmosProvider {
     this.registerEventListeners();
   }
 
-  public async request<T = unknown>(args: RequestArguments): Promise<T> {
+  public async request<T = unknown>(args: RequestArguments, chainId?: string): Promise<T> {
     if (this.methods.includes(args.method)) {
-      return this.signer.request(args);
+      const context =
+        typeof chainId !== "undefined" ? { chainId: this.formatChainId(chainId) } : undefined;
+      return this.signer.request(args, context);
     }
     if (typeof this.http === "undefined") {
       throw new Error(`Cannot request JSON-RPC method (${args.method}) without provided rpc url`);

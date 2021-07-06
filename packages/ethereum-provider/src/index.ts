@@ -106,7 +106,7 @@ class EthereumProvider implements IEthereumProvider {
         break;
     }
     if (args.method.startsWith("eth_signTypedData") || this.methods.includes(args.method)) {
-      return this.signer.request(args, { chainId: this.chainId });
+      return this.signer.request(args, { chainId: this.formatChainId(this.chainId) });
     }
     if (typeof this.http === "undefined") {
       throw new Error(`Cannot request JSON-RPC method (${args.method}) without provided rpc url`);
