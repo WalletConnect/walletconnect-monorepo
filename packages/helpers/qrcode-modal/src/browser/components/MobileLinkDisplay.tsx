@@ -76,12 +76,12 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
             pageLinks.map((entry: IMobileRegistryEntry) => {
               const { color, name, shortName, logo } = entry;
               const href = formatIOSMobile(props.uri, entry);
-              const handleClickIOS = React.useCallback(() => {
+              const handleClickIOS = () => {
                 saveMobileLinkInfo({
                   name,
                   href,
                 });
-              }, []);
+              };
               return !grid ? (
                 <WalletButton
                   color={color}
