@@ -99,6 +99,8 @@ declare module "@walletconnect/types" {
   }
 
   export interface ISocketTransportOptions {
+    protocol: string;
+    version: number;
     url: string;
     netMonitor?: INetworkMonitor;
     subscriptions?: string[];
@@ -237,6 +239,8 @@ declare module "@walletconnect/types" {
   export interface IWalletConnectOptions {
     bridge?: string;
     uri?: string;
+    storageId?: string;
+    signingMethods?: string[];
     session?: IWalletConnectSession;
     storage?: ISessionStorage;
     clientMeta?: IClientMeta;
@@ -297,6 +301,8 @@ declare module "@walletconnect/types" {
     bridge?: string;
     qrcode?: boolean;
     chainId?: number;
+    storageId?: string;
+    signingMethods?: string[];
     qrcodeModalOptions?: IQRCodeModalOptions;
     clientMeta?: IClientMeta;
   }
@@ -316,6 +322,7 @@ declare module "@walletconnect/types" {
 
   export interface IWalletConnectProviderOptions extends IWCEthRpcConnectionOptions {
     pollingInterval?: number;
+    qrcodeModal?: IQRCodeModal;
   }
 
   export interface IRequestOptions {
@@ -347,12 +354,19 @@ declare module "@walletconnect/types" {
   export interface IWCRpcConnection extends IRpcConnection {
     bridge: string;
     qrcode: boolean;
-    wc: IConnector | null;
+    qrcodeModalOptions: IQRCodeModalOptions | undefined;
+    wc: IConnector;
+    chainId: number;
     connected: boolean;
+    connector: IConnector;
 
     create(chainId?: number): void;
+    open(): Promise<void>;
+    close(): Promise<void>;
+    onOpen(): void;
     onClose(): void;
     onError(payload: any, message: string, code?: number): void;
+    send(payload: any): Promise<any>;
     sendPayload(payload: any): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError>;
   }
 
@@ -372,5 +386,51 @@ declare module "@walletconnect/types" {
     logo: string;
     universalLink: string;
     deepLink: string;
+  }
+
+  export type IMobileRegistry = IMobileRegistryEntry[];
+
+  export interface IMobileLinkInfo {
+    name: string;
+    href: string;
+  }
+
+  export interface IAppEntry {
+    id: string;
+    name: string;
+    homepage: string;
+    chains: string[];
+    app: {
+      browser: string;
+      ios: string;
+      android: string;
+      mac: string;
+      windows: string;
+      linux: string;
+    };
+    mobile: {
+      native: string;
+      universal: string;
+    };
+    desktop: {
+      native: string;
+      universal: string;
+    };
+    metadata: {
+      shortName: string;
+      colors: {
+        primary: string;
+        secondary: string;
+      };
+    };
+  }
+
+  export type IAppRegistry = {
+    [id: string]: IAppEntry;
+  };
+
+  export interface IRpcConfig {
+    infuraId: string | undefined;
+    custom: IRPCMap | undefined;
   }
 }

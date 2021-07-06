@@ -1,7 +1,7 @@
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import HttpConnection from "@walletconnect/http-connection";
-import { payloadId, signingMethods, parsePersonalSign } from "@walletconnect/utils";
+import { payloadId, signingMethods, parsePersonalSign, getRpcUrl } from "@walletconnect/utils";
 import {
   IRPCMap,
   IConnector,
@@ -22,6 +22,7 @@ const SubscriptionsSubprovider = require("web3-provider-engine/subproviders/subs
 class WalletConnectProvider extends ProviderEngine {
   public bridge = "https://bridge.walletconnect.org";
   public qrcode = true;
+  public qrcodeModal = QRCodeModal;
   public qrcodeModalOptions: IQRCodeModalOptions | undefined = undefined;
   public rpc: IRPCMap | null = null;
   public infuraId = "";
@@ -32,7 +33,6 @@ class WalletConnectProvider extends ProviderEngine {
   public connectCallbacks: any[] = [];
   public accounts: string[] = [];
   public chainId = 1;
-  public networkId = 1;
   public rpcUrl = "";
 
   constructor(opts: IWalletConnectProviderOptions) {
@@ -41,13 +41,16 @@ class WalletConnectProvider extends ProviderEngine {
       ? opts.connector.bridge
       : opts.bridge || "https://bridge.walletconnect.org";
     this.qrcode = typeof opts.qrcode === "undefined" || opts.qrcode !== false;
+    this.qrcodeModal = opts.qrcodeModal || this.qrcodeModal;
     this.qrcodeModalOptions = opts.qrcodeModalOptions;
     this.wc =
       opts.connector ||
       new WalletConnect({
         bridge: this.bridge,
-        qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+        qrcodeModal: this.qrcode ? this.qrcodeModal : undefined,
         qrcodeModalOptions: this.qrcodeModalOptions,
+        storageId: opts?.storageId,
+        signingMethods: opts?.signingMethods,
         clientMeta: opts?.clientMeta,
       });
     this.rpc = opts.rpc || null;
@@ -58,95 +61,8 @@ class WalletConnectProvider extends ProviderEngine {
       throw new Error("Missing one of the required parameters: rpc or infuraId");
     }
     this.infuraId = opts.infuraId || "";
-    this.chainId = typeof opts.chainId !== "undefined" ? opts.chainId : 1;
-    this.networkId = this.chainId;
-    this.updateRpcUrl(this.chainId);
-    this.addProvider(
-      new FixtureSubprovider({
-        eth_hashrate: "0x00",
-        eth_mining: false,
-        eth_syncing: true,
-        net_listening: true,
-        web3_clientVersion: `WalletConnect/v1.x.x/javascript`,
-      }),
-    );
-    this.addProvider(new CacheSubprovider());
-    this.addProvider(new SubscriptionsSubprovider());
-    this.addProvider(new FilterSubprovider());
-    this.addProvider(new NonceSubprovider());
-    this.addProvider(
-      new HookedWalletSubprovider({
-        getAccounts: async (cb: any) => {
-          try {
-            const wc = await this.getWalletConnector();
-            const accounts = wc.accounts;
-            if (accounts && accounts.length) {
-              cb(null, accounts);
-            } else {
-              cb(new Error("Failed to get accounts"));
-            }
-          } catch (error) {
-            cb(error);
-          }
-        },
-        processMessage: async (msgParams: { from: string; data: string }, cb: any) => {
-          try {
-            const wc = await this.getWalletConnector();
-            const result = await wc.signMessage([msgParams.from, msgParams.data]);
-            cb(null, result);
-          } catch (error) {
-            cb(error);
-          }
-        },
-        processPersonalMessage: async (msgParams: { from: string; data: string }, cb: any) => {
-          try {
-            const wc = await this.getWalletConnector();
-            const result = await wc.signPersonalMessage([msgParams.data, msgParams.from]);
-            cb(null, result);
-          } catch (error) {
-            cb(error);
-          }
-        },
-        processSignTransaction: async (txParams: any, cb: any) => {
-          try {
-            const wc = await this.getWalletConnector();
-            const result = await wc.signTransaction(txParams);
-            cb(null, result);
-          } catch (error) {
-            cb(error);
-          }
-        },
-        processTransaction: async (txParams: any, cb: any) => {
-          try {
-            const wc = await this.getWalletConnector();
-            const result = await wc.sendTransaction(txParams);
-            cb(null, result);
-          } catch (error) {
-            cb(error);
-          }
-        },
-        processTypedMessage: async (msgParams: { from: string; data: string }, cb: any) => {
-          try {
-            const wc = await this.getWalletConnector();
-            const result = await wc.signTypedData([msgParams.from, msgParams.data]);
-            cb(null, result);
-          } catch (error) {
-            cb(error);
-          }
-        },
-      }),
-    );
-    this.addProvider({
-      handleRequest: async (payload: IJsonRpcRequest, next: any, end: any) => {
-        try {
-          const { result } = await this.handleRequest(payload);
-          end(null, result);
-        } catch (error) {
-          end(error);
-        }
-      },
-      setEngine: (_: any) => _,
-    });
+    this.chainId = opts?.chainId || this.chainId;
+    this.initialize();
   }
 
   get isWalletConnect() {
@@ -163,7 +79,7 @@ class WalletConnectProvider extends ProviderEngine {
 
   // Connect with a wallet and return the addresses of all available
   // accounts.
-  async enable(): Promise<string[]> {
+  enable = async (): Promise<string[]> => {
     const wc = await this.getWalletConnector();
     if (wc) {
       this.start();
@@ -172,13 +88,13 @@ class WalletConnectProvider extends ProviderEngine {
     } else {
       throw new Error("Failed to connect to WalleConnect");
     }
-  }
+  };
 
-  async request(payload: any): Promise<any> {
+  request = async (payload: any): Promise<any> => {
     return this.send(payload);
-  }
+  };
 
-  async send(payload: any, callback?: any): Promise<any> {
+  send = async (payload: any, callback?: any): Promise<any> => {
     // Web3 1.0 beta.38 (and above) calls `send` with method and parameters
     if (typeof payload === "string") {
       const method = payload;
@@ -206,17 +122,17 @@ class WalletConnectProvider extends ProviderEngine {
     }
 
     return this.sendAsyncPromise(payload.method, payload.params);
-  }
+  };
 
-  onConnect(callback: any) {
+  onConnect = (callback: any) => {
     this.connectCallbacks.push(callback);
-  }
+  };
 
-  triggerConnect(result: any) {
+  triggerConnect = (result: any) => {
     if (this.connectCallbacks && this.connectCallbacks.length) {
       this.connectCallbacks.forEach(callback => callback(result));
     }
-  }
+  };
 
   async disconnect() {
     this.close();
@@ -248,7 +164,7 @@ class WalletConnectProvider extends ProviderEngine {
           result = wc.chainId;
           break;
         case "net_version":
-          result = wc.networkId || wc.chainId;
+          result = wc.chainId;
           break;
         case "eth_uninstallFilter":
           this.sendAsync(payload, (_: any) => _);
@@ -303,11 +219,10 @@ class WalletConnectProvider extends ProviderEngine {
         this.onConnect((x: any) => resolve(x));
       } else if (!wc.connected && !disableSessionCreation) {
         this.isConnecting = true;
-        const sessionRequestOpions = this.chainId ? { chainId: this.chainId } : undefined;
         wc.on("modal_closed", () => {
           reject(new Error("User closed modal"));
         });
-        wc.createSession(sessionRequestOpions)
+        wc.createSession({ chainId: this.chainId })
           .then(() => {
             wc.on("connect", (error, payload) => {
               if (error) {
@@ -387,26 +302,11 @@ class WalletConnectProvider extends ProviderEngine {
     this.updateRpcUrl(this.chainId, rpcUrl || "");
   }
 
-  updateRpcUrl(chainId: number, rpcUrl = "") {
-    const infuraNetworks = {
-      1: "mainnet",
-      3: "ropsten",
-      4: "rinkeby",
-      5: "goerli",
-      42: "kovan",
-    };
-    const network = infuraNetworks[chainId];
-    if (!rpcUrl) {
-      if (this.rpc && this.rpc[chainId]) {
-        rpcUrl = this.rpc[chainId];
-      } else if (network) {
-        rpcUrl = `https://${network}.infura.io/v3/${this.infuraId}`;
-      }
-    }
+  updateRpcUrl(chainId: number, rpcUrl: string | undefined = "") {
+    const rpc = { infuraId: this.infuraId, custom: this.rpc || undefined };
+    rpcUrl = rpcUrl || getRpcUrl(chainId, rpc);
     if (rpcUrl) {
-      // Update rpcUrl
       this.rpcUrl = rpcUrl;
-      // Handle http update
       this.updateHttpConnection();
     } else {
       this.emit("error", new Error(`No RPC Url available for chainId: ${chainId}`));
@@ -439,6 +339,98 @@ class WalletConnectProvider extends ProviderEngine {
         },
       );
     });
+  }
+
+  private initialize() {
+    this.updateRpcUrl(this.chainId);
+    this.addProvider(
+      new FixtureSubprovider({
+        eth_hashrate: "0x00",
+        eth_mining: false,
+        eth_syncing: true,
+        net_listening: true,
+        web3_clientVersion: `WalletConnect/v1.x.x/javascript`,
+      }),
+    );
+    this.addProvider(new CacheSubprovider());
+    this.addProvider(new SubscriptionsSubprovider());
+    this.addProvider(new FilterSubprovider());
+    this.addProvider(new NonceSubprovider());
+    this.addProvider(new HookedWalletSubprovider(this.configWallet()));
+    this.addProvider({
+      handleRequest: async (payload: IJsonRpcRequest, next: any, end: any) => {
+        try {
+          const { error, result } = await this.handleRequest(payload);
+          end(error, result);
+        } catch (error) {
+          end(error);
+        }
+      },
+      setEngine: (_: any) => _,
+    });
+  }
+
+  private configWallet() {
+    return {
+      getAccounts: async (cb: any) => {
+        try {
+          const wc = await this.getWalletConnector();
+          const accounts = wc.accounts;
+          if (accounts && accounts.length) {
+            cb(null, accounts);
+          } else {
+            cb(new Error("Failed to get accounts"));
+          }
+        } catch (error) {
+          cb(error);
+        }
+      },
+      processMessage: async (msgParams: { from: string; data: string }, cb: any) => {
+        try {
+          const wc = await this.getWalletConnector();
+          const result = await wc.signMessage([msgParams.from, msgParams.data]);
+          cb(null, result);
+        } catch (error) {
+          cb(error);
+        }
+      },
+      processPersonalMessage: async (msgParams: { from: string; data: string }, cb: any) => {
+        try {
+          const wc = await this.getWalletConnector();
+          const result = await wc.signPersonalMessage([msgParams.data, msgParams.from]);
+          cb(null, result);
+        } catch (error) {
+          cb(error);
+        }
+      },
+      processSignTransaction: async (txParams: any, cb: any) => {
+        try {
+          const wc = await this.getWalletConnector();
+          const result = await wc.signTransaction(txParams);
+          cb(null, result);
+        } catch (error) {
+          cb(error);
+        }
+      },
+      processTransaction: async (txParams: any, cb: any) => {
+        try {
+          const wc = await this.getWalletConnector();
+          const result = await wc.sendTransaction(txParams);
+          cb(null, result);
+        } catch (error) {
+          cb(error);
+        }
+      },
+      processTypedMessage: async (msgParams: { from: string; data: string }, cb: any) => {
+        try {
+          const wc = await this.getWalletConnector();
+          const result = await wc.signTypedData([msgParams.from, msgParams.data]);
+          cb(null, result);
+        } catch (error) {
+          cb(error);
+        }
+      },
+    };
   }
 }
 

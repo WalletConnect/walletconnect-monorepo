@@ -25,4 +25,10 @@ export const signingMethods = [
 
 export const stateMethods = ["eth_accounts", "eth_chainId", "net_version"];
 
-export const mobileLinkChoiceKey = "WALLETCONNECT_DEEPLINK_CHOICE";
+export const infuraNetworks = {
+  1: "mainnet",
+  3: "ropsten",
+  4: "rinkeby",
+  5: "goerli",
+  42: "kovan",
+};

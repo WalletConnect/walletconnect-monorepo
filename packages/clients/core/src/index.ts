@@ -110,14 +110,19 @@ class Connector implements IConnector {
   private _qrcodeModal: IQRCodeModal | undefined;
   private _qrcodeModalOptions: IQRCodeModalOptions | undefined;
 
+  // -- methods ----------------------------------------------------------//
+
+  private readonly _signingMethods: string[];
+
   // -- constructor ----------------------------------------------------- //
 
   constructor(opts: IConnectorOpts) {
     this._clientMeta = getClientMeta() || opts.connectorOpts.clientMeta || null;
     this._cryptoLib = opts.cryptoLib;
-    this._sessionStorage = opts.sessionStorage || new SessionStorage();
+    this._sessionStorage = opts.sessionStorage || new SessionStorage(opts.connectorOpts.storageId);
     this._qrcodeModal = opts.connectorOpts.qrcodeModal;
     this._qrcodeModalOptions = opts.connectorOpts.qrcodeModalOptions;
+    this._signingMethods = [...signingMethods, ...(opts.connectorOpts.signingMethods || [])];
 
     if (!opts.connectorOpts.bridge && !opts.connectorOpts.uri && !opts.connectorOpts.session) {
       throw new Error(ERROR_MISSING_REQUIRED);
@@ -144,6 +149,8 @@ class Connector implements IConnector {
     this._transport =
       opts.transport ||
       new SocketTransport({
+        protocol: this.protocol,
+        version: this.version,
         url: this.bridge,
         subscriptions: [this.clientId],
       });
@@ -367,6 +374,10 @@ class Connector implements IConnector {
       callback,
     };
     this._eventManager.subscribe(eventEmitter);
+  }
+
+  public off(event: string): void {
+    this._eventManager.unsubscribe(event);
   }
 
   public async createInstantRequest(instantRequest: Partial<IJsonRpcRequest>): Promise<void> {
@@ -758,6 +769,10 @@ class Connector implements IConnector {
     }
   }
 
+  public transportClose() {
+    this._transport.close();
+  }
+
   // -- private --------------------------------------------------------- //
 
   protected async _sendRequest(
@@ -799,7 +814,13 @@ class Connector implements IConnector {
 
   protected _sendCallRequest(request: IJsonRpcRequest, options?: IRequestOptions): Promise<any> {
     this._sendRequest(request, options);
-    if (isMobile() && signingMethods.includes(request.method)) {
+
+    this._eventManager.trigger({
+      event: "call_request_sent",
+      params: [{ request, options }],
+    });
+
+    if (isMobile() && this._signingMethods.includes(request.method)) {
       const mobileLinkUrl = getLocal(mobileLinkChoiceKey);
       if (mobileLinkUrl) {
         window.location.href = mobileLinkUrl.href;
@@ -873,7 +894,7 @@ class Connector implements IConnector {
       params: [{ message }],
     });
     this._removeStorageSession();
-    this._transport.close();
+    this.transportClose();
   }
 
   private _handleSessionResponse(errorMsg: string, sessionParams?: ISessionParams) {
@@ -1110,7 +1131,7 @@ class Connector implements IConnector {
       const bridge = decodeURIComponent(result.bridge);
 
       if (!result.key) {
-        throw Error("Invalid or missing kkey parameter value");
+        throw Error("Invalid or missing key parameter value");
       }
       const key = result.key;
 

@@ -1,22 +1,47 @@
 import EventEmitter from "eventemitter3";
-import { IJsonRpcConnection } from "@json-rpc-tools/types";
-
-import WCRpcConnection from "@walletconnect/rpc-connection";
-import { IWCEthRpcConnectionOptions, IWCRpcConnection } from "@walletconnect/types";
+import WalletConnect from "@walletconnect/client";
+import QRCodeModal from "@walletconnect/qrcode-modal";
+import { IJsonRpcConnection, JsonRpcError, JsonRpcResponse } from "@json-rpc-tools/types";
+import { formatJsonRpcError } from "@json-rpc-tools/utils";
+import {
+  IConnector,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
+  IQRCodeModalOptions,
+  IWCEthRpcConnectionOptions,
+} from "@walletconnect/types";
 
 export class SignerConnection extends IJsonRpcConnection {
   public events: any = new EventEmitter();
 
-  private connector: IWCRpcConnection | undefined;
+  public accounts: string[] = [];
+  public chainId = 1;
+
+  private pending = false;
+  private wc: IConnector | undefined;
+  private bridge = "https://bridge.walletconnect.org";
+  private qrcode = true;
+  private qrcodeModalOptions: IQRCodeModalOptions | undefined = undefined;
   private opts: IWCEthRpcConnectionOptions | undefined;
 
   constructor(opts?: IWCEthRpcConnectionOptions) {
     super();
-    this.connector = this.register(opts);
+    this.opts = opts;
+    this.chainId = opts?.chainId || this.chainId;
+    this.wc = this.register(opts);
   }
 
   get connected(): boolean {
-    return typeof this.connector !== "undefined" && this.connector.connected;
+    return typeof this.wc !== "undefined" && this.wc.connected;
+  }
+
+  get connecting(): boolean {
+    return this.pending;
+  }
+
+  get connector(): IConnector {
+    this.wc = this.register(this.opts);
+    return this.wc;
   }
 
   public on(event: string, listener: any) {
@@ -35,62 +60,169 @@ export class SignerConnection extends IJsonRpcConnection {
     this.events.removeListener(event, listener);
   }
 
-  public async open(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (typeof this.connector === "undefined") {
-        this.connector = this.register(this.opts);
-      }
-      if (this.connector.wc === null) {
-        throw new Error("Connector missing or invalid");
-      }
-      this.connector.wc.on("disconnect", () => {
-        reject();
+  public async open(chainId?: number): Promise<void> {
+    if (this.connected) {
+      this.onOpen();
+      return;
+    }
+    return new Promise((resolve, reject): void => {
+      this.on("error", err => {
+        reject(err);
       });
-      this.connector.wc.on("connect", () => {
-        this.onOpen(this.connector);
+
+      this.on("open", () => {
         resolve();
       });
 
-      this.connector.create();
+      this.create(chainId);
     });
   }
 
-  public async close() {
-    if (typeof this.connector === "undefined") {
-      return;
+  public async close(): Promise<void> {
+    if (typeof this.wc === "undefined") return;
+    if (this.wc.connected) {
+      this.wc.killSession();
     }
-    if (this.connector.wc === null) {
-      throw new Error("Connector missing or invalid");
-    }
-    await this.connector.wc.killSession();
     this.onClose();
   }
 
   public async send(payload: any) {
-    if (typeof this.connector === "undefined") {
-      this.connector = this.register(this.opts);
-    }
-    this.connector.sendPayload(payload).then((res: any) => this.events.emit("payload", res));
+    this.wc = this.register(this.opts);
+
+    if (!this.connected) await this.open();
+    this.sendPayload(payload)
+      .then((res: any) => this.events.emit("payload", res))
+      .catch(e => this.events.emit("payload", formatJsonRpcError(payload.id, e.message)));
   }
 
   // ---------- Private ----------------------------------------------- //
 
-  private register(opts?: IWCEthRpcConnectionOptions): IWCRpcConnection {
-    return new WCRpcConnection(opts);
+  private register(opts?: IWCEthRpcConnectionOptions): IConnector {
+    if (this.wc) return this.wc;
+    this.opts = opts || this.opts;
+    this.bridge = opts?.connector
+      ? opts.connector.bridge
+      : opts?.bridge || "https://bridge.walletconnect.org";
+
+    this.qrcode = typeof opts?.qrcode === "undefined" || opts.qrcode !== false;
+    this.chainId = typeof opts?.chainId !== "undefined" ? opts.chainId : this.chainId;
+    this.qrcodeModalOptions = opts?.qrcodeModalOptions;
+    const connectorOpts = {
+      bridge: this.bridge,
+      qrcodeModal: this.qrcode ? QRCodeModal : undefined,
+      qrcodeModalOptions: this.qrcodeModalOptions,
+      storageId: opts?.storageId,
+      signingMethods: opts?.signingMethods,
+      clientMeta: opts?.clientMeta,
+    };
+    this.wc =
+      typeof opts?.connector !== "undefined" ? opts.connector : new WalletConnect(connectorOpts);
+    if (typeof this.wc === "undefined") {
+      throw new Error("Failed to register WalletConnect connector");
+    }
+    this.registerConnectorEvents();
+    return this.wc;
   }
 
-  private onOpen(connector?: IWCRpcConnection) {
-    if (connector) {
-      this.connector = connector;
+  private onOpen(wc?: IConnector) {
+    this.pending = false;
+    if (wc) {
+      this.wc = wc;
     }
     this.events.emit("open");
   }
 
   private onClose() {
-    if (this.connector) {
-      this.connector = undefined;
+    this.pending = false;
+    if (this.wc) {
+      this.wc = undefined;
     }
     this.events.emit("close");
+  }
+
+  public onError(
+    payload: any,
+    message = "Failed or Rejected Request",
+    code = -32000,
+  ): JsonRpcError {
+    const errorPayload = {
+      id: payload.id,
+      jsonrpc: payload.jsonrpc,
+      error: { code, message },
+    };
+    this.events.emit("payload", errorPayload);
+    return errorPayload;
+  }
+
+  private create(chainId?: number): void {
+    this.wc = this.register(this.opts);
+    this.chainId = chainId || this.chainId;
+    if (this.connected || this.pending) return;
+    this.pending = true;
+    this.registerConnectorEvents();
+    this.wc
+      .createSession({ chainId: this.chainId })
+      .then(() => this.events.emit("created"))
+      .catch((e: Error) => this.events.emit("error", e));
+  }
+
+  private registerConnectorEvents() {
+    this.wc = this.register(this.opts);
+
+    this.wc.on("connect", (err: Error | null) => {
+      if (err) {
+        this.events.emit("error", err);
+        return;
+      }
+      this.accounts = this.wc?.accounts || [];
+      this.chainId = this.wc?.chainId || this.chainId;
+
+      this.onOpen();
+    });
+
+    this.wc.on("disconnect", (err: Error | null) => {
+      if (err) {
+        this.events.emit("error", err);
+        return;
+      }
+
+      this.onClose();
+    });
+
+    this.wc.on("modal_closed", () => {
+      this.events.emit("error", new Error("User closed modal"));
+    });
+
+    this.wc.on("session_update", (error, payload) => {
+      const { accounts, chainId } = payload.params[0];
+      if (!this.accounts || (accounts && this.accounts !== accounts)) {
+        this.accounts = accounts;
+        this.events.emit("accountsChanged", accounts);
+      }
+      if (!this.chainId || (chainId && this.chainId !== chainId)) {
+        this.chainId = chainId;
+        this.events.emit("chainChanged", chainId);
+      }
+    });
+  }
+
+  private async sendPayload(payload: any): Promise<JsonRpcResponse> {
+    this.wc = this.register(this.opts);
+    try {
+      const response = await this.wc.unsafeSend(payload);
+      return this.sanitizeResponse(response);
+    } catch (error) {
+      return this.onError(payload, error.message);
+    }
+  }
+
+  private sanitizeResponse(
+    response: IJsonRpcResponseSuccess | IJsonRpcResponseError,
+  ): JsonRpcResponse {
+    return typeof (response as IJsonRpcResponseError).error !== "undefined" &&
+      typeof (response as IJsonRpcResponseError).error.code === "undefined"
+      ? formatJsonRpcError(response.id, (response as IJsonRpcResponseError).error.message)
+      : (response as JsonRpcResponse);
   }
 }
 

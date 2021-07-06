@@ -9,7 +9,7 @@ module.exports = {
     path: path.resolve(__dirname, "dist", "umd"),
     filename: "[name].min.js",
     libraryTarget: "umd",
-    library: "WalletConnectEthereumProvider",
+    library: "WalletConnectProvider",
     umdNamedDefine: true,
     globalObject: "this",
   },
