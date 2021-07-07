@@ -120,6 +120,14 @@ export class SignerConnection extends IJsonRpcConnection {
     if (typeof this.wc === "undefined") {
       throw new Error("Failed to register WalletConnect connector");
     }
+    if (this.wc.accounts.length) {
+      this.accounts = this.wc.accounts;
+    }
+    if (this.wc.chainId) {
+      this.chainId = this.wc.chainId;
+    }
+    // this.accounts = this.wc.accounts;
+    // this.chainId = this.wc.chainId;
     this.registerConnectorEvents();
     return this.wc;
   }
