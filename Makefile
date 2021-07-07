@@ -158,9 +158,6 @@ predeploy: dirs pull build-images
 	touch $(flags)/$@
 
 dev: predeploy ## runs relay on watch mode and shows logs
-	nix show-derivation /nix/store/*-relay-conf.json.drv
-	nix show-derivation /nix/store/*-stream-relay.drv
-	nix show-derivation /nix/store/*-relay.tar.gz.drv
 	REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
 	@echo  "MAKE: Done with $@"
 	@echo
@@ -169,6 +166,10 @@ dev: predeploy ## runs relay on watch mode and shows logs
 ci: ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	$(MAKE) dev
+	nix show-derivation /nix/store/*-relay-conf.json.drv
+	nix show-derivation /nix/store/*-stream-relay.drv
+	nix show-derivation /nix/store/*-relay.tar.gz.drv
+	nix show-derivation /nix/store/*-relay-base.json.drv
 	sleep 15
 	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
