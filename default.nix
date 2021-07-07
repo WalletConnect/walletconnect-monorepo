@@ -52,6 +52,10 @@ with pkgs; let
   };
 
 in {
+  relayDeps = (callPackage ./servers/relay/node-packages.nix {
+      inherit nodeEnv;
+    }).nodeDependencies;
+  relayApp = relayApp;
   relay = pkgs.dockerTools.buildLayeredImage {
     name = "relay";
     config = {

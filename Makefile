@@ -22,7 +22,9 @@ dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/
 dockerLoad=docker load -i build/$@ \
 		| awk '{print $$NF}' \
 		| tee build/$@-img
-copyResult=cp -f -L result build/$@
+copyResult=cp -r -f -L result build/$@ && rm -rf result
+buildRelayDeps=nix-build --attr relayDeps
+buildRelayApp=nix-build --attr relayApp
 buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && $(copyResult)
 caddyVersion=v2.4.3
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
@@ -39,7 +41,9 @@ dirs:
 
 pull: ## pulls docker images
 	docker pull $(redisImage)
+ifeq (, $(shell which nix))
 	docker pull nixos/nix
+endif
 	touch $(flags)/$@
 	$(log_end)
 
@@ -81,10 +85,28 @@ build-relay: ## builds the relay using system npm
 	$(log_end)
 
 nix-volume:
+ifneq (, $(shell which nix))
 	docker volume create nix-store
+endif
 	$(log_end)
 
-build-img-relay: dirs nix-volume ## builds relay docker image inside of docker
+build-relay-deps: dirs
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildRelayDeps)"
+else
+	$(buildRelayDeps)
+endif
+	$(log_end)
+
+build-relay-app: dirs
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildRelayApp)"
+else
+	$(buildRelayApp)
+endif
+	$(log_end)
+
+build-img-relay: dirs nix-volume build-relay-deps build-relay-app ## builds relay docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildRelay)"
 else
@@ -136,6 +158,9 @@ predeploy: dirs pull build-images
 	touch $(flags)/$@
 
 dev: predeploy ## runs relay on watch mode and shows logs
+	nix show-derivation /nix/store/*-relay-conf.json.drv
+	nix show-derivation /nix/store/*-stream-relay.drv
+	nix show-derivation /nix/store/*-relay.tar.gz.drv
 	REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
 	@echo  "MAKE: Done with $@"
 	@echo
@@ -166,6 +191,8 @@ relay-logs: ## follows the relay container logs.
 	docker service logs -f --raw --tail 100 $(project)_relay
 
 cachix: clean dirs ## pushes docker images to cachix
+	cachix push walletconnect $(shell $(buildRelayDeps))
+	cachix push walletconnect $(shell $(buildRelayApp))
 	cachix push walletconnect $(shell $(buildRelay))
 	cachix push walletconnect $(shell $(buildWaku))
 	cachix push walletconnect $(shell $(buildCaddy))

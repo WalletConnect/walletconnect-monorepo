@@ -1,7 +1,6 @@
 {
   pkgs ? import (import ./nix/sources.nix).nixpkgs {},
   wakunode ? import (import ./nix/sources.nix)."nix-nim-waku" {},
-  #wakunode ? import ../../nix-nim-waku/default.nix {}, # this is for local dev imports
 }:
 let
   entry-script = with pkgs; writeScript "entry-script.sh" ''
@@ -14,15 +13,27 @@ let
       od -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /mnt/nodekey
     fi
 
-    ${wakunode}/bin/wakunode --nodekey=$(cat /mnt/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
+    mkdir -v /tmp
+    ${wakunode}/bin/wakunode \
+      --nat=none \
+      --nodekey=$(cat /mnt/nodekey) \
+      --rpc=true \
+      --rpc-address=0.0.0.0 \
+      --relay=false \
+      --rln-relay=false \
+      --store=false \
+      --filter=false \
+      --swap=false &
     PID=$!
-    sleep 10 # wait for rpc server to start
+    echo "Sleeping...."
+    sleep 5 # wait for rpc server to start
+    echo "Done!"
 
     while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
       sleep 1
     done
     peerIPs=$(${dnsutils}/bin/dig +short $SWARM_PEERS)
-    echo "SUP $peerIPs"
+    echo "Peer ip addresses: $peerIPs"
     peersArgs=""
     for ip in $peerIPs; do
       echo "IP $ip"
@@ -42,13 +53,12 @@ let
     done
 
 
-    echo "Stopping last waku with PID: $PID"
+    echo "Stopping background waku with PID: $PID"
     kill $PID
     peersArgs="$peersArgs --staticnode=$STORE"
 
-    echo "ALL $peersArgs"
-
     run="${wakunode}/bin/wakunode \
+      --nat=none \
       --nodekey=$(${coreutils}/bin/cat /mnt/nodekey) \
       --keep-alive=true \
       --swap=false \
@@ -67,7 +77,6 @@ let
     "
     printf "\n\nCommand: $run\n\n"
     exec $run
-
   '';
 in pkgs.dockerTools.buildLayeredImage {
   name =  "wakunode";
