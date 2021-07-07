@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/client",
-  "version": "1.5.0-rc.6",
+  "version": "1.5.0-rc.7",
   "description": "Client for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -60,10 +60,10 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/core": "^1.5.0-rc.6",
-    "@walletconnect/iso-crypto": "^1.5.0-rc.6",
-    "@walletconnect/types": "^1.5.0-rc.6",
-    "@walletconnect/utils": "^1.5.0-rc.6"
+    "@walletconnect/core": "^1.5.0-rc.7",
+    "@walletconnect/iso-crypto": "^1.5.0-rc.7",
+    "@walletconnect/types": "^1.5.0-rc.7",
+    "@walletconnect/utils": "^1.5.0-rc.7"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
