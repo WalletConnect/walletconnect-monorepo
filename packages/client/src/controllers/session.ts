@@ -68,6 +68,10 @@ export class Session extends ISession {
     return this.settled.get(topic);
   }
 
+  public find(permissions: Partial<SessionTypes.Permissions>): Promise<SessionTypes.Settled[]> {
+    return this.engine.find(permissions);
+  }
+
   public ping(topic: string, timeout?: number): Promise<void> {
     return this.engine.ping(topic, timeout);
   }

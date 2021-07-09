@@ -13,6 +13,7 @@ import { ISubscription } from "./subscription";
 import { IJsonRpcHistory } from "./history";
 import {
   AppMetadata,
+  BlockchainTypes,
   JsonRpcPermissions,
   NotificationPermissions,
   Reason,
@@ -62,6 +63,7 @@ export declare namespace SequenceTypes {
   export type Relay = RelayerTypes.ProtocolOptions;
   export interface BasePermissions {
     jsonrpc: JsonRpcPermissions;
+    blockchain: BlockchainTypes.Permissions;
     notifications?: NotificationPermissions;
   }
   export interface ProposedPermissions extends BasePermissions {
@@ -304,7 +306,8 @@ export abstract class ISequence<
     ProposeParams,
     SettleParams,
     NotifyParams,
-    Participant
+    Participant,
+    Permissions
   >;
 
   constructor(public client: IClient, public logger: Logger) {
@@ -316,6 +319,9 @@ export abstract class ISequence<
 
   // get settled subscription data
   public abstract get(topic: string): Promise<Settled>;
+
+  // find compatible settled subscriptions
+  public abstract find(permissions: Partial<Permissions>): Promise<Settled[]>;
 
   // called by either to ping peer
   public abstract ping(topic: string, timeout?: number): Promise<void>;

@@ -1,8 +1,7 @@
-import { JsonRpcPayload, JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/types";
+import { JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/types";
 
 import { ISequence, SequenceTypes } from "./sequence";
-import { CryptoTypes } from "./crypto";
-import { SignalTypes, BlockchainTypes, NotificationPermissions, AppMetadata } from "./misc";
+import { SignalTypes, BlockchainTypes, AppMetadata } from "./misc";
 
 export declare namespace SessionTypes {
   export type Status = SequenceTypes.Status;
@@ -15,16 +14,11 @@ export declare namespace SessionTypes {
 
   export type Relay = SequenceTypes.Relay;
 
-  export interface BasePermissions extends SequenceTypes.BasePermissions {
-    blockchain: BlockchainTypes.Permissions;
-  }
-  export interface ProposedPermissions extends BasePermissions {
-    notifications: NotificationPermissions;
-  }
+  export type BasePermissions = SequenceTypes.BasePermissions;
 
-  export interface SettledPermissions extends ProposedPermissions {
-    controller: CryptoTypes.Participant;
-  }
+  export type ProposedPermissions = SequenceTypes.ProposedPermissions;
+
+  export type SettledPermissions = SequenceTypes.SettledPermissions;
 
   export type Permissions = SettledPermissions;
 

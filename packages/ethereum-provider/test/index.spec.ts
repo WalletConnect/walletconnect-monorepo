@@ -98,12 +98,9 @@ describe("WalletConnectProvider", function() {
     provider = new WalletConnectProvider(TEST_PROVIDER_OPTS);
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     walletAddress = walletClient.signer.address;
-    console.log("[before]", "walletAddress", walletAddress); // eslint-disable-line no-console
     receiverAddress = ACCOUNTS.b.address;
-    console.log("[before]", "receiverAddress", receiverAddress); // eslint-disable-line no-console
     expect(walletAddress).to.eql(ACCOUNTS.a.address);
     const providerAccounts = await provider.enable();
-    console.log("[before]", "providerAccounts", providerAccounts); // eslint-disable-line no-console
     expect(providerAccounts).to.eql([walletAddress]);
   });
   after(async () => {
@@ -161,6 +158,7 @@ describe("WalletConnectProvider", function() {
       new Promise<void>(async (resolve, reject) => {
         try {
           await walletClient.changeAccount(ACCOUNTS.c.privateKey);
+
           resolve();
         } catch (e) {
           reject(e);

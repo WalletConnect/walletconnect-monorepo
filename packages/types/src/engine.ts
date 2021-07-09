@@ -1,5 +1,4 @@
 import { JsonRpcPayload } from "@json-rpc-tools/types";
-import { AppMetadata } from "./misc";
 
 import { ISequence, SequenceTypes } from "./sequence";
 import { SubscriptionEvent } from "./subscription";
@@ -18,10 +17,12 @@ export abstract class IEngine<
   ProposeParams = SequenceTypes.ProposeParams,
   SettleParams = SequenceTypes.SettleParams,
   NotifyParams = SequenceTypes.NotifyParams,
-  Participant = SequenceTypes.Participant
+  Participant = SequenceTypes.Participant,
+  Permissions = SequenceTypes.Permissions
 > {
   constructor(public sequence: ISequence) {}
 
+  public abstract find(permissions: Partial<Permissions>): Promise<Settled[]>;
   public abstract ping(topic: string, timeout?: number): Promise<void>;
   public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
   public abstract create(params?: CreateParams): Promise<Settled>;

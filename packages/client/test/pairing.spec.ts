@@ -93,4 +93,17 @@ describe("Pairing", function() {
       }
     });
   });
+  it("can find compatible sessions from permission set", async () => {
+    const { clients } = await setupClientsForTesting();
+    const topic = await testPairingWithoutSession(clients);
+    const incompatible = await clients.a.pairing.find({ jsonrpc: { methods: ["eth_sign"] } });
+    expect(!!incompatible).to.be.true;
+    expect(incompatible.length).to.eql(0);
+    const compatible = await clients.a.pairing.find({
+      jsonrpc: { methods: ["wc_sessionPropose"] },
+    });
+    expect(!!compatible).to.be.true;
+    expect(compatible.length).to.eql(1);
+    expect(compatible[0].topic).to.eql(topic);
+  });
 });

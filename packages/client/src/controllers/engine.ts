@@ -7,6 +7,7 @@ import {
 } from "@walletconnect/types";
 import {
   generateRandomBytes32,
+  hasOverlap,
   isSignalTypePairing,
   isSequenceFailed,
   isSequenceResponded,
@@ -37,6 +38,33 @@ export class Engine extends IEngine {
     super(sequence);
     this.sequence = sequence;
     this.registerEventListeners();
+  }
+
+  public async find(
+    permissions: Partial<SequenceTypes.Permissions>,
+  ): Promise<SequenceTypes.Settled[]> {
+    return this.sequence.values.filter((settled: SequenceTypes.Settled) => {
+      let isCompatible = false;
+      if (
+        permissions.jsonrpc?.methods &&
+        hasOverlap(permissions.jsonrpc.methods, settled.permissions.jsonrpc.methods)
+      ) {
+        isCompatible = true;
+      }
+      if (
+        permissions.blockchain?.chains &&
+        hasOverlap(permissions.blockchain.chains, settled.permissions.blockchain.chains)
+      ) {
+        isCompatible = true;
+      }
+      if (
+        permissions.notifications?.types &&
+        hasOverlap(permissions.notifications.types, settled.permissions.notifications.types)
+      ) {
+        isCompatible = true;
+      }
+      return isCompatible;
+    });
   }
 
   public async ping(topic: string, timeout?: number): Promise<void> {

@@ -324,4 +324,15 @@ describe("Session", function() {
       }
     });
   });
+  it("can find compatible sessions from permission set", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const incompatible = await clients.a.session.find({ blockchain: { chains: ["eip155:123"] } });
+    expect(!!incompatible).to.be.true;
+    expect(incompatible.length).to.eql(0);
+    const compatible = await clients.a.session.find({ blockchain: { chains: ["eip155:1"] } });
+    expect(!!compatible).to.be.true;
+    expect(compatible.length).to.eql(1);
+    expect(compatible[0].topic).to.eql(topic);
+  });
 });

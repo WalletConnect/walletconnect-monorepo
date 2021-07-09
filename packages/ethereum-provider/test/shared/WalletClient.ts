@@ -32,6 +32,10 @@ export class WalletClient {
     return walletClient;
   }
 
+  get accounts() {
+    return [this.signer.address];
+  }
+
   constructor(provider: EthereumProvider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
     this.chainId = opts?.chainId || 123;
@@ -40,16 +44,20 @@ export class WalletClient {
   }
 
   public async changeAccount(privateKey: string) {
-    this.signer = this.getWallet(privateKey);
-    await this.updateSession();
+    this.setAccount(privateKey);
+    await this.updateAccounts();
   }
 
   public async changeChain(chainId: number, rpcUrl: string) {
-    this.setChain(chainId, rpcUrl);
-    await this.updateSession();
+    this.setChainId(chainId, rpcUrl);
+    await this.updateChainId();
   }
 
-  private setChain(chainId: number, rpcUrl: string) {
+  private setAccount(privateKey: string) {
+    this.signer = this.getWallet(privateKey);
+  }
+
+  private setChainId(chainId: number, rpcUrl: string) {
     if (this.chainId !== chainId) {
       this.chainId = chainId;
     }
@@ -57,6 +65,26 @@ export class WalletClient {
       this.rpcUrl = rpcUrl;
       this.signer = this.signer.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
     }
+  }
+
+  private async emitAccountsChangedEvent() {
+    if (typeof this.client === "undefined") return;
+    if (typeof this.topic === "undefined") return;
+    await this.client.notify({
+      topic: this.topic,
+      type: "accountsChanged",
+      data: [this.signer.address],
+    });
+  }
+
+  private async emitChainChangedEvent() {
+    if (typeof this.client === "undefined") return;
+    if (typeof this.topic === "undefined") return;
+    await this.client.notify({
+      topic: this.topic,
+      type: "chainChanged",
+      data: this.chainId,
+    });
   }
 
   private getWallet(privateKey?: string) {
@@ -99,25 +127,38 @@ export class WalletClient {
     await this.client.update({ topic: this.topic, state: this.getSessionState() });
   }
 
+  private async upgradeSession() {
+    if (typeof this.client === "undefined") return;
+    if (typeof this.topic === "undefined") return;
+    await this.client.upgrade({
+      topic: this.topic,
+      permissions: { blockchain: { chains: [`eip155:${this.chainId}`] } },
+    });
+    await this.updateAccounts();
+  }
+
+  private async updateAccounts() {
+    await this.updateSession();
+    await this.emitAccountsChangedEvent();
+  }
+
+  private async updateChainId() {
+    await this.upgradeSession();
+    await this.emitChainChangedEvent();
+  }
+
   private async initialize(opts?: ClientOptions) {
-    console.log("[initialize]", "opts", opts); // eslint-disable-line no-console
     this.client = await Client.init({ ...opts, controller: true });
-    console.log("[initialize]", "!!this.client", !!this.client); // eslint-disable-line no-console
     this.registerEventListeners();
   }
 
   private registerEventListeners() {
-    console.log("[registerEventListeners]", "typeof this.client", typeof this.client); // eslint-disable-line no-console
-    console.log("[registerEventListeners]", "typeof this.provider", typeof this.provider); // eslint-disable-line no-console
     if (typeof this.client === "undefined") {
       throw new Error("Client not inititialized");
     }
 
     // auto-pair
     this.provider.signer.connection.on(SIGNER_EVENTS.uri, async ({ uri }) => {
-      console.log("[SIGNER_EVENTS.uri]", "uri", uri); // eslint-disable-line no-console
-      console.log("[SIGNER_EVENTS.uri]", "!!this.client", !!this.client); // eslint-disable-line no-console
-
       if (typeof this.client === "undefined") {
         throw new Error("Client not inititialized");
       }
@@ -126,9 +167,6 @@ export class WalletClient {
 
     // auto-approve
     this.client.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
-      console.log("[session.proposal]", "proposal", proposal); // eslint-disable-line no-console
-      console.log("[session.proposal]", "!!this.client", !!this.client); // eslint-disable-line no-console
-
       if (typeof this.client === "undefined") {
         throw new Error("Client not inititialized");
       }
@@ -141,9 +179,6 @@ export class WalletClient {
     this.client.on(
       CLIENT_EVENTS.session.request,
       async (requestEvent: SessionTypes.RequestEvent) => {
-        console.log("[session.request]", "requestEvent", requestEvent); // eslint-disable-line no-console
-        console.log("[session.request]", "!!this.client", !!this.client); // eslint-disable-line no-console
-
         if (typeof this.client === "undefined") {
           throw new Error("Client not inititialized");
         }

@@ -63,6 +63,10 @@ export class Pairing extends IPairing {
     return this.settled.get(topic);
   }
 
+  public find(permissions: Partial<PairingTypes.Permissions>): Promise<PairingTypes.Settled[]> {
+    return this.engine.find(permissions);
+  }
+
   public ping(topic: string, timeout?: number): Promise<void> {
     return this.engine.ping(topic, timeout);
   }
@@ -143,6 +147,7 @@ export class Pairing extends IPairing {
           ...(upgrade.permissions.jsonrpc?.methods || []),
         ],
       },
+      blockchain: { chains: [] },
       notifications: {
         types: [
           ...settled.permissions.notifications?.types,
@@ -190,6 +195,9 @@ export class Pairing extends IPairing {
     const permissions: PairingTypes.ProposedPermissions = {
       jsonrpc: {
         methods: [SESSION_JSONRPC.propose],
+      },
+      blockchain: {
+        chains: [],
       },
       notifications: {
         types: [],

@@ -399,6 +399,7 @@ function formatPairingProposal(uri: string): PairingTypes.Proposal {
     signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri } },
     permissions: {
       jsonrpc: { methods: [SESSION_JSONRPC.propose] },
+      blockchain: { chains: [] },
       notifications: { types: [] },
     },
     ttl: PAIRING_DEFAULT_TTL,

@@ -93,7 +93,6 @@ class EthereumProvider implements IEthereumProvider {
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
-    console.log("[enable]", "args.method", args.method); // eslint-disable-line no-console
     switch (args.method) {
       case "eth_requestAccounts":
         await this.connect();
@@ -123,16 +122,12 @@ class EthereumProvider implements IEthereumProvider {
   }
 
   public async enable(): Promise<ProviderAccounts> {
-    console.log("[enable]", "this.accounts", this.accounts); // eslint-disable-line no-console
     const accounts = await this.request({ method: "eth_requestAccounts" });
-    console.log("[enable]", "this.accounts", this.accounts); // eslint-disable-line no-console
     return accounts as ProviderAccounts;
   }
 
   public async connect(): Promise<void> {
-    console.log("[connect]", "before"); // eslint-disable-line no-console
     await this.signer.connect();
-    console.log("[connect]", "after"); // eslint-disable-line no-console
   }
 
   public async disconnect(): Promise<void> {
@@ -159,6 +154,12 @@ class EthereumProvider implements IEthereumProvider {
   // ---------- Private ----------------------------------------------- //
 
   private registerEventListeners() {
+    this.signer.on("connect", async () => {
+      const chains = (this.signer.connection as SignerConnection).chains;
+      if (chains && chains.length) this.setChainId(chains);
+      const accounts = (this.signer.connection as SignerConnection).accounts;
+      if (accounts && accounts.length) this.setAccounts(accounts);
+    });
     this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Settled) => {
       this.setChainId(session.permissions.blockchain.chains);
       this.setAccounts(session.state.accounts);
@@ -175,7 +176,15 @@ class EthereumProvider implements IEthereumProvider {
     this.signer.connection.on(
       SIGNER_EVENTS.notification,
       (notification: SessionTypes.Notification) => {
-        this.events.emit(notification.type, notification.data);
+        if (notification.type === providerEvents.changed.accounts) {
+          this.accounts = notification.data;
+          this.events.emit(providerEvents.changed.accounts, this.accounts);
+        } else if (notification.type === providerEvents.changed.chain) {
+          this.chainId = notification.data;
+          this.events.emit(providerEvents.changed.chain, this.chainId);
+        } else {
+          this.events.emit(notification.type, notification.data);
+        }
       },
     );
     this.events.on(providerEvents.changed.chain, chainId => this.setHttpProvider(chainId));
@@ -210,22 +219,17 @@ class EthereumProvider implements IEthereumProvider {
   }
 
   private setChainId(chains: string[]) {
-    console.log("[setChainId]", "chains", chains); // eslint-disable-line no-console
     const compatible = chains.filter(x => this.isCompatibleChainId(x));
-    console.log("[setChainId]", "compatible", compatible); // eslint-disable-line no-console
     if (compatible.length) {
       this.chainId = this.parseChainId(compatible[0]);
-      console.log("[setChainId]", "this.chainId", this.chainId); // eslint-disable-line no-console
       this.events.emit(providerEvents.changed.chain, this.chainId);
     }
   }
 
   private setAccounts(accounts: string[]) {
-    console.log("[setAccounts]", "accounts", accounts); // eslint-disable-line no-console
     this.accounts = accounts
       .filter(x => this.parseChainId(x.split("@")[1]) === this.chainId)
       .map(x => x.split("@")[0]);
-    console.log("[setAccounts]", "this.accounts", this.accounts); // eslint-disable-line no-console
     this.events.emit(providerEvents.changed.accounts, this.accounts);
   }
 }

@@ -73,6 +73,13 @@ export function assertType(obj: any, key: string, type: string) {
   }
 }
 
+// -- array ------------------------------------------------- //
+
+export function hasOverlap(a: any[], b: any[]) {
+  const matches = a.filter(x => b.includes(x));
+  return matches.length === a.length;
+}
+
 // -- map ------------------------------------------------- //
 
 export function mapToObj<T = any>(map: Map<string, T>): Record<string, T> {
