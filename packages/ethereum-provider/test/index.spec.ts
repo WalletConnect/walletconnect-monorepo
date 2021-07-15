@@ -152,7 +152,7 @@ describe("WalletConnectProvider", function() {
       }),
     ]);
   });
-  it("accountsChanged", async () => {
+  it.skip("accountsChanged", async () => {
     // change to account c
     await Promise.all([
       new Promise<void>(async (resolve, reject) => {

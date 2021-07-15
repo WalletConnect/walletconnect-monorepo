@@ -30,7 +30,7 @@
   "dependencies": {
     "@json-rpc-tools/utils": "^2.0.0-beta.12",
     "@walletconnect/types": "^2.0.0-beta.12",
-    "ecies-25519": "^2.0.0-beta.5",
+    "ecies-25519": "^2.0.0-beta.6",
     "enc-utils": "^3.0.0",
     "query-string": "^6.13.5",
     "safe-json-utils": "^1.1.1",
