@@ -41,6 +41,7 @@
     "axios": "^0.21.1",
     "blockies-ts": "^1.0.0",
     "caip-wallet": "^2.0.0-beta.4",
+    "cosmos-wallet": "^1.1.0",
     "ethers": "^5.3.0",
     "keyvaluestorage": "^0.7.1",
     "prop-types": "^15.7.2",
