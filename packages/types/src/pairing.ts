@@ -1,5 +1,6 @@
 import { SequenceTypes, ISequence } from "./sequence";
 import { AppMetadata, SignalTypes } from "./misc";
+import { IEngine } from "./engine";
 
 export declare namespace PairingTypes {
   export type Status = SequenceTypes.Status;
@@ -12,13 +13,13 @@ export declare namespace PairingTypes {
 
   export type Relay = SequenceTypes.Relay;
 
-  export type BasePermissions = SequenceTypes.BasePermissions;
+  export type BasePermissions = Omit<SequenceTypes.BasePermissions, "blockchain">;
 
-  export type ProposedPermissions = SequenceTypes.ProposedPermissions;
+  export type ProposedPermissions = Omit<SequenceTypes.ProposedPermissions, "blockchain">;
 
-  export type SettledPermissions = SequenceTypes.SettledPermissions;
+  export type SettledPermissions = Omit<SequenceTypes.SettledPermissions, "blockchain">;
 
-  export type Permissions = SequenceTypes.Permissions;
+  export type Permissions = Omit<SequenceTypes.Permissions, "blockchain">;
 
   export type ProposeParams = SequenceTypes.ProposeParams;
 
@@ -31,7 +32,7 @@ export declare namespace PairingTypes {
 
   export type ProposedPeer = SequenceTypes.ProposedPeer;
 
-  export type Proposal = SequenceTypes.Proposal<Signal>;
+  export type Proposal = SequenceTypes.Proposal<Signal, ProposedPeer, ProposedPermissions>;
 
   export type ProposedStatus = SequenceTypes.ProposedStatus;
 
@@ -39,27 +40,27 @@ export declare namespace PairingTypes {
 
   export type PendingStatus = SequenceTypes.PendingStatus;
 
-  export type BasePending = SequenceTypes.BasePending<Proposal>;
+  export type BasePending = SequenceTypes.BasePending<Participant, Proposal>;
 
   export type ProposedPending = SequenceTypes.ProposedPending<Participant, Proposal>;
 
   export type RespondedPending = SequenceTypes.RespondedPending<Participant, Proposal, State>;
 
-  export type Pending = SequenceTypes.Pending;
+  export type Pending = SequenceTypes.Pending<Participant, Proposal, State>;
 
-  export type RespondParams = SequenceTypes.RespondParams;
+  export type RespondParams = SequenceTypes.RespondParams<Proposal>;
 
-  export type SettleParams = SequenceTypes.SettleParams;
+  export type SettleParams = SequenceTypes.SettleParams<State, Participant, Permissions>;
 
-  export type UpgradeParams = SequenceTypes.UpgradeParams;
+  export type UpgradeParams = SequenceTypes.UpgradeParams<Permissions>;
 
-  export type UpdateParams = SequenceTypes.UpdateParams;
+  export type UpdateParams = SequenceTypes.UpdateParams<State>;
 
   export type RequestParams = SequenceTypes.RequestParams;
 
-  export type Upgrade = SequenceTypes.Upgrade;
+  export type Upgrade = SequenceTypes.Upgrade<Permissions>;
 
-  export type Update = SequenceTypes.Update;
+  export type Update = SequenceTypes.Update<State>;
 
   export type Request = SequenceTypes.Request;
 
@@ -71,15 +72,15 @@ export declare namespace PairingTypes {
 
   export type DeleteParams = SequenceTypes.DeleteParams;
 
-  export type Settled = SequenceTypes.Settled;
+  export type Settled = SequenceTypes.Settled<State, Participant, Permissions>;
 
-  export type Created = SequenceTypes.Created;
+  export type Created = SequenceTypes.Created<State, Participant, Permissions>;
 
-  export type Success = SequenceTypes.Success;
+  export type Success = SequenceTypes.Success<State, Participant>;
 
   export type Failed = SequenceTypes.Failed;
 
-  export type Outcome = SequenceTypes.Outcome;
+  export type Outcome = SequenceTypes.Outcome<State, Participant>;
 
   export interface State {
     metadata?: AppMetadata;
@@ -92,9 +93,28 @@ export declare namespace PairingTypes {
   export type NotificationEvent = SequenceTypes.NotificationEvent;
 
   export type NotifyParams = SequenceTypes.NotifyParams;
+
+  export type Engine = IEngine<
+    Pending,
+    Settled,
+    Upgrade,
+    Update,
+    CreateParams,
+    RespondParams,
+    RequestParams,
+    UpgradeParams,
+    UpdateParams,
+    DeleteParams,
+    ProposeParams,
+    SettleParams,
+    NotifyParams,
+    Participant,
+    Permissions
+  >;
 }
 
 export abstract class IPairing extends ISequence<
+  PairingTypes.Engine,
   PairingTypes.Config,
   PairingTypes.Pending,
   PairingTypes.Settled,

@@ -63,10 +63,11 @@ export declare namespace SequenceTypes {
   export type Relay = RelayerTypes.ProtocolOptions;
   export interface BasePermissions {
     jsonrpc: JsonRpcPermissions;
-    blockchain: BlockchainTypes.Permissions;
+    blockchain?: BlockchainTypes.Permissions;
     notifications?: NotificationPermissions;
   }
   export interface ProposedPermissions extends BasePermissions {
+    blockchain: BlockchainTypes.Permissions;
     notifications: NotificationPermissions;
   }
 
@@ -247,9 +248,12 @@ export declare namespace SequenceTypes {
   }
 
   export type NotifyParams = NotificationEvent;
+
+  export type Engine = IEngine;
 }
 
 export abstract class ISequence<
+  Engine = SequenceTypes.Engine,
   Config = SequenceTypes.Config,
   Pending = SequenceTypes.Pending,
   Settled = SequenceTypes.Settled,
@@ -292,23 +296,7 @@ export abstract class ISequence<
   public abstract config: Config;
 
   // sequence protocol engine
-  public abstract engine: IEngine<
-    Pending,
-    Settled,
-    Upgrade,
-    Update,
-    CreateParams,
-    RespondParams,
-    RequestParams,
-    UpgradeParams,
-    UpdateParams,
-    DeleteParams,
-    ProposeParams,
-    SettleParams,
-    NotifyParams,
-    Participant,
-    Permissions
-  >;
+  public abstract engine: Engine;
 
   constructor(public client: IClient, public logger: Logger) {
     super();

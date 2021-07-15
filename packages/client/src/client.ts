@@ -271,8 +271,11 @@ export class Client extends IClient {
   }
 
   protected async onPairingSettled(pairing: PairingTypes.Settled) {
-    if (pairing.permissions.controller.publicKey === pairing.self.publicKey) {
-      this.pairing.update({ topic: pairing.topic, state: { metadata: this.metadata } });
+    if (
+      pairing.permissions.controller.publicKey === pairing.self.publicKey &&
+      typeof pairing.state.metadata === "undefined"
+    ) {
+      await this.pairing.update({ topic: pairing.topic, state: { metadata: this.metadata } });
     }
   }
   // ---------- Private ----------------------------------------------- //
@@ -399,7 +402,6 @@ function formatPairingProposal(uri: string): PairingTypes.Proposal {
     signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri } },
     permissions: {
       jsonrpc: { methods: [SESSION_JSONRPC.propose] },
-      blockchain: { chains: [] },
       notifications: { types: [] },
     },
     ttl: PAIRING_DEFAULT_TTL,

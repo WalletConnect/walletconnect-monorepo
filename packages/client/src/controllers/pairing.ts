@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@pedrouid/pino-utils";
-import { PairingTypes, IClient, IPairing } from "@walletconnect/types";
+import { PairingTypes, IClient, IPairing, ISequence, IEngine } from "@walletconnect/types";
 import { formatUri } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@json-rpc-tools/utils";
 
@@ -33,7 +33,7 @@ export class Pairing extends IPairing {
     jsonrpc: PAIRING_JSONRPC,
   };
 
-  public engine: Engine;
+  public engine: PairingTypes.Engine;
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
@@ -49,7 +49,7 @@ export class Pairing extends IPairing {
       this.config.status.settled,
     );
     this.history = new JsonRpcHistory(client, this.logger);
-    this.engine = new Engine(this);
+    this.engine = new Engine(this) as PairingTypes.Engine;
   }
 
   public async init(): Promise<void> {
@@ -147,7 +147,6 @@ export class Pairing extends IPairing {
           ...(upgrade.permissions.jsonrpc?.methods || []),
         ],
       },
-      blockchain: { chains: [] },
       notifications: {
         types: [
           ...settled.permissions.notifications?.types,
@@ -195,9 +194,6 @@ export class Pairing extends IPairing {
     const permissions: PairingTypes.ProposedPermissions = {
       jsonrpc: {
         methods: [SESSION_JSONRPC.propose],
-      },
-      blockchain: {
-        chains: [],
       },
       notifications: {
         types: [],

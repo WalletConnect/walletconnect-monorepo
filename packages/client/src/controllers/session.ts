@@ -37,8 +37,7 @@ export class Session extends ISession {
     jsonrpc: SESSION_JSONRPC,
   };
 
-  // TODO: fix type casting as any
-  public engine: any;
+  public engine: SessionTypes.Engine;
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
@@ -54,7 +53,7 @@ export class Session extends ISession {
       this.config.status.settled,
     );
     this.history = new JsonRpcHistory(client, this.logger);
-    this.engine = new Engine(this);
+    this.engine = new Engine(this) as SessionTypes.Engine;
   }
 
   public async init(): Promise<void> {

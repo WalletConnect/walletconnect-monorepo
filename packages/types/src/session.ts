@@ -1,7 +1,9 @@
 import { JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/types";
 
 import { ISequence, SequenceTypes } from "./sequence";
-import { SignalTypes, BlockchainTypes, AppMetadata } from "./misc";
+import { SignalTypes, BlockchainTypes, AppMetadata, NotificationPermissions } from "./misc";
+import { CryptoTypes } from "./crypto";
+import { IEngine } from "./engine";
 
 export declare namespace SessionTypes {
   export type Status = SequenceTypes.Status;
@@ -14,11 +16,18 @@ export declare namespace SessionTypes {
 
   export type Relay = SequenceTypes.Relay;
 
-  export type BasePermissions = SequenceTypes.BasePermissions;
+  export interface BasePermissions extends SequenceTypes.BasePermissions {
+    blockchain: BlockchainTypes.Permissions;
+  }
 
-  export type ProposedPermissions = SequenceTypes.ProposedPermissions;
+  export interface ProposedPermissions extends SequenceTypes.ProposedPermissions {
+    blockchain: BlockchainTypes.Permissions;
+    notifications: NotificationPermissions;
+  }
 
-  export type SettledPermissions = SequenceTypes.SettledPermissions;
+  export interface SettledPermissions extends SequenceTypes.SettledPermissions {
+    controller: CryptoTypes.Participant;
+  }
 
   export type Permissions = SettledPermissions;
 
@@ -123,9 +132,28 @@ export declare namespace SessionTypes {
   export type NotificationEvent = SequenceTypes.NotificationEvent;
 
   export type NotifyParams = SequenceTypes.NotifyParams;
+
+  export type Engine = IEngine<
+    Pending,
+    Settled,
+    Upgrade,
+    Update,
+    CreateParams,
+    RespondParams,
+    RequestParams,
+    UpgradeParams,
+    UpdateParams,
+    DeleteParams,
+    ProposeParams,
+    SettleParams,
+    NotifyParams,
+    Participant,
+    Permissions
+  >;
 }
 
 export abstract class ISession extends ISequence<
+  SessionTypes.Engine,
   SessionTypes.Config,
   SessionTypes.Pending,
   SessionTypes.Settled,

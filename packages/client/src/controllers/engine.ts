@@ -34,7 +34,9 @@ import {
 } from "../constants";
 
 export class Engine extends IEngine {
-  constructor(public sequence: ISequence) {
+  public sequence: ISequence;
+
+  constructor(sequence: any) {
     super(sequence);
     this.sequence = sequence;
     this.registerEventListeners();
@@ -46,18 +48,21 @@ export class Engine extends IEngine {
     return this.sequence.values.filter((settled: SequenceTypes.Settled) => {
       let isCompatible = false;
       if (
+        settled.permissions?.jsonrpc &&
         permissions.jsonrpc?.methods &&
         hasOverlap(permissions.jsonrpc.methods, settled.permissions.jsonrpc.methods)
       ) {
         isCompatible = true;
       }
       if (
+        settled.permissions?.blockchain &&
         permissions.blockchain?.chains &&
         hasOverlap(permissions.blockchain.chains, settled.permissions.blockchain.chains)
       ) {
         isCompatible = true;
       }
       if (
+        settled.permissions?.notifications &&
         permissions.notifications?.types &&
         hasOverlap(permissions.notifications.types, settled.permissions.notifications.types)
       ) {
