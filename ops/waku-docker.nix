@@ -1,36 +1,39 @@
 {
   pkgs ? import (import ./nix/sources.nix).nixpkgs {},
-  tag ? "master"
+  wakunode ? import (import ./nix/sources.nix)."nix-nim-waku" {},
 }:
 let
-  statusImage = pkgs.dockerTools.pullImage {
-    imageName = "walletconnect/waku";
-    finalImageTag = tag;
-    # docker image inspect walletconnect/waku:walletconnect --format "{{index .RepoDigests 0}}" | cut -d "@" -f2
-    imageDigest = "sha256:ee091297d9b24cd7ab16789a50af789b4faaacd6d12fb99a671f54ec6f615266";
-    # If you can find out how to get the RIGHT tar file you can use 
-    # nix-hash --type sha256 --flat --base32 pmjdag6jmsm6vm8lcfrbwaa63ccx44zy-docker-image-walletconnect-waku-walletconnect.tar
-    # to get the value of sha256
-    sha256 = "07gb4h390gqxy3980p4xyn7fg56cp7xqsglm903rb28rjbpmygxq";
-  };
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
     set -e
+    export PATH=$PATH:${coreutils}/bin
 
-    if [[ ! -e /key/nodekey ]]; then
+    if [[ ! -e /mnt/nodekey ]]; then
       # https://stackoverflow.com/a/34329799
-      ${coreutils}/bin/od -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /key/nodekey
+      od -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /mnt/nodekey
     fi
 
-    /usr/bin/wakunode --nodekey=$(cat /key/nodekey) --rpc=true --rpc-address=0.0.0.0 > /dev/null 2>&1 &
+    mkdir -v /tmp
+    ${wakunode}/bin/wakunode \
+      --nat=none \
+      --nodekey=$(cat /mnt/nodekey) \
+      --rpc=true \
+      --rpc-address=0.0.0.0 \
+      --relay=false \
+      --rln-relay=false \
+      --store=false \
+      --filter=false \
+      --swap=false &
     PID=$!
-    sleep 10 # wait for rpc server to start
+    echo "Sleeping...."
+    sleep 5 # wait for rpc server to start
+    echo "Done!"
 
     while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
       sleep 1
     done
     peerIPs=$(${dnsutils}/bin/dig +short $SWARM_PEERS)
-    echo "SUP $peerIPs"
+    echo "Peer ip addresses: $peerIPs"
     peersArgs=""
     for ip in $peerIPs; do
       echo "IP $ip"
@@ -40,7 +43,7 @@ let
          multiaddr=$(echo -n $result | ${jq}/bin/jq -r '.result.listenStr')
          echo "Multiaddr $multiaddr"
          if [[ -n $multiaddr ]]; then
-           multiaddr=$(sed "s/0\.0\.0\.0/$ip/g" <<< $multiaddr)
+           multiaddr=$(${gnused}/bin/sed "s/0\.0\.0\.0/$ip/g" <<< $multiaddr)
            peersArgs="$peersArgs --staticnode=$multiaddr"
            break
          fi
@@ -50,14 +53,13 @@ let
     done
 
 
-    echo "Stopping last waku with PID: $PID"
+    echo "Stopping background waku with PID: $PID"
     kill $PID
     peersArgs="$peersArgs --staticnode=$STORE"
 
-    echo "ALL $peersArgs"
-
-    run="/usr/bin/wakunode \
-      --nodekey=$(cat /key/nodekey) \
+    run="${wakunode}/bin/wakunode \
+      --nat=none \
+      --nodekey=$(${coreutils}/bin/cat /mnt/nodekey) \
       --keep-alive=true \
       --swap=false \
       --rln-relay=false \
@@ -75,22 +77,14 @@ let
     "
     printf "\n\nCommand: $run\n\n"
     exec $run
-
   '';
-in
-{
-  statusImage = statusImage;
-  docker = pkgs.dockerTools.buildImage {
-    name =  statusImage.imageName;
-    fromImage = statusImage;
-    fromImageName = statusImage.finalImageName;
-    fromImageTag = statusImage.finalImageTag;
-    contents = pkgs.bash;
-    created = "now";
-    config = {
-      Cmd = [
-        "${entry-script}"
-      ];
-    };
+in pkgs.dockerTools.buildLayeredImage {
+  name =  "wakunode";
+  contents = wakunode;
+  created = "now";
+  config = {
+    Cmd = [
+      "${entry-script}"
+    ];
   };
 }

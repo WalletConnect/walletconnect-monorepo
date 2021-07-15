@@ -22,12 +22,14 @@ dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/
 dockerLoad=docker load -i build/$@ \
 		| awk '{print $$NF}' \
 		| tee build/$@-img
-copyResult=cp -f -L result build/$@
+copyResult=cp -r -f -L result build/$@ && rm -rf result
+buildRelayDeps=nix-build --attr relayDeps
+buildRelayApp=nix-build --attr relayApp
 buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && $(copyResult)
-caddyVersion=v2.4.2
+caddyVersion=v2.4.3
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
 buildCaddy=nix-build $(caddySrc) --attr docker && $(copyResult)
-buildWaku=nix-build ./ops/waku-docker.nix --attr docker && $(copyResult)
+buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
 
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
 help: ## Show this help
@@ -39,7 +41,9 @@ dirs:
 
 pull: ## pulls docker images
 	docker pull $(redisImage)
+ifeq (, $(shell which nix))
 	docker pull nixos/nix
+endif
 	touch $(flags)/$@
 	$(log_end)
 
@@ -81,10 +85,28 @@ build-relay: ## builds the relay using system npm
 	$(log_end)
 
 nix-volume:
+ifneq (, $(shell which nix))
 	docker volume create nix-store
+endif
 	$(log_end)
 
-build-img-relay: dirs nix-volume ## builds relay docker image inside of docker
+build-relay-deps: dirs
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildRelayDeps)"
+else
+	$(buildRelayDeps)
+endif
+	$(log_end)
+
+build-relay-app: dirs
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildRelayApp)"
+else
+	$(buildRelayApp)
+endif
+	$(log_end)
+
+build-img-relay: dirs nix-volume build-relay-deps build-relay-app ## builds relay docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildRelay)"
 else
@@ -144,6 +166,10 @@ dev: predeploy ## runs relay on watch mode and shows logs
 ci: ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	$(MAKE) dev
+	nix show-derivation /nix/store/*-relay-conf.json.drv
+	nix show-derivation /nix/store/*-stream-relay.drv
+	nix show-derivation /nix/store/*-relay.tar.gz.drv
+	nix show-derivation /nix/store/*-relay-base.json.drv
 	sleep 15
 	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
@@ -166,6 +192,8 @@ relay-logs: ## follows the relay container logs.
 	docker service logs -f --raw --tail 100 $(project)_relay
 
 cachix: clean dirs ## pushes docker images to cachix
+	cachix push walletconnect $(shell $(buildRelayDeps))
+	cachix push walletconnect $(shell $(buildRelayApp))
 	cachix push walletconnect $(shell $(buildRelay))
 	cachix push walletconnect $(shell $(buildWaku))
 	cachix push walletconnect $(shell $(buildCaddy))

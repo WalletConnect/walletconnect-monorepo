@@ -16,6 +16,8 @@ with pkgs; let
         "result"
         "dist"
         "node_modules"
+        "ops"
+        ".git"
         ./.gitignore
       ] path;
       buildInputs = [ myNodejs ];
@@ -50,9 +52,12 @@ with pkgs; let
   };
 
 in {
+  relayDeps = (callPackage ./servers/relay/node-packages.nix {
+      inherit nodeEnv;
+    }).nodeDependencies;
+  relayApp = relayApp;
   relay = pkgs.dockerTools.buildLayeredImage {
     name = "relay";
-    created = "now";
     config = {
       Cmd = [ "${myNodejs}/bin/node" "${relayApp}/dist" ];
       Env = [
@@ -62,7 +67,6 @@ in {
   };
   health = pkgs.dockerTools.buildLayeredImage {
     name = "health";
-    created = "now";
     config = {
       Cmd = [ "${myNodejs}/bin/node" "${healthApp}/dist" ];
     };
