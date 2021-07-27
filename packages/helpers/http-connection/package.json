@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/http-connection",
-  "version": "1.5.0-rc.7",
+  "version": "1.5.0-rc.8",
   "description": "Http Connection for WalletConnect Providers",
   "scripts": {
     "clean": "rm -rf dist",
@@ -61,8 +61,8 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.5.0-rc.7",
-    "@walletconnect/utils": "^1.5.0-rc.7",
+    "@walletconnect/types": "^1.5.0-rc.8",
+    "@walletconnect/utils": "^1.5.0-rc.8",
     "eventemitter3": "4.0.7",
     "xhr2-cookies": "1.1.0"
   },
