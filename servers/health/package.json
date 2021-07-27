@@ -31,14 +31,14 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.6.1",
-    "@pedrouid/pino-utils": "^1.0.1",
-    "@pedrouid/timestamp": "^1.0.0",
+    "@walletconnect/jsonrpc-utils": "^1.0.0-beta.1",
+    "@walletconnect/logger": "^1.0.0-beta.1",
+    "@walletconnect/timestamp": "^1.0.0-beta.1",
     "@types/pino": "^6.3.5",
     "@walletconnect/client": "^2.0.0-beta.10",
     "@walletconnect/types": "^2.0.0-beta.10",
     "axios": "^0.21.1",
-    "enc-utils": "^3.0.0",
+    "@walletconnect/encoding": "^1.0.0-beta.1",
     "fastify": "^3.10.1",
     "fastify-helmet": "^5.1.0",
     "pino": "^6.11.0",
