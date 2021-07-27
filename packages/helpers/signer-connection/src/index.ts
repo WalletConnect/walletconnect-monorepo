@@ -1,8 +1,8 @@
 import EventEmitter from "eventemitter3";
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
-import { IJsonRpcConnection, JsonRpcError, JsonRpcResponse } from "@json-rpc-tools/types";
-import { formatJsonRpcError } from "@json-rpc-tools/utils";
+import { IJsonRpcConnection, JsonRpcError, JsonRpcResponse } from "@walletconnect/jsonrpc-types";
+import { formatJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import {
   IConnector,
   IJsonRpcResponseError,

@@ -62,11 +62,11 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^2.0.0-beta.11",
+    "@walletconnect/jsonrpc-utils": "^1.0.0-beta.1",
     "@walletconnect/browser-utils": "^1.5.0-rc.7",
+    "@walletconnect/encoding": "^1.0.0-beta.1",
     "@walletconnect/types": "^1.5.0-rc.7",
     "bn.js": "4.11.8",
-    "enc-utils": "3.0.0",
     "js-sha3": "0.8.0",
     "query-string": "6.13.5"
   },

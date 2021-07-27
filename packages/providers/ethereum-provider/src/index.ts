@@ -1,6 +1,6 @@
 import EventEmitter from "eventemitter3";
-import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { HttpConnection } from "@json-rpc-tools/http-connection";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import { IConnector, IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
 import { getRpcUrl, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";

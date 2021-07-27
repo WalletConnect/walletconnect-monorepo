@@ -1,7 +1,7 @@
 import { IClientMeta } from "@walletconnect/types";
 
-import * as windowMetadata from "window-metadata";
-import * as windowGetters from "window-getters";
+import * as windowMetadata from "@walletconnect/window-metadata";
+import * as windowGetters from "@walletconnect/window-getters";
 import {
   detect,
   BrowserInfo,
