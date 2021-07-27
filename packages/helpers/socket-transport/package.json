@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/socket-transport",
-  "version": "1.5.0-rc.9",
+  "version": "1.5.0",
   "description": "Socket Transport for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -61,8 +61,8 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.5.0-rc.9",
-    "@walletconnect/utils": "^1.5.0-rc.9",
+    "@walletconnect/types": "^1.5.0",
+    "@walletconnect/utils": "^1.5.0",
     "ws": "7.3.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"

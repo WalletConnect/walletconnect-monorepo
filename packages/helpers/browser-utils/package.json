@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/browser-utils",
-  "version": "1.5.0-rc.9",
+  "version": "1.5.0",
   "description": "Browser Utilities for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@walletconnect/safe-json": "1.0.0-beta.1",
-    "@walletconnect/types": "^1.5.0-rc.9",
+    "@walletconnect/types": "^1.5.0",
     "@walletconnect/window-getters": "1.0.0-beta.1",
     "@walletconnect/window-metadata": "1.0.0-beta.1",
     "detect-browser": "5.2.0"
