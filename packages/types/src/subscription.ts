@@ -1,4 +1,4 @@
-import { JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
+import { JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";

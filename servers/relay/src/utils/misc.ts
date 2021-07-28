@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
-import * as encUtils from "enc-utils";
+import * as encoding from "@walletconnect/encoding";
 
 export function assertType(obj: any, key: string, type = "string") {
   if (!obj[key] || typeof obj[key] !== type) {
@@ -8,7 +8,7 @@ export function assertType(obj: any, key: string, type = "string") {
 }
 
 export function generateRandomBytes32(): string {
-  return encUtils.bufferToHex(crypto.randomBytes(32));
+  return encoding.bufferToHex(crypto.randomBytes(32));
 }
 
 export function sha256(data: string): string {

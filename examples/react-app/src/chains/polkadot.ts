@@ -1,4 +1,4 @@
-import { JsonRpcRequest } from "@json-rpc-tools/utils";
+import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { BLOCKCHAIN_LOGO_BASE_URL } from "../constants";
 
 import { NamespaceMetadata, ChainMetadata, ChainRequestRender } from "../helpers";

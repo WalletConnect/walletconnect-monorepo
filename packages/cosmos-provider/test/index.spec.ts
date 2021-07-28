@@ -15,7 +15,11 @@ import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { SessionTypes } from "@walletconnect/types";
 
 import CosmosProvider from "./../src/index";
-import { formatJsonRpcError, formatJsonRpcResult, JsonRpcResponse } from "@json-rpc-tools/utils";
+import {
+  formatJsonRpcError,
+  formatJsonRpcResult,
+  JsonRpcResponse,
+} from "@walletconnect/jsonrpc-utils";
 
 const NAMESPACE = "cosmos";
 const CHAIN_ID = "cosmoshub-4";

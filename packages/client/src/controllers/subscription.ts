@@ -9,7 +9,7 @@ import {
   SubscriptionParams,
 } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
-import { JsonRpcPayload } from "@json-rpc-tools/utils";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 import {
   CLIENT_BEAT_INTERVAL,
@@ -18,7 +18,7 @@ import {
   SUBSCRIPTION_DEFAULT_TTL,
   SUBSCRIPTION_EVENTS,
 } from "../constants";
-import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();

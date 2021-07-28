@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { EventEmitter } from "events";
-import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 
 import { LegacySocketMessage } from "../../src/types";
 
@@ -57,7 +57,7 @@ export class Socket {
   private register(url = this.url): Promise<WebSocket> {
     this.url = url;
     return new Promise((resolve, reject) => {
-      const socket = new WebSocket(url, [], {rejectUnauthorized: false});
+      const socket = new WebSocket(url, [], { rejectUnauthorized: false });
       socket.onopen = () => {
         this.onOpen(socket);
         resolve(socket);

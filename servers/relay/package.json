@@ -31,14 +31,16 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
+    "@types/pino": "^6.3.5",
+    "@walletconnect/encoding": "^1.0.0-beta.1",
     "@walletconnect/jsonrpc-http-connection": "^1.0.0-beta.1",
     "@walletconnect/jsonrpc-provider": "^1.0.0-beta.1",
     "@walletconnect/jsonrpc-utils": "^1.0.0-beta.1",
     "@walletconnect/jsonrpc-ws-connection": "^1.0.0-beta.1",
     "@walletconnect/logger": "^1.0.0-beta.1",
-    "@types/pino": "^6.3.5",
+    "@walletconnect/relay-api": "^1.0.0-beta.1",
+    "@walletconnect/safe-json": "^1.0.0-beta.1",
     "axios": "^0.21.1",
-    "@walletconnect/encoding": "^1.0.0-beta.1",
     "fastify": "^3.10.1",
     "fastify-helmet": "^5.1.0",
     "fastify-websocket": "^3.0.0",
@@ -46,8 +48,6 @@
     "pino-pretty": "^4.3.0",
     "prom-client": "^13.0.0",
     "redis": "^3.1.2",
-    "@walletconnect/relay-api": "^1.0.0-beta.1",
-    "@walletconnect/safe-json": "^1.0.0-beta.1",
     "tslib": "^2.1.0"
   },
   "devDependencies": {

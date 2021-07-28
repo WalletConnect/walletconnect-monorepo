@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+import { generateChildLogger } from "@walletconnect/logger";
 
 import { Subscription } from "./types";
 import { generateRandomBytes32 } from "./utils";

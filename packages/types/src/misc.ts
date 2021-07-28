@@ -1,4 +1,4 @@
-import { ErrorResponse, JsonRpcRequest } from "@json-rpc-tools/types";
+import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-types";
 
 import { RelayerTypes } from "./relayer";
 

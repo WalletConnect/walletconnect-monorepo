@@ -24,7 +24,7 @@ import {
   isJsonRpcError,
   isJsonRpcRequest,
   ErrorResponse,
-} from "@json-rpc-tools/utils";
+} from "@walletconnect/jsonrpc-utils";
 
 import {
   SUBSCRIPTION_EVENTS,

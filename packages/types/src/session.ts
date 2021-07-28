@@ -1,4 +1,4 @@
-import { JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/types";
+import { JsonRpcRequest, JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 import { ISequence, SequenceTypes } from "./sequence";
 import { SignalTypes, BlockchainTypes, AppMetadata, NotificationPermissions } from "./misc";

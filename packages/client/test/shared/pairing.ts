@@ -1,5 +1,5 @@
 import "mocha";
-import Timestamp from "@pedrouid/timestamp";
+import Timestamp from "@walletconnect/timestamp";
 import { AppMetadata, PairingTypes } from "@walletconnect/types";
 
 import { CLIENT_EVENTS, SESSION_JSONRPC, SUBSCRIPTION_EVENTS } from "../../src";

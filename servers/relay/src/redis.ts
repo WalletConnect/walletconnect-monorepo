@@ -1,8 +1,8 @@
 import redis from "redis";
-import { RelayJsonRpc } from "relay-provider";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { Logger } from "pino";
-import { generateChildLogger } from "@pedrouid/pino-utils";
-import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
+import { generateChildLogger } from "@walletconnect/logger";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 
 import config from "./config";
 import { sha256 } from "./utils";

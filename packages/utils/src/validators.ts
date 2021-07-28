@@ -1,4 +1,4 @@
-import { ErrorResponse } from "@json-rpc-tools/types";
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import {
   AppMetadata,
   BlockchainTypes,

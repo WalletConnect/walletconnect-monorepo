@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 import pino from "pino";
-import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
+import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import { NetworkService } from "../src/network";
 import { generateRandomBytes32 } from "../src/utils";
 

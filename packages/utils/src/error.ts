@@ -1,4 +1,4 @@
-import { ErrorResponse } from "@json-rpc-tools/utils";
+import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 
 import { capitalize, enumify } from "./misc";
 

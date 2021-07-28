@@ -1,7 +1,7 @@
 import "mocha";
 import * as chai from "chai";
-import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { IClient, RequestEvent, SessionTypes } from "@walletconnect/types";
 

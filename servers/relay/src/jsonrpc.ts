@@ -7,7 +7,7 @@ import {
   JsonRpcResponse,
   JsonRpcPayload,
   METHOD_NOT_FOUND,
-} from "@json-rpc-tools/utils";
+} from "@walletconnect/jsonrpc-utils";
 import { Logger } from "pino";
 import {
   RELAY_JSONRPC,
@@ -15,8 +15,8 @@ import {
   parsePublishRequest,
   parseSubscribeRequest,
   parseUnsubscribeRequest,
-} from "relay-provider";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+} from "@walletconnect/relay-api";
+import { generateChildLogger } from "@walletconnect/logger";
 
 import config from "./config";
 import { HttpService } from "./http";

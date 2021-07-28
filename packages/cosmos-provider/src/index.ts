@@ -1,13 +1,13 @@
 import EventEmitter from "eventemitter3";
-import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { RequestArguments } from "@json-rpc-tools/utils";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { RequestArguments } from "@walletconnect/jsonrpc-utils";
 import { SessionTypes } from "@walletconnect/types";
 import {
   SignerConnection,
   SIGNER_EVENTS,
   SignerConnectionClientOpts,
 } from "@walletconnect/signer-connection";
-import HttpConnection from "@json-rpc-tools/http-connection";
+import HttpConnection from "@walletconnect/jsonrpc-http-connection";
 
 export const signerMethods = ["cosmos_getAccounts", "cosmos_signDirect", "cosmos_signAmino"];
 

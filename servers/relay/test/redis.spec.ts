@@ -1,6 +1,6 @@
 import "mocha";
 import pino from "pino";
-import { getDefaultLoggerOptions } from "@pedrouid/pino-utils";
+import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import { expect } from "chai";
 import { sha256, generateRandomBytes32 } from "../src/utils";
 

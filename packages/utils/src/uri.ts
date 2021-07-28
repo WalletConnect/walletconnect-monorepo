@@ -1,6 +1,6 @@
 import * as qs from "query-string";
 import { UriParameters } from "@walletconnect/types";
-import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 
 // -- uri -------------------------------------------------- //
 

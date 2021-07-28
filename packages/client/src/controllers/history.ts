@@ -7,8 +7,8 @@ import {
   isJsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
-} from "@json-rpc-tools/utils";
-import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
+} from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
 

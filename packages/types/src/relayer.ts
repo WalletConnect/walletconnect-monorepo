@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
+import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
 

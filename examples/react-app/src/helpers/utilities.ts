@@ -1,5 +1,5 @@
 import { BigNumber, BigNumberish, providers, utils } from "ethers";
-import * as encUtils from "enc-utils";
+import * as encoding from "@walletconnect/encoding";
 import { TypedDataUtils } from "eth-sig-util";
 import * as ethUtil from "ethereumjs-util";
 
@@ -42,7 +42,7 @@ export function ellipseAddress(address = "", width = 10): string {
 export function getDataString(func: string, arrVals: any[]): string {
   let val = "";
   for (let i = 0; i < arrVals.length; i++) {
-    val += encUtils.padLeft(arrVals[i], 64);
+    val += encoding.padLeft(arrVals[i], 64);
   }
   const data = func + val;
   return data;
@@ -82,7 +82,7 @@ export function isMobile(): boolean {
 }
 
 export function encodePersonalMessage(msg: string): string {
-  const data = encUtils.utf8ToBuffer(msg);
+  const data = encoding.utf8ToBuffer(msg);
   const buf = Buffer.concat([
     Buffer.from("\u0019Ethereum Signed Message:\n" + data.length.toString(), "utf8"),
     data,
@@ -151,7 +151,7 @@ export async function verifySignature(
 
 export function convertHexToNumber(hex: string) {
   try {
-    return encUtils.hexToNumber(hex);
+    return encoding.hexToNumber(hex);
   } catch (e) {
     return hex;
   }
@@ -159,7 +159,7 @@ export function convertHexToNumber(hex: string) {
 
 export function convertHexToUtf8(hex: string) {
   try {
-    return encUtils.hexToUtf8(hex);
+    return encoding.hexToUtf8(hex);
   } catch (e) {
     return hex;
   }

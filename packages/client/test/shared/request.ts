@@ -1,12 +1,12 @@
 import "mocha";
-import Timestamp from "@pedrouid/timestamp";
+import Timestamp from "@walletconnect/timestamp";
 import { SessionTypes } from "@walletconnect/types";
 import {
   isJsonRpcError,
   isJsonRpcResult,
   JsonRpcResponse,
   RequestArguments,
-} from "@json-rpc-tools/utils";
+} from "@walletconnect/jsonrpc-utils";
 
 import { CLIENT_EVENTS } from "../../src";
 

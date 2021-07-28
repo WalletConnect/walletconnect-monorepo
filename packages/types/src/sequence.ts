@@ -5,7 +5,7 @@ import {
   RequestArguments,
   JsonRpcRequest,
   JsonRpcResponse,
-} from "@json-rpc-tools/types";
+} from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";

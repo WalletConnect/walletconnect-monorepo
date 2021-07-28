@@ -2,7 +2,7 @@ import { ethers, utils } from "ethers";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import { ClientOptions, IClient, SessionTypes } from "@walletconnect/types";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
-import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 import EthereumProvider from "../../src";
 

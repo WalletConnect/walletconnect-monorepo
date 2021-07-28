@@ -17,7 +17,7 @@ import {
   TEST_SESSION_TTL,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
-import { ErrorResponse, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { ErrorResponse, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 describe("Session", function() {
   this.timeout(TEST_TIMEOUT_DURATION);

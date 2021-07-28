@@ -1,5 +1,5 @@
-import { RELAY_JSONRPC, RelayJsonRpc } from "relay-provider";
-import { formatJsonRpcRequest, JsonRpcRequest } from "@json-rpc-tools/utils";
+import { RELAY_JSONRPC, RelayJsonRpc } from "@walletconnect/relay-api";
+import { formatJsonRpcRequest, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 import { LegacySocketMessage } from "../../src/types";
 import { generateRandomBytes32 } from "../../src/utils";

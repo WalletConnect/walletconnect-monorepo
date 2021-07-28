@@ -1,4 +1,4 @@
-import { JsonRpcPayload } from "@json-rpc-tools/types";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
 import { ISequence, SequenceTypes } from "./sequence";
 import { SubscriptionEvent } from "./subscription";
