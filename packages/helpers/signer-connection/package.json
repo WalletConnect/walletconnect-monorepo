@@ -62,8 +62,8 @@
   },
   "dependencies": {
     "@walletconnect/client": "^1.5.0",
-    "@walletconnect/jsonrpc-types": "^1.0.0-beta.1",
-    "@walletconnect/jsonrpc-utils": "^1.0.0-beta.1",
+    "@walletconnect/jsonrpc-types": "^1.0.0",
+    "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/qrcode-modal": "^1.5.0",
     "@walletconnect/types": "^1.5.0",
     "eventemitter3": "4.0.7"

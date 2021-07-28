@@ -64,8 +64,8 @@
   },
   "dependencies": {
     "@walletconnect/client": "^1.5.0",
-    "@walletconnect/jsonrpc-http-connection": "^1.0.0-beta.1",
-    "@walletconnect/jsonrpc-provider": "^1.0.0-beta.1",
+    "@walletconnect/jsonrpc-http-connection": "^1.0.0",
+    "@walletconnect/jsonrpc-provider": "^1.0.0",
     "@walletconnect/signer-connection": "^1.5.0",
     "@walletconnect/types": "^1.5.0",
     "@walletconnect/utils": "^1.5.0",
