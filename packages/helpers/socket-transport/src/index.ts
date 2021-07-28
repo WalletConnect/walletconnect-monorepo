@@ -150,8 +150,10 @@ class SocketTransport implements ITransportLib {
     this._nextSocket.onerror = (event: Event) => this._socketError(event);
 
     this._nextSocket.onclose = () => {
-      this._nextSocket = null;
-      this._socketCreate();
+      setTimeout(() => {
+        this._nextSocket = null;
+        this._socketCreate();
+      }, 1000);
     };
   }
 
