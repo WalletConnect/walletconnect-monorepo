@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
-import { IJsonRpcConnection } from "@json-rpc-tools/types";
-import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
+import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { ERROR } from "@walletconnect/utils";

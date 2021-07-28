@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
+import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
 
@@ -44,5 +44,9 @@ export abstract class IRelayer extends IEvents {
     opts?: RelayerTypes.SubscribeOptions,
   ): Promise<string>;
 
-  public abstract unsubscribe(id: string, opts?: RelayerTypes.SubscribeOptions): Promise<void>;
+  public abstract unsubscribe(
+    topic: string,
+    id: string,
+    opts?: RelayerTypes.SubscribeOptions,
+  ): Promise<void>;
 }

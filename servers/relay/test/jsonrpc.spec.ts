@@ -1,12 +1,12 @@
 import "mocha";
 import { expect } from "chai";
-import JsonRpcProvider from "@json-rpc-tools/provider";
-import WsConnection from "@json-rpc-tools/ws-connection";
-import { RELAY_JSONRPC } from "relay-provider";
+import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
+import WsConnection from "@walletconnect/jsonrpc-ws-connection";
+import { RELAY_JSONRPC } from "@walletconnect/relay-api";
 
 import { TEST_RELAY_URL, getTestJsonRpc, Counter } from "./shared";
-import { JsonRpcPayload } from "@json-rpc-tools/types";
-import { formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { generateRandomBytes32 } from "../src/utils";
 
 describe("JSON-RPC", () => {

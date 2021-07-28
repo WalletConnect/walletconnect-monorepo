@@ -3,7 +3,7 @@ import fastify, { FastifyInstance } from "fastify";
 import helmet from "fastify-helmet";
 import ws from "fastify-websocket";
 import pino, { Logger } from "pino";
-import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
+import { getDefaultLoggerOptions, generateChildLogger } from "@walletconnect/logger";
 import client from "prom-client";
 
 import config from "./config";

@@ -1,8 +1,8 @@
 import { Logger } from "pino";
 import client from "prom-client";
-import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
-import { isJsonRpcPayload, JsonRpcPayload } from "@json-rpc-tools/utils";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import { isJsonRpcPayload, JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger } from "@walletconnect/logger";
 
 import config from "./config";
 import { JsonRpcService } from "./jsonrpc";

@@ -1,6 +1,6 @@
 import axios from "axios";
 import https from "https";
-import { isLocalhostUrl } from "@walletconnect/client/node_modules/@json-rpc-tools/utils";
+import { isLocalhostUrl } from "@walletconnect/jsonrpc-utils";
 import { getHttpUrl } from "../utils";
 
 export async function isServerAvailable(url: string): Promise<boolean> {

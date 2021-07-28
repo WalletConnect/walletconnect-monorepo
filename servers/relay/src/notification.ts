@@ -1,11 +1,11 @@
 import axios from "axios";
 import { Logger } from "pino";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+import { generateChildLogger } from "@walletconnect/logger";
 
 import { LegacySocketMessage, Notification } from "./types";
 import { HttpService } from "./http";
 import { JSONRPC_EVENTS, LEGACY_EVENTS, NOTIFICATION_CONTEXT } from "./constants";
-import { RelayJsonRpc } from "relay-provider";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
 
 export class NotificationService {
   public context = NOTIFICATION_CONTEXT;

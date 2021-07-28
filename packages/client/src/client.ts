@@ -18,8 +18,8 @@ import {
   getAppMetadata,
   ERROR,
 } from "@walletconnect/utils";
-import { ErrorResponse, JsonRpcRequest } from "@json-rpc-tools/utils";
-import { generateChildLogger, getDefaultLoggerOptions } from "@pedrouid/pino-utils";
+import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger, getDefaultLoggerOptions } from "@walletconnect/logger";
 
 import { Pairing, Session, Relayer } from "./controllers";
 import {

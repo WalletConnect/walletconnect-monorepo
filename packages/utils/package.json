@@ -28,14 +28,14 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^2.0.0-beta.12",
+    "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/types": "^2.0.0-beta.14",
-    "ecies-25519": "^2.0.0-beta.6",
-    "enc-utils": "^3.0.0",
+    "@walletconnect/ecies-25519": "^1.0.0",
+    "@walletconnect/encoding": "^1.0.0",
     "query-string": "^6.13.5",
-    "safe-json-utils": "^1.1.1",
-    "window-getters": "^1.0.1",
-    "window-metadata": "^1.0.1"
+    "@walletconnect/safe-json": "^1.0.0",
+    "@walletconnect/window-getters": "^1.0.0",
+    "@walletconnect/window-metadata": "^1.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",

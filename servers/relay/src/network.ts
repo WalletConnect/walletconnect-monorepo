@@ -1,9 +1,9 @@
 import { Logger } from "pino";
-import { generateChildLogger } from "@pedrouid/pino-utils";
-import { IJsonRpcProvider } from "@json-rpc-tools/utils";
-import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { HttpConnection } from "@json-rpc-tools/http-connection";
-import { arrayToHex } from "enc-utils";
+import { generateChildLogger } from "@walletconnect/logger";
+import { IJsonRpcProvider } from "@walletconnect/jsonrpc-utils";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
+import * as encoding from "@walletconnect/encoding";
 import { isFloat } from "./utils";
 import { PagingOptions, WakuMessagesResult, WakuMessage, Subscription } from "./types";
 
@@ -130,7 +130,7 @@ export class NetworkService {
     },
     messages: WakuMessage[] = [],
   ): Promise<WakuMessage[]> {
-    const startTime: number = 0.001;
+    const startTime = 0.001;
     let endTime: number = Date.now() / 1000;
     if (isFloat(endTime)) endTime += 0.001;
     const method = WAKU_JSONRPC.get.store.messages;
@@ -166,7 +166,7 @@ export class NetworkService {
     const messages: WakuMessage[] = [];
     const seenMessages = new Set();
     result.forEach(m => {
-      const stringPayload = arrayToHex(m.payload);
+      const stringPayload = encoding.arrayToHex(m.payload);
       if (!seenMessages.has(stringPayload)) {
         seenMessages.add(stringPayload);
         messages.push({

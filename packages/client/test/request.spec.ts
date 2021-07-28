@@ -1,7 +1,7 @@
 import "mocha";
 import sinon from "sinon";
 import { generateRandomBytes32 } from "@walletconnect/utils";
-import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 import {
   expect,

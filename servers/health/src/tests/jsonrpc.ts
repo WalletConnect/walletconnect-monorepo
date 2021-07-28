@@ -1,5 +1,5 @@
-import Timestamp from "@pedrouid/timestamp";
-import { formatJsonRpcResult } from "@json-rpc-tools/utils";
+import Timestamp from "@walletconnect/timestamp";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
 

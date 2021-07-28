@@ -1,4 +1,4 @@
-import { JsonRpcRequest } from "@json-rpc-tools/utils";
+import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 import * as eip155 from "./eip155";
 import * as cosmos from "./cosmos";

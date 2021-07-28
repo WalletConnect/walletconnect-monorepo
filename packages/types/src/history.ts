@@ -4,7 +4,7 @@ import {
   JsonRpcRequest,
   JsonRpcResponse,
   RequestArguments,
-} from "@json-rpc-tools/types";
+} from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";

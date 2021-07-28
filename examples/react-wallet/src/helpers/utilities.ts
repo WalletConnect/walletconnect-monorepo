@@ -1,11 +1,11 @@
-import * as encUtils from "enc-utils";
+import * as encoding from "@walletconnect/encoding";
 
 import { Cards } from "./types";
 
 export function capitalize(string: string): string {
   return string
     .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 }
 
@@ -19,7 +19,7 @@ export function ellipseText(text = "", maxLength = 9999): string {
   const result =
     text
       .split(" ")
-      .filter((word) => {
+      .filter(word => {
         currentLength += word.length;
         if (ellipse || currentLength >= _maxLength) {
           ellipse = true;
@@ -89,7 +89,7 @@ export function getViewportDimensions() {
 
 export function convertHexToNumber(hex: string) {
   try {
-    return encUtils.hexToNumber(hex);
+    return encoding.hexToNumber(hex);
   } catch (e) {
     return hex;
   }
@@ -97,7 +97,7 @@ export function convertHexToNumber(hex: string) {
 
 export function convertHexToUtf8(hex: string) {
   try {
-    return encUtils.hexToUtf8(hex);
+    return encoding.hexToUtf8(hex);
   } catch (e) {
     return hex;
   }

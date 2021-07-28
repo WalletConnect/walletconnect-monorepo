@@ -1,4 +1,4 @@
-import { ErrorResponse, RequestArguments } from "@json-rpc-tools/utils";
+import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-utils";
 import { IClient, SessionTypes, ClientOptions, AppMetadata } from "@walletconnect/types";
 
 export interface InitializedClients {

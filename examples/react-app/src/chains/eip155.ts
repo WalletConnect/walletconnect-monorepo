@@ -1,4 +1,4 @@
-import { JsonRpcRequest } from "@json-rpc-tools/utils";
+import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 import {
   NamespaceMetadata,

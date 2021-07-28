@@ -1,6 +1,6 @@
 import { Logger } from "pino";
-import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
+import { generateChildLogger } from "@walletconnect/logger";
 
 import { sha256 } from "./utils";
 import { HttpService } from "./http";
@@ -14,8 +14,8 @@ import {
   SIX_HOURS,
   NETWORK_EVENTS,
 } from "./constants";
-import { JsonRpcRequest } from "@json-rpc-tools/types";
-import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
+import { JsonRpcRequest } from "@walletconnect/jsonrpc-types";
+import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 export class MessageService {
   public context = MESSAGE_CONTEXT;

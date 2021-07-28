@@ -1,5 +1,6 @@
 import { IKeyValueStorage } from "keyvaluestorage";
 import { IClient, CryptoTypes, ICrypto, IKeyChain } from "@walletconnect/types";
+import * as encoding from "@walletconnect/encoding";
 import {
   ERROR,
   mapToObj,
@@ -12,7 +13,6 @@ import {
 } from "@walletconnect/utils";
 
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
-import { arrayToHex, concatArrays, hexToArray } from "enc-utils";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
@@ -114,12 +114,14 @@ export class Crypto implements ICrypto {
   // ---------- Private ----------------------------------------------- //
 
   private concatKeys(keyA: string, keyB: string): string {
-    return arrayToHex(concatArrays(hexToArray(keyA), hexToArray(keyB)));
+    return encoding.arrayToHex(
+      encoding.concatArrays(encoding.hexToArray(keyA), encoding.hexToArray(keyB)),
+    );
   }
 
   private splitKeys(keys: string): string[] {
-    const arr = hexToArray(keys);
-    return [arrayToHex(arr.slice(0, 32)), arrayToHex(arr.slice(32, 64))];
+    const arr = encoding.hexToArray(keys);
+    return [encoding.arrayToHex(arr.slice(0, 32)), encoding.arrayToHex(arr.slice(32, 64))];
   }
 
   private async setKeyPair(keyPair: CryptoTypes.KeyPair): Promise<string> {

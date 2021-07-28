@@ -1,6 +1,6 @@
 import * as qs from "query-string";
-import { getWindowMetadata } from "window-metadata";
-import { getDocument, getLocation, getNavigator } from "window-getters";
+import { getWindowMetadata } from "@walletconnect/window-metadata";
+import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { RelayClientMetadata, AppMetadata } from "@walletconnect/types";
 
 // -- env -----------------------------------------------//

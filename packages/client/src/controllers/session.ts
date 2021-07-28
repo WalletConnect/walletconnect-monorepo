@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+import { generateChildLogger } from "@walletconnect/logger";
 import { IClient, ISession, SessionTypes } from "@walletconnect/types";
 import {
   validateSessionProposeParams,
@@ -8,7 +8,7 @@ import {
   isValidationInvalid,
   ERROR,
 } from "@walletconnect/utils";
-import { JsonRpcPayload } from "@json-rpc-tools/utils";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 import { Subscription } from "./subscription";
 import { JsonRpcHistory } from "./history";

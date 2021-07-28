@@ -29,16 +29,16 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^2.0.0-beta.12",
+    "@walletconnect/jsonrpc-utils": "^1.0.0",
     "axios": "^0.21.1",
     "bluebird": "^3.5.5",
-    "enc-utils": "^3.0.0",
+    "@walletconnect/encoding": "^1.0.0",
     "fastify": "^3.4.1",
     "fastify-helmet": "^5.0.3",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
     "redis": "^2.8.0",
-    "safe-json-utils": "^1.1.1",
+    "@walletconnect/safe-json": "^1.0.0",
     "ws": "^7.0.0"
   },
   "devDependencies": {

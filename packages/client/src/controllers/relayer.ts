@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { generateChildLogger } from "@pedrouid/pino-utils";
+import { generateChildLogger } from "@walletconnect/logger";
 import { RelayerTypes, IRelayer, IClient } from "@walletconnect/types";
-import { RelayJsonRpc, RELAY_JSONRPC } from "relay-provider";
+import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
-import { utf8ToHex, hexToUtf8 } from "enc-utils";
+import * as encoding from "@walletconnect/encoding";
 import {
   IJsonRpcProvider,
   JsonRpcPayload,
@@ -12,10 +12,10 @@ import {
   JsonRpcRequest,
   formatJsonRpcResult,
   RequestArguments,
-} from "@json-rpc-tools/utils";
-import { JsonRpcProvider } from "@json-rpc-tools/provider";
-import { WsConnection } from "@json-rpc-tools/ws-connection";
-import { safeJsonParse, safeJsonStringify } from "safe-json-utils";
+} from "@walletconnect/jsonrpc-utils";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { WsConnection } from "@walletconnect/jsonrpc-ws-connection";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 
 import {
   RELAYER_CONTEXT,
@@ -59,7 +59,9 @@ export class Relayer extends IRelayer {
       const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
       const msg = safeJsonStringify(payload);
       const hasKeys = await this.client.crypto.hasKeys(topic);
-      const message = hasKeys ? await this.client.crypto.encrypt(topic, msg) : utf8ToHex(msg);
+      const message = hasKeys
+        ? await this.client.crypto.encrypt(topic, msg)
+        : encoding.utf8ToHex(msg);
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request: RequestArguments<RelayJsonRpc.PublishParams> = {
         method: jsonRpc.publish,
@@ -103,7 +105,7 @@ export class Relayer extends IRelayer {
       this.events.on(id, async ({ message }) => {
         const hasKeys = await this.client.crypto.hasKeys(topic);
         const payload = safeJsonParse(
-          hasKeys ? await this.client.crypto.decrypt(topic, message) : hexToUtf8(message),
+          hasKeys ? await this.client.crypto.decrypt(topic, message) : encoding.hexToUtf8(message),
         );
         listener(payload);
       });
@@ -117,7 +119,11 @@ export class Relayer extends IRelayer {
     }
   }
 
-  public async unsubscribe(id: string, opts?: RelayerTypes.SubscribeOptions): Promise<void> {
+  public async unsubscribe(
+    topic: string,
+    id: string,
+    opts?: RelayerTypes.SubscribeOptions,
+  ): Promise<void> {
     this.logger.debug(`Unsubscribing Topic`);
     this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
     try {
@@ -126,6 +132,7 @@ export class Relayer extends IRelayer {
       const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
         method: jsonRpc.unsubscribe,
         params: {
+          topic,
           id,
         },
       };

@@ -9,7 +9,7 @@ import {
   SubscriptionParams,
 } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
-import { JsonRpcPayload } from "@json-rpc-tools/utils";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 import {
   CLIENT_BEAT_INTERVAL,
@@ -18,7 +18,7 @@ import {
   SUBSCRIPTION_DEFAULT_TTL,
   SUBSCRIPTION_EVENTS,
 } from "../constants";
-import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 export class Subscription<Data = any> extends ISubscription<Data> {
   public subscriptions = new Map<string, SubscriptionParams<Data>>();
@@ -101,7 +101,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.logger.trace({ type: "method", method: "delete", topic, reason });
     const subscription = await this.getSubscription(topic);
     this.subscriptions.delete(topic);
-    await this.client.relayer.unsubscribe(subscription.id, {
+    await this.client.relayer.unsubscribe(subscription.topic, subscription.id, {
       relay: subscription.relay,
     });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
