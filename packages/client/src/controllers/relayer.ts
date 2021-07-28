@@ -119,7 +119,11 @@ export class Relayer extends IRelayer {
     }
   }
 
-  public async unsubscribe(id: string, opts?: RelayerTypes.SubscribeOptions): Promise<void> {
+  public async unsubscribe(
+    topic: string,
+    id: string,
+    opts?: RelayerTypes.SubscribeOptions,
+  ): Promise<void> {
     this.logger.debug(`Unsubscribing Topic`);
     this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
     try {
@@ -128,6 +132,7 @@ export class Relayer extends IRelayer {
       const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
         method: jsonRpc.unsubscribe,
         params: {
+          topic,
           id,
         },
       };

@@ -34,10 +34,10 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/jsonrpc-http-connection": "^1.0.0-beta.1",
-    "@walletconnect/jsonrpc-provider": "^1.0.0-beta.1",
-    "@walletconnect/jsonrpc-types": "^1.0.0-beta.1",
-    "@walletconnect/jsonrpc-utils": "^1.0.0-beta.1",
+    "@walletconnect/jsonrpc-http-connection": "^1.0.0",
+    "@walletconnect/jsonrpc-provider": "^1.0.0",
+    "@walletconnect/jsonrpc-types": "^1.0.0",
+    "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/client": "^2.0.0-beta.14",
     "@walletconnect/signer-connection": "^2.0.0-beta.14",
     "@walletconnect/types": "^2.0.0-beta.14",

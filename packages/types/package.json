@@ -27,7 +27,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/jsonrpc-types": "^1.0.0-beta.1",
+    "@walletconnect/jsonrpc-types": "^1.0.0",
     "keyvaluestorage": "^0.7.1",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0"

@@ -31,18 +31,18 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/jsonrpc-provider": "^1.0.0-beta.1",
-    "@walletconnect/jsonrpc-utils": "^1.0.0-beta.1",
-    "@walletconnect/jsonrpc-ws-connection": "^1.0.0-beta.1",
-    "@walletconnect/logger": "^1.0.0-beta.1",
+    "@walletconnect/jsonrpc-provider": "^1.0.0",
+    "@walletconnect/jsonrpc-utils": "^1.0.0",
+    "@walletconnect/jsonrpc-ws-connection": "^1.0.0",
+    "@walletconnect/logger": "^1.0.0",
     "@walletconnect/types": "^2.0.0-beta.14",
     "@walletconnect/utils": "^2.0.0-beta.14",
-    "@walletconnect/encoding": "^1.0.0-beta.1",
+    "@walletconnect/encoding": "^1.0.0",
     "keyvaluestorage": "^0.7.1",
     "pino": "^6.7.0",
     "pino-pretty": "^4.3.0",
-    "@walletconnect/relay-api": "^1.0.0-beta.1",
-    "@walletconnect/safe-json": "^1.0.0-beta.1"
+    "@walletconnect/relay-api": "^1.0.0",
+    "@walletconnect/safe-json": "^1.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
@@ -52,7 +52,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.1",
     "@babel/register": "^7.12.1",
-    "@walletconnect/timestamp": "^1.0.0-beta.1",
+    "@walletconnect/timestamp": "^1.0.0",
     "@types/chai": "^4.2.14",
     "@types/chai-as-promised": "^7.1.0",
     "@types/jest": "^22.2.3",

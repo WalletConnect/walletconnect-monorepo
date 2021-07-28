@@ -101,7 +101,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.logger.trace({ type: "method", method: "delete", topic, reason });
     const subscription = await this.getSubscription(topic);
     this.subscriptions.delete(topic);
-    await this.client.relayer.unsubscribe(subscription.id, {
+    await this.client.relayer.unsubscribe(subscription.topic, subscription.id, {
       relay: subscription.relay,
     });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
