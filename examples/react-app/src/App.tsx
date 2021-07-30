@@ -757,7 +757,7 @@ class App extends React.Component<any, any> {
       <SLanding center>
         <Banner />
         <h6>
-          <span>{`Using v${process.env.REACT_APP_VERSION || "2.0.0-alpha"}`}</span>
+          <span>{`Using v${process.env.REACT_APP_VERSION || "2.0.0-beta"}`}</span>
         </h6>
         <SButtonContainer>
           <h6>Select chains:</h6>
