@@ -5,7 +5,7 @@ import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
-import * as encUtils from "enc-utils";
+import * as encoding from "@walletconnect/encoding";
 import { apiGetChainNamespace, ChainsMap } from "caip-api";
 import { formatDirectSignDoc, stringifySignDocValues } from "cosmos-wallet";
 import { BigNumber } from "ethers";
@@ -434,7 +434,7 @@ class App extends React.Component<any, any> {
       const message = `My email is john@doe.com - ${Date.now()}`;
 
       // encode message (hex)
-      const hexMsg = encUtils.utf8ToHex(message, true);
+      const hexMsg = encoding.utf8ToHex(message, true);
 
       // get ethereum address
       const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
