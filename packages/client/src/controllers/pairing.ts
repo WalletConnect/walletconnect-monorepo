@@ -57,6 +57,7 @@ export class Pairing extends IPairing {
     await this.pending.init();
     await this.settled.init();
     await this.history.init();
+    await this.engine.init();
   }
 
   public get(topic: string): Promise<PairingTypes.Settled> {

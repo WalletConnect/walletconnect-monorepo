@@ -1,10 +1,9 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger } from "@walletconnect/logger";
-import { RelayerTypes, IRelayer, IClient } from "@walletconnect/types";
+import { RelayerTypes, IRelayer, IClient, SubscriptionParams } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
-import { formatRelayRpcUrl } from "@walletconnect/utils";
-import * as encoding from "@walletconnect/encoding";
+import { ERROR, formatRelayRpcUrl } from "@walletconnect/utils";
 import {
   IJsonRpcProvider,
   JsonRpcPayload,
@@ -15,7 +14,6 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { WsConnection } from "@walletconnect/jsonrpc-ws-connection";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 
 import {
   RELAYER_CONTEXT,
@@ -23,14 +21,22 @@ import {
   RELAYER_DEFAULT_RPC_URL,
   RELAYER_DEFAULT_PUBLISH_TTL,
   RELAYER_EVENTS,
+  CLIENT_BEAT_INTERVAL,
+  CLIENT_EVENTS,
 } from "../constants";
 
 export class Relayer extends IRelayer {
   public events = new EventEmitter();
 
+  public subscriptions = new Map<string, SubscriptionParams<any>>();
+
   public provider: IJsonRpcProvider;
 
   public context: string = RELAYER_CONTEXT;
+
+  private timeout = new Map<string, NodeJS.Timeout>();
+
+  private cached: SubscriptionParams<any>[] = [];
 
   constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
     super(client, logger);
@@ -57,11 +63,7 @@ export class Relayer extends IRelayer {
     this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
     try {
       const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
-      const msg = safeJsonStringify(payload);
-      const hasKeys = await this.client.crypto.hasKeys(topic);
-      const message = hasKeys
-        ? await this.client.crypto.encrypt(topic, msg)
-        : encoding.utf8ToHex(msg);
+      const message = await this.client.crypto.encodeJsonRpc(payload);
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
       const request: RequestArguments<RelayJsonRpc.PublishParams> = {
         method: jsonRpc.publish,
@@ -85,7 +87,7 @@ export class Relayer extends IRelayer {
 
   public async subscribe(
     topic: string,
-    listener: (payload: JsonRpcPayload) => void,
+    expiry: number,
     opts?: RelayerTypes.SubscribeOptions,
   ): Promise<string> {
     this.logger.debug(`Subscribing Topic`);
@@ -102,13 +104,6 @@ export class Relayer extends IRelayer {
       this.logger.debug(`Outgoing Relay Payload`);
       this.logger.trace({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
-      this.events.on(id, async ({ message }) => {
-        const hasKeys = await this.client.crypto.hasKeys(topic);
-        const payload = safeJsonParse(
-          hasKeys ? await this.client.crypto.decrypt(topic, message) : encoding.hexToUtf8(message),
-        );
-        listener(payload);
-      });
       this.logger.debug(`Successfully Subscribed Topic`);
       this.logger.trace({ type: "method", method: "subscribe", request });
       return id;
@@ -119,13 +114,23 @@ export class Relayer extends IRelayer {
     }
   }
 
-  public async unsubscribe(
+  public async unsubscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<void> {
+    const subscriptions: SubscriptionParams<any>[] = [];
+    this.subscriptions.forEach(subscription => {
+      if (subscription.topic === topic) subscriptions.push(subscription);
+    });
+    await Promise.all(
+      subscriptions.map(({ id, topic, opts }) => this.unsubscribeById(topic, id, opts)),
+    );
+  }
+
+  public async unsubscribeById(
     topic: string,
     id: string,
     opts?: RelayerTypes.SubscribeOptions,
   ): Promise<void> {
     this.logger.debug(`Unsubscribing Topic`);
-    this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
+    this.logger.trace({ type: "method", method: "unsubscribeById", params: { id, opts } });
     try {
       const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
       const jsonRpc = getRelayProtocolJsonRpc(protocol);
@@ -168,13 +173,70 @@ export class Relayer extends IRelayer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private onPayload(payload: JsonRpcPayload) {
+  private async isEnabled(): Promise<void> {
+    if (!this.cached.length) return;
+    return new Promise(resolve => {
+      this.events.once(SUBSCRIPTION_EVENTS.enabled, () => resolve());
+    });
+  }
+
+  private async enable(): Promise<void> {
+    this.cached = [];
+    this.events.emit(SUBSCRIPTION_EVENTS.enabled);
+  }
+
+  private async disable(): Promise<void> {
+    if (!this.cached.length) {
+      this.cached = this.values;
+    }
+    this.resetTimeout();
+    this.events.emit(SUBSCRIPTION_EVENTS.disabled);
+  }
+
+  private setTimeout(topic: string, expiry: number) {
+    if (this.timeout.has(topic)) return;
+    const ttl = expiry - Date.now();
+    if (ttl <= 0) {
+      this.onTimeout(topic);
+      return;
+    }
+    if (ttl > CLIENT_BEAT_INTERVAL) return;
+    const timeout = setTimeout(() => this.onTimeout(topic), ttl);
+    this.timeout.set(topic, timeout);
+  }
+
+  private deleteTimeout(topic: string): void {
+    if (!this.timeout.has(topic)) return;
+    const timeout = this.timeout.get(topic);
+    if (typeof timeout === "undefined") return;
+    clearTimeout(timeout);
+  }
+
+  private resetTimeout(): void {
+    this.timeout.forEach(timeout => clearTimeout(timeout));
+    this.timeout.clear();
+  }
+
+  private onTimeout(topic: string): void {
+    this.deleteTimeout(topic);
+    this.subscriptions.delete(topic);
+  }
+
+  private checkSubscriptions(): void {
+    this.subscriptions.forEach(sequence => this.setTimeout(sequence.topic, sequence.expiry));
+  }
+
+  private async onPayload(payload: JsonRpcPayload) {
     this.logger.debug(`Incoming Relay Payload`);
     this.logger.trace({ type: "payload", direction: "incoming", payload });
     if (isJsonRpcRequest(payload)) {
       if (payload.method.endsWith("_subscription")) {
         const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
-        this.events.emit(event.id, event.data);
+        const eventPayload = {
+          topic: event.data.topic,
+          payload: await this.client.crypto.decodeJsonRpc(event.data),
+        };
+        this.events.emit(event.id, eventPayload);
         const response = formatJsonRpcResult(payload.id, true);
         this.provider.connection.send(response);
       }
@@ -195,6 +257,7 @@ export class Relayer extends IRelayer {
   }
 
   private registerEventListeners(): void {
+    this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
     this.provider.on("payload", (payload: JsonRpcPayload) => this.onPayload(payload));
     this.provider.on("connect", () => this.events.emit(RELAYER_EVENTS.connect));
     this.provider.on("disconnect", () => {

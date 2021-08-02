@@ -42,6 +42,10 @@ export class Engine extends IEngine {
     this.registerEventListeners();
   }
 
+  public async init() {
+    await Promise.all();
+  }
+
   public async find(
     permissions: Partial<SequenceTypes.Permissions>,
   ): Promise<SequenceTypes.Settled[]> {
@@ -221,7 +225,7 @@ export class Engine extends IEngine {
           proposal,
           outcome,
         };
-        await this.sequence.pending.set(pending.topic, pending, { relay: pending.relay });
+        await this.sequence.pending.set(pending.topic, pending);
         return pending;
       } catch (e) {
         const reason = ERROR.GENERIC.format({ message: e.message });
@@ -234,7 +238,7 @@ export class Engine extends IEngine {
           proposal,
           outcome,
         };
-        await this.sequence.pending.set(pending.topic, pending, { relay: pending.relay });
+        await this.sequence.pending.set(pending.topic, pending);
         return pending;
       }
     } else {
@@ -248,7 +252,7 @@ export class Engine extends IEngine {
         proposal,
         outcome,
       };
-      await this.sequence.pending.set(pending.topic, pending, { relay: pending.relay });
+      await this.sequence.pending.set(pending.topic, pending);
       return pending;
     }
   }
@@ -385,10 +389,7 @@ export class Engine extends IEngine {
       expiry: params.expiry,
       state: params.state,
     };
-    await this.sequence.settled.set(settled.topic, settled, {
-      relay: settled.relay,
-      expiry: settled.expiry,
-    });
+    await this.sequence.settled.set(settled.topic, settled);
     return settled;
   }
 
@@ -767,6 +768,33 @@ export class Engine extends IEngine {
     }
   }
 
+  private async onNewPending(createdEvent: SubscriptionEvent.Created<SequenceTypes.Pending>) {
+    const { topic, data: pending } = createdEvent;
+    const subscription = await this.sequence.client.relayer.subscribe(topic, {
+      relay: pending.relay,
+    });
+    subscription.on("payload", (payloadEvent: SubscriptionEvent.Payload) =>
+      this.onPendingPayloadEvent(payloadEvent),
+    );
+    subscription.on("expired", (payloadEvent: SubscriptionEvent.Payload) =>
+      this.sequence.pending.delete(topic, ERROR.EXPIRED.format({ context: this.sequence.context })),
+    );
+  }
+
+  private async onNewSettled(createdEvent: SubscriptionEvent.Created<SequenceTypes.Settled>) {
+    const { topic, data: settled } = createdEvent;
+    const id = await this.sequence.client.relayer.subscribe(topic, {
+      relay: settled.relay,
+      expiry: settled.expiry,
+    });
+    this.sequence.client.relayer.on(id, (payloadEvent: SubscriptionEvent.Payload) =>
+      this.onPendingPayloadEvent(payloadEvent),
+    );
+    subscription.on("expired", (payloadEvent: SubscriptionEvent.Payload) =>
+      this.sequence.settled.delete(topic, ERROR.EXPIRED.format({ context: this.sequence.context })),
+    );
+  }
+
   private registerEventListeners(): void {
     // Pending Subscription Events
     this.sequence.pending.on(
@@ -775,8 +803,10 @@ export class Engine extends IEngine {
     );
     this.sequence.pending.on(
       SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<SequenceTypes.Pending>) =>
-        this.onPendingStatusEvent(createdEvent),
+      async (createdEvent: SubscriptionEvent.Created<SequenceTypes.Pending>) => {
+        await this.onNewPending(createdEvent);
+        this.onPendingStatusEvent(createdEvent);
+      },
     );
     this.sequence.pending.on(
       SUBSCRIPTION_EVENTS.updated,
@@ -790,7 +820,8 @@ export class Engine extends IEngine {
     );
     this.sequence.settled.on(
       SUBSCRIPTION_EVENTS.created,
-      (createdEvent: SubscriptionEvent.Created<SequenceTypes.Settled>) => {
+      async (createdEvent: SubscriptionEvent.Created<SequenceTypes.Settled>) => {
+        await this.onNewSettled(createdEvent);
         const { data: settled } = createdEvent;
         const eventName = this.sequence.config.events.settled;
         this.sequence.logger.info(`Emitting ${eventName}`);
@@ -800,7 +831,7 @@ export class Engine extends IEngine {
     );
     this.sequence.settled.on(
       SUBSCRIPTION_EVENTS.updated,
-      (updatedEvent: SubscriptionEvent.Updated<SequenceTypes.Settled>) => {
+      async (updatedEvent: SubscriptionEvent.Updated<SequenceTypes.Settled>) => {
         const { data: settled, update } = updatedEvent;
         const eventName = this.sequence.config.events.updated;
         this.sequence.logger.info(`Emitting ${eventName}`);

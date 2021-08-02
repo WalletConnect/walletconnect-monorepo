@@ -38,15 +38,9 @@ export abstract class IRelayer extends IEvents {
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
 
-  public abstract subscribe(
-    topic: string,
-    listener: (payload: JsonRpcPayload) => void,
-    opts?: RelayerTypes.SubscribeOptions,
-  ): Promise<string>;
+  public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
 
-  public abstract unsubscribe(
-    topic: string,
-    id: string,
-    opts?: RelayerTypes.SubscribeOptions,
-  ): Promise<void>;
+  public abstract unsubscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<void>;
+
+  public abstract unsubscribeById(id: string, opts?: RelayerTypes.SubscribeOptions): Promise<void>;
 }

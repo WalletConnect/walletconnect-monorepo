@@ -13,6 +13,8 @@ import {
 } from "@walletconnect/utils";
 
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
@@ -109,6 +111,20 @@ export class Crypto implements ICrypto {
     const { sharedKey } = await this.getEncryptionKeys(topic);
     const result = await decrypt({ encrypted, sharedKey });
     return result;
+  }
+
+  public async encodeJsonRpc(topic: string, payload: JsonRpcPayload): Promise<string> {
+    const message = safeJsonStringify(payload);
+    const hasKeys = await this.hasKeys(topic);
+    const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
+    return result;
+  }
+
+  public async decodeJsonRpc(topic: string, encrypted: string): Promise<JsonRpcPayload> {
+    const hasKeys = await this.hasKeys(topic);
+    const message = hasKeys ? await this.decrypt(topic, encrypted) : encoding.hexToUtf8(encrypted);
+    const payload = safeJsonParse(message);
+    return payload;
   }
 
   // ---------- Private ----------------------------------------------- //
