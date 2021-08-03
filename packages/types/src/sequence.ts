@@ -9,7 +9,6 @@ import {
 
 import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
-import { ISubscription } from "./subscription";
 import { IJsonRpcHistory } from "./history";
 import {
   AppMetadata,
@@ -21,6 +20,7 @@ import {
 } from "./misc";
 import { RelayerTypes } from "./relayer";
 import { IEngine } from "./engine";
+import { IState } from "./state";
 
 export declare namespace SequenceTypes {
   export interface Status {
@@ -275,18 +275,18 @@ export abstract class ISequence<
   DefaultSignalParams = SequenceTypes.DefaultSignalParams,
   ProposedPermissions = SequenceTypes.ProposedPermissions
 > extends IEvents {
-  // pending subscriptions
-  public abstract pending: ISubscription<Pending>;
-  // settled subscriptions
-  public abstract settled: ISubscription<Settled>;
+  // pending sequences
+  public abstract pending: IState<Pending>;
+  // settled sequences
+  public abstract settled: IState<Settled>;
   // jsonrpc history
   public abstract history: IJsonRpcHistory;
 
-  // returns settled subscriptions length
+  // returns settled sequences length
   public abstract readonly length: number;
-  // returns settled subscriptions topics
+  // returns settled sequences topics
   public abstract readonly topics: string[];
-  // returns settled subscriptions values
+  // returns settled sequences values
   public abstract readonly values: Settled[];
 
   // describes sequence context
@@ -305,10 +305,10 @@ export abstract class ISequence<
   // initialize with persisted state
   public abstract init(): Promise<void>;
 
-  // get settled subscription data
+  // get settled sequence state
   public abstract get(topic: string): Promise<Settled>;
 
-  // find compatible settled subscriptions
+  // find compatible settled sequence
   public abstract find(permissions: Partial<Permissions>): Promise<Settled[]>;
 
   // called by either to ping peer

@@ -10,7 +10,8 @@ import {
 } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
-import { Subscription } from "./subscription";
+import { State } from "./state";
+import { Engine } from "./engine";
 import { JsonRpcHistory } from "./history";
 import {
   SESSION_CONTEXT,
@@ -20,11 +21,10 @@ import {
   SESSION_SIGNAL_METHOD_PAIRING,
   SESSION_DEFAULT_TTL,
 } from "../constants";
-import { Engine } from "./engine";
 
 export class Session extends ISession {
-  public pending: Subscription<SessionTypes.Pending>;
-  public settled: Subscription<SessionTypes.Settled>;
+  public pending: State<SessionTypes.Pending>;
+  public settled: State<SessionTypes.Settled>;
   public history: JsonRpcHistory;
 
   public events = new EventEmitter();
@@ -42,16 +42,8 @@ export class Session extends ISession {
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
     this.logger = generateChildLogger(logger, this.context);
-    this.pending = new Subscription<SessionTypes.Pending>(
-      client,
-      this.logger,
-      this.config.status.pending,
-    );
-    this.settled = new Subscription<SessionTypes.Settled>(
-      client,
-      this.logger,
-      this.config.status.settled,
-    );
+    this.pending = new State<SessionTypes.Pending>(client, this.logger, this.config.status.pending);
+    this.settled = new State<SessionTypes.Settled>(client, this.logger, this.config.status.settled);
     this.history = new JsonRpcHistory(client, this.logger);
     this.engine = new Engine(this) as SessionTypes.Engine;
   }
@@ -61,7 +53,6 @@ export class Session extends ISession {
     await this.pending.init();
     await this.settled.init();
     await this.history.init();
-    await this.engine.init();
   }
 
   public get(topic: string): Promise<SessionTypes.Settled> {
@@ -89,7 +80,7 @@ export class Session extends ISession {
   }
 
   get values(): SessionTypes.Settled[] {
-    return this.settled.values.map(x => x.data);
+    return this.settled.values;
   }
 
   public create(params?: SessionTypes.CreateParams): Promise<SessionTypes.Settled> {

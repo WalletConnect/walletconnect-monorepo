@@ -5,34 +5,34 @@ import {
   ISubscription,
   Reason,
   SubscriptionEvent,
-  SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import {
   CLIENT_BEAT_INTERVAL,
   CLIENT_EVENTS,
   RELAYER_EVENTS,
+  SUBSCRIPTION_CONTEXT,
   SUBSCRIPTION_DEFAULT_TTL,
   SUBSCRIPTION_EVENTS,
 } from "../constants";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
-export class Subscription<Data = any> extends ISubscription<Data> {
-  public subscriptions = new Map<string, SubscriptionParams<Data>>();
+export class Subscription extends ISubscription {
+  public subscriptions = new Map<string, SubscriptionParams>();
 
   public events = new EventEmitter();
 
+  public context = SUBSCRIPTION_CONTEXT;
+
   private timeout = new Map<string, NodeJS.Timeout>();
 
-  private cached: SubscriptionParams<Data>[] = [];
+  private cached: SubscriptionParams[] = [];
 
-  constructor(public client: IClient, public logger: Logger, public context: string) {
-    super(client, logger, context);
+  constructor(public client: IClient, public logger: Logger) {
+    super(client, logger);
     this.logger = generateChildLogger(logger, this.context);
-
     this.registerEventListeners();
   }
 
@@ -49,66 +49,41 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     return Array.from(this.subscriptions.keys());
   }
 
-  get values(): SubscriptionParams<Data>[] {
+  get values(): SubscriptionParams[] {
     return Array.from(this.subscriptions.values());
   }
 
-  public async set(topic: string, data: Data, opts: SubscriptionOptions): Promise<void> {
+  public async set(id: string, subscription: SubscriptionParams): Promise<void> {
     await this.isEnabled();
-    if (this.subscriptions.has(topic)) {
-      this.update(topic, data);
-    } else {
-      this.logger.debug(`Setting subscription`);
-      this.logger.trace({ type: "method", method: "set", topic, data, opts });
-      await this.subscribeAndSet(topic, data, opts);
-      this.events.emit(SUBSCRIPTION_EVENTS.created, {
-        topic,
-        data,
-      } as SubscriptionEvent.Created<Data>);
-    }
+    if (this.subscriptions.has(id)) return;
+    this.logger.debug(`Setting subscription`);
+    this.logger.trace({ type: "method", method: "set", id, subscription });
+    await this.subscribeAndSet(id, subscription);
+    this.events.emit(SUBSCRIPTION_EVENTS.created, subscription);
   }
 
-  public async get(topic: string): Promise<Data> {
+  public async get(id: string): Promise<SubscriptionParams> {
     await this.isEnabled();
     this.logger.debug(`Getting subscription`);
-    this.logger.trace({ type: "method", method: "get", topic });
-    const subscription = await this.getSubscription(topic);
-    return subscription.data;
+    this.logger.trace({ type: "method", method: "get", id });
+    const subscription = await this.getSubscription(id);
+    return subscription;
   }
 
-  public async update(topic: string, update: Partial<Data>): Promise<void> {
-    await this.isEnabled();
-    this.logger.debug(`Updating subscription`);
-    this.logger.trace({ type: "method", method: "update", topic, update });
-    const subscription = await this.getSubscription(topic);
-    const data = { ...subscription.data, ...update };
-    this.subscriptions.set(topic, {
-      ...subscription,
-      topic,
-      data,
-    });
-    this.events.emit(SUBSCRIPTION_EVENTS.updated, {
-      topic,
-      data,
-      update,
-    } as SubscriptionEvent.Updated<Data>);
-  }
-
-  public async delete(topic: string, reason: Reason): Promise<void> {
+  public async delete(id: string, reason: Reason): Promise<void> {
     await this.isEnabled();
 
     this.logger.debug(`Deleting subscription`);
-    this.logger.trace({ type: "method", method: "delete", topic, reason });
-    const subscription = await this.getSubscription(topic);
-    this.subscriptions.delete(topic);
+    this.logger.trace({ type: "method", method: "delete", id, reason });
+    const subscription = await this.getSubscription(id);
+    this.subscriptions.delete(id);
     await this.client.relayer.unsubscribe(subscription.topic, subscription.id, {
       relay: subscription.relay,
     });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
-      topic,
-      data: subscription.data,
+      ...subscription,
       reason,
-    } as SubscriptionEvent.Deleted<Data>);
+    } as SubscriptionEvent.Deleted);
   }
 
   public on(event: string, listener: any): void {
@@ -127,12 +102,6 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.events.removeListener(event, listener);
   }
 
-  // ---------- Protected ----------------------------------------------- //
-
-  protected async onPayload(payloadEvent: SubscriptionEvent.Payload) {
-    this.events.emit(SUBSCRIPTION_EVENTS.payload, payloadEvent);
-  }
-
   // ---------- Private ----------------------------------------------- //
 
   private getNestedContext(length: number) {
@@ -146,17 +115,17 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private getStorageKey() {
     const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    const subscriptionContext = this.getNestedContext(2).join(":");
-    return `${storageKeyPrefix}//${subscriptionContext}`;
+    const recordContext = this.getNestedContext(2).join(":");
+    return `${storageKeyPrefix}//${recordContext}`;
   }
 
-  private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
+  private async getSubscription(id: string): Promise<SubscriptionParams> {
     await this.isEnabled();
-    const subscription = this.subscriptions.get(topic);
+    const subscription = this.subscriptions.get(id);
     if (!subscription) {
-      const error = ERROR.NO_MATCHING_TOPIC.format({
+      const error = ERROR.NO_MATCHING_ID.format({
         context: this.getSubscriptionContext(),
-        topic,
+        id,
       });
       this.logger.error(error.message);
       throw new Error(error.message);
@@ -164,37 +133,27 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     return subscription;
   }
 
-  private async subscribeAndSet(
-    topic: string,
-    data: Data,
-    opts: SubscriptionOptions,
-  ): Promise<void> {
-    const id = await this.client.relayer.subscribe(
-      topic,
-      (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
-      opts,
-    );
-
-    const expiry = opts.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
-    this.subscriptions.set(topic, { id, topic, data, ...opts, expiry });
-    this.setTimeout(topic, expiry);
+  private async subscribeAndSet(id: string, subscription: SubscriptionParams): Promise<void> {
+    const expiry = subscription.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
+    this.subscriptions.set(id, { ...subscription, expiry });
+    this.setTimeout(id, expiry);
   }
 
-  private setTimeout(topic: string, expiry: number) {
-    if (this.timeout.has(topic)) return;
+  private setTimeout(id: string, expiry: number) {
+    if (this.timeout.has(id)) return;
     const ttl = expiry - Date.now();
     if (ttl <= 0) {
-      this.onTimeout(topic);
+      this.onTimeout(id);
       return;
     }
     if (ttl > CLIENT_BEAT_INTERVAL) return;
-    const timeout = setTimeout(() => this.onTimeout(topic), ttl);
-    this.timeout.set(topic, timeout);
+    const timeout = setTimeout(() => this.onTimeout(id), ttl);
+    this.timeout.set(id, timeout);
   }
 
-  private deleteTimeout(topic: string): void {
-    if (!this.timeout.has(topic)) return;
-    const timeout = this.timeout.get(topic);
+  private deleteTimeout(id: string): void {
+    if (!this.timeout.has(id)) return;
+    const timeout = this.timeout.get(id);
     if (typeof timeout === "undefined") return;
     clearTimeout(timeout);
   }
@@ -204,28 +163,25 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.timeout.clear();
   }
 
-  private onTimeout(topic: string): void {
-    this.deleteTimeout(topic);
-    this.delete(topic, ERROR.EXPIRED.format({ context: this.getSubscriptionContext() }));
+  private onTimeout(id: string): void {
+    this.deleteTimeout(id);
+    this.delete(id, ERROR.EXPIRED.format({ context: this.getSubscriptionContext() }));
   }
 
   private checkSubscriptions(): void {
     this.subscriptions.forEach(subscription =>
-      this.setTimeout(subscription.topic, subscription.expiry),
+      this.setTimeout(subscription.id, subscription.expiry),
     );
   }
 
   private async persist() {
-    await this.client.storage.setItem<SubscriptionParams<Data>[]>(
-      this.getStorageKey(),
-      this.values,
-    );
+    await this.client.storage.setItem<SubscriptionParams[]>(this.getStorageKey(), this.values);
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getItem<SubscriptionParams<Data>[]>(
+      const persisted = await this.client.storage.getItem<SubscriptionParams[]>(
         this.getStorageKey(),
       );
       if (typeof persisted === "undefined") return;
@@ -240,12 +196,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
       this.cached = persisted;
       await Promise.all(
         this.cached.map(async subscription => {
-          const { topic, data } = subscription;
-          const opts = {
-            relay: subscription.relay,
-            expiry: subscription.expiry,
-          };
-          await this.subscribeAndSet(topic, data, opts);
+          await this.subscribeAndSet(subscription.id, subscription);
         }),
       );
       await this.enable();
@@ -261,12 +212,7 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     await this.disable();
     await Promise.all(
       this.cached.map(async subscription => {
-        const { topic, data } = subscription;
-        const opts = {
-          relay: subscription.relay,
-          expiry: subscription.expiry,
-        };
-        await this.subscribeAndSet(topic, data, opts);
+        await this.subscribeAndSet(subscription.id, subscription);
       }),
     );
     await this.enable();
@@ -294,25 +240,15 @@ export class Subscription<Data = any> extends ISubscription<Data> {
 
   private registerEventListeners(): void {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
-    this.client.relayer.on(RELAYER_EVENTS.connect, () => this.reset());
-    this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      const eventName = SUBSCRIPTION_EVENTS.payload;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: payloadEvent });
-    });
-    this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created<Data>) => {
+    this.client.relayer.on(RELAYER_EVENTS.connect, () => this.enable());
+    this.client.relayer.on(RELAYER_EVENTS.disconnect, () => this.disable());
+    this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created) => {
       const eventName = SUBSCRIPTION_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: createdEvent });
       this.persist();
     });
-    this.events.on(SUBSCRIPTION_EVENTS.updated, (updatedEvent: SubscriptionEvent.Updated<Data>) => {
-      const eventName = SUBSCRIPTION_EVENTS.updated;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: updatedEvent });
-      this.persist();
-    });
-    this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
+    this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted) => {
       const eventName = SUBSCRIPTION_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });

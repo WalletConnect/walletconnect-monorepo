@@ -7,9 +7,9 @@ import {
   SequenceTypes,
   PairingTypes,
   SessionTypes,
-  SubscriptionEvent,
   Validation,
   SignalTypes,
+  StateEvent,
 } from "@walletconnect/types";
 
 import { ERROR } from "./error";
@@ -78,9 +78,9 @@ export function isSessionFailed(outcome: SessionTypes.Outcome): outcome is Sessi
   return "reason" in outcome;
 }
 
-export function isSubscriptionUpdatedEvent<T = any>(
-  event: SubscriptionEvent.Created<T> | SubscriptionEvent.Updated<T>,
-): event is SubscriptionEvent.Updated<T> {
+export function isStateUpdatedEvent<T = any>(
+  event: StateEvent.Created<T> | StateEvent.Updated<T>,
+): event is StateEvent.Updated<T> {
   return "update" in event;
 }
 

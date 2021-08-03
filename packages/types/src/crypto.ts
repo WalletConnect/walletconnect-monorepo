@@ -1,3 +1,4 @@
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { IClient } from "./client";
 
 export declare namespace CryptoTypes {
@@ -55,4 +56,8 @@ export abstract class ICrypto {
   public abstract encrypt(topic: string, message: string): Promise<string>;
 
   public abstract decrypt(topic: string, encrypted: string): Promise<string>;
+
+  public abstract encodeJsonRpc(topic: string, payload: JsonRpcPayload): Promise<string>;
+
+  public abstract decodeJsonRpc(topic: string, encrypted: string): Promise<JsonRpcPayload>;
 }

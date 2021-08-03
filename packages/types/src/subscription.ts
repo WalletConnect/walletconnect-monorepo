@@ -1,17 +1,14 @@
-import { JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";
 import { Reason } from "./misc";
 import { RelayerTypes } from "./relayer";
 
-export interface SubscriptionOptions extends RelayerTypes.SubscribeOptions {
+export interface SubscriptionParams extends RelayerTypes.SubscribeOptions {
+  id: string;
   topic: string;
   expiry: number;
-}
-
-export interface SubscriptionParams extends SubscriptionOptions {
-  id: string;
 }
 
 export declare namespace SubscriptionEvent {
@@ -22,24 +19,22 @@ export declare namespace SubscriptionEvent {
   }
 }
 
-export type SubscriptionEntries<T> = Record<string, SubscriptionParams>;
-
-export abstract class ISubscription<Data> extends IEvents {
+export abstract class ISubscription extends IEvents {
   public abstract subscriptions = new Map<string, SubscriptionParams>();
 
   public abstract readonly length: number;
 
-  public abstract readonly topics: string[];
-
   public abstract readonly values: SubscriptionParams[];
 
-  constructor(public client: IClient, public logger: Logger, public context: string) {
+  public abstract context: string;
+
+  constructor(public client: IClient, public logger: Logger) {
     super();
   }
 
   public abstract init(): Promise<void>;
 
-  public abstract set(id: string, opts: SubscriptionOptions): Promise<void>;
+  public abstract set(id: string, subscription: SubscriptionParams): Promise<void>;
 
   public abstract get(id: string): Promise<SubscriptionParams>;
 

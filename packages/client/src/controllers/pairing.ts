@@ -5,9 +5,9 @@ import { PairingTypes, IClient, IPairing, ISequence, IEngine } from "@walletconn
 import { formatUri } from "@walletconnect/utils";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
-import { Subscription } from "./subscription";
-import { JsonRpcHistory } from "./history";
+import { State } from "./state";
 import { Engine } from "./engine";
+import { JsonRpcHistory } from "./history";
 import {
   PAIRING_CONTEXT,
   PAIRING_EVENTS,
@@ -19,8 +19,8 @@ import {
 } from "../constants";
 
 export class Pairing extends IPairing {
-  public pending: Subscription<PairingTypes.Pending>;
-  public settled: Subscription<PairingTypes.Settled>;
+  public pending: State<PairingTypes.Pending>;
+  public settled: State<PairingTypes.Settled>;
   public history: JsonRpcHistory;
 
   public events = new EventEmitter();
@@ -38,16 +38,8 @@ export class Pairing extends IPairing {
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
     this.logger = generateChildLogger(logger, this.context);
-    this.pending = new Subscription<PairingTypes.Pending>(
-      client,
-      this.logger,
-      this.config.status.pending,
-    );
-    this.settled = new Subscription<PairingTypes.Settled>(
-      client,
-      this.logger,
-      this.config.status.settled,
-    );
+    this.pending = new State<PairingTypes.Pending>(client, this.logger, this.config.status.pending);
+    this.settled = new State<PairingTypes.Settled>(client, this.logger, this.config.status.settled);
     this.history = new JsonRpcHistory(client, this.logger);
     this.engine = new Engine(this) as PairingTypes.Engine;
   }
@@ -57,7 +49,6 @@ export class Pairing extends IPairing {
     await this.pending.init();
     await this.settled.init();
     await this.history.init();
-    await this.engine.init();
   }
 
   public get(topic: string): Promise<PairingTypes.Settled> {
@@ -85,7 +76,7 @@ export class Pairing extends IPairing {
   }
 
   get values(): PairingTypes.Settled[] {
-    return this.settled.values.map(x => x.data);
+    return this.settled.values;
   }
 
   public create(params?: PairingTypes.CreateParams): Promise<PairingTypes.Settled> {
