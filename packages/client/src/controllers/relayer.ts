@@ -90,8 +90,9 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
-      const protocol = opts?.relay.protocol || RELAYER_DEFAULT_PROTOCOL;
-      const jsonRpc = getRelayProtocolJsonRpc(protocol);
+      const relay =
+        typeof opts?.relay == "undefined" ? opts.relay : { protocol: RELAYER_DEFAULT_PROTOCOL };
+      const jsonRpc = getRelayProtocolJsonRpc(relay.protocol);
       const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
         method: jsonRpc.subscribe,
         params: {
@@ -101,6 +102,8 @@ export class Relayer extends IRelayer {
       this.logger.debug(`Outgoing Relay Payload`);
       this.logger.trace({ type: "payload", direction: "outgoing", request });
       const id = await this.provider.request(request);
+      const subscription = { id, topic, expiry, relay };
+      await this.subscriptions.set(id, subscription);
       this.logger.debug(`Successfully Subscribed Topic`);
       this.logger.trace({ type: "method", method: "subscribe", request });
       return id;
