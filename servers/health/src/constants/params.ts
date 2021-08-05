@@ -27,7 +27,7 @@ export const metadata: AppMetadata = {
 export const address = "0x1d85568eEAbad713fBB5293B45ea066e552A90De";
 
 export const state: SessionTypes.State = {
-  accounts: [`${address}@eip155:1`],
+  accounts: [`${chainId}:${address}`],
 };
 
 export const connectorParams = {

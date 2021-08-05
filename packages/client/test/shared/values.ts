@@ -52,7 +52,7 @@ export const TEST_APP_METADATA_B: AppMetadata = {
 export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
 export const TEST_SESSION_ACCOUNTS = TEST_ETHEREUM_ACCOUNTS.map(
-  address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
+  address => `${TEST_ETHEREUM_CHAIN_ID}:${address}`,
 );
 
 export const TEST_SESSION_STATE = {
