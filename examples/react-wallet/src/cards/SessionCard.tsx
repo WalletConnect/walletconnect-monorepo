@@ -40,7 +40,8 @@ const SessionCard = (props: SessionCardProps) => {
         <React.Fragment>
           <h6>{"Accounts"}</h6>
           {accounts.map(account => {
-            const [address, chainId] = account.split("@");
+            const [namespace, reference, address] = account.split(":");
+            const chainId = `${namespace}:${reference}`;
             return (
               <Blockchain
                 key={`session:account:${account}`}

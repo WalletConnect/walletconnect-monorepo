@@ -121,7 +121,7 @@ const Blockchain: FC<PropsWithChildren<BlockchainProps>> = (
   const chain = getBlockchainDisplayData(chainId, chainData);
   if (typeof chain === "undefined") return null;
   const name = chain.meta.name || chain.data.name;
-  const account = typeof address !== "undefined" ? `${address}@${chainId}` : undefined;
+  const account = typeof address !== "undefined" ? `${chainId}:${address}` : undefined;
   const assets =
     typeof account !== "undefined" && typeof balances !== "undefined" ? balances[account] : [];
   return (
