@@ -218,7 +218,8 @@ export function validateBlockchainState(
     return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "state accounts" }));
   }
   const mismatched = state.accounts.filter(accountId => {
-    const chainId = accountId.split("@")[1];
+    const [namespace, reference] = accountId.split(":");
+    const chainId = `${namespace}:${reference}`;
     return !blockchain.chains.includes(chainId);
   });
   if (mismatched.length) {
@@ -254,10 +255,11 @@ export function isValidChainId(value: any): boolean {
 }
 
 export function isValidAccountId(value: any): boolean {
-  if (isValidString(value) && value.includes("@")) {
-    const split = value.split("@");
-    if (split.length === 2) {
-      return !!split[0] && isValidChainId(split[1]);
+  if (isValidString(value) && value.includes(":")) {
+    const split = value.split(":");
+    if (split.length === 3) {
+      const chainId = split[0] + ":" + split[1];
+      return !!split[2] && isValidChainId(chainId);
     }
   }
   return false;

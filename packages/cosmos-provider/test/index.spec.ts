@@ -131,7 +131,7 @@ describe("@walletconnect/cosmos-provider", () => {
       new Promise<void>((resolve, reject) => {
         walletClient.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
           const response = {
-            state: { accounts: [`${TEST_COSMOS_ADDRESS}@${NAMESPACE}:${CHAIN_ID}`] },
+            state: { accounts: [`${NAMESPACE}:${CHAIN_ID}:${TEST_COSMOS_ADDRESS}`] },
           };
           await walletClient.approve({
             proposal,
@@ -146,7 +146,7 @@ describe("@walletconnect/cosmos-provider", () => {
         resolve();
       }),
     ]);
-    expect(accounts[0].split("@")[0]).to.eql(TEST_COSMOS_ADDRESS);
+    expect(accounts[0]).to.eql(TEST_COSMOS_ADDRESS);
 
     // auto-respond
     walletClient.on(

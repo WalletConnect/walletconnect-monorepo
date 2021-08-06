@@ -239,7 +239,12 @@ class App extends React.Component<any, any> {
     // populates existing session to state (assume only the top one)
     if (this.state.client.session.topics.length) {
       const session = await this.state.client.session.get(this.state.client.session.topics[0]);
-      const chains = session.state.accounts.map(account => account.split("@")[1]);
+      const chains = session.state.accounts.map(account =>
+        account
+          .split(":")
+          .slice(0, -1)
+          .join(":"),
+      );
       this.setState({ accounts: session.state.accounts, chains });
       this.onSessionConnected(session);
     }
@@ -331,7 +336,8 @@ class App extends React.Component<any, any> {
     try {
       const arr = await Promise.all(
         this.state.accounts.map(async account => {
-          const [address, chainId] = account.split("@");
+          const [namespace, reference, address] = account.split(":");
+          const chainId = `${namespace}:${reference}`;
           const assets = await apiGetAccountAssets(address, chainId);
           return { account, assets };
         }),
@@ -375,9 +381,11 @@ class App extends React.Component<any, any> {
     }
 
     try {
-      const address =
-        this.state.accounts.find(account => account.split("@")[1] === chainId)?.split("@")[0] || "";
-      const account = `${address}@${chainId}`;
+      // get ethereum address
+      const account = this.state.accounts.find(account => account.startsWith(chainId));
+      if (account === undefined) throw new Error("Account is not found");
+      const address = account.split(":").pop();
+      if (address === undefined) throw new Error("Address is invalid");
 
       // open modal
       this.openRequestModal();
@@ -437,8 +445,10 @@ class App extends React.Component<any, any> {
       const hexMsg = encoding.utf8ToHex(message, true);
 
       // get ethereum address
-      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
-      if (address === undefined) throw new Error("Address is not valid");
+      const account = this.state.accounts.find(account => account.startsWith(chainId));
+      if (account === undefined) throw new Error("Account is not found");
+      const address = account.split(":").pop();
+      if (address === undefined) throw new Error("Address is invalid");
 
       // personal_sign params
       const params = [hexMsg, address];
@@ -499,8 +509,10 @@ class App extends React.Component<any, any> {
       const message = JSON.stringify(eip712.example);
 
       // get ethereum address
-      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
-      if (address === undefined) throw new Error("Address is not valid");
+      const account = this.state.accounts.find(account => account.startsWith(chainId));
+      if (account === undefined) throw new Error("Account is not found");
+      const address = account.split(":").pop();
+      if (address === undefined) throw new Error("Address is invalid");
 
       // eth_signTypedData params
       const params = [address, message];
@@ -585,9 +597,11 @@ class App extends React.Component<any, any> {
         reference,
       );
 
-      // get ethereum address
-      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
-      if (address === undefined) throw new Error("Address is not valid");
+      // get cosmos address
+      const account = this.state.accounts.find(account => account.startsWith(chainId));
+      if (account === undefined) throw new Error("Account is not found");
+      const address = account.split(":").pop();
+      if (address === undefined) throw new Error("Address is invalid");
 
       // cosmos_signDirect params
       const params = {
@@ -655,9 +669,11 @@ class App extends React.Component<any, any> {
         sequence: "54",
       };
 
-      // get ethereum address
-      const address = this.state.accounts.find(account => account.endsWith(chainId))?.split("@")[0];
-      if (address === undefined) throw new Error("Address is not valid");
+      // get cosmos address
+      const account = this.state.accounts.find(account => account.startsWith(chainId));
+      if (account === undefined) throw new Error("Account is not found");
+      const address = account.split(":").pop();
+      if (address === undefined) throw new Error("Address is invalid");
 
       // cosmos_signAmino params
       const params = { signerAddress: address, signDoc };
@@ -789,7 +805,8 @@ class App extends React.Component<any, any> {
         <h3>Accounts</h3>
         <SAccounts>
           {this.state.accounts.map(account => {
-            const [address, chainId] = account.split("@");
+            const [namespace, reference, address] = account.split(":");
+            const chainId = `${namespace}:${reference}`;
             return (
               <Blockchain
                 key={account}

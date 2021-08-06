@@ -226,10 +226,16 @@ class EthereumProvider implements IEthereumProvider {
     }
   }
 
+  private parseAccountId(account: string): { chainId: string; address: string } {
+    const [namespace, reference, address] = account.split(":");
+    const chainId = `${namespace}:${reference}`;
+    return { chainId, address };
+  }
+
   private setAccounts(accounts: string[]) {
     this.accounts = accounts
-      .filter(x => this.parseChainId(x.split("@")[1]) === this.chainId)
-      .map(x => x.split("@")[0]);
+      .filter(x => this.parseChainId(this.parseAccountId(x).chainId) === this.chainId)
+      .map(x => this.parseAccountId(x).address);
     this.events.emit(providerEvents.changed.accounts, this.accounts);
   }
 }

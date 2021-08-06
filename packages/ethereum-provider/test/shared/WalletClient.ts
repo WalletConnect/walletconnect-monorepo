@@ -117,7 +117,7 @@ export class WalletClient {
   };
 
   private getSessionState() {
-    const account = `${this.signer.address}@eip155:${this.chainId}`;
+    const account = `eip155:${this.chainId}:${this.signer.address}`;
     return { accounts: [account] };
   }
 

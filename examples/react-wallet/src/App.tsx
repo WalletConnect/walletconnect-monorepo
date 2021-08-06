@@ -413,7 +413,8 @@ class App extends React.Component<{}> {
       throw new Error("Accounts is undefined");
     }
     const accounts = this.state.accounts.filter(account => {
-      const chainId = account.split("@")[1];
+      const [namespace, reference] = account.split(":");
+      const chainId = `${namespace}:${reference}`;
       return proposal.permissions.blockchain.chains.includes(chainId);
     });
     const response = {
@@ -583,7 +584,7 @@ class App extends React.Component<{}> {
             />
           )}
         </SContainer>
-        <SVersionNumber>{`v${process.env.REACT_APP_VERSION || "2.0.0-alpha"}`}</SVersionNumber>
+        <SVersionNumber>{`v${process.env.REACT_APP_VERSION || "2.0.0-beta"}`}</SVersionNumber>
       </React.Fragment>
     );
   }
