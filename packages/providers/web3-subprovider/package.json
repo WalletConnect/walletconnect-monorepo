@@ -1,13 +1,14 @@
 {
   "name": "@walletconnect/web3-subprovider",
-  "version": "1.4.2-rc.2",
+  "version": "1.5.2",
   "description": "Web3 Subprovider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "run-s clean",
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
+    "build:esm": "npx tsc -p tsconfig.esm.json",
     "build:umd": "webpack",
-    "build": "run-s build:pre build:cjs build:umd",
+    "build": "run-s build:pre build:cjs build:esm build:umd",
     "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha -r ts-node/register ./test/**/*.spec.ts --exit"
   },
   "keywords": [
@@ -26,6 +27,7 @@
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
   "main": "dist/cjs/index.js",
+  "browser": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
   "unpkg": "dist/umd/index.min.js",
   "files": [
@@ -58,9 +60,9 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/client": "^1.4.2-rc.2",
-    "@walletconnect/qrcode-modal": "^1.4.2-rc.2",
-    "@walletconnect/types": "^1.4.2-rc.2",
+    "@walletconnect/client": "^1.5.2",
+    "@walletconnect/qrcode-modal": "^1.5.2",
+    "@walletconnect/types": "^1.5.2",
     "web3-provider-engine": "16.0.1"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"

@@ -1,11 +1,12 @@
 import EventEmitter from "eventemitter3";
-import { JsonRpcProvider } from "@json-rpc-tools/provider";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import { IConnector, IRpcConfig, IWCEthRpcConnectionOptions } from "@walletconnect/types";
 import { getRpcUrl, signingMethods } from "@walletconnect/utils";
 import { SignerConnection } from "@walletconnect/signer-connection";
 import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
 
-class WalletConnectEthereumProvider implements IEthereumProvider {
+class WalletConnectProvider implements IEthereumProvider {
   public events: any = new EventEmitter();
 
   private rpc: IRpcConfig;
@@ -19,8 +20,24 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
   }
 
+  get connected(): boolean {
+    return (this.signer.connection as SignerConnection).connected;
+  }
+
   get connector(): IConnector {
-    return (this.signer.connection as any).connector as IConnector;
+    return (this.signer.connection as SignerConnection).connector;
+  }
+
+  get accounts(): string[] {
+    return (this.signer.connection as SignerConnection).accounts;
+  }
+
+  get chainId(): number {
+    return (this.signer.connection as SignerConnection).chainId;
+  }
+
+  get rpcUrl(): string {
+    return (this.http?.connection as HttpConnection).url || "";
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
@@ -93,9 +110,9 @@ class WalletConnectEthereumProvider implements IEthereumProvider {
   private setHttpProvider(chainId: number): JsonRpcProvider | undefined {
     const rpcUrl = getRpcUrl(chainId, this.rpc);
     if (typeof rpcUrl === "undefined") return undefined;
-    const http = new JsonRpcProvider(rpcUrl);
+    const http = new JsonRpcProvider(new HttpConnection(rpcUrl));
     return http;
   }
 }
 
-export default WalletConnectEthereumProvider;
+export default WalletConnectProvider;

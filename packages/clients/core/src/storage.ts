@@ -2,7 +2,7 @@ import { IWalletConnectSession } from "@walletconnect/types";
 import { isWalletConnectSession, getLocal, setLocal, removeLocal } from "@walletconnect/utils";
 
 class SessionStorage {
-  public storageId = "walletconnect";
+  constructor(public storageId: string = "walletconnect") {}
 
   public getSession(): IWalletConnectSession | null {
     let session: IWalletConnectSession | null = null;

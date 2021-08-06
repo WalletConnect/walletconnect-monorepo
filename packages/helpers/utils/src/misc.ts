@@ -1,24 +1,24 @@
-import * as encUtils from "enc-utils";
-import * as jsonRpcUtils from "@json-rpc-tools/utils";
+import * as encoding from "@walletconnect/encoding";
+import * as jsonRpcUtils from "@walletconnect/jsonrpc-utils";
 import { IRpcConfig } from "@walletconnect/types";
 import { infuraNetworks } from "./constants";
 
 // -- hex -------------------------------------------------- //
 
 export function sanitizeHex(hex: string): string {
-  return encUtils.sanitizeHex(hex);
+  return encoding.sanitizeHex(hex);
 }
 
 export function addHexPrefix(hex: string): string {
-  return encUtils.addHexPrefix(hex);
+  return encoding.addHexPrefix(hex);
 }
 
 export function removeHexPrefix(hex: string): string {
-  return encUtils.removeHexPrefix(hex);
+  return encoding.removeHexPrefix(hex);
 }
 
 export function removeHexLeadingZeros(hex: string): string {
-  return encUtils.removeHexLeadingZeros(encUtils.addHexPrefix(hex));
+  return encoding.removeHexLeadingZeros(encoding.addHexPrefix(hex));
 }
 
 // -- id -------------------------------------------------- //

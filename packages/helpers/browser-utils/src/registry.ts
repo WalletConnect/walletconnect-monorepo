@@ -14,19 +14,19 @@ export function getAppLogoUrl(id): string {
   return API_URL + "/logo/sm/" + id + ".jpeg";
 }
 
-export function formatMobileRegistryEntry(entry: IAppEntry): IMobileRegistryEntry {
+export function formatMobileRegistryEntry(entry: IAppEntry, platform: "mobile" | "desktop" = "mobile"): IMobileRegistryEntry {
   return {
     name: entry.name || "",
     shortName: entry.metadata.shortName || "",
     color: entry.metadata.colors.primary || "",
     logo: entry.id ? getAppLogoUrl(entry.id) : "",
-    universalLink: entry.mobile.universal || "",
-    deepLink: entry.mobile.native || "",
+    universalLink: entry[platform].universal || "",
+    deepLink: entry[platform].native || "",
   };
 }
 
-export function formatMobileRegistry(registry: IAppRegistry): IMobileRegistryEntry[] {
+export function formatMobileRegistry(registry: IAppRegistry, platform: "mobile" | "desktop" = "mobile"): IMobileRegistryEntry[] {
   return Object.values<any>(registry)
-    .filter(entry => !!entry.mobile.universal || !!entry.mobile.native)
-    .map(formatMobileRegistryEntry);
+    .filter(entry => !!entry[platform].universal || !!entry[platform].native)
+    .map((entry) => formatMobileRegistryEntry(entry, platform));
 }

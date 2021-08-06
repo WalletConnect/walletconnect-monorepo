@@ -1,4 +1,4 @@
-import * as encUtils from "enc-utils";
+import * as encoding from "@walletconnect/encoding";
 import {
   IJsonRpcSubscription,
   IJsonRpcRequest,
@@ -18,27 +18,27 @@ export function isEmptyArray(array: any[]): boolean {
 }
 
 export function isBuffer(val: any) {
-  return encUtils.isBuffer(val);
+  return encoding.isBuffer(val);
 }
 
 export function isTypedArray(val: any) {
-  return encUtils.isTypedArray(val);
+  return encoding.isTypedArray(val);
 }
 
 export function isArrayBuffer(val: any) {
-  return encUtils.isArrayBuffer(val);
+  return encoding.isArrayBuffer(val);
 }
 
 export function getType(val: any) {
-  return encUtils.getType(val);
+  return encoding.getType(val);
 }
 
 export function getEncoding(val: any) {
-  return encUtils.getEncoding(val);
+  return encoding.getEncoding(val);
 }
 
 export function isHexString(value: any, length?: number): boolean {
-  return encUtils.isHexString(value, length);
+  return encoding.isHexString(value, length);
 }
 
 export function isJsonRpcSubscription(object: any): object is IJsonRpcSubscription {

@@ -1,11 +1,17 @@
 import "mocha";
 import { expect } from "chai";
+import { ICreateSessionOptions } from "@walletconnect/types";
 
 import IsomorphicClient from "../../src";
 
 import { TEST_BRIDGE_URL, TEST_SESSION_PARAMS } from "./values";
 
-export async function connectTwoClients() {
+export async function connectTwoClients(opts?: ICreateSessionOptions) {
+  const sessionParams = {
+    ...TEST_SESSION_PARAMS,
+    chainId: opts?.chainId || TEST_SESSION_PARAMS.chainId,
+  };
+
   let connectorB: IsomorphicClient | undefined;
   const connectorA = new IsomorphicClient({
     bridge: TEST_BRIDGE_URL,
@@ -18,8 +24,8 @@ export async function connectTwoClients() {
           reject(error);
         }
         expect(connectorA.connected).to.be.true;
-        expect(connectorA.accounts).to.eql(TEST_SESSION_PARAMS.accounts);
-        expect(connectorA.chainId).to.eql(TEST_SESSION_PARAMS.chainId);
+        expect(connectorA.accounts).to.eql(sessionParams.accounts);
+        expect(connectorA.chainId).to.eql(sessionParams.chainId);
         resolve();
       });
     }),
@@ -33,25 +39,25 @@ export async function connectTwoClients() {
         connectorB = new IsomorphicClient({ uri });
 
         // Subscribe to session requests
-        connectorB.on("session_request", error => {
+        connectorB.on("session_request", (error, payload) => {
           if (error) {
             reject(error);
           }
           if (typeof connectorB === "undefined") {
             throw new Error("Peer connector is undefined");
           }
-          connectorB.approveSession(TEST_SESSION_PARAMS);
+          connectorB.approveSession(sessionParams);
 
           expect(connectorB.connected).to.be.true;
-          expect(connectorB.accounts).to.eql(TEST_SESSION_PARAMS.accounts);
-          expect(connectorB.chainId).to.eql(TEST_SESSION_PARAMS.chainId);
+          expect(connectorB.accounts).to.eql(sessionParams.accounts);
+          expect(connectorB.chainId).to.eql(sessionParams.chainId);
           resolve();
         });
       });
     }),
     new Promise<void>((resolve, reject) => {
       connectorA
-        .createSession()
+        .createSession(opts)
         .then(() => {
           resolve();
         })

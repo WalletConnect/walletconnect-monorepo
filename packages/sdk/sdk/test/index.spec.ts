@@ -6,7 +6,7 @@ import WalletConnectSDK from "../src";
 describe("WalletConnect", () => {
   describe("When instantiated", () => {
     const walletConnect = new WalletConnectSDK({
-      bridge: "https://staging.walletconnect.org",
+      bridge: "https://bridge.walletconnect.org",
     });
 
     it("should be an instance of WalletConnectSDK", () => {

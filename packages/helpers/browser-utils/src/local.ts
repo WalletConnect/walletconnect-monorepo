@@ -16,7 +16,7 @@ export function getLocal(key: string): any {
   if (local) {
     raw = local.getItem(key);
   }
-  data = safeJsonParse(raw);
+  data = raw ? safeJsonParse(raw) : raw;
   return data;
 }
 

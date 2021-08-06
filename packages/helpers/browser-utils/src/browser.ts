@@ -1,7 +1,7 @@
 import { IClientMeta } from "@walletconnect/types";
 
-import * as windowMetadata from "window-metadata";
-import * as windowGetters from "window-getters";
+import * as windowMetadata from "@walletconnect/window-metadata";
+import * as windowGetters from "@walletconnect/window-getters";
 import {
   detect,
   BrowserInfo,
@@ -22,14 +22,22 @@ export function detectOS() {
   return env && env.os ? env.os : undefined;
 }
 
+export function isAndroid(): boolean {
+  const os = detectOS();
+  return os ? os.toLowerCase().includes("android") : false;
+}
+
 export function isIOS(): boolean {
   const os = detectOS();
-  return os ? os.toLowerCase().includes("ios") : false;
+  return os
+    ? os.toLowerCase().includes("ios") ||
+        (os.toLowerCase().includes("mac") && navigator.maxTouchPoints > 1)
+    : false;
 }
 
 export function isMobile(): boolean {
   const os = detectOS();
-  return os ? os.toLowerCase().includes("android") || os.toLowerCase().includes("ios") : false;
+  return os ? isAndroid() || isIOS() : false;
 }
 
 export function isNode(): boolean {
