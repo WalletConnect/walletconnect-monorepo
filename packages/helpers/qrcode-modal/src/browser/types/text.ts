@@ -5,6 +5,7 @@ export interface TextMap {
   connect: string;
   qrcode: string;
   mobile: string;
+  desktop: string;
   copy_to_clipboard: string;
   copied_to_clipboard: string;
 }

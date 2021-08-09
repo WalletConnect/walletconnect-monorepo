@@ -1,10 +1,10 @@
 import { keccak_256 } from "js-sha3";
+import { removeHexPrefix, addHexPrefix } from "@walletconnect/encoding";
 
 import { ITxData } from "@walletconnect/types";
 import { convertUtf8ToHex, convertNumberToHex, convertUtf8ToBuffer } from "./encoding";
 import { sanitizeHex, removeHexLeadingZeros } from "./misc";
 import { isEmptyArray, isHexString, isEmptyString } from "./validators";
-import { removeHexPrefix, addHexPrefix } from "enc-utils";
 
 export function toChecksumAddress(address: string): string {
   address = removeHexPrefix(address.toLowerCase());

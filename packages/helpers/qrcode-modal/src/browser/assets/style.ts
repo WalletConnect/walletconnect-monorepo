@@ -351,7 +351,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   position: relative;
   overflow: hidden;
   border-radius: 8px;
-  margin-bottom: 5vw;
+  margin-bottom: 18px;
   background: #d4d5d9;
 }
 

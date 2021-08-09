@@ -1,8 +1,8 @@
 import EventEmitter from "eventemitter3";
 import WalletConnect from "@walletconnect/client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
-import { IJsonRpcConnection, JsonRpcError, JsonRpcResponse } from "@json-rpc-tools/types";
-import { formatJsonRpcError } from "@json-rpc-tools/utils";
+import { IJsonRpcConnection, JsonRpcError, JsonRpcResponse } from "@walletconnect/jsonrpc-types";
+import { formatJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import {
   IConnector,
   IJsonRpcResponseError,
@@ -120,6 +120,14 @@ export class SignerConnection extends IJsonRpcConnection {
     if (typeof this.wc === "undefined") {
       throw new Error("Failed to register WalletConnect connector");
     }
+    if (this.wc.accounts.length) {
+      this.accounts = this.wc.accounts;
+    }
+    if (this.wc.chainId) {
+      this.chainId = this.wc.chainId;
+    }
+    // this.accounts = this.wc.accounts;
+    // this.chainId = this.wc.chainId;
     this.registerConnectorEvents();
     return this.wc;
   }

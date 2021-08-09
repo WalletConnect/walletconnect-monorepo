@@ -5,9 +5,9 @@ const fr: TextMap = {
   connect_mobile_wallet: "Se connecter au portefeuille mobile",
   scan_qrcode_with_wallet: "Scannez le QR code avec un portefeuille compatible WalletConnect",
   connect: "Se connecter",
-  // TODO: review following translations
   qrcode: "QR Code",
   mobile: "Mobile",
+  desktop: "Desktop",
   copy_to_clipboard: "Copier",
   copied_to_clipboard: "Copié!",
 };

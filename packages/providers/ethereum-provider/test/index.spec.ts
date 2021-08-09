@@ -38,7 +38,7 @@ const ACCOUNTS = {
 const TEST_PROVIDER_OPTS = {
   chainId: CHAIN_ID,
   qrcode: false,
-  bridge: "https://polygon.bridge.walletconnect.org",
+  bridge: "https://bridge.walletconnect.org",
   rpc: {
     [CHAIN_ID]: RPC_URL,
   },

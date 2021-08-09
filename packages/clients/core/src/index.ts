@@ -63,6 +63,7 @@ import {
 } from "./errors";
 import EventManager from "./events";
 import SessionStorage from "./storage";
+import { getBridgeUrl } from "./url";
 
 // -- Connector ------------------------------------------------------------ //
 
@@ -129,7 +130,7 @@ class Connector implements IConnector {
     }
 
     if (opts.connectorOpts.bridge) {
-      this.bridge = opts.connectorOpts.bridge;
+      this.bridge = getBridgeUrl(opts.connectorOpts.bridge);
     }
 
     if (opts.connectorOpts.uri) {

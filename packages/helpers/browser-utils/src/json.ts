@@ -1,5 +1,5 @@
-import * as safeJsonUtils from "safe-json-utils";
+import * as safeJson from "@walletconnect/safe-json";
 
-export const safeJsonParse = safeJsonUtils.safeJsonParse;
+export const safeJsonParse = safeJson.safeJsonParse;
 
-export const safeJsonStringify = safeJsonUtils.safeJsonStringify;
+export const safeJsonStringify = safeJson.safeJsonStringify;

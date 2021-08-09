@@ -1,7 +1,7 @@
 import * as React from "react";
 import { IMobileRegistryEntry, IQRCodeModalOptions, IAppRegistry } from "@walletconnect/types";
 import {
-  isIOS,
+  isAndroid,
   formatIOSMobile,
   saveMobileLinkInfo,
   getMobileLinkRegistry,
@@ -19,17 +19,18 @@ import WalletButton from "./WalletButton";
 import WalletIcon from "./WalletIcon";
 import { TextMap } from "../types";
 
-interface MobileLinkDisplayProps {
-  qrcodeModalOptions?: IQRCodeModalOptions;
+interface LinkDisplayProps {
+  mobile: boolean;
   text: TextMap;
   uri: string;
+  qrcodeModalOptions?: IQRCodeModalOptions;
 }
 
 const GRID_MIN_COUNT = 5;
 const LINKS_PER_PAGE = 12;
 
-function MobileLinkDisplay(props: MobileLinkDisplayProps) {
-  const ios = isIOS();
+function LinkDisplay(props: LinkDisplayProps) {
+  const android = isAndroid();
   const whitelist =
     props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
       ? props.qrcodeModalOptions.mobileLinks
@@ -40,11 +41,12 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   const [links, setLinks] = React.useState<IMobileRegistryEntry[]>([]);
   React.useEffect(() => {
     const initMobileLinks = async () => {
-      if (!ios) return;
+      if (android) return;
       try {
         const url = getWalletRegistryUrl();
         const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
-        const _links = getMobileLinkRegistry(formatMobileRegistry(registry), whitelist);
+        const platform = props.mobile ? "mobile" : "desktop";
+        const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
 
         setLinks(_links);
       } catch (e) {
@@ -64,14 +66,14 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
-        {ios ? props.text.choose_preferred_wallet : props.text.connect_mobile_wallet}
+        {android ? props.text.connect_mobile_wallet : props.text.choose_preferred_wallet}
       </p>
       <div
         className={`walletconnect-connect__buttons__wrapper${
-          !ios ? "__android" : grid ? "__wrap" : ""
+          android ? "__android" : grid ? "__wrap" : ""
         }`}
       >
-        {ios ? (
+        {!android ? (
           pageLinks.length ? (
             pageLinks.map((entry: IMobileRegistryEntry) => {
               const { color, name, shortName, logo } = entry;
@@ -119,7 +121,7 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
           />
         )}
       </div>
-      {!!(ios && pages > 1) && (
+      {!!(!android && pages > 1) && (
         <div className="walletconnect-modal__footer">
           {Array(pages)
             .fill(0)
@@ -141,4 +143,4 @@ function MobileLinkDisplay(props: MobileLinkDisplayProps) {
   );
 }
 
-export default MobileLinkDisplay;
+export default LinkDisplay;
