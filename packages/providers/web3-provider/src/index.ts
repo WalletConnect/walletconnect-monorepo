@@ -279,6 +279,7 @@ class WalletConnectProvider extends ProviderEngine {
     await this.stop();
     this.emit("close", 1000, "Connection closed");
     this.emit("disconnect", 1000, "Connection disconnected");
+    this.connected = false;
   }
 
   async updateState(sessionParams: any) {
