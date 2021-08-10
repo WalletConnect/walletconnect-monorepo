@@ -13,6 +13,18 @@ const bridges = [
   "https://j.bridge.walletconnect.org",
   "https://k.bridge.walletconnect.org",
   "https://l.bridge.walletconnect.org",
+  "https://m.bridge.walletconnect.org",
+  "https://n.bridge.walletconnect.org",
+  "https://o.bridge.walletconnect.org",
+  "https://p.bridge.walletconnect.org",
+  "https://q.bridge.walletconnect.org",
+  "https://r.bridge.walletconnect.org",
+  "https://s.bridge.walletconnect.org",
+  "https://t.bridge.walletconnect.org",
+  "https://u.bridge.walletconnect.org",
+  "https://v.bridge.walletconnect.org",
+  "https://w.bridge.walletconnect.org",
+  "https://x.bridge.walletconnect.org",
 ];
 
 export function randomBridgeIndex(): number {
