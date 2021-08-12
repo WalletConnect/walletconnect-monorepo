@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/iso-crypto",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "Isomorphic Crypto for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -62,8 +62,8 @@
   },
   "dependencies": {
     "@walletconnect/crypto": "^1.0.1",
-    "@walletconnect/types": "^1.5.4",
-    "@walletconnect/utils": "^1.5.4"
+    "@walletconnect/types": "^1.5.5",
+    "@walletconnect/utils": "^1.5.5"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
