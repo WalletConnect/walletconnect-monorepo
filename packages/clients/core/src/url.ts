@@ -5,11 +5,11 @@ const alphanumerical = "abcdefghijklmnopqrstuvwxyz0123456789";
 const bridges = alphanumerical.split("").map(char => `https://${char}.bridge.walletconnect.org`);
 
 export function extractHostname(url: string): string {
-  //find & remove protocol (http, ftp, etc.) and get hostname
+  // find & remove protocol
   let hostname = url.indexOf("//") > -1 ? url.split("/")[2] : url.split("/")[0];
-  //find & remove port number
+  // find & remove port number
   hostname = hostname.split(":")[0];
-  //find & remove "?"
+  // find & remove query string
   hostname = hostname.split("?")[0];
   return hostname;
 }
