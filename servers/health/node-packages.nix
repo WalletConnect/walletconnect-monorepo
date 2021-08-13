@@ -22,78 +22,6 @@ let
         sha512 = "WEezM1FWztfbzqIUbsDzFRVMxSoLy3HugVcux6KDDtTqzPsLE8NDRHfXvev66aH1i2oOKKar3/XDjbvh/OUBdg==";
       };
     };
-    "@json-rpc-tools/provider-2.0.0-beta.12" = {
-      name = "_at_json-rpc-tools_slash_provider";
-      packageName = "@json-rpc-tools/provider";
-      version = "2.0.0-beta.12";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/provider/-/provider-2.0.0-beta.12.tgz";
-        sha512 = "YXckO+chyylvZWtYr0RmmYLP/Khi17r1DYyJRyzQKYUUkzL13rx71QEUYVed9VBnuBK2ezHUW+V1BSGXwGNs6g==";
-      };
-    };
-    "@json-rpc-tools/types-2.0.0-beta.12" = {
-      name = "_at_json-rpc-tools_slash_types";
-      packageName = "@json-rpc-tools/types";
-      version = "2.0.0-beta.12";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/types/-/types-2.0.0-beta.12.tgz";
-        sha512 = "UM8w0RnD4DjYql/HlThe051ivW2Q8ulWarr7ux5Aas1UsOmcGQEg4slQo46p+BXgh1Nth7SHWS2tVnW/UUnCwQ==";
-      };
-    };
-    "@json-rpc-tools/utils-2.0.0-beta.12" = {
-      name = "_at_json-rpc-tools_slash_utils";
-      packageName = "@json-rpc-tools/utils";
-      version = "2.0.0-beta.12";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/utils/-/utils-2.0.0-beta.12.tgz";
-        sha512 = "7j3REzegFNXdgA0rjllNKz84ikIAXm4Yv3mO8Lx9D64hUOU2tUZfELtKEm2wr8FsP5if46Xl9ZH/Ch7JB4nXJQ==";
-      };
-    };
-    "@json-rpc-tools/ws-connection-2.0.0-beta.12" = {
-      name = "_at_json-rpc-tools_slash_ws-connection";
-      packageName = "@json-rpc-tools/ws-connection";
-      version = "2.0.0-beta.12";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@json-rpc-tools/ws-connection/-/ws-connection-2.0.0-beta.12.tgz";
-        sha512 = "AqNkWBROfO5zOUjoU4CNQKwR+L1pedVv+QeMUFdBT8T3GUrhet7PRdxto2BkB7JPFkHzxCUaGswkO+w11bq96A==";
-      };
-    };
-    "@pedrouid/environment-1.0.1" = {
-      name = "_at_pedrouid_slash_environment";
-      packageName = "@pedrouid/environment";
-      version = "1.0.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@pedrouid/environment/-/environment-1.0.1.tgz";
-        sha512 = "HaW78NszGzRZd9SeoI3JD11JqY+lubnaOx7Pewj5pfjqWXOEATpeKIFb9Z4t2WBUK2iryiXX3lzWwmYWgUL0Ug==";
-      };
-    };
-    "@pedrouid/iso-crypto-2.0.0-beta.7" = {
-      name = "_at_pedrouid_slash_iso-crypto";
-      packageName = "@pedrouid/iso-crypto";
-      version = "2.0.0-beta.7";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@pedrouid/iso-crypto/-/iso-crypto-2.0.0-beta.7.tgz";
-        sha512 = "5FxV0kH1gWeI+ejAh3yub/niB/ecxdtUUw8BvKFsPNjNHYF4Zz7zMa1EcSSjOri5D/mw6PLW/Vp+3I2wfeICcw==";
-      };
-    };
-    "@pedrouid/iso-random-2.0.0-beta.6" = {
-      name = "_at_pedrouid_slash_iso-random";
-      packageName = "@pedrouid/iso-random";
-      version = "2.0.0-beta.6";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@pedrouid/iso-random/-/iso-random-2.0.0-beta.6.tgz";
-        sha512 = "y2oAAPULxBWVSF2FLA0veB/qAfclbyJqepxx2p9/dT4166B+iVfIO5Y+YBXo3t9yhKfSpjdg8lJcd4Cyfe2Yvg==";
-      };
-    };
-    "@pedrouid/pino-utils-1.0.1" = {
-      name = "_at_pedrouid_slash_pino-utils";
-      packageName = "@pedrouid/pino-utils";
-      version = "1.0.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/@pedrouid/pino-utils/-/pino-utils-1.0.1.tgz";
-        sha512 = "a20vNltMhvk/bvhgnpSvBLFqL9B4xXNCukDEo70lO1bCSwRy5Tmu6Gc/1DsuYY+oNgE6b424j5J+8/J1OJenCg==";
-      };
-    };
     "@sindresorhus/is-0.14.0" = {
       name = "_at_sindresorhus_slash_is";
       packageName = "@sindresorhus/is";
@@ -301,13 +229,31 @@ let
         sha512 = "sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==";
       };
     };
-    "@walletconnect/client-2.0.0-beta.14" = {
+    "@walletconnect/client-2.0.0-beta.17" = {
       name = "_at_walletconnect_slash_client";
       packageName = "@walletconnect/client";
-      version = "2.0.0-beta.14";
+      version = "2.0.0-beta.17";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/client/-/client-2.0.0-beta.14.tgz";
-        sha512 = "OPMCc/UN9O3MCo/d4r5hZyxdQVZN2BOnPW12wnYquowNfiz8blnkJu829iFUnWP/LI4wTqmJTxVOZvLpGBeb2Q==";
+        url = "https://registry.npmjs.org/@walletconnect/client/-/client-2.0.0-beta.17.tgz";
+        sha512 = "Wxp4JpT6g4nDoD5/Q+3lTMPgKA+CyLRixJbEPCDAtM2XRSGOwycVSMduiWnGceWNY/z+cZz3j0QvEYD3WCnjGg==";
+      };
+    };
+    "@walletconnect/crypto-1.0.1" = {
+      name = "_at_walletconnect_slash_crypto";
+      packageName = "@walletconnect/crypto";
+      version = "1.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/crypto/-/crypto-1.0.1.tgz";
+        sha512 = "IgUReNrycIFxkGgq8YT9HsosCkhutakWD9Q411PR0aJfxpEa/VKJeaLRtoz6DvJpztWStwhIHnAbBoOVR72a6g==";
+      };
+    };
+    "@walletconnect/ecies-25519-1.0.1" = {
+      name = "_at_walletconnect_slash_ecies-25519";
+      packageName = "@walletconnect/ecies-25519";
+      version = "1.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/ecies-25519/-/ecies-25519-1.0.1.tgz";
+        sha512 = "IK3bYxmYbnFicO69qehPuacwfa3dU1Lw20YdvfLg3IH/WCCmo5EKZu5puaQCXep42uReYE4CQ5gcVSC4PCOLcw==";
       };
     };
     "@walletconnect/encoding-1.0.0" = {
@@ -328,6 +274,15 @@ let
         sha512 = "4BwqyWy6KpSvkocSaV7WR3BlZfrxLbJSLkg+j7Gl6pTDE+U55lLhJvQaMuDVazXYxcjBsG09k7UlH7cGiUI5vQ==";
       };
     };
+    "@walletconnect/jsonrpc-provider-1.0.0" = {
+      name = "_at_walletconnect_slash_jsonrpc-provider";
+      packageName = "@walletconnect/jsonrpc-provider";
+      version = "1.0.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/jsonrpc-provider/-/jsonrpc-provider-1.0.0.tgz";
+        sha512 = "ZVe23tYT0LdykZ/denBdkKCjBC13fnpj8MiKFuvUl0idBv1PiYKYJR3LVJHy8+7zk0lBbDH3hBNrbMt/K4kjcw==";
+      };
+    };
     "@walletconnect/jsonrpc-types-1.0.0" = {
       name = "_at_walletconnect_slash_jsonrpc-types";
       packageName = "@walletconnect/jsonrpc-types";
@@ -346,6 +301,15 @@ let
         sha512 = "qUHbKUK6sHeHn67qtHZoLoYk5hS6x1arTPjKDRkY93/6Fx+ZmNIpdm1owX3l6aYueyegJ7mz43FpvYHUqJ8xcw==";
       };
     };
+    "@walletconnect/jsonrpc-ws-connection-1.0.0" = {
+      name = "_at_walletconnect_slash_jsonrpc-ws-connection";
+      packageName = "@walletconnect/jsonrpc-ws-connection";
+      version = "1.0.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/jsonrpc-ws-connection/-/jsonrpc-ws-connection-1.0.0.tgz";
+        sha512 = "ITeDZo08Jr2AdftksAJNSoB/IQdpmxwJBhHsa9z9rp95V6S88zSqc6EB+BSYMVJZPjLYW8Xi+gZD9YPwxMRY0w==";
+      };
+    };
     "@walletconnect/logger-1.0.0" = {
       name = "_at_walletconnect_slash_logger";
       packageName = "@walletconnect/logger";
@@ -353,6 +317,33 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/@walletconnect/logger/-/logger-1.0.0.tgz";
         sha512 = "micLp42wwwDogbN+lKZjhk2t9oc7A6IvA2UR/3T+Xeh12eewZKfgrvZSu6CYijYLgiodjBxAwn0dC4a3ywXv/w==";
+      };
+    };
+    "@walletconnect/randombytes-1.0.1" = {
+      name = "_at_walletconnect_slash_randombytes";
+      packageName = "@walletconnect/randombytes";
+      version = "1.0.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/randombytes/-/randombytes-1.0.1.tgz";
+        sha512 = "YJTyq69i0PtxVg7osEpKfvjTaWuAsR49QEcqGKZRKVQWMbGXBZ65fovemK/SRgtiFRv0V8PwsrlKSheqzfPNcg==";
+      };
+    };
+    "@walletconnect/relay-api-1.0.0" = {
+      name = "_at_walletconnect_slash_relay-api";
+      packageName = "@walletconnect/relay-api";
+      version = "1.0.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/relay-api/-/relay-api-1.0.0.tgz";
+        sha512 = "ri+hail+6rz9Fx4Hfqq/er0OfzMmKg2/thL5WemOM3JuR6zVqMUr0G5ExJ4OjCWjd/ndL4CZ0ldLINmeOZr2ag==";
+      };
+    };
+    "@walletconnect/safe-json-1.0.0" = {
+      name = "_at_walletconnect_slash_safe-json";
+      packageName = "@walletconnect/safe-json";
+      version = "1.0.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/safe-json/-/safe-json-1.0.0.tgz";
+        sha512 = "QJzp/S/86sUAgWY6eh5MKYmSfZaRpIlmCJdi5uG4DJlKkZrHEF7ye7gA+VtbVzvTtpM/gRwO2plQuiooIeXjfg==";
       };
     };
     "@walletconnect/timestamp-1.0.0" = {
@@ -364,22 +355,40 @@ let
         sha512 = "kloxbLEu3gUcFhxqerc8oCEyTBVOmXDXj9uCmBGir9enJsgtV9tNc8pEVbfrvbmcbaJ9KI48j6d68r/qf288iA==";
       };
     };
-    "@walletconnect/types-2.0.0-beta.14" = {
+    "@walletconnect/types-2.0.0-beta.17" = {
       name = "_at_walletconnect_slash_types";
       packageName = "@walletconnect/types";
-      version = "2.0.0-beta.14";
+      version = "2.0.0-beta.17";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/types/-/types-2.0.0-beta.14.tgz";
-        sha512 = "OxR8r+scDbSB6Wpwl7+yuVZ5fna8AcU/mcO9qI17oTYTPliVJX7WRR4PEbFnZXgQOmb4Bm49v248lz4vgFCwqQ==";
+        url = "https://registry.npmjs.org/@walletconnect/types/-/types-2.0.0-beta.17.tgz";
+        sha512 = "YQjS9HqQSR6yztTarzeT9+DW5BTnDWBAlWedGGxiEdhuwV56FQJTZKnMjpM1f8yS5j0vBH/mSst65h7jS/65zQ==";
       };
     };
-    "@walletconnect/utils-2.0.0-beta.14" = {
+    "@walletconnect/utils-2.0.0-beta.17" = {
       name = "_at_walletconnect_slash_utils";
       packageName = "@walletconnect/utils";
-      version = "2.0.0-beta.14";
+      version = "2.0.0-beta.17";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@walletconnect/utils/-/utils-2.0.0-beta.14.tgz";
-        sha512 = "PwpAxQoVo8TsZgoPDng6wjfPmLsZFnUJwRn3LLnm9NYmNwxJbRX9Sc6hDq1Ww1i7+qikKuiYdWt5E+8Y/bR6RA==";
+        url = "https://registry.npmjs.org/@walletconnect/utils/-/utils-2.0.0-beta.17.tgz";
+        sha512 = "+1Yp1aymXDlrsVl/koDb0vt2XDwy71ERDxM81yqbLMTkAR8Y96aV+uVJS1tEVox72Eccj3QHb5JdgQYYJWp1MA==";
+      };
+    };
+    "@walletconnect/window-getters-1.0.0" = {
+      name = "_at_walletconnect_slash_window-getters";
+      packageName = "@walletconnect/window-getters";
+      version = "1.0.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/window-getters/-/window-getters-1.0.0.tgz";
+        sha512 = "xB0SQsLaleIYIkSsl43vm8EwETpBzJ2gnzk7e0wMF3ktqiTGS6TFHxcprMl5R44KKh4tCcHCJwolMCaDSwtAaA==";
+      };
+    };
+    "@walletconnect/window-metadata-1.0.0" = {
+      name = "_at_walletconnect_slash_window-metadata";
+      packageName = "@walletconnect/window-metadata";
+      version = "1.0.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@walletconnect/window-metadata/-/window-metadata-1.0.0.tgz";
+        sha512 = "9eFvmJxIKCC3YWOL97SgRkKhlyGXkrHwamfechmqszbypFspaSk+t2jQXAEU7YClHF6Qjw5eYOmy1//zFi9/GA==";
       };
     };
     "abbrev-1.1.1" = {
@@ -1201,15 +1210,6 @@ let
         sha1 = "ee01dd1cac0ed3cbc7fdbea37dc0a8f1ce002ce2";
       };
     };
-    "ecies-25519-2.0.0-beta.6" = {
-      name = "ecies-25519";
-      packageName = "ecies-25519";
-      version = "2.0.0-beta.6";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/ecies-25519/-/ecies-25519-2.0.0-beta.6.tgz";
-        sha512 = "QL7SEyprWcvSM28m/6UtGucwI3gSgnDm/Q9E/J4+z+T/PuCNpWR5y0c45Sip6+T3WrusalPvaEGHHe003ECxzw==";
-      };
-    };
     "emoji-regex-7.0.3" = {
       name = "emoji-regex";
       packageName = "emoji-regex";
@@ -1226,15 +1226,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz";
         sha512 = "MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==";
-      };
-    };
-    "enc-utils-3.0.0" = {
-      name = "enc-utils";
-      packageName = "enc-utils";
-      version = "3.0.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/enc-utils/-/enc-utils-3.0.0.tgz";
-        sha512 = "e57t/Z2HzWOLwOp7DZcV0VMEY8t7ptWwsxyp6kM2b2zrk6JqIpXxzkruHAMiBsy5wg9jp/183GdiRXCvBtzsYg==";
       };
     };
     "end-of-stream-1.4.4" = {
@@ -3010,15 +3001,6 @@ let
         sha512 = "8acYXXTI0AkQv6RAOjE3vOaIXZkT9wo4LOFbBKYQEEnnMNBpKqdUrI6S4NT0KPIo/WVvJ5tE/X5LF/TQUf0ekw==";
       };
     };
-    "relay-provider-2.0.0-beta.0" = {
-      name = "relay-provider";
-      packageName = "relay-provider";
-      version = "2.0.0-beta.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/relay-provider/-/relay-provider-2.0.0-beta.0.tgz";
-        sha512 = "ni4p+cqlH2U+SwBLjYk7uM9HWOfpR/PXPTh3M5AtzKxUJo5Y6d2u9qaKWfgdGGpQrtI5CIGeaHkzBpoBqXf4gA==";
-      };
-    };
     "require-directory-2.1.1" = {
       name = "require-directory";
       packageName = "require-directory";
@@ -3098,15 +3080,6 @@ let
       src = fetchurl {
         url = "https://registry.npmjs.org/safe-json-utils/-/safe-json-utils-1.1.1.tgz";
         sha512 = "SAJWGKDs50tAbiDXLf89PDwt9XYkWyANFWVzn4dTXl5QyI8t2o/bW5/OJl3lvc2WVU4MEpTo9Yz5NVFNsp+OJQ==";
-      };
-    };
-    "safe-json-utils-2.0.0-beta.0" = {
-      name = "safe-json-utils";
-      packageName = "safe-json-utils";
-      version = "2.0.0-beta.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/safe-json-utils/-/safe-json-utils-2.0.0-beta.0.tgz";
-        sha512 = "kaIaayQoR1EoeX0UIQqQyHvWNNWKnQcrNmebCpR80zSjML/EMmulChGJDSoJvFR8eWkVIpDD5kAF0dMuxl1ngg==";
       };
     };
     "safe-regex2-2.0.0" = {
@@ -3532,13 +3505,13 @@ let
         sha512 = "MpUEN2OodtUzxvKQl72cUF7RQ5EiHsGvSsVG0ia9c5RbWGL2CI4C7EpPS8UTBIplnlzZiNuV56w+FuNxy3ty2Q==";
       };
     };
-    "tar-6.1.2" = {
+    "tar-6.1.6" = {
       name = "tar";
       packageName = "tar";
-      version = "6.1.2";
+      version = "6.1.6";
       src = fetchurl {
-        url = "https://registry.npmjs.org/tar/-/tar-6.1.2.tgz";
-        sha512 = "EwKEgqJ7nJoS+s8QfLYVGMDmAsj+StbI2AM/RTHeUSsOw6Z8bwNBRv5z3CY0m7laC5qUAqruLX5AhMuc5deY3Q==";
+        url = "https://registry.npmjs.org/tar/-/tar-6.1.6.tgz";
+        sha512 = "oaWyu5dQbHaYcyZCTfyPpC+VmI62/OM2RTUYavTk1MDr1cwW5Boi3baeYQKiZbY2uSQJGr+iMOzb/JFxLrft+g==";
       };
     };
     "tar-fs-2.1.1" = {
@@ -3784,24 +3757,6 @@ let
         sha512 = "NsmoXalsWVDMGupxZ5R08ka9flZjjiLvHVAWYOKtiKM8ujtZWr9cRffak+uSE48+Ob8ObalXpwyeUiyDD6QFgg==";
       };
     };
-    "window-getters-1.0.1" = {
-      name = "window-getters";
-      packageName = "window-getters";
-      version = "1.0.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/window-getters/-/window-getters-1.0.1.tgz";
-        sha512 = "cojBfDeV58XEurDgj+rre15c7dvu27bWCPlOIpwQgreOsw6qQk0UGDR1hi7ZHKw5+L0AENUNNWGG2h4yr2Y3hQ==";
-      };
-    };
-    "window-metadata-1.0.1" = {
-      name = "window-metadata";
-      packageName = "window-metadata";
-      version = "1.0.1";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/window-metadata/-/window-metadata-1.0.1.tgz";
-        sha512 = "jdU1zWsFMDTYRUtZx/4nh5dUJ9MJHfNVvrf0jaYVuC9SiNcSLiBd79H4XM2DhKmHmN8tlOCzovc5RCI4HbFObA==";
-      };
-    };
     "workerpool-6.1.0" = {
       name = "workerpool";
       packageName = "workerpool";
@@ -3928,22 +3883,6 @@ let
     dependencies = [
       sources."@fastify/ajv-compiler-1.1.0"
       sources."@hapi/bourne-2.0.0"
-      (sources."@json-rpc-tools/provider-2.0.0-beta.12" // {
-        dependencies = [
-          sources."safe-json-utils-2.0.0-beta.0"
-        ];
-      })
-      sources."@json-rpc-tools/types-2.0.0-beta.12"
-      sources."@json-rpc-tools/utils-2.0.0-beta.12"
-      (sources."@json-rpc-tools/ws-connection-2.0.0-beta.12" // {
-        dependencies = [
-          sources."safe-json-utils-2.0.0-beta.0"
-        ];
-      })
-      sources."@pedrouid/environment-1.0.1"
-      sources."@pedrouid/iso-crypto-2.0.0-beta.7"
-      sources."@pedrouid/iso-random-2.0.0-beta.6"
-      sources."@pedrouid/pino-utils-1.0.1"
       sources."@sindresorhus/is-0.14.0"
       sources."@stablelib/binary-1.0.1"
       sources."@stablelib/bytes-1.0.1"
@@ -3967,15 +3906,24 @@ let
       sources."@types/superagent-3.8.7"
       sources."@types/ws-6.0.4"
       sources."@ungap/promise-all-settled-1.1.2"
-      sources."@walletconnect/client-2.0.0-beta.14"
+      sources."@walletconnect/client-2.0.0-beta.17"
+      sources."@walletconnect/crypto-1.0.1"
+      sources."@walletconnect/ecies-25519-1.0.1"
       sources."@walletconnect/encoding-1.0.0"
       sources."@walletconnect/environment-1.0.0"
+      sources."@walletconnect/jsonrpc-provider-1.0.0"
       sources."@walletconnect/jsonrpc-types-1.0.0"
       sources."@walletconnect/jsonrpc-utils-1.0.0"
+      sources."@walletconnect/jsonrpc-ws-connection-1.0.0"
       sources."@walletconnect/logger-1.0.0"
+      sources."@walletconnect/randombytes-1.0.1"
+      sources."@walletconnect/relay-api-1.0.0"
+      sources."@walletconnect/safe-json-1.0.0"
       sources."@walletconnect/timestamp-1.0.0"
-      sources."@walletconnect/types-2.0.0-beta.14"
-      sources."@walletconnect/utils-2.0.0-beta.14"
+      sources."@walletconnect/types-2.0.0-beta.17"
+      sources."@walletconnect/utils-2.0.0-beta.17"
+      sources."@walletconnect/window-getters-1.0.0"
+      sources."@walletconnect/window-metadata-1.0.0"
       sources."abbrev-1.1.1"
       sources."abstract-logging-2.0.1"
       sources."aes-js-3.1.2"
@@ -4112,9 +4060,7 @@ let
       sources."diff-5.0.0"
       sources."dot-prop-5.3.0"
       sources."duplexer3-0.1.4"
-      sources."ecies-25519-2.0.0-beta.6"
       sources."emoji-regex-7.0.3"
-      sources."enc-utils-3.0.0"
       sources."end-of-stream-1.4.4"
       sources."error-ex-1.3.2"
       sources."es-abstract-1.18.3"
@@ -4360,7 +4306,6 @@ let
       sources."readdirp-3.5.0"
       sources."registry-auth-token-4.2.1"
       sources."registry-url-5.1.0"
-      sources."relay-provider-2.0.0-beta.0"
       sources."require-directory-2.1.1"
       sources."resolve-1.20.0"
       sources."responselike-1.0.2"
@@ -4416,7 +4361,7 @@ let
         ];
       })
       sources."supports-color-8.1.1"
-      sources."tar-6.1.2"
+      sources."tar-6.1.6"
       (sources."tar-fs-2.1.1" // {
         dependencies = [
           sources."chownr-1.1.4"
@@ -4469,8 +4414,6 @@ let
           sources."strip-ansi-6.0.0"
         ];
       })
-      sources."window-getters-1.0.1"
-      sources."window-metadata-1.0.1"
       sources."workerpool-6.1.0"
       (sources."wrap-ansi-7.0.0" // {
         dependencies = [

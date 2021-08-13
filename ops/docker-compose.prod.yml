@@ -12,7 +12,7 @@ services:
       CLOUDFLARE_TOKEN: ${CLOUDFLARE_TOKEN}
       UPSTREAM_NAME: ${UPSTREAM_NAME:-relay}
       UPSTREAM_PORT: ${UPSTREAM_PORT:-5000}
-      LOG_LEVEL: ERROR
+      LOG_LEVEL: ${LOG_LEVEL:-ERROR}
     volumes:
       - ./stats.html:/www/index.html
     deploy:
@@ -20,10 +20,10 @@ services:
 
   relay:
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      RELAY_MODE: ${RELAY_MODE:-any}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RELAY_MODE: ${RELAY_MODE:-legacy}
     deploy:
       replicas: ${REPLICAS:-1}
   waku:
     deploy:
-      replicas: ${REPLICAS:-1}
+      replicas: ${REPLICAS:-0}
