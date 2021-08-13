@@ -5,6 +5,7 @@ networks:
 
 volumes:
   redis:
+    name: 'redis-{{.Task.Slot}}'
   waku:
     name: 'waku-{{.Task.Slot}}'
   caddy_data:

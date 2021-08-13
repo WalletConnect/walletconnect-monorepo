@@ -26,4 +26,4 @@ services:
       replicas: ${REPLICAS:-1}
   waku:
     deploy:
-      replicas: ${REPLICAS:-0}
+      replicas: 0
