@@ -33,7 +33,7 @@ class SocketTransport implements ITransportLib {
 
   // -- constructor ----------------------------------------------------- //
 
-  constructor(opts: ISocketTransportOptions) {
+  constructor(private opts: ISocketTransportOptions) {
     this._protocol = opts.protocol;
     this._version = opts.version;
     this._url = "";
@@ -228,7 +228,7 @@ class SocketTransport implements ITransportLib {
       }),
     );
 
-    this._subscriptions = [];
+    this._subscriptions = this.opts.subscriptions || [];
   }
 
   private _setToQueue(socketMessage: ISocketMessage) {
