@@ -30,7 +30,7 @@ export function getMobileRegistryEntry(
 export function getMobileLinkRegistry(registry: IMobileRegistry, whitelist?: string[]) {
   let links = registry;
   if (whitelist && whitelist.length) {
-    links = whitelist.map((name: string) => getMobileRegistryEntry(registry, name));
+    links = whitelist.map((name: string) => getMobileRegistryEntry(registry, name)).filter(Boolean);
   }
   return links;
 }
