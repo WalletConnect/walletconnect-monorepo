@@ -83,7 +83,7 @@ function LinkDisplay(props: LinkDisplayProps) {
                   name,
                   href,
                 });
-              }, []);
+              }, [pageLinks]);
               return !grid ? (
                 <WalletButton
                   color={color}
