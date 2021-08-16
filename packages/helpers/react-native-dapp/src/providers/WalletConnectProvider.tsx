@@ -269,7 +269,7 @@ export default function WalletConnectProvider({
         ...intermediateValue,
         walletServices,
         connectToWalletService,
-        connector: {
+        connector: Object.assign(Object.create(connector), {
           ...connector,
           connect: async (opts?: ICreateSessionOptions) => {
             if (!walletServices.length) {
@@ -283,7 +283,7 @@ export default function WalletConnectProvider({
             setConnector(nextConnector);
             return nextConnector.connect(opts);
           },
-        } as WalletConnect,
+        } as WalletConnect),
       }
     }
     return {
