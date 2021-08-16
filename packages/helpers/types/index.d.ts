@@ -123,6 +123,7 @@ declare module "@walletconnect/types" {
   }
 
   export interface ICallTxData {
+    type?: string;
     to?: string;
     value?: number | string;
     gas?: number | string;

@@ -42,6 +42,8 @@ export function parsePersonalSign(params: string[]): string[] {
 }
 
 export function parseTransactionData(txData: Partial<ITxData>): Partial<ITxData> {
+  if (typeof txData.type !== "undefined" && txData.type !== "0") return txData;
+
   if (typeof txData.from === "undefined" || !isValidAddress(txData.from)) {
     throw new Error(`Transaction object must include a valid 'from' value.`);
   }
