@@ -34,6 +34,11 @@ export class WalletClient {
     await this.updateSession();
   }
 
+  public async disconnect() {
+    if (!this.client) return;
+    await this.client.killSession({ message: "User disconnected" });
+  }
+
   private setChain(chainId: number, rpcUrl: string) {
     if (this.chainId !== chainId) {
       this.chainId = chainId;

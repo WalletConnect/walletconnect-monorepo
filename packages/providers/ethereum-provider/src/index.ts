@@ -105,6 +105,9 @@ class WalletConnectProvider implements IEthereumProvider {
       this.http = this.setHttpProvider(chainId);
       this.events.emit("chainChanged", chainId);
     });
+    this.signer.on("disconnect", () => {
+      this.events.emit("disconnect");
+    });
   }
 
   private setHttpProvider(chainId: number): JsonRpcProvider | undefined {
