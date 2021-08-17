@@ -45,26 +45,36 @@ function Modal(props: ModalProps) {
   const [singleLinkHref, setSingleLinkHref] = React.useState("");
   const [hasSingleLink, setHasSingleLink] = React.useState(false);
   const [links, setLinks] = React.useState<IMobileRegistryEntry[]>([]);
-  React.useEffect(() => {
-    const initMobileLinks = async () => {
-      if (android) return;
-      try {
-        const url = getWalletRegistryUrl();
-        const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
-        const platform = mobile ? "mobile" : "desktop";
-        const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
-        setLinks(_links);
-        const hasSingleLink = _links.length === 1;
-        if (hasSingleLink) {
-          setSingleLinkHref(formatIOSMobile(props.uri, _links[0]));
+  const [error, setError] = React.useState(false);
+
+  const getLinksIfNeeded = () => {
+    if (links.length > 0) { return }
+
+    React.useEffect(() => {
+      const initMobileLinks = async () => {
+        if (android) return;
+        try {
+          const url = getWalletRegistryUrl();
+          const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
+          const platform = mobile ? "mobile" : "desktop";
+          const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
+          setError(false);
+          setLinks(_links);
+          const hasSingleLink = _links.length === 1;
+          if (hasSingleLink) {
+            setSingleLinkHref(formatIOSMobile(props.uri, _links[0]));
+          }
+          setHasSingleLink(hasSingleLink);
+        } catch (e) {
+          setError(true)
+          console.error(e); // eslint-disable-line no-console
         }
-        setHasSingleLink(hasSingleLink);
-      } catch (e) {
-        console.error(e); // eslint-disable-line no-console
-      }
-    };
-    initMobileLinks();
-  }, []);
+      };
+      initMobileLinks();
+    });
+  }
+
+  getLinksIfNeeded();
 
   const rightSelected = mobile ? displayQRCode : !displayQRCode;
   return (
@@ -95,20 +105,21 @@ function Modal(props: ModalProps) {
           <div className="walletconnect-modal__mobile__toggle_selector" />
           {mobile ? (
             <>
-              <a onClick={() => setDisplayQRCode(false)}>{props.text.mobile}</a>
+              <a onClick={() => (setDisplayQRCode(false), getLinksIfNeeded())}>{props.text.mobile}</a>
               <a onClick={() => setDisplayQRCode(true)}>{props.text.qrcode}</a>
             </>
           ) : (
             <>
               <a onClick={() => setDisplayQRCode(true)}>{props.text.qrcode}</a>
-              <a onClick={() => setDisplayQRCode(false)}>{props.text.desktop}</a>
+              <a onClick={() => (setDisplayQRCode(false), getLinksIfNeeded())}>{props.text.desktop}</a>
             </>
           )}
         </div>
         }
         
         <div>
-          {displayQRCode ? <QRCodeDisplay {...displayProps} /> : <LinkDisplay {...displayProps} />}
+          {displayQRCode ? <QRCodeDisplay {...displayProps} /> : 
+          <LinkDisplay {...displayProps} links={links} error={error}/>}
         </div>
       </div>
     </div>
