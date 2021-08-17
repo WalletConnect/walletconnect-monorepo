@@ -8,4 +8,5 @@ export interface TextMap {
   desktop: string;
   copy_to_clipboard: string;
   copied_to_clipboard: string;
+  connect_with: string;
 }

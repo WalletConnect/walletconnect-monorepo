@@ -1,12 +1,9 @@
 import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions, IAppRegistry } from "@walletconnect/types";
+import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
 import {
   isAndroid,
   formatIOSMobile,
   saveMobileLinkInfo,
-  getMobileLinkRegistry,
-  getWalletRegistryUrl,
-  formatMobileRegistry,
 } from "@walletconnect/browser-utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
@@ -24,6 +21,8 @@ interface LinkDisplayProps {
   text: TextMap;
   uri: string;
   qrcodeModalOptions?: IQRCodeModalOptions;
+  links: IMobileRegistryEntry[];
+  error: boolean;
 }
 
 const GRID_MIN_COUNT = 5;
@@ -31,32 +30,9 @@ const LINKS_PER_PAGE = 12;
 
 function LinkDisplay(props: LinkDisplayProps) {
   const android = isAndroid();
-  const whitelist =
-    props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
-      ? props.qrcodeModalOptions.mobileLinks
-      : undefined;
-
   const [page, setPage] = React.useState(1);
-  const [error, setError] = React.useState(false);
-  const [links, setLinks] = React.useState<IMobileRegistryEntry[]>([]);
-  React.useEffect(() => {
-    const initMobileLinks = async () => {
-      if (android) return;
-      try {
-        const url = getWalletRegistryUrl();
-        const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
-        const platform = props.mobile ? "mobile" : "desktop";
-        const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
-
-        setLinks(_links);
-      } catch (e) {
-        console.error(e); // eslint-disable-line no-console
-        setError(true);
-      }
-    };
-    initMobileLinks();
-  }, []);
-
+  const links = props.links;
+  const error = props.error;
   const grid = links.length > GRID_MIN_COUNT;
   const pages = Math.ceil(links.length / LINKS_PER_PAGE);
   const range = [(page - 1) * LINKS_PER_PAGE + 1, page * LINKS_PER_PAGE];

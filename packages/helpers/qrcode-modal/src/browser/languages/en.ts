@@ -10,6 +10,7 @@ const en: TextMap = {
   desktop: "Desktop",
   copy_to_clipboard: "Copy to clipboard",
   copied_to_clipboard: "Copied to clipboard!",
+  connect_with: "Connect with",
 };
 
 export default en;

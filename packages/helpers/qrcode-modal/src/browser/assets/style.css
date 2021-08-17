@@ -355,6 +355,22 @@
   background: #d4d5d9;
 }
 
+.walletconnect-modal__single_wallet {
+  display: flex;
+  justify-content: center;
+  margin-top: 7px;
+  margin-bottom: 18px;
+}
+
+.walletconnect-modal__single_wallet a {
+  cursor: pointer;
+  color: rgb(64, 153, 255);
+  font-size: 21px;
+  font-weight: 800;
+  text-decoration: none !important;
+  margin: 0 auto;
+}
+
 .walletconnect-modal__mobile__toggle_selector {
   width: calc(50% - 8px);
   background: white;
