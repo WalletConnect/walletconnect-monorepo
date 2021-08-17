@@ -158,7 +158,7 @@ predeploy: dirs pull build-images
 	touch $(flags)/$@
 
 dev: predeploy ## runs relay on watch mode and shows logs
-	REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
+	RELAY_MODE=any REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
 	@echo  "MAKE: Done with $@"
 	@echo
 	$(log_end)

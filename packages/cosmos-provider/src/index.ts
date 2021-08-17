@@ -118,6 +118,9 @@ class CosmosProvider {
         this.events.emit(notification.type, notification.data);
       },
     );
+    this.signer.on("disconnect", () => {
+      this.events.emit("disconnect");
+    });
     this.events.on(providerEvents.changed.chains, chains => this.setHttpProvider(chains));
   }
 

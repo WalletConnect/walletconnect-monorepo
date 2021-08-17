@@ -12,6 +12,7 @@ import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
 import { HttpServiceOptions, PostSubscribeRequest } from "./types";
+import { isJsonRpcDisabled } from "./utils/validators";
 import {
   METRICS_DURACTION_BUCKETS,
   METRICS_PREFIX,
@@ -50,7 +51,7 @@ export class HttpService {
     this.metrics = this.setMetrics();
     this.redis = new RedisService(this.logger);
     this.ws = new WebSocketService(this, this.logger);
-    if (config.wakuUrl !== undefined) {
+    if (config.wakuUrl != undefined && !isJsonRpcDisabled(config.mode)) {
       this.network = new NetworkService(this, this.logger, config.wakuUrl);
     }
     this.message = new MessageService(this, this.logger);

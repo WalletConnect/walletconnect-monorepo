@@ -187,6 +187,9 @@ class EthereumProvider implements IEthereumProvider {
         }
       },
     );
+    this.signer.on("disconnect", () => {
+      this.events.emit("disconnect");
+    });
     this.events.on(providerEvents.changed.chain, chainId => this.setHttpProvider(chainId));
   }
 

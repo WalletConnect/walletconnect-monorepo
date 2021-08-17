@@ -1,6 +1,7 @@
 import { ethers, utils } from "ethers";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
 import { ClientOptions, IClient, SessionTypes } from "@walletconnect/types";
+import { ERROR } from "@walletconnect/utils";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
@@ -51,6 +52,12 @@ export class WalletClient {
   public async changeChain(chainId: number, rpcUrl: string) {
     this.setChainId(chainId, rpcUrl);
     await this.updateChainId();
+  }
+
+  public async disconnect() {
+    if (!this.client) return;
+    if (!this.topic) return;
+    await this.client.disconnect({ topic: this.topic, reason: ERROR.USER_DISCONNECTED.format() });
   }
 
   private setAccount(privateKey: string) {

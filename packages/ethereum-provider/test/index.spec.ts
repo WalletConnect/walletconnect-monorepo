@@ -104,7 +104,23 @@ describe("WalletConnectProvider", function() {
     expect(providerAccounts).to.eql([walletAddress]);
   });
   after(async () => {
+    // close test network
     await testNetwork.close();
+    // disconnect provider
+    await Promise.all([
+      new Promise<void>(async resolve => {
+        provider.on("disconnect", () => {
+          resolve();
+        });
+      }),
+      new Promise<void>(async resolve => {
+        await walletClient.disconnect();
+        resolve();
+      }),
+    ]);
+    // expect provider to be disconnected
+    expect(walletClient.client?.session.values.length).to.eql(0);
+    expect(provider.connected).to.be.false;
   });
   it("chainChanged", async () => {
     // change to Kovan
