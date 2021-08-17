@@ -5,18 +5,17 @@
 	acme_dns cloudflare {env.CLOUDFLARE_TOKEN}
 }
 
-(certifcates) {
+(certificates) {
 	tls {
 		dns cloudflare {env.CLOUDFLARE_TOKEN}
 	}
 }
 
-{env.DOMAIN} {
-	import certifcates
+(common) {
 	# This rate_limit option is tighly coupled with Cloudflare.
 	# If we don't use the cloudflare proxy we won't get
 	# a X-Forwaded-For header, making rate limiting useless
-	rate_limit {header.X-Forwarded-For} 6r/s 1000000
+	rate_limit {header.X-Forwarded-For} 10r/s 1000000
 	log {
 		output stdout
 		format json
@@ -26,12 +25,17 @@
 		header Connection *Upgrade*
 		header Upgrade websocket
 	}
-	reverse_proxy @websockets {env.UPSTREAM_NAME}:{env.UPSTREAM_PORT}
-	reverse_proxy {env.UPSTREAM_NAME}:{env.UPSTREAM_PORT}
+	reverse_proxy @websockets {args.0}:{env.UPSTREAM_PORT}
+	reverse_proxy {args.0}:{env.UPSTREAM_PORT}
+}
+
+{env.DOMAIN} {
+	import certificates
+	import common relay.1
 }
 
 grafana.{env.DOMAIN} {
-	import certifcates
+	import certificates
 	handle {
 		header Access-Control-Allow-Methods "GET"
 		header Access-Control-Allow-Origin grafana.{env.DOMAIN}
