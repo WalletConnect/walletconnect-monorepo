@@ -10,6 +10,7 @@ const fa: TextMap = {
   desktop: "دسکتاپ",
   copy_to_clipboard: "کپی به کلیپ بورد",
   copied_to_clipboard: "در کلیپ بورد کپی شد!",
+  connect_with: "ارتباط با",
 };
 
 export default fa;

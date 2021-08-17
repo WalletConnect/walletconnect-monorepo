@@ -10,6 +10,7 @@ const ko: TextMap = {
   desktop: "데스크탑",
   copy_to_clipboard: "클립보드에 복사",
   copied_to_clipboard: "클립보드에 복사되었습니다!",
+  connect_with: "와 연결하다",
 };
 
 export default ko;

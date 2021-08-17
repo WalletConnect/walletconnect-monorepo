@@ -10,6 +10,7 @@ const zh: TextMap = {
   desktop: "桌面",
   copy_to_clipboard: "复制到剪贴板",
   copied_to_clipboard: "复制到剪贴板成功！",
+  connect_with: "通过以下方式连接",
 };
 
 export default zh;

@@ -10,6 +10,7 @@ const de: TextMap = {
   desktop: "Desktop",
   copy_to_clipboard: "In die Zwischenablage kopieren",
   copied_to_clipboard: "In die Zwischenablage kopiert!",
+  connect_with: "Verbinden mit Hilfe von",
 };
 
 export default de;
