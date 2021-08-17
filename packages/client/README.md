@@ -8,9 +8,9 @@ This library provides a Standalone Client for WalletConnect 2.0 Protocol for bot
 
 ## Documentation
 
-Check out documentation [here](https://docs.walletconnect.org/v/v2.0.0-alpha/).
+Check out documentation [here](https://docs.walletconnect.org/v/2.0).
 
-Also available quick start for [Dapps](https://docs.walletconnect.org/v/v2.0.0-alpha/quick-start/dapps/client) and for [Wallets](https://docs.walletconnect.org/v/v2.0.0-alpha/quick-start/wallets/react-native)
+Also available quick start for [Dapps](https://docs.walletconnect.org/v/2.0/quick-start/dapps/client) and for [Wallets](https://docs.walletconnect.org/v/2.0/quick-start/wallets/react-native)
 
 ## License
 
