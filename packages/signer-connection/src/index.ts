@@ -222,6 +222,7 @@ export class SignerConnection extends IJsonRpcConnection {
       this.onClose();
 
       this.events.emit(SIGNER_EVENTS.deleted, session);
+      this.session = undefined;
     });
     this.client.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
       const uri = proposal.signal.params.uri;
