@@ -366,7 +366,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   cursor: pointer;
   color: rgb(64, 153, 255);
   font-size: 21px;
-  font-weight: 600;
+  font-weight: 800;
   text-decoration: none !important;
   margin: 0 auto;
 }

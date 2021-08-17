@@ -91,7 +91,7 @@ function Modal(props: ModalProps) {
             rel="noopener noreferrer"
             target="_blank"
           >
-            {props.text.connect_with + " " + (hasSingleLink ? links[0].name : "")}
+            {props.text.connect_with + " " + (hasSingleLink ? links[0].name : "") + " ›"}
           </a>
         </div>
 
