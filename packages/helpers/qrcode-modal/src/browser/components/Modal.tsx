@@ -82,7 +82,7 @@ function Modal(props: ModalProps) {
       <div className="walletconnect-modal__base">
         <Header onClose={props.onClose} />
         {
-        hasSingleLink ?
+        hasSingleLink && displayQRCode ?
 
         <div className="walletconnect-modal__single_wallet">
           <a 
