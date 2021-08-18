@@ -50,7 +50,7 @@ export class Client extends IClient {
   public crypto: Crypto;
 
   public relayer: Relayer;
-  public storage: IKeyValueStorage;
+  public storage: Storage;
 
   public pairing: Pairing;
   public session: Session;
@@ -77,7 +77,7 @@ export class Client extends IClient {
     this.controller = opts?.controller || false;
     this.metadata = opts?.metadata || getAppMetadata();
 
-    const storage =
+    const keyValueStorage =
       opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
     this.logger = generateChildLogger(logger, this.context);

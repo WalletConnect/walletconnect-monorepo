@@ -23,7 +23,6 @@ export class KeyChain implements IKeyChain {
 
   constructor(public client: IClient, public storage: IKeyValueStorage) {
     this.client = client;
-    this.storage = storage;
   }
 
   public async init(): Promise<void> {
