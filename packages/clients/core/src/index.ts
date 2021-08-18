@@ -707,6 +707,11 @@ class Connector implements IConnector {
   ): Promise<IJsonRpcResponseSuccess | IJsonRpcResponseError> {
     this._sendRequest(request, options);
 
+    this._eventManager.trigger({
+      event: "call_request_sent",
+      params: [{ request, options }],
+    });
+
     return new Promise((resolve, reject) => {
       this._subscribeToResponse(request.id, (error: Error | null, payload: any | null) => {
         if (error) {
@@ -821,12 +826,6 @@ class Connector implements IConnector {
       params: [{ request, options }],
     });
 
-    if (isMobile() && this._signingMethods.includes(request.method)) {
-      const mobileLinkUrl = getLocal(mobileLinkChoiceKey);
-      if (mobileLinkUrl) {
-        window.location.href = mobileLinkUrl.href;
-      }
-    }
     return this._subscribeToCallResponse(request.id);
   }
 
@@ -1048,6 +1047,16 @@ class Connector implements IConnector {
     this.on("connect", () => {
       if (this._qrcodeModal) {
         this._qrcodeModal.close();
+      }
+    });
+
+    this.on("call_request_sent", (error, payload) => {
+      const { request } = payload.params[0];
+      if (isMobile() && this._signingMethods.includes(request.method)) {
+        const mobileLinkUrl = getLocal(mobileLinkChoiceKey);
+        if (mobileLinkUrl) {
+          window.location.href = mobileLinkUrl.href;
+        }
       }
     });
 

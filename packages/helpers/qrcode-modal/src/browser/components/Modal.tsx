@@ -1,5 +1,10 @@
 import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions, IAppRegistry, IMobileLinkInfo } from "@walletconnect/types";
+import {
+  IMobileRegistryEntry,
+  IQRCodeModalOptions,
+  IAppRegistry,
+  IMobileLinkInfo,
+} from "@walletconnect/types";
 import {
   isMobile,
   isAndroid,
@@ -48,7 +53,9 @@ function Modal(props: ModalProps) {
   const [error, setError] = React.useState(false);
 
   const getLinksIfNeeded = () => {
-    if (links.length > 0) { return }
+    if (links.length > 0) {
+      return;
+    }
 
     React.useEffect(() => {
       const initMobileLinks = async () => {
@@ -66,13 +73,13 @@ function Modal(props: ModalProps) {
           }
           setHasSingleLink(hasSingleLink);
         } catch (e) {
-          setError(true)
+          setError(true);
           console.error(e); // eslint-disable-line no-console
         }
       };
       initMobileLinks();
     });
-  }
+  };
 
   getLinksIfNeeded();
 
@@ -81,45 +88,48 @@ function Modal(props: ModalProps) {
     <div id={WALLETCONNECT_MODAL_ID} className="walletconnect-qrcode__base animated fadeIn">
       <div className="walletconnect-modal__base">
         <Header onClose={props.onClose} />
-        {
-        hasSingleLink && displayQRCode ?
-
-        <div className="walletconnect-modal__single_wallet">
-          <a 
-            onClick={() => saveMobileLinkInfo({name: links[0].name, href: singleLinkHref})}
-            href={singleLinkHref}
-            rel="noopener noreferrer"
-            target="_blank"
+        {hasSingleLink && displayQRCode ? (
+          <div className="walletconnect-modal__single_wallet">
+            <a
+              onClick={() => saveMobileLinkInfo({ name: links[0].name, href: singleLinkHref })}
+              href={singleLinkHref}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {props.text.connect_with + " " + (hasSingleLink ? links[0].name : "") + " ›"}
+            </a>
+          </div>
+        ) : (
+          <div
+            className={`walletconnect-modal__mobile__toggle${
+              rightSelected ? " right__selected" : ""
+            }`}
           >
-            {props.text.connect_with + " " + (hasSingleLink ? links[0].name : "") + " ›"}
-          </a>
-        </div>
+            <div className="walletconnect-modal__mobile__toggle_selector" />
+            {mobile ? (
+              <>
+                <a onClick={() => (setDisplayQRCode(false), getLinksIfNeeded())}>
+                  {props.text.mobile}
+                </a>
+                <a onClick={() => setDisplayQRCode(true)}>{props.text.qrcode}</a>
+              </>
+            ) : (
+              <>
+                <a onClick={() => setDisplayQRCode(true)}>{props.text.qrcode}</a>
+                <a onClick={() => (setDisplayQRCode(false), getLinksIfNeeded())}>
+                  {props.text.desktop}
+                </a>
+              </>
+            )}
+          </div>
+        )}
 
-        :
-
-        <div
-          className={`walletconnect-modal__mobile__toggle${
-            rightSelected ? " right__selected" : ""
-          }`}
-        >
-          <div className="walletconnect-modal__mobile__toggle_selector" />
-          {mobile ? (
-            <>
-              <a onClick={() => (setDisplayQRCode(false), getLinksIfNeeded())}>{props.text.mobile}</a>
-              <a onClick={() => setDisplayQRCode(true)}>{props.text.qrcode}</a>
-            </>
-          ) : (
-            <>
-              <a onClick={() => setDisplayQRCode(true)}>{props.text.qrcode}</a>
-              <a onClick={() => (setDisplayQRCode(false), getLinksIfNeeded())}>{props.text.desktop}</a>
-            </>
-          )}
-        </div>
-        }
-        
         <div>
-          {displayQRCode ? <QRCodeDisplay {...displayProps} /> : 
-          <LinkDisplay {...displayProps} links={links} error={error}/>}
+          {displayQRCode ? (
+            <QRCodeDisplay {...displayProps} />
+          ) : (
+            <LinkDisplay {...displayProps} links={links} error={error} />
+          )}
         </div>
       </div>
     </div>
