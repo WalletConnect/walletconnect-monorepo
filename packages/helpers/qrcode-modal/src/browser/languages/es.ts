@@ -11,6 +11,9 @@ const es: TextMap = {
   copy_to_clipboard: "Copiar",
   copied_to_clipboard: "Copiado!",
   connect_with: "Conectar mediante",
+  loading: "Cargando...",
+  something_went_wrong: "Algo salió mal",
+  no_supported_wallets: "Todavía no hay monederos compatibles",
 };
 
 export default es;

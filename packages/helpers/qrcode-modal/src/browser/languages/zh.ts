@@ -11,6 +11,9 @@ const zh: TextMap = {
   copy_to_clipboard: "复制到剪贴板",
   copied_to_clipboard: "复制到剪贴板成功！",
   connect_with: "通过以下方式连接",
+  loading: "正在加载...",
+  something_went_wrong: "出了问题",
+  no_supported_wallets: "目前还没有支持的钱包",
 };
 
 export default zh;

@@ -9,4 +9,7 @@ export interface TextMap {
   copy_to_clipboard: string;
   copied_to_clipboard: string;
   connect_with: string;
+  loading: string;
+  something_went_wrong: string;
+  no_supported_wallets: string;
 }

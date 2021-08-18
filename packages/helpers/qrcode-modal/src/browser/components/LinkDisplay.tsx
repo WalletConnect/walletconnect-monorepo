@@ -18,7 +18,7 @@ interface LinkDisplayProps {
   uri: string;
   qrcodeModalOptions?: IQRCodeModalOptions;
   links: IMobileRegistryEntry[];
-  error: boolean;
+  errorMessage: string;
 }
 
 const GRID_MIN_COUNT = 5;
@@ -28,7 +28,7 @@ function LinkDisplay(props: LinkDisplayProps) {
   const android = isAndroid();
   const [page, setPage] = React.useState(1);
   const links = props.links;
-  const error = props.error;
+  const errorMessage = props.errorMessage;
   const grid = links.length > GRID_MIN_COUNT;
   const pages = Math.ceil(links.length / LINKS_PER_PAGE);
   const range = [(page - 1) * LINKS_PER_PAGE + 1, page * LINKS_PER_PAGE];
@@ -76,7 +76,7 @@ function LinkDisplay(props: LinkDisplayProps) {
             })
           ) : (
             <>
-              <p>{error ? `Something went wrong` : `Loading...`}</p>
+              <p>{errorMessage.length ? props.errorMessage : props.text.loading}</p>
             </>
           )
         ) : (

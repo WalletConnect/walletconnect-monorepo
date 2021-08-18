@@ -11,6 +11,9 @@ const fa: TextMap = {
   copy_to_clipboard: "کپی به کلیپ بورد",
   copied_to_clipboard: "در کلیپ بورد کپی شد!",
   connect_with: "ارتباط با",
+  loading: "...بارگذاری",
+  something_went_wrong: "مشکلی پیش آمد",
+  no_supported_wallets: "هنوز هیچ کیف پول پشتیبانی شده ای وجود ندارد",
 };
 
 export default fa;
