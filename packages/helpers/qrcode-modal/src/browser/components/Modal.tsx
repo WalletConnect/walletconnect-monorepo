@@ -35,6 +35,7 @@ interface ModalProps {
 function Modal(props: ModalProps) {
   const android = isAndroid();
   const mobile = isMobile();
+
   const whitelist = mobile
     ? props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
       ? props.qrcodeModalOptions.mobileLinks
@@ -42,6 +43,7 @@ function Modal(props: ModalProps) {
     : props.qrcodeModalOptions && props.qrcodeModalOptions.desktopLinks
     ? props.qrcodeModalOptions.desktopLinks
     : undefined;
+  const [loading, setLoading] = React.useState(false);
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   const displayProps = {
     mobile,
@@ -63,11 +65,13 @@ function Modal(props: ModalProps) {
     React.useEffect(() => {
       const initLinks = async () => {
         if (android) return;
+        setLoading(true);
         try {
           const url = getWalletRegistryUrl();
           const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
           const platform = mobile ? "mobile" : "desktop";
           const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
+          setLoading(false);
           setErrorMessage(!_links.length ? props.text.no_supported_wallets : "");
           setLinks(_links);
           const hasSingleLink = _links.length === 1;
@@ -77,6 +81,7 @@ function Modal(props: ModalProps) {
           }
           setHasSingleLink(hasSingleLink);
         } catch (e) {
+          setLoading(false);
           setErrorMessage(props.text.something_went_wrong);
           console.error(e); // eslint-disable-line no-console
         }
@@ -103,7 +108,7 @@ function Modal(props: ModalProps) {
               {props.text.connect_with + " " + (hasSingleLink ? links[0].name : "") + " ›"}
             </a>
           </div>
-        ) : links.length ? (
+        ) : loading || (!loading && links.length) ? (
           <div
             className={`walletconnect-modal__mobile__toggle${
               rightSelected ? " right__selected" : ""
@@ -129,7 +134,7 @@ function Modal(props: ModalProps) {
         ) : null}
 
         <div>
-          {displayQRCode || !links.length ? (
+          {displayQRCode || (!loading && !links.length) ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
             <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} />

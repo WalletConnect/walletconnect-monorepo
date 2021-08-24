@@ -15,9 +15,7 @@ function onInit() {
   connector = new WalletConnect({
     bridge: DEFAULT_BRIDGE, // Required
     qrcodeModal: WalletConnectQRCodeModal,
-    qrcodeModalOptions: {
-      mobileLinks: ["rainbow"],
-    },
+    qrcodeModalOptions: {},
   });
 
   // Check if connection is already established
