@@ -16,7 +16,7 @@ class WalletConnectProvider implements IEthereumProvider {
   constructor(opts?: IWCEthRpcConnectionOptions) {
     this.rpc = { infuraId: opts?.infuraId, custom: opts?.rpc };
     this.signer = new JsonRpcProvider(new SignerConnection(opts));
-    this.http = this.setHttpProvider(opts?.chainId || 1);
+    this.http = this.setHttpProvider(this.signer.connection.chainId || opts?.chainId || 1);
     this.registerEventListeners();
   }
 
