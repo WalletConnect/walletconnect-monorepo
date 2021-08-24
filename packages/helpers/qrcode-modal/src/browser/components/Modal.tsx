@@ -35,9 +35,13 @@ interface ModalProps {
 function Modal(props: ModalProps) {
   const android = isAndroid();
   const mobile = isMobile();
-  const whitelist = mobile ?
-    (props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks ? props.qrcodeModalOptions.mobileLinks : undefined) :
-    (props.qrcodeModalOptions && props.qrcodeModalOptions.desktopLinks ? props.qrcodeModalOptions.desktopLinks : undefined);
+  const whitelist = mobile
+    ? props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
+      ? props.qrcodeModalOptions.mobileLinks
+      : undefined
+    : props.qrcodeModalOptions && props.qrcodeModalOptions.desktopLinks
+    ? props.qrcodeModalOptions.desktopLinks
+    : undefined;
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   const displayProps = {
     mobile,
@@ -98,7 +102,7 @@ function Modal(props: ModalProps) {
               {props.text.connect_with + " " + (hasSingleLink ? links[0].name : "") + " ›"}
             </a>
           </div>
-        ) : (
+        ) : links.length ? (
           <div
             className={`walletconnect-modal__mobile__toggle${
               rightSelected ? " right__selected" : ""
@@ -121,10 +125,10 @@ function Modal(props: ModalProps) {
               </>
             )}
           </div>
-        )}
+        ) : null}
 
         <div>
-          {displayQRCode ? (
+          {displayQRCode || !links.length ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
             <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} />
