@@ -51,12 +51,6 @@ export default function WalletConnectProvider({
 
   const open = React.useCallback(async (uri: string, cb: unknown): Promise<unknown> => {
     if (Platform.OS === 'android') {
-      const canOpenURL = await Linking.canOpenURL(uri);
-      if (!canOpenURL) {
-        // Redirect the user to download a wallet.
-        Linking.openURL('https://walletconnect.org/wallets');
-        throw new Error('No wallets found.');
-      }
       await Linking.openURL(uri);
     }
     setState({
