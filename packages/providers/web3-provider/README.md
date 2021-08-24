@@ -148,9 +148,10 @@ provider.connector.on("display_uri", (err, payload) => {
 });
 ```
 
-#### Filter Mobile Linking Options
+#### Filter Linking Options
 
-If you would like to reduce the number of mobile linking options or customize its order, you can provide an array of wallet names
+If you would like to reduce the number of linking options or customize its order, you can provide an array of wallet names.
+Providing empty whitelist disables linking.
 
 ```typescript
 const provider = new WalletConnectProvider({
@@ -162,7 +163,10 @@ const provider = new WalletConnectProvider({
       "argent",
       "trust",
       "imtoken",
-      "pillar
+      "pillar",
+    ],
+    desktopLinks: [
+      "encrypted ink",
     ]
   }
 });

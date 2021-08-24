@@ -11,6 +11,9 @@ const de: TextMap = {
   copy_to_clipboard: "In die Zwischenablage kopieren",
   copied_to_clipboard: "In die Zwischenablage kopiert!",
   connect_with: "Verbinden mit Hilfe von",
+  loading: "Laden...",
+  something_went_wrong: "Etwas ist schief gelaufen",
+  no_supported_wallets: "Es gibt noch keine unterstützten Geldbörsen",
 };
 
 export default de;

@@ -34,11 +34,10 @@ interface ModalProps {
 
 function Modal(props: ModalProps) {
   const android = isAndroid();
-  const whitelist =
-    props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
-      ? props.qrcodeModalOptions.mobileLinks
-      : undefined;
   const mobile = isMobile();
+  const whitelist = mobile ?
+    (props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks ? props.qrcodeModalOptions.mobileLinks : undefined) :
+    (props.qrcodeModalOptions && props.qrcodeModalOptions.desktopLinks ? props.qrcodeModalOptions.desktopLinks : undefined);
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   const displayProps = {
     mobile,
@@ -50,7 +49,7 @@ function Modal(props: ModalProps) {
   const [singleLinkHref, setSingleLinkHref] = React.useState("");
   const [hasSingleLink, setHasSingleLink] = React.useState(false);
   const [links, setLinks] = React.useState<IMobileRegistryEntry[]>([]);
-  const [error, setError] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   const getLinksIfNeeded = () => {
     if (links.length > 0) {
@@ -58,14 +57,14 @@ function Modal(props: ModalProps) {
     }
 
     React.useEffect(() => {
-      const initMobileLinks = async () => {
+      const initLinks = async () => {
         if (android) return;
         try {
           const url = getWalletRegistryUrl();
           const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
           const platform = mobile ? "mobile" : "desktop";
           const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
-          setError(false);
+          setErrorMessage(!_links.length ? props.text.no_supported_wallets : "");
           setLinks(_links);
           const hasSingleLink = _links.length === 1;
           if (hasSingleLink) {
@@ -73,11 +72,11 @@ function Modal(props: ModalProps) {
           }
           setHasSingleLink(hasSingleLink);
         } catch (e) {
-          setError(true);
+          setErrorMessage(props.text.something_went_wrong);
           console.error(e); // eslint-disable-line no-console
         }
       };
-      initMobileLinks();
+      initLinks();
     });
   };
 
@@ -128,7 +127,7 @@ function Modal(props: ModalProps) {
           {displayQRCode ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
-            <LinkDisplay {...displayProps} links={links} error={error} />
+            <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} />
           )}
         </div>
       </div>

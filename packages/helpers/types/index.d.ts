@@ -378,6 +378,7 @@ declare module "@walletconnect/types" {
 
   export interface IQRCodeModalOptions {
     mobileLinks?: string[];
+    desktopLinks?: string[];
   }
 
   export interface IMobileRegistryEntry {
