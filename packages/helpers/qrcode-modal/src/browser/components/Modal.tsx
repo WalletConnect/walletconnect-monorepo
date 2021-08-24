@@ -73,6 +73,7 @@ function Modal(props: ModalProps) {
           const hasSingleLink = _links.length === 1;
           if (hasSingleLink) {
             setSingleLinkHref(formatIOSMobile(props.uri, _links[0]));
+            setDisplayQRCode(true);
           }
           setHasSingleLink(hasSingleLink);
         } catch (e) {
