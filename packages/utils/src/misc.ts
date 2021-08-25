@@ -1,7 +1,8 @@
 import * as qs from "query-string";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
-import { RelayClientMetadata, AppMetadata } from "@walletconnect/types";
+import { Logger, RelayClientMetadata, AppMetadata } from "@walletconnect/types";
+import { getLoggerContext } from "@walletconnect/logger";
 
 // -- env -----------------------------------------------//
 
@@ -71,6 +72,13 @@ export function assertType(obj: any, key: string, type: string) {
   if (!obj[key] || typeof obj[key] !== type) {
     throw new Error(`Missing or invalid "${key}" param`);
   }
+}
+
+// -- context ----------------------------------------------- //
+
+export function getNestedContext(logger: Logger, length = 2) {
+  const context = getLoggerContext(logger).split("/");
+  return context.slice(context.length - length, context.length).join(" ");
 }
 
 // -- array ------------------------------------------------- //

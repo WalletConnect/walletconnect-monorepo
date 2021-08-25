@@ -3,7 +3,7 @@ import { Logger } from "pino";
 
 import { IClient } from "./client";
 import { Reason } from "./misc";
-import { RelayerTypes } from "./relayer";
+import { IRelayer, RelayerTypes } from "./relayer";
 
 export interface SubscriptionParams extends RelayerTypes.SubscribeOptions {
   id: string;
@@ -28,7 +28,7 @@ export abstract class ISubscription extends IEvents {
 
   public abstract context: string;
 
-  constructor(public client: IClient, public logger: Logger) {
+  constructor(public client: IClient, public logger: Logger, public relayer: IRelayer) {
     super();
   }
 

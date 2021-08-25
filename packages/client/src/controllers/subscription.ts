@@ -7,8 +7,8 @@ import {
   SubscriptionEvent,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { ERROR, getNestedContext } from "@walletconnect/utils";
+import { generateChildLogger } from "@walletconnect/logger";
 
 import {
   CLIENT_BEAT_INTERVAL,
@@ -18,6 +18,7 @@ import {
   SUBSCRIPTION_DEFAULT_TTL,
   SUBSCRIPTION_EVENTS,
 } from "../constants";
+import { Relayer } from "./relayer";
 
 export class Subscription extends ISubscription {
   public subscriptions = new Map<string, SubscriptionParams>();
@@ -30,9 +31,10 @@ export class Subscription extends ISubscription {
 
   private cached: SubscriptionParams[] = [];
 
-  constructor(public client: IClient, public logger: Logger) {
-    super(client, logger);
+  constructor(public client: IClient, public logger: Logger, public relayer: Relayer) {
+    super(client, logger, relayer);
     this.logger = generateChildLogger(logger, this.context);
+    this.relayer = relayer;
     this.registerEventListeners();
   }
 
@@ -77,7 +79,7 @@ export class Subscription extends ISubscription {
     this.logger.trace({ type: "method", method: "delete", id, reason });
     const subscription = await this.getSubscription(id);
     this.subscriptions.delete(id);
-    await this.client.relayer.unsubscribe(subscription.topic, subscription.id, {
+    await this.relayer.unsubscribe(subscription.topic, subscription.id, {
       relay: subscription.relay,
     });
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
@@ -105,10 +107,7 @@ export class Subscription extends ISubscription {
   // ---------- Private ----------------------------------------------- //
 
   private getSubscriptionContext() {
-    return this.client.storage
-      .getStorageKeyName(this.logger)
-      .split(":")
-      .join(":");
+    return getNestedContext(this.logger);
   }
 
   private async getSubscription(id: string): Promise<SubscriptionParams> {
@@ -167,13 +166,15 @@ export class Subscription extends ISubscription {
   }
 
   private async persist() {
-    await this.client.storage.setRelayerSubscriptions(this.logger, this.values);
+    await this.client.storage.setRelayerSubscriptions(this.getSubscriptionContext(), this.values);
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getRelayerSubscriptions(this.logger);
+      const persisted = await this.client.storage.getRelayerSubscriptions(
+        this.getSubscriptionContext(),
+      );
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
@@ -230,8 +231,8 @@ export class Subscription extends ISubscription {
 
   private registerEventListeners(): void {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
-    this.client.relayer.on(RELAYER_EVENTS.connect, () => this.enable());
-    this.client.relayer.on(RELAYER_EVENTS.disconnect, () => this.disable());
+    this.relayer.on(RELAYER_EVENTS.connect, () => this.enable());
+    this.relayer.on(RELAYER_EVENTS.disconnect, () => this.disable());
     this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created) => {
       const eventName = SUBSCRIPTION_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);

@@ -1,10 +1,11 @@
-import { IKeyValueStorage } from "keyvaluestorage";
-import { IClient, CryptoTypes, ICrypto, IKeyChain } from "@walletconnect/types";
+import { Logger } from "pino";
 import * as encoding from "@walletconnect/encoding";
+import { generateChildLogger } from "@walletconnect/logger";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import { IClient, CryptoTypes, ICrypto, IKeyChain } from "@walletconnect/types";
 import {
   ERROR,
-  mapToObj,
-  objToMap,
   generateKeyPair,
   deriveSharedKey,
   encrypt,
@@ -12,11 +13,7 @@ import {
   sha256,
 } from "@walletconnect/utils";
 
-import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
-import { Logger } from "pino";
-import { generateChildLogger } from "@walletconnect/logger";
+import { CRYPTO_CONTEXT, CRYPTO_KEYCHAIN_NESTED_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
@@ -52,15 +49,19 @@ export class KeyChain implements IKeyChain {
 
   // ---------- Private ----------------------------------------------- //
 
+  private getKeyChainContext() {
+    return CRYPTO_KEYCHAIN_NESTED_CONTEXT;
+  }
+
   private async restore() {
-    const keychain = await this.client.storage.getKeyChain(this.logger);
+    const keychain = await this.client.storage.getKeyChain(this.getKeyChainContext());
     if (typeof keychain !== "undefined") {
       this.keychain = keychain;
     }
   }
 
   private async persist() {
-    await this.client.storage.setKeyChain(this.logger, this.keychain);
+    await this.client.storage.setKeyChain(this.getKeyChainContext(), this.keychain);
   }
 }
 

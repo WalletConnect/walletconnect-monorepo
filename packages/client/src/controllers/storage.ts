@@ -26,64 +26,68 @@ export class Storage implements IStorage {
     return `${this.client.protocol}@${this.client.version}:${this.client.context}:${this.version}`;
   }
 
-  public async setKeyChain(logger: Logger, keychain: Map<string, string>): Promise<void> {
-    const key = this.getStorageKey(logger);
+  public async setKeyChain(context: string, keychain: Map<string, string>): Promise<void> {
+    const key = this.getStorageKey(context);
     await this.keyValueStorage.setItem<Record<string, string>>(key, mapToObj(keychain));
   }
 
-  public async getKeyChain(logger: Logger): Promise<Map<string, string> | undefined> {
-    const key = this.getStorageKey(logger);
+  public async getKeyChain(context: string): Promise<Map<string, string> | undefined> {
+    const key = this.getStorageKey(context);
     const keychain = await this.keyValueStorage.getItem<Record<string, string>>(key);
     return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
 
   public async setSequenceState<Sequence = any>(
-    logger: Logger,
+    context: string,
     sequences: Sequence[],
   ): Promise<void> {
-    const key = this.getStorageKey(logger);
+    const key = this.getStorageKey(context);
     await this.keyValueStorage.setItem<Sequence[]>(key, sequences);
   }
 
-  public async getSequenceState<Sequence = any>(logger: Logger): Promise<Sequence[] | undefined> {
-    const key = this.getStorageKey(logger);
+  public async getSequenceState<Sequence = any>(context: string): Promise<Sequence[] | undefined> {
+    const key = this.getStorageKey(context);
     const sequences = await this.keyValueStorage.getItem<Sequence[]>(key);
     return sequences;
   }
 
-  public async setJsonRpcRecords(logger: Logger, records: JsonRpcRecord[]): Promise<void> {
-    const key = this.getStorageKey(logger);
+  public async setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void> {
+    const key = this.getStorageKey(context);
     await this.keyValueStorage.setItem<JsonRpcRecord[]>(key, records);
   }
 
-  public async getJsonRpcRecords(logger: Logger): Promise<JsonRpcRecord[] | undefined> {
-    const key = this.getStorageKey(logger);
+  public async getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined> {
+    const key = this.getStorageKey(context);
     const records = await this.keyValueStorage.getItem<JsonRpcRecord[]>(key);
     return records;
   }
 
   public async setRelayerSubscriptions(
-    logger: Logger,
+    context: string,
     subscriptions: SubscriptionParams[],
   ): Promise<void> {
-    const key = this.getStorageKey(logger);
+    const key = this.getStorageKey(context);
     await this.keyValueStorage.setItem<SubscriptionParams[]>(key, subscriptions);
   }
 
-  public async getRelayerSubscriptions(logger: Logger): Promise<SubscriptionParams[] | undefined> {
-    const key = this.getStorageKey(logger);
+  public async getRelayerSubscriptions(context: string): Promise<SubscriptionParams[] | undefined> {
+    const key = this.getStorageKey(context);
     const subscriptions = await this.keyValueStorage.getItem<SubscriptionParams[]>(key);
     return subscriptions;
   }
 
-  public getStorageKeyName(logger: Logger): string {
-    const context = getLoggerContext(logger).split("/");
-    const name = context.slice(context.length - length, context.length).join(":");
+  public getStorageKey(context: string): string {
+    const name = this.getStorageKeyName(context);
     if (!this.isValidStorageKeyName(name)) {
-      const error = ERROR.MISSING_OR_INVALID.format({ name: "key name" });
+      const error = ERROR.INVALID_STORAGE_KEY_NAME.format({ name });
       throw new Error(error.message);
     }
-    return name;
+    const key = this.prefix + "//" + name;
+    return key;
+  }
+
+  public getStorageKeyName(context: string): string {
+    return context.split(" ").join(":");
   }
 
   public isValidStorageKeyName(name: string): boolean {
@@ -94,9 +98,4 @@ export class Storage implements IStorage {
   }
 
   // ---------- Private ----------------------------------------------- //
-
-  private getStorageKey(logger: Logger): string {
-    const key = this.prefix + "//" + this.getStorageKeyName(logger);
-    return key;
-  }
 }

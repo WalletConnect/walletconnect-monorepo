@@ -36,7 +36,7 @@ export class Relayer extends IRelayer {
   constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
     super(client, logger);
     this.logger = generateChildLogger(logger, this.context);
-    this.subscriptions = new Subscription(client, this.logger);
+    this.subscriptions = new Subscription(client, this.logger, this);
     this.provider = this.setProvider(provider);
     this.registerEventListeners();
   }

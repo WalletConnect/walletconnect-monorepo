@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { IClient, IState, Reason, StateEvent } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
+import { ERROR, getNestedContext } from "@walletconnect/utils";
 
 import { STATE_EVENTS } from "../constants";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger } from "@walletconnect/logger";
 
 export class State<Sequence = any> extends IState<Sequence> {
   public sequences = new Map<string, Sequence>();
@@ -105,10 +105,7 @@ export class State<Sequence = any> extends IState<Sequence> {
   // ---------- Private ----------------------------------------------- //
 
   private getStateContext() {
-    return this.client.storage
-      .getStorageKeyName(this.logger)
-      .split(":")
-      .join(":");
+    return getNestedContext(this.logger);
   }
 
   private async getState(topic: string): Promise<Sequence> {
@@ -126,13 +123,13 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   private async persist() {
-    await this.client.storage.setSequenceState(this.logger, this.values);
+    await this.client.storage.setSequenceState(this.getStateContext(), this.values);
     this.events.emit(STATE_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getSequenceState(this.logger);
+      const persisted = await this.client.storage.getSequenceState(this.getStateContext());
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.sequences.size) {

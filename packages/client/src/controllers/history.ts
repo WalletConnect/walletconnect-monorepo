@@ -1,14 +1,14 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { IClient, IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
+import { ERROR, getNestedContext } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
   isJsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger } from "@walletconnect/logger";
 
 import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
 
@@ -151,10 +151,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   // ---------- Private ----------------------------------------------- //
 
   private getHistoryContext() {
-    return this.client.storage
-      .getStorageKeyName(this.logger)
-      .split(":")
-      .join(":");
+    return getNestedContext(this.logger);
   }
 
   private async getRecord(id: number): Promise<JsonRpcRecord> {
@@ -172,13 +169,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private async persist() {
-    await this.client.storage.setJsonRpcRecords(this.logger, this.values);
+    await this.client.storage.setJsonRpcRecords(this.getHistoryContext(), this.values);
     this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getJsonRpcRecords(this.logger);
+      const persisted = await this.client.storage.getJsonRpcRecords(this.getHistoryContext());
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {
