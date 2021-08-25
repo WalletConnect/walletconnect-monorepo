@@ -150,19 +150,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   // ---------- Private ----------------------------------------------- //
 
-  private getNestedContext(length: number) {
-    const nestedContext = getLoggerContext(this.logger).split("/");
-    return nestedContext.slice(nestedContext.length - length, nestedContext.length);
-  }
-
   private getHistoryContext() {
-    return this.getNestedContext(2).join(" ");
-  }
-
-  private getStorageKey() {
-    const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    const recordContext = this.getNestedContext(2).join(":");
-    return `${storageKeyPrefix}//${recordContext}`;
+    return this.client.storage
+      .getStorageKeyName(this.logger)
+      .split(":")
+      .join(":");
   }
 
   private async getRecord(id: number): Promise<JsonRpcRecord> {
@@ -180,13 +172,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private async persist() {
-    await this.client.storage.setItem<JsonRpcRecord[]>(this.getStorageKey(), this.values);
+    await this.client.storage.setJsonRpcRecords(this.logger, this.values);
     this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getItem<JsonRpcRecord[]>(this.getStorageKey());
+      const persisted = await this.client.storage.getJsonRpcRecords(this.logger);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {

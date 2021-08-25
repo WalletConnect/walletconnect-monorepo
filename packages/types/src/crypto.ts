@@ -1,4 +1,5 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+import { Logger } from "pino";
 import { IClient } from "./client";
 
 export declare namespace CryptoTypes {
@@ -28,6 +29,12 @@ export declare namespace CryptoTypes {
 }
 
 export abstract class IKeyChain {
+  public abstract keychain: Map<string, string>;
+
+  public abstract context: string;
+
+  constructor(public client: IClient, public logger: Logger) {}
+
   public abstract init(): Promise<void>;
 
   public abstract has(tag: string, opts?: any): Promise<boolean>;
@@ -39,7 +46,7 @@ export abstract class IKeyChain {
 export abstract class ICrypto {
   public abstract context: string;
 
-  constructor(public client: IClient, public keychain: IKeyChain) {}
+  constructor(public client: IClient, public logger: Logger, public keychain: IKeyChain) {}
 
   public abstract init(): Promise<void>;
 

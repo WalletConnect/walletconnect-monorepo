@@ -11,6 +11,7 @@ export const ERROR_TYPE = enumify({
   MISSING_DECRYPT_PARAMS: "MISSING_DECRYPT_PARAMS",
   INVALID_UPDATE_REQUEST: "INVALID_UPDATE_REQUEST",
   INVALID_UPGRADE_REQUEST: "INVALID_UPGRADE_REQUEST",
+  INVALID_STORAGE_KEY_NAME: "INVALID_STORAGE_KEY_NAME",
   RECORD_ALREADY_EXISTS: "RECORD_ALREADY_EXISTS",
   RESTORE_WILL_OVERRIDE: "RESTORE_WILL_OVERRIDE",
   NO_MATCHING_ID: "NO_MATCHING_ID",
@@ -133,6 +134,15 @@ export const ERROR: Record<ErrorType, Error> = {
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.INVALID_UPGRADE_REQUEST].code,
       message: ERROR[ERROR_TYPE.INVALID_UPGRADE_REQUEST].stringify(params),
+    }),
+  },
+  [ERROR_TYPE.INVALID_STORAGE_KEY_NAME]: {
+    type: ERROR_TYPE.INVALID_STORAGE_KEY_NAME,
+    code: 1005,
+    stringify: (params?: any) => `Invalid storage key name: ${params?.name || defaultParams.name}`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.INVALID_STORAGE_KEY_NAME].code,
+      message: ERROR[ERROR_TYPE.INVALID_STORAGE_KEY_NAME].stringify(params),
     }),
   },
   [ERROR_TYPE.RECORD_ALREADY_EXISTS]: {

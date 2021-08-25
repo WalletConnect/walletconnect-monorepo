@@ -7,6 +7,7 @@ import { ISession, SessionTypes } from "./session";
 import { IPairing } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
+import { IStorage } from "./storage";
 
 export interface ClientOptions {
   name?: string;
@@ -27,7 +28,7 @@ export abstract class IClient extends IEvents {
   public abstract crypto: ICrypto;
 
   public abstract relayer: IRelayer;
-  public abstract storage: IKeyValueStorage;
+  public abstract storage: IStorage;
 
   public abstract pairing: IPairing;
   public abstract session: ISession;

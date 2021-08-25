@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
-import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
+import KeyValueStorage from "keyvaluestorage";
 import {
   IClient,
   ClientOptions,
@@ -39,6 +39,7 @@ import {
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
 import { Crypto, KeyChain } from "./controllers/crypto";
+import { Storage } from "./controllers/storage";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -77,11 +78,15 @@ export class Client extends IClient {
     this.controller = opts?.controller || false;
     this.metadata = opts?.metadata || getAppMetadata();
 
+    this.logger = generateChildLogger(logger, this.context);
+
     const keyValueStorage =
       opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
-    this.logger = generateChildLogger(logger, this.context);
-    this.crypto = new Crypto(this, opts?.keychain || new KeyChain(this, storage));
+    const storage = new Storage(this, keyValueStorage);
+
+    const keychain = opts?.keychain || new KeyChain(this, this.logger);
+    this.crypto = new Crypto(this, this.logger, keychain);
 
     this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
     this.storage = storage;

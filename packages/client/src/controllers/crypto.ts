@@ -15,14 +15,17 @@ import {
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { Logger } from "pino";
+import { generateChildLogger } from "@walletconnect/logger";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
 
   public context = KEYCHAIN_CONTEXT;
 
-  constructor(public client: IClient, public storage: IKeyValueStorage) {
+  constructor(public client: IClient, public logger: Logger) {
     this.client = client;
+    this.logger = generateChildLogger(logger, this.context);
   }
 
   public async init(): Promise<void> {
@@ -49,32 +52,25 @@ export class KeyChain implements IKeyChain {
 
   // ---------- Private ----------------------------------------------- //
 
-  private getStorageKey() {
-    const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    return `${storageKeyPrefix}//${this.context}`;
-  }
-
   private async restore() {
-    const persisted = await this.storage.getItem<Record<string, string>>(this.getStorageKey());
-    if (typeof persisted !== "undefined") {
-      this.keychain = objToMap(persisted);
+    const keychain = await this.client.storage.getKeyChain(this.logger);
+    if (typeof keychain !== "undefined") {
+      this.keychain = keychain;
     }
   }
 
   private async persist() {
-    await this.storage.setItem<Record<string, string>>(
-      this.getStorageKey(),
-      mapToObj(this.keychain),
-    );
+    await this.client.storage.setKeyChain(this.logger, this.keychain);
   }
 }
 
 export class Crypto implements ICrypto {
   public context: string = CRYPTO_CONTEXT;
 
-  constructor(public client: IClient, public keychain: IKeyChain) {
+  constructor(public client: IClient, public logger: Logger, public keychain: IKeyChain) {
     this.client = client;
     this.keychain = keychain;
+    this.logger = generateChildLogger(logger, this.context);
   }
 
   public async init(): Promise<void> {

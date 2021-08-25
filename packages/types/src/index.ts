@@ -8,4 +8,5 @@ export * from "./relayer";
 export * from "./sequence";
 export * from "./session";
 export * from "./state";
+export * from "./storage";
 export * from "./subscription";

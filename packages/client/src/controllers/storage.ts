@@ -1,43 +1,21 @@
-import { IClient } from "@walletconnect/types";
-import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
+import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
+import { getLoggerContext } from "@walletconnect/logger";
+import {
+  IClient,
+  IStorage,
+  JsonRpcRecord,
+  StorageKeyMap,
+  SubscriptionParams,
+} from "@walletconnect/types";
+import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
 
-export type KeyMap = Record<string, string | Record<string, string>>;
+import { STORAGE_KEYS } from "../constants";
 
-export function validateKey(label: string, map: KeyMap) {
-  const names = labe.split(":");
-  let key: string | undefined;
-}
-
-// refactor storage keys to always include a "scope" and a "name"
-// schema:
-// key = scope + ":" + name
-// example
-// key = "crypto" + ":" + "keychain"
-export const STORAGE_KEYS = {
-  crypto: {
-    keychain: "crypto:keychain",
-  },
-  session: {
-    pending: "session:pending",
-    settled: "session:settled",
-    history: "session:history",
-  },
-  pairing: {
-    pending: "pairing:pending",
-    settled: "pairing:settled",
-    history: "pairing:history",
-  },
-  relayer: {
-    history: "relayer:history",
-    subscription: "relayer:subscription",
-  },
-};
-
-export class Storage {
+export class Storage implements IStorage {
   public version = "0.1";
 
-  private keyMap = STORAGE_KEYS;
+  public keyMap: StorageKeyMap = STORAGE_KEYS;
 
   constructor(public client: IClient, public keyValueStorage: IKeyValueStorage) {
     this.client = client;
@@ -48,33 +26,77 @@ export class Storage {
     return `${this.client.protocol}@${this.client.version}:${this.client.context}:${this.version}`;
   }
 
-  public async setKeyChain(keychain: Map<string, string>) {
-    await this.keyValueStorage.setItem<Record<string, string>>(
-      this.getStorageKey(STORAGE_KEYS.keychain),
-      mapToObj(keychain),
-    );
+  public async setKeyChain(logger: Logger, keychain: Map<string, string>): Promise<void> {
+    const key = this.getStorageKey(logger);
+    await this.keyValueStorage.setItem<Record<string, string>>(key, mapToObj(keychain));
   }
 
-  public async getKeyChain(): Promise<Map<string, string> | undefined> {
-    const persisted = await this.keyValueStorage.getItem<Record<string, string>>(
-      this.getStorageKey(STORAGE_KEYS.keychain),
-    );
-    return typeof persisted !== "undefined" ? objToMap(persisted) : undefined;
+  public async getKeyChain(logger: Logger): Promise<Map<string, string> | undefined> {
+    const key = this.getStorageKey(logger);
+    const keychain = await this.keyValueStorage.getItem<Record<string, string>>(key);
+    return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
 
-  public async getSequences(context: string);
+  public async setSequenceState<Sequence = any>(
+    logger: Logger,
+    sequences: Sequence[],
+  ): Promise<void> {
+    const key = this.getStorageKey(logger);
+    await this.keyValueStorage.setItem<Sequence[]>(key, sequences);
+  }
 
-  private getStorageKey(label: string): string {
-    const names = label.split(":");
-    let key: string;
-    if (names.length === 1) {
-      if (typeof name === "undefined") {
-        const error = ERROR.MISSING_OR_INVALID.format({ name: "label" });
-        throw new Error(error.message);
-      }
+  public async getSequenceState<Sequence = any>(logger: Logger): Promise<Sequence[] | undefined> {
+    const key = this.getStorageKey(logger);
+    const sequences = await this.keyValueStorage.getItem<Sequence[]>(key);
+    return sequences;
+  }
+
+  public async setJsonRpcRecords(logger: Logger, records: JsonRpcRecord[]): Promise<void> {
+    const key = this.getStorageKey(logger);
+    await this.keyValueStorage.setItem<JsonRpcRecord[]>(key, records);
+  }
+
+  public async getJsonRpcRecords(logger: Logger): Promise<JsonRpcRecord[] | undefined> {
+    const key = this.getStorageKey(logger);
+    const records = await this.keyValueStorage.getItem<JsonRpcRecord[]>(key);
+    return records;
+  }
+
+  public async setRelayerSubscriptions(
+    logger: Logger,
+    subscriptions: SubscriptionParams[],
+  ): Promise<void> {
+    const key = this.getStorageKey(logger);
+    await this.keyValueStorage.setItem<SubscriptionParams[]>(key, subscriptions);
+  }
+
+  public async getRelayerSubscriptions(logger: Logger): Promise<SubscriptionParams[] | undefined> {
+    const key = this.getStorageKey(logger);
+    const subscriptions = await this.keyValueStorage.getItem<SubscriptionParams[]>(key);
+    return subscriptions;
+  }
+
+  public getStorageKeyName(logger: Logger): string {
+    const context = getLoggerContext(logger).split("/");
+    const name = context.slice(context.length - length, context.length).join(":");
+    if (!this.isValidStorageKeyName(name)) {
+      const error = ERROR.MISSING_OR_INVALID.format({ name: "key name" });
+      throw new Error(error.message);
     }
-    const key = this.prefix + "//" + name;
+    return name;
+  }
 
+  public isValidStorageKeyName(name: string): boolean {
+    const validKeys = Object.keys(this.keyMap)
+      .map(key => Object.values(this.keyMap[key]))
+      .flat();
+    return validKeys.includes(name.toLowerCase());
+  }
+
+  // ---------- Private ----------------------------------------------- //
+
+  private getStorageKey(logger: Logger): string {
+    const key = this.prefix + "//" + this.getStorageKeyName(logger);
     return key;
   }
 }

@@ -104,19 +104,11 @@ export class State<Sequence = any> extends IState<Sequence> {
 
   // ---------- Private ----------------------------------------------- //
 
-  private getNestedContext(length: number) {
-    const nestedContext = getLoggerContext(this.logger).split("/");
-    return nestedContext.slice(nestedContext.length - length, nestedContext.length);
-  }
-
   private getStateContext() {
-    return this.getNestedContext(2).join(" ");
-  }
-
-  private getStorageKey() {
-    const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    const sequenceContext = this.getNestedContext(2).join(":");
-    return `${storageKeyPrefix}//${sequenceContext}`;
+    return this.client.storage
+      .getStorageKeyName(this.logger)
+      .split(":")
+      .join(":");
   }
 
   private async getState(topic: string): Promise<Sequence> {
@@ -134,13 +126,13 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   private async persist() {
-    await this.client.storage.setItem<Sequence[]>(this.getStorageKey(), this.values);
+    await this.client.storage.setSequenceState(this.logger, this.values);
     this.events.emit(STATE_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getItem<Sequence[]>(this.getStorageKey());
+      const persisted = await this.client.storage.getSequenceState(this.logger);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.sequences.size) {

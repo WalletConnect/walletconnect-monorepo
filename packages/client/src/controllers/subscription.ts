@@ -104,19 +104,11 @@ export class Subscription extends ISubscription {
 
   // ---------- Private ----------------------------------------------- //
 
-  private getNestedContext(length: number) {
-    const nestedContext = getLoggerContext(this.logger).split("/");
-    return nestedContext.slice(nestedContext.length - length, nestedContext.length);
-  }
-
   private getSubscriptionContext() {
-    return this.getNestedContext(2).join(" ");
-  }
-
-  private getStorageKey() {
-    const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    const recordContext = this.getNestedContext(2).join(":");
-    return `${storageKeyPrefix}//${recordContext}`;
+    return this.client.storage
+      .getStorageKeyName(this.logger)
+      .split(":")
+      .join(":");
   }
 
   private async getSubscription(id: string): Promise<SubscriptionParams> {
@@ -175,15 +167,13 @@ export class Subscription extends ISubscription {
   }
 
   private async persist() {
-    await this.client.storage.setItem<SubscriptionParams[]>(this.getStorageKey(), this.values);
+    await this.client.storage.setRelayerSubscriptions(this.logger, this.values);
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getItem<SubscriptionParams[]>(
-        this.getStorageKey(),
-      );
+      const persisted = await this.client.storage.getRelayerSubscriptions(this.logger);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
