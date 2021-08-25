@@ -130,6 +130,7 @@ export class Pairing extends IPairing {
     };
     return state;
   }
+
   public async mergeUpgrade(topic: string, upgrade: PairingTypes.Upgrade) {
     const settled = await this.settled.get(topic);
     const permissions = {

@@ -28,13 +28,16 @@ export class KeyChain implements IKeyChain {
   public async init(): Promise<void> {
     await this.restore();
   }
+
   public async has(tag: string, opts?: any): Promise<boolean> {
     return this.keychain.has(tag);
   }
+
   public async set(tag: string, key: string, opts?: any): Promise<void> {
     this.keychain.set(tag, key);
     await this.persist();
   }
+
   public async get(tag: string, opts?: any): Promise<string> {
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
@@ -42,6 +45,7 @@ export class KeyChain implements IKeyChain {
     }
     return key;
   }
+
   public async del(tag: string, opts?: any): Promise<void> {
     this.keychain.delete(tag);
     await this.persist();

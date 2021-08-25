@@ -136,6 +136,7 @@ export class Session extends ISession {
     };
     return state;
   }
+
   public async mergeUpgrade(topic: string, upgrade: SessionTypes.Upgrade) {
     const settled = await this.settled.get(topic);
     const permissions = {
@@ -161,6 +162,7 @@ export class Session extends ISession {
     };
     return permissions;
   }
+
   public async validateRespond(params?: SessionTypes.RespondParams) {
     if (typeof params === "undefined") {
       const error = ERROR.MISSING_OR_INVALID.format({ name: "respond params" });
