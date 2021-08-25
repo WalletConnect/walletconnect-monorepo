@@ -10,10 +10,10 @@ import {
 } from "@walletconnect/types";
 import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
 
-import { STORAGE_KEYS } from "../constants";
+import { STORAGE_KEYS, STORAGE_VERSION } from "../constants";
 
 export class Storage implements IStorage {
-  public version = "0.1";
+  public version = STORAGE_VERSION;
 
   public keyMap: StorageKeyMap = STORAGE_KEYS;
 
