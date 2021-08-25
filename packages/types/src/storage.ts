@@ -1,3 +1,4 @@
+import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
 
 import { IClient } from "./client";
@@ -7,12 +8,19 @@ import { SubscriptionParams } from "./subscription";
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
 export abstract class IStorage {
+  public abstract context: string;
+
   public abstract version: string;
+
   public abstract keyMap: StorageKeyMap;
 
   public abstract prefix: string;
 
-  constructor(public client: IClient, public keyValueStorage: IKeyValueStorage) {
+  constructor(
+    public client: IClient,
+    public logger: Logger,
+    public keyValueStorage: IKeyValueStorage,
+  ) {
     this.client = client;
     this.keyValueStorage = keyValueStorage;
   }

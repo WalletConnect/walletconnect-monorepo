@@ -1,6 +1,6 @@
 import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
-import { getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import {
   IClient,
   IStorage,
@@ -10,15 +10,22 @@ import {
 } from "@walletconnect/types";
 import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
 
-import { STORAGE_KEYS, STORAGE_VERSION } from "../constants";
+import { STORAGE_CONTEXT, STORAGE_KEYS, STORAGE_VERSION } from "../constants";
 
 export class Storage implements IStorage {
+  public context = STORAGE_CONTEXT;
+
   public version = STORAGE_VERSION;
 
   public keyMap: StorageKeyMap = STORAGE_KEYS;
 
-  constructor(public client: IClient, public keyValueStorage: IKeyValueStorage) {
+  constructor(
+    public client: IClient,
+    public logger: Logger,
+    public keyValueStorage: IKeyValueStorage,
+  ) {
     this.client = client;
+    this.logger = generateChildLogger(logger, this.context);
     this.keyValueStorage = keyValueStorage;
   }
 

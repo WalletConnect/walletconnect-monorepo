@@ -83,7 +83,7 @@ export class Client extends IClient {
     const keyValueStorage =
       opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
-    const storage = new Storage(this, keyValueStorage);
+    const storage = new Storage(this, this.logger, keyValueStorage);
 
     const keychain = opts?.keychain || new KeyChain(this, this.logger);
     this.crypto = new Crypto(this, this.logger, keychain);
