@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/types",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Typescript Types for WalletConnect",
   "scripts": {},
   "keywords": [
