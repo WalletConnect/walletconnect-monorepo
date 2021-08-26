@@ -53,7 +53,7 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 }
 
 .walletconnect-modal__header p {
-  color: #ffffff;
+  color: rgba(60, 66, 82, 0.6);
   font-size: 20px;
   font-weight: 600;
   margin: 0;
@@ -65,8 +65,8 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
 
 .walletconnect-modal__close__wrapper {
   position: absolute;
-  top: 0px;
-  right: 0px;
+  top: 10px;
+  right: 10px;
   z-index: 10000;
   background: white;
   border-radius: 26px;
@@ -241,8 +241,6 @@ export const WALLETCONNECT_STYLE_SHEET = `:root {
   height: 26px;
   left: 0;
   justify-content: space-between;
-  position: absolute;
-  top: -42px;
   width: 100%;
 }
 
