@@ -22,13 +22,19 @@ export declare namespace SubscriptionEvent {
 export abstract class ISubscription extends IEvents {
   public abstract subscriptions = new Map<string, SubscriptionParams>();
 
+  public abstract topicMap = new Map<string, string[]>();
+
   public abstract readonly length: number;
+
+  public abstract readonly ids: string[];
 
   public abstract readonly values: SubscriptionParams[];
 
+  public abstract readonly topics: string[];
+
   public abstract context: string;
 
-  constructor(public client: IClient, public logger: Logger, public relayer: IRelayer) {
+  constructor(public client: IClient, public logger: Logger) {
     super();
   }
 
@@ -39,4 +45,10 @@ export abstract class ISubscription extends IEvents {
   public abstract get(id: string): Promise<SubscriptionParams>;
 
   public abstract delete(id: string, reason: Reason): Promise<void>;
+
+  public abstract exists(id: string): Promise<boolean>;
+
+  public abstract enable(): Promise<void>;
+
+  public abstract disable(): Promise<void>;
 }

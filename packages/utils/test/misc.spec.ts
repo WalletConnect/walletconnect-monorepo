@@ -22,8 +22,8 @@ const EXPECTED_RPC_URL_2 =
 describe("Misc", () => {
   it("formatRpcRelayUrl", () => {
     expect(formatRelayRpcUrl(PROTOCOL, VERSION, TEST_DEFAULT_RPC_URL)).to.eql(EXPECTED_RPC_URL_1);
-    expect(
-      formatRelayRpcUrl(PROTOCOL, VERSION, TEST_DEFAULT_RPC_URL + `?apiKey=${API_KEY}`),
-    ).to.eql(EXPECTED_RPC_URL_2);
+    expect(formatRelayRpcUrl(PROTOCOL, VERSION, TEST_DEFAULT_RPC_URL, API_KEY)).to.eql(
+      EXPECTED_RPC_URL_2,
+    );
   });
 });

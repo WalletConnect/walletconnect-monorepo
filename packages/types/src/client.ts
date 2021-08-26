@@ -11,6 +11,7 @@ import { IStorage } from "./storage";
 
 export interface ClientOptions {
   name?: string;
+  apiKey?: string;
   controller?: boolean;
   metadata?: AppMetadata;
   logger?: string | Logger;
@@ -37,6 +38,8 @@ export abstract class IClient extends IEvents {
 
   public abstract readonly controller: boolean;
   public abstract metadata: AppMetadata | undefined;
+
+  public abstract apiKey: string | undefined;
 
   constructor(opts?: ClientOptions) {
     super();

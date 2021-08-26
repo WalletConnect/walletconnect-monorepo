@@ -13,15 +13,15 @@ import { generateChildLogger } from "@walletconnect/logger";
 import {
   CLIENT_BEAT_INTERVAL,
   CLIENT_EVENTS,
-  RELAYER_EVENTS,
   SUBSCRIPTION_CONTEXT,
   SUBSCRIPTION_DEFAULT_TTL,
   SUBSCRIPTION_EVENTS,
 } from "../constants";
-import { Relayer } from "./relayer";
 
 export class Subscription extends ISubscription {
   public subscriptions = new Map<string, SubscriptionParams>();
+
+  public topicMap = new Map<string, string[]>();
 
   public events = new EventEmitter();
 
@@ -31,10 +31,9 @@ export class Subscription extends ISubscription {
 
   private cached: SubscriptionParams[] = [];
 
-  constructor(public client: IClient, public logger: Logger, public relayer: Relayer) {
-    super(client, logger, relayer);
+  constructor(public client: IClient, public logger: Logger) {
+    super(client, logger);
     this.logger = generateChildLogger(logger, this.context);
-    this.relayer = relayer;
     this.registerEventListeners();
   }
 
@@ -47,7 +46,7 @@ export class Subscription extends ISubscription {
     return this.subscriptions.size;
   }
 
-  get topics(): string[] {
+  get ids(): string[] {
     return Array.from(this.subscriptions.keys());
   }
 
@@ -55,12 +54,16 @@ export class Subscription extends ISubscription {
     return Array.from(this.subscriptions.values());
   }
 
+  get topics(): string[] {
+    return Array.from(this.topicMap.keys());
+  }
+
   public async set(id: string, subscription: SubscriptionParams): Promise<void> {
     await this.isEnabled();
     if (this.subscriptions.has(id)) return;
     this.logger.debug(`Setting subscription`);
     this.logger.trace({ type: "method", method: "set", id, subscription });
-    await this.subscribeAndSet(id, subscription);
+    this.setSubscription(id, subscription);
     this.events.emit(SUBSCRIPTION_EVENTS.created, subscription);
   }
 
@@ -78,10 +81,8 @@ export class Subscription extends ISubscription {
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "delete", id, reason });
     const subscription = await this.getSubscription(id);
-    this.subscriptions.delete(id);
-    await this.relayer.unsubscribe(subscription.topic, subscription.id, {
-      relay: subscription.relay,
-    });
+    this.deleteSubscription(id, subscription);
+
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
       ...subscription,
       reason,
@@ -104,10 +105,30 @@ export class Subscription extends ISubscription {
     this.events.removeListener(event, listener);
   }
 
+  public async enable(): Promise<void> {
+    this.cached = [];
+    this.events.emit(SUBSCRIPTION_EVENTS.enabled);
+  }
+
+  public async disable(): Promise<void> {
+    if (!this.cached.length) {
+      this.cached = this.values;
+    }
+    this.resetTimeout();
+    this.events.emit(SUBSCRIPTION_EVENTS.disabled);
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private getSubscriptionContext() {
     return getNestedContext(this.logger);
+  }
+
+  private setSubscription(id: string, subscription: SubscriptionParams): void {
+    const expiry = subscription.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
+    this.subscriptions.set(id, { ...subscription, expiry });
+    this.setOnTopicMap(id, subscription);
+    this.setTimeout(id, expiry);
   }
 
   private async getSubscription(id: string): Promise<SubscriptionParams> {
@@ -124,10 +145,34 @@ export class Subscription extends ISubscription {
     return subscription;
   }
 
-  private async subscribeAndSet(id: string, subscription: SubscriptionParams): Promise<void> {
-    const expiry = subscription.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
-    this.subscriptions.set(id, { ...subscription, expiry });
-    this.setTimeout(id, expiry);
+  private deleteSubscription(id: string, subscription: SubscriptionParams): void {
+    this.subscriptions.delete(id);
+    this.deleteOnTopicMap(id, subscription);
+  }
+
+  private setOnTopicMap(id: string, subscription: SubscriptionParams): void {
+    if (this.topicMap.has(subscription.topic)) {
+      const ids = this.topicMap.get(subscription.topic);
+      if (typeof ids !== "undefined" && !ids.includes(id)) {
+        this.topicMap.set(subscription.topic, [...ids, id]);
+      }
+    } else {
+      this.topicMap.set(subscription.topic, [id]);
+    }
+  }
+
+  private deleteOnTopicMap(id: string, subscription: SubscriptionParams): void {
+    if (this.topicMap.has(subscription.topic)) {
+      const ids = this.topicMap.get(subscription.topic);
+      if (typeof ids !== "undefined" && ids.includes(id)) {
+        const newIds = ids.filter(x => x === id);
+        if (newIds.length) {
+          this.topicMap.set(subscription.topic, newIds);
+        } else {
+          this.topicMap.delete(subscription.topic);
+        }
+      }
+    }
   }
 
   private setTimeout(id: string, expiry: number) {
@@ -187,7 +232,7 @@ export class Subscription extends ISubscription {
       this.cached = persisted;
       await Promise.all(
         this.cached.map(async subscription => {
-          await this.subscribeAndSet(subscription.id, subscription);
+          this.setSubscription(subscription.id, subscription);
         }),
       );
       await this.enable();
@@ -203,7 +248,7 @@ export class Subscription extends ISubscription {
     await this.disable();
     await Promise.all(
       this.cached.map(async subscription => {
-        await this.subscribeAndSet(subscription.id, subscription);
+        this.setSubscription(subscription.id, subscription);
       }),
     );
     await this.enable();
@@ -216,23 +261,8 @@ export class Subscription extends ISubscription {
     });
   }
 
-  private async enable(): Promise<void> {
-    this.cached = [];
-    this.events.emit(SUBSCRIPTION_EVENTS.enabled);
-  }
-
-  private async disable(): Promise<void> {
-    if (!this.cached.length) {
-      this.cached = this.values;
-    }
-    this.resetTimeout();
-    this.events.emit(SUBSCRIPTION_EVENTS.disabled);
-  }
-
   private registerEventListeners(): void {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
-    this.relayer.on(RELAYER_EVENTS.connect, () => this.enable());
-    this.relayer.on(RELAYER_EVENTS.disconnect, () => this.disable());
     this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created) => {
       const eventName = SUBSCRIPTION_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);

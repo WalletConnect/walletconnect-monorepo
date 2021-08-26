@@ -6,6 +6,7 @@ import {
   SessionTypes,
   StateEvent,
   RelayerTypes,
+  Reason,
 } from "@walletconnect/types";
 import {
   generateRandomBytes32,
@@ -775,14 +776,6 @@ export class Engine extends IEngine {
     this.sequence.client.relayer.on(id, (payloadEvent: RelayerTypes.PayloadEvent) =>
       this.onPendingPayloadEvent(payloadEvent),
     );
-    this.sequence.client.relayer.subscriptions.on(
-      SUBSCRIPTION_EVENTS.deleted,
-      (deletedEvent: SubscriptionEvent.Deleted) =>
-        this.sequence.pending.delete(
-          topic,
-          ERROR.EXPIRED.format({ context: this.sequence.context }),
-        ),
-    );
   }
 
   private async onNewSettled(createdEvent: StateEvent.Created<SequenceTypes.Settled>) {
@@ -792,14 +785,6 @@ export class Engine extends IEngine {
     });
     this.sequence.client.relayer.on(id, (payloadEvent: RelayerTypes.PayloadEvent) =>
       this.onMessage(payloadEvent),
-    );
-    this.sequence.client.relayer.subscriptions.on(
-      SUBSCRIPTION_EVENTS.deleted,
-      (deletedEvent: SubscriptionEvent.Deleted) =>
-        this.sequence.settled.delete(
-          topic,
-          ERROR.EXPIRED.format({ context: this.sequence.context }),
-        ),
     );
   }
 
@@ -866,17 +851,19 @@ export class Engine extends IEngine {
     // Relayer Subscriptions Events
     this.sequence.client.relayer.subscriptions.on(
       SUBSCRIPTION_EVENTS.deleted,
-      (deletedEvent: SubscriptionEvent.Deleted) => {
+      (deletedEvent: SubscriptionEvent.Deleted, reason: Reason) => {
         if (this.sequence.pending.sequences.has(deletedEvent.topic)) {
-          this.sequence.pending.delete(
-            deletedEvent.topic,
-            ERROR.EXPIRED.format({ context: this.sequence.pending.context }),
-          );
+          reason =
+            reason.code === ERROR.EXPIRED.code
+              ? ERROR.EXPIRED.format({ context: this.sequence.pending.context })
+              : reason;
+          this.sequence.pending.delete(deletedEvent.topic, reason);
         } else {
-          this.sequence.settled.delete(
-            deletedEvent.topic,
-            ERROR.EXPIRED.format({ context: this.sequence.settled.context }),
-          );
+          reason =
+            reason.code === ERROR.EXPIRED.code
+              ? ERROR.EXPIRED.format({ context: this.sequence.settled.context })
+              : reason;
+          this.sequence.settled.delete(deletedEvent.topic, reason);
         }
       },
     );

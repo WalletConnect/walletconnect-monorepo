@@ -200,14 +200,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     }
   }
 
-  private async reset(): Promise<void> {
-    await this.disable();
-    await Promise.all(
-      this.cached.map(async record => {
-        this.records.set(record.id, record);
-      }),
-    );
-    await this.enable();
+  private async enable(): Promise<void> {
+    this.cached = [];
+    this.events.emit(HISTORY_EVENTS.enabled);
   }
 
   private async isEnabled(): Promise<void> {
@@ -215,18 +210,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     return new Promise(resolve => {
       this.events.once(HISTORY_EVENTS.enabled, () => resolve());
     });
-  }
-
-  private async enable(): Promise<void> {
-    this.cached = [];
-    this.events.emit(HISTORY_EVENTS.enabled);
-  }
-
-  private async disable(): Promise<void> {
-    if (!this.cached.length) {
-      this.cached = this.values;
-    }
-    this.events.emit(HISTORY_EVENTS.disabled);
   }
 
   private registerEventListeners(): void {

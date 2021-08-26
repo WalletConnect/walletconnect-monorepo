@@ -61,6 +61,8 @@ export class Client extends IClient {
   public readonly controller: boolean;
   public metadata: AppMetadata | undefined;
 
+  public apiKey: string | undefined;
+
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
     await client.initialize();
@@ -77,19 +79,18 @@ export class Client extends IClient {
     this.context = opts?.name || this.context;
     this.controller = opts?.controller || false;
     this.metadata = opts?.metadata || getAppMetadata();
+    this.apiKey = opts?.apiKey;
 
     this.logger = generateChildLogger(logger, this.context);
 
     const keyValueStorage =
       opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
-    const storage = new Storage(this, this.logger, keyValueStorage);
-
     const keychain = opts?.keychain || new KeyChain(this, this.logger);
     this.crypto = new Crypto(this, this.logger, keychain);
 
     this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
-    this.storage = storage;
+    this.storage = new Storage(this, this.logger, keyValueStorage);
 
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);

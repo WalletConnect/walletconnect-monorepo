@@ -59,9 +59,15 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 
 // -- rpcUrl ----------------------------------------------//
 
-export function formatRelayRpcUrl(protocol: string, version: number, url: string): string {
+export function formatRelayRpcUrl(
+  protocol: string,
+  version: number,
+  url: string,
+  apiKey?: string,
+): string {
   const splitUrl = url.split("?");
-  const params = getRelayClientMetadata(protocol, version);
+  const metadata = getRelayClientMetadata(protocol, version);
+  const params = apiKey ? { ...metadata, apiKey } : metadata;
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }

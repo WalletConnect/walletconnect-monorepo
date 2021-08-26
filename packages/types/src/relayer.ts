@@ -3,6 +3,7 @@ import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrp
 
 import { IClient } from "./client";
 import { ISubscription } from "./subscription";
+import { IJsonRpcHistory } from "./history";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -28,11 +29,15 @@ export declare namespace RelayerTypes {
 export abstract class IRelayer extends IEvents {
   public abstract subscriptions: ISubscription;
 
+  public abstract history: IJsonRpcHistory;
+
   public abstract provider: IJsonRpcProvider;
 
   public abstract context: string;
 
   public abstract readonly connected: boolean;
+
+  public abstract readonly connecting: boolean;
 
   constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
     super();

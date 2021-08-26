@@ -13,3 +13,14 @@ export const RELAYER_EVENTS = {
   disconnect: "relayer_disconnect",
   error: "relayer_error",
 };
+
+export const RELAYER_SUBSCRIPTION_SUFFIX = "_subscription";
+
+export const RELAYER_PROVIDER_EVENTS = {
+  payload: "payload",
+  connect: "connect",
+  disconnect: "disconnect",
+  error: "error",
+};
+
+export const RELAYER_RECONNECT_TIMEOUT = 1000;
