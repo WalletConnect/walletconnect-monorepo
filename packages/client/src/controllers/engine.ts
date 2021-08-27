@@ -794,13 +794,13 @@ export class Engine extends IEngine {
       STATE_EVENTS.created,
       async (createdEvent: StateEvent.Created<SequenceTypes.Pending>) => {
         await this.onNewPending(createdEvent);
-        this.onPendingStatusEvent(createdEvent);
+        await this.onPendingStatusEvent(createdEvent);
       },
     );
     this.sequence.pending.on(
       STATE_EVENTS.updated,
-      (updatedEvent: StateEvent.Updated<SequenceTypes.Pending>) =>
-        this.onPendingStatusEvent(updatedEvent),
+      async (updatedEvent: StateEvent.Updated<SequenceTypes.Pending>) =>
+        await this.onPendingStatusEvent(updatedEvent),
     );
     // Settled Events
     this.sequence.settled.on(
@@ -852,7 +852,7 @@ export class Engine extends IEngine {
               ? ERROR.EXPIRED.format({ context: this.sequence.pending.getNestedContext() })
               : deletedEvent.reason;
           this.sequence.pending.delete(deletedEvent.topic, reason);
-        } else {
+        } else if (this.sequence.settled.sequences.has(deletedEvent.topic)) {
           const reason =
             deletedEvent.reason.code === ERROR.EXPIRED.code
               ? ERROR.EXPIRED.format({ context: this.sequence.settled.getNestedContext() })

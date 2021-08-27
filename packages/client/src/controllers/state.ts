@@ -44,6 +44,7 @@ export class State<Sequence = any> extends IState<Sequence> {
     } else {
       this.logger.debug(`Setting sequence`);
       this.logger.trace({ type: "method", method: "set", topic, sequence });
+      this.sequences.set(topic, sequence);
       this.events.emit(STATE_EVENTS.created, {
         topic,
         sequence,
