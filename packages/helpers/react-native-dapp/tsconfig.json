@@ -5,7 +5,7 @@
     "experimentalDecorators": true,
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es6", "esnext"],
+    "lib": ["es6", "esnext", "dom"],
     "module": "esnext",
     "moduleResolution": "node",
     "noImplicitAny": true,

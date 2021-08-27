@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import UAParser from 'ua-parser-js';
 
 import { RenderQrcodeModalProps, WalletService } from '../types';
 
@@ -111,7 +112,18 @@ export default function QrcodeModal({
     );
   }, [modalWidth, modalHeight, division, icons, shouldConnectToWalletService]);
 
-  const shouldRenderQrcode = Platform.OS === 'web';
+
+  const shouldRenderQrcode = React.useMemo(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const parser = new UAParser(window.navigator.userAgent);
+      const result = parser.getResult();
+
+      // Dont render QR Code if device is mobile or tablet
+      return !(result.device.type === 'mobile' || result.device.type === 'tablet')
+    }
+
+    return Platform.OS === 'web';
+  }, []);
 
   return (
     <Animated.View
