@@ -102,7 +102,7 @@ export class Engine extends IEngine {
         );
       }
     } else {
-      await this.sequence.history.update(topic, payload);
+      await this.sequence.history.resolve(payload);
     }
     await this.sequence.client.relayer.publish(settled.topic, payload, {
       relay: settled.relay,
@@ -690,7 +690,7 @@ export class Engine extends IEngine {
       if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
       await this.sequence.history.set(topic, payload, chainId);
     } else {
-      await this.sequence.history.update(topic, payload);
+      await this.sequence.history.resolve(payload);
     }
     if (isJsonRpcRequest(payload)) {
       const requestEvent: SequenceTypes.RequestEvent = { topic, request: payload, chainId };

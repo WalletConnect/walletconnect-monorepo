@@ -81,13 +81,12 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.events.emit(HISTORY_EVENTS.created, record);
   }
 
-  public async update(topic: string, response: JsonRpcResponse): Promise<void> {
+  public async resolve(response: JsonRpcResponse): Promise<void> {
     await this.isInitialized();
     this.logger.debug(`Updating JSON-RPC response history record`);
-    this.logger.trace({ type: "method", method: "update", topic, response });
+    this.logger.trace({ type: "method", method: "update", response });
     if (!this.records.has(response.id)) return;
     const record = await this.getRecord(response.id);
-    if (record.topic !== topic) return;
     if (typeof record.response !== "undefined") return;
     record.response = isJsonRpcError(response)
       ? { error: response.error }

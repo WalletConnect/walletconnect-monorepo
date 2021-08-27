@@ -83,11 +83,10 @@ export class Relayer extends IRelayer {
       const message = await this.client.crypto.encodeJsonRpc(topic, payload);
       const ttl = opts?.ttl || RELAYER_DEFAULT_PUBLISH_TTL;
       const relay = this.getRelayProtocol(opts);
-      // TODO: rpcPublish
       if (isJsonRpcRequest(payload)) {
         await this.history.set(topic, payload);
       } else {
-        await this.history.update(topic, payload);
+        await this.history.resolve(payload);
       }
       await this.rpcPublish(topic, message, ttl, relay);
       this.logger.debug(`Successfully Published Payload`);
@@ -257,6 +256,11 @@ export class Relayer extends IRelayer {
         topic,
         payload: await this.client.crypto.decodeJsonRpc(topic, message),
       } as RelayerTypes.PayloadEvent;
+      if (isJsonRpcRequest(eventPayload.payload)) {
+        this.history.set(topic, eventPayload.payload);
+      } else {
+        this.history.resolve(eventPayload.payload);
+      }
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...eventPayload });
       this.events.emit(event.id, eventPayload);
