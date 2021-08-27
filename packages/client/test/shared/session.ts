@@ -2,7 +2,7 @@ import "mocha";
 import Timestamp from "@walletconnect/timestamp";
 import { SessionTypes, PairingTypes, SignalTypes } from "@walletconnect/types";
 
-import { CLIENT_EVENTS, SUBSCRIPTION_EVENTS } from "../../src";
+import { CLIENT_EVENTS, STATE_EVENTS } from "../../src";
 
 import { expect } from "./chai";
 import { InitializedClients, InitializedSetup } from "./types";
@@ -103,7 +103,7 @@ export async function testApproveSession(
       const timeout = setTimeout(() => {
         reject("Took too long to propose");
       }, TEST_TIMEOUT_SAFEGUARD);
-      clients.a.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
+      clients.a.pairing.pending.on(STATE_EVENTS.created, async () => {
         clients.a.logger.warn(`TEST >> Pairing Proposed`);
         clearTimeout(timeout);
         time.start("pairing");
@@ -117,7 +117,7 @@ export async function testApproveSession(
       const timeout = setTimeout(() => {
         reject("Took too long to acknowledge");
       }, TEST_TIMEOUT_SAFEGUARD);
-      clients.b.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+      clients.b.pairing.pending.on(STATE_EVENTS.deleted, async () => {
         clients.b.logger.warn(`TEST >> Pairing Acknowledged`);
         clearTimeout(timeout);
         time.stop("pairing");
@@ -128,7 +128,7 @@ export async function testApproveSession(
       const timeout = setTimeout(() => {
         reject("Took too long to propose");
       }, TEST_TIMEOUT_SAFEGUARD);
-      clients.a.session.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
+      clients.a.session.pending.on(STATE_EVENTS.created, async () => {
         clients.a.logger.warn(`TEST >> Session Proposed`);
         clearTimeout(timeout);
         time.start("session");
@@ -139,7 +139,7 @@ export async function testApproveSession(
       const timeout = setTimeout(() => {
         reject("Took too long to acknowledge");
       }, TEST_TIMEOUT_SAFEGUARD);
-      clients.b.session.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+      clients.b.session.pending.on(STATE_EVENTS.deleted, async () => {
         clients.b.logger.warn(`TEST >> Session Acknowledged`);
         clearTimeout(timeout);
         time.stop("session");

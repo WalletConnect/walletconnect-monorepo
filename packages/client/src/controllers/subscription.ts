@@ -186,13 +186,13 @@ export class Subscription extends ISubscription {
 
   private setTimeout(id: string, expiry: number) {
     if (this.timeout.has(id)) return;
-    const ttl = toMiliseconds(expiry) - Date.now();
-    if (ttl <= 0) {
+    const milisecondsLeft = toMiliseconds(expiry) - Date.now();
+    if (milisecondsLeft <= 0) {
       this.onTimeout(id);
       return;
     }
-    if (ttl > CLIENT_BEAT_INTERVAL) return;
-    const timeout = setTimeout(() => this.onTimeout(id), ttl);
+    if (milisecondsLeft > CLIENT_BEAT_INTERVAL) return;
+    const timeout = setTimeout(() => this.onTimeout(id), milisecondsLeft);
     this.timeout.set(id, timeout);
   }
 

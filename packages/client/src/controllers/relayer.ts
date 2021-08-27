@@ -9,6 +9,7 @@ import {
   IJsonRpcHistory,
   SequenceTypes,
   SubscriptionEvent,
+  Reason,
 } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import { ERROR, formatRelayRpcUrl } from "@walletconnect/utils";
@@ -104,14 +105,14 @@ export class Relayer extends IRelayer {
     opts?: RelayerTypes.SubscribeOptions,
   ): Promise<string> {
     this.logger.debug(`Subscribing Topic`);
-    this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
+    this.logger.trace({ type: "method", method: "subscribe", params: { topic, expiry, opts } });
     try {
       const relay = this.getRelayProtocol(opts);
       const id = await this.rpcSubscribe(topic, relay);
       const subscription = { id, topic, expiry, relay };
       await this.subscriptions.set(id, subscription);
       this.logger.debug(`Successfully Subscribed Topic`);
-      this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
+      this.logger.trace({ type: "method", method: "subscribe", params: { topic, expiry, opts } });
       return id;
     } catch (e) {
       this.logger.debug(`Failed to Subscribe Topic`);
@@ -126,13 +127,14 @@ export class Relayer extends IRelayer {
     opts?: RelayerTypes.UnsubscribeOptions,
   ): Promise<void> {
     this.logger.debug(`Unsubscribing Topic`);
-    this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
+    this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     try {
       const relay = this.getRelayProtocol(opts);
       await this.rpcUnsubscribe(topic, id, relay);
-      await this.onUnsubscribe(id);
+      const reason = ERROR.DELETED.format({ context: this.subscriptions.getNestedContext() });
+      await this.onUnsubscribe(id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
-      this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
+      this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     } catch (e) {
       this.logger.debug(`Failed to Unsubscribe Topic`);
       this.logger.error(e);
@@ -140,12 +142,15 @@ export class Relayer extends IRelayer {
     }
   }
 
-  public async unsubscribeAll(
+  public async unsubscribeByTopic(
     topic: string,
     opts?: RelayerTypes.UnsubscribeOptions,
   ): Promise<void> {
-    const subscriptions = this.subscriptions.values;
-    await Promise.all(subscriptions.map(async ({ id }) => await this.unsubscribe(topic, id, opts)));
+    if (!this.subscriptions.topicMap.has(topic)) return;
+    const ids = this.subscriptions.topicMap.get(topic);
+    if (typeof ids !== "undefined") {
+      await Promise.all(ids.map(async id => await this.unsubscribe(topic, id, opts)));
+    }
   }
 
   public on(event: string, listener: any): void {
@@ -221,10 +226,10 @@ export class Relayer extends IRelayer {
     return this.provider.request(request);
   }
 
-  private async onUnsubscribe(id: string) {
+  private async onUnsubscribe(id: string, reason: Reason) {
     this.events.removeAllListeners(id);
     if (this.subscriptions.subscriptions.has(id)) {
-      await this.subscriptions.delete(id, ERROR.DELETED.format());
+      await this.subscriptions.delete(id, reason);
     }
   }
 
@@ -252,6 +257,8 @@ export class Relayer extends IRelayer {
         topic,
         payload: await this.client.crypto.decodeJsonRpc(topic, message),
       } as RelayerTypes.PayloadEvent;
+      this.logger.debug(`Emitting Relayer Payload`);
+      this.logger.trace({ type: "event", event: event.id, ...eventPayload });
       this.events.emit(event.id, eventPayload);
       await this.acknowledgePayload(payload);
     }
@@ -296,7 +303,7 @@ export class Relayer extends IRelayer {
         if (deletedEvent.reason.code === ERROR.EXPIRED.code) {
           const { topic, id, relay } = deletedEvent;
           await this.rpcUnsubscribe(topic, id, relay);
-          await this.onUnsubscribe(id);
+          await this.onUnsubscribe(id, deletedEvent.reason);
         }
       },
     );

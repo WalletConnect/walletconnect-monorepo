@@ -806,7 +806,7 @@ export class Engine extends IEngine {
     this.sequence.pending.on(
       STATE_EVENTS.deleted,
       async (deletedDevent: StateEvent.Deleted<SequenceTypes.Pending>) => {
-        await this.sequence.client.relayer.unsubscribeAll(deletedDevent.topic, {
+        await this.sequence.client.relayer.unsubscribeByTopic(deletedDevent.topic, {
           relay: deletedDevent.sequence.relay,
         });
       },
@@ -846,7 +846,9 @@ export class Engine extends IEngine {
         await this.sequence.client.relayer.publish(settled.topic, request, {
           relay: settled.relay,
         });
-        await this.sequence.client.relayer.unsubscribeAll(settled.topic, { relay: settled.relay });
+        await this.sequence.client.relayer.unsubscribeByTopic(settled.topic, {
+          relay: settled.relay,
+        });
       },
     );
     this.sequence.settled.on(STATE_EVENTS.sync, () =>
@@ -864,7 +866,7 @@ export class Engine extends IEngine {
             : ERROR.DELETED.format(reasonParams);
           this.sequence.pending.delete(deletedEvent.topic, reason);
           if (!isExpired) {
-            await this.sequence.client.relayer.unsubscribeAll(deletedEvent.topic, {
+            await this.sequence.client.relayer.unsubscribeByTopic(deletedEvent.topic, {
               relay: deletedEvent.relay,
             });
           }
@@ -876,7 +878,7 @@ export class Engine extends IEngine {
             : ERROR.DELETED.format(reasonParams);
           this.sequence.settled.delete(deletedEvent.topic, reason);
           if (!isExpired) {
-            await this.sequence.client.relayer.unsubscribeAll(deletedEvent.topic, {
+            await this.sequence.client.relayer.unsubscribeByTopic(deletedEvent.topic, {
               relay: deletedEvent.relay,
             });
           }
