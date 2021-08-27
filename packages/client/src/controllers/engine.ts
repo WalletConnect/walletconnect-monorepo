@@ -803,6 +803,14 @@ export class Engine extends IEngine {
       async (updatedEvent: StateEvent.Updated<SequenceTypes.Pending>) =>
         await this.onPendingStatusEvent(updatedEvent),
     );
+    this.sequence.pending.on(
+      STATE_EVENTS.deleted,
+      async (deletedDevent: StateEvent.Deleted<SequenceTypes.Pending>) => {
+        await this.sequence.client.relayer.unsubscribeAll(deletedDevent.topic, {
+          relay: deletedDevent.sequence.relay,
+        });
+      },
+    );
     // Settled Events
     this.sequence.settled.on(
       STATE_EVENTS.created,
@@ -838,6 +846,7 @@ export class Engine extends IEngine {
         await this.sequence.client.relayer.publish(settled.topic, request, {
           relay: settled.relay,
         });
+        await this.sequence.client.relayer.unsubscribeAll(settled.topic, { relay: settled.relay });
       },
     );
     this.sequence.settled.on(STATE_EVENTS.sync, () =>
@@ -846,19 +855,31 @@ export class Engine extends IEngine {
     // Relayer Subscriptions Events
     this.sequence.client.relayer.subscriptions.on(
       SUBSCRIPTION_EVENTS.deleted,
-      (deletedEvent: SubscriptionEvent.Deleted) => {
+      async (deletedEvent: SubscriptionEvent.Deleted) => {
         if (this.sequence.pending.sequences.has(deletedEvent.topic)) {
-          const reason =
-            deletedEvent.reason.code === ERROR.EXPIRED.code
-              ? ERROR.EXPIRED.format({ context: this.sequence.pending.getNestedContext() })
-              : deletedEvent.reason;
+          const isExpired = deletedEvent.reason.code === ERROR.EXPIRED.code;
+          const reasonParams = { context: this.sequence.pending.getNestedContext() };
+          const reason = isExpired
+            ? ERROR.EXPIRED.format(reasonParams)
+            : ERROR.DELETED.format(reasonParams);
           this.sequence.pending.delete(deletedEvent.topic, reason);
+          if (!isExpired) {
+            await this.sequence.client.relayer.unsubscribeAll(deletedEvent.topic, {
+              relay: deletedEvent.relay,
+            });
+          }
         } else if (this.sequence.settled.sequences.has(deletedEvent.topic)) {
-          const reason =
-            deletedEvent.reason.code === ERROR.EXPIRED.code
-              ? ERROR.EXPIRED.format({ context: this.sequence.settled.getNestedContext() })
-              : deletedEvent.reason;
+          const isExpired = deletedEvent.reason.code === ERROR.EXPIRED.code;
+          const reasonParams = { context: this.sequence.settled.getNestedContext() };
+          const reason = isExpired
+            ? ERROR.EXPIRED.format(reasonParams)
+            : ERROR.DELETED.format(reasonParams);
           this.sequence.settled.delete(deletedEvent.topic, reason);
+          if (!isExpired) {
+            await this.sequence.client.relayer.unsubscribeAll(deletedEvent.topic, {
+              relay: deletedEvent.relay,
+            });
+          }
         }
       },
     );

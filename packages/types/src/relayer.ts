@@ -66,6 +66,11 @@ export abstract class IRelayer extends IEvents {
   public abstract unsubscribe(
     topic: string,
     id: string,
-    opts?: RelayerTypes.SubscribeOptions,
+    opts?: RelayerTypes.UnsubscribeOptions,
+  ): Promise<void>;
+
+  public abstract unsubscribeAll(
+    topic: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
   ): Promise<void>;
 }

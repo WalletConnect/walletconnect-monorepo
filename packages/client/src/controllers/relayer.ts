@@ -123,7 +123,7 @@ export class Relayer extends IRelayer {
   public async unsubscribe(
     topic: string,
     id: string,
-    opts?: RelayerTypes.SubscribeOptions,
+    opts?: RelayerTypes.UnsubscribeOptions,
   ): Promise<void> {
     this.logger.debug(`Unsubscribing Topic`);
     this.logger.trace({ type: "method", method: "unsubscribe", params: { id, opts } });
@@ -138,6 +138,14 @@ export class Relayer extends IRelayer {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  public async unsubscribeAll(
+    topic: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+  ): Promise<void> {
+    const subscriptions = this.subscriptions.values;
+    await Promise.all(subscriptions.map(async ({ id }) => await this.unsubscribe(topic, id, opts)));
   }
 
   public on(event: string, listener: any): void {
