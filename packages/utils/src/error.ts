@@ -26,6 +26,7 @@ export const ERROR_TYPE = enumify({
   PROPOSAL_RESPONDED: "PROPOSAL_RESPONDED",
   RESPONSE_ACKNOWLEDGED: "RESPONSE_ACKNOWLEDGED",
   EXPIRED: "EXPIRED",
+  DELETED: "DELETED",
   // 2000 (Timeout)
   SETTLE_TIMEOUT: "SETTLE_TIMEOUT",
   JSONRPC_REQUEST_TIMEOUT: "JSONRPC_REQUEST_TIMEOUT",
@@ -276,11 +277,20 @@ export const ERROR: Record<ErrorType, Error> = {
   },
   [ERROR_TYPE.EXPIRED]: {
     type: ERROR_TYPE.EXPIRED,
-    code: 1603,
+    code: 1604,
     stringify: (params?: any) => `${capitalize(params?.context || defaultParams.context)} expired`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.EXPIRED].code,
       message: ERROR[ERROR_TYPE.EXPIRED].stringify(params),
+    }),
+  },
+  [ERROR_TYPE.DELETED]: {
+    type: ERROR_TYPE.DELETED,
+    code: 1605,
+    stringify: (params?: any) => `${capitalize(params?.context || defaultParams.context)} deleted`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.DELETED].code,
+      message: ERROR[ERROR_TYPE.DELETED].stringify(params),
     }),
   },
   // 2000 (Timeout)

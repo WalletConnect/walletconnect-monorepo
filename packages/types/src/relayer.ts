@@ -20,6 +20,12 @@ export declare namespace RelayerTypes {
     relay: ProtocolOptions;
   }
 
+  export interface UnsubscribeOptions {
+    relay: ProtocolOptions;
+  }
+
+  export type RequestOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions;
+
   export interface PayloadEvent {
     topic: string;
     payload: JsonRpcPayload;

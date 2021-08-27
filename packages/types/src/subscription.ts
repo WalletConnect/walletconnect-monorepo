@@ -3,7 +3,7 @@ import { Logger } from "pino";
 
 import { IClient } from "./client";
 import { Reason } from "./misc";
-import { IRelayer, RelayerTypes } from "./relayer";
+import { RelayerTypes } from "./relayer";
 
 export interface SubscriptionParams extends RelayerTypes.SubscribeOptions {
   id: string;
@@ -46,9 +46,11 @@ export abstract class ISubscription extends IEvents {
 
   public abstract delete(id: string, reason: Reason): Promise<void>;
 
-  public abstract exists(id: string): Promise<boolean>;
+  public abstract reset(): Promise<void>;
 
   public abstract enable(): Promise<void>;
 
   public abstract disable(): Promise<void>;
+
+  public abstract getNestedContext(): string;
 }

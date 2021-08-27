@@ -60,12 +60,12 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   public async set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void> {
-    await this.isEnabled();
+    await this.isInitialized();
     this.logger.debug(`Setting JSON-RPC request history record`);
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
     if (this.records.has(request.id)) {
       const error = ERROR.RECORD_ALREADY_EXISTS.format({
-        context: this.getHistoryContext(),
+        context: this.getNestedContext(),
         id: request.id,
       });
       this.logger.error(error.message);
@@ -82,7 +82,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   public async update(topic: string, response: JsonRpcResponse): Promise<void> {
-    await this.isEnabled();
+    await this.isInitialized();
     this.logger.debug(`Updating JSON-RPC response history record`);
     this.logger.trace({ type: "method", method: "update", topic, response });
     if (!this.records.has(response.id)) return;
@@ -97,13 +97,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   public async get(topic: string, id: number): Promise<JsonRpcRecord> {
-    await this.isEnabled();
+    await this.isInitialized();
     this.logger.debug(`Getting record`);
     this.logger.trace({ type: "method", method: "get", topic, id });
     const record = await this.getRecord(id);
     if (record.topic !== topic) {
       const error = ERROR.MISMATCHED_TOPIC.format({
-        context: this.getHistoryContext(),
+        context: this.getNestedContext(),
         id,
       });
       this.logger.error(error.message);
@@ -113,7 +113,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   public async delete(topic: string, id?: number): Promise<void> {
-    await this.isEnabled();
+    await this.isInitialized();
     this.logger.debug(`Deleting record`);
     this.logger.trace({ type: "method", method: "delete", id });
     this.values.forEach((record: JsonRpcRecord) => {
@@ -126,7 +126,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   public async exists(topic: string, id: number): Promise<boolean> {
-    await this.isEnabled();
+    await this.isInitialized();
     if (!this.records.has(id)) return false;
     const record = await this.getRecord(id);
     return record.topic === topic;
@@ -148,18 +148,18 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.events.removeListener(event, listener);
   }
 
-  // ---------- Private ----------------------------------------------- //
-
-  private getHistoryContext() {
+  public getNestedContext() {
     return getNestedContext(this.logger);
   }
 
+  // ---------- Private ----------------------------------------------- //
+
   private async getRecord(id: number): Promise<JsonRpcRecord> {
-    await this.isEnabled();
+    await this.isInitialized();
     const record = this.records.get(id);
     if (!record) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: this.getHistoryContext(),
+        context: this.getNestedContext(),
         id,
       });
       this.logger.error(error.message);
@@ -169,18 +169,18 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private async persist() {
-    await this.client.storage.setJsonRpcRecords(this.getHistoryContext(), this.values);
+    await this.client.storage.setJsonRpcRecords(this.getNestedContext(), this.values);
     this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getJsonRpcRecords(this.getHistoryContext());
+      const persisted = await this.client.storage.getJsonRpcRecords(this.getNestedContext());
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.getHistoryContext(),
+          context: this.getNestedContext(),
         });
         this.logger.error(error.message);
         throw new Error(error.message);
@@ -191,24 +191,24 @@ export class JsonRpcHistory extends IJsonRpcHistory {
           this.records.set(record.id, record);
         }),
       );
-      await this.enable();
-      this.logger.debug(`Successfully Restored records for ${this.getHistoryContext()}`);
+      await this.onInit();
+      this.logger.debug(`Successfully Restored records for ${this.getNestedContext()}`);
       this.logger.trace({ type: "method", method: "restore", records: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore records for ${this.getHistoryContext()}`);
+      this.logger.debug(`Failed to Restore records for ${this.getNestedContext()}`);
       this.logger.error(e);
     }
   }
 
-  private async enable(): Promise<void> {
+  private async onInit(): Promise<void> {
     this.cached = [];
-    this.events.emit(HISTORY_EVENTS.enabled);
+    this.events.emit(HISTORY_EVENTS.init);
   }
 
-  private async isEnabled(): Promise<void> {
+  private async isInitialized(): Promise<void> {
     if (!this.cached.length) return;
     return new Promise(resolve => {
-      this.events.once(HISTORY_EVENTS.enabled, () => resolve());
+      this.events.once(HISTORY_EVENTS.init, () => resolve());
     });
   }
 

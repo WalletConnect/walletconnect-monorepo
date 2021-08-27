@@ -37,8 +37,6 @@ export declare namespace SequenceTypes {
     deleted: string;
     request: string;
     response: string;
-    enabled: string;
-    disabled: string;
     sync: string;
     notification: string;
   }

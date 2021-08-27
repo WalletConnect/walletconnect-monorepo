@@ -38,9 +38,14 @@ export abstract class IKeyChain {
   public abstract init(): Promise<void>;
 
   public abstract has(tag: string, opts?: any): Promise<boolean>;
+
   public abstract set(tag: string, key: string, opts?: any): Promise<void>;
+
   public abstract get(tag: string, opts?: any): Promise<string>;
+
   public abstract del(tag: string, opts?: any): Promise<void>;
+
+  public abstract getNestedContext(): string;
 }
 
 export abstract class ICrypto {

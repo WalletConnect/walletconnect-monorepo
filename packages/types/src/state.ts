@@ -45,4 +45,6 @@ export abstract class IState<Sequence> extends IEvents {
   public abstract update(topic: string, update: Partial<Sequence>): Promise<void>;
 
   public abstract delete(topic: string, reason: Reason): Promise<void>;
+
+  public abstract getNestedContext(): string;
 }

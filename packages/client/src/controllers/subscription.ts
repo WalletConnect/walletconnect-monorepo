@@ -105,6 +105,14 @@ export class Subscription extends ISubscription {
     this.events.removeListener(event, listener);
   }
 
+  public async reset(): Promise<void> {
+    await this.disable();
+    this.cached.map(async subscription => {
+      this.setSubscription(subscription.id, subscription);
+    });
+    await this.enable();
+  }
+
   public async enable(): Promise<void> {
     this.cached = [];
     this.events.emit(SUBSCRIPTION_EVENTS.enabled);
@@ -118,11 +126,11 @@ export class Subscription extends ISubscription {
     this.events.emit(SUBSCRIPTION_EVENTS.disabled);
   }
 
-  // ---------- Private ----------------------------------------------- //
-
-  private getSubscriptionContext() {
+  public getNestedContext() {
     return getNestedContext(this.logger);
   }
+
+  // ---------- Private ----------------------------------------------- //
 
   private setSubscription(id: string, subscription: SubscriptionParams): void {
     const expiry = subscription.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
@@ -136,7 +144,7 @@ export class Subscription extends ISubscription {
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: this.getSubscriptionContext(),
+        context: this.getNestedContext(),
         id,
       });
       this.logger.error(error.message);
@@ -201,7 +209,7 @@ export class Subscription extends ISubscription {
 
   private onTimeout(id: string): void {
     this.deleteTimeout(id);
-    this.delete(id, ERROR.EXPIRED.format({ context: this.getSubscriptionContext() }));
+    this.delete(id, ERROR.EXPIRED.format({ context: this.getNestedContext() }));
   }
 
   private checkSubscriptions(): void {
@@ -211,20 +219,18 @@ export class Subscription extends ISubscription {
   }
 
   private async persist() {
-    await this.client.storage.setRelayerSubscriptions(this.getSubscriptionContext(), this.values);
+    await this.client.storage.setRelayerSubscriptions(this.getNestedContext(), this.values);
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getRelayerSubscriptions(
-        this.getSubscriptionContext(),
-      );
+      const persisted = await this.client.storage.getRelayerSubscriptions(this.getNestedContext());
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.getSubscriptionContext(),
+          context: this.getNestedContext(),
         });
         this.logger.error(error.message);
         throw new Error(error.message);
@@ -236,22 +242,12 @@ export class Subscription extends ISubscription {
         }),
       );
       await this.enable();
-      this.logger.debug(`Successfully Restored subscriptions for ${this.getSubscriptionContext()}`);
+      this.logger.debug(`Successfully Restored subscriptions for ${this.getNestedContext()}`);
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore subscriptions for ${this.getSubscriptionContext()}`);
+      this.logger.debug(`Failed to Restore subscriptions for ${this.getNestedContext()}`);
       this.logger.error(e);
     }
-  }
-
-  private async reset(): Promise<void> {
-    await this.disable();
-    await Promise.all(
-      this.cached.map(async subscription => {
-        this.setSubscription(subscription.id, subscription);
-      }),
-    );
-    await this.enable();
   }
 
   private async isEnabled(): Promise<void> {

@@ -34,8 +34,6 @@ export const PAIRING_EVENTS: PairingTypes.Events = {
   deleted: "pairing_deleted",
   request: "pairing_request",
   response: "pairing_response",
-  enabled: "pairing_enabled",
-  disabled: "pairing_disabled",
   sync: "pairing_sync",
   notification: "pairing_notification",
 };

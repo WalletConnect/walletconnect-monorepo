@@ -38,7 +38,7 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   public async set(topic: string, sequence: Sequence): Promise<void> {
-    await this.isEnabled();
+    await this.isInitialized();
     if (this.sequences.has(topic)) {
       this.update(topic, sequence);
     } else {
@@ -52,7 +52,7 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   public async get(topic: string): Promise<Sequence> {
-    await this.isEnabled();
+    await this.isInitialized();
     this.logger.debug(`Getting sequence`);
     this.logger.trace({ type: "method", method: "get", topic });
     const sequence = await this.getState(topic);
@@ -60,7 +60,7 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   public async update(topic: string, update: Partial<Sequence>): Promise<void> {
-    await this.isEnabled();
+    await this.isInitialized();
     this.logger.debug(`Updating sequence`);
     this.logger.trace({ type: "method", method: "update", topic, update });
     const sequence = { ...(await this.getState(topic)), ...update };
@@ -73,7 +73,7 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   public async delete(topic: string, reason: Reason): Promise<void> {
-    await this.isEnabled();
+    await this.isInitialized();
     if (!this.sequences.has(topic)) return;
     this.logger.debug(`Deleting sequence`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });
@@ -102,18 +102,18 @@ export class State<Sequence = any> extends IState<Sequence> {
     this.events.removeListener(event, listener);
   }
 
-  // ---------- Private ----------------------------------------------- //
-
-  private getStateContext() {
+  public getNestedContext() {
     return getNestedContext(this.logger);
   }
 
+  // ---------- Private ----------------------------------------------- //
+
   private async getState(topic: string): Promise<Sequence> {
-    await this.isEnabled();
+    await this.isInitialized();
     const sequence = this.sequences.get(topic);
     if (!sequence) {
       const error = ERROR.NO_MATCHING_TOPIC.format({
-        context: this.getStateContext(),
+        context: this.getNestedContext(),
         topic,
       });
       this.logger.error(error.message);
@@ -123,43 +123,43 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   private async persist() {
-    await this.client.storage.setSequenceState(this.getStateContext(), this.values);
+    await this.client.storage.setSequenceState(this.getNestedContext(), this.values);
     this.events.emit(STATE_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getSequenceState(this.getStateContext());
+      const persisted = await this.client.storage.getSequenceState(this.getNestedContext());
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.sequences.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.getStateContext(),
+          context: this.getNestedContext(),
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
       this.cached.forEach(sequence => this.sequences.set((sequence as any).topic, sequence));
-      await this.enable();
-      this.logger.debug(`Successfully Restored sequences for ${this.getStateContext()}`);
+      await this.onInit();
+      this.logger.debug(`Successfully Restored sequences for ${this.getNestedContext()}`);
       this.logger.trace({ type: "method", method: "restore", sequences: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore sequences for ${this.getStateContext()}`);
+      this.logger.debug(`Failed to Restore sequences for ${this.getNestedContext()}`);
       this.logger.error(e);
     }
   }
 
-  private async isEnabled(): Promise<void> {
+  private async isInitialized(): Promise<void> {
     if (!this.cached.length) return;
     return new Promise(resolve => {
-      this.events.once(STATE_EVENTS.enabled, () => resolve());
+      this.events.once(STATE_EVENTS.init, () => resolve());
     });
   }
 
-  private async enable(): Promise<void> {
+  private async onInit(): Promise<void> {
     this.cached = [];
-    this.events.emit(STATE_EVENTS.enabled);
+    this.events.emit(STATE_EVENTS.init);
   }
 
   private registerEventListeners(): void {

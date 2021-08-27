@@ -2,8 +2,7 @@ export const HISTORY_EVENTS = {
   created: "history_created",
   updated: "history_updated",
   deleted: "history_deleted",
-  enabled: "history_enabled",
-  disabled: "history_disabled",
+  init: "history_init",
   sync: "history_sync",
 };
 

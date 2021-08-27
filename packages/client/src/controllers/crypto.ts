@@ -51,21 +51,21 @@ export class KeyChain implements IKeyChain {
     await this.persist();
   }
 
-  // ---------- Private ----------------------------------------------- //
-
-  private getKeyChainContext() {
+  public getNestedContext() {
     return CRYPTO_KEYCHAIN_NESTED_CONTEXT;
   }
 
+  // ---------- Private ----------------------------------------------- //
+
   private async restore() {
-    const keychain = await this.client.storage.getKeyChain(this.getKeyChainContext());
+    const keychain = await this.client.storage.getKeyChain(this.getNestedContext());
     if (typeof keychain !== "undefined") {
       this.keychain = keychain;
     }
   }
 
   private async persist() {
-    await this.client.storage.setKeyChain(this.getKeyChainContext(), this.keychain);
+    await this.client.storage.setKeyChain(this.getNestedContext(), this.keychain);
   }
 }
 

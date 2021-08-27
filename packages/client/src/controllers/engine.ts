@@ -842,27 +842,21 @@ export class Engine extends IEngine {
     this.sequence.settled.on(STATE_EVENTS.sync, () =>
       this.sequence.events.emit(this.sequence.config.events.sync),
     );
-    this.sequence.settled.on(STATE_EVENTS.enabled, () =>
-      this.sequence.events.emit(this.sequence.config.events.enabled),
-    );
-    this.sequence.settled.on(STATE_EVENTS.disabled, () =>
-      this.sequence.events.emit(this.sequence.config.events.disabled),
-    );
     // Relayer Subscriptions Events
     this.sequence.client.relayer.subscriptions.on(
       SUBSCRIPTION_EVENTS.deleted,
-      (deletedEvent: SubscriptionEvent.Deleted, reason: Reason) => {
+      (deletedEvent: SubscriptionEvent.Deleted) => {
         if (this.sequence.pending.sequences.has(deletedEvent.topic)) {
-          reason =
-            reason.code === ERROR.EXPIRED.code
-              ? ERROR.EXPIRED.format({ context: this.sequence.pending.context })
-              : reason;
+          const reason =
+            deletedEvent.reason.code === ERROR.EXPIRED.code
+              ? ERROR.EXPIRED.format({ context: this.sequence.pending.getNestedContext() })
+              : deletedEvent.reason;
           this.sequence.pending.delete(deletedEvent.topic, reason);
         } else {
-          reason =
-            reason.code === ERROR.EXPIRED.code
-              ? ERROR.EXPIRED.format({ context: this.sequence.settled.context })
-              : reason;
+          const reason =
+            deletedEvent.reason.code === ERROR.EXPIRED.code
+              ? ERROR.EXPIRED.format({ context: this.sequence.settled.getNestedContext() })
+              : deletedEvent.reason;
           this.sequence.settled.delete(deletedEvent.topic, reason);
         }
       },
