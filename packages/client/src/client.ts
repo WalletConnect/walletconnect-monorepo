@@ -24,6 +24,7 @@ import { generateChildLogger, getDefaultLoggerOptions } from "@walletconnect/log
 import { Pairing, Session, Relayer } from "./controllers";
 import {
   CLIENT_CONTEXT,
+  CLIENT_DEFAULT,
   CLIENT_BEAT_INTERVAL,
   CLIENT_EVENTS,
   CLIENT_STORAGE_OPTIONS,
@@ -74,10 +75,10 @@ export class Client extends IClient {
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || "error" }));
+        : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
 
-    this.context = opts?.name || this.context;
-    this.controller = opts?.controller || false;
+    this.context = opts?.name || CLIENT_DEFAULT.name;
+    this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
     this.apiKey = opts?.apiKey;
 
