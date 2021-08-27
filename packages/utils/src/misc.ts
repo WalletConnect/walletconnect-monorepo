@@ -132,3 +132,13 @@ export function capitalize(str: string) {
     .map(w => capitalizeWord(w))
     .join(" ");
 }
+
+// -- time ------------------------------------------------- //
+
+export function toMiliseconds(seconds: number): number {
+  return seconds * 1000;
+}
+
+export function fromMiliseconds(miliseconds: number): number {
+  return Math.floor(miliseconds / 1000);
+}

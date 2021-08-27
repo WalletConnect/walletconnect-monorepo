@@ -1,6 +1,6 @@
 import "mocha";
 import sinon from "sinon";
-import { generateRandomBytes32 } from "@walletconnect/utils";
+import { fromMiliseconds, generateRandomBytes32 } from "@walletconnect/utils";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 import {
@@ -69,7 +69,7 @@ describe("Request", function() {
       })
       .catch(e => {
         expect(e.message).to.equal(
-          `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: ${
+          `JSON-RPC Request timeout after ${fromMiliseconds(TEST_TIMEOUT_DURATION)} seconds: ${
             request.method
           }`,
         );

@@ -2,7 +2,7 @@ import "mocha";
 import sinon from "sinon";
 import { KeyValueStorage } from "keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
-import { ERROR, generateRandomBytes32 } from "@walletconnect/utils";
+import { ERROR, fromMiliseconds, generateRandomBytes32 } from "@walletconnect/utils";
 
 import {
   expect,
@@ -280,7 +280,9 @@ describe("Session", function() {
       })
       .catch(e => {
         expect(e.message).to.equal(
-          `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
+          `JSON-RPC Request timeout after ${fromMiliseconds(
+            TEST_TIMEOUT_DURATION,
+          )} seconds: wc_sessionPing`,
         );
       });
     clock.tick(TEST_TIMEOUT_DURATION);

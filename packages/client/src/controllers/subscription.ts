@@ -7,7 +7,7 @@ import {
   SubscriptionEvent,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR, getNestedContext } from "@walletconnect/utils";
+import { ERROR, fromMiliseconds, getNestedContext, toMiliseconds } from "@walletconnect/utils";
 import { generateChildLogger } from "@walletconnect/logger";
 
 import {
@@ -133,7 +133,8 @@ export class Subscription extends ISubscription {
   // ---------- Private ----------------------------------------------- //
 
   private setSubscription(id: string, subscription: SubscriptionParams): void {
-    const expiry = subscription.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
+    const expiry =
+      subscription.expiry || fromMiliseconds(Date.now() + toMiliseconds(SUBSCRIPTION_DEFAULT_TTL));
     this.subscriptions.set(id, { ...subscription, expiry });
     this.setOnTopicMap(id, subscription);
     this.setTimeout(id, expiry);
@@ -185,7 +186,7 @@ export class Subscription extends ISubscription {
 
   private setTimeout(id: string, expiry: number) {
     if (this.timeout.has(id)) return;
-    const ttl = expiry - Date.now();
+    const ttl = toMiliseconds(expiry) - Date.now();
     if (ttl <= 0) {
       this.onTimeout(id);
       return;

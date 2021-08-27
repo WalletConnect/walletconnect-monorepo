@@ -6,9 +6,9 @@ import {
   SessionTypes,
   StateEvent,
   RelayerTypes,
-  Reason,
 } from "@walletconnect/types";
 import {
+  toMiliseconds,
   generateRandomBytes32,
   hasOverlap,
   isSignalTypePairing,
@@ -16,6 +16,7 @@ import {
   isSequenceResponded,
   isStateUpdatedEvent,
   ERROR,
+  fromMiliseconds,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -79,7 +80,7 @@ export class Engine extends IEngine {
 
   public async ping(topic: string, timeout?: number): Promise<void> {
     const request = { method: this.sequence.config.jsonrpc.ping, params: {} };
-    return this.request({ topic, request, timeout: timeout || THIRTY_SECONDS * 1000 });
+    return this.request({ topic, request, timeout: timeout || toMiliseconds(THIRTY_SECONDS) });
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
@@ -124,7 +125,7 @@ export class Engine extends IEngine {
     return new Promise(async (resolve, reject) => {
       this.sequence.logger.debug(`Create ${this.sequence.context}`);
       this.sequence.logger.trace({ type: "method", method: "create", params });
-      const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
+      const maxTimeout = params?.timeout || toMiliseconds(FIVE_MINUTES);
       const timeout = setTimeout(() => {
         const error = ERROR.SETTLE_TIMEOUT.format({
           context: this.sequence.context,
@@ -188,7 +189,7 @@ export class Engine extends IEngine {
           metadata: response?.metadata,
         };
         if (!responder.metadata) delete responder.metadata;
-        const expiry = Date.now() + proposal.ttl * 1000;
+        const expiry = fromMiliseconds(Date.now() + toMiliseconds(proposal.ttl));
         const state: SequenceTypes.State = response?.state || {};
         const peer: SequenceTypes.Participant = {
           publicKey: proposal.proposer.publicKey,
@@ -288,7 +289,7 @@ export class Engine extends IEngine {
         return reject(e);
       }
       const request = formatJsonRpcRequest(params.request.method, params.request.params);
-      const maxTimeout = params?.timeout || FIVE_MINUTES * 1000;
+      const maxTimeout = params?.timeout || toMiliseconds(FIVE_MINUTES);
       const timeout = setTimeout(() => {
         const error = ERROR.JSONRPC_REQUEST_TIMEOUT.format({
           method: request.method,
@@ -769,7 +770,7 @@ export class Engine extends IEngine {
 
   private async onNewPending(createdEvent: StateEvent.Created<SequenceTypes.Pending>) {
     const { topic, sequence: pending } = createdEvent;
-    const expiry = Date.now() + ONE_DAY * 1000;
+    const expiry = fromMiliseconds(Date.now() + toMiliseconds(ONE_DAY));
     const id = await this.sequence.client.relayer.subscribe(topic, expiry, {
       relay: pending.relay,
     });

@@ -1,4 +1,6 @@
-import { SIX_HOURS } from "./time";
+import { toMiliseconds } from "@walletconnect/utils";
+
+import { ONE_SECOND, SIX_HOURS } from "./time";
 
 export const RELAYER_DEFAULT_PUBLISH_TTL = SIX_HOURS;
 
@@ -23,4 +25,4 @@ export const RELAYER_PROVIDER_EVENTS = {
   error: "error",
 };
 
-export const RELAYER_RECONNECT_TIMEOUT = 1000;
+export const RELAYER_RECONNECT_TIMEOUT = toMiliseconds(ONE_SECOND);

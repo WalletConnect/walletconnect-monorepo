@@ -1,6 +1,6 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 
-import { capitalize, enumify } from "./misc";
+import { capitalize, enumify, fromMiliseconds } from "./misc";
 
 export const ERROR_TYPE = enumify({
   // 0 (Generic)
@@ -300,7 +300,7 @@ export const ERROR: Record<ErrorType, Error> = {
     stringify: (params?: any) =>
       `${capitalize(
         params?.context || defaultParams.context,
-      )} failed to settle after ${params?.timeout / 1000} seconds`,
+      )} failed to settle after ${fromMiliseconds(params?.timeout)} seconds`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.SETTLE_TIMEOUT].code,
       message: ERROR[ERROR_TYPE.SETTLE_TIMEOUT].stringify(params),
@@ -310,7 +310,9 @@ export const ERROR: Record<ErrorType, Error> = {
     type: ERROR_TYPE.JSONRPC_REQUEST_TIMEOUT,
     code: 2001,
     stringify: (params?: any) =>
-      `JSON-RPC Request timeout after ${params?.timeout / 1000} seconds: ${params?.method}`,
+      `JSON-RPC Request timeout after ${fromMiliseconds(params?.timeout)} seconds: ${
+        params?.method
+      }`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.JSONRPC_REQUEST_TIMEOUT].code,
       message: ERROR[ERROR_TYPE.JSONRPC_REQUEST_TIMEOUT].stringify(params),
