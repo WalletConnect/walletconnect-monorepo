@@ -800,10 +800,12 @@ export class Engine extends IEngine {
     );
     this.sequence.pending.on(
       STATE_EVENTS.deleted,
-      async (deletedDevent: StateEvent.Deleted<SequenceTypes.Pending>) => {
-        await this.sequence.client.relayer.unsubscribeByTopic(deletedDevent.topic, {
-          relay: deletedDevent.sequence.relay,
-        });
+      async (deletedEvent: StateEvent.Deleted<SequenceTypes.Pending>) => {
+        if (deletedEvent.reason.code !== ERROR.EXPIRED.code) {
+          await this.sequence.client.relayer.unsubscribeByTopic(deletedEvent.topic, {
+            relay: deletedEvent.sequence.relay,
+          });
+        }
       },
     );
     // Settled Events
