@@ -17,6 +17,8 @@ export declare namespace SubscriptionEvent {
   export interface Deleted extends SubscriptionParams {
     reason: Reason;
   }
+
+  export type Expired = Deleted;
 }
 
 export abstract class ISubscription extends IEvents {

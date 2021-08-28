@@ -260,17 +260,21 @@ export class Subscription extends ISubscription {
 
   private registerEventListeners(): void {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
-    this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created) => {
+    this.events.on(SUBSCRIPTION_EVENTS.created, async (createdEvent: SubscriptionEvent.Created) => {
       const eventName = SUBSCRIPTION_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: createdEvent });
-      this.persist();
+      await this.persist();
     });
-    this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted) => {
+    this.events.on(SUBSCRIPTION_EVENTS.deleted, async (deletedEvent: SubscriptionEvent.Deleted) => {
       const eventName = SUBSCRIPTION_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
-      this.persist();
+      await this.persist();
+      if (deletedEvent.reason.code === ERROR.EXPIRED.code) {
+        const expiredEvent = deletedEvent;
+        this.events.emit(SUBSCRIPTION_EVENTS.deleted, expiredEvent as SubscriptionEvent.Expired);
+      }
     });
   }
 }

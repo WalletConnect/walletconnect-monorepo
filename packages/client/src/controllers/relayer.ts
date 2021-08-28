@@ -131,7 +131,7 @@ export class Relayer extends IRelayer {
       const relay = this.getRelayProtocol(opts);
       await this.rpcUnsubscribe(topic, id, relay);
       const reason = ERROR.DELETED.format({ context: this.subscriptions.getNestedContext() });
-      await this.onUnsubscribe(id, reason);
+      await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     } catch (e) {
@@ -225,10 +225,14 @@ export class Relayer extends IRelayer {
     return this.provider.request(request);
   }
 
-  private async onUnsubscribe(id: string, reason: Reason) {
+  private async onUnsubscribe(topic: string, id: string, reason: Reason) {
     this.events.removeAllListeners(id);
     if (this.subscriptions.subscriptions.has(id)) {
       await this.subscriptions.delete(id, reason);
+    }
+    const ids = this.subscriptions.topicMap.get(topic);
+    if (typeof ids === "undefined" || !(typeof ids !== "undefined" && ids.length)) {
+      await this.history.delete(topic);
     }
   }
 
@@ -264,6 +268,7 @@ export class Relayer extends IRelayer {
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...eventPayload });
       this.events.emit(event.id, eventPayload);
+      this.events.emit(RELAYER_EVENTS.payload, eventPayload);
       await this.acknowledgePayload(payload);
     }
   }
@@ -302,13 +307,11 @@ export class Relayer extends IRelayer {
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
     this.subscriptions.on(
-      SUBSCRIPTION_EVENTS.deleted,
-      async (deletedEvent: SubscriptionEvent.Deleted) => {
-        if (deletedEvent.reason.code === ERROR.EXPIRED.code) {
-          const { topic, id, relay } = deletedEvent;
-          await this.rpcUnsubscribe(topic, id, relay);
-          await this.onUnsubscribe(id, deletedEvent.reason);
-        }
+      SUBSCRIPTION_EVENTS.expired,
+      async (expiredEvent: SubscriptionEvent.Deleted) => {
+        const { topic, id, relay } = expiredEvent;
+        await this.rpcUnsubscribe(topic, id, relay);
+        await this.onUnsubscribe(topic, id, expiredEvent.reason);
       },
     );
   }

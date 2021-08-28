@@ -37,6 +37,7 @@ import {
   FIVE_MINUTES,
   THIRTY_SECONDS,
   ONE_DAY,
+  RELAYER_EVENTS,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -768,25 +769,19 @@ export class Engine extends IEngine {
     }
   }
 
-  private async onNewPending(createdEvent: StateEvent.Created<SequenceTypes.Pending>) {
+  private async subscribeNewPending(createdEvent: StateEvent.Created<SequenceTypes.Pending>) {
     const { topic, sequence: pending } = createdEvent;
     const expiry = fromMiliseconds(Date.now() + toMiliseconds(ONE_DAY));
-    const id = await this.sequence.client.relayer.subscribe(topic, expiry, {
+    await this.sequence.client.relayer.subscribe(topic, expiry, {
       relay: pending.relay,
     });
-    this.sequence.client.relayer.on(id, (payloadEvent: RelayerTypes.PayloadEvent) =>
-      this.onPendingPayloadEvent(payloadEvent),
-    );
   }
 
-  private async onNewSettled(createdEvent: StateEvent.Created<SequenceTypes.Settled>) {
+  private async subscribeNewSettled(createdEvent: StateEvent.Created<SequenceTypes.Settled>) {
     const { topic, sequence: settled } = createdEvent;
-    const id = await this.sequence.client.relayer.subscribe(topic, settled.expiry, {
+    await this.sequence.client.relayer.subscribe(topic, settled.expiry, {
       relay: settled.relay,
     });
-    this.sequence.client.relayer.on(id, (payloadEvent: RelayerTypes.PayloadEvent) =>
-      this.onMessage(payloadEvent),
-    );
   }
 
   private registerEventListeners(): void {
@@ -794,7 +789,7 @@ export class Engine extends IEngine {
     this.sequence.pending.on(
       STATE_EVENTS.created,
       async (createdEvent: StateEvent.Created<SequenceTypes.Pending>) => {
-        await this.onNewPending(createdEvent);
+        await this.subscribeNewPending(createdEvent);
         await this.onPendingStatusEvent(createdEvent);
       },
     );
@@ -815,7 +810,7 @@ export class Engine extends IEngine {
     this.sequence.settled.on(
       STATE_EVENTS.created,
       async (createdEvent: StateEvent.Created<SequenceTypes.Settled>) => {
-        await this.onNewSettled(createdEvent);
+        await this.subscribeNewSettled(createdEvent);
         const { sequence: settled } = createdEvent;
         const eventName = this.sequence.config.events.settled;
         this.sequence.logger.info(`Emitting ${eventName}`);
@@ -846,42 +841,41 @@ export class Engine extends IEngine {
         await this.sequence.client.relayer.publish(settled.topic, request, {
           relay: settled.relay,
         });
-        await this.sequence.client.relayer.unsubscribeByTopic(settled.topic, {
-          relay: settled.relay,
-        });
+        if (deletedEvent.reason.code !== ERROR.EXPIRED.code) {
+          await this.sequence.client.relayer.unsubscribeByTopic(settled.topic, {
+            relay: settled.relay,
+          });
+        }
       },
     );
     this.sequence.settled.on(STATE_EVENTS.sync, () =>
       this.sequence.events.emit(this.sequence.config.events.sync),
     );
-    // Relayer Subscriptions Events
+    // Relayer Events
+    this.sequence.client.relayer.on(
+      RELAYER_EVENTS.payload,
+      (payloadEvent: RelayerTypes.PayloadEvent) => {
+        if (this.sequence.pending.sequences.has(payloadEvent.topic)) {
+          this.onPendingPayloadEvent(payloadEvent);
+        } else if (this.sequence.settled.sequences.has(payloadEvent.topic)) {
+          this.onMessage(payloadEvent);
+        }
+      },
+    );
+    // Relayer subscription Events
     this.sequence.client.relayer.subscriptions.on(
-      SUBSCRIPTION_EVENTS.deleted,
-      async (deletedEvent: SubscriptionEvent.Deleted) => {
-        if (this.sequence.pending.sequences.has(deletedEvent.topic)) {
-          const isExpired = deletedEvent.reason.code === ERROR.EXPIRED.code;
-          const reasonParams = { context: this.sequence.pending.getNestedContext() };
-          const reason = isExpired
-            ? ERROR.EXPIRED.format(reasonParams)
-            : ERROR.DELETED.format(reasonParams);
-          this.sequence.pending.delete(deletedEvent.topic, reason);
-          if (!isExpired) {
-            await this.sequence.client.relayer.unsubscribeByTopic(deletedEvent.topic, {
-              relay: deletedEvent.relay,
-            });
-          }
-        } else if (this.sequence.settled.sequences.has(deletedEvent.topic)) {
-          const isExpired = deletedEvent.reason.code === ERROR.EXPIRED.code;
-          const reasonParams = { context: this.sequence.settled.getNestedContext() };
-          const reason = isExpired
-            ? ERROR.EXPIRED.format(reasonParams)
-            : ERROR.DELETED.format(reasonParams);
-          this.sequence.settled.delete(deletedEvent.topic, reason);
-          if (!isExpired) {
-            await this.sequence.client.relayer.unsubscribeByTopic(deletedEvent.topic, {
-              relay: deletedEvent.relay,
-            });
-          }
+      SUBSCRIPTION_EVENTS.expired,
+      async (expiredEvent: SubscriptionEvent.Deleted) => {
+        if (this.sequence.pending.sequences.has(expiredEvent.topic)) {
+          const reason = ERROR.EXPIRED.format({
+            context: this.sequence.pending.getNestedContext(),
+          });
+          this.sequence.pending.delete(expiredEvent.topic, reason);
+        } else if (this.sequence.settled.sequences.has(expiredEvent.topic)) {
+          const reason = ERROR.EXPIRED.format({
+            context: this.sequence.settled.getNestedContext(),
+          });
+          this.sequence.settled.delete(expiredEvent.topic, reason);
         }
       },
     );
