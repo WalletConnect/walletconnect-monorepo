@@ -29,8 +29,11 @@ buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && $(copyResult)
 caddyVersion=v2.4.3
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
 buildCaddy=nix-build $(caddySrc) --attr docker && $(copyResult)
-buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
+WAKU_VERSION_TAG ?= v0.5.1
+WAKU_SHA256 ?= 108l12f7qyjb0rkzl3hd585s311ic0a9c8iqb0yrncbp99g6wmi5
+buildWakuCommand:=-nix-build ./ops/waku-docker.nix --argstr wakuVersionTag $(WAKU_VERSION_TAG) --argstr nixNimRepoSha256 $(WAKU_SHA256)
 
+buildWaku=$(buildWakuCommand) && $(copyResult)
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
 help: ## Show this help
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
