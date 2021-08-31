@@ -57,7 +57,10 @@ in {
     }).nodeDependencies;
   relayApp = relayApp;
   relay = pkgs.dockerTools.buildLayeredImage {
-    name = "relay";
+    name = "walletconnect/${
+      pkgs.lib.lists.last (builtins.split "_slash_" relayApp.pname)
+    }";
+    tag = "${relayApp.version}";
     config = {
       Cmd = [ "${myNodejs}/bin/node" "${relayApp}/dist" ];
       Env = [
@@ -66,7 +69,10 @@ in {
     };
   };
   health = pkgs.dockerTools.buildLayeredImage {
-    name = "health";
+    name = "walletconnect/${
+      pkgs.lib.lists.last (builtins.split "_slash_" healthApp.pname)
+    }";
+    tag = "${healthApp.version}";
     config = {
       Cmd = [ "${myNodejs}/bin/node" "${healthApp}/dist" ];
     };
