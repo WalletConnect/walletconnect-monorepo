@@ -1,8 +1,13 @@
 {
   pkgs ? import (import ./nix/sources.nix).nixpkgs {},
-  wakunode ? import (import ./nix/sources.nix)."nix-nim-waku" {},
+  wakuVersionTag,
+  nixNimRepoSha256,
 }:
 let
+  wakunode = (import(fetchTarball {
+    url = "https://github.com/WalletConnect-Labs/nix-nim-waku/archive/${wakuVersionTag}.tar.gz";
+    sha256 = nixNimRepoSha256;
+  }) {});
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
     set -e
