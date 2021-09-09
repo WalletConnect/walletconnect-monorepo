@@ -20,14 +20,6 @@ import { CLIENT_EVENTS } from "../src";
 import { ErrorResponse, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 describe("Session", function() {
-  this.timeout(TEST_TIMEOUT_DURATION);
-  let clock: sinon.SinonFakeTimers;
-  beforeEach(function() {
-    clock = sinon.useFakeTimers(Date.now());
-  });
-  afterEach(function() {
-    clock.restore();
-  });
   it("A proposes session and B approves", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -206,8 +198,6 @@ describe("Session", function() {
       `Unauthorized Notification Type Requested: ${event.type}`,
     );
   });
-  // FIXME: chainId is leaking to TEST_PERMISSIONS and breaking following tests
-  //
   it("B upgrades permissions and A receives event", async () => {
     const chainId = "eip155:300";
     const request = {
@@ -265,28 +255,6 @@ describe("Session", function() {
       `No matching session settled with topic: ${topic}`,
     );
   });
-  it("A fails to pings B after B deletes session", async () => {
-    const { setup, clients } = await setupClientsForTesting();
-    const topic = await testApproveSession(setup, clients);
-    const reason = ERROR.USER_DISCONNECTED.format();
-    await clients.b.disconnect({ topic, reason });
-    await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
-      `No matching session settled with topic: ${topic}`,
-    );
-    clients.a.session
-      .ping(topic, TEST_TIMEOUT_DURATION)
-      .then(() => {
-        throw new Error("Should not resolve");
-      })
-      .catch(e => {
-        expect(e.message).to.equal(
-          `JSON-RPC Request timeout after ${fromMiliseconds(
-            TEST_TIMEOUT_DURATION,
-          )} seconds: wc_sessionPing`,
-        );
-      });
-    clock.tick(TEST_TIMEOUT_DURATION);
-  });
   it("clients ping each other after restart", async () => {
     const storage = new KeyValueStorage({ database: TEST_CLIENT_DATABASE });
     // setup
@@ -303,6 +271,28 @@ describe("Session", function() {
     // ping
     await after.clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     await after.clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
+  });
+  it("can find compatible sessions from permission set", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const incompatible = await clients.a.session.find({ blockchain: { chains: ["eip155:123"] } });
+    expect(!!incompatible).to.be.true;
+    expect(incompatible.length).to.eql(0);
+    const compatible = await clients.a.session.find({ blockchain: { chains: ["eip155:1"] } });
+    expect(!!compatible).to.be.true;
+    expect(compatible.length).to.eql(1);
+    expect(compatible[0].topic).to.eql(topic);
+  });
+});
+
+describe("Session (with timeout)", function() {
+  this.timeout(TEST_TIMEOUT_DURATION);
+  let clock: sinon.SinonFakeTimers;
+  beforeEach(function() {
+    clock = sinon.useFakeTimers(Date.now());
+  });
+  afterEach(function() {
+    clock.restore();
   });
   it("should expire after default period is elapsed", function() {
     this.timeout(TEST_SESSION_TTL);
@@ -326,15 +316,26 @@ describe("Session", function() {
       }
     });
   });
-  it("can find compatible sessions from permission set", async () => {
+  it("A fails to pings B after B deletes session", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const incompatible = await clients.a.session.find({ blockchain: { chains: ["eip155:123"] } });
-    expect(!!incompatible).to.be.true;
-    expect(incompatible.length).to.eql(0);
-    const compatible = await clients.a.session.find({ blockchain: { chains: ["eip155:1"] } });
-    expect(!!compatible).to.be.true;
-    expect(compatible.length).to.eql(1);
-    expect(compatible[0].topic).to.eql(topic);
+    const reason = ERROR.USER_DISCONNECTED.format();
+    await clients.b.disconnect({ topic, reason });
+    await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
+      `No matching session settled with topic: ${topic}`,
+    );
+    clients.a.session
+      .ping(topic, TEST_TIMEOUT_DURATION)
+      .then(() => {
+        throw new Error("Should not resolve");
+      })
+      .catch(e => {
+        expect(e.message).to.equal(
+          `JSON-RPC Request timeout after ${fromMiliseconds(
+            TEST_TIMEOUT_DURATION,
+          )} seconds: wc_sessionPing`,
+        );
+      });
+    clock.tick(TEST_TIMEOUT_DURATION);
   });
 });

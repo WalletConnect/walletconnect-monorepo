@@ -70,6 +70,7 @@ export class Relayer extends IRelayer {
     this.logger.trace(`Initialized`);
     await this.provider.connect();
     await this.subscriptions.init();
+    await this.resubscribe();
   }
 
   public async publish(
@@ -278,6 +279,14 @@ export class Relayer extends IRelayer {
     await this.provider.connection.send(response);
   }
 
+  private async resubscribe() {
+    await Promise.all(
+      this.subscriptions.values.map(async subscription => {
+        await this.rpcSubscribe(subscription.topic, subscription.relay);
+      }),
+    );
+  }
+
   private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
     this.logger.debug(`Setting Relay Provider`);
     this.logger.trace({ type: "method", method: "setProvider", provider: provider?.toString() });
@@ -296,9 +305,10 @@ export class Relayer extends IRelayer {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
       this.onPayload(payload),
     );
-    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
       this.events.emit(RELAYER_EVENTS.connect);
-      this.subscriptions.enable();
+      await this.subscriptions.enable();
+      await this.resubscribe();
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       this.events.emit(RELAYER_EVENTS.disconnect);

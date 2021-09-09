@@ -17,6 +17,7 @@ import {
   isSessionResponded,
   getAppMetadata,
   ERROR,
+  toMiliseconds,
 } from "@walletconnect/utils";
 import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getDefaultLoggerOptions } from "@walletconnect/logger";
@@ -282,7 +283,12 @@ export class Client extends IClient {
       pairing.permissions.controller.publicKey === pairing.self.publicKey &&
       typeof pairing.state.metadata === "undefined"
     ) {
-      await this.pairing.update({ topic: pairing.topic, state: { metadata: this.metadata } });
+      setTimeout(
+        async () =>
+          await this.pairing.update({ topic: pairing.topic, state: { metadata: this.metadata } }),
+        // just enough timeout to avoid sporadic race conditions on unit tests
+        50,
+      );
     }
   }
   // ---------- Private ----------------------------------------------- //

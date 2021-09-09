@@ -330,4 +330,64 @@ describe("JSON-RPC", () => {
       }, 500);
     });
   });
+  it("A can publish multiple messages while B is concurrently subscribing", async function() {
+    const topic = generateRandomBytes32();
+    const { sub } = getTestJsonRpc(generateRandomBytes32(), topic);
+
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    await providerA.connect();
+
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    await providerB.connect();
+
+    // N amount
+    const amount = 1000;
+
+    // acknowledging received payloads
+    providerB.on("payload", (payload: JsonRpcPayload) => {
+      const response = formatJsonRpcResult(payload.id, true);
+      providerB.connection.send(response);
+    });
+
+    // generates N messages with index as content
+    const sent = Array.from(Array(amount)).map((_, i) => String(i + 1));
+
+    // send N messages to topic
+    sent.map(i => {
+      providerA.request(getTestJsonRpc(i, topic).pub);
+    });
+    // subscribe to topic
+    providerB.request(sub);
+
+    const promises: any = [];
+    const received: string[] = [];
+    await Promise.all([
+      await new Promise<void>(resolve => {
+        // evaluating incoming subscriptions
+        providerB.on("message", ({ type, data }) => {
+          if (type === RELAY_JSONRPC.waku.subscription && data.data.topic === topic) {
+            const content = data.data.message;
+            if (!received.includes(content) && sent.includes(content)) {
+              received.push(content);
+            }
+          }
+          if (received.length === amount) {
+            resolve();
+          }
+        });
+      }),
+      // first half
+      sent
+        .slice(0, sent.length / 2)
+        .map(i => promises.push(providerA.request(getTestJsonRpc(i, topic).pub))),
+      // subscribe
+      promises.push(providerB.request),
+      // second half
+      sent
+        .slice(sent.length / 2)
+        .map(i => promises.push(providerA.request(getTestJsonRpc(i, topic).pub))),
+    ]);
+
+    expect(received.length).to.eql(amount);
+  });
 });
