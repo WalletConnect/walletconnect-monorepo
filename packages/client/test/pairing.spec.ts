@@ -14,14 +14,6 @@ import {
 import { CLIENT_EVENTS } from "../src";
 
 describe("Pairing", function() {
-  this.timeout(TEST_TIMEOUT_DURATION);
-  let clock: sinon.SinonFakeTimers;
-  beforeEach(function() {
-    clock = sinon.useFakeTimers(Date.now());
-  });
-  afterEach(function() {
-    clock.restore();
-  });
   it("A pings B with existing pairing", async () => {
     const { clients } = await setupClientsForTesting();
     await testPairingWithoutSession(clients);
@@ -75,6 +67,30 @@ describe("Pairing", function() {
     // ping
     await clients.a.pairing.ping(topic, TEST_TIMEOUT_DURATION);
   });
+  it("can find compatible sessions from permission set", async () => {
+    const { clients } = await setupClientsForTesting();
+    const topic = await testPairingWithoutSession(clients);
+    const incompatible = await clients.a.pairing.find({ jsonrpc: { methods: ["eth_sign"] } });
+    expect(!!incompatible).to.be.true;
+    expect(incompatible.length).to.eql(0);
+    const compatible = await clients.a.pairing.find({
+      jsonrpc: { methods: ["wc_sessionPropose"] },
+    });
+    expect(!!compatible).to.be.true;
+    expect(compatible.length).to.eql(1);
+    expect(compatible[0].topic).to.eql(topic);
+  });
+});
+
+describe("Pairing (with timeout)", function() {
+  this.timeout(TEST_TIMEOUT_DURATION);
+  let clock: sinon.SinonFakeTimers;
+  beforeEach(function() {
+    clock = sinon.useFakeTimers(Date.now());
+  });
+  afterEach(function() {
+    clock.restore();
+  });
   it("should expire after default period is elapsed", function() {
     this.timeout(TEST_PAIRING_TTL);
     return new Promise<void>(async (resolve, reject) => {
@@ -92,18 +108,5 @@ describe("Pairing", function() {
         reject(e);
       }
     });
-  });
-  it("can find compatible sessions from permission set", async () => {
-    const { clients } = await setupClientsForTesting();
-    const topic = await testPairingWithoutSession(clients);
-    const incompatible = await clients.a.pairing.find({ jsonrpc: { methods: ["eth_sign"] } });
-    expect(!!incompatible).to.be.true;
-    expect(incompatible.length).to.eql(0);
-    const compatible = await clients.a.pairing.find({
-      jsonrpc: { methods: ["wc_sessionPropose"] },
-    });
-    expect(!!compatible).to.be.true;
-    expect(compatible.length).to.eql(1);
-    expect(compatible[0].topic).to.eql(topic);
   });
 });

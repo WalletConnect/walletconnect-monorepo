@@ -15,14 +15,6 @@ import {
 } from "./shared";
 
 describe("Request", function() {
-  this.timeout(TEST_TIMEOUT_DURATION + 100);
-  let clock: sinon.SinonFakeTimers;
-  beforeEach(function() {
-    clock = sinon.useFakeTimers(Date.now());
-  });
-  afterEach(function() {
-    clock.restore();
-  });
   it("A requests method and B responds result", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -56,6 +48,17 @@ describe("Request", function() {
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized JSON-RPC Method Requested: ${request.method}`,
     );
+  });
+});
+
+describe("Request (with timeout)", function() {
+  this.timeout(TEST_TIMEOUT_DURATION + 100);
+  let clock: sinon.SinonFakeTimers;
+  beforeEach(function() {
+    clock = sinon.useFakeTimers(Date.now());
+  });
+  afterEach(function() {
+    clock.restore();
   });
   it("A requests method and B fails to return response in time", async () => {
     const { setup, clients } = await setupClientsForTesting();
