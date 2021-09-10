@@ -16,14 +16,14 @@ import { CLIENT_EVENTS } from "../src";
 describe("Pairing", function() {
   it("A pings B with existing pairing", async () => {
     const { clients } = await setupClientsForTesting();
-    await testPairingWithoutSession(clients);
-    const topic = clients.a.pairing.topics[0];
+    const topic = await testPairingWithoutSession(clients);
+    expect(topic).to.eql(clients.a.pairing.topics[0]);
     await clients.a.pairing.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("B pings A with existing pairing", async () => {
     const { clients } = await setupClientsForTesting();
-    await testPairingWithoutSession(clients);
-    const topic = clients.b.pairing.topics[0];
+    const topic = await testPairingWithoutSession(clients);
+    expect(topic).to.eql(clients.b.pairing.topics[0]);
     await clients.b.pairing.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("clients ping each other after restart", async () => {

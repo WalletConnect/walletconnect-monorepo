@@ -2,7 +2,13 @@ import path from "path";
 import { toMiliseconds } from "@walletconnect/utils";
 import { ClientOptions, SessionTypes, AppMetadata } from "@walletconnect/types";
 
-import { ONE_SECOND, PAIRING_DEFAULT_TTL, SESSION_DEFAULT_TTL, THIRTY_SECONDS } from "../../src";
+import {
+  CLIENT_SHORT_TIMEOUT,
+  ONE_SECOND,
+  PAIRING_DEFAULT_TTL,
+  SESSION_DEFAULT_TTL,
+  THIRTY_SECONDS,
+} from "../../src";
 
 import { ROOT_DIR } from "../../../../ops/js/shared";
 
@@ -65,6 +71,7 @@ export const TEST_ETHEREUM_RESULT = TEST_ETHEREUM_ACCOUNTS;
 
 export const TEST_RANDOM_REQUEST = { method: "random_method" };
 
+export const TEST_TIMEOUT_SHORT = CLIENT_SHORT_TIMEOUT;
 export const TEST_TIMEOUT_SAFEGUARD = toMiliseconds(ONE_SECOND);
 export const TEST_TIMEOUT_DURATION = toMiliseconds(THIRTY_SECONDS);
 export const TEST_PAIRING_TTL = toMiliseconds(PAIRING_DEFAULT_TTL);

@@ -12,6 +12,8 @@ export const CLIENT_DEFAULT = {
 
 export const CLIENT_BEAT_INTERVAL = toMiliseconds(FIVE_SECONDS);
 
+export const CLIENT_SHORT_TIMEOUT = 50;
+
 export const CLIENT_EVENTS = {
   beat: "client_beat",
   pairing: {

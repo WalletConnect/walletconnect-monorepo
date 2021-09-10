@@ -27,6 +27,7 @@ import {
   CLIENT_CONTEXT,
   CLIENT_DEFAULT,
   CLIENT_BEAT_INTERVAL,
+  CLIENT_SHORT_TIMEOUT,
   CLIENT_EVENTS,
   CLIENT_STORAGE_OPTIONS,
   PAIRING_DEFAULT_TTL,
@@ -287,7 +288,7 @@ export class Client extends IClient {
         async () =>
           await this.pairing.update({ topic: pairing.topic, state: { metadata: this.metadata } }),
         // just enough timeout to avoid sporadic race conditions on unit tests
-        50,
+        CLIENT_SHORT_TIMEOUT,
       );
     }
   }
