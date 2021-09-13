@@ -294,7 +294,8 @@ describe("Session (with timeout)", function() {
   afterEach(function() {
     clock.restore();
   });
-  it("should expire after default period is elapsed", function() {
+  // FIXME: this test is succeeding but it's taking way too long and it's throwing thousands of memory leaks for Subscription controller
+  it.skip("should expire after default period is elapsed", function() {
     this.timeout(TEST_SESSION_TTL);
     return new Promise<void>(async (resolve, reject) => {
       try {

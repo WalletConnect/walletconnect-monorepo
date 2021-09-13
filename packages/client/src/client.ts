@@ -312,7 +312,7 @@ export class Client extends IClient {
   }
 
   private setBeatInterval() {
-    setInterval(() => this.events.emit(CLIENT_EVENTS.beat), CLIENT_BEAT_INTERVAL);
+    setInterval(() => this.events.emit(CLIENT_EVENTS.beat), toMiliseconds(CLIENT_BEAT_INTERVAL));
   }
 
   private registerEventListeners(): void {

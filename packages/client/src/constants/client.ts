@@ -1,5 +1,3 @@
-import { toMiliseconds } from "@walletconnect/utils";
-
 import { FIVE_SECONDS } from "./time";
 
 export const CLIENT_CONTEXT = "client";
@@ -10,7 +8,7 @@ export const CLIENT_DEFAULT = {
   controller: false,
 };
 
-export const CLIENT_BEAT_INTERVAL = toMiliseconds(FIVE_SECONDS);
+export const CLIENT_BEAT_INTERVAL = FIVE_SECONDS;
 
 export const CLIENT_SHORT_TIMEOUT = 50;
 

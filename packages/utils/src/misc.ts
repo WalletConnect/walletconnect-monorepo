@@ -142,3 +142,7 @@ export function toMiliseconds(seconds: number): number {
 export function fromMiliseconds(miliseconds: number): number {
   return Math.floor(miliseconds / 1000);
 }
+
+export function calcExpiry(ttl: number, now?: number): number {
+  return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
+}

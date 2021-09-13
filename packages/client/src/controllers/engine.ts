@@ -8,6 +8,7 @@ import {
   RelayerTypes,
 } from "@walletconnect/types";
 import {
+  calcExpiry,
   toMiliseconds,
   generateRandomBytes32,
   hasOverlap,
@@ -16,7 +17,6 @@ import {
   isSequenceResponded,
   isStateUpdatedEvent,
   ERROR,
-  fromMiliseconds,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -190,7 +190,7 @@ export class Engine extends IEngine {
           metadata: response?.metadata,
         };
         if (!responder.metadata) delete responder.metadata;
-        const expiry = fromMiliseconds(Date.now() + toMiliseconds(proposal.ttl));
+        const expiry = calcExpiry(proposal.ttl);
         const state: SequenceTypes.State = response?.state || {};
         const peer: SequenceTypes.Participant = {
           publicKey: proposal.proposer.publicKey,
@@ -771,7 +771,7 @@ export class Engine extends IEngine {
 
   private async subscribeNewPending(createdEvent: StateEvent.Created<SequenceTypes.Pending>) {
     const { topic, sequence: pending } = createdEvent;
-    const expiry = fromMiliseconds(Date.now() + toMiliseconds(ONE_DAY));
+    const expiry = calcExpiry(ONE_DAY);
     await this.sequence.client.relayer.subscribe(topic, expiry, {
       relay: pending.relay,
     });

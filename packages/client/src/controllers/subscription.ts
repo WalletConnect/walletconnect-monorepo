@@ -7,7 +7,7 @@ import {
   SubscriptionEvent,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR, fromMiliseconds, getNestedContext, toMiliseconds } from "@walletconnect/utils";
+import { ERROR, getNestedContext, toMiliseconds, calcExpiry } from "@walletconnect/utils";
 import { generateChildLogger } from "@walletconnect/logger";
 
 import {
@@ -133,8 +133,7 @@ export class Subscription extends ISubscription {
   // ---------- Private ----------------------------------------------- //
 
   private setSubscription(id: string, subscription: SubscriptionParams): void {
-    const expiry =
-      subscription.expiry || fromMiliseconds(Date.now() + toMiliseconds(SUBSCRIPTION_DEFAULT_TTL));
+    const expiry = subscription.expiry || calcExpiry(SUBSCRIPTION_DEFAULT_TTL);
     this.subscriptions.set(id, { ...subscription, expiry });
     this.setOnTopicMap(id, subscription);
     this.setTimeout(id, expiry);
@@ -157,6 +156,9 @@ export class Subscription extends ISubscription {
   private deleteSubscription(id: string, subscription: SubscriptionParams): void {
     this.subscriptions.delete(id);
     this.deleteOnTopicMap(id, subscription);
+    if (this.timeout.has(id)) {
+      this.deleteTimeout(id);
+    }
   }
 
   private setOnTopicMap(id: string, subscription: SubscriptionParams): void {
@@ -184,15 +186,16 @@ export class Subscription extends ISubscription {
     }
   }
 
-  private setTimeout(id: string, expiry: number) {
+  private setTimeout(id: string, expiry: number): void {
+    // timeout already set
     if (this.timeout.has(id)) return;
-    const milisecondsLeft = toMiliseconds(expiry) - Date.now();
-    if (milisecondsLeft <= 0) {
-      this.onTimeout(id);
-      return;
-    }
-    if (milisecondsLeft > CLIENT_BEAT_INTERVAL) return;
-    const timeout = setTimeout(() => this.onTimeout(id), milisecondsLeft);
+    const msToTimeout = toMiliseconds(expiry) - Date.now();
+    // timeout is late
+    if (msToTimeout <= 0) return this.onTimeout(id);
+    // timeout is early
+    if (msToTimeout > toMiliseconds(CLIENT_BEAT_INTERVAL)) return;
+    // set timeout
+    const timeout = setTimeout(() => this.onTimeout(id), msToTimeout);
     this.timeout.set(id, timeout);
   }
 
@@ -201,6 +204,7 @@ export class Subscription extends ISubscription {
     const timeout = this.timeout.get(id);
     if (typeof timeout === "undefined") return;
     clearTimeout(timeout);
+    this.timeout.delete(id);
   }
 
   private resetTimeout(): void {
@@ -258,6 +262,13 @@ export class Subscription extends ISubscription {
     });
   }
 
+  private onExpiry(expiredEvent: SubscriptionEvent.Expired) {
+    const eventName = SUBSCRIPTION_EVENTS.expired;
+    this.logger.info(`Emitting ${eventName}`);
+    this.logger.debug({ type: "event", event: eventName, data: expiredEvent });
+    this.events.emit(SUBSCRIPTION_EVENTS.expired, expiredEvent as SubscriptionEvent.Expired);
+  }
+
   private registerEventListeners(): void {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
     this.events.on(SUBSCRIPTION_EVENTS.created, async (createdEvent: SubscriptionEvent.Created) => {
@@ -271,10 +282,7 @@ export class Subscription extends ISubscription {
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
       await this.persist();
-      if (deletedEvent.reason.code === ERROR.EXPIRED.code) {
-        const expiredEvent = deletedEvent;
-        this.events.emit(SUBSCRIPTION_EVENTS.deleted, expiredEvent as SubscriptionEvent.Expired);
-      }
+      if (deletedEvent.reason.code === ERROR.EXPIRED.code) this.onExpiry(deletedEvent);
     });
   }
 }
