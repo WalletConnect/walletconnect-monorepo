@@ -46,6 +46,4 @@ export abstract class IJsonRpcHistory extends IEvents {
   public abstract delete(topic: string, id?: number): Promise<void>;
 
   public abstract exists(topic: string, id: number): Promise<boolean>;
-
-  public abstract getNestedContext(): string;
 }

@@ -34,7 +34,8 @@ export abstract class IClient extends IEvents {
   public abstract pairing: IPairing;
   public abstract session: ISession;
 
-  public abstract context: string;
+  public abstract name: string;
+  public abstract readonly context: string;
 
   public abstract readonly controller: boolean;
   public abstract metadata: AppMetadata | undefined;

@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { generateChildLogger } from "@walletconnect/logger";
-import { PairingTypes, IClient, IPairing, ISequence, IEngine } from "@walletconnect/types";
-import { formatUri } from "@walletconnect/utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { PairingTypes, IClient, IPairing } from "@walletconnect/types";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { formatUri } from "@walletconnect/utils";
 
 import { State } from "./state";
 import { Engine } from "./engine";
@@ -25,7 +25,7 @@ export class Pairing extends IPairing {
 
   public events = new EventEmitter();
 
-  public context: string = PAIRING_CONTEXT;
+  public name: string = PAIRING_CONTEXT;
 
   public config = {
     status: PAIRING_STATUS,
@@ -37,7 +37,7 @@ export class Pairing extends IPairing {
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
     this.pending = new State<PairingTypes.Pending>(client, this.logger, this.config.status.pending);
     this.settled = new State<PairingTypes.Settled>(client, this.logger, this.config.status.settled);
     this.history = new JsonRpcHistory(client, this.logger);
@@ -65,6 +65,10 @@ export class Pairing extends IPairing {
 
   public send(topic: string, payload: JsonRpcPayload): Promise<void> {
     return this.engine.send(topic, payload);
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get length(): number {

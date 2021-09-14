@@ -1,18 +1,17 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { generateChildLogger } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import {
   RelayerTypes,
   IRelayer,
   IClient,
   ISubscription,
   IJsonRpcHistory,
-  SequenceTypes,
   SubscriptionEvent,
   Reason,
 } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
-import { ERROR, formatRelayRpcUrl } from "@walletconnect/utils";
+import { ERROR, formatRelayRpcUrl, formatMessageContext } from "@walletconnect/utils";
 import {
   IJsonRpcProvider,
   JsonRpcPayload,
@@ -47,15 +46,19 @@ export class Relayer extends IRelayer {
 
   public provider: IJsonRpcProvider;
 
-  public context: string = RELAYER_CONTEXT;
+  public name: string = RELAYER_CONTEXT;
 
   constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
     super(client, logger);
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
     this.subscriptions = new Subscription(client, this.logger);
     this.history = new JsonRpcHistory(client, this.logger);
     this.provider = this.setProvider(provider);
     this.registerEventListeners();
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get connected(): boolean {
@@ -94,7 +97,7 @@ export class Relayer extends IRelayer {
       this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
-      this.logger.error(e);
+      this.logger.error(e as any);
       throw e;
     }
   }
@@ -116,7 +119,7 @@ export class Relayer extends IRelayer {
       return id;
     } catch (e) {
       this.logger.debug(`Failed to Subscribe Topic`);
-      this.logger.error(e);
+      this.logger.error(e as any);
       throw e;
     }
   }
@@ -131,13 +134,13 @@ export class Relayer extends IRelayer {
     try {
       const relay = this.getRelayProtocol(opts);
       await this.rpcUnsubscribe(topic, id, relay);
-      const reason = ERROR.DELETED.format({ context: this.subscriptions.getNestedContext() });
+      const reason = ERROR.DELETED.format({ context: formatMessageContext(this.context) });
       await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     } catch (e) {
       this.logger.debug(`Failed to Unsubscribe Topic`);
-      this.logger.error(e);
+      this.logger.error(e as any);
       throw e;
     }
   }

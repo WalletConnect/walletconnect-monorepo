@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { IClient, IState, Reason, StateEvent } from "@walletconnect/types";
-import { ERROR, getNestedContext } from "@walletconnect/utils";
+import { ERROR, formatMessageContext } from "@walletconnect/utils";
 
 import { STATE_EVENTS } from "../constants";
-import { generateChildLogger } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 export class State<Sequence = any> extends IState<Sequence> {
   public sequences = new Map<string, Sequence>();
@@ -13,9 +13,9 @@ export class State<Sequence = any> extends IState<Sequence> {
 
   private cached: Sequence[] = [];
 
-  constructor(public client: IClient, public logger: Logger, public context: string) {
-    super(client, logger, context);
-    this.logger = generateChildLogger(logger, this.context);
+  constructor(public client: IClient, public logger: Logger, public name: string) {
+    super(client, logger, name);
+    this.logger = generateChildLogger(logger, this.name);
 
     this.registerEventListeners();
   }
@@ -23,6 +23,10 @@ export class State<Sequence = any> extends IState<Sequence> {
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
     await this.restore();
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get length(): number {
@@ -103,10 +107,6 @@ export class State<Sequence = any> extends IState<Sequence> {
     this.events.removeListener(event, listener);
   }
 
-  public getNestedContext() {
-    return getNestedContext(this.logger);
-  }
-
   // ---------- Private ----------------------------------------------- //
 
   private async getState(topic: string): Promise<Sequence> {
@@ -114,7 +114,7 @@ export class State<Sequence = any> extends IState<Sequence> {
     const sequence = this.sequences.get(topic);
     if (!sequence) {
       const error = ERROR.NO_MATCHING_TOPIC.format({
-        context: this.getNestedContext(),
+        context: formatMessageContext(this.context),
         topic,
       });
       this.logger.error(error.message);
@@ -124,18 +124,18 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   private async persist() {
-    await this.client.storage.setSequenceState(this.getNestedContext(), this.values);
+    await this.client.storage.setSequenceState(this.context, this.values);
     this.events.emit(STATE_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getSequenceState(this.getNestedContext());
+      const persisted = await this.client.storage.getSequenceState(this.context);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.sequences.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.getNestedContext(),
+          context: formatMessageContext(this.context),
         });
         this.logger.error(error.message);
         throw new Error(error.message);
@@ -143,11 +143,13 @@ export class State<Sequence = any> extends IState<Sequence> {
       this.cached = persisted;
       this.cached.forEach(sequence => this.sequences.set((sequence as any).topic, sequence));
       await this.onInit();
-      this.logger.debug(`Successfully Restored sequences for ${this.getNestedContext()}`);
+      this.logger.debug(
+        `Successfully Restored sequences for ${formatMessageContext(this.context)}`,
+      );
       this.logger.trace({ type: "method", method: "restore", sequences: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore sequences for ${this.getNestedContext()}`);
-      this.logger.error(e);
+      this.logger.debug(`Failed to Restore sequences for ${formatMessageContext(this.context)}`);
+      this.logger.error(e as any);
     }
   }
 

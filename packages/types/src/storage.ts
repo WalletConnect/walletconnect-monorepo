@@ -8,7 +8,9 @@ import { SubscriptionParams } from "./subscription";
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
 export abstract class IStorage {
-  public abstract context: string;
+  public abstract name: string;
+
+  public abstract readonly context: string;
 
   public abstract version: string;
 

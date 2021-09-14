@@ -1,6 +1,6 @@
 import { Logger } from "pino";
 import * as encoding from "@walletconnect/encoding";
-import { generateChildLogger } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { IClient, CryptoTypes, ICrypto, IKeyChain } from "@walletconnect/types";
@@ -13,16 +13,20 @@ import {
   sha256,
 } from "@walletconnect/utils";
 
-import { CRYPTO_CONTEXT, CRYPTO_KEYCHAIN_NESTED_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
+import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
 
-  public context = KEYCHAIN_CONTEXT;
+  public name: string = KEYCHAIN_CONTEXT;
 
   constructor(public client: IClient, public logger: Logger) {
     this.client = client;
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   public async init(): Promise<void> {
@@ -51,31 +55,33 @@ export class KeyChain implements IKeyChain {
     await this.persist();
   }
 
-  public getNestedContext() {
-    return CRYPTO_KEYCHAIN_NESTED_CONTEXT;
-  }
-
   // ---------- Private ----------------------------------------------- //
 
   private async restore() {
-    const keychain = await this.client.storage.getKeyChain(this.getNestedContext());
+    const keychain = await this.client.storage.getKeyChain(this.context);
     if (typeof keychain !== "undefined") {
       this.keychain = keychain;
     }
   }
 
   private async persist() {
-    await this.client.storage.setKeyChain(this.getNestedContext(), this.keychain);
+    await this.client.storage.setKeyChain(this.context, this.keychain);
   }
 }
 
 export class Crypto implements ICrypto {
-  public context: string = CRYPTO_CONTEXT;
+  public name: string = CRYPTO_CONTEXT;
 
-  constructor(public client: IClient, public logger: Logger, public keychain: IKeyChain) {
+  public keychain: IKeyChain;
+
+  constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {
     this.client = client;
-    this.keychain = keychain;
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
+    this.keychain = keychain || new KeyChain(this.client, this.logger);
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   public async init(): Promise<void> {

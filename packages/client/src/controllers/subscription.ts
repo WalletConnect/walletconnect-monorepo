@@ -7,8 +7,8 @@ import {
   SubscriptionEvent,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR, getNestedContext, toMiliseconds, calcExpiry } from "@walletconnect/utils";
-import { generateChildLogger } from "@walletconnect/logger";
+import { ERROR, formatMessageContext, toMiliseconds, calcExpiry } from "@walletconnect/utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import {
   CLIENT_BEAT_INTERVAL,
@@ -25,7 +25,7 @@ export class Subscription extends ISubscription {
 
   public events = new EventEmitter();
 
-  public context = SUBSCRIPTION_CONTEXT;
+  public name: string = SUBSCRIPTION_CONTEXT;
 
   private timeout = new Map<string, NodeJS.Timeout>();
 
@@ -33,13 +33,17 @@ export class Subscription extends ISubscription {
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
     await this.restore();
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get length(): number {
@@ -126,10 +130,6 @@ export class Subscription extends ISubscription {
     this.events.emit(SUBSCRIPTION_EVENTS.disabled);
   }
 
-  public getNestedContext() {
-    return getNestedContext(this.logger);
-  }
-
   // ---------- Private ----------------------------------------------- //
 
   private setSubscription(id: string, subscription: SubscriptionParams): void {
@@ -144,7 +144,7 @@ export class Subscription extends ISubscription {
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: this.getNestedContext(),
+        context: formatMessageContext(this.context),
         id,
       });
       this.logger.error(error.message);
@@ -214,7 +214,7 @@ export class Subscription extends ISubscription {
 
   private onTimeout(id: string): void {
     this.deleteTimeout(id);
-    this.delete(id, ERROR.EXPIRED.format({ context: this.getNestedContext() }));
+    this.delete(id, ERROR.EXPIRED.format({ context: formatMessageContext(this.context) }));
   }
 
   private checkSubscriptions(): void {
@@ -224,18 +224,18 @@ export class Subscription extends ISubscription {
   }
 
   private async persist() {
-    await this.client.storage.setRelayerSubscriptions(this.getNestedContext(), this.values);
+    await this.client.storage.setRelayerSubscriptions(this.context, this.values);
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getRelayerSubscriptions(this.getNestedContext());
+      const persisted = await this.client.storage.getRelayerSubscriptions(this.context);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.getNestedContext(),
+          context: formatMessageContext(this.context),
         });
         this.logger.error(error.message);
         throw new Error(error.message);
@@ -247,11 +247,15 @@ export class Subscription extends ISubscription {
         }),
       );
       await this.enable();
-      this.logger.debug(`Successfully Restored subscriptions for ${this.getNestedContext()}`);
+      this.logger.debug(
+        `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
+      );
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore subscriptions for ${this.getNestedContext()}`);
-      this.logger.error(e);
+      this.logger.debug(
+        `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
+      );
+      this.logger.error(e as any);
     }
   }
 

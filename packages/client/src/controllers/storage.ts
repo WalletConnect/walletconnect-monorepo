@@ -8,12 +8,12 @@ import {
   StorageKeyMap,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
+import { ERROR, mapToObj, objToMap, formatStorageKeyName } from "@walletconnect/utils";
 
 import { STORAGE_CONTEXT, STORAGE_KEYS, STORAGE_VERSION } from "../constants";
 
 export class Storage implements IStorage {
-  public context = STORAGE_CONTEXT;
+  public name: string = STORAGE_CONTEXT;
 
   public version = STORAGE_VERSION;
 
@@ -25,8 +25,12 @@ export class Storage implements IStorage {
     public keyValueStorage: IKeyValueStorage,
   ) {
     this.client = client;
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
     this.keyValueStorage = keyValueStorage;
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get prefix() {
@@ -94,7 +98,7 @@ export class Storage implements IStorage {
   }
 
   public getStorageKeyName(context: string): string {
-    return context.split(" ").join(":");
+    return formatStorageKeyName(context);
   }
 
   public isValidStorageKeyName(name: string): boolean {
@@ -103,6 +107,4 @@ export class Storage implements IStorage {
       .flat();
     return validKeys.includes(name.toLowerCase());
   }
-
-  // ---------- Private ----------------------------------------------- //
 }

@@ -24,7 +24,9 @@ export declare namespace StateEvent {
 }
 
 export abstract class IState<Sequence> extends IEvents {
-  public abstract sequences = new Map<string, Sequence>();
+  public abstract sequences: Map<string, Sequence>;
+
+  public abstract readonly context: string;
 
   public abstract readonly length: number;
 
@@ -32,7 +34,7 @@ export abstract class IState<Sequence> extends IEvents {
 
   public abstract readonly values: Sequence[];
 
-  constructor(public client: IClient, public logger: Logger, public context: string) {
+  constructor(public client: IClient, public logger: Logger, public name: string) {
     super();
   }
 
@@ -45,6 +47,4 @@ export abstract class IState<Sequence> extends IEvents {
   public abstract update(topic: string, update: Partial<Sequence>): Promise<void>;
 
   public abstract delete(topic: string, reason: Reason): Promise<void>;
-
-  public abstract getNestedContext(): string;
 }

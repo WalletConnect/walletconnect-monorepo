@@ -22,9 +22,9 @@ export declare namespace SubscriptionEvent {
 }
 
 export abstract class ISubscription extends IEvents {
-  public abstract subscriptions = new Map<string, SubscriptionParams>();
+  public abstract subscriptions: Map<string, SubscriptionParams>;
 
-  public abstract topicMap = new Map<string, string[]>();
+  public abstract topicMap: Map<string, string[]>;
 
   public abstract readonly length: number;
 
@@ -34,7 +34,9 @@ export abstract class ISubscription extends IEvents {
 
   public abstract readonly topics: string[];
 
-  public abstract context: string;
+  public abstract name: string;
+
+  public abstract readonly context: string;
 
   constructor(public client: IClient, public logger: Logger) {
     super();
@@ -53,6 +55,4 @@ export abstract class ISubscription extends IEvents {
   public abstract enable(): Promise<void>;
 
   public abstract disable(): Promise<void>;
-
-  public abstract getNestedContext(): string;
 }

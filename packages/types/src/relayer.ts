@@ -39,7 +39,9 @@ export abstract class IRelayer extends IEvents {
 
   public abstract provider: IJsonRpcProvider;
 
-  public abstract context: string;
+  public abstract name: string;
+
+  public abstract readonly context: string;
 
   public abstract readonly connected: boolean;
 

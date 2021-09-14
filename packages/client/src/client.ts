@@ -20,7 +20,11 @@ import {
   toMiliseconds,
 } from "@walletconnect/utils";
 import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { generateChildLogger, getDefaultLoggerOptions } from "@walletconnect/logger";
+import {
+  generateChildLogger,
+  getDefaultLoggerOptions,
+  getLoggerContext,
+} from "@walletconnect/logger";
 
 import { Pairing, Session, Relayer } from "./controllers";
 import {
@@ -41,7 +45,7 @@ import {
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
-import { Crypto, KeyChain } from "./controllers/crypto";
+import { Crypto } from "./controllers/crypto";
 import { Storage } from "./controllers/storage";
 
 export class Client extends IClient {
@@ -59,7 +63,7 @@ export class Client extends IClient {
   public pairing: Pairing;
   public session: Session;
 
-  public context: string = CLIENT_CONTEXT;
+  public name: string = CLIENT_CONTEXT;
 
   public readonly controller: boolean;
   public metadata: AppMetadata | undefined;
@@ -79,24 +83,27 @@ export class Client extends IClient {
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
 
-    this.context = opts?.name || CLIENT_DEFAULT.name;
+    this.name = opts?.name || CLIENT_DEFAULT.name;
     this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
     this.apiKey = opts?.apiKey;
 
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
 
     const keyValueStorage =
       opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
-    const keychain = opts?.keychain || new KeyChain(this, this.logger);
-    this.crypto = new Crypto(this, this.logger, keychain);
+    this.crypto = new Crypto(this, this.logger, opts?.keychain);
 
     this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
     this.storage = new Storage(this, this.logger, keyValueStorage);
 
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   public on(event: string, listener: any): void {
@@ -147,7 +154,7 @@ export class Client extends IClient {
       return session;
     } catch (e) {
       this.logger.debug(`Application Connection Failure`);
-      this.logger.error(e);
+      this.logger.error(e as any);
       throw e;
     }
   }
@@ -306,7 +313,7 @@ export class Client extends IClient {
       this.logger.info(`Client Initilization Success`);
     } catch (e) {
       this.logger.info(`Client Initilization Failure`);
-      this.logger.error(e);
+      this.logger.error(e as any);
       throw e;
     }
   }

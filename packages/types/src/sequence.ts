@@ -287,8 +287,11 @@ export abstract class ISequence<
   // returns settled sequences values
   public abstract readonly values: Settled[];
 
+  // describes sequence name
+  public abstract name: string;
+
   // describes sequence context
-  public abstract context: string;
+  public abstract readonly context: string;
 
   // describes sequence config
   public abstract config: Config;

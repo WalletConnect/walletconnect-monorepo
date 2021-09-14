@@ -31,7 +31,9 @@ export declare namespace CryptoTypes {
 export abstract class IKeyChain {
   public abstract keychain: Map<string, string>;
 
-  public abstract context: string;
+  public abstract name: string;
+
+  public abstract readonly context: string;
 
   constructor(public client: IClient, public logger: Logger) {}
 
@@ -44,14 +46,16 @@ export abstract class IKeyChain {
   public abstract get(tag: string, opts?: any): Promise<string>;
 
   public abstract del(tag: string, opts?: any): Promise<void>;
-
-  public abstract getNestedContext(): string;
 }
 
 export abstract class ICrypto {
-  public abstract context: string;
+  public abstract name: string;
 
-  constructor(public client: IClient, public logger: Logger, public keychain: IKeyChain) {}
+  public abstract readonly context: string;
+
+  public abstract keychain: IKeyChain;
+
+  constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {}
 
   public abstract init(): Promise<void>;
 

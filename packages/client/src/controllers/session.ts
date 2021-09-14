@@ -1,14 +1,14 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { generateChildLogger } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IClient, ISession, SessionTypes } from "@walletconnect/types";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import {
   validateSessionProposeParams,
   validateSessionRespondParams,
   isValidationInvalid,
   ERROR,
 } from "@walletconnect/utils";
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 import { State } from "./state";
 import { Engine } from "./engine";
@@ -29,7 +29,7 @@ export class Session extends ISession {
 
   public events = new EventEmitter();
 
-  public context: string = SESSION_CONTEXT;
+  public name: string = SESSION_CONTEXT;
 
   public config = {
     status: SESSION_STATUS,
@@ -41,7 +41,7 @@ export class Session extends ISession {
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
     this.pending = new State<SessionTypes.Pending>(client, this.logger, this.config.status.pending);
     this.settled = new State<SessionTypes.Settled>(client, this.logger, this.config.status.settled);
     this.history = new JsonRpcHistory(client, this.logger);
@@ -69,6 +69,10 @@ export class Session extends ISession {
 
   public send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     return this.engine.send(topic, payload, chainId);
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get length(): number {

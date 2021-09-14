@@ -1,14 +1,14 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { IClient, IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
-import { ERROR, getNestedContext } from "@walletconnect/utils";
+import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
   isJsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
-import { generateChildLogger } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
 
@@ -17,20 +17,24 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   public events = new EventEmitter();
 
-  public context: string = HISTORY_CONTEXT;
+  public name: string = HISTORY_CONTEXT;
 
   private cached: JsonRpcRecord[] = [];
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
     this.client;
-    this.logger = generateChildLogger(logger, this.context);
+    this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
     await this.restore();
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get size(): number {
@@ -65,7 +69,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
     if (this.records.has(request.id)) {
       const error = ERROR.RECORD_ALREADY_EXISTS.format({
-        context: this.getNestedContext(),
+        context: formatMessageContext(this.context),
         id: request.id,
       });
       this.logger.error(error.message);
@@ -102,7 +106,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record = await this.getRecord(id);
     if (record.topic !== topic) {
       const error = ERROR.MISMATCHED_TOPIC.format({
-        context: this.getNestedContext(),
+        context: formatMessageContext(this.context),
         id,
       });
       this.logger.error(error.message);
@@ -147,10 +151,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.events.removeListener(event, listener);
   }
 
-  public getNestedContext() {
-    return getNestedContext(this.logger);
-  }
-
   // ---------- Private ----------------------------------------------- //
 
   private async getRecord(id: number): Promise<JsonRpcRecord> {
@@ -158,7 +158,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record = this.records.get(id);
     if (!record) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: this.getNestedContext(),
+        context: formatMessageContext(this.context),
         id,
       });
       this.logger.error(error.message);
@@ -168,18 +168,18 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private async persist() {
-    await this.client.storage.setJsonRpcRecords(this.getNestedContext(), this.values);
+    await this.client.storage.setJsonRpcRecords(this.context, this.values);
     this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getJsonRpcRecords(this.getNestedContext());
+      const persisted = await this.client.storage.getJsonRpcRecords(this.context);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.getNestedContext(),
+          context: formatMessageContext(this.context),
         });
         this.logger.error(error.message);
         throw new Error(error.message);
@@ -191,11 +191,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         }),
       );
       await this.onInit();
-      this.logger.debug(`Successfully Restored records for ${this.getNestedContext()}`);
+      this.logger.debug(`Successfully Restored records for ${formatMessageContext(this.context)}`);
       this.logger.trace({ type: "method", method: "restore", records: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore records for ${this.getNestedContext()}`);
-      this.logger.error(e);
+      this.logger.debug(`Failed to Restore records for ${formatMessageContext(this.context)}`);
+      this.logger.error(e as any);
     }
   }
 

@@ -1,8 +1,28 @@
 import * as qs from "query-string";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
-import { Logger, RelayClientMetadata, AppMetadata } from "@walletconnect/types";
-import { getLoggerContext } from "@walletconnect/logger";
+import { RelayClientMetadata, AppMetadata } from "@walletconnect/types";
+
+// -- constants -----------------------------------------//
+
+export const REACT_NATIVE_PRODUCT = "ReactNative";
+
+export const ENV_MAP = {
+  reactNative: "react-native",
+  node: "node",
+  browser: "browser",
+  unknown: "unknown",
+};
+
+export const EMPTY_SPACE = " ";
+
+export const COLON = ":";
+
+export const SLASH = "/";
+
+export const DEFAULT_DEPTH = 2;
+
+export const ONE_THOUSAND = 1000;
 
 // -- env -----------------------------------------------//
 
@@ -15,7 +35,7 @@ export function isNode(): boolean {
 }
 
 export function isReactNative(): boolean {
-  return !getDocument() && !!getNavigator() && navigator.product === "ReactNative";
+  return !getDocument() && !!getNavigator() && navigator.product === REACT_NATIVE_PRODUCT;
 }
 
 export function isBrowser(): boolean {
@@ -23,10 +43,10 @@ export function isBrowser(): boolean {
 }
 
 export function getEnvironment(): string {
-  if (isReactNative()) return "react-native";
-  if (isNode()) return "node";
-  if (isBrowser()) return "browser";
-  return "unknown";
+  if (isReactNative()) return ENV_MAP.reactNative;
+  if (isNode()) return ENV_MAP.node;
+  if (isBrowser()) return ENV_MAP.browser;
+  return ENV_MAP.unknown;
 }
 
 // -- query -----------------------------------------------//
@@ -80,18 +100,29 @@ export function assertType(obj: any, key: string, type: string) {
   }
 }
 
-// -- context ----------------------------------------------- //
+// -- context ------------------------------------------------- //
 
-export function getNestedContext(logger: Logger, length = 2) {
-  const context = getLoggerContext(logger).split("/");
-  return context.slice(context.length - length, context.length).join(" ");
+export function parseContextNames(context: string, depth = DEFAULT_DEPTH) {
+  return getLastItems(context.split(SLASH), depth);
+}
+
+export function formatMessageContext(context: string): string {
+  return parseContextNames(context).join(EMPTY_SPACE);
+}
+
+export function formatStorageKeyName(context: string): string {
+  return parseContextNames(context).join(COLON);
 }
 
 // -- array ------------------------------------------------- //
 
-export function hasOverlap(a: any[], b: any[]) {
+export function hasOverlap(a: any[], b: any[]): boolean {
   const matches = a.filter(x => b.includes(x));
   return matches.length === a.length;
+}
+
+export function getLastItems(arr: any[], depth = DEFAULT_DEPTH): any[] {
+  return arr.slice(Math.max(arr.length - depth, 0));
 }
 
 // -- map ------------------------------------------------- //
@@ -128,19 +159,19 @@ export function capitalizeWord(word: string) {
 
 export function capitalize(str: string) {
   return str
-    .split(" ")
+    .split(EMPTY_SPACE)
     .map(w => capitalizeWord(w))
-    .join(" ");
+    .join(EMPTY_SPACE);
 }
 
 // -- time ------------------------------------------------- //
 
 export function toMiliseconds(seconds: number): number {
-  return seconds * 1000;
+  return seconds * ONE_THOUSAND;
 }
 
 export function fromMiliseconds(miliseconds: number): number {
-  return Math.floor(miliseconds / 1000);
+  return Math.floor(miliseconds / ONE_THOUSAND);
 }
 
 export function calcExpiry(ttl: number, now?: number): number {

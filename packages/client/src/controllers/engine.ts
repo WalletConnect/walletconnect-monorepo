@@ -8,6 +8,7 @@ import {
   RelayerTypes,
 } from "@walletconnect/types";
 import {
+  formatMessageContext,
   calcExpiry,
   toMiliseconds,
   generateRandomBytes32,
@@ -129,7 +130,7 @@ export class Engine extends IEngine {
       const maxTimeout = params?.timeout || toMiliseconds(FIVE_MINUTES);
       const timeout = setTimeout(() => {
         const error = ERROR.SETTLE_TIMEOUT.format({
-          context: this.sequence.context,
+          context: this.sequence.name,
           timeout: maxTimeout,
         });
         this.sequence.logger.error(error.message);
@@ -159,7 +160,7 @@ export class Engine extends IEngine {
             } else {
               try {
                 const settled = await this.sequence.settled.get(outcome.topic);
-                const reason = ERROR.SETTLED.format({ context: this.sequence.context });
+                const reason = ERROR.SETTLED.format({ context: this.sequence.name });
                 await this.sequence.pending.delete(pending.topic, reason);
                 resolve(settled);
               } catch (e) {
@@ -231,7 +232,7 @@ export class Engine extends IEngine {
         await this.sequence.pending.set(pending.topic, pending);
         return pending;
       } catch (e) {
-        const reason = ERROR.GENERIC.format({ message: e.message });
+        const reason = ERROR.GENERIC.format({ message: (e as any).message });
         const outcome: SequenceTypes.Outcome = { reason };
         const pending: SequenceTypes.Pending = {
           status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
@@ -245,7 +246,7 @@ export class Engine extends IEngine {
         return pending;
       }
     } else {
-      const defaultReason = ERROR.NOT_APPROVED.format({ context: this.sequence.context });
+      const defaultReason = ERROR.NOT_APPROVED.format({ context: this.sequence.name });
       const outcome: SequenceTypes.Outcome = { reason: params?.reason || defaultReason };
       const pending: SequenceTypes.Pending = {
         status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
@@ -439,8 +440,8 @@ export class Engine extends IEngine {
           },
         });
       } catch (e) {
-        this.sequence.logger.error(e);
-        error = ERROR.GENERIC.format({ message: e.message });
+        this.sequence.logger.error(e as any);
+        error = ERROR.GENERIC.format({ message: (e as any).message });
         await this.sequence.pending.update(topic, {
           status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
           outcome: { reason: error },
@@ -472,7 +473,7 @@ export class Engine extends IEngine {
     if (isJsonRpcError(response) && !isSequenceFailed(pending.outcome)) {
       await this.sequence.settled.delete(pending.outcome.topic, response.error);
     }
-    const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.sequence.context });
+    const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.sequence.name });
     await this.sequence.pending.delete(topic, reason);
   }
 
@@ -554,8 +555,8 @@ export class Engine extends IEngine {
       const response = formatJsonRpcResult(request.id, true);
       await this.send(settled.topic, response);
     } catch (e) {
-      this.sequence.logger.error(e);
-      const response = formatJsonRpcError(request.id, e.message);
+      this.sequence.logger.error(e as any);
+      const response = formatJsonRpcError(request.id, (e as any).message);
       await this.send(settled.topic, response);
     }
   }
@@ -572,8 +573,8 @@ export class Engine extends IEngine {
       const response = formatJsonRpcResult(request.id, true);
       await this.send(settled.topic, response);
     } catch (e) {
-      this.sequence.logger.error(e);
-      const response = formatJsonRpcError(request.id, e.message);
+      this.sequence.logger.error(e as any);
+      const response = formatJsonRpcError(request.id, (e as any).message);
       await this.send(settled.topic, response);
     }
   }
@@ -599,14 +600,14 @@ export class Engine extends IEngine {
     participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Update> {
     if (typeof update.state === "undefined") {
-      const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.sequence.context });
+      const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.sequence.name });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
     const settled = await this.sequence.settled.get(topic);
     if (participant.publicKey !== settled.permissions.controller.publicKey) {
       const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({
-        context: this.sequence.context,
+        context: this.sequence.name,
       });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
@@ -622,14 +623,14 @@ export class Engine extends IEngine {
     participant: SequenceTypes.Participant,
   ): Promise<SequenceTypes.Upgrade> {
     if (typeof upgrade.permissions === "undefined") {
-      const error = ERROR.INVALID_UPGRADE_REQUEST.format({ context: this.sequence.context });
+      const error = ERROR.INVALID_UPGRADE_REQUEST.format({ context: this.sequence.name });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
     const settled = await this.sequence.settled.get(topic);
     if (participant.publicKey !== settled.permissions.controller.publicKey) {
       const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({
-        context: this.sequence.context,
+        context: this.sequence.name,
       });
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
@@ -870,12 +871,12 @@ export class Engine extends IEngine {
       async (expiredEvent: SubscriptionEvent.Deleted) => {
         if (this.sequence.pending.sequences.has(expiredEvent.topic)) {
           const reason = ERROR.EXPIRED.format({
-            context: this.sequence.pending.getNestedContext(),
+            context: formatMessageContext(this.sequence.pending.context),
           });
           this.sequence.pending.delete(expiredEvent.topic, reason);
         } else if (this.sequence.settled.sequences.has(expiredEvent.topic)) {
           const reason = ERROR.EXPIRED.format({
-            context: this.sequence.settled.getNestedContext(),
+            context: formatMessageContext(this.sequence.settled.context),
           });
           this.sequence.settled.delete(expiredEvent.topic, reason);
         }
