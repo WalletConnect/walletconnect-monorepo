@@ -149,11 +149,8 @@ export class Relayer extends IRelayer {
     topic: string,
     opts?: RelayerTypes.UnsubscribeOptions,
   ): Promise<void> {
-    if (!this.subscriptions.topicMap.has(topic)) return;
     const ids = this.subscriptions.topicMap.get(topic);
-    if (typeof ids !== "undefined") {
-      await Promise.all(ids.map(async id => await this.unsubscribe(topic, id, opts)));
-    }
+    await Promise.all(ids.map(async id => await this.unsubscribe(topic, id, opts)));
   }
 
   public on(event: string, listener: any): void {

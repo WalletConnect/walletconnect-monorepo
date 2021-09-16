@@ -3,6 +3,7 @@ import { Logger } from "pino";
 import {
   IClient,
   ISubscription,
+  ISubscriptionTopicMap,
   Reason,
   SubscriptionEvent,
   SubscriptionParams,
@@ -18,10 +19,54 @@ import {
   SUBSCRIPTION_EVENTS,
 } from "../constants";
 
+export class SubscriptionTopicMap implements ISubscriptionTopicMap {
+  public map = new Map<string, string[]>();
+
+  get topics(): string[] {
+    return Array.from(this.map.keys());
+  }
+
+  public set(topic: string, id: string): void {
+    const ids = this.get(topic);
+    if (this.exists(topic, id)) return;
+    this.map.set(topic, [...ids, id]);
+  }
+
+  public get(topic: string): string[] {
+    const ids = this.map.get(topic);
+    return ids || [];
+  }
+
+  public exists(topic: string, id: string): boolean {
+    const ids = this.get(topic);
+    return ids.includes(id);
+  }
+
+  public delete(topic: string, id?: string): void {
+    if (typeof id === "undefined") {
+      this.map.delete(topic);
+      return;
+    }
+    if (!this.map.has(topic)) return;
+    const ids = this.get(topic);
+    if (!this.exists(topic, id)) return;
+    const remaining = ids.filter(x => x === id);
+    if (!remaining.length) {
+      this.map.delete(topic);
+      return;
+    }
+    this.map.set(topic, remaining);
+  }
+
+  public clear(): void {
+    this.map.clear();
+  }
+}
+
 export class Subscription extends ISubscription {
   public subscriptions = new Map<string, SubscriptionParams>();
 
-  public topicMap = new Map<string, string[]>();
+  public topicMap = new SubscriptionTopicMap();
 
   public events = new EventEmitter();
 
@@ -59,7 +104,7 @@ export class Subscription extends ISubscription {
   }
 
   get topics(): string[] {
-    return Array.from(this.topicMap.keys());
+    return this.topicMap.topics;
   }
 
   public async set(id: string, subscription: SubscriptionParams): Promise<void> {
@@ -135,7 +180,7 @@ export class Subscription extends ISubscription {
   private setSubscription(id: string, subscription: SubscriptionParams): void {
     const expiry = subscription.expiry || calcExpiry(SUBSCRIPTION_DEFAULT_TTL);
     this.subscriptions.set(id, { ...subscription, expiry });
-    this.setOnTopicMap(id, subscription);
+    this.topicMap.set(subscription.topic, id);
     this.setTimeout(id, expiry);
   }
 
@@ -155,34 +200,9 @@ export class Subscription extends ISubscription {
 
   private deleteSubscription(id: string, subscription: SubscriptionParams): void {
     this.subscriptions.delete(id);
-    this.deleteOnTopicMap(id, subscription);
+    this.topicMap.delete(subscription.topic, id);
     if (this.timeout.has(id)) {
       this.deleteTimeout(id);
-    }
-  }
-
-  private setOnTopicMap(id: string, subscription: SubscriptionParams): void {
-    if (this.topicMap.has(subscription.topic)) {
-      const ids = this.topicMap.get(subscription.topic);
-      if (typeof ids !== "undefined" && !ids.includes(id)) {
-        this.topicMap.set(subscription.topic, [...ids, id]);
-      }
-    } else {
-      this.topicMap.set(subscription.topic, [id]);
-    }
-  }
-
-  private deleteOnTopicMap(id: string, subscription: SubscriptionParams): void {
-    if (this.topicMap.has(subscription.topic)) {
-      const ids = this.topicMap.get(subscription.topic);
-      if (typeof ids !== "undefined" && ids.includes(id)) {
-        const newIds = ids.filter(x => x === id);
-        if (newIds.length) {
-          this.topicMap.set(subscription.topic, newIds);
-        } else {
-          this.topicMap.delete(subscription.topic);
-        }
-      }
     }
   }
 

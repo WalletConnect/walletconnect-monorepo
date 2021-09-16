@@ -5,6 +5,22 @@ import { IClient } from "./client";
 import { Reason } from "./misc";
 import { RelayerTypes } from "./relayer";
 
+export abstract class ISubscriptionTopicMap {
+  public map = new Map<string, string[]>();
+
+  public abstract readonly topics: string[];
+
+  public abstract set(topic: string, id: string): void;
+
+  public abstract get(topic: string): string[];
+
+  public abstract exists(topic: string, id: string): boolean;
+
+  public abstract delete(topic: string, id?: string): void;
+
+  public abstract clear(): void;
+}
+
 export interface SubscriptionParams extends RelayerTypes.SubscribeOptions {
   id: string;
   topic: string;
@@ -24,7 +40,7 @@ export declare namespace SubscriptionEvent {
 export abstract class ISubscription extends IEvents {
   public abstract subscriptions: Map<string, SubscriptionParams>;
 
-  public abstract topicMap: Map<string, string[]>;
+  public abstract topicMap: ISubscriptionTopicMap;
 
   public abstract readonly length: number;
 
