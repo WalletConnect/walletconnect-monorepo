@@ -22,7 +22,7 @@ export class State<Sequence = any> extends IState<Sequence> {
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
-    await this.restore();
+    await this.initialize();
   }
 
   get context(): string {
@@ -141,8 +141,6 @@ export class State<Sequence = any> extends IState<Sequence> {
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.cached.forEach(sequence => this.sequences.set((sequence as any).topic, sequence));
-      await this.onInit();
       this.logger.debug(
         `Successfully Restored sequences for ${formatMessageContext(this.context)}`,
       );
@@ -153,16 +151,26 @@ export class State<Sequence = any> extends IState<Sequence> {
     }
   }
 
+  private async initialize() {
+    await this.restore();
+    this.reset();
+    this.onInit();
+  }
+
+  private reset() {
+    this.cached.forEach(sequence => this.sequences.set((sequence as any).topic, sequence));
+  }
+
+  private onInit() {
+    this.cached = [];
+    this.events.emit(STATE_EVENTS.init);
+  }
+
   private async isInitialized(): Promise<void> {
     if (!this.cached.length) return;
     return new Promise(resolve => {
       this.events.once(STATE_EVENTS.init, () => resolve());
     });
-  }
-
-  private async onInit(): Promise<void> {
-    this.cached = [];
-    this.events.emit(STATE_EVENTS.init);
   }
 
   private registerEventListeners(): void {

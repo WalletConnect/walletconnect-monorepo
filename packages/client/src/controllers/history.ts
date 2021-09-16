@@ -30,7 +30,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
-    await this.restore();
+    await this.initialize();
   }
 
   get context(): string {
@@ -185,12 +185,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         throw new Error(error.message);
       }
       this.cached = persisted;
-      await Promise.all(
-        this.cached.map(async record => {
-          this.records.set(record.id, record);
-        }),
-      );
-      await this.onInit();
       this.logger.debug(`Successfully Restored records for ${formatMessageContext(this.context)}`);
       this.logger.trace({ type: "method", method: "restore", records: this.values });
     } catch (e) {
@@ -199,7 +193,17 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     }
   }
 
-  private async onInit(): Promise<void> {
+  private async initialize() {
+    await this.restore();
+    this.reset();
+    this.onInit();
+  }
+
+  private reset() {
+    this.cached.forEach(record => this.records.set(record.id, record));
+  }
+
+  private onInit() {
     this.cached = [];
     this.events.emit(HISTORY_EVENTS.init);
   }

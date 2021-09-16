@@ -81,7 +81,7 @@ export class Subscription extends ISubscription {
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
-    await this.restore();
+    await this.initialize();
   }
 
   get context(): string {
@@ -151,14 +151,9 @@ export class Subscription extends ISubscription {
     this.events.removeListener(event, listener);
   }
 
-  public async reset(): Promise<void> {
-    await this.disable();
-    await this.enable();
-  }
-
   public async enable(): Promise<void> {
     if (!this.cached.length) return;
-    this.cached.map(async subscription => this.setSubscription(subscription.id, subscription));
+    this.reset();
     this.onEnable();
   }
 
@@ -168,6 +163,10 @@ export class Subscription extends ISubscription {
   }
 
   // ---------- Private ----------------------------------------------- //
+
+  private reset() {
+    this.cached.map(async subscription => this.setSubscription(subscription.id, subscription));
+  }
 
   private onEnable() {
     this.cached = [];
@@ -240,7 +239,6 @@ export class Subscription extends ISubscription {
         throw new Error(error.message);
       }
       this.cached = persisted;
-      await this.enable();
       this.logger.debug(
         `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
       );
@@ -251,6 +249,16 @@ export class Subscription extends ISubscription {
       );
       this.logger.error(e as any);
     }
+  }
+
+  private async initialize() {
+    await this.restore();
+    this.reset();
+    this.onInit();
+  }
+
+  private onInit() {
+    this.onEnable();
   }
 
   private async isEnabled(): Promise<void> {
