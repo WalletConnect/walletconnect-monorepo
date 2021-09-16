@@ -313,7 +313,9 @@ export class Relayer extends IRelayer {
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       this.events.emit(RELAYER_EVENTS.disconnect);
       this.subscriptions.disable();
-      setTimeout(() => this.provider.connect(), RELAYER_RECONNECT_TIMEOUT);
+      setTimeout(() => {
+        this.provider.connect();
+      }, RELAYER_RECONNECT_TIMEOUT);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
     this.subscriptions.on(
