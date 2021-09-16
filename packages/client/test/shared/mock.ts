@@ -20,6 +20,7 @@ import {
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import { toMiliseconds } from "@walletconnect/utils";
 
 export class MockWakuRelayer implements IEvents {
   public events = new EventEmitter();
@@ -137,7 +138,7 @@ export class MockWakuRelayer implements IEvents {
       this.events.emit(RELAYER_EVENTS.disconnect);
       setTimeout(() => {
         this.provider.connect();
-      }, RELAYER_RECONNECT_TIMEOUT);
+      }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
   }

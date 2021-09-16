@@ -102,8 +102,6 @@ describe("Relayer", function() {
   it("A pings B after A socket reconnects", async () => {
     // setup
     const { setup, clients } = await setupClientsForTesting();
-    {
-    }
     // connect
     const topic = await testApproveSession(setup, clients);
     // ping
