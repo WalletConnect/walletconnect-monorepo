@@ -12,7 +12,6 @@ import { ERROR, formatMessageContext, toMiliseconds, calcExpiry } from "@walletc
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import {
-  CLIENT_BEAT_INTERVAL,
   CLIENT_EVENTS,
   SUBSCRIPTION_CONTEXT,
   SUBSCRIPTION_DEFAULT_TTL,
@@ -71,8 +70,6 @@ export class Subscription extends ISubscription {
   public events = new EventEmitter();
 
   public name: string = SUBSCRIPTION_CONTEXT;
-
-  private timeout = new Map<string, NodeJS.Timeout>();
 
   private cached: SubscriptionParams[] = [];
 
@@ -171,7 +168,6 @@ export class Subscription extends ISubscription {
     if (!this.cached.length) {
       this.cached = this.values;
     }
-    this.resetTimeout();
     this.events.emit(SUBSCRIPTION_EVENTS.disabled);
   }
 
@@ -181,7 +177,7 @@ export class Subscription extends ISubscription {
     const expiry = subscription.expiry || calcExpiry(SUBSCRIPTION_DEFAULT_TTL);
     this.subscriptions.set(id, { ...subscription, expiry });
     this.topicMap.set(subscription.topic, id);
-    this.setTimeout(id, expiry);
+    this.checkExpiry(id, expiry);
   }
 
   private async getSubscription(id: string): Promise<SubscriptionParams> {
@@ -201,45 +197,20 @@ export class Subscription extends ISubscription {
   private deleteSubscription(id: string, subscription: SubscriptionParams): void {
     this.subscriptions.delete(id);
     this.topicMap.delete(subscription.topic, id);
-    if (this.timeout.has(id)) {
-      this.deleteTimeout(id);
-    }
   }
 
-  private setTimeout(id: string, expiry: number): void {
-    // timeout already set
-    if (this.timeout.has(id)) return;
+  private checkExpiry(id: string, expiry: number): void {
     const msToTimeout = toMiliseconds(expiry) - Date.now();
-    // timeout is late
-    if (msToTimeout <= 0) return this.onTimeout(id);
-    // timeout is early
-    if (msToTimeout > toMiliseconds(CLIENT_BEAT_INTERVAL)) return;
-    // set timeout
-    const timeout = setTimeout(() => this.onTimeout(id), msToTimeout);
-    this.timeout.set(id, timeout);
+    if (msToTimeout <= 0) return this.expire(id);
   }
 
-  private deleteTimeout(id: string): void {
-    if (!this.timeout.has(id)) return;
-    const timeout = this.timeout.get(id);
-    if (typeof timeout === "undefined") return;
-    clearTimeout(timeout);
-    this.timeout.delete(id);
-  }
-
-  private resetTimeout(): void {
-    this.timeout.forEach(timeout => clearTimeout(timeout));
-    this.timeout.clear();
-  }
-
-  private onTimeout(id: string): void {
-    this.deleteTimeout(id);
+  private expire(id: string): void {
     this.delete(id, ERROR.EXPIRED.format({ context: formatMessageContext(this.context) }));
   }
 
   private checkSubscriptions(): void {
     this.subscriptions.forEach(subscription =>
-      this.setTimeout(subscription.id, subscription.expiry),
+      this.checkExpiry(subscription.id, subscription.expiry),
     );
   }
 
