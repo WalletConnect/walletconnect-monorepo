@@ -52,7 +52,7 @@ describe("Request", function() {
 });
 
 describe("Request (with timeout)", function() {
-  this.timeout(TEST_TIMEOUT_DURATION + 100);
+  this.timeout(TEST_TIMEOUT_DURATION);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {
     clock = sinon.useFakeTimers(Date.now());

@@ -27,6 +27,7 @@ export const ERROR_TYPE = enumify({
   RESPONSE_ACKNOWLEDGED: "RESPONSE_ACKNOWLEDGED",
   EXPIRED: "EXPIRED",
   DELETED: "DELETED",
+  RESUBSCRIBED: "RESUBSCRIBED",
   // 2000 (Timeout)
   SETTLE_TIMEOUT: "SETTLE_TIMEOUT",
   JSONRPC_REQUEST_TIMEOUT: "JSONRPC_REQUEST_TIMEOUT",
@@ -70,6 +71,7 @@ export type Error = {
 };
 
 const defaultParams = {
+  topic: "undefined",
   message: "Something went wrong",
   name: "parameter",
   context: "session",
@@ -291,6 +293,16 @@ export const ERROR: Record<ErrorType, Error> = {
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.DELETED].code,
       message: ERROR[ERROR_TYPE.DELETED].stringify(params),
+    }),
+  },
+  [ERROR_TYPE.RESUBSCRIBED]: {
+    type: ERROR_TYPE.RESUBSCRIBED,
+    code: 1606,
+    stringify: (params?: any) =>
+      `Subscription resubscribed with topic: ${params.topic || defaultParams.topic}`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.RESUBSCRIBED].code,
+      message: ERROR[ERROR_TYPE.RESUBSCRIBED].stringify(params),
     }),
   },
   // 2000 (Timeout)

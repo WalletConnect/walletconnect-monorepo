@@ -231,10 +231,7 @@ export class Relayer extends IRelayer {
     if (this.subscriptions.subscriptions.has(id)) {
       await this.subscriptions.delete(id, reason);
     }
-    const ids = this.subscriptions.topicMap.get(topic);
-    if (typeof ids === "undefined" || !(typeof ids !== "undefined" && ids.length)) {
-      await this.history.delete(topic);
-    }
+    await this.history.delete(topic);
   }
 
   private async shouldIgnorePayloadEvent(payloadEvent: RelayerTypes.PayloadEvent) {
@@ -282,9 +279,24 @@ export class Relayer extends IRelayer {
   private async resubscribe() {
     await Promise.all(
       this.subscriptions.values.map(async subscription => {
-        await this.rpcSubscribe(subscription.topic, subscription.relay);
+        const id = await this.rpcSubscribe(subscription.topic, subscription.relay);
+        await this.subscriptions.set(id, { ...subscription, id });
+        const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
+        await this.subscriptions.delete(subscription.id, reason);
       }),
     );
+  }
+
+  private async onConnect() {
+    await this.subscriptions.enable();
+    await this.resubscribe();
+  }
+
+  private async onDisconnect() {
+    await this.subscriptions.disable();
+    setTimeout(() => {
+      this.provider.connect();
+    }, RELAYER_RECONNECT_TIMEOUT);
   }
 
   private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
@@ -306,16 +318,12 @@ export class Relayer extends IRelayer {
       this.onPayload(payload),
     );
     this.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+      await this.onConnect();
       this.events.emit(RELAYER_EVENTS.connect);
-      await this.subscriptions.enable();
-      await this.resubscribe();
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, async () => {
+      await this.onDisconnect();
       this.events.emit(RELAYER_EVENTS.disconnect);
-      this.subscriptions.disable();
-      setTimeout(() => {
-        this.provider.connect();
-      }, RELAYER_RECONNECT_TIMEOUT);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
     this.subscriptions.on(

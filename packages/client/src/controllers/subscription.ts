@@ -49,7 +49,7 @@ export class SubscriptionTopicMap implements ISubscriptionTopicMap {
     if (!this.map.has(topic)) return;
     const ids = this.get(topic);
     if (!this.exists(topic, id)) return;
-    const remaining = ids.filter(x => x === id);
+    const remaining = ids.filter(x => x !== id);
     if (!remaining.length) {
       this.map.delete(topic);
       return;
@@ -153,25 +153,33 @@ export class Subscription extends ISubscription {
 
   public async reset(): Promise<void> {
     await this.disable();
-    this.cached.map(async subscription => {
-      this.setSubscription(subscription.id, subscription);
-    });
     await this.enable();
   }
 
   public async enable(): Promise<void> {
+    if (!this.cached.length) return;
+    this.cached.map(async subscription => this.setSubscription(subscription.id, subscription));
+    this.onEnable();
+  }
+
+  public async disable(): Promise<void> {
+    if (this.cached.length) return;
+    this.onDisable();
+  }
+
+  // ---------- Private ----------------------------------------------- //
+
+  private onEnable() {
     this.cached = [];
     this.events.emit(SUBSCRIPTION_EVENTS.enabled);
   }
 
-  public async disable(): Promise<void> {
-    if (!this.cached.length) {
-      this.cached = this.values;
-    }
+  private onDisable() {
+    this.cached = this.values;
+    this.subscriptions.clear();
+    this.topicMap.clear();
     this.events.emit(SUBSCRIPTION_EVENTS.disabled);
   }
-
-  // ---------- Private ----------------------------------------------- //
 
   private setSubscription(id: string, subscription: SubscriptionParams): void {
     const expiry = subscription.expiry || calcExpiry(SUBSCRIPTION_DEFAULT_TTL);
@@ -232,11 +240,6 @@ export class Subscription extends ISubscription {
         throw new Error(error.message);
       }
       this.cached = persisted;
-      await Promise.all(
-        this.cached.map(async subscription => {
-          this.setSubscription(subscription.id, subscription);
-        }),
-      );
       await this.enable();
       this.logger.debug(
         `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
