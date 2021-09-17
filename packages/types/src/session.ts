@@ -69,7 +69,7 @@ export declare namespace SessionTypes {
   export type Pending = SequenceTypes.Pending<Participant, Proposal, State>;
 
   export interface RespondParams extends SequenceTypes.RespondParams<Proposal> {
-    response: Response;
+    response: ResponseInput;
   }
 
   export type SettleParams = SequenceTypes.SettleParams<State, Participant, Permissions>;
@@ -112,6 +112,12 @@ export declare namespace SessionTypes {
 
   export type Created = Settled;
 
+  export type Approval = SequenceTypes.Approval<State, Participant>;
+
+  export type Rejection = SequenceTypes.Rejection;
+
+  export type Response = Rejection | Approval;
+
   export type Success = SequenceTypes.Success<State, Participant>;
 
   export type Failed = SequenceTypes.Failed;
@@ -120,7 +126,7 @@ export declare namespace SessionTypes {
 
   export type State = BlockchainTypes.State;
 
-  export interface Response {
+  export interface ResponseInput {
     state: State;
     metadata: AppMetadata;
   }

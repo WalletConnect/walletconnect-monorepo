@@ -137,7 +137,7 @@ export declare namespace SequenceTypes {
     approved: boolean;
     proposal: Pro;
     reason?: Reason;
-    response?: Response;
+    response?: ResponseInput;
   }
 
   export interface SettleParams<S = State, Par = Participant, Per = Permissions> {
@@ -209,23 +209,30 @@ export declare namespace SequenceTypes {
 
   export type Created<S = State, Par = Participant, Per = Permissions> = Settled<S, Par, Per>;
 
-  export interface Success<S = State, Par = Participant> {
-    topic: string;
+  export interface Approval<S = State, Par = Participant> {
     relay: Relay;
     responder: Par;
     expiry: number;
     state: S;
   }
 
-  export interface Failed {
+  export interface Rejection {
     reason: Reason;
   }
+
+  export type Response<S = State, Par = Participant> = Rejection | Approval<S, Par>;
+
+  export interface Success<S = State, Par = Participant> extends Approval<S, Par> {
+    topic: string;
+  }
+
+  export type Failed = Rejection;
 
   export type Outcome<S = State, Par = Participant> = Failed | Success<S, Par>;
 
   export type State = any;
 
-  export interface Response {
+  export interface ResponseInput {
     state?: State;
     metadata?: AppMetadata;
   }

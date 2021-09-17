@@ -38,6 +38,12 @@ export function isSequenceResponded(
   return isSequenceRespondedStatus(pending.status) && "outcome" in pending;
 }
 
+export function isSequenceRejected(
+  response: SequenceTypes.Response,
+): response is SequenceTypes.Rejection {
+  return "reason" in response;
+}
+
 export function isSequenceFailed(outcome: SequenceTypes.Outcome): outcome is SequenceTypes.Failed {
   return "reason" in outcome;
 }
@@ -56,6 +62,12 @@ export function isPairingResponded(
   return isPairingRespondedStatus(pending.status) && "outcome" in pending;
 }
 
+export function isPairingRejected(
+  response: PairingTypes.Response,
+): response is PairingTypes.Rejection {
+  return "reason" in response;
+}
+
 export function isPairingFailed(outcome: PairingTypes.Outcome): outcome is PairingTypes.Failed {
   return "reason" in outcome;
 }
@@ -72,6 +84,12 @@ export function isSessionResponded(
   pending: SessionTypes.Pending,
 ): pending is SessionTypes.RespondedPending {
   return isPairingRespondedStatus(pending.status) && "outcome" in pending;
+}
+
+export function isSessionRejected(
+  response: SessionTypes.Response,
+): response is SessionTypes.Rejection {
+  return "reason" in response;
 }
 
 export function isSessionFailed(outcome: SessionTypes.Outcome): outcome is SessionTypes.Failed {

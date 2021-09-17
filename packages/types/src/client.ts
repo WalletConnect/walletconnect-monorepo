@@ -83,14 +83,14 @@ export declare namespace ClientTypes {
     uri: string;
   }
 
-  export interface Response {
+  export interface ResponseInput {
     state: SessionTypes.State;
     metadata?: AppMetadata;
   }
 
   export interface ApproveParams {
     proposal: SessionTypes.Proposal;
-    response: Response;
+    response: ResponseInput;
   }
   export interface RejectParams {
     proposal: SessionTypes.Proposal;

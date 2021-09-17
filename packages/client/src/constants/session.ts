@@ -65,4 +65,4 @@ export const SESSION_EMPTY_METADATA = {
 export const SESSION_EMPTY_RESPONSE = {
   metadata: SESSION_EMPTY_METADATA,
   state: SESSION_EMPTY_STATE,
-} as SessionTypes.Response;
+} as SessionTypes.ResponseInput;

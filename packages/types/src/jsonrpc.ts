@@ -5,7 +5,6 @@ export declare namespace PairingJsonRpc {
   // -- approve ----------------------------------------- //
 
   export interface ApproveParams {
-    topic: string;
     relay: RelayerTypes.ProtocolOptions;
     responder: PairingTypes.Participant;
     expiry: number;
@@ -155,7 +154,6 @@ export declare namespace SessionJsonRpc {
   // -- approve ----------------------------------------- //
 
   export interface ApproveParams {
-    topic: string;
     relay: RelayerTypes.ProtocolOptions;
     responder: SessionTypes.Participant;
     expiry: number;

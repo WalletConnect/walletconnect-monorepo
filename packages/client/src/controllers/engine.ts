@@ -18,6 +18,7 @@ import {
   isSequenceResponded,
   isStateUpdatedEvent,
   ERROR,
+  isSequenceRejected,
 } from "@walletconnect/utils";
 import {
   JsonRpcPayload,
@@ -401,21 +402,21 @@ export class Engine extends IEngine {
     const { topic, payload } = payloadEvent;
     this.sequence.logger.debug(`Receiving ${this.sequence.context} response`);
     this.sequence.logger.trace({ type: "method", method: "onResponse", topic, payload });
-    const request = payload as JsonRpcRequest<SequenceTypes.Outcome>;
-    const outcome = request.params;
+    const request = payload as JsonRpcRequest<SequenceTypes.Response>;
+    const response = request.params;
     const pending = await this.sequence.pending.get(topic);
     let error: ErrorResponse | undefined;
-    if (!isSequenceFailed(outcome)) {
+    if (!isSequenceRejected(response)) {
       try {
         const controller = pending.proposal.proposer.controller
           ? { publicKey: pending.proposal.proposer.publicKey }
-          : { publicKey: outcome.responder.publicKey };
+          : { publicKey: response.responder.publicKey };
         const peer: SequenceTypes.Participant = {
-          publicKey: outcome.responder.publicKey,
-          metadata: outcome.responder.metadata,
+          publicKey: response.responder.publicKey,
+          metadata: response.responder.metadata,
         };
         if (!peer.metadata) delete peer.metadata;
-        const state: SequenceTypes.State = outcome.state || {};
+        const state: SequenceTypes.State = response.state || {};
         const permissions: SequenceTypes.Permissions = {
           ...pending.proposal.permissions,
           controller,
@@ -426,18 +427,19 @@ export class Engine extends IEngine {
           peer,
           permissions,
           ttl: pending.proposal.ttl,
-          expiry: outcome.expiry,
+          expiry: response.expiry,
           state,
         });
+        const outcome = {
+          topic: settled.topic,
+          relay: settled.relay,
+          responder: response.responder,
+          expiry: settled.expiry,
+          state: settled.state,
+        };
         await this.sequence.pending.update(topic, {
           status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-          outcome: {
-            topic: settled.topic,
-            relay: settled.relay,
-            responder: outcome.responder,
-            expiry: settled.expiry,
-            state: settled.state,
-          },
+          outcome,
         });
       } catch (e) {
         this.sequence.logger.error(e as any);
@@ -447,18 +449,20 @@ export class Engine extends IEngine {
           outcome: { reason: error },
         });
       }
-      const response =
+      await this.sequence.client.relayer.publish(
+        pending.topic,
         typeof error === "undefined"
           ? formatJsonRpcResult(request.id, true)
-          : formatJsonRpcError(request.id, error);
-      await this.sequence.client.relayer.publish(pending.topic, response, {
-        relay: pending.relay,
-      });
+          : formatJsonRpcError(request.id, error),
+        {
+          relay: pending.relay,
+        },
+      );
     } else {
-      this.sequence.logger.error(outcome.reason);
+      this.sequence.logger.error(response.reason);
       await this.sequence.pending.update(topic, {
         status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-        outcome: { reason: outcome.reason },
+        outcome: { reason: response.reason },
       });
     }
   }
@@ -746,13 +750,22 @@ export class Engine extends IEngine {
       this.sequence.logger.debug({ type: "event", event: eventName, sequence: pending });
       this.sequence.events.emit(eventName, pending);
       if (!isStateUpdatedEvent(event)) {
-        const method = !isSequenceFailed(pending.outcome)
+        const { topic, outcome, relay } = pending;
+        const method = !isSequenceFailed(outcome)
           ? this.sequence.config.jsonrpc.approve
           : this.sequence.config.jsonrpc.reject;
-        const request = formatJsonRpcRequest(method, pending.outcome);
-        await this.sequence.client.relayer.publish(pending.topic, request, {
-          relay: pending.relay,
-        });
+        const params: SequenceTypes.Response = !isSequenceFailed(outcome)
+          ? {
+              relay: outcome.relay,
+              responder: outcome.responder,
+              expiry: outcome.expiry,
+              state: outcome.state,
+            }
+          : {
+              reason: outcome.reason,
+            };
+        const request = formatJsonRpcRequest(method, params);
+        await this.sequence.client.relayer.publish(topic, request, { relay });
       }
     } else {
       const eventName = this.sequence.config.events.proposed;

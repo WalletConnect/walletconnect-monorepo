@@ -76,11 +76,17 @@ export declare namespace PairingTypes {
 
   export type Created = SequenceTypes.Created<State, Participant, Permissions>;
 
+  export type Approval = SequenceTypes.Approval<State, Participant>;
+
+  export type Rejection = SequenceTypes.Rejection;
+
+  export type Response = Rejection | Approval;
+
   export type Success = SequenceTypes.Success<State, Participant>;
 
   export type Failed = SequenceTypes.Failed;
 
-  export type Outcome = SequenceTypes.Outcome<State, Participant>;
+  export type Outcome = Failed | Success;
 
   export interface State {
     metadata?: AppMetadata;
