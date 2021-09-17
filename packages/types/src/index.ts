@@ -3,6 +3,7 @@ export * from "./pairing";
 export * from "./crypto";
 export * from "./engine";
 export * from "./history";
+export * from "./jsonrpc";
 export * from "./misc";
 export * from "./relayer";
 export * from "./sequence";
