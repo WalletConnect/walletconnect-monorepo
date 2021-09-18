@@ -49,9 +49,15 @@ export default function WalletConnectProvider({
       : defaultRenderQrcodeModal
   ), [maybeRenderQrcodeModal]);
 
+  const { storageOptions, redirectUrl, onConnectFail } = intermediateValue;
+
   const open = React.useCallback(async (uri: string, cb: unknown): Promise<unknown> => {
     if (Platform.OS === 'android') {
-      await Linking.openURL(uri);
+      try {
+          await Linking.openURL(uri);
+      } catch (error) {
+          onConnectFail(uri);
+      }
     }
     setState({
       uri,
@@ -79,7 +85,7 @@ export default function WalletConnectProvider({
     close,
   }), [open, close]);
 
-  const { storageOptions, redirectUrl } = intermediateValue;
+ 
 
   const createStorage = React.useCallback((storageOptions: ReactNativeStorageOptions): KeyValueStorage => {
     return new KeyValueStorage(storageOptions);

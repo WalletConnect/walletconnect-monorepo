@@ -51,6 +51,7 @@ export type WalletConnectStorageOptions = ReactNativeStorageOptions & {
 export type WalletConnectOptions = IWalletConnectOptions & {
   readonly redirectUrl: string;
   readonly storageOptions: Partial<WalletConnectStorageOptions>;
+  readonly onConnectFail?: (uri: string) => unknown;
 };
 
 export type ConnectToWalletServiceCallback = (walletService: WalletService, uri?: string) => Promise<void>;

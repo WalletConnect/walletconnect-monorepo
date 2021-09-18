@@ -38,7 +38,7 @@ export default function App(): JSX.Element {
     <WalletConnectProvider
       redirectUrl={Platform.OS === 'web' ? window.location.origin : 'yourappscheme://'}
       storageOptions= {{
-        asyncStorage AsyncStorage,
+        asyncStorage: AsyncStorage,
       }}>
       <>{/* awesome app here */}</>
     </WalletConnectProvider>
@@ -51,6 +51,9 @@ Above, we pass the [`WalletConnectProvider`](./src/providers/WalletConnectProvid
   - The `redirectUrl` is used to help control navigation between external wallets and your application. On the `web`, you only need to specify a valid application route; whereas on mobile platforms, you must [**specify a deep link URI scheme**](https://docs.expo.io/workflow/linking/#universaldeep-links-without-a-custom-scheme).
   - The `storageOptions` prop allows you to specify the storage engine which must be used to persist session data.
     - Although in our examples we use [`@react-native-async-storage/async-storage`](https://github.com/react-native-async-storage/async-storage), this can be which engine you please, provided it conforms to the [`IAsyncStorage`](https://github.com/pedrouid/keyvaluestorage) generic storage interface declaration.
+  - The optional `onConnectFail` callback gets executed only when there are no applications installed on the device that support opening the WalletConnect link.
+    - This is due to the oberved problem on Android where `Linking.canOpenURL(url)` produces `false` for WalletConnect URIs even when there are Wallet applications installed on the device that can handle opening the link.
+    - Defaults to `(uri) => Linking.openURL("https://walletconnect.org/wallets"`.
 
 Notably, the [`WalletConnectProvider`](./src/providers/WalletConnectProvider.tsx) optionally accepts `WalletConnect` configuration arguments as defined by the [`IWalletConnectOptions`](https://github.com/WalletConnect/walletconnect-monorepo/tree/next/packages/helpers/utils) interface:
 
@@ -71,8 +74,9 @@ export default function App(): JSX.Element {
       }}
       redirectUrl={Platform.OS === 'web' ? window.location.origin : 'yourappscheme://'}
       storageOptions= {{
-        asyncStorage AsyncStorage,
-      }}>
+        asyncStorage: AsyncStorage,
+      }}
+      onConnectFail={() => Linking.openURL("https://walletconnect.org/wallets"})>
       <>{/* awesome app here */}</>
     </WalletConnectProvider>
   );
@@ -132,7 +136,7 @@ function App(): JSX.Element {
 export default withWalletConnect(App, {
   redirectUrl: Platform.OS === 'web' ? window.location.origin : 'yourappscheme://',
   storageOptions: {
-    asyncStorage AsyncStorage,
+    asyncStorage: AsyncStorage,
   },
 });
 ```
@@ -179,7 +183,7 @@ function App(): JSX.Element {
 export default withWalletConnect(App, {
   redirectUrl: Platform.OS === 'web' ? window.location.origin : 'yourappscheme://',
   storageOptions: {
-    asyncStorage AsyncStorage,
+    asyncStorage: AsyncStorage,
   },
   renderQrcodeModal: (props: RenderQrcodeModalProps): JSX.Element => (
     <CustomBottomSheet {...props} />
