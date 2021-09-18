@@ -85,8 +85,6 @@ export default function WalletConnectProvider({
     close,
   }), [open, close]);
 
- 
-
   const createStorage = React.useCallback((storageOptions: ReactNativeStorageOptions): KeyValueStorage => {
     return new KeyValueStorage(storageOptions);
   }, []);
