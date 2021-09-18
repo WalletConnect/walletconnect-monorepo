@@ -44,6 +44,7 @@ function Modal(props: ModalProps) {
     ? props.qrcodeModalOptions.desktopLinks
     : undefined;
   const [loading, setLoading] = React.useState(false);
+  const [fetched, setFetched] = React.useState(false);
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
   const displayProps = {
     mobile,
@@ -58,7 +59,7 @@ function Modal(props: ModalProps) {
   const [errorMessage, setErrorMessage] = React.useState("");
 
   const getLinksIfNeeded = () => {
-    if (links.length > 0) {
+    if (fetched || loading || (whitelist && !whitelist.length) || links.length > 0) {
       return;
     }
 
@@ -72,6 +73,7 @@ function Modal(props: ModalProps) {
           const platform = mobile ? "mobile" : "desktop";
           const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
           setLoading(false);
+          setFetched(true);
           setErrorMessage(!_links.length ? props.text.no_supported_wallets : "");
           setLinks(_links);
           const hasSingleLink = _links.length === 1;
@@ -82,6 +84,7 @@ function Modal(props: ModalProps) {
           setHasSingleLink(hasSingleLink);
         } catch (e) {
           setLoading(false);
+          setFetched(true);
           setErrorMessage(props.text.something_went_wrong);
           console.error(e); // eslint-disable-line no-console
         }
@@ -108,7 +111,7 @@ function Modal(props: ModalProps) {
               {props.text.connect_with + " " + (hasSingleLink ? links[0].name : "") + " ›"}
             </a>
           </div>
-        ) : loading || (!loading && links.length) ? (
+        ) : android || loading || (!loading && links.length) ? (
           <div
             className={`walletconnect-modal__mobile__toggle${
               rightSelected ? " right__selected" : ""
@@ -134,7 +137,7 @@ function Modal(props: ModalProps) {
         ) : null}
 
         <div>
-          {displayQRCode || (!loading && !links.length) ? (
+          {displayQRCode || (!android && !loading && !links.length) ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
             <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} />
