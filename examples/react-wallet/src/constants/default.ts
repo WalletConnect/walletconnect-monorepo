@@ -23,7 +23,7 @@ export const DEFAULT_EIP155_METHODS = ["eth_sendTransaction", "personal_sign", "
 
 export const DEFAULT_COSMOS_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
 
-export const DEFAULT_LOGGER = "debug";
+export const DEFAULT_LOGGER = "trace";
 
 export const DEFAULT_APP_METADATA = {
   name: "React Wallet",
