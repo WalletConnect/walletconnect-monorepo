@@ -160,7 +160,7 @@ class App extends React.Component<{}> {
         try {
           chains = await apiGetChainNamespace(namespace);
         } catch (e) {
-          console.error(e);
+          console.error(e as any);
           // ignore error
         }
         if (typeof chains !== "undefined") {
@@ -180,7 +180,7 @@ class App extends React.Component<{}> {
         try {
           rpc = await apiGetChainJsonRpc(namespace);
         } catch (e) {
-          console.error(e);
+          console.error(e as any);
           // ignore error
         }
         if (typeof rpc !== "undefined") {
@@ -298,7 +298,7 @@ class App extends React.Component<{}> {
           }
         } catch (e) {
           console.error(e);
-          const response = formatJsonRpcError(requestEvent.request.id, e.message);
+          const response = formatJsonRpcError(requestEvent.request.id, (e as any).message);
           await this.respondRequest(requestEvent.topic, response);
         }
       },
@@ -346,8 +346,8 @@ class App extends React.Component<{}> {
     const res: ScannerValidation = { error: null, result: null };
     try {
       res.result = data;
-    } catch (error) {
-      res.error = error;
+    } catch (e) {
+      res.error = e as any;
     }
 
     return res;
@@ -480,7 +480,7 @@ class App extends React.Component<{}> {
       });
     } catch (e) {
       console.error(e);
-      const response = formatJsonRpcError(requestEvent.request.id, e.message);
+      const response = formatJsonRpcError(requestEvent.request.id, (e as any).message);
       this.state.client.respond({ topic: requestEvent.topic, response });
     }
 

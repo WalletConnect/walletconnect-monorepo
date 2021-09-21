@@ -99,8 +99,8 @@ class Scanner extends React.Component<ScannerProps, ScannerState> {
     try {
       await this.stopRecording();
       this.props.onClose();
-    } catch (error) {
-      this.handleError(error);
+    } catch (e) {
+      this.handleError(e as any);
     }
   };
 

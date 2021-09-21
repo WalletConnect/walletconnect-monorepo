@@ -348,8 +348,8 @@ class App extends React.Component<any, any> {
         balances[account] = assets;
       });
       this.setState({ fetching: false, balances });
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error(e);
       this.setState({ fetching: false });
     }
   };
@@ -423,8 +423,8 @@ class App extends React.Component<any, any> {
 
       // display result
       this.setState({ pending: false, result: formattedResult || null });
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error(e);
       this.setState({ pending: false, result: null });
     }
   };
@@ -491,8 +491,8 @@ class App extends React.Component<any, any> {
 
       // display result
       this.setState({ pending: false, result: formattedResult || null });
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error(e);
       this.setState({ pending: false, result: null });
     }
   };
@@ -555,8 +555,8 @@ class App extends React.Component<any, any> {
 
       // display result
       this.setState({ pending: false, result: formattedResult || null });
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error(e);
       this.setState({ pending: false, result: null });
     }
   };
@@ -641,8 +641,8 @@ class App extends React.Component<any, any> {
 
       // display result
       this.setState({ pending: false, result: formattedResult || null });
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error(e);
       this.setState({ pending: false, result: null });
     }
   };
@@ -710,8 +710,8 @@ class App extends React.Component<any, any> {
 
       // display result
       this.setState({ pending: false, result: formattedResult || null });
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error(e);
       this.setState({ pending: false, result: null });
     }
   };
