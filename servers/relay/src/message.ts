@@ -88,7 +88,7 @@ export class MessageService {
   private setTimeout(socketId: string, request: JsonRpcRequest) {
     if (this.timeout.has(request.id)) return;
     const timeout = setTimeout(() => this.onTimeout(socketId, request), MESSAGE_RETRIAL_TIMEOUT);
-    this.timeout.set(request.id, { counter: 1, timeout });
+    this.timeout.set(request.id, { counter: 1, timeout: timeout as any });
   }
 
   private async onTimeout(socketId: string, request: JsonRpcRequest) {
