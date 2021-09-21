@@ -1,39 +1,55 @@
-version: '3.7'
+version: '3.9'
 
 networks:
   default:
 
 volumes:
   redis:
-  letsencrypt:
+    name: 'redis-{{.Task.Slot}}'
+  waku:
+    name: 'waku-{{.Task.Slot}}'
+  caddy_data:
+  caddy_conf:
 
 services:
-  nginx:
-    image: ${NGINX_IMAGE}
+  caddy:
+    image: ${CADDY_IMAGE}
     deploy:
-      mode: global
-    # This port format is needed to get real ip address of the client
+      mode: replicated
+    # Port mode must be mode: host to allow access to the external ip
     ports:
-      - target: 8080
+      - target: 80
         published: 80
-        mode: host
-      - target: 8443
+        mode: ingress
+      - target: 443
         published: 443
-        mode: host
+        mode: ingress
     volumes:
-      - letsencrypt:/etc/letsencrypt
+      - caddy_data:/data
+      - caddy_conf:/config
+      - ./Caddyfile:/Caddyfile
 
   redis:
     image: 'redis:6-alpine'
+    hostname: "redis.{{.Task.Slot}}"
     volumes:
       - redis:/data
+    deploy:
+      replicas: ${REPLICAS:-1}
 
-  # This naming of the docker containers completely defeats the
-  # purpose of Docker swarm and docker load balancing
-  # so we are instead handling the load balancing with
-  # our own nginx container
-  relay0:
-    image: ${RELAY_IMAGE}
+  waku:
+    image: ${WAKU_IMAGE}
+    hostname: "waku.{{.Task.Slot}}"
+    volumes:
+      - waku:/mnt
     environment:
-      NODE_ENV: development
-      REDIS_URL: redis://redis:6379/0
+      SWARM_PEERS: "tasks.{{.Service.Name}}"
+      STORE: "/ip4/138.197.189.151/tcp/60000/p2p/16Uiu2HAmF1iLV2KdC7YUj99YKoqCYWSiMBq34mdmQX28J8k4kqmn"
+
+  relay:
+    image: ${RELAY_IMAGE}
+    hostname: "relay.{{.Task.Slot}}"
+    environment:
+      PORT: ${RELAY_PORT}
+      REDIS_URL: "redis://redis.{{.Task.Slot}}:6379/0"
+      WAKU_URL: "http://waku.{{.Task.Slot}}:8545"

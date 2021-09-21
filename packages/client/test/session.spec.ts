@@ -2,7 +2,7 @@ import "mocha";
 import sinon from "sinon";
 import { KeyValueStorage } from "keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
-import { ERROR, generateRandomBytes32 } from "@walletconnect/utils";
+import { ERROR, fromMiliseconds, generateRandomBytes32 } from "@walletconnect/utils";
 
 import {
   expect,
@@ -17,17 +17,9 @@ import {
   TEST_SESSION_TTL,
 } from "./shared";
 import { CLIENT_EVENTS } from "../src";
-import { ErrorResponse, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { ErrorResponse, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 describe("Session", function() {
-  this.timeout(TEST_TIMEOUT_DURATION);
-  let clock: sinon.SinonFakeTimers;
-  beforeEach(function() {
-    clock = sinon.useFakeTimers(Date.now());
-  });
-  afterEach(function() {
-    clock.restore();
-  });
   it("A proposes session and B approves", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -142,18 +134,16 @@ describe("Session", function() {
   });
   it("A pings B with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
-    await testApproveSession(setup, clients);
-    const topic = clients.a.session.topics[0];
+    const topic = await testApproveSession(setup, clients);
     await clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("B pings A with existing session", async () => {
     const { setup, clients } = await setupClientsForTesting();
-    await testApproveSession(setup, clients);
-    const topic = clients.b.session.topics[0];
+    const topic = await testApproveSession(setup, clients);
     await clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("B updates state accounts and A receives event", async () => {
-    const state = { accounts: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
+    const state = { accounts: ["eip155:1:0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45"] };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     await Promise.all([
@@ -171,7 +161,7 @@ describe("Session", function() {
     ]);
   });
   it("A updates state accounts and error is thrown", async () => {
-    const state = { accounts: ["0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45@eip155:1"] };
+    const state = { accounts: ["eip155:1:0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45"] };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const promise = clients.a.update({ topic, state });
@@ -209,14 +199,14 @@ describe("Session", function() {
     );
   });
   it("B upgrades permissions and A receives event", async () => {
-    const chainId = "eip155:100";
+    const chainId = "eip155:300";
     const request = {
       method: "personal_sign",
       params: ["0xdeadbeaf", "0x9b2055d370f73ec7d8a03e965129118dc8f5bf83"],
     };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    // first - attempt sending request to chainId=eip155:100
+    // first - attempt sending request to new chainId
     const promise = clients.a.request({ topic, request, chainId, timeout: TEST_TIMEOUT_DURATION });
     await expect(promise).to.eventually.be.rejectedWith(
       `Unauthorized Target ChainId Requested: ${chainId}`,
@@ -244,12 +234,11 @@ describe("Session", function() {
     await testJsonRpcRequest(setup, clients, topic, request, formatJsonRpcResult(1, "0xdeadbeaf"));
   });
   it("A upgrades permissions and error is thrown", async () => {
-    const chainId = "eip155:100";
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const promise = clients.a.upgrade({
       topic,
-      permissions: { blockchain: { chains: [chainId] } },
+      permissions: { blockchain: { chains: ["eip155:123"] } },
     });
     await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session upgrade request`);
   });
@@ -264,20 +253,6 @@ describe("Session", function() {
     const promise = clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     await expect(promise).to.eventually.be.rejectedWith(
       `No matching session settled with topic: ${topic}`,
-    );
-  });
-  it("A fails to pings B after B deletes session", async () => {
-    const { setup, clients } = await setupClientsForTesting();
-    const topic = await testApproveSession(setup, clients);
-    const reason = ERROR.USER_DISCONNECTED.format();
-    await clients.b.disconnect({ topic, reason });
-    await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
-      `No matching session settled with topic: ${topic}`,
-    );
-    const promise = clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
-    clock.tick(TEST_TIMEOUT_DURATION);
-    await expect(promise).to.eventually.be.rejectedWith(
-      `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: wc_sessionPing`,
     );
   });
   it("clients ping each other after restart", async () => {
@@ -297,7 +272,30 @@ describe("Session", function() {
     await after.clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     await after.clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
-  it("should expire after default period is elapsed", function() {
+  it("can find compatible sessions from permission set", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const incompatible = await clients.a.session.find({ blockchain: { chains: ["eip155:123"] } });
+    expect(!!incompatible).to.be.true;
+    expect(incompatible.length).to.eql(0);
+    const compatible = await clients.a.session.find({ blockchain: { chains: ["eip155:1"] } });
+    expect(!!compatible).to.be.true;
+    expect(compatible.length).to.eql(1);
+    expect(compatible[0].topic).to.eql(topic);
+  });
+});
+
+describe("Session (with timeout)", function() {
+  this.timeout(TEST_TIMEOUT_DURATION);
+  let clock: sinon.SinonFakeTimers;
+  beforeEach(function() {
+    clock = sinon.useFakeTimers(Date.now());
+  });
+  afterEach(function() {
+    clock.restore();
+  });
+  // FIXME: this test is succeeding but it's taking way too long and it's throwing thousands of memory leaks for Subscription controller
+  it.skip("should expire after default period is elapsed", function() {
     this.timeout(TEST_SESSION_TTL);
     return new Promise<void>(async (resolve, reject) => {
       try {
@@ -318,5 +316,27 @@ describe("Session", function() {
         reject(e);
       }
     });
+  });
+  it("A fails to pings B after B deletes session", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const reason = ERROR.USER_DISCONNECTED.format();
+    await clients.b.disconnect({ topic, reason });
+    await expect(clients.b.session.get(topic)).to.eventually.be.rejectedWith(
+      `No matching session settled with topic: ${topic}`,
+    );
+    clients.a.session
+      .ping(topic, TEST_TIMEOUT_DURATION)
+      .then(() => {
+        throw new Error("Should not resolve");
+      })
+      .catch(e => {
+        expect(e.message).to.equal(
+          `JSON-RPC Request timeout after ${fromMiliseconds(
+            TEST_TIMEOUT_DURATION,
+          )} seconds: wc_sessionPing`,
+        );
+      });
+    clock.tick(TEST_TIMEOUT_DURATION);
   });
 });

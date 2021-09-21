@@ -1,12 +1,12 @@
 import { EventEmitter } from "events";
-import { IJsonRpcConnection } from "@json-rpc-tools/types";
-import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
+import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { ERROR } from "@walletconnect/utils";
 import { ClientOptions, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
 
-export function isClient(opts?: SignerConnectionClientOpts): opts is IClient {
+function isClient(opts?: SignerConnectionClientOpts): opts is IClient {
   return typeof opts !== "undefined" && typeof (opts as IClient).context !== "undefined";
 }
 
@@ -35,6 +35,8 @@ export class SignerConnection extends IJsonRpcConnection {
   private pending = false;
   private session: SessionTypes.Settled | undefined;
 
+  private opts: SignerConnectionClientOpts | undefined;
+
   private client: IClient | undefined;
   private initializing = false;
 
@@ -43,7 +45,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
     this.chains = opts?.chains || [];
     this.methods = opts?.methods || [];
-    this.register(opts?.client);
+    this.opts = opts?.client;
   }
 
   get connected(): boolean {
@@ -52,6 +54,10 @@ export class SignerConnection extends IJsonRpcConnection {
 
   get connecting(): boolean {
     return this.pending;
+  }
+
+  get accounts() {
+    return this.session?.state.accounts || [];
   }
 
   public on(event: string, listener: any) {
@@ -71,15 +77,39 @@ export class SignerConnection extends IJsonRpcConnection {
   }
 
   public async open(): Promise<void> {
-    this.pending = true;
-    const client = await this.register();
-    this.session = await client.connect({
-      permissions: {
+    if (this.pending) {
+      return new Promise((resolve, reject) => {
+        this.events.once("open", () => {
+          this.events.once("open_error", error => {
+            reject(error);
+          });
+          if (typeof this.client === "undefined") {
+            return reject(new Error("Client not initialized"));
+          }
+          resolve();
+        });
+      });
+    }
+
+    try {
+      this.pending = true;
+      const client = await this.register();
+      const compatible = await client.session.find({
         blockchain: { chains: this.chains },
         jsonrpc: { methods: this.methods },
-      },
-    });
-    this.onOpen();
+      });
+      if (compatible.length) return this.onOpen(compatible[0]);
+      this.session = await client.connect({
+        permissions: {
+          blockchain: { chains: this.chains },
+          jsonrpc: { methods: this.methods },
+        },
+      });
+      this.onOpen();
+    } catch (e) {
+      this.events.emit("open_error", e);
+      throw e;
+    }
   }
 
   public async close() {
@@ -110,12 +140,18 @@ export class SignerConnection extends IJsonRpcConnection {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async register(opts?: SignerConnectionClientOpts): Promise<IClient> {
+  private async register(
+    opts: SignerConnectionClientOpts | undefined = this.opts,
+  ): Promise<IClient> {
     if (typeof this.client !== "undefined") {
       return this.client;
     }
+
     if (this.initializing) {
       return new Promise((resolve, reject) => {
+        this.events.once("register_error", error => {
+          reject(error);
+        });
         this.events.once(SIGNER_EVENTS.init, () => {
           if (typeof this.client === "undefined") {
             return reject(new Error("Client not initialized"));
@@ -129,12 +165,17 @@ export class SignerConnection extends IJsonRpcConnection {
       this.registerEventListeners();
       return this.client;
     }
-    this.initializing = true;
-    this.client = await Client.init(opts);
-    this.initializing = false;
-    this.registerEventListeners();
-    this.events.emit(SIGNER_EVENTS.init);
-    return this.client;
+    try {
+      this.initializing = true;
+      this.client = await Client.init(opts);
+      this.initializing = false;
+      this.registerEventListeners();
+      this.events.emit(SIGNER_EVENTS.init);
+      return this.client;
+    } catch (e) {
+      this.events.emit("register_error", e);
+      throw e;
+    }
   }
 
   private onOpen(session?: SessionTypes.Settled) {
@@ -179,7 +220,9 @@ export class SignerConnection extends IJsonRpcConnection {
       if (!this.session) return;
       if (this.session && this.session?.topic !== session.topic) return;
       this.onClose();
+
       this.events.emit(SIGNER_EVENTS.deleted, session);
+      this.session = undefined;
     });
     this.client.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
       const uri = proposal.signal.params.uri;

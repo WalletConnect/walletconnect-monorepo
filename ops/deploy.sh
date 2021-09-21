@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
+source setup
 
-monitoring=${MONITORING:-false} # this makes a bash string, not a boolean
-
-export RELAY_URL=$(grep RELAY_URL config | cut -f2 -d=)
-export CERTBOT_EMAIL=$(grep CERTBOT_EMAIL config | cut -f2 -d=)
-export CLOUDFLARE=$(grep CLOUDFLARE config | cut -f2 -d=)
+monitoring=${MONITORING:-true} # this makes a bash string, not a boolean
+port=${UPSTREAM_PORT:-5000}
+export RELAY_IMAGE=$(cat ./build/build-img-relay-img)
+export CADDY_IMAGE=$(cat ./build/build-img-caddy-img)
+export WAKU_IMAGE=$(cat ./build/build-img-waku-img)
 
 run="docker stack deploy $PROJECT -c ops/docker-compose.yml -c ops/docker-compose.prod.yml "
-if [[ $CLOUDFLARE != false ]]; then
-  run="${run} -c /tmp/${PROJECT}.secrets.yml"
-fi
 
 if [[ $monitoring != false ]]; then
+  sed "s|{{env \"DOMAIN\"}}|$RELAY_URL|g" ops/grafana/grafana.ini.tmpl > ops/grafana/grafana.ini
   run="${run} -c ops/docker-compose.monitor.yml"
 fi
 
@@ -20,4 +19,4 @@ if [[ $NODE_ENV == development ]]; then
 fi
 
 printf "\nDeploy command: $run\n\n"
-exec $run
+exec env UPSTREAM_PORT=$port RELAY_PORT=$port $run

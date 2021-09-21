@@ -1,14 +1,12 @@
-import { JsonRpcRequest } from "@json-rpc-tools/utils";
-import { config } from "caip-api";
+import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
-import cosmosLogo from "../assets/cosmos.png";
+import { BLOCKCHAIN_LOGO_BASE_URL } from "../constants";
 
 import { NamespaceMetadata, ChainMetadata, ChainRequestRender } from "../helpers";
 
 export const CosmosMetadata: NamespaceMetadata = {
-  "cosmoshub-3": {
-    ...config.cosmos["cosmoshub-3"],
-    logo: cosmosLogo,
+  "cosmoshub-4": {
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "cosmos:cosmoshub-4.png",
     rgb: "27, 31, 53",
   },
 };

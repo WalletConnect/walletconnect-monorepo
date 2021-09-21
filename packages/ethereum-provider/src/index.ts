@@ -1,5 +1,6 @@
-import EventEmitter from "eventemitter3";
-import { JsonRpcProvider } from "@json-rpc-tools/provider";
+import { EventEmitter } from "events";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import { SessionTypes } from "@walletconnect/types";
 import {
   SignerConnection,
@@ -25,6 +26,13 @@ export const infuraNetworks = {
   4: "rinkeby",
   5: "goerli",
   42: "kovan",
+};
+
+export const providerEvents = {
+  changed: {
+    chain: "chainChanged",
+    accounts: "accountsChanged",
+  },
 };
 
 export interface EthereumRpcConfig {
@@ -66,6 +74,7 @@ class EthereumProvider implements IEthereumProvider {
 
   private rpc: EthereumRpcConfig | undefined;
 
+  public namespace = "eip155";
   public chainId = 1;
   public methods = signerMethods;
 
@@ -96,12 +105,20 @@ class EthereumProvider implements IEthereumProvider {
         break;
     }
     if (args.method.startsWith("eth_signTypedData") || this.methods.includes(args.method)) {
-      return this.signer.request(args, { chainId: this.chainId });
+      return this.signer.request(args, { chainId: this.formatChainId(this.chainId) });
     }
     if (typeof this.http === "undefined") {
       throw new Error(`Cannot request JSON-RPC method (${args.method}) without provided rpc url`);
     }
     return this.http.request(args);
+  }
+
+  get connected(): boolean {
+    return (this.signer.connection as SignerConnection).connected;
+  }
+
+  get connecting(): boolean {
+    return (this.signer.connection as SignerConnection).connecting;
   }
 
   public async enable(): Promise<ProviderAccounts> {
@@ -137,12 +154,18 @@ class EthereumProvider implements IEthereumProvider {
   // ---------- Private ----------------------------------------------- //
 
   private registerEventListeners() {
+    this.signer.on("connect", async () => {
+      const chains = (this.signer.connection as SignerConnection).chains;
+      if (chains && chains.length) this.setChainId(chains);
+      const accounts = (this.signer.connection as SignerConnection).accounts;
+      if (accounts && accounts.length) this.setAccounts(accounts);
+    });
     this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Settled) => {
       this.setChainId(session.permissions.blockchain.chains);
       this.setAccounts(session.state.accounts);
     });
     this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Settled) => {
-      const chain = `eip155:${this.chainId}`;
+      const chain = this.formatChainId(this.chainId);
       if (!session.permissions.blockchain.chains.includes(chain)) {
         this.setChainId(session.permissions.blockchain.chains);
       }
@@ -153,15 +176,26 @@ class EthereumProvider implements IEthereumProvider {
     this.signer.connection.on(
       SIGNER_EVENTS.notification,
       (notification: SessionTypes.Notification) => {
-        this.events.emit(notification.type, notification.data);
+        if (notification.type === providerEvents.changed.accounts) {
+          this.accounts = notification.data;
+          this.events.emit(providerEvents.changed.accounts, this.accounts);
+        } else if (notification.type === providerEvents.changed.chain) {
+          this.chainId = notification.data;
+          this.events.emit(providerEvents.changed.chain, this.chainId);
+        } else {
+          this.events.emit(notification.type, notification.data);
+        }
       },
     );
-    this.events.on("chainChanged", chainId => this.setHttpProvider(chainId));
+    this.signer.on("disconnect", () => {
+      this.events.emit("disconnect");
+    });
+    this.events.on(providerEvents.changed.chain, chainId => this.setHttpProvider(chainId));
   }
 
   private setSignerProvider(client?: SignerConnectionClientOpts) {
     const connection = new SignerConnection({
-      chains: [`eip155:${this.chainId}`],
+      chains: [this.formatChainId(this.chainId)],
       methods: this.methods,
       client,
     });
@@ -171,23 +205,41 @@ class EthereumProvider implements IEthereumProvider {
   private setHttpProvider(chainId: number): JsonRpcProvider | undefined {
     const rpcUrl = getRpcUrl(chainId, this.rpc);
     if (typeof rpcUrl === "undefined") return undefined;
-    const http = new JsonRpcProvider(rpcUrl);
+    const http = new JsonRpcProvider(new HttpConnection(rpcUrl));
     return http;
   }
 
+  private isCompatibleChainId(chainId: string): boolean {
+    return chainId.startsWith(`${this.namespace}:`);
+  }
+
+  private formatChainId(chainId: number): string {
+    return `${this.namespace}:${chainId}`;
+  }
+
+  private parseChainId(chainId: string): number {
+    return Number(chainId.split(":")[1]);
+  }
+
   private setChainId(chains: string[]) {
-    const compatible = chains.filter(x => x.startsWith("eip155"));
+    const compatible = chains.filter(x => this.isCompatibleChainId(x));
     if (compatible.length) {
-      this.chainId = Number(compatible[0].split(":")[1]);
-      this.events.emit("chainChanged", this.chainId);
+      this.chainId = this.parseChainId(compatible[0]);
+      this.events.emit(providerEvents.changed.chain, this.chainId);
     }
+  }
+
+  private parseAccountId(account: string): { chainId: string; address: string } {
+    const [namespace, reference, address] = account.split(":");
+    const chainId = `${namespace}:${reference}`;
+    return { chainId, address };
   }
 
   private setAccounts(accounts: string[]) {
     this.accounts = accounts
-      .filter(x => x.split("@")[1] === `eip155:${this.chainId}`)
-      .map(x => x.split("@")[0]);
-    this.events.emit("accountsChanged", this.accounts);
+      .filter(x => this.parseChainId(this.parseAccountId(x).chainId) === this.chainId)
+      .map(x => this.parseAccountId(x).address);
+    this.events.emit(providerEvents.changed.accounts, this.accounts);
   }
 }
 

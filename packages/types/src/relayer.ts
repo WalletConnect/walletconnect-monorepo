@@ -1,7 +1,9 @@
 import { Logger } from "pino";
-import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
+import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
+import { ISubscription } from "./subscription";
+import { IJsonRpcHistory } from "./history";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -17,14 +19,33 @@ export declare namespace RelayerTypes {
   export interface SubscribeOptions {
     relay: ProtocolOptions;
   }
+
+  export interface UnsubscribeOptions {
+    relay: ProtocolOptions;
+  }
+
+  export type RequestOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions;
+
+  export interface PayloadEvent {
+    topic: string;
+    payload: JsonRpcPayload;
+  }
 }
 
 export abstract class IRelayer extends IEvents {
+  public abstract subscriptions: ISubscription;
+
+  public abstract history: IJsonRpcHistory;
+
   public abstract provider: IJsonRpcProvider;
 
-  public abstract context: string;
+  public abstract name: string;
+
+  public abstract readonly context: string;
 
   public abstract readonly connected: boolean;
+
+  public abstract readonly connecting: boolean;
 
   constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
     super();
@@ -40,9 +61,18 @@ export abstract class IRelayer extends IEvents {
 
   public abstract subscribe(
     topic: string,
-    listener: (payload: JsonRpcPayload) => void,
+    expiry: number,
     opts?: RelayerTypes.SubscribeOptions,
   ): Promise<string>;
 
-  public abstract unsubscribe(id: string, opts?: RelayerTypes.SubscribeOptions): Promise<void>;
+  public abstract unsubscribe(
+    topic: string,
+    id: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+  ): Promise<void>;
+
+  public abstract unsubscribeByTopic(
+    topic: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+  ): Promise<void>;
 }

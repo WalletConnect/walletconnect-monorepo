@@ -1,16 +1,52 @@
-import { ErrorResponse } from "@json-rpc-tools/types";
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import {
   AppMetadata,
   BlockchainTypes,
   JsonRpcPermissions,
   NotificationPermissions,
+  SequenceTypes,
   PairingTypes,
   SessionTypes,
-  SubscriptionEvent,
   Validation,
+  SignalTypes,
+  StateEvent,
 } from "@walletconnect/types";
 
 import { ERROR } from "./error";
+
+// -- signal -------------------------------------------------- //
+
+export function isSignalTypePairing(signal: SignalTypes.Base): signal is SignalTypes.Pairing {
+  return signal.method === "pairing";
+}
+
+export function isSignalTypeUri(signal: SignalTypes.Base): signal is SignalTypes.Uri {
+  return signal.method === "uri";
+}
+
+// -- sequence -------------------------------------------------- //
+
+export function isSequenceRespondedStatus(
+  status: SequenceTypes.PendingStatus,
+): status is SequenceTypes.RespondedStatus {
+  return status === "responded";
+}
+
+export function isSequenceResponded(
+  pending: SequenceTypes.Pending,
+): pending is SequenceTypes.RespondedPending {
+  return isSequenceRespondedStatus(pending.status) && "outcome" in pending;
+}
+
+export function isSequenceRejected(
+  response: SequenceTypes.Response,
+): response is SequenceTypes.Rejection {
+  return "reason" in response;
+}
+
+export function isSequenceFailed(outcome: SequenceTypes.Outcome): outcome is SequenceTypes.Failed {
+  return "reason" in outcome;
+}
 
 // -- pairing -------------------------------------------------- //
 
@@ -24,6 +60,12 @@ export function isPairingResponded(
   pending: PairingTypes.Pending,
 ): pending is PairingTypes.RespondedPending {
   return isPairingRespondedStatus(pending.status) && "outcome" in pending;
+}
+
+export function isPairingRejected(
+  response: PairingTypes.Response,
+): response is PairingTypes.Rejection {
+  return "reason" in response;
 }
 
 export function isPairingFailed(outcome: PairingTypes.Outcome): outcome is PairingTypes.Failed {
@@ -44,13 +86,19 @@ export function isSessionResponded(
   return isPairingRespondedStatus(pending.status) && "outcome" in pending;
 }
 
+export function isSessionRejected(
+  response: SessionTypes.Response,
+): response is SessionTypes.Rejection {
+  return "reason" in response;
+}
+
 export function isSessionFailed(outcome: SessionTypes.Outcome): outcome is SessionTypes.Failed {
   return "reason" in outcome;
 }
 
-export function isSubscriptionUpdatedEvent<T = any>(
-  event: SubscriptionEvent.Created<T> | SubscriptionEvent.Updated<T>,
-): event is SubscriptionEvent.Updated<T> {
+export function isStateUpdatedEvent<T = any>(
+  event: StateEvent.Created<T> | StateEvent.Updated<T>,
+): event is StateEvent.Updated<T> {
   return "update" in event;
 }
 
@@ -188,7 +236,8 @@ export function validateBlockchainState(
     return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "state accounts" }));
   }
   const mismatched = state.accounts.filter(accountId => {
-    const chainId = accountId.split("@")[1];
+    const [namespace, reference] = accountId.split(":");
+    const chainId = `${namespace}:${reference}`;
     return !blockchain.chains.includes(chainId);
   });
   if (mismatched.length) {
@@ -224,10 +273,11 @@ export function isValidChainId(value: any): boolean {
 }
 
 export function isValidAccountId(value: any): boolean {
-  if (isValidString(value) && value.includes("@")) {
-    const split = value.split("@");
-    if (split.length === 2) {
-      return !!split[0] && isValidChainId(split[1]);
+  if (isValidString(value) && value.includes(":")) {
+    const split = value.split(":");
+    if (split.length === 3) {
+      const chainId = split[0] + ":" + split[1];
+      return !!split[2] && isValidChainId(chainId);
     }
   }
   return false;

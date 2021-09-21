@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 import { UriParameters } from "@walletconnect/types";
-import { safeJsonStringify } from "safe-json-utils";
+import { safeJsonStringify } from "@walletconnect/safe-json";
 
 import { formatUri, parseUri } from "../src";
 import { TEST_KEY_PAIRS, TEST_PAIRING_TOPIC, TEST_RELAY_OPTIONS } from "./shared";
@@ -17,9 +17,9 @@ const TEST_URI_PARAMS: UriParameters = {
 
 const TEST_URI_STRING = `${TEST_URI_PARAMS.protocol}:${TEST_URI_PARAMS.topic}@${
   TEST_URI_PARAMS.version
-}?controller=${TEST_URI_PARAMS.controller}&publicKey=${TEST_URI_PARAMS.publicKey}&relay=${encodeURIComponent(
-  safeJsonStringify(TEST_URI_PARAMS.relay),
-)}`;
+}?controller=${TEST_URI_PARAMS.controller}&publicKey=${
+  TEST_URI_PARAMS.publicKey
+}&relay=${encodeURIComponent(safeJsonStringify(TEST_URI_PARAMS.relay))}`;
 
 describe("URI", () => {
   it("formatUri", () => {

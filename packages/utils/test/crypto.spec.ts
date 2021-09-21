@@ -1,8 +1,8 @@
 import "mocha";
 import { expect } from "chai";
-import * as eccies25519 from "ecies-25519";
-import * as encUtils from "enc-utils";
-import { safeJsonStringify } from "safe-json-utils";
+import * as eccies25519 from "@walletconnect/ecies-25519";
+import * as encoding from "@walletconnect/encoding";
+import { safeJsonStringify } from "@walletconnect/safe-json";
 
 import { deriveSharedKey, encrypt, sha256, decrypt } from "../src";
 
@@ -38,14 +38,14 @@ describe("Crypto", () => {
       sharedKey: TEST_SHARED_KEY,
       publicKey: TEST_SELF.publicKey,
     });
-    const deserialized = eccies25519.deserialize(encUtils.hexToArray(encrypted));
-    const iv = encUtils.arrayToHex(deserialized.iv);
+    const deserialized = eccies25519.deserialize(encoding.hexToArray(encrypted));
+    const iv = encoding.arrayToHex(deserialized.iv);
     expect(iv).to.eql(TEST_IV);
-    const publicKey = encUtils.arrayToHex(deserialized.publicKey);
+    const publicKey = encoding.arrayToHex(deserialized.publicKey);
     expect(publicKey).to.eql(TEST_SELF.publicKey);
-    const mac = encUtils.arrayToHex(deserialized.mac);
+    const mac = encoding.arrayToHex(deserialized.mac);
     expect(mac).to.eql(TEST_MAC);
-    const ciphertext = encUtils.arrayToHex(deserialized.ciphertext);
+    const ciphertext = encoding.arrayToHex(deserialized.ciphertext);
     expect(ciphertext).to.eql(TEST_CIPHERTEXT);
   });
   it("decrypt", async () => {

@@ -1,7 +1,15 @@
 import path from "path";
+import { toMiliseconds } from "@walletconnect/utils";
 import { ClientOptions, SessionTypes, AppMetadata } from "@walletconnect/types";
 
-import { PAIRING_DEFAULT_TTL, SESSION_DEFAULT_TTL, THIRTY_SECONDS } from "../../src";
+import {
+  CLIENT_BEAT_INTERVAL,
+  CLIENT_SHORT_TIMEOUT,
+  ONE_SECOND,
+  PAIRING_DEFAULT_TTL,
+  SESSION_DEFAULT_TTL,
+  THIRTY_SECONDS,
+} from "../../src";
 
 import { ROOT_DIR } from "../../../../ops/js/shared";
 
@@ -52,7 +60,7 @@ export const TEST_APP_METADATA_B: AppMetadata = {
 export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
 export const TEST_SESSION_ACCOUNTS = TEST_ETHEREUM_ACCOUNTS.map(
-  address => `${address}@${TEST_ETHEREUM_CHAIN_ID}`,
+  address => `${TEST_ETHEREUM_CHAIN_ID}:${address}`,
 );
 
 export const TEST_SESSION_STATE = {
@@ -64,6 +72,9 @@ export const TEST_ETHEREUM_RESULT = TEST_ETHEREUM_ACCOUNTS;
 
 export const TEST_RANDOM_REQUEST = { method: "random_method" };
 
-export const TEST_TIMEOUT_DURATION = THIRTY_SECONDS * 1000;
-export const TEST_PAIRING_TTL = PAIRING_DEFAULT_TTL * 1000;
-export const TEST_SESSION_TTL = SESSION_DEFAULT_TTL * 1000;
+export const TEST_TIMEOUT_SHORT = CLIENT_SHORT_TIMEOUT;
+export const TEST_TIMEOUT_SAFEGUARD = toMiliseconds(ONE_SECOND);
+export const TEST_TIMEOUT_DURATION = toMiliseconds(THIRTY_SECONDS);
+export const TEST_PAIRING_TTL = toMiliseconds(PAIRING_DEFAULT_TTL);
+export const TEST_SESSION_TTL = toMiliseconds(SESSION_DEFAULT_TTL);
+export const TEST_CLIENT_BEAT = toMiliseconds(CLIENT_BEAT_INTERVAL);

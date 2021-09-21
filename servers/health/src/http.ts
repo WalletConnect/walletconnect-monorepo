@@ -1,12 +1,12 @@
 import fastify, { FastifyInstance } from "fastify";
 import helmet from "fastify-helmet";
 import pino, { Logger } from "pino";
-import { getDefaultLoggerOptions, generateChildLogger } from "@pedrouid/pino-utils";
+import { getDefaultLoggerOptions, generateChildLogger } from "@walletconnect/logger";
 
 import config from "./config";
 import { assertType } from "./utils";
 import { HttpServiceOptions, GetTestRequest } from "./types";
-import { isServerAvailable, testRelayProvider, testLegacyProvider, isModeSupported } from "./tests";
+import { isServerAvailable, testRelayProvider, isModeSupported } from "./tests";
 
 export class HttpService {
   public app: FastifyInstance;
@@ -47,8 +47,7 @@ export class HttpService {
         assertType(req.query, "url");
 
         const { url } = req.query;
-        const legacy = req.query?.legacy === "true";
-        const mode = legacy ? "legacy" : "jsonrpc";
+        const mode = "jsonrpc";
 
         this.logger.info(`Testing Relay provider at ${url} with ${mode} mode`);
 
@@ -64,9 +63,7 @@ export class HttpService {
           return;
         }
 
-        const result = legacy
-          ? await testLegacyProvider(url)
-          : await testRelayProvider(url, req.query.url2);
+        const result = await testRelayProvider(url, req.query.url2);
         res.status(200).send({ mode, ...result });
       } catch (e) {
         res.status(400).send({ message: `Error: ${e.message}` });

@@ -34,7 +34,7 @@
     },
     {
       "aliasColors": {
-        "{instance=\"relay0:5000\", job=\"relay\"}": "semi-dark-yellow"
+        "{instance=\"relay:5000\", job=\"relay\"}": "semi-dark-yellow"
       },
       "bars": false,
       "dashLength": 10,
@@ -131,7 +131,7 @@
     },
     {
       "aliasColors": {
-        "{instance=\"relay0:5000\", job=\"relay\"}": "dark-purple"
+        "{instance=\"relay:5000\", job=\"relay\"}": "dark-purple"
       },
       "bars": false,
       "dashLength": 10,
@@ -404,7 +404,7 @@
     },
     {
       "aliasColors": {
-        "{instance=\"relay0:5000\", job=\"relay\"}": "dark-blue"
+        "{instance=\"relay:5000\", job=\"relay\"}": "dark-blue"
       },
       "bars": false,
       "dashLength": 10,
@@ -513,7 +513,7 @@
     },
     {
       "aliasColors": {
-        "relay_nodejs_eventloop_lag_mean_seconds{instance=\"relay0:5000\", job=\"relay\"}": "dark-orange"
+        "relay_nodejs_eventloop_lag_mean_seconds{instance=\"relay:5000\", job=\"relay\"}": "dark-orange"
       },
       "bars": false,
       "dashLength": 10,

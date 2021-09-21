@@ -4,7 +4,7 @@ import {
   JsonRpcRequest,
   JsonRpcResponse,
   RequestArguments,
-} from "@json-rpc-tools/types";
+} from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";
@@ -38,8 +38,12 @@ export abstract class IJsonRpcHistory extends IEvents {
   public abstract init(): Promise<void>;
 
   public abstract set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void>;
-  public abstract update(topic: string, response: JsonRpcResponse): Promise<void>;
+
   public abstract get(topic: string, id: number): Promise<JsonRpcRecord>;
-  public abstract delete(topic: string, id: number): Promise<void>;
+
+  public abstract resolve(response: JsonRpcResponse): Promise<void>;
+
+  public abstract delete(topic: string, id?: number): Promise<void>;
+
   public abstract exists(topic: string, id: number): Promise<boolean>;
 }

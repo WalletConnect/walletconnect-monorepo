@@ -1,7 +1,7 @@
 import "mocha";
 import sinon from "sinon";
-import { generateRandomBytes32 } from "@walletconnect/utils";
-import { formatJsonRpcError, formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { fromMiliseconds, generateRandomBytes32 } from "@walletconnect/utils";
+import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 import {
   expect,
@@ -15,14 +15,6 @@ import {
 } from "./shared";
 
 describe("Request", function() {
-  this.timeout(TEST_TIMEOUT_DURATION);
-  let clock: sinon.SinonFakeTimers;
-  beforeEach(function() {
-    clock = sinon.useFakeTimers(Date.now());
-  });
-  afterEach(function() {
-    clock.restore();
-  });
   it("A requests method and B responds result", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -57,15 +49,34 @@ describe("Request", function() {
       `Unauthorized JSON-RPC Method Requested: ${request.method}`,
     );
   });
+});
+
+describe("Request (with timeout)", function() {
+  this.timeout(TEST_TIMEOUT_DURATION);
+  let clock: sinon.SinonFakeTimers;
+  beforeEach(function() {
+    clock = sinon.useFakeTimers(Date.now());
+  });
+  afterEach(function() {
+    clock.restore();
+  });
   it("A requests method and B fails to return response in time", async () => {
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     const request = TEST_ETHEREUM_REQUEST;
     const chainId = setup.a.permissions.blockchain.chains[0];
-    const promise = clients.a.request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION });
+    clients.a
+      .request({ topic, chainId, request, timeout: TEST_TIMEOUT_DURATION })
+      .then(() => {
+        throw new Error("Should not receive result");
+      })
+      .catch(e => {
+        expect(e.message).to.equal(
+          `JSON-RPC Request timeout after ${fromMiliseconds(TEST_TIMEOUT_DURATION)} seconds: ${
+            request.method
+          }`,
+        );
+      });
     clock.tick(TEST_TIMEOUT_DURATION);
-    await expect(promise).to.eventually.be.rejectedWith(
-      `JSON-RPC Request timeout after ${TEST_TIMEOUT_DURATION / 1000} seconds: ${request.method}`,
-    );
   });
 });

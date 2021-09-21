@@ -35,8 +35,6 @@ export const SESSION_EVENTS: SessionTypes.Events = {
   deleted: "session_deleted",
   request: "session_request",
   response: "session_response",
-  enabled: "session_enabled",
-  disabled: "session_disabled",
   sync: "session_sync",
   notification: "session_notification",
 };
@@ -67,4 +65,4 @@ export const SESSION_EMPTY_METADATA = {
 export const SESSION_EMPTY_RESPONSE = {
   metadata: SESSION_EMPTY_METADATA,
   state: SESSION_EMPTY_STATE,
-} as SessionTypes.Response;
+} as SessionTypes.ResponseInput;

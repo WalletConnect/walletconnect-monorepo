@@ -1,10 +1,12 @@
 import "mocha";
-import Timestamp from "@pedrouid/timestamp";
+import { clock } from "sinon";
+import Timestamp from "@walletconnect/timestamp";
 import { AppMetadata, PairingTypes } from "@walletconnect/types";
 
-import { CLIENT_EVENTS, SESSION_JSONRPC, SUBSCRIPTION_EVENTS } from "../../src";
+import { CLIENT_EVENTS, SESSION_JSONRPC, STATE_EVENTS } from "../../src";
 
 import { expect } from "./chai";
+import { TEST_TIMEOUT_SHORT } from "./values";
 import { InitializedClients } from "./types";
 
 export async function testPairingWithoutSession(clients: InitializedClients): Promise<string> {
@@ -33,14 +35,14 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clients.a.pairing.pending.on(SUBSCRIPTION_EVENTS.created, async () => {
+      clients.a.pairing.pending.on(STATE_EVENTS.created, async () => {
         clients.a.logger.warn(`TEST >> Pairing Proposed`);
         time.start("pairing");
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clients.b.pairing.pending.on(SUBSCRIPTION_EVENTS.deleted, async () => {
+      clients.b.pairing.pending.on(STATE_EVENTS.deleted, async () => {
         clients.b.logger.warn(`TEST >> Pairing Acknowledged`);
         time.stop("pairing");
         resolve();
@@ -50,6 +52,9 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
       clients.a.on(CLIENT_EVENTS.pairing.created, async (pairing: PairingTypes.Created) => {
         clients.a.logger.warn(`TEST >> Pairing Created`);
         pairingA = pairing;
+        if (typeof clock !== "undefined") {
+          clock.tick(TEST_TIMEOUT_SHORT);
+        }
         resolve();
       });
     }),
@@ -57,6 +62,9 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
       clients.b.on(CLIENT_EVENTS.pairing.created, async (pairing: PairingTypes.Created) => {
         clients.b.logger.warn(`TEST >> Pairing Created`);
         pairingB = pairing;
+        if (typeof clock !== "undefined") {
+          clock.tick(TEST_TIMEOUT_SHORT);
+        }
         resolve();
       });
     }),

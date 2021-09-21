@@ -7,9 +7,34 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - run: docker swarm init 2> /dev/null || true
+      - uses: actions/checkout@v2
+      - uses: docker-practice/actions-setup-docker@master
+      - uses: cachix/install-nix-action@v13
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v10
+        with:
+          name: walletconnect
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - name: Cache multiple paths
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+      - run: |
+          docker version
+          docker swarm init 2> /dev/null || true
       - run: make ci
+      - name: "Pushes nix store to cachix nix cache"
+        if: success()
+        run: make cachix
+        env:
+           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Print logs
         if: failure()
-        run: docker service logs --tail 200 walletconnect_nginx && docker service logs --tail 200 walletconnect_relay0
+        run: docker service logs --tail 200 walletconnect_caddy && docker service logs --tail 200 walletconnect_relay

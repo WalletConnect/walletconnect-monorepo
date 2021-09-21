@@ -1,9 +1,11 @@
-import { IKeyValueStorage } from "keyvaluestorage";
+import { Logger } from "pino";
+import * as encoding from "@walletconnect/encoding";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { IClient, CryptoTypes, ICrypto, IKeyChain } from "@walletconnect/types";
 import {
   ERROR,
-  mapToObj,
-  objToMap,
   generateKeyPair,
   deriveSharedKey,
   encrypt,
@@ -12,28 +14,34 @@ import {
 } from "@walletconnect/utils";
 
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
-import { arrayToHex, concatArrays, hexToArray } from "enc-utils";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
 
-  public context = KEYCHAIN_CONTEXT;
+  public name: string = KEYCHAIN_CONTEXT;
 
-  constructor(public client: IClient, public storage: IKeyValueStorage) {
+  constructor(public client: IClient, public logger: Logger) {
     this.client = client;
-    this.storage = storage;
+    this.logger = generateChildLogger(logger, this.name);
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   public async init(): Promise<void> {
     await this.restore();
   }
+
   public async has(tag: string, opts?: any): Promise<boolean> {
     return this.keychain.has(tag);
   }
+
   public async set(tag: string, key: string, opts?: any): Promise<void> {
     this.keychain.set(tag, key);
     await this.persist();
   }
+
   public async get(tag: string, opts?: any): Promise<string> {
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
@@ -41,6 +49,7 @@ export class KeyChain implements IKeyChain {
     }
     return key;
   }
+
   public async del(tag: string, opts?: any): Promise<void> {
     this.keychain.delete(tag);
     await this.persist();
@@ -48,32 +57,31 @@ export class KeyChain implements IKeyChain {
 
   // ---------- Private ----------------------------------------------- //
 
-  private getStorageKey() {
-    const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    return `${storageKeyPrefix}//${this.context}`;
-  }
-
   private async restore() {
-    const persisted = await this.storage.getItem<Record<string, string>>(this.getStorageKey());
-    if (typeof persisted !== "undefined") {
-      this.keychain = objToMap(persisted);
+    const keychain = await this.client.storage.getKeyChain(this.context);
+    if (typeof keychain !== "undefined") {
+      this.keychain = keychain;
     }
   }
 
   private async persist() {
-    await this.storage.setItem<Record<string, string>>(
-      this.getStorageKey(),
-      mapToObj(this.keychain),
-    );
+    await this.client.storage.setKeyChain(this.context, this.keychain);
   }
 }
 
 export class Crypto implements ICrypto {
-  public context: string = CRYPTO_CONTEXT;
+  public name: string = CRYPTO_CONTEXT;
 
-  constructor(public client: IClient, public keychain: IKeyChain) {
+  public keychain: IKeyChain;
+
+  constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {
     this.client = client;
-    this.keychain = keychain;
+    this.logger = generateChildLogger(logger, this.name);
+    this.keychain = keychain || new KeyChain(this.client, this.logger);
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   public async init(): Promise<void> {
@@ -111,15 +119,31 @@ export class Crypto implements ICrypto {
     return result;
   }
 
+  public async encodeJsonRpc(topic: string, payload: JsonRpcPayload): Promise<string> {
+    const message = safeJsonStringify(payload);
+    const hasKeys = await this.hasKeys(topic);
+    const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
+    return result;
+  }
+
+  public async decodeJsonRpc(topic: string, encrypted: string): Promise<JsonRpcPayload> {
+    const hasKeys = await this.hasKeys(topic);
+    const message = hasKeys ? await this.decrypt(topic, encrypted) : encoding.hexToUtf8(encrypted);
+    const payload = safeJsonParse(message);
+    return payload;
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private concatKeys(keyA: string, keyB: string): string {
-    return arrayToHex(concatArrays(hexToArray(keyA), hexToArray(keyB)));
+    return encoding.arrayToHex(
+      encoding.concatArrays(encoding.hexToArray(keyA), encoding.hexToArray(keyB)),
+    );
   }
 
   private splitKeys(keys: string): string[] {
-    const arr = hexToArray(keys);
-    return [arrayToHex(arr.slice(0, 32)), arrayToHex(arr.slice(32, 64))];
+    const arr = encoding.hexToArray(keys);
+    return [encoding.arrayToHex(arr.slice(0, 32)), encoding.arrayToHex(arr.slice(32, 64))];
   }
 
   private async setKeyPair(keyPair: CryptoTypes.KeyPair): Promise<string> {

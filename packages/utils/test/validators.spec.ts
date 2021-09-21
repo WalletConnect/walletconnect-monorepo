@@ -62,7 +62,7 @@ const TEST_INVALID_STATE = {
 
 const TEST_MISMATCH_STATE = {
   ...TEST_SESSION_STATE,
-  accounts: [`${TEST_ETHEREUM_ACCOUNTS}@eip155:100`],
+  accounts: [`eip155:100:${TEST_ETHEREUM_ACCOUNTS}`],
 };
 
 describe("Validators", () => {

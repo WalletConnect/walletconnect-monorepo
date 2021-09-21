@@ -1,12 +1,4 @@
-import { JsonRpcRequest } from "@json-rpc-tools/utils";
-import { config } from "caip-api";
-
-import ethereumLogo from "../assets/ethereum.png";
-import goerliLogo from "../assets/goerli.png";
-import optimismLogo from "../assets/optimism.png";
-import xdaiLogo from "../assets/xdai.png";
-import maticLogo from "../assets/matic.png";
-import arbitrumLogo from "../assets/arbitrum.png";
+import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 import {
   NamespaceMetadata,
@@ -15,49 +7,46 @@ import {
   convertHexToNumber,
   convertHexToUtf8,
 } from "../helpers";
+import { BLOCKCHAIN_LOGO_BASE_URL } from "../constants";
 
 export const EIP155Metadata: NamespaceMetadata = {
   "1": {
-    ...config.eip155["1"],
     name: "Ethereum",
-    logo: ethereumLogo,
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:1.png",
     rgb: "99, 125, 234",
   },
   "5": {
-    ...config.eip155["5"],
-    logo: goerliLogo,
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:5.png",
     rgb: "189, 174, 155",
   },
   "10": {
-    ...config.eip155["10"],
     name: "Optimism",
-    logo: optimismLogo,
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:10.png",
     rgb: "233, 1, 1",
   },
+  "42": {
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:42.png",
+    rgb: "99, 125, 234",
+  },
   "69": {
-    ...config.eip155["69"],
-    logo: optimismLogo,
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:69.png",
     rgb: "233, 1, 1",
   },
   "100": {
-    ...config.eip155["100"],
-    logo: xdaiLogo,
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:100.png",
     rgb: "73, 169, 166",
   },
   "137": {
-    ...config.eip155["137"],
     name: "Matic",
-    logo: maticLogo,
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:137.png",
     rgb: "43, 109, 239",
   },
   "80001": {
-    ...config.eip155["80001"],
-    logo: maticLogo,
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:80001.png",
     rgb: "43, 109, 239",
   },
-  "79377087078960": {
-    ...config.eip155["79377087078960"],
-    logo: arbitrumLogo,
+  "421611": {
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:421611.png",
     rgb: "44, 55, 75",
   },
 };

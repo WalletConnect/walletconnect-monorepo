@@ -1,15 +1,17 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@json-rpc-tools/types";
+import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 import { IPairing } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
+import { IStorage } from "./storage";
 
 export interface ClientOptions {
   name?: string;
+  apiKey?: string;
   controller?: boolean;
   metadata?: AppMetadata;
   logger?: string | Logger;
@@ -27,15 +29,18 @@ export abstract class IClient extends IEvents {
   public abstract crypto: ICrypto;
 
   public abstract relayer: IRelayer;
-  public abstract storage: IKeyValueStorage;
+  public abstract storage: IStorage;
 
   public abstract pairing: IPairing;
   public abstract session: ISession;
 
-  public abstract context: string;
+  public abstract name: string;
+  public abstract readonly context: string;
 
   public abstract readonly controller: boolean;
   public abstract metadata: AppMetadata | undefined;
+
+  public abstract apiKey: string | undefined;
 
   constructor(opts?: ClientOptions) {
     super();
@@ -78,14 +83,14 @@ export declare namespace ClientTypes {
     uri: string;
   }
 
-  export interface Response {
+  export interface ResponseInput {
     state: SessionTypes.State;
     metadata?: AppMetadata;
   }
 
   export interface ApproveParams {
     proposal: SessionTypes.Proposal;
-    response: Response;
+    response: ResponseInput;
   }
   export interface RejectParams {
     proposal: SessionTypes.Proposal;

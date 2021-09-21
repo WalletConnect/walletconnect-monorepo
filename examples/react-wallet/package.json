@@ -1,6 +1,6 @@
 {
   "name": "walletconnect-react-wallet",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.17",
   "private": true,
   "keywords": [
     "walletconnect",
@@ -24,7 +24,6 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
   "dependencies": {
-    "@json-rpc-tools/utils": "^1.7.6",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -35,20 +34,23 @@
     "@types/react-dom": "^16.9.8",
     "@types/react-qr-reader": "^2.1.3",
     "@types/styled-components": "^5.1.2",
-    "@walletconnect/client": "^2.0.0-beta.2",
-    "@walletconnect/types": "^2.0.0-beta.2",
-    "@walletconnect/utils": "^2.0.0-beta.2",
+    "@walletconnect/client": "^2.0.0-beta.17",
+    "@walletconnect/jsonrpc-utils": "^1.0.0",
+    "@walletconnect/types": "^2.0.0-beta.17",
+    "@walletconnect/utils": "^2.0.0-beta.17",
     "axios": "^0.21.1",
     "blockies-ts": "^1.0.0",
-    "caip-wallet": "^1.6.6",
+    "caip-wallet": "^2.0.0-beta.5",
+    "cosmos-wallet": "^1.1.0",
+    "ethers": "^5.3.0",
     "keyvaluestorage": "^0.7.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
-    "react-dom": "^17.0.1",
+    "react-dom": "^17.0.2",
     "react-qr-reader": "^2.2.1",
-    "react-scripts": "^4.0.1",
+    "react-scripts": "^4.0.3",
     "styled-components": "^5.2.0",
-    "typescript": "^4.2.3",
+    "typescript": "^4.3.2",
     "web-vitals": "^0.2.4"
   },
   "eslintConfig": {

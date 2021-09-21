@@ -10,6 +10,7 @@ import Blockchain from "../components/Blockchain";
 import Method from "../components/Method";
 
 import settingsIcon from "../assets/settings.svg";
+import { ChainNamespaces } from "../helpers";
 
 const SSection = styled.div`
   width: 100%;
@@ -71,6 +72,7 @@ const SInput = styled(Input)`
 `;
 
 interface DefaultCardProps {
+  chainData: ChainNamespaces;
   accounts: string[];
   sessions: SessionTypes.Created[];
   requests: SessionTypes.RequestEvent[];
@@ -83,6 +85,7 @@ interface DefaultCardProps {
 
 const DefaultCard = (props: DefaultCardProps) => {
   const {
+    chainData,
     accounts,
     sessions,
     requests,
@@ -100,10 +103,12 @@ const DefaultCard = (props: DefaultCardProps) => {
           <React.Fragment>
             <h6>{"Accounts"}</h6>
             {accounts.map(account => {
-              const [address, chainId] = account.split("@");
+              const [namespace, reference, address] = account.split(":");
+              const chainId = `${namespace}:${reference}`;
               return (
                 <Blockchain
                   key={`default:account:${account}`}
+                  chainData={chainData}
                   chainId={chainId}
                   address={address}
                 />

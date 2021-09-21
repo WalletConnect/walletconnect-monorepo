@@ -1,6 +1,8 @@
-import { ErrorResponse, JsonRpcRequest } from "@json-rpc-tools/types";
+import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-types";
 
 import { RelayerTypes } from "./relayer";
+
+export { Logger } from "pino";
 
 export declare namespace SignalTypes {
   export type Method = MethodPairing | MethodUri;

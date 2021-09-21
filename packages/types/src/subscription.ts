@@ -1,71 +1,72 @@
-import { JsonRpcPayload, IEvents } from "@json-rpc-tools/types";
+import { IEvents } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 
 import { IClient } from "./client";
 import { Reason } from "./misc";
 import { RelayerTypes } from "./relayer";
 
-export interface SubscriptionOptions extends RelayerTypes.SubscribeOptions {
-  expiry?: number;
+export abstract class ISubscriptionTopicMap {
+  public map = new Map<string, string[]>();
+
+  public abstract readonly topics: string[];
+
+  public abstract set(topic: string, id: string): void;
+
+  public abstract get(topic: string): string[];
+
+  public abstract exists(topic: string, id: string): boolean;
+
+  public abstract delete(topic: string, id?: string): void;
+
+  public abstract clear(): void;
 }
 
-export interface SubscriptionParams<Data> extends SubscriptionOptions {
+export interface SubscriptionParams extends RelayerTypes.SubscribeOptions {
   id: string;
   topic: string;
-  data: Data;
   expiry: number;
 }
 
 export declare namespace SubscriptionEvent {
-  export interface Payload {
-    topic: string;
-    payload: JsonRpcPayload;
-  }
+  export type Created = SubscriptionParams;
 
-  export interface Created<T> {
-    topic: string;
-    data: T;
-  }
-
-  export interface Updated<T> {
-    topic: string;
-    data: T;
-    update: Partial<T>;
-  }
-
-  export interface Deleted<T> {
-    topic: string;
-    data: T;
+  export interface Deleted extends SubscriptionParams {
     reason: Reason;
   }
+
+  export type Expired = Deleted;
 }
 
-export type SubscriptionEntries<T> = Record<string, SubscriptionParams<T>>;
+export abstract class ISubscription extends IEvents {
+  public abstract subscriptions: Map<string, SubscriptionParams>;
 
-export abstract class ISubscription<Data> extends IEvents {
-  public abstract subscriptions = new Map<string, SubscriptionParams<Data>>();
+  public abstract topicMap: ISubscriptionTopicMap;
 
   public abstract readonly length: number;
 
+  public abstract readonly ids: string[];
+
+  public abstract readonly values: SubscriptionParams[];
+
   public abstract readonly topics: string[];
 
-  public abstract readonly values: SubscriptionParams<Data>[];
+  public abstract name: string;
 
-  constructor(public client: IClient, public logger: Logger, public context: string) {
+  public abstract readonly context: string;
+
+  constructor(public client: IClient, public logger: Logger) {
     super();
   }
 
   public abstract init(): Promise<void>;
 
-  public abstract set(topic: string, data: Data, opts: SubscriptionOptions): Promise<void>;
+  public abstract set(id: string, subscription: SubscriptionParams): Promise<void>;
 
-  public abstract get(topic: string): Promise<Data>;
+  public abstract get(id: string): Promise<SubscriptionParams>;
 
-  public abstract update(topic: string, update: Partial<Data>): Promise<void>;
+  public abstract delete(id: string, reason: Reason): Promise<void>;
 
-  public abstract delete(topic: string, reason: Reason): Promise<void>;
+  public abstract enable(): Promise<void>;
 
-  // ---------- Protected ----------------------------------------------- //
-
-  protected abstract onPayload(payloadEvent: SubscriptionEvent.Payload): Promise<any>;
+  public abstract disable(): Promise<void>;
 }

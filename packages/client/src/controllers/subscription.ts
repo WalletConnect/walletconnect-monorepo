@@ -3,112 +3,136 @@ import { Logger } from "pino";
 import {
   IClient,
   ISubscription,
+  ISubscriptionTopicMap,
   Reason,
   SubscriptionEvent,
-  SubscriptionOptions,
   SubscriptionParams,
 } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
-import { JsonRpcPayload } from "@json-rpc-tools/utils";
+import { ERROR, formatMessageContext, toMiliseconds, calcExpiry } from "@walletconnect/utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import {
-  CLIENT_BEAT_INTERVAL,
   CLIENT_EVENTS,
-  RELAYER_EVENTS,
+  SUBSCRIPTION_CONTEXT,
   SUBSCRIPTION_DEFAULT_TTL,
   SUBSCRIPTION_EVENTS,
 } from "../constants";
-import { generateChildLogger, getLoggerContext } from "@pedrouid/pino-utils";
 
-export class Subscription<Data = any> extends ISubscription<Data> {
-  public subscriptions = new Map<string, SubscriptionParams<Data>>();
+export class SubscriptionTopicMap implements ISubscriptionTopicMap {
+  public map = new Map<string, string[]>();
+
+  get topics(): string[] {
+    return Array.from(this.map.keys());
+  }
+
+  public set(topic: string, id: string): void {
+    const ids = this.get(topic);
+    if (this.exists(topic, id)) return;
+    this.map.set(topic, [...ids, id]);
+  }
+
+  public get(topic: string): string[] {
+    const ids = this.map.get(topic);
+    return ids || [];
+  }
+
+  public exists(topic: string, id: string): boolean {
+    const ids = this.get(topic);
+    return ids.includes(id);
+  }
+
+  public delete(topic: string, id?: string): void {
+    if (typeof id === "undefined") {
+      this.map.delete(topic);
+      return;
+    }
+    if (!this.map.has(topic)) return;
+    const ids = this.get(topic);
+    if (!this.exists(topic, id)) return;
+    const remaining = ids.filter(x => x !== id);
+    if (!remaining.length) {
+      this.map.delete(topic);
+      return;
+    }
+    this.map.set(topic, remaining);
+  }
+
+  public clear(): void {
+    this.map.clear();
+  }
+}
+
+export class Subscription extends ISubscription {
+  public subscriptions = new Map<string, SubscriptionParams>();
+
+  public topicMap = new SubscriptionTopicMap();
 
   public events = new EventEmitter();
 
-  private timeout = new Map<string, NodeJS.Timeout>();
+  public name: string = SUBSCRIPTION_CONTEXT;
 
-  private cached: SubscriptionParams<Data>[] = [];
+  private cached: SubscriptionParams[] = [];
 
-  constructor(public client: IClient, public logger: Logger, public context: string) {
-    super(client, logger, context);
-    this.logger = generateChildLogger(logger, this.context);
-
+  constructor(public client: IClient, public logger: Logger) {
+    super(client, logger);
+    this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
   }
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
-    await this.restore();
+    await this.initialize();
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
   }
 
   get length(): number {
     return this.subscriptions.size;
   }
 
-  get topics(): string[] {
+  get ids(): string[] {
     return Array.from(this.subscriptions.keys());
   }
 
-  get values(): SubscriptionParams<Data>[] {
+  get values(): SubscriptionParams[] {
     return Array.from(this.subscriptions.values());
   }
 
-  public async set(topic: string, data: Data, opts: SubscriptionOptions): Promise<void> {
-    await this.isEnabled();
-    if (this.subscriptions.has(topic)) {
-      this.update(topic, data);
-    } else {
-      this.logger.debug(`Setting subscription`);
-      this.logger.trace({ type: "method", method: "set", topic, data, opts });
-      await this.subscribeAndSet(topic, data, opts);
-      this.events.emit(SUBSCRIPTION_EVENTS.created, {
-        topic,
-        data,
-      } as SubscriptionEvent.Created<Data>);
-    }
+  get topics(): string[] {
+    return this.topicMap.topics;
   }
 
-  public async get(topic: string): Promise<Data> {
+  public async set(id: string, subscription: SubscriptionParams): Promise<void> {
+    await this.isEnabled();
+    if (this.subscriptions.has(id)) return;
+    this.logger.debug(`Setting subscription`);
+    this.logger.trace({ type: "method", method: "set", id, subscription });
+    this.setSubscription(id, subscription);
+    this.events.emit(SUBSCRIPTION_EVENTS.created, subscription);
+  }
+
+  public async get(id: string): Promise<SubscriptionParams> {
     await this.isEnabled();
     this.logger.debug(`Getting subscription`);
-    this.logger.trace({ type: "method", method: "get", topic });
-    const subscription = await this.getSubscription(topic);
-    return subscription.data;
+    this.logger.trace({ type: "method", method: "get", id });
+    const subscription = await this.getSubscription(id);
+    return subscription;
   }
 
-  public async update(topic: string, update: Partial<Data>): Promise<void> {
-    await this.isEnabled();
-    this.logger.debug(`Updating subscription`);
-    this.logger.trace({ type: "method", method: "update", topic, update });
-    const subscription = await this.getSubscription(topic);
-    const data = { ...subscription.data, ...update };
-    this.subscriptions.set(topic, {
-      ...subscription,
-      topic,
-      data,
-    });
-    this.events.emit(SUBSCRIPTION_EVENTS.updated, {
-      topic,
-      data,
-      update,
-    } as SubscriptionEvent.Updated<Data>);
-  }
-
-  public async delete(topic: string, reason: Reason): Promise<void> {
+  public async delete(id: string, reason: Reason): Promise<void> {
     await this.isEnabled();
 
     this.logger.debug(`Deleting subscription`);
-    this.logger.trace({ type: "method", method: "delete", topic, reason });
-    const subscription = await this.getSubscription(topic);
-    this.subscriptions.delete(topic);
-    await this.client.relayer.unsubscribe(subscription.id, {
-      relay: subscription.relay,
-    });
+    this.logger.trace({ type: "method", method: "delete", id, reason });
+    const subscription = await this.getSubscription(id);
+    this.deleteSubscription(id, subscription);
+
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
-      topic,
-      data: subscription.data,
+      ...subscription,
       reason,
-    } as SubscriptionEvent.Deleted<Data>);
+    } as SubscriptionEvent.Deleted);
   }
 
   public on(event: string, listener: any): void {
@@ -127,36 +151,49 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     this.events.removeListener(event, listener);
   }
 
-  // ---------- Protected ----------------------------------------------- //
+  public async enable(): Promise<void> {
+    if (!this.cached.length) return;
+    this.reset();
+    this.onEnable();
+  }
 
-  protected async onPayload(payloadEvent: SubscriptionEvent.Payload) {
-    this.events.emit(SUBSCRIPTION_EVENTS.payload, payloadEvent);
+  public async disable(): Promise<void> {
+    if (this.cached.length) return;
+    this.onDisable();
   }
 
   // ---------- Private ----------------------------------------------- //
 
-  private getNestedContext(length: number) {
-    const nestedContext = getLoggerContext(this.logger).split("/");
-    return nestedContext.slice(nestedContext.length - length, nestedContext.length);
+  private reset() {
+    this.cached.map(async subscription => this.setSubscription(subscription.id, subscription));
   }
 
-  private getSubscriptionContext() {
-    return this.getNestedContext(2).join(" ");
+  private onEnable() {
+    this.cached = [];
+    this.events.emit(SUBSCRIPTION_EVENTS.enabled);
   }
 
-  private getStorageKey() {
-    const storageKeyPrefix = `${this.client.protocol}@${this.client.version}:${this.client.context}`;
-    const subscriptionContext = this.getNestedContext(2).join(":");
-    return `${storageKeyPrefix}//${subscriptionContext}`;
+  private onDisable() {
+    this.cached = this.values;
+    this.subscriptions.clear();
+    this.topicMap.clear();
+    this.events.emit(SUBSCRIPTION_EVENTS.disabled);
   }
 
-  private async getSubscription(topic: string): Promise<SubscriptionParams<Data>> {
+  private setSubscription(id: string, subscription: SubscriptionParams): void {
+    const expiry = subscription.expiry || calcExpiry(SUBSCRIPTION_DEFAULT_TTL);
+    this.subscriptions.set(id, { ...subscription, expiry });
+    this.topicMap.set(subscription.topic, id);
+    this.checkExpiry(id, expiry);
+  }
+
+  private async getSubscription(id: string): Promise<SubscriptionParams> {
     await this.isEnabled();
-    const subscription = this.subscriptions.get(topic);
+    const subscription = this.subscriptions.get(id);
     if (!subscription) {
-      const error = ERROR.NO_MATCHING_TOPIC.format({
-        context: this.getSubscriptionContext(),
-        topic,
+      const error = ERROR.NO_MATCHING_ID.format({
+        context: formatMessageContext(this.context),
+        id,
       });
       this.logger.error(error.message);
       throw new Error(error.message);
@@ -164,112 +201,64 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     return subscription;
   }
 
-  private async subscribeAndSet(
-    topic: string,
-    data: Data,
-    opts: SubscriptionOptions,
-  ): Promise<void> {
-    const id = await this.client.relayer.subscribe(
-      topic,
-      (payload: JsonRpcPayload) => this.onPayload({ topic, payload }),
-      opts,
-    );
-
-    const expiry = opts.expiry || Date.now() + SUBSCRIPTION_DEFAULT_TTL * 1000;
-    this.subscriptions.set(topic, { id, topic, data, ...opts, expiry });
-    this.setTimeout(topic, expiry);
+  private deleteSubscription(id: string, subscription: SubscriptionParams): void {
+    this.subscriptions.delete(id);
+    this.topicMap.delete(subscription.topic, id);
   }
 
-  private setTimeout(topic: string, expiry: number) {
-    if (this.timeout.has(topic)) return;
-    const ttl = expiry - Date.now();
-    if (ttl <= 0) {
-      this.onTimeout(topic);
-      return;
-    }
-    if (ttl > CLIENT_BEAT_INTERVAL) return;
-    const timeout = setTimeout(() => this.onTimeout(topic), ttl);
-    this.timeout.set(topic, timeout);
+  private checkExpiry(id: string, expiry: number): void {
+    const msToTimeout = toMiliseconds(expiry) - Date.now();
+    if (msToTimeout <= 0) return this.expire(id);
   }
 
-  private deleteTimeout(topic: string): void {
-    if (!this.timeout.has(topic)) return;
-    const timeout = this.timeout.get(topic);
-    if (typeof timeout === "undefined") return;
-    clearTimeout(timeout);
-  }
-
-  private resetTimeout(): void {
-    this.timeout.forEach(timeout => clearTimeout(timeout));
-    this.timeout.clear();
-  }
-
-  private onTimeout(topic: string): void {
-    this.deleteTimeout(topic);
-    this.delete(topic, ERROR.EXPIRED.format({ context: this.getSubscriptionContext() }));
+  private expire(id: string): void {
+    this.delete(id, ERROR.EXPIRED.format({ context: formatMessageContext(this.context) }));
   }
 
   private checkSubscriptions(): void {
     this.subscriptions.forEach(subscription =>
-      this.setTimeout(subscription.topic, subscription.expiry),
+      this.checkExpiry(subscription.id, subscription.expiry),
     );
   }
 
   private async persist() {
-    await this.client.storage.setItem<SubscriptionParams<Data>[]>(
-      this.getStorageKey(),
-      this.values,
-    );
+    await this.client.storage.setRelayerSubscriptions(this.context, this.values);
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getItem<SubscriptionParams<Data>[]>(
-        this.getStorageKey(),
-      );
+      const persisted = await this.client.storage.getRelayerSubscriptions(this.context);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.getSubscriptionContext(),
+          context: formatMessageContext(this.context),
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
-      await Promise.all(
-        this.cached.map(async subscription => {
-          const { topic, data } = subscription;
-          const opts = {
-            relay: subscription.relay,
-            expiry: subscription.expiry,
-          };
-          await this.subscribeAndSet(topic, data, opts);
-        }),
+      this.logger.debug(
+        `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
       );
-      await this.enable();
-      this.logger.debug(`Successfully Restored subscriptions for ${this.getSubscriptionContext()}`);
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore subscriptions for ${this.getSubscriptionContext()}`);
-      this.logger.error(e);
+      this.logger.debug(
+        `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
+      );
+      this.logger.error(e as any);
     }
   }
 
-  private async reset(): Promise<void> {
-    await this.disable();
-    await Promise.all(
-      this.cached.map(async subscription => {
-        const { topic, data } = subscription;
-        const opts = {
-          relay: subscription.relay,
-          expiry: subscription.expiry,
-        };
-        await this.subscribeAndSet(topic, data, opts);
-      }),
-    );
-    await this.enable();
+  private async initialize() {
+    await this.restore();
+    this.reset();
+    this.onInit();
+  }
+
+  private onInit() {
+    this.onEnable();
   }
 
   private async isEnabled(): Promise<void> {
@@ -279,40 +268,27 @@ export class Subscription<Data = any> extends ISubscription<Data> {
     });
   }
 
-  private async enable(): Promise<void> {
-    this.cached = [];
-    this.events.emit(SUBSCRIPTION_EVENTS.enabled);
-  }
-
-  private async disable(): Promise<void> {
-    if (!this.cached.length) {
-      this.cached = this.values;
-    }
-    this.resetTimeout();
-    this.events.emit(SUBSCRIPTION_EVENTS.disabled);
+  private onExpiry(expiredEvent: SubscriptionEvent.Expired) {
+    const eventName = SUBSCRIPTION_EVENTS.expired;
+    this.logger.info(`Emitting ${eventName}`);
+    this.logger.debug({ type: "event", event: eventName, data: expiredEvent });
+    this.events.emit(SUBSCRIPTION_EVENTS.expired, expiredEvent as SubscriptionEvent.Expired);
   }
 
   private registerEventListeners(): void {
     this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
-    this.client.relayer.on(RELAYER_EVENTS.connect, () => this.reset());
-    this.events.on(SUBSCRIPTION_EVENTS.payload, (payloadEvent: SubscriptionEvent.Payload) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: payloadEvent });
+    this.events.on(SUBSCRIPTION_EVENTS.created, async (createdEvent: SubscriptionEvent.Created) => {
+      const eventName = SUBSCRIPTION_EVENTS.created;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: createdEvent });
+      await this.persist();
     });
-    this.events.on(SUBSCRIPTION_EVENTS.created, (createdEvent: SubscriptionEvent.Created<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.created}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.created, data: createdEvent });
-      this.persist();
-    });
-    this.events.on(SUBSCRIPTION_EVENTS.updated, (updatedEvent: SubscriptionEvent.Updated<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.updated}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.updated, data: updatedEvent });
-      this.persist();
-    });
-    this.events.on(SUBSCRIPTION_EVENTS.deleted, (deletedEvent: SubscriptionEvent.Deleted<Data>) => {
-      this.logger.info(`Emitting ${SUBSCRIPTION_EVENTS.deleted}`);
-      this.logger.debug({ type: "event", event: SUBSCRIPTION_EVENTS.deleted, data: deletedEvent });
-      this.persist();
+    this.events.on(SUBSCRIPTION_EVENTS.deleted, async (deletedEvent: SubscriptionEvent.Deleted) => {
+      const eventName = SUBSCRIPTION_EVENTS.deleted;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
+      await this.persist();
+      if (deletedEvent.reason.code === ERROR.EXPIRED.code) this.onExpiry(deletedEvent);
     });
   }
 }

@@ -1,4 +1,4 @@
-import { SessionTypes, AppMetadata } from "walletconnect-types-v2";
+import { SessionTypes, AppMetadata } from "@walletconnect/types";
 
 export const chainRef = 1;
 export const chainId = `eip155:${chainRef}`;
@@ -27,7 +27,7 @@ export const metadata: AppMetadata = {
 export const address = "0x1d85568eEAbad713fBB5293B45ea066e552A90De";
 
 export const state: SessionTypes.State = {
-  accounts: [`${address}@eip155:1`],
+  accounts: [`${chainId}:${address}`],
 };
 
 export const connectorParams = {

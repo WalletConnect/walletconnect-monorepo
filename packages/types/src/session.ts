@@ -1,31 +1,31 @@
-import { JsonRpcPayload, JsonRpcRequest, JsonRpcResponse } from "@json-rpc-tools/types";
+import { JsonRpcRequest, JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 import { ISequence, SequenceTypes } from "./sequence";
+import { SignalTypes, BlockchainTypes, AppMetadata, NotificationPermissions } from "./misc";
 import { CryptoTypes } from "./crypto";
-import { SignalTypes, BlockchainTypes, NotificationPermissions, AppMetadata } from "./misc";
-import { SubscriptionEvent } from "./subscription";
+import { IEngine } from "./engine";
 
 export declare namespace SessionTypes {
   export type Status = SequenceTypes.Status;
-  export interface JsonRpc extends SequenceTypes.JsonRpc {
-    notification: string;
-  }
-  export interface Events extends SequenceTypes.Events {
-    notification: string;
-  }
+
+  export type JsonRpc = SequenceTypes.JsonRpc;
+
+  export type Events = SequenceTypes.Events;
 
   export type Config = SequenceTypes.Config<Events, JsonRpc, Status>;
 
   export type Relay = SequenceTypes.Relay;
+
   export interface BasePermissions extends SequenceTypes.BasePermissions {
     blockchain: BlockchainTypes.Permissions;
-    notifications?: NotificationPermissions;
   }
-  export interface ProposedPermissions extends BasePermissions {
+
+  export interface ProposedPermissions extends SequenceTypes.ProposedPermissions {
+    blockchain: BlockchainTypes.Permissions;
     notifications: NotificationPermissions;
   }
 
-  export interface SettledPermissions extends ProposedPermissions {
+  export interface SettledPermissions extends SequenceTypes.SettledPermissions {
     controller: CryptoTypes.Participant;
   }
 
@@ -69,7 +69,7 @@ export declare namespace SessionTypes {
   export type Pending = SequenceTypes.Pending<Participant, Proposal, State>;
 
   export interface RespondParams extends SequenceTypes.RespondParams<Proposal> {
-    response: Response;
+    response: ResponseInput;
   }
 
   export type SettleParams = SequenceTypes.SettleParams<State, Participant, Permissions>;
@@ -112,6 +112,12 @@ export declare namespace SessionTypes {
 
   export type Created = Settled;
 
+  export type Approval = SequenceTypes.Approval<State, Participant>;
+
+  export type Rejection = SequenceTypes.Rejection;
+
+  export type Response = Rejection | Approval;
+
   export type Success = SequenceTypes.Success<State, Participant>;
 
   export type Failed = SequenceTypes.Failed;
@@ -120,29 +126,47 @@ export declare namespace SessionTypes {
 
   export type State = BlockchainTypes.State;
 
-  export interface Notification {
-    type: string;
-    data: any;
-  }
-
-  export interface NotificationEvent extends Notification {
-    topic: string;
-  }
-
-  export type NotifyParams = NotificationEvent;
-
-  export interface Response {
+  export interface ResponseInput {
     state: State;
     metadata: AppMetadata;
   }
+
+  export type DefaultSignalParams = SequenceTypes.DefaultSignalParams<ProposedPeer>;
+
+  export type Notification = SequenceTypes.Notification;
+
+  export type NotificationEvent = SequenceTypes.NotificationEvent;
+
+  export type NotifyParams = SequenceTypes.NotifyParams;
+
+  export type Engine = IEngine<
+    Pending,
+    Settled,
+    Upgrade,
+    Update,
+    CreateParams,
+    RespondParams,
+    RequestParams,
+    UpgradeParams,
+    UpdateParams,
+    DeleteParams,
+    ProposeParams,
+    SettleParams,
+    NotifyParams,
+    Participant,
+    Permissions
+  >;
 }
 
 export abstract class ISession extends ISequence<
+  SessionTypes.Engine,
   SessionTypes.Config,
   SessionTypes.Pending,
   SessionTypes.Settled,
   SessionTypes.Upgrade,
   SessionTypes.Update,
+  SessionTypes.State,
+  SessionTypes.Permissions,
   SessionTypes.CreateParams,
   SessionTypes.RespondParams,
   SessionTypes.RequestParams,
@@ -151,11 +175,9 @@ export abstract class ISession extends ISequence<
   SessionTypes.DeleteParams,
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams,
-  SessionTypes.Participant
-> {
-  public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
-
-  public abstract notify(params: SessionTypes.NotifyParams): Promise<void>;
-
-  protected abstract onNotification(event: SubscriptionEvent.Payload): Promise<void>;
-}
+  SessionTypes.NotifyParams,
+  SessionTypes.Participant,
+  SessionTypes.Signal,
+  SessionTypes.DefaultSignalParams,
+  SessionTypes.ProposedPermissions
+> {}

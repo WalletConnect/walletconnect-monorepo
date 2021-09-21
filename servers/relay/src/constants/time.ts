@@ -15,3 +15,5 @@ export const THIRTY_SECONDS = 30;
 export const TEN_SECONDS = 10;
 
 export const FIVE_SECONDS = 5;
+
+export const ONE_SECOND = 1;

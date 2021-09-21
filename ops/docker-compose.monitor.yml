@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.9"
 
 volumes:
   grafana:
@@ -8,15 +8,6 @@ networks:
   default:
 
 services:
-  nginx:
-    image: ${NGINX_IMAGE}
-    environment:
-      SUBDOMAINS: "grafana:3000"
-    depends_on:
-      - grafana
-    volumes:
-      - ./nginx/exporter.conf:/etc/nginx/servers/exporter.conf
-
   cadvisor:
     image: gcr.io/google-containers/cadvisor:latest
     volumes:
@@ -32,11 +23,11 @@ services:
       - '--redis.addr=redis://redis:6379'
 
   node_exporter:
-     image: quay.io/prometheus/node-exporter
-     volumes:
-       - /:/host:ro,rslave
-     command:
-       # https://github.com/prometheus/node_exporter#collectors
+    image: quay.io/prometheus/node-exporter
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      # https://github.com/prometheus/node_exporter#collectors
        - '--path.rootfs=/host'
        - '--no-collector.arp'
        - '--no-collector.bcache'
@@ -77,12 +68,6 @@ services:
        - '--no-collector.xfs'
        - '--no-collector.zfs'
 
-  nginx_exporter:
-    image: nginx/nginx-prometheus-exporter
-    command:
-      - -nginx.scrape-uri
-      - http://nginx:8081/stub_status
-
   prometheus:
     image: quay.io/prometheus/prometheus
     volumes:
@@ -95,5 +80,3 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - grafana:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-    depends_on:
-      - prometheus

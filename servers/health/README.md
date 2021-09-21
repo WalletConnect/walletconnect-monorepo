@@ -1,3 +1,3 @@
-# @walletconnect/relay-server
+# @walletconnect/health-server
 
-Relay Server for WalletConnect Protocol
+Health Server for WalletConnect Protocol
