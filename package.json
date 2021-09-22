@@ -31,9 +31,11 @@
     "npm-publish:latest": "lerna exec -- npm publish --access public",
     "npm-publish:next": "lerna exec -- npm publish --access public --tag next",
     "npm-publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
+    "npm-publish:canary": "lerna exec -- npm publish --access public --tag canary",
     "publish:latest": "run-s pre-publish npm-publish:latest",
     "publish:next": "run-s pre-publish npm-publish:next",
-    "publish:experimental": "run-s pre-publish npm-publish:experimental"
+    "publish:experimental": "run-s pre-publish npm-publish:experimental",
+    "publish:canary": "run-s pre-publish npm-publish:canary"
   },
   "repository": {
     "type": "git",
