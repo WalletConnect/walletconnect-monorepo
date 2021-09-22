@@ -9,6 +9,7 @@ import {
   IJsonRpcHistory,
   SubscriptionEvent,
   Reason,
+  JsonRpcRecord,
 } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import { ERROR, formatRelayRpcUrl, formatMessageContext } from "@walletconnect/utils";
@@ -240,7 +241,17 @@ export class Relayer extends IRelayer {
     if (!this.subscriptions.topics.includes(topic)) return true;
     let exists = false;
     try {
-      exists = await this.history.exists(topic, payload.id);
+      if (isJsonRpcRequest(payload)) {
+        exists = await this.history.exists(topic, payload.id);
+      } else {
+        let record: JsonRpcRecord | undefined;
+        try {
+          record = await this.history.get(topic, payload.id);
+        } catch (e) {
+          // skip error
+        }
+        exists = typeof record !== "undefined" && typeof record.response !== "undefined";
+      }
     } catch (e) {
       // skip error
     }
