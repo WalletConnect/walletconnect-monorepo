@@ -71,6 +71,7 @@ export class Relayer extends IRelayer {
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
+    await this.history.init();
     await this.provider.connect();
     await this.subscriptions.init();
     await this.resubscribe();
