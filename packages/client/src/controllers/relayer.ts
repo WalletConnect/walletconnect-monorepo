@@ -254,11 +254,11 @@ export class Relayer extends IRelayer {
       if (!payload.method.endsWith(RELAYER_SUBSCRIPTION_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
-      if (await this.shouldIgnorePayloadEvent({ topic, payload })) return;
       const eventPayload = {
         topic,
         payload: await this.client.crypto.decodeJsonRpc(topic, message),
       } as RelayerTypes.PayloadEvent;
+      if (await this.shouldIgnorePayloadEvent(eventPayload)) return;
       if (isJsonRpcRequest(eventPayload.payload)) {
         this.history.set(topic, eventPayload.payload);
       } else {
