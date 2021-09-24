@@ -9,45 +9,69 @@ import {
 } from "../helpers";
 import { BLOCKCHAIN_LOGO_BASE_URL } from "../constants";
 
+export const EIP155Colors = {
+  ethereum: "99, 125, 234",
+  optimism: "233, 1, 1",
+  goerli: "189, 174, 155",
+  xdai: "73, 169, 166",
+  polygon: "130, 71, 229",
+  celo: "60, 203, 132",
+  arbitrum: "44, 55, 75",
+};
+
 export const EIP155Metadata: NamespaceMetadata = {
   "1": {
     name: "Ethereum",
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:1.png",
-    rgb: "99, 125, 234",
+    rgb: EIP155Colors.ethereum,
   },
   "5": {
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:5.png",
-    rgb: "189, 174, 155",
+    rgb: EIP155Colors.goerli,
   },
   "10": {
     name: "Optimism",
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:10.png",
-    rgb: "233, 1, 1",
+    rgb: EIP155Colors.optimism,
   },
   "42": {
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:42.png",
-    rgb: "99, 125, 234",
+    rgb: EIP155Colors.ethereum,
   },
   "69": {
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:69.png",
-    rgb: "233, 1, 1",
+    rgb: EIP155Colors.optimism,
   },
   "100": {
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:100.png",
-    rgb: "73, 169, 166",
+    rgb: EIP155Colors.xdai,
   },
   "137": {
-    name: "Matic",
+    name: "Polygon",
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:137.png",
-    rgb: "43, 109, 239",
+    rgb: EIP155Colors.polygon,
   },
   "80001": {
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:80001.png",
-    rgb: "43, 109, 239",
+    rgb: EIP155Colors.polygon,
+  },
+  "42161": {
+    name: "Arbitrum",
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:42161.png",
+    rgb: EIP155Colors.arbitrum,
+  },
+  "42220": {
+    name: "Celo",
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:42220.png",
+    rgb: EIP155Colors.celo,
+  },
+  "44787": {
+    logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:44787.png",
+    rgb: EIP155Colors.celo,
   },
   "421611": {
     logo: BLOCKCHAIN_LOGO_BASE_URL + "eip155:421611.png",
-    rgb: "44, 55, 75",
+    rgb: EIP155Colors.arbitrum,
   },
 };
 
