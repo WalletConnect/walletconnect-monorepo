@@ -36,6 +36,8 @@ import {
   AccountBalances,
   formatTestTransaction,
   ChainNamespaces,
+  setInitialStateTestnet,
+  getInitialStateTestnet,
 } from "./helpers";
 import { fonts } from "./styles";
 import Toggle from "./components/Toggle";
@@ -147,6 +149,7 @@ const INITIAL_STATE: AppState = {
 class App extends React.Component<any, any> {
   public state: AppState = {
     ...INITIAL_STATE,
+    testnet: getInitialStateTestnet(),
   };
   public componentDidMount() {
     this.init();
@@ -319,7 +322,11 @@ class App extends React.Component<any, any> {
     this.setState({ ...INITIAL_STATE, client, chainData });
   };
 
-  public toggleTestnets = () => this.setState({ testnet: !this.state.testnet });
+  public toggleTestnets = () => {
+    const testnet = !this.state.testnet;
+    this.setState({ testnet });
+    setInitialStateTestnet(testnet);
+  };
 
   public onSessionConnected = async (session: SessionTypes.Settled) => {
     this.setState({ session });

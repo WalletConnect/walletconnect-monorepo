@@ -34,6 +34,8 @@ import {
   isRequestCard,
   isSessionCard,
   isSettingsCard,
+  setInitialStateTestnet,
+  getInitialStateTestnet,
 } from "./helpers";
 
 const SContainer = styled.div`
@@ -107,6 +109,8 @@ class App extends React.Component<{}> {
     super(props);
     this.state = {
       ...INITIAL_STATE,
+      testnet: getInitialStateTestnet(),
+      chains: getInitialStateTestnet() ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS,
     };
   }
   public componentDidMount() {
@@ -201,6 +205,7 @@ class App extends React.Component<{}> {
     await this.resetApp();
     const testnet = !this.state.testnet;
     this.setState({ testnet });
+    setInitialStateTestnet(testnet);
     const chains = testnet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
     await this.init(chains);
   };

@@ -180,3 +180,21 @@ export const toWad = (amount: string, decimals = 18): BigNumber => {
 export const fromWad = (wad: BigNumberish, decimals = 18): string => {
   return sanitizeDecimals(utils.formatUnits(wad, decimals), decimals);
 };
+
+export const LOCALSTORAGE_KEY_TESTNET = "TESTNET";
+export const INITIAL_STATE_TESTNET_DEFAULT = true;
+
+export function setInitialStateTestnet(value: boolean): void {
+  window.localStorage.setItem(LOCALSTORAGE_KEY_TESTNET, `${value}`);
+}
+
+export function getInitialStateTestnet(): boolean {
+  let value = INITIAL_STATE_TESTNET_DEFAULT;
+  const persisted = window.localStorage.getItem(LOCALSTORAGE_KEY_TESTNET);
+  if (!persisted) {
+    setInitialStateTestnet(value);
+  } else {
+    value = persisted === "true" ? true : false;
+  }
+  return value;
+}
