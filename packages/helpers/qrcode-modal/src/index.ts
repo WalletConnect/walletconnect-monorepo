@@ -2,6 +2,7 @@ import { IQRCodeModalOptions } from "@walletconnect/types";
 
 import * as nodeLib from "./node";
 import * as browserLib from "./browser";
+import isElectron from "is-electron";
 
 const isNode = () =>
   typeof process !== "undefined" &&
@@ -11,7 +12,7 @@ const isNode = () =>
 function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
   // eslint-disable-next-line no-console
   console.log(uri);
-  if (isNode()) {
+  if (isNode() && !isElectron()) {
     nodeLib.open(uri);
   } else {
     browserLib.open(uri, cb, qrcodeModalOptions);
@@ -19,7 +20,7 @@ function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
 }
 
 function close() {
-  if (isNode()) {
+  if (isNode() && !isElectron()) {
     nodeLib.close();
   } else {
     browserLib.close();
