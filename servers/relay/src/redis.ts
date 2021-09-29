@@ -49,9 +49,11 @@ export class RedisService {
       this.client.smembers(`message:${topic}`, (err: Error, res: string[]) => {
         if (err) reject(err);
         const messages: string[] = [];
-        res.map((m: string) => {
-          if (m != null) messages.push(m.split(":")[1]);
-        });
+        if (typeof res !== "undefined" && res.length) {
+          res.forEach((m: string) => {
+            if (m != null) messages.push(m.split(":")[1]);
+          });
+        }
         resolve(messages);
       });
     });
@@ -62,7 +64,7 @@ export class RedisService {
       this.logger.debug(`Deleting Message`);
       this.logger.trace({ type: "method", method: "deleteMessage", topic });
       const res = await this.sscan(`message:${topic}`, "MATCH", `${hash}:*`);
-      if (res.length) {
+      if (typeof res !== "undefined" && res.length) {
         this.client.srem(`message:${topic}`, res[0], (err: Error) => {
           if (err) reject(err);
           resolve();
@@ -90,13 +92,15 @@ export class RedisService {
 
   public getLegacyCached(topic: string): Promise<LegacySocketMessage[]> {
     return new Promise((resolve, reject) => {
-      this.client.lrange(`legacy:${topic}`, 0, -1, (err: Error, raw: any) => {
+      this.client.lrange(`legacy:${topic}`, 0, -1, (err: Error, res: any) => {
         if (err) reject(err);
         const messages: LegacySocketMessage[] = [];
-        raw.forEach((data: string) => {
-          const message = safeJsonParse(data);
-          messages.push(message);
-        });
+        if (typeof res !== "undefined" && res.length) {
+          res.forEach((data: string) => {
+            const message = safeJsonParse(data);
+            messages.push(message);
+          });
+        }
         this.client.del(`legacy:${topic}`);
         this.logger.debug(`Getting Legacy Published`);
         this.logger.trace({ type: "method", method: "getLegacyCached", topic, messages });
@@ -121,12 +125,18 @@ export class RedisService {
 
   public getNotification(topic: string): Promise<Notification[]> {
     return new Promise((resolve, reject) => {
-      this.client.lrange([`notification:${topic}`, 0, -1], (err: Error, raw: any) => {
+      this.client.lrange([`notification:${topic}`, 0, -1], (err: Error, res: any) => {
         if (err) reject(err);
-        const data = raw.map((item: string) => safeJsonParse(item));
+        const notifications: Notification[] = [];
+        if (typeof res !== "undefined" && res.length) {
+          res.forEach((item: string) => {
+            const notification = safeJsonParse(item);
+            notifications.push(notification);
+          });
+        }
         this.logger.debug(`Getting Notification`);
-        this.logger.trace({ type: "method", method: "getNotification", topic, data });
-        resolve(data);
+        this.logger.trace({ type: "method", method: "getNotification", topic, notifications });
+        resolve(notifications);
       });
     });
   }
@@ -193,9 +203,12 @@ export class RedisService {
   private async sscan(key: string, match = "", pattern = "", cursor = "0"): Promise<string[]> {
     const messages: string[] = [];
     const [nextCursor, values] = await this.sscanAsync(key, match, pattern, cursor);
-    values.forEach((m: string) => {
-      if (m != null) messages.push(m);
-    });
+    if (typeof values !== "undefined" && values.length) {
+      values.forEach((message: string) => {
+        if (!message) return;
+        messages.push(message);
+      });
+    }
     if (nextCursor == "0") {
       return messages;
     }

@@ -3365,7 +3365,7 @@ let
   args = {
     name = "_at_walletconnect_slash_relay-server";
     packageName = "@walletconnect/relay-server";
-    version = "1.0.0";
+    version = "1.0.1";
     src = ./.;
     dependencies = [
       sources."@fastify/ajv-compiler-1.1.0"

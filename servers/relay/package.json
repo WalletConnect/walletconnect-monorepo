@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/relay-server",
   "description": "Relay Server for WalletConnect Protocol",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",

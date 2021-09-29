@@ -7,7 +7,16 @@ volumes:
 networks:
   default:
 
+configs:
+  stats_html:
+    file: ./stats.html
+
 services:
+  caddy:
+    configs:
+      - source: stats_html
+        target: /config/www/index.html
+
   cadvisor:
     image: gcr.io/google-containers/cadvisor:latest
     volumes:

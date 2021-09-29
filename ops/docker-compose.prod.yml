@@ -13,8 +13,6 @@ services:
       UPSTREAM_NAME: ${UPSTREAM_NAME:-relay}
       UPSTREAM_PORT: ${UPSTREAM_PORT:-5000}
       LOG_LEVEL: ${LOG_LEVEL:-ERROR}
-    volumes:
-      - ./stats.html:/www/index.html
     deploy:
       replicas: ${REPLICAS:-1}
 

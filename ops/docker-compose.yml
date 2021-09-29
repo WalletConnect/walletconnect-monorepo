@@ -11,12 +11,19 @@ volumes:
   caddy_data:
   caddy_conf:
 
+configs:
+  caddyfile:
+    file: ./Caddyfile
+
 services:
   caddy:
     image: ${CADDY_IMAGE}
     deploy:
       mode: replicated
     # Port mode must be mode: host to allow access to the external ip
+    configs:
+      - source: caddyfile
+        target: /config/Caddyfile
     ports:
       - target: 80
         published: 80
@@ -27,7 +34,6 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_conf:/config
-      - ./Caddyfile:/Caddyfile
 
   redis:
     image: 'redis:6-alpine'

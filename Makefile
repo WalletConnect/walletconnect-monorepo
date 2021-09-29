@@ -30,7 +30,7 @@ caddyVersion=v2.4.3
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
 buildCaddy=nix-build $(caddySrc) --attr docker && $(copyResult)
 WAKU_VERSION_TAG ?= v0.5.1
-WAKU_SHA256 ?= 108l12f7qyjb0rkzl3hd585s311ic0a9c8iqb0yrncbp99g6wmi5
+WAKU_SHA256 ?= 0k55hw1wqcyrpf9cxchhxdb92p75mmskkpvfn1paivl1r38pyb4a
 buildWakuCommand:=-nix-build ./ops/waku-docker.nix --argstr wakuVersionTag $(WAKU_VERSION_TAG) --argstr nixNimRepoSha256 $(WAKU_SHA256)
 
 buildWaku=$(buildWakuCommand) && $(copyResult)

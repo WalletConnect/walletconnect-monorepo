@@ -4,3 +4,6 @@ services:
   redis:
     ports:
       - "6379:6379"
+  relay:
+    environment:
+      WAKU_URL: ""
