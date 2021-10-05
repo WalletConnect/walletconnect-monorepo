@@ -220,7 +220,7 @@ export class SignerConnection extends IJsonRpcConnection {
       const response = await this.wc.unsafeSend(payload);
       return this.sanitizeResponse(response);
     } catch (error) {
-      return this.onError(payload, error.message);
+      return this.onError(payload, (error as any).message);
     }
   }
 

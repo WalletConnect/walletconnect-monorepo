@@ -68,7 +68,10 @@ function Modal(props: ModalProps) {
         if (android) return;
         setLoading(true);
         try {
-          const url = getWalletRegistryUrl();
+          const url =
+            props.qrcodeModalOptions && props.qrcodeModalOptions.registryUrl
+              ? props.qrcodeModalOptions.registryUrl
+              : getWalletRegistryUrl();
           const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
           const platform = mobile ? "mobile" : "desktop";
           const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);

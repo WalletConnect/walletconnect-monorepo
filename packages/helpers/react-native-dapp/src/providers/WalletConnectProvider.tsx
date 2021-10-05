@@ -120,7 +120,7 @@ export default function WalletConnectProvider({
     )}${maybeRedirectUrl}`;
 
     if (await Linking.canOpenURL(connectionUrl)) {
-      return Promise.all([
+      return await Promise.all<any>([
         storage.setItem(walletServiceStorageKey, walletService),
         Linking.openURL(connectionUrl),
       ]) && undefined;
