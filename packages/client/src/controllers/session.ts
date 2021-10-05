@@ -7,6 +7,7 @@ import {
   validateSessionProposeParams,
   validateSessionRespondParams,
   isValidationInvalid,
+  mergeArrays,
   ERROR,
 } from "@walletconnect/utils";
 
@@ -145,22 +146,22 @@ export class Session extends ISession {
     const settled = await this.settled.get(topic);
     const permissions = {
       jsonrpc: {
-        methods: [
-          ...settled.permissions.jsonrpc.methods,
-          ...(upgrade.permissions.jsonrpc?.methods || []),
-        ],
+        methods: mergeArrays(
+          settled.permissions.jsonrpc.methods,
+          upgrade.permissions.jsonrpc?.methods || [],
+        ),
       },
       notifications: {
-        types: [
-          ...settled.permissions.notifications?.types,
-          ...(upgrade.permissions.notifications?.types || []),
-        ],
+        types: mergeArrays(
+          settled.permissions.notifications?.types || [],
+          upgrade.permissions.notifications?.types || [],
+        ),
       },
       blockchain: {
-        chains: [
-          ...settled.permissions.blockchain?.chains,
-          ...(upgrade.permissions.blockchain?.chains || []),
-        ],
+        chains: mergeArrays(
+          settled.permissions.blockchain?.chains || [],
+          upgrade.permissions.blockchain?.chains || [],
+        ),
       },
       controller: settled.permissions.controller,
     };

@@ -3,7 +3,7 @@ import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { PairingTypes, IClient, IPairing } from "@walletconnect/types";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
-import { formatUri } from "@walletconnect/utils";
+import { formatUri, mergeArrays } from "@walletconnect/utils";
 
 import { State } from "./state";
 import { Engine } from "./engine";
@@ -139,16 +139,16 @@ export class Pairing extends IPairing {
     const settled = await this.settled.get(topic);
     const permissions = {
       jsonrpc: {
-        methods: [
-          ...settled.permissions.jsonrpc.methods,
-          ...(upgrade.permissions.jsonrpc?.methods || []),
-        ],
+        methods: mergeArrays(
+          settled.permissions.jsonrpc.methods,
+          upgrade.permissions.jsonrpc?.methods || [],
+        ),
       },
       notifications: {
-        types: [
-          ...settled.permissions.notifications?.types,
-          ...(upgrade.permissions.notifications?.types || []),
-        ],
+        types: mergeArrays(
+          settled.permissions.notifications?.types || [],
+          upgrade.permissions.notifications?.types || [],
+        ),
       },
       controller: settled.permissions.controller,
     };
