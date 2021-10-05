@@ -2,6 +2,22 @@ import { BigNumber, BigNumberish, providers, utils } from "ethers";
 import * as encoding from "@walletconnect/encoding";
 import { TypedDataUtils } from "eth-sig-util";
 import * as ethUtil from "ethereumjs-util";
+import { fromBase64, fromHex, toHex, toBase64, Bech32 } from "@cosmjs/encoding";
+import {
+  makeSignBytes,
+  makeSignDoc,
+  decodePubkey,
+  encodePubkey,
+  makeAuthInfoBytes,
+} from "@cosmjs/proto-signing";
+import {
+  pubkeyToAddress,
+  rawSecp256k1PubkeyToRawAddress,
+  encodeSecp256k1Pubkey,
+  decodeAminoPubkey,
+  pubkeyToRawAddress,
+} from "@cosmjs/amino";
+import { Secp256k1, Secp256k1Signature, sha256, ExtendedSecp256k1Signature } from "@cosmjs/crypto";
 
 import { eip1271 } from "./eip1271";
 
@@ -147,6 +163,32 @@ export async function verifySignature(
   } else {
     return eip1271.isValidSignature(address, sig, hash, provider);
   }
+}
+
+export async function verifyCosmosSignature(
+  address: string,
+  signature: string,
+  hash: Uint8Array,
+): Promise<boolean> {
+  for (let i = 0; i < 5; i++) {
+    const sig = Secp256k1Signature.fromFixedLength(fromBase64(signature));
+    const extendedSig = new ExtendedSecp256k1Signature(sig.r(), sig.s(), i);
+    try {
+      const recoveredPubKey = await Secp256k1.recoverPubkey(extendedSig, hash);
+      const recoveredAddress = pubkeyToAddress(
+        {
+          type: "tendermint/PubKeySecp256k1",
+          value: toBase64(Secp256k1.compressPubkey(recoveredPubKey)),
+        },
+        "cosmos",
+      );
+      if (recoveredAddress === address) {
+        return true;
+      }
+    } catch {}
+  }
+
+  return false;
 }
 
 export function convertHexToNumber(hex: string) {

@@ -1,48 +1,49 @@
-import * as React from "react";
-import styled from "styled-components";
-
+import { sha256 } from "@cosmjs/crypto";
+import { makeSignBytes } from "@cosmjs/proto-signing";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
+import * as encoding from "@walletconnect/encoding";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
-import * as encoding from "@walletconnect/encoding";
 import { apiGetChainNamespace, ChainsMap } from "caip-api";
 import { formatDirectSignDoc, stringifySignDocValues } from "cosmos-wallet";
 import { BigNumber } from "ethers";
-
+import * as React from "react";
+import styled from "styled-components";
 import Banner from "./components/Banner";
 import Blockchain from "./components/Blockchain";
 import Button from "./components/Button";
 import Column from "./components/Column";
 import Header from "./components/Header";
 import Modal from "./components/Modal";
+import Toggle from "./components/Toggle";
 import Wrapper from "./components/Wrapper";
 import {
   DEFAULT_APP_METADATA,
-  DEFAULT_MAIN_CHAINS,
-  DEFAULT_LOGGER,
-  DEFAULT_EIP155_METHODS,
+  DEFAULT_CHAINS,
   DEFAULT_COSMOS_METHODS,
+  DEFAULT_EIP155_METHODS,
+  DEFAULT_LOGGER,
+  DEFAULT_MAIN_CHAINS,
   DEFAULT_RELAY_PROVIDER,
   DEFAULT_TEST_CHAINS,
-  DEFAULT_CHAINS,
 } from "./constants";
 import {
-  apiGetAccountAssets,
   AccountAction,
-  eip712,
-  hashPersonalMessage,
-  verifySignature,
   AccountBalances,
-  formatTestTransaction,
+  apiGetAccountAssets,
   ChainNamespaces,
-  setInitialStateTestnet,
+  eip712,
+  formatTestTransaction,
   getInitialStateTestnet,
+  hashPersonalMessage,
+  setInitialStateTestnet,
+  verifyCosmosSignature,
+  verifySignature,
 } from "./helpers";
-import { fonts } from "./styles";
-import Toggle from "./components/Toggle";
-import RequestModal from "./modals/RequestModal";
 import PairingModal from "./modals/PairingModal";
+import RequestModal from "./modals/RequestModal";
+import { fonts } from "./styles";
 
 const SLayout = styled.div`
   position: relative;
@@ -243,10 +244,7 @@ class App extends React.Component<any, any> {
     if (this.state.client.session.topics.length) {
       const session = await this.state.client.session.get(this.state.client.session.topics[0]);
       const chains = session.state.accounts.map(account =>
-        account
-          .split(":")
-          .slice(0, -1)
-          .join(":"),
+        account.split(":").slice(0, -1).join(":"),
       );
       this.setState({ accounts: session.state.accounts, chains });
       this.onSessionConnected(session);
@@ -577,7 +575,6 @@ class App extends React.Component<any, any> {
     }
 
     try {
-      // test direct sign doc inputs
       const inputs = {
         fee: [{ amount: "2000", denom: "ucosm" }],
         pubkey: "AgSEjOuOr991QlHCORRmdE5ahVKeyBrmtgoYepCpQGOW",
@@ -635,15 +632,15 @@ class App extends React.Component<any, any> {
         throw new Error(`Missing chain data for chainId: ${chainId}`);
       }
 
-      // TODO: check if valid
-      const valid = true;
+      const messageHash = sha256(makeSignBytes(signDoc));
+      const valid = await verifyCosmosSignature(address, result.signature, messageHash);
 
       // format displayed result
       const formattedResult = {
         method: "cosmos_signDirect",
         address,
         valid,
-        result: result.signature.signature,
+        result: result.signature,
       };
 
       // display result
@@ -712,7 +709,7 @@ class App extends React.Component<any, any> {
         method: "cosmos_signAmino",
         address,
         valid,
-        result: result.signature.signature,
+        result: result.signature,
       };
 
       // display result
