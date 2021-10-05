@@ -6,6 +6,7 @@ import {
   SessionTypes,
   StateEvent,
   RelayerTypes,
+  JsonRpcRecord,
 } from "@walletconnect/types";
 import {
   formatMessageContext,
@@ -30,6 +31,7 @@ import {
   isJsonRpcError,
   isJsonRpcRequest,
   ErrorResponse,
+  isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 
 import {
@@ -87,12 +89,12 @@ export class Engine extends IEngine {
   }
 
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
+    const originalPayload = payload;
     const settled = await this.sequence.settled.get(topic);
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(this.sequence.config.jsonrpc).includes(payload.method)) {
         await this.isJsonRpcAuthorized(topic, settled.self, payload);
         await this.sequence.validateRequest({ topic, request: payload, chainId });
-        await this.sequence.history.set(topic, payload, chainId);
         const params = {
           chainId,
           request: { method: payload.method, params: payload.params },
@@ -104,12 +106,17 @@ export class Engine extends IEngine {
           payload.id,
         );
       }
-    } else {
-      await this.sequence.history.resolve(payload);
     }
     await this.sequence.client.relayer.publish(settled.topic, payload, {
       relay: settled.relay,
     });
+    if (
+      isJsonRpcResponse(originalPayload) ||
+      (isJsonRpcRequest(originalPayload) &&
+        !Object.values(this.sequence.config.jsonrpc).includes(originalPayload.method))
+    ) {
+      await this.recordPayloadEvent({ topic, payload: originalPayload, chainId });
+    }
   }
 
   get length(): number {
@@ -678,12 +685,31 @@ export class Engine extends IEngine {
     }
   }
 
+  private async recordPayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
+    const { topic, payload, chainId } = payloadEvent;
+    if (isJsonRpcRequest(payload)) {
+      await this.sequence.history.set(topic, payload, chainId);
+    } else {
+      await this.sequence.history.resolve(payload);
+    }
+  }
+
   private async shouldIgnorePayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
     const { topic, payload } = payloadEvent;
     if (!this.sequence.settled.sequences.has(topic)) return true;
     let exists = false;
     try {
-      exists = await this.sequence.history.exists(topic, payload.id);
+      if (isJsonRpcRequest(payload)) {
+        exists = await this.sequence.history.exists(topic, payload.id);
+      } else {
+        let record: JsonRpcRecord | undefined;
+        try {
+          record = await this.sequence.history.get(topic, payload.id);
+        } catch (e) {
+          // skip error
+        }
+        exists = typeof record !== "undefined" && typeof record.response !== "undefined";
+      }
     } catch (e) {
       // skip error
     }
@@ -692,12 +718,7 @@ export class Engine extends IEngine {
 
   private async onPayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
     const { topic, payload, chainId } = payloadEvent;
-    if (isJsonRpcRequest(payload)) {
-      if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
-      await this.sequence.history.set(topic, payload, chainId);
-    } else {
-      await this.sequence.history.resolve(payload);
-    }
+    if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
     if (isJsonRpcRequest(payload)) {
       const requestEvent: SequenceTypes.RequestEvent = { topic, request: payload, chainId };
       const eventName = this.sequence.config.events.request;
@@ -711,6 +732,7 @@ export class Engine extends IEngine {
       this.sequence.logger.debug({ type: "event", event: eventName, sequence: responseEvent });
       this.sequence.events.emit(eventName, responseEvent);
     }
+    await this.recordPayloadEvent(payloadEvent);
   }
 
   private async onPendingPayloadEvent(event: RelayerTypes.PayloadEvent) {

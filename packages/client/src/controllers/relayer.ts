@@ -89,14 +89,10 @@ export class Relayer extends IRelayer {
       const message = await this.client.crypto.encodeJsonRpc(topic, payload);
       const ttl = opts?.ttl || RELAYER_DEFAULT_PUBLISH_TTL;
       const relay = this.getRelayProtocol(opts);
-      if (isJsonRpcRequest(payload)) {
-        await this.history.set(topic, payload);
-      } else {
-        await this.history.resolve(payload);
-      }
       await this.rpcPublish(topic, message, ttl, relay);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
+      await this.recordPayloadEvent({ topic, payload });
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e as any);
@@ -236,6 +232,15 @@ export class Relayer extends IRelayer {
     await this.history.delete(topic);
   }
 
+  private async recordPayloadEvent(payloadEvent: RelayerTypes.PayloadEvent) {
+    const { topic, payload } = payloadEvent;
+    if (isJsonRpcRequest(payload)) {
+      await this.history.set(topic, payload);
+    } else {
+      await this.history.resolve(payload);
+    }
+  }
+
   private async shouldIgnorePayloadEvent(payloadEvent: RelayerTypes.PayloadEvent) {
     const { topic, payload } = payloadEvent;
     if (!this.subscriptions.topics.includes(topic)) return true;
@@ -265,21 +270,17 @@ export class Relayer extends IRelayer {
       if (!payload.method.endsWith(RELAYER_SUBSCRIPTION_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
-      const eventPayload = {
+      const payloadEvent = {
         topic,
         payload: await this.client.crypto.decodeJsonRpc(topic, message),
       } as RelayerTypes.PayloadEvent;
-      if (await this.shouldIgnorePayloadEvent(eventPayload)) return;
-      if (isJsonRpcRequest(eventPayload.payload)) {
-        this.history.set(topic, eventPayload.payload);
-      } else {
-        this.history.resolve(eventPayload.payload);
-      }
+      if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
       this.logger.debug(`Emitting Relayer Payload`);
-      this.logger.trace({ type: "event", event: event.id, ...eventPayload });
-      this.events.emit(event.id, eventPayload);
-      this.events.emit(RELAYER_EVENTS.payload, eventPayload);
+      this.logger.trace({ type: "event", event: event.id, ...payloadEvent });
+      this.events.emit(event.id, payloadEvent);
+      this.events.emit(RELAYER_EVENTS.payload, payloadEvent);
       await this.acknowledgePayload(payload);
+      await this.recordPayloadEvent(payloadEvent);
     }
   }
 

@@ -112,12 +112,12 @@ export class MockWakuRelayer implements IEvents {
       if (!payload.method.endsWith(RELAYER_SUBSCRIPTION_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
-      const eventPayload = {
+      const payloadEvent = {
         topic,
         payload: await this.decodeJsonRpc(topic, message),
       } as RelayerTypes.PayloadEvent;
-      this.events.emit(event.id, eventPayload);
-      this.events.emit(RELAYER_EVENTS.payload, eventPayload);
+      this.events.emit(event.id, payloadEvent);
+      this.events.emit(RELAYER_EVENTS.payload, payloadEvent);
       await this.acknowledgePayload(payload);
     }
   }
