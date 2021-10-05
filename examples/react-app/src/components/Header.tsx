@@ -19,6 +19,13 @@ const SHeader = styled.div`
   }
 `;
 
+const SHeaderActions = styled.div`
+  display: flex;
+  & > button:first-child {
+    margin-right: 10px !important;
+  }
+`;
+
 const SActiveAccount = styled.div`
   display: flex;
   align-items: center;
@@ -41,12 +48,13 @@ const SActiveSession = styled(SActiveAccount as any)`
 `;
 
 interface HeaderProps {
-  disconnect: () => void;
+  ping: () => Promise<void>;
+  disconnect: () => Promise<void>;
   session: SessionTypes.Created | undefined;
 }
 
 const Header = (props: HeaderProps) => {
-  const { disconnect, session } = props;
+  const { ping, disconnect, session } = props;
   return (
     <SHeader {...props}>
       {session ? (
@@ -55,9 +63,14 @@ const Header = (props: HeaderProps) => {
             <p>{`Connected to`}</p>
             <p>{session.peer.metadata.name}</p>
           </SActiveSession>
-          <Button outline color="red" onClick={disconnect}>
-            {"Disconnect"}
-          </Button>
+          <SHeaderActions>
+            <Button outline color="black" onClick={ping}>
+              {"Ping"}
+            </Button>
+            <Button outline color="red" onClick={disconnect}>
+              {"Disconnect"}
+            </Button>
+          </SHeaderActions>
         </>
       ) : null}
     </SHeader>
