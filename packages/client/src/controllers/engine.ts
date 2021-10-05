@@ -339,9 +339,9 @@ export class Engine extends IEngine {
   }
 
   public async notify(params: SequenceTypes.NotifyParams): Promise<void> {
+    const { topic, notification } = params;
     const settled = await this.sequence.settled.get(params.topic);
-    await this.isNotificationAuthorized(params.topic, settled.self, params.type);
-    const notification: SequenceTypes.Notification = { type: params.type, data: params.data };
+    await this.isNotificationAuthorized(params.topic, settled.self, notification.type);
     const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.notification, notification);
     await this.send(params.topic, request);
   }
@@ -594,11 +594,7 @@ export class Engine extends IEngine {
     const notification = (event.payload as JsonRpcRequest<SessionTypes.Notification>).params;
     const settled = await this.sequence.settled.get(event.topic);
     await this.isNotificationAuthorized(event.topic, settled.peer, notification.type);
-    const notificationEvent: SessionTypes.NotificationEvent = {
-      topic: event.topic,
-      type: notification.type,
-      data: notification.data,
-    };
+    const notificationEvent: SessionTypes.NotificationEvent = { topic: event.topic, notification };
     const eventName = this.sequence.config.events.notification;
     this.sequence.logger.info(`Emitting ${eventName}`);
     this.sequence.logger.debug({ type: "event", event: eventName, notificationEvent });

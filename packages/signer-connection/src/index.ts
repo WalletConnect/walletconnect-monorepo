@@ -208,12 +208,9 @@ export class SignerConnection extends IJsonRpcConnection {
     });
     this.client.on(
       CLIENT_EVENTS.session.notification,
-      (notification: SessionTypes.NotificationEvent) => {
-        if (this.session && this.session?.topic !== notification.topic) return;
-        this.events.emit(SIGNER_EVENTS.notification, {
-          type: notification.type,
-          data: notification.data,
-        });
+      (notificationEvent: SessionTypes.NotificationEvent) => {
+        if (this.session && this.session?.topic !== notificationEvent.topic) return;
+        this.events.emit(SIGNER_EVENTS.notification, notificationEvent.notification);
       },
     );
     this.client.on(CLIENT_EVENTS.session.deleted, (session: SessionTypes.Settled) => {

@@ -168,7 +168,7 @@ describe("Session", function() {
     await expect(promise).to.eventually.be.rejectedWith(`Unauthorized session update request`);
   });
   it("B emits notification and A receives event", async () => {
-    const event = { type: "chainChanged", data: { chainId: "100" } };
+    const notification = { type: "chainChanged", data: { chainId: "100" } };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
     await Promise.all([
@@ -177,25 +177,25 @@ describe("Session", function() {
           CLIENT_EVENTS.session.notification,
           (notificationEvent: SessionTypes.NotificationEvent) => {
             if (notificationEvent.topic !== topic) return;
-            expect(notificationEvent.type).to.eql(event.type);
-            expect(notificationEvent.data).to.eql(event.data);
+            expect(notificationEvent.notification.type).to.eql(notification.type);
+            expect(notificationEvent.notification.data).to.eql(notification.data);
             resolve();
           },
         );
       }),
       new Promise<void>(async (resolve, reject) => {
-        await clients.b.notify({ topic, type: event.type, data: event.data });
+        await clients.b.notify({ topic, notification });
         resolve();
       }),
     ]);
   });
   it("A emits notification and error is thrown", async () => {
-    const event = { type: "chainChanged", data: { chainId: "100" } };
+    const notification = { type: "chainChanged", data: { chainId: "100" } };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
-    const promise = clients.a.notify({ topic, type: event.type, data: event.data });
+    const promise = clients.a.notify({ topic, notification });
     await expect(promise).to.eventually.be.rejectedWith(
-      `Unauthorized Notification Type Requested: ${event.type}`,
+      `Unauthorized Notification Type Requested: ${notification.type}`,
     );
   });
   it("B upgrades permissions and A receives event", async () => {

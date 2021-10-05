@@ -159,7 +159,7 @@ export class Client extends IClient {
     }
   }
 
-  public async pair(params: ClientTypes.PairParams): Promise<string> {
+  public async pair(params: ClientTypes.PairParams): Promise<PairingTypes.Settled> {
     this.logger.debug(`Pairing`);
     this.logger.trace({ type: "method", method: "pair", params });
     const proposal = formatPairingProposal(params.uri);
@@ -180,7 +180,8 @@ export class Client extends IClient {
     }
     this.logger.debug(`Pairing Success`);
     this.logger.trace({ type: "method", method: "pair", pending });
-    return pending.outcome.topic;
+    const pairing = await this.pairing.get(pending.outcome.topic);
+    return pairing;
   }
 
   public async approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled> {
@@ -250,6 +251,10 @@ export class Client extends IClient {
 
   public async respond(params: ClientTypes.RespondParams): Promise<void> {
     await this.session.send(params.topic, params.response);
+  }
+
+  public async ping(params: ClientTypes.PingParams): Promise<void> {
+    await this.session.ping(params.topic, params.timeout);
   }
 
   public async notify(params: ClientTypes.NotifyParams): Promise<void> {

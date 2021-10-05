@@ -8,6 +8,7 @@ import { IPairing } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
 import { IStorage } from "./storage";
+import { PairingTypes } from ".";
 
 export interface ClientOptions {
   name?: string;
@@ -49,7 +50,7 @@ export abstract class IClient extends IEvents {
   // for proposer to propose a session to a responder
   public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
   // for responder to receive a session proposal from a proposer
-  public abstract pair(params: ClientTypes.PairParams): Promise<string>;
+  public abstract pair(params: ClientTypes.PairParams): Promise<PairingTypes.Settled>;
 
   // for responder to approve a session proposal
   public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
@@ -65,6 +66,8 @@ export abstract class IClient extends IEvents {
   // for responder to respond JSON-RPC
   public abstract respond(params: ClientTypes.RespondParams): Promise<void>;
 
+  // for either to ping and verify peer is online
+  public abstract ping(params: ClientTypes.PingParams): Promise<void>;
   // for either to send notifications
   public abstract notify(params: ClientTypes.NotifyParams): Promise<void>;
   // for either to disconnect a session
@@ -106,6 +109,11 @@ export declare namespace ClientTypes {
   export interface RespondParams {
     topic: string;
     response: JsonRpcResponse;
+  }
+
+  export interface PingParams {
+    topic: string;
+    timeout?: number;
   }
 
   export type NotifyParams = SessionTypes.NotifyParams;

@@ -248,8 +248,9 @@ export declare namespace SequenceTypes {
     data: any;
   }
 
-  export interface NotificationEvent extends Notification {
+  export interface NotificationEvent {
     topic: string;
+    notification: Notification;
   }
 
   export type NotifyParams = NotificationEvent;
