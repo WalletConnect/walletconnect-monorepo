@@ -170,7 +170,7 @@ export async function verifyCosmosSignature(
   signature: string,
   hash: Uint8Array,
 ): Promise<boolean> {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     const sig = Secp256k1Signature.fromFixedLength(fromBase64(signature));
     const extendedSig = new ExtendedSecp256k1Signature(sig.r(), sig.s(), i);
     try {
