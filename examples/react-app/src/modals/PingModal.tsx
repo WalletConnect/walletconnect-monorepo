@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import Loader from "../components/Loader";
-import { SContainer, STable, SRow, SKey, SValue } from "../components/shared";
+import { SContainer } from "../components/shared";
 
 import { SModalContainer, SModalTitle } from "./shared";
 
@@ -26,14 +26,6 @@ const PingModal = (props: PingModalProps) => {
           <SModalTitle>
             {result.valid ? "Successful Session Ping" : "Failed Session Ping"}
           </SModalTitle>
-          <STable>
-            {Object.keys(result).map(key => (
-              <SRow key={key}>
-                <SKey>{key}</SKey>
-                <SValue>{result[key].toString()}</SValue>
-              </SRow>
-            ))}
-          </STable>
         </SModalContainer>
       ) : (
         <SModalContainer>
