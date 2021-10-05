@@ -44,6 +44,7 @@ import {
 import PairingModal from "./modals/PairingModal";
 import RequestModal from "./modals/RequestModal";
 import { fonts } from "./styles";
+import PingModal from "./modals/PingModal";
 
 const SLayout = styled.div`
   position: relative;
@@ -362,6 +363,8 @@ class App extends React.Component<any, any> {
   public openPairingModal = () => this.setState({ modal: "pairing" });
 
   public openRequestModal = () => this.setState({ pending: true, modal: "request" });
+
+  public openPingModal = () => this.setState({ pending: true, modal: "ping" });
 
   public openModal = (modal: string) => this.setState({ modal });
 
@@ -720,6 +723,41 @@ class App extends React.Component<any, any> {
     }
   };
 
+  public ping = async () => {
+    if (typeof this.state.client === "undefined") {
+      throw new Error("WalletConnect is not initialized");
+    }
+    if (typeof this.state.session === "undefined") {
+      throw new Error("Session is not connected");
+    }
+
+    try {
+      // open modal
+      this.openPingModal();
+
+      let valid = false;
+
+      try {
+        await this.state.client.session.ping(this.state.session.topic);
+        valid = true;
+      } catch (e) {
+        valid = false;
+      }
+
+      // format displayed result
+      const formattedResult = {
+        method: "ping",
+        valid,
+      };
+
+      // display result
+      this.setState({ pending: false, result: formattedResult || null });
+    } catch (e) {
+      console.error(e);
+      this.setState({ pending: false, result: null });
+    }
+  };
+
   public handleChainSelectionClick = (chainId: string) => {
     const { chains } = this.state;
     if (chains.includes(chainId)) {
@@ -765,6 +803,8 @@ class App extends React.Component<any, any> {
         return <PairingModal pairings={this.state.client.pairing.values} connect={this.connect} />;
       case "request":
         return <RequestModal pending={this.state.pending} result={this.state.result} />;
+      case "ping":
+        return <PingModal pending={this.state.pending} result={this.state.result} />;
       default:
         return null;
     }
@@ -834,7 +874,7 @@ class App extends React.Component<any, any> {
     return (
       <SLayout>
         <Column maxWidth={1000} spanHeight>
-          <Header disconnect={this.disconnect} session={session} />
+          <Header ping={this.ping} disconnect={this.disconnect} session={session} />
           <SContent>{loading ? "Loading..." : this.renderContent()}</SContent>
         </Column>
         <Modal show={!!modal} closeModal={this.closeModal}>
