@@ -292,8 +292,11 @@ export class Relayer extends IRelayer {
   private async resubscribe() {
     await Promise.all(
       this.subscriptions.values.map(async subscription => {
+        // get new subscription id
         const id = await this.rpcSubscribe(subscription.topic, subscription.relay);
+        // set new subscription id
         await this.subscriptions.set(id, { ...subscription, id });
+        // delete old subscription id
         const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
         await this.subscriptions.delete(subscription.id, reason);
       }),
