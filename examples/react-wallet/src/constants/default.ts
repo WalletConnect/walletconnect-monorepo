@@ -19,7 +19,7 @@ export const DEFAULT_TEST_CHAINS = [
 ];
 export const DEFAULT_CHAINS = [...DEFAULT_MAIN_CHAINS, ...DEFAULT_TEST_CHAINS];
 
-export const DEFAULT_RELAY_PROVIDER = "wss://relay.walletconnect.org";
+export const DEFAULT_RELAY_PROVIDER = "wss://relay.walletconnect.com";
 
 export const DEFAULT_EIP155_METHODS = ["eth_sendTransaction", "personal_sign", "eth_signTypedData"];
 

@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { calcExpiry, formatRelayRpcUrl, fromMiliseconds, toMiliseconds } from "../src";
 import { hasOverlap } from "../dist/cjs";
 
-const TEST_DEFAULT_RPC_URL = "wss://relay.walletconnect.org";
+const TEST_DEFAULT_RPC_URL = "wss://relay.walletconnect.com";
 
 const API_KEY = "27e484dcd9e3efcfd25a83a78777cdf1";
 
