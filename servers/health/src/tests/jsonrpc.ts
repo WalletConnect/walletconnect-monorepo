@@ -1,14 +1,15 @@
 import Timestamp from "@walletconnect/timestamp";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { PairingTypes, SessionTypes } from "@walletconnect/types";
+import { ClientTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
 
 import { metadata, permissions, state, chainId, request, result } from "../constants";
 import { getWsUrl } from "../utils";
+import config from "../config";
 
 export async function testRelayProvider(url: string, url2?: string) {
   // client opts
-  const clientAOpts = { name: "A", relayProvider: getWsUrl(url), metadata };
+  const clientAOpts = { name: "A", relayProvider: getWsUrl(url), metadata, apiKey: config.apiKey };
   const clientBOpts = {
     ...clientAOpts,
     name: "B",
@@ -93,6 +94,18 @@ export async function testRelayProvider(url: string, url2?: string) {
     request: time.get("request"),
     total: time.get("total"),
   };
-
+  const disconnectP: ClientTypes.DisconnectParams = {
+    topic: topic,
+    reason: {
+      code: 1002,
+      message: "Bye bye",
+    },
+  };
+  await clients.a.disconnect(disconnectP);
+  await clients.a.relayer.provider.connection.close();
+  delete clients.a;
+  await clients.b.disconnect(disconnectP);
+  await clients.b.relayer.provider.connection.close();
+  delete clients.b;
   return { success: true, test };
 }
