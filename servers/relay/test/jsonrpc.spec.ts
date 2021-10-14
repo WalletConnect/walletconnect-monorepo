@@ -6,12 +6,12 @@ import { RELAY_JSONRPC } from "@walletconnect/relay-api";
 
 import { TEST_RELAY_URL, getTestJsonRpc, Counter } from "./shared";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
-import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { formatJsonRpcRequest, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { generateRandomBytes32 } from "../src/utils";
 
 describe("JSON-RPC", () => {
   it("A can publish to B subscribed to same topic", async () => {
-    const { pub, sub } = getTestJsonRpc();
+    const { topic, pub, sub } = getTestJsonRpc();
 
     const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
     await providerA.connect();
@@ -51,6 +51,35 @@ describe("JSON-RPC", () => {
           expect(data.data.message).to.eql(pub.params.message);
           resolve();
         });
+      }),
+    ]);
+
+    expect(counterB.value).to.eql(1);
+
+    await Promise.all([
+      new Promise<void>(async resolve => {
+        // unsubscribring to topic
+        const unsub = formatJsonRpcRequest(RELAY_JSONRPC.waku.unsubscribe, {
+          topic,
+          id: subscriptionB,
+        });
+        await providerB.request(unsub);
+        resolve();
+      }),
+      new Promise<void>(resolve => {
+        // publishing to topics
+        providerA.request(getTestJsonRpc("SECOND_MESSAGE", topic).pub);
+        resolve();
+      }),
+      new Promise<void>((resolve, reject) => {
+        // evaluating incoming subscriptions
+        providerB.on("message", ({ type, data }) => {
+          counterB.tick();
+          reject();
+        });
+        setTimeout(() => {
+          resolve();
+        }, 1000);
       }),
     ]);
 
