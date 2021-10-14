@@ -226,7 +226,7 @@ export class Relayer extends IRelayer {
 
   private async onUnsubscribe(topic: string, id: string, reason: Reason) {
     this.events.removeAllListeners(id);
-    if (this.subscriptions.subscriptions.has(id)) {
+    if (await this.subscriptions.exists(id, topic)) {
       await this.subscriptions.delete(id, reason);
     }
     await this.history.delete(topic);

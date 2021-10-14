@@ -294,9 +294,8 @@ describe("Session (with timeout)", function() {
   afterEach(function() {
     clock.restore();
   });
-  // FIXME: this test is succeeding but it's taking way too long and it's throwing thousands of memory leaks for Subscription controller
-  it.skip("should expire after default period is elapsed", function() {
-    this.timeout(TEST_SESSION_TTL);
+  it("should expire after default period is elapsed", function() {
+    this.timeout(TEST_SESSION_TTL * 2);
     return new Promise<void>(async (resolve, reject) => {
       try {
         // setup
@@ -337,6 +336,6 @@ describe("Session (with timeout)", function() {
           )} seconds: wc_sessionPing`,
         );
       });
-    clock.tick(TEST_TIMEOUT_DURATION);
+    // clock.tick(TEST_TIMEOUT_DURATION);
   });
 });

@@ -66,6 +66,8 @@ export abstract class ISubscription extends IEvents {
 
   public abstract delete(id: string, reason: Reason): Promise<void>;
 
+  public abstract exists(id: string, topic: string): Promise<boolean>;
+
   public abstract enable(): Promise<void>;
 
   public abstract disable(): Promise<void>;
