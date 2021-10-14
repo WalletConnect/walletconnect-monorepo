@@ -7,6 +7,7 @@ import { generateRandomBytes32 } from "../../src/utils";
 import { TEST_MESSAGE } from "./values";
 
 export interface TestJsonRpcPayloads {
+  topic: string;
   pub: JsonRpcRequest<RelayJsonRpc.PublishParams>;
   sub: JsonRpcRequest<RelayJsonRpc.SubscribeParams>;
 }
@@ -26,10 +27,11 @@ export function getTestJsonRpc(
   const sub = formatJsonRpcRequest<RelayJsonRpc.SubscribeParams>(RELAY_JSONRPC.waku.subscribe, {
     topic,
   });
-  return { pub, sub };
+  return { topic, pub, sub };
 }
 
 export interface TestLegacyPayloads {
+  topic: string;
   pub: LegacySocketMessage;
   sub: LegacySocketMessage;
 }
@@ -51,5 +53,5 @@ export function getTestLegacy(payload = TEST_MESSAGE): TestLegacyPayloads {
     silent: true,
   };
 
-  return { pub, sub };
+  return { topic, pub, sub };
 }
