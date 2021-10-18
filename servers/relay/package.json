@@ -40,7 +40,7 @@
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/relay-api": "^1.0.0",
     "@walletconnect/safe-json": "^1.0.0",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "fastify": "^3.10.1",
     "fastify-helmet": "^5.1.0",
     "fastify-websocket": "^3.0.0",
