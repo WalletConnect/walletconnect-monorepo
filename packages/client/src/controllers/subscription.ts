@@ -117,18 +117,28 @@ export class Subscription extends ISubscription {
     await this.isEnabled();
     this.logger.debug(`Getting subscription`);
     this.logger.trace({ type: "method", method: "get", id });
-    const subscription = await this.getSubscription(id);
+    const subscription = this.getSubscription(id);
     return subscription;
+  }
+
+  public async exists(id: string, topic: string): Promise<boolean> {
+    await this.isEnabled();
+    let result = false;
+    try {
+      const subscription = this.getSubscription(id);
+      result = subscription.topic === topic;
+    } catch (e) {
+      // ignore error
+    }
+    return result;
   }
 
   public async delete(id: string, reason: Reason): Promise<void> {
     await this.isEnabled();
-
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "delete", id, reason });
-    const subscription = await this.getSubscription(id);
+    const subscription = this.getSubscription(id);
     this.deleteSubscription(id, subscription);
-
     this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
       ...subscription,
       reason,
@@ -187,15 +197,14 @@ export class Subscription extends ISubscription {
     this.checkExpiry(id, expiry);
   }
 
-  private async getSubscription(id: string): Promise<SubscriptionParams> {
-    await this.isEnabled();
+  private getSubscription(id: string): SubscriptionParams {
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
       const error = ERROR.NO_MATCHING_ID.format({
         context: formatMessageContext(this.context),
         id,
       });
-      this.logger.error(error.message);
+      // this.logger.error(error.message);
       throw new Error(error.message);
     }
     return subscription;
@@ -208,11 +217,17 @@ export class Subscription extends ISubscription {
 
   private checkExpiry(id: string, expiry: number): void {
     const msToTimeout = toMiliseconds(expiry) - Date.now();
-    if (msToTimeout <= 0) return this.expire(id);
+    if (msToTimeout <= 0) this.expire(id);
   }
 
   private expire(id: string): void {
-    this.delete(id, ERROR.EXPIRED.format({ context: formatMessageContext(this.context) }));
+    const reason = ERROR.EXPIRED.format({ context: formatMessageContext(this.context) });
+    const subscription = this.getSubscription(id);
+    this.deleteSubscription(id, subscription);
+    this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
+      ...subscription,
+      reason,
+    } as SubscriptionEvent.Deleted);
   }
 
   private checkSubscriptions(): void {

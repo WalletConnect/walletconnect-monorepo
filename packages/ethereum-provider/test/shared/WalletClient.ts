@@ -77,21 +77,15 @@ export class WalletClient {
   private async emitAccountsChangedEvent() {
     if (typeof this.client === "undefined") return;
     if (typeof this.topic === "undefined") return;
-    await this.client.notify({
-      topic: this.topic,
-      type: "accountsChanged",
-      data: [this.signer.address],
-    });
+    const notification = { type: "accountsChanged", data: [this.signer.address] };
+    await this.client.notify({ topic: this.topic, notification });
   }
 
   private async emitChainChangedEvent() {
     if (typeof this.client === "undefined") return;
     if (typeof this.topic === "undefined") return;
-    await this.client.notify({
-      topic: this.topic,
-      type: "chainChanged",
-      data: this.chainId,
-    });
+    const notification = { type: "chainChanged", data: this.chainId };
+    await this.client.notify({ topic: this.topic, notification });
   }
 
   private getWallet(privateKey?: string) {

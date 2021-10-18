@@ -67,14 +67,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     await this.isInitialized();
     this.logger.debug(`Setting JSON-RPC request history record`);
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
-    if (this.records.has(request.id)) {
-      const error = ERROR.RECORD_ALREADY_EXISTS.format({
-        context: formatMessageContext(this.context),
-        id: request.id,
-      });
-      this.logger.error(error.message);
-      throw new Error(error.message);
-    }
+    if (this.records.has(request.id)) return;
     const record: JsonRpcRecord = {
       id: request.id,
       topic,
@@ -109,7 +102,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         context: formatMessageContext(this.context),
         id,
       });
-      this.logger.error(error.message);
+      // silencing this for now
+      // this.logger.error(error.message);
       throw new Error(error.message);
     }
     return record;
@@ -161,7 +155,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         context: formatMessageContext(this.context),
         id,
       });
-      this.logger.error(error.message);
+      // silencing this for now
+      // this.logger.error(error.message);
       throw new Error(error.message);
     }
     return record;
