@@ -3,19 +3,19 @@ import { expect } from "chai";
 import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import { RELAY_JSONRPC } from "@walletconnect/relay-api";
-
-import { TEST_RELAY_URL, getTestJsonRpc, Counter } from "./shared";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcRequest, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+
+import { TEST_WS_URL, getTestJsonRpc, Counter } from "./shared";
 import { generateRandomBytes32 } from "../src/utils";
 
 describe("JSON-RPC", () => {
   it("A can publish to B subscribed to same topic", async () => {
     const { topic, pub, sub } = getTestJsonRpc();
 
-    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerA.connect();
-    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerB.connect();
 
     let subscriptionB: string;
@@ -88,11 +88,11 @@ describe("JSON-RPC", () => {
   it("A can publish to B and C subscribed to same topic", async () => {
     const { pub, sub } = getTestJsonRpc();
 
-    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerA.connect();
-    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerB.connect();
-    const providerC = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerC = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerC.connect();
 
     let subscriptionB: string;
@@ -162,13 +162,13 @@ describe("JSON-RPC", () => {
   it("B can receive pending messages published while offline", async () => {
     const { pub, sub } = getTestJsonRpc();
 
-    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerA.connect();
 
     // publishing to topics
     await providerA.request(pub);
 
-    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerB.connect();
 
     let subscriptionB: string;
@@ -204,7 +204,7 @@ describe("JSON-RPC", () => {
 
     expect(counterB.value).to.eql(1);
 
-    const providerC = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerC = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerC.connect();
 
     let subscriptionC: string;
@@ -243,9 +243,9 @@ describe("JSON-RPC", () => {
   it("A can publish to B through Provider A to Provider B", async function() {
     const { pub, sub } = getTestJsonRpc(generateRandomBytes32());
 
-    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerA.connect();
-    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerB.connect();
 
     let subscriptionB: string;
@@ -289,10 +289,10 @@ describe("JSON-RPC", () => {
   it("C can receive pending messages published on other providers while offline", async function() {
     this.timeout(5000);
     const { pub, sub } = getTestJsonRpc(generateRandomBytes32());
-    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerA.connect();
     await providerA.request(pub);
-    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerB.connect();
     let subscriptionB: string;
     const counterB = new Counter();
@@ -327,7 +327,7 @@ describe("JSON-RPC", () => {
 
     return new Promise(resolve => {
       setTimeout(async () => {
-        const providerC = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+        const providerC = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
         await providerC.connect();
         let subscriptionC: string;
         const counterC = new Counter();
@@ -363,10 +363,10 @@ describe("JSON-RPC", () => {
     const topic = generateRandomBytes32();
     const { sub } = getTestJsonRpc(generateRandomBytes32(), topic);
 
-    const providerA = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerA = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerA.connect();
 
-    const providerB = new JsonRpcProvider(new WsConnection(TEST_RELAY_URL));
+    const providerB = new JsonRpcProvider(new WsConnection(TEST_WS_URL));
     await providerB.connect();
 
     // N amount
