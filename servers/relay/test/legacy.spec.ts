@@ -1,16 +1,16 @@
 import "mocha";
 import { expect } from "chai";
 
-import { Counter, Socket, TEST_RELAY_URL } from "./shared";
+import { Counter, Socket, TEST_WS_URL } from "./shared";
 import { getTestLegacy } from "./shared/message";
 
 describe("LEGACY", () => {
   it("A can publish to B subscribed to same topic", async () => {
     const { pub, sub } = getTestLegacy();
 
-    const socketA = new Socket(TEST_RELAY_URL);
+    const socketA = new Socket(TEST_WS_URL);
     await socketA.open();
-    const socketB = new Socket(TEST_RELAY_URL);
+    const socketB = new Socket(TEST_WS_URL);
     await socketB.open();
 
     const counterB = new Counter();
@@ -38,11 +38,11 @@ describe("LEGACY", () => {
   it("A can publish to B and C subscribed to same topic", async () => {
     const { pub, sub } = getTestLegacy();
 
-    const socketA = new Socket(TEST_RELAY_URL);
+    const socketA = new Socket(TEST_WS_URL);
     await socketA.open();
-    const socketB = new Socket(TEST_RELAY_URL);
+    const socketB = new Socket(TEST_WS_URL);
     await socketB.open();
-    const socketC = new Socket(TEST_RELAY_URL);
+    const socketC = new Socket(TEST_WS_URL);
     await socketC.open();
 
     const counterB = new Counter();
@@ -83,10 +83,10 @@ describe("LEGACY", () => {
   it("B can receive pending messages published while offline", async () => {
     const { pub, sub } = getTestLegacy();
 
-    const socketA = new Socket(TEST_RELAY_URL);
+    const socketA = new Socket(TEST_WS_URL);
     await socketA.open();
     await socketA.send(pub);
-    const socketB = new Socket(TEST_RELAY_URL);
+    const socketB = new Socket(TEST_WS_URL);
     await socketB.open();
     const counterB = new Counter();
 
