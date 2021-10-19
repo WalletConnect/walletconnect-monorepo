@@ -79,7 +79,7 @@ describe("Relayer", function() {
     // payload
     const request = formatJsonRpcRequest("test_method", []);
     // setup
-    const client = await Client.init({ relayProvider: TEST_RELAY_URL });
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
     await Promise.all([
       // subscribe
       waku.subscribe(topic),
@@ -151,7 +151,7 @@ describe("Relayer (with timeout)", function() {
     // expiry
     const expiry = calcExpiry(ttl);
     // setup
-    const client = await Client.init({ relayProvider: TEST_RELAY_URL });
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
     const id = await client.relayer.subscribe(topic, expiry);
     expect(id).to.not.be.undefined;
@@ -186,7 +186,7 @@ describe("Relayer (with timeout)", function() {
     // expiry
     const expiry = calcExpiry(ttl);
     // setup
-    const client = await Client.init({ relayProvider: TEST_RELAY_URL });
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
     const id = await client.relayer.subscribe(topic, expiry);
     expect(id).to.not.be.undefined;
