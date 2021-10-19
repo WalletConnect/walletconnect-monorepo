@@ -28,6 +28,14 @@ export const infuraNetworks = {
   42: "kovan",
 };
 
+export const pocketNetworks = {
+  1: "eth-mainnet",
+  3: "eth-ropsten",
+  4: "eth-rinkeby",
+  5: "eth-goerli",
+  42: "poa-kovan",
+};
+
 export const providerEvents = {
   changed: {
     chain: "chainChanged",
@@ -37,6 +45,7 @@ export const providerEvents = {
 
 export interface EthereumRpcConfig {
   infuraId?: string;
+  pocketId?: string;
   custom?: {
     [chainId: number]: string;
   };
@@ -51,13 +60,25 @@ export function getInfuraRpcUrl(chainId: number, infuraId?: string): string | un
   return rpcUrl;
 }
 
+export function getPocketRpcUrl(chainId: number, pocketId?: string): string | undefined {
+  let rpcUrl: string | undefined;
+  const network = infuraNetworks[chainId];
+  if (network) {
+    rpcUrl = `https://${network}.gateway.pokt.network/v1/${pocketId}`;
+  }
+  return rpcUrl;
+}
+
 export function getRpcUrl(chainId: number, rpc?: EthereumRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
-  const infuraUrl = getInfuraRpcUrl(chainId, rpc?.infuraId);
+  const pocketUrl = getPocketRpcUrl(chainId, rpc?.pocketId);
+
   if (rpc && rpc.custom) {
     rpcUrl = rpc.custom[chainId];
-  } else if (infuraUrl) {
-    rpcUrl = infuraUrl;
+  } else if (pocketUrl) {
+    rpcUrl = pocketUrl;
+  } else {
+    rpcUrl = getInfuraRpcUrl(chainId, rpc?.infuraId);
   }
   return rpcUrl;
 }
