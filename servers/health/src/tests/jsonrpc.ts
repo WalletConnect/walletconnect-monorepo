@@ -94,13 +94,6 @@ export async function testRelayProvider(url: string, url2?: string) {
     request: time.get("request"),
     total: time.get("total"),
   };
-  const disconnectP: ClientTypes.DisconnectParams = {
-    topic: topic,
-    reason: {
-      code: 1002,
-      message: "Bye bye",
-    },
-  };
   await clients.a.relayer.provider.connection.close();
   delete clients.a;
   await clients.b.relayer.provider.connection.close();
