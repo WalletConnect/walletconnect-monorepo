@@ -101,10 +101,8 @@ export async function testRelayProvider(url: string, url2?: string) {
       message: "Bye bye",
     },
   };
-  await clients.a.disconnect(disconnectP);
   await clients.a.relayer.provider.connection.close();
   delete clients.a;
-  await clients.b.disconnect(disconnectP);
   await clients.b.relayer.provider.connection.close();
   delete clients.b;
   return { success: true, test };
