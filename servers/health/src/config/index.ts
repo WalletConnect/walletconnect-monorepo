@@ -8,7 +8,7 @@ if (LEVELS.indexOf(logLevel.toLowerCase()) == -1) {
 logLevel = logLevel.toLowerCase();
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5001;
 const host = process.env.HOST || `0.0.0.0`;
-const apiKey = process.env.API_KEY || "8fc0e7f22838029db1a4fc46928644e2";
+const apiKey = process.env.TEST_API_KEY || "8fc0e7f22838029db1a4fc46928644e2";
 
 export default {
   apiKey,
