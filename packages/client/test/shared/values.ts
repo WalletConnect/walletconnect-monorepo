@@ -46,15 +46,15 @@ export const TEST_PERMISSIONS: SessionTypes.BasePermissions = {
 export const TEST_APP_METADATA_A: AppMetadata = {
   name: "App A (Proposer)",
   description: "Description of Proposer App run by client A",
-  url: "https://walletconnect.org",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 export const TEST_APP_METADATA_B: AppMetadata = {
   name: "App B (Responder)",
   description: "Description of Responder App run by client B",
-  url: "https://walletconnect.org",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];

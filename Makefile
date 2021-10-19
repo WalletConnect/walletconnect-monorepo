@@ -144,11 +144,11 @@ build: dirs build-images bootstrap-lerna build-relay build-react-app build-react
 test-client: build-lerna ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
 	npm run test --prefix packages/client
 
-test-staging: build-lerna ## tests client against staging.walletconnect.org
-	TEST_RELAY_URL=wss://staging.walletconnect.org npm run test --prefix packages/client
+test-staging: build-lerna ## tests client against staging.walletconnect.com
+	TEST_RELAY_URL=wss://staging.walletconnect.com npm run test --prefix packages/client
 
-test-production: build-lerna ## tests client against relay.walletconnect.org
-	TEST_RELAY_URL=wss://relay.walletconnect.org npm run test --prefix packages/client
+test-production: build-lerna ## tests client against relay.walletconnect.com
+	TEST_RELAY_URL=wss://relay.walletconnect.com npm run test --prefix packages/client
 
 test-relay: build-relay ## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before. Also needs waku nodes running locally
 	npm run test --prefix servers/relay

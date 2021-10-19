@@ -68,15 +68,15 @@ const TEST_METHODS = [TEST_JSONRPC_METHOD];
 const TEST_APP_METADATA = {
   name: "Test App",
   description: "Test App for WalletConnect",
-  url: "https://walletconnect.org/",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 const TEST_WALLET_METADATA = {
   name: "Test Wallet",
   description: "Test Wallet for WalletConnect",
-  url: "https://walletconnect.org/",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 export const TEST_COSMOS_DIRECT_SIGNATURE =
