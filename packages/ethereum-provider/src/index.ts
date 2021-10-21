@@ -71,12 +71,11 @@ export function getPocketRpcUrl(chainId: number, pocketId?: string): string | un
 
 export function getRpcUrl(chainId: number, rpc?: EthereumRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
-  const pocketUrl = getPocketRpcUrl(chainId, rpc?.pocketId);
 
   if (rpc && rpc.custom) {
     rpcUrl = rpc.custom[chainId];
-  } else if (pocketUrl) {
-    rpcUrl = pocketUrl;
+  } else if (rpc && rpc.pocketId) {
+    rpcUrl = getPocketRpcUrl(chainId, rpc.pocketId);
   } else {
     rpcUrl = getInfuraRpcUrl(chainId, rpc?.infuraId);
   }
