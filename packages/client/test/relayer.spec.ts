@@ -1,7 +1,12 @@
 import "mocha";
 import sinon from "sinon";
 
-import { calcExpiry, generateRandomBytes32, toMiliseconds } from "@walletconnect/utils";
+import {
+  calcExpiry,
+  formatRelayRpcUrl,
+  generateRandomBytes32,
+  toMiliseconds,
+} from "@walletconnect/utils";
 
 import { Client, FIVE_SECONDS, ONE_SECOND, RELAYER_EVENTS, SUBSCRIPTION_EVENTS } from "../src";
 
@@ -12,12 +17,14 @@ import {
   TEST_TIMEOUT_DURATION,
   MockWakuRelayer,
   TEST_RELAY_URL,
+  TEST_CLIENT_OPTIONS,
+  TEST_API_KEY,
 } from "./shared";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes, SubscriptionEvent } from "@walletconnect/types";
 
 describe("Relayer", function() {
-  const waku = new MockWakuRelayer(TEST_RELAY_URL);
+  const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?apiKey=${TEST_API_KEY}`);
   this.timeout(TEST_TIMEOUT_DURATION);
   before(async () => {
     await waku.init();
@@ -30,7 +37,7 @@ describe("Relayer", function() {
     // expiry
     const expiry = calcExpiry(TEST_TIMEOUT_DURATION);
     // setup
-    const client = await Client.init({ relayProvider: TEST_RELAY_URL });
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
     const id = await client.relayer.subscribe(topic, expiry);
     expect(id).to.not.be.undefined;
@@ -72,7 +79,7 @@ describe("Relayer", function() {
     // payload
     const request = formatJsonRpcRequest("test_method", []);
     // setup
-    const client = await Client.init({ relayProvider: TEST_RELAY_URL });
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
     await Promise.all([
       // subscribe
       waku.subscribe(topic),
@@ -144,7 +151,7 @@ describe("Relayer (with timeout)", function() {
     // expiry
     const expiry = calcExpiry(ttl);
     // setup
-    const client = await Client.init({ relayProvider: TEST_RELAY_URL });
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
     const id = await client.relayer.subscribe(topic, expiry);
     expect(id).to.not.be.undefined;
@@ -179,7 +186,7 @@ describe("Relayer (with timeout)", function() {
     // expiry
     const expiry = calcExpiry(ttl);
     // setup
-    const client = await Client.init({ relayProvider: TEST_RELAY_URL });
+    const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
     const id = await client.relayer.subscribe(topic, expiry);
     expect(id).to.not.be.undefined;

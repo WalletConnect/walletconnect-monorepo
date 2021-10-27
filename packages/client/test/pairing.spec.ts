@@ -43,7 +43,7 @@ describe("Pairing", function() {
     await after.clients.a.pairing.ping(topic, TEST_TIMEOUT_DURATION);
     await after.clients.b.pairing.ping(topic, TEST_TIMEOUT_DURATION);
   });
-  it("A pings B after A socket reconnects", async () => {
+  xit("A pings B after A socket reconnects", async () => {
     // setup
     const { clients } = await setupClientsForTesting();
     // pair
