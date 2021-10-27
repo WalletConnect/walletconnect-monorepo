@@ -24,7 +24,7 @@ import {
   DEFAULT_LOGGER,
   DEFAULT_EIP155_METHODS,
   DEFAULT_COSMOS_METHODS,
-  DEFAULT_RELAY_PROVIDER,
+  DEFAULT_API_KEY,
   DEFAULT_MAIN_CHAINS,
 } from "./constants";
 import {
@@ -127,7 +127,7 @@ class App extends React.Component<{}> {
       const wallet = await Wallet.init({ chains, storage, mnemonic });
       const client = await Client.init({
         controller: true,
-        relayProvider: DEFAULT_RELAY_PROVIDER,
+        apiKey: DEFAULT_API_KEY,
         logger: DEFAULT_LOGGER,
         storage,
       });
