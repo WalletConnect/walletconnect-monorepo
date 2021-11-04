@@ -1,7 +1,18 @@
 import { THIRTY_DAYS } from "../constants";
 import { RelayModes } from "../types";
 
-const GITHASH = process.env.GITHASH || "0000000";
+let GITHASH = process.env.GITHASH
+
+if (!GITHASH) {
+  try {
+    GITHASH = require('child_process')
+      .execSync('git rev-parse HEAD')
+      .toString().trim()
+  } catch {
+    GITHASH = "0000000"
+  }
+}
+
 const VERSION = require("../../package.json").version || "0.0.0";
 const LEVELS = ["trace", "debug", "info", "warn", "error", "fatal", "silent"];
 let logLevel = process.env.LOG_LEVEL || "info";
