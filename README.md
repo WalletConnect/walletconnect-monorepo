@@ -35,8 +35,8 @@ make test-production
 
 ```
 bootstrap-lerna      setups lerna for the monorepo management
-build-react-app    builds the example react-app
-build-react-wallet builds the example react-wallet
+build-react-app      builds the example react-app
+build-react-wallet   builds the example react-wallet
 build-container      builds relay docker image
 build-lerna          builds the npm packages in "./packages"
 build-nginx          builds nginx docker image
