@@ -24,6 +24,7 @@ import {
   DEFAULT_EIP155_METHODS,
   DEFAULT_COSMOS_METHODS,
   DEFAULT_API_KEY,
+  DEFAULT_RELAY_URL,
   DEFAULT_TEST_CHAINS,
   DEFAULT_CHAINS,
 } from "./constants";
@@ -164,6 +165,7 @@ class App extends React.Component<any, any> {
       const client = await Client.init({
         logger: DEFAULT_LOGGER,
         apiKey: DEFAULT_API_KEY,
+        relayProvider: DEFAULT_RELAY_URL,
       });
       this.setState({ loading: false, client });
       this.subscribeToEvents();
