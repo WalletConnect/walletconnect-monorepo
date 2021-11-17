@@ -1,4 +1,3 @@
-declare module "@walletconnect/types" {
   export interface IConnector {
     bridge: string;
     key: string;
@@ -436,4 +435,4 @@ declare module "@walletconnect/types" {
     infuraId: string | undefined;
     custom: IRPCMap | undefined;
   }
-}
+
