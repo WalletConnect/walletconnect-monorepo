@@ -3,7 +3,7 @@ import { clock } from "sinon";
 import Timestamp from "@walletconnect/timestamp";
 import { AppMetadata, PairingTypes } from "@walletconnect/types";
 
-import { CLIENT_EVENTS, SESSION_JSONRPC, STATE_EVENTS } from "../../src";
+import { CLIENT_EVENTS, SESSION_JSONRPC, STORE_EVENTS } from "../../src";
 
 import { expect } from "./chai";
 import { TEST_TIMEOUT_SHORT } from "./values";
@@ -35,14 +35,14 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clients.a.pairing.pending.on(STATE_EVENTS.created, async () => {
+      clients.a.pairing.pending.on(STORE_EVENTS.created, async () => {
         clients.a.logger.warn(`TEST >> Pairing Proposed`);
         time.start("pairing");
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
-      clients.b.pairing.pending.on(STATE_EVENTS.deleted, async () => {
+      clients.b.pairing.pending.on(STORE_EVENTS.deleted, async () => {
         clients.b.logger.warn(`TEST >> Pairing Acknowledged`);
         time.stop("pairing");
         resolve();

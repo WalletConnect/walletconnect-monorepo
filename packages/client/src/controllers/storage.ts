@@ -48,7 +48,7 @@ export class Storage implements IStorage {
     return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
 
-  public async setSequenceState<Sequence = any>(
+  public async setSequenceStore<Sequence = any>(
     context: string,
     sequences: Sequence[],
   ): Promise<void> {
@@ -56,7 +56,7 @@ export class Storage implements IStorage {
     await this.keyValueStorage.setItem<Sequence[]>(key, sequences);
   }
 
-  public async getSequenceState<Sequence = any>(context: string): Promise<Sequence[] | undefined> {
+  public async getSequenceStore<Sequence = any>(context: string): Promise<Sequence[] | undefined> {
     const key = this.getStorageKey(context);
     const sequences = await this.keyValueStorage.getItem<Sequence[]>(key);
     return sequences;

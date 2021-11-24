@@ -5,7 +5,7 @@ import { PairingTypes, IClient, IPairing } from "@walletconnect/types";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import { formatUri, mergeArrays } from "@walletconnect/utils";
 
-import { State } from "./state";
+import { Store } from "./store";
 import { Engine } from "./engine";
 import { JsonRpcHistory } from "./history";
 import {
@@ -19,8 +19,8 @@ import {
 } from "../constants";
 
 export class Pairing extends IPairing {
-  public pending: State<PairingTypes.Pending>;
-  public settled: State<PairingTypes.Settled>;
+  public pending: Store<PairingTypes.Pending>;
+  public settled: Store<PairingTypes.Settled>;
   public history: JsonRpcHistory;
 
   public events = new EventEmitter();
@@ -38,8 +38,8 @@ export class Pairing extends IPairing {
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
     this.logger = generateChildLogger(logger, this.name);
-    this.pending = new State<PairingTypes.Pending>(client, this.logger, this.config.status.pending);
-    this.settled = new State<PairingTypes.Settled>(client, this.logger, this.config.status.settled);
+    this.pending = new Store<PairingTypes.Pending>(client, this.logger, this.config.status.pending);
+    this.settled = new Store<PairingTypes.Settled>(client, this.logger, this.config.status.settled);
     this.history = new JsonRpcHistory(client, this.logger);
     this.engine = new Engine(this) as PairingTypes.Engine;
   }

@@ -4,7 +4,7 @@ import {
   SubscriptionEvent,
   IEngine,
   SessionTypes,
-  StateEvent,
+  StoreEvent,
   RelayerTypes,
   JsonRpcRecord,
 } from "@walletconnect/types";
@@ -17,7 +17,7 @@ import {
   isSignalTypePairing,
   isSequenceFailed,
   isSequenceResponded,
-  isStateUpdatedEvent,
+  isStoreUpdatedEvent,
   ERROR,
   isSequenceRejected,
 } from "@walletconnect/utils";
@@ -35,7 +35,7 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 
 import {
-  STATE_EVENTS,
+  STORE_EVENTS,
   SUBSCRIPTION_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   FIVE_MINUTES,
@@ -152,8 +152,8 @@ export class Engine extends IEngine {
         return reject(e);
       }
       this.sequence.pending.on(
-        STATE_EVENTS.updated,
-        async (updatedEvent: StateEvent.Updated<SequenceTypes.Pending>) => {
+        STORE_EVENTS.updated,
+        async (updatedEvent: StoreEvent.Updated<SequenceTypes.Pending>) => {
           if (pending.topic !== updatedEvent.sequence.topic) return;
           if (isSequenceResponded(updatedEvent.sequence)) {
             const outcome = updatedEvent.sequence.outcome;
@@ -747,7 +747,7 @@ export class Engine extends IEngine {
   }
 
   private async onPendingStatusEvent(
-    event: StateEvent.Created<SequenceTypes.Pending> | StateEvent.Updated<SequenceTypes.Pending>,
+    event: StoreEvent.Created<SequenceTypes.Pending> | StoreEvent.Updated<SequenceTypes.Pending>,
   ) {
     const { sequence: pending } = event;
     if (isSignalTypePairing(pending.proposal.signal)) {
@@ -767,7 +767,7 @@ export class Engine extends IEngine {
       this.sequence.logger.info(`Emitting ${eventName}`);
       this.sequence.logger.debug({ type: "event", event: eventName, sequence: pending });
       this.sequence.events.emit(eventName, pending);
-      if (!isStateUpdatedEvent(event)) {
+      if (!isStoreUpdatedEvent(event)) {
         const { topic, outcome, relay } = pending;
         const method = !isSequenceFailed(outcome)
           ? this.sequence.config.jsonrpc.approve
@@ -801,7 +801,7 @@ export class Engine extends IEngine {
     }
   }
 
-  private async subscribeNewPending(createdEvent: StateEvent.Created<SequenceTypes.Pending>) {
+  private async subscribeNewPending(createdEvent: StoreEvent.Created<SequenceTypes.Pending>) {
     const { topic, sequence: pending } = createdEvent;
     const expiry = calcExpiry(ONE_DAY);
     await this.sequence.client.relayer.subscribe(topic, expiry, {
@@ -809,7 +809,7 @@ export class Engine extends IEngine {
     });
   }
 
-  private async subscribeNewSettled(createdEvent: StateEvent.Created<SequenceTypes.Settled>) {
+  private async subscribeNewSettled(createdEvent: StoreEvent.Created<SequenceTypes.Settled>) {
     const { topic, sequence: settled } = createdEvent;
     await this.sequence.client.relayer.subscribe(topic, settled.expiry, {
       relay: settled.relay,
@@ -819,20 +819,20 @@ export class Engine extends IEngine {
   private registerEventListeners(): void {
     // Pending Events
     this.sequence.pending.on(
-      STATE_EVENTS.created,
-      async (createdEvent: StateEvent.Created<SequenceTypes.Pending>) => {
+      STORE_EVENTS.created,
+      async (createdEvent: StoreEvent.Created<SequenceTypes.Pending>) => {
         await this.subscribeNewPending(createdEvent);
         await this.onPendingStatusEvent(createdEvent);
       },
     );
     this.sequence.pending.on(
-      STATE_EVENTS.updated,
-      async (updatedEvent: StateEvent.Updated<SequenceTypes.Pending>) =>
+      STORE_EVENTS.updated,
+      async (updatedEvent: StoreEvent.Updated<SequenceTypes.Pending>) =>
         await this.onPendingStatusEvent(updatedEvent),
     );
     this.sequence.pending.on(
-      STATE_EVENTS.deleted,
-      async (deletedEvent: StateEvent.Deleted<SequenceTypes.Pending>) => {
+      STORE_EVENTS.deleted,
+      async (deletedEvent: StoreEvent.Deleted<SequenceTypes.Pending>) => {
         if (deletedEvent.reason.code !== ERROR.EXPIRED.code) {
           await this.sequence.client.relayer.unsubscribeByTopic(deletedEvent.topic, {
             relay: deletedEvent.sequence.relay,
@@ -842,8 +842,8 @@ export class Engine extends IEngine {
     );
     // Settled Events
     this.sequence.settled.on(
-      STATE_EVENTS.created,
-      async (createdEvent: StateEvent.Created<SequenceTypes.Settled>) => {
+      STORE_EVENTS.created,
+      async (createdEvent: StoreEvent.Created<SequenceTypes.Settled>) => {
         await this.subscribeNewSettled(createdEvent);
         const { sequence: settled } = createdEvent;
         const eventName = this.sequence.config.events.settled;
@@ -853,8 +853,8 @@ export class Engine extends IEngine {
       },
     );
     this.sequence.settled.on(
-      STATE_EVENTS.updated,
-      async (updatedEvent: StateEvent.Updated<SequenceTypes.Settled>) => {
+      STORE_EVENTS.updated,
+      async (updatedEvent: StoreEvent.Updated<SequenceTypes.Settled>) => {
         const { sequence: settled, update } = updatedEvent;
         const eventName = this.sequence.config.events.updated;
         this.sequence.logger.info(`Emitting ${eventName}`);
@@ -863,8 +863,8 @@ export class Engine extends IEngine {
       },
     );
     this.sequence.settled.on(
-      STATE_EVENTS.deleted,
-      async (deletedEvent: StateEvent.Deleted<SequenceTypes.Settled>) => {
+      STORE_EVENTS.deleted,
+      async (deletedEvent: StoreEvent.Deleted<SequenceTypes.Settled>) => {
         const { sequence: settled, reason } = deletedEvent;
         const eventName = this.sequence.config.events.deleted;
         this.sequence.logger.info(`Emitting ${eventName}`);
@@ -882,7 +882,7 @@ export class Engine extends IEngine {
         }
       },
     );
-    this.sequence.settled.on(STATE_EVENTS.sync, () =>
+    this.sequence.settled.on(STORE_EVENTS.sync, () =>
       this.sequence.events.emit(this.sequence.config.events.sync),
     );
     // Relayer Events

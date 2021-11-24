@@ -30,11 +30,11 @@ export abstract class IStorage {
   public abstract setKeyChain(context: string, keychain: Map<string, string>): Promise<void>;
   public abstract getKeyChain(context: string): Promise<Map<string, string> | undefined>;
 
-  public abstract setSequenceState<Sequence = any>(
+  public abstract setSequenceStore<Sequence = any>(
     context: string,
     sequences: Sequence[],
   ): Promise<void>;
-  public abstract getSequenceState<Sequence = any>(
+  public abstract getSequenceStore<Sequence = any>(
     context: string,
   ): Promise<Sequence[] | undefined>;
 
