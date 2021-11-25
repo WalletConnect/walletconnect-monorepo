@@ -400,6 +400,7 @@ export class Engine extends IEngine {
       permissions: params.permissions,
       expiry: params.expiry,
       state: params.state,
+      acknowledged: false,
     };
     await this.sequence.settled.set(settled.topic, settled);
     return settled;
@@ -413,6 +414,7 @@ export class Engine extends IEngine {
     const response = request.params;
     const pending = await this.sequence.pending.get(topic);
     let error: ErrorResponse | undefined;
+    let outcome: SequenceTypes.Outcome | undefined;
     if (!isSequenceRejected(response)) {
       try {
         const controller = pending.proposal.proposer.controller
@@ -451,9 +453,10 @@ export class Engine extends IEngine {
       } catch (e) {
         this.sequence.logger.error(e as any);
         error = ERROR.GENERIC.format({ message: (e as any).message });
+        outcome = { reason: error };
         await this.sequence.pending.update(topic, {
           status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-          outcome: { reason: error },
+          outcome,
         });
       }
       await this.sequence.client.relayer.publish(
@@ -465,6 +468,9 @@ export class Engine extends IEngine {
           relay: pending.relay,
         },
       );
+      if (typeof outcome !== "undefined" && !isSequenceFailed(outcome)) {
+        await this.sequence.settled.update(outcome.topic, { acknowledged: true });
+      }
     } else {
       this.sequence.logger.error(response.reason);
       await this.sequence.pending.update(topic, {
@@ -481,8 +487,12 @@ export class Engine extends IEngine {
     const response = payload as JsonRpcResponse;
     const pending = await this.sequence.pending.get(topic);
     if (!isSequenceResponded(pending)) return;
-    if (isJsonRpcError(response) && !isSequenceFailed(pending.outcome)) {
-      await this.sequence.settled.delete(pending.outcome.topic, response.error);
+    const { outcome } = pending;
+    if (isJsonRpcError(response) && !isSequenceFailed(outcome)) {
+      await this.sequence.settled.delete(outcome.topic, response.error);
+    }
+    if (typeof outcome !== "undefined" && !isSequenceFailed(outcome)) {
+      await this.sequence.settled.update(outcome.topic, { acknowledged: true });
     }
     const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.sequence.name });
     await this.sequence.pending.delete(topic, reason);

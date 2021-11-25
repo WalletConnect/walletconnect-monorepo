@@ -205,6 +205,7 @@ export declare namespace SequenceTypes {
     permissions: Per;
     expiry: number;
     state: S;
+    acknowledged: boolean;
   }
 
   export type Created<S = State, Par = Participant, Per = Permissions> = Settled<S, Par, Per>;
