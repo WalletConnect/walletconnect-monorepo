@@ -6,7 +6,7 @@ import {
   IStorage,
   JsonRpcRecord,
   StorageKeyMap,
-  SubscriptionParams,
+  SubscriptionActive,
 } from "@walletconnect/types";
 import { ERROR, mapToObj, objToMap, formatStorageKeyName } from "@walletconnect/utils";
 
@@ -75,15 +75,15 @@ export class Storage implements IStorage {
 
   public async setRelayerSubscriptions(
     context: string,
-    subscriptions: SubscriptionParams[],
+    subscriptions: SubscriptionActive[],
   ): Promise<void> {
     const key = this.getStorageKey(context);
-    await this.keyValueStorage.setItem<SubscriptionParams[]>(key, subscriptions);
+    await this.keyValueStorage.setItem<SubscriptionActive[]>(key, subscriptions);
   }
 
-  public async getRelayerSubscriptions(context: string): Promise<SubscriptionParams[] | undefined> {
+  public async getRelayerSubscriptions(context: string): Promise<SubscriptionActive[] | undefined> {
     const key = this.getStorageKey(context);
-    const subscriptions = await this.keyValueStorage.getItem<SubscriptionParams[]>(key);
+    const subscriptions = await this.keyValueStorage.getItem<SubscriptionActive[]>(key);
     return subscriptions;
   }
 

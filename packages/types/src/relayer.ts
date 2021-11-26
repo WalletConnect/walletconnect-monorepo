@@ -2,7 +2,7 @@ import { Logger } from "pino";
 import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
-import { ISubscription } from "./subscription";
+import { ISubscription, SubscriptionParams } from "./subscription";
 import { IJsonRpcHistory } from "./history";
 
 export declare namespace RelayerTypes {
@@ -32,7 +32,17 @@ export declare namespace RelayerTypes {
   }
 }
 
+export interface PublishParams {
+  topic: string;
+  payload: JsonRpcPayload;
+  opts: Required<RelayerTypes.PublishOptions>;
+}
+
 export abstract class IRelayer extends IEvents {
+  public abstract queue: Map<number, PublishParams>;
+
+  public abstract pending: Map<string, SubscriptionParams>;
+
   public abstract subscriptions: ISubscription;
 
   public abstract history: IJsonRpcHistory;

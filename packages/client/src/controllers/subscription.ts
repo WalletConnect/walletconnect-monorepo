@@ -6,7 +6,7 @@ import {
   ISubscriptionTopicMap,
   Reason,
   SubscriptionEvent,
-  SubscriptionParams,
+  SubscriptionActive,
 } from "@walletconnect/types";
 import { ERROR, formatMessageContext, toMiliseconds, calcExpiry } from "@walletconnect/utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
@@ -63,7 +63,7 @@ export class SubscriptionTopicMap implements ISubscriptionTopicMap {
 }
 
 export class Subscription extends ISubscription {
-  public subscriptions = new Map<string, SubscriptionParams>();
+  public subscriptions = new Map<string, SubscriptionActive>();
 
   public topicMap = new SubscriptionTopicMap();
 
@@ -71,7 +71,7 @@ export class Subscription extends ISubscription {
 
   public name: string = SUBSCRIPTION_CONTEXT;
 
-  private cached: SubscriptionParams[] = [];
+  private cached: SubscriptionActive[] = [];
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
@@ -96,7 +96,7 @@ export class Subscription extends ISubscription {
     return Array.from(this.subscriptions.keys());
   }
 
-  get values(): SubscriptionParams[] {
+  get values(): SubscriptionActive[] {
     return Array.from(this.subscriptions.values());
   }
 
@@ -104,7 +104,7 @@ export class Subscription extends ISubscription {
     return this.topicMap.topics;
   }
 
-  public async set(id: string, subscription: SubscriptionParams): Promise<void> {
+  public async set(id: string, subscription: SubscriptionActive): Promise<void> {
     await this.isEnabled();
     if (this.subscriptions.has(id)) return;
     this.logger.debug(`Setting subscription`);
@@ -113,7 +113,7 @@ export class Subscription extends ISubscription {
     this.events.emit(SUBSCRIPTION_EVENTS.created, subscription);
   }
 
-  public async get(id: string): Promise<SubscriptionParams> {
+  public async get(id: string): Promise<SubscriptionActive> {
     await this.isEnabled();
     this.logger.debug(`Getting subscription`);
     this.logger.trace({ type: "method", method: "get", id });
@@ -190,14 +190,14 @@ export class Subscription extends ISubscription {
     this.events.emit(SUBSCRIPTION_EVENTS.disabled);
   }
 
-  private setSubscription(id: string, subscription: SubscriptionParams): void {
+  private setSubscription(id: string, subscription: SubscriptionActive): void {
     const expiry = subscription.expiry || calcExpiry(SUBSCRIPTION_DEFAULT_TTL);
     this.subscriptions.set(id, { ...subscription, expiry });
     this.topicMap.set(subscription.topic, id);
     this.checkExpiry(id, expiry);
   }
 
-  private getSubscription(id: string): SubscriptionParams {
+  private getSubscription(id: string): SubscriptionActive {
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
       const error = ERROR.NO_MATCHING_ID.format({
@@ -210,7 +210,7 @@ export class Subscription extends ISubscription {
     return subscription;
   }
 
-  private deleteSubscription(id: string, subscription: SubscriptionParams): void {
+  private deleteSubscription(id: string, subscription: SubscriptionActive): void {
     this.subscriptions.delete(id);
     this.topicMap.delete(subscription.topic, id);
   }

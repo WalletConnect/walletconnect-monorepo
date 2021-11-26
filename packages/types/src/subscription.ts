@@ -22,15 +22,18 @@ export abstract class ISubscriptionTopicMap {
 }
 
 export interface SubscriptionParams extends RelayerTypes.SubscribeOptions {
-  id: string;
   topic: string;
   expiry: number;
 }
 
-export declare namespace SubscriptionEvent {
-  export type Created = SubscriptionParams;
+export interface SubscriptionActive extends SubscriptionParams {
+  id: string;
+}
 
-  export interface Deleted extends SubscriptionParams {
+export declare namespace SubscriptionEvent {
+  export type Created = SubscriptionActive;
+
+  export interface Deleted extends SubscriptionActive {
     reason: Reason;
   }
 
@@ -38,7 +41,7 @@ export declare namespace SubscriptionEvent {
 }
 
 export abstract class ISubscription extends IEvents {
-  public abstract subscriptions: Map<string, SubscriptionParams>;
+  public abstract subscriptions: Map<string, SubscriptionActive>;
 
   public abstract topicMap: ISubscriptionTopicMap;
 
@@ -46,7 +49,7 @@ export abstract class ISubscription extends IEvents {
 
   public abstract readonly ids: string[];
 
-  public abstract readonly values: SubscriptionParams[];
+  public abstract readonly values: SubscriptionActive[];
 
   public abstract readonly topics: string[];
 
@@ -60,9 +63,9 @@ export abstract class ISubscription extends IEvents {
 
   public abstract init(): Promise<void>;
 
-  public abstract set(id: string, subscription: SubscriptionParams): Promise<void>;
+  public abstract set(id: string, subscription: SubscriptionActive): Promise<void>;
 
-  public abstract get(id: string): Promise<SubscriptionParams>;
+  public abstract get(id: string): Promise<SubscriptionActive>;
 
   public abstract delete(id: string, reason: Reason): Promise<void>;
 
