@@ -600,15 +600,29 @@ export class Engine extends IEngine {
     }
   }
 
-  protected async onNotification(event: RelayerTypes.PayloadEvent) {
-    const notification = (event.payload as JsonRpcRequest<SessionTypes.Notification>).params;
-    const settled = await this.sequence.settled.get(event.topic);
-    await this.isNotificationAuthorized(event.topic, settled.peer, notification.type);
-    const notificationEvent: SessionTypes.NotificationEvent = { topic: event.topic, notification };
-    const eventName = this.sequence.config.events.notification;
-    this.sequence.logger.info(`Emitting ${eventName}`);
-    this.sequence.logger.debug({ type: "event", event: eventName, notificationEvent });
-    this.sequence.events.emit(eventName, notificationEvent);
+  protected async onNotification(payloadEvent: RelayerTypes.PayloadEvent) {
+    const { params: notification } = payloadEvent.payload as JsonRpcRequest<
+      SessionTypes.Notification
+    >;
+    const request = payloadEvent.payload as JsonRpcRequest;
+    const settled = await this.sequence.settled.get(payloadEvent.topic);
+    try {
+      await this.isNotificationAuthorized(payloadEvent.topic, settled.peer, notification.type);
+      const notificationEvent: SessionTypes.NotificationEvent = {
+        topic: payloadEvent.topic,
+        notification,
+      };
+      const eventName = this.sequence.config.events.notification;
+      this.sequence.logger.info(`Emitting ${eventName}`);
+      this.sequence.logger.debug({ type: "event", event: eventName, notificationEvent });
+      this.sequence.events.emit(eventName, notificationEvent);
+      const response = formatJsonRpcResult(request.id, true);
+      await this.send(settled.topic, response);
+    } catch (e) {
+      this.sequence.logger.error(e as any);
+      const response = formatJsonRpcError(request.id, (e as any).message);
+      await this.send(settled.topic, response);
+    }
   }
 
   public async handleUpdate(
