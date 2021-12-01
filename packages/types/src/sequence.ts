@@ -20,7 +20,7 @@ import {
 } from "./misc";
 import { RelayerTypes } from "./relayer";
 import { IEngine } from "./engine";
-import { IState } from "./state";
+import { IStore } from "./store";
 
 export declare namespace SequenceTypes {
   export interface Status {
@@ -205,6 +205,7 @@ export declare namespace SequenceTypes {
     permissions: Per;
     expiry: number;
     state: S;
+    acknowledged: boolean;
   }
 
   export type Created<S = State, Par = Participant, Per = Permissions> = Settled<S, Par, Per>;
@@ -282,9 +283,9 @@ export abstract class ISequence<
   ProposedPermissions = SequenceTypes.ProposedPermissions
 > extends IEvents {
   // pending sequences
-  public abstract pending: IState<Pending>;
+  public abstract pending: IStore<Pending>;
   // settled sequences
-  public abstract settled: IState<Settled>;
+  public abstract settled: IStore<Settled>;
   // jsonrpc history
   public abstract history: IJsonRpcHistory;
 

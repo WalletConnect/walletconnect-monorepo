@@ -19,7 +19,13 @@ export const DEFAULT_TEST_CHAINS = [
 ];
 export const DEFAULT_CHAINS = [...DEFAULT_MAIN_CHAINS, ...DEFAULT_TEST_CHAINS];
 
+<<<<<<< HEAD
 export const DEFAULT_RELAY_PROVIDER = "wss://relay.walletconnect.com";
+=======
+export const DEFAULT_API_KEY = process.env.REACT_APP_API_KEY;
+
+export const DEFAULT_RELAY_URL = process.env.REACT_APP_RELAY_URL;
+>>>>>>> 947690c0a7062535b5e384c602b78ff744446f80
 
 export const DEFAULT_EIP155_METHODS = ["eth_sendTransaction", "personal_sign", "eth_signTypedData"];
 
@@ -30,6 +36,6 @@ export const DEFAULT_LOGGER = "debug";
 export const DEFAULT_APP_METADATA = {
   name: "React Wallet",
   description: "React Wallet for WalletConnect",
-  url: "https://walletconnect.org/",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };

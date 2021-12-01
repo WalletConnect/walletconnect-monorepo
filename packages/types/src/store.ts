@@ -4,7 +4,7 @@ import { Logger } from "pino";
 import { IClient } from "./client";
 import { Reason } from "./misc";
 
-export declare namespace StateEvent {
+export declare namespace StoreEvent {
   export interface Created<T> {
     topic: string;
     sequence: T;
@@ -23,7 +23,7 @@ export declare namespace StateEvent {
   }
 }
 
-export abstract class IState<Sequence> extends IEvents {
+export abstract class IStore<Sequence> extends IEvents {
   public abstract sequences: Map<string, Sequence>;
 
   public abstract readonly context: string;

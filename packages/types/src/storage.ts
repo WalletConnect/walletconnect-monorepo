@@ -3,7 +3,7 @@ import { IKeyValueStorage } from "keyvaluestorage";
 
 import { IClient } from "./client";
 import { JsonRpcRecord } from "./history";
-import { SubscriptionParams } from "./subscription";
+import { SubscriptionActive } from "./subscription";
 
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
@@ -30,11 +30,11 @@ export abstract class IStorage {
   public abstract setKeyChain(context: string, keychain: Map<string, string>): Promise<void>;
   public abstract getKeyChain(context: string): Promise<Map<string, string> | undefined>;
 
-  public abstract setSequenceState<Sequence = any>(
+  public abstract setSequenceStore<Sequence = any>(
     context: string,
     sequences: Sequence[],
   ): Promise<void>;
-  public abstract getSequenceState<Sequence = any>(
+  public abstract getSequenceStore<Sequence = any>(
     context: string,
   ): Promise<Sequence[] | undefined>;
 
@@ -43,11 +43,11 @@ export abstract class IStorage {
 
   public abstract setRelayerSubscriptions(
     context: string,
-    subscriptions: SubscriptionParams[],
+    subscriptions: SubscriptionActive[],
   ): Promise<void>;
   public abstract getRelayerSubscriptions(
     context: string,
-  ): Promise<SubscriptionParams[] | undefined>;
+  ): Promise<SubscriptionActive[] | undefined>;
 
   public abstract getStorageKey(context: string): string;
   public abstract getStorageKeyName(context: string): string;

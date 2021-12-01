@@ -1,12 +1,12 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { IClient, IState, Reason, StateEvent } from "@walletconnect/types";
+import { IClient, IStore, Reason, StoreEvent } from "@walletconnect/types";
 import { ERROR, formatMessageContext } from "@walletconnect/utils";
 
-import { STATE_EVENTS } from "../constants";
+import { STORE_EVENTS } from "../constants";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
-export class State<Sequence = any> extends IState<Sequence> {
+export class Store<Sequence = any> extends IStore<Sequence> {
   public sequences = new Map<string, Sequence>();
 
   public events = new EventEmitter();
@@ -49,10 +49,10 @@ export class State<Sequence = any> extends IState<Sequence> {
       this.logger.debug(`Setting sequence`);
       this.logger.trace({ type: "method", method: "set", topic, sequence });
       this.sequences.set(topic, sequence);
-      this.events.emit(STATE_EVENTS.created, {
+      this.events.emit(STORE_EVENTS.created, {
         topic,
         sequence,
-      } as StateEvent.Created<Sequence>);
+      } as StoreEvent.Created<Sequence>);
     }
   }
 
@@ -60,7 +60,7 @@ export class State<Sequence = any> extends IState<Sequence> {
     await this.isInitialized();
     this.logger.debug(`Getting sequence`);
     this.logger.trace({ type: "method", method: "get", topic });
-    const sequence = await this.getState(topic);
+    const sequence = await this.getSequence(topic);
     return sequence;
   }
 
@@ -68,13 +68,13 @@ export class State<Sequence = any> extends IState<Sequence> {
     await this.isInitialized();
     this.logger.debug(`Updating sequence`);
     this.logger.trace({ type: "method", method: "update", topic, update });
-    const sequence = { ...(await this.getState(topic)), ...update };
+    const sequence = { ...(await this.getSequence(topic)), ...update };
     this.sequences.set(topic, sequence);
-    this.events.emit(STATE_EVENTS.updated, {
+    this.events.emit(STORE_EVENTS.updated, {
       topic,
       sequence,
       update,
-    } as StateEvent.Updated<Sequence>);
+    } as StoreEvent.Updated<Sequence>);
   }
 
   public async delete(topic: string, reason: Reason): Promise<void> {
@@ -82,13 +82,13 @@ export class State<Sequence = any> extends IState<Sequence> {
     if (!this.sequences.has(topic)) return;
     this.logger.debug(`Deleting sequence`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });
-    const sequence = await this.getState(topic);
+    const sequence = await this.getSequence(topic);
     this.sequences.delete(topic);
-    this.events.emit(STATE_EVENTS.deleted, {
+    this.events.emit(STORE_EVENTS.deleted, {
       topic,
       sequence,
       reason,
-    } as StateEvent.Deleted<Sequence>);
+    } as StoreEvent.Deleted<Sequence>);
   }
 
   public on(event: string, listener: any): void {
@@ -109,7 +109,7 @@ export class State<Sequence = any> extends IState<Sequence> {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async getState(topic: string): Promise<Sequence> {
+  private async getSequence(topic: string): Promise<Sequence> {
     await this.isInitialized();
     const sequence = this.sequences.get(topic);
     if (!sequence) {
@@ -124,13 +124,13 @@ export class State<Sequence = any> extends IState<Sequence> {
   }
 
   private async persist() {
-    await this.client.storage.setSequenceState(this.context, this.values);
-    this.events.emit(STATE_EVENTS.sync);
+    await this.client.storage.setSequenceStore(this.context, this.values);
+    this.events.emit(STORE_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getSequenceState(this.context);
+      const persisted = await this.client.storage.getSequenceStore(this.context);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.sequences.size) {
@@ -163,31 +163,31 @@ export class State<Sequence = any> extends IState<Sequence> {
 
   private onInit() {
     this.cached = [];
-    this.events.emit(STATE_EVENTS.init);
+    this.events.emit(STORE_EVENTS.init);
   }
 
   private async isInitialized(): Promise<void> {
     if (!this.cached.length) return;
     return new Promise(resolve => {
-      this.events.once(STATE_EVENTS.init, () => resolve());
+      this.events.once(STORE_EVENTS.init, () => resolve());
     });
   }
 
   private registerEventListeners(): void {
-    this.events.on(STATE_EVENTS.created, (createdEvent: StateEvent.Created<Sequence>) => {
-      const eventName = STATE_EVENTS.created;
+    this.events.on(STORE_EVENTS.created, (createdEvent: StoreEvent.Created<Sequence>) => {
+      const eventName = STORE_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: createdEvent });
       this.persist();
     });
-    this.events.on(STATE_EVENTS.updated, (updatedEvent: StateEvent.Updated<Sequence>) => {
-      const eventName = STATE_EVENTS.updated;
+    this.events.on(STORE_EVENTS.updated, (updatedEvent: StoreEvent.Updated<Sequence>) => {
+      const eventName = STORE_EVENTS.updated;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: updatedEvent });
       this.persist();
     });
-    this.events.on(STATE_EVENTS.deleted, (deletedEvent: StateEvent.Deleted<Sequence>) => {
-      const eventName = STATE_EVENTS.deleted;
+    this.events.on(STORE_EVENTS.deleted, (deletedEvent: StoreEvent.Deleted<Sequence>) => {
+      const eventName = STORE_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
       this.persist();

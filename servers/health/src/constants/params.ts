@@ -20,8 +20,8 @@ export const permissions: SessionTypes.BasePermissions = {
 export const metadata: AppMetadata = {
   name: "App Name",
   description: "Description of App",
-  url: "https://walletconnect.org",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 export const address = "0x1d85568eEAbad713fBB5293B45ea066e552A90De";

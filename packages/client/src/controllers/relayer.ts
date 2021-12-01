@@ -8,6 +8,8 @@ import {
   ISubscription,
   IJsonRpcHistory,
   SubscriptionEvent,
+  SubscriptionParams,
+  PublishParams,
   Reason,
   JsonRpcRecord,
 } from "@walletconnect/types";
@@ -26,6 +28,7 @@ import { WsConnection } from "@walletconnect/jsonrpc-ws-connection";
 
 import { Subscription } from "./subscription";
 import {
+  CLIENT_EVENTS,
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_DEFAULT_RPC_URL,
@@ -40,6 +43,10 @@ import { JsonRpcHistory } from "./history";
 
 export class Relayer extends IRelayer {
   public events = new EventEmitter();
+
+  public queue = new Map<number, PublishParams>();
+
+  public pending = new Map<string, SubscriptionParams>();
 
   public subscriptions: ISubscription;
 
@@ -86,13 +93,15 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
     try {
-      const message = await this.client.crypto.encodeJsonRpc(topic, payload);
       const ttl = opts?.ttl || RELAYER_DEFAULT_PUBLISH_TTL;
       const relay = this.getRelayProtocol(opts);
+      const params = { topic, payload, opts: { ttl, relay } };
+      this.queue.set(payload.id, params);
+      const message = await this.client.crypto.encodeJsonRpc(topic, payload);
       await this.rpcPublish(topic, message, ttl, relay);
+      await this.onPublish(payload.id, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
-      await this.recordPayloadEvent({ topic, payload });
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e as any);
@@ -109,9 +118,10 @@ export class Relayer extends IRelayer {
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, expiry, opts } });
     try {
       const relay = this.getRelayProtocol(opts);
+      const params = { topic, expiry, relay };
+      this.pending.set(topic, params);
       const id = await this.rpcSubscribe(topic, relay);
-      const subscription = { id, topic, expiry, relay };
-      await this.subscriptions.set(id, subscription);
+      await this.onSubscribe(id, params);
       this.logger.debug(`Successfully Subscribed Topic`);
       this.logger.trace({ type: "method", method: "subscribe", params: { topic, expiry, opts } });
       return id;
@@ -224,6 +234,18 @@ export class Relayer extends IRelayer {
     return this.provider.request(request);
   }
 
+  private async onPublish(id: number, params: PublishParams) {
+    const { topic, payload } = params;
+    await this.recordPayloadEvent({ topic, payload });
+    this.queue.delete(id);
+  }
+
+  private async onSubscribe(id: string, params: SubscriptionParams) {
+    const subscription = { id, ...params };
+    await this.subscriptions.set(id, subscription);
+    this.pending.delete(params.topic);
+  }
+
   private async onUnsubscribe(topic: string, id: string, reason: Reason) {
     this.events.removeAllListeners(id);
     if (await this.subscriptions.exists(id, topic)) {
@@ -292,11 +314,11 @@ export class Relayer extends IRelayer {
   private async resubscribe() {
     await Promise.all(
       this.subscriptions.values.map(async subscription => {
-        // get new subscription id
-        const id = await this.rpcSubscribe(subscription.topic, subscription.relay);
-        // set new subscription id
-        await this.subscriptions.set(id, { ...subscription, id });
-        // delete old subscription id
+        const { topic, expiry, relay } = subscription;
+        const params = { topic, expiry, relay };
+        this.pending.set(params.topic, params);
+        const id = await this.rpcSubscribe(params.topic, params.relay);
+        await this.onSubscribe(id, params);
         const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
         await this.subscriptions.delete(subscription.id, reason);
       }),
@@ -329,7 +351,31 @@ export class Relayer extends IRelayer {
       : new JsonRpcProvider(new WsConnection(rpcUrl));
   }
 
+  private checkQueue(): void {
+    this.queue.forEach(async params => {
+      const {
+        topic,
+        payload,
+        opts: { ttl, relay },
+      } = params;
+      const message = await this.client.crypto.encodeJsonRpc(topic, payload);
+      await this.rpcPublish(topic, message, ttl, relay);
+      await this.onPublish(payload.id, params);
+    });
+  }
+
+  private checkPending(): void {
+    this.pending.forEach(async params => {
+      const id = await this.rpcSubscribe(params.topic, params.relay);
+      await this.onSubscribe(id, params);
+    });
+  }
+
   private registerEventListeners(): void {
+    this.client.on(CLIENT_EVENTS.beat, () => {
+      this.checkQueue();
+      this.checkPending();
+    });
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
       this.onPayload(payload),
     );

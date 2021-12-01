@@ -144,11 +144,11 @@ build: dirs build-images bootstrap-lerna build-relay build-react-app build-react
 test-client: build-lerna ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
 	npm run test --prefix packages/client
 
-test-staging: build-lerna ## tests client against staging.walletconnect.org
-	TEST_RELAY_URL=wss://staging.walletconnect.org npm run test --prefix packages/client
+test-staging: build-lerna ## tests client against staging.walletconnect.com
+	TEST_RELAY_URL=wss://staging.walletconnect.com npm run test --prefix packages/client
 
-test-production: build-lerna ## tests client against relay.walletconnect.org
-	TEST_RELAY_URL=wss://relay.walletconnect.org npm run test --prefix packages/client
+test-production: build-lerna ## tests client against relay.walletconnect.com
+	TEST_RELAY_URL=wss://relay.walletconnect.com npm run test --prefix packages/client
 
 test-relay: build-relay ## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before. Also needs waku nodes running locally
 	npm run test --prefix servers/relay
@@ -169,10 +169,10 @@ dev: predeploy ## runs relay on watch mode and shows logs
 ci: ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	$(MAKE) dev
-	nix show-derivation /nix/store/*-relay-conf.json.drv
-	nix show-derivation /nix/store/*-stream-relay.drv
-	nix show-derivation /nix/store/*-relay.tar.gz.drv
-	nix show-derivation /nix/store/*-relay-base.json.drv
+	#nix show-derivation /nix/store/*-relay-conf.json.drv
+	#nix show-derivation /nix/store/*-stream-relay.drv
+	#nix show-derivation /nix/store/*-relay.tar.gz.drv
+	#nix show-derivation /nix/store/*-relay-base.json.drv
 	sleep 15
 	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
