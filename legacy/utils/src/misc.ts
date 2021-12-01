@@ -1,7 +1,7 @@
 import * as encoding from "@walletconnect/encoding";
 import * as jsonRpcUtils from "@walletconnect/jsonrpc-utils";
 
-import { IRpcConfig, infuraNetworks } from "@walletconnect/legacy-types";
+import { IRpcConfig, INFURA_NETWORKS } from "@walletconnect/legacy-types";
 
 // -- hex -------------------------------------------------- //
 
@@ -52,7 +52,7 @@ export function logDeprecationWarning() {
 
 export function getInfuraRpcUrl(chainId: number, infuraId?: string): string | undefined {
   let rpcUrl: string | undefined;
-  const network = infuraNetworks[chainId];
+  const network = INFURA_NETWORKS[chainId];
   if (network) {
     rpcUrl = `https://${network}.infura.io/v3/${infuraId}`;
   }

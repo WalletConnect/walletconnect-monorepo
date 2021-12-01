@@ -5,8 +5,8 @@ import {
   IJsonRpcResponseSuccess,
   IJsonRpcResponseError,
   IInternalEvent,
-  signingMethods,
-  reservedEvents,
+  SIGNING_METHODS,
+  RESERVED_EVENTS,
 } from "@walletconnect/legacy-types";
 
 export function isEmptyString(value: string): boolean {
@@ -62,14 +62,14 @@ export function isInternalEvent(object: any): object is IInternalEvent {
 }
 
 export function isReservedEvent(event: string) {
-  return reservedEvents.includes(event) || event.startsWith("wc_");
+  return RESERVED_EVENTS.includes(event) || event.startsWith("wc_");
 }
 
 export function isSilentPayload(request: IJsonRpcRequest): boolean {
   if (request.method.startsWith("wc_")) {
     return true;
   }
-  if (signingMethods.includes(request.method)) {
+  if (SIGNING_METHODS.includes(request.method)) {
     return false;
   }
   return true;

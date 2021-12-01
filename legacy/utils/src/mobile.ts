@@ -2,7 +2,7 @@ import {
   IMobileRegistryEntry,
   IMobileRegistry,
   IMobileLinkInfo,
-  mobileLinkChoiceKey,
+  MOBILE_LINK_CHOICE_KEY,
 } from "@walletconnect/legacy-types";
 
 import { setLocal } from "./local";
@@ -18,7 +18,7 @@ export function formatIOSMobile(uri: string, entry: IMobileRegistryEntry) {
 
 export function saveMobileLinkInfo(data: IMobileLinkInfo) {
   const focusUri = data.href.split("?")[0];
-  setLocal(mobileLinkChoiceKey, { ...data, href: focusUri });
+  setLocal(MOBILE_LINK_CHOICE_KEY, { ...data, href: focusUri });
 }
 
 export function getMobileRegistryEntry(
