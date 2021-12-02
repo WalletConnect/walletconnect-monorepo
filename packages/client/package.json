@@ -40,9 +40,7 @@
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/types": "^2.0.0-beta.20.1",
     "@walletconnect/utils": "^2.0.0-beta.20.1",
-    "keyvaluestorage": "^0.7.1",
-    "pino": "^6.7.0",
-    "pino-pretty": "^4.3.0"
+    "ws": "^8.3.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
