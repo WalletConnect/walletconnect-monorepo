@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/legacy-utils",
   "description": "Legacy Utils (v1.0) for WalletConnect Protocol",
-  "version": "2.0.0-beta.20.1",
+  "version": "2.0.0-beta.20.2",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
@@ -30,7 +30,7 @@
   "dependencies": {
     "@walletconnect/encoding": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/legacy-types": "^2.0.0-beta.20.1",
+    "@walletconnect/legacy-types": "^2.0.0-beta.20.2",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/window-getters": "^1.0.0",
     "@walletconnect/window-metadata": "^1.0.0",
