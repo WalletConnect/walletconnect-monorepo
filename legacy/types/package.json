@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/legacy-types",
   "description": "Legacy Typings (v1.0) for WalletConnect Protocol",
-  "version": "2.0.0-beta.20.2",
+  "version": "2.0.0-beta.20.3",
   "author": "WalletConnect Labs <walletconnectlabs.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "LGPL-3.0",
