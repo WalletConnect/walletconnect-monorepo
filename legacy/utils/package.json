@@ -30,7 +30,7 @@
   "dependencies": {
     "@walletconnect/encoding": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/legacy-types": "^2.0.0-beta.20",
+    "@walletconnect/legacy-types": "2.0.0-beta.20",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/window-metadata": "^1.0.0",
     "@walletconnect/window-getters": "^1.0.0",

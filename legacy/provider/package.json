@@ -75,12 +75,12 @@
     "web3": "^1.3.5"
   },
   "dependencies": {
-    "@walletconnect/legacy-client": "^2.0.0-beta.20",
-    "@walletconnect/legacy-modal": "^2.0.0-beta.20",
+    "@walletconnect/legacy-client": "2.0.0-beta.20",
+    "@walletconnect/legacy-modal": "2.0.0-beta.20",
     "@walletconnect/jsonrpc-http-connection": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.0",
-    "@walletconnect/legacy-types": "^2.0.0-beta.20",
-    "@walletconnect/legacy-utils": "^2.0.0-beta.20",
+    "@walletconnect/legacy-types": "2.0.0-beta.20",
+    "@walletconnect/legacy-utils": "2.0.0-beta.20",
     "eip1193-provider": "^1.0.1",
     "eventemitter3": "^4.0.7"
   },
