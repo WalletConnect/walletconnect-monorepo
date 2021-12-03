@@ -75,14 +75,13 @@
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
+    "@walletconnect/legacy-client": "2.0.0-beta.20.2",
+    "@walletconnect/legacy-modal": "2.0.0-beta.20.2",
     "@walletconnect/jsonrpc-http-connection": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.0",
-    "@walletconnect/legacy-client": "^2.0.0-beta.20.2",
-    "@walletconnect/legacy-modal": "^2.0.0-beta.20.2",
-    "@walletconnect/legacy-types": "^2.0.0-beta.20.2",
-    "@walletconnect/legacy-utils": "^2.0.0-beta.20.2",
+    "@walletconnect/legacy-types": "2.0.0-beta.20.2",
+    "@walletconnect/legacy-utils": "2.0.0-beta.20.2",
     "eip1193-provider": "^1.0.1",
     "eventemitter3": "^4.0.7"
-  },
-  "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
+  }
 }

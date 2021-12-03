@@ -79,8 +79,8 @@
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
-    "@walletconnect/legacy-types": "^2.0.0-beta.20.2",
-    "@walletconnect/legacy-utils": "^2.0.0-beta.20.2",
+    "@walletconnect/legacy-types": "2.0.0-beta.20.2",
+    "@walletconnect/legacy-utils": "2.0.0-beta.20.2",
     "copy-to-clipboard": "^3.3.1",
     "preact": "10.4.1",
     "qrcode": "1.4.4"

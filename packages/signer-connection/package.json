@@ -29,11 +29,11 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/client": "^2.0.0-beta.20.2",
+    "@walletconnect/client": "2.0.0-beta.20.2",
     "@walletconnect/jsonrpc-types": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/types": "^2.0.0-beta.20.2",
-    "@walletconnect/utils": "^2.0.0-beta.20.2"
+    "@walletconnect/types": "2.0.0-beta.20.2",
+    "@walletconnect/utils": "2.0.0-beta.20.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
