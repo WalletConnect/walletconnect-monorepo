@@ -14,6 +14,7 @@ import {
 import { Store } from "./store";
 import { Engine } from "./engine";
 import { JsonRpcHistory } from "./history";
+import { Expirer } from "./expirer";
 import {
   SESSION_CONTEXT,
   SESSION_EVENTS,
@@ -27,6 +28,7 @@ export class Session extends ISession {
   public pending: Store<SessionTypes.Pending>;
   public settled: Store<SessionTypes.Settled>;
   public history: JsonRpcHistory;
+  public expirer: Expirer;
 
   public events = new EventEmitter();
 
@@ -46,6 +48,7 @@ export class Session extends ISession {
     this.pending = new Store<SessionTypes.Pending>(client, this.logger, this.config.status.pending);
     this.settled = new Store<SessionTypes.Settled>(client, this.logger, this.config.status.settled);
     this.history = new JsonRpcHistory(client, this.logger);
+    this.expirer = new Expirer(client, this.logger);
     this.engine = new Engine(this) as SessionTypes.Engine;
   }
 

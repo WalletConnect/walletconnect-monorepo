@@ -30,7 +30,6 @@ import { Pairing, Session, Relayer } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_DEFAULT,
-  CLIENT_BEAT_INTERVAL,
   CLIENT_SHORT_TIMEOUT,
   CLIENT_EVENTS,
   CLIENT_STORAGE_OPTIONS,
@@ -47,14 +46,21 @@ import {
 } from "./constants";
 import { Crypto } from "./controllers/crypto";
 import { Storage } from "./controllers/storage";
+import { HeartBeat } from "./controllers/heartbeat";
 
 export class Client extends IClient {
+  init(): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
   public readonly protocol = "wc";
   public readonly version = 2;
 
   public events = new EventEmitter();
 
   public logger: Logger;
+
+  public heartbeat: HeartBeat;
+
   public crypto: Crypto;
 
   public relayer: Relayer;
@@ -90,10 +96,12 @@ export class Client extends IClient {
 
     this.logger = generateChildLogger(logger, this.name);
 
-    const keyValueStorage =
-      opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
+    this.heartbeat = new HeartBeat(this.logger);
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
+
+    const keyValueStorage =
+      opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
     this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
     this.storage = new Storage(this, this.logger, keyValueStorage);
@@ -313,7 +321,7 @@ export class Client extends IClient {
       await this.session.init();
       await this.crypto.init();
       await this.relayer.init();
-      this.setBeatInterval();
+      await this.heartbeat.init();
       this.registerEventListeners();
       this.logger.info(`Client Initilization Success`);
     } catch (e) {
@@ -321,10 +329,6 @@ export class Client extends IClient {
       this.logger.error(e as any);
       throw e;
     }
-  }
-
-  private setBeatInterval() {
-    setInterval(() => this.events.emit(CLIENT_EVENTS.beat), toMiliseconds(CLIENT_BEAT_INTERVAL));
   }
 
   private registerEventListeners(): void {

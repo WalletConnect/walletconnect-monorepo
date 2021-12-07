@@ -28,7 +28,7 @@ import { WsConnection } from "@walletconnect/jsonrpc-ws-connection";
 
 import { Subscription } from "./subscription";
 import {
-  CLIENT_EVENTS,
+  HEARTBEAT_EVENTS,
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_DEFAULT_RPC_URL,
@@ -372,7 +372,7 @@ export class Relayer extends IRelayer {
   }
 
   private registerEventListeners(): void {
-    this.client.on(CLIENT_EVENTS.beat, () => {
+    this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkQueue();
       this.checkPending();
     });

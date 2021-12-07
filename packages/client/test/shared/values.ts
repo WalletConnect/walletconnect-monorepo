@@ -3,7 +3,6 @@ import { toMiliseconds } from "@walletconnect/utils";
 import { ClientOptions, SessionTypes, AppMetadata } from "@walletconnect/types";
 
 import {
-  CLIENT_BEAT_INTERVAL,
   CLIENT_SHORT_TIMEOUT,
   ONE_SECOND,
   PAIRING_DEFAULT_TTL,
@@ -80,4 +79,3 @@ export const TEST_TIMEOUT_SAFEGUARD = toMiliseconds(ONE_SECOND);
 export const TEST_TIMEOUT_DURATION = toMiliseconds(THIRTY_SECONDS);
 export const TEST_PAIRING_TTL = toMiliseconds(PAIRING_DEFAULT_TTL);
 export const TEST_SESSION_TTL = toMiliseconds(SESSION_DEFAULT_TTL);
-export const TEST_CLIENT_BEAT = toMiliseconds(CLIENT_BEAT_INTERVAL);

@@ -12,7 +12,7 @@ import { ERROR, formatMessageContext, toMiliseconds, calcExpiry } from "@walletc
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import {
-  CLIENT_EVENTS,
+  HEARTBEAT_EVENTS,
   SUBSCRIPTION_CONTEXT,
   SUBSCRIPTION_DEFAULT_TTL,
   SUBSCRIPTION_EVENTS,
@@ -291,7 +291,7 @@ export class Subscription extends ISubscription {
   }
 
   private registerEventListeners(): void {
-    this.client.on(CLIENT_EVENTS.beat, () => this.checkSubscriptions());
+    this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkSubscriptions());
     this.events.on(SUBSCRIPTION_EVENTS.created, async (createdEvent: SubscriptionEvent.Created) => {
       const eventName = SUBSCRIPTION_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);

@@ -4,11 +4,11 @@ import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@walletconnect/jsonr
 
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
-import { IPairing } from "./pairing";
+import { IPairing, PairingTypes } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
+import { IHeartBeat } from "./heartbeat";
 import { IStorage } from "./storage";
-import { PairingTypes } from ".";
 
 export interface ClientOptions {
   name?: string;
@@ -27,6 +27,9 @@ export abstract class IClient extends IEvents {
   public readonly version = 2;
 
   public abstract logger: Logger;
+
+  public abstract heartbeat: IHeartBeat;
+
   public abstract crypto: ICrypto;
 
   public abstract relayer: IRelayer;
