@@ -19,7 +19,7 @@ import {
   ERROR,
   toMiliseconds,
 } from "@walletconnect/utils";
-import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
+import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
@@ -277,7 +277,7 @@ export class Client extends IClient {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async onPairingRequest(request: JsonRpcRequest): Promise<void> {
+  protected async onPairingRequest(request: JsonRpcRequest, topic: string): Promise<void> {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
@@ -296,6 +296,8 @@ export class Client extends IClient {
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: proposal });
       this.events.emit(eventName, proposal);
+      const response = formatJsonRpcResult(request.id, true);
+      await this.pairing.send(topic, response);
     }
   }
 
@@ -366,7 +368,7 @@ export class Client extends IClient {
       },
     );
     this.pairing.on(PAIRING_EVENTS.request, (requestEvent: PairingTypes.RequestEvent) => {
-      this.onPairingRequest(requestEvent.request);
+      this.onPairingRequest(requestEvent.request, requestEvent.topic);
     });
     this.session.on(PAIRING_EVENTS.sync, () => this.events.emit(CLIENT_EVENTS.pairing.sync));
     // Session Subscription Events
