@@ -4,9 +4,9 @@ export const RELAYER_DEFAULT_PUBLISH_TTL = SIX_HOURS;
 
 export const RELAYER_DEFAULT_PROTOCOL = "waku";
 
-export const REALYER_DEFAULT_LOGGER = "error";
+export const RELAYER_DEFAULT_LOGGER = "error";
 
-export const RELAYER_DEFAULT_RPC_URL = "wss://relay.walletconnect.com";
+export const RELAYER_DEFAULT_RELAY_URL = "wss://relay.walletconnect.com";
 
 export const RELAYER_CONTEXT = "relayer";
 

@@ -19,26 +19,9 @@ import {
   RELAYER_SUBSCRIPTION_SUFFIX,
 } from "../../src";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { IEncoder, IRelayerEncoder, RelayerTypes } from "@walletconnect/types";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import { IRelayerEncoder, RelayerTypes } from "@walletconnect/types";
 import { toMiliseconds } from "@walletconnect/utils";
-import { HeartBeat } from "../../src/controllers";
-
-export async function getMockHeartBeat() {
-  const heartbeat = new HeartBeat(pino());
-  await heartbeat.init();
-  return heartbeat;
-}
-
-export class MockEncoder implements IRelayerEncoder {
-  public async encode(topic: string, payload: JsonRpcPayload) {
-    return encoding.utf8ToHex(safeJsonStringify(payload));
-  }
-
-  public async decode(topic: string, message: string) {
-    return safeJsonParse(encoding.hexToUtf8(message));
-  }
-}
+import { RelayerEncoder } from "../../src/controllers";
 
 export class MockWakuRelayer implements IEvents {
   public events = new EventEmitter();
@@ -53,7 +36,7 @@ export class MockWakuRelayer implements IEvents {
 
   constructor(rpcUrl: string) {
     this.provider = new JsonRpcProvider(new WsConnection(rpcUrl));
-    this.encoder = new MockEncoder();
+    this.encoder = new RelayerEncoder();
     this.registerEventListeners();
   }
 

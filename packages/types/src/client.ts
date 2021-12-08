@@ -1,6 +1,6 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@walletconnect/jsonrpc-types";
+import { JsonRpcResponse, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
@@ -16,10 +16,10 @@ export interface ClientOptions {
   apiKey?: string;
   controller?: boolean;
   metadata?: AppMetadata;
+  relayUrl?: string;
   logger?: string | Logger;
   keychain?: IKeyChain;
   storage?: IKeyValueStorage;
-  relayProvider?: string | IJsonRpcProvider;
   storageOptions?: KeyValueStorageOptions;
 }
 

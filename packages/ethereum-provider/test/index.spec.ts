@@ -62,7 +62,7 @@ const TEST_PROVIDER_OPTS = {
     },
   },
   client: {
-    relayProvider: TEST_RELAY_URL,
+    relayUrl: TEST_RELAY_URL,
     metadata: TEST_APP_METADATA,
   },
 };
@@ -71,7 +71,7 @@ const TEST_WALLET_CLIENT_OPTS = {
   chainId: CHAIN_ID,
   rpcUrl: RPC_URL,
   privateKey: ACCOUNTS.a.privateKey,
-  relayProvider: TEST_RELAY_URL,
+  relayUrl: TEST_RELAY_URL,
   metadata: TEST_WALLET_METADATA,
 };
 

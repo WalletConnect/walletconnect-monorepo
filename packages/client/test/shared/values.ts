@@ -20,7 +20,7 @@ export const TEST_API_KEY = process.env.TEST_API_KEY ? process.env.TEST_API_KEY 
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
   logger: "fatal",
-  relayProvider: TEST_RELAY_URL,
+  relayUrl: TEST_RELAY_URL,
   apiKey: TEST_API_KEY,
 };
 

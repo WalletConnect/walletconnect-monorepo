@@ -3,7 +3,7 @@ import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-import { IClient, IEncoder } from "@walletconnect/types";
+import { IClient, IEncoder, IRelayerEncoder } from "@walletconnect/types";
 
 import { ENCODER_CONTEXT } from "../constants";
 
@@ -35,5 +35,15 @@ export class Encoder implements IEncoder {
       : encoding.hexToUtf8(encrypted);
     const payload = safeJsonParse(message);
     return payload;
+  }
+}
+
+export class RelayerEncoder implements IRelayerEncoder {
+  public async encode(topic: string, payload: JsonRpcPayload) {
+    return encoding.utf8ToHex(safeJsonStringify(payload));
+  }
+
+  public async decode(topic: string, message: string) {
+    return safeJsonParse(encoding.hexToUtf8(message));
   }
 }

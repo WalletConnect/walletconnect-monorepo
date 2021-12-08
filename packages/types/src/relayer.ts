@@ -55,10 +55,12 @@ export abstract class IRelayerEncoder {
 }
 
 export interface RelayerOptions {
-  logger?: string | Logger;
-  provider?: string | IJsonRpcProvider;
+  heartbeat?: IHeartBeat;
+  encoder?: IRelayerEncoder;
   storage?: IRelayerStorage;
   keyValueStorage?: IKeyValueStorage;
+  logger?: string | Logger;
+  relayUrl?: string;
   apiKey?: string;
 }
 
@@ -66,6 +68,10 @@ export abstract class IRelayer extends IEvents {
   public abstract logger: Logger;
 
   public abstract storage: IRelayerStorage;
+
+  public abstract heartbeat: IHeartBeat;
+
+  public abstract encoder: IRelayerEncoder;
 
   public abstract queue: Map<number, PublishParams>;
 
@@ -85,11 +91,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connecting: boolean;
 
-  constructor(
-    public heartbeat: IHeartBeat,
-    public encoder: IRelayerEncoder,
-    opts?: RelayerOptions,
-  ) {
+  constructor(opts?: RelayerOptions) {
     super();
   }
 

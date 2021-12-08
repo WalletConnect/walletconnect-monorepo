@@ -4,6 +4,7 @@ export const CLIENT_DEFAULT = {
   name: CLIENT_CONTEXT,
   logger: "error",
   controller: false,
+  relayUrl: "wss://relay.walletconnect.com",
 };
 
 export const CLIENT_SHORT_TIMEOUT = 50;

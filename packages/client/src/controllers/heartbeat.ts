@@ -1,23 +1,43 @@
+import pino, { Logger } from "pino";
 import { EventEmitter } from "events";
-import { Logger } from "pino";
 
-import { IHeartBeat } from "@walletconnect/types";
+import { IHeartBeat, HeartBeatOptions } from "@walletconnect/types";
 
-import { HEARTBEAT_INTERVAL, HEARTBEAT_EVENTS, HEARTBEAT_CONTEXT } from "../constants";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import {
+  HEARTBEAT_INTERVAL,
+  HEARTBEAT_EVENTS,
+  HEARTBEAT_CONTEXT,
+  HEARTBEAT_DEFAULT_LOGGER,
+} from "../constants";
+import {
+  generateChildLogger,
+  getDefaultLoggerOptions,
+  getLoggerContext,
+} from "@walletconnect/logger";
 import { toMiliseconds } from "@walletconnect/utils";
 
 export class HeartBeat extends IHeartBeat {
+  static async init(opts?: HeartBeatOptions) {
+    const heartbeat = new HeartBeat(opts);
+    await heartbeat.init();
+    return heartbeat;
+  }
+
   public events = new EventEmitter();
 
   public interval = HEARTBEAT_INTERVAL;
 
   public name: string = HEARTBEAT_CONTEXT;
 
-  constructor(public logger: Logger, interval?: number) {
-    super(logger);
-    this.logger = generateChildLogger(logger, this.name);
-    this.interval = interval || HEARTBEAT_INTERVAL;
+  public logger: Logger;
+
+  constructor(opts?: HeartBeatOptions) {
+    super(opts);
+    this.logger =
+      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
+        ? generateChildLogger(opts.logger, this.name)
+        : pino(getDefaultLoggerOptions({ level: opts?.logger || HEARTBEAT_DEFAULT_LOGGER }));
+    this.interval = opts?.interval || HEARTBEAT_INTERVAL;
   }
 
   get context(): string {

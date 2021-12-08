@@ -17,6 +17,7 @@ import {
   isSessionResponded,
   getAppMetadata,
   ERROR,
+  formatRelayRpcUrl,
 } from "@walletconnect/utils";
 import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import {
@@ -25,16 +26,7 @@ import {
   getLoggerContext,
 } from "@walletconnect/logger";
 
-import {
-  Pairing,
-  Session,
-  Relayer,
-  Encoder,
-  Crypto,
-  Storage,
-  HeartBeat,
-  formatRelayProvider,
-} from "./controllers";
+import { Pairing, Session, Relayer, Encoder, Crypto, Storage, HeartBeat } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_DEFAULT,
@@ -99,7 +91,7 @@ export class Client extends IClient {
 
     this.logger = generateChildLogger(logger, this.name);
 
-    this.heartbeat = new HeartBeat(this.logger);
+    this.heartbeat = new HeartBeat({ logger: this.logger });
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
 
@@ -114,16 +106,18 @@ export class Client extends IClient {
       context: this.context,
     });
 
-    const provider = formatRelayProvider(
+    const relayUrl = formatRelayRpcUrl(
       this.protocol,
       this.version,
-      opts?.relayProvider,
+      opts?.relayUrl || CLIENT_DEFAULT.relayUrl,
       this.apiKey,
     );
 
-    this.relayer = new Relayer(this.heartbeat, this.encoder, {
+    this.relayer = new Relayer({
+      relayUrl,
+      heartbeat: this.heartbeat,
+      encoder: this.encoder,
       logger: this.logger,
-      provider,
       storage: this.storage,
     });
 
