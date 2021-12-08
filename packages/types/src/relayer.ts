@@ -1,9 +1,11 @@
 import { Logger } from "pino";
+import { IKeyValueStorage } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
 import { ISubscription, SubscriptionParams } from "./subscription";
 import { IJsonRpcHistory } from "./history";
+import { IHeartBeat, IRelayerStorage, Storage } from ".";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -38,7 +40,33 @@ export interface PublishParams {
   opts: Required<RelayerTypes.PublishOptions>;
 }
 
+export abstract class IRelayerEncoder {
+  public abstract encode(
+    topic: string,
+    payload: JsonRpcPayload,
+    nonce?: number | string,
+  ): Promise<string>;
+
+  public abstract decode(
+    topic: string,
+    encrypted: string,
+    nonce?: number | string,
+  ): Promise<JsonRpcPayload>;
+}
+
+export interface RelayerOptions {
+  logger?: string | Logger;
+  provider?: string | IJsonRpcProvider;
+  storage?: Storage;
+  keyValueStorage?: IKeyValueStorage;
+  apiKey?: string;
+}
+
 export abstract class IRelayer extends IEvents {
+  public abstract logger: Logger;
+
+  public abstract storage: IRelayerStorage;
+
   public abstract queue: Map<number, PublishParams>;
 
   public abstract pending: Map<string, SubscriptionParams>;
@@ -57,7 +85,11 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connecting: boolean;
 
-  constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
+  constructor(
+    public heartbeat: IHeartBeat,
+    public encoder: IRelayerEncoder,
+    opts?: RelayerOptions,
+  ) {
     super();
   }
 

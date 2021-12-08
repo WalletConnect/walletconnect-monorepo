@@ -7,6 +7,7 @@ import {
   Reason,
   SubscriptionEvent,
   SubscriptionActive,
+  IRelayerStorage,
 } from "@walletconnect/types";
 import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
@@ -68,9 +69,10 @@ export class Subscription extends ISubscription {
 
   private cached: SubscriptionActive[] = [];
 
-  constructor(public client: IClient, public logger: Logger) {
-    super(client, logger);
+  constructor(public logger: Logger, public storage: IRelayerStorage) {
+    super(logger, storage);
     this.logger = generateChildLogger(logger, this.name);
+    this.storage = storage;
     this.registerEventListeners();
   }
 
@@ -209,13 +211,13 @@ export class Subscription extends ISubscription {
   }
 
   private async persist() {
-    await this.client.storage.setRelayerSubscriptions(this.context, this.values);
+    await this.storage.setRelayerSubscriptions(this.context, this.values);
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getRelayerSubscriptions(this.context);
+      const persisted = await this.storage.getRelayerSubscriptions(this.context);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {

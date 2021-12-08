@@ -42,7 +42,7 @@ export class Pairing extends IPairing {
     this.logger = generateChildLogger(logger, this.name);
     this.pending = new Store<PairingTypes.Pending>(client, this.logger, this.config.status.pending);
     this.settled = new Store<PairingTypes.Settled>(client, this.logger, this.config.status.settled);
-    this.history = new JsonRpcHistory(client, this.logger);
+    this.history = new JsonRpcHistory(this.logger, this.client.storage);
     this.expirer = new Expirer(client, this.logger);
     this.engine = new Engine(this) as PairingTypes.Engine;
   }

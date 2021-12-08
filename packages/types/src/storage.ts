@@ -1,13 +1,20 @@
 import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
 
-import { IClient } from "./client";
 import { JsonRpcRecord } from "./history";
 import { SubscriptionActive } from "./subscription";
 
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
-export abstract class IStorage {
+export type Storage = IClientStorage | IRelayerStorage;
+
+export interface StorageConfig {
+  protocol: string;
+  version: number;
+  context: string;
+}
+
+export abstract class IBaseStorage {
   public abstract name: string;
 
   public abstract readonly context: string;
@@ -19,12 +26,44 @@ export abstract class IStorage {
   public abstract prefix: string;
 
   constructor(
-    public client: IClient,
     public logger: Logger,
     public keyValueStorage: IKeyValueStorage,
+    public config: StorageConfig,
+  ) {}
+
+  public abstract getStorageKey(context: string): string;
+  public abstract getStorageKeyName(context: string): string;
+  public abstract isValidStorageKeyName(name: string): boolean;
+}
+
+export abstract class IRelayerStorage extends IBaseStorage {
+  constructor(
+    public logger: Logger,
+    public keyValueStorage: IKeyValueStorage,
+    public config: StorageConfig,
   ) {
-    this.client = client;
-    this.keyValueStorage = keyValueStorage;
+    super(logger, keyValueStorage, config);
+  }
+
+  public abstract setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void>;
+  public abstract getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined>;
+
+  public abstract setRelayerSubscriptions(
+    context: string,
+    subscriptions: SubscriptionActive[],
+  ): Promise<void>;
+  public abstract getRelayerSubscriptions(
+    context: string,
+  ): Promise<SubscriptionActive[] | undefined>;
+}
+
+export abstract class IClientStorage extends IRelayerStorage {
+  constructor(
+    public logger: Logger,
+    public keyValueStorage: IKeyValueStorage,
+    public config: StorageConfig,
+  ) {
+    super(logger, keyValueStorage, config);
   }
 
   public abstract setKeyChain(context: string, keychain: Map<string, string>): Promise<void>;
@@ -37,19 +76,4 @@ export abstract class IStorage {
   public abstract getSequenceStore<Sequence = any>(
     context: string,
   ): Promise<Sequence[] | undefined>;
-
-  public abstract setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void>;
-  public abstract getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined>;
-
-  public abstract setRelayerSubscriptions(
-    context: string,
-    subscriptions: SubscriptionActive[],
-  ): Promise<void>;
-  public abstract getRelayerSubscriptions(
-    context: string,
-  ): Promise<SubscriptionActive[] | undefined>;
-
-  public abstract getStorageKey(context: string): string;
-  public abstract getStorageKeyName(context: string): string;
-  public abstract isValidStorageKeyName(name: string): boolean;
 }

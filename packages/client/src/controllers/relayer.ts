@@ -1,10 +1,14 @@
 import { EventEmitter } from "events";
-import { Logger } from "pino";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import pino, { Logger } from "pino";
+import KeyValueStorage from "keyvaluestorage";
+import {
+  generateChildLogger,
+  getDefaultLoggerOptions,
+  getLoggerContext,
+} from "@walletconnect/logger";
 import {
   RelayerTypes,
   IRelayer,
-  IClient,
   ISubscription,
   IJsonRpcHistory,
   SubscriptionEvent,
@@ -12,6 +16,10 @@ import {
   PublishParams,
   Reason,
   JsonRpcRecord,
+  IHeartBeat,
+  IRelayerEncoder,
+  RelayerOptions,
+  Storage,
 } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import { ERROR, formatMessageContext } from "@walletconnect/utils";
@@ -30,15 +38,26 @@ import {
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_DEFAULT_PUBLISH_TTL,
+  REALYER_DEFAULT_LOGGER,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIPTION_SUFFIX,
   RELAYER_RECONNECT_TIMEOUT,
+  RELAYER_STORAGE_OPTIONS,
   SUBSCRIPTION_EVENTS,
 } from "../constants";
 import { JsonRpcHistory } from "./history";
+import { RelayerStorage } from "./storage";
+import { formatRelayProvider } from "./shared";
 
 export class Relayer extends IRelayer {
+  public readonly protocol = "irn";
+  public readonly version = 1;
+
+  public logger: Logger;
+
+  public storage: Storage;
+
   public events = new EventEmitter();
 
   public queue = new Map<number, PublishParams>();
@@ -53,12 +72,28 @@ export class Relayer extends IRelayer {
 
   public name: string = RELAYER_CONTEXT;
 
-  constructor(public client: IClient, public logger: Logger, provider: IJsonRpcProvider) {
-    super(client, logger);
-    this.logger = generateChildLogger(logger, this.name);
-    this.subscriptions = new Subscription(client, this.logger);
-    this.history = new JsonRpcHistory(client, this.logger);
-    this.provider = provider;
+  constructor(
+    public heartbeat: IHeartBeat,
+    public encoder: IRelayerEncoder,
+    opts?: RelayerOptions,
+  ) {
+    super(heartbeat, encoder);
+    this.logger =
+      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
+        ? generateChildLogger(opts.logger, this.name)
+        : pino(getDefaultLoggerOptions({ level: opts?.logger || REALYER_DEFAULT_LOGGER }));
+    const keyValueStorage = opts?.keyValueStorage || new KeyValueStorage(RELAYER_STORAGE_OPTIONS);
+    this.storage =
+      typeof opts?.storage !== "undefined"
+        ? opts.storage
+        : new RelayerStorage(this.logger, keyValueStorage, {
+            protocol: this.protocol,
+            version: this.version,
+            context: this.context,
+          });
+    this.subscriptions = new Subscription(this.logger, this.storage);
+    this.history = new JsonRpcHistory(this.logger, this.storage);
+    this.provider = formatRelayProvider(this.protocol, this.version, opts?.provider, opts?.apiKey);
     this.registerEventListeners();
   }
 
@@ -94,7 +129,7 @@ export class Relayer extends IRelayer {
       const relay = this.getRelayProtocol(opts);
       const params = { topic, payload, opts: { ttl, relay } };
       this.queue.set(payload.id, params);
-      const message = await this.client.crypto.encode(topic, payload);
+      const message = await this.encoder.encode(topic, payload);
       await this.rpcPublish(topic, message, ttl, relay);
       await this.onPublish(payload.id, params);
       this.logger.debug(`Successfully Published Payload`);
@@ -284,7 +319,7 @@ export class Relayer extends IRelayer {
       const { topic, message } = event.data;
       const payloadEvent = {
         topic,
-        payload: await this.client.crypto.decode(topic, message),
+        payload: await this.encoder.decode(topic, message),
       } as RelayerTypes.PayloadEvent;
       if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
       this.logger.debug(`Emitting Relayer Payload`);
@@ -334,7 +369,7 @@ export class Relayer extends IRelayer {
         payload,
         opts: { ttl, relay },
       } = params;
-      const message = await this.client.crypto.encode(topic, payload);
+      const message = await this.encoder.encode(topic, payload);
       await this.rpcPublish(topic, message, ttl, relay);
       await this.onPublish(payload.id, params);
     });
@@ -348,7 +383,7 @@ export class Relayer extends IRelayer {
   }
 
   private registerEventListeners(): void {
-    this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+    this.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkQueue();
       this.checkPending();
     });

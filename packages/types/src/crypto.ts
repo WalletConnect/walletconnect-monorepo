@@ -1,5 +1,6 @@
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+
 import { IClient } from "./client";
 
 export declare namespace CryptoTypes {

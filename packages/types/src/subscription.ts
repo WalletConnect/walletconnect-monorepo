@@ -1,8 +1,8 @@
 import { IEvents } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 
-import { IClient } from "./client";
 import { Reason } from "./misc";
+import { IRelayerStorage } from "./storage";
 import { RelayerTypes } from "./relayer";
 
 export abstract class ISubscriptionTopicMap {
@@ -56,7 +56,7 @@ export abstract class ISubscription extends IEvents {
 
   public abstract readonly context: string;
 
-  constructor(public client: IClient, public logger: Logger) {
+  constructor(public logger: Logger, public storage: IRelayerStorage) {
     super();
   }
 
