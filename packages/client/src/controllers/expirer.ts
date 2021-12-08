@@ -40,16 +40,25 @@ export class Expirer extends IExpirer {
   }
 
   public async set(topic: string, expiration: Expiration): Promise<void> {
-    return this.setExpiration(topic, expiration);
+    this.expirations.set(topic, expiration);
+    this.checkExpiry(topic, expiration);
+    this.events.emit(EXPIRER_EVENTS.created, {
+      topic,
+      expiration,
+    } as ExpirerEvents.Created);
   }
 
   public async get(topic: string): Promise<Expiration> {
-    return this.getExpiration(topic) as any;
+    return this.getExpiration(topic);
   }
 
   public async del(topic: string): Promise<void> {
     const expiration = this.getExpiration(topic);
-    return this.deleteExpiration(topic, expiration);
+    this.expirations.delete(topic);
+    this.events.emit(EXPIRER_EVENTS.deleted, {
+      topic,
+      expiration,
+    } as ExpirerEvents.Deleted);
   }
 
   public on(event: string, listener: any): void {
@@ -75,15 +84,6 @@ export class Expirer extends IExpirer {
     this.registerEventListeners();
   }
 
-  private setExpiration(topic: string, expiration: Expiration): void {
-    this.expirations.set(topic, expiration);
-    this.checkExpiry(topic, expiration);
-    this.events.emit(EXPIRER_EVENTS.created, {
-      topic,
-      expiration,
-    } as ExpirerEvents.Created);
-  }
-
   private getExpiration(topic: string): Expiration {
     const expiration = this.expirations.get(topic);
     if (!expiration) {
@@ -95,14 +95,6 @@ export class Expirer extends IExpirer {
       throw new Error(error.message);
     }
     return expiration;
-  }
-
-  private deleteExpiration(topic: string, expiration: Expiration): void {
-    this.expirations.delete(topic);
-    this.events.emit(EXPIRER_EVENTS.deleted, {
-      topic,
-      expiration,
-    } as ExpirerEvents.Deleted);
   }
 
   private checkExpiry(topic: string, expiration: Expiration): void {

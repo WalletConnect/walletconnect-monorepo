@@ -260,13 +260,6 @@ export class Subscription extends ISubscription {
     });
   }
 
-  private onExpiry(expiredEvent: SubscriptionEvent.Expired) {
-    const eventName = SUBSCRIPTION_EVENTS.expired;
-    this.logger.info(`Emitting ${eventName}`);
-    this.logger.debug({ type: "event", event: eventName, data: expiredEvent });
-    this.events.emit(SUBSCRIPTION_EVENTS.expired, expiredEvent as SubscriptionEvent.Expired);
-  }
-
   private registerEventListeners(): void {
     this.events.on(SUBSCRIPTION_EVENTS.created, async (createdEvent: SubscriptionEvent.Created) => {
       const eventName = SUBSCRIPTION_EVENTS.created;
@@ -279,7 +272,6 @@ export class Subscription extends ISubscription {
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
       await this.persist();
-      if (deletedEvent.reason.code === ERROR.EXPIRED.code) this.onExpiry(deletedEvent);
     });
   }
 }
