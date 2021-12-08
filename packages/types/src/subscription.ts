@@ -23,7 +23,6 @@ export abstract class ISubscriptionTopicMap {
 
 export interface SubscriptionParams extends RelayerTypes.SubscribeOptions {
   topic: string;
-  expiry: number;
 }
 
 export interface SubscriptionActive extends SubscriptionParams {

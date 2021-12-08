@@ -1,21 +1,11 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 
-import { IClient, IExpirer } from "@walletconnect/types";
+import { IClient, IExpirer, Expiration, ExpirerEvents } from "@walletconnect/types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { calcExpiry, ERROR, formatMessageContext, toMiliseconds } from "@walletconnect/utils";
+import { ERROR, formatMessageContext, toMiliseconds } from "@walletconnect/utils";
 
-import {
-  EXPIRER_CONTEXT,
-  EXPIRER_EVENTS,
-  EXPIRER_DEFAULT_TTL,
-  HEARTBEAT_EVENTS,
-} from "../constants";
-
-interface Expiration {
-  id: string;
-  expiry: number;
-}
+import { EXPIRER_CONTEXT, EXPIRER_EVENTS, HEARTBEAT_EVENTS } from "../constants";
 
 export class Expirer extends IExpirer {
   public expirations = new Map<string, Expiration>();
@@ -42,23 +32,24 @@ export class Expirer extends IExpirer {
   public async has(topic: string): Promise<boolean> {
     try {
       const expiration = this.getExpiration(topic);
-      return true;
+      return typeof expiration !== "undefined";
     } catch (e) {
       // ignore
       return false;
     }
   }
 
-  public async set(topic: string, expiry: number): Promise<void> {
-    return this.setExpiration(topic, { id: "", expiry });
+  public async set(topic: string, expiration: Expiration): Promise<void> {
+    return this.setExpiration(topic, expiration);
   }
 
-  public async get(topic: string): Promise<number> {
+  public async get(topic: string): Promise<Expiration> {
     return this.getExpiration(topic) as any;
   }
 
   public async del(topic: string): Promise<void> {
-    return this.deleteExpiration(topic, { id: "", expiry: 0 });
+    const expiration = this.getExpiration(topic);
+    return this.deleteExpiration(topic, expiration);
   }
 
   public on(event: string, listener: any): void {
@@ -85,9 +76,12 @@ export class Expirer extends IExpirer {
   }
 
   private setExpiration(topic: string, expiration: Expiration): void {
-    const expiry = expiration.expiry || calcExpiry(EXPIRER_DEFAULT_TTL);
-    this.expirations.set(topic, { ...expiration, expiry });
-    this.checkExpiry(topic, expiry);
+    this.expirations.set(topic, expiration);
+    this.checkExpiry(topic, expiration);
+    this.events.emit(EXPIRER_EVENTS.created, {
+      topic,
+      expiration,
+    } as ExpirerEvents.Created);
   }
 
   private getExpiration(topic: string): Expiration {
@@ -105,29 +99,31 @@ export class Expirer extends IExpirer {
 
   private deleteExpiration(topic: string, expiration: Expiration): void {
     this.expirations.delete(topic);
+    this.events.emit(EXPIRER_EVENTS.deleted, {
+      topic,
+      expiration,
+    } as ExpirerEvents.Deleted);
   }
 
-  private checkExpiry(topic: string, expiry: number): void {
+  private checkExpiry(topic: string, expiration: Expiration): void {
+    const { expiry } = expiration;
     const msToTimeout = toMiliseconds(expiry) - Date.now();
-    if (msToTimeout <= 0) this.expire(topic);
+    if (msToTimeout <= 0) this.expire(topic, expiration);
   }
 
-  private expire(topic: string): void {
-    const reason = ERROR.EXPIRED.format({ context: formatMessageContext(this.context) });
-    const expiration = this.getExpiration(topic);
-    this.deleteExpiration(topic, expiration);
-    this.events.emit(EXPIRER_EVENTS.del, {
-      ...expiration,
-      reason,
-    } as any); // ExpirerEvents.Deleted
+  private expire(topic: string, expiration: Expiration): void {
+    this.expirations.delete(topic);
+    this.events.emit(EXPIRER_EVENTS.expired, {
+      topic,
+      expiration,
+    } as ExpirerEvents.Expired);
   }
 
   private checkExpirations(): void {
-    this.expirations.forEach(expiration => this.checkExpiry(expiration.id, expiration.expiry));
+    this.expirations.forEach((expiration, topic) => this.checkExpiry(topic, expiration));
   }
 
   private registerEventListeners(): void {
-    // TODO: inactive until implemented
-    // this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkExpirations());
+    this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkExpirations());
   }
 }

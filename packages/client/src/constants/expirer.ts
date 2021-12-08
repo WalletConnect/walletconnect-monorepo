@@ -3,8 +3,8 @@ import { ONE_DAY } from "./time";
 export const EXPIRER_CONTEXT = "expirer";
 
 export const EXPIRER_EVENTS = {
-  set: "expirer_set",
-  del: "expirer_del",
+  created: "expirer_created",
+  deleted: "expirer_deleted",
   expired: "expirer_expired",
 };
 

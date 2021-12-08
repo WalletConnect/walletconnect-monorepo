@@ -191,10 +191,8 @@ export class Subscription extends ISubscription {
   }
 
   private setSubscription(id: string, subscription: SubscriptionActive): void {
-    const expiry = subscription.expiry || calcExpiry(SUBSCRIPTION_DEFAULT_TTL);
-    this.subscriptions.set(id, { ...subscription, expiry });
+    this.subscriptions.set(id, { ...subscription });
     this.topicMap.set(subscription.topic, id);
-    this.checkExpiry(id, expiry);
   }
 
   private getSubscription(id: string): SubscriptionActive {
@@ -213,27 +211,6 @@ export class Subscription extends ISubscription {
   private deleteSubscription(id: string, subscription: SubscriptionActive): void {
     this.subscriptions.delete(id);
     this.topicMap.delete(subscription.topic, id);
-  }
-
-  private checkExpiry(id: string, expiry: number): void {
-    const msToTimeout = toMiliseconds(expiry) - Date.now();
-    if (msToTimeout <= 0) this.expire(id);
-  }
-
-  private expire(id: string): void {
-    const reason = ERROR.EXPIRED.format({ context: formatMessageContext(this.context) });
-    const subscription = this.getSubscription(id);
-    this.deleteSubscription(id, subscription);
-    this.events.emit(SUBSCRIPTION_EVENTS.deleted, {
-      ...subscription,
-      reason,
-    } as SubscriptionEvent.Deleted);
-  }
-
-  private checkSubscriptions(): void {
-    this.subscriptions.forEach(subscription =>
-      this.checkExpiry(subscription.id, subscription.expiry),
-    );
   }
 
   private async persist() {
@@ -291,7 +268,6 @@ export class Subscription extends ISubscription {
   }
 
   private registerEventListeners(): void {
-    this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkSubscriptions());
     this.events.on(SUBSCRIPTION_EVENTS.created, async (createdEvent: SubscriptionEvent.Created) => {
       const eventName = SUBSCRIPTION_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);

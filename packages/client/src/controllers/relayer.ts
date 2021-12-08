@@ -109,21 +109,17 @@ export class Relayer extends IRelayer {
     }
   }
 
-  public async subscribe(
-    topic: string,
-    expiry: number,
-    opts?: RelayerTypes.SubscribeOptions,
-  ): Promise<string> {
+  public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string> {
     this.logger.debug(`Subscribing Topic`);
-    this.logger.trace({ type: "method", method: "subscribe", params: { topic, expiry, opts } });
+    this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
       const relay = this.getRelayProtocol(opts);
-      const params = { topic, expiry, relay };
+      const params = { topic, relay };
       this.pending.set(topic, params);
       const id = await this.rpcSubscribe(topic, relay);
       await this.onSubscribe(id, params);
       this.logger.debug(`Successfully Subscribed Topic`);
-      this.logger.trace({ type: "method", method: "subscribe", params: { topic, expiry, opts } });
+      this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
       return id;
     } catch (e) {
       this.logger.debug(`Failed to Subscribe Topic`);
@@ -132,7 +128,12 @@ export class Relayer extends IRelayer {
     }
   }
 
-  public async unsubscribe(
+  public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void> {
+    const ids = this.subscriptions.topicMap.get(topic);
+    await Promise.all(ids.map(async id => await this.unsubscribeById(topic, id, opts)));
+  }
+
+  public async unsubscribeById(
     topic: string,
     id: string,
     opts?: RelayerTypes.UnsubscribeOptions,
@@ -151,14 +152,6 @@ export class Relayer extends IRelayer {
       this.logger.error(e as any);
       throw e;
     }
-  }
-
-  public async unsubscribeByTopic(
-    topic: string,
-    opts?: RelayerTypes.UnsubscribeOptions,
-  ): Promise<void> {
-    const ids = this.subscriptions.topicMap.get(topic);
-    await Promise.all(ids.map(async id => await this.unsubscribe(topic, id, opts)));
   }
 
   public on(event: string, listener: any): void {
@@ -314,8 +307,8 @@ export class Relayer extends IRelayer {
   private async resubscribe() {
     await Promise.all(
       this.subscriptions.values.map(async subscription => {
-        const { topic, expiry, relay } = subscription;
-        const params = { topic, expiry, relay };
+        const { topic, relay } = subscription;
+        const params = { topic, relay };
         this.pending.set(params.topic, params);
         const id = await this.rpcSubscribe(params.topic, params.relay);
         await this.onSubscribe(id, params);

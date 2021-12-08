@@ -48,7 +48,11 @@ export class HeartBeat extends IHeartBeat {
   // ---------- Private ----------------------------------------------- //
 
   private async initialize(): Promise<any> {
-    setInterval(() => this.events.emit(HEARTBEAT_EVENTS.pulse), toMiliseconds(this.interval));
+    setInterval(() => this.pulse(), toMiliseconds(this.interval));
     this.logger.trace(`Initialized`);
+  }
+
+  private pulse() {
+    this.events.emit(HEARTBEAT_EVENTS.pulse);
   }
 }

@@ -69,20 +69,7 @@ export abstract class IRelayer extends IEvents {
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
 
-  public abstract subscribe(
-    topic: string,
-    expiry: number,
-    opts?: RelayerTypes.SubscribeOptions,
-  ): Promise<string>;
+  public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
 
-  public abstract unsubscribe(
-    topic: string,
-    id: string,
-    opts?: RelayerTypes.UnsubscribeOptions,
-  ): Promise<void>;
-
-  public abstract unsubscribeByTopic(
-    topic: string,
-    opts?: RelayerTypes.UnsubscribeOptions,
-  ): Promise<void>;
+  public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
 }
