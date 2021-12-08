@@ -215,33 +215,33 @@ export class Subscription extends ISubscription {
     this.events.emit(SUBSCRIPTION_EVENTS.sync);
   }
 
-  private async restore() {
-    try {
-      const persisted = await this.storage.getRelayerSubscriptions(this.context);
-      if (typeof persisted === "undefined") return;
-      if (!persisted.length) return;
-      if (this.subscriptions.size) {
-        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: formatMessageContext(this.context),
-        });
-        this.logger.error(error.message);
-        throw new Error(error.message);
-      }
-      this.cached = persisted;
-      this.logger.debug(
-        `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
-      );
-      this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
-    } catch (e) {
-      this.logger.debug(
-        `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
-      );
-      this.logger.error(e as any);
-    }
-  }
+  // private async restore() {
+  //   try {
+  //     const persisted = await this.storage.getRelayerSubscriptions(this.context);
+  //     if (typeof persisted === "undefined") return;
+  //     if (!persisted.length) return;
+  //     if (this.subscriptions.size) {
+  //       const error = ERROR.RESTORE_WILL_OVERRIDE.format({
+  //         context: formatMessageContext(this.context),
+  //       });
+  //       this.logger.error(error.message);
+  //       throw new Error(error.message);
+  //     }
+  //     this.cached = persisted;
+  //     this.logger.debug(
+  //       `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
+  //     );
+  //     this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
+  //   } catch (e) {
+  //     this.logger.debug(
+  //       `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
+  //     );
+  //     this.logger.error(e as any);
+  //   }
+  // }
 
   private async initialize() {
-    await this.restore();
+    // await this.restore();
     this.reset();
     this.onInit();
   }

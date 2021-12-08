@@ -2,10 +2,10 @@ import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
-import { IClient } from "./client";
+import { IRelayerStorage } from "./storage";
 import { ISubscription, SubscriptionParams } from "./subscription";
 import { IJsonRpcHistory } from "./history";
-import { IHeartBeat, IRelayerStorage, Storage } from ".";
+import { IHeartBeat } from "./heartbeat";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -57,7 +57,7 @@ export abstract class IRelayerEncoder {
 export interface RelayerOptions {
   logger?: string | Logger;
   provider?: string | IJsonRpcProvider;
-  storage?: Storage;
+  storage?: IRelayerStorage;
   keyValueStorage?: IKeyValueStorage;
   apiKey?: string;
 }

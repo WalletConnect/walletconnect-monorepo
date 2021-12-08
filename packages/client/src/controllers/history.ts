@@ -5,7 +5,7 @@ import {
   IJsonRpcHistory,
   JsonRpcRecord,
   RequestEvent,
-  Storage,
+  IRelayerStorage,
 } from "@walletconnect/types";
 import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import {
@@ -27,7 +27,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private cached: JsonRpcRecord[] = [];
 
-  constructor(public logger: Logger, public storage: Storage) {
+  constructor(public logger: Logger, public storage: IRelayerStorage) {
     super(logger, storage);
     this.logger = generateChildLogger(logger, this.name);
     this.storage = storage;

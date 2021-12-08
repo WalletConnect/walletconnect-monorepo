@@ -31,7 +31,7 @@ import {
   Relayer,
   Encoder,
   Crypto,
-  ClientStorage,
+  Storage,
   HeartBeat,
   formatRelayProvider,
 } from "./controllers";
@@ -66,8 +66,8 @@ export class Client extends IClient {
   public crypto: Crypto;
 
   public encoder: Encoder;
+  public storage: Storage;
   public relayer: Relayer;
-  public storage: ClientStorage;
 
   public pairing: Pairing;
   public session: Session;
@@ -105,6 +105,15 @@ export class Client extends IClient {
 
     this.encoder = new Encoder(this, this.logger);
 
+    const keyValueStorage =
+      opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
+
+    this.storage = new Storage(this.logger, keyValueStorage, {
+      protocol: this.protocol,
+      version: this.version,
+      context: this.context,
+    });
+
     const provider = formatRelayProvider(
       this.protocol,
       this.version,
@@ -112,15 +121,10 @@ export class Client extends IClient {
       this.apiKey,
     );
 
-    this.relayer = new Relayer(this.heartbeat, this.encoder, { logger: this.logger, provider });
-
-    const keyValueStorage =
-      opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
-
-    this.storage = new ClientStorage(this.logger, keyValueStorage, {
-      protocol: this.protocol,
-      version: this.version,
-      context: this.context,
+    this.relayer = new Relayer(this.heartbeat, this.encoder, {
+      logger: this.logger,
+      provider,
+      storage: this.storage,
     });
 
     this.pairing = new Pairing(this, this.logger);

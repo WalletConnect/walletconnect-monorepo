@@ -3,7 +3,7 @@ import { IKeyValueStorage } from "keyvaluestorage";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import {
   IClient,
-  IClientStorage,
+  IStorage,
   JsonRpcRecord,
   StorageKeyMap,
   SubscriptionActive,
@@ -97,7 +97,7 @@ export class RelayerStorage extends BaseStorage implements IRelayerStorage {
   }
 }
 
-export class ClientStorage extends RelayerStorage implements IClientStorage {
+export class Storage extends RelayerStorage implements IStorage {
   constructor(
     public logger: Logger,
     public keyValueStorage: IKeyValueStorage,

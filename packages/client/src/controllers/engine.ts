@@ -931,7 +931,7 @@ export class Engine extends IEngine {
             context: formatMessageContext(this.sequence.pending.context),
           });
           this.sequence.pending.delete(expiredEvent.topic, reason);
-        } else if (this.sequence.settled.sequences.has(expiredEvent.topic)) {
+        } else {
           const reason = ERROR.EXPIRED.format({
             context: formatMessageContext(this.sequence.settled.context),
           });

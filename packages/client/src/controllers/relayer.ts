@@ -19,7 +19,8 @@ import {
   IHeartBeat,
   IRelayerEncoder,
   RelayerOptions,
-  Storage,
+  IRelayerStorage,
+  SubscriptionActive,
 } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import { ERROR, formatMessageContext } from "@walletconnect/utils";
@@ -56,7 +57,7 @@ export class Relayer extends IRelayer {
 
   public logger: Logger;
 
-  public storage: Storage;
+  public storage: IRelayerStorage;
 
   public events = new EventEmitter();
 
@@ -114,7 +115,7 @@ export class Relayer extends IRelayer {
     await this.history.init();
     await this.provider.connect();
     await this.subscriptions.init();
-    await this.resubscribe();
+    await this.restoreSubscriptions();
   }
 
   public async publish(
@@ -336,23 +337,37 @@ export class Relayer extends IRelayer {
     await this.provider.connection.send(response);
   }
 
-  private async resubscribe() {
+  private async restoreSubscriptions() {
+    let subscriptions: SubscriptionActive[] = [];
+    try {
+      const persisted = await this.storage.getRelayerSubscriptions(this.subscriptions.context);
+      if (typeof persisted !== "undefined") subscriptions = persisted;
+    } catch (e) {
+      // ignore error
+    }
+    await this.resubscribe(subscriptions);
+  }
+
+  private async resubscribe(subscriptions: SubscriptionActive[]) {
+    if (!subscriptions.length) return;
     await Promise.all(
-      this.subscriptions.values.map(async subscription => {
+      subscriptions.map(async subscription => {
         const { topic, relay } = subscription;
         const params = { topic, relay };
         this.pending.set(params.topic, params);
         const id = await this.rpcSubscribe(params.topic, params.relay);
         await this.onSubscribe(id, params);
-        const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
-        await this.subscriptions.delete(subscription.id, reason);
+        if (this.subscriptions.ids.includes(subscription.id)) {
+          const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
+          await this.subscriptions.delete(subscription.id, reason);
+        }
       }),
     );
   }
 
   private async onConnect() {
     await this.subscriptions.enable();
-    await this.resubscribe();
+    await this.resubscribe(this.subscriptions.values);
   }
 
   private async onDisconnect() {

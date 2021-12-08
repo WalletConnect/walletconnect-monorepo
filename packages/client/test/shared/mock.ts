@@ -1,3 +1,4 @@
+import pino from "pino";
 import { EventEmitter } from "events";
 import * as encoding from "@walletconnect/encoding";
 import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
@@ -18,9 +19,26 @@ import {
   RELAYER_SUBSCRIPTION_SUFFIX,
 } from "../../src";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes } from "@walletconnect/types";
+import { IEncoder, IRelayerEncoder, RelayerTypes } from "@walletconnect/types";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { toMiliseconds } from "@walletconnect/utils";
+import { HeartBeat } from "../../src/controllers";
+
+export async function getMockHeartBeat() {
+  const heartbeat = new HeartBeat(pino());
+  await heartbeat.init();
+  return heartbeat;
+}
+
+export class MockEncoder implements IRelayerEncoder {
+  public async encode(topic: string, payload: JsonRpcPayload) {
+    return encoding.utf8ToHex(safeJsonStringify(payload));
+  }
+
+  public async decode(topic: string, message: string) {
+    return safeJsonParse(encoding.hexToUtf8(message));
+  }
+}
 
 export class MockWakuRelayer implements IEvents {
   public events = new EventEmitter();
@@ -31,8 +49,11 @@ export class MockWakuRelayer implements IEvents {
 
   public provider: IJsonRpcProvider;
 
+  public encoder: IRelayerEncoder;
+
   constructor(rpcUrl: string) {
     this.provider = new JsonRpcProvider(new WsConnection(rpcUrl));
+    this.encoder = new MockEncoder();
     this.registerEventListeners();
   }
 
@@ -69,7 +90,7 @@ export class MockWakuRelayer implements IEvents {
       method: this.jsonRpc.publish,
       params: {
         topic,
-        message: await this.encode(topic, payload),
+        message: await this.encoder.encode(topic, payload),
         ttl: RELAYER_DEFAULT_PUBLISH_TTL,
       },
     };
@@ -99,14 +120,6 @@ export class MockWakuRelayer implements IEvents {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async encode(topic: string, payload: JsonRpcPayload) {
-    return encoding.utf8ToHex(safeJsonStringify(payload));
-  }
-
-  private async decode(topic: string, message: string) {
-    return safeJsonParse(encoding.hexToUtf8(message));
-  }
-
   private async onPayload(payload: JsonRpcPayload) {
     if (isJsonRpcRequest(payload)) {
       if (!payload.method.endsWith(RELAYER_SUBSCRIPTION_SUFFIX)) return;
@@ -114,7 +127,7 @@ export class MockWakuRelayer implements IEvents {
       const { topic, message } = event.data;
       const payloadEvent = {
         topic,
-        payload: await this.decode(topic, message),
+        payload: await this.encoder.decode(topic, message),
       } as RelayerTypes.PayloadEvent;
       this.events.emit(event.id, payloadEvent);
       this.events.emit(RELAYER_EVENTS.payload, payloadEvent);

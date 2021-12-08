@@ -6,8 +6,6 @@ import { SubscriptionActive } from "./subscription";
 
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
-export type Storage = IClientStorage | IRelayerStorage;
-
 export interface StorageConfig {
   protocol: string;
   version: number;
@@ -57,7 +55,7 @@ export abstract class IRelayerStorage extends IBaseStorage {
   ): Promise<SubscriptionActive[] | undefined>;
 }
 
-export abstract class IClientStorage extends IRelayerStorage {
+export abstract class IStorage extends IRelayerStorage {
   constructor(
     public logger: Logger,
     public keyValueStorage: IKeyValueStorage,
