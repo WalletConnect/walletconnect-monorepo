@@ -3,6 +3,7 @@ import { IKeyValueStorage } from "keyvaluestorage";
 
 import { JsonRpcRecord } from "./history";
 import { SubscriptionActive } from "./subscription";
+import { Expiration } from ".";
 
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
@@ -74,4 +75,7 @@ export abstract class IStorage extends IRelayerStorage {
   public abstract getSequenceStore<Sequence = any>(
     context: string,
   ): Promise<Sequence[] | undefined>;
+
+  public abstract setExpirations(context: string, sequences: Expiration[]): Promise<void>;
+  public abstract getExpirations(context: string): Promise<Expiration[] | undefined>;
 }

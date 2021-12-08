@@ -57,6 +57,7 @@ export class Session extends ISession {
     await this.pending.init();
     await this.settled.init();
     await this.history.init();
+    await this.expirer.init();
   }
 
   public get(topic: string): Promise<SessionTypes.Settled> {

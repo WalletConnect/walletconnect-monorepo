@@ -23,6 +23,7 @@ export declare namespace RelayerTypes {
   }
 
   export interface UnsubscribeOptions {
+    id?: string;
     relay: ProtocolOptions;
   }
 

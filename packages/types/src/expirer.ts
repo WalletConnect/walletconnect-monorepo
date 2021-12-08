@@ -5,6 +5,7 @@ import { IClient } from "./client";
 
 export interface Expiration {
   id: string;
+  topic: string;
   expiry: number;
 }
 

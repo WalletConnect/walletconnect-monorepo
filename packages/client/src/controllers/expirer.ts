@@ -14,14 +14,29 @@ export class Expirer extends IExpirer {
 
   public name: string = EXPIRER_CONTEXT;
 
+  private cached: Expiration[] = [];
+
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
     this.client;
     this.logger = generateChildLogger(logger, this.name);
+    this.registerEventListeners();
   }
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get length(): number {
+    return this.expirations.size;
+  }
+
+  get topics(): string[] {
+    return Array.from(this.expirations.keys());
+  }
+
+  get values(): Expiration[] {
+    return Array.from(this.expirations.values());
   }
 
   public async init(): Promise<void> {
@@ -79,9 +94,54 @@ export class Expirer extends IExpirer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async initialize(): Promise<any> {
-    this.logger.trace(`Initialized`);
-    this.registerEventListeners();
+  private async persist() {
+    await this.client.storage.setSequenceStore(this.context, this.values);
+    this.events.emit(EXPIRER_EVENTS.sync);
+  }
+
+  private async restore() {
+    try {
+      const persisted = await this.client.storage.getSequenceStore(this.context);
+      if (typeof persisted === "undefined") return;
+      if (!persisted.length) return;
+      if (this.expirations.size) {
+        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
+          context: formatMessageContext(this.context),
+        });
+        this.logger.error(error.message);
+        throw new Error(error.message);
+      }
+      this.cached = persisted;
+      this.logger.debug(
+        `Successfully Restored expirations for ${formatMessageContext(this.context)}`,
+      );
+      this.logger.trace({ type: "method", method: "restore", expirations: this.values });
+    } catch (e) {
+      this.logger.debug(`Failed to Restore expirations for ${formatMessageContext(this.context)}`);
+      this.logger.error(e as any);
+    }
+  }
+
+  private async initialize() {
+    await this.restore();
+    this.reset();
+    this.onInit();
+  }
+
+  private reset() {
+    this.cached.forEach(expiration => this.expirations.set(expiration.topic, expiration));
+  }
+
+  private onInit() {
+    this.cached = [];
+    this.events.emit(EXPIRER_EVENTS.init);
+  }
+
+  private async isInitialized(): Promise<void> {
+    if (!this.cached.length) return;
+    return new Promise(resolve => {
+      this.events.once(EXPIRER_EVENTS.init, () => resolve());
+    });
   }
 
   private getExpiration(topic: string): Expiration {
@@ -117,5 +177,23 @@ export class Expirer extends IExpirer {
 
   private registerEventListeners(): void {
     this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkExpirations());
+    this.events.on(EXPIRER_EVENTS.created, (createdEvent: ExpirerEvents.Created) => {
+      const eventName = EXPIRER_EVENTS.created;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: createdEvent });
+      this.persist();
+    });
+    this.events.on(EXPIRER_EVENTS.expired, (expiredEvent: ExpirerEvents.Expired) => {
+      const eventName = EXPIRER_EVENTS.expired;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: expiredEvent });
+      this.persist();
+    });
+    this.events.on(EXPIRER_EVENTS.deleted, (deletedEvent: ExpirerEvents.Deleted) => {
+      const eventName = EXPIRER_EVENTS.deleted;
+      this.logger.info(`Emitting ${eventName}`);
+      this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
+      this.persist();
+    });
   }
 }

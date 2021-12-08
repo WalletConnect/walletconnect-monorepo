@@ -831,7 +831,7 @@ export class Engine extends IEngine {
     const id = await this.sequence.client.relayer.subscribe(topic, {
       relay: pending.relay,
     });
-    await this.sequence.expirer.set(topic, { id, expiry });
+    await this.sequence.expirer.set(topic, { id, topic, expiry });
   }
 
   private async subscribeNewSettled(createdEvent: StoreEvent.Created<SequenceTypes.Settled>) {
@@ -840,7 +840,7 @@ export class Engine extends IEngine {
     const id = await this.sequence.client.relayer.subscribe(topic, {
       relay: settled.relay,
     });
-    await this.sequence.expirer.set(topic, { id, expiry });
+    await this.sequence.expirer.set(topic, { id, topic, expiry });
   }
 
   private registerEventListeners(): void {

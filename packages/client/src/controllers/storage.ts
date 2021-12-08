@@ -10,6 +10,7 @@ import {
   StorageConfig,
   IBaseStorage,
   IRelayerStorage,
+  Expiration,
 } from "@walletconnect/types";
 import { ERROR, mapToObj, objToMap, formatStorageKeyName } from "@walletconnect/utils";
 
@@ -129,5 +130,16 @@ export class Storage extends RelayerStorage implements IStorage {
     const key = this.getStorageKey(context);
     const sequences = await this.keyValueStorage.getItem<Sequence[]>(key);
     return sequences;
+  }
+
+  public async setExpirations(context: string, expirations: Expiration[]): Promise<void> {
+    const key = this.getStorageKey(context);
+    await this.keyValueStorage.setItem<Expiration[]>(key, expirations);
+  }
+
+  public async getExpirations(context: string): Promise<Expiration[] | undefined> {
+    const key = this.getStorageKey(context);
+    const expirations = await this.keyValueStorage.getItem<Expiration[]>(key);
+    return expirations;
   }
 }
