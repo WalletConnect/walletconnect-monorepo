@@ -14,7 +14,7 @@ import {
   JsonRpcRecord,
 } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
-import { ERROR, formatRelayRpcUrl, formatMessageContext } from "@walletconnect/utils";
+import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import {
   IJsonRpcProvider,
   JsonRpcPayload,
@@ -23,15 +23,12 @@ import {
   formatJsonRpcResult,
   RequestArguments,
 } from "@walletconnect/jsonrpc-utils";
-import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
-import { WsConnection } from "@walletconnect/jsonrpc-ws-connection";
 
 import { Subscription } from "./subscription";
 import {
   HEARTBEAT_EVENTS,
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_PROTOCOL,
-  RELAYER_DEFAULT_RPC_URL,
   RELAYER_DEFAULT_PUBLISH_TTL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
@@ -56,12 +53,12 @@ export class Relayer extends IRelayer {
 
   public name: string = RELAYER_CONTEXT;
 
-  constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
+  constructor(public client: IClient, public logger: Logger, provider: IJsonRpcProvider) {
     super(client, logger);
     this.logger = generateChildLogger(logger, this.name);
     this.subscriptions = new Subscription(client, this.logger);
     this.history = new JsonRpcHistory(client, this.logger);
-    this.provider = this.setProvider(provider);
+    this.provider = provider;
     this.registerEventListeners();
   }
 
@@ -328,20 +325,6 @@ export class Relayer extends IRelayer {
     setTimeout(() => {
       this.provider.connect();
     }, RELAYER_RECONNECT_TIMEOUT);
-  }
-
-  private setProvider(provider?: string | IJsonRpcProvider): IJsonRpcProvider {
-    this.logger.debug(`Setting Relay Provider`);
-    this.logger.trace({ type: "method", method: "setProvider", provider: provider?.toString() });
-    const rpcUrl = formatRelayRpcUrl(
-      this.client.protocol,
-      this.client.version,
-      typeof provider === "string" ? provider : RELAYER_DEFAULT_RPC_URL,
-      this.client.apiKey,
-    );
-    return typeof provider !== "string" && typeof provider !== "undefined"
-      ? provider
-      : new JsonRpcProvider(new WsConnection(rpcUrl));
   }
 
   private checkQueue(): void {

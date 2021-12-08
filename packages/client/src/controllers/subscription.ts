@@ -8,15 +8,10 @@ import {
   SubscriptionEvent,
   SubscriptionActive,
 } from "@walletconnect/types";
-import { ERROR, formatMessageContext, toMiliseconds, calcExpiry } from "@walletconnect/utils";
+import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
-import {
-  HEARTBEAT_EVENTS,
-  SUBSCRIPTION_CONTEXT,
-  SUBSCRIPTION_DEFAULT_TTL,
-  SUBSCRIPTION_EVENTS,
-} from "../constants";
+import { SUBSCRIPTION_CONTEXT, SUBSCRIPTION_EVENTS } from "../constants";
 
 export class SubscriptionTopicMap implements ISubscriptionTopicMap {
   public map = new Map<string, string[]>();

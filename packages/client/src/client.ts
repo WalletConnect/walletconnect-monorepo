@@ -17,8 +17,9 @@ import {
   isSessionResponded,
   getAppMetadata,
   ERROR,
-  toMiliseconds,
+  formatRelayRpcUrl,
 } from "@walletconnect/utils";
+import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
 import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import {
   generateChildLogger,
@@ -37,6 +38,7 @@ import {
   PAIRING_EVENTS,
   PAIRING_SIGNAL_METHOD_URI,
   RELAYER_DEFAULT_PROTOCOL,
+  RELAYER_DEFAULT_RPC_URL,
   SESSION_EMPTY_PERMISSIONS,
   SESSION_EMPTY_RESPONSE,
   SESSION_EMPTY_STATE,
@@ -47,6 +49,8 @@ import {
 import { Crypto } from "./controllers/crypto";
 import { Storage } from "./controllers/storage";
 import { HeartBeat } from "./controllers/heartbeat";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 
 export class Client extends IClient {
   init(): Promise<void> {
@@ -100,10 +104,18 @@ export class Client extends IClient {
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
 
+    const relayProvider = formatRelayProvider(
+      this.protocol,
+      this.version,
+      opts?.relayProvider,
+      this.apiKey,
+    );
+
+    this.relayer = new Relayer(this, this.logger, relayProvider);
+
     const keyValueStorage =
       opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
-    this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
     this.storage = new Storage(this, this.logger, keyValueStorage);
 
     this.pairing = new Pairing(this, this.logger);
@@ -440,4 +452,21 @@ function formatPairingProposal(uri: string): PairingTypes.Proposal {
     },
     ttl: PAIRING_DEFAULT_TTL,
   };
+}
+
+function formatRelayProvider(
+  protocol: string,
+  version: number,
+  provider?: string | IJsonRpcProvider,
+  apiKey?: string,
+): IJsonRpcProvider {
+  const rpcUrl = formatRelayRpcUrl(
+    protocol,
+    version,
+    typeof provider === "string" ? provider : RELAYER_DEFAULT_RPC_URL,
+    apiKey,
+  );
+  return typeof provider !== "string" && typeof provider !== "undefined"
+    ? provider
+    : new JsonRpcProvider(new WsConnection(rpcUrl));
 }
