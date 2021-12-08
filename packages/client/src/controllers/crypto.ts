@@ -119,14 +119,14 @@ export class Crypto implements ICrypto {
     return result;
   }
 
-  public async encodeJsonRpc(topic: string, payload: JsonRpcPayload): Promise<string> {
+  public async encode(topic: string, payload: JsonRpcPayload): Promise<string> {
     const message = safeJsonStringify(payload);
     const hasKeys = await this.hasKeys(topic);
     const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
     return result;
   }
 
-  public async decodeJsonRpc(topic: string, encrypted: string): Promise<JsonRpcPayload> {
+  public async decode(topic: string, encrypted: string): Promise<JsonRpcPayload> {
     const hasKeys = await this.hasKeys(topic);
     const message = hasKeys ? await this.decrypt(topic, encrypted) : encoding.hexToUtf8(encrypted);
     const payload = safeJsonParse(message);

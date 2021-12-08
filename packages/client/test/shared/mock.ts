@@ -69,7 +69,7 @@ export class MockWakuRelayer implements IEvents {
       method: this.jsonRpc.publish,
       params: {
         topic,
-        message: await this.encodeJsonRpc(topic, payload),
+        message: await this.encode(topic, payload),
         ttl: RELAYER_DEFAULT_PUBLISH_TTL,
       },
     };
@@ -99,11 +99,11 @@ export class MockWakuRelayer implements IEvents {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async encodeJsonRpc(topic: string, payload: JsonRpcPayload) {
+  private async encode(topic: string, payload: JsonRpcPayload) {
     return encoding.utf8ToHex(safeJsonStringify(payload));
   }
 
-  private async decodeJsonRpc(topic: string, message: string) {
+  private async decode(topic: string, message: string) {
     return safeJsonParse(encoding.hexToUtf8(message));
   }
 
@@ -114,7 +114,7 @@ export class MockWakuRelayer implements IEvents {
       const { topic, message } = event.data;
       const payloadEvent = {
         topic,
-        payload: await this.decodeJsonRpc(topic, message),
+        payload: await this.decode(topic, message),
       } as RelayerTypes.PayloadEvent;
       this.events.emit(event.id, payloadEvent);
       this.events.emit(RELAYER_EVENTS.payload, payloadEvent);
