@@ -9,4 +9,4 @@ export * from "./relayer";
 export * from "./session";
 export * from "./storage";
 export * from "./store";
-export * from "./subscription";
+export * from "./subscriber";

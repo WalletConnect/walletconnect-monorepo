@@ -2,8 +2,8 @@ import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
 
 import { JsonRpcRecord } from "./history";
-import { SubscriptionActive } from "./subscription";
-import { Expiration } from ".";
+import { SubscriberTypes } from "./subscriber";
+import { Expiration } from "./expirer";
 
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
@@ -49,11 +49,11 @@ export abstract class IRelayerStorage extends IBaseStorage {
 
   public abstract setRelayerSubscriptions(
     context: string,
-    subscriptions: SubscriptionActive[],
+    subscriptions: SubscriberTypes.Active[],
   ): Promise<void>;
   public abstract getRelayerSubscriptions(
     context: string,
-  ): Promise<SubscriptionActive[] | undefined>;
+  ): Promise<SubscriberTypes.Active[] | undefined>;
 }
 
 export abstract class IStorage extends IRelayerStorage {

@@ -1,6 +1,4 @@
-import pino from "pino";
 import { EventEmitter } from "events";
-import * as encoding from "@walletconnect/encoding";
 import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
@@ -12,11 +10,11 @@ import {
 } from "@walletconnect/jsonrpc-types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import {
-  RELAYER_DEFAULT_PUBLISH_TTL,
+  PUBLISHER_DEFAULT_TTL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
-  RELAYER_SUBSCRIPTION_SUFFIX,
+  RELAYER_SUBSCRIBER_SUFFIX,
 } from "../../src";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { IRelayerEncoder, RelayerTypes } from "@walletconnect/types";
@@ -74,7 +72,7 @@ export class MockWakuRelayer implements IEvents {
       params: {
         topic,
         message: await this.encoder.encode(topic, payload),
-        ttl: RELAYER_DEFAULT_PUBLISH_TTL,
+        ttl: PUBLISHER_DEFAULT_TTL,
       },
     };
     return this.provider.request(request);
@@ -105,7 +103,7 @@ export class MockWakuRelayer implements IEvents {
 
   private async onPayload(payload: JsonRpcPayload) {
     if (isJsonRpcRequest(payload)) {
-      if (!payload.method.endsWith(RELAYER_SUBSCRIPTION_SUFFIX)) return;
+      if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
       const payloadEvent = {

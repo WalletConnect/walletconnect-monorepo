@@ -6,7 +6,7 @@ import {
   IStorage,
   JsonRpcRecord,
   StorageKeyMap,
-  SubscriptionActive,
+  SubscriberTypes,
   StorageConfig,
   IBaseStorage,
   IRelayerStorage,
@@ -85,15 +85,17 @@ export class RelayerStorage extends BaseStorage implements IRelayerStorage {
 
   public async setRelayerSubscriptions(
     context: string,
-    subscriptions: SubscriptionActive[],
+    subscriptions: SubscriberTypes.Active[],
   ): Promise<void> {
     const key = this.getStorageKey(context);
-    await this.keyValueStorage.setItem<SubscriptionActive[]>(key, subscriptions);
+    await this.keyValueStorage.setItem<SubscriberTypes.Active[]>(key, subscriptions);
   }
 
-  public async getRelayerSubscriptions(context: string): Promise<SubscriptionActive[] | undefined> {
+  public async getRelayerSubscriptions(
+    context: string,
+  ): Promise<SubscriberTypes.Active[] | undefined> {
     const key = this.getStorageKey(context);
-    const subscriptions = await this.keyValueStorage.getItem<SubscriptionActive[]>(key);
+    const subscriptions = await this.keyValueStorage.getItem<SubscriberTypes.Active[]>(key);
     return subscriptions;
   }
 }

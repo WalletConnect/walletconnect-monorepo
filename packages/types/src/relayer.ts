@@ -3,9 +3,10 @@ import { IKeyValueStorage } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IRelayerStorage } from "./storage";
-import { ISubscription, SubscriptionParams } from "./subscription";
+import { ISubscriber } from "./subscriber";
 import { IJsonRpcHistory } from "./history";
 import { IHeartBeat } from "./heartbeat";
+import { IPublisher } from "./publisher";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -33,12 +34,6 @@ export declare namespace RelayerTypes {
     topic: string;
     payload: JsonRpcPayload;
   }
-}
-
-export interface PublishParams {
-  topic: string;
-  payload: JsonRpcPayload;
-  opts: Required<RelayerTypes.PublishOptions>;
 }
 
 export abstract class IRelayerEncoder {
@@ -74,11 +69,9 @@ export abstract class IRelayer extends IEvents {
 
   public abstract encoder: IRelayerEncoder;
 
-  public abstract queue: Map<number, PublishParams>;
+  public abstract subscriber: ISubscriber;
 
-  public abstract pending: Map<string, SubscriptionParams>;
-
-  public abstract subscriptions: ISubscription;
+  public abstract publisher: IPublisher;
 
   public abstract history: IJsonRpcHistory;
 

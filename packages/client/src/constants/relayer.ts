@@ -1,6 +1,4 @@
-import { ONE_SECOND, SIX_HOURS } from "./time";
-
-export const RELAYER_DEFAULT_PUBLISH_TTL = SIX_HOURS;
+import { ONE_SECOND } from "./time";
 
 export const RELAYER_DEFAULT_PROTOCOL = "waku";
 
@@ -17,7 +15,7 @@ export const RELAYER_EVENTS = {
   error: "relayer_error",
 };
 
-export const RELAYER_SUBSCRIPTION_SUFFIX = "_subscription";
+export const RELAYER_SUBSCRIBER_SUFFIX = "_subscription";
 
 export const RELAYER_PROVIDER_EVENTS = {
   payload: "payload",

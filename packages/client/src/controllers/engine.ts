@@ -36,7 +36,7 @@ import {
 
 import {
   STORE_EVENTS,
-  SUBSCRIPTION_EVENTS,
+  SUBSCRIBER_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   FIVE_MINUTES,
   THIRTY_SECONDS,
@@ -924,7 +924,7 @@ export class Engine extends IEngine {
     );
     // Expirer Events
     this.sequence.expirer.on(
-      SUBSCRIPTION_EVENTS.expired,
+      SUBSCRIBER_EVENTS.expired,
       async (expiredEvent: ExpirerEvents.Expired) => {
         if (this.sequence.pending.sequences.has(expiredEvent.topic)) {
           const reason = ERROR.EXPIRED.format({
