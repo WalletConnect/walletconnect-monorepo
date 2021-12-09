@@ -55,6 +55,7 @@ export class Expirer extends IExpirer {
   }
 
   public async set(topic: string, expiration: Expiration): Promise<void> {
+    await this.isInitialized();
     this.expirations.set(topic, expiration);
     this.checkExpiry(topic, expiration);
     this.events.emit(EXPIRER_EVENTS.created, {
@@ -64,10 +65,12 @@ export class Expirer extends IExpirer {
   }
 
   public async get(topic: string): Promise<Expiration> {
+    await this.isInitialized();
     return this.getExpiration(topic);
   }
 
   public async del(topic: string): Promise<void> {
+    await this.isInitialized();
     const expiration = this.getExpiration(topic);
     this.expirations.delete(topic);
     this.events.emit(EXPIRER_EVENTS.deleted, {

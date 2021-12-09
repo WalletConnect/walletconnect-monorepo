@@ -12,11 +12,13 @@ export const STORAGE_KEYS: StorageKeyMap = {
     pending: "session:pending",
     settled: "session:settled",
     history: "session:history",
+    expirer: "session:expirer",
   },
   pairing: {
     pending: "pairing:pending",
     settled: "pairing:settled",
     history: "pairing:history",
+    expirer: "pairing:expirer",
   },
   relayer: {
     history: "relayer:history",

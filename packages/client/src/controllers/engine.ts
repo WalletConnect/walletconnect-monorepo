@@ -828,19 +828,19 @@ export class Engine extends IEngine {
   private async subscribeNewPending(createdEvent: StoreEvent.Created<SequenceTypes.Pending>) {
     const { topic, sequence: pending } = createdEvent;
     const expiry = calcExpiry(ONE_DAY);
-    const id = await this.sequence.client.relayer.subscribe(topic, {
+    await this.sequence.client.relayer.subscribe(topic, {
       relay: pending.relay,
     });
-    await this.sequence.expirer.set(topic, { id, topic, expiry });
+    await this.sequence.expirer.set(topic, { topic, expiry });
   }
 
   private async subscribeNewSettled(createdEvent: StoreEvent.Created<SequenceTypes.Settled>) {
     const { topic, sequence: settled } = createdEvent;
     const { expiry } = settled;
-    const id = await this.sequence.client.relayer.subscribe(topic, {
+    await this.sequence.client.relayer.subscribe(topic, {
       relay: settled.relay,
     });
-    await this.sequence.expirer.set(topic, { id, topic, expiry });
+    await this.sequence.expirer.set(topic, { topic, expiry });
   }
 
   private registerEventListeners(): void {
