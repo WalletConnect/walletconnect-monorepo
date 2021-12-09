@@ -159,7 +159,6 @@ export class Subscriber extends ISubscriber {
 
   private async enable(): Promise<void> {
     if (!this.cached.length) return;
-    this.reset();
     this.onEnable();
   }
 
@@ -168,49 +167,16 @@ export class Subscriber extends ISubscriber {
     this.onDisable();
   }
 
-  private reset() {
-    this.cached.map(async subscription => this.setSubscription(subscription.id, subscription));
-  }
-
-  private async set(id: string, subscription: SubscriberTypes.Active): Promise<void> {
-    await this.isEnabled();
-    if (this.subscriptions.has(id)) return;
-    this.logger.debug(`Setting subscription`);
-    this.logger.trace({ type: "method", method: "set", id, subscription });
-    this.setSubscription(id, subscription);
-    this.events.emit(SUBSCRIBER_EVENTS.created, subscription);
-  }
-
-  private async get(id: string): Promise<SubscriberTypes.Active> {
-    await this.isEnabled();
-    this.logger.debug(`Getting subscription`);
-    this.logger.trace({ type: "method", method: "get", id });
-    const subscription = this.getSubscription(id);
-    return subscription;
-  }
-
-  private async exists(id: string, topic: string): Promise<boolean> {
+  private async hasSubscription(id: string, topic: string): Promise<boolean> {
     await this.isEnabled();
     let result = false;
     try {
-      const subscription = this.getSubscription(id);
+      const subscription = await this.getSubscription(id);
       result = subscription.topic === topic;
     } catch (e) {
       // ignore error
     }
     return result;
-  }
-
-  private async delete(id: string, reason: Reason): Promise<void> {
-    await this.isEnabled();
-    this.logger.debug(`Deleting subscription`);
-    this.logger.trace({ type: "method", method: "delete", id, reason });
-    const subscription = this.getSubscription(id);
-    this.deleteSubscription(id, subscription);
-    this.events.emit(SUBSCRIBER_EVENTS.deleted, {
-      ...subscription,
-      reason,
-    } as SubscriberEvents.Deleted);
   }
 
   private onEnable() {
@@ -287,24 +253,32 @@ export class Subscriber extends ISubscriber {
 
   private async onSubscribe(id: string, params: SubscriberTypes.Params) {
     const subscription = { id, ...params };
-    await this.set(id, subscription);
+    await this.setSubscription(id, subscription);
     this.pending.delete(params.topic);
   }
 
   private async onUnsubscribe(topic: string, id: string, reason: Reason) {
     this.events.removeAllListeners(id);
-    if (await this.exists(id, topic)) {
-      await this.delete(id, reason);
+    if (await this.hasSubscription(id, topic)) {
+      await this.deleteSubscription(id, reason);
     }
     await this.relayer.history.delete(topic);
   }
 
-  private setSubscription(id: string, subscription: SubscriberTypes.Active): void {
+  private async setSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {
+    // await this.isEnabled();
+    if (this.subscriptions.has(id)) return;
+    this.logger.debug(`Setting subscription`);
+    this.logger.trace({ type: "method", method: "setSubscription", id, subscription });
     this.subscriptions.set(id, { ...subscription });
     this.topicMap.set(subscription.topic, id);
+    this.events.emit(SUBSCRIBER_EVENTS.created, subscription);
   }
 
-  private getSubscription(id: string): SubscriberTypes.Active {
+  private async getSubscription(id: string): Promise<SubscriberTypes.Active> {
+    await this.isEnabled();
+    this.logger.debug(`Getting subscription`);
+    this.logger.trace({ type: "method", method: "getSubscription", id });
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
       const error = ERROR.NO_MATCHING_ID.format({
@@ -317,9 +291,17 @@ export class Subscriber extends ISubscriber {
     return subscription;
   }
 
-  private deleteSubscription(id: string, subscription: SubscriberTypes.Active): void {
+  private async deleteSubscription(id: string, reason: Reason): Promise<void> {
+    await this.isEnabled();
+    this.logger.debug(`Deleting subscription`);
+    this.logger.trace({ type: "method", method: "deleteSubscription", id, reason });
+    const subscription = await this.getSubscription(id);
     this.subscriptions.delete(id);
     this.topicMap.delete(subscription.topic, id);
+    this.events.emit(SUBSCRIBER_EVENTS.deleted, {
+      ...subscription,
+      reason,
+    } as SubscriberEvents.Deleted);
   }
 
   private async persist() {
@@ -327,40 +309,35 @@ export class Subscriber extends ISubscriber {
     this.events.emit(SUBSCRIBER_EVENTS.sync);
   }
 
-  // private async restore() {
-  //   try {
-  //     const persisted = await this.relayer.storage.getRelayerSubscriptions(this.context);
-  //     if (typeof persisted === "undefined") return;
-  //     if (!persisted.length) return;
-  //     if (this.subscriptions.size) {
-  //       const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-  //         context: formatMessageContext(this.context),
-  //       });
-  //       this.logger.error(error.message);
-  //       throw new Error(error.message);
-  //     }
-  //     this.cached = persisted;
-  //     this.logger.debug(
-  //       `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
-  //     );
-  //     this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
-  //   } catch (e) {
-  //     this.logger.debug(
-  //       `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
-  //     );
-  //     this.logger.error(e as any);
-  //   }
-  // }
-
-  private async initialize() {
-    // await this.restore();
-    this.restoreSubscriptions();
-    this.reset();
-    this.onInit();
+  private async restore() {
+    try {
+      const persisted = await this.relayer.storage.getRelayerSubscriptions(this.context);
+      if (typeof persisted === "undefined") return;
+      if (!persisted.length) return;
+      if (this.subscriptions.size) {
+        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
+          context: formatMessageContext(this.context),
+        });
+        this.logger.error(error.message);
+        throw new Error(error.message);
+      }
+      this.cached = persisted;
+      this.logger.debug(
+        `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
+      );
+      this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
+    } catch (e) {
+      this.logger.debug(
+        `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
+      );
+      this.logger.error(e as any);
+    }
   }
 
-  private onInit() {
-    this.onEnable();
+  private async initialize() {
+    await this.restore();
+    await this.reset();
+    await this.enable();
   }
 
   private async isEnabled(): Promise<void> {
@@ -370,37 +347,26 @@ export class Subscriber extends ISubscriber {
     });
   }
 
-  private async restoreSubscriptions() {
-    let subscriptions: SubscriberTypes.Active[] = [];
-    try {
-      const persisted = await this.relayer.storage.getRelayerSubscriptions(this.context);
-      if (typeof persisted !== "undefined") subscriptions = persisted;
-    } catch (e) {
-      // ignore error
-    }
-    await this.resubscribe(subscriptions);
+  private async reset() {
+    if (!this.cached.length) return;
+    await Promise.all(this.cached.map(async subscription => this.resubscribe(subscription)));
   }
 
-  private async resubscribe(subscriptions: SubscriberTypes.Active[]) {
-    if (!subscriptions.length) return;
-    await Promise.all(
-      subscriptions.map(async subscription => {
-        const { topic, relay } = subscription;
-        const params = { topic, relay };
-        this.pending.set(params.topic, params);
-        const id = await this.rpcSubscribe(params.topic, params.relay);
-        await this.onSubscribe(id, params);
-        if (this.ids.includes(subscription.id)) {
-          const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
-          await this.delete(subscription.id, reason);
-        }
-      }),
-    );
+  private async resubscribe(subscription: SubscriberTypes.Active) {
+    const { topic, relay } = subscription;
+    const params = { topic, relay };
+    this.pending.set(params.topic, params);
+    const id = await this.rpcSubscribe(params.topic, params.relay);
+    await this.onSubscribe(id, params);
+    if (this.ids.includes(subscription.id)) {
+      const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
+      await this.deleteSubscription(subscription.id, reason);
+    }
   }
 
   private async onConnect() {
+    await this.reset();
     await this.enable();
-    await this.resubscribe(this.values);
   }
 
   private async onDisconnect() {
