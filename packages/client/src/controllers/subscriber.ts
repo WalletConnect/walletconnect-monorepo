@@ -252,8 +252,12 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onSubscribe(id: string, params: SubscriberTypes.Params) {
-    const subscription = { id, ...params };
-    await this.setSubscription(id, subscription);
+    await this.setSubscription(id, { ...params, id });
+    this.pending.delete(params.topic);
+  }
+
+  private async onResubscribe(id: string, params: SubscriberTypes.Params) {
+    await this.addSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
   }
 
@@ -266,10 +270,14 @@ export class Subscriber extends ISubscriber {
   }
 
   private async setSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {
-    // await this.isEnabled();
+    await this.isEnabled();
     if (this.subscriptions.has(id)) return;
     this.logger.debug(`Setting subscription`);
     this.logger.trace({ type: "method", method: "setSubscription", id, subscription });
+    await this.addSubscription(id, subscription);
+  }
+
+  private async addSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {
     this.subscriptions.set(id, { ...subscription });
     this.topicMap.set(subscription.topic, id);
     this.events.emit(SUBSCRIBER_EVENTS.created, subscription);
@@ -357,7 +365,7 @@ export class Subscriber extends ISubscriber {
     const params = { topic, relay };
     this.pending.set(params.topic, params);
     const id = await this.rpcSubscribe(params.topic, params.relay);
-    await this.onSubscribe(id, params);
+    await this.onResubscribe(id, params);
     if (this.ids.includes(subscription.id)) {
       const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
       await this.deleteSubscription(subscription.id, reason);
