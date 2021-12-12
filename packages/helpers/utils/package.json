@@ -67,8 +67,7 @@
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/types": "^1.6.6",
     "bn.js": "4.11.8",
-    "js-sha3": "0.8.0",
-    "query-string": "6.13.5"
+    "js-sha3": "0.8.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
