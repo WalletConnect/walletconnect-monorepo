@@ -1,4 +1,3 @@
-import BN from "bn.js";
 import * as encoding from "@walletconnect/encoding";
 
 // -- ArrayBuffer ------------------------------------------ //
@@ -60,7 +59,7 @@ export function convertUtf8ToHex(utf8: string, noPrefix?: boolean): string {
 }
 
 export function convertUtf8ToNumber(utf8: string): number {
-  return new BN(utf8, 10).toNumber();
+  return parseInt(utf8, 10);
 }
 
 // -- Hex -------------------------------------------------- //
@@ -78,7 +77,7 @@ export function convertHexToUtf8(hex: string): string {
 }
 
 export function convertHexToNumber(hex: string): number {
-  return new BN(encoding.removeHexPrefix(hex), "hex").toNumber();
+  return parseInt(hex, 16);
 }
 
 // -- Number ----------------------------------------------- //
@@ -92,10 +91,10 @@ export function convertNumberToArrayBuffer(num: number): ArrayBuffer {
 }
 
 export function convertNumberToUtf8(num: number): string {
-  return new BN(num).toString();
+  return BigInt(num).toString();
 }
 
 export function convertNumberToHex(num: number | string, noPrefix?: boolean): string {
-  const hex = encoding.removeHexPrefix(encoding.sanitizeHex(new BN(num).toString(16)));
+  const hex = encoding.removeHexPrefix(encoding.sanitizeHex(BigInt(num).toString(16)));
   return noPrefix ? hex : encoding.addHexPrefix(hex);
 }
