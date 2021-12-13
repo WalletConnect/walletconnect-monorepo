@@ -3822,7 +3822,7 @@ let
     meta = {
       description = "Relay Server for WalletConnect Protocol";
       homepage = "https://github.com/walletconnect/walletconnect-monorepo/";
-      license = "LGPL-3.0";
+      license = "Apache-2.0";
     };
     production = false;
     bypassCache = true;

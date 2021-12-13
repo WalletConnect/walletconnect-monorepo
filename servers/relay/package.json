@@ -3,9 +3,9 @@
   "description": "Relay Server for WalletConnect Protocol",
   "version": "1.0.1",
   "private": true,
-  "author": "WalletConnect Labs <walletconnectlabs.com>",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
-  "license": "LGPL-3.0",
+  "license": "Apache-2.0",
   "keywords": [
     "walletconnect",
     "ethereum",

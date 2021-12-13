@@ -14,4 +14,4 @@ Also available quick start for [Dapps](https://docs.walletconnect.com/quick-star
 
 ## License
 
-LGPL-3.0
+Apache 2.0

@@ -65,4 +65,4 @@ test-staging         tests client against staging.walletconnect.com
 
 ## License
 
-LGPL-3.0
+Apache 2.0

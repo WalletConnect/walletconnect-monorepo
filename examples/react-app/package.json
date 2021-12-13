@@ -8,8 +8,8 @@
     "web3",
     "crypto"
   ],
-  "author": "WalletConnect Labs <walletconnectlabs.com>",
-  "license": "LGPL-3.0",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "license": "MIT",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
