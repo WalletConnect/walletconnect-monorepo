@@ -14,6 +14,7 @@ const fa: TextMap = {
   loading: "...بارگذاری",
   something_went_wrong: "مشکلی پیش آمد",
   no_supported_wallets: "هنوز هیچ کیف پول پشتیبانی شده ای وجود ندارد",
+  no_wallets_found: "هیچ کیف پولی پیدا نشد",
 };
 
 export default fa;

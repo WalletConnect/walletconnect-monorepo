@@ -14,6 +14,7 @@ const zh: TextMap = {
   loading: "正在加载...",
   something_went_wrong: "出了问题",
   no_supported_wallets: "目前还没有支持的钱包",
+  no_wallets_found: "没有找到钱包",
 };
 
 export default zh;

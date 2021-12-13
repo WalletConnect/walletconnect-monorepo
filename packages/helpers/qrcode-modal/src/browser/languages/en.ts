@@ -14,6 +14,7 @@ const en: TextMap = {
   loading: "Loading...",
   something_went_wrong: "Something went wrong",
   no_supported_wallets: "There are no supported wallets yet",
+  no_wallets_found: "No wallets found",
 };
 
 export default en;

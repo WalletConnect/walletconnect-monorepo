@@ -26,23 +26,52 @@ const LINKS_PER_PAGE = 12;
 
 function LinkDisplay(props: LinkDisplayProps) {
   const android = isAndroid();
+  const [input, setInput] = React.useState("");
+  const [filter, setFilter] = React.useState("");
   const [page, setPage] = React.useState(1);
-  const links = props.links;
+  const links = filter
+    ? props.links.filter(link => link.name.toLowerCase().includes(filter.toLowerCase()))
+    : props.links;
   const errorMessage = props.errorMessage;
-  const grid = links.length > GRID_MIN_COUNT;
+  const grid = filter || links.length > GRID_MIN_COUNT;
   const pages = Math.ceil(links.length / LINKS_PER_PAGE);
   const range = [(page - 1) * LINKS_PER_PAGE + 1, page * LINKS_PER_PAGE];
   const pageLinks = links.length
     ? links.filter((_, index) => index + 1 >= range[0] && index + 1 <= range[1])
     : [];
+  const hasPaging = !!(!android && pages > 1);
+  let filterTimeout: any = undefined;
+  function handleInput(e) {
+    setInput(e.target.value);
+    clearTimeout(filterTimeout);
+    if (e.target.value) {
+      filterTimeout = setTimeout(() => {
+        setFilter(e.target.value);
+        setPage(1);
+      }, 1000);
+    } else {
+      setInput("");
+      setFilter("");
+      setPage(1);
+    }
+  }
+
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
         {android ? props.text.connect_mobile_wallet : props.text.choose_preferred_wallet}
       </p>
+      {!android && (
+        <input
+          className={`walletconnect-search__input`}
+          placeholder="Search"
+          value={input}
+          onChange={handleInput}
+        />
+      )}
       <div
         className={`walletconnect-connect__buttons__wrapper${
-          android ? "__android" : grid ? "__wrap" : ""
+          android ? "__android" : grid && links.length ? "__wrap" : ""
         }`}
       >
         {!android ? (
@@ -76,7 +105,13 @@ function LinkDisplay(props: LinkDisplayProps) {
             })
           ) : (
             <>
-              <p>{errorMessage.length ? props.errorMessage : props.text.loading}</p>
+              <p>
+                {errorMessage.length
+                  ? props.errorMessage
+                  : !!props.links.length && !links.length
+                  ? props.text.no_wallets_found
+                  : props.text.loading}
+              </p>
             </>
           )
         ) : (
@@ -93,7 +128,7 @@ function LinkDisplay(props: LinkDisplayProps) {
           />
         )}
       </div>
-      {!!(!android && pages > 1) && (
+      {hasPaging && (
         <div className="walletconnect-modal__footer">
           {Array(pages)
             .fill(0)
