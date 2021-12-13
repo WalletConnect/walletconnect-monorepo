@@ -18,13 +18,13 @@ import {
   MockWakuRelayer,
   TEST_RELAY_URL,
   TEST_CLIENT_OPTIONS,
-  TEST_API_KEY,
+  TEST_PROJECT_ID,
 } from "./shared";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes, SubscriberEvents } from "@walletconnect/types";
 
 describe("Relayer", function() {
-  const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?apiKey=${TEST_API_KEY}`);
+  const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?projectId=${TEST_PROJECT_ID}`);
   this.timeout(TEST_TIMEOUT_DURATION);
   before(async () => {
     await waku.init();

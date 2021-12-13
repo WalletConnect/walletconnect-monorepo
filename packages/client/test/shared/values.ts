@@ -16,12 +16,14 @@ export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
   : "ws://localhost:5555";
 
-export const TEST_API_KEY = process.env.TEST_API_KEY ? process.env.TEST_API_KEY : undefined;
+export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
+  ? process.env.TEST_PROJECT_ID
+  : undefined;
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
   logger: "fatal",
   relayUrl: TEST_RELAY_URL,
-  apiKey: TEST_API_KEY,
+  projectId: TEST_PROJECT_ID,
 };
 
 export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");

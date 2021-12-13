@@ -57,7 +57,7 @@ export interface RelayerOptions {
   keyValueStorage?: IKeyValueStorage;
   logger?: string | Logger;
   relayUrl?: string;
-  apiKey?: string;
+  projectId?: string;
 }
 
 export abstract class IRelayer extends IEvents {

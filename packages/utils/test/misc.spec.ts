@@ -18,7 +18,7 @@ const EXPECTED_RPC_URL_1 =
   TEST_DEFAULT_RPC_URL + `?env=${ENV}&protocol=${PROTOCOL}&version=${VERSION}`;
 
 const EXPECTED_RPC_URL_2 =
-  TEST_DEFAULT_RPC_URL + `?apiKey=${API_KEY}&env=${ENV}&protocol=${PROTOCOL}&version=${VERSION}`;
+  TEST_DEFAULT_RPC_URL + `?env=${ENV}&projectId=${API_KEY}&protocol=${PROTOCOL}&version=${VERSION}`;
 
 const SEVEN_DAYS = 604800;
 

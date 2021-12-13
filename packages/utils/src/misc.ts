@@ -84,11 +84,11 @@ export function formatRelayRpcUrl(
   protocol: string,
   version: number,
   url: string,
-  apiKey?: string,
+  projectId?: string,
 ): string {
   const splitUrl = url.split("?");
   const metadata = getRelayClientMetadata(protocol, version);
-  const params = apiKey ? { ...metadata, apiKey } : metadata;
+  const params = projectId ? { ...metadata, projectId } : metadata;
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }

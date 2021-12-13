@@ -69,7 +69,7 @@ export class Client extends IClient {
   public readonly controller: boolean;
   public metadata: AppMetadata | undefined;
 
-  public apiKey: string | undefined;
+  public projectId: string | undefined;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
@@ -87,7 +87,7 @@ export class Client extends IClient {
     this.name = opts?.name || CLIENT_DEFAULT.name;
     this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
-    this.apiKey = opts?.apiKey;
+    this.projectId = opts?.projectId;
 
     this.logger = generateChildLogger(logger, this.name);
 
@@ -110,7 +110,7 @@ export class Client extends IClient {
       this.protocol,
       this.version,
       opts?.relayUrl || CLIENT_DEFAULT.relayUrl,
-      this.apiKey,
+      this.projectId,
     );
 
     this.relayer = new Relayer({

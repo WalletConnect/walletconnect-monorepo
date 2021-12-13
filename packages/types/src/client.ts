@@ -13,7 +13,7 @@ import { IEncoder } from "./encoder";
 
 export interface ClientOptions {
   name?: string;
-  apiKey?: string;
+  projectId?: string;
   controller?: boolean;
   metadata?: AppMetadata;
   relayUrl?: string;
@@ -46,7 +46,7 @@ export abstract class IClient extends IEvents {
   public abstract readonly controller: boolean;
   public abstract metadata: AppMetadata | undefined;
 
-  public abstract apiKey: string | undefined;
+  public abstract projectId: string | undefined;
 
   constructor(opts?: ClientOptions) {
     super();

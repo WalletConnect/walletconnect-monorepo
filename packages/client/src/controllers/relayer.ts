@@ -93,7 +93,7 @@ export class Relayer extends IRelayer {
       this.protocol,
       this.version,
       opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL,
-      opts?.apiKey,
+      opts?.projectId,
     );
     this.provider = new JsonRpcProvider(new WsConnection(rpcUrl));
     this.history = new JsonRpcHistory(this.logger, this.storage);
