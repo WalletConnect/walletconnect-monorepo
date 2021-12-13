@@ -19,7 +19,7 @@ export const DEFAULT_TEST_CHAINS = [
 ];
 export const DEFAULT_CHAINS = [...DEFAULT_MAIN_CHAINS, ...DEFAULT_TEST_CHAINS];
 
-export const DEFAULT_API_KEY = process.env.REACT_APP_API_KEY;
+export const DEFAULT_PROJECT_ID = process.env.REACT_APP_API_KEY;
 
 export const DEFAULT_RELAY_URL = process.env.REACT_APP_RELAY_URL;
 

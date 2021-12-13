@@ -107,7 +107,7 @@ describe("@walletconnect/cosmos-provider", () => {
     const wallet = await CosmosWallet.init(TEST_COSMOS_KEYPAIR.privateKey);
     const walletClient = await Client.init({
       controller: true,
-      relayProvider: TEST_RELAY_URL,
+      relayUrl: TEST_RELAY_URL,
       metadata: TEST_WALLET_METADATA,
     });
     const provider = new CosmosProvider({
@@ -118,7 +118,7 @@ describe("@walletconnect/cosmos-provider", () => {
         },
       },
       client: {
-        relayProvider: TEST_RELAY_URL,
+        relayUrl: TEST_RELAY_URL,
         metadata: TEST_APP_METADATA,
       },
     });

@@ -9,7 +9,12 @@ import config from "../config";
 
 export async function testRelayProvider(url: string, url2?: string) {
   // client opts
-  const clientAOpts = { name: "A", relayProvider: getWsUrl(url), metadata, apiKey: config.apiKey };
+  const clientAOpts = {
+    name: "A",
+    relayProvider: getWsUrl(url),
+    metadata,
+    projectId: config.projectId,
+  };
   const clientBOpts = {
     ...clientAOpts,
     name: "B",

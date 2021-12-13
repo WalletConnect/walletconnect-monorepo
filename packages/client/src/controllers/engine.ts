@@ -1,12 +1,12 @@
 import {
   SequenceTypes,
   ISequence,
-  SubscriptionEvent,
   IEngine,
   SessionTypes,
   StoreEvent,
   RelayerTypes,
   JsonRpcRecord,
+  ExpirerEvents,
 } from "@walletconnect/types";
 import {
   formatMessageContext,
@@ -36,7 +36,7 @@ import {
 
 import {
   STORE_EVENTS,
-  SUBSCRIPTION_EVENTS,
+  SUBSCRIBER_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   FIVE_MINUTES,
   THIRTY_SECONDS,
@@ -828,16 +828,19 @@ export class Engine extends IEngine {
   private async subscribeNewPending(createdEvent: StoreEvent.Created<SequenceTypes.Pending>) {
     const { topic, sequence: pending } = createdEvent;
     const expiry = calcExpiry(ONE_DAY);
-    await this.sequence.client.relayer.subscribe(topic, expiry, {
+    await this.sequence.client.relayer.subscribe(topic, {
       relay: pending.relay,
     });
+    await this.sequence.expirer.set(topic, { topic, expiry });
   }
 
   private async subscribeNewSettled(createdEvent: StoreEvent.Created<SequenceTypes.Settled>) {
     const { topic, sequence: settled } = createdEvent;
-    await this.sequence.client.relayer.subscribe(topic, settled.expiry, {
+    const { expiry } = settled;
+    await this.sequence.client.relayer.subscribe(topic, {
       relay: settled.relay,
     });
+    await this.sequence.expirer.set(topic, { topic, expiry });
   }
 
   private registerEventListeners(): void {
@@ -857,11 +860,11 @@ export class Engine extends IEngine {
     this.sequence.pending.on(
       STORE_EVENTS.deleted,
       async (deletedEvent: StoreEvent.Deleted<SequenceTypes.Pending>) => {
-        if (deletedEvent.reason.code !== ERROR.EXPIRED.code) {
-          await this.sequence.client.relayer.unsubscribeByTopic(deletedEvent.topic, {
-            relay: deletedEvent.sequence.relay,
-          });
-        }
+        const { sequence: pending } = deletedEvent;
+        await this.sequence.client.relayer.unsubscribe(pending.topic, {
+          relay: pending.relay,
+        });
+        await this.sequence.expirer.del(pending.topic);
       },
     );
     // Settled Events
@@ -899,11 +902,10 @@ export class Engine extends IEngine {
         await this.sequence.client.relayer.publish(settled.topic, request, {
           relay: settled.relay,
         });
-        if (deletedEvent.reason.code !== ERROR.EXPIRED.code) {
-          await this.sequence.client.relayer.unsubscribeByTopic(settled.topic, {
-            relay: settled.relay,
-          });
-        }
+        await this.sequence.client.relayer.unsubscribe(settled.topic, {
+          relay: settled.relay,
+        });
+        await this.sequence.expirer.del(settled.topic);
       },
     );
     this.sequence.settled.on(STORE_EVENTS.sync, () =>
@@ -920,16 +922,16 @@ export class Engine extends IEngine {
         }
       },
     );
-    // Relayer subscription Events
-    this.sequence.client.relayer.subscriptions.on(
-      SUBSCRIPTION_EVENTS.expired,
-      async (expiredEvent: SubscriptionEvent.Deleted) => {
+    // Expirer Events
+    this.sequence.expirer.on(
+      SUBSCRIBER_EVENTS.expired,
+      async (expiredEvent: ExpirerEvents.Expired) => {
         if (this.sequence.pending.sequences.has(expiredEvent.topic)) {
           const reason = ERROR.EXPIRED.format({
             context: formatMessageContext(this.sequence.pending.context),
           });
           this.sequence.pending.delete(expiredEvent.topic, reason);
-        } else if (this.sequence.settled.sequences.has(expiredEvent.topic)) {
+        } else {
           const reason = ERROR.EXPIRED.format({
             context: formatMessageContext(this.sequence.settled.context),
           });

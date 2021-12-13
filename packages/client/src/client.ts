@@ -17,20 +17,19 @@ import {
   isSessionResponded,
   getAppMetadata,
   ERROR,
-  toMiliseconds,
+  formatRelayRpcUrl,
 } from "@walletconnect/utils";
-import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
+import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
 
-import { Pairing, Session, Relayer } from "./controllers";
+import { Pairing, Session, Relayer, Encoder, Crypto, Storage, HeartBeat } from "./controllers";
 import {
   CLIENT_CONTEXT,
   CLIENT_DEFAULT,
-  CLIENT_BEAT_INTERVAL,
   CLIENT_SHORT_TIMEOUT,
   CLIENT_EVENTS,
   CLIENT_STORAGE_OPTIONS,
@@ -45,8 +44,6 @@ import {
   SESSION_JSONRPC,
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
-import { Crypto } from "./controllers/crypto";
-import { Storage } from "./controllers/storage";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -55,10 +52,14 @@ export class Client extends IClient {
   public events = new EventEmitter();
 
   public logger: Logger;
+
+  public heartbeat: HeartBeat;
+
   public crypto: Crypto;
 
-  public relayer: Relayer;
+  public encoder: Encoder;
   public storage: Storage;
+  public relayer: Relayer;
 
   public pairing: Pairing;
   public session: Session;
@@ -68,7 +69,7 @@ export class Client extends IClient {
   public readonly controller: boolean;
   public metadata: AppMetadata | undefined;
 
-  public apiKey: string | undefined;
+  public projectId: string | undefined;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
@@ -86,17 +87,39 @@ export class Client extends IClient {
     this.name = opts?.name || CLIENT_DEFAULT.name;
     this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
-    this.apiKey = opts?.apiKey;
+    this.projectId = opts?.projectId;
 
     this.logger = generateChildLogger(logger, this.name);
+
+    this.heartbeat = new HeartBeat({ logger: this.logger });
+
+    this.crypto = new Crypto(this, this.logger, opts?.keychain);
+
+    this.encoder = new Encoder(this, this.logger);
 
     const keyValueStorage =
       opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
 
-    this.crypto = new Crypto(this, this.logger, opts?.keychain);
+    this.storage = new Storage(this.logger, keyValueStorage, {
+      protocol: this.protocol,
+      version: this.version,
+      context: this.context,
+    });
 
-    this.relayer = new Relayer(this, this.logger, opts?.relayProvider);
-    this.storage = new Storage(this, this.logger, keyValueStorage);
+    const relayUrl = formatRelayRpcUrl(
+      this.protocol,
+      this.version,
+      opts?.relayUrl || CLIENT_DEFAULT.relayUrl,
+      this.projectId,
+    );
+
+    this.relayer = new Relayer({
+      relayUrl,
+      heartbeat: this.heartbeat,
+      encoder: this.encoder,
+      logger: this.logger,
+      storage: this.storage,
+    });
 
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
@@ -269,7 +292,7 @@ export class Client extends IClient {
 
   // ---------- Protected ----------------------------------------------- //
 
-  protected async onPairingRequest(request: JsonRpcRequest): Promise<void> {
+  protected async onPairingRequest(request: JsonRpcRequest, topic: string): Promise<void> {
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
       if (proposal.proposer.controller === this.controller) {
@@ -288,6 +311,8 @@ export class Client extends IClient {
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: proposal });
       this.events.emit(eventName, proposal);
+      const response = formatJsonRpcResult(request.id, true);
+      await this.pairing.send(topic, response);
     }
   }
 
@@ -313,7 +338,7 @@ export class Client extends IClient {
       await this.session.init();
       await this.crypto.init();
       await this.relayer.init();
-      this.setBeatInterval();
+      await this.heartbeat.init();
       this.registerEventListeners();
       this.logger.info(`Client Initilization Success`);
     } catch (e) {
@@ -321,10 +346,6 @@ export class Client extends IClient {
       this.logger.error(e as any);
       throw e;
     }
-  }
-
-  private setBeatInterval() {
-    setInterval(() => this.events.emit(CLIENT_EVENTS.beat), toMiliseconds(CLIENT_BEAT_INTERVAL));
   }
 
   private registerEventListeners(): void {
@@ -362,7 +383,7 @@ export class Client extends IClient {
       },
     );
     this.pairing.on(PAIRING_EVENTS.request, (requestEvent: PairingTypes.RequestEvent) => {
-      this.onPairingRequest(requestEvent.request);
+      this.onPairingRequest(requestEvent.request, requestEvent.topic);
     });
     this.session.on(PAIRING_EVENTS.sync, () => this.events.emit(CLIENT_EVENTS.pairing.sync));
     // Session Subscription Events

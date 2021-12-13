@@ -8,6 +8,7 @@ import { formatUri, mergeArrays } from "@walletconnect/utils";
 import { Store } from "./store";
 import { Engine } from "./engine";
 import { JsonRpcHistory } from "./history";
+import { Expirer } from "./expirer";
 import {
   PAIRING_CONTEXT,
   PAIRING_EVENTS,
@@ -22,6 +23,7 @@ export class Pairing extends IPairing {
   public pending: Store<PairingTypes.Pending>;
   public settled: Store<PairingTypes.Settled>;
   public history: JsonRpcHistory;
+  public expirer: Expirer;
 
   public events = new EventEmitter();
 
@@ -40,7 +42,8 @@ export class Pairing extends IPairing {
     this.logger = generateChildLogger(logger, this.name);
     this.pending = new Store<PairingTypes.Pending>(client, this.logger, this.config.status.pending);
     this.settled = new Store<PairingTypes.Settled>(client, this.logger, this.config.status.settled);
-    this.history = new JsonRpcHistory(client, this.logger);
+    this.history = new JsonRpcHistory(this.logger, this.client.storage);
+    this.expirer = new Expirer(client, this.logger);
     this.engine = new Engine(this) as PairingTypes.Engine;
   }
 
@@ -49,6 +52,7 @@ export class Pairing extends IPairing {
     await this.pending.init();
     await this.settled.init();
     await this.history.init();
+    await this.expirer.init();
   }
 
   public get(topic: string): Promise<PairingTypes.Settled> {

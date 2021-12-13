@@ -21,6 +21,7 @@ import {
 import { RelayerTypes } from "./relayer";
 import { IEngine } from "./engine";
 import { IStore } from "./store";
+import { IExpirer } from "./expirer";
 
 export declare namespace SequenceTypes {
   export interface Status {
@@ -288,6 +289,8 @@ export abstract class ISequence<
   public abstract settled: IStore<Settled>;
   // jsonrpc history
   public abstract history: IJsonRpcHistory;
+  // sequence expiry
+  public abstract expirer: IExpirer;
 
   // returns settled sequences length
   public abstract readonly length: number;

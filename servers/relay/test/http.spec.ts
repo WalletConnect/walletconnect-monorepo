@@ -4,13 +4,13 @@ import { use, expect } from "chai";
 import chaiHttp from "chai-http";
 import { Agent } from "https";
 
-import { TEST_HTTP_URL, TEST_API_KEY, TEST_TOPIC } from "./shared";
+import { TEST_HTTP_URL, TEST_PROJECT_ID, TEST_TOPIC } from "./shared";
 
 use(chaiHttp);
 
-function formatEndpoint(path: string, apiKey?: string) {
-  if (typeof apiKey !== "undefined") {
-    path = path + `?apiKey=${apiKey}`;
+function formatEndpoint(path: string, projectId?: string) {
+  if (typeof projectId !== "undefined") {
+    path = path + `?projectId=${projectId}`;
   }
   return path;
 }
@@ -32,19 +32,19 @@ describe("HTTP", () => {
     });
   });
   it("GET health", async () => {
-    const endpoint = formatEndpoint("/health", TEST_API_KEY);
+    const endpoint = formatEndpoint("/health", TEST_PROJECT_ID);
     const response = await api.get(endpoint);
     expect(response.status).to.equal(204);
   });
   it("GET hello", async () => {
-    const endpoint = formatEndpoint("/hello", TEST_API_KEY);
+    const endpoint = formatEndpoint("/hello", TEST_PROJECT_ID);
     const response = await api.get(endpoint);
     expect(response.status).to.equal(200);
     expect(response.data.startsWith(`Hello World, this is Relay Server`)).to.be.true;
   });
   it("POST subscribe", async () => {
     const payload = { topic: TEST_TOPIC, webhook: "https://example.com" };
-    const endpoint = formatEndpoint("/subscribe", TEST_API_KEY);
+    const endpoint = formatEndpoint("/subscribe", TEST_PROJECT_ID);
     const response = await api.post(endpoint, payload);
     expect(response.status).to.equal(200);
     expect(response.data).to.deep.equal({ success: true });

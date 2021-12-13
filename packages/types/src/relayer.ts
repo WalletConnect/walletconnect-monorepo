@@ -1,9 +1,12 @@
 import { Logger } from "pino";
+import { IKeyValueStorage } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
-import { IClient } from "./client";
-import { ISubscription, SubscriptionParams } from "./subscription";
+import { IRelayerStorage } from "./storage";
+import { ISubscriber } from "./subscriber";
 import { IJsonRpcHistory } from "./history";
+import { IHeartBeat } from "./heartbeat";
+import { IPublisher } from "./publisher";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -21,6 +24,7 @@ export declare namespace RelayerTypes {
   }
 
   export interface UnsubscribeOptions {
+    id?: string;
     relay: ProtocolOptions;
   }
 
@@ -32,18 +36,42 @@ export declare namespace RelayerTypes {
   }
 }
 
-export interface PublishParams {
-  topic: string;
-  payload: JsonRpcPayload;
-  opts: Required<RelayerTypes.PublishOptions>;
+export abstract class IRelayerEncoder {
+  public abstract encode(
+    topic: string,
+    payload: JsonRpcPayload,
+    nonce?: number | string,
+  ): Promise<string>;
+
+  public abstract decode(
+    topic: string,
+    encrypted: string,
+    nonce?: number | string,
+  ): Promise<JsonRpcPayload>;
+}
+
+export interface RelayerOptions {
+  heartbeat?: IHeartBeat;
+  encoder?: IRelayerEncoder;
+  storage?: IRelayerStorage;
+  keyValueStorage?: IKeyValueStorage;
+  logger?: string | Logger;
+  relayUrl?: string;
+  projectId?: string;
 }
 
 export abstract class IRelayer extends IEvents {
-  public abstract queue: Map<number, PublishParams>;
+  public abstract logger: Logger;
 
-  public abstract pending: Map<string, SubscriptionParams>;
+  public abstract storage: IRelayerStorage;
 
-  public abstract subscriptions: ISubscription;
+  public abstract heartbeat: IHeartBeat;
+
+  public abstract encoder: IRelayerEncoder;
+
+  public abstract subscriber: ISubscriber;
+
+  public abstract publisher: IPublisher;
 
   public abstract history: IJsonRpcHistory;
 
@@ -57,7 +85,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connecting: boolean;
 
-  constructor(public client: IClient, public logger: Logger, provider?: string | IJsonRpcProvider) {
+  constructor(opts?: RelayerOptions) {
     super();
   }
 
@@ -69,20 +97,7 @@ export abstract class IRelayer extends IEvents {
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
 
-  public abstract subscribe(
-    topic: string,
-    expiry: number,
-    opts?: RelayerTypes.SubscribeOptions,
-  ): Promise<string>;
+  public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
 
-  public abstract unsubscribe(
-    topic: string,
-    id: string,
-    opts?: RelayerTypes.UnsubscribeOptions,
-  ): Promise<void>;
-
-  public abstract unsubscribeByTopic(
-    topic: string,
-    opts?: RelayerTypes.UnsubscribeOptions,
-  ): Promise<void>;
+  public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
 }

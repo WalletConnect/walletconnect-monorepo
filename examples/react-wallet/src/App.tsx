@@ -24,7 +24,7 @@ import {
   DEFAULT_LOGGER,
   DEFAULT_EIP155_METHODS,
   DEFAULT_COSMOS_METHODS,
-  DEFAULT_API_KEY,
+  DEFAULT_PROJECT_ID,
   DEFAULT_RELAY_URL,
   DEFAULT_MAIN_CHAINS,
 } from "./constants";
@@ -129,7 +129,7 @@ class App extends React.Component<{}> {
       const client = await Client.init({
         controller: true,
         logger: DEFAULT_LOGGER,
-        apiKey: DEFAULT_API_KEY,
+        projectId: DEFAULT_PROJECT_ID,
         relayProvider: DEFAULT_RELAY_URL,
         storage,
       });

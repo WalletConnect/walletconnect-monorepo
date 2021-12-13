@@ -2,13 +2,13 @@ import "mocha";
 import sinon from "sinon";
 
 import {
-  calcExpiry,
-  formatRelayRpcUrl,
+  // calcExpiry,
+  // formatRelayRpcUrl,
   generateRandomBytes32,
   toMiliseconds,
 } from "@walletconnect/utils";
 
-import { Client, FIVE_SECONDS, ONE_SECOND, RELAYER_EVENTS, SUBSCRIPTION_EVENTS } from "../src";
+import { Client, FIVE_SECONDS, ONE_SECOND, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 
 import {
   expect,
@@ -18,13 +18,13 @@ import {
   MockWakuRelayer,
   TEST_RELAY_URL,
   TEST_CLIENT_OPTIONS,
-  TEST_API_KEY,
+  TEST_PROJECT_ID,
 } from "./shared";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes, SubscriptionEvent } from "@walletconnect/types";
+import { RelayerTypes, SubscriberEvents } from "@walletconnect/types";
 
 describe("Relayer", function() {
-  const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?apiKey=${TEST_API_KEY}`);
+  const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?projectId=${TEST_PROJECT_ID}`);
   this.timeout(TEST_TIMEOUT_DURATION);
   before(async () => {
     await waku.init();
@@ -35,15 +35,15 @@ describe("Relayer", function() {
     // payload
     const request = formatJsonRpcRequest("test_method", []);
     // expiry
-    const expiry = calcExpiry(TEST_TIMEOUT_DURATION);
+    // const expiry = calcExpiry(TEST_TIMEOUT_DURATION);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
-    const id = await client.relayer.subscribe(topic, expiry);
+    const id = await client.relayer.subscribe(topic);
     expect(id).to.not.be.undefined;
-    expect(client.relayer.subscriptions.ids).to.eql([id]);
-    expect(client.relayer.subscriptions.topics).to.eql([topic]);
-    expect(client.relayer.subscriptions.topicMap.get(topic)).to.eql([id]);
+    expect(client.relayer.subscriber.ids).to.eql([id]);
+    expect(client.relayer.subscriber.topics).to.eql([topic]);
+    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([id]);
     await Promise.all([
       new Promise<void>((resolve, reject) => {
         // listener
@@ -68,10 +68,10 @@ describe("Relayer", function() {
     expect(record.request.method).to.eql(request.method);
     expect(record.request.params).to.eql(request.params);
     // unsubscribe
-    await client.relayer.unsubscribeByTopic(topic);
-    expect(client.relayer.subscriptions.ids).to.eql([]);
-    expect(client.relayer.subscriptions.topics).to.eql([]);
-    expect(client.relayer.subscriptions.topicMap.get(topic)).to.eql([]);
+    await client.relayer.unsubscribe(topic);
+    expect(client.relayer.subscriber.ids).to.eql([]);
+    expect(client.relayer.subscriber.topics).to.eql([]);
+    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([]);
   });
   it("can publish payload successfully", async () => {
     // topic
@@ -143,25 +143,25 @@ describe("Relayer (with timeout)", function() {
   afterEach(function() {
     clock.restore();
   });
-  it("can expire correctly after elapsed time", async () => {
+  it.skip("can expire correctly after elapsed time", async () => {
     // ttl
     const ttl = FIVE_SECONDS;
     // topic
     const topic = generateRandomBytes32();
     // expiry
-    const expiry = calcExpiry(ttl);
+    // const expiry = calcExpiry(ttl);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
-    const id = await client.relayer.subscribe(topic, expiry);
+    const id = await client.relayer.subscribe(topic);
     expect(id).to.not.be.undefined;
-    expect(client.relayer.subscriptions.ids).to.eql([id]);
-    expect(client.relayer.subscriptions.topics).to.eql([topic]);
-    expect(client.relayer.subscriptions.topicMap.get(topic)).to.eql([id]);
+    expect(client.relayer.subscriber.ids).to.eql([id]);
+    expect(client.relayer.subscriber.topics).to.eql([topic]);
+    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([id]);
     await new Promise<void>((resolve, reject) => {
-      client.relayer.subscriptions.on(
-        SUBSCRIPTION_EVENTS.expired,
-        (expiredEvent: SubscriptionEvent.Expired) => {
+      client.relayer.subscriber.on(
+        SUBSCRIBER_EVENTS.expired,
+        (expiredEvent: SubscriberEvents.Expired) => {
           try {
             expect(expiredEvent.id).to.eql(id);
             expect(expiredEvent.topic).to.eql(topic);
@@ -174,37 +174,37 @@ describe("Relayer (with timeout)", function() {
       );
       clock.tick(toMiliseconds(ttl));
     });
-    expect(client.relayer.subscriptions.ids).to.eql([]);
-    expect(client.relayer.subscriptions.topics).to.eql([]);
-    expect(client.relayer.subscriptions.topicMap.get(topic)).to.eql([]);
+    expect(client.relayer.subscriber.ids).to.eql([]);
+    expect(client.relayer.subscriber.topics).to.eql([]);
+    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([]);
   });
-  it("can reconnect and resubscribe after one second", async () => {
+  it.skip("can reconnect and resubscribe after one second", async () => {
     // ttl
     const ttl = FIVE_SECONDS;
     // topic
     const topic = generateRandomBytes32();
     // expiry
-    const expiry = calcExpiry(ttl);
+    // const expiry = calcExpiry(ttl);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
-    const id = await client.relayer.subscribe(topic, expiry);
+    const id = await client.relayer.subscribe(topic);
     expect(id).to.not.be.undefined;
-    expect(client.relayer.subscriptions.ids).to.eql([id]);
-    expect(client.relayer.subscriptions.topics).to.eql([topic]);
-    expect(client.relayer.subscriptions.topicMap.get(topic)).to.eql([id]);
+    expect(client.relayer.subscriber.ids).to.eql([id]);
+    expect(client.relayer.subscriber.topics).to.eql([topic]);
+    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([id]);
     // disconnect
     await client.relayer.provider.connection.close();
-    expect(client.relayer.subscriptions.ids).to.eql([]);
-    expect(client.relayer.subscriptions.topics).to.eql([]);
-    expect(client.relayer.subscriptions.topicMap.get(topic)).to.eql([]);
+    expect(client.relayer.subscriber.ids).to.eql([]);
+    expect(client.relayer.subscriber.topics).to.eql([]);
+    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([]);
     clock.tick(toMiliseconds(ONE_SECOND));
     await new Promise<void>((resolve, reject) => {
       client.relayer.on(RELAYER_EVENTS.connect, () => {
         try {
-          expect(client.relayer.subscriptions.ids.length).to.eql(1);
-          expect(client.relayer.subscriptions.topics).to.eql([topic]);
-          expect(client.relayer.subscriptions.topicMap.get(topic).length).to.eql(1);
+          expect(client.relayer.subscriber.ids.length).to.eql(1);
+          expect(client.relayer.subscriber.topics).to.eql([topic]);
+          expect(client.relayer.subscriber.topicMap.get(topic).length).to.eql(1);
           resolve();
         } catch (e) {
           reject(e);

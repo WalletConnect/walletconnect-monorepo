@@ -6,13 +6,17 @@ import {
   IStorage,
   JsonRpcRecord,
   StorageKeyMap,
-  SubscriptionActive,
+  SubscriberTypes,
+  StorageConfig,
+  IBaseStorage,
+  IRelayerStorage,
+  Expiration,
 } from "@walletconnect/types";
 import { ERROR, mapToObj, objToMap, formatStorageKeyName } from "@walletconnect/utils";
 
 import { STORAGE_CONTEXT, STORAGE_KEYS, STORAGE_VERSION } from "../constants";
 
-export class Storage implements IStorage {
+export class BaseStorage implements IBaseStorage {
   public name: string = STORAGE_CONTEXT;
 
   public version = STORAGE_VERSION;
@@ -20,13 +24,13 @@ export class Storage implements IStorage {
   public keyMap: StorageKeyMap = STORAGE_KEYS;
 
   constructor(
-    public client: IClient,
     public logger: Logger,
     public keyValueStorage: IKeyValueStorage,
+    public config: StorageConfig,
   ) {
-    this.client = client;
     this.logger = generateChildLogger(logger, this.name);
     this.keyValueStorage = keyValueStorage;
+    this.config = config;
   }
 
   get context(): string {
@@ -34,7 +38,75 @@ export class Storage implements IStorage {
   }
 
   get prefix() {
-    return `${this.client.protocol}@${this.client.version}:${this.client.context}:${this.version}`;
+    return `${this.config.protocol}@${this.config.version}:${this.config.context}:${this.version}`;
+  }
+
+  public getStorageKey(context: string): string {
+    const name = this.getStorageKeyName(context);
+    if (!this.isValidStorageKeyName(name)) {
+      const error = ERROR.INVALID_STORAGE_KEY_NAME.format({ name });
+      throw new Error(error.message);
+    }
+    const key = this.prefix + "//" + name;
+    return key;
+  }
+
+  public getStorageKeyName(context: string): string {
+    return formatStorageKeyName(context);
+  }
+
+  public isValidStorageKeyName(name: string): boolean {
+    const validKeys = Object.keys(this.keyMap)
+      .map(key => Object.values(this.keyMap[key]))
+      .flat();
+    return validKeys.includes(name.toLowerCase());
+  }
+}
+
+export class RelayerStorage extends BaseStorage implements IRelayerStorage {
+  constructor(
+    public logger: Logger,
+    public keyValueStorage: IKeyValueStorage,
+    public config: StorageConfig,
+  ) {
+    super(logger, keyValueStorage, config);
+  }
+
+  public async setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void> {
+    const key = this.getStorageKey(context);
+    await this.keyValueStorage.setItem<JsonRpcRecord[]>(key, records);
+  }
+
+  public async getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined> {
+    const key = this.getStorageKey(context);
+    const records = await this.keyValueStorage.getItem<JsonRpcRecord[]>(key);
+    return records;
+  }
+
+  public async setRelayerSubscriptions(
+    context: string,
+    subscriptions: SubscriberTypes.Active[],
+  ): Promise<void> {
+    const key = this.getStorageKey(context);
+    await this.keyValueStorage.setItem<SubscriberTypes.Active[]>(key, subscriptions);
+  }
+
+  public async getRelayerSubscriptions(
+    context: string,
+  ): Promise<SubscriberTypes.Active[] | undefined> {
+    const key = this.getStorageKey(context);
+    const subscriptions = await this.keyValueStorage.getItem<SubscriberTypes.Active[]>(key);
+    return subscriptions;
+  }
+}
+
+export class Storage extends RelayerStorage implements IStorage {
+  constructor(
+    public logger: Logger,
+    public keyValueStorage: IKeyValueStorage,
+    public config: StorageConfig,
+  ) {
+    super(logger, keyValueStorage, config);
   }
 
   public async setKeyChain(context: string, keychain: Map<string, string>): Promise<void> {
@@ -62,49 +134,14 @@ export class Storage implements IStorage {
     return sequences;
   }
 
-  public async setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void> {
+  public async setExpirations(context: string, expirations: Expiration[]): Promise<void> {
     const key = this.getStorageKey(context);
-    await this.keyValueStorage.setItem<JsonRpcRecord[]>(key, records);
+    await this.keyValueStorage.setItem<Expiration[]>(key, expirations);
   }
 
-  public async getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined> {
+  public async getExpirations(context: string): Promise<Expiration[] | undefined> {
     const key = this.getStorageKey(context);
-    const records = await this.keyValueStorage.getItem<JsonRpcRecord[]>(key);
-    return records;
-  }
-
-  public async setRelayerSubscriptions(
-    context: string,
-    subscriptions: SubscriptionActive[],
-  ): Promise<void> {
-    const key = this.getStorageKey(context);
-    await this.keyValueStorage.setItem<SubscriptionActive[]>(key, subscriptions);
-  }
-
-  public async getRelayerSubscriptions(context: string): Promise<SubscriptionActive[] | undefined> {
-    const key = this.getStorageKey(context);
-    const subscriptions = await this.keyValueStorage.getItem<SubscriptionActive[]>(key);
-    return subscriptions;
-  }
-
-  public getStorageKey(context: string): string {
-    const name = this.getStorageKeyName(context);
-    if (!this.isValidStorageKeyName(name)) {
-      const error = ERROR.INVALID_STORAGE_KEY_NAME.format({ name });
-      throw new Error(error.message);
-    }
-    const key = this.prefix + "//" + name;
-    return key;
-  }
-
-  public getStorageKeyName(context: string): string {
-    return formatStorageKeyName(context);
-  }
-
-  public isValidStorageKeyName(name: string): boolean {
-    const validKeys = Object.keys(this.keyMap)
-      .map(key => Object.values(this.keyMap[key]))
-      .flat();
-    return validKeys.includes(name.toLowerCase());
+    const expirations = await this.keyValueStorage.getItem<Expiration[]>(key);
+    return expirations;
   }
 }

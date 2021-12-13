@@ -1,4 +1,6 @@
-export const TEST_API_KEY = process.env.TEST_API_KEY ? process.env.TEST_API_KEY : undefined;
+export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
+  ? process.env.TEST_PROJECT_ID
+  : undefined;
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
@@ -8,7 +10,7 @@ export const TEST_WAKU_URL = process.env.TEST_WAKU_URL
   ? process.env.TEST_WAKU_URL
   : "http://localhost:8546";
 
-export const TEST_WS_URL = TEST_RELAY_URL + `?apiKey=${TEST_API_KEY}`;
+export const TEST_WS_URL = TEST_RELAY_URL + `?projectId=${TEST_PROJECT_ID}`;
 export const TEST_HTTP_URL = TEST_RELAY_URL.replace("ws", "http");
 
 export const TEST_TOPIC = "f5d3f03946b6a2a3b22661fae1385cd1639bfb6f6c070115699b0a2ec1decd8c";

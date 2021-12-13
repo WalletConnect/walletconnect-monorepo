@@ -3,7 +3,6 @@ import { toMiliseconds } from "@walletconnect/utils";
 import { ClientOptions, SessionTypes, AppMetadata } from "@walletconnect/types";
 
 import {
-  CLIENT_BEAT_INTERVAL,
   CLIENT_SHORT_TIMEOUT,
   ONE_SECOND,
   PAIRING_DEFAULT_TTL,
@@ -17,12 +16,14 @@ export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
   : "ws://localhost:5555";
 
-export const TEST_API_KEY = process.env.TEST_API_KEY ? process.env.TEST_API_KEY : undefined;
+export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
+  ? process.env.TEST_PROJECT_ID
+  : undefined;
 
 export const TEST_CLIENT_OPTIONS: ClientOptions = {
   logger: "fatal",
-  relayProvider: TEST_RELAY_URL,
-  apiKey: TEST_API_KEY,
+  relayUrl: TEST_RELAY_URL,
+  projectId: TEST_PROJECT_ID,
 };
 
 export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");
@@ -80,4 +81,3 @@ export const TEST_TIMEOUT_SAFEGUARD = toMiliseconds(ONE_SECOND);
 export const TEST_TIMEOUT_DURATION = toMiliseconds(THIRTY_SECONDS);
 export const TEST_PAIRING_TTL = toMiliseconds(PAIRING_DEFAULT_TTL);
 export const TEST_SESSION_TTL = toMiliseconds(SESSION_DEFAULT_TTL);
-export const TEST_CLIENT_BEAT = toMiliseconds(CLIENT_BEAT_INTERVAL);
