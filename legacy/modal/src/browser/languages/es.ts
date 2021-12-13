@@ -13,7 +13,8 @@ const es: TextMap = {
   connect_with: "Conectar mediante",
   loading: "Cargando...",
   something_went_wrong: "Algo salió mal",
-  no_supported_wallets: "Todavía no hay monederos compatibles",
+  no_supported_wallets: "Todavía no hay billeteras compatibles",
+  no_wallets_found: "No se encontraron billeteras",
 };
 
 export default es;
