@@ -6,7 +6,7 @@ import { hasOverlap } from "../dist/cjs";
 
 const TEST_DEFAULT_RPC_URL = "wss://relay.walletconnect.com";
 
-const API_KEY = "27e484dcd9e3efcfd25a83a78777cdf1";
+const PROJECT_ID = "27e484dcd9e3efcfd25a83a78777cdf1";
 
 const PROTOCOL = "wc";
 
@@ -18,7 +18,8 @@ const EXPECTED_RPC_URL_1 =
   TEST_DEFAULT_RPC_URL + `?env=${ENV}&protocol=${PROTOCOL}&version=${VERSION}`;
 
 const EXPECTED_RPC_URL_2 =
-  TEST_DEFAULT_RPC_URL + `?env=${ENV}&projectId=${API_KEY}&protocol=${PROTOCOL}&version=${VERSION}`;
+  TEST_DEFAULT_RPC_URL +
+  `?env=${ENV}&projectId=${PROJECT_ID}&protocol=${PROTOCOL}&version=${VERSION}`;
 
 const SEVEN_DAYS = 604800;
 
@@ -31,7 +32,7 @@ const EXPECTED_EXPIRY = 1628771622;
 describe("Misc", () => {
   it("formatRpcRelayUrl", () => {
     expect(formatRelayRpcUrl(PROTOCOL, VERSION, TEST_DEFAULT_RPC_URL)).to.eql(EXPECTED_RPC_URL_1);
-    expect(formatRelayRpcUrl(PROTOCOL, VERSION, TEST_DEFAULT_RPC_URL, API_KEY)).to.eql(
+    expect(formatRelayRpcUrl(PROTOCOL, VERSION, TEST_DEFAULT_RPC_URL, PROJECT_ID)).to.eql(
       EXPECTED_RPC_URL_2,
     );
   });

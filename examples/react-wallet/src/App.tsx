@@ -130,7 +130,7 @@ class App extends React.Component<{}> {
         controller: true,
         logger: DEFAULT_LOGGER,
         projectId: DEFAULT_PROJECT_ID,
-        relayProvider: DEFAULT_RELAY_URL,
+        relayIUrl: DEFAULT_RELAY_URL,
         storage,
       });
       const accounts = await wallet.getAccounts();

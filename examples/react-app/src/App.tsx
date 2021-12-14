@@ -165,7 +165,7 @@ class App extends React.Component<any, any> {
       const client = await Client.init({
         logger: DEFAULT_LOGGER,
         projectId: DEFAULT_PROJECT_ID,
-        relayProvider: DEFAULT_RELAY_URL,
+        relayIUrl: DEFAULT_RELAY_URL,
       });
       this.setState({ loading: false, client });
       this.subscribeToEvents();
