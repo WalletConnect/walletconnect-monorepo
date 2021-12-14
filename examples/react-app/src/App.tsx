@@ -164,8 +164,8 @@ class App extends React.Component<any, any> {
       await this.loadChainData();
       const client = await Client.init({
         logger: DEFAULT_LOGGER,
+        relayUrl: DEFAULT_RELAY_URL,
         projectId: DEFAULT_PROJECT_ID,
-        relayIUrl: DEFAULT_RELAY_URL,
       });
       this.setState({ loading: false, client });
       this.subscribeToEvents();
