@@ -2,7 +2,6 @@ import { Logger } from "pino";
 import { IKeyValueStorage } from "keyvaluestorage";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import {
-  IClient,
   IStorage,
   JsonRpcRecord,
   StorageKeyMap,

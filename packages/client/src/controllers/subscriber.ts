@@ -6,7 +6,6 @@ import {
   Reason,
   SubscriberEvents,
   SubscriberTypes,
-  IRelayerStorage,
   RelayerTypes,
   IRelayer,
 } from "@walletconnect/types";

@@ -1,14 +1,9 @@
 import "mocha";
 import sinon from "sinon";
 
-import {
-  // calcExpiry,
-  // formatRelayRpcUrl,
-  generateRandomBytes32,
-  toMiliseconds,
-} from "@walletconnect/utils";
+import { generateRandomBytes32, toMiliseconds } from "@walletconnect/utils";
 
-import { Client, FIVE_SECONDS, ONE_SECOND, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
+import { Client, ONE_SECOND, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 
 import {
   expect,
@@ -21,7 +16,7 @@ import {
   TEST_PROJECT_ID,
 } from "./shared";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes, SubscriberEvents } from "@walletconnect/types";
+import { RelayerTypes } from "@walletconnect/types";
 
 describe("Relayer", function() {
   const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?projectId=${TEST_PROJECT_ID}`);
@@ -34,8 +29,6 @@ describe("Relayer", function() {
     const topic = generateRandomBytes32();
     // payload
     const request = formatJsonRpcRequest("test_method", []);
-    // expiry
-    // const expiry = calcExpiry(TEST_TIMEOUT_DURATION);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
@@ -143,48 +136,9 @@ describe("Relayer (with timeout)", function() {
   afterEach(function() {
     clock.restore();
   });
-  it.skip("can expire correctly after elapsed time", async () => {
-    // ttl
-    const ttl = FIVE_SECONDS;
+  it("can reconnect and resubscribe after one second", async () => {
     // topic
     const topic = generateRandomBytes32();
-    // expiry
-    // const expiry = calcExpiry(ttl);
-    // setup
-    const client = await Client.init(TEST_CLIENT_OPTIONS);
-    // subscribe
-    const id = await client.relayer.subscribe(topic);
-    expect(id).to.not.be.undefined;
-    expect(client.relayer.subscriber.ids).to.eql([id]);
-    expect(client.relayer.subscriber.topics).to.eql([topic]);
-    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([id]);
-    await new Promise<void>((resolve, reject) => {
-      client.relayer.subscriber.on(
-        SUBSCRIBER_EVENTS.expired,
-        (expiredEvent: SubscriberEvents.Expired) => {
-          try {
-            expect(expiredEvent.id).to.eql(id);
-            expect(expiredEvent.topic).to.eql(topic);
-
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        },
-      );
-      clock.tick(toMiliseconds(ttl));
-    });
-    expect(client.relayer.subscriber.ids).to.eql([]);
-    expect(client.relayer.subscriber.topics).to.eql([]);
-    expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([]);
-  });
-  it.skip("can reconnect and resubscribe after one second", async () => {
-    // ttl
-    const ttl = FIVE_SECONDS;
-    // topic
-    const topic = generateRandomBytes32();
-    // expiry
-    // const expiry = calcExpiry(ttl);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
@@ -200,7 +154,7 @@ describe("Relayer (with timeout)", function() {
     expect(client.relayer.subscriber.topicMap.get(topic)).to.eql([]);
     clock.tick(toMiliseconds(ONE_SECOND));
     await new Promise<void>((resolve, reject) => {
-      client.relayer.on(RELAYER_EVENTS.connect, () => {
+      client.relayer.subscriber.on(SUBSCRIBER_EVENTS.enabled, () => {
         try {
           expect(client.relayer.subscriber.ids.length).to.eql(1);
           expect(client.relayer.subscriber.topics).to.eql([topic]);

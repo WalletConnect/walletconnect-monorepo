@@ -91,7 +91,7 @@ describe("Pairing (with timeout)", function() {
   afterEach(function() {
     clock.restore();
   });
-  it.skip("should expire after default period is elapsed", function() {
+  it("should expire after default period is elapsed", function() {
     this.timeout(TEST_PAIRING_TTL);
     return new Promise<void>(async (resolve, reject) => {
       try {
