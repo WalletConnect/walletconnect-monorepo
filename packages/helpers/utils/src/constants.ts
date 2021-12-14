@@ -21,6 +21,8 @@ export const signingMethods = [
   "eth_signTypedData_v3",
   "eth_signTypedData_v4",
   "personal_sign",
+  "wallet_addEthereumChain",
+  "wallet_switchEthereumChain",
 ];
 
 export const stateMethods = ["eth_accounts", "eth_chainId", "net_version"];
