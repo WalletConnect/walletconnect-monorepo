@@ -18,7 +18,7 @@ import {
   IRelayerStorage,
 } from "@walletconnect/types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
-import { ERROR, formatMessageContext, formatRelayRpcUrl } from "@walletconnect/utils";
+import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {

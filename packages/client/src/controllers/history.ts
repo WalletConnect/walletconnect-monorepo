@@ -1,7 +1,6 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
-  IClient,
   IJsonRpcHistory,
   JsonRpcRecord,
   RequestEvent,

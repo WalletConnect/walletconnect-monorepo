@@ -1,14 +1,9 @@
 import "mocha";
 import sinon from "sinon";
 
-import {
-  // calcExpiry,
-  // formatRelayRpcUrl,
-  generateRandomBytes32,
-  toMiliseconds,
-} from "@walletconnect/utils";
+import { generateRandomBytes32, toMiliseconds } from "@walletconnect/utils";
 
-import { Client, FIVE_SECONDS, ONE_SECOND, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
+import { Client, ONE_SECOND, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 
 import {
   expect,
@@ -21,7 +16,7 @@ import {
   TEST_PROJECT_ID,
 } from "./shared";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes, SubscriberEvents } from "@walletconnect/types";
+import { RelayerTypes } from "@walletconnect/types";
 
 describe("Relayer", function() {
   const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?projectId=${TEST_PROJECT_ID}`);
