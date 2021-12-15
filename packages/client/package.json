@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/client",
   "description": "Client for WalletConnect Protocol",
-  "version": "2.0.0-beta.20.5",
+  "version": "2.0.0-beta.20.6",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -38,8 +38,8 @@
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/relay-api": "^1.0.0",
     "@walletconnect/safe-json": "^1.0.0",
-    "@walletconnect/types": "^2.0.0-beta.20.5",
-    "@walletconnect/utils": "^2.0.0-beta.20.5",
+    "@walletconnect/types": "^2.0.0-beta.20.6",
+    "@walletconnect/utils": "^2.0.0-beta.20.6",
     "ws": "^8.3.0"
   },
   "devDependencies": {
