@@ -28,7 +28,6 @@ import {
 
 import { Pairing, Session, Relayer, Encoder, Crypto, Storage, HeartBeat } from "./controllers";
 import {
-  CLIENT_CONTEXT,
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,
   CLIENT_EVENTS,
@@ -64,12 +63,13 @@ export class Client extends IClient {
   public pairing: Pairing;
   public session: Session;
 
-  public name: string = CLIENT_CONTEXT;
+  public readonly name: string = CLIENT_DEFAULT.name;
 
   public readonly controller: boolean;
-  public metadata: AppMetadata | undefined;
+  public readonly metadata: AppMetadata | undefined;
 
-  public projectId: string | undefined;
+  public readonly relayUrl: string | undefined;
+  public readonly projectId: string | undefined;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
@@ -106,7 +106,7 @@ export class Client extends IClient {
       context: this.context,
     });
 
-    const relayUrl = formatRelayRpcUrl(
+    this.relayUrl = formatRelayRpcUrl(
       this.protocol,
       this.version,
       opts?.relayUrl || CLIENT_DEFAULT.relayUrl,
@@ -114,11 +114,12 @@ export class Client extends IClient {
     );
 
     this.relayer = new Relayer({
-      relayUrl,
+      rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
       encoder: this.encoder,
       logger: this.logger,
       storage: this.storage,
+      projectId: this.projectId,
     });
 
     this.pairing = new Pairing(this, this.logger);

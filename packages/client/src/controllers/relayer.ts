@@ -89,13 +89,13 @@ export class Relayer extends IRelayer {
           });
     this.heartbeat = opts?.heartbeat || new HeartBeat({ logger: this.logger });
     this.encoder = opts?.encoder || new RelayerEncoder();
-    const rpcUrl = formatRelayRpcUrl(
-      this.protocol,
-      this.version,
-      opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL,
-      opts?.projectId,
-    );
-    this.provider = new JsonRpcProvider(new WsConnection(rpcUrl));
+    const rpcUrl =
+      opts?.rpcUrl ||
+      formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts?.projectId);
+    this.provider =
+      typeof opts?.relayProvider !== "string" && typeof opts?.relayProvider !== "undefined"
+        ? opts?.relayProvider
+        : new JsonRpcProvider(new WsConnection(rpcUrl));
     this.history = new JsonRpcHistory(this.logger, this.storage);
     this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);

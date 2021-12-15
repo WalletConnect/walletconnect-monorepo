@@ -56,8 +56,9 @@ export interface RelayerOptions {
   storage?: IRelayerStorage;
   keyValueStorage?: IKeyValueStorage;
   logger?: string | Logger;
-  relayUrl?: string;
+  rpcUrl?: string;
   projectId?: string;
+  relayProvider?: string | IJsonRpcProvider;
 }
 
 export abstract class IRelayer extends IEvents {
