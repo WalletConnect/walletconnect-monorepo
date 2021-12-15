@@ -40,13 +40,14 @@ export abstract class IClient extends IEvents {
   public abstract pairing: IPairing;
   public abstract session: ISession;
 
-  public abstract name: string;
+  public abstract readonly name: string;
   public abstract readonly context: string;
 
   public abstract readonly controller: boolean;
-  public abstract metadata: AppMetadata | undefined;
+  public abstract readonly metadata: AppMetadata | undefined;
 
-  public abstract projectId: string | undefined;
+  public abstract readonly relayUrl: string | undefined;
+  public abstract readonly projectId: string | undefined;
 
   constructor(opts?: ClientOptions) {
     super();
