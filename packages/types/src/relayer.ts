@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IKeyValueStorage } from "keyvaluestorage";
+import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IRelayerStorage } from "./storage";
@@ -55,6 +55,7 @@ export interface RelayerOptions {
   encoder?: IRelayerEncoder;
   storage?: IRelayerStorage;
   keyValueStorage?: IKeyValueStorage;
+  keyValueStorageOptions?: KeyValueStorageOptions;
   logger?: string | Logger;
   rpcUrl?: string;
   projectId?: string;

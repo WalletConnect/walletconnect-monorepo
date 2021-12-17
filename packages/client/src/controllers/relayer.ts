@@ -78,15 +78,19 @@ export class Relayer extends IRelayer {
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? generateChildLogger(opts.logger, this.name)
         : pino(getDefaultLoggerOptions({ level: opts?.logger || RELAYER_DEFAULT_LOGGER }));
-    const keyValueStorage = opts?.keyValueStorage || new KeyValueStorage(RELAYER_STORAGE_OPTIONS);
+    const kvsOptions = { ...RELAYER_STORAGE_OPTIONS, ...opts?.keyValueStorageOptions };
     this.storage =
       typeof opts?.storage !== "undefined"
         ? opts.storage
-        : new RelayerStorage(this.logger, keyValueStorage, {
-            protocol: this.protocol,
-            version: this.version,
-            context: this.context,
-          });
+        : new RelayerStorage(
+            this.logger,
+            opts?.keyValueStorage || new KeyValueStorage(kvsOptions),
+            {
+              protocol: this.protocol,
+              version: this.version,
+              context: this.context,
+            },
+          );
     this.heartbeat = opts?.heartbeat || new HeartBeat({ logger: this.logger });
     this.encoder = opts?.encoder || new RelayerEncoder();
     const rpcUrl =
