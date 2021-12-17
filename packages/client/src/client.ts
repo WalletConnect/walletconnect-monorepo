@@ -97,10 +97,9 @@ export class Client extends IClient {
 
     this.encoder = new Encoder(this, this.logger);
 
-    const keyValueStorage =
-      opts?.storage || new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
+    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
-    this.storage = new Storage(this.logger, keyValueStorage, {
+    this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
       protocol: this.protocol,
       version: this.version,
       context: this.context,
@@ -120,6 +119,7 @@ export class Client extends IClient {
       logger: this.logger,
       storage: this.storage,
       projectId: this.projectId,
+      keyValueStorageOptions: storageOptions,
     });
 
     this.pairing = new Pairing(this, this.logger);
