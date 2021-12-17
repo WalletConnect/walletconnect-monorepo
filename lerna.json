@@ -1,4 +1,7 @@
 {
-  "version": "2.0.0-beta.20",
-  "packages": ["packages/*", "legacy/*"]
+  "version": "2.0.0-beta.21",
+  "packages": [
+    "packages/*",
+    "legacy/*"
+  ]
 }

@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/ethereum-provider",
   "description": "Ethereum Provider for WalletConnect Protocol",
-  "version": "2.0.0-beta.20",
+  "version": "2.0.0-beta.21",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
@@ -34,14 +34,14 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/client": "2.0.0-beta.20",
+    "@walletconnect/client": "^2.0.0-beta.21",
     "@walletconnect/jsonrpc-http-connection": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.0",
     "@walletconnect/jsonrpc-types": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/signer-connection": "2.0.0-beta.20",
-    "@walletconnect/types": "2.0.0-beta.20",
-    "@walletconnect/utils": "2.0.0-beta.20",
+    "@walletconnect/signer-connection": "^2.0.0-beta.21",
+    "@walletconnect/types": "^2.0.0-beta.21",
+    "@walletconnect/utils": "^2.0.0-beta.21",
     "eip1193-provider": "^1.0.1"
   },
   "devDependencies": {
