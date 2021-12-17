@@ -2,7 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
-import QRCodeModal from "@walletconnect/qrcode-modal";
+import QRCodeModal from "@walletconnect/legacy-modal";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
 import * as encoding from "@walletconnect/encoding";
