@@ -23,6 +23,11 @@ export const signingMethods = [
   "personal_sign",
   "wallet_addEthereumChain",
   "wallet_switchEthereumChain",
+  "wallet_getPermissions",
+  "wallet_requestPermissions",
+  "wallet_registerOnboarding",
+  "wallet_watchAsset",
+  "wallet_scanQRCode",
 ];
 
 export const stateMethods = ["eth_accounts", "eth_chainId", "net_version"];
