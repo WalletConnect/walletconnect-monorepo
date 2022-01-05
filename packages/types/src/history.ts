@@ -7,7 +7,7 @@ import {
 } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 
-import { IClient } from "./client";
+import { IRelayerStorage } from "./storage";
 import { RequestEvent } from "./misc";
 
 export interface JsonRpcRecord {
@@ -31,7 +31,7 @@ export abstract class IJsonRpcHistory extends IEvents {
 
   public abstract readonly pending: RequestEvent[];
 
-  constructor(public client: IClient, public logger: Logger) {
+  constructor(public logger: Logger, public storage: IRelayerStorage) {
     super();
   }
 

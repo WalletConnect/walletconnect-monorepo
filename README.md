@@ -1,6 +1,6 @@
 # WalletConnect v2.x.x
 
-Open protocol for connecting Wallets to Dapps - https://walletconnect.org
+Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
 ## Setup development
 
@@ -35,8 +35,8 @@ make test-production
 
 ```
 bootstrap-lerna      setups lerna for the monorepo management
-build-react-app    builds the example react-app
-build-react-wallet builds the example react-wallet
+build-react-app      builds the example react-app
+build-react-wallet   builds the example react-wallet
 build-container      builds relay docker image
 build-lerna          builds the npm packages in "./packages"
 build-nginx          builds nginx docker image
@@ -58,11 +58,11 @@ start-redis          starts redis docker container for local development
 stop                 stops the whole docker stack
 test-relay           runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before.
 test-client          runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
-test-production      tests client against relay.walletconnect.org
-test-staging         tests client against staging.walletconnect.org
+test-production      tests client against relay.walletconnect.com
+test-staging         tests client against staging.walletconnect.com
 
 ```
 
 ## License
 
-LGPL-3.0
+Apache 2.0

@@ -1,0 +1,69 @@
+import { IEvents } from "@walletconnect/jsonrpc-types";
+import { Logger } from "pino";
+
+import { Reason } from "./misc";
+import { IRelayer, RelayerTypes } from "./relayer";
+
+export declare namespace SubscriberTypes {
+  export interface Params extends RelayerTypes.SubscribeOptions {
+    topic: string;
+  }
+
+  export interface Active extends Params {
+    id: string;
+  }
+}
+
+export declare namespace SubscriberEvents {
+  export type Created = SubscriberTypes.Active;
+
+  export interface Deleted extends SubscriberTypes.Active {
+    reason: Reason;
+  }
+
+  export type Expired = Deleted;
+}
+
+export abstract class ISubscriberTopicMap {
+  public map = new Map<string, string[]>();
+
+  public abstract readonly topics: string[];
+
+  public abstract set(topic: string, id: string): void;
+
+  public abstract get(topic: string): string[];
+
+  public abstract exists(topic: string, id: string): boolean;
+
+  public abstract delete(topic: string, id?: string): void;
+
+  public abstract clear(): void;
+}
+
+export abstract class ISubscriber extends IEvents {
+  public abstract subscriptions: Map<string, SubscriberTypes.Active>;
+
+  public abstract topicMap: ISubscriberTopicMap;
+
+  public abstract readonly length: number;
+
+  public abstract readonly ids: string[];
+
+  public abstract readonly values: SubscriberTypes.Active[];
+
+  public abstract readonly topics: string[];
+
+  public abstract name: string;
+
+  public abstract readonly context: string;
+
+  constructor(public relayer: IRelayer, public logger: Logger) {
+    super();
+  }
+
+  public abstract init(): Promise<void>;
+
+  public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
+
+  public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
+}

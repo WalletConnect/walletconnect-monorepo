@@ -8,10 +8,10 @@ This library provides a Standalone Client for WalletConnect v2.0 Protocol for bo
 
 ## Documentation
 
-Check out documentation [here](https://docs.walletconnect.org/v/2.0).
+Check out documentation [here](https://docs.walletconnect.com/).
 
-Also available quick start for [Dapps](https://docs.walletconnect.org/v/2.0/quick-start/dapps/client) and for [Wallets](https://docs.walletconnect.org/v/2.0/quick-start/wallets/react-native)
+Also available quick start for [Dapps](https://docs.walletconnect.com/quick-start/dapps/client) and for [Wallets](https://docs.walletconnect.com/quick-start/wallets/react-native)
 
 ## License
 
-LGPL-3.0
+Apache 2.0

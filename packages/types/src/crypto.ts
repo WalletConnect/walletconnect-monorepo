@@ -1,5 +1,6 @@
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+
 import { IClient } from "./client";
 
 export declare namespace CryptoTypes {
@@ -73,7 +74,7 @@ export abstract class ICrypto {
 
   public abstract decrypt(topic: string, encrypted: string): Promise<string>;
 
-  public abstract encodeJsonRpc(topic: string, payload: JsonRpcPayload): Promise<string>;
+  public abstract encode(topic: string, payload: JsonRpcPayload): Promise<string>;
 
-  public abstract decodeJsonRpc(topic: string, encrypted: string): Promise<JsonRpcPayload>;
+  public abstract decode(topic: string, encrypted: string): Promise<JsonRpcPayload>;
 }

@@ -9,7 +9,7 @@ import {
   SessionTypes,
   Validation,
   SignalTypes,
-  StateEvent,
+  StoreEvent,
 } from "@walletconnect/types";
 
 import { ERROR } from "./error";
@@ -96,9 +96,9 @@ export function isSessionFailed(outcome: SessionTypes.Outcome): outcome is Sessi
   return "reason" in outcome;
 }
 
-export function isStateUpdatedEvent<T = any>(
-  event: StateEvent.Created<T> | StateEvent.Updated<T>,
-): event is StateEvent.Updated<T> {
+export function isStoreUpdatedEvent<T = any>(
+  event: StoreEvent.Created<T> | StoreEvent.Updated<T>,
+): event is StoreEvent.Updated<T> {
   return "update" in event;
 }
 

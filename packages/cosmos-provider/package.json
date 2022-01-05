@@ -1,15 +1,15 @@
 {
   "name": "@walletconnect/cosmos-provider",
   "description": "Cosmos Provider for WalletConnect Protocol",
-  "version": "2.0.0-beta.19",
-  "author": "WalletConnect Labs <walletconnectlabs.com>",
+  "version": "2.0.0-beta.21",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
     "type": "git",
     "url": "https://github.com/walletconnect/walletconnect-monorepo",
     "directory": "packages/ethereum-provider"
   },
-  "license": "LGPL-3.0",
+  "license": "Apache-2.0",
   "main": "dist/cjs/index.js",
   "types": "dist/cjs/index.d.ts",
   "unpkg": "dist/umd/index.min.js",
@@ -32,14 +32,14 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/client": "^2.0.0-beta.19",
+    "@walletconnect/client": "^2.0.0-beta.21",
     "@walletconnect/jsonrpc-http-connection": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.0",
     "@walletconnect/jsonrpc-types": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/signer-connection": "^2.0.0-beta.19",
-    "@walletconnect/types": "^2.0.0-beta.19",
-    "@walletconnect/utils": "^2.0.0-beta.19"
+    "@walletconnect/signer-connection": "^2.0.0-beta.21",
+    "@walletconnect/types": "^2.0.0-beta.21",
+    "@walletconnect/utils": "^2.0.0-beta.21"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",

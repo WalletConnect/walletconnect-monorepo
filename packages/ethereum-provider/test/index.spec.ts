@@ -43,15 +43,15 @@ const TEST_RELAY_URL = process.env.TEST_RELAY_URL
 const TEST_APP_METADATA = {
   name: "Test App",
   description: "Test App for WalletConnect",
-  url: "https://walletconnect.org/",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 const TEST_WALLET_METADATA = {
   name: "Test Wallet",
   description: "Test Wallet for WalletConnect",
-  url: "https://walletconnect.org/",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 const TEST_PROVIDER_OPTS = {
@@ -62,7 +62,7 @@ const TEST_PROVIDER_OPTS = {
     },
   },
   client: {
-    relayProvider: TEST_RELAY_URL,
+    relayUrl: TEST_RELAY_URL,
     metadata: TEST_APP_METADATA,
   },
 };
@@ -71,7 +71,7 @@ const TEST_WALLET_CLIENT_OPTS = {
   chainId: CHAIN_ID,
   rpcUrl: RPC_URL,
   privateKey: ACCOUNTS.a.privateKey,
-  relayProvider: TEST_RELAY_URL,
+  relayUrl: TEST_RELAY_URL,
   metadata: TEST_WALLET_METADATA,
 };
 

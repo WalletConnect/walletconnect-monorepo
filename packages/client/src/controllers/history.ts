@@ -1,6 +1,11 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { IClient, IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
+import {
+  IJsonRpcHistory,
+  JsonRpcRecord,
+  RequestEvent,
+  IRelayerStorage,
+} from "@walletconnect/types";
 import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
@@ -21,10 +26,10 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private cached: JsonRpcRecord[] = [];
 
-  constructor(public client: IClient, public logger: Logger) {
-    super(client, logger);
-    this.client;
+  constructor(public logger: Logger, public storage: IRelayerStorage) {
+    super(logger, storage);
     this.logger = generateChildLogger(logger, this.name);
+    this.storage = storage;
     this.registerEventListeners();
   }
 
@@ -163,13 +168,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private async persist() {
-    await this.client.storage.setJsonRpcRecords(this.context, this.values);
+    await this.storage.setJsonRpcRecords(this.context, this.values);
     this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getJsonRpcRecords(this.context);
+      const persisted = await this.storage.getJsonRpcRecords(this.context);
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {

@@ -1,24 +1,25 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { IJsonRpcProvider, JsonRpcResponse, IEvents } from "@walletconnect/jsonrpc-types";
+import { JsonRpcResponse, IEvents } from "@walletconnect/jsonrpc-types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
-import { IPairing } from "./pairing";
+import { IPairing, PairingTypes } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
+import { IHeartBeat } from "./heartbeat";
 import { IStorage } from "./storage";
-import { PairingTypes } from ".";
+import { IEncoder } from "./encoder";
 
 export interface ClientOptions {
   name?: string;
-  apiKey?: string;
+  projectId?: string;
   controller?: boolean;
   metadata?: AppMetadata;
+  relayUrl?: string;
   logger?: string | Logger;
   keychain?: IKeyChain;
   storage?: IKeyValueStorage;
-  relayProvider?: string | IJsonRpcProvider;
   storageOptions?: KeyValueStorageOptions;
 }
 
@@ -27,21 +28,26 @@ export abstract class IClient extends IEvents {
   public readonly version = 2;
 
   public abstract logger: Logger;
+
+  public abstract heartbeat: IHeartBeat;
+
   public abstract crypto: ICrypto;
 
-  public abstract relayer: IRelayer;
+  public abstract encoder: IEncoder;
   public abstract storage: IStorage;
+  public abstract relayer: IRelayer;
 
   public abstract pairing: IPairing;
   public abstract session: ISession;
 
-  public abstract name: string;
+  public abstract readonly name: string;
   public abstract readonly context: string;
 
   public abstract readonly controller: boolean;
-  public abstract metadata: AppMetadata | undefined;
+  public abstract readonly metadata: AppMetadata | undefined;
 
-  public abstract apiKey: string | undefined;
+  public abstract readonly relayUrl: string | undefined;
+  public abstract readonly projectId: string | undefined;
 
   constructor(opts?: ClientOptions) {
     super();

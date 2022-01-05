@@ -21,15 +21,15 @@ const TEST_METHODS = [TEST_JSONRPC_METHOD];
 const TEST_APP_METADATA = {
   name: "Test App",
   description: "Test App for WalletConnect",
-  url: "https://walletconnect.org/",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 const TEST_WALLET_METADATA = {
   name: "Test Wallet",
   description: "Test Wallet for WalletConnect",
-  url: "https://walletconnect.org/",
-  icons: ["https://walletconnect.org/walletconnect-logo.png"],
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
 async function setup() {
@@ -37,14 +37,14 @@ async function setup() {
     chains: TEST_CHAINS,
     methods: TEST_METHODS,
     client: {
-      relayProvider: TEST_RELAY_URL,
+      relayUrl: TEST_RELAY_URL,
       metadata: TEST_APP_METADATA,
     },
   });
   const provider = new JsonRpcProvider(connection);
   const clientB = await Client.init({
     controller: true,
-    relayProvider: TEST_RELAY_URL,
+    relayUrl: TEST_RELAY_URL,
     metadata: TEST_WALLET_METADATA,
   });
   return { provider, wallet: clientB };

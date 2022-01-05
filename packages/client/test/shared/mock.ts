@@ -1,5 +1,4 @@
 import { EventEmitter } from "events";
-import * as encoding from "@walletconnect/encoding";
 import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
@@ -11,16 +10,16 @@ import {
 } from "@walletconnect/jsonrpc-types";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import {
-  RELAYER_DEFAULT_PUBLISH_TTL,
+  PUBLISHER_DEFAULT_TTL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
-  RELAYER_SUBSCRIPTION_SUFFIX,
+  RELAYER_SUBSCRIBER_SUFFIX,
 } from "../../src";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes } from "@walletconnect/types";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import { IRelayerEncoder, RelayerTypes } from "@walletconnect/types";
 import { toMiliseconds } from "@walletconnect/utils";
+import { RelayerEncoder } from "../../src/controllers";
 
 export class MockWakuRelayer implements IEvents {
   public events = new EventEmitter();
@@ -31,8 +30,11 @@ export class MockWakuRelayer implements IEvents {
 
   public provider: IJsonRpcProvider;
 
+  public encoder: IRelayerEncoder;
+
   constructor(rpcUrl: string) {
     this.provider = new JsonRpcProvider(new WsConnection(rpcUrl));
+    this.encoder = new RelayerEncoder();
     this.registerEventListeners();
   }
 
@@ -69,8 +71,8 @@ export class MockWakuRelayer implements IEvents {
       method: this.jsonRpc.publish,
       params: {
         topic,
-        message: await this.encodeJsonRpc(topic, payload),
-        ttl: RELAYER_DEFAULT_PUBLISH_TTL,
+        message: await this.encoder.encode(topic, payload),
+        ttl: PUBLISHER_DEFAULT_TTL,
       },
     };
     return this.provider.request(request);
@@ -99,22 +101,14 @@ export class MockWakuRelayer implements IEvents {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async encodeJsonRpc(topic: string, payload: JsonRpcPayload) {
-    return encoding.utf8ToHex(safeJsonStringify(payload));
-  }
-
-  private async decodeJsonRpc(topic: string, message: string) {
-    return safeJsonParse(encoding.hexToUtf8(message));
-  }
-
   private async onPayload(payload: JsonRpcPayload) {
     if (isJsonRpcRequest(payload)) {
-      if (!payload.method.endsWith(RELAYER_SUBSCRIPTION_SUFFIX)) return;
+      if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
       const payloadEvent = {
         topic,
-        payload: await this.decodeJsonRpc(topic, message),
+        payload: await this.encoder.decode(topic, message),
       } as RelayerTypes.PayloadEvent;
       this.events.emit(event.id, payloadEvent);
       this.events.emit(RELAYER_EVENTS.payload, payloadEvent);

@@ -1,10 +1,10 @@
-import { ONE_SECOND, SIX_HOURS } from "./time";
-
-export const RELAYER_DEFAULT_PUBLISH_TTL = SIX_HOURS;
+import { ONE_SECOND } from "./time";
 
 export const RELAYER_DEFAULT_PROTOCOL = "waku";
 
-export const RELAYER_DEFAULT_RPC_URL = "wss://relay.walletconnect.org";
+export const RELAYER_DEFAULT_LOGGER = "error";
+
+export const RELAYER_DEFAULT_RELAY_URL = "wss://relay.walletconnect.com";
 
 export const RELAYER_CONTEXT = "relayer";
 
@@ -15,7 +15,7 @@ export const RELAYER_EVENTS = {
   error: "relayer_error",
 };
 
-export const RELAYER_SUBSCRIPTION_SUFFIX = "_subscription";
+export const RELAYER_SUBSCRIBER_SUFFIX = "_subscription";
 
 export const RELAYER_PROVIDER_EVENTS = {
   payload: "payload",
@@ -25,3 +25,7 @@ export const RELAYER_PROVIDER_EVENTS = {
 };
 
 export const RELAYER_RECONNECT_TIMEOUT = ONE_SECOND;
+
+export const RELAYER_STORAGE_OPTIONS = {
+  database: ":memory:",
+};

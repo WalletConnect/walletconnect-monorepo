@@ -2,7 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
-import QRCodeModal from "@walletconnect/qrcode-modal";
+import QRCodeModal from "@walletconnect/legacy-modal";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
 import * as encoding from "@walletconnect/encoding";
@@ -23,7 +23,8 @@ import {
   DEFAULT_LOGGER,
   DEFAULT_EIP155_METHODS,
   DEFAULT_COSMOS_METHODS,
-  DEFAULT_RELAY_PROVIDER,
+  DEFAULT_PROJECT_ID,
+  DEFAULT_RELAY_URL,
   DEFAULT_TEST_CHAINS,
   DEFAULT_CHAINS,
 } from "./constants";
@@ -164,7 +165,8 @@ class App extends React.Component<any, any> {
       await this.loadChainData();
       const client = await Client.init({
         logger: DEFAULT_LOGGER,
-        relayProvider: DEFAULT_RELAY_PROVIDER,
+        relayUrl: DEFAULT_RELAY_URL,
+        projectId: DEFAULT_PROJECT_ID,
       });
       this.setState({ loading: false, client });
       this.subscribeToEvents();
