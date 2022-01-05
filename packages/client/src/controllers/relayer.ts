@@ -17,7 +17,7 @@ import {
   RelayerOptions,
   IRelayerStorage,
 } from "@walletconnect/types";
-import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
@@ -33,7 +33,6 @@ import {
 import { Subscriber } from "./subscriber";
 import {
   RELAYER_CONTEXT,
-  RELAYER_DEFAULT_PROTOCOL,
   RELAYER_DEFAULT_LOGGER,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
@@ -235,18 +234,4 @@ export class Relayer extends IRelayer {
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
   }
-}
-
-export function getRelayProtocolName(
-  opts?: RelayerTypes.RequestOptions,
-): RelayerTypes.ProtocolOptions {
-  return opts?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
-}
-
-export function getRelayProtocolApi(protocol: string) {
-  const jsonrpc = RELAY_JSONRPC[protocol];
-  if (typeof jsonrpc === "undefined") {
-    throw new Error(`Relay Protocol not supported: ${protocol}`);
-  }
-  return jsonrpc;
 }

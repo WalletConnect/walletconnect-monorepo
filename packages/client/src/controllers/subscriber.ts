@@ -20,7 +20,7 @@ import {
   RELAYER_PROVIDER_EVENTS,
   HEARTBEAT_EVENTS,
 } from "../constants";
-import { getRelayProtocolName, getRelayProtocolApi } from "./relayer";
+import { getRelayProtocolName, getRelayProtocolApi } from "./relayProtocol";
 
 export class SubscriberTopicMap implements ISubscriberTopicMap {
   public map = new Map<string, string[]>();
