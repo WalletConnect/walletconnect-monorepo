@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/types",
-  "version": "1.6.6",
+  "version": "1.7.0",
   "description": "Typescript Types for WalletConnect",
   "scripts": {},
   "keywords": [
@@ -15,9 +15,9 @@
     "cryptocurrency",
     "dapp"
   ],
-  "author": "WalletConnect <walletconnect.org>",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/",
-  "license": "LGPL-3.0",
+  "license": "Apache-2.0",
   "main": "",
   "types": "index",
   "repository": {
