@@ -889,6 +889,9 @@ class Connector implements IConnector {
     if (this._handshakeTopic) {
       this._handshakeTopic = "";
     }
+    if (this._peerId) {
+      this._peerId = "";
+    }
     this._eventManager.trigger({
       event: "disconnect",
       params: [{ message }],
