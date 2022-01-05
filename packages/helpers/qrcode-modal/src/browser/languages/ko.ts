@@ -14,6 +14,7 @@ const ko: TextMap = {
   loading: "로드 중...",
   something_went_wrong: "문제가 발생했습니다.",
   no_supported_wallets: "아직 지원되는 지갑이 없습니다",
+  no_wallets_found: "지갑을 찾을 수 없습니다",
 };
 
 export default ko;

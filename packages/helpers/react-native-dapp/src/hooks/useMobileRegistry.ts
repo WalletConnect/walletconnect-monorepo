@@ -30,7 +30,7 @@ export default function useMobileRegistry(): State {
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(error);
-        setState({ ...defaultState, error, loading: false });
+        setState({ ...defaultState, error: error as any, loading: false });
       }
     })();
   }, [setState]);

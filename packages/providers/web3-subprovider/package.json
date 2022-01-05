@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/web3-subprovider",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "Web3 Subprovider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -23,9 +23,9 @@
     "cryptocurrency",
     "dapp"
   ],
-  "author": "WalletConnect <walletconnect.org>",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/",
-  "license": "LGPL-3.0",
+  "license": "Apache-2.0",
   "main": "dist/cjs/index.js",
   "browser": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
@@ -60,9 +60,9 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/client": "^1.6.2",
-    "@walletconnect/qrcode-modal": "^1.6.2",
-    "@walletconnect/types": "^1.6.2",
+    "@walletconnect/client": "^1.7.0",
+    "@walletconnect/qrcode-modal": "^1.7.0",
+    "@walletconnect/types": "^1.7.0",
     "web3-provider-engine": "16.0.1"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"

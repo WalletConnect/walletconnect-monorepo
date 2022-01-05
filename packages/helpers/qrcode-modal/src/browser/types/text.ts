@@ -12,4 +12,5 @@ export interface TextMap {
   loading: string;
   something_went_wrong: string;
   no_supported_wallets: string;
+  no_wallets_found: string;
 }
