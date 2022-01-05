@@ -3,10 +3,11 @@ import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
 
-import { PUBLISHER_CONTEXT, HEARTBEAT_EVENTS, PUBLISHER_DEFAULT_TTL } from "../constants";
-import { getRelayProtocolName, getRelayProtocolApi } from "./relayProtocol";
+import { getRelayProtocolName, getRelayProtocolApi } from "@walletconnect/utils";
 import { IEvents, JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
+
+import { PUBLISHER_CONTEXT, HEARTBEAT_EVENTS, PUBLISHER_DEFAULT_TTL } from "../constants";
 
 export abstract class IPublisher extends IEvents {
   public abstract name: string;

@@ -11,7 +11,12 @@ import {
 } from "@walletconnect/types";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { RequestArguments } from "@walletconnect/jsonrpc-types";
-import { ERROR, formatMessageContext } from "@walletconnect/utils";
+import {
+  ERROR,
+  formatMessageContext,
+  getRelayProtocolName,
+  getRelayProtocolApi,
+} from "@walletconnect/utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import {
@@ -20,7 +25,6 @@ import {
   RELAYER_PROVIDER_EVENTS,
   HEARTBEAT_EVENTS,
 } from "../constants";
-import { getRelayProtocolName, getRelayProtocolApi } from "./relayProtocol";
 
 export class SubscriberTopicMap implements ISubscriberTopicMap {
   public map = new Map<string, string[]>();
