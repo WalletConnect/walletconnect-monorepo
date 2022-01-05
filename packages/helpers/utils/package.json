@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/utils",
-  "version": "1.7.0",
+  "version": "1.7.1-alpha.0",
   "description": "Utility Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -30,7 +30,9 @@
   "browser": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
   "unpkg": "dist/umd/index.min.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
@@ -60,10 +62,10 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/browser-utils": "^1.7.0",
+    "@walletconnect/browser-utils": "^1.7.1-alpha.0",
     "@walletconnect/encoding": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/types": "^1.7.0",
+    "@walletconnect/types": "^1.7.1-alpha.0",
     "js-sha3": "0.8.0",
     "query-string": "6.13.5"
   },
