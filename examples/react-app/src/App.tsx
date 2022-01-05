@@ -33,6 +33,7 @@ import {
   AccountAction,
   eip712,
   hashPersonalMessage,
+  hashTypedDataMessage,
   verifySignature,
   AccountBalances,
   formatTestTransaction,
@@ -554,7 +555,7 @@ class App extends React.Component<any, any> {
       const rpcUrl = chainData.rpc[0];
 
       // verify signature
-      const hash = hashPersonalMessage(message);
+      const hash = hashTypedDataMessage(message);
       const valid = await verifySignature(address, result, hash, rpcUrl);
 
       // format displayed result
