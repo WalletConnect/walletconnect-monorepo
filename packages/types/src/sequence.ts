@@ -35,6 +35,7 @@ export declare namespace SequenceTypes {
     responded: string;
     settled: string;
     updated: string;
+    upgraded: string;
     deleted: string;
     request: string;
     response: string;

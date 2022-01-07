@@ -643,8 +643,8 @@ export class Engine extends IEngine {
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    settled.state = await this.sequence.mergeUpdate(topic, update);
-    await this.sequence.settled.update(settled.topic, settled);
+    const state = await this.sequence.mergeUpdate(topic, update);
+    await this.sequence.settled.update(settled.topic, { state });
     return update;
   }
 
@@ -666,8 +666,8 @@ export class Engine extends IEngine {
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    settled.permissions = await this.sequence.mergeUpgrade(topic, upgrade);
-    await this.sequence.settled.update(settled.topic, settled);
+    const permissions = await this.sequence.mergeUpgrade(topic, upgrade);
+    await this.sequence.settled.update(settled.topic, { permissions });
     return upgrade;
   }
   // ---------- Private ----------------------------------------------- //
@@ -883,10 +883,28 @@ export class Engine extends IEngine {
       STORE_EVENTS.updated,
       async (updatedEvent: StoreEvent.Updated<SequenceTypes.Settled>) => {
         const { sequence: settled, update } = updatedEvent;
-        const eventName = this.sequence.config.events.updated;
-        this.sequence.logger.info(`Emitting ${eventName}`);
-        this.sequence.logger.debug({ type: "event", event: eventName, sequence: settled, update });
-        this.sequence.events.emit(eventName, settled, update);
+        if (typeof update.state !== "undefined") {
+          const eventName = this.sequence.config.events.updated;
+          this.sequence.logger.info(`Emitting ${eventName}`);
+          this.sequence.logger.debug({
+            type: "event",
+            event: eventName,
+            sequence: settled,
+            update,
+          });
+          this.sequence.events.emit(eventName, settled, update);
+        } else if (typeof update.permissions !== "undefined") {
+          const eventName = this.sequence.config.events.upgraded;
+          const upgrade = update;
+          this.sequence.logger.info(`Emitting ${eventName}`);
+          this.sequence.logger.debug({
+            type: "event",
+            event: eventName,
+            sequence: settled,
+            upgrade,
+          });
+          this.sequence.events.emit(eventName, settled, upgrade);
+        }
       },
     );
     this.sequence.settled.on(

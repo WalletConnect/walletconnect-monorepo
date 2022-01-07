@@ -142,7 +142,7 @@ describe("Session", function() {
     const topic = await testApproveSession(setup, clients);
     await clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);
   });
-  it("B updates state accounts and A receives event", async () => {
+  it.only("B updates state accounts and A receives event", async () => {
     const state = { accounts: ["eip155:1:0x8fd00f170fdf3772c5ebdcd90bf257316c69ba45"] };
     const { setup, clients } = await setupClientsForTesting();
     const topic = await testApproveSession(setup, clients);
@@ -198,7 +198,7 @@ describe("Session", function() {
       `Unauthorized Notification Type Requested: ${notification.type}`,
     );
   });
-  it("B upgrades permissions and A receives event", async () => {
+  it.only("B upgrades permissions and A receives event", async () => {
     const chainId = "eip155:300";
     const request = {
       method: "personal_sign",
@@ -214,9 +214,11 @@ describe("Session", function() {
     // second - upgrade permissions to include new chainId
     await Promise.all([
       new Promise<void>(async (resolve, reject) => {
-        clients.a.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
+        clients.a.on(CLIENT_EVENTS.session.upgraded, (session: SessionTypes.Settled) => {
           if (!session.permissions.blockchain.chains.includes(chainId)) {
-            return reject(new Error(`Updated session permissions missing new chainId: ${chainId}`));
+            return reject(
+              new Error(`Upgraded session permissions missing new chainId: ${chainId}`),
+            );
           }
           resolve();
         });

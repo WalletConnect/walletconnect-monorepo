@@ -375,6 +375,15 @@ export class Client extends IClient {
       },
     );
     this.pairing.on(
+      PAIRING_EVENTS.upgraded,
+      (pairing: PairingTypes.Settled, upgrade: Partial<PairingTypes.Settled>) => {
+        const eventName = CLIENT_EVENTS.pairing.upgraded;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: pairing, upgrade });
+        this.events.emit(eventName, pairing, upgrade);
+      },
+    );
+    this.pairing.on(
       PAIRING_EVENTS.deleted,
       (pairing: PairingTypes.Settled, reason: ErrorResponse) => {
         const eventName = CLIENT_EVENTS.pairing.deleted;
@@ -407,6 +416,15 @@ export class Client extends IClient {
         this.logger.info(`Emitting ${eventName}`);
         this.logger.debug({ type: "event", event: eventName, data: session, update });
         this.events.emit(eventName, session, update);
+      },
+    );
+    this.session.on(
+      SESSION_EVENTS.upgraded,
+      (session: SessionTypes.Settled, upgrade: Partial<SessionTypes.Settled>) => {
+        const eventName = CLIENT_EVENTS.session.upgraded;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: session, upgrade });
+        this.events.emit(eventName, session, upgrade);
       },
     );
     this.session.on(

@@ -13,6 +13,7 @@ export const CLIENT_EVENTS = {
   pairing: {
     proposal: "pairing_proposal",
     updated: "pairing_updated",
+    upgraded: "pairing_upgraded",
     created: "pairing_created",
     deleted: "pairing_deleted",
     sync: "pairing_sync",
@@ -20,6 +21,7 @@ export const CLIENT_EVENTS = {
   session: {
     proposal: "session_proposal",
     updated: "session_updated",
+    upgraded: "session_upgraded",
     created: "session_created",
     deleted: "session_deleted",
     notification: "session_notification",

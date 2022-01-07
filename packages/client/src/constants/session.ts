@@ -32,6 +32,7 @@ export const SESSION_EVENTS: SessionTypes.Events = {
   responded: "session_responded",
   settled: "session_settled",
   updated: "session_updated",
+  upgraded: "session_upgraded",
   deleted: "session_deleted",
   request: "session_request",
   response: "session_response",

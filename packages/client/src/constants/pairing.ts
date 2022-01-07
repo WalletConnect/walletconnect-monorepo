@@ -31,6 +31,7 @@ export const PAIRING_EVENTS: PairingTypes.Events = {
   responded: "pairing_responded",
   settled: "pairing_settled",
   updated: "pairing_updated",
+  upgraded: "pairing_upgraded",
   deleted: "pairing_deleted",
   request: "pairing_request",
   response: "pairing_response",
