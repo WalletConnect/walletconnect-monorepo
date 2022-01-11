@@ -66,7 +66,7 @@
     "@walletconnect/encoding": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/types": "^1.7.1",
-    "js-sha3": "0.8.0",
+    "js-sha3": "0.8.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
