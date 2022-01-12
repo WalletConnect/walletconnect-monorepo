@@ -17,6 +17,7 @@ export declare namespace RelayerTypes {
   export interface PublishOptions {
     relay: ProtocolOptions;
     ttl?: number;
+    prompt?: boolean;
   }
 
   export interface SubscribeOptions {

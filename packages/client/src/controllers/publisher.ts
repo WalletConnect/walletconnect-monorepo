@@ -101,6 +101,7 @@ export class Publisher extends IPublisher {
     message: string,
     ttl: number,
     relay: RelayerTypes.ProtocolOptions,
+    prompt?: boolean,
   ): Promise<void> {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
@@ -109,8 +110,12 @@ export class Publisher extends IPublisher {
         topic,
         message,
         ttl,
+        prompt,
       },
     };
+    if (typeof request.params?.prompt === "undefined") {
+      delete request.params?.prompt;
+    }
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     return this.relayer.provider.request(request);
