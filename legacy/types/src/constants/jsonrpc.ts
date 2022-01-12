@@ -1,3 +1,13 @@
+export const WALLET_METHODS = [
+  "wallet_addEthereumChain",
+  "wallet_switchEthereumChain",
+  "wallet_getPermissions",
+  "wallet_requestPermissions",
+  "wallet_registerOnboarding",
+  "wallet_watchAsset",
+  "wallet_scanQRCode",
+]
+
 export const SIGNING_METHODS = [
   "eth_sendTransaction",
   "eth_signTransaction",
@@ -8,6 +18,7 @@ export const SIGNING_METHODS = [
   "eth_signTypedData_v3",
   "eth_signTypedData_v4",
   "personal_sign",
+  ...WALLET_METHODS
 ];
 
 // backwards-compatibility alias
