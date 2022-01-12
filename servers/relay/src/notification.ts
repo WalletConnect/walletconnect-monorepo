@@ -52,7 +52,9 @@ export class NotificationService {
       },
     );
     this.server.events.on(JSONRPC_EVENTS.publish, async (params: RelayJsonRpc.PublishParams) => {
-      await this.server.notification.push(params.topic);
+      if (params.prompt) {
+        await this.server.notification.push(params.topic);
+      }
     });
   }
 }
