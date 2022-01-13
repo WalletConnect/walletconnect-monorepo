@@ -4,7 +4,7 @@ import { IJsonRpcProvider } from "@walletconnect/jsonrpc-utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import * as encoding from "@walletconnect/encoding";
-import { isFloat } from "./utils";
+import { checkIridiumMessageVersion, isFloat } from "./utils";
 import {
   PagingOptions,
   WakuMessagesResult,
@@ -208,10 +208,16 @@ export class NetworkService {
 
   private async emitWakuMessage(m: WakuMessage) {
     const topic = m.contentTopic;
-    const {
-      message,
-      opts: { prompt },
-    } = await this.encoder.decode(m.payload);
+    const version = checkIridiumMessageVersion(m.payload);
+    let message = "";
+    let prompt = false;
+    if (version === 0) {
+      message = m.payload;
+    } else {
+      const decoded = await this.encoder.decode(m.payload);
+      message = decoded.message;
+      prompt = decoded.opts.prompt || false;
+    }
     this.server.events.emit(NETWORK_EVENTS.message, topic, message, prompt);
   }
 
