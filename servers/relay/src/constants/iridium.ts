@@ -1,0 +1,1 @@
+export const IRIDIUM_MESSAGE_PREFIX = "0x69726e";
