@@ -110,7 +110,9 @@ export class JsonRpcService {
   }
 
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
+    console.log(request.params); // eslint-disable-line
     const params = parsePublishRequest(request);
+    console.log(params); // eslint-disable-line
     if (params.ttl > config.REDIS_MAX_TTL) {
       const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`;
       this.logger.error(errorMessage);

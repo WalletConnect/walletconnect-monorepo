@@ -4,7 +4,7 @@ import { generateChildLogger } from "@walletconnect/logger";
 
 import { LegacySocketMessage, Notification } from "./types";
 import { HttpService } from "./http";
-import { JSONRPC_EVENTS, LEGACY_EVENTS, NOTIFICATION_CONTEXT } from "./constants";
+import { JSONRPC_EVENTS, LEGACY_EVENTS, NETWORK_EVENTS, NOTIFICATION_CONTEXT } from "./constants";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 
 export class NotificationService {
@@ -54,6 +54,11 @@ export class NotificationService {
     this.server.events.on(JSONRPC_EVENTS.publish, async (params: RelayJsonRpc.PublishParams) => {
       if (params.prompt) {
         await this.server.notification.push(params.topic);
+      }
+    });
+    this.server.events.on(NETWORK_EVENTS.message, async (topic, message, prompt) => {
+      if (prompt) {
+        await this.server.notification.push(topic);
       }
     });
   }
