@@ -527,7 +527,7 @@ let
             if [ -f ${src}/package-lock.json ]
             then
                 cp ${src}/package-lock.json .
-                // THIS IS IMPORTANT @sbc64
+                # THIS IS IMPORTANT @sbc64
                 chmod 644 package-lock.json
             fi
           ''}
