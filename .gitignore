@@ -29,5 +29,5 @@ zip
 tsconfig.tsbuildinfo
 test.db
 setup
-result
+result*
 ops/grafana/grafana.ini

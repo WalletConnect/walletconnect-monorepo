@@ -1,7 +1,8 @@
-{ pkgs ? import (import ./ops/nix/sources.nix).nixpkgs {}, githash ? ""}:
-with pkgs; let
-  myNodejs = pkgs.nodejs-14_x;
-  nodeEnv = callPackage ./ops/node-env.nix {
+{ sources ? import ./ops/nix/sources.nix, githash ? "" }:
+let
+  pkgs = import sources.nixpkgs {};
+  myNodejs = pkgs.nodejs-16_x;
+  nodeEnv = with pkgs; pkgs.callPackage ./ops/node-env.nix {
     nodejs = myNodejs;
     inherit pkgs stdenv lib python2 runCommand writeTextFile;
     libtool = if pkgs.stdenv.isDarwin then pkgs.darwin.cctools else null;
@@ -12,13 +13,11 @@ with pkgs; let
       version = "v${pkgjson.version}";
       src = pkgs.nix-gitignore.gitignoreSourcePure [ 
         "**/test"
-        "Makefile"
         "result"
         "dist"
         "node_modules"
         "ops"
         ".git"
-        ./.gitignore
       ] path;
       buildInputs = [ myNodejs ];
       buildPhase = ''
@@ -37,7 +36,7 @@ with pkgs; let
 
   relayApp = nodeAppDerivation { 
     pkgjson = builtins.fromJSON (builtins.readFile ./servers/relay/package.json);
-    nodeDependencies = (callPackage ./servers/relay/node-packages.nix {
+    nodeDependencies = (pkgs.callPackage ./servers/relay/node-packages.nix {
       inherit nodeEnv;
     }).nodeDependencies;
     path = ./servers/relay;
@@ -45,14 +44,14 @@ with pkgs; let
 
   healthApp = nodeAppDerivation { 
     pkgjson = builtins.fromJSON (builtins.readFile ./servers/health/package.json);
-    nodeDependencies = (callPackage ./servers/health/node-packages.nix {
+    nodeDependencies = (pkgs.callPackage ./servers/health/node-packages.nix {
       inherit nodeEnv;
     }).nodeDependencies;
     path = ./servers/health;
   };
 
 in {
-  relayDeps = (callPackage ./servers/relay/node-packages.nix {
+  relayDeps = (pkgs.callPackage ./servers/relay/node-packages.nix {
       inherit nodeEnv;
     }).nodeDependencies;
   relayApp = relayApp;
