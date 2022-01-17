@@ -208,16 +208,10 @@ export class NetworkService {
 
   private async emitWakuMessage(m: WakuMessage) {
     const topic = m.contentTopic;
-    const version = checkIridiumMessageVersion(m.payload);
-    let message = "";
-    let prompt = false;
-    if (version === 0) {
-      message = m.payload;
-    } else {
-      const decoded = await this.encoder.decode(m.payload);
-      message = decoded.message;
-      prompt = decoded.opts.prompt || false;
-    }
+    const {
+      message,
+      opts: { prompt },
+    } = await this.encoder.decode(m.payload);
     this.server.events.emit(NETWORK_EVENTS.message, topic, message, prompt);
   }
 

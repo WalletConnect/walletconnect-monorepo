@@ -1,7 +1,6 @@
 export interface IridiumBaseMessage {
   version: number;
   message: string;
-  length: number;
   opts?: any;
 }
 
