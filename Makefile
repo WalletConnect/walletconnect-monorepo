@@ -218,5 +218,5 @@ reset: ## removes all build artifacts
 	$(log_end)
 
 clean: ## removes all build outputs
-	rm -rf .makeFlags build
+	rm -rf .makeFlags build result*
 	$(log_end)
