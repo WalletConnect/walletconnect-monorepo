@@ -6,7 +6,15 @@ export const NETWORK_DEFAULT_PAGE_SIZE = 500; // The smaller the page the more l
 
 export const NETWORK_STORE_CALL_REPEATS = 3;
 
-export const NETWORK_PUBSUB_TOPIC = "/waku/2/walletconnect/proto";
+export const NETWORK_PUBSUB_TOPIC = {
+  prod: "/waku/2/walletconnect/proto",
+  stag: "/waku/2/walletconnect-staging/proto",
+};
+
+export const NETWORK_ENV = {
+  prod: "production",
+  stag: "staging",
+};
 
 export const NETWORK_CONTEXT = "network";
 

@@ -4,7 +4,7 @@ import { IJsonRpcProvider } from "@walletconnect/jsonrpc-utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import * as encoding from "@walletconnect/encoding";
-import { checkIridiumMessageVersion, isFloat } from "./utils";
+import { isFloat } from "./utils";
 import {
   PagingOptions,
   WakuMessagesResult,
@@ -18,10 +18,11 @@ import {
   NETWORK_POLLING_INTERVAL,
   NETWORK_DEFAULT_PAGE_SIZE,
   NETWORK_CONTEXT,
-  NETWORK_PUBSUB_TOPIC,
   NETWORK_EVENTS,
   SUBSCRIPTION_EVENTS,
   NETWORK_RECONNECT_INTERVAL,
+  NETWORK_ENV,
+  NETWORK_PUBSUB_TOPIC,
 } from "./constants";
 import { HttpService } from "./http";
 import { IridiumEncoder } from "./encoder";
@@ -30,14 +31,18 @@ export class NetworkService {
   public context = NETWORK_CONTEXT;
   public server: HttpService;
   public logger: Logger;
-  public namespace = NETWORK_PUBSUB_TOPIC;
+  public namespace = NETWORK_PUBSUB_TOPIC.prod;
   public encoder = new IridiumEncoder();
   public provider: IJsonRpcProvider | undefined;
 
-  constructor(server: HttpService, logger: Logger, nodeUrl: string) {
+  constructor(server: HttpService, logger: Logger) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
+    const nodeUrl = this.server.config.waku.url;
     this.provider = this.setJsonRpcProvider(nodeUrl);
+    if ((this.server.config.waku.env = NETWORK_ENV.stag)) {
+      this.namespace = NETWORK_PUBSUB_TOPIC.stag;
+    }
     this.initialize();
   }
 
@@ -215,7 +220,10 @@ export class NetworkService {
     this.server.events.emit(NETWORK_EVENTS.message, topic, message, prompt);
   }
 
-  private setJsonRpcProvider(nodeUrl: string): JsonRpcProvider | undefined {
+  private setJsonRpcProvider(nodeUrl?: string): JsonRpcProvider | undefined {
+    if (typeof nodeUrl === "undefined") {
+      throw new Error("Missing nodeUrl for WakuService");
+    }
     let provider: JsonRpcProvider | undefined;
     try {
       provider = new JsonRpcProvider(new HttpConnection(nodeUrl));

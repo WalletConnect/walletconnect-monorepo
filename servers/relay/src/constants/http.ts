@@ -1,5 +1,9 @@
 import { FIVE_SECONDS } from "./time";
 
+export const SERVER_LOGGER = {
+  levels: ["trace", "debug", "info", "warn", "error", "fatal", "silent"],
+};
+
 export const SERVER_CONTEXT = "relay";
 
 export const SERVER_EVENTS = {
