@@ -58,7 +58,7 @@ setup: ## configures domain and certbot email
 	$(log_end)
 
 bootstrap-lerna: ## setups lerna for the monorepo management
-	npm i --dev
+	npm i --include=dev
 	npm run bootstrap
 	touch $(flags)/$@
 	$(log_end)
@@ -151,10 +151,6 @@ dev: predeploy ## runs relay on watch mode and shows logs
 ci: ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	$(MAKE) dev
-	#nix show-derivation /nix/store/*-relay-conf.json.drv
-	#nix show-derivation /nix/store/*-stream-relay.drv
-	#nix show-derivation /nix/store/*-relay.tar.gz.drv
-	#nix show-derivation /nix/store/*-relay-base.json.drv
 	sleep 15
 	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
