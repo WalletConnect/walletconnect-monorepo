@@ -23,9 +23,7 @@ dockerLoad=docker load -i build/$@ \
 		| awk '{print $$NF}' \
 		| tee build/$@-img
 copyResult=cp -r -f -L result build/$@ && rm -rf result
-buildRelayDeps=nix-build --attr relayDeps
-buildRelayApp=nix-build --attr relayApp
-buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && $(copyResult)
+buildRelay=nix-build --attr relay.docker --argstr githash $(GITHASH) && $(copyResult)
 caddyVersion=v2.4.3
 caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
 buildCaddy=nix-build $(caddySrc) --attr docker && $(copyResult)
@@ -93,23 +91,7 @@ ifneq (, $(shell which nix))
 endif
 	$(log_end)
 
-build-relay-deps: dirs
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildRelayDeps)"
-else
-	$(buildRelayDeps)
-endif
-	$(log_end)
-
-build-relay-app: dirs
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildRelayApp)"
-else
-	$(buildRelayApp)
-endif
-	$(log_end)
-
-build-img-relay: dirs nix-volume build-relay-deps build-relay-app ## builds relay docker image inside of docker
+build-img-relay: dirs nix-volume ## builds relay docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildRelay)"
 else
@@ -195,8 +177,6 @@ relay-logs: ## follows the relay container logs.
 	docker service logs -f --raw --tail 100 $(project)_relay
 
 cachix: clean dirs ## pushes docker images to cachix
-	cachix push walletconnect $(shell $(buildRelayDeps))
-	cachix push walletconnect $(shell $(buildRelayApp))
 	cachix push walletconnect $(shell $(buildRelay))
 	cachix push walletconnect $(shell $(buildWaku))
 	cachix push walletconnect $(shell $(buildCaddy))

@@ -22,5 +22,17 @@
         "type": "tarball",
         "url": "https://github.com/NixOS/nixpkgs/archive/fe6f208d68ac254873b659db9676d44dea9b0555.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "npmlock2nix": {
+        "branch": "master",
+        "description": null,
+        "homepage": null,
+        "owner": "nix-community",
+        "repo": "npmlock2nix",
+        "rev": "04c98232246316dadd499c50e80e9125b4d84ba6",
+        "sha256": "17mf3r34skc38mp0zssrn4xn4m4nwwm3xsa6bm3zrwcnm855sszi",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/npmlock2nix/archive/04c98232246316dadd499c50e80e9125b4d84ba6.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
