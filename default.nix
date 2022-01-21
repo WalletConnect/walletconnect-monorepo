@@ -8,75 +8,61 @@ let
       })
     ];
   };
-  nodejs = pkgs.nodejs-16_x;
   buildNodeApp =
     { src
-    , nodeDeps
-    , pkgjson ? builtins.fromJSON (builtins.readFile src + "/package.json")
+    , node_modules
+    , pkgjson ? builtins.fromJSON (builtins.readFile (src + "/package.json"))
     }: pkgs.stdenv.mkDerivation {
       inherit src;
       pname = builtins.replaceStrings [ "@" "/" ] [ "_at_" "_slash_" ] pkgjson.name;
       version = "v${pkgjson.version}";
-      buildInputs = [ nodeDeps.nodejs ];
+      buildInputs = [ node_modules.nodejs ];
       buildPhase = ''
-        export HOME=$TMP
-        mkdir -p $out
-        ln -s ${nodeDeps}/node_modules ./node_modules
-        ${nodeDeps.nodejs}/bin/npm run compile
+        ln -s ${node_modules}/node_modules ./node_modules
+        ${node_modules.nodejs}/bin/npm run compile
       '';
       installPhase = ''
+        mkdir -p $out
+        ln -s ${node_modules}/node_modules $out/node_modules
         cp -r dist/ $out/
         cp -r package.json $out/
-        export PATH=${nodeDeps}/bin:$PATH
       '';
-  };
-  buildDockerImage = {app, nodejs }: pkgs.dockerTools.buildLayeredImage {
+    };
+  buildDockerImage = { app, nodejs, githash }: pkgs.dockerTools.buildLayeredImage {
     name = "${organization}/${pkgs.lib.lists.last (builtins.split "_slash_" app.pname)}";
-      tag = "${app.version}";
-      config = {
-        Cmd = [ "${nodejs}/bin/node" "${app}/dist" ];
-        Env = [
-          "GITHASH=${githash}"
-        ];
+    tag = "${app.version}";
+    config = {
+      Cmd = [ "${nodejs}/bin/node" "${app}/dist" ];
+      Env = [ "GITHASH=${githash}" ];
+    };
+  };
+  build = { src, nodejs }: rec {
+    app = buildNodeApp {
+      inherit src;
+      # remember that node_modules {} accepts mkDerivation attributes
+      node_modules = pkgs.npmlock2nix.node_modules {
+        inherit src nodejs;
+        buildPhase = ''npm ci'';
       };
     };
-
+    docker = buildDockerImage { inherit app githash nodejs; };
+  };
 in
 {
-  relay = rec {
-    path = ./servers/relay;
-    node_modules = pkgs.npmlock2nix.node_modules {
-      inherit nodejs;
-      buildPhase = ''npm ci'';
-      src = pkgs.nix-gitignore.gitignoreSourcePure [
-        "dist"
-        "node_modules"
-        ".git"
-      ] path;
-    };
-    app = buildNodeApp {
-      pkgjson = builtins.fromJSON (builtins.readFile ./servers/relay/package.json);
-      nodeDeps = node_modules;
-      src = path;
-    };
-    docker = buildDockerImage{inherit app nodejs;};
+  relay = build {
+    nodejs = pkgs.nodejs-16_x;
+    src = pkgs.nix-gitignore.gitignoreSourcePure [
+      "dist"
+      "test"
+      ./.gitignore
+    ] ./servers/relay;
   };
-  health = rec {
-    path = ./servers/health;
-    node_modules = pkgs.npmlock2nix.node_modules {
-      inherit nodejs;
-      buildPhase = ''npm ci'';
-      src = pkgs.nix-gitignore.gitignoreSourcePure [
-        "dist"
-        "node_modules"
-        ".git"
-      ] path;
-    };
-    app = buildNodeApp {
-      pkgjson = builtins.fromJSON (builtins.readFile ./servers/relay/package.json);
-      nodeDeps = node_modules;
-      src = path;
-    };
-    docker = buildDockerImage{inherit app nodejs;};
+  health = build {
+    nodejs = pkgs.nodejs-16_x;
+    src = pkgs.nix-gitignore.gitignoreSourcePure [
+      "dist"
+      "test"
+      ./.gitignore
+    ] ./servers/health;
   };
 }

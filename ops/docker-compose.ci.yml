@@ -7,3 +7,5 @@ services:
   relay:
     environment:
       WAKU_URL: ""
+    ports:
+      - "5000:5000"
