@@ -6,13 +6,15 @@ import { ISequence, SequenceTypes } from "./sequence";
 export abstract class IEngine<
   Pending = SequenceTypes.Pending,
   Settled = SequenceTypes.Settled,
-  Upgrade = SequenceTypes.Upgrade,
   Update = SequenceTypes.Update,
+  Upgrade = SequenceTypes.Upgrade,
+  Extension = SequenceTypes.Extension,
   CreateParams = SequenceTypes.CreateParams,
   RespondParams = SequenceTypes.RespondParams,
   RequestParams = SequenceTypes.RequestParams,
-  UpgradeParams = SequenceTypes.UpgradeParams,
   UpdateParams = SequenceTypes.UpdateParams,
+  UpgradeParams = SequenceTypes.UpgradeParams,
+  ExtendParams = SequenceTypes.ExtendParams,
   DeleteParams = SequenceTypes.DeleteParams,
   ProposeParams = SequenceTypes.ProposeParams,
   SettleParams = SequenceTypes.SettleParams,
@@ -27,8 +29,9 @@ export abstract class IEngine<
   public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
   public abstract create(params?: CreateParams): Promise<Settled>;
   public abstract respond(params: RespondParams): Promise<Pending>;
-  public abstract upgrade(params: UpgradeParams): Promise<Settled>;
   public abstract update(params: UpdateParams): Promise<Settled>;
+  public abstract upgrade(params: UpgradeParams): Promise<Settled>;
+  public abstract extend(params: ExtendParams): Promise<Settled>;
   public abstract request(params: RequestParams): Promise<any>;
   public abstract delete(params: DeleteParams): Promise<void>;
   public abstract notify(params: NotifyParams): Promise<void>;
@@ -45,12 +48,17 @@ export abstract class IEngine<
 
   protected abstract handleUpdate(
     topic: string,
-    params: Update,
+    update: Update,
     participant: Participant,
   ): Promise<Update>;
   protected abstract handleUpgrade(
     topic: string,
-    params: Upgrade,
+    upgrade: Upgrade,
     participant: Participant,
   ): Promise<Upgrade>;
+  protected abstract handleExtension(
+    topic: string,
+    extension: Extension,
+    participant: Participant,
+  ): Promise<Extension>;
 }

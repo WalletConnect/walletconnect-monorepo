@@ -261,12 +261,16 @@ export class Client extends IClient {
     this.logger.trace({ type: "method", method: "reject", pending });
   }
 
+  public async update(params: ClientTypes.UpdateParams): Promise<void> {
+    await this.session.update(params);
+  }
+
   public async upgrade(params: ClientTypes.UpgradeParams): Promise<void> {
     await this.session.upgrade(params);
   }
 
-  public async update(params: ClientTypes.UpdateParams): Promise<void> {
-    await this.session.update(params);
+  public async extend(params: ClientTypes.ExtendParams): Promise<void> {
+    await this.session.extend(params);
   }
 
   public async request(params: ClientTypes.RequestParams): Promise<any> {
@@ -425,6 +429,15 @@ export class Client extends IClient {
         this.logger.info(`Emitting ${eventName}`);
         this.logger.debug({ type: "event", event: eventName, data: session, upgrade });
         this.events.emit(eventName, session, upgrade);
+      },
+    );
+    this.session.on(
+      SESSION_EVENTS.extended,
+      (session: SessionTypes.Settled, extension: Partial<SessionTypes.Settled>) => {
+        const eventName = CLIENT_EVENTS.session.extended;
+        this.logger.info(`Emitting ${eventName}`);
+        this.logger.debug({ type: "event", event: eventName, data: session, extension });
+        this.events.emit(eventName, session, extension);
       },
     );
     this.session.on(

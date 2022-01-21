@@ -3,7 +3,7 @@ import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { PairingTypes, IClient, IPairing } from "@walletconnect/types";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
-import { formatUri, mergeArrays } from "@walletconnect/utils";
+import { ERROR, formatUri, mergeArrays } from "@walletconnect/utils";
 
 import { Store } from "./store";
 import { Engine } from "./engine";
@@ -88,31 +88,35 @@ export class Pairing extends IPairing {
   }
 
   public create(params?: PairingTypes.CreateParams): Promise<PairingTypes.Settled> {
-    return this.engine.create(params);
+    return this.engine.create(params as any) as any;
   }
 
   public respond(params: PairingTypes.RespondParams): Promise<PairingTypes.Pending> {
-    return this.engine.respond(params);
-  }
-
-  public upgrade(params: PairingTypes.UpgradeParams): Promise<PairingTypes.Settled> {
-    return this.engine.upgrade(params);
+    return this.engine.respond(params as any) as any;
   }
 
   public update(params: PairingTypes.UpdateParams): Promise<PairingTypes.Settled> {
-    return this.engine.update(params);
+    return this.engine.update(params as any) as any;
+  }
+
+  public upgrade(params: PairingTypes.UpgradeParams): Promise<PairingTypes.Settled> {
+    return this.engine.upgrade(params as any) as any;
+  }
+
+  public extend(params: PairingTypes.ExtendParams): Promise<PairingTypes.Settled> {
+    return this.engine.extend(params as any) as any;
   }
 
   public request(params: PairingTypes.RequestParams): Promise<any> {
-    return this.engine.request(params);
+    return this.engine.request(params as any) as any;
   }
 
   public delete(params: PairingTypes.DeleteParams): Promise<void> {
-    return this.engine.delete(params);
+    return this.engine.delete(params as any) as any;
   }
 
   public notify(params: PairingTypes.NotificationEvent): Promise<void> {
-    return this.engine.notify(params);
+    return this.engine.notify(params as any) as any;
   }
 
   public on(event: string, listener: any): void {
@@ -157,6 +161,16 @@ export class Pairing extends IPairing {
       controller: settled.permissions.controller,
     };
     return permissions;
+  }
+
+  public async mergeExtension(topic: string, extension: PairingTypes.Extension) {
+    const settled = await this.settled.get(topic);
+    if (settled.expiry >= extension.expiry) {
+      const error = ERROR.INVALID_EXTEND_REQUEST.format({ context: this.name });
+      this.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    return extension;
   }
 
   public async validateRespond(params?: PairingTypes.RespondParams) {

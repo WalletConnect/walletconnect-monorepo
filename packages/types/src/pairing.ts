@@ -52,15 +52,19 @@ export declare namespace PairingTypes {
 
   export type SettleParams = SequenceTypes.SettleParams<State, Participant, Permissions>;
 
+  export type UpdateParams = SequenceTypes.UpdateParams<State>;
+
   export type UpgradeParams = SequenceTypes.UpgradeParams<Permissions>;
 
-  export type UpdateParams = SequenceTypes.UpdateParams<State>;
+  export type ExtendParams = SequenceTypes.ExtendParams;
 
   export type RequestParams = SequenceTypes.RequestParams;
 
+  export type Update = SequenceTypes.Update<State>;
+
   export type Upgrade = SequenceTypes.Upgrade<Permissions>;
 
-  export type Update = SequenceTypes.Update<State>;
+  export type Extension = SequenceTypes.Extension;
 
   export type Request = SequenceTypes.Request;
 
@@ -103,13 +107,15 @@ export declare namespace PairingTypes {
   export type Engine = IEngine<
     Pending,
     Settled,
-    Upgrade,
     Update,
+    Upgrade,
+    Extension,
     CreateParams,
     RespondParams,
     RequestParams,
-    UpgradeParams,
     UpdateParams,
+    UpgradeParams,
+    ExtendParams,
     DeleteParams,
     ProposeParams,
     SettleParams,
@@ -124,15 +130,17 @@ export abstract class IPairing extends ISequence<
   PairingTypes.Config,
   PairingTypes.Pending,
   PairingTypes.Settled,
-  PairingTypes.Upgrade,
   PairingTypes.Update,
+  PairingTypes.Upgrade,
+  PairingTypes.Extension,
   PairingTypes.State,
   PairingTypes.Permissions,
   PairingTypes.CreateParams,
   PairingTypes.RespondParams,
   PairingTypes.RequestParams,
-  PairingTypes.UpgradeParams,
   PairingTypes.UpdateParams,
+  PairingTypes.UpgradeParams,
+  PairingTypes.ExtendParams,
   PairingTypes.DeleteParams,
   PairingTypes.ProposeParams,
   PairingTypes.SettleParams,
