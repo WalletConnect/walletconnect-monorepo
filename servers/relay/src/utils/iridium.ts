@@ -3,41 +3,50 @@ import { IRIDIUM_MESSAGE_PREFIX } from "../constants";
 
 import { IridiumV1Message, IridiumV1MessageOptions } from "../types";
 
+export function hasIridiumMessagePrefix(encoded: Uint8Array): boolean {
+  const pLength = IRIDIUM_MESSAGE_PREFIX.length;
+  const sliced = encoded.slice(0, pLength);
+  return encoding.arrayToHex(sliced) === encoding.arrayToHex(sliced);
+}
+
+export function getIridiumMessageVersion(encoded: Uint8Array): number {
+  const pLength = IRIDIUM_MESSAGE_PREFIX.length;
+  return encoding.arrayToNumber(encoded.slice(pLength, pLength + 1));
+}
+
 export function checkIridiumMessageVersion(hex: string): number {
-  if (!hex.startsWith(IRIDIUM_MESSAGE_PREFIX)) {
+  const encoded = encoding.hexToArray(hex);
+  if (!hasIridiumMessagePrefix(encoded)) {
     return 0;
   } else {
-    const encoded = encoding.hexToArray(hex);
-    const version = encoding.arrayToNumber(encoded.slice(2, 3));
-    return version;
+    return getIridiumMessageVersion(encoded);
   }
 }
 
-export function encodeIridiumV1Message(v: number, msg: string, opts?: IridiumV1MessageOptions) {
-  const prefix = encoding.hexToArray(IRIDIUM_MESSAGE_PREFIX);
-  const version = encoding.numberToArray(v);
+export function encodeIridiumV1Message(msg: string, opts?: IridiumV1MessageOptions) {
+  const prefix = IRIDIUM_MESSAGE_PREFIX;
+  const version = encoding.numberToArray(1);
   const message = encoding.utf8ToArray(msg);
   const length = encoding.numberToArray(message.length);
   const prompt = encoding.numberToArray(opts?.prompt ? 1 : 0);
   return encoding.arrayToHex(encoding.concatArrays(prefix, version, length, message, prompt));
 }
 
-export function decodeIridiumV1Message(v: number, hex: string): IridiumV1Message {
-  if (!hex.startsWith(IRIDIUM_MESSAGE_PREFIX)) {
+export function decodeIridiumV1Message(hex: string, v?: number): IridiumV1Message {
+  const encoded = encoding.hexToArray(hex);
+  if (!hasIridiumMessagePrefix(encoded)) {
     throw new Error(`Cannot decode Iridum message with missing prefix`);
   }
-  const encoded = encoding.hexToArray(hex);
-  const version = encoding.arrayToNumber(encoded.slice(2, 3));
-  if (version !== v) {
+  const version = getIridiumMessageVersion(encoded);
+  if (typeof v !== "undefined" && version !== v) {
     throw new Error(`Cannot decode Iridum message with version: ${version}`);
   }
-  const length = encoding.arrayToNumber(encoded.slice(3, 4));
-  const message = encoding.arrayToUtf8(encoded.slice(4, length));
+  const length = encoding.arrayToNumber(encoded.slice(4, 5));
+  const message = encoding.arrayToUtf8(encoded.slice(5, length));
   const prompt = encoding.arrayToNumber(encoded.slice(length, length + 1));
   return {
     version,
     message,
-    length,
     opts: { prompt: prompt === 1 },
   };
 }

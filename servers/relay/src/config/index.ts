@@ -1,36 +1,39 @@
-import { THIRTY_DAYS } from "../constants";
-import { RelayModes } from "../types";
+import { NETWORK_ENV, SERVER_LOGGER, REDIS_DEFAULT_MAXTTL } from "../constants";
+import { HttpServiceConfig, RelayModes } from "../types";
 
-const GITHASH = process.env.GITHASH || "0000000";
-const VERSION = require("../../package.json").version || "0.0.0";
-const LEVELS = ["trace", "debug", "info", "warn", "error", "fatal", "silent"];
-let logLevel = process.env.LOG_LEVEL || "info";
+const gitHash = process.env.GITHASH || "0000000";
+const version = require("../../package.json").version || "0.0.0";
+const logger = (process.env.LOG_LEVEL || "info").toLowerCase();
 
-if (LEVELS.indexOf(logLevel.toLowerCase()) == -1) {
-  throw `Wrong log level used: ${process.env.LOG_LEVEL}. Valid levels are: ${LEVELS}`;
+if (SERVER_LOGGER.levels.indexOf(logger) == -1) {
+  throw `Wrong log level used: ${process.env.LOG_LEVEL}. Valid levels are: ${SERVER_LOGGER.levels}`;
 }
-logLevel = logLevel.toLowerCase();
 
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 const host = process.env.HOST || `0.0.0.0`;
-const REDIS_MAX_TTL: number = process.env.REDIS_MAXTTL
+const maxTTL: number = process.env.REDIS_MAXTTL
   ? parseInt(process.env.REDIS_MAXTTL, 10)
-  : THIRTY_DAYS;
+  : REDIS_DEFAULT_MAXTTL;
 const redis = {
   url: process.env.REDIS_URL || `redis://localhost:6379/0`,
   prefix: process.env.REDIS_PREFIX || "walletconnect-bridge",
 };
 const mode = (process.env.RELAY_MODE || "any") as RelayModes.All;
-const wakuUrl = process.env.WAKU_URL;
+const waku = {
+  env: process.env.RELAY_ENV || NETWORK_ENV.prod,
+  url: process.env.WAKU_URL,
+};
 
-export default {
-  logLevel,
+const config: HttpServiceConfig = {
+  logger,
   port,
   host,
   redis,
   mode,
-  wakuUrl,
-  REDIS_MAX_TTL,
-  GITHASH,
-  VERSION,
+  waku,
+  maxTTL,
+  gitHash,
+  version,
 };
+
+export default config;

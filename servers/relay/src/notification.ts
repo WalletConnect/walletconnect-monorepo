@@ -42,24 +42,23 @@ export class NotificationService {
     this.registerEventListeners();
   }
 
+  private async onNewMessage(topic: string, prompt?: boolean) {
+    if (prompt) {
+      await this.server.notification.push(topic);
+    }
+  }
+
   private registerEventListeners() {
     this.server.events.on(
       LEGACY_EVENTS.publish,
-      async (socketId: string, message: LegacySocketMessage) => {
-        if (!message.silent) {
-          await this.server.notification.push(message.topic);
-        }
-      },
+      async (socketId: string, message: LegacySocketMessage) =>
+        this.onNewMessage(message.topic, !message.silent),
     );
-    this.server.events.on(JSONRPC_EVENTS.publish, async (params: RelayJsonRpc.PublishParams) => {
-      if (params.prompt) {
-        await this.server.notification.push(params.topic);
-      }
-    });
-    this.server.events.on(NETWORK_EVENTS.message, async (topic, message, prompt) => {
-      if (prompt) {
-        await this.server.notification.push(topic);
-      }
-    });
+    this.server.events.on(JSONRPC_EVENTS.publish, async (params: RelayJsonRpc.PublishParams) =>
+      this.onNewMessage(params.topic, params.prompt),
+    );
+    this.server.events.on(NETWORK_EVENTS.message, async (topic, message, prompt) =>
+      this.onNewMessage(topic, prompt),
+    );
   }
 }
