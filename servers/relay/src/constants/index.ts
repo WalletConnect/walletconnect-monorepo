@@ -1,4 +1,5 @@
 export * from "./http";
+export * from "./iridium";
 export * from "./jsonrpc";
 export * from "./legacy";
 export * from "./message";

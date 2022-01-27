@@ -18,7 +18,6 @@ import {
 } from "@walletconnect/relay-api";
 import { generateChildLogger } from "@walletconnect/logger";
 
-import config from "./config";
 import { HttpService } from "./http";
 import { Subscription } from "./types";
 import {
@@ -79,7 +78,7 @@ export class JsonRpcService {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
-      this.server.ws.send(socketId, formatJsonRpcError(request.id, e.message));
+      this.server.ws.send(socketId, formatJsonRpcError(request.id, (e as any).message));
     }
   }
 
@@ -111,12 +110,13 @@ export class JsonRpcService {
 
   private async onPublishRequest(socketId: string, request: JsonRpcRequest) {
     const params = parsePublishRequest(request);
-    if (params.ttl > config.REDIS_MAX_TTL) {
-      const errorMessage = `requested ttl is above ${config.REDIS_MAX_TTL} seconds`;
+    const maxTTL = this.server.config.maxTTL;
+    if (params.ttl > maxTTL) {
+      const errorMessage = `requested ttl is above ${maxTTL} seconds`;
       this.logger.error(errorMessage);
       this.server.ws.send(
         socketId,
-        formatJsonRpcError(request.id, `requested ttl is above ${config.REDIS_MAX_TTL} seconds`),
+        formatJsonRpcError(request.id, `requested ttl is above ${maxTTL} seconds`),
       );
       return;
     }
