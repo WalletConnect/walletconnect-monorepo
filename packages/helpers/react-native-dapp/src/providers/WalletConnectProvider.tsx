@@ -188,7 +188,7 @@ export default function WalletConnectProvider({
               );
               if (maybeMatchingServices.length === 1) {
                 const [detectedWalletService] = maybeMatchingServices;
-                const url = formatWalletServiceUrl(detectedWalletService);
+                const url = `${formatWalletServiceUrl(detectedWalletService)}/wc`;
                 if (await Linking.canOpenURL(url)) {
                   return Linking.openURL(url);
                 }
@@ -204,7 +204,7 @@ export default function WalletConnectProvider({
             return maybeThrowError(new Error('Cached WalletService not found.'));
           }
   
-          const url = formatWalletServiceUrl(walletService);
+          const url = `${formatWalletServiceUrl(walletService)}/wc`;
           return (await Linking.canOpenURL(url)) && Linking.openURL(url);
         }
       });
