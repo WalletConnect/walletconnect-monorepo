@@ -7,7 +7,6 @@ volumes:
   waku:
     name: 'waku-{{.Task.Slot}}'
   wakustore:
-    name: 'wakustore-{{.Task.Slot}}'
   redis:
 
 services:
@@ -20,9 +19,25 @@ services:
 
   wakustore:
     image: ${WAKU_IMAGE}
-    hostname: "waku.{{.Task.Slot}}"
+    hostname: "wakustore"
     volumes:
-      - waku:/mnt
+      - wakustore:/mnt
+    ports:
+      - "8545:8545"
+    command:
+      - "wakunode"
+      - "--nodekey=bbf358ab08ab29d70b6b20845e4aa417124bb8051ecdbaf4f822bba18f28f7fb"
+      - "--persist-peers=true"
+      - "--keep-alive=true"
+      - "--swap=false"
+      - "--rln-relay=false"
+      - "--rpc=false"
+      - "--relay=true"
+      - "--store=true"
+      - "--persist-messages=true"
+      - "--filter=true"
+      - "--db-path=/mnt"
+      - "--topics=/waku/2/walletconnect/proto"
 
   waku:
     image: ${WAKU_IMAGE}
@@ -31,6 +46,7 @@ services:
       - waku:/mnt
     environment:
       SWARM_PEERS: "tasks.{{.Service.Name}}"
+      STORE_NODE_KEY: "16Uiu2HAkxthSUou6qdD5igzt6E4niDRbsXGTU6GpKNGKRahv6TTX"
     deploy:
       replicas: 3
 

@@ -9,8 +9,8 @@ standAloneRedis=xredis
 
 ## Environment variables used by the compose files
 export PROJECT=$(project)
-export WAKU_IMAGE=$(shell cat ./build/build-img-waku-img)
-export RELAY_IMAGE=$(shell cat ./build/build-img-relay-img)
+export WAKU_IMAGE=$(shell cat ./build/build-img-waku-name)
+export RELAY_IMAGE=$(shell cat ./build/build-img-relay-name)
 
 ### Makefile internal coordination
 log_end=@echo "MAKE: Done with $@"; echo
@@ -20,9 +20,8 @@ $(shell mkdir -p $(flags))
 .PHONY: help clean clean-all reset build
 
 dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/src -w /src nixos/nix nix-shell -p bash --run
-dockerLoad=docker load -i build/$@ \
-		| awk '{print $$NF}' \
-		| tee build/$@-img
+dockerLoad=docker load -i build/$@ | awk '{print $$NF}' \
+    | grep walletconnect > build/$@-name 
 copyResult=cp -r -f -L result build/$@ && rm -rf result
 buildRelay=nix-build --attr relay.docker --argstr githash $(GITHASH) && $(copyResult)
 buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
