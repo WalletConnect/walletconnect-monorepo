@@ -1,25 +1,20 @@
 {
-  pkgs ? import (import ./nix/sources.nix).nixpkgs {},
-  wakuVersionTag,
-  nixNimRepoSha256,
+  sources ? import ./nix/sources.nix,
 }:
 let
-  wakunode = (import(fetchTarball {
-    url = "https://github.com/WalletConnect-Labs/nix-nim-waku/archive/${wakuVersionTag}.tar.gz";
-    sha256 = nixNimRepoSha256;
-  }) {});
+  pkgs = import sources.nixpkgs {};
+  wakunode = import sources.nix-nim-waku {};
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
     set -e
-    export PATH=$PATH:${coreutils}/bin
+    export PATH=$PATH:${coreutils}/bin:${wakunode}/bin
 
     if [[ ! -e /mnt/nodekey ]]; then
       # https://stackoverflow.com/a/34329799
       od -vN "32" -An -tx1 /dev/urandom | tr -d " \n" > /mnt/nodekey
     fi
 
-    mkdir -v /tmp
-    ${wakunode}/bin/wakunode \
+    wakunode \
       --nat=none \
       --nodekey=$(cat /mnt/nodekey) \
       --rpc=true \
@@ -29,6 +24,7 @@ let
       --store=false \
       --filter=false \
       --swap=false &
+
     PID=$!
     echo "Sleeping...."
     sleep 5 # wait for rpc server to start
@@ -37,57 +33,56 @@ let
     while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
       sleep 1
     done
+
     peerIPs=$(${dnsutils}/bin/dig +short $SWARM_PEERS)
     echo "Peer ip addresses: $peerIPs"
     peersArgs=""
     for ip in $peerIPs; do
-      echo "IP $ip"
       while [ true ]; do
-         ${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545
-         result=$(${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545)
-         multiaddr=$(echo -n $result | ${jq}/bin/jq -r '.result.listenStr')
-         echo "Multiaddr $multiaddr"
-         if [[ -n $multiaddr ]]; then
-           multiaddr=$(${gnused}/bin/sed "s/0\.0\.0\.0/$ip/g" <<< $multiaddr)
-           peersArgs="$peersArgs --staticnode=$multiaddr"
-           break
-         fi
-         sleep 3
-         echo -n .
+        echo "Calling ip: $ip"
+        result=$(${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545)
+        multiaddr=$(echo -n $result | ${jq}/bin/jq -r '.result.listenAddresses[0]')
+        echo "Multiaddr $multiaddr"
+        if [[ -n $multiaddr ]]; then
+          multiaddr=$(${gnused}/bin/sed "s/0\.0\.0\.0/$ip/g" <<< $multiaddr)
+          peersArgs="$peersArgs --staticnode=$multiaddr"
+          break
+        fi
+        sleep 3
+        echo -n .
       done
     done
 
 
     echo "Stopping background waku with PID: $PID"
     kill $PID
-    peersArgs="$peersArgs --staticnode=$STORE"
+    storeIp=$(${dnsutils}/bin/dig +short tasks.wakustore)
+    echo "STORE IP: $storeIp"
 
-    run="${wakunode}/bin/wakunode \
+    run="wakunode \
       --nat=none \
-      --nodekey=$(${coreutils}/bin/cat /mnt/nodekey) \
+      --nodekey=$(cat /mnt/nodekey) \
       --keep-alive=true \
       --swap=false \
-      --rln-relay=false \
       --rpc=true \
       --rpc-address=0.0.0.0 \
       --persist-peers=true \
-      --metrics-server=true \
-      --metrics-server-address=0.0.0.0 \
-      --metrics-server-port=9001 \
       --relay=true \
-      --store=true \
-      --db-path=/store \
-      --storenode=$STORE \
+      --storenode=/ip4/$storeIp/tcp/60000/p2p/$STORE_NODE_KEY \
+      --filternode=/ip4/$storeIp/tcp/60000/p2p/$STORE_NODE_KEY \
       $peersArgs
     "
     printf "\n\nCommand: $run\n\n"
     exec $run
   '';
 in pkgs.dockerTools.buildLayeredImage {
-  name =  "wakunode";
-  contents = wakunode;
+  name =  "walletconnect/wakunode";
+  tag = "${sources.nix-nim-waku.rev}";
   created = "now";
   config = {
+    Env = [
+      "PATH=${wakunode}/bin"
+    ];
     Cmd = [
       "${entry-script}"
     ];

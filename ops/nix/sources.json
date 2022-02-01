@@ -11,6 +11,18 @@
         "url": "https://github.com/nmattia/niv/archive/5830a4dd348d77e39a0f3c4c762ff2663b602d4c.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "nix-nim-waku": {
+        "branch": "master",
+        "description": null,
+        "homepage": null,
+        "owner": "WalletConnect-Labs",
+        "repo": "nix-nim-waku",
+        "rev": "v0.7",
+        "sha256": "0qp1gds9z52qbssqf3l09n6wavsnzxwany8xr3wf9qbrvza3pzpv",
+        "type": "tarball",
+        "url": "https://github.com/WalletConnect-Labs/nix-nim-waku/archive/0c297588f4c2683b175caa4f64e468c3fc72f6f1.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "release-21.11",
         "description": "Nix Packages collection",
