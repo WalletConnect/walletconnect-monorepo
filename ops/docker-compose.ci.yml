@@ -1,11 +1,53 @@
 version: '3.9'
 
+networks:
+  default:
+
+volumes:
+  waku:
+    name: 'waku-{{.Task.Slot}}'
+  wakustore:
+    name: 'wakustore-{{.Task.Slot}}'
+  redis:
+
 services:
   redis:
     ports:
       - "6379:6379"
-  relay:
+    image: 'redis:6-alpine'
+    volumes:
+      - redis:/data
+
+  wakustore:
+    image: ${WAKU_IMAGE}
+    hostname: "waku.{{.Task.Slot}}"
+    volumes:
+      - waku:/mnt
+
+  waku:
+    image: ${WAKU_IMAGE}
+    hostname: "waku.{{.Task.Slot}}"
+    volumes:
+      - waku:/mnt
     environment:
-      WAKU_URL: ""
+      SWARM_PEERS: "tasks.{{.Service.Name}}"
+    deploy:
+      replicas: 3
+
+  relay:
+    image: ${RELAY_IMAGE}
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      WAKU_URL: "http://waku.{{.Task.Slot}}:8545"
     ports:
       - "5000:5000"
+    deploy:
+      replicas: 2
+
+  externalrelay:
+    image: ${RELAY_IMAGE}
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      WAKU_URL: "http://waku.3:8545"
+    ports:
+      - "5001:5000"

@@ -1,17 +1,13 @@
 {
-  pkgs ? import (import ./nix/sources.nix).nixpkgs {},
-  wakuVersionTag,
-  nixNimRepoSha256,
+  sources ? import ./nix/sources.nix,
 }:
 let
-  wakunode = (import(fetchTarball {
-    url = "https://github.com/WalletConnect-Labs/nix-nim-waku/archive/${wakuVersionTag}.tar.gz";
-    sha256 = nixNimRepoSha256;
-  }) {});
+  pkgs = import sources.nixpkgs {};
+  wakunode = import sources.nix-nim-waku {};
   entry-script = with pkgs; writeScript "entry-script.sh" ''
     #!${runtimeShell}
     set -e
-    export PATH=$PATH:${coreutils}/bin
+    export PATH=$PATH:${coreutils}/bin:${wakunode}/bin
 
     if [[ ! -e /mnt/nodekey ]]; then
       # https://stackoverflow.com/a/34329799
@@ -29,6 +25,7 @@ let
       --store=false \
       --filter=false \
       --swap=false &
+
     PID=$!
     echo "Sleeping...."
     sleep 5 # wait for rpc server to start
@@ -37,6 +34,7 @@ let
     while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
       sleep 1
     done
+
     peerIPs=$(${dnsutils}/bin/dig +short $SWARM_PEERS)
     echo "Peer ip addresses: $peerIPs"
     peersArgs=""
@@ -67,7 +65,6 @@ let
       --nodekey=$(${coreutils}/bin/cat /mnt/nodekey) \
       --keep-alive=true \
       --swap=false \
-      --rln-relay=false \
       --rpc=true \
       --rpc-address=0.0.0.0 \
       --persist-peers=true \
@@ -84,8 +81,8 @@ let
     exec $run
   '';
 in pkgs.dockerTools.buildLayeredImage {
-  name =  "wakunode";
-  contents = wakunode;
+  name =  "walletconnect/wakunode";
+  tag = "${sources.nix-nim-waku.rev}";
   created = "now";
   config = {
     Cmd = [

@@ -9,7 +9,8 @@ standAloneRedis=xredis
 
 ## Environment variables used by the compose files
 export PROJECT=$(project)
-export $(shell sed 's/=.*//' setup)
+export WAKU_IMAGE=$(shell cat ./build/build-img-waku-img)
+export RELAY_IMAGE=$(shell cat ./build/build-img-relay-img)
 
 ### Makefile internal coordination
 log_end=@echo "MAKE: Done with $@"; echo
@@ -24,11 +25,8 @@ dockerLoad=docker load -i build/$@ \
 		| tee build/$@-img
 copyResult=cp -r -f -L result build/$@ && rm -rf result
 buildRelay=nix-build --attr relay.docker --argstr githash $(GITHASH) && $(copyResult)
-WAKU_VERSION_TAG ?= v0.5.1
-WAKU_SHA256 ?= 0k55hw1wqcyrpf9cxchhxdb92p75mmskkpvfn1paivl1r38pyb4a
-buildWakuCommand:=nix-build ./ops/waku-docker.nix --argstr wakuVersionTag $(WAKU_VERSION_TAG) --argstr nixNimRepoSha256 $(WAKU_SHA256)
+buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
 
-buildWaku=$(buildWakuCommand) && $(copyResult)
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
 help: ## Show this help
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -43,15 +41,6 @@ ifeq (, $(shell which nix))
 	docker pull nixos/nix
 endif
 	touch $(flags)/$@
-	$(log_end)
-
-setup: ## configures domain and certbot email
-	@read -p 'Relay URL domain [localhost]: ' relay; \
-	echo "export RELAY_URL="$${relay:-localhost} > setup
-	@read -p 'Email for SSL certificate (default noreply@gmail.com): ' email; \
-	echo "export CERTBOT_EMAIL="$${email:-noreply@gmail.com} >> setup
-	@read -p 'Paste your cloudflare API token: ' cf; \
-	echo "export CLOUDFLARE_TOKEN="$${cf} >> setup
 	$(log_end)
 
 bootstrap-lerna: ## setups lerna for the monorepo management
@@ -131,22 +120,16 @@ predeploy: dirs pull build-images
 	touch $(flags)/$@
 
 dev: predeploy ## runs relay on watch mode and shows logs
-	RELAY_MODE=any REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
-	@echo  "MAKE: Done with $@"
-	@echo
+	docker stack deploy $(project) \
+		-c ops/docker-compose.ci.yml
 	$(log_end)
 
 ci: ## runs tests in github actions
-	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	$(MAKE) dev
 	sleep 15
 	docker service logs --tail 100 $(project)_relay
 	TEST_RELAY_URL=ws://localhost:5000 $(MAKE) test-client
 	TEST_RELAY_URL=ws://localhost:5000 $(MAKE) test-relay
-
-deploy: setup predeploy ## Deploys the docker swarm for the relay
-	bash ops/deploy.sh
-	$(log_end)
 
 deploy-no-monitoring: setup predeploy ## same as deploy but without the monitoring
 	MONITORING=false bash ops/deploy.sh
