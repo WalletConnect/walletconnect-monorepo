@@ -32,7 +32,7 @@
     "@walletconnect/encoding": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
-    "@walletconnect/relay-api": "^1.0.0",
+    "@walletconnect/relay-api": "^1.0.2",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/types": "^2.0.0-beta.22",
     "@walletconnect/window-getters": "^1.0.0",
