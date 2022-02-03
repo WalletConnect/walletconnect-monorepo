@@ -4,16 +4,18 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 
-import config from "./config";
 import { sha256 } from "./utils";
+import { HttpService } from "./http";
 import { REDIS_CONTEXT, SIX_HOURS } from "./constants";
 import { Notification, LegacySocketMessage } from "./types";
 
 export class RedisService {
-  public client: any = redis.createClient(config.redis);
+  public client: any;
   public context = REDIS_CONTEXT;
 
-  constructor(public logger: Logger) {
+  constructor(public server: HttpService, public logger: Logger) {
+    this.server = server;
+    this.client = redis.createClient(this.server.config.redis);
     this.logger = generateChildLogger(logger, this.context);
     this.initialize();
   }
@@ -150,7 +152,7 @@ export class RedisService {
       this.logger.trace({ type: "method", method: "setPendingRequest", topic, id, message });
       this.client.set(key, val, (err: Error) => {
         if (err) reject(err);
-        this.client.expire(key, config.REDIS_MAX_TTL, (err: Error) => {
+        this.client.expire(key, this.server.config.maxTTL, (err: Error) => {
           if (err) reject(err);
           resolve();
         });

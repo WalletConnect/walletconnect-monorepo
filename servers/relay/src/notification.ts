@@ -4,7 +4,7 @@ import { generateChildLogger } from "@walletconnect/logger";
 
 import { LegacySocketMessage, Notification } from "./types";
 import { HttpService } from "./http";
-import { JSONRPC_EVENTS, LEGACY_EVENTS, NOTIFICATION_CONTEXT } from "./constants";
+import { JSONRPC_EVENTS, LEGACY_EVENTS, NETWORK_EVENTS, NOTIFICATION_CONTEXT } from "./constants";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 
 export class NotificationService {
@@ -42,17 +42,23 @@ export class NotificationService {
     this.registerEventListeners();
   }
 
+  private async onNewMessage(topic: string, prompt?: boolean) {
+    if (prompt) {
+      await this.server.notification.push(topic);
+    }
+  }
+
   private registerEventListeners() {
     this.server.events.on(
       LEGACY_EVENTS.publish,
-      async (socketId: string, message: LegacySocketMessage) => {
-        if (!message.silent) {
-          await this.server.notification.push(message.topic);
-        }
-      },
+      async (socketId: string, message: LegacySocketMessage) =>
+        this.onNewMessage(message.topic, !message.silent),
     );
-    this.server.events.on(JSONRPC_EVENTS.publish, async (params: RelayJsonRpc.PublishParams) => {
-      await this.server.notification.push(params.topic);
-    });
+    this.server.events.on(JSONRPC_EVENTS.publish, async (params: RelayJsonRpc.PublishParams) =>
+      this.onNewMessage(params.topic, params.prompt),
+    );
+    this.server.events.on(NETWORK_EVENTS.message, async (topic, message, prompt) =>
+      this.onNewMessage(topic, prompt),
+    );
   }
 }

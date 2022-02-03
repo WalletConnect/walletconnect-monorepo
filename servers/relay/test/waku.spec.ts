@@ -1,12 +1,12 @@
 import "mocha";
 import { expect } from "chai";
-import pino from "pino";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import { NetworkService } from "../src/network";
-import { generateRandomBytes32 } from "../src/utils";
 
 import { TEST_WAKU_URL } from "./shared";
+
+import config from "../src/config";
 import { HttpService } from "../src/http";
+import { NetworkService } from "../src/network";
+import { generateRandomBytes32 } from "../src/utils";
 
 describe("NETWORK", () => {
   let serverOne: HttpService;
@@ -16,11 +16,24 @@ describe("NETWORK", () => {
   let testMessage: string;
   let topic: string;
   before(() => {
-    const logger = pino(getDefaultLoggerOptions({ level: "trace" }));
-    const serverOne = new HttpService({ logger: "fatal" });
-    const serverTwo = new HttpService({ logger: "fatal" });
-    wakuOne = new NetworkService(serverOne, logger, TEST_WAKU_URL);
-    wakuTwo = new NetworkService(serverTwo, logger, TEST_WAKU_URL.replace("8546", "8547"));
+    serverOne = new HttpService({
+      ...config,
+      logger: "fatal",
+      waku: {
+        env: "prod",
+        url: TEST_WAKU_URL,
+      },
+    });
+    serverTwo = new HttpService({
+      ...config,
+      logger: "fatal",
+      waku: {
+        env: "prod",
+        url: TEST_WAKU_URL.replace("8546", "8547"),
+      },
+    });
+    wakuOne = new NetworkService(serverOne, serverOne.logger);
+    wakuTwo = new NetworkService(serverTwo, serverOne.logger);
   });
   beforeEach(() => {
     testMessage = generateRandomBytes32();

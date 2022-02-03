@@ -23,12 +23,7 @@ dockerLoad=docker load -i build/$@ \
 		| awk '{print $$NF}' \
 		| tee build/$@-img
 copyResult=cp -r -f -L result build/$@ && rm -rf result
-buildRelayDeps=nix-build --attr relayDeps
-buildRelayApp=nix-build --attr relayApp
-buildRelay=nix-build --attr relay --argstr githash $(GITHASH) && $(copyResult)
-caddyVersion=v2.4.3
-caddySrc=https://github.com/WalletConnect-Labs/nix-caddy/archive/$(caddyVersion).tar.gz
-buildCaddy=nix-build $(caddySrc) --attr docker && $(copyResult)
+buildRelay=nix-build --attr relay.docker --argstr githash $(GITHASH) && $(copyResult)
 WAKU_VERSION_TAG ?= v0.5.1
 WAKU_SHA256 ?= 0k55hw1wqcyrpf9cxchhxdb92p75mmskkpvfn1paivl1r38pyb4a
 buildWakuCommand:=nix-build ./ops/waku-docker.nix --argstr wakuVersionTag $(WAKU_VERSION_TAG) --argstr nixNimRepoSha256 $(WAKU_SHA256)
@@ -60,7 +55,7 @@ setup: ## configures domain and certbot email
 	$(log_end)
 
 bootstrap-lerna: ## setups lerna for the monorepo management
-	npm i --dev
+	npm i --include=dev
 	npm run bootstrap
 	touch $(flags)/$@
 	$(log_end)
@@ -93,23 +88,7 @@ ifneq (, $(shell which nix))
 endif
 	$(log_end)
 
-build-relay-deps: dirs
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildRelayDeps)"
-else
-	$(buildRelayDeps)
-endif
-	$(log_end)
-
-build-relay-app: dirs
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildRelayApp)"
-else
-	$(buildRelayApp)
-endif
-	$(log_end)
-
-build-img-relay: dirs nix-volume build-relay-deps build-relay-app ## builds relay docker image inside of docker
+build-img-relay: dirs nix-volume ## builds relay docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildRelay)"
 else
@@ -118,16 +97,7 @@ endif
 	$(dockerLoad)
 	$(log_end)
 
-build-img-caddy: dirs nix-volume ## builds caddy docker image inside of docker
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildCaddy)"
-else
-	$(buildCaddy)
-endif
-	$(dockerLoad)
-	$(log_end)
-
-build-img-waku: dirs nix-volume ## builds caddy docker image inside of docker
+build-img-waku: dirs nix-volume ## builds waky docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildWaku)"
 else
@@ -136,7 +106,7 @@ endif
 	$(dockerLoad)
 	$(log_end)
 
-build-images: build-img-relay build-img-caddy build-img-waku
+build-images: build-img-relay build-img-waku
 
 build: dirs build-images bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
 	$(log_end)
@@ -169,15 +139,10 @@ dev: predeploy ## runs relay on watch mode and shows logs
 ci: ## runs tests in github actions
 	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
 	$(MAKE) dev
-	#nix show-derivation /nix/store/*-relay-conf.json.drv
-	#nix show-derivation /nix/store/*-stream-relay.drv
-	#nix show-derivation /nix/store/*-relay.tar.gz.drv
-	#nix show-derivation /nix/store/*-relay-base.json.drv
 	sleep 15
-	docker service logs --tail 100 $(project)_caddy
 	docker service logs --tail 100 $(project)_relay
-	TEST_RELAY_URL=wss://localhost $(MAKE) test-client
-	TEST_RELAY_URL=wss://localhost $(MAKE) test-relay
+	TEST_RELAY_URL=ws://localhost:5000 $(MAKE) test-client
+	TEST_RELAY_URL=ws://localhost:5000 $(MAKE) test-relay
 
 deploy: setup predeploy ## Deploys the docker swarm for the relay
 	bash ops/deploy.sh
@@ -188,18 +153,14 @@ deploy-no-monitoring: setup predeploy ## same as deploy but without the monitori
 	$(log_end)
 
 redeploy: setup clean predeploy ## redeploys the prodution containers and rebuilds them
-	docker service update --force --image $(caddyImage) $(project)_caddy
 	docker service update --force --image $(relayImage) $(project)_relay
 
 relay-logs: ## follows the relay container logs.
 	docker service logs -f --raw --tail 100 $(project)_relay
 
 cachix: clean dirs ## pushes docker images to cachix
-	cachix push walletconnect $(shell $(buildRelayDeps))
-	cachix push walletconnect $(shell $(buildRelayApp))
 	cachix push walletconnect $(shell $(buildRelay))
 	cachix push walletconnect $(shell $(buildWaku))
-	cachix push walletconnect $(shell $(buildCaddy))
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true
@@ -218,5 +179,5 @@ reset: ## removes all build artifacts
 	$(log_end)
 
 clean: ## removes all build outputs
-	rm -rf .makeFlags build
+	rm -rf .makeFlags build result*
 	$(log_end)

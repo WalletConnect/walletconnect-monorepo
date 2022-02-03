@@ -5,31 +5,44 @@ import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import * as encoding from "@walletconnect/encoding";
 import { isFloat } from "./utils";
-import { PagingOptions, WakuMessagesResult, WakuMessage, Subscription } from "./types";
+import {
+  PagingOptions,
+  WakuMessagesResult,
+  WakuMessage,
+  Subscription,
+  IridiumV1MessageOptions,
+} from "./types";
 
 import {
   WAKU_JSONRPC,
   NETWORK_POLLING_INTERVAL,
   NETWORK_DEFAULT_PAGE_SIZE,
   NETWORK_CONTEXT,
-  NETWORK_PUBSUB_TOPIC,
   NETWORK_EVENTS,
   SUBSCRIPTION_EVENTS,
   NETWORK_RECONNECT_INTERVAL,
+  NETWORK_ENV,
+  NETWORK_PUBSUB_TOPIC,
 } from "./constants";
 import { HttpService } from "./http";
+import { IridiumEncoder } from "./encoder";
 
 export class NetworkService {
   public context = NETWORK_CONTEXT;
   public server: HttpService;
   public logger: Logger;
-  public namespace = NETWORK_PUBSUB_TOPIC;
+  public namespace = NETWORK_PUBSUB_TOPIC.prod;
+  public encoder = new IridiumEncoder();
   public provider: IJsonRpcProvider | undefined;
 
-  constructor(server: HttpService, logger: Logger, nodeUrl: string) {
+  constructor(server: HttpService, logger: Logger) {
     this.server = server;
     this.logger = generateChildLogger(logger, this.context);
+    const nodeUrl = this.server.config.waku.url;
     this.provider = this.setJsonRpcProvider(nodeUrl);
+    if ((this.server.config.waku.env = NETWORK_ENV.stag)) {
+      this.namespace = NETWORK_PUBSUB_TOPIC.stag;
+    }
     this.initialize();
   }
 
@@ -37,8 +50,9 @@ export class NetworkService {
     return this.provider?.connection.connected;
   }
 
-  public publish(topic: string, payload: string) {
+  public publish(topic: string, message: string, opts?: IridiumV1MessageOptions) {
     const method = WAKU_JSONRPC.post.relay.message;
+    const payload = this.encoder.encode(message, opts);
     const params = [
       this.namespace,
       {
@@ -77,7 +91,7 @@ export class NetworkService {
       }
       this.onConnect();
     } catch (e) {
-      this.logger.error({ "Provider Error": e.message });
+      this.logger.error({ "Provider Error": (e as any).message });
     }
   }
 
@@ -94,7 +108,7 @@ export class NetworkService {
   private onConnect() {
     this.registerNamespace();
     this.registerEventListeners();
-    this.getStoreMessages();
+    this.fetchStoreMessages();
     setInterval(() => this.poll(), NETWORK_POLLING_INTERVAL);
   }
 
@@ -146,6 +160,14 @@ export class NetworkService {
     return [...messages, ...(await this.getStoreMessages(pagingOptions))];
   }
 
+  private async fetchStoreMessages() {
+    const messages = await this.getStoreMessages();
+    if (messages && messages.length) {
+      this.logger.trace({ method: "fetch", messages });
+      messages.forEach(m => this.emitWakuMessage(m));
+    }
+  }
+
   private async request(payload: { method; params }): Promise<any> {
     try {
       if (typeof this.provider === "undefined") throw "Provider not defined";
@@ -153,7 +175,7 @@ export class NetworkService {
       return await this.provider.request(payload);
     } catch (e) {
       this.logger.error({ "Request Error": e });
-      if (e.includes("get_waku_v2_relay_v1_messages")) {
+      if ((e as any).toString().includes("get_waku_v2_relay_v1_messages")) {
         this.provider?.disconnect();
         this.logger.info("Attempting to reconnect...");
         this.reconnectProvider();
@@ -185,18 +207,28 @@ export class NetworkService {
     const messages = await this.getMessages();
     if (messages && messages.length) {
       this.logger.trace({ method: "poll", messages });
-      messages.forEach(m =>
-        this.server.events.emit(NETWORK_EVENTS.message, m.contentTopic, m.payload),
-      );
+      messages.forEach(m => this.emitWakuMessage(m));
     }
   }
 
-  private setJsonRpcProvider(nodeUrl: string): JsonRpcProvider | undefined {
+  private async emitWakuMessage(m: WakuMessage) {
+    const topic = m.contentTopic;
+    const {
+      message,
+      opts: { prompt },
+    } = await this.encoder.decode(m.payload);
+    this.server.events.emit(NETWORK_EVENTS.message, topic, message, prompt);
+  }
+
+  private setJsonRpcProvider(nodeUrl?: string): JsonRpcProvider | undefined {
+    if (typeof nodeUrl === "undefined") {
+      throw new Error("Missing nodeUrl for WakuService");
+    }
     let provider: JsonRpcProvider | undefined;
     try {
       provider = new JsonRpcProvider(new HttpConnection(nodeUrl));
     } catch (e) {
-      this.logger.error({ "Setting RpcProvider Error": e.message });
+      this.logger.error({ "Setting RpcProvider Error": (e as any).message });
     }
     return provider;
   }

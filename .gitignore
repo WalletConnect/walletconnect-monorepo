@@ -3,6 +3,7 @@ logs
 *.log
 npm-debug.log*
 lerna-debug.log
+*.lerna_backup
 
 # Runtime data
 pids
@@ -29,5 +30,5 @@ zip
 tsconfig.tsbuildinfo
 test.db
 setup
-result
+result*
 ops/grafana/grafana.ini
