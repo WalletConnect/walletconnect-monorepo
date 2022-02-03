@@ -4,7 +4,6 @@ import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { isJsonRpcPayload, JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger } from "@walletconnect/logger";
 
-import config from "./config";
 import { JsonRpcService } from "./jsonrpc";
 import { LegacySocketMessage, Socket } from "./types";
 import {
@@ -104,13 +103,13 @@ export class WebSocketService {
         this.send(socketId, "Socket message is invalid");
         return;
       } else if (isLegacySocketMessage(payload)) {
-        if (isLegacyDisabled(config.mode)) {
+        if (isLegacyDisabled(this.server.config.mode)) {
           this.send(socketId, "Legacy messages are disabled");
           return;
         }
         this.legacy.onRequest(socketId, payload);
       } else if (isJsonRpcPayload(payload)) {
-        if (isJsonRpcDisabled(config.mode)) {
+        if (isJsonRpcDisabled(this.server.config.mode)) {
           this.send(socketId, "JSON-RPC messages are disabled");
           return;
         }

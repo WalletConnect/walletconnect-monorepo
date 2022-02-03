@@ -8,33 +8,8 @@ volumes:
     name: 'redis-{{.Task.Slot}}'
   waku:
     name: 'waku-{{.Task.Slot}}'
-  caddy_data:
-  caddy_conf:
-
-configs:
-  caddyfile:
-    file: ./Caddyfile
 
 services:
-  caddy:
-    image: ${CADDY_IMAGE}
-    deploy:
-      mode: replicated
-    # Port mode must be mode: host to allow access to the external ip
-    configs:
-      - source: caddyfile
-        target: /config/Caddyfile
-    ports:
-      - target: 80
-        published: 80
-        mode: ingress
-      - target: 443
-        published: 443
-        mode: ingress
-    volumes:
-      - caddy_data:/data
-      - caddy_conf:/config
-
   redis:
     image: 'redis:6-alpine'
     hostname: "redis.{{.Task.Slot}}"

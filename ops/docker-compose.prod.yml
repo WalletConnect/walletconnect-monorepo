@@ -1,21 +1,6 @@
 version: '3.9'
 
-volumes:
-  caddy_data:
-  caddy_conf:
-
 services:
-  caddy:
-    environment:
-      DOMAIN: ${RELAY_URL:-localhost}
-      EMAIL: ${CERTBOT_EMAIL}
-      CLOUDFLARE_TOKEN: ${CLOUDFLARE_TOKEN}
-      UPSTREAM_NAME: ${UPSTREAM_NAME:-relay}
-      UPSTREAM_PORT: ${UPSTREAM_PORT:-5000}
-      LOG_LEVEL: ${LOG_LEVEL:-ERROR}
-    deploy:
-      replicas: ${REPLICAS:-1}
-
   relay:
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}

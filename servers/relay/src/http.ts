@@ -6,12 +6,11 @@ import pino, { Logger } from "pino";
 import { getDefaultLoggerOptions, generateChildLogger } from "@walletconnect/logger";
 import client from "prom-client";
 
-import config from "./config";
 import { assertType } from "./utils";
 import { RedisService } from "./redis";
 import { WebSocketService } from "./ws";
 import { NotificationService } from "./notification";
-import { HttpServiceOptions, PostSubscribeRequest } from "./types";
+import { HttpServiceConfig, PostSubscribeRequest } from "./types";
 import { isJsonRpcDisabled } from "./utils/validators";
 import {
   METRICS_DURACTION_BUCKETS,
@@ -41,18 +40,16 @@ export class HttpService {
 
   public metrics;
 
-  constructor(opts: HttpServiceOptions) {
-    const logger =
-      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
-        ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger }));
+  constructor(public config: HttpServiceConfig) {
+    const logger = pino(getDefaultLoggerOptions({ level: config.logger }));
+    this.config = config;
     this.app = fastify({ logger });
     this.logger = generateChildLogger(logger, this.context);
     this.metrics = this.setMetrics();
-    this.redis = new RedisService(this.logger);
+    this.redis = new RedisService(this, this.logger);
     this.ws = new WebSocketService(this, this.logger);
-    if (config.wakuUrl != undefined && !isJsonRpcDisabled(config.mode)) {
-      this.network = new NetworkService(this, this.logger, config.wakuUrl);
+    if (this.config.waku.url != undefined && !isJsonRpcDisabled(this.config.mode)) {
+      this.network = new NetworkService(this, this.logger);
     }
     this.message = new MessageService(this, this.logger);
     this.subscription = new SubscriptionService(this, this.logger);
@@ -107,11 +104,11 @@ export class HttpService {
       this.metrics.hello.inc();
       res
         .status(200)
-        .send(`Hello World, this is Relay Server v${config.VERSION}@${config.GITHASH}`);
+        .send(`Hello World, this is Relay Server v${this.config.version}@${this.config.gitHash}`);
     });
 
     this.app.get("/mode", (_, res) => {
-      res.status(200).send(`RELAY_MODE: ${config.mode}`);
+      res.status(200).send(`RELAY_MODE: ${this.config.mode}`);
     });
 
     this.app.get("/metrics", (_, res) => {
@@ -132,7 +129,7 @@ export class HttpService {
 
         res.status(200).send({ success: true });
       } catch (e) {
-        res.status(400).send({ message: `Error: ${e.message}` });
+        res.status(400).send({ message: `Error: ${(e as any).message}` });
       }
     });
   }

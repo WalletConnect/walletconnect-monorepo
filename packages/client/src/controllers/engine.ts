@@ -91,6 +91,7 @@ export class Engine extends IEngine {
   public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
     const originalPayload = payload;
     const settled = await this.sequence.settled.get(topic);
+    let prompt = false;
     if (isJsonRpcRequest(payload)) {
       if (!Object.values(this.sequence.config.jsonrpc).includes(payload.method)) {
         await this.isJsonRpcAuthorized(topic, settled.self, payload);
@@ -100,6 +101,7 @@ export class Engine extends IEngine {
           request: { method: payload.method, params: payload.params },
         };
         if (!params.chainId) delete params.chainId;
+        prompt = true;
         payload = formatJsonRpcRequest<SequenceTypes.Request>(
           this.sequence.config.jsonrpc.payload,
           params,
@@ -109,6 +111,7 @@ export class Engine extends IEngine {
     }
     await this.sequence.client.relayer.publish(settled.topic, payload, {
       relay: settled.relay,
+      prompt,
     });
     if (
       isJsonRpcResponse(originalPayload) ||
