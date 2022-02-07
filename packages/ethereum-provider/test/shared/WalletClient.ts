@@ -149,7 +149,10 @@ export class WalletClient {
   }
 
   private async initialize(opts?: ClientOptions) {
-    this.client = await Client.init({ ...opts, controller: true });
+    this.client = await Client.init({
+      ...opts,
+      // controller: true
+    });
     this.registerEventListeners();
   }
 

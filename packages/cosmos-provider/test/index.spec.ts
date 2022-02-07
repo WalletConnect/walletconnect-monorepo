@@ -106,7 +106,7 @@ describe("@walletconnect/cosmos-provider", () => {
   it("Test connect and sign", async () => {
     const wallet = await CosmosWallet.init(TEST_COSMOS_KEYPAIR.privateKey);
     const walletClient = await Client.init({
-      controller: true,
+      // controller: true,
       relayUrl: TEST_RELAY_URL,
       metadata: TEST_WALLET_METADATA,
     });

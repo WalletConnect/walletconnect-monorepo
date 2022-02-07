@@ -43,7 +43,7 @@ async function setup() {
   });
   const provider = new JsonRpcProvider(connection);
   const clientB = await Client.init({
-    controller: true,
+    // controller: true,
     relayUrl: TEST_RELAY_URL,
     metadata: TEST_WALLET_METADATA,
   });

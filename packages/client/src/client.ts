@@ -65,7 +65,7 @@ export class Client extends IClient {
 
   public readonly name: string = CLIENT_DEFAULT.name;
 
-  public readonly controller: boolean;
+  // public readonly controller: boolean;
   public readonly metadata: AppMetadata | undefined;
 
   public readonly relayUrl: string | undefined;
@@ -85,7 +85,7 @@ export class Client extends IClient {
         : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
 
     this.name = opts?.name || CLIENT_DEFAULT.name;
-    this.controller = opts?.controller || CLIENT_DEFAULT.controller;
+    // isController = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
     this.projectId = opts?.projectId;
 
@@ -186,11 +186,12 @@ export class Client extends IClient {
   public async pair(params: ClientTypes.PairParams): Promise<PairingTypes.Settled> {
     this.logger.debug(`Pairing`);
     this.logger.trace({ type: "method", method: "pair", params });
+    const isController = true;
     const proposal = formatPairingProposal(params.uri);
-    const approved = proposal.proposer.controller !== this.controller;
+    const approved = proposal.proposer.controller !== isController;
     const reason = approved
       ? undefined
-      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
+      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: isController });
     const pending = await this.pairing.respond({ approved, proposal, reason });
     if (!isPairingResponded(pending)) {
       const error = ERROR.NO_MATCHING_RESPONSE.format({ context: "pairing" });
@@ -216,6 +217,7 @@ export class Client extends IClient {
       this.logger.error(error.message);
       throw new Error(error.message);
     }
+    const isController = true;
     const state = params.response.state || SESSION_EMPTY_STATE;
     const metadata = params.response.metadata || this.metadata;
     if (typeof metadata === "undefined") {
@@ -223,10 +225,10 @@ export class Client extends IClient {
       this.logger.error(error.message);
       throw new Error(error.message);
     }
-    const approved = params.proposal.proposer.controller !== this.controller;
+    const approved = params.proposal.proposer.controller !== isController;
     const reason = approved
       ? undefined
-      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
+      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: isController });
     const pending = await this.session.respond({
       approved,
       proposal: params.proposal,
@@ -298,11 +300,12 @@ export class Client extends IClient {
   // ---------- Protected ----------------------------------------------- //
 
   protected async onPairingRequest(request: JsonRpcRequest, topic: string): Promise<void> {
+    const isController = true;
     if (request.method === SESSION_JSONRPC.propose) {
       const proposal = request.params as SessionTypes.Proposal;
-      if (proposal.proposer.controller === this.controller) {
+      if (proposal.proposer.controller === isController) {
         const reason = ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({
-          controller: this.controller,
+          controller: isController,
         });
         await this.session.respond({
           approved: false,

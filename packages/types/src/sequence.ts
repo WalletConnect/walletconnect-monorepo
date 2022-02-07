@@ -85,6 +85,7 @@ export declare namespace SequenceTypes {
     ttl?: number;
     permissions?: ProposedPermissions;
     metadata?: AppMetadata;
+    controller?: boolean;
   }
 
   export type CreateParams = ProposeParams;

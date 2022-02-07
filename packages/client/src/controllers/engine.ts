@@ -381,7 +381,7 @@ export class Engine extends IEngine {
     if (!self.metadata) delete self.metadata;
     const proposer: SequenceTypes.ProposedPeer = {
       publicKey: self.publicKey,
-      controller: this.sequence.client.controller,
+      controller: !!params?.controller,
       metadata: self.metadata,
     };
     if (!proposer.metadata) delete proposer.metadata;
