@@ -62,10 +62,13 @@ export abstract class IClient extends IEvents {
   public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
   // for responder to reject a session proposal
   public abstract reject(params: ClientTypes.RejectParams): Promise<void>;
-  // for responder to upgrade session permissions
-  public abstract upgrade(params: ClientTypes.UpgradeParams): Promise<void>;
-  // for responder to update session state
+
+  // for controller to update session state
   public abstract update(params: ClientTypes.UpdateParams): Promise<void>;
+  // for controller to upgrade session permissions
+  public abstract upgrade(params: ClientTypes.UpgradeParams): Promise<void>;
+  // for controller to extend session expiry
+  public abstract extend(params: ClientTypes.ExtendParams): Promise<void>;
 
   // for proposer to request JSON-RPC
   public abstract request(params: ClientTypes.RequestParams): Promise<any>;
@@ -106,9 +109,11 @@ export declare namespace ClientTypes {
     reason?: Reason;
   }
 
+  export type UpdateParams = SessionTypes.UpdateParams;
+
   export type UpgradeParams = SessionTypes.UpgradeParams;
 
-  export type UpdateParams = SessionTypes.UpdateParams;
+  export type ExtendParams = SessionTypes.ExtendParams;
 
   export type RequestParams = SessionTypes.RequestParams;
 

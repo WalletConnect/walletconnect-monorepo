@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, ISession, SessionTypes } from "@walletconnect/types";
+import { IClient, ISession, SequenceTypes, SessionTypes } from "@walletconnect/types";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import {
   validateSessionProposeParams,
@@ -100,26 +100,28 @@ export class Session extends ISession {
     return this.engine.respond(params as any) as any;
   }
 
-  public upgrade(params: SessionTypes.UpgradeParams): Promise<SessionTypes.Settled> {
-    // TODO: fix type casting as any
-    return this.engine.upgrade(params as any) as any;
-  }
-
   public update(params: SessionTypes.UpdateParams): Promise<SessionTypes.Settled> {
-    // TODO: fix type casting as any
     return this.engine.update(params as any) as any;
   }
 
+  public upgrade(params: SessionTypes.UpgradeParams): Promise<SessionTypes.Settled> {
+    return this.engine.upgrade(params as any) as any;
+  }
+
+  public extend(params: SessionTypes.ExtendParams): Promise<SessionTypes.Settled> {
+    return this.engine.extend(params as any) as any;
+  }
+
   public request(params: SessionTypes.RequestParams): Promise<any> {
-    return this.engine.request(params);
+    return this.engine.request(params as any) as any;
   }
 
   public delete(params: SessionTypes.DeleteParams): Promise<void> {
-    return this.engine.delete(params);
+    return this.engine.delete(params as any) as any;
   }
 
   public notify(params: SessionTypes.NotificationEvent): Promise<void> {
-    return this.engine.notify(params);
+    return this.engine.notify(params as any) as any;
   }
 
   public on(event: string, listener: any): void {
@@ -170,6 +172,16 @@ export class Session extends ISession {
       controller: settled.permissions.controller,
     };
     return permissions;
+  }
+
+  public async mergeExtension(topic: string, extension: SessionTypes.Extension) {
+    const settled = await this.settled.get(topic);
+    if (extension.expiry <= settled.expiry) {
+      const error = ERROR.INVALID_EXTEND_REQUEST.format({ context: this.name });
+      this.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    return extension;
   }
 
   public async validateRespond(params?: SessionTypes.RespondParams) {

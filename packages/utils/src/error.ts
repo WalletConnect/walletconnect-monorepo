@@ -11,6 +11,7 @@ export const ERROR_TYPE = enumify({
   MISSING_DECRYPT_PARAMS: "MISSING_DECRYPT_PARAMS",
   INVALID_UPDATE_REQUEST: "INVALID_UPDATE_REQUEST",
   INVALID_UPGRADE_REQUEST: "INVALID_UPGRADE_REQUEST",
+  INVALID_EXTEND_REQUEST: "INVALID_EXTEND_REQUEST",
   INVALID_STORAGE_KEY_NAME: "INVALID_STORAGE_KEY_NAME",
   RECORD_ALREADY_EXISTS: "RECORD_ALREADY_EXISTS",
   RESTORE_WILL_OVERRIDE: "RESTORE_WILL_OVERRIDE",
@@ -37,6 +38,7 @@ export const ERROR_TYPE = enumify({
   UNAUTHORIZED_NOTIFICATION_TYPE: "UNAUTHORIZED_NOTIFICATION_TYPE",
   UNAUTHORIZED_UPDATE_REQUEST: "UNAUTHORIZED_UPDATE_REQUEST",
   UNAUTHORIZED_UPGRADE_REQUEST: "UNAUTHORIZED_UPGRADE_REQUEST",
+  UNAUTHORIZED_EXTEND_REQUEST: "UNAUTHORIZED_EXTEND_REQUEST",
   UNAUTHORIZED_MATCHING_CONTROLLER: "UNAUTHORIZED_MATCHING_CONTROLLER",
   // 4000 (EIP-1193)
   JSONRPC_REQUEST_METHOD_REJECTED: "JSONRPC_REQUEST_METHOD_REJECTED",
@@ -139,9 +141,19 @@ export const ERROR: Record<ErrorType, Error> = {
       message: ERROR[ERROR_TYPE.INVALID_UPGRADE_REQUEST].stringify(params),
     }),
   },
+  [ERROR_TYPE.INVALID_EXTEND_REQUEST]: {
+    type: ERROR_TYPE.INVALID_EXTEND_REQUEST,
+    code: 1005,
+    stringify: (params?: any) =>
+      `Invalid ${params?.context || defaultParams.context} extend request`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.INVALID_EXTEND_REQUEST].code,
+      message: ERROR[ERROR_TYPE.INVALID_EXTEND_REQUEST].stringify(params),
+    }),
+  },
   [ERROR_TYPE.INVALID_STORAGE_KEY_NAME]: {
     type: ERROR_TYPE.INVALID_STORAGE_KEY_NAME,
-    code: 1005,
+    code: 1020,
     stringify: (params?: any) => `Invalid storage key name: ${params?.name || defaultParams.name}`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.INVALID_STORAGE_KEY_NAME].code,
@@ -378,9 +390,20 @@ export const ERROR: Record<ErrorType, Error> = {
       message: ERROR[ERROR_TYPE.UNAUTHORIZED_UPGRADE_REQUEST].stringify(params),
     }),
   },
+  [ERROR_TYPE.UNAUTHORIZED_EXTEND_REQUEST]: {
+    type: ERROR_TYPE.UNAUTHORIZED_EXTEND_REQUEST,
+    code: 3005,
+    stringify: (params?: any) =>
+      `Unauthorized ${params?.context || defaultParams.context} extend request`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.UNAUTHORIZED_EXTEND_REQUEST].code,
+      message: ERROR[ERROR_TYPE.UNAUTHORIZED_EXTEND_REQUEST].stringify(params),
+    }),
+  },
+
   [ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER]: {
     type: ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER,
-    code: 3005,
+    code: 3100,
     stringify: (params?: any) =>
       `Unauthorized: peer is also ${params?.controller ? "" : "not "}controller`,
     format: (params?: any) => ({

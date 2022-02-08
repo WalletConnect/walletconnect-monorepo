@@ -15,9 +15,11 @@ import {
   TEST_TIMEOUT_DURATION,
   testJsonRpcRequest,
   TEST_SESSION_TTL,
+  TEST_TIMEOUT_SAFEGUARD,
 } from "./shared";
-import { CLIENT_EVENTS } from "../src";
+import { CLIENT_EVENTS, ONE_DAY, SEVEN_DAYS, THIRTY_DAYS } from "../src";
 import { ErrorResponse, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { delay } from "@walletconnect/timestamp";
 
 describe("Session", function() {
   it("A proposes session and B approves", async () => {
@@ -339,5 +341,61 @@ describe("Session (with timeout)", function() {
         );
       });
     // clock.tick(TEST_TIMEOUT_DURATION);
+  });
+  it("B extends expiry and A receives event", async () => {
+    const ttl = SEVEN_DAYS;
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const { expiry } = await clients.a.session.get(topic);
+    await Promise.all([
+      new Promise<void>(async (resolve, reject) => {
+        clients.a.on(CLIENT_EVENTS.session.extended, async (session: SessionTypes.Settled) => {
+          if (session.expiry <= expiry) {
+            return reject(new Error(`Upgraded session expiry missing new value: ${expiry}`));
+          }
+          const savedSession = await clients.a.session.get(session.topic);
+          if (savedSession.expiry <= expiry) {
+            return reject(new Error(`Saved session expiry missing new value: ${expiry}`));
+          }
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve, reject) => {
+        try {
+          clock.tick(TEST_TIMEOUT_SAFEGUARD);
+          await clients.b.extend({ topic, ttl });
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }),
+    ]);
+  });
+  it("B fails to extend expiry if higher than default ttl", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const ttl = THIRTY_DAYS;
+    clock.tick(TEST_TIMEOUT_SAFEGUARD);
+    await expect(clients.b.extend({ topic, ttl })).to.eventually.be.rejectedWith(
+      `Invalid session extend request`,
+    );
+  });
+  it("B fails to extend expiry if smaller than current expiry", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const ttl = ONE_DAY;
+    clock.tick(TEST_TIMEOUT_SAFEGUARD);
+    await expect(clients.b.extend({ topic, ttl })).to.eventually.be.rejectedWith(
+      `Invalid session extend request`,
+    );
+  });
+  it("A fails to extend expiry as non-controller", async () => {
+    const { setup, clients } = await setupClientsForTesting();
+    const topic = await testApproveSession(setup, clients);
+    const ttl = SEVEN_DAYS;
+    clock.tick(TEST_TIMEOUT_SAFEGUARD);
+    await expect(clients.a.extend({ topic, ttl })).to.eventually.be.rejectedWith(
+      `Unauthorized session extend request`,
+    );
   });
 });

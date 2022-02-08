@@ -294,6 +294,23 @@ export class Engine extends IEngine {
     return settled;
   }
 
+  public async extend(params: SequenceTypes.ExtendParams): Promise<SequenceTypes.Settled> {
+    this.sequence.logger.debug(`Extend ${this.sequence.context}`);
+    this.sequence.logger.trace({ type: "method", method: "extend", params });
+    const settled = await this.sequence.settled.get(params.topic);
+    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
+    if (params.ttl > (await this.sequence.getDefaultTTL())) {
+      const error = ERROR.INVALID_EXTEND_REQUEST.format({ context: this.sequence.name });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    let extension = { expiry: calcExpiry(params.ttl) };
+    extension = await this.handleExtension(params.topic, extension, participant);
+    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.extend, extension);
+    await this.send(settled.topic, request);
+    return settled;
+  }
+
   public async request(params: SequenceTypes.RequestParams): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -519,6 +536,9 @@ export class Engine extends IEngine {
         case this.sequence.config.jsonrpc.upgrade:
           await this.onUpgrade(payloadEvent);
           break;
+        case this.sequence.config.jsonrpc.extend:
+          await this.onExtension(payloadEvent);
+          break;
         case this.sequence.config.jsonrpc.notification:
           await this.onNotification(payloadEvent);
           break;
@@ -603,6 +623,24 @@ export class Engine extends IEngine {
     }
   }
 
+  public async onExtension(payloadEvent: RelayerTypes.PayloadEvent): Promise<void> {
+    const { topic, payload } = payloadEvent;
+    this.sequence.logger.debug(`Receiving ${this.sequence.context} extension`);
+    this.sequence.logger.trace({ type: "method", method: "onExtension", topic, payload });
+    const request = payloadEvent.payload as JsonRpcRequest;
+    const settled = await this.sequence.settled.get(payloadEvent.topic);
+    try {
+      const participant: SequenceTypes.Participant = { publicKey: settled.peer.publicKey };
+      await this.handleExtension(topic, request.params, participant);
+      const response = formatJsonRpcResult(request.id, true);
+      await this.send(settled.topic, response);
+    } catch (e) {
+      this.sequence.logger.error(e as any);
+      const response = formatJsonRpcError(request.id, (e as any).message);
+      await this.send(settled.topic, response);
+    }
+  }
+
   protected async onNotification(payloadEvent: RelayerTypes.PayloadEvent) {
     const { params: notification } = payloadEvent.payload as JsonRpcRequest<
       SessionTypes.Notification
@@ -672,6 +710,29 @@ export class Engine extends IEngine {
     const permissions = await this.sequence.mergeUpgrade(topic, upgrade);
     await this.sequence.settled.update(settled.topic, { permissions });
     return upgrade;
+  }
+
+  public async handleExtension(
+    topic: string,
+    extension: SequenceTypes.Extension,
+    participant: SequenceTypes.Participant,
+  ): Promise<SequenceTypes.Extension> {
+    if (typeof extension.expiry === "undefined") {
+      const error = ERROR.INVALID_EXTEND_REQUEST.format({ context: this.sequence.name });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    const settled = await this.sequence.settled.get(topic);
+    if (participant.publicKey !== settled.permissions.controller.publicKey) {
+      const error = ERROR.UNAUTHORIZED_EXTEND_REQUEST.format({
+        context: this.sequence.name,
+      });
+      this.sequence.logger.error(error.message);
+      throw new Error(error.message);
+    }
+    extension = await this.sequence.mergeExtension(topic, extension);
+    await this.sequence.settled.update(settled.topic, extension);
+    return extension;
   }
   // ---------- Private ----------------------------------------------- //
 
@@ -907,6 +968,17 @@ export class Engine extends IEngine {
             upgrade,
           });
           this.sequence.events.emit(eventName, settled, upgrade);
+        } else if (typeof update.expiry !== "undefined") {
+          const eventName = this.sequence.config.events.extended;
+          const extension = update;
+          this.sequence.logger.info(`Emitting ${eventName}`);
+          this.sequence.logger.debug({
+            type: "event",
+            event: eventName,
+            sequence: settled,
+            extension,
+          });
+          this.sequence.events.emit(eventName, settled, extension);
         }
       },
     );

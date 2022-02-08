@@ -74,21 +74,25 @@ export declare namespace SessionTypes {
 
   export type SettleParams = SequenceTypes.SettleParams<State, Participant, Permissions>;
 
+  export interface UpdateParams extends Update {
+    topic: string;
+  }
+
   export interface UpgradeParams extends Upgrade {
     topic: string;
   }
 
-  export interface UpdateParams extends Update {
-    topic: string;
-  }
+  export type ExtendParams = SequenceTypes.ExtendParams;
 
   export interface RequestParams extends SequenceTypes.RequestParams {
     chainId?: string;
   }
 
+  export type Update = SequenceTypes.Update<State>;
+
   export type Upgrade = SequenceTypes.Upgrade<Permissions>;
 
-  export type Update = SequenceTypes.Update<State>;
+  export type Extension = SequenceTypes.Extension;
 
   export interface Request extends SequenceTypes.Request {
     chainId?: string;
@@ -142,13 +146,15 @@ export declare namespace SessionTypes {
   export type Engine = IEngine<
     Pending,
     Settled,
-    Upgrade,
     Update,
+    Upgrade,
+    Extension,
     CreateParams,
     RespondParams,
     RequestParams,
-    UpgradeParams,
     UpdateParams,
+    UpgradeParams,
+    ExtendParams,
     DeleteParams,
     ProposeParams,
     SettleParams,
@@ -163,15 +169,17 @@ export abstract class ISession extends ISequence<
   SessionTypes.Config,
   SessionTypes.Pending,
   SessionTypes.Settled,
-  SessionTypes.Upgrade,
   SessionTypes.Update,
+  SessionTypes.Upgrade,
+  SessionTypes.Extension,
   SessionTypes.State,
   SessionTypes.Permissions,
   SessionTypes.CreateParams,
   SessionTypes.RespondParams,
   SessionTypes.RequestParams,
-  SessionTypes.UpgradeParams,
   SessionTypes.UpdateParams,
+  SessionTypes.UpgradeParams,
+  SessionTypes.ExtendParams,
   SessionTypes.DeleteParams,
   SessionTypes.ProposeParams,
   SessionTypes.SettleParams,

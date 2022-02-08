@@ -36,6 +36,7 @@ export declare namespace SequenceTypes {
     settled: string;
     updated: string;
     upgraded: string;
+    extended: string;
     deleted: string;
     request: string;
     response: string;
@@ -48,6 +49,7 @@ export declare namespace SequenceTypes {
     reject: string;
     update: string;
     upgrade: string;
+    extend: string;
     delete: string;
     payload: string;
     ping: string;
@@ -152,12 +154,17 @@ export declare namespace SequenceTypes {
     expiry: number;
   }
 
+  export interface UpdateParams<S = State> extends Update<S> {
+    topic: string;
+  }
+
   export interface UpgradeParams<Per = Permissions> extends Upgrade<Per> {
     topic: string;
   }
 
-  export interface UpdateParams<S = State> extends Update<S> {
+  export interface ExtendParams {
     topic: string;
+    ttl: number;
   }
 
   export interface RequestParams {
@@ -167,12 +174,16 @@ export declare namespace SequenceTypes {
     chainId?: string;
   }
 
+  export interface Update<S = State> {
+    state: Partial<S>;
+  }
+
   export interface Upgrade<Per = Permissions> {
     permissions: Partial<Per>;
   }
 
-  export interface Update<S = State> {
-    state: Partial<S>;
+  export interface Extension {
+    expiry: number;
   }
 
   export interface Request {
@@ -266,15 +277,17 @@ export abstract class ISequence<
   Config = SequenceTypes.Config,
   Pending = SequenceTypes.Pending,
   Settled = SequenceTypes.Settled,
-  Upgrade = SequenceTypes.Upgrade,
   Update = SequenceTypes.Update,
+  Upgrade = SequenceTypes.Upgrade,
+  Extension = SequenceTypes.Extension,
   State = SequenceTypes.State,
   Permissions = SequenceTypes.Permissions,
   CreateParams = SequenceTypes.CreateParams,
   RespondParams = SequenceTypes.RespondParams,
   RequestParams = SequenceTypes.RequestParams,
-  UpgradeParams = SequenceTypes.UpgradeParams,
   UpdateParams = SequenceTypes.UpdateParams,
+  UpgradeParams = SequenceTypes.UpgradeParams,
+  ExtendParams = SequenceTypes.ExtendParams,
   DeleteParams = SequenceTypes.DeleteParams,
   ProposeParams = SequenceTypes.ProposeParams,
   SettleParams = SequenceTypes.SettleParams,
@@ -337,11 +350,14 @@ export abstract class ISequence<
 
   // called by proposer to request JSON-RPC
   public abstract request(params: RequestParams): Promise<any>;
-  // called by responder to upgrade permissions
-  public abstract upgrade(params: UpgradeParams): Promise<Settled>;
 
-  // called by either to update state
+  // called by controller to update state
   public abstract update(params: UpdateParams): Promise<Settled>;
+  // called by controller to upgrade permissions
+  public abstract upgrade(params: UpgradeParams): Promise<Settled>;
+  // called by controller to extend expiry
+  public abstract extend(params: ExtendParams): Promise<Settled>;
+
   // called by either to terminate
   public abstract delete(params: DeleteParams): Promise<void>;
   // called by either to notify
@@ -350,6 +366,7 @@ export abstract class ISequence<
   // merge callbacks for sequence engine
   public abstract mergeUpdate(topic: string, update: Update): Promise<State>;
   public abstract mergeUpgrade(topic: string, upgrade: Upgrade): Promise<Permissions>;
+  public abstract mergeExtension(topic: string, extension: Extension): Promise<Extension>;
 
   // validator callbacks for sequence engine
   public abstract validateRespond(params?: RespondParams): Promise<void>;
