@@ -165,7 +165,7 @@ export class Pairing extends IPairing {
 
   public async mergeExtension(topic: string, extension: PairingTypes.Extension) {
     const settled = await this.settled.get(topic);
-    if (settled.expiry >= extension.expiry) {
+    if (extension.expiry <= settled.expiry) {
       const error = ERROR.INVALID_EXTEND_REQUEST.format({ context: this.name });
       this.logger.error(error.message);
       throw new Error(error.message);

@@ -304,9 +304,9 @@ export class Engine extends IEngine {
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    const extension = { expiry: calcExpiry(params.ttl) };
-    const upgrade = await this.handleExtension(params.topic, extension, participant);
-    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.upgrade, upgrade);
+    let extension = { expiry: calcExpiry(params.ttl) };
+    extension = await this.handleExtension(params.topic, extension, participant);
+    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.extend, extension);
     await this.send(settled.topic, request);
     return settled;
   }
@@ -730,7 +730,7 @@ export class Engine extends IEngine {
       this.sequence.logger.error(error.message);
       throw new Error(error.message);
     }
-    await this.sequence.mergeExtension(topic, extension);
+    extension = await this.sequence.mergeExtension(topic, extension);
     await this.sequence.settled.update(settled.topic, extension);
     return extension;
   }
