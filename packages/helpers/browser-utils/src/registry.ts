@@ -3,15 +3,11 @@ import { IMobileRegistryEntry, IAppRegistry, IAppEntry } from "@walletconnect/ty
 const API_URL = "https://registry.walletconnect.com";
 
 export function getWalletRegistryUrl(): string {
-  return API_URL + "/api/v1/wallets";
+  return API_URL + "/api/v2/wallets";
 }
 
 export function getDappRegistryUrl(): string {
-  return API_URL + "/api/v1/dapps";
-}
-
-export function getAppLogoUrl(id): string {
-  return API_URL + "/api/v1/logo/sm/" + id;
+  return API_URL + "/api/v2/dapps";
 }
 
 export function formatMobileRegistryEntry(entry: IAppEntry, platform: "mobile" | "desktop" = "mobile"): IMobileRegistryEntry {
@@ -19,7 +15,7 @@ export function formatMobileRegistryEntry(entry: IAppEntry, platform: "mobile" |
     name: entry.name || "",
     shortName: entry.metadata.shortName || "",
     color: entry.metadata.colors.primary || "",
-    logo: entry.id ? getAppLogoUrl(entry.id) : "",
+    logo: entry.image_url.sm ?? "",
     universalLink: entry[platform].universal || "",
     deepLink: entry[platform].native || "",
   };

@@ -402,6 +402,12 @@ export interface IAppEntry {
   name: string;
   homepage: string;
   chains: string[];
+  image_id: string;
+  image_url: {
+    sm: string;
+    md: string;
+    lg: string;
+  }
   app: {
     browser: string;
     ios: string;
