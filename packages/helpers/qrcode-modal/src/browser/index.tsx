@@ -61,8 +61,8 @@ function getWrappedCallback(cb: any): any {
 }
 
 function getText(): TextMap {
-  const lang = getNavigatorOrThrow().language.split("-")[0] || "en";
-  return Languages[lang] || Languages["en"];
+  const lang = getNavigatorOrThrow().language.replace("-", "_").toLowerCase() || "en";
+  return Languages[lang] || Languages[lang.split("_")[0]] || Languages["en"];
 }
 
 export function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
