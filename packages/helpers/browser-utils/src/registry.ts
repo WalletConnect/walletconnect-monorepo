@@ -15,7 +15,7 @@ export function formatMobileRegistryEntry(entry: IAppEntry, platform: "mobile" |
     name: entry.name || "",
     shortName: entry.metadata.shortName || "",
     color: entry.metadata.colors.primary || "",
-    logo: entry.image_url.sm ? entry.image_url.sm : "",
+    logo: entry.image_url.sm ?? "",
     universalLink: entry[platform].universal || "",
     deepLink: entry[platform].native || "",
   };
