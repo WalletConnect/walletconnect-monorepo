@@ -519,7 +519,7 @@ class App extends React.Component<any, any> {
     }
     try {
       // test message
-      const message = JSON.stringify(eip712.example);
+      const message = JSON.stringify(eip712.example(Number(chainId)));
 
       // get ethereum address
       const account = this.state.accounts.find(account => account.startsWith(chainId));
