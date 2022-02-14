@@ -1,6 +1,8 @@
-{ sources ? import ./ops/nix/sources.nix, githash ? "" }:
+{ sources ? import ./ops/nix/sources.nix
+, githash ? ""
+, org ? "walletconnect"
+}:
 let
-  organization = "walletconnect";
   pkgs = import sources.nixpkgs {
     overlays = [
       (self: super: {
@@ -28,9 +30,9 @@ let
         cp -r package.json $out/
       '';
     };
-  buildDockerImage = { app, nodejs, githash }: pkgs.dockerTools.buildLayeredImage {
-    name = "${organization}/${pkgs.lib.lists.last (builtins.split "_slash_" app.pname)}";
-    tag = "${app.version}";
+  buildDockerImage = { app, nodejs, githash, org }: pkgs.dockerTools.buildLayeredImage {
+    name = "${org}/${pkgs.lib.lists.last (builtins.split "_slash_" app.pname)}";
+    tag = "${app.version}-${githash}";
     config = {
       Cmd = [ "${nodejs}/bin/node" "${app}/dist" ];
       Env = [ "GITHASH=${githash}" ];
@@ -45,7 +47,7 @@ let
         buildPhase = ''npm ci'';
       };
     };
-    docker = buildDockerImage { inherit app githash nodejs; };
+    docker = buildDockerImage { inherit app githash nodejs org; };
   };
 in
 {

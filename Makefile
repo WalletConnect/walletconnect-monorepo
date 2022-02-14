@@ -71,7 +71,7 @@ build-relay: ## builds the relay using system npm
 	$(log_end)
 
 nix-volume:
-ifneq (, $(shell which nix))
+ifeq (, $(shell which nix))
 	docker volume create nix-store
 endif
 	$(log_end)
@@ -95,6 +95,9 @@ endif
 	$(log_end)
 
 build-images: build-img-relay build-img-waku
+
+push-images: build-images
+	docker push $(shell cat ./build/build-img-waku-name)
 
 build: dirs build-images bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
 	$(log_end)
