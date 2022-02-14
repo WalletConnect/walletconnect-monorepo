@@ -1,6 +1,7 @@
 { sources ? import ./ops/nix/sources.nix
 , githash ? ""
 , org ? "walletconnect"
+, tag 
 }:
 let
   pkgs = import sources.nixpkgs {
@@ -32,7 +33,8 @@ let
     };
   buildDockerImage = { app, nodejs, githash, org }: pkgs.dockerTools.buildLayeredImage {
     name = "${org}/${pkgs.lib.lists.last (builtins.split "_slash_" app.pname)}";
-    tag = "${app.version}-${githash}";
+    tag = "${tag}";
+    created = "now";
     config = {
       Cmd = [ "${nodejs}/bin/node" "${app}/dist" ];
       Env = [ "GITHASH=${githash}" ];

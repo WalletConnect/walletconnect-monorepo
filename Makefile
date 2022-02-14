@@ -1,8 +1,7 @@
 ### Deploy configs
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+TAG=$(shell git tag --points-at HEAD)
 GITHASH=$(shell git rev-parse --short HEAD)
-REMOTE=$(shell git remote show origin -n | grep Push | cut -f6 -d' ')
-REMOTE_HASH=$(shell git ls-remote $(REMOTE) $(BRANCH) | head -n1 | cut -f1)
 project=walletconnect
 redisImage=redis:6-alpine
 standAloneRedis=xredis
@@ -19,11 +18,16 @@ VPATH=$(flags):build
 $(shell mkdir -p $(flags))
 .PHONY: help clean clean-all reset build
 
+version=$(BRANCH)
+ifneq (, $(TAG))
+	version=$(TAG)
+endif
+
 dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/src -w /src nixos/nix nix-shell -p bash --run
 dockerLoad=docker load -i build/$@ | awk '{print $$NF}' \
     | grep walletconnect > build/$@-name 
 copyResult=cp -r -f -L result build/$@ && rm -rf result
-buildRelay=nix-build --attr relay.docker --argstr githash $(GITHASH) && $(copyResult)
+buildRelay=nix-build --attr relay.docker --argstr tag $(version) --argstr githash $(GITHASH) && $(copyResult)
 buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
 
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
