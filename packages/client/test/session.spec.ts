@@ -289,7 +289,7 @@ describe("Session", function() {
   });
 });
 
-describe("Session (with timeout)", function() {
+xdescribe("Session (with timeout)", function() {
   this.timeout(TEST_TIMEOUT_DURATION);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {

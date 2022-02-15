@@ -82,7 +82,7 @@ describe("Pairing", function() {
   });
 });
 
-describe("Pairing (with timeout)", function() {
+xdescribe("Pairing (with timeout)", function() {
   this.timeout(TEST_TIMEOUT_DURATION);
   let clock: sinon.SinonFakeTimers;
   beforeEach(function() {
