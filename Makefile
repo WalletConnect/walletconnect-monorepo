@@ -89,7 +89,7 @@ endif
 	$(dockerLoad)
 	$(logEnd)
 
-build-img-waku: dirs pull dockerized-nix ## builds waky docker image inside of docker
+build-img-waku: dirs dockerized-nix ## builds waky docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildWaku)"
 else
@@ -101,6 +101,7 @@ endif
 build-images: build-img-relay build-img-waku
 
 push-images: build-images
+	docker push $(shell cat ./build/build-img-relay-name)
 	docker push $(shell cat ./build/build-img-waku-name)
 
 build: dirs build-images bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
