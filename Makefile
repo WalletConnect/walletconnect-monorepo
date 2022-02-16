@@ -13,7 +13,7 @@ export WAKU_IMAGE=$(shell cat ./build/build-img-waku-name)
 export RELAY_IMAGE=$(shell cat ./build/build-img-relay-name)
 
 ### Makefile internal coordination
-log_end=@echo "MAKE: Done with $@"; echo
+logEnd=@echo "MAKE: Done with $@"; echo
 flags=.makeFlags
 VPATH=$(flags):build
 $(shell mkdir -p $(flags))
@@ -42,42 +42,42 @@ dirs:
 pull: ## pulls docker images
 	docker pull $(redisImage)
 	touch $(flags)/$@
-	$(log_end)
+	$(logEnd)
 
 bootstrap-lerna: ## setups lerna for the monorepo management
 	npm i --include=dev
 	npm run bootstrap
 	touch $(flags)/$@
-	$(log_end)
+	$(logEnd)
 
 build-react-app: ## builds the example react-app
 	npm install --prefix examples/react-app
 	npm run build --prefix examples/react-app
 	touch $(flags)/$@
-	$(log_end)
+	$(logEnd)
 
 build-react-wallet: ## builds the example react-wallet
 	npm install --prefix examples/react-wallet
 	npm run build --prefix examples/react-wallet
 	touch $(flags)/$@
-	$(log_end)
+	$(logEnd)
 
 build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 	npm run build
 	touch $(flags)/$@
-	$(log_end)
+	$(logEnd)
 
 build-relay: ## builds the relay using system npm
 	npm install --also=dev --prefix servers/relay
 	npm run build --prefix servers/relay
-	$(log_end)
+	$(logEnd)
 
 dockerized-nix:
 ifeq (, $(shell which nix))
 	docker volume create nix-store
 	docker pull $(nixImage)
 	touch $(flags)/$@
-	$(log_end)
+	$(logEnd)
 endif
 
 build-img-relay: dirs dockerized-nix ## builds relay docker image inside of docker
@@ -87,7 +87,7 @@ else
 	$(buildRelay)
 endif
 	$(dockerLoad)
-	$(log_end)
+	$(logEnd)
 
 build-img-waku: dirs pull dockerized-nix ## builds waky docker image inside of docker
 ifeq (, $(shell which nix))
@@ -96,7 +96,7 @@ else
 	$(buildWaku)
 endif
 	$(dockerLoad)
-	$(log_end)
+	$(logEnd)
 
 build-images: build-img-relay build-img-waku
 
@@ -104,7 +104,7 @@ push-images: build-images
 	docker push $(shell cat ./build/build-img-waku-name)
 
 build: dirs build-images bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
-	$(log_end)
+	$(logEnd)
 
 test-client: build-lerna ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
 	npm run test --prefix packages/client
@@ -120,7 +120,7 @@ test-relay: build-relay ## runs "./servers/relay" tests against the locally runn
 
 start-redis: ## starts redis docker container for local development
 	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
-	$(log_end)
+	$(logEnd)
 
 predeploy: dirs pull build-images 
 	touch $(flags)/$@
@@ -128,7 +128,7 @@ predeploy: dirs pull build-images
 dev: predeploy ## runs relay on watch mode and shows logs
 	docker stack deploy $(project) \
 		-c ops/docker-compose.ci.yml
-	$(log_end)
+	$(logEnd)
 
 ci: ## runs tests in github actions
 	$(MAKE) dev
@@ -139,7 +139,7 @@ ci: ## runs tests in github actions
 
 deploy-no-monitoring: setup predeploy ## same as deploy but without the monitoring
 	MONITORING=false bash ops/deploy.sh
-	$(log_end)
+	$(logEnd)
 
 redeploy: setup clean predeploy ## redeploys the prodution containers and rebuilds them
 	docker service update --force --image $(relayImage) $(project)_relay
@@ -160,13 +160,13 @@ stop: rm-redis ## stops the whole docker stack
 	docker stack rm $(project)
 	while [ -n "`docker network ls --quiet --filter label=com.docker.stack.namespace=$(project)`" ]; do echo -n '.' && sleep 1; done
 	@echo
-	$(log_end)
+	$(logEnd)
 
 reset: ## removes all build artifacts
 	rm -f setup
 	rm -rf build
-	$(log_end)
+	$(logEnd)
 
 clean: ## removes all build outputs
 	rm -rf .makeFlags build result*
-	$(log_end)
+	$(logEnd)
