@@ -28,7 +28,7 @@ dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/
 dockerLoad=docker load -i build/$@ | awk '{print $$NF}' \
     | grep walletconnect > build/$@-name 
 copyResult=cp -r -f -L result build/$@ && rm -rf result
-buildRelay=nix-build --option sandbox false --attr relay.docker --argstr tag $(version) --argstr githash $(GITHASH) && $(copyResult)
+buildRelay=nix-build --option sandbox false --attr relay --argstr tag $(version) --argstr githash $(GITHASH) && $(copyResult)
 buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
 
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
@@ -41,9 +41,6 @@ dirs:
 
 pull: ## pulls docker images
 	docker pull $(redisImage)
-ifeq (, $(shell which nix))
-	docker pull $(nixImage)
-endif
 	touch $(flags)/$@
 	$(log_end)
 
@@ -75,13 +72,15 @@ build-relay: ## builds the relay using system npm
 	npm run build --prefix servers/relay
 	$(log_end)
 
-nix-volume:
+dockerized-nix:
 ifeq (, $(shell which nix))
 	docker volume create nix-store
-endif
+	docker pull $(nixImage)
+	touch $(flags)/$@
 	$(log_end)
+endif
 
-build-img-relay: dirs pull nix-volume ## builds relay docker image inside of docker
+build-img-relay: dirs dockerized-nix ## builds relay docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildRelay)"
 else
@@ -90,7 +89,7 @@ endif
 	$(dockerLoad)
 	$(log_end)
 
-build-img-waku: dirs pull nix-volume ## builds waky docker image inside of docker
+build-img-waku: dirs pull dockerized-nix ## builds waky docker image inside of docker
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildWaku)"
 else
