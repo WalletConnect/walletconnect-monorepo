@@ -24,6 +24,7 @@ dockerLoad=docker load -i build/$@ | awk '{print $$NF}' \
     | grep walletconnect > build/$@-name 
 copyResult=cp -r -f -L result build/$@ && rm -rf result
 buildRelay=nix-build --option sandbox false --attr relay --argstr tag $(version) --argstr githash $(GITHASH) && $(copyResult)
+buildHealth=nix-build --option sandbox false --attr health --argstr tag $(version) --argstr githash $(GITHASH) && $(copyResult)
 buildWaku=nix-build ./ops/waku-docker.nix && $(copyResult)
 
 ## Environment variables used by the compose files
@@ -88,6 +89,15 @@ endif
 	$(dockerLoad)
 	$(logEnd)
 
+build-img-health: dirs dockerized-nix ## builds relay docker image
+ifeq (, $(shell which nix))
+	$(dockerizedNix) "$(buildHealth)"
+else
+	$(buildHealth)
+endif
+	$(dockerLoad)
+	$(logEnd)
+
 build-img-waku: dirs dockerized-nix ## builds waku docker image
 ifeq (, $(shell which nix))
 	$(dockerizedNix) "$(buildWaku)"
@@ -97,11 +107,12 @@ endif
 	$(dockerLoad)
 	$(logEnd)
 
-build-images: build-img-relay build-img-waku
+build-images: build-img-health build-img-relay build-img-waku
 
 push-images: build-images
 	docker push $(shell cat ./build/build-img-relay-name)
 	docker push $(shell cat ./build/build-img-waku-name)
+	docker push $(shell cat ./build/build-img-health-name)
 
 build: build-images bootstrap-lerna build-react-app build-react-wallet ## builds all packages
 	$(logEnd)
@@ -137,9 +148,10 @@ ci: ## runs ci tests
 relay-logs: ## follows the relay container logs.
 	docker service logs -f --raw --tail 100 $(project)_relay
 
-cachix: clean dirs ## pushes docker images to cachix
+cachix: ## pushes docker images to cachix
 	cachix push walletconnect $(shell $(buildRelay))
 	cachix push walletconnect $(shell $(buildWaku))
+	cachix push walletconnect $(shell $(buildHealth))
 
 rm-redis: ## stops the redis container
 	docker stop $(standAloneRedis) || true
