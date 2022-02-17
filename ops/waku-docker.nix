@@ -1,17 +1,15 @@
-{ sources ? import ./nix/sources.nix
-,
-}:
+{ sources ? import ./nix/sources.nix, }:
 let
   pkgs = import sources.nixpkgs { };
   wakunode = import sources.nix-nim-waku { };
   entry-script =
     with pkgs;
     writeScript
-      "entry-script.sh"
-      ''
-      #!${ runtimeShell }
+    "entry-script.sh"
+    ''
+      #!${runtimeShell}
       set -e
-      export PATH=$PATH:${ coreutils }/bin:${ wakunode }/bin
+      export PATH=$PATH:${coreutils}/bin:${wakunode}/bin
 
       if [[ ! -e /mnt/nodekey ]]; then
         # https://stackoverflow.com/a/34329799
@@ -34,21 +32,21 @@ let
       sleep 5 # wait for rpc server to start
       echo "Done!"
 
-      while ! ${ dnsutils }/bin/dig +short $SWARM_PEERS; do
+      while ! ${dnsutils}/bin/dig +short $SWARM_PEERS; do
         sleep 1
       done
 
-      peerIPs=$(${ dnsutils }/bin/dig +short $SWARM_PEERS)
+      peerIPs=$(${dnsutils}/bin/dig +short $SWARM_PEERS)
       echo "Peer ip addresses: $peerIPs"
       peersArgs=""
       for ip in $peerIPs; do
         while [ true ]; do
           echo "Calling ip: $ip"
-          result=$(${ curl }/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545)
-          multiaddr=$(echo -n $result | ${ jq }/bin/jq -r '.result.listenAddresses[0]')
+          result=$(${curl}/bin/curl -s -d '{"jsonrpc":"2.0","id":"id","method":"get_waku_v2_debug_v1_info", "params":[]}' --header "Content-Type: application/json" http://$ip:8545)
+          multiaddr=$(echo -n $result | ${jq}/bin/jq -r '.result.listenAddresses[0]')
           echo "Multiaddr $multiaddr"
           if [[ -n $multiaddr ]]; then
-            multiaddr=$(${ gnused }/bin/sed "s/0\.0\.0\.0/$ip/g" <<< $multiaddr)
+            multiaddr=$(${gnused}/bin/sed "s/0\.0\.0\.0/$ip/g" <<< $multiaddr)
             peersArgs="$peersArgs --staticnode=$multiaddr"
             break
           fi
@@ -60,7 +58,7 @@ let
 
       echo "Stopping background waku with PID: $PID"
       kill $PID
-      storeIp=$(${ dnsutils }/bin/dig +short tasks.wakustore)
+      storeIp=$(${dnsutils}/bin/dig +short tasks.wakustore)
       echo "STORE IP: $storeIp"
 
       run="wakunode \
@@ -78,15 +76,15 @@ let
       "
       printf "\n\nCommand: $run\n\n"
       exec $run
-      '';
+    '';
 in
 pkgs.dockerTools.buildLayeredImage
-  {
-    name = "walletconnect/wakunode";
-    tag = "${ sources.nix-nim-waku.rev }";
-    created = "now";
-    config = {
-      Env = [ "PATH=${ wakunode }/bin" ];
-      Cmd = [ "${ entry-script }" ];
-    };
-  }
+{
+  name = "walletconnect/wakunode";
+  tag = "${sources.nix-nim-waku.rev}";
+  created = "now";
+  config = {
+    Env = [ "PATH=${wakunode}/bin" ];
+    Cmd = [ "${entry-script}" ];
+  };
+}

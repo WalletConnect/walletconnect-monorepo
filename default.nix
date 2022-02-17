@@ -64,25 +64,25 @@ in
 {
   relay =
     buildDockerImage
-    {
+    rec {
       inherit githash tag;
       nodejs = pkgs.nodejs-16_x;
       app =
         buildNodeApp
         {
-          nodejs = pkgs.nodejs-16_x;
+          inherit nodejs;
           src = filterSource [ "dist" "test" ] ./servers/relay;
         };
     };
   health =
     buildDockerImage
-    {
+    rec {
       inherit githash tag;
       nodejs = pkgs.nodejs-16_x;
       app =
         buildNodeApp
         {
-          nodejs = pkgs.nodejs-16_x;
+          inherit nodejs;
           src = filterSource [ "dist" "test" ] ./servers/health;
         };
     };
