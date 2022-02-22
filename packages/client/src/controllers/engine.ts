@@ -528,7 +528,7 @@ export class Engine extends IEngine {
       let error: ErrorResponse | undefined;
       switch (request.method) {
         case this.sequence.config.jsonrpc.payload:
-          await this.onPayload(payloadEvent);
+          await this.onRequest(payloadEvent);
           break;
         case this.sequence.config.jsonrpc.update:
           await this.onUpdate(payloadEvent);
@@ -559,32 +559,23 @@ export class Engine extends IEngine {
     }
   }
 
-  public async onPayload(payloadEvent: RelayerTypes.PayloadEvent): Promise<void> {
+  public async onRequest(payloadEvent: RelayerTypes.PayloadEvent): Promise<void> {
     const { topic, payload } = payloadEvent;
-    if (isJsonRpcRequest(payload)) {
-      const { id, params } = payload as JsonRpcRequest<SequenceTypes.Request>;
-      const { chainId } = params;
-      const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
-      const settled = await this.sequence.settled.get(topic);
-      await this.isJsonRpcAuthorized(topic, settled.peer, request);
-      await this.sequence.validateRequest({ topic, request, chainId });
-      const settledPayloadEvent: SequenceTypes.PayloadEvent = {
-        topic,
-        payload: request,
-        chainId,
-      };
-      this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
-      this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
-      this.onPayloadEvent(settledPayloadEvent);
-    } else {
-      const settledPayloadEvent: SequenceTypes.PayloadEvent = {
-        topic,
-        payload,
-      };
-      this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
-      this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
-      this.onPayloadEvent(settledPayloadEvent);
-    }
+    if (!isJsonRpcRequest(payload)) return;
+    const { id, params } = payload as JsonRpcRequest<SequenceTypes.Request>;
+    const { chainId } = params;
+    const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
+    const settled = await this.sequence.settled.get(topic);
+    await this.isJsonRpcAuthorized(topic, settled.peer, request);
+    await this.sequence.validateRequest({ topic, request, chainId });
+    const settledPayloadEvent: SequenceTypes.PayloadEvent = {
+      topic,
+      payload: request,
+      chainId,
+    };
+    this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
+    this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
+    this.onPayloadEvent(settledPayloadEvent);
   }
 
   public async onUpdate(payloadEvent: RelayerTypes.PayloadEvent): Promise<void> {
@@ -641,11 +632,9 @@ export class Engine extends IEngine {
     }
   }
 
-  protected async onNotification(payloadEvent: RelayerTypes.PayloadEvent) {
-    const { params: notification } = payloadEvent.payload as JsonRpcRequest<
-      SessionTypes.Notification
-    >;
-    const request = payloadEvent.payload as JsonRpcRequest;
+  protected async onNotify(payloadEvent: RelayerTypes.PayloadEvent) {
+    const request = payloadEvent.payload as JsonRpcRequest<SessionTypes.Notification>;
+    const notification = request.params;
     const settled = await this.sequence.settled.get(payloadEvent.topic);
     try {
       await this.isNotificationAuthorized(payloadEvent.topic, settled.peer, notification.type);

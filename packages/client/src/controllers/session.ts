@@ -229,31 +229,4 @@ export class Session extends ISession {
       throw new Error(error.message);
     }
   }
-
-  public async getDefaultSignal(params: SessionTypes.DefaultSignalParams) {
-    const pairing = await this.client.pairing.settled.get(params.topic);
-    const signal: SessionTypes.Signal = {
-      method: SESSION_SIGNAL_METHOD_PAIRING,
-      params: { topic: pairing.topic },
-    };
-    return signal;
-  }
-
-  public async getDefaultTTL() {
-    return SESSION_DEFAULT_TTL;
-  }
-
-  public async getDefaultPermissions() {
-    return {
-      jsonrpc: {
-        methods: [],
-      },
-      notifications: {
-        types: [],
-      },
-      blockchain: {
-        chains: [],
-      },
-    };
-  }
 }

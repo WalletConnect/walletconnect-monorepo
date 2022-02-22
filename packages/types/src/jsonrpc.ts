@@ -2,15 +2,16 @@ import { JsonRpcRequest, JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { PairingTypes } from "./pairing";
 import { SessionTypes } from "./session";
 import { RelayerTypes } from "./relayer";
+import { CryptoTypes } from "./crypto";
 
 export declare namespace PairingJsonRpc {
   // -- approve ----------------------------------------- //
 
   export interface ApproveParams {
     relay: RelayerTypes.ProtocolOptions;
-    responder: PairingTypes.Participant;
+    responder: CryptoTypes.Participant;
     expiry: number;
-    state: PairingTypes.State;
+    state: {};
   }
 
   export interface ApproveRequest extends JsonRpcRequest {
@@ -40,7 +41,7 @@ export declare namespace PairingJsonRpc {
   // -- update ----------------------------------------- //
 
   export interface UpdateParams {
-    state: Partial<PairingTypes.State>;
+    state: {};
   }
 
   export interface UpdateRequest extends JsonRpcRequest {
@@ -55,7 +56,7 @@ export declare namespace PairingJsonRpc {
   // -- upgrade ----------------------------------------- //
 
   export interface UpgradeParams {
-    permissions: Partial<PairingTypes.Permissions>;
+    permissions: {};
   }
 
   export interface UpgradeRequest extends JsonRpcRequest {
@@ -139,7 +140,6 @@ export declare namespace SessionJsonRpc {
     topic: string;
     relay: RelayerTypes.ProtocolOptions;
     proposer: SessionTypes.Participant;
-    signal: SessionTypes.Signal;
     permissions: SessionTypes.Permissions;
     ttl: number;
   }
