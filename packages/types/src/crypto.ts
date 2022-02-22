@@ -70,11 +70,11 @@ export abstract class ICrypto {
     overrideTopic?: string,
   ): Promise<string>;
 
+  public abstract generateSymKey(overrideTopic?: string): Promise<string>;
+
+  public abstract setSymKey(symKey: string, overrideTopic?: string): Promise<string>;
+
   public abstract encrypt(topic: string, message: string): Promise<string>;
 
   public abstract decrypt(topic: string, encrypted: string): Promise<string>;
-
-  public abstract encode(topic: string, payload: JsonRpcPayload): Promise<string>;
-
-  public abstract decode(topic: string, encrypted: string): Promise<JsonRpcPayload>;
 }

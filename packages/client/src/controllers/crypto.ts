@@ -1,8 +1,6 @@
 import { Logger } from "pino";
 import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { IClient, CryptoTypes, ICrypto, IKeyChain } from "@walletconnect/types";
 import {
   ERROR,
@@ -11,6 +9,7 @@ import {
   encrypt,
   decrypt,
   sha256,
+  generateRandomBytes32,
 } from "@walletconnect/utils";
 
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
@@ -107,6 +106,21 @@ export class Crypto implements ICrypto {
     return this.setEncryptionKeys({ sharedKey, publicKey: keyPair.publicKey }, overrideTopic);
   }
 
+  public async generateSymKey(overrideTopic?: string) {
+    const symKey = generateRandomBytes32();
+    return this.setSymKey(symKey, overrideTopic);
+  }
+
+  public async setSymKey(symKey: string, overrideTopic?: string) {
+    return this.setEncryptionKeys(
+      {
+        sharedKey: symKey,
+        publicKey: await sha256(symKey),
+      },
+      overrideTopic,
+    );
+  }
+
   public async encrypt(topic: string, message: string): Promise<string> {
     const { sharedKey, publicKey } = await this.getEncryptionKeys(topic);
     const result = await encrypt({ message, sharedKey, publicKey });
@@ -117,20 +131,6 @@ export class Crypto implements ICrypto {
     const { sharedKey } = await this.getEncryptionKeys(topic);
     const result = await decrypt({ encrypted, sharedKey });
     return result;
-  }
-
-  public async encode(topic: string, payload: JsonRpcPayload): Promise<string> {
-    const message = safeJsonStringify(payload);
-    const hasKeys = await this.hasKeys(topic);
-    const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
-    return result;
-  }
-
-  public async decode(topic: string, encrypted: string): Promise<JsonRpcPayload> {
-    const hasKeys = await this.hasKeys(topic);
-    const message = hasKeys ? await this.decrypt(topic, encrypted) : encoding.hexToUtf8(encrypted);
-    const payload = safeJsonParse(message);
-    return payload;
   }
 
   // ---------- Private ----------------------------------------------- //
