@@ -58,9 +58,8 @@ export interface UriParameters {
   protocol: string;
   version: number;
   topic: string;
-  publicKey: string;
+  symKey: string;
   relay: RelayerTypes.ProtocolOptions;
-  controller: boolean;
 }
 
 export interface AppMetadata {

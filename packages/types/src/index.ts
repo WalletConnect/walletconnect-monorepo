@@ -10,7 +10,7 @@ export * from "./misc";
 export * from "./pairing";
 export * from "./publisher";
 export * from "./relayer";
-export * from "./sequence";
+export * from "./session";
 export * from "./session";
 export * from "./store";
 export * from "./storage";

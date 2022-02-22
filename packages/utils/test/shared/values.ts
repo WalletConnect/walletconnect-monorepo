@@ -18,9 +18,12 @@ export const TEST_KEY_PAIRS = {
 export const TEST_SHARED_KEY = "1b665e13f74b54aa2401bb8762b6fe06b3fdcf4c248ff0bde8781c3b02f23b06";
 export const TEST_HASHED_KEY = "08ca02463e7c45383d43efaee4bbe33f700df0658e99726a755fd77f9a040988";
 
+export const TEST_SYMMETRIC_KEY =
+  "a2171a46194bdfd18b1d7f606f3937e7c504bc09c5b71a51c6e30a39891195a4";
+
 export const TEST_RELAY_OPTIONS = {
   protocol: "waku",
-  params: {},
+  data: "",
 };
 
 export const TEST_SESSION_METADATA = {

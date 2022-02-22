@@ -1,41 +1,90 @@
-import { JsonRpcRequest, JsonRpcResponse } from "@walletconnect/jsonrpc-types";
+import { Logger } from "pino";
+import {
+  JsonRpcPayload,
+  IEvents,
+  RequestArguments,
+  JsonRpcRequest,
+  JsonRpcResponse,
+} from "@walletconnect/jsonrpc-types";
 
-import { ISequence, SequenceTypes } from "./sequence";
-import { SignalTypes, BlockchainTypes, AppMetadata, NotificationPermissions } from "./misc";
+import { IClient } from "./client";
 import { CryptoTypes } from "./crypto";
+import { IJsonRpcHistory } from "./history";
+import {
+  AppMetadata,
+  BlockchainTypes,
+  JsonRpcPermissions,
+  NotificationPermissions,
+  Reason,
+  SignalTypes,
+} from "./misc";
+import { RelayerTypes } from "./relayer";
 import { IEngine } from "./engine";
+import { IStore } from "./store";
+import { IExpirer } from "./expirer";
 
 export declare namespace SessionTypes {
-  export type Status = SequenceTypes.Status;
-
-  export type JsonRpc = SequenceTypes.JsonRpc;
-
-  export type Events = SequenceTypes.Events;
-
-  export type Config = SequenceTypes.Config<Events, JsonRpc, Status>;
-
-  export type Relay = SequenceTypes.Relay;
-
-  export interface BasePermissions extends SequenceTypes.BasePermissions {
-    blockchain: BlockchainTypes.Permissions;
+  export interface Status {
+    proposed: string;
+    responded: string;
+    pending: string;
+    settled: string;
+  }
+  export interface Events {
+    proposed: string;
+    responded: string;
+    settled: string;
+    updated: string;
+    upgraded: string;
+    extended: string;
+    deleted: string;
+    request: string;
+    response: string;
+    sync: string;
+    notification: string;
+  }
+  export interface JsonRpc {
+    propose: string;
+    approve: string;
+    reject: string;
+    update: string;
+    upgrade: string;
+    extend: string;
+    delete: string;
+    payload: string;
+    ping: string;
+    notification: string;
   }
 
-  export interface ProposedPermissions extends SequenceTypes.ProposedPermissions {
+  export interface Config<E = Events, J = JsonRpc, S = Status> {
+    events: E;
+    jsonrpc: J;
+    status: S;
+  }
+
+  export type Relay = RelayerTypes.ProtocolOptions;
+  export interface BasePermissions {
+    jsonrpc: JsonRpcPermissions;
+    blockchain: BlockchainTypes.Permissions;
+    notifications?: NotificationPermissions;
+  }
+  export interface ProposedPermissions extends BasePermissions {
     blockchain: BlockchainTypes.Permissions;
     notifications: NotificationPermissions;
   }
 
-  export interface SettledPermissions extends SequenceTypes.SettledPermissions {
+  export interface SettledPermissions extends ProposedPermissions {
     controller: CryptoTypes.Participant;
   }
-
   export type Permissions = SettledPermissions;
 
-  export interface ProposeParams extends SequenceTypes.ProposeParams {
+  export interface ProposeParams {
+    relay: Relay;
     signal: Signal;
     metadata: AppMetadata;
     permissions: ProposedPermissions;
     ttl?: number;
+    timeout?: number;
   }
 
   export type CreateParams = ProposeParams;
@@ -43,8 +92,7 @@ export declare namespace SessionTypes {
   // Pairing method is specific to Session
   export type Signal = SignalTypes.Pairing;
 
-  // Peer requires metadata in Session
-  export interface Participant extends SequenceTypes.Participant {
+  export interface Participant extends CryptoTypes.Participant {
     metadata: AppMetadata;
   }
 
@@ -52,53 +100,101 @@ export declare namespace SessionTypes {
     controller: boolean;
   }
 
-  export type Proposal = SequenceTypes.Proposal<Signal, ProposedPeer, ProposedPermissions>;
+  export interface Proposal<S = Signal, Par = ProposedPeer, Per = ProposedPermissions> {
+    topic: string;
+    relay: Relay;
+    proposer: Par;
+    signal: S;
+    permissions: Per;
+    ttl: number;
+  }
 
-  export type ProposedStatus = SequenceTypes.ProposedStatus;
+  export type ProposedStatus = "proposed";
 
-  export type RespondedStatus = SequenceTypes.RespondedStatus;
+  export type RespondedStatus = "responded";
 
-  export type PendingStatus = SequenceTypes.PendingStatus;
+  export type PendingStatus = ProposedStatus | RespondedStatus;
 
-  export type BasePending = SequenceTypes.BasePending<Participant, Proposal>;
+  export interface BasePending<Par = Participant, Pro = Proposal> {
+    status: PendingStatus;
+    topic: string;
+    relay: Relay;
+    self: Par;
+    proposal: Pro;
+  }
 
-  export type ProposedPending = SequenceTypes.ProposedPending<Participant, Proposal>;
+  export interface ProposedPending<Par = Participant, Pro = Proposal>
+    extends BasePending<Par, Pro> {
+    status: ProposedStatus;
+  }
 
-  export type RespondedPending = SequenceTypes.RespondedPending<Participant, Proposal, State>;
+  export interface RespondedPending<Par = Participant, Pro = Proposal, S = State>
+    extends BasePending<Par, Pro> {
+    status: RespondedStatus;
+    outcome: Outcome<S, Par>;
+  }
 
-  export type Pending = SequenceTypes.Pending<Participant, Proposal, State>;
+  export type Pending<Par = Participant, Pro = Proposal, S = State> =
+    | ProposedPending<Par, Pro>
+    | RespondedPending<Par, Pro, S>;
 
-  export interface RespondParams extends SequenceTypes.RespondParams<Proposal> {
+  export interface RespondParams<Pro = Proposal> {
+    approved: boolean;
+    proposal: Pro;
     response: ResponseInput;
+    reason?: Reason;
   }
 
-  export type SettleParams = SequenceTypes.SettleParams<State, Participant, Permissions>;
+  export interface SettleParams<S = State, Par = Participant, Per = Permissions> {
+    relay: Relay;
+    peer: Par;
+    self: Par;
+    state: S;
+    permissions: Per;
+    ttl: number;
+    expiry: number;
+  }
 
-  export interface UpdateParams extends Update {
+  export interface UpdateParams<S = State> extends Update<S> {
     topic: string;
   }
 
-  export interface UpgradeParams extends Upgrade {
+  export interface UpgradeParams<Per = Permissions> extends Upgrade<Per> {
     topic: string;
   }
 
-  export type ExtendParams = SequenceTypes.ExtendParams;
+  export interface ExtendParams {
+    topic: string;
+    ttl: number;
+  }
 
-  export interface RequestParams extends SequenceTypes.RequestParams {
+  export interface RequestParams {
+    topic: string;
+    request: RequestArguments;
+    timeout?: number;
     chainId?: string;
   }
 
-  export type Update = SequenceTypes.Update<State>;
+  export interface Update<S = State> {
+    state: Partial<S>;
+  }
 
-  export type Upgrade = SequenceTypes.Upgrade<Permissions>;
+  export interface Upgrade<Per = Permissions> {
+    permissions: Partial<Per>;
+  }
 
-  export type Extension = SequenceTypes.Extension;
+  export interface Extension {
+    expiry: number;
+  }
 
-  export interface Request extends SequenceTypes.Request {
+  export interface Request {
+    request: RequestArguments;
     chainId?: string;
   }
 
-  export interface PayloadEvent extends SequenceTypes.PayloadEvent {
+  export interface PayloadEvent {
+    topic: string;
+    payload: JsonRpcPayload;
     chainId?: string;
   }
 
@@ -110,82 +206,176 @@ export declare namespace SessionTypes {
     response: JsonRpcResponse;
   }
 
-  export type DeleteParams = SequenceTypes.DeleteParams;
+  export interface DeleteParams {
+    topic: string;
+    reason: Reason;
+  }
 
-  export type Settled = SequenceTypes.Settled<State, Participant, Permissions>;
+  export interface Settled<S = State, Par = Participant, Per = Permissions> {
+    topic: string;
+    relay: Relay;
+    self: Par;
+    peer: Par;
+    permissions: Per;
+    expiry: number;
+    state: S;
+    acknowledged: boolean;
+  }
 
-  export type Created = Settled;
+  export type Created<S = State, Par = Participant, Per = Permissions> = Settled<S, Par, Per>;
 
-  export type Approval = SequenceTypes.Approval<State, Participant>;
+  export interface Approval<S = State, Par = Participant> {
+    relay: Relay;
+    responder: Par;
+    expiry: number;
+    state: S;
+  }
 
-  export type Rejection = SequenceTypes.Rejection;
+  export interface Rejection {
+    reason: Reason;
+  }
 
-  export type Response = Rejection | Approval;
+  export type Response<S = State, Par = Participant> = Rejection | Approval<S, Par>;
 
-  export type Success = SequenceTypes.Success<State, Participant>;
+  export interface Success<S = State, Par = Participant> extends Approval<S, Par> {
+    topic: string;
+  }
 
-  export type Failed = SequenceTypes.Failed;
+  export type Failed = Rejection;
 
-  export type Outcome = Failed | Success;
+  export type Outcome<S = State, Par = Participant> = Failed | Success<S, Par>;
 
-  export type State = BlockchainTypes.State;
+  export type State = any;
 
   export interface ResponseInput {
     state: State;
     metadata: AppMetadata;
   }
 
-  export type DefaultSignalParams = SequenceTypes.DefaultSignalParams<ProposedPeer>;
+  export interface DefaultSignalParams<P = ProposedPeer> {
+    topic: string;
+    relay: Relay;
+    proposer: P;
+  }
 
-  export type Notification = SequenceTypes.Notification;
+  export interface Notification {
+    type: string;
+    data: any;
+  }
 
-  export type NotificationEvent = SequenceTypes.NotificationEvent;
+  export interface NotificationEvent {
+    topic: string;
+    notification: Notification;
+  }
 
-  export type NotifyParams = SequenceTypes.NotifyParams;
+  export type NotifyParams = NotificationEvent;
 
-  export type Engine = IEngine<
-    Pending,
-    Settled,
-    Update,
-    Upgrade,
-    Extension,
-    CreateParams,
-    RespondParams,
-    RequestParams,
-    UpdateParams,
-    UpgradeParams,
-    ExtendParams,
-    DeleteParams,
-    ProposeParams,
-    SettleParams,
-    NotifyParams,
-    Participant,
-    Permissions
-  >;
+  export type Engine = IEngine;
 }
 
-export abstract class ISession extends ISequence<
-  SessionTypes.Engine,
-  SessionTypes.Config,
-  SessionTypes.Pending,
-  SessionTypes.Settled,
-  SessionTypes.Update,
-  SessionTypes.Upgrade,
-  SessionTypes.Extension,
-  SessionTypes.State,
-  SessionTypes.Permissions,
-  SessionTypes.CreateParams,
-  SessionTypes.RespondParams,
-  SessionTypes.RequestParams,
-  SessionTypes.UpdateParams,
-  SessionTypes.UpgradeParams,
-  SessionTypes.ExtendParams,
-  SessionTypes.DeleteParams,
-  SessionTypes.ProposeParams,
-  SessionTypes.SettleParams,
-  SessionTypes.NotifyParams,
-  SessionTypes.Participant,
-  SessionTypes.Signal,
-  SessionTypes.DefaultSignalParams,
-  SessionTypes.ProposedPermissions
-> {}
+export abstract class ISession<
+  Engine = SessionTypes.Engine,
+  Config = SessionTypes.Config,
+  Pending = SessionTypes.Pending,
+  Settled = SessionTypes.Settled,
+  Update = SessionTypes.Update,
+  Upgrade = SessionTypes.Upgrade,
+  Extension = SessionTypes.Extension,
+  State = SessionTypes.State,
+  Permissions = SessionTypes.Permissions,
+  CreateParams = SessionTypes.CreateParams,
+  RespondParams = SessionTypes.RespondParams,
+  RequestParams = SessionTypes.RequestParams,
+  UpdateParams = SessionTypes.UpdateParams,
+  UpgradeParams = SessionTypes.UpgradeParams,
+  ExtendParams = SessionTypes.ExtendParams,
+  DeleteParams = SessionTypes.DeleteParams,
+  ProposeParams = SessionTypes.ProposeParams,
+  SettleParams = SessionTypes.SettleParams,
+  NotifyParams = SessionTypes.NotifyParams,
+  Participant = SessionTypes.Participant,
+  Signal = SessionTypes.Signal,
+  DefaultSignalParams = SessionTypes.DefaultSignalParams,
+  ProposedPermissions = SessionTypes.ProposedPermissions
+> extends IEvents {
+  // pending sequences
+  public abstract pending: IStore<Pending>;
+  // settled sequences
+  public abstract settled: IStore<Settled>;
+  // jsonrpc history
+  public abstract history: IJsonRpcHistory;
+  // sequence expiry
+  public abstract expirer: IExpirer;
+
+  // returns settled sequences length
+  public abstract readonly length: number;
+  // returns settled sequences topics
+  public abstract readonly topics: string[];
+  // returns settled sequences values
+  public abstract readonly values: Settled[];
+
+  // describes sequence name
+  public abstract name: string;
+
+  // describes sequence context
+  public abstract readonly context: string;
+
+  // describes sequence config
+  public abstract config: Config;
+
+  // sequence protocol engine
+  public abstract engine: Engine;
+
+  constructor(public client: IClient, public logger: Logger) {
+    super();
+  }
+
+  // initialize with persisted state
+  public abstract init(): Promise<void>;
+
+  // get settled sequence state
+  public abstract get(topic: string): Promise<Settled>;
+
+  // find compatible settled sequence
+  public abstract find(permissions: Partial<Permissions>): Promise<Settled[]>;
+
+  // called by either to ping peer
+  public abstract ping(topic: string, timeout?: number): Promise<void>;
+  // called by either to send JSON-RPC
+  public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
+
+  // called by proposer
+  public abstract create(params?: CreateParams): Promise<Settled>;
+  // called by responder
+  public abstract respond(params: RespondParams): Promise<Pending>;
+
+  // called by proposer to request JSON-RPC
+  public abstract request(params: RequestParams): Promise<any>;
+
+  // called by controller to update state
+  public abstract update(params: UpdateParams): Promise<Settled>;
+  // called by controller to upgrade permissions
+  public abstract upgrade(params: UpgradeParams): Promise<Settled>;
+  // called by controller to extend expiry
+  public abstract extend(params: ExtendParams): Promise<Settled>;
+
+  // called by either to terminate
+  public abstract delete(params: DeleteParams): Promise<void>;
+  // called by either to notify
+  public abstract notify(params: NotifyParams): Promise<void>;
+
+  // merge callbacks for sequence engine
+  public abstract mergeUpdate(topic: string, update: Update): Promise<State>;
+  public abstract mergeUpgrade(topic: string, upgrade: Upgrade): Promise<Permissions>;
+  public abstract mergeExtension(topic: string, extension: Extension): Promise<Extension>;
+
+  // validator callbacks for sequence engine
+  public abstract validateRespond(params?: RespondParams): Promise<void>;
+  public abstract validateRequest(params?: RequestParams): Promise<void>;
+  public abstract validatePropose(params?: ProposeParams): Promise<void>;
+
+  // default callbacks for sequence engine
+  public abstract getDefaultSignal(params: DefaultSignalParams): Promise<Signal>;
+  public abstract getDefaultTTL(): Promise<number>;
+  public abstract getDefaultPermissions(): Promise<ProposedPermissions>;
+}

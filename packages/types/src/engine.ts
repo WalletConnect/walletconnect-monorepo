@@ -1,29 +1,27 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
 import { RelayerTypes } from "./relayer";
-import { ISequence, SequenceTypes } from "./sequence";
+import { SessionTypes } from "./session";
 
 export abstract class IEngine<
-  Pending = SequenceTypes.Pending,
-  Settled = SequenceTypes.Settled,
-  Update = SequenceTypes.Update,
-  Upgrade = SequenceTypes.Upgrade,
-  Extension = SequenceTypes.Extension,
-  CreateParams = SequenceTypes.CreateParams,
-  RespondParams = SequenceTypes.RespondParams,
-  RequestParams = SequenceTypes.RequestParams,
-  UpdateParams = SequenceTypes.UpdateParams,
-  UpgradeParams = SequenceTypes.UpgradeParams,
-  ExtendParams = SequenceTypes.ExtendParams,
-  DeleteParams = SequenceTypes.DeleteParams,
-  ProposeParams = SequenceTypes.ProposeParams,
-  SettleParams = SequenceTypes.SettleParams,
-  NotifyParams = SequenceTypes.NotifyParams,
-  Participant = SequenceTypes.Participant,
-  Permissions = SequenceTypes.Permissions
+  Pending = SessionTypes.Pending,
+  Settled = SessionTypes.Settled,
+  Update = SessionTypes.Update,
+  Upgrade = SessionTypes.Upgrade,
+  Extension = SessionTypes.Extension,
+  CreateParams = SessionTypes.CreateParams,
+  RespondParams = SessionTypes.RespondParams,
+  RequestParams = SessionTypes.RequestParams,
+  UpdateParams = SessionTypes.UpdateParams,
+  UpgradeParams = SessionTypes.UpgradeParams,
+  ExtendParams = SessionTypes.ExtendParams,
+  DeleteParams = SessionTypes.DeleteParams,
+  ProposeParams = SessionTypes.ProposeParams,
+  SettleParams = SessionTypes.SettleParams,
+  NotifyParams = SessionTypes.NotifyParams,
+  Participant = SessionTypes.Participant,
+  Permissions = SessionTypes.Permissions
 > {
-  constructor(public sequence: ISequence) {}
-
   public abstract find(permissions: Partial<Permissions>): Promise<Settled[]>;
   public abstract ping(topic: string, timeout?: number): Promise<void>;
   public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;

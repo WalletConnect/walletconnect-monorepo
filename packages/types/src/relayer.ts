@@ -11,7 +11,7 @@ import { IPublisher } from "./publisher";
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
     protocol: string;
-    params?: any;
+    data?: string;
   }
 
   export interface PublishOptions {
