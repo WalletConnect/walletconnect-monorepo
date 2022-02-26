@@ -2,11 +2,10 @@ import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
-import { IJsonRpcProvider, JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
 
 import { IRelayerStorage } from "./storage";
 import { ISubscriber } from "./subscriber";
-import { IJsonRpcHistory } from "./history";
 import { IPublisher } from "./publisher";
 
 export declare namespace RelayerTypes {
@@ -32,29 +31,14 @@ export declare namespace RelayerTypes {
 
   export type RequestOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions;
 
-  export interface PayloadEvent {
+  export interface MessageEvent {
     topic: string;
-    payload: JsonRpcPayload;
+    message: string;
   }
-}
-
-export abstract class IRelayerEncoder {
-  public abstract encode(
-    topic: string,
-    payload: JsonRpcPayload,
-    nonce?: number | string,
-  ): Promise<string>;
-
-  public abstract decode(
-    topic: string,
-    encrypted: string,
-    nonce?: number | string,
-  ): Promise<JsonRpcPayload>;
 }
 
 export interface RelayerOptions {
   heartbeat?: IHeartBeat;
-  encoder?: IRelayerEncoder;
   storage?: IRelayerStorage;
   keyValueStorage?: IKeyValueStorage;
   keyValueStorageOptions?: KeyValueStorageOptions;
@@ -64,6 +48,28 @@ export interface RelayerOptions {
   relayProvider?: string | IJsonRpcProvider;
 }
 
+export type MessageRecord = Record<string, string>;
+
+export abstract class IMessageTracker {
+  public abstract messages: Map<string, MessageRecord>;
+
+  public abstract name: string;
+
+  public abstract readonly context: string;
+
+  constructor(public logger: Logger, public storage: IRelayerStorage) {}
+
+  public abstract init(): Promise<void>;
+
+  public abstract set(topic: string, message: string): Promise<string>;
+
+  public abstract get(topic: string): Promise<MessageRecord>;
+
+  public abstract has(topic: string, message: string): Promise<boolean>;
+
+  public abstract del(topic: string): Promise<void>;
+}
+
 export abstract class IRelayer extends IEvents {
   public abstract logger: Logger;
 
@@ -71,13 +77,11 @@ export abstract class IRelayer extends IEvents {
 
   public abstract heartbeat: IHeartBeat;
 
-  public abstract encoder: IRelayerEncoder;
-
   public abstract subscriber: ISubscriber;
 
   public abstract publisher: IPublisher;
 
-  public abstract history: IJsonRpcHistory;
+  public abstract messages: IMessageTracker;
 
   public abstract provider: IJsonRpcProvider;
 
@@ -97,7 +101,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract publish(
     topic: string,
-    payload: JsonRpcPayload,
+    message: string,
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
 
