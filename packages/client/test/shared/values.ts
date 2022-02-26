@@ -1,14 +1,8 @@
 import path from "path";
-import { toMiliseconds } from "@walletconnect/utils";
 import { ClientOptions, SessionTypes, AppMetadata } from "@walletconnect/types";
+import { ONE_SECOND, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
 
-import {
-  CLIENT_SHORT_TIMEOUT,
-  ONE_SECOND,
-  PAIRING_DEFAULT_TTL,
-  SESSION_DEFAULT_TTL,
-  THIRTY_SECONDS,
-} from "../../src";
+import { CLIENT_SHORT_TIMEOUT, PAIRING_DEFAULT_TTL, SESSION_DEFAULT_TTL } from "../../src";
 
 import { ROOT_DIR } from "../../../../ops/js/shared";
 

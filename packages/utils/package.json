@@ -34,6 +34,7 @@
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/relay-api": "^1.0.2",
     "@walletconnect/safe-json": "^1.0.0",
+    "@walletconnect/time": "^1.0.1",
     "@walletconnect/types": "^2.0.0-beta.23",
     "@walletconnect/window-getters": "^1.0.0",
     "@walletconnect/window-metadata": "^1.0.0",

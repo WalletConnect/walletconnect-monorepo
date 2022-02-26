@@ -3,10 +3,11 @@ import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { Logger } from "pino";
 import { generateChildLogger } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import { SIX_HOURS } from "@walletconnect/time";
 
 import { sha256 } from "./utils";
 import { HttpService } from "./http";
-import { REDIS_CONTEXT, SIX_HOURS } from "./constants";
+import { REDIS_CONTEXT } from "./constants";
 import { Notification, LegacySocketMessage } from "./types";
 
 export class RedisService {

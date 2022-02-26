@@ -1,4 +1,4 @@
-import { FIVE_SECONDS } from "./time";
+import { FIVE_SECONDS } from "@walletconnect/time";
 
 export const HEARTBEAT_CONTEXT = "heartbeat";
 

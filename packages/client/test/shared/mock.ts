@@ -18,7 +18,7 @@ import {
 } from "../../src";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { IRelayerEncoder, RelayerTypes } from "@walletconnect/types";
-import { toMiliseconds } from "@walletconnect/utils";
+import { toMiliseconds } from "@walletconnect/time";
 import { RelayerEncoder } from "../../src/controllers";
 
 export class MockWakuRelayer implements IEvents {

@@ -1,9 +1,10 @@
 import "mocha";
 import sinon from "sinon";
 
-import { generateRandomBytes32, toMiliseconds } from "@walletconnect/utils";
+import { ONE_SECOND, toMiliseconds } from "@walletconnect/time";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 
-import { Client, ONE_SECOND, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
+import { Client, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 
 import {
   expect,

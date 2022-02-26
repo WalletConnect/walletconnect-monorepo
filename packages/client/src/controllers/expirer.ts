@@ -1,9 +1,10 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 
+import { toMiliseconds } from "@walletconnect/time";
 import { IClient, IExpirer, Expiration, ExpirerEvents } from "@walletconnect/types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { ERROR, formatMessageContext, toMiliseconds } from "@walletconnect/utils";
+import { ERROR, formatMessageContext } from "@walletconnect/utils";
 
 import { EXPIRER_CONTEXT, EXPIRER_EVENTS, HEARTBEAT_EVENTS } from "../constants";
 

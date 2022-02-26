@@ -1,4 +1,4 @@
-import { ONE_SECOND } from "./time";
+import { ONE_SECOND } from "@walletconnect/time";
 
 export const RELAYER_DEFAULT_PROTOCOL = "waku";
 

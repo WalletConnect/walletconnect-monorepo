@@ -1,4 +1,4 @@
-import { ONE_DAY } from "./time";
+import { ONE_DAY } from "@walletconnect/time";
 
 export const EXPIRER_CONTEXT = "expirer";
 

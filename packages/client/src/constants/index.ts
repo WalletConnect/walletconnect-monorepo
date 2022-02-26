@@ -11,4 +11,3 @@ export * from "./session";
 export * from "./store";
 export * from "./storage";
 export * from "./subscriber";
-export * from "./time";
