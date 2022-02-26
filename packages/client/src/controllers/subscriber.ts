@@ -265,7 +265,7 @@ export class Subscriber extends ISubscriber {
     if (await this.hasSubscription(id, topic)) {
       await this.deleteSubscription(id, reason);
     }
-    await this.relayer.history.delete(topic);
+    await this.relayer.messages.del(topic);
   }
 
   private async setSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {

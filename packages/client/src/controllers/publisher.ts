@@ -1,40 +1,21 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { IEvents } from "@walletconnect/events";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
+import { IRelayer, IPublisher, PublisherTypes, RelayerTypes } from "@walletconnect/types";
 
-import { getRelayProtocolName, getRelayProtocolApi } from "@walletconnect/utils";
-import { JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
+import { getRelayProtocolName, getRelayProtocolApi, sha256 } from "@walletconnect/utils";
+import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
-
-export abstract class IPublisher extends IEvents {
-  public abstract name: string;
-
-  public abstract readonly context: string;
-
-  constructor(public relayer: IRelayer, public logger: Logger) {
-    super();
-  }
-
-  public abstract init(): Promise<void>;
-
-  public abstract publish(
-    topic: string,
-    payload: JsonRpcPayload,
-    opts?: RelayerTypes.PublishOptions,
-  ): Promise<void>;
-}
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
 
   public name: string = PUBLISHER_CONTEXT;
 
-  public queue = new Map<number, PublisherTypes.Params>();
+  public queue = new Map<string, PublisherTypes.Params>();
 
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
@@ -54,22 +35,22 @@ export class Publisher extends IPublisher {
 
   public async publish(
     topic: string,
-    payload: JsonRpcPayload,
+    message: string,
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void> {
     this.logger.debug(`Publishing Payload`);
-    this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
+    this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     try {
       const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
-      const params = { topic, payload, opts: { ttl, relay, prompt } };
-      this.queue.set(payload.id, params);
-      const message = await this.relayer.encoder.encode(topic, payload);
+      const params = { topic, message, opts: { ttl, relay, prompt } };
+      const hash = await sha256(message);
+      this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
-      await this.onPublish(payload.id, params);
+      await this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
-      this.logger.trace({ type: "method", method: "publish", params: { topic, payload, opts } });
+      this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e as any);
@@ -120,26 +101,26 @@ export class Publisher extends IPublisher {
       delete request.params?.prompt;
     }
     this.logger.debug(`Outgoing Relay Payload`);
-    this.logger.trace({ type: "payload", direction: "outgoing", request });
+    this.logger.trace({ type: "message", direction: "outgoing", request });
     return this.relayer.provider.request(request);
   }
 
-  private async onPublish(id: number, params: PublisherTypes.Params) {
-    // const { topic, payload } = params;
-    // await this.relayer.recordPayloadEvent({ topic, payload });
-    this.queue.delete(id);
+  private async onPublish(hash: string, params: PublisherTypes.Params) {
+    // const { topic, message } = params;
+    // await this.relayer.recordPayloadEvent({ topic, message });
+    this.queue.delete(hash);
   }
 
   private checkQueue(): void {
     this.queue.forEach(async params => {
       const {
         topic,
-        payload,
+        message,
         opts: { ttl, relay },
       } = params;
-      const message = await this.relayer.encoder.encode(topic, payload);
+      const hash = await sha256(message);
       await this.rpcPublish(topic, message, ttl, relay);
-      await this.onPublish(payload.id, params);
+      await this.onPublish(hash, params);
     });
   }
 

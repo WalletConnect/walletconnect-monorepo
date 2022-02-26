@@ -4,6 +4,7 @@ import { IKeyValueStorage } from "keyvaluestorage";
 import { JsonRpcRecord } from "./history";
 import { SubscriberTypes } from "./subscriber";
 import { Expiration } from "./expirer";
+import { MessageRecord } from ".";
 
 export type StorageKeyMap = Record<string, Record<string, string>>;
 
@@ -44,8 +45,13 @@ export abstract class IRelayerStorage extends IBaseStorage {
     super(logger, keyValueStorage, config);
   }
 
-  public abstract setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void>;
-  public abstract getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined>;
+  public abstract setRelayerMessages(
+    context: string,
+    messages: Map<string, MessageRecord>,
+  ): Promise<void>;
+  public abstract getRelayerMessages(
+    context: string,
+  ): Promise<Map<string, MessageRecord> | undefined>;
 
   public abstract setRelayerSubscriptions(
     context: string,
@@ -78,4 +84,7 @@ export abstract class IStorage extends IRelayerStorage {
 
   public abstract setExpirations(context: string, sequences: Expiration[]): Promise<void>;
   public abstract getExpirations(context: string): Promise<Expiration[] | undefined>;
+
+  public abstract setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void>;
+  public abstract getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined>;
 }

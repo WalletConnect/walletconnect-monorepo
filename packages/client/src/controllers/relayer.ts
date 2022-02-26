@@ -10,15 +10,16 @@ import {
   RelayerTypes,
   IRelayer,
   ISubscriber,
-  IJsonRpcHistory,
+  IPublisher,
   JsonRpcRecord,
-  IRelayerEncoder,
   RelayerOptions,
   IRelayerStorage,
+  IMessageTracker,
+  MessageRecord,
 } from "@walletconnect/types";
 import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { formatRelayRpcUrl } from "@walletconnect/utils";
+import { ERROR, formatMessageContext, formatRelayRpcUrl, sha256 } from "@walletconnect/utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
@@ -27,7 +28,6 @@ import {
   isJsonRpcRequest,
   JsonRpcRequest,
   formatJsonRpcResult,
-  RequestArguments,
 } from "@walletconnect/jsonrpc-utils";
 
 import { Subscriber } from "./subscriber";
@@ -41,10 +41,91 @@ import {
   RELAYER_STORAGE_OPTIONS,
   RELAYER_DEFAULT_RELAY_URL,
 } from "../constants";
-import { JsonRpcHistory } from "./history";
 import { RelayerStorage } from "./storage";
-import { RelayerEncoder } from "./encoder";
-import { IPublisher, Publisher } from "./publisher";
+import { Publisher } from "./publisher";
+
+const MESSAGES_CONTEXT = "messages";
+
+export class MessageTracker extends IMessageTracker {
+  public messages = new Map<string, MessageRecord>();
+
+  public name = MESSAGES_CONTEXT;
+
+  private cached: MessageRecord[] = [];
+
+  constructor(public logger: Logger, public storage: IRelayerStorage) {
+    super(logger, storage);
+    this.logger = generateChildLogger(logger, this.name);
+    this.storage = storage;
+  }
+
+  get context(): string {
+    return getLoggerContext(this.logger);
+  }
+
+  public async init(): Promise<void> {
+    this.logger.trace(`Initialized`);
+    await this.initialize();
+  }
+
+  public async set(topic: string, message: string): Promise<string> {
+    const hash = await sha256(message);
+    let messages = this.messages.get(topic);
+    if (typeof messages === "undefined") {
+      messages = {};
+    }
+    if (typeof messages[hash] !== "undefined") {
+      throw new Error("Message already recorded");
+    }
+    messages[hash] = message;
+    this.messages.set(topic, messages);
+    await this.persist();
+    return hash;
+  }
+
+  public async get(topic: string): Promise<MessageRecord> {
+    let messages = this.messages.get(topic);
+    if (typeof messages === "undefined") {
+      messages = {};
+    }
+    return messages;
+  }
+
+  public async has(topic: string, message: string): Promise<boolean> {
+    const messages = this.get(topic);
+    const hash = await sha256(message);
+    return typeof messages[hash] !== "undefined";
+  }
+
+  public async del(topic: string) {
+    this.messages.delete(topic);
+    await this.persist();
+  }
+
+  // ---------- Private ----------------------------------------------- //
+
+  private async persist() {
+    await this.storage.setRelayerMessages(this.context, this.messages);
+  }
+
+  private async restore() {
+    try {
+      const messages = await this.storage.getRelayerMessages(this.context);
+      if (typeof messages !== "undefined") {
+        this.messages = messages;
+      }
+      this.logger.debug(`Successfully Restored records for ${formatMessageContext(this.context)}`);
+      this.logger.trace({ type: "method", method: "restore", size: this.messages.size });
+    } catch (e) {
+      this.logger.debug(`Failed to Restore records for ${formatMessageContext(this.context)}`);
+      this.logger.error(e as any);
+    }
+  }
+
+  private async initialize() {
+    await this.restore();
+  }
+}
 
 export class Relayer extends IRelayer {
   public readonly protocol = "irn";
@@ -56,13 +137,11 @@ export class Relayer extends IRelayer {
 
   public heartbeat: IHeartBeat;
 
-  public encoder: IRelayerEncoder;
-
   public events = new EventEmitter();
 
   public provider: IJsonRpcProvider;
 
-  public history: IJsonRpcHistory;
+  public messages: IMessageTracker;
 
   public subscriber: ISubscriber;
 
@@ -90,7 +169,6 @@ export class Relayer extends IRelayer {
             },
           );
     this.heartbeat = opts?.heartbeat || new HeartBeat();
-    this.encoder = opts?.encoder || new RelayerEncoder();
     const rpcUrl =
       opts?.rpcUrl ||
       formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts?.projectId);
@@ -98,7 +176,7 @@ export class Relayer extends IRelayer {
       typeof opts?.relayProvider !== "string" && typeof opts?.relayProvider !== "undefined"
         ? opts?.relayProvider
         : new JsonRpcProvider(new WsConnection(rpcUrl));
-    this.history = new JsonRpcHistory(this.logger, this.storage);
+    this.messages = new MessageTracker(this.logger, this.storage);
     this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);
     this.registerEventListeners();
@@ -118,7 +196,7 @@ export class Relayer extends IRelayer {
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
-    await this.history.init();
+    await this.messages.init();
     await this.provider.connect();
     await this.subscriber.init();
     await this.publisher.init();
@@ -126,11 +204,11 @@ export class Relayer extends IRelayer {
 
   public async publish(
     topic: string,
-    payload: JsonRpcPayload,
+    message: string,
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void> {
-    await this.publisher.publish(topic, payload, opts);
-    await this.recordPayloadEvent({ topic, payload });
+    await this.publisher.publish(topic, message, opts);
+    await this.recordMessageEvent({ topic, message });
   }
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string> {
@@ -160,34 +238,15 @@ export class Relayer extends IRelayer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async recordPayloadEvent(payloadEvent: RelayerTypes.PayloadEvent) {
-    const { topic, payload } = payloadEvent;
-    if (isJsonRpcRequest(payload)) {
-      await this.history.set(topic, payload);
-    } else {
-      await this.history.resolve(payload);
-    }
+  private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+    const { topic, message } = messageEvent;
+    await this.messages.set(topic, message);
   }
 
-  private async shouldIgnorePayloadEvent(payloadEvent: RelayerTypes.PayloadEvent) {
-    const { topic, payload } = payloadEvent;
+  private async shouldIgnorePayloadEvent(messageEvent: RelayerTypes.MessageEvent) {
+    const { topic, message } = messageEvent;
     if (!this.subscriber.topics.includes(topic)) return true;
-    let exists = false;
-    try {
-      if (isJsonRpcRequest(payload)) {
-        exists = await this.history.exists(topic, payload.id);
-      } else {
-        let record: JsonRpcRecord | undefined;
-        try {
-          record = await this.history.get(topic, payload.id);
-        } catch (e) {
-          // skip error
-        }
-        exists = typeof record !== "undefined" && typeof record.response !== "undefined";
-      }
-    } catch (e) {
-      // skip error
-    }
+    const exists = await this.messages.has(topic, message);
     return exists;
   }
 
@@ -198,17 +257,17 @@ export class Relayer extends IRelayer {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
-      const payloadEvent = {
+      const messageEvent = {
         topic,
-        payload: await this.encoder.decode(topic, message),
-      } as RelayerTypes.PayloadEvent;
-      if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
+        message,
+      } as RelayerTypes.MessageEvent;
+      if (await this.shouldIgnorePayloadEvent(messageEvent)) return;
       this.logger.debug(`Emitting Relayer Payload`);
-      this.logger.trace({ type: "event", event: event.id, ...payloadEvent });
-      this.events.emit(event.id, payloadEvent);
-      this.events.emit(RELAYER_EVENTS.payload, payloadEvent);
+      this.logger.trace({ type: "event", event: event.id, ...messageEvent });
+      this.events.emit(event.id, messageEvent);
+      this.events.emit(RELAYER_EVENTS.payload, messageEvent);
       await this.acknowledgePayload(payload);
-      await this.recordPayloadEvent(payloadEvent);
+      await this.recordMessageEvent(messageEvent);
     }
   }
 

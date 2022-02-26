@@ -2,7 +2,7 @@ import "mocha";
 import sinon from "sinon";
 
 import { ONE_SECOND, toMiliseconds } from "@walletconnect/time";
-import { generateRandomBytes32 } from "@walletconnect/utils";
+import { generateRandomBytes32, sha256 } from "@walletconnect/utils";
 
 import { Client, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 
@@ -15,11 +15,13 @@ import {
   TEST_RELAY_URL,
   TEST_CLIENT_OPTIONS,
   TEST_PROJECT_ID,
+  MockWakuEncoder,
 } from "./shared";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 
 describe("Relayer", function() {
+  const encoder = new MockWakuEncoder();
   const waku = new MockWakuRelayer(TEST_RELAY_URL + `/?projectId=${TEST_PROJECT_ID}`);
   this.timeout(TEST_TIMEOUT_DURATION);
   before(async () => {
@@ -30,6 +32,10 @@ describe("Relayer", function() {
     const topic = generateRandomBytes32();
     // payload
     const request = formatJsonRpcRequest("test_method", []);
+    // message
+    const message = await encoder.encode(topic, request);
+    // hash
+    const hash = await sha256(message);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
@@ -41,26 +47,27 @@ describe("Relayer", function() {
     await Promise.all([
       new Promise<void>((resolve, reject) => {
         // listener
-        client.relayer.on(RELAYER_EVENTS.payload, (payloadEvent: RelayerTypes.PayloadEvent) => {
-          try {
-            expect(payloadEvent.topic).to.eql(topic);
-            expect(payloadEvent.payload).to.eql(request);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        });
+        client.relayer.on(
+          RELAYER_EVENTS.payload,
+          async (messageEvent: RelayerTypes.MessageEvent) => {
+            const decoded = await encoder.decode(messageEvent.topic, messageEvent.message);
+            try {
+              expect(messageEvent.topic).to.eql(topic);
+              expect(decoded).to.eql(request);
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          },
+        );
       }),
       // publish
-      waku.publish(topic, request),
+      waku.publish(topic, message),
     ]);
-    // history
-    const record = await client.relayer.history.get(topic, request.id);
-    expect(record.topic).to.eql(topic);
-    expect(record.id).to.eql(request.id);
-    expect(record.chainId).to.be.undefined;
-    expect(record.request.method).to.eql(request.method);
-    expect(record.request.params).to.eql(request.params);
+    // messages
+    const messages = await client.relayer.messages.get(topic);
+    expect(messages[hash]).to.not.be.undefined;
+    expect(messages[hash]).to.eql(message);
     // unsubscribe
     await client.relayer.unsubscribe(topic);
     expect(client.relayer.subscriber.ids).to.eql([]);
@@ -72,6 +79,10 @@ describe("Relayer", function() {
     const topic = generateRandomBytes32();
     // payload
     const request = formatJsonRpcRequest("test_method", []);
+    // message
+    const message = await encoder.encode(topic, request);
+    // hash
+    const hash = await sha256(message);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     await Promise.all([
@@ -79,10 +90,11 @@ describe("Relayer", function() {
       waku.subscribe(topic),
       new Promise<void>((resolve, reject) => {
         // listener
-        waku.on(RELAYER_EVENTS.payload, (payloadEvent: RelayerTypes.PayloadEvent) => {
+        waku.on(RELAYER_EVENTS.payload, async (messageEvent: RelayerTypes.MessageEvent) => {
+          const decoded = await encoder.decode(messageEvent.topic, messageEvent.message);
           try {
-            expect(payloadEvent.topic).to.eql(topic);
-            expect(payloadEvent.payload).to.eql(request);
+            expect(messageEvent.topic).to.eql(topic);
+            expect(decoded).to.eql(request);
             resolve();
           } catch (e) {
             reject(e);
@@ -90,15 +102,12 @@ describe("Relayer", function() {
         });
       }),
       // publish
-      client.relayer.publish(topic, request),
+      client.relayer.publish(topic, message),
     ]);
-    // history
-    const record = await client.relayer.history.get(topic, request.id);
-    expect(record.topic).to.eql(topic);
-    expect(record.id).to.eql(request.id);
-    expect(record.chainId).to.be.undefined;
-    expect(record.request.method).to.eql(request.method);
-    expect(record.request.params).to.eql(request.params);
+    // messages
+    const messages = await client.relayer.messages.get(topic);
+    expect(messages[hash]).to.not.be.undefined;
+    expect(messages[hash]).to.eql(message);
   });
   it("A pings B after A socket reconnects", async () => {
     // setup

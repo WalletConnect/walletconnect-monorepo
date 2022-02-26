@@ -27,7 +27,7 @@ import {
   getLoggerContext,
 } from "@walletconnect/logger";
 
-import { Pairing, Session, Relayer, Encoder, Crypto, Storage } from "./controllers";
+import { Pairing, Session, Relayer, Crypto, Storage } from "./controllers";
 import {
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,
@@ -57,7 +57,6 @@ export class Client extends IClient {
 
   public crypto: Crypto;
 
-  public encoder: Encoder;
   public storage: Storage;
   public relayer: Relayer;
 
@@ -96,8 +95,6 @@ export class Client extends IClient {
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
 
-    this.encoder = new Encoder(this, this.logger);
-
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
     this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
@@ -116,7 +113,6 @@ export class Client extends IClient {
     this.relayer = new Relayer({
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
-      encoder: this.encoder,
       logger: this.logger,
       storage: this.storage,
       projectId: this.projectId,
