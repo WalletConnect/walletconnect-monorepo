@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@walletconnect/events": "^1.0.0",
+    "@walletconnect/heartbeat": "^1.0.0",
     "@walletconnect/jsonrpc-types": "^1.0.0",
     "keyvaluestorage": "^0.7.1",
     "pino": "^6.7.0",

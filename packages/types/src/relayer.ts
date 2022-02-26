@@ -1,12 +1,12 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
+import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IJsonRpcProvider, JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
 import { IRelayerStorage } from "./storage";
 import { ISubscriber } from "./subscriber";
 import { IJsonRpcHistory } from "./history";
-import { IHeartBeat } from "./heartbeat";
 import { IPublisher } from "./publisher";
 
 export declare namespace RelayerTypes {
