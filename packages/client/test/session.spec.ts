@@ -19,7 +19,6 @@ import {
 } from "./shared";
 import { CLIENT_EVENTS, ONE_DAY, SEVEN_DAYS, THIRTY_DAYS } from "../src";
 import { ErrorResponse, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { delay } from "@walletconnect/timestamp";
 
 describe("Session", function() {
   it("A proposes session and B approves", async () => {
