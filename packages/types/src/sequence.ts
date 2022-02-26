@@ -1,7 +1,7 @@
 import { Logger } from "pino";
+import { IEvents } from "@walletconnect/events";
 import {
   JsonRpcPayload,
-  IEvents,
   RequestArguments,
   JsonRpcRequest,
   JsonRpcResponse,

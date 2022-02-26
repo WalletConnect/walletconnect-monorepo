@@ -1,6 +1,7 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
+import { IJsonRpcProvider, JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
 import { IRelayerStorage } from "./storage";
 import { ISubscriber } from "./subscriber";

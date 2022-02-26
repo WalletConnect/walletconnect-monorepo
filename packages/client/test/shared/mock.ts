@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
+import { IEvents } from "@walletconnect/events";
 import {
-  IEvents,
   IJsonRpcProvider,
   JsonRpcPayload,
   JsonRpcRequest,

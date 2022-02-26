@@ -1,10 +1,11 @@
 import {
   ErrorResponse,
-  IEvents,
   JsonRpcRequest,
   JsonRpcResponse,
   RequestArguments,
 } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
+
 import { Logger } from "pino";
 
 import { IRelayerStorage } from "./storage";

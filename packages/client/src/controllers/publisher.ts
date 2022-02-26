@@ -1,10 +1,11 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
+import { IEvents } from "@walletconnect/events";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
 
 import { getRelayProtocolName, getRelayProtocolApi } from "@walletconnect/utils";
-import { IEvents, JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
+import { JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 
 import { PUBLISHER_CONTEXT, HEARTBEAT_EVENTS, PUBLISHER_DEFAULT_TTL } from "../constants";

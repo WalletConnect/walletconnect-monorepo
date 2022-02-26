@@ -1,5 +1,6 @@
 import { Logger } from "pino";
-import { IEvents, JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 

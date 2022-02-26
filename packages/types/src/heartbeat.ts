@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IEvents } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
 
 export interface HeartBeatOptions {
   logger?: string | Logger;
