@@ -9,6 +9,7 @@ import {
   RelayerTypes,
   IRelayer,
 } from "@walletconnect/types";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import {
@@ -19,12 +20,7 @@ import {
 } from "@walletconnect/utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
-import {
-  SUBSCRIBER_CONTEXT,
-  SUBSCRIBER_EVENTS,
-  RELAYER_PROVIDER_EVENTS,
-  HEARTBEAT_EVENTS,
-} from "../constants";
+import { SUBSCRIBER_CONTEXT, SUBSCRIBER_EVENTS, RELAYER_PROVIDER_EVENTS } from "../constants";
 
 export class SubscriberTopicMap implements ISubscriberTopicMap {
   public map = new Map<string, string[]>();
@@ -269,7 +265,7 @@ export class Subscriber extends ISubscriber {
     if (await this.hasSubscription(id, topic)) {
       await this.deleteSubscription(id, reason);
     }
-    await this.relayer.history.delete(topic);
+    await this.relayer.messages.del(topic);
   }
 
   private async setSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {

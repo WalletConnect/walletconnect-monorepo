@@ -10,6 +10,7 @@ import {
   IBaseStorage,
   IRelayerStorage,
   Expiration,
+  MessageRecord,
 } from "@walletconnect/types";
 import { ERROR, mapToObj, objToMap, formatStorageKeyName } from "@walletconnect/utils";
 
@@ -71,15 +72,20 @@ export class RelayerStorage extends BaseStorage implements IRelayerStorage {
     super(logger, keyValueStorage, config);
   }
 
-  public async setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void> {
+  public async setRelayerMessages(
+    context: string,
+    messages: Map<string, MessageRecord>,
+  ): Promise<void> {
     const key = this.getStorageKey(context);
-    await this.keyValueStorage.setItem<JsonRpcRecord[]>(key, records);
+    await this.keyValueStorage.setItem<Record<string, MessageRecord>>(key, mapToObj(messages));
   }
 
-  public async getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined> {
+  public async getRelayerMessages(
+    context: string,
+  ): Promise<Map<string, MessageRecord> | undefined> {
     const key = this.getStorageKey(context);
-    const records = await this.keyValueStorage.getItem<JsonRpcRecord[]>(key);
-    return records;
+    const messages = await this.keyValueStorage.getItem<Record<string, MessageRecord>>(key);
+    return typeof messages !== "undefined" ? objToMap(messages) : undefined;
   }
 
   public async setRelayerSubscriptions(
@@ -142,5 +148,16 @@ export class Storage extends RelayerStorage implements IStorage {
     const key = this.getStorageKey(context);
     const expirations = await this.keyValueStorage.getItem<Expiration[]>(key);
     return expirations;
+  }
+
+  public async setJsonRpcRecords(context: string, records: JsonRpcRecord[]): Promise<void> {
+    const key = this.getStorageKey(context);
+    await this.keyValueStorage.setItem<JsonRpcRecord[]>(key, records);
+  }
+
+  public async getJsonRpcRecords(context: string): Promise<JsonRpcRecord[] | undefined> {
+    const key = this.getStorageKey(context);
+    const records = await this.keyValueStorage.getItem<JsonRpcRecord[]>(key);
+    return records;
   }
 }

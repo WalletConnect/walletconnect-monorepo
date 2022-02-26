@@ -1,4 +1,4 @@
-import { THIRTY_DAYS } from "./time";
+import { THIRTY_DAYS } from "@walletconnect/time";
 
 export const SUBSCRIBER_EVENTS = {
   created: "subscription_created",

@@ -1,11 +1,6 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import {
-  IJsonRpcHistory,
-  JsonRpcRecord,
-  RequestEvent,
-  IRelayerStorage,
-} from "@walletconnect/types";
+import { IJsonRpcHistory, JsonRpcRecord, IStorage, RequestEvent } from "@walletconnect/types";
 import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
@@ -26,7 +21,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private cached: JsonRpcRecord[] = [];
 
-  constructor(public logger: Logger, public storage: IRelayerStorage) {
+  constructor(public logger: Logger, public storage: IStorage) {
     super(logger, storage);
     this.logger = generateChildLogger(logger, this.name);
     this.storage = storage;

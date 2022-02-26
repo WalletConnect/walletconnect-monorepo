@@ -1,4 +1,4 @@
-import { IEvents } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
 import { Logger } from "pino";
 
 import { IClient } from "./client";

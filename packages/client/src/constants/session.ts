@@ -1,6 +1,6 @@
 import { SessionTypes, SignalTypes } from "@walletconnect/types";
 
-import { SEVEN_DAYS } from "./time";
+import { SEVEN_DAYS } from "@walletconnect/time";
 
 export const SESSION_JSONRPC: SessionTypes.JsonRpc = {
   propose: "wc_sessionPropose",
