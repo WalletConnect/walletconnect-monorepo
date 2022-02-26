@@ -1,6 +1,7 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { JsonRpcResponse, IEvents } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
+import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";

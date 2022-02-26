@@ -31,6 +31,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
+    "@walletconnect/events": "^1.0.0",
     "@walletconnect/encoding": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
