@@ -4,6 +4,7 @@ export * from "./engine";
 export * from "./expirer";
 export * from "./history";
 export * from "./jsonrpc";
+export * from "./messages";
 export * from "./misc";
 export * from "./pairing";
 export * from "./publisher";

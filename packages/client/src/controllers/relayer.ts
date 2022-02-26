@@ -11,15 +11,13 @@ import {
   IRelayer,
   ISubscriber,
   IPublisher,
-  JsonRpcRecord,
   RelayerOptions,
   IRelayerStorage,
   IMessageTracker,
-  MessageRecord,
 } from "@walletconnect/types";
 import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { ERROR, formatMessageContext, formatRelayRpcUrl, sha256 } from "@walletconnect/utils";
+import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
@@ -43,89 +41,7 @@ import {
 } from "../constants";
 import { RelayerStorage } from "./storage";
 import { Publisher } from "./publisher";
-
-const MESSAGES_CONTEXT = "messages";
-
-export class MessageTracker extends IMessageTracker {
-  public messages = new Map<string, MessageRecord>();
-
-  public name = MESSAGES_CONTEXT;
-
-  private cached: MessageRecord[] = [];
-
-  constructor(public logger: Logger, public storage: IRelayerStorage) {
-    super(logger, storage);
-    this.logger = generateChildLogger(logger, this.name);
-    this.storage = storage;
-  }
-
-  get context(): string {
-    return getLoggerContext(this.logger);
-  }
-
-  public async init(): Promise<void> {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
-  }
-
-  public async set(topic: string, message: string): Promise<string> {
-    const hash = await sha256(message);
-    let messages = this.messages.get(topic);
-    if (typeof messages === "undefined") {
-      messages = {};
-    }
-    if (typeof messages[hash] !== "undefined") {
-      throw new Error("Message already recorded");
-    }
-    messages[hash] = message;
-    this.messages.set(topic, messages);
-    await this.persist();
-    return hash;
-  }
-
-  public async get(topic: string): Promise<MessageRecord> {
-    let messages = this.messages.get(topic);
-    if (typeof messages === "undefined") {
-      messages = {};
-    }
-    return messages;
-  }
-
-  public async has(topic: string, message: string): Promise<boolean> {
-    const messages = this.get(topic);
-    const hash = await sha256(message);
-    return typeof messages[hash] !== "undefined";
-  }
-
-  public async del(topic: string) {
-    this.messages.delete(topic);
-    await this.persist();
-  }
-
-  // ---------- Private ----------------------------------------------- //
-
-  private async persist() {
-    await this.storage.setRelayerMessages(this.context, this.messages);
-  }
-
-  private async restore() {
-    try {
-      const messages = await this.storage.getRelayerMessages(this.context);
-      if (typeof messages !== "undefined") {
-        this.messages = messages;
-      }
-      this.logger.debug(`Successfully Restored records for ${formatMessageContext(this.context)}`);
-      this.logger.trace({ type: "method", method: "restore", size: this.messages.size });
-    } catch (e) {
-      this.logger.debug(`Failed to Restore records for ${formatMessageContext(this.context)}`);
-      this.logger.error(e as any);
-    }
-  }
-
-  private async initialize() {
-    await this.restore();
-  }
-}
+import { MessageTracker } from "./messages";
 
 export class Relayer extends IRelayer {
   public readonly protocol = "irn";
@@ -257,15 +173,12 @@ export class Relayer extends IRelayer {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
-      const messageEvent = {
-        topic,
-        message,
-      } as RelayerTypes.MessageEvent;
+      const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
       if (await this.shouldIgnorePayloadEvent(messageEvent)) return;
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);
-      this.events.emit(RELAYER_EVENTS.payload, messageEvent);
+      this.events.emit(RELAYER_EVENTS.message, messageEvent);
       await this.acknowledgePayload(payload);
       await this.recordMessageEvent(messageEvent);
     }
