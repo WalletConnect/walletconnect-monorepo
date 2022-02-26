@@ -11,7 +11,6 @@ import {
 import {
   formatMessageContext,
   calcExpiry,
-  toMiliseconds,
   generateRandomBytes32,
   hasOverlap,
   isSignalTypePairing,
@@ -33,14 +32,12 @@ import {
   ErrorResponse,
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
+import { toMiliseconds, FIVE_MINUTES, THIRTY_SECONDS, ONE_DAY } from "@walletconnect/time";
 
 import {
   STORE_EVENTS,
   EXPIRER_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
-  FIVE_MINUTES,
-  THIRTY_SECONDS,
-  ONE_DAY,
   RELAYER_EVENTS,
 } from "../constants";
 

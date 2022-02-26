@@ -14,7 +14,7 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { toMiliseconds } from "@walletconnect/utils";
+import { toMiliseconds } from "@walletconnect/time";
 
 export class HeartBeat extends IHeartBeat {
   static async init(opts?: HeartBeatOptions) {

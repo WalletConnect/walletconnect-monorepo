@@ -1,6 +1,7 @@
 import { Logger } from "pino";
 import { RelayJsonRpc, RELAY_JSONRPC } from "@walletconnect/relay-api";
 import { generateChildLogger } from "@walletconnect/logger";
+import { SIX_HOURS } from "@walletconnect/time";
 
 import { sha256 } from "./utils";
 import { HttpService } from "./http";
@@ -11,7 +12,6 @@ import {
   MESSAGE_EVENTS,
   MESSAGE_RETRIAL_MAX,
   MESSAGE_RETRIAL_TIMEOUT,
-  SIX_HOURS,
   NETWORK_EVENTS,
 } from "./constants";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-types";

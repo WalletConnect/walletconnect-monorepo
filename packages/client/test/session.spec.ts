@@ -2,7 +2,8 @@ import "mocha";
 import sinon from "sinon";
 import { KeyValueStorage } from "keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
-import { ERROR, fromMiliseconds, generateRandomBytes32 } from "@walletconnect/utils";
+import { ONE_DAY, SEVEN_DAYS, THIRTY_DAYS, fromMiliseconds } from "@walletconnect/time";
+import { ERROR, generateRandomBytes32 } from "@walletconnect/utils";
 
 import {
   expect,
@@ -17,7 +18,7 @@ import {
   TEST_SESSION_TTL,
   TEST_TIMEOUT_SAFEGUARD,
 } from "./shared";
-import { CLIENT_EVENTS, ONE_DAY, SEVEN_DAYS, THIRTY_DAYS } from "../src";
+import { CLIENT_EVENTS } from "../src";
 import { ErrorResponse, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 describe("Session", function() {

@@ -1,6 +1,7 @@
 import "mocha";
 import sinon from "sinon";
-import { fromMiliseconds, generateRandomBytes32 } from "@walletconnect/utils";
+import { fromMiliseconds } from "@walletconnect/time";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 import {
