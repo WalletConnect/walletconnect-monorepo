@@ -1,4 +1,4 @@
-import Timestamp from "@walletconnect/timestamp";
+import { Watch } from "@walletconnect/time";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { ClientTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
@@ -28,20 +28,20 @@ export async function testRelayProvider(url: string, url2?: string) {
     b: await Client.init(clientBOpts),
   };
 
-  // timestamps & elapsed time
-  const time = new Timestamp();
+  // watch & elapsed time
+  const watch = new Watch();
 
   let topic = "";
 
-  time.start("total");
+  watch.start("total");
 
   // connect two clients
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
-      time.start("session");
+      watch.start("session");
       const session = await clients.a.connect({ permissions });
       topic = session.topic;
-      time.stop("session");
+      watch.stop("session");
       resolve();
     }),
     new Promise<void>(async (resolve, reject) => {
@@ -81,9 +81,9 @@ export async function testRelayProvider(url: string, url2?: string) {
       );
     }),
     new Promise<void>(async (resolve, reject) => {
-      time.start("request");
+      watch.start("request");
       received = await clients.a.request({ topic, chainId, request });
-      time.stop("request");
+      watch.stop("request");
       resolve();
     }),
   ]);
@@ -92,12 +92,12 @@ export async function testRelayProvider(url: string, url2?: string) {
     throw new Error("Incorrect result when checking");
   }
 
-  time.stop("total");
+  watch.stop("total");
 
   const test = {
-    session: time.get("session"),
-    request: time.get("request"),
-    total: time.get("total"),
+    session: watch.get("session"),
+    request: watch.get("request"),
+    total: watch.get("total"),
   };
   await clients.a.relayer.provider.connection.close();
   delete clients.a;

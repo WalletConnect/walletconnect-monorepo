@@ -1,5 +1,5 @@
 import "mocha";
-import Timestamp from "@walletconnect/timestamp";
+import { Watch } from "@walletconnect/time";
 import { SessionTypes } from "@walletconnect/types";
 import {
   isJsonRpcError,
@@ -25,8 +25,8 @@ export async function testJsonRpcRequest(
   // cache received result
   let id: any;
   let result: any;
-  // timestamps & elapsed time
-  const time = new Timestamp();
+  // watch & elapsed time
+  const watch = new Watch();
 
   // request & respond a JSON-RPC request
   await Promise.all([
@@ -56,7 +56,7 @@ export async function testJsonRpcRequest(
       );
     }),
     new Promise<void>(async (resolve, reject) => {
-      time.start("request");
+      watch.start("request");
       try {
         clients.a.logger.warn(`TEST >> JSON-RPC Request Sent`);
         if (isJsonRpcError(response)) {
@@ -81,12 +81,12 @@ export async function testJsonRpcRequest(
       } catch (e) {
         reject(e);
       }
-      time.stop("request");
+      watch.stop("request");
     }),
   ]);
 
   // log elapsed times
-  clients.b.logger.warn(`TEST >> Request Elapsed Time: ${time.elapsed("request")}ms`);
+  clients.b.logger.warn(`TEST >> Request Elapsed Time: ${watch.elapsed("request")}ms`);
 
   // evaluate history
   expect(clients.a.session.history.size).to.eql(1);
