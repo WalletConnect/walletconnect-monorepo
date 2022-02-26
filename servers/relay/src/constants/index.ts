@@ -8,6 +8,5 @@ export * from "./network";
 export * from "./notification";
 export * from "./redis";
 export * from "./subscription";
-export * from "./time";
 export * from "./waku";
 export * from "./ws";

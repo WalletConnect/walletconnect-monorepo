@@ -1,4 +1,4 @@
-import { THIRTY_SECONDS } from "./time";
+import { THIRTY_SECONDS } from "@walletconnect/time";
 
 export const JSONRPC_RETRIAL_TIMEOUT = THIRTY_SECONDS * 1000;
 

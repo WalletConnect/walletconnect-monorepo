@@ -1,6 +1,6 @@
 import "mocha";
 import { clock } from "sinon";
-import Timestamp from "@walletconnect/timestamp";
+import { Watch } from "@walletconnect/time";
 import { AppMetadata, PairingTypes } from "@walletconnect/types";
 
 import { CLIENT_EVENTS, SESSION_JSONRPC, STORE_EVENTS } from "../../src";
@@ -16,8 +16,8 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
   let metadataA: AppMetadata | undefined;
   let metadataB: AppMetadata | undefined;
 
-  // timestamps & elapsed time
-  const time = new Timestamp();
+  // watch & elapsed time
+  const watch = new Watch();
 
   // pair two clients
   await Promise.all([
@@ -37,14 +37,14 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
     new Promise<void>(async (resolve, reject) => {
       clients.a.pairing.pending.on(STORE_EVENTS.created, async () => {
         clients.a.logger.warn(`TEST >> Pairing Proposed`);
-        time.start("pairing");
+        watch.start("pairing");
         resolve();
       });
     }),
     new Promise<void>(async (resolve, reject) => {
       clients.b.pairing.pending.on(STORE_EVENTS.deleted, async () => {
         clients.b.logger.warn(`TEST >> Pairing Acknowledged`);
-        time.stop("pairing");
+        watch.stop("pairing");
         resolve();
       });
     }),
@@ -84,7 +84,7 @@ export async function testPairingWithoutSession(clients: InitializedClients): Pr
     }),
   ]);
 
-  clients.b.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
+  clients.b.logger.warn(`TEST >> Pairing Elapsed Time: ${watch.elapsed("pairing")}ms`);
   // pairing data
   expect(pairingA?.topic).to.eql(pairingB?.topic);
   expect(pairingA?.relay.protocol).to.eql(pairingB?.relay.protocol);

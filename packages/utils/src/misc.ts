@@ -1,6 +1,7 @@
 import union from "lodash.union";
 import * as qs from "query-string";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
+import { toMiliseconds, fromMiliseconds } from "@walletconnect/time";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { RelayClientMetadata, AppMetadata } from "@walletconnect/types";
 
@@ -170,14 +171,6 @@ export function capitalize(str: string) {
 }
 
 // -- time ------------------------------------------------- //
-
-export function toMiliseconds(seconds: number): number {
-  return seconds * ONE_THOUSAND;
-}
-
-export function fromMiliseconds(miliseconds: number): number {
-  return Math.floor(miliseconds / ONE_THOUSAND);
-}
 
 export function calcExpiry(ttl: number, now?: number): number {
   return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));

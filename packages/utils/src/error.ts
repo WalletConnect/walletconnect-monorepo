@@ -1,6 +1,7 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
+import { fromMiliseconds } from "@walletconnect/time";
 
-import { capitalize, enumify, fromMiliseconds } from "./misc";
+import { capitalize, enumify } from "./misc";
 
 export const ERROR_TYPE = enumify({
   // 0 (Generic)

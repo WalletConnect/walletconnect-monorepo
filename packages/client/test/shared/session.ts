@@ -1,5 +1,5 @@
 import "mocha";
-import Timestamp from "@walletconnect/timestamp";
+import { Watch } from "@walletconnect/time";
 import { SessionTypes, PairingTypes, SignalTypes } from "@walletconnect/types";
 
 import { CLIENT_EVENTS, STORE_EVENTS } from "../../src";
@@ -17,13 +17,13 @@ export async function testApproveSession(
   let sessionA: SessionTypes.Created | undefined;
   let sessionB: SessionTypes.Created | undefined;
 
-  // timestamps & elapsed time
-  const time = new Timestamp();
+  // watch & elapsed time
+  const watch = new Watch();
 
   // connect two clients
   await Promise.all([
     new Promise<void>(async (resolve, reject) => {
-      time.start("connect");
+      watch.start("connect");
       try {
         await clients.a.connect({
           metadata: setup.a.options.metadata,
@@ -34,7 +34,7 @@ export async function testApproveSession(
       } catch (e) {
         reject(e);
       }
-      time.stop("connect");
+      watch.stop("connect");
     }),
     new Promise<void>(async (resolve, reject) => {
       if (typeof pairing !== "undefined") {
@@ -106,7 +106,7 @@ export async function testApproveSession(
       clients.a.pairing.pending.on(STORE_EVENTS.created, async () => {
         clients.a.logger.warn(`TEST >> Pairing Proposed`);
         clearTimeout(timeout);
-        time.start("pairing");
+        watch.start("pairing");
         resolve();
       });
     }),
@@ -120,7 +120,7 @@ export async function testApproveSession(
       clients.b.pairing.pending.on(STORE_EVENTS.deleted, async () => {
         clients.b.logger.warn(`TEST >> Pairing Acknowledged`);
         clearTimeout(timeout);
-        time.stop("pairing");
+        watch.stop("pairing");
         resolve();
       });
     }),
@@ -131,7 +131,7 @@ export async function testApproveSession(
       clients.a.session.pending.on(STORE_EVENTS.created, async () => {
         clients.a.logger.warn(`TEST >> Session Proposed`);
         clearTimeout(timeout);
-        time.start("session");
+        watch.start("session");
         resolve();
       });
     }),
@@ -142,7 +142,7 @@ export async function testApproveSession(
       clients.b.session.pending.on(STORE_EVENTS.deleted, async () => {
         clients.b.logger.warn(`TEST >> Session Acknowledged`);
         clearTimeout(timeout);
-        time.stop("session");
+        watch.stop("session");
         resolve();
       });
     }),
@@ -150,10 +150,10 @@ export async function testApproveSession(
 
   // log elapsed times
   if (typeof pairing === "undefined") {
-    clients.b.logger.warn(`TEST >> Pairing Elapsed Time: ${time.elapsed("pairing")}ms`);
+    clients.b.logger.warn(`TEST >> Pairing Elapsed Time: ${watch.elapsed("pairing")}ms`);
   }
-  clients.b.logger.warn(`TEST >> Session Elapsed Time: ${time.elapsed("session")}ms`);
-  clients.b.logger.warn(`TEST >> Connect Elapsed Time: ${time.elapsed("connect")}ms`);
+  clients.b.logger.warn(`TEST >> Session Elapsed Time: ${watch.elapsed("session")}ms`);
+  clients.b.logger.warn(`TEST >> Connect Elapsed Time: ${watch.elapsed("connect")}ms`);
 
   // session data
   expect(sessionA?.topic).to.eql(sessionB?.topic);

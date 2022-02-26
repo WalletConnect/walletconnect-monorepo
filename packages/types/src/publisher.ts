@@ -1,12 +1,12 @@
 import { Logger } from "pino";
-import { IEvents, JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 
 export declare namespace PublisherTypes {
   export interface Params {
     topic: string;
-    payload: JsonRpcPayload;
+    message: string;
     opts: Required<RelayerTypes.PublishOptions>;
   }
 }
@@ -24,7 +24,7 @@ export abstract class IPublisher extends IEvents {
 
   public abstract publish(
     topic: string,
-    payload: JsonRpcPayload,
+    message: string,
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
 }

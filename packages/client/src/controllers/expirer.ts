@@ -1,11 +1,13 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 
+import { toMiliseconds } from "@walletconnect/time";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { IClient, IExpirer, Expiration, ExpirerEvents } from "@walletconnect/types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { ERROR, formatMessageContext, toMiliseconds } from "@walletconnect/utils";
+import { ERROR, formatMessageContext } from "@walletconnect/utils";
 
-import { EXPIRER_CONTEXT, EXPIRER_EVENTS, HEARTBEAT_EVENTS } from "../constants";
+import { EXPIRER_CONTEXT, EXPIRER_EVENTS } from "../constants";
 
 export class Expirer extends IExpirer {
   public expirations = new Map<string, Expiration>();
