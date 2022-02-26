@@ -1,6 +1,7 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
+import { IHeartBeat } from "@walletconnect/heartbeat";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
@@ -8,7 +9,6 @@ import { ISession, SessionTypes } from "./session";
 import { IPairing, PairingTypes } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
-import { IHeartBeat } from "./heartbeat";
 import { IStorage } from "./storage";
 import { IEncoder } from "./encoder";
 

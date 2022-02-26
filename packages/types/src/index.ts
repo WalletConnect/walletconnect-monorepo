@@ -3,7 +3,6 @@ export * from "./crypto";
 export * from "./encoder";
 export * from "./engine";
 export * from "./expirer";
-export * from "./heartbeat";
 export * from "./history";
 export * from "./jsonrpc";
 export * from "./misc";

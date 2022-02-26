@@ -12,11 +12,11 @@ import {
   ISubscriber,
   IJsonRpcHistory,
   JsonRpcRecord,
-  IHeartBeat,
   IRelayerEncoder,
   RelayerOptions,
   IRelayerStorage,
 } from "@walletconnect/types";
+import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -44,7 +44,6 @@ import {
 import { JsonRpcHistory } from "./history";
 import { RelayerStorage } from "./storage";
 import { RelayerEncoder } from "./encoder";
-import { HeartBeat } from "./heartbeat";
 import { IPublisher, Publisher } from "./publisher";
 
 export class Relayer extends IRelayer {
@@ -90,7 +89,7 @@ export class Relayer extends IRelayer {
               context: this.context,
             },
           );
-    this.heartbeat = opts?.heartbeat || new HeartBeat({ logger: this.logger });
+    this.heartbeat = opts?.heartbeat || new HeartBeat();
     this.encoder = opts?.encoder || new RelayerEncoder();
     const rpcUrl =
       opts?.rpcUrl ||
