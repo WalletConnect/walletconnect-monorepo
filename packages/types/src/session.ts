@@ -17,9 +17,9 @@ import {
   NotificationPermissions,
   Reason,
 } from "./misc";
-import { RelayerTypes } from "./relayer";
 import { IStore } from "./store";
 import { IExpirer } from "./expirer";
+import { RelayerTypes } from ".";
 
 export declare namespace SessionTypes {
   export interface Events {
@@ -328,14 +328,14 @@ export abstract class ISession<
   protected abstract settle(params: SettleParams): Promise<Settled>;
 
   // event callbacks
-  protected abstract onResponse(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onAcknowledge(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onMessage(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onRequest(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onUpdate(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onUpgrade(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onExtend(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onNotify(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
+  protected abstract onResponse(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
+  protected abstract onAcknowledge(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
+  protected abstract onMessage(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
+  protected abstract onRequest(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
+  protected abstract onUpdate(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
+  protected abstract onUpgrade(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
+  protected abstract onExtend(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
+  protected abstract onNotify(payloadEvent: SessionTypes.PayloadEvent): Promise<void>;
 
   protected abstract handleUpdate(
     topic: string,

@@ -4,7 +4,7 @@ import {
   BlockchainTypes,
   JsonRpcPermissions,
   NotificationPermissions,
-  SequenceTypes,
+  SessionTypes,
   PairingTypes,
   SessionTypes,
   Validation,
@@ -27,24 +27,24 @@ export function isSignalTypeUri(signal: SignalTypes.Base): signal is SignalTypes
 // -- sequence -------------------------------------------------- //
 
 export function isSequenceRespondedStatus(
-  status: SequenceTypes.PendingStatus,
-): status is SequenceTypes.RespondedStatus {
+  status: SessionTypes.PendingStatus,
+): status is SessionTypes.RespondedStatus {
   return status === "responded";
 }
 
 export function isSequenceResponded(
-  pending: SequenceTypes.Pending,
-): pending is SequenceTypes.RespondedPending {
+  pending: SessionTypes.Pending,
+): pending is SessionTypes.RespondedPending {
   return isSequenceRespondedStatus(pending.status) && "outcome" in pending;
 }
 
 export function isSequenceRejected(
-  response: SequenceTypes.Response,
-): response is SequenceTypes.Rejection {
+  response: SessionTypes.Response,
+): response is SessionTypes.Rejection {
   return "reason" in response;
 }
 
-export function isSequenceFailed(outcome: SequenceTypes.Outcome): outcome is SequenceTypes.Failed {
+export function isSequenceFailed(outcome: SessionTypes.Outcome): outcome is SessionTypes.Failed {
   return "reason" in outcome;
 }
 

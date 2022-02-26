@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, ISession, SequenceTypes, SessionTypes } from "@walletconnect/types";
+import { IClient, ISession, SessionTypes, SessionTypes } from "@walletconnect/types";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import {
   validateSessionProposeParams,
