@@ -48,12 +48,14 @@ describe("Relayer", function() {
       new Promise<void>((resolve, reject) => {
         // listener
         client.relayer.on(
-          RELAYER_EVENTS.payload,
+          RELAYER_EVENTS.message,
           async (messageEvent: RelayerTypes.MessageEvent) => {
             const decoded = await encoder.decode(messageEvent.topic, messageEvent.message);
             try {
               expect(messageEvent.topic).to.eql(topic);
+              expect(messageEvent.message).to.eql(message);
               expect(decoded).to.eql(request);
+              expect(await sha256(messageEvent.message)).to.eql(hash);
               resolve();
             } catch (e) {
               reject(e);
@@ -66,7 +68,6 @@ describe("Relayer", function() {
     ]);
     // messages
     const messages = await client.relayer.messages.get(topic);
-    expect(messages[hash]).to.not.be.undefined;
     expect(messages[hash]).to.eql(message);
     // unsubscribe
     await client.relayer.unsubscribe(topic);
@@ -90,11 +91,13 @@ describe("Relayer", function() {
       waku.subscribe(topic),
       new Promise<void>((resolve, reject) => {
         // listener
-        waku.on(RELAYER_EVENTS.payload, async (messageEvent: RelayerTypes.MessageEvent) => {
+        waku.on(RELAYER_EVENTS.message, async (messageEvent: RelayerTypes.MessageEvent) => {
           const decoded = await encoder.decode(messageEvent.topic, messageEvent.message);
           try {
             expect(messageEvent.topic).to.eql(topic);
+            expect(messageEvent.message).to.eql(message);
             expect(decoded).to.eql(request);
+            expect(await sha256(messageEvent.message)).to.eql(hash);
             resolve();
           } catch (e) {
             reject(e);
@@ -106,7 +109,6 @@ describe("Relayer", function() {
     ]);
     // messages
     const messages = await client.relayer.messages.get(topic);
-    expect(messages[hash]).to.not.be.undefined;
     expect(messages[hash]).to.eql(message);
   });
   it("A pings B after A socket reconnects", async () => {

@@ -1006,7 +1006,7 @@ export class Engine extends IEngine {
     );
     // Relayer Events
     this.sequence.client.relayer.on(
-      RELAYER_EVENTS.payload,
+      RELAYER_EVENTS.message,
       async (messageEvent: RelayerTypes.MessageEvent) => {
         const { topic, message } = messageEvent;
         const payload = await this.sequence.client.crypto.decode(topic, message);
