@@ -74,6 +74,12 @@ export abstract class ICrypto {
 
   public abstract setSymKey(symKey: string, overrideTopic?: string): Promise<string>;
 
+  public abstract deleteKeyPair(publicKey: string): Promise<void>;
+
+  public abstract deleteSharedKey(topic: string): Promise<void>;
+
+  public abstract deleteSymKey(topic: string): Promise<void>;
+
   public abstract encrypt(topic: string, message: string): Promise<string>;
 
   public abstract decrypt(topic: string, encrypted: string): Promise<string>;

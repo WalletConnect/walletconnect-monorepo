@@ -106,19 +106,26 @@ export class Crypto implements ICrypto {
     return this.setEncryptionKeys({ sharedKey, publicKey: keyPair.publicKey }, overrideTopic);
   }
 
-  public async generateSymKey(overrideTopic?: string) {
+  public async generateSymKey(overrideTopic?: string): Promise<string> {
     const symKey = generateRandomBytes32();
     return this.setSymKey(symKey, overrideTopic);
   }
 
-  public async setSymKey(symKey: string, overrideTopic?: string) {
-    return this.setEncryptionKeys(
-      {
-        sharedKey: symKey,
-        publicKey: await sha256(symKey),
-      },
-      overrideTopic,
-    );
+  public async setSymKey(symKey: string, overrideTopic?: string): Promise<string> {
+    const hash = await sha256(symKey);
+    return this.setEncryptionKeys({ sharedKey: symKey, publicKey: hash }, overrideTopic);
+  }
+
+  public async deleteKeyPair(publicKey: string): Promise<void> {
+    await this.keychain.del(publicKey);
+  }
+
+  public async deleteSharedKey(topic: string): Promise<void> {
+    await this.keychain.del(topic);
+  }
+
+  public async deleteSymKey(topic: string): Promise<void> {
+    await this.keychain.del(topic);
   }
 
   public async encrypt(topic: string, message: string): Promise<string> {
