@@ -62,6 +62,15 @@ class WalletConnectProvider implements IEthereumProvider {
     return this.http.request(args);
   }
 
+  public sendAsync(
+    args: RequestArguments,
+    callback: (error: Error | null, response: any) => void,
+  ): void {
+    this.request(args)
+      .then(response => callback(null, response))
+      .catch(error => callback(error, undefined));
+  }
+
   public async enable(): Promise<ProviderAccounts> {
     const accounts = await this.request({ method: "eth_requestAccounts" });
     return accounts as ProviderAccounts;
