@@ -91,6 +91,14 @@ export class Client extends IClient {
 
     this.logger = generateChildLogger(logger, this.name);
 
+    if (!this.projectId) {
+      const error = ERROR.MISSING_OR_INVALID.format({
+        name: "projectId",
+      });
+      this.logger.error(error.message);
+      throw new Error(error.message);
+    }
+
     this.heartbeat = new HeartBeat({ logger: this.logger });
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
