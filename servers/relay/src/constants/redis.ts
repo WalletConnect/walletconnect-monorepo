@@ -1,4 +1,4 @@
-import { THIRTY_DAYS } from "./time";
+import { THIRTY_DAYS } from "@walletconnect/time";
 
 export const REDIS_CONTEXT = "redis";
 

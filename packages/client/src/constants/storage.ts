@@ -2,7 +2,7 @@ import { StorageKeyMap } from "@walletconnect/types";
 
 export const STORAGE_CONTEXT = "storage";
 
-export const STORAGE_VERSION = "0.2";
+export const STORAGE_VERSION = "0.3";
 
 export const STORAGE_KEYS: StorageKeyMap = {
   crypto: {
@@ -21,7 +21,7 @@ export const STORAGE_KEYS: StorageKeyMap = {
     expirer: "pairing:expirer",
   },
   relayer: {
-    history: "relayer:history",
+    messages: "relayer:messages",
     subscription: "relayer:subscription",
   },
 };

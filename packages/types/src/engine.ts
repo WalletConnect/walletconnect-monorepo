@@ -1,6 +1,5 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
-import { RelayerTypes } from "./relayer";
 import { ISequence, SequenceTypes } from "./sequence";
 
 export abstract class IEngine<
@@ -38,13 +37,13 @@ export abstract class IEngine<
 
   protected abstract propose(params?: ProposeParams): Promise<Pending>;
   protected abstract settle(params: SettleParams): Promise<Settled>;
-  protected abstract onResponse(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onAcknowledge(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onMessage(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onPayload(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onUpdate(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onUpgrade(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
-  protected abstract onNotification(payloadEvent: RelayerTypes.PayloadEvent): Promise<void>;
+  protected abstract onResponse(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
+  protected abstract onAcknowledge(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
+  protected abstract onMessage(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
+  protected abstract onPayload(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
+  protected abstract onUpdate(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
+  protected abstract onUpgrade(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
+  protected abstract onNotification(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
 
   protected abstract handleUpdate(
     topic: string,

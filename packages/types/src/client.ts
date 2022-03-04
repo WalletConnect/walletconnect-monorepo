@@ -1,15 +1,15 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { JsonRpcResponse, IEvents } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
+import { IHeartBeat } from "@walletconnect/heartbeat";
+import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 import { IPairing, PairingTypes } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
-import { IHeartBeat } from "./heartbeat";
 import { IStorage } from "./storage";
-import { IEncoder } from "./encoder";
 
 export interface ClientOptions {
   name?: string;
@@ -33,7 +33,6 @@ export abstract class IClient extends IEvents {
 
   public abstract crypto: ICrypto;
 
-  public abstract encoder: IEncoder;
   public abstract storage: IStorage;
   public abstract relayer: IRelayer;
 

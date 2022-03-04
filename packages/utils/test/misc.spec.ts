@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 
-import { calcExpiry, formatRelayRpcUrl, fromMiliseconds, toMiliseconds } from "../src";
+import { calcExpiry, formatRelayRpcUrl } from "../src";
 import { hasOverlap } from "../dist/cjs";
 
 const RELAY_URL = "wss://relay.walletconnect.com";
@@ -37,12 +37,6 @@ describe("Misc", () => {
     expect(hasOverlap(["dog"], ["dog", "cat"])).to.be.true;
     expect(hasOverlap(["dog", "cat"], ["dog"])).to.be.false;
     expect(hasOverlap(["dog"], [])).to.be.false;
-  });
-  it("toMiliseconds", () => {
-    expect(toMiliseconds(TEST_SECONDS)).to.eql(TEST_MILISECONDS);
-  });
-  it("fromMiliseconds", () => {
-    expect(fromMiliseconds(TEST_MILISECONDS)).to.eql(TEST_SECONDS);
   });
   it("calcExpiry", () => {
     expect(calcExpiry(SEVEN_DAYS, TEST_MILISECONDS)).to.eql(EXPECTED_EXPIRY);

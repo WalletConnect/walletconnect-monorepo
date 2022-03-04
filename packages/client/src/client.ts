@@ -19,6 +19,7 @@ import {
   ERROR,
   formatRelayRpcUrl,
 } from "@walletconnect/utils";
+import { HeartBeat } from "@walletconnect/heartbeat";
 import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import {
   generateChildLogger,
@@ -26,7 +27,7 @@ import {
   getLoggerContext,
 } from "@walletconnect/logger";
 
-import { Pairing, Session, Relayer, Encoder, Crypto, Storage, HeartBeat } from "./controllers";
+import { Pairing, Session, Relayer, Crypto, Storage } from "./controllers";
 import {
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,
@@ -56,7 +57,6 @@ export class Client extends IClient {
 
   public crypto: Crypto;
 
-  public encoder: Encoder;
   public storage: Storage;
   public relayer: Relayer;
 
@@ -99,11 +99,9 @@ export class Client extends IClient {
       throw new Error(error.message);
     }
 
-    this.heartbeat = new HeartBeat({ logger: this.logger });
+    this.heartbeat = new HeartBeat();
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
-
-    this.encoder = new Encoder(this, this.logger);
 
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
@@ -123,7 +121,6 @@ export class Client extends IClient {
     this.relayer = new Relayer({
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
-      encoder: this.encoder,
       logger: this.logger,
       storage: this.storage,
       projectId: this.projectId,

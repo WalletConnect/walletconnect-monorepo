@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
+import { IEvents } from "@walletconnect/events";
 import {
-  IEvents,
   IJsonRpcProvider,
   JsonRpcPayload,
   JsonRpcRequest,
@@ -16,10 +16,21 @@ import {
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_SUBSCRIBER_SUFFIX,
 } from "../../src";
+import * as encoding from "@walletconnect/encoding";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { IRelayerEncoder, RelayerTypes } from "@walletconnect/types";
-import { toMiliseconds } from "@walletconnect/utils";
-import { RelayerEncoder } from "../../src/controllers";
+import { RelayerTypes } from "@walletconnect/types";
+import { toMiliseconds } from "@walletconnect/time";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+
+export class MockWakuEncoder {
+  public async encode(topic: string, payload: JsonRpcPayload) {
+    return encoding.utf8ToHex(safeJsonStringify(payload));
+  }
+
+  public async decode(topic: string, message: string) {
+    return safeJsonParse(encoding.hexToUtf8(message));
+  }
+}
 
 export class MockWakuRelayer implements IEvents {
   public events = new EventEmitter();
@@ -30,11 +41,8 @@ export class MockWakuRelayer implements IEvents {
 
   public provider: IJsonRpcProvider;
 
-  public encoder: IRelayerEncoder;
-
   constructor(rpcUrl: string) {
     this.provider = new JsonRpcProvider(new WsConnection(rpcUrl));
-    this.encoder = new RelayerEncoder();
     this.registerEventListeners();
   }
 
@@ -66,12 +74,12 @@ export class MockWakuRelayer implements IEvents {
     this.events.removeListener(event, listener);
   }
 
-  public async publish(topic: string, payload: JsonRpcPayload): Promise<void> {
+  public async publish(topic: string, message: string): Promise<void> {
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
       method: this.jsonRpc.publish,
       params: {
         topic,
-        message: await this.encoder.encode(topic, payload),
+        message,
         ttl: PUBLISHER_DEFAULT_TTL,
       },
     };
@@ -106,12 +114,12 @@ export class MockWakuRelayer implements IEvents {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
-      const payloadEvent = {
+      const messageEvent = {
         topic,
-        payload: await this.encoder.decode(topic, message),
-      } as RelayerTypes.PayloadEvent;
-      this.events.emit(event.id, payloadEvent);
-      this.events.emit(RELAYER_EVENTS.payload, payloadEvent);
+        message,
+      } as RelayerTypes.MessageEvent;
+      this.events.emit(event.id, messageEvent);
+      this.events.emit(RELAYER_EVENTS.message, messageEvent);
       await this.acknowledgePayload(payload);
     }
   }

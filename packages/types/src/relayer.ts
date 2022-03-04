@@ -1,12 +1,13 @@
 import { Logger } from "pino";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { IJsonRpcProvider, JsonRpcPayload, IEvents } from "@walletconnect/jsonrpc-types";
+import { IEvents } from "@walletconnect/events";
+import { IHeartBeat } from "@walletconnect/heartbeat";
+import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
 
 import { IRelayerStorage } from "./storage";
 import { ISubscriber } from "./subscriber";
-import { IJsonRpcHistory } from "./history";
-import { IHeartBeat } from "./heartbeat";
 import { IPublisher } from "./publisher";
+import { IMessageTracker } from "./messages";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -31,29 +32,14 @@ export declare namespace RelayerTypes {
 
   export type RequestOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions;
 
-  export interface PayloadEvent {
+  export interface MessageEvent {
     topic: string;
-    payload: JsonRpcPayload;
+    message: string;
   }
-}
-
-export abstract class IRelayerEncoder {
-  public abstract encode(
-    topic: string,
-    payload: JsonRpcPayload,
-    nonce?: number | string,
-  ): Promise<string>;
-
-  public abstract decode(
-    topic: string,
-    encrypted: string,
-    nonce?: number | string,
-  ): Promise<JsonRpcPayload>;
 }
 
 export interface RelayerOptions {
   heartbeat?: IHeartBeat;
-  encoder?: IRelayerEncoder;
   storage?: IRelayerStorage;
   keyValueStorage?: IKeyValueStorage;
   keyValueStorageOptions?: KeyValueStorageOptions;
@@ -70,13 +56,11 @@ export abstract class IRelayer extends IEvents {
 
   public abstract heartbeat: IHeartBeat;
 
-  public abstract encoder: IRelayerEncoder;
-
   public abstract subscriber: ISubscriber;
 
   public abstract publisher: IPublisher;
 
-  public abstract history: IJsonRpcHistory;
+  public abstract messages: IMessageTracker;
 
   public abstract provider: IJsonRpcProvider;
 
@@ -96,7 +80,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract publish(
     topic: string,
-    payload: JsonRpcPayload,
+    message: string,
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
 
