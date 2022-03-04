@@ -24,7 +24,7 @@ dockerLoad=docker load -i build/$@ \
 		| tee build/$@-img
 copyResult=cp -r -f -L result build/$@ && rm -rf result
 buildRelay=nix-build --attr relay.docker --argstr githash $(GITHASH) && $(copyResult)
-WAKU_VERSION_TAG ?= v0.5.1
+WAKU_VERSION_TAG ?= refs/tags/v0.5.1
 WAKU_SHA256 ?= 0k55hw1wqcyrpf9cxchhxdb92p75mmskkpvfn1paivl1r38pyb4a
 buildWakuCommand:=nix-build ./ops/waku-docker.nix --argstr wakuVersionTag $(WAKU_VERSION_TAG) --argstr nixNimRepoSha256 $(WAKU_SHA256)
 
