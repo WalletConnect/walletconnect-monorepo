@@ -113,6 +113,15 @@ class EthereumProvider implements IEthereumProvider {
     return this.http.request(args);
   }
 
+  public sendAsync(
+    args: RequestArguments,
+    callback: (error: Error | null, response: any) => void,
+  ): void {
+    this.request(args)
+      .then(response => callback(null, response))
+      .catch(error => callback(error, undefined));
+  }
+
   get connected(): boolean {
     return (this.signer.connection as SignerConnection).connected;
   }
