@@ -372,7 +372,7 @@
 }
 
 .walletconnect-modal__mobile__toggle_selector {
-  width: calc(50% - 8px);
+  width: calc(33% - 8px);
   background: white;
   position: absolute;
   border-radius: 5px;
@@ -382,13 +382,18 @@
   transform: translate3d(4px, 0, 0);
 }
 
-.walletconnect-modal__mobile__toggle.right__selected .walletconnect-modal__mobile__toggle_selector {
+.walletconnect-modal__mobile__toggle.middle__selected
+  .walletconnect-modal__mobile__toggle_selector {
   transform: translate3d(calc(100% + 12px), 0, 0);
+}
+
+.walletconnect-modal__mobile__toggle.right__selected .walletconnect-modal__mobile__toggle_selector {
+  transform: translate3d(calc(200% + 22px), 0, 0);
 }
 
 .walletconnect-modal__mobile__toggle a {
   font-size: 12px;
-  width: 50%;
+  width: 33%;
   text-align: center;
   padding: 8px;
   margin: 0;

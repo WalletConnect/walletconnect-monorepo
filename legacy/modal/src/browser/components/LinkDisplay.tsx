@@ -1,6 +1,6 @@
 import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/legacy-types";
-import { isAndroid, formatIOSMobile, saveMobileLinkInfo } from "@walletconnect/legacy-utils";
+import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
+import { isAndroid, formatIOSMobile, saveMobileLinkInfo } from "@walletconnect/browser-utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 
@@ -30,7 +30,7 @@ function LinkDisplay(props: LinkDisplayProps) {
   const [filter, setFilter] = React.useState("");
   const [page, setPage] = React.useState(1);
   const links = filter
-    ? props.links.filter(link => link.name.toLowerCase().includes(filter.toLowerCase()))
+    ? props.links.filter((link) => link.name.toLowerCase().includes(filter.toLowerCase()))
     : props.links;
   const errorMessage = props.errorMessage;
   const grid = filter || links.length > GRID_MIN_COUNT;

@@ -13,4 +13,7 @@ export interface TextMap {
   something_went_wrong: string;
   no_supported_wallets: string;
   no_wallets_found: string;
+  pairings?: string;
+  connect_pairing?: string;
+  no_pairings?: string;
 }

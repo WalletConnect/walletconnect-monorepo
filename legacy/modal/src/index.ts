@@ -1,4 +1,4 @@
-import { IQRCodeModalOptions } from "@walletconnect/legacy-types";
+import { IQRCodeModalOptions } from "@walletconnect/types";
 
 import * as nodeLib from "./node";
 import * as browserLib from "./browser";
@@ -8,13 +8,21 @@ const isNode = () =>
   typeof process.versions !== "undefined" &&
   typeof process.versions.node !== "undefined";
 
-function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
+// FIXME: use appropriate type for `pairings` here
+function open(opts: {
+  uri: string;
+  chains: string[];
+  pairings: any[];
+  onPairingSelected: (pairingTopic: string) => void;
+  cb: any;
+  qrcodeModalOptions?: IQRCodeModalOptions;
+}) {
   // eslint-disable-next-line no-console
-  console.log(uri);
+  console.log(opts.uri);
   if (isNode()) {
-    nodeLib.open(uri);
+    nodeLib.open(opts.uri);
   } else {
-    browserLib.open(uri, cb, qrcodeModalOptions);
+    browserLib.open(opts);
   }
 }
 

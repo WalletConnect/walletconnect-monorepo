@@ -2,8 +2,7 @@
 import * as React from "react";
 // @ts-ignore
 import * as ReactDOM from "react-dom";
-import { getDocumentOrThrow, getNavigatorOrThrow } from "@walletconnect/legacy-utils";
-import { IQRCodeModalOptions } from "@walletconnect/legacy-types";
+import { getDocumentOrThrow, getNavigatorOrThrow } from "@walletconnect/browser-utils";
 
 import { WALLETCONNECT_STYLE_SHEET } from "./assets/style";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -15,6 +14,7 @@ import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_STYLE_ID,
 } from "./constants";
+import { IQRCodeModalOptions } from "@walletconnect/types";
 import { TextMap } from "./types";
 
 function injectStyleSheet() {
@@ -65,13 +65,30 @@ function getText(): TextMap {
   return Languages[lang] || Languages["en"];
 }
 
-export function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
+export function open({
+  uri,
+  pairings,
+  chains,
+  onPairingSelected,
+  cb,
+  qrcodeModalOptions,
+}: {
+  uri: string;
+  chains: string[];
+  pairings: any[];
+  onPairingSelected: (pairingTopic: string) => void;
+  cb: any;
+  qrcodeModalOptions?: IQRCodeModalOptions;
+}) {
   injectStyleSheet();
   const wrapper = renderWrapper();
   ReactDOM.render(
     <Modal
       text={getText()}
       uri={uri}
+      chains={chains}
+      pairings={pairings}
+      onPairingSelected={onPairingSelected}
       onClose={getWrappedCallback(cb)}
       qrcodeModalOptions={qrcodeModalOptions}
     />,
