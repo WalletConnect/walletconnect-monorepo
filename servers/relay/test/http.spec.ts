@@ -3,7 +3,6 @@ import axios, { AxiosInstance } from "axios";
 import { use, expect } from "chai";
 import chaiHttp from "chai-http";
 import { Agent } from "https";
-
 import { TEST_HTTP_URL, TEST_PROJECT_ID, TEST_TOPIC } from "./shared";
 
 use(chaiHttp);

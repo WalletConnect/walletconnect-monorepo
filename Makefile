@@ -60,18 +60,6 @@ bootstrap-lerna: ## setups lerna for the monorepo management
 	touch $(flags)/$@
 	$(log_end)
 
-build-react-app: ## builds the example react-app
-	npm install --prefix examples/react-app
-	npm run build --prefix examples/react-app
-	touch $(flags)/$@
-	$(log_end)
-
-build-react-wallet: ## builds the example react-wallet
-	npm install --prefix examples/react-wallet
-	npm run build --prefix examples/react-wallet
-	touch $(flags)/$@
-	$(log_end)
-
 build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
 	npm run build
 	touch $(flags)/$@
