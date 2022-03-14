@@ -28,8 +28,8 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/ecies-25519": "^1.0.1",
-    "@walletconnect/encoding": "^1.0.0",
+    "@walletconnect/ecies-25519": "^1.0.2",
+    "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/relay-api": "^1.0.2",

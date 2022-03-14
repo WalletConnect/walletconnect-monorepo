@@ -33,7 +33,7 @@
   "dependencies": {
     "@types/pino": "^6.3.5",
     "@walletconnect/client": "^2.0.0-beta.18.2",
-    "@walletconnect/encoding": "^1.0.0",
+    "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/time": "^1.0.1",
