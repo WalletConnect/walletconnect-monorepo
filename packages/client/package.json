@@ -32,9 +32,9 @@
   },
   "dependencies": {
     "@walletconnect/events": "^1.0.0",
-    "@walletconnect/encoding": "^1.0.0",
+    "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/heartbeat": "^1.0.0",
-    "@walletconnect/jsonrpc-provider": "^1.0.1",
+    "@walletconnect/jsonrpc-provider": "^1.0.2",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/jsonrpc-ws-connection": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",

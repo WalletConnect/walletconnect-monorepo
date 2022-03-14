@@ -32,7 +32,7 @@
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "axios": "^0.21.1",
     "bluebird": "^3.5.5",
-    "@walletconnect/encoding": "^1.0.0",
+    "@walletconnect/encoding": "^1.0.1",
     "fastify": "^3.4.1",
     "fastify-helmet": "^5.0.3",
     "pino": "^6.7.0",
