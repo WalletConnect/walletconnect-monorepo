@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/ethereum-provider",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "description": "Ethereum Provider for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -63,12 +63,12 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/client": "^1.7.4",
+    "@walletconnect/client": "^1.7.5",
     "@walletconnect/jsonrpc-http-connection": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.2",
-    "@walletconnect/signer-connection": "^1.7.4",
-    "@walletconnect/types": "^1.7.4",
-    "@walletconnect/utils": "^1.7.4",
+    "@walletconnect/signer-connection": "^1.7.5",
+    "@walletconnect/types": "^1.7.5",
+    "@walletconnect/utils": "^1.7.5",
     "eip1193-provider": "1.0.1",
     "eventemitter3": "4.0.7"
   },
