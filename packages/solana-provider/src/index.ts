@@ -9,7 +9,7 @@ import {
 } from "@walletconnect/signer-connection";
 import HttpConnection from "@walletconnect/jsonrpc-http-connection";
 
-export const signerMethods = ["cosmos_getAccounts", "cosmos_signDirect", "cosmos_signAmino"];
+export const signerMethods = ["solana_getAccounts", "solana_signTransaction", "solana_signMessage"];
 
 export const providerEvents = {
   changed: {
@@ -18,13 +18,13 @@ export const providerEvents = {
   },
 };
 
-export interface CosmosRpcConfig {
+export interface SolanaRpcConfig {
   custom?: {
     [chainId: string]: string;
   };
 }
 
-export function getRpcUrl(chainId: string, rpc?: CosmosRpcConfig): string | undefined {
+export function getRpcUrl(chainId: string, rpc?: SolanaRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
   if (rpc && rpc.custom) {
     rpcUrl = rpc.custom[chainId];
@@ -32,19 +32,19 @@ export function getRpcUrl(chainId: string, rpc?: CosmosRpcConfig): string | unde
   return rpcUrl;
 }
 
-export interface CosmosProviderOptions {
+export interface SolanaProviderOptions {
   chains: string[];
   methods?: string[];
-  rpc?: CosmosRpcConfig;
+  rpc?: SolanaRpcConfig;
   client?: SignerConnectionClientOpts;
 }
 
-class CosmosProvider {
+class SolanaProvider {
   public events: any = new EventEmitter();
 
-  private rpc: CosmosRpcConfig | undefined;
+  private rpc: SolanaRpcConfig | undefined;
 
-  public namespace = "cosmos";
+  public namespace = "solana";
   public chains: string[] = [];
   public methods: string[] = signerMethods;
 
@@ -53,7 +53,7 @@ class CosmosProvider {
   public signer: JsonRpcProvider;
   public http: JsonRpcProvider | undefined;
 
-  constructor(opts?: CosmosProviderOptions) {
+  constructor(opts?: SolanaProviderOptions) {
     this.rpc = opts?.rpc;
     this.chains = opts?.chains || this.chains;
     this.methods = opts?.methods ? [...opts?.methods, ...this.methods] : this.methods;
@@ -182,4 +182,4 @@ class CosmosProvider {
   }
 }
 
-export default CosmosProvider;
+export default SolanaProvider;
