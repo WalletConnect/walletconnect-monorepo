@@ -113,9 +113,26 @@ export class Relayer extends IRelayer {
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
     await this.messages.init();
-    await this.provider.connect();
+    // await this.provider.connect();
+    await this.initProvider();
     await this.subscriber.init();
     await this.publisher.init();
+  }
+
+  public async initProvider(count = 1) {
+    try {
+      await this.provider.connect();
+    } catch (error) {
+      if (count < 3) {
+        // eslint-disable-next-line
+        console.error(error);
+        // eslint-disable-next-line
+        console.log("controllers/relayer: Retrying `initProvider`, count is", count);
+        this.initProvider(count + 1);
+      } else {
+        throw error;
+      }
+    }
   }
 
   public async publish(
@@ -197,11 +214,13 @@ export class Relayer extends IRelayer {
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, async () => {
+      // eslint-disable-next-line
+      console.log("RELAY PROVIDER DISCONNECT");
       this.events.emit(RELAYER_EVENTS.disconnect);
-      // reconnect after one minute
+      // reconnect after one second
       setTimeout(() => {
         this.provider.connect();
-      }, RELAYER_RECONNECT_TIMEOUT);
+      }, RELAYER_RECONNECT_TIMEOUT); // FIXME: should be converted to `toMilliseconds`
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
   }
