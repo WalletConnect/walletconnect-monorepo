@@ -389,7 +389,7 @@ class WalletConnectProvider extends ProviderEngine {
       processMessage: async (msgParams: { from: string; data: string }, cb: any) => {
         try {
           const wc = await this.getWalletConnector();
-          const result = await wc.signMessage([msgParams.from, msgParams.data]);
+          const result = await wc.signPersonalMessage([msgParams.data, msgParams.from]);
           cb(null, result);
         } catch (error) {
           cb(error);
