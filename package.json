@@ -19,7 +19,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "clean": "lerna clean --yes",
-    "bootstrap": "lerna bootstrap --hoist",
+    "bootstrap": "lerna bootstrap --hoist -- --unsafe-perm",
     "lint": "lerna run lint",
     "build": "lerna run build",
     "test": "lerna run test",

@@ -1,14 +1,8 @@
-# JS Dev environment
+# JS Dev Environment
 
-## Setup
-
-1. Run Redis on the background (recommended brew services)
-2. Install Relay Server dependencies
-3. Run "PORT=5555 npm run start" for relay server
-4. Develop!
-
-## Develop
-
-- Make sure root dependencies are installed (npm install)
-- Call bootstrap for the first time (npm run bootstrap)
-- Then you can either run: - npm run check = this will call lint, build and test - npm run reset = this will install fresh dependencies before doing `check` script
+1. Install python3 and ensure `python` cli is linked (required to build npm modules)
+2. Install redis and tun it as brew service [recommended brew services](https://gist.github.com/tomysmile/1b8a321e7c58499ef9f9441b2faa0aa8)
+3. Bootstrap lerna (install npm packages) `npm run bootstrap`
+4. Verify installation `npm run check`
+5. Start relay server `PORT=5555 npm run start --prefix=servers/relay`
+6. If you update npm packages, run `npm run reset`
