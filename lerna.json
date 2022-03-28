@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-beta.23",
+  "version": "2.0.0-beta.24",
   "packages": [
     "packages/*",
     "legacy/*"
