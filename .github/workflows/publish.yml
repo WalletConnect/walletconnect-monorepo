@@ -1,0 +1,48 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v?[0-9]+.[0-9]+.[0-9]+'
+      - 'v?[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+
+jobs:
+  get_dist_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      DIST_TAG: ${{ steps.get_tag.outputs.DIST_TAG }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Get the tag name
+        id: get_tag
+        run: |
+          dist_tag=latest
+          [ -z "$dist_tag" ] && echo "Distribution tag is not set to latest nor to rc" && exit 1
+          echo ::set-output name=DIST_TAG::$dist_tag
+        shell: bash
+  build-and-publish:
+    needs: get_dist_tag
+    if: needs.get_dist_tag.outputs.DIST_TAG
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
+      - name: Build and publish package
+        run: |
+          cd packages/alephium-provider/
+          npm ci
+          npm run build
+          npm pack
+          npm publish alephium-walletconnect-provider-*.tgz --access public --tag ${{ needs.get_dist_tag.outputs.DIST_TAG }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
