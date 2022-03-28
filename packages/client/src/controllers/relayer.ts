@@ -17,7 +17,8 @@ import {
 } from "@walletconnect/types";
 import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { formatRelayRpcUrl, toMiliseconds } from "@walletconnect/utils";
+import { formatRelayRpcUrl } from "@walletconnect/utils";
+import { toMiliseconds } from "@walletconnect/time";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
