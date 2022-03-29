@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/legacy-provider",
   "description": "Legacy Ethereum Provider (v1.0) for WalletConnect Protocol",
-  "version": "2.0.0-beta.25",
+  "version": "2.0.0-beta.26",
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "run-s clean",
@@ -77,10 +77,10 @@
   "dependencies": {
     "@walletconnect/jsonrpc-http-connection": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.3",
-    "@walletconnect/legacy-client": "^2.0.0-beta.25",
-    "@walletconnect/legacy-modal": "^2.0.0-beta.25",
-    "@walletconnect/legacy-types": "^2.0.0-beta.25",
-    "@walletconnect/legacy-utils": "^2.0.0-beta.25",
+    "@walletconnect/legacy-client": "^2.0.0-beta.26",
+    "@walletconnect/legacy-modal": "^2.0.0-beta.26",
+    "@walletconnect/legacy-types": "^2.0.0-beta.26",
+    "@walletconnect/legacy-utils": "^2.0.0-beta.26",
     "eip1193-provider": "^1.0.1",
     "eventemitter3": "^4.0.7"
   },

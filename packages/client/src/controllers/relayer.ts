@@ -160,14 +160,14 @@ export class Relayer extends IRelayer {
     await this.messages.set(topic, message);
   }
 
-  private async shouldIgnorePayloadEvent(messageEvent: RelayerTypes.MessageEvent) {
+  private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
     if (!this.subscriber.topics.includes(topic)) return true;
     const exists = await this.messages.has(topic, message);
     return exists;
   }
 
-  private async onPayload(payload: JsonRpcPayload) {
+  private async onProviderPayload(payload: JsonRpcPayload) {
     this.logger.debug(`Incoming Relay Payload`);
     this.logger.trace({ type: "payload", direction: "incoming", payload });
     if (isJsonRpcRequest(payload)) {
@@ -175,14 +175,18 @@ export class Relayer extends IRelayer {
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
       const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
-      if (await this.shouldIgnorePayloadEvent(messageEvent)) return;
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);
-      this.events.emit(RELAYER_EVENTS.message, messageEvent);
       await this.acknowledgePayload(payload);
-      await this.recordMessageEvent(messageEvent);
+      await this.onMessageEvent(messageEvent);
     }
+  }
+
+  private async onMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+    if (await this.shouldIgnoreMessageEvent(messageEvent)) return;
+    this.events.emit(RELAYER_EVENTS.message, messageEvent);
+    await this.recordMessageEvent(messageEvent);
   }
 
   private async acknowledgePayload(payload: JsonRpcPayload) {
@@ -192,7 +196,7 @@ export class Relayer extends IRelayer {
 
   private registerEventListeners(): void {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
-      this.onPayload(payload),
+      this.onProviderPayload(payload),
     );
     this.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
       this.events.emit(RELAYER_EVENTS.connect);
