@@ -18,6 +18,7 @@ import {
 import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
+import { toMiliseconds } from "@walletconnect/time";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
@@ -198,10 +199,10 @@ export class Relayer extends IRelayer {
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, async () => {
       this.events.emit(RELAYER_EVENTS.disconnect);
-      // reconnect after one minute
+      // Attempt reconnection after one second.
       setTimeout(() => {
         this.provider.connect();
-      }, RELAYER_RECONNECT_TIMEOUT);
+      }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
   }
