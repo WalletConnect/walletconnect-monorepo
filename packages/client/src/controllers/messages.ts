@@ -32,7 +32,7 @@ export class MessageTracker extends IMessageTracker {
       messages = {};
     }
     if (typeof messages[hash] !== "undefined") {
-      throw new Error("Message already recorded");
+      return hash;
     }
     messages[hash] = message;
     this.messages.set(topic, messages);
