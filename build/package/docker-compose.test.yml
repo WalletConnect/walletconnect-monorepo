@@ -2,7 +2,7 @@ version: '3.9'
 name: walletconnect
 
 services:
-  monorepo:       
+  monorepo-tests:
     networks:
       - walletconnect-monorepo
     environment:

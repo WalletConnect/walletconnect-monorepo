@@ -12,8 +12,8 @@ services:
     build:
       context: servers/relay/
       dockerfile: Dockerfile-dev
-  monorepo:
-    image: walletconnect/monorepo:${TAG:-dev}-dev
+  monorepo-tests:
+    image: walletconnect/monorepo-tests:${TAG:-dev}-dev
     build:
       context: ../../
       dockerfile: build/package/Dockerfile-dev      
