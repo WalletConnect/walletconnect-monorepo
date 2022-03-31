@@ -17,20 +17,17 @@ import {
   isStoreUpdatedEvent,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { Logger } from "pino";
 import { STORE_EVENTS } from "../constants";
 
 export default class Engine {
   private relayer: IRelayer;
   private expirer: IExpirer;
-  private logger: Logger;
   private crypto: ICrypto;
   private events: EventEmitter;
   private pairing: IPairing;
 
   constructor(public sequence: ISequence) {
     this.expirer = sequence.expirer;
-    this.logger = sequence.logger;
     this.relayer = sequence.client.relayer;
     this.crypto = sequence.client.crypto;
     this.events = sequence.client.events;
