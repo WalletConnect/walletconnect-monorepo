@@ -1,5 +1,0 @@
-{
-    "yaml.schemas": {
-        "https://json.schemastore.org/github-workflow.json": "file:///Volumes/Files/workspaces/WalletConnect/walletconnect-monorepo/.github/workflows/build.yml"
-    }
-}
