@@ -1,44 +1,43 @@
 import {
-  SequenceTypes,
-  ISequence,
-  IEngine,
-  SessionTypes,
-  StoreEvent,
-  RelayerTypes,
-  JsonRpcRecord,
-  ExpirerEvents,
-} from "@walletconnect/types";
-import {
-  formatMessageContext,
-  calcExpiry,
-  generateRandomBytes32,
-  hasOverlap,
-  isSignalTypePairing,
-  isSequenceFailed,
-  isSequenceResponded,
-  isStoreUpdatedEvent,
-  ERROR,
-  isSequenceRejected,
-} from "@walletconnect/utils";
-import {
-  JsonRpcPayload,
-  JsonRpcRequest,
-  JsonRpcResponse,
+  ErrorResponse,
   formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
   isJsonRpcError,
   isJsonRpcRequest,
-  ErrorResponse,
   isJsonRpcResponse,
+  JsonRpcPayload,
+  JsonRpcRequest,
+  JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
-import { toMiliseconds, FIVE_MINUTES, THIRTY_SECONDS, ONE_DAY } from "@walletconnect/time";
-
+import { FIVE_MINUTES, ONE_DAY, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
 import {
-  STORE_EVENTS,
+  ExpirerEvents,
+  IEngine,
+  ISequence,
+  JsonRpcRecord,
+  RelayerTypes,
+  SequenceTypes,
+  SessionTypes,
+  StoreEvent,
+} from "@walletconnect/types";
+import {
+  calcExpiry,
+  ERROR,
+  formatMessageContext,
+  generateRandomBytes32,
+  hasOverlap,
+  isSequenceFailed,
+  isSequenceRejected,
+  isSequenceResponded,
+  isSignalTypePairing,
+  isStoreUpdatedEvent,
+} from "@walletconnect/utils";
+import {
   EXPIRER_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_EVENTS,
+  STORE_EVENTS,
 } from "../constants";
 
 export class Engine extends IEngine {
