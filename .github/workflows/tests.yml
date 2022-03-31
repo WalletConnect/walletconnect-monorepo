@@ -16,8 +16,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}               
       - name: start server for run tests
         run: |
-          ## pull latest image to improve build time
-          TAG=latest make pull 
+          make build-dev
           make dev
       - name: run relay tests
         run: |
