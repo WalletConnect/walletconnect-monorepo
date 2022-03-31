@@ -29,11 +29,11 @@ export default class Engine {
 
   constructor(public sequence: ISequence) {
     this.expirer = sequence.expirer;
+    this.config = sequence.config;
     this.relayer = sequence.client.relayer;
     this.crypto = sequence.client.crypto;
     this.events = sequence.client.events;
     this.pairing = sequence.client.pairing;
-    this.config = sequence.config;
     this.subscribeToPendingEvents();
     this.subscribeToSettledEvents();
   }
@@ -82,12 +82,12 @@ export default class Engine {
     event: StoreEvent.Created<SequenceTypes.Pending> | StoreEvent.Updated<SequenceTypes.Pending>,
   ) {
     const { sequence: eventSequence } = event;
-    const { signal, topic: proposalTopic } = eventSequence.proposal;
+    const { signal: proposalSignal, topic: proposalTopic } = eventSequence.proposal;
 
-    if (isSignalTypePairing(signal)) {
+    if (isSignalTypePairing(proposalSignal)) {
       const topicHasKeys = await this.crypto.hasKeys(proposalTopic);
       if (!topicHasKeys) {
-        const { self, peer } = await this.pairing.settled.get(signal.params.topic);
+        const { self, peer } = await this.pairing.settled.get(proposalSignal.params.topic);
         await this.crypto.generateSharedKey(self, peer, proposalTopic);
       }
     }
@@ -124,9 +124,9 @@ export default class Engine {
       const eventName = this.config.events.proposed;
       this.events.emit(eventName, eventSequence);
 
-      if (isSignalTypePairing(signal)) {
+      if (isSignalTypePairing(proposalSignal)) {
         const request = formatJsonRpcRequest(this.config.jsonrpc.propose, eventSequence.proposal);
-        await this.pairing.send(signal.params.topic, request);
+        await this.pairing.send(proposalSignal.params.topic, request);
       }
     }
   }
