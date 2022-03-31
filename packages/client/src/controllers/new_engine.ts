@@ -25,6 +25,7 @@ export default class Engine {
   private crypto: ICrypto;
   private events: EventEmitter;
   private pairing: IPairing;
+  private config: SequenceTypes.Config;
 
   constructor(public sequence: ISequence) {
     this.expirer = sequence.expirer;
@@ -32,6 +33,7 @@ export default class Engine {
     this.crypto = sequence.client.crypto;
     this.events = sequence.client.events;
     this.pairing = sequence.client.pairing;
+    this.config = sequence.config;
     this.subscribeToPendingEvents();
     this.subscribeToSettledEvents();
   }
@@ -91,7 +93,7 @@ export default class Engine {
     }
 
     if (isSequenceResponded(eventSequence)) {
-      const eventName = this.sequence.config.events.responded;
+      const eventName = this.config.events.responded;
       this.events.emit(eventName, eventSequence);
 
       if (!isStoreUpdatedEvent(event)) {
@@ -100,12 +102,12 @@ export default class Engine {
         let params: SequenceTypes.Response;
 
         if (isSequenceFailed(outcome)) {
-          method = this.sequence.config.jsonrpc.reject;
+          method = this.config.jsonrpc.reject;
           params = {
             reason: outcome.reason,
           };
         } else {
-          method = this.sequence.config.jsonrpc.approve;
+          method = this.config.jsonrpc.approve;
           params = {
             relay: outcome.relay,
             responder: outcome.responder,
@@ -119,14 +121,11 @@ export default class Engine {
         await this.relayer.publish(sequenceTopic, message, { relay });
       }
     } else {
-      const eventName = this.sequence.config.events.proposed;
+      const eventName = this.config.events.proposed;
       this.events.emit(eventName, eventSequence);
 
       if (isSignalTypePairing(signal)) {
-        const request = formatJsonRpcRequest(
-          this.sequence.config.jsonrpc.propose,
-          eventSequence.proposal,
-        );
+        const request = formatJsonRpcRequest(this.config.jsonrpc.propose, eventSequence.proposal);
         await this.pairing.send(signal.params.topic, request);
       }
     }
