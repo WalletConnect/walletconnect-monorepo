@@ -4,12 +4,12 @@ services:
   health:
     image: walletconnect/health-server:${TAG:-dev}-dev
     build:
-      context: servers/health/
+      context: ../../servers/health/
       dockerfile: Dockerfile-dev
   relay:
     image: walletconnect/relay-server:${TAG:-dev}-dev
     build:
-      context: servers/relay/
+      context: ../../servers/relay/
       dockerfile: Dockerfile-dev
   monorepo-tests:
     image: walletconnect/monorepo-tests:${TAG:-dev}-dev

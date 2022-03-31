@@ -14,9 +14,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}               
-      - name: start server for run tests
+      - name: build docker images
         run: |
-          make build-dev
+          ## pull latest image to improve build time
+          TAG=latest make pull
+          make build-dev          
+      - name: start server to run tests
+        run: |
           make dev
       - name: run relay tests
         run: |

@@ -23,7 +23,8 @@ jobs:
           echo "TAG=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
       - name: build docker images
         run: |
-          TAG=latest make pull || true
+          ## pull latest image to improve build time
+          TAG=latest make pull
           make build
           make build-dev
       - name: publish docker images
