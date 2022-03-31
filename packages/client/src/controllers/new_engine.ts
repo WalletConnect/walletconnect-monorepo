@@ -115,12 +115,12 @@ export default class Engine {
         }
 
         const request = formatJsonRpcRequest(method, params);
-        const message = await this.sequence.client.crypto.encode(sequenceTopic, request);
+        const message = await this.crypto.encode(sequenceTopic, request);
         await this.relayer.publish(sequenceTopic, message, { relay });
       }
     } else {
       const eventName = this.sequence.config.events.proposed;
-      this.sequence.events.emit(eventName, eventSequence);
+      this.events.emit(eventName, eventSequence);
 
       if (isSignalTypePairing(signal)) {
         const request = formatJsonRpcRequest(
