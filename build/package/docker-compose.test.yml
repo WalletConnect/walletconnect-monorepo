@@ -1,0 +1,12 @@
+version: '3.9'
+name: walletconnect
+
+services:
+  monorepo:       
+    networks:
+      - walletconnect-monorepo
+    environment:
+      - TEST_RELAY_URL=ws://relay:5000
+    depends_on:
+      relay:
+        condition: service_healthy

@@ -1,0 +1,19 @@
+version: '3.9'
+name: walletconnect
+
+services:   
+  health:
+    image: walletconnect/health-server:${TAG:-dev}-dev
+    build:
+      context: servers/health/
+      dockerfile: Dockerfile-dev
+  relay:
+    image: walletconnect/relay-server:${TAG:-dev}-dev
+    build:
+      context: servers/relay/
+      dockerfile: Dockerfile-dev
+  monorepo:
+    image: walletconnect/monorepo:${TAG:-dev}-dev
+    build:
+      context: ../../
+      dockerfile: build/package/Dockerfile-dev      
