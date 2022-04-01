@@ -33,13 +33,9 @@ import {
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { toMiliseconds, FIVE_MINUTES, THIRTY_SECONDS, ONE_DAY } from "@walletconnect/time";
+import { RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
-import {
-  STORE_EVENTS,
-  EXPIRER_EVENTS,
-  RELAYER_DEFAULT_PROTOCOL,
-  RELAYER_EVENTS,
-} from "../constants";
+import { STORE_EVENTS, EXPIRER_EVENTS } from "../constants";
 
 export class Engine extends IEngine {
   public sequence: ISequence;

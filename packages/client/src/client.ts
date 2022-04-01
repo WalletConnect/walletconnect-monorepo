@@ -27,6 +27,7 @@ import {
   crypto as coreCrypto,
   relayer as coreRelayer,
   storage as coreStorage,
+  RELAYER_DEFAULT_PROTOCOL,
 } from "@walletconnect/core";
 
 import { Pairing, Session } from "./controllers";
@@ -38,7 +39,6 @@ import {
   PAIRING_DEFAULT_TTL,
   PAIRING_EVENTS,
   PAIRING_SIGNAL_METHOD_URI,
-  RELAYER_DEFAULT_PROTOCOL,
   SESSION_EMPTY_PERMISSIONS,
   SESSION_EMPTY_RESPONSE,
   SESSION_EMPTY_STATE,
