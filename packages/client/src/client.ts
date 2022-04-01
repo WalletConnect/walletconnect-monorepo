@@ -57,7 +57,6 @@ export class Client extends IClient {
 
   public heartbeat: coreHeartbeat.HeartBeat;
 
-  // @ts-expect-error
   public crypto: coreCrypto.Crypto;
 
   public storage: coreStorage.Storage;
@@ -98,7 +97,6 @@ export class Client extends IClient {
 
     this.heartbeat = new coreHeartbeat.HeartBeat();
 
-    // @ts-expect-error
     this.crypto = new coreCrypto.Crypto(this, this.logger, opts?.keychain);
 
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
@@ -128,9 +126,7 @@ export class Client extends IClient {
       projectId: this.projectId,
       keyValueStorageOptions: storageOptions,
     });
-    // @ts-expect-error
     this.pairing = new Pairing(this, this.logger);
-    // @ts-expect-error
     this.session = new Session(this, this.logger);
   }
 
