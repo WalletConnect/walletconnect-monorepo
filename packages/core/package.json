@@ -36,11 +36,14 @@
   "dependencies": {
     "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/heartbeat": "^1.0.0",
+    "@walletconnect/jsonrpc-provider": "^1.0.3",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
+    "@walletconnect/jsonrpc-ws-connection": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/types": "^2.0.0-beta.26",
     "@walletconnect/utils": "^2.0.0-beta.26",
+    "keyvaluestorage": "^0.7.1",
     "pino": "^6.14.0"
   },
   "devDependencies": {
