@@ -19,15 +19,11 @@ import {
   ERROR,
   formatRelayRpcUrl,
 } from "@walletconnect/utils";
-import { HeartBeat } from "@walletconnect/heartbeat";
 import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import {
-  generateChildLogger,
-  getDefaultLoggerOptions,
-  getLoggerContext,
-} from "@walletconnect/logger";
 
-import { Pairing, Session, Relayer, Crypto, Storage } from "./controllers";
+import { heartbeat, logger as coreLogger, crypto } from "@walletconnect/core";
+
+import { Pairing, Session, Relayer, Storage } from "./controllers";
 import {
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,
@@ -53,9 +49,10 @@ export class Client extends IClient {
 
   public logger: Logger;
 
-  public heartbeat: HeartBeat;
+  public heartbeat: heartbeat.HeartBeat;
 
-  public crypto: Crypto;
+  // @ts-expect-error
+  public crypto: crypto.Crypto;
 
   public storage: Storage;
   public relayer: Relayer;
@@ -82,18 +79,21 @@ export class Client extends IClient {
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
+        : pino(
+            coreLogger.getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }),
+          );
 
     this.name = opts?.name || CLIENT_DEFAULT.name;
     this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
     this.projectId = opts?.projectId;
 
-    this.logger = generateChildLogger(logger, this.name);
+    this.logger = coreLogger.generateChildLogger(logger, this.name);
 
-    this.heartbeat = new HeartBeat();
+    this.heartbeat = new heartbeat.HeartBeat();
 
-    this.crypto = new Crypto(this, this.logger, opts?.keychain);
+    // @ts-expect-error
+    this.crypto = new crypto.Crypto(this, this.logger, opts?.keychain);
 
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
@@ -118,13 +118,14 @@ export class Client extends IClient {
       projectId: this.projectId,
       keyValueStorageOptions: storageOptions,
     });
-
+    // @ts-expect-error
     this.pairing = new Pairing(this, this.logger);
+    // @ts-expect-error
     this.session = new Session(this, this.logger);
   }
 
   get context(): string {
-    return getLoggerContext(this.logger);
+    return coreLogger.getLoggerContext(this.logger);
   }
 
   public on(event: string, listener: any): void {

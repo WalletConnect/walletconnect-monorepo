@@ -2,11 +2,6 @@ import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
 import KeyValueStorage from "keyvaluestorage";
 import {
-  generateChildLogger,
-  getDefaultLoggerOptions,
-  getLoggerContext,
-} from "@walletconnect/logger";
-import {
   RelayerTypes,
   IRelayer,
   ISubscriber,
@@ -15,7 +10,6 @@ import {
   IRelayerStorage,
   IMessageTracker,
 } from "@walletconnect/types";
-import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { toMiliseconds } from "@walletconnect/time";
@@ -29,7 +23,6 @@ import {
   formatJsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
 
-import { Subscriber } from "./subscriber";
 import {
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
@@ -41,8 +34,13 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
 } from "../constants";
 import { RelayerStorage } from "./storage";
-import { Publisher } from "./publisher";
 import { MessageTracker } from "./messages";
+import {
+  subscriber,
+  publisher,
+  logger as coreLogger,
+  heartbeat as coreHeartbeat,
+} from "@walletconnect/core";
 
 export class Relayer extends IRelayer {
   public readonly protocol = "irn";
@@ -52,7 +50,7 @@ export class Relayer extends IRelayer {
 
   public storage: IRelayerStorage;
 
-  public heartbeat: IHeartBeat;
+  public heartbeat: coreHeartbeat.IHeartBeat;
 
   public events = new EventEmitter();
 
@@ -70,8 +68,10 @@ export class Relayer extends IRelayer {
     super(opts);
     this.logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
-        ? generateChildLogger(opts.logger, this.name)
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || RELAYER_DEFAULT_LOGGER }));
+        ? coreLogger.generateChildLogger(opts.logger, this.name)
+        : pino(
+            coreLogger.getDefaultLoggerOptions({ level: opts?.logger || RELAYER_DEFAULT_LOGGER }),
+          );
     const kvsOptions = { ...RELAYER_STORAGE_OPTIONS, ...opts?.keyValueStorageOptions };
     this.storage =
       typeof opts?.storage !== "undefined"
@@ -85,7 +85,7 @@ export class Relayer extends IRelayer {
               context: this.context,
             },
           );
-    this.heartbeat = opts?.heartbeat || new HeartBeat();
+    this.heartbeat = opts?.heartbeat || new coreHeartbeat.HeartBeat();
     const rpcUrl =
       opts?.rpcUrl ||
       formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts?.projectId);
@@ -94,13 +94,13 @@ export class Relayer extends IRelayer {
         ? opts?.relayProvider
         : new JsonRpcProvider(new WsConnection(rpcUrl));
     this.messages = new MessageTracker(this.logger, this.storage);
-    this.subscriber = new Subscriber(this, this.logger);
-    this.publisher = new Publisher(this, this.logger);
+    this.subscriber = new subscriber.Subscriber(this, this.logger);
+    this.publisher = new publisher.Publisher(this, this.logger);
     this.registerEventListeners();
   }
 
   get context(): string {
-    return getLoggerContext(this.logger);
+    return coreLogger.getLoggerContext(this.logger);
   }
 
   get connected(): boolean {
