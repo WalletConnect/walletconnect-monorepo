@@ -21,9 +21,15 @@ import {
 } from "@walletconnect/utils";
 import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
-import { heartbeat, logger as coreLogger, crypto } from "@walletconnect/core";
+import {
+  heartbeat as coreHeartbeat,
+  logger as coreLogger,
+  crypto as coreCrypto,
+  relayer as coreRelayer,
+  storage as coreStorage,
+} from "@walletconnect/core";
 
-import { Pairing, Session, Relayer, Storage } from "./controllers";
+import { Pairing, Session } from "./controllers";
 import {
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,
@@ -49,13 +55,13 @@ export class Client extends IClient {
 
   public logger: Logger;
 
-  public heartbeat: heartbeat.HeartBeat;
+  public heartbeat: coreHeartbeat.HeartBeat;
 
   // @ts-expect-error
-  public crypto: crypto.Crypto;
+  public crypto: coreCrypto.Crypto;
 
-  public storage: Storage;
-  public relayer: Relayer;
+  public storage: coreStorage.Storage;
+  public relayer: coreRelayer.Relayer;
 
   public pairing: Pairing;
   public session: Session;
@@ -90,18 +96,22 @@ export class Client extends IClient {
 
     this.logger = coreLogger.generateChildLogger(logger, this.name);
 
-    this.heartbeat = new heartbeat.HeartBeat();
+    this.heartbeat = new coreHeartbeat.HeartBeat();
 
     // @ts-expect-error
-    this.crypto = new crypto.Crypto(this, this.logger, opts?.keychain);
+    this.crypto = new coreCrypto.Crypto(this, this.logger, opts?.keychain);
 
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
-    this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
-      protocol: this.protocol,
-      version: this.version,
-      context: this.context,
-    });
+    this.storage = new coreStorage.Storage(
+      this.logger,
+      opts?.storage || new KeyValueStorage(storageOptions),
+      {
+        protocol: this.protocol,
+        version: this.version,
+        context: this.context,
+      },
+    );
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
@@ -110,7 +120,7 @@ export class Client extends IClient {
       this.projectId,
     );
 
-    this.relayer = new Relayer({
+    this.relayer = new coreRelayer.Relayer({
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
       logger: this.logger,
