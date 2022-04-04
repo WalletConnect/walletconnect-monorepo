@@ -1,133 +1,39 @@
-import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { ONE_DAY } from "@walletconnect/time";
-import {
-  ICrypto,
-  IExpirer,
-  IPairing,
-  IRelayer,
-  ISequence,
-  SequenceTypes,
-  StoreEvent,
-} from "@walletconnect/types";
-import {
-  calcExpiry,
-  isSequenceFailed,
-  isSequenceResponded,
-  isSignalTypePairing,
-  isStoreUpdatedEvent,
-} from "@walletconnect/utils";
-import { EventEmitter } from "events";
-import { STORE_EVENTS } from "../constants";
+import { ISequence, RelayerTypes, SequenceTypes } from "@walletconnect/types";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 
 export default class Engine {
-  private relayer: IRelayer;
-  private expirer: IExpirer;
-  private crypto: ICrypto;
-  private events: EventEmitter;
-  private pairing: IPairing;
-  private config: SequenceTypes.Config;
-
-  constructor(public sequence: ISequence) {
-    this.expirer = sequence.expirer;
-    this.config = sequence.config;
-    this.relayer = sequence.client.relayer;
-    this.crypto = sequence.client.crypto;
-    this.events = sequence.client.events;
-    this.pairing = sequence.client.pairing;
-    this.subscribeToPendingEvents();
-    this.subscribeToSettledEvents();
-  }
+  constructor(public sequence: ISequence) {}
 
   /**
-   * Event subscriptions
+   * Public Methds
    */
-  private subscribeToPendingEvents() {
-    this.sequence.pending.on(
-      STORE_EVENTS.created,
-      async (event: StoreEvent.Created<SequenceTypes.Pending>) => {
-        await this.onPendingCreatedEvent(event);
-        await this.onPendingCreatedOrUpdatedEvent(event);
-      },
-    );
+  public async createPairing(params: SequenceTypes.CreateParams) {
+    await this.sequence.validatePropose(params);
+    const topic = generateRandomBytes32();
+    const symetricKey = await this.sequence.client.crypto.generateSymKey(topic);
+    const pairingUri = this.createPairingUri(topic, symetricKey, params.relay);
+    this.sequence.pending.set(topic /* TODO create sequence data */);
+    this.sequence.client.relayer.subscribe(topic);
 
-    this.sequence.pending.on(
-      STORE_EVENTS.updated,
-      async (event: StoreEvent.Updated<SequenceTypes.Pending>) =>
-        await this.onPendingCreatedOrUpdatedEvent(event),
-    );
-
-    this.sequence.pending.on(
-      STORE_EVENTS.deleted,
-      async (event: StoreEvent.Deleted<SequenceTypes.Pending>) => {
-        const { topic, relay } = event.sequence;
-        await this.relayer.unsubscribe(topic, { relay });
-        await this.expirer.del(topic);
-      },
-    );
+    return pairingUri;
   }
 
-  private subscribeToSettledEvents() {}
+  public createSession() {}
 
   /**
-   * Event listener handlers
+   * Private Methods
    */
-  private async onPendingCreatedEvent(event: StoreEvent.Created<SequenceTypes.Pending>) {
-    const { topic, sequence } = event;
-    const expiry = calcExpiry(ONE_DAY);
-    await this.relayer.subscribe(topic, { relay: sequence.relay });
-    await this.expirer.set(topic, { topic, expiry });
-  }
-
-  private async onPendingCreatedOrUpdatedEvent(
-    event: StoreEvent.Created<SequenceTypes.Pending> | StoreEvent.Updated<SequenceTypes.Pending>,
+  private createPairingUri(
+    topic: string,
+    symetricKey: string,
+    relay: RelayerTypes.ProtocolOptions,
   ) {
-    const { sequence: eventSequence } = event;
-    const { signal: proposalSignal, topic: proposalTopic } = eventSequence.proposal;
+    const protocol = this.sequence.client.protocol;
+    const version = this.sequence.client.version;
+    const relayProtocol = `?relay-protocol=${relay.protocol}`;
+    const relayData = relay.params ? `&relay-data=${relay.params}` : "";
+    const symKey = `&symKey=${symetricKey}`;
 
-    if (isSignalTypePairing(proposalSignal)) {
-      const topicHasKeys = await this.crypto.hasKeys(proposalTopic);
-      if (!topicHasKeys) {
-        const { self, peer } = await this.pairing.settled.get(proposalSignal.params.topic);
-        await this.crypto.generateSharedKey(self, peer, proposalTopic);
-      }
-    }
-
-    if (isSequenceResponded(eventSequence)) {
-      const eventName = this.config.events.responded;
-      this.events.emit(eventName, eventSequence);
-
-      if (!isStoreUpdatedEvent(event)) {
-        const { topic: sequenceTopic, outcome, relay } = eventSequence;
-        let method: string;
-        let params: SequenceTypes.Response;
-
-        if (isSequenceFailed(outcome)) {
-          method = this.config.jsonrpc.reject;
-          params = {
-            reason: outcome.reason,
-          };
-        } else {
-          method = this.config.jsonrpc.approve;
-          params = {
-            relay: outcome.relay,
-            responder: outcome.responder,
-            expiry: outcome.expiry,
-            state: outcome.state,
-          };
-        }
-
-        const request = formatJsonRpcRequest(method, params);
-        const message = await this.crypto.encode(sequenceTopic, request);
-        await this.relayer.publish(sequenceTopic, message, { relay });
-      }
-    } else {
-      const eventName = this.config.events.proposed;
-      this.events.emit(eventName, eventSequence);
-
-      if (isSignalTypePairing(proposalSignal)) {
-        const request = formatJsonRpcRequest(this.config.jsonrpc.propose, eventSequence.proposal);
-        await this.pairing.send(proposalSignal.params.topic, request);
-      }
-    }
+    return `${protocol}:${topic}@${version}${relayProtocol}${relayData}${symKey}`;
   }
 }
