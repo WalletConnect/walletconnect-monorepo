@@ -14,6 +14,7 @@ export default class Engine {
     const pairingUri = this.createPairingUri(topic, symetricKey, params.relay);
     this.sequence.pending.set(topic /* TODO create sequence data */);
     this.sequence.client.relayer.subscribe(topic);
+    this.createSession(/* Todo pass session data */);
 
     return pairingUri;
   }
