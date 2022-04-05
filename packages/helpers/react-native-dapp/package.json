@@ -42,8 +42,8 @@
     "@walletconnect/types": "^1.7.7",
     "@walletconnect/utils": "^1.7.7",
     "keyvaluestorage": "0.7.1",
-    "react-native-qrcode-svg": "6.0.6",
-    "react-native-svg": "9.6.4",
+    "react-native-qrcode-svg": "6.1.2",
+    "react-native-svg": "12.3.0",
     "use-deep-compare-effect": "1.6.1"
   },
   "devDependencies": {
