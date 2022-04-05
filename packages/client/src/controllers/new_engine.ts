@@ -2,28 +2,62 @@ import { ISequence, RelayerTypes, SequenceTypes } from "@walletconnect/types";
 import { generateRandomBytes32 } from "@walletconnect/utils";
 
 export default class Engine {
-  constructor(public sequence: ISequence) {}
+  constructor(public sequence: ISequence) {
+    this.registerEventListeners();
+  }
 
-  /**
-   * Public Methds
-   */
   public async createPairing(params: SequenceTypes.CreateParams) {
     await this.sequence.validatePropose(params);
-    const topic = generateRandomBytes32();
-    const symetricKey = await this.sequence.client.crypto.generateSymKey(topic);
-    const pairingUri = this.createPairingUri(topic, symetricKey, params.relay);
-    this.sequence.pending.set(topic /* TODO create sequence data */);
-    this.sequence.client.relayer.subscribe(topic);
-    this.createSession(/* Todo pass session data */);
+    const pairingTopic = generateRandomBytes32();
+    const symetricKey = await this.sequence.client.crypto.generateSymKey(pairingTopic);
+    const pairingUri = this.createPairingUri(pairingTopic, symetricKey, params.relay);
+    /**
+     * @TODO 1 - this.sequence.pairing.create(topic, params)
+     * Creates and persists sequence in pairing store with.
+     * Should add additional fields like expiry.
+     */
+    this.sequence.client.relayer.subscribe(pairingTopic);
+    await this.createSession(pairingTopic, params);
 
     return pairingUri;
   }
 
-  public createSession() {}
+  public async createSession(pairingTopic: string, params: SequenceTypes.CreateParams) {
+    const selfPublicKey = await this.sequence.client.crypto.generateKeyPair();
+    /**
+     * @TODO 2 - this.sequence.session.create(params)
+     * Creates session proposal based on given params. Also stores it?
+     */
+    /**
+     * @TODO 3 - constructs session proposal and sends it on pairing topic A
+     */
+    const message = "";
+    await this.sequence.client.relayer.publish(pairingTopic, message);
+  }
 
-  /**
-   * Private Methods
-   */
+  public async pair(pairingUri: string) {
+    /**
+     * @TODO 4 - Validate pairing uri
+     */
+    const { topic, params } = this.getPairingUriParams(pairingUri);
+    this.sequence.client.crypto.setSymKey(params.symKey, topic);
+    /**
+     * @TODO 5 - const pairing = this.sequence.pairing.createFromUri(pairingUri)
+     * Creates and stores pairing from given uri
+     */
+    this.sequence.client.relayer.subscribe(topic);
+  }
+
+  private registerEventListeners() {
+    /**
+     * @TODO
+     * onSessionPropose - Sequence event that gets triggered on topic A for session data
+     * onSessionProposalResponse -
+     */
+  }
+
+  private settleSession() {}
+
   private createPairingUri(
     topic: string,
     symetricKey: string,
@@ -36,5 +70,18 @@ export default class Engine {
     const symKey = `&symKey=${symetricKey}`;
 
     return `${protocol}:${topic}@${version}${relayProtocol}${relayData}${symKey}`;
+  }
+
+  private getPairingUriParams(pairingUri: string) {
+    const [protocolData, query] = pairingUri.split("?");
+    const topic = protocolData.split(":")[1].slice(0, -1);
+    const variables = query.split("&");
+    const params: Record<string, string> = {};
+    variables.forEach(variable => {
+      const [key, value] = variable.split("&");
+      params[key] = value;
+    });
+
+    return { topic, params };
   }
 }
