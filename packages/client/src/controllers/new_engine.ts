@@ -42,7 +42,7 @@ export default class Engine {
     const { topic, params } = this.getPairingUriParams(pairingUri);
     this.sequence.client.crypto.setSymKey(params.symKey, topic);
     /**
-     * @TODO 5 - const pairing = this.sequence.pairing.createFromUri(pairingUri)
+     * @TODO 5 - this.sequence.pairing.createFromUri(pairingUri)
      * Creates and stores pairing from given uri
      */
     this.sequence.client.relayer.subscribe(topic);
@@ -51,12 +51,16 @@ export default class Engine {
   private registerEventListeners() {
     /**
      * @TODO
-     * onSessionPropose - Sequence event that gets triggered on topic A for session data
-     * onSessionProposalResponse -
+     * onSessionPropose - receiver:Wallet Gets session proposal data sent on topic A
+     * onSessionProposalResponse - receiver:Dapp Gets session aproval from wallet and data to derrive topic B
+     * onSessionSettle - receiver:Dapp After subscribing to topic B dapp gets full session data on topic B
+     * onSessionSettleResponse - receiver:Wallet Gets session settlement acknowledgement from dapp
      */
   }
 
   private settleSession() {}
+
+  // Private methods that will likely move to @waleltconnect/utils
 
   private createPairingUri(
     topic: string,
