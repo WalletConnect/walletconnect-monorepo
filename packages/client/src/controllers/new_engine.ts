@@ -13,8 +13,7 @@ export default class Engine {
     const pairingUri = this.createPairingUri(pairingTopic, symetricKey, params.relay);
     /**
      * @TODO 1 - this.sequence.pairing.create(topic, params)
-     * Creates and persists sequence in pairing store with.
-     * Should add additional fields like expiry.
+     * Create and persist pairing. Should add expiry field.
      */
     this.sequence.client.relayer.subscribe(pairingTopic);
     await this.createSession(pairingTopic, params);
@@ -26,10 +25,10 @@ export default class Engine {
     const selfPublicKey = await this.sequence.client.crypto.generateKeyPair();
     /**
      * @TODO 2 - this.sequence.session.create(params)
-     * Creates session proposal based on given params. Also stores it?
+     * Creates and persists session.
      */
     /**
-     * @TODO 3 - constructs session proposal and sends it on pairing topic A
+     * @TODO 3 - Constructs session proposal message and sends it on pairing topic A
      */
     const message = "";
     await this.sequence.client.relayer.publish(pairingTopic, message);
