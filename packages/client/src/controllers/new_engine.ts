@@ -6,44 +6,34 @@ export default class Engine {
     this.registerEventListeners();
   }
 
-  public async createPairing(params: SequenceTypes.CreateParams) {
-    await this.sequence.validatePropose(params);
-    const pairingTopic = generateRandomBytes32();
-    const symetricKey = await this.sequence.client.crypto.generateSymKey(pairingTopic);
-    const pairingUri = this.createPairingUri(pairingTopic, symetricKey, params.relay);
-    /**
-     * @TODO 1 - this.pairing.create(topic, params)
-     * Create and store pairing.
-     */
-    this.sequence.client.relayer.subscribe(pairingTopic);
-    await this.createSession(pairingTopic, params);
-
-    return pairingUri;
+  public async createSession(params: SequenceTypes.CreateParams, topic?: string) {
+    // validate params
+    if (!topic) {
+      await this.createPairing(params);
+    }
+    const selfPublicKey = await this.sequence.client.crypto.generateKeyPair();
+    // const session = this.generateSession(params)
+    // this.session.set(session)
+    // const message = this.generateSessionMessage(session)
+    // this.send(topic, message)
   }
 
-  public async createSession(pairingTopic: string, params: SequenceTypes.CreateParams) {
-    const selfPublicKey = await this.sequence.client.crypto.generateKeyPair();
-    /**
-     * @TODO 2 - this.session.create(params)
-     * Creates and store session proposal alongside daps public key.
-     */
-    /**
-     * @TODO 3 - Consturct json rpc message for session proposal
-     */
-    const message = "";
-    await this.sequence.client.relayer.publish(pairingTopic, message);
+  public async createPairing(params: SequenceTypes.CreateParams) {
+    const topic = generateRandomBytes32();
+    const symetricKey = await this.sequence.client.crypto.generateSymKey(topic);
+    const pairingUri = this.createPairingUri(topic, symetricKey, params.relay);
+    // this.pairing.set(topic, pairing)
+    this.sequence.client.relayer.subscribe(topic);
+
+    return { topic, pairingUri };
   }
 
   public async pair(pairingUri: string) {
-    /**
-     * @TODO 4 - Validate pairing uri
-     */
+    // validate pairing Uri
     const { topic, params } = this.getPairingUriParams(pairingUri);
     this.sequence.client.crypto.setSymKey(params.symKey, topic);
-    /**
-     * @TODO 5 - this.pairing.createFromUri(pairingUri)
-     * Creates and store pairing from pairingUri
-     */
+    // this.generatePairing(params)
+    // this.pairing.set(topic, params)
     this.sequence.client.relayer.subscribe(topic);
   }
 
@@ -53,7 +43,7 @@ export default class Engine {
      * onSessionPropose - receiver:Wallet get session proposal data from topic A
      * onSessionProposalResponse - receiver:Dapp get session proposal aproval and wallet data on topic A, derrive topic B
      * onSessionSettle - receiver:Dapp get full session data on topic B
-     * onSessionSettleResponse - receiver:Wallet get acknowledgement about session settlement from dapp on topic B
+     * onSessionSettleAck - receiver:Wallet get acknowledgement about session settlement from dapp on topic B
      */
   }
 
