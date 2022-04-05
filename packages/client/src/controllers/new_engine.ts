@@ -12,8 +12,8 @@ export default class Engine {
     const symetricKey = await this.sequence.client.crypto.generateSymKey(pairingTopic);
     const pairingUri = this.createPairingUri(pairingTopic, symetricKey, params.relay);
     /**
-     * @TODO 1 - this.sequence.pairing.create(topic, params)
-     * Create and persist pairing. Should add expiry field.
+     * @TODO 1 - this.pairing.create(topic, params)
+     * Create and store pairing.
      */
     this.sequence.client.relayer.subscribe(pairingTopic);
     await this.createSession(pairingTopic, params);
@@ -24,11 +24,11 @@ export default class Engine {
   public async createSession(pairingTopic: string, params: SequenceTypes.CreateParams) {
     const selfPublicKey = await this.sequence.client.crypto.generateKeyPair();
     /**
-     * @TODO 2 - this.sequence.session.create(params)
-     * Creates and persists session.
+     * @TODO 2 - this.session.create(params)
+     * Creates and store session proposal alongside daps public key.
      */
     /**
-     * @TODO 3 - Constructs session proposal message and sends it on pairing topic A
+     * @TODO 3 - Consturct json rpc message for session proposal
      */
     const message = "";
     await this.sequence.client.relayer.publish(pairingTopic, message);
@@ -41,8 +41,8 @@ export default class Engine {
     const { topic, params } = this.getPairingUriParams(pairingUri);
     this.sequence.client.crypto.setSymKey(params.symKey, topic);
     /**
-     * @TODO 5 - this.sequence.pairing.createFromUri(pairingUri)
-     * Creates and stores pairing from given uri
+     * @TODO 5 - this.pairing.createFromUri(pairingUri)
+     * Creates and store pairing from pairingUri
      */
     this.sequence.client.relayer.subscribe(topic);
   }
@@ -50,10 +50,10 @@ export default class Engine {
   private registerEventListeners() {
     /**
      * @TODO
-     * onSessionPropose - receiver:Wallet Gets session proposal data sent on topic A
-     * onSessionProposalResponse - receiver:Dapp Gets session aproval from wallet and data to derrive topic B
-     * onSessionSettle - receiver:Dapp After subscribing to topic B dapp gets full session data on topic B
-     * onSessionSettleResponse - receiver:Wallet Gets session settlement acknowledgement from dapp
+     * onSessionPropose - receiver:Wallet get session proposal data from topic A
+     * onSessionProposalResponse - receiver:Dapp get session proposal aproval and wallet data on topic A, derrive topic B
+     * onSessionSettle - receiver:Dapp get full session data on topic B
+     * onSessionSettleResponse - receiver:Wallet get acknowledgement about session settlement from dapp on topic B
      */
   }
 
