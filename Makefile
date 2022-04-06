@@ -6,9 +6,9 @@ help: ## Show this help
 	@egrep -h '\s##\s' Makefile \
 		| sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-DOCKER_COMPOSE=-f ./build/package/docker-compose.yml
-DOCKER_COMPOSE_DEV=-f ./build/package/docker-compose.dev.yml -f ./build/package/docker-compose.override.yml
-DOCKER_COMPOSE_TEST=-f ./build/package/docker-compose.test.yml
+DOCKER_COMPOSE=-f ./ops/package/docker-compose.yml
+DOCKER_COMPOSE_DEV=-f ./ops/package/docker-compose.dev.yml -f ./ops/package/docker-compose.override.yml
+DOCKER_COMPOSE_TEST=-f ./ops/package/docker-compose.test.yml
 
 DEV_PROJECTS=health relay monorepo-tests
 
