@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
-import KeyValueStorage from "keyvaluestorage";
+import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
 import {
   IClient,
   ClientOptions,
@@ -45,7 +45,12 @@ import {
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
 
-export class Client extends IClient {
+// TODO: properly alter this type
+abstract class IClient2 extends IClient {
+  keyValueStorage: any;
+}
+
+export class Client extends IClient2 {
   public readonly protocol = "wc";
   public readonly version = 2;
 
@@ -97,6 +102,8 @@ export class Client extends IClient {
 
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
+    this.keyValueStorage = opts?.storage || new KeyValueStorage(storageOptions);
+
     this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
       protocol: this.protocol,
       version: this.version,
@@ -125,6 +132,10 @@ export class Client extends IClient {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storagePrefix(): string {
+    return `${this.protocol}@${this.version}:${this.context}:`;
   }
 
   public on(event: string, listener: any): void {
