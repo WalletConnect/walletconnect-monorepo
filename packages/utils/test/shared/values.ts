@@ -4,6 +4,8 @@ export const TEST_PAIRING_TOPIC =
 export const TEST_SESSION_TOPIC =
   "f5d3f03946b6a2a3b22661fae1385cd1639bfb6f6c070115699b0a2ec1decd8c";
 
+export const TEST_SYMETRIC_KEY = "587d5484ce2a2a6ee3ba1962fdd7e8588e06200c46823bd18fbd67def96ad303";
+
 export const TEST_KEY_PAIRS = {
   A: {
     privateKey: "0a857b942485fee18e4c55b6ec02fef6fc0c1c3872c10e669c7790f315fd3d0b",
@@ -20,7 +22,7 @@ export const TEST_HASHED_KEY = "08ca02463e7c45383d43efaee4bbe33f700df0658e99726a
 
 export const TEST_RELAY_OPTIONS = {
   protocol: "waku",
-  params: {},
+  data: "",
 };
 
 export const TEST_SESSION_METADATA = {
