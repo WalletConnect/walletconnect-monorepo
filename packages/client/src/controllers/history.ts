@@ -1,7 +1,13 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { IJsonRpcHistory, JsonRpcRecord, IStorage, RequestEvent } from "@walletconnect/types";
-import { ERROR, formatMessageContext } from "@walletconnect/utils";
+import {
+  IJsonRpcHistory,
+  JsonRpcRecord,
+  IStorage,
+  RequestEvent,
+  IClient,
+} from "@walletconnect/types";
+import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
   isJsonRpcError,
@@ -10,21 +16,28 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
-import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
+import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
 
-export class JsonRpcHistory extends IJsonRpcHistory {
+// TODO: properly alter type
+abstract class IJsonRpcHistory2 extends IJsonRpcHistory {
+  // @ts-expect-error
+  constructor(logger: Logger, client: IClient);
+}
+
+export class JsonRpcHistory extends IJsonRpcHistory2 {
   public records = new Map<number, JsonRpcRecord>();
 
   public events = new EventEmitter();
 
   public name: string = HISTORY_CONTEXT;
 
+  public version: string = HISTORY_STORAGE_VERSION;
+
   private cached: JsonRpcRecord[] = [];
 
-  constructor(public logger: Logger, public storage: IStorage) {
-    super(logger, storage);
+  constructor(public logger: Logger, public client: IClient) {
+    super(logger, client);
     this.logger = generateChildLogger(logger, this.name);
-    this.storage = storage;
     this.registerEventListeners();
   }
 
@@ -35,6 +48,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    // @ts-expect-error
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   get size(): number {
@@ -147,6 +165,17 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   // ---------- Private ----------------------------------------------- //
 
+  private async setJsonRpcRecords(records: JsonRpcRecord[]): Promise<void> {
+    // @ts-expect-error
+    await this.client.keyValueStorage.setItem<JsonRpcRecord[]>(this.storageKey, records);
+  }
+
+  private async getJsonRpcRecords(): Promise<JsonRpcRecord[] | undefined> {
+    // @ts-expect-error
+    const records = await this.client.keyValueStorage.getItem<JsonRpcRecord[]>(this.storageKey);
+    return records;
+  }
+
   private async getRecord(id: number): Promise<JsonRpcRecord> {
     await this.isInitialized();
     const record = this.records.get(id);
@@ -163,13 +192,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private async persist() {
-    await this.storage.setJsonRpcRecords(this.context, this.values);
+    await this.setJsonRpcRecords(this.values);
     this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.storage.getJsonRpcRecords(this.context);
+      const persisted = await this.getJsonRpcRecords();
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {
