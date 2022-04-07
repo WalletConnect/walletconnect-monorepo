@@ -41,13 +41,6 @@ import {
 import { Publisher } from "./publisher";
 import { MessageTracker } from "./messages";
 
-interface RelayerOptions2 extends RelayerOptions {
-  client: IClient;
-  storage?: undefined;
-  keyValueStorage?: undefined;
-  keyValueStorageOptions?: undefined;
-}
-
 export class Relayer extends IRelayer {
   public readonly protocol = "irn";
   public readonly version = 1;
@@ -68,7 +61,7 @@ export class Relayer extends IRelayer {
 
   public name: string = RELAYER_CONTEXT;
 
-  constructor(opts: RelayerOptions2) {
+  constructor(opts: RelayerOptions) {
     super(opts);
     this.logger =
       typeof opts.logger !== "undefined" && typeof opts.logger !== "string"

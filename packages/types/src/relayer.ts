@@ -8,6 +8,7 @@ import { IRelayerStorage } from "./storage";
 import { ISubscriber } from "./subscriber";
 import { IPublisher } from "./publisher";
 import { IMessageTracker } from "./messages";
+import { IClient } from "./client";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -39,10 +40,8 @@ export declare namespace RelayerTypes {
 }
 
 export interface RelayerOptions {
+  client: IClient;
   heartbeat?: IHeartBeat;
-  storage?: IRelayerStorage;
-  keyValueStorage?: IKeyValueStorage;
-  keyValueStorageOptions?: KeyValueStorageOptions;
   logger?: string | Logger;
   rpcUrl?: string;
   projectId?: string;
@@ -70,7 +69,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connecting: boolean;
 
-  constructor(opts?: RelayerOptions) {
+  constructor(opts: RelayerOptions) {
     super();
   }
 
