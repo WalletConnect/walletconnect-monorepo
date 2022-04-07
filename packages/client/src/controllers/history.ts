@@ -18,13 +18,7 @@ import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
 
-// TODO: properly alter type
-abstract class IJsonRpcHistory2 extends IJsonRpcHistory {
-  // @ts-expect-error
-  constructor(logger: Logger, client: IClient);
-}
-
-export class JsonRpcHistory extends IJsonRpcHistory2 {
+export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();
 
   public events = new EventEmitter();
