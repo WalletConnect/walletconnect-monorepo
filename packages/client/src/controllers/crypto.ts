@@ -14,6 +14,7 @@ import {
   generateRandomBytes32,
   objToMap,
   mapToObj,
+  formatStorageKeyName,
 } from "@walletconnect/utils";
 
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
@@ -35,7 +36,7 @@ export class KeyChain implements IKeyChain {
   }
 
   get storageKey(): string {
-    return this.client.storagePrefix + this.version + "//" + "crypto:keychain";
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   public async init(): Promise<void> {
