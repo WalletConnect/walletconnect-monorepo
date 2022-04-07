@@ -21,9 +21,9 @@ export class Client extends IClient {
   public readonly relayUrl: string | undefined;
   public readonly projectId: string | undefined;
 
-  public logger: Logger;
   public pairing: Pairing;
   public session: Session;
+  protected logger: Logger;
   protected heartbeat: HeartBeat;
   protected events = new EventEmitter();
   protected relayer: Relayer;
