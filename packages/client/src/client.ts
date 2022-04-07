@@ -74,19 +74,19 @@ export class Client extends IClient {
     return getLoggerContext(this.logger);
   }
 
-  public on(event: string, listener: any): void {
+  public on(event: string, listener: any) {
     this.events.on(event, listener);
   }
 
-  public once(event: string, listener: any): void {
+  public once(event: string, listener: any) {
     this.events.once(event, listener);
   }
 
-  public off(event: string, listener: any): void {
+  public off(event: string, listener: any) {
     this.events.off(event, listener);
   }
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener(event: string, listener: any) {
     this.events.removeListener(event, listener);
   }
 
@@ -209,7 +209,7 @@ export class Client extends IClient {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async initialize(): Promise<any> {
+  private async initialize() {
     this.logger.trace(`Initialized`);
     try {
       await this.pairing.init();
