@@ -1,5 +1,4 @@
 import { HeartBeat } from "@walletconnect/heartbeat";
-import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
@@ -11,7 +10,6 @@ import {
   ClientTypes,
   IClient,
   NewTypes,
-  PairingTypes,
   SessionTypes,
 } from "@walletconnect/types";
 import {
@@ -20,25 +18,12 @@ import {
   getAppMetadata,
   isSessionFailed,
   isSessionResponded,
-  parseUri,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import KeyValueStorage from "keyvaluestorage";
 import pino, { Logger } from "pino";
-import {
-  CLIENT_DEFAULT,
-  CLIENT_EVENTS,
-  CLIENT_SHORT_TIMEOUT,
-  CLIENT_STORAGE_OPTIONS,
-  PAIRING_DEFAULT_TTL,
-  PAIRING_EVENTS,
-  PAIRING_SIGNAL_METHOD_URI,
-  SESSION_EMPTY_RESPONSE,
-  SESSION_EMPTY_STATE,
-  SESSION_EVENTS,
-  SESSION_JSONRPC,
-} from "./constants";
-import { Crypto, NewEngine, Pairing, Relayer, Session, Storage } from "./controllers";
+import { CLIENT_DEFAULT, SESSION_EMPTY_RESPONSE, SESSION_EMPTY_STATE } from "./constants";
+import { Crypto, Pairing, Relayer, Session } from "./controllers";
+import NewEngine from "./controllers/new_engine";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -49,15 +34,14 @@ export class Client extends IClient {
   public readonly relayUrl: string | undefined;
   public readonly projectId: string | undefined;
 
-  public events = new EventEmitter();
   public logger: Logger;
-  public heartbeat: HeartBeat;
-  public crypto: Crypto;
-  public storage: Storage;
-  public relayer: Relayer;
   public pairing: Pairing;
   public session: Session;
-  private engine: NewEngine;
+  protected heartbeat: HeartBeat;
+  protected events = new EventEmitter();
+  protected relayer: Relayer;
+  protected crypto: Crypto;
+  protected engine: NewEngine;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
@@ -79,13 +63,6 @@ export class Client extends IClient {
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
-    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
-
-    this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
-      protocol: this.protocol,
-      version: this.version,
-      context: this.context,
-    });
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
@@ -98,14 +75,12 @@ export class Client extends IClient {
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
       logger: this.logger,
-      storage: this.storage,
       projectId: this.projectId,
-      keyValueStorageOptions: storageOptions,
     });
 
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
-    this.engine = new NewEngine();
+    this.engine = new NewEngine(this.relayer, this.crypto, this.session, this.pairing);
   }
 
   get context(): string {
@@ -129,11 +104,21 @@ export class Client extends IClient {
   }
 
   public async connect(params: NewTypes.CreateSessionParams) {
-    this.engine.createSession(params);
+    try {
+      await this.engine.createSession(params);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
   public async pair(params: ClientTypes.PairParams) {
-    this.engine.pair();
+    try {
+      await this.engine.pair();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
   public async approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled> {
@@ -223,45 +208,6 @@ export class Client extends IClient {
     await this.session.delete(params);
   }
 
-  // ---------- Protected ----------------------------------------------- //
-
-  protected async onPairingRequest(request: JsonRpcRequest, topic: string): Promise<void> {
-    if (request.method === SESSION_JSONRPC.propose) {
-      const proposal = request.params as SessionTypes.Proposal;
-      if (proposal.proposer.controller === this.controller) {
-        const reason = ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({
-          controller: this.controller,
-        });
-        await this.session.respond({
-          approved: false,
-          proposal,
-          response: SESSION_EMPTY_RESPONSE,
-          reason,
-        });
-        return;
-      }
-      const eventName = CLIENT_EVENTS.session.proposal;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: proposal });
-      this.events.emit(eventName, proposal);
-      const response = formatJsonRpcResult(request.id, true);
-      await this.pairing.send(topic, response);
-    }
-  }
-
-  protected async onPairingSettled(pairing: PairingTypes.Settled) {
-    if (
-      pairing.permissions.controller.publicKey === pairing.self.publicKey &&
-      typeof pairing.state.metadata === "undefined"
-    ) {
-      setTimeout(
-        async () =>
-          await this.pairing.update({ topic: pairing.topic, state: { metadata: this.metadata } }),
-        // just enough timeout to avoid sporadic race conditions on unit tests
-        CLIENT_SHORT_TIMEOUT,
-      );
-    }
-  }
   // ---------- Private ----------------------------------------------- //
 
   private async initialize(): Promise<any> {
@@ -272,7 +218,6 @@ export class Client extends IClient {
       await this.crypto.init();
       await this.relayer.init();
       await this.heartbeat.init();
-      this.registerEventListeners();
       this.logger.info(`Client Initilization Success`);
     } catch (e) {
       this.logger.info(`Client Initilization Failure`);
@@ -280,139 +225,4 @@ export class Client extends IClient {
       throw e;
     }
   }
-
-  private registerEventListeners(): void {
-    // Pairing Subscription Events
-    this.pairing.on(PAIRING_EVENTS.proposed, (pending: PairingTypes.Pending) => {
-      const eventName = CLIENT_EVENTS.pairing.proposal;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: pending.proposal });
-      this.events.emit(eventName, pending.proposal);
-    });
-
-    this.pairing.on(PAIRING_EVENTS.settled, (pairing: PairingTypes.Settled) => {
-      const eventName = CLIENT_EVENTS.pairing.created;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: pairing });
-      this.events.emit(eventName, pairing);
-      this.onPairingSettled(pairing);
-    });
-    this.pairing.on(
-      PAIRING_EVENTS.updated,
-      (pairing: PairingTypes.Settled, update: Partial<PairingTypes.Settled>) => {
-        const eventName = CLIENT_EVENTS.pairing.updated;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: pairing, update });
-        this.events.emit(eventName, pairing, update);
-      },
-    );
-    this.pairing.on(
-      PAIRING_EVENTS.upgraded,
-      (pairing: PairingTypes.Settled, upgrade: Partial<PairingTypes.Settled>) => {
-        const eventName = CLIENT_EVENTS.pairing.upgraded;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: pairing, upgrade });
-        this.events.emit(eventName, pairing, upgrade);
-      },
-    );
-    this.pairing.on(
-      PAIRING_EVENTS.deleted,
-      (pairing: PairingTypes.Settled, reason: ErrorResponse) => {
-        const eventName = CLIENT_EVENTS.pairing.deleted;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: pairing, reason });
-        this.events.emit(eventName, pairing, reason);
-      },
-    );
-    this.pairing.on(PAIRING_EVENTS.request, (requestEvent: PairingTypes.RequestEvent) => {
-      this.onPairingRequest(requestEvent.request, requestEvent.topic);
-    });
-    this.session.on(PAIRING_EVENTS.sync, () => this.events.emit(CLIENT_EVENTS.pairing.sync));
-    // Session Subscription Events
-    this.session.on(SESSION_EVENTS.proposed, (pending: SessionTypes.Pending) => {
-      const eventName = CLIENT_EVENTS.session.proposal;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: pending.proposal });
-      this.events.emit(eventName, pending.proposal);
-    });
-    this.session.on(SESSION_EVENTS.settled, (session: SessionTypes.Settled) => {
-      const eventName = CLIENT_EVENTS.session.created;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: session });
-      this.events.emit(eventName, session);
-    });
-    this.session.on(
-      SESSION_EVENTS.updated,
-      (session: SessionTypes.Settled, update: Partial<SessionTypes.Settled>) => {
-        const eventName = CLIENT_EVENTS.session.updated;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: session, update });
-        this.events.emit(eventName, session, update);
-      },
-    );
-    this.session.on(
-      SESSION_EVENTS.upgraded,
-      (session: SessionTypes.Settled, upgrade: Partial<SessionTypes.Settled>) => {
-        const eventName = CLIENT_EVENTS.session.upgraded;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: session, upgrade });
-        this.events.emit(eventName, session, upgrade);
-      },
-    );
-    this.session.on(
-      SESSION_EVENTS.extended,
-      (session: SessionTypes.Settled, extension: Partial<SessionTypes.Settled>) => {
-        const eventName = CLIENT_EVENTS.session.extended;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: session, extension });
-        this.events.emit(eventName, session, extension);
-      },
-    );
-    this.session.on(
-      SESSION_EVENTS.deleted,
-      (session: SessionTypes.Settled, reason: ErrorResponse) => {
-        const eventName = CLIENT_EVENTS.session.deleted;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: session, reason });
-        this.events.emit(eventName, session, reason);
-      },
-    );
-    this.session.on(SESSION_EVENTS.request, (requestEvent: SessionTypes.RequestEvent) => {
-      const eventName = CLIENT_EVENTS.session.request;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: requestEvent });
-      this.events.emit(eventName, requestEvent);
-    });
-    this.session.on(SESSION_EVENTS.response, (responseEvent: SessionTypes.ResponseEvent) => {
-      const eventName = CLIENT_EVENTS.session.response;
-      this.logger.info(`Emitting ${eventName}`);
-      this.logger.debug({ type: "event", event: eventName, data: responseEvent });
-      this.events.emit(eventName, responseEvent);
-    });
-    this.session.on(
-      SESSION_EVENTS.notification,
-      (notificationEvent: SessionTypes.NotificationEvent) => {
-        const eventName = CLIENT_EVENTS.session.notification;
-        this.logger.info(`Emitting ${eventName}`);
-        this.logger.debug({ type: "event", event: eventName, data: notificationEvent });
-        this.events.emit(eventName, notificationEvent);
-      },
-    );
-    this.session.on(SESSION_EVENTS.sync, () => this.events.emit(CLIENT_EVENTS.session.sync));
-  }
-}
-
-function formatPairingProposal(uri: string): PairingTypes.Proposal {
-  const uriParams = parseUri(uri);
-  return {
-    topic: uriParams.topic,
-    relay: uriParams.relay,
-    proposer: { publicKey: uriParams.publicKey, controller: uriParams.controller },
-    signal: { method: PAIRING_SIGNAL_METHOD_URI, params: { uri } },
-    permissions: {
-      jsonrpc: { methods: [SESSION_JSONRPC.propose] },
-      notifications: { types: [] },
-    },
-    ttl: PAIRING_DEFAULT_TTL,
-  };
 }

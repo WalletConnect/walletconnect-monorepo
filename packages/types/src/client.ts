@@ -1,15 +1,13 @@
-import { Logger } from "pino";
-import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
-
+import { Logger } from "pino";
+import { ICrypto, IKeyChain } from "./crypto";
+import { AppMetadata, Reason, SignalTypes } from "./misc";
+import { IPairing, PairingTypes } from "./pairing";
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
-import { IPairing, PairingTypes } from "./pairing";
-import { SignalTypes, AppMetadata, Reason } from "./misc";
-import { ICrypto, IKeyChain } from "./crypto";
-import { IStorage } from "./storage";
+
 
 export interface ClientOptions {
   name?: string;
@@ -19,34 +17,26 @@ export interface ClientOptions {
   relayUrl?: string;
   logger?: string | Logger;
   keychain?: IKeyChain;
-  storage?: IKeyValueStorage;
-  storageOptions?: KeyValueStorageOptions;
 }
 
 export abstract class IClient extends IEvents {
   public readonly protocol = "wc";
   public readonly version = 2;
 
-  public abstract logger: Logger;
-
-  public abstract heartbeat: IHeartBeat;
-
-  public abstract crypto: ICrypto;
-
-  public abstract storage: IStorage;
-  public abstract relayer: IRelayer;
+  public abstract readonly name: string;
+  public abstract readonly context: string;
+  public abstract readonly controller: boolean;
+  public abstract readonly metadata: AppMetadata | undefined;
+  public abstract readonly relayUrl: string | undefined;
+  public abstract readonly projectId: string | undefined;
 
   public abstract pairing: IPairing;
   public abstract session: ISession;
 
-  public abstract readonly name: string;
-  public abstract readonly context: string;
-
-  public abstract readonly controller: boolean;
-  public abstract readonly metadata: AppMetadata | undefined;
-
-  public abstract readonly relayUrl: string | undefined;
-  public abstract readonly projectId: string | undefined;
+  protected abstract logger: Logger;
+  protected abstract heartbeat: IHeartBeat;
+  protected abstract crypto: ICrypto;
+  protected abstract relayer: IRelayer;
 
   constructor(opts?: ClientOptions) {
     super();

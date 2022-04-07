@@ -1,13 +1,13 @@
 import { FIVE_MINUTES } from "@walletconnect/time";
-import { ICrypto, IRelayer, NewTypes } from "@walletconnect/types";
+import { ICrypto, IPairing, IRelayer, ISession, NewTypes } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 
 export default class NewEngine {
   constructor(
     private relayer: IRelayer,
     private crypto: ICrypto,
-    private session: any, // TODO will be new store
-    private pairing: any, // TODO will be new store
+    private session: ISession,
+    private pairing: IPairing,
   ) {
     this.registerEventListeners();
   }
@@ -22,7 +22,7 @@ export default class NewEngine {
     }
     const selfPublicKey = await this.crypto.generateKeyPair();
     const newSession = {};
-    this.session.set(topic, newSession);
+    this.session.create(topic, newSession);
     // const message = this.generateSessionMessage(session)
     // this.send(topic, message)
   }
@@ -44,7 +44,7 @@ export default class NewEngine {
       uri: pairingUri,
       isActive: true,
     };
-    this.pairing.set(newTopic, newPairing);
+    this.pairing.create(newTopic, newPairing);
     this.relayer.subscribe(newTopic);
 
     return { newTopic, pairingUri };
@@ -57,6 +57,14 @@ export default class NewEngine {
     // this.generatePairing(params)
     // this.pairing.set(topic, params)
     this.relayer.subscribe(topic);
+  }
+
+  public async approve() {
+    // TODO
+  }
+
+  public async reject() {
+    // TODO
   }
 
   private registerEventListeners() {
