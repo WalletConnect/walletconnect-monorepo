@@ -1,6 +1,6 @@
 import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IRelayerStorage, IMessageTracker, MessageRecord, IClient } from "@walletconnect/types";
+import { IMessageTracker, MessageRecord, IClient } from "@walletconnect/types";
 import {
   formatMessageContext,
   formatStorageKeyName,
@@ -11,13 +11,7 @@ import {
 
 import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
-// TODO: properly alter type
-abstract class IMessageTracker2 extends IMessageTracker {
-  // @ts-expect-error
-  constructor(logger: Logger, client: IClient);
-}
-
-export class MessageTracker extends IMessageTracker2 {
+export class MessageTracker extends IMessageTracker {
   public messages = new Map<string, MessageRecord>();
 
   public name = MESSAGES_CONTEXT;
