@@ -58,7 +58,6 @@ test-relay           runs "./servers/relay" tests against the locally running re
 test-client          runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
 test-production      tests client against relay.walletconnect.com
 test-staging         tests client against staging.walletconnect.com
-
 ```
 
 ## License
