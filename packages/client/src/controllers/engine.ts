@@ -520,7 +520,6 @@ export class Engine extends IEngine {
     const { topic, payload } = payloadEvent;
     this.sequence.logger.debug(`Receiving ${this.sequence.context} message`);
     this.sequence.logger.trace({ type: "method", method: "onMessage", topic, payload });
-
     if (isJsonRpcRequest(payload)) {
       const request = payload as JsonRpcRequest;
       const settled = await this.sequence.settled.get(payloadEvent.topic);
