@@ -12,3 +12,5 @@ export const SUBSCRIBER_EVENTS = {
 export const SUBSCRIBER_DEFAULT_TTL = THIRTY_DAYS;
 
 export const SUBSCRIBER_CONTEXT = "subscription";
+
+export const SUBSCRIBER_STORAGE_VERSION = "0.3";

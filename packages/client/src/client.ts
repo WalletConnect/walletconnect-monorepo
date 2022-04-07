@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
-import KeyValueStorage from "keyvaluestorage";
+import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
 import {
   IClient,
   ClientOptions,
@@ -27,7 +27,7 @@ import {
   getLoggerContext,
 } from "@walletconnect/logger";
 
-import { Pairing, Session, Relayer, Crypto, Storage } from "./controllers";
+import { Pairing, Session, Relayer, Crypto } from "./controllers";
 import {
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,
@@ -48,28 +48,20 @@ import {
 export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
-
-  public events = new EventEmitter();
-
-  public logger: Logger;
-
-  public heartbeat: HeartBeat;
-
-  public crypto: Crypto;
-
-  public storage: Storage;
-  public relayer: Relayer;
+  public readonly name: string = CLIENT_DEFAULT.name;
+  public readonly controller: boolean;
+  public readonly metadata: AppMetadata | undefined;
+  public readonly relayUrl: string | undefined;
+  public readonly projectId: string | undefined;
 
   public pairing: Pairing;
   public session: Session;
-
-  public readonly name: string = CLIENT_DEFAULT.name;
-
-  public readonly controller: boolean;
-  public readonly metadata: AppMetadata | undefined;
-
-  public readonly relayUrl: string | undefined;
-  public readonly projectId: string | undefined;
+  public logger: Logger;
+  public heartbeat: HeartBeat;
+  public events = new EventEmitter();
+  public relayer: Relayer;
+  public crypto: Crypto;
+  public keyValueStorage: IKeyValueStorage;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
@@ -97,11 +89,7 @@ export class Client extends IClient {
 
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
-    this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
-      protocol: this.protocol,
-      version: this.version,
-      context: this.context,
-    });
+    this.keyValueStorage = opts?.storage || new KeyValueStorage(storageOptions);
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
@@ -111,12 +99,11 @@ export class Client extends IClient {
     );
 
     this.relayer = new Relayer({
+      client: this,
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
       logger: this.logger,
-      storage: this.storage,
       projectId: this.projectId,
-      keyValueStorageOptions: storageOptions,
     });
 
     this.pairing = new Pairing(this, this.logger);
@@ -125,6 +112,10 @@ export class Client extends IClient {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storagePrefix(): string {
+    return `${this.protocol}@${this.version}:${this.context}:`;
   }
 
   public on(event: string, listener: any): void {
