@@ -73,13 +73,7 @@ export class SubscriberTopicMap implements ISubscriberTopicMap {
   }
 }
 
-// TODO: properly alter type
-abstract class ISubscriber2 extends ISubscriber {
-  // @ts-expect-error
-  constructor(relayer: IRelayer, client: IClient, logger: Logger);
-}
-
-export class Subscriber extends ISubscriber2 {
+export class Subscriber extends ISubscriber {
   public subscriptions = new Map<string, SubscriberTypes.Active>();
 
   public topicMap = new SubscriberTopicMap();
@@ -94,7 +88,7 @@ export class Subscriber extends ISubscriber2 {
 
   private cached: SubscriberTypes.Active[] = [];
 
-  constructor(relayer: IRelayer, public client: IClient, public logger: Logger) {
+  constructor(public relayer: IRelayer, public client: IClient, public logger: Logger) {
     super(relayer, client, logger);
     this.client = client;
     this.relayer = relayer;
