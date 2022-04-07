@@ -1,8 +1,8 @@
-import type { AppMetadata } from "./misc";
+import { AppMetadata } from "./misc";
 
 export declare namespace NewTypes {
   // types/relay.ts RelayerTypes.ProtocolOptions
-  interface ProtocolOptions {
+  interface Relay {
     protocol: string;
     data?: string;
   }
@@ -16,15 +16,32 @@ export declare namespace NewTypes {
     relayData?: string;
   }
 
-  // types/sequence.ts SequenceTypes.Proposal
   interface Pairing {
     topic: string;
     expiry: number;
     relayProtocol: string;
     uri: string;
     isActive: boolean;
-    selfMetadata?: AppMetadata;
     peerMetadata?: AppMetadata;
     relayData?: string;
+  }
+
+  interface SessionPermissions {
+    blockchains: {
+      chains: string[];
+      accounts: string[];
+    };
+    notifications?: {
+      types: string[];
+    };
+  }
+
+  // types/sequence.ts SequenceTypes.ProposeParams
+  interface CreateSessionParams {
+    relay: NewTypes.Relay;
+    pairingTopic?: string;
+    expiry?: number;
+    permissions?: SessionPermissions;
+    metadata?: AppMetadata;
   }
 }

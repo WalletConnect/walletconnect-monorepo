@@ -3,6 +3,7 @@ export * from "./engine";
 export * from "./expirer";
 export * from "./history";
 export * from "./messages";
+export * from "./new_engine";
 export * from "./pairing";
 export * from "./relayer";
 export * from "./session";

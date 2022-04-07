@@ -1,24 +1,3 @@
-import { EventEmitter } from "events";
-import pino, { Logger } from "pino";
-import KeyValueStorage from "keyvaluestorage";
-import {
-  IClient,
-  ClientOptions,
-  ClientTypes,
-  PairingTypes,
-  SessionTypes,
-  AppMetadata,
-} from "@walletconnect/types";
-import {
-  isPairingFailed,
-  isSessionFailed,
-  parseUri,
-  isPairingResponded,
-  isSessionResponded,
-  getAppMetadata,
-  ERROR,
-  formatRelayRpcUrl,
-} from "@walletconnect/utils";
 import { HeartBeat } from "@walletconnect/heartbeat";
 import { ErrorResponse, formatJsonRpcResult, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import {
@@ -26,50 +5,59 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-
-import { Pairing, Session, Relayer, Crypto, Storage } from "./controllers";
+import {
+  AppMetadata,
+  ClientOptions,
+  ClientTypes,
+  IClient,
+  NewTypes,
+  PairingTypes,
+  SessionTypes,
+} from "@walletconnect/types";
+import {
+  ERROR,
+  formatRelayRpcUrl,
+  getAppMetadata,
+  isSessionFailed,
+  isSessionResponded,
+  parseUri,
+} from "@walletconnect/utils";
+import { EventEmitter } from "events";
+import KeyValueStorage from "keyvaluestorage";
+import pino, { Logger } from "pino";
 import {
   CLIENT_DEFAULT,
-  CLIENT_SHORT_TIMEOUT,
   CLIENT_EVENTS,
+  CLIENT_SHORT_TIMEOUT,
   CLIENT_STORAGE_OPTIONS,
   PAIRING_DEFAULT_TTL,
   PAIRING_EVENTS,
   PAIRING_SIGNAL_METHOD_URI,
-  RELAYER_DEFAULT_PROTOCOL,
-  SESSION_EMPTY_PERMISSIONS,
   SESSION_EMPTY_RESPONSE,
   SESSION_EMPTY_STATE,
   SESSION_EVENTS,
   SESSION_JSONRPC,
-  SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
+import { Crypto, NewEngine, Pairing, Relayer, Session, Storage } from "./controllers";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
-
-  public events = new EventEmitter();
-
-  public logger: Logger;
-
-  public heartbeat: HeartBeat;
-
-  public crypto: Crypto;
-
-  public storage: Storage;
-  public relayer: Relayer;
-
-  public pairing: Pairing;
-  public session: Session;
-
   public readonly name: string = CLIENT_DEFAULT.name;
-
   public readonly controller: boolean;
   public readonly metadata: AppMetadata | undefined;
-
   public readonly relayUrl: string | undefined;
   public readonly projectId: string | undefined;
+
+  public events = new EventEmitter();
+  public logger: Logger;
+  public heartbeat: HeartBeat;
+  public crypto: Crypto;
+  public storage: Storage;
+  public relayer: Relayer;
+  public pairing: Pairing;
+  public session: Session;
+  private engine: NewEngine;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
@@ -88,13 +76,9 @@ export class Client extends IClient {
     this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
     this.projectId = opts?.projectId;
-
     this.logger = generateChildLogger(logger, this.name);
-
     this.heartbeat = new HeartBeat();
-
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
-
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
     this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
@@ -121,6 +105,7 @@ export class Client extends IClient {
 
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
+    this.engine = new NewEngine();
   }
 
   get context(): string {
@@ -143,66 +128,12 @@ export class Client extends IClient {
     this.events.removeListener(event, listener);
   }
 
-  public async connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled> {
-    this.logger.debug(`Connecting Application`);
-    this.logger.trace({ type: "method", method: "connect", params });
-    try {
-      if (typeof params.pairing === undefined) {
-        this.logger.info("Connecing with existing pairing");
-      }
-      const pairing =
-        typeof params.pairing === "undefined"
-          ? await this.pairing.create()
-          : await this.pairing.get(params.pairing.topic);
-      this.logger.trace({ type: "method", method: "connect", pairing });
-      const metadata = params.metadata || this.metadata;
-      if (typeof metadata === "undefined") {
-        const error = ERROR.MISSING_OR_INVALID.format({ name: "app metadata" });
-        this.logger.error(error.message);
-        throw new Error(error.message);
-      }
-      const session = await this.session.create({
-        signal: { method: SESSION_SIGNAL_METHOD_PAIRING, params: { topic: pairing.topic } },
-        relay: params.relay || { protocol: RELAYER_DEFAULT_PROTOCOL },
-        metadata,
-        permissions: {
-          ...params.permissions,
-          notifications: SESSION_EMPTY_PERMISSIONS.notifications,
-        },
-      });
-      this.logger.debug(`Application Connection Successful`);
-      this.logger.trace({ type: "method", method: "connect", session });
-      return session;
-    } catch (e) {
-      this.logger.debug(`Application Connection Failure`);
-      this.logger.error(e as any);
-      throw e;
-    }
+  public async connect(params: NewTypes.CreateSessionParams) {
+    this.engine.createSession(params);
   }
 
-  public async pair(params: ClientTypes.PairParams): Promise<PairingTypes.Settled> {
-    this.logger.debug(`Pairing`);
-    this.logger.trace({ type: "method", method: "pair", params });
-    const proposal = formatPairingProposal(params.uri);
-    const approved = proposal.proposer.controller !== this.controller;
-    const reason = approved
-      ? undefined
-      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
-    const pending = await this.pairing.respond({ approved, proposal, reason });
-    if (!isPairingResponded(pending)) {
-      const error = ERROR.NO_MATCHING_RESPONSE.format({ context: "pairing" });
-      this.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    if (isPairingFailed(pending.outcome)) {
-      this.logger.debug(`Pairing Failure`);
-      this.logger.trace({ type: "method", method: "pair", outcome: pending.outcome });
-      throw new Error(pending.outcome.reason.message);
-    }
-    this.logger.debug(`Pairing Success`);
-    this.logger.trace({ type: "method", method: "pair", pending });
-    const pairing = await this.pairing.get(pending.outcome.topic);
-    return pairing;
+  public async pair(params: ClientTypes.PairParams) {
+    this.engine.pair();
   }
 
   public async approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled> {

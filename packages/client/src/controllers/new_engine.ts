@@ -1,7 +1,8 @@
-import { ICrypto, IRelayer, SequenceTypes } from "@walletconnect/types";
-import { formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
+import { FIVE_MINUTES } from "@walletconnect/time";
+import { ICrypto, IRelayer, NewTypes } from "@walletconnect/types";
+import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 
-export default class Engine {
+export default class NewEngine {
   constructor(
     private relayer: IRelayer,
     private crypto: ICrypto,
@@ -11,39 +12,46 @@ export default class Engine {
     this.registerEventListeners();
   }
 
-  public async createSession(params: SequenceTypes.CreateParams, pairingTopic?: string) {
-    // TODO validate params
+  public async createSession(params: NewTypes.CreateSessionParams) {
+    const { pairingTopic, relay } = params;
+    // TODO validate create session params
     let topic = pairingTopic;
     if (!topic) {
-      const { newTopic } = await this.createPairing(params);
+      const { newTopic } = await this.createPairing(relay);
       topic = newTopic;
     }
     const selfPublicKey = await this.crypto.generateKeyPair();
-    // const session = formatSession()
-    this.session.set(topic, session);
+    const newSession = {};
+    this.session.set(topic, newSession);
     // const message = this.generateSessionMessage(session)
     // this.send(topic, message)
   }
 
-  public async createPairing(params: SequenceTypes.CreateParams) {
-    const { relay } = params;
+  public async createPairing({ protocol, data }: NewTypes.Relay) {
     const newTopic = generateRandomBytes32();
     const symetricKey = await this.crypto.generateSymKey(newTopic);
-    const pairingUri = formatUri({
+    const pairingPayload = {
       topic: newTopic,
       symetricKey,
       version: 2,
-      relayProtocol: relay.protocol,
-      relayData: relay.data,
-    });
-    this.pairing.set(newTopic, pairing);
+      relayProtocol: protocol,
+      relayData: data,
+    };
+    const pairingUri = formatUri(pairingPayload);
+    const newPairing: NewTypes.Pairing = {
+      ...pairingPayload,
+      expiry: calcExpiry(FIVE_MINUTES),
+      uri: pairingUri,
+      isActive: true,
+    };
+    this.pairing.set(newTopic, newPairing);
     this.relayer.subscribe(newTopic);
 
     return { newTopic, pairingUri };
   }
 
   public async pair(pairingUri: string) {
-    // validate pairing Uri
+    // TODO validate pairing Uri
     const { topic, symetricKey } = parseUri(pairingUri);
     this.crypto.setSymKey(symetricKey, topic);
     // this.generatePairing(params)
