@@ -35,7 +35,6 @@ export class MessageTracker extends IMessageTracker2 {
   }
 
   get storageKey(): string {
-    // @ts-expect-error
     return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
@@ -81,7 +80,6 @@ export class MessageTracker extends IMessageTracker2 {
   // ---------- Private ----------------------------------------------- //
 
   private async setRelayerMessages(messages: Map<string, MessageRecord>): Promise<void> {
-    // @ts-expect-error
     await this.client.keyValueStorage.setItem<Record<string, MessageRecord>>(
       this.storageKey,
       mapToObj(messages),
@@ -89,7 +87,6 @@ export class MessageTracker extends IMessageTracker2 {
   }
 
   private async getRelayerMessages(): Promise<Map<string, MessageRecord> | undefined> {
-    // @ts-expect-error
     const messages = await this.client.keyValueStorage.getItem<Record<string, MessageRecord>>(
       this.storageKey,
     );

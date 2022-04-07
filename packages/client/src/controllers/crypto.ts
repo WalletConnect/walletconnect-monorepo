@@ -35,7 +35,6 @@ export class KeyChain implements IKeyChain {
   }
 
   get storageKey(): string {
-    // @ts-expect-error
     return this.client.storagePrefix + this.version + "//" + "crypto:keychain";
   }
 
@@ -68,7 +67,6 @@ export class KeyChain implements IKeyChain {
   // ---------- Private ----------------------------------------------- //
 
   private async setKeyChain(keychain: Map<string, string>): Promise<void> {
-    // @ts-expect-error
     await this.client.keyValueStorage.setItem<Record<string, string>>(
       this.storageKey,
       mapToObj(keychain),
@@ -76,7 +74,6 @@ export class KeyChain implements IKeyChain {
   }
 
   private async getKeyChain(): Promise<Map<string, string> | undefined> {
-    // @ts-expect-error
     const keychain = await this.client.keyValueStorage.getItem<Record<string, string>>(
       this.storageKey,
     );

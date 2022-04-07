@@ -32,7 +32,6 @@ export class Store<Sequence = any> extends IStore<Sequence> {
   }
 
   get storageKey(): string {
-    // @ts-expect-error
     return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
@@ -117,12 +116,10 @@ export class Store<Sequence = any> extends IStore<Sequence> {
   // ---------- Private ----------------------------------------------- //
 
   private async setSequenceStore<Sequence = any>(sequences: Sequence[]): Promise<void> {
-    // @ts-expect-error
     await this.client.keyValueStorage.setItem<Sequence[]>(this.storageKey, sequences);
   }
 
   private async getSequenceStore<Sequence = any>(): Promise<Sequence[] | undefined> {
-    // @ts-expect-error
     const sequences = await this.client.keyValueStorage.getItem<Sequence[]>(this.storageKey);
     return sequences;
   }

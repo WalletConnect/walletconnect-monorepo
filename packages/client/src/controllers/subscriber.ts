@@ -112,7 +112,6 @@ export class Subscriber extends ISubscriber2 {
   }
 
   get storageKey(): string {
-    // @ts-expect-error
     return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
@@ -290,7 +289,6 @@ export class Subscriber extends ISubscriber2 {
   }
 
   private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]): Promise<void> {
-    // @ts-expect-error
     await this.client.keyValueStorage.setItem<SubscriberTypes.Active[]>(
       this.storageKey,
       subscriptions,
@@ -298,7 +296,6 @@ export class Subscriber extends ISubscriber2 {
   }
 
   private async getRelayerSubscriptions(): Promise<SubscriberTypes.Active[] | undefined> {
-    // @ts-expect-error
     const subscriptions = await this.client.keyValueStorage.getItem<SubscriberTypes.Active[]>(
       this.storageKey,
     );

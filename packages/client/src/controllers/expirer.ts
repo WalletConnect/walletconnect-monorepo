@@ -32,7 +32,6 @@ export class Expirer extends IExpirer {
   }
 
   get storageKey(): string {
-    // @ts-expect-error
     return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
@@ -107,12 +106,10 @@ export class Expirer extends IExpirer {
   // ---------- Private ----------------------------------------------- //
 
   private async setExpirations(expirations: Expiration[]): Promise<void> {
-    // @ts-expect-error
     await this.client.keyValueStorage.setItem<Expiration[]>(this.storageKey, expirations);
   }
 
   private async getExpirations(): Promise<Expiration[] | undefined> {
-    // @ts-expect-error
     const expirations = await this.client.keyValueStorage.getItem<Expiration[]>(this.storageKey);
     return expirations;
   }

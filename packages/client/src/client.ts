@@ -45,36 +45,23 @@ import {
   SESSION_SIGNAL_METHOD_PAIRING,
 } from "./constants";
 
-// TODO: properly alter this type
-abstract class IClient2 extends IClient {
-  keyValueStorage: any;
-  storage: any;
-}
-
-export class Client extends IClient2 {
+export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
-
-  public events = new EventEmitter();
-
-  public logger: Logger;
-
-  public heartbeat: HeartBeat;
-
-  public crypto: Crypto;
-
-  public relayer: Relayer;
+  public readonly name: string = CLIENT_DEFAULT.name;
+  public readonly controller: boolean;
+  public readonly metadata: AppMetadata | undefined;
+  public readonly relayUrl: string | undefined;
+  public readonly projectId: string | undefined;
 
   public pairing: Pairing;
   public session: Session;
-
-  public readonly name: string = CLIENT_DEFAULT.name;
-
-  public readonly controller: boolean;
-  public readonly metadata: AppMetadata | undefined;
-
-  public readonly relayUrl: string | undefined;
-  public readonly projectId: string | undefined;
+  public logger: Logger;
+  public heartbeat: HeartBeat;
+  public events = new EventEmitter();
+  public relayer: Relayer;
+  public crypto: Crypto;
+  public keyValueStorage: IKeyValueStorage;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);

@@ -51,7 +51,6 @@ export class JsonRpcHistory extends IJsonRpcHistory2 {
   }
 
   get storageKey(): string {
-    // @ts-expect-error
     return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
@@ -166,12 +165,10 @@ export class JsonRpcHistory extends IJsonRpcHistory2 {
   // ---------- Private ----------------------------------------------- //
 
   private async setJsonRpcRecords(records: JsonRpcRecord[]): Promise<void> {
-    // @ts-expect-error
     await this.client.keyValueStorage.setItem<JsonRpcRecord[]>(this.storageKey, records);
   }
 
   private async getJsonRpcRecords(): Promise<JsonRpcRecord[] | undefined> {
-    // @ts-expect-error
     const records = await this.client.keyValueStorage.getItem<JsonRpcRecord[]>(this.storageKey);
     return records;
   }
