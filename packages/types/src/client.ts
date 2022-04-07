@@ -1,6 +1,7 @@
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
+import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
 import { AppMetadata, Reason, SignalTypes } from "./misc";
@@ -17,6 +18,8 @@ export interface ClientOptions {
   relayUrl?: string;
   logger?: string | Logger;
   keychain?: IKeyChain;
+  storage?: IKeyValueStorage;
+  storageOptions?: KeyValueStorageOptions;
 }
 
 export abstract class IClient extends IEvents {
@@ -37,6 +40,7 @@ export abstract class IClient extends IEvents {
   protected abstract heartbeat: IHeartBeat;
   protected abstract crypto: ICrypto;
   protected abstract relayer: IRelayer;
+  protected abstract keyValueStorage: IKeyValueStorage;
 
   constructor(opts?: ClientOptions) {
     super();

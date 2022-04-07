@@ -27,29 +27,6 @@ export default class NewEngine {
     // this.send(topic, message)
   }
 
-  public async createPairing({ protocol, data }: NewTypes.Relay) {
-    const newTopic = generateRandomBytes32();
-    const symetricKey = await this.crypto.generateSymKey(newTopic);
-    const pairingPayload = {
-      topic: newTopic,
-      symetricKey,
-      version: 2,
-      relayProtocol: protocol,
-      relayData: data,
-    };
-    const pairingUri = formatUri(pairingPayload);
-    const newPairing: NewTypes.Pairing = {
-      ...pairingPayload,
-      expiry: calcExpiry(FIVE_MINUTES),
-      uri: pairingUri,
-      isActive: true,
-    };
-    this.pairing.create(newTopic, newPairing);
-    this.relayer.subscribe(newTopic);
-
-    return { newTopic, pairingUri };
-  }
-
   public async pair(pairingUri: string) {
     // TODO validate pairing Uri
     const { topic, symetricKey } = parseUri(pairingUri);
@@ -101,6 +78,31 @@ export default class NewEngine {
 
   public async disconnect() {
     // TODO
+  }
+
+  // ---------- Private ----------------------------------------------- //
+
+  private async createPairing({ protocol, data }: NewTypes.Relay) {
+    const newTopic = generateRandomBytes32();
+    const symetricKey = await this.crypto.generateSymKey(newTopic);
+    const pairingPayload = {
+      topic: newTopic,
+      symetricKey,
+      version: 2,
+      relayProtocol: protocol,
+      relayData: data,
+    };
+    const pairingUri = formatUri(pairingPayload);
+    const newPairing: NewTypes.Pairing = {
+      ...pairingPayload,
+      expiry: calcExpiry(FIVE_MINUTES),
+      uri: pairingUri,
+      isActive: true,
+    };
+    this.pairing.create(newTopic, newPairing);
+    this.relayer.subscribe(newTopic);
+
+    return { newTopic, pairingUri };
   }
 
   private registerEventListeners() {

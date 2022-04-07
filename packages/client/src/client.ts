@@ -7,8 +7,9 @@ import {
 import { AppMetadata, ClientOptions, ClientTypes, IClient, NewTypes } from "@walletconnect/types";
 import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
+import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
 import pino, { Logger } from "pino";
-import { CLIENT_DEFAULT } from "./constants";
+import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
 import { Crypto, Pairing, Relayer, Session } from "./controllers";
 import NewEngine from "./controllers/new_engine";
 
@@ -29,8 +30,9 @@ export class Client extends IClient {
   protected relayer: Relayer;
   protected crypto: Crypto;
   protected engine: NewEngine;
+  protected keyValueStorage: IKeyValueStorage;
 
-  static async init(opts?: ClientOptions): Promise<Client> {
+  static async init(opts?: ClientOptions) {
     const client = new Client(opts);
     await client.initialize();
     return client;
@@ -58,11 +60,15 @@ export class Client extends IClient {
       this.projectId,
     );
 
+    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
+    this.keyValueStorage = opts?.storage || new KeyValueStorage(storageOptions);
+
     this.relayer = new Relayer({
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
       logger: this.logger,
       projectId: this.projectId,
+      keyValueStorageOptions: storageOptions,
     });
 
     this.pairing = new Pairing(this, this.logger);

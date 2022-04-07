@@ -4,15 +4,23 @@ import {
   BlockchainTypes,
   JsonRpcPermissions,
   NotificationPermissions,
-  SequenceTypes,
   PairingTypes,
+  SequenceTypes,
   SessionTypes,
-  Validation,
   SignalTypes,
   StoreEvent,
+  Validation,
 } from "@walletconnect/types";
-
 import { ERROR } from "./error";
+
+// -- general -------------------------------------------------- //
+export function isString(input: unknown): input is string {
+  return typeof input === "string";
+}
+
+export function isUndefined(input: unknown): input is (undefined | null) {
+  return typeof input !== "undefined" && input !== null;
+}
 
 // -- signal -------------------------------------------------- //
 
