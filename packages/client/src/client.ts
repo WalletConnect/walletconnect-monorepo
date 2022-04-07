@@ -118,12 +118,11 @@ export class Client extends IClient2 {
     );
 
     this.relayer = new Relayer({
+      client: this,
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
       logger: this.logger,
-      storage: this.storage,
       projectId: this.projectId,
-      keyValueStorageOptions: storageOptions,
     });
 
     this.pairing = new Pairing(this, this.logger);

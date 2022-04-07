@@ -1,23 +1,42 @@
 import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IRelayerStorage, IMessageTracker, MessageRecord } from "@walletconnect/types";
-import { formatMessageContext, sha256 } from "@walletconnect/utils";
+import { IRelayerStorage, IMessageTracker, MessageRecord, IClient } from "@walletconnect/types";
+import {
+  formatMessageContext,
+  formatStorageKeyName,
+  mapToObj,
+  objToMap,
+  sha256,
+} from "@walletconnect/utils";
 
-import { MESSAGES_CONTEXT } from "../constants";
+import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
-export class MessageTracker extends IMessageTracker {
+// TODO: properly alter type
+abstract class IMessageTracker2 extends IMessageTracker {
+  // @ts-expect-error
+  constructor(logger: Logger, client: IClient);
+}
+
+export class MessageTracker extends IMessageTracker2 {
   public messages = new Map<string, MessageRecord>();
 
   public name = MESSAGES_CONTEXT;
 
-  constructor(public logger: Logger, public storage: IRelayerStorage) {
-    super(logger, storage);
+  public version: string = MESSAGES_STORAGE_VERSION;
+
+  constructor(public logger: Logger, public client: IClient) {
+    super(logger, client);
     this.logger = generateChildLogger(logger, this.name);
-    this.storage = storage;
+    this.client = client;
   }
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    // @ts-expect-error
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   public async init(): Promise<void> {
@@ -61,13 +80,29 @@ export class MessageTracker extends IMessageTracker {
 
   // ---------- Private ----------------------------------------------- //
 
+  private async setRelayerMessages(messages: Map<string, MessageRecord>): Promise<void> {
+    // @ts-expect-error
+    await this.client.keyValueStorage.setItem<Record<string, MessageRecord>>(
+      this.storageKey,
+      mapToObj(messages),
+    );
+  }
+
+  private async getRelayerMessages(): Promise<Map<string, MessageRecord> | undefined> {
+    // @ts-expect-error
+    const messages = await this.client.keyValueStorage.getItem<Record<string, MessageRecord>>(
+      this.storageKey,
+    );
+    return typeof messages !== "undefined" ? objToMap(messages) : undefined;
+  }
+
   private async persist() {
-    await this.storage.setRelayerMessages(this.context, this.messages);
+    await this.setRelayerMessages(this.messages);
   }
 
   private async restore() {
     try {
-      const messages = await this.storage.getRelayerMessages(this.context);
+      const messages = await this.getRelayerMessages();
       if (typeof messages !== "undefined") {
         this.messages = messages;
       }

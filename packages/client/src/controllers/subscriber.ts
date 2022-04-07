@@ -8,6 +8,7 @@ import {
   SubscriberTypes,
   RelayerTypes,
   IRelayer,
+  IClient,
 } from "@walletconnect/types";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
@@ -17,10 +18,16 @@ import {
   formatMessageContext,
   getRelayProtocolName,
   getRelayProtocolApi,
+  formatStorageKeyName,
 } from "@walletconnect/utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
-import { SUBSCRIBER_CONTEXT, SUBSCRIBER_EVENTS, RELAYER_PROVIDER_EVENTS } from "../constants";
+import {
+  SUBSCRIBER_CONTEXT,
+  SUBSCRIBER_EVENTS,
+  RELAYER_PROVIDER_EVENTS,
+  SUBSCRIBER_STORAGE_VERSION,
+} from "../constants";
 
 export class SubscriberTopicMap implements ISubscriberTopicMap {
   public map = new Map<string, string[]>();
@@ -66,7 +73,13 @@ export class SubscriberTopicMap implements ISubscriberTopicMap {
   }
 }
 
-export class Subscriber extends ISubscriber {
+// TODO: properly alter type
+abstract class ISubscriber2 extends ISubscriber {
+  // @ts-expect-error
+  constructor(relayer: IRelayer, client: IClient, logger: Logger);
+}
+
+export class Subscriber extends ISubscriber2 {
   public subscriptions = new Map<string, SubscriberTypes.Active>();
 
   public topicMap = new SubscriberTopicMap();
@@ -75,12 +88,15 @@ export class Subscriber extends ISubscriber {
 
   public name: string = SUBSCRIBER_CONTEXT;
 
+  public version: string = SUBSCRIBER_STORAGE_VERSION;
+
   public pending = new Map<string, SubscriberTypes.Params>();
 
   private cached: SubscriberTypes.Active[] = [];
 
-  constructor(public relayer: IRelayer, public logger: Logger) {
-    super(relayer, logger);
+  constructor(relayer: IRelayer, public client: IClient, public logger: Logger) {
+    super(relayer, client, logger);
+    this.client = client;
     this.relayer = relayer;
     this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
@@ -93,6 +109,11 @@ export class Subscriber extends ISubscriber {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    // @ts-expect-error
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   get length(): number {
@@ -268,6 +289,22 @@ export class Subscriber extends ISubscriber {
     await this.relayer.messages.del(topic);
   }
 
+  private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]): Promise<void> {
+    // @ts-expect-error
+    await this.client.keyValueStorage.setItem<SubscriberTypes.Active[]>(
+      this.storageKey,
+      subscriptions,
+    );
+  }
+
+  private async getRelayerSubscriptions(): Promise<SubscriberTypes.Active[] | undefined> {
+    // @ts-expect-error
+    const subscriptions = await this.client.keyValueStorage.getItem<SubscriberTypes.Active[]>(
+      this.storageKey,
+    );
+    return subscriptions;
+  }
+
   private async setSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {
     await this.isEnabled();
     if (this.subscriptions.has(id)) return;
@@ -312,13 +349,13 @@ export class Subscriber extends ISubscriber {
   }
 
   private async persist() {
-    await this.relayer.storage.setRelayerSubscriptions(this.context, this.values);
+    await this.setRelayerSubscriptions(this.values);
     this.events.emit(SUBSCRIBER_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.relayer.storage.getRelayerSubscriptions(this.context);
+      const persisted = await this.getRelayerSubscriptions();
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
