@@ -67,6 +67,42 @@ export default class NewEngine {
     // TODO
   }
 
+  public async updateAccounts() {
+    // TODO
+  }
+
+  public async updateMethods() {
+    // TODO
+  }
+
+  public async updateEvents() {
+    // TODO
+  }
+
+  public async updateExpiry() {
+    // TODO
+  }
+
+  public async request() {
+    // TODO
+  }
+
+  public async respond() {
+    // TODO
+  }
+
+  public async ping() {
+    // TODO
+  }
+
+  public async notify() {
+    // TODO
+  }
+
+  public async disconnect() {
+    // TODO
+  }
+
   private registerEventListeners() {
     /**
      * TODO

@@ -1,23 +1,22 @@
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { IClient, IPairing, PairingTypes } from "@walletconnect/types";
+import { ERROR, formatUri, mergeArrays } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { PairingTypes, IClient, IPairing } from "@walletconnect/types";
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
-import { ERROR, formatUri, mergeArrays } from "@walletconnect/utils";
-
-import { Store } from "./store";
-import { Engine } from "./engine";
-import { JsonRpcHistory } from "./history";
-import { Expirer } from "./expirer";
 import {
   PAIRING_CONTEXT,
+  PAIRING_DEFAULT_TTL,
   PAIRING_EVENTS,
   PAIRING_JSONRPC,
-  PAIRING_STATUS,
   PAIRING_SIGNAL_METHOD_URI,
+  PAIRING_STATUS,
   SESSION_JSONRPC,
-  PAIRING_DEFAULT_TTL,
 } from "../constants";
+import { Engine } from "./engine";
+import { Expirer } from "./expirer";
+import { JsonRpcHistory } from "./history";
+import { Store } from "./store";
 
 export class Pairing extends IPairing {
   public pending: Store<PairingTypes.Pending>;

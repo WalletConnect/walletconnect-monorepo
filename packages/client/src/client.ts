@@ -4,24 +4,11 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import {
-  AppMetadata,
-  ClientOptions,
-  ClientTypes,
-  IClient,
-  NewTypes,
-  SessionTypes,
-} from "@walletconnect/types";
-import {
-  ERROR,
-  formatRelayRpcUrl,
-  getAppMetadata,
-  isSessionFailed,
-  isSessionResponded,
-} from "@walletconnect/utils";
+import { AppMetadata, ClientOptions, ClientTypes, IClient, NewTypes } from "@walletconnect/types";
+import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
-import { CLIENT_DEFAULT, SESSION_EMPTY_RESPONSE, SESSION_EMPTY_STATE } from "./constants";
+import { CLIENT_DEFAULT } from "./constants";
 import { Crypto, Pairing, Relayer, Session } from "./controllers";
 import NewEngine from "./controllers/new_engine";
 
@@ -121,91 +108,103 @@ export class Client extends IClient {
     }
   }
 
-  public async approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled> {
-    this.logger.debug(`Approving Session Proposal`);
-    this.logger.trace({ type: "method", method: "approve", params });
-    if (typeof params.response === "undefined") {
-      const error = ERROR.MISSING_RESPONSE.format({ context: "session" });
-      this.logger.error(error.message);
-      throw new Error(error.message);
+  public async approve(params: ClientTypes.ApproveParams) {
+    try {
+      await this.engine.approve();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
     }
-    const state = params.response.state || SESSION_EMPTY_STATE;
-    const metadata = params.response.metadata || this.metadata;
-    if (typeof metadata === "undefined") {
-      const error = ERROR.MISSING_OR_INVALID.format({ name: "app metadata" });
-      this.logger.error(error.message);
-      throw new Error(error.message);
+  }
+
+  public async reject(params: ClientTypes.RejectParams) {
+    try {
+      await this.engine.reject();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
     }
-    const approved = params.proposal.proposer.controller !== this.controller;
-    const reason = approved
-      ? undefined
-      : ERROR.UNAUTHORIZED_MATCHING_CONTROLLER.format({ controller: this.controller });
-    const pending = await this.session.respond({
-      approved,
-      proposal: params.proposal,
-      response: { state, metadata },
-      reason,
-    });
-    if (!isSessionResponded(pending)) {
-      const error = ERROR.NO_MATCHING_RESPONSE.format({ context: "session" });
-      this.logger.error(error.message);
-      throw new Error(error.message);
+  }
+
+  public async updateAccounts() {
+    try {
+      await this.engine.updateAccounts();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
     }
-    if (isSessionFailed(pending.outcome)) {
-      this.logger.debug(`Session Proposal Approval Failure`);
-      this.logger.trace({ type: "method", method: "approve", outcome: pending.outcome });
-      throw new Error(pending.outcome.reason.message);
+  }
+
+  public async updateMethods() {
+    try {
+      await this.engine.updateMethods();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
     }
-    this.logger.debug(`Session Proposal Approval Success`);
-    this.logger.trace({ type: "method", method: "approve", pending });
-    return this.session.get(pending.outcome.topic);
   }
 
-  public async reject(params: ClientTypes.RejectParams): Promise<void> {
-    this.logger.debug(`Rejecting Session Proposal`);
-    this.logger.trace({ type: "method", method: "reject", params });
-    const pending = await this.session.respond({
-      approved: false,
-      proposal: params.proposal,
-      response: SESSION_EMPTY_RESPONSE,
-      reason: params.reason,
-    });
-    this.logger.debug(`Session Proposal Response Success`);
-    this.logger.trace({ type: "method", method: "reject", pending });
+  public async updateEvents() {
+    try {
+      await this.engine.updateEvents();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
-  public async update(params: ClientTypes.UpdateParams): Promise<void> {
-    await this.session.update(params);
+  public async updateExpiry() {
+    try {
+      await this.engine.updateExpiry();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
-  public async upgrade(params: ClientTypes.UpgradeParams): Promise<void> {
-    await this.session.upgrade(params);
+  public async request(params: ClientTypes.RequestParams) {
+    try {
+      await this.engine.request();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
-  public async extend(params: ClientTypes.ExtendParams): Promise<void> {
-    await this.session.extend(params);
+  public async respond(params: ClientTypes.RespondParams) {
+    try {
+      await this.engine.respond();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
-  public async request(params: ClientTypes.RequestParams): Promise<any> {
-    return this.session.request(params);
+  public async ping(params: ClientTypes.PingParams) {
+    try {
+      await this.engine.ping();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
-  public async respond(params: ClientTypes.RespondParams): Promise<void> {
-    await this.session.send(params.topic, params.response);
+  public async notify(params: ClientTypes.NotifyParams) {
+    try {
+      await this.engine.notify();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
-  public async ping(params: ClientTypes.PingParams): Promise<void> {
-    await this.session.ping(params.topic, params.timeout);
-  }
-
-  public async notify(params: ClientTypes.NotifyParams): Promise<void> {
-    await this.session.notify(params);
-  }
-
-  public async disconnect(params: ClientTypes.DisconnectParams): Promise<void> {
-    this.logger.debug(`Disconnecting Application`);
-    this.logger.trace({ type: "method", method: "disconnect", params });
-    await this.session.delete(params);
+  public async disconnect(params: ClientTypes.DisconnectParams) {
+    try {
+      await this.engine.disconnect();
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -219,10 +218,10 @@ export class Client extends IClient {
       await this.relayer.init();
       await this.heartbeat.init();
       this.logger.info(`Client Initilization Success`);
-    } catch (e) {
+    } catch (err) {
       this.logger.info(`Client Initilization Failure`);
-      this.logger.error(e as any);
-      throw e;
+      this.logger.error(err);
+      throw err;
     }
   }
 }
