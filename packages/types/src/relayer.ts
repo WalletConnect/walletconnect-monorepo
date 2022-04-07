@@ -52,8 +52,6 @@ export interface RelayerOptions {
 export abstract class IRelayer extends IEvents {
   public abstract logger: Logger;
 
-  public abstract storage: IRelayerStorage;
-
   public abstract heartbeat: IHeartBeat;
 
   public abstract subscriber: ISubscriber;

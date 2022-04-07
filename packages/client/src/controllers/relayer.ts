@@ -48,8 +48,6 @@ interface RelayerOptions2 extends RelayerOptions {
   keyValueStorageOptions?: undefined;
 }
 
-// Non-abstract class 'Relayer' does not implement inherited abstract member 'storage' from class 'IRelayer'.ts(2515)
-// @ts-expect-error
 export class Relayer extends IRelayer {
   public readonly protocol = "irn";
   public readonly version = 1;
