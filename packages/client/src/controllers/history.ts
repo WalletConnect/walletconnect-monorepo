@@ -1,12 +1,6 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import {
-  IJsonRpcHistory,
-  JsonRpcRecord,
-  IStorage,
-  RequestEvent,
-  IClient,
-} from "@walletconnect/types";
+import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, IClient } from "@walletconnect/types";
 import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,

@@ -27,7 +27,7 @@ import {
   getLoggerContext,
 } from "@walletconnect/logger";
 
-import { Pairing, Session, Relayer, Crypto, Storage } from "./controllers";
+import { Pairing, Session, Relayer, Crypto } from "./controllers";
 import {
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,

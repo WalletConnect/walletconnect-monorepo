@@ -9,7 +9,6 @@ import { ISession, SessionTypes } from "./session";
 import { IPairing, PairingTypes } from "./pairing";
 import { SignalTypes, AppMetadata, Reason } from "./misc";
 import { ICrypto, IKeyChain } from "./crypto";
-import { IStorage } from "./storage";
 
 export interface ClientOptions {
   name?: string;

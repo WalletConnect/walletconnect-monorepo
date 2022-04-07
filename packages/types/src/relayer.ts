@@ -1,10 +1,8 @@
 import { Logger } from "pino";
-import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
 
-import { IRelayerStorage } from "./storage";
 import { ISubscriber } from "./subscriber";
 import { IPublisher } from "./publisher";
 import { IMessageTracker } from "./messages";
