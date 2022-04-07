@@ -32,7 +32,7 @@ export abstract class IJsonRpcHistory extends IEvents {
 
   public abstract readonly pending: RequestEvent[];
 
-  constructor(logger: Logger, client: IClient) {
+  constructor(public logger: Logger, public client: IClient) {
     super();
   }
 
