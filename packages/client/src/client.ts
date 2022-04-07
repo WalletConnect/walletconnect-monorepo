@@ -48,6 +48,7 @@ import {
 // TODO: properly alter this type
 abstract class IClient2 extends IClient {
   keyValueStorage: any;
+  storage: any;
 }
 
 export class Client extends IClient2 {
@@ -62,7 +63,6 @@ export class Client extends IClient2 {
 
   public crypto: Crypto;
 
-  public storage: Storage;
   public relayer: Relayer;
 
   public pairing: Pairing;
@@ -103,12 +103,6 @@ export class Client extends IClient2 {
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
     this.keyValueStorage = opts?.storage || new KeyValueStorage(storageOptions);
-
-    this.storage = new Storage(this.logger, opts?.storage || new KeyValueStorage(storageOptions), {
-      protocol: this.protocol,
-      version: this.version,
-      context: this.context,
-    });
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
