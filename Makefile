@@ -21,7 +21,7 @@ build: ## build docker images
 publish: ## push docker images to docker hub
 	@docker-compose $(DOCKER_COMPOSE) push
 
-### Dev build/publis
+### Dev build/publish
 .PHONY: build-dev
 build-dev: ## build docker images for dev enviromnent 
 	@docker-compose $(DOCKER_COMPOSE_DEV) build $(DEV_PROJECTS)

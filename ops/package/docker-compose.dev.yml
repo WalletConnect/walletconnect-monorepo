@@ -15,4 +15,4 @@ services:
     image: walletconnect/monorepo-tests:${TAG:-dev}-dev
     build:
       context: ../../
-      dockerfile: build/package/Dockerfile-dev      
+      dockerfile: ops/package/Dockerfile-dev      
