@@ -1,15 +1,13 @@
+import { IEvents } from "@walletconnect/events";
 import {
   ErrorResponse,
   JsonRpcRequest,
   JsonRpcResponse,
   RequestArguments,
 } from "@walletconnect/jsonrpc-types";
-import { IEvents } from "@walletconnect/events";
-
 import { Logger } from "pino";
-
-import { RequestEvent } from "./misc";
 import { IClient } from "./client";
+import { RequestEvent } from "./misc";
 
 export interface JsonRpcRecord {
   id: number;

@@ -1,5 +1,4 @@
 import { Logger } from "pino";
-
 import { IClient } from "./client";
 
 export type MessageRecord = Record<string, string>;

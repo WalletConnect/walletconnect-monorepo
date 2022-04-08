@@ -1,6 +1,5 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
-
+import { Logger } from "pino";
 import { IRelayer, RelayerTypes } from "./relayer";
 
 export declare namespace PublisherTypes {

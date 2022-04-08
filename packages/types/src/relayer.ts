@@ -7,7 +7,6 @@ import { IMessageTracker } from "./messages";
 import { IPublisher } from "./publisher";
 import { ISubscriber } from "./subscriber";
 
-
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
     protocol: string;

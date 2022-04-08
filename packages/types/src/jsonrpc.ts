@@ -1,7 +1,7 @@
 import { JsonRpcRequest, JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { PairingTypes } from "./pairing";
-import { SessionTypes } from "./session";
 import { RelayerTypes } from "./relayer";
+import { SessionTypes } from "./session";
 
 export declare namespace PairingJsonRpc {
   // -- approve ----------------------------------------- //

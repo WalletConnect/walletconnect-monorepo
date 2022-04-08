@@ -1,9 +1,8 @@
 import { IEvents } from "@walletconnect/events";
 import { Logger } from "pino";
-
+import { IClient } from "./client";
 import { Reason } from "./misc";
 import { IRelayer, RelayerTypes } from "./relayer";
-import { IClient } from "./client";
 
 export declare namespace SubscriberTypes {
   export interface Params extends RelayerTypes.SubscribeOptions {

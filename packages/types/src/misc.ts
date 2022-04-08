@@ -1,5 +1,4 @@
 import { ErrorResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-types";
-
 import { RelayerTypes } from "./relayer";
 
 export { Logger } from "pino";
