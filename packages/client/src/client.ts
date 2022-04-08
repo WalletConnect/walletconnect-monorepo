@@ -11,7 +11,7 @@ import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
 import pino, { Logger } from "pino";
 import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
 import { Crypto, Pairing, Relayer, Session } from "./controllers";
-import NewEngine from "./controllers/new_engine";
+import Engine from "./controllers/engine";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -29,7 +29,7 @@ export class Client extends IClient {
   public events = new EventEmitter();
   public relayer: Relayer;
   public crypto: Crypto;
-  public engine: NewEngine;
+  public engine: Engine;
   public keyValueStorage: IKeyValueStorage;
 
   static async init(opts?: ClientOptions) {
@@ -70,7 +70,7 @@ export class Client extends IClient {
       logger: this.logger,
       projectId: this.projectId,
     });
-    this.engine = new NewEngine(this.relayer, this.crypto, this.session, this.pairing);
+    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing);
   }
 
   get context(): string {

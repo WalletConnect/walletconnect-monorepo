@@ -1,8 +1,16 @@
 import { FIVE_MINUTES } from "@walletconnect/time";
-import { ICrypto, IPairing, IRelayer, ISession, NewTypes } from "@walletconnect/types";
+import {
+  EngineTypes,
+  ICrypto,
+  IEngine,
+  IPairing,
+  IRelayer,
+  ISession,
+  RelayerTypes,
+} from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 
-export default class NewEngine {
+export default class Engine implements IEngine {
   constructor(
     private relayer: IRelayer,
     private crypto: ICrypto,
@@ -12,7 +20,7 @@ export default class NewEngine {
     this.registerEventListeners();
   }
 
-  public async createSession(params: NewTypes.CreateSessionParams) {
+  public async createSession(params: EngineTypes.CreateSessionParams) {
     const { pairingTopic, relay } = params;
     // TODO validate create session params
     let topic = pairingTopic;
@@ -82,7 +90,7 @@ export default class NewEngine {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async createPairing({ protocol, data }: NewTypes.Relay) {
+  private async createPairing({ protocol, data }: RelayerTypes.ProtocolOptions) {
     const newTopic = generateRandomBytes32();
     const symetricKey = await this.crypto.generateSymKey(newTopic);
     const pairingPayload = {
@@ -94,13 +102,13 @@ export default class NewEngine {
     };
     const pairingUri = formatUri(pairingPayload);
     const pairingExpiry = calcExpiry(FIVE_MINUTES);
-    const newPairing: NewTypes.Pairing = {
+    const newPairing = {
       ...pairingPayload,
       expiry: pairingExpiry,
       uri: pairingUri,
       isActive: true,
     };
-    this.pairing.create(newTopic, newPairing);
+    this.pairing.set(newTopic, newPairing);
     this.relayer.subscribe(newTopic);
 
     return { newTopic, pairingUri };

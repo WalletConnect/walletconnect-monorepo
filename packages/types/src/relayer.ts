@@ -10,7 +10,7 @@ import { ISubscriber } from "./subscriber";
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
     protocol: string;
-    params?: any;
+    data?: string;
   }
 
   export interface PublishOptions {
