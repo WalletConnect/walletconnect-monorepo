@@ -10,7 +10,7 @@ import { EventEmitter } from "events";
 import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
 import pino, { Logger } from "pino";
 import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
-import { Crypto, Expirer, Pairing, Relayer, Session } from "./controllers";
+import { Crypto, Pairing, Relayer, Session } from "./controllers";
 import NewEngine from "./controllers/new_engine";
 
 export class Client extends IClient {
@@ -22,7 +22,6 @@ export class Client extends IClient {
   public readonly relayUrl: string | undefined;
   public readonly projectId: string | undefined;
 
-  public expirer: Expirer;
   public pairing: Pairing;
   public session: Session;
   public logger: Logger;
@@ -50,7 +49,6 @@ export class Client extends IClient {
     this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
     this.projectId = opts?.projectId;
-
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
       this.version,
@@ -63,30 +61,27 @@ export class Client extends IClient {
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
-    this.expirer = new Expirer();
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
     this.relayer = new Relayer({
+      client: this,
       rpcUrl: this.relayUrl,
       heartbeat: this.heartbeat,
       logger: this.logger,
       projectId: this.projectId,
-      keyValueStorageOptions: storageOptions,
     });
-    this.engine = new NewEngine(
-      this.relayer,
-      this.crypto,
-      this.session,
-      this.pairing,
-      this.expirer,
-    );
+    this.engine = new NewEngine(this.relayer, this.crypto, this.session, this.pairing);
   }
 
   get context(): string {
     return getLoggerContext(this.logger);
   }
 
-  public on(event: string, listener: any) {
+  get storagePrefix(): string {
+    return `${this.protocol}@${this.version}:${this.context}:`;
+  }
+
+  public on(event: string, listener: any): void {
     this.events.on(event, listener);
   }
 

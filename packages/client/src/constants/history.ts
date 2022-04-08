@@ -7,3 +7,5 @@ export const HISTORY_EVENTS = {
 };
 
 export const HISTORY_CONTEXT = "history";
+
+export const HISTORY_STORAGE_VERSION = "0.3";

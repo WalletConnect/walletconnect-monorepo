@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
-import KeyValueStorage from "keyvaluestorage";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
@@ -12,8 +11,8 @@ import {
   ISubscriber,
   IPublisher,
   RelayerOptions,
-  IRelayerStorage,
   IMessageTracker,
+  IClient,
 } from "@walletconnect/types";
 import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
@@ -37,10 +36,8 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_RECONNECT_TIMEOUT,
-  RELAYER_STORAGE_OPTIONS,
   RELAYER_DEFAULT_RELAY_URL,
 } from "../constants";
-import { RelayerStorage } from "./storage";
 import { Publisher } from "./publisher";
 import { MessageTracker } from "./messages";
 
@@ -49,8 +46,6 @@ export class Relayer extends IRelayer {
   public readonly version = 1;
 
   public logger: Logger;
-
-  public storage: IRelayerStorage;
 
   public heartbeat: IHeartBeat;
 
@@ -66,35 +61,23 @@ export class Relayer extends IRelayer {
 
   public name: string = RELAYER_CONTEXT;
 
-  constructor(opts?: RelayerOptions) {
+  constructor(opts: RelayerOptions) {
     super(opts);
     this.logger =
-      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
+      typeof opts.logger !== "undefined" && typeof opts.logger !== "string"
         ? generateChildLogger(opts.logger, this.name)
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || RELAYER_DEFAULT_LOGGER }));
-    const kvsOptions = { ...RELAYER_STORAGE_OPTIONS, ...opts?.keyValueStorageOptions };
-    this.storage =
-      typeof opts?.storage !== "undefined"
-        ? opts.storage
-        : new RelayerStorage(
-            this.logger,
-            opts?.keyValueStorage || new KeyValueStorage(kvsOptions),
-            {
-              protocol: this.protocol,
-              version: this.version,
-              context: this.context,
-            },
-          );
-    this.heartbeat = opts?.heartbeat || new HeartBeat();
+        : pino(getDefaultLoggerOptions({ level: opts.logger || RELAYER_DEFAULT_LOGGER }));
+
+    this.heartbeat = opts.heartbeat || new HeartBeat();
     const rpcUrl =
-      opts?.rpcUrl ||
-      formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts?.projectId);
+      opts.rpcUrl ||
+      formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts.projectId);
     this.provider =
-      typeof opts?.relayProvider !== "string" && typeof opts?.relayProvider !== "undefined"
-        ? opts?.relayProvider
+      typeof opts.relayProvider !== "string" && typeof opts.relayProvider !== "undefined"
+        ? opts.relayProvider
         : new JsonRpcProvider(new WsConnection(rpcUrl));
-    this.messages = new MessageTracker(this.logger, this.storage);
-    this.subscriber = new Subscriber(this, this.logger);
+    this.messages = new MessageTracker(this.logger, opts.client);
+    this.subscriber = new Subscriber(this, opts.client, this.logger);
     this.publisher = new Publisher(this, this.logger);
     this.registerEventListeners();
   }

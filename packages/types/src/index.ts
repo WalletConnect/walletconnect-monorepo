@@ -12,6 +12,5 @@ export * from "./publisher";
 export * from "./relayer";
 export * from "./sequence";
 export * from "./session";
-export * from "./storage";
 export * from "./store";
 export * from "./subscriber";

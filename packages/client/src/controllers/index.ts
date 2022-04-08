@@ -5,6 +5,5 @@ export * from "./messages";
 export * from "./pairing";
 export * from "./relayer";
 export * from "./session";
-export * from "./storage";
 export * from "./store";
 export * from "./subscriber";

@@ -1,13 +1,12 @@
 import { Logger } from "pino";
-import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
 
-import { IRelayerStorage } from "./storage";
 import { ISubscriber } from "./subscriber";
 import { IPublisher } from "./publisher";
 import { IMessageTracker } from "./messages";
+import { IClient } from "./client";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -39,10 +38,8 @@ export declare namespace RelayerTypes {
 }
 
 export interface RelayerOptions {
+  client: IClient;
   heartbeat?: IHeartBeat;
-  storage?: IRelayerStorage;
-  keyValueStorage?: IKeyValueStorage;
-  keyValueStorageOptions?: KeyValueStorageOptions;
   logger?: string | Logger;
   rpcUrl?: string;
   projectId?: string;
@@ -51,8 +48,6 @@ export interface RelayerOptions {
 
 export abstract class IRelayer extends IEvents {
   public abstract logger: Logger;
-
-  public abstract storage: IRelayerStorage;
 
   public abstract heartbeat: IHeartBeat;
 
@@ -72,7 +67,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connecting: boolean;
 
-  constructor(opts?: RelayerOptions) {
+  constructor(opts: RelayerOptions) {
     super();
   }
 

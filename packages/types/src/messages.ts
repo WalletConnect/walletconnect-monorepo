@@ -1,6 +1,6 @@
 import { Logger } from "pino";
 
-import { IRelayerStorage } from "./storage";
+import { IClient } from "./client";
 
 export type MessageRecord = Record<string, string>;
 
@@ -11,7 +11,7 @@ export abstract class IMessageTracker {
 
   public abstract readonly context: string;
 
-  constructor(public logger: Logger, public storage: IRelayerStorage) {}
+  constructor(public logger: Logger, public client: IClient) {}
 
   public abstract init(): Promise<void>;
 
