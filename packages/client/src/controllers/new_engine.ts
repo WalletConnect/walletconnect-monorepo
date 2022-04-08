@@ -1,5 +1,5 @@
 import { FIVE_MINUTES } from "@walletconnect/time";
-import { ICrypto, IExpirer, IPairing, IRelayer, ISession, NewTypes } from "@walletconnect/types";
+import { ICrypto, IPairing, IRelayer, ISession, NewTypes } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 
 export default class NewEngine {
@@ -8,7 +8,6 @@ export default class NewEngine {
     private crypto: ICrypto,
     private session: ISession,
     private pairing: IPairing,
-    private expirer: IExpirer,
   ) {
     this.registerEventListeners();
   }
@@ -102,7 +101,6 @@ export default class NewEngine {
       isActive: true,
     };
     this.pairing.create(newTopic, newPairing);
-    this.expirer.set(newTopic, pairingExpiry);
     this.relayer.subscribe(newTopic);
 
     return { newTopic, pairingUri };
