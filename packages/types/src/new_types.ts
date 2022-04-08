@@ -16,16 +16,6 @@ export declare namespace NewTypes {
     relayData?: string;
   }
 
-  interface Pairing {
-    topic: string;
-    expiry: number;
-    relayProtocol: string;
-    uri: string;
-    isActive: boolean;
-    peerMetadata?: AppMetadata;
-    relayData?: string;
-  }
-
   interface SessionPermissions {
     blockchains: {
       chains: string[];

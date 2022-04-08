@@ -1,30 +1,9 @@
-import { IEvents } from "@walletconnect/events";
 import { Logger } from "pino";
-
 import { IClient } from "./client";
 import { Reason } from "./misc";
 
-export declare namespace StoreEvent {
-  export interface Created<T> {
-    topic: string;
-    sequence: T;
-  }
-
-  export interface Updated<T> {
-    topic: string;
-    sequence: T;
-    update: Partial<T>;
-  }
-
-  export interface Deleted<T> {
-    topic: string;
-    sequence: T;
-    reason: Reason;
-  }
-}
-
-export abstract class IStore<Sequence> extends IEvents {
-  public abstract sequences: Map<string, Sequence>;
+export abstract class IStore<Data> {
+  public abstract data: Map<string, Data>;
 
   public abstract readonly context: string;
 
@@ -32,19 +11,17 @@ export abstract class IStore<Sequence> extends IEvents {
 
   public abstract readonly topics: string[];
 
-  public abstract readonly values: Sequence[];
+  public abstract readonly values: Data[];
 
-  constructor(public client: IClient, public logger: Logger, public name: string) {
-    super();
-  }
+  constructor(public client: IClient, public logger: Logger, public name: string) {}
 
   public abstract init(): Promise<void>;
 
-  public abstract set(topic: string, sequence: Sequence): Promise<void>;
+  public abstract set(topic: string, sequence: Data): Promise<void>;
 
-  public abstract get(topic: string): Promise<Sequence>;
+  public abstract get(topic: string): Promise<Data>;
 
-  public abstract update(topic: string, update: Partial<Sequence>): Promise<void>;
+  public abstract update(topic: string, update: Partial<Data>): Promise<void>;
 
   public abstract delete(topic: string, reason: Reason): Promise<void>;
 }

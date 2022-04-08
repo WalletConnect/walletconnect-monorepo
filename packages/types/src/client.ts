@@ -5,9 +5,9 @@ import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
 import { AppMetadata, Reason, SignalTypes } from "./misc";
-import { IPairing, PairingTypes } from "./pairing";
+import { IPairing } from "./pairing";
 import { IRelayer, RelayerTypes } from "./relayer";
-import { ISession, SessionTypes } from "./session";
+import { ISession, SessionPermissions } from "./session";
 
 export interface ClientOptions {
   name?: string;
@@ -55,13 +55,13 @@ export abstract class IClient extends IEvents {
   // for responder to reject a session proposal
   public abstract reject(params: ClientTypes.RejectParams): Promise<void>;
 
-  public abstract updateAccounts(): Promise<void>
+  public abstract updateAccounts(): Promise<void>;
 
-  public abstract updateMethods(): Promise<void>
+  public abstract updateMethods(): Promise<void>;
 
-  public abstract updateEvents(): Promise<void>
-  
-  public abstract updateExpiry(): Promise<void>
+  public abstract updateEvents(): Promise<void>;
+
+  public abstract updateExpiry(): Promise<void>;
 
   // for proposer to request JSON-RPC
   public abstract request(params: ClientTypes.RequestParams): Promise<any>;
@@ -78,7 +78,7 @@ export abstract class IClient extends IEvents {
 
 export declare namespace ClientTypes {
   export interface ConnectParams {
-    permissions: SessionTypes.BasePermissions;
+    permissions: SessionPermissions;
     metadata?: AppMetadata;
     relay?: RelayerTypes.ProtocolOptions;
     pairing?: SignalTypes.ParamsPairing;

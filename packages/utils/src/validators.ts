@@ -8,7 +8,6 @@ import {
   SequenceTypes,
   SessionTypes,
   SignalTypes,
-  StoreEvent,
   Validation,
 } from "@walletconnect/types";
 import { ERROR } from "./error";
@@ -18,7 +17,7 @@ export function isString(input: unknown): input is string {
   return typeof input === "string";
 }
 
-export function isUndefined(input: unknown): input is (undefined | null) {
+export function isUndefined(input: unknown): input is undefined | null {
   return typeof input !== "undefined" && input !== null;
 }
 
@@ -102,12 +101,6 @@ export function isSessionRejected(
 
 export function isSessionFailed(outcome: SessionTypes.Outcome): outcome is SessionTypes.Failed {
   return "reason" in outcome;
-}
-
-export function isStoreUpdatedEvent<T = any>(
-  event: StoreEvent.Created<T> | StoreEvent.Updated<T>,
-): event is StoreEvent.Updated<T> {
-  return "update" in event;
 }
 
 export function validateSessionProposeParamsPermissions(

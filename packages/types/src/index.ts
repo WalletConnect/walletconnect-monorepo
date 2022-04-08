@@ -1,6 +1,5 @@
 export * from "./client";
 export * from "./crypto";
-export * from "./engine";
 export * from "./expirer";
 export * from "./history";
 export * from "./jsonrpc";
@@ -10,7 +9,6 @@ export * from "./new_types";
 export * from "./pairing";
 export * from "./publisher";
 export * from "./relayer";
-export * from "./sequence";
 export * from "./session";
 export * from "./store";
 export * from "./subscriber";
