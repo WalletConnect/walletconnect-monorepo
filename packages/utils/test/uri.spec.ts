@@ -1,10 +1,10 @@
-import { NewTypes } from "@walletconnect/types";
+import { EngineTypes } from "@walletconnect/types";
 import { expect } from "chai";
 import "mocha";
 import { formatUri, parseUri } from "../src";
 import { TEST_PAIRING_TOPIC, TEST_RELAY_OPTIONS, TEST_SYMETRIC_KEY } from "./shared";
 
-const TEST_URI_PARAMS: NewTypes.UriParameters = {
+const TEST_URI_PARAMS: EngineTypes.UriParameters = {
   version: 2,
   topic: TEST_PAIRING_TOPIC,
   symetricKey: TEST_SYMETRIC_KEY,
