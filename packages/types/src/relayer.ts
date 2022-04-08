@@ -1,12 +1,12 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
-
-import { ISubscriber } from "./subscriber";
-import { IPublisher } from "./publisher";
-import { IMessageTracker } from "./messages";
+import { Logger } from "pino";
 import { IClient } from "./client";
+import { IMessageTracker } from "./messages";
+import { IPublisher } from "./publisher";
+import { ISubscriber } from "./subscriber";
+
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
