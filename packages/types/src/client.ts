@@ -4,6 +4,7 @@ import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
+import { IExpirer } from "./expirer";
 import { AppMetadata, Reason, SignalTypes } from "./misc";
 import { IPairing, PairingTypes } from "./pairing";
 import { IRelayer, RelayerTypes } from "./relayer";
@@ -35,12 +36,12 @@ export abstract class IClient extends IEvents {
 
   public abstract pairing: IPairing;
   public abstract session: ISession;
-
-  protected abstract logger: Logger;
-  protected abstract heartbeat: IHeartBeat;
-  protected abstract crypto: ICrypto;
-  protected abstract relayer: IRelayer;
-  protected abstract keyValueStorage: IKeyValueStorage;
+  public abstract logger: Logger;
+  public abstract heartbeat: IHeartBeat;
+  public abstract crypto: ICrypto;
+  public abstract relayer: IRelayer;
+  public abstract expirer: IExpirer;
+  public abstract keyValueStorage: IKeyValueStorage;
 
   constructor(opts?: ClientOptions) {
     super();

@@ -1,28 +1,27 @@
-import { EventEmitter } from "events";
-import { Logger } from "pino";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, ISession, SequenceTypes, SessionTypes } from "@walletconnect/types";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { IClient, ISession, SessionTypes } from "@walletconnect/types";
 import {
-  validateSessionProposeParams,
-  validateSessionRespondParams,
+  ERROR,
   isValidationInvalid,
   mergeArrays,
-  ERROR,
+  validateSessionProposeParams,
+  validateSessionRespondParams,
 } from "@walletconnect/utils";
-
-import { Store } from "./store";
-import { Engine } from "./engine";
-import { JsonRpcHistory } from "./history";
-import { Expirer } from "./expirer";
+import { EventEmitter } from "events";
+import { Logger } from "pino";
 import {
   SESSION_CONTEXT,
+  SESSION_DEFAULT_TTL,
   SESSION_EVENTS,
   SESSION_JSONRPC,
-  SESSION_STATUS,
   SESSION_SIGNAL_METHOD_PAIRING,
-  SESSION_DEFAULT_TTL,
+  SESSION_STATUS,
 } from "../constants";
+import { Engine } from "./engine";
+import { Expirer } from "./expirer";
+import { JsonRpcHistory } from "./history";
+import { Store } from "./store";
 
 export class Session extends ISession {
   public pending: Store<SessionTypes.Pending>;
