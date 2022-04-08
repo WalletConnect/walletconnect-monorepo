@@ -4,7 +4,7 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { AppMetadata, ClientOptions, ClientTypes, IClient, NewTypes } from "@walletconnect/types";
+import { AppMetadata, ClientOptions, EngineTypes, IClient } from "@walletconnect/types";
 import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
@@ -97,7 +97,7 @@ export class Client extends IClient {
     this.events.removeListener(event, listener);
   }
 
-  public async connect(params: NewTypes.CreateSessionParams) {
+  public async connect(params: EngineTypes.CreateSessionParams) {
     try {
       await this.engine.createSession(params);
     } catch (err) {
@@ -106,16 +106,16 @@ export class Client extends IClient {
     }
   }
 
-  public async pair(params: ClientTypes.PairParams) {
+  public async pair(pairingUri: string) {
     try {
-      await this.engine.pair();
+      await this.engine.pair(pairingUri);
     } catch (err) {
       this.logger.error(err);
       throw err;
     }
   }
 
-  public async approve(params: ClientTypes.ApproveParams) {
+  public async approve() {
     try {
       await this.engine.approve();
     } catch (err) {
@@ -124,7 +124,7 @@ export class Client extends IClient {
     }
   }
 
-  public async reject(params: ClientTypes.RejectParams) {
+  public async reject() {
     try {
       await this.engine.reject();
     } catch (err) {
@@ -169,7 +169,7 @@ export class Client extends IClient {
     }
   }
 
-  public async request(params: ClientTypes.RequestParams) {
+  public async request() {
     try {
       await this.engine.request();
     } catch (err) {
@@ -178,7 +178,7 @@ export class Client extends IClient {
     }
   }
 
-  public async respond(params: ClientTypes.RespondParams) {
+  public async respond() {
     try {
       await this.engine.respond();
     } catch (err) {
@@ -187,7 +187,7 @@ export class Client extends IClient {
     }
   }
 
-  public async ping(params: ClientTypes.PingParams) {
+  public async ping() {
     try {
       await this.engine.ping();
     } catch (err) {
@@ -196,7 +196,7 @@ export class Client extends IClient {
     }
   }
 
-  public async notify(params: ClientTypes.NotifyParams) {
+  public async notify() {
     try {
       await this.engine.notify();
     } catch (err) {
@@ -205,7 +205,7 @@ export class Client extends IClient {
     }
   }
 
-  public async disconnect(params: ClientTypes.DisconnectParams) {
+  public async disconnect() {
     try {
       await this.engine.disconnect();
     } catch (err) {

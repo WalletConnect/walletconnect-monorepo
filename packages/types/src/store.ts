@@ -17,7 +17,7 @@ export abstract class IStore<Data> {
 
   public abstract init(): Promise<void>;
 
-  public abstract set(topic: string, sequence: Data): Promise<void>;
+  public abstract set(topic: string, data: Data): Promise<void>;
 
   public abstract get(topic: string): Promise<Data>;
 

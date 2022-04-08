@@ -1,22 +1,21 @@
-import { Logger } from "pino";
 import * as encoding from "@walletconnect/encoding";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-import { IClient, CryptoTypes, ICrypto, IKeyChain } from "@walletconnect/types";
+import { CryptoTypes, IClient, ICrypto, IKeyChain } from "@walletconnect/types";
 import {
-  ERROR,
-  generateKeyPair,
+  decrypt,
   deriveSharedKey,
   encrypt,
-  decrypt,
-  sha256,
-  generateRandomBytes32,
-  objToMap,
-  mapToObj,
+  ERROR,
   formatStorageKeyName,
+  generateKeyPair,
+  generateRandomBytes32,
+  mapToObj,
+  objToMap,
+  sha256,
 } from "@walletconnect/utils";
-
+import { Logger } from "pino";
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
 export class KeyChain implements IKeyChain {

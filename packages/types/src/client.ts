@@ -1,13 +1,12 @@
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
-import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
-import { AppMetadata, Reason, SignalTypes } from "./misc";
+import { AppMetadata } from "./misc";
 import { IPairing } from "./pairing";
-import { IRelayer, RelayerTypes } from "./relayer";
-import { ISession, SessionPermissions } from "./session";
+import { IRelayer } from "./relayer";
+import { ISession } from "./session";
 
 export interface ClientOptions {
   name?: string;
@@ -41,86 +40,7 @@ export abstract class IClient extends IEvents {
   public abstract relayer: IRelayer;
   public abstract keyValueStorage: IKeyValueStorage;
 
-  constructor(opts?: ClientOptions) {
+  constructor(public opts?: ClientOptions) {
     super();
   }
-
-  // for proposer to propose a session to a responder
-  public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
-  // for responder to receive a session proposal from a proposer
-  public abstract pair(params: ClientTypes.PairParams): Promise<PairingTypes.Settled>;
-
-  // for responder to approve a session proposal
-  public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
-  // for responder to reject a session proposal
-  public abstract reject(params: ClientTypes.RejectParams): Promise<void>;
-
-  public abstract updateAccounts(): Promise<void>;
-
-  public abstract updateMethods(): Promise<void>;
-
-  public abstract updateEvents(): Promise<void>;
-
-  public abstract updateExpiry(): Promise<void>;
-
-  // for proposer to request JSON-RPC
-  public abstract request(params: ClientTypes.RequestParams): Promise<any>;
-  // for responder to respond JSON-RPC
-  public abstract respond(params: ClientTypes.RespondParams): Promise<void>;
-
-  // for either to ping and verify peer is online
-  public abstract ping(params: ClientTypes.PingParams): Promise<void>;
-  // for either to send notifications
-  public abstract notify(params: ClientTypes.NotifyParams): Promise<void>;
-  // for either to disconnect a session
-  public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
-}
-
-export declare namespace ClientTypes {
-  export interface ConnectParams {
-    permissions: SessionPermissions;
-    metadata?: AppMetadata;
-    relay?: RelayerTypes.ProtocolOptions;
-    pairing?: SignalTypes.ParamsPairing;
-  }
-
-  export interface PairParams {
-    uri: string;
-  }
-
-  export interface ResponseInput {
-    state: SessionTypes.State;
-    metadata?: AppMetadata;
-  }
-
-  export interface ApproveParams {
-    proposal: SessionTypes.Proposal;
-    response: ResponseInput;
-  }
-  export interface RejectParams {
-    proposal: SessionTypes.Proposal;
-    reason?: Reason;
-  }
-
-  export type UpdateParams = SessionTypes.UpdateParams;
-
-  export type UpgradeParams = SessionTypes.UpgradeParams;
-
-  export type ExtendParams = SessionTypes.ExtendParams;
-
-  export type RequestParams = SessionTypes.RequestParams;
-
-  export interface RespondParams {
-    topic: string;
-    response: JsonRpcResponse;
-  }
-
-  export interface PingParams {
-    topic: string;
-    timeout?: number;
-  }
-
-  export type NotifyParams = SessionTypes.NotifyParams;
-
-  export type DisconnectParams = SessionTypes.DeleteParams;
 }

@@ -30,7 +30,7 @@ export default class Engine implements IEngine {
     }
     const selfPublicKey = await this.crypto.generateKeyPair();
     const newSession = {};
-    this.session.create(topic, newSession);
+    this.session.set(topic, newSession);
     // const message = this.generateSessionMessage(session)
     // this.send(topic, message)
   }

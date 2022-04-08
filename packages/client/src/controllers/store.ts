@@ -4,7 +4,7 @@ import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnec
 import { Logger } from "pino";
 import { STORE_STORAGE_VERSION } from "../constants";
 
-export class Store<Data = SessionTypes.Data | PairingTypes.Data> extends IStore<Data> {
+export class Store<Data extends SessionTypes.Data | PairingTypes.Data> extends IStore<Data> {
   public data = new Map<string, Data>();
   public version: string = STORE_STORAGE_VERSION;
 
@@ -70,7 +70,6 @@ export class Store<Data = SessionTypes.Data | PairingTypes.Data> extends IStore<
     if (!this.data.has(topic)) return;
     this.logger.debug(`Deleting data`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });
-    const data = await this.getData(topic);
     this.data.delete(topic);
     this.persist();
   }

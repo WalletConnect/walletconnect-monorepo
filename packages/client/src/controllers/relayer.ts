@@ -182,6 +182,8 @@ export class Relayer extends IRelayer {
         this.provider.connect();
       }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
+    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
+      this.events.emit(RELAYER_EVENTS.error, err),
+    );
   }
 }
