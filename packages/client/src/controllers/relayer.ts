@@ -1,64 +1,55 @@
-import { EventEmitter } from "events";
-import pino, { Logger } from "pino";
+import { HeartBeat, IHeartBeat } from "@walletconnect/heartbeat";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import {
+  formatJsonRpcResult,
+  IJsonRpcProvider,
+  isJsonRpcRequest,
+  JsonRpcPayload,
+  JsonRpcRequest,
+} from "@walletconnect/jsonrpc-utils";
+import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
+import { toMiliseconds } from "@walletconnect/time";
 import {
-  RelayerTypes,
+  IMessageTracker,
+  IPublisher,
   IRelayer,
   ISubscriber,
-  IPublisher,
   RelayerOptions,
-  IMessageTracker,
-  IClient,
+  RelayerTypes,
 } from "@walletconnect/types";
-import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
-import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
-import { toMiliseconds } from "@walletconnect/time";
-import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
-import WsConnection from "@walletconnect/jsonrpc-ws-connection";
-import {
-  IJsonRpcProvider,
-  JsonRpcPayload,
-  isJsonRpcRequest,
-  JsonRpcRequest,
-  formatJsonRpcResult,
-} from "@walletconnect/jsonrpc-utils";
-
-import { Subscriber } from "./subscriber";
+import { EventEmitter } from "events";
+import pino, { Logger } from "pino";
 import {
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
+  RELAYER_DEFAULT_RELAY_URL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
-  RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_RECONNECT_TIMEOUT,
-  RELAYER_DEFAULT_RELAY_URL,
+  RELAYER_SUBSCRIBER_SUFFIX,
 } from "../constants";
-import { Publisher } from "./publisher";
 import { MessageTracker } from "./messages";
+import { Publisher } from "./publisher";
+import { Subscriber } from "./subscriber";
 
 export class Relayer extends IRelayer {
   public readonly protocol = "irn";
   public readonly version = 1;
 
   public logger: Logger;
-
   public heartbeat: IHeartBeat;
-
   public events = new EventEmitter();
-
   public provider: IJsonRpcProvider;
-
   public messages: IMessageTracker;
-
   public subscriber: ISubscriber;
-
   public publisher: IPublisher;
-
   public name: string = RELAYER_CONTEXT;
 
   constructor(opts: RelayerOptions) {
