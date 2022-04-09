@@ -10,8 +10,11 @@ import {
   deriveSharedKey,
   encrypt,
   decrypt,
+  serialize,
+  deserialize,
   sha256,
   generateRandomBytes32,
+  deriveSymmetricKey,
 } from "@walletconnect/utils";
 
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
@@ -105,7 +108,8 @@ export class Crypto implements ICrypto {
   ): Promise<string> {
     const keyPair = await this.getKeyPair(self.publicKey);
     const sharedKey = deriveSharedKey(keyPair.privateKey, peer.publicKey);
-    return this.setEncryptionKeys({ sharedKey, publicKey: keyPair.publicKey }, overrideTopic);
+    const symKey = deriveSymmetricKey(sharedKey);
+    return this.setEncryptionKeys({ symKey, publicKey: keyPair.publicKey }, overrideTopic);
   }
 
   public async generateSymKey(overrideTopic?: string): Promise<string> {
@@ -115,7 +119,7 @@ export class Crypto implements ICrypto {
 
   public async setSymKey(symKey: string, overrideTopic?: string): Promise<string> {
     const hash = await sha256(symKey);
-    return this.setEncryptionKeys({ sharedKey: symKey, publicKey: hash }, overrideTopic);
+    return this.setEncryptionKeys({ symKey, publicKey: hash }, overrideTopic);
   }
 
   public async deleteKeyPair(publicKey: string): Promise<void> {
@@ -131,27 +135,25 @@ export class Crypto implements ICrypto {
   }
 
   public async encrypt(topic: string, message: string): Promise<string> {
-    const { sharedKey, publicKey } = await this.getEncryptionKeys(topic);
-    const result = await encrypt({ message, sharedKey, publicKey });
+    const { symKey } = await this.getEncryptionKeys(topic);
+    const result = await encrypt({ symKey, message });
     return result;
   }
 
-  public async decrypt(topic: string, encrypted: string): Promise<string> {
-    const { sharedKey } = await this.getEncryptionKeys(topic);
-    const result = await decrypt({ encrypted, sharedKey });
+  public async decrypt(topic: string, encoded: string): Promise<string> {
+    const { symKey } = await this.getEncryptionKeys(topic);
+    const result = await decrypt({ symKey, encoded });
     return result;
   }
 
   public async encode(topic: string, payload: JsonRpcPayload): Promise<string> {
     const message = safeJsonStringify(payload);
-    const hasKeys = await this.hasKeys(topic);
-    const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
+    const result = await this.encrypt(topic, message);
     return result;
   }
 
-  public async decode(topic: string, encrypted: string): Promise<JsonRpcPayload> {
-    const hasKeys = await this.hasKeys(topic);
-    const message = hasKeys ? await this.decrypt(topic, encrypted) : encoding.hexToUtf8(encrypted);
+  public async decode(topic: string, encoded: string): Promise<JsonRpcPayload> {
+    const message = await this.decrypt(topic, encoded);
     const payload = safeJsonParse(message);
     return payload;
   }
@@ -184,13 +186,13 @@ export class Crypto implements ICrypto {
     encryptionKeys: CryptoTypes.EncryptionKeys,
     overrideTopic?: string,
   ): Promise<string> {
-    const topic = overrideTopic || (await sha256(encryptionKeys.sharedKey));
-    const keys = this.concatKeys(encryptionKeys.sharedKey, encryptionKeys.publicKey);
+    const topic = overrideTopic || (await sha256(encryptionKeys.symKey));
+    const keys = this.concatKeys(encryptionKeys.symKey, encryptionKeys.publicKey);
     await this.keychain.set(topic, keys);
     return topic;
   }
   private async getEncryptionKeys(topic: string): Promise<CryptoTypes.EncryptionKeys> {
-    const [sharedKey, publicKey] = this.splitKeys(await this.keychain.get(topic));
-    return { sharedKey, publicKey };
+    const [symKey, publicKey] = this.splitKeys(await this.keychain.get(topic));
+    return { symKey, publicKey };
   }
 }

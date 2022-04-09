@@ -14,18 +14,25 @@ export declare namespace CryptoTypes {
   }
 
   export interface EncryptionKeys {
-    sharedKey: string;
     publicKey: string;
+    symKey: string;
     iv?: string;
   }
 
-  export interface EncryptParams extends EncryptionKeys {
+  export interface EncryptParams {
+    symKey: string;
     message: string;
+    iv?: string;
   }
 
   export interface DecryptParams {
-    sharedKey: string;
-    encrypted: string;
+    symKey: string;
+    encoded: string;
+  }
+
+  export interface EncodingParams {
+    sealed: Uint8Array;
+    iv: Uint8Array;
   }
 }
 
@@ -82,9 +89,9 @@ export abstract class ICrypto {
 
   public abstract encrypt(topic: string, message: string): Promise<string>;
 
-  public abstract decrypt(topic: string, encrypted: string): Promise<string>;
+  public abstract decrypt(topic: string, encoded: string): Promise<string>;
 
   public abstract encode(topic: string, payload: JsonRpcPayload): Promise<string>;
 
-  public abstract decode(topic: string, encrypted: string): Promise<JsonRpcPayload>;
+  public abstract decode(topic: string, encoded: string): Promise<JsonRpcPayload>;
 }

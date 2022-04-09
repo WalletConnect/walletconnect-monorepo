@@ -45,29 +45,31 @@ export function deriveSymmetricKey(sharedKey: string) {
   return toString(symKey, BASE16);
 }
 
-export async function sha256(msg: string): Promise<string> {
-  return toString(hash(fromString(msg, BASE16)), BASE16);
+export async function sha256(hex: string): Promise<string> {
+  return toString(hash(fromString(hex, BASE16)), BASE16);
 }
 
-export async function encrypt(symKey: string, plaintext: string, _iv?: string): Promise<string> {
-  const iv = typeof _iv !== "undefined" ? fromString(_iv, BASE16) : randomBytes(IV_LENGTH);
-  const box = new ChaCha20Poly1305(fromString(symKey, BASE16));
-  const sealed = box.seal(iv, fromString(plaintext, UTF8));
-  return toString(sealed, BASE16);
+export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string> {
+  const iv =
+    typeof params.iv !== "undefined" ? fromString(params.iv, BASE16) : randomBytes(IV_LENGTH);
+  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
+  const sealed = box.seal(iv, fromString(params.message, UTF8));
+  return serialize({ sealed, iv });
 }
 
-export async function decrypt(symKey: string, sealed: string, iv: string): Promise<string> {
-  const box = new ChaCha20Poly1305(fromString(symKey, BASE16));
-  const plaintext = box.open(fromString(iv, BASE16), fromString(sealed, BASE16));
-  if (plaintext === null) throw new Error("Failed to decrypt");
-  return toString(plaintext, UTF8);
+export async function decrypt(params: CryptoTypes.DecryptParams): Promise<string> {
+  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
+  const { sealed, iv } = deserialize(params.encoded);
+  const message = box.open(iv, sealed);
+  if (message === null) throw new Error("Failed to decrypt");
+  return toString(message, UTF8);
 }
 
-export function serialize(sealed: Uint8Array, iv: Uint8Array): string {
-  return toString(concat([iv, sealed]), BASE64);
+export function serialize(params: CryptoTypes.EncodingParams): string {
+  return toString(concat([params.iv, params.sealed]), BASE64);
 }
 
-export function deserialize(encoded: string): { sealed: Uint8Array; iv: Uint8Array } {
+export function deserialize(encoded: string): CryptoTypes.EncodingParams {
   const array = fromString(encoded, BASE64);
   const iv = array.slice(ZERO_INDEX, IV_LENGTH);
   const sealed = array.slice(IV_LENGTH);
