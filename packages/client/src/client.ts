@@ -4,7 +4,7 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { AppMetadata, ClientOptions, EngineTypes, IClient } from "@walletconnect/types";
+import { AppMetadata, ClientOptions, IClient, SessionTypes } from "@walletconnect/types";
 import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
@@ -13,7 +13,7 @@ import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
 import { Crypto, Pairing, Relayer, Session } from "./controllers";
 import Engine from "./controllers/engine";
 
-export class Client extends IClient {
+export class Client implements IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
   public readonly name: string = CLIENT_DEFAULT.name;
@@ -39,7 +39,6 @@ export class Client extends IClient {
   }
 
   constructor(opts?: ClientOptions) {
-    super(opts);
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
@@ -101,7 +100,7 @@ export class Client extends IClient {
 
   // ---------- Engine ----------------------------------------------- //
 
-  public async connect(params: EngineTypes.CreateSessionParams) {
+  public async createSession(params: SessionTypes.CreateSessionParams) {
     try {
       await this.engine.createSession(params);
     } catch (err) {
@@ -110,9 +109,9 @@ export class Client extends IClient {
     }
   }
 
-  public async pair(pairingUri: string) {
+  public async pair(params: SessionTypes.SessionPairParams) {
     try {
-      await this.engine.pair(pairingUri);
+      await this.engine.pair(params);
     } catch (err) {
       this.logger.error(err);
       throw err;

@@ -1,4 +1,5 @@
 import { AppMetadata } from "./misc";
+import { RelayerTypes } from "./relayer";
 import { IStore } from "./store";
 
 export declare namespace PairingTypes {
@@ -10,6 +11,11 @@ export declare namespace PairingTypes {
     isActive: boolean;
     peerMetadata?: AppMetadata;
     relayData?: string;
+  }
+
+  interface CreatePairingParams {
+    relayProtocol: RelayerTypes.ProtocolOptions["protocol"];
+    relayData?: RelayerTypes.ProtocolOptions["data"];
   }
 }
 

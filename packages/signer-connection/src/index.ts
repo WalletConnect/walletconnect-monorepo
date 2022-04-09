@@ -1,10 +1,9 @@
-import { EventEmitter } from "events";
+import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-
-import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { ERROR } from "@walletconnect/utils";
 import { ClientOptions, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
+import { ERROR } from "@walletconnect/utils";
+import { EventEmitter } from "events";
 
 function isClient(opts?: SignerConnectionClientOpts): opts is IClient {
   return typeof opts !== "undefined" && typeof (opts as IClient).context !== "undefined";

@@ -107,7 +107,6 @@ export declare namespace PairingJsonRpc {
 
   export interface PingRequest extends JsonRpcRequest {
     method: "wc_pairingPing";
-    f;
     params: PingParams;
   }
 

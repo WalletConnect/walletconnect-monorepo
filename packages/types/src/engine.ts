@@ -1,16 +1,7 @@
-import { AppMetadata } from "./misc";
-import { RelayerTypes } from "./relayer";
+
 import { SessionTypes } from "./session";
 
 export declare namespace EngineTypes {
-  interface CreateSessionParams {
-    relay: RelayerTypes.ProtocolOptions;
-    pairingTopic?: string;
-    expiry?: number;
-    permissions?: SessionTypes.Permissions;
-    metadata?: AppMetadata;
-  }
-
   interface UriParameters {
     version: number;
     topic: string;
@@ -21,7 +12,7 @@ export declare namespace EngineTypes {
 }
 
 export interface IEngine {
-  createSession(params: EngineTypes.CreateSessionParams): Promise<void>;
+  createSession(params: SessionTypes.CreateSessionParams): Promise<void>;
   pair(pairingUri: string): Promise<void>;
   approve(): Promise<void>;
   reject(): Promise<void>;

@@ -1,12 +1,12 @@
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
-  EngineTypes,
   ICrypto,
   IEngine,
   IPairing,
   IRelayer,
   ISession,
-  RelayerTypes,
+  PairingTypes,
+  SessionTypes,
 } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 
@@ -20,14 +20,18 @@ export default class Engine implements IEngine {
     this.registerEventListeners();
   }
 
-  public async createSession(params: EngineTypes.CreateSessionParams) {
-    const { pairingTopic, relay } = params;
-    // TODO validate create session params
+  public async createSession(params: SessionTypes.CreateSessionParams) {
+    // TODO(ilja) validate params
+    const { pairingTopic, relayProtocol, relayData } = params;
     let topic = pairingTopic;
-    if (!topic) {
-      const { newTopic } = await this.createPairing(relay);
+
+    if (topic) {
+      // TODO(ilja) get and validate existing pairing
+    } else {
+      const { pairingTopic: newTopic } = await this.createPairing({ relayProtocol, relayData });
       topic = newTopic;
     }
+
     const selfPublicKey = await this.crypto.generateKeyPair();
     const newSession = {};
     this.session.set(topic, newSession);
@@ -35,7 +39,7 @@ export default class Engine implements IEngine {
     // this.send(topic, message)
   }
 
-  public async pair(pairingUri: string) {
+  public async pair(pairingUri: SessionTypes.SessionPairParams) {
     // TODO validate pairing Uri
     const { topic, symetricKey } = parseUri(pairingUri);
     this.crypto.setSymKey(symetricKey, topic);
@@ -90,29 +94,32 @@ export default class Engine implements IEngine {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async createPairing({ protocol, data }: RelayerTypes.ProtocolOptions) {
-    const newTopic = generateRandomBytes32();
-    const symetricKey = await this.crypto.generateSymKey(newTopic);
-    const pairingPayload = {
-      topic: newTopic,
+  private async createPairing(params: PairingTypes.CreatePairingParams) {
+    const { relayProtocol, relayData } = params;
+    const pairingTopic = generateRandomBytes32();
+    const symetricKey = await this.crypto.generateSymKey(pairingTopic);
+    const pairingUriData = {
+      topic: pairingTopic,
       symetricKey,
       version: 2,
-      relayProtocol: protocol,
-      relayData: data,
+      relayProtocol,
+      relayData,
     };
-    const pairingUri = formatUri(pairingPayload);
+    const pairingUri = formatUri(pairingUriData);
     const pairingExpiry = calcExpiry(FIVE_MINUTES);
-    const newPairing = {
-      ...pairingPayload,
+    const pairingData = {
+      ...pairingUriData,
       expiry: pairingExpiry,
       uri: pairingUri,
       isActive: true,
     };
-    this.pairing.set(newTopic, newPairing);
-    this.relayer.subscribe(newTopic);
+    this.pairing.set(pairingTopic, pairingData);
+    this.relayer.subscribe(pairingTopic);
 
-    return { newTopic, pairingUri };
+    return { pairingTopic, pairingUri };
   }
+
+  private sendEncoded() {}
 
   private registerEventListeners() {
     /**
