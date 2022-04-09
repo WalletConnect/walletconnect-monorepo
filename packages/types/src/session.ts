@@ -15,15 +15,14 @@ export declare namespace SessionTypes {
   }
 
   interface CreateSessionParams {
-    relayProtocol: RelayerTypes.ProtocolOptions["protocol"];
-    relayData?: RelayerTypes.ProtocolOptions["data"];
+    relay: RelayerTypes.ProtocolOptions;
     pairingTopic?: string;
     expiry?: number;
     permissions?: SessionTypes.Permissions;
     metadata?: AppMetadata;
   }
 
-  type SessionPairParams = string
+  type SessionPairParams = string;
 }
 
 export interface ISession extends IStore<SessionTypes.Data> {

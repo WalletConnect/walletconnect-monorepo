@@ -22,13 +22,13 @@ export default class Engine implements IEngine {
 
   public async createSession(params: SessionTypes.CreateSessionParams) {
     // TODO(ilja) validate params
-    const { pairingTopic, relayProtocol, relayData } = params;
+    const { pairingTopic, relay } = params;
     let topic = pairingTopic;
 
     if (topic) {
       // TODO(ilja) get and validate existing pairing
     } else {
-      const { pairingTopic: newTopic } = await this.createPairing({ relayProtocol, relayData });
+      const { pairingTopic: newTopic } = await this.createPairing(relay);
       topic = newTopic;
     }
 
@@ -95,20 +95,24 @@ export default class Engine implements IEngine {
   // ---------- Private ----------------------------------------------- //
 
   private async createPairing(params: PairingTypes.CreatePairingParams) {
-    const { relayProtocol, relayData } = params;
+    const { relay } = params;
     const pairingTopic = generateRandomBytes32();
     const symetricKey = await this.crypto.generateSymKey(pairingTopic);
-    const pairingUriData = {
+    const sharedPairingData = {
       topic: pairingTopic,
-      symetricKey,
       version: 2,
-      relayProtocol,
-      relayData,
+    };
+    const pairingUriData = {
+      ...sharedPairingData,
+      symetricKey,
+      relayProtocol: relay.protocol,
+      relayData: relay.data,
     };
     const pairingUri = formatUri(pairingUriData);
     const pairingExpiry = calcExpiry(FIVE_MINUTES);
     const pairingData = {
-      ...pairingUriData,
+      ...sharedPairingData,
+      relay,
       expiry: pairingExpiry,
       uri: pairingUri,
       isActive: true,
@@ -118,8 +122,6 @@ export default class Engine implements IEngine {
 
     return { pairingTopic, pairingUri };
   }
-
-  private sendEncoded() {}
 
   private registerEventListeners() {
     /**

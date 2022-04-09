@@ -1,31 +1,30 @@
-import { EventEmitter } from "events";
-import { Logger } from "pino";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+import { RequestArguments } from "@walletconnect/jsonrpc-types";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
 import {
+  IClient,
+  IRelayer,
   ISubscriber,
   ISubscriberTopicMap,
   Reason,
+  RelayerTypes,
   SubscriberEvents,
   SubscriberTypes,
-  RelayerTypes,
-  IRelayer,
-  IClient,
 } from "@walletconnect/types";
-import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
-import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import {
   ERROR,
   formatMessageContext,
-  getRelayProtocolName,
-  getRelayProtocolApi,
   formatStorageKeyName,
+  getRelayProtocolApi,
+  getRelayProtocolName,
 } from "@walletconnect/utils";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-
+import { EventEmitter } from "events";
+import { Logger } from "pino";
 import {
+  RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
-  RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
 } from "../constants";
 
