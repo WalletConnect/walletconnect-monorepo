@@ -15,14 +15,19 @@ import {
   sha256,
   generateRandomBytes32,
   deriveSymmetricKey,
+  objToMap,
+  mapToObj,
+  formatStorageKeyName,
 } from "@walletconnect/utils";
 
-import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
+import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
 
   public name: string = KEYCHAIN_CONTEXT;
+
+  public version: string = KEYCHAIN_STORAGE_VERSION;
 
   constructor(public client: IClient, public logger: Logger) {
     this.client = client;
@@ -31,6 +36,10 @@ export class KeyChain implements IKeyChain {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   public async init(): Promise<void> {
@@ -61,15 +70,29 @@ export class KeyChain implements IKeyChain {
 
   // ---------- Private ----------------------------------------------- //
 
+  private async setKeyChain(keychain: Map<string, string>): Promise<void> {
+    await this.client.keyValueStorage.setItem<Record<string, string>>(
+      this.storageKey,
+      mapToObj(keychain),
+    );
+  }
+
+  private async getKeyChain(): Promise<Map<string, string> | undefined> {
+    const keychain = await this.client.keyValueStorage.getItem<Record<string, string>>(
+      this.storageKey,
+    );
+    return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
+  }
+
   private async restore() {
-    const keychain = await this.client.storage.getKeyChain(this.context);
+    const keychain = await this.getKeyChain();
     if (typeof keychain !== "undefined") {
       this.keychain = keychain;
     }
   }
 
   private async persist() {
-    await this.client.storage.setKeyChain(this.context, this.keychain);
+    await this.setKeyChain(this.keychain);
   }
 }
 

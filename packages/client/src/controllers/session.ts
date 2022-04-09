@@ -47,7 +47,7 @@ export class Session extends ISession {
     this.logger = generateChildLogger(logger, this.name);
     this.pending = new Store<SessionTypes.Pending>(client, this.logger, this.config.status.pending);
     this.settled = new Store<SessionTypes.Settled>(client, this.logger, this.config.status.settled);
-    this.history = new JsonRpcHistory(this.logger, this.client.storage);
+    this.history = new JsonRpcHistory(this.logger, this.client);
     this.expirer = new Expirer(client, this.logger);
     this.engine = new Engine(this) as SessionTypes.Engine;
   }

@@ -1,15 +1,17 @@
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { IClient, IStore, Reason, StoreEvent } from "@walletconnect/types";
-import { ERROR, formatMessageContext } from "@walletconnect/utils";
+import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 
-import { STORE_EVENTS } from "../constants";
+import { STORE_EVENTS, STORE_STORAGE_VERSION } from "../constants";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 export class Store<Sequence = any> extends IStore<Sequence> {
   public sequences = new Map<string, Sequence>();
 
   public events = new EventEmitter();
+
+  public version: string = STORE_STORAGE_VERSION;
 
   private cached: Sequence[] = [];
 
@@ -27,6 +29,10 @@ export class Store<Sequence = any> extends IStore<Sequence> {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   get length(): number {
@@ -109,6 +115,15 @@ export class Store<Sequence = any> extends IStore<Sequence> {
 
   // ---------- Private ----------------------------------------------- //
 
+  private async setSequenceStore<Sequence = any>(sequences: Sequence[]): Promise<void> {
+    await this.client.keyValueStorage.setItem<Sequence[]>(this.storageKey, sequences);
+  }
+
+  private async getSequenceStore<Sequence = any>(): Promise<Sequence[] | undefined> {
+    const sequences = await this.client.keyValueStorage.getItem<Sequence[]>(this.storageKey);
+    return sequences;
+  }
+
   private async getSequence(topic: string): Promise<Sequence> {
     await this.isInitialized();
     const sequence = this.sequences.get(topic);
@@ -124,13 +139,13 @@ export class Store<Sequence = any> extends IStore<Sequence> {
   }
 
   private async persist() {
-    await this.client.storage.setSequenceStore(this.context, this.values);
+    await this.setSequenceStore(this.values);
     this.events.emit(STORE_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getSequenceStore(this.context);
+      const persisted = await this.getSequenceStore();
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.sequences.size) {

@@ -5,3 +5,5 @@ export const STORE_EVENTS = {
   init: "store_init",
   sync: "store_sync",
 };
+
+export const STORE_STORAGE_VERSION = "0.3";
