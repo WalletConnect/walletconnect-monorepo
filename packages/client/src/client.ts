@@ -81,21 +81,25 @@ export class Client extends IClient {
     return `${this.protocol}@${this.version}:${this.context}:`;
   }
 
-  public on(event: string, listener: any): void {
+  // ---------- Events ----------------------------------------------- //
+
+  public on(event: string, listener: (...args: any[]) => void) {
     this.events.on(event, listener);
   }
 
-  public once(event: string, listener: any) {
+  public once(event: string, listener: (...args: any[]) => void) {
     this.events.once(event, listener);
   }
 
-  public off(event: string, listener: any) {
+  public off(event: string, listener: (...args: any[]) => void) {
     this.events.off(event, listener);
   }
 
-  public removeListener(event: string, listener: any) {
+  public removeListener(event: string, listener: (...args: any[]) => void) {
     this.events.removeListener(event, listener);
   }
+
+  // ---------- Engine ----------------------------------------------- //
 
   public async connect(params: EngineTypes.CreateSessionParams) {
     try {
