@@ -2,10 +2,14 @@ import { AppMetadata } from "./misc";
 import { RelayerTypes } from "./relayer";
 
 export declare namespace JsonRpc {
-  // -- shared types --------------------------------------------- //
+  // -- shared types --------------------------------- //
   export interface BaseRequest {
     id: string;
     jsonrpc: "2.0";
+  }
+
+  export interface BaseResponse extends BaseRequest {
+    result: boolean;
   }
 
   export interface JsonrpcPermissions {
@@ -21,10 +25,27 @@ export declare namespace JsonRpc {
     notifications: NotificationsPermissions;
   }
 
-  // -- client.createSession ------------------------------------- //
-  export interface CreateSessionParams {
+  // -- pairing delete ------------------------------------- //
+  export interface PairingDeleteParams {
+    code: number;
+    reason: string;
+  }
+
+  export interface PairingDeleteRequest extends BaseRequest {
+    method: "wc_pairingDelete";
+    params: PairingDeleteParams;
+  }
+
+  // -- pairing ping ---------------------------------------- //
+  export interface PairingPingRequest extends BaseRequest {
+    method: "wc_pairingPing";
+    params: {};
+  }
+
+  // -- session propose ------------------------------------- //
+  export interface SessionProposeParams {
     relays: RelayerTypes.ProtocolOptions[];
-    permissions: JsonRpc.Permissions;
+    permissions: Permissions;
     ttl: number;
     blockchainProposed: {
       chains: string[];
@@ -36,15 +57,34 @@ export declare namespace JsonRpc {
     };
   }
 
-  export interface CreateSessionRequest extends JsonRpc.BaseRequest {
+  export interface SessionProposeRequest extends BaseRequest {
     method: "wc_sessionPropose";
-    params: CreateSessionParams;
+    params: SessionProposeParams;
   }
 
-  export interface CreateSessionResponse {
+  export interface SessionProposeResponse {
     relay: RelayerTypes.ProtocolOptions[];
     responder: {
       publicKey: string;
     };
+  }
+
+  // -- session settle  -------------------------------------- //
+  export interface SessionSettleParams {
+    relay: RelayerTypes.ProtocolOptions;
+    blockchain: {
+      chains: string[];
+      accounts: string[];
+    };
+    permissions: Permissions;
+    controller: {
+      publicKey: string;
+      metadata: AppMetadata;
+    };
+  }
+
+  export interface SessionSettleRequest extends BaseRequest {
+    method: "wc_sessionSettle";
+    params: SessionSettleParams;
   }
 }
