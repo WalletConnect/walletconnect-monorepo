@@ -1,6 +1,6 @@
 import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IRelayerStorage, IMessageTracker, MessageRecord } from "@walletconnect/types";
+import { IRelayerStorage, IMessageTracker, MessageRecord, BASE64 } from "@walletconnect/types";
 import { formatMessageContext, sha256 } from "@walletconnect/utils";
 
 import { MESSAGES_CONTEXT } from "../constants";
@@ -26,7 +26,7 @@ export class MessageTracker extends IMessageTracker {
   }
 
   public async set(topic: string, message: string): Promise<string> {
-    const hash = await sha256(message);
+    const hash = await sha256(message, BASE64);
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
       messages = {};
@@ -50,7 +50,7 @@ export class MessageTracker extends IMessageTracker {
 
   public async has(topic: string, message: string): Promise<boolean> {
     const messages = this.get(topic);
-    const hash = await sha256(message);
+    const hash = await sha256(message, BASE64);
     return typeof messages[hash] !== "undefined";
   }
 

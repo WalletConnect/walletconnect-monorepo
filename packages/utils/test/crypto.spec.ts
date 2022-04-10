@@ -1,6 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 import { toString } from "uint8arrays/to-string";
+import { BASE16, BASE64 } from "@walletconnect/types";
 import { safeJsonStringify } from "@walletconnect/safe-json";
 
 import {
@@ -28,6 +29,7 @@ const TEST_SEALED =
   "7a5a1e843debf98b01d6a75718b5ee27115eafa3caba9703ca1c5601a6af2419045320faec2073cc8b6b8dc439e63e21612ff3883c867e0bdcd72c833eb7f7bb2034a9ec35c2fb03d93732";
 const TEST_ENCODED =
   "cXdlY2ZhYXNkYWRzeloehD3r+YsB1qdXGLXuJxFer6PKupcDyhxWAaavJBkEUyD67CBzzItrjcQ55j4hYS/ziDyGfgvc1yyDPrf3uyA0qew1wvsD2Tcy";
+const TEST_HASHED_ENCODED = "4fb4d12d14891e560984914972a6f81f373141ece816ea085f9a32f4eb51a026";
 
 describe("Crypto", () => {
   it("generateKeyPair", async () => {
@@ -45,17 +47,21 @@ describe("Crypto", () => {
     const symKey = deriveSymmetricKey(sharedKey);
     expect(symKey).to.eql(TEST_SYM_KEY);
   });
-  it("sha256", async () => {
+  it("sha256 (base16)", async () => {
     const hash = await sha256(TEST_SHARED_KEY);
     expect(hash).to.eql(TEST_HASHED_KEY);
+  });
+  it("sha256 (base64)", async () => {
+    const hash = await sha256(TEST_ENCODED, BASE64);
+    expect(hash).to.eql(TEST_HASHED_ENCODED);
   });
   it("encrypt", async () => {
     const encoded = await encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
     expect(encoded).to.eql(TEST_ENCODED);
     const deserialized = deserialize(encoded);
-    const iv = toString(deserialized.iv, "base16");
+    const iv = toString(deserialized.iv, BASE16);
     expect(iv).to.eql(TEST_IV);
-    const sealed = toString(deserialized.sealed, "base16");
+    const sealed = toString(deserialized.sealed, BASE16);
     expect(sealed).to.eql(TEST_SEALED);
   });
   it("decrypt", async () => {

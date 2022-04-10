@@ -3,6 +3,14 @@ import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
 
+export const BASE16 = "base16";
+export const BASE64 = "base64";
+export const UTF8 = "utf8";
+
+export const ZERO_INDEX = 0;
+export const IV_LENGTH = 12;
+export const KEY_LENGTH = 32;
+
 export declare namespace CryptoTypes {
   export interface Participant {
     publicKey: string;
