@@ -4,21 +4,29 @@ import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
 import { IEngine } from "./engine";
-import { AppMetadata } from "./misc";
 import { IPairing } from "./pairing";
 import { IRelayer } from "./relayer";
 import { ISession } from "./session";
 
-export interface ClientOptions {
-  name?: string;
-  projectId?: string;
-  controller?: boolean;
-  metadata?: AppMetadata;
-  relayUrl?: string;
-  logger?: string | Logger;
-  keychain?: IKeyChain;
-  storage?: IKeyValueStorage;
-  storageOptions?: KeyValueStorageOptions;
+export declare namespace ClientTypes {
+  interface Metadata {
+    name: string;
+    description: string;
+    url: string;
+    icons: [string];
+  }
+
+  interface Options {
+    name?: string;
+    projectId?: string;
+    controller?: boolean;
+    metadata?: Metadata;
+    relayUrl?: string;
+    logger?: string | Logger;
+    keychain?: IKeyChain;
+    storage?: IKeyValueStorage;
+    storageOptions?: KeyValueStorageOptions;
+  }
 }
 
 export abstract class IClient implements IEvents, IEngine {
@@ -29,7 +37,7 @@ export abstract class IClient implements IEvents, IEngine {
   public abstract readonly context: string;
   public abstract readonly storagePrefix: string;
   public abstract readonly controller: boolean;
-  public abstract readonly metadata: AppMetadata | undefined;
+  public abstract readonly metadata: ClientTypes.Metadata | undefined;
   public abstract readonly relayUrl: string | undefined;
   public abstract readonly projectId: string | undefined;
 
@@ -42,7 +50,7 @@ export abstract class IClient implements IEvents, IEngine {
   public abstract keyValueStorage: IKeyValueStorage;
   public abstract events: IEvents["events"];
 
-  constructor(public opts?: ClientOptions) {}
+  constructor(public opts?: ClientTypes.Metadata) {}
 
   public abstract on: IEvents["on"];
   public abstract once: IEvents["once"];

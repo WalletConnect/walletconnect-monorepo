@@ -1,13 +1,11 @@
-import "mocha";
-import { clock } from "sinon";
 import { Watch } from "@walletconnect/time";
 import { AppMetadata, PairingTypes } from "@walletconnect/types";
-
+import "mocha";
+import { clock } from "sinon";
 import { CLIENT_EVENTS, SESSION_JSONRPC, STORE_EVENTS } from "../../src";
-
 import { expect } from "./chai";
-import { TEST_TIMEOUT_SHORT } from "./values";
 import { InitializedClients } from "./types";
+import { TEST_TIMEOUT_SHORT } from "./values";
 
 export async function testPairingWithoutSession(clients: InitializedClients): Promise<string> {
   // testing data points

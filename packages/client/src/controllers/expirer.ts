@@ -1,16 +1,14 @@
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { toMiliseconds } from "@walletconnect/time";
+import { ExpirerTypes, IClient, IExpirer } from "@walletconnect/types";
+import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-
-import { toMiliseconds } from "@walletconnect/time";
-import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
-import { IClient, IExpirer, Expiration, ExpirerEvents } from "@walletconnect/types";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
-
 import { EXPIRER_CONTEXT, EXPIRER_EVENTS, EXPIRER_STORAGE_VERSION } from "../constants";
 
 export class Expirer extends IExpirer {
-  public expirations = new Map<string, Expiration>();
+  public expirations = new Map<string, ExpirerTypes.Expiration>();
 
   public events = new EventEmitter();
 
@@ -18,7 +16,7 @@ export class Expirer extends IExpirer {
 
   public version: string = EXPIRER_STORAGE_VERSION;
 
-  private cached: Expiration[] = [];
+  private cached: ExpirerTypes.Expiration[] = [];
 
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger);
@@ -43,7 +41,7 @@ export class Expirer extends IExpirer {
     return Array.from(this.expirations.keys());
   }
 
-  get values(): Expiration[] {
+  get values(): ExpirerTypes.Expiration[] {
     return Array.from(this.expirations.values());
   }
 
@@ -62,17 +60,17 @@ export class Expirer extends IExpirer {
     }
   }
 
-  public async set(topic: string, expiration: Expiration): Promise<void> {
+  public async set(topic: string, expiration: ExpirerTypes.Expiration): Promise<void> {
     await this.isInitialized();
     this.expirations.set(topic, expiration);
     this.checkExpiry(topic, expiration);
     this.events.emit(EXPIRER_EVENTS.created, {
       topic,
       expiration,
-    } as ExpirerEvents.Created);
+    } as ExpirerTypes.Created);
   }
 
-  public async get(topic: string): Promise<Expiration> {
+  public async get(topic: string): Promise<ExpirerTypes.Expiration> {
     await this.isInitialized();
     return this.getExpiration(topic);
   }
@@ -84,7 +82,7 @@ export class Expirer extends IExpirer {
     this.events.emit(EXPIRER_EVENTS.deleted, {
       topic,
       expiration,
-    } as ExpirerEvents.Deleted);
+    } as ExpirerTypes.Deleted);
   }
 
   public on(event: string, listener: any): void {
@@ -105,12 +103,17 @@ export class Expirer extends IExpirer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async setExpirations(expirations: Expiration[]): Promise<void> {
-    await this.client.keyValueStorage.setItem<Expiration[]>(this.storageKey, expirations);
+  private async setExpirations(expirations: ExpirerTypes.Expiration[]): Promise<void> {
+    await this.client.keyValueStorage.setItem<ExpirerTypes.Expiration[]>(
+      this.storageKey,
+      expirations,
+    );
   }
 
-  private async getExpirations(): Promise<Expiration[] | undefined> {
-    const expirations = await this.client.keyValueStorage.getItem<Expiration[]>(this.storageKey);
+  private async getExpirations(): Promise<ExpirerTypes.Expiration[] | undefined> {
+    const expirations = await this.client.keyValueStorage.getItem<ExpirerTypes.Expiration[]>(
+      this.storageKey,
+    );
     return expirations;
   }
 
@@ -164,7 +167,7 @@ export class Expirer extends IExpirer {
     });
   }
 
-  private getExpiration(topic: string): Expiration {
+  private getExpiration(topic: string): ExpirerTypes.Expiration {
     const expiration = this.expirations.get(topic);
     if (!expiration) {
       const error = ERROR.NO_MATCHING_ID.format({
@@ -177,18 +180,18 @@ export class Expirer extends IExpirer {
     return expiration;
   }
 
-  private checkExpiry(topic: string, expiration: Expiration): void {
+  private checkExpiry(topic: string, expiration: ExpirerTypes.Expiration): void {
     const { expiry } = expiration;
     const msToTimeout = toMiliseconds(expiry) - Date.now();
     if (msToTimeout <= 0) this.expire(topic, expiration);
   }
 
-  private expire(topic: string, expiration: Expiration): void {
+  private expire(topic: string, expiration: ExpirerTypes.Expiration): void {
     this.expirations.delete(topic);
     this.events.emit(EXPIRER_EVENTS.expired, {
       topic,
       expiration,
-    } as ExpirerEvents.Expired);
+    } as ExpirerTypes.Expired);
   }
 
   private checkExpirations(): void {
@@ -197,19 +200,19 @@ export class Expirer extends IExpirer {
 
   private registerEventListeners(): void {
     this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkExpirations());
-    this.events.on(EXPIRER_EVENTS.created, (createdEvent: ExpirerEvents.Created) => {
+    this.events.on(EXPIRER_EVENTS.created, (createdEvent: ExpirerTypes.Created) => {
       const eventName = EXPIRER_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: createdEvent });
       this.persist();
     });
-    this.events.on(EXPIRER_EVENTS.expired, (expiredEvent: ExpirerEvents.Expired) => {
+    this.events.on(EXPIRER_EVENTS.expired, (expiredEvent: ExpirerTypes.Expired) => {
       const eventName = EXPIRER_EVENTS.expired;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: expiredEvent });
       this.persist();
     });
-    this.events.on(EXPIRER_EVENTS.deleted, (deletedEvent: ExpirerEvents.Deleted) => {
+    this.events.on(EXPIRER_EVENTS.deleted, (deletedEvent: ExpirerTypes.Deleted) => {
       const eventName = EXPIRER_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });

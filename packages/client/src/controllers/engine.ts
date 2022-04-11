@@ -42,11 +42,11 @@ export default class Engine implements IEngine {
     this.relayer.subscribe(topic);
   }
 
-  public async approve() {
+  public async approveSession() {
     // TODO
   }
 
-  public async reject() {
+  public async rejectSession() {
     // TODO
   }
 
@@ -78,7 +78,7 @@ export default class Engine implements IEngine {
     // TODO
   }
 
-  public async notify() {
+  public async emit() {
     // TODO
   }
 

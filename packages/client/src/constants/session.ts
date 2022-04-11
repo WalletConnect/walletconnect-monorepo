@@ -1,7 +1,7 @@
 import { SEVEN_DAYS } from "@walletconnect/time";
 import { SessionTypes, SignalTypes } from "@walletconnect/types";
 
-export const SESSION_JSONRPC: SessionTypes.JsonRpc = {
+export const SESSION_JSONRPC = {
   propose: "wc_sessionPropose",
   approve: "wc_sessionApprove",
   reject: "wc_sessionReject",

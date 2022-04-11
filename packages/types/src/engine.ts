@@ -1,4 +1,4 @@
-import { AppMetadata } from "./misc";
+import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
 
@@ -18,7 +18,7 @@ export declare namespace EngineTypes {
     pairingTopic?: string;
     expiry?: number;
     permissions?: SessionTypes.Permissions;
-    metadata?: AppMetadata;
+    metadata?: ClientTypes.Metadata;
   }
 }
 

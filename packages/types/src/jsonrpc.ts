@@ -1,4 +1,4 @@
-import { AppMetadata } from "./misc";
+import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 
 export declare namespace JsonRpc {
@@ -23,8 +23,10 @@ export declare namespace JsonRpc {
   export interface PairingDeleteRequest extends BaseRequest {
     method: "wc_pairingDelete";
     params: {
-      code: number;
-      reason: string;
+      reason: {
+        code: number;
+        message: string;
+      };
     };
   }
 
@@ -49,7 +51,7 @@ export declare namespace JsonRpc {
       events: string[];
       proposer: {
         publicKey: string;
-        metadata: AppMetadata;
+        metadata: ClientTypes.Metadata;
       };
     };
   }
@@ -74,7 +76,7 @@ export declare namespace JsonRpc {
       expiry: number;
       controller: {
         publicKey: string;
-        metadata: AppMetadata;
+        metadata: ClientTypes.Metadata;
       };
     };
   }
@@ -125,8 +127,10 @@ export declare namespace JsonRpc {
   export interface SessionDeleteRequest extends BaseRequest {
     method: "wc_sessionDelete";
     params: {
-      code: number;
-      reason: string;
+      reason: {
+        code: number;
+        reason: string;
+      };
     };
   }
 
