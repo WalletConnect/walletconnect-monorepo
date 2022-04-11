@@ -1,171 +1,89 @@
-### Deploy configs
-BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
-GITHASH=$(shell git rev-parse --short HEAD)
-REMOTE=$(shell git remote show origin -n | grep Push | cut -f6 -d' ')
-REMOTE_HASH=$(shell git ls-remote $(REMOTE) $(BRANCH) | head -n1 | cut -f1)
-project=walletconnect
-redisImage=redis:6-alpine
-standAloneRedis=xredis
+SHELL := /bin/bash
 
-## Environment variables used by the compose files
-export PROJECT=$(project)
-export $(shell sed 's/=.*//' setup)
-
-### Makefile internal coordination
-log_end=@echo "MAKE: Done with $@"; echo
-flags=.makeFlags
-VPATH=$(flags):build
-$(shell mkdir -p $(flags))
-.PHONY: help clean clean-all reset build
-
-dockerizedNix=docker run --name builder --rm -v nix-store:/nix -v $(shell pwd):/src -w /src nixos/nix nix-shell -p bash --run
-dockerLoad=docker load -i build/$@ \
-		| awk '{print $$NF}' \
-		| tee build/$@-img
-copyResult=cp -r -f -L result build/$@ && rm -rf result
-buildRelay=nix-build --attr relay.docker --argstr githash $(GITHASH) && $(copyResult)
-WAKU_VERSION_TAG ?= v0.5.1
-WAKU_SHA256 ?= 0k55hw1wqcyrpf9cxchhxdb92p75mmskkpvfn1paivl1r38pyb4a
-buildWakuCommand:=nix-build ./ops/waku-docker.nix --argstr wakuVersionTag $(WAKU_VERSION_TAG) --argstr nixNimRepoSha256 $(WAKU_SHA256)
-
-buildWaku=$(buildWakuCommand) && $(copyResult)
 # Shamelessly stolen from https://www.freecodecamp.org/news/self-documenting-makefile
+.PHONY: help
 help: ## Show this help
-	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@egrep -h '\s##\s' Makefile \
+		| sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-dirs:
-	mkdir -p build
-	mkdir -p $(flags)
+DOCKER_COMPOSE=-f ./ops/package/docker-compose.yml
+DOCKER_COMPOSE_DEV=-f ./ops/package/docker-compose.dev.yml -f ./ops/package/docker-compose.override.yml
+DOCKER_COMPOSE_TEST=-f ./ops/package/docker-compose.test.yml
 
-pull: ## pulls docker images
-	docker pull $(redisImage)
-ifeq (, $(shell which nix))
-	docker pull nixos/nix
+DEV_PROJECTS=health relay monorepo-tests
+
+### Production build/publish
+.PHONY: build
+build: ## build docker images
+	@docker-compose $(DOCKER_COMPOSE) build
+
+.PHONY: publish
+publish: ## push docker images to docker hub
+	@docker-compose $(DOCKER_COMPOSE) push
+
+### Dev build/publish
+.PHONY: build-dev
+build-dev: ## build docker images for dev enviromnent 
+	@docker-compose $(DOCKER_COMPOSE_DEV) build $(DEV_PROJECTS)
+
+.PHONY: publish-dev
+publish-dev: ## push docker images for dev environment to the docker hub
+	@docker-compose $(DOCKER_COMPOSE_DEV) push $(DEV_PROJECTS)
+
+# Local dev environment helpers
+.PHONY: dev
+.PHONY: pull
+pull: ## pull image environment 
+	@docker-compose $(DOCKER_COMPOSE_DEV) pull --ignore-pull-failures || true
+
+dev: ## start local dev environment
+ifeq (,$(fast))
+	@make build-dev
 endif
-	touch $(flags)/$@
-	$(log_end)
+	@docker-compose $(DOCKER_COMPOSE_DEV) up -d
 
-setup: ## configures domain and certbot email
-	@read -p 'Relay URL domain [localhost]: ' relay; \
-	echo "export RELAY_URL="$${relay:-localhost} > setup
-	@read -p 'Email for SSL certificate (default noreply@gmail.com): ' email; \
-	echo "export CERTBOT_EMAIL="$${email:-noreply@gmail.com} >> setup
-	@read -p 'Paste your cloudflare API token: ' cf; \
-	echo "export CLOUDFLARE_TOKEN="$${cf} >> setup
-	$(log_end)
+.PHONY: stop
+stop: ## stop local environment 
+	@docker-compose $(DOCKER_COMPOSE_DEV) stop
 
-bootstrap-lerna: ## setups lerna for the monorepo management
-	npm i --include=dev
-	npm run bootstrap
-	touch $(flags)/$@
-	$(log_end)
+.PHONY: clean
+clean: stop ## clean local environment 
+	@docker-compose $(DOCKER_COMPOSE_DEV) rm -f
 
-build-lerna: bootstrap-lerna ## builds the npm packages in "./packages"
-	npm run build
-	touch $(flags)/$@
-	$(log_end)
+logs: ## show logs for docker containers. To get logs for a single container uses `make logs service=relay`
+	@docker-compose $(DOCKER_COMPOSE_DEV) logs ${service}
 
-build-relay: ## builds the relay using system npm
-	npm install --also=dev --prefix servers/relay
-	npm run build --prefix servers/relay
-	$(log_end)
+.PHONY: ps
+ps: ## show docker container status
+	@docker-compose $(DOCKER_COMPOSE_DEV) ps
 
-nix-volume:
-ifneq (, $(shell which nix))
-	docker volume create nix-store
-endif
-	$(log_end)
+### Testing 
+.PHONY: test
+test: test-relay test-client
 
-build-img-relay: dirs nix-volume ## builds relay docker image inside of docker
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildRelay)"
-else
-	$(buildRelay)
-endif
-	$(dockerLoad)
-	$(log_end)
+.PHONY: test-relay
+test-relay:  ## runs "./servers/relay" tests against the locally running relay
+	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
+		run --rm -e TEST_RELAY_URL=ws://relay:5000 \
+		monorepo-tests \
+		npm run test 
 
-build-img-waku: dirs nix-volume ## builds waky docker image inside of docker
-ifeq (, $(shell which nix))
-	$(dockerizedNix) "$(buildWaku)"
-else
-	$(buildWaku)
-endif
-	$(dockerLoad)
-	$(log_end)
+.PHONY: test-client
+test-client:  ## runs "./packages/client" tests against the locally running relay
+	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
+		run --rm monorepo-tests \
+		npm run test --prefix packages/client
 
-build-images: build-img-relay build-img-waku
+.PHONY: test-staging
+test-staging: ## runs "./packages/client" tests against the staging.walletconnect.com
+	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
+		run --rm -e TEST_RELAY_URL=ws://staging.walletconnect.com \
+		monorepo-tests \
+		npm run test --prefix packages/client	
 
-build: dirs build-images bootstrap-lerna build-relay build-react-app build-react-wallet ## builds all the packages and the containers for the relay
-	$(log_end)
-
-test-client: build-lerna ## runs "./packages/client" tests against the locally running relay. Make sure you run 'make dev' before.
-	npm run test --prefix packages/client
-
-test-staging: build-lerna ## tests client against staging.walletconnect.com
-	TEST_RELAY_URL=wss://staging.walletconnect.com npm run test --prefix packages/client
-
-test-production: build-lerna ## tests client against relay.walletconnect.com
-	TEST_RELAY_URL=wss://relay.walletconnect.com npm run test --prefix packages/client
-
-test-relay: build-relay ## runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before. Also needs waku nodes running locally
-	npm run test --prefix servers/relay
-
-start-redis: ## starts redis docker container for local development
-	docker run --rm --name $(standAloneRedis) -d -p 6379:6379 $(redisImage) || true
-	$(log_end)
-
-predeploy: dirs pull build-images 
-	touch $(flags)/$@
-
-dev: predeploy ## runs relay on watch mode and shows logs
-	RELAY_MODE=any REPLICAS=1 MONITORING=false NODE_ENV=development $(MAKE) deploy
-	@echo  "MAKE: Done with $@"
-	@echo
-	$(log_end)
-
-ci: ## runs tests in github actions
-	printf "export RELAY_URL=localhost\nexport CERTBOT_EMAIL=norepy@gmail.com\nexport CLOUDFLARE_TOKEN=\n" > setup
-	$(MAKE) dev
-	sleep 15
-	docker service logs --tail 100 $(project)_relay
-	TEST_RELAY_URL=ws://localhost:5000 $(MAKE) test-client
-	TEST_RELAY_URL=ws://localhost:5000 $(MAKE) test-relay
-
-deploy: setup predeploy ## Deploys the docker swarm for the relay
-	bash ops/deploy.sh
-	$(log_end)
-
-deploy-no-monitoring: setup predeploy ## same as deploy but without the monitoring
-	MONITORING=false bash ops/deploy.sh
-	$(log_end)
-
-redeploy: setup clean predeploy ## redeploys the prodution containers and rebuilds them
-	docker service update --force --image $(relayImage) $(project)_relay
-
-relay-logs: ## follows the relay container logs.
-	docker service logs -f --raw --tail 100 $(project)_relay
-
-cachix: clean dirs ## pushes docker images to cachix
-	cachix push walletconnect $(shell $(buildRelay))
-	cachix push walletconnect $(shell $(buildWaku))
-
-rm-redis: ## stops the redis container
-	docker stop $(standAloneRedis) || true
-
-down: stop ## alias of stop
-
-stop: rm-redis ## stops the whole docker stack
-	docker stack rm $(project)
-	while [ -n "`docker network ls --quiet --filter label=com.docker.stack.namespace=$(project)`" ]; do echo -n '.' && sleep 1; done
-	@echo
-	$(log_end)
-
-reset: ## removes all build artifacts
-	rm -f setup
-	rm -rf build
-	$(log_end)
-
-clean: ## removes all build outputs
-	rm -rf .makeFlags build result*
-	$(log_end)
+.PHONY: test-production
+test-production: build-lerna ## runs "./packages/client" tests against the relay.walletconnect.com
+	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
+		run --rm -e TEST_RELAY_URL=ws://relay.walletconnect.com \
+		monorepo-tests \
+		npm run test --prefix packages/client	

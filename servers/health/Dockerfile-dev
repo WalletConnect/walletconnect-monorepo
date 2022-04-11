@@ -1,0 +1,17 @@
+FROM node:16.14-alpine as base
+
+WORKDIR /usr/src/app
+
+RUN apk --update --no-cache \
+        add g++ make python3
+
+FROM base as build
+
+COPY package.json package-lock.json ./
+COPY tsconfig.json ./
+RUN npm install 
+
+COPY ./src ./src
+RUN npm run compile
+
+CMD ["npm", "run", "dev"]

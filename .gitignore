@@ -32,3 +32,5 @@ test.db
 setup
 result*
 ops/grafana/grafana.ini
+
+.vscode
