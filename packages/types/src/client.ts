@@ -51,8 +51,8 @@ export abstract class IClient implements IEvents, IEngine {
 
   public abstract createSession: IEngine["createSession"];
   public abstract pair: IEngine["pair"];
-  public abstract approve: IEngine["approve"];
-  public abstract reject: IEngine["reject"];
+  public abstract approveSession: IEngine["approveSession"];
+  public abstract rejectSession: IEngine["rejectSession"];
   public abstract updateAccounts: IEngine["updateAccounts"];
   public abstract updateMethods: IEngine["updateMethods"];
   public abstract updateEvents: IEngine["updateEvents"];
@@ -60,6 +60,6 @@ export abstract class IClient implements IEvents, IEngine {
   public abstract request: IEngine["request"];
   public abstract respond: IEngine["respond"];
   public abstract ping: IEngine["ping"];
-  public abstract notify: IEngine["notify"];
+  public abstract emit: IEngine["emit"];
   public abstract disconnect: IEngine["disconnect"];
 }
