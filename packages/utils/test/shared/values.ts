@@ -4,7 +4,7 @@ export const TEST_PAIRING_TOPIC =
 export const TEST_SESSION_TOPIC =
   "f5d3f03946b6a2a3b22661fae1385cd1639bfb6f6c070115699b0a2ec1decd8c";
 
-export const TEST_SYMETRIC_KEY = "587d5484ce2a2a6ee3ba1962fdd7e8588e06200c46823bd18fbd67def96ad303";
+export const TEST_SYM_KEY = "587d5484ce2a2a6ee3ba1962fdd7e8588e06200c46823bd18fbd67def96ad303";
 
 export const TEST_KEY_PAIRS = {
   A: {

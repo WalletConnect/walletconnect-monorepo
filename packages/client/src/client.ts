@@ -69,7 +69,7 @@ export class Client implements IClient {
       logger: this.logger,
       projectId: this.projectId,
     });
-    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing);
+    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing, this.events);
   }
 
   get context(): string {

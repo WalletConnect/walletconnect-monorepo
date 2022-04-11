@@ -1,14 +1,7 @@
 import { FIVE_MINUTES } from "@walletconnect/time";
-import {
-  ICrypto,
-  IEngine,
-  IPairing,
-  IRelayer,
-  ISession,
-  PairingTypes,
-  SessionTypes,
-} from "@walletconnect/types";
+import { EngineTypes, ICrypto, IEngine, IPairing, IRelayer, ISession } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
+import EventEmitter from "events";
 
 export default class Engine implements IEngine {
   constructor(
@@ -16,11 +9,12 @@ export default class Engine implements IEngine {
     private crypto: ICrypto,
     private session: ISession,
     private pairing: IPairing,
+    private events: EventEmitter,
   ) {
-    this.registerEventListeners();
+    this.registerRelayerEvents();
   }
 
-  public async createSession(params: SessionTypes.CreateSessionParams) {
+  public async createSession(params: EngineTypes.CreateSessionParams) {
     // TODO(ilja) validate params
     const { pairingTopic, relay } = params;
     let topic = pairingTopic;
@@ -39,10 +33,10 @@ export default class Engine implements IEngine {
     // this.send(topic, message)
   }
 
-  public async pair(pairingUri: SessionTypes.SessionPairParams) {
+  public async pair(pairingUri: string) {
     // TODO validate pairing Uri
-    const { topic, symetricKey } = parseUri(pairingUri);
-    this.crypto.setSymKey(symetricKey, topic);
+    const { topic, symKey } = parseUri(pairingUri);
+    this.crypto.setSymKey(symKey, topic);
     // this.generatePairing(params)
     // this.pairing.set(topic, params)
     this.relayer.subscribe(topic);
@@ -94,17 +88,16 @@ export default class Engine implements IEngine {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async createPairing(params: PairingTypes.CreatePairingParams) {
-    const { relay } = params;
+  private async createPairing(relay: EngineTypes.CreatePairingParams) {
     const pairingTopic = generateRandomBytes32();
-    const symetricKey = await this.crypto.generateSymKey(pairingTopic);
+    const symKey = await this.crypto.generateSymKey(pairingTopic);
     const sharedPairingData = {
       topic: pairingTopic,
       version: 2,
     };
     const pairingUriData = {
       ...sharedPairingData,
-      symetricKey,
+      symKey,
       relayProtocol: relay.protocol,
       relayData: relay.data,
     };
@@ -123,7 +116,7 @@ export default class Engine implements IEngine {
     return { pairingTopic, pairingUri };
   }
 
-  private registerEventListeners() {
+  private registerRelayerEvents() {
     /**
      * TODO
      * onSessionPropose - receiver:Wallet get session proposal data from topic A

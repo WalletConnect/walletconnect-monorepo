@@ -1,21 +1,32 @@
-
+import { AppMetadata } from "./misc";
+import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
 
 export declare namespace EngineTypes {
   interface UriParameters {
     version: number;
     topic: string;
-    symetricKey: string;
+    symKey: string;
     relayProtocol: string;
     relayData?: string;
+  }
+
+  type CreatePairingParams = RelayerTypes.ProtocolOptions;
+
+  interface CreateSessionParams {
+    relay: RelayerTypes.ProtocolOptions;
+    pairingTopic?: string;
+    expiry?: number;
+    permissions?: SessionTypes.Permissions;
+    metadata?: AppMetadata;
   }
 }
 
 export interface IEngine {
-  createSession(params: SessionTypes.CreateSessionParams): Promise<void>;
+  createSession(params: EngineTypes.CreateSessionParams): Promise<void>;
   pair(pairingUri: string): Promise<void>;
-  approve(): Promise<void>;
-  reject(): Promise<void>;
+  approveSession(): Promise<void>;
+  rejectSession(): Promise<void>;
   updateAccounts(): Promise<void>;
   updateMethods(): Promise<void>;
   updateEvents(): Promise<void>;
@@ -23,6 +34,6 @@ export interface IEngine {
   request(): Promise<void>;
   respond(): Promise<void>;
   ping(): Promise<void>;
-  notify(): Promise<void>;
+  emit(): Promise<void>;
   disconnect(): Promise<void>;
 }

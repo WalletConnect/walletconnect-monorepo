@@ -1,4 +1,4 @@
-import { AppMetadata } from "./misc";
+import { AppMetadata, JsonRpcPermissions, NotificationPermissions } from "./misc";
 import { RelayerTypes } from "./relayer";
 
 export declare namespace JsonRpc {
@@ -10,19 +10,6 @@ export declare namespace JsonRpc {
 
   export interface BaseResponse extends BaseRequest {
     result: boolean;
-  }
-
-  export interface JsonrpcPermissions {
-    methods: string[];
-  }
-
-  export interface NotificationsPermissions {
-    types: string[];
-  }
-
-  export interface Permissions {
-    jsonrpc: JsonrpcPermissions;
-    notifications: NotificationsPermissions;
   }
 
   // -- pairing delete ------------------------------------- //
@@ -45,8 +32,11 @@ export declare namespace JsonRpc {
   // -- session propose ------------------------------------- //
   export interface SessionProposeParams {
     relays: RelayerTypes.ProtocolOptions[];
-    permissions: Permissions;
-    ttl: number;
+    permissions: {
+      jsonrpc: JsonRpcPermissions;
+      notifications: NotificationPermissions;
+    };
+    expiry: number;
     blockchainProposed: {
       chains: string[];
       auth?: string;
