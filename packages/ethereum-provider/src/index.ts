@@ -20,7 +20,7 @@ export const signerMethods = [
   "personal_sign",
 ];
 
-export const infuraNetworks = {
+export const networks = {
   1: "mainnet",
   3: "ropsten",
   4: "rinkeby",
@@ -35,8 +35,14 @@ export const providerEvents = {
   },
 };
 
+export interface QuickNodeConfig {
+  token: string;
+  subdomain: string;
+}
+
 export interface EthereumRpcConfig {
   infuraId?: string;
+  quicknodeConfig?: QuickNodeConfig;
   custom?: {
     [chainId: number]: string;
   };
@@ -44,20 +50,36 @@ export interface EthereumRpcConfig {
 
 export function getInfuraRpcUrl(chainId: number, infuraId?: string): string | undefined {
   let rpcUrl: string | undefined;
-  const network = infuraNetworks[chainId];
+  const network = networks[chainId];
   if (network) {
     rpcUrl = `https://${network}.infura.io/v3/${infuraId}`;
   }
   return rpcUrl;
 }
 
+export function getQuickNodeRpcUrl(
+  chainId: number,
+  quickNodeConfig: QuickNodeConfig,
+): string | undefined {
+  let rpcUrl: string | undefined;
+  const network = networks[chainId];
+  const { token, subdomain } = quickNodeConfig;
+  if (network && network !== "mainnet") {
+    rpcUrl = `https://${subdomain}.${network}.quiknode.pro/${token}/`;
+  } else if (network) {
+    rpcUrl = `https://${subdomain}.quiknode.pro/${token}/`;
+  }
+  return rpcUrl;
+}
+
 export function getRpcUrl(chainId: number, rpc?: EthereumRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
-  const infuraUrl = getInfuraRpcUrl(chainId, rpc?.infuraId);
   if (rpc && rpc.custom) {
     rpcUrl = rpc.custom[chainId];
-  } else if (infuraUrl) {
-    rpcUrl = infuraUrl;
+  } else if (rpc?.quicknodeConfig) {
+    rpcUrl = getQuickNodeRpcUrl(chainId, rpc?.quicknodeConfig);
+  } else if (rpc?.infuraId) {
+    rpcUrl = getInfuraRpcUrl(chainId, rpc?.infuraId);
   }
   return rpcUrl;
 }

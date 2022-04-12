@@ -12,7 +12,7 @@ import {
 
 import { WalletClient } from "./shared";
 
-import EthereumProvider from "../src";
+import EthereumProvider, { getRpcUrl } from "../src";
 
 const CHAIN_ID = 123;
 const PORT = 8545;
@@ -80,6 +80,33 @@ const TEST_ETH_TRANSFER = {
   value: utils.parseEther("1").toHexString(),
   data: "0x",
 };
+
+describe("getRpcUrl", function() {
+  it("getRpcUrl with quicknode config and mainnet", function() {
+    const rpcUrl = getRpcUrl(1, {
+      quicknodeConfig: { subdomain: "lost-blue-arc", token: "something-secret" },
+    });
+    expect(rpcUrl).to.eql("https://lost-blue-arc.quiknode.pro/something-secret/");
+  });
+  it("getRpcUrl with quicknode config and kovan", function() {
+    const rpcUrl = getRpcUrl(42, {
+      quicknodeConfig: { subdomain: "lost-blue-arc", token: "something-secret" },
+    });
+    expect(rpcUrl).to.eql("https://lost-blue-arc.kovan.quiknode.pro/something-secret/");
+  });
+  it("getRpcUrl with infura id", function() {
+    const rpcUrl = getRpcUrl(1, {
+      infuraId: "12345",
+    });
+    expect(rpcUrl).to.eql("https://mainnet.infura.io/v3/12345");
+  });
+  it("getRpcUrl with custom url", function() {
+    const rpcUrl = getRpcUrl(1, {
+      custom: { 1: "https://custom.url" },
+    });
+    expect(rpcUrl).to.eql("https://custom.url");
+  });
+});
 
 describe("EthereumProvider", function() {
   this.timeout(30_000);
