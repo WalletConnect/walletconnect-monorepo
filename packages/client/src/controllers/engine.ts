@@ -124,20 +124,19 @@ export default class Engine extends IEngine {
       topic: pairingTopic,
       version: 2,
     };
-    const pairingUriData = {
+    const pairingUri = formatUri({
       ...sharedPairingData,
       symKey,
       relayProtocol: relay.protocol,
       relayData: relay.data,
-    };
-    const pairingUri = formatUri(pairingUriData);
+    });
     const pairingExpiry = calcExpiry(FIVE_MINUTES);
     const pairingData = {
       ...sharedPairingData,
       relay,
-      expiry: pairingExpiry,
       uri: pairingUri,
-      isActive: true,
+      expiry: pairingExpiry,
+      active: true,
     };
     this.pairing.set(pairingTopic, pairingData);
     this.relayer.subscribe(pairingTopic);
