@@ -63,12 +63,12 @@ export default class Engine extends IEngine {
   }
 
   public async pair(pairingUri: string) {
-    // TODO validate pairing Uri
-    const { topic, symKey } = parseUri(pairingUri);
+    // TODO(ilja) validate pairing Uri
+    const { topic, symKey, relay } = parseUri(pairingUri);
     this.crypto.setSymKey(symKey, topic);
-    // this.generatePairing(params)
-    // this.pairing.set(topic, params)
-    this.relayer.subscribe(topic);
+    // TODO(ilja) this.generatePairing(params)
+    // TODO(ilja) this.pairing.set(topic, params)
+    this.relayer.subscribe(topic, relay);
   }
 
   public async approve() {

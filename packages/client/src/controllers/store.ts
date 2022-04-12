@@ -4,7 +4,7 @@ import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnec
 import { Logger } from "pino";
 import { STORE_STORAGE_VERSION } from "../constants";
 
-export class Store<Data extends SessionTypes.Data | PairingTypes.Data> extends IStore<Data> {
+export class Store<Data extends SessionTypes.Struct | PairingTypes.Struct> extends IStore<Data> {
   public data = new Map<string, Data>();
   public version: string = STORE_STORAGE_VERSION;
 

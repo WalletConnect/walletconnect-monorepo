@@ -1,16 +1,15 @@
-import { AppMetadata } from "./misc";
+import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 import { IStore } from "./store";
 
 export declare namespace PairingTypes {
-  export interface Data {
+  export interface Struct {
     topic: string;
     expiry: number;
     relay: RelayerTypes.ProtocolOptions;
-    uri: string;
-    isActive: boolean;
-    selfMetadata?: AppMetadata;
+    active: boolean;
+    peerMetadata?: ClientTypes.Options;
   }
 }
 
-export type IPairing = IStore<PairingTypes.Data>;
+export type IPairing = IStore<PairingTypes.Struct>;
