@@ -141,7 +141,7 @@ export declare namespace JsonRpc {
   export type SessionPingResponse = DefaultResponse;
 
   // -- session request -------------------------------------------- //
-  export interface SessionRequestRequest extends BaseRequest {
+  export interface SessionRequest extends BaseRequest {
     method: "wc_sessionRequest";
     params: {
       request: {

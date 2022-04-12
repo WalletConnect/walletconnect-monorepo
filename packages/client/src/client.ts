@@ -29,7 +29,7 @@ export class Client implements IClient {
   public events: IClient["events"] = new EventEmitter();
   public relayer: IClient["relayer"];
   public crypto: IClient["crypto"];
-  public engine: IClient["engine"];
+  public engine: Engine;
   public keyValueStorage: IClient["keyValueStorage"];
 
   static async init(opts?: ClientTypes.Options) {
@@ -69,7 +69,7 @@ export class Client implements IClient {
       logger: this.logger,
       projectId: this.projectId,
     });
-    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing, this.events);
+    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing);
   }
 
   get context(): string {

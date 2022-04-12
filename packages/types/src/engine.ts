@@ -1,3 +1,4 @@
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
@@ -9,6 +10,11 @@ export declare namespace EngineTypes {
     symKey: string;
     relayProtocol: string;
     relayData?: string;
+  }
+
+  interface DecodedRelayEvent {
+    topic: string;
+    payload: JsonRpcPayload<string, unknown>;
   }
 
   type CreatePairingParams = RelayerTypes.ProtocolOptions;

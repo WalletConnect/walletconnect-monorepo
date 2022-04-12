@@ -1,7 +1,3 @@
-import { EventEmitter } from "events";
-import { Logger } from "pino";
-import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, IClient } from "@walletconnect/types";
-import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
   isJsonRpcError,
@@ -9,7 +5,10 @@ import {
   JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-
+import { IClient, IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
+import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
+import { EventEmitter } from "events";
+import { Logger } from "pino";
 import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
 
 export class JsonRpcHistory extends IJsonRpcHistory {

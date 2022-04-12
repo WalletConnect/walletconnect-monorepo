@@ -1,7 +1,16 @@
+import { isJsonRpcRequest, isJsonRpcResponse } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
-import { EngineTypes, ICrypto, IEngine, IPairing, IRelayer, ISession } from "@walletconnect/types";
+import {
+  EngineTypes,
+  ICrypto,
+  IEngine,
+  IPairing,
+  IRelayer,
+  ISession,
+  RelayerTypes,
+} from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
-import EventEmitter from "events";
+import { RELAYER_EVENTS } from "../constants";
 
 export default class Engine implements IEngine {
   constructor(
@@ -9,9 +18,9 @@ export default class Engine implements IEngine {
     private crypto: ICrypto,
     private session: ISession,
     private pairing: IPairing,
-    private events: EventEmitter,
   ) {
     this.registerRelayerEvents();
+    this.registerExpirerEvents();
   }
 
   public async createSession(params: EngineTypes.CreateSessionParams) {
@@ -116,13 +125,67 @@ export default class Engine implements IEngine {
     return { pairingTopic, pairingUri };
   }
 
+  // ---------- Relay Events ------------------------------------------- //
+
   private registerRelayerEvents() {
-    /**
-     * TODO
-     * onSessionPropose - receiver:Wallet get session proposal data from topic A
-     * onSessionProposalResponse - receiver:Dapp get session proposal aproval and wallet data on topic A, derrive topic B
-     * onSessionSettle - receiver:Dapp get full session data on topic B
-     * onSessionSettleAcknowledgement - receiver:Wallet get acknowledgement about session settlement from dapp on topic B
-     */
+    this.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
+      const { topic, message } = event;
+      const payload = await this.crypto.decode(topic, message);
+      if (this.pairing.topics.includes(topic)) {
+        if (isJsonRpcRequest(payload)) {
+          this.onPairingRelayEventRequest({ topic, payload });
+        } else if (isJsonRpcResponse(payload)) {
+          this.onPairingRelayEventResponse({ topic, payload });
+        }
+      } else if (this.session.topics.includes(topic)) {
+        if (isJsonRpcRequest(payload)) {
+          this.onSessionRelayEventRequest({ topic, payload });
+        } else if (isJsonRpcResponse(payload)) {
+          this.onSessionRelayEventResponse({ topic, payload });
+        }
+      }
+    });
+  }
+
+  private onPairingRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // onSessionProposeRequest
+    // onPairingDeleteRequest
+    // onPairingPingRequest
+  }
+
+  private onPairingRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // onSessionProposeResponse
+    // onPairingDeleteResponse
+    // onPairingPingResponse
+  }
+
+  private onSessionRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // onSessionSettleRequest
+    // onSessionUpdateAccountsRequest
+    // onSessionUpdateMethodsRequest
+    // onSessionUpdateEventsRequest
+    // onSessionUpdateExpiryRequest
+    // onSessionDeleteRequest
+    // onSessionPingRequest
+    // onSessionRequest
+    // onSessionEventRequest
+  }
+
+  private onSessionRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // onSessionSettleResponse
+    // onSessionUpdateAccountsResponse
+    // onSessionUpdateMethodsResponse
+    // onSessionUpdateEventsResponse
+    // onSessionUpdateExpiryResponse
+    // onSessionDeleteResponse
+    // onSessionPingResponse
+    // onSessionRequestResponse
+    // onSessionEventResponse
+  }
+
+  // ---------- Expirer Events ----------------------------------------- //
+
+  private registerExpirerEvents() {
+    // TODO
   }
 }
