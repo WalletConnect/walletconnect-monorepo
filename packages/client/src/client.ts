@@ -13,7 +13,7 @@ import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
 import { Crypto, Pairing, Relayer, Session } from "./controllers";
 import Engine from "./controllers/engine";
 
-export class Client implements IClient {
+export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
   public readonly name: IClient["name"] = CLIENT_DEFAULT.name;
@@ -29,7 +29,7 @@ export class Client implements IClient {
   public events: IClient["events"] = new EventEmitter();
   public relayer: IClient["relayer"];
   public crypto: IClient["crypto"];
-  public engine: Engine;
+  public engine: IClient["engine"];
   public keyValueStorage: IClient["keyValueStorage"];
 
   static async init(opts?: ClientTypes.Options) {
@@ -39,6 +39,7 @@ export class Client implements IClient {
   }
 
   constructor(opts?: ClientTypes.Options) {
+    super(opts);
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
@@ -118,18 +119,18 @@ export class Client implements IClient {
     }
   }
 
-  public async approveSession() {
+  public async approve() {
     try {
-      await this.engine.approveSession();
+      await this.engine.approve();
     } catch (err) {
       this.logger.error(err);
       throw err;
     }
   }
 
-  public async rejectSession() {
+  public async reject() {
     try {
-      await this.engine.rejectSession();
+      await this.engine.reject();
     } catch (err) {
       this.logger.error(err);
       throw err;

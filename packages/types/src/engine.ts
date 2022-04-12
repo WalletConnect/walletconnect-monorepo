@@ -1,7 +1,9 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
-import { RelayerTypes } from "./relayer";
-import { SessionTypes } from "./session";
+import { ICrypto } from "./crypto";
+import { IPairing } from "./pairing";
+import { IRelayer, RelayerTypes } from "./relayer";
+import { ISession, SessionTypes } from "./session";
 
 export declare namespace EngineTypes {
   interface UriParameters {
@@ -28,20 +30,23 @@ export declare namespace EngineTypes {
   }
 }
 
-export interface IEngine {
-  connect(params: EngineTypes.CreateSessionParams): Promise<void>;
-  pair(pairingUri: string): Promise<void>;
-  approveSession(): Promise<void>;
-  rejectSession(): Promise<void>;
-  updateAccounts(): Promise<void>;
-  updateMethods(): Promise<void>;
-  updateEvents(): Promise<void>;
-  updateExpiry(): Promise<void>;
-  request(): Promise<void>;
-  respond(): Promise<void>;
-  pingSession(): Promise<void>;
-  pingPairing(): Promise<void>;
-  deleteSession(): Promise<void>;
-  deletePairing(): Promise<void>;
-  emit(): Promise<void>;
+export abstract class IEngine {
+  constructor( private relayer: IRelayer,
+    private crypto: ICrypto,
+    private session: ISession,
+    private pairing: IPairing) {}
+
+  public abstract createSession(params: EngineTypes.CreateSessionParams): Promise<void>;
+  public abstract pair(pairingUri: string): Promise<void>;
+  public abstract approve(): Promise<void>;
+  public abstract reject(): Promise<void>;
+  public abstract request(): Promise<void>;
+  public abstract respond(): Promise<void>;
+  public abstract ping(): Promise<void>;
+  public abstract disconnect(): Promise<void>;
+  public abstract emit(): Promise<void>;
+  public abstract updateAccounts(): Promise<void>;
+  public abstract updateMethods(): Promise<void>;
+  public abstract updateEvents(): Promise<void>;
+  public abstract updateExpiry(): Promise<void>;
 }

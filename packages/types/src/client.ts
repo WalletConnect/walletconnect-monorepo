@@ -29,7 +29,7 @@ export declare namespace ClientTypes {
   }
 }
 
-export abstract class IClient implements IEvents, IEngine {
+export abstract class IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
 
@@ -49,18 +49,19 @@ export abstract class IClient implements IEvents, IEngine {
   public abstract relayer: IRelayer;
   public abstract keyValueStorage: IKeyValueStorage;
   public abstract events: IEvents["events"];
+  public abstract engine: IEngine;
 
-  constructor(public opts?: ClientTypes.Metadata) {}
+  constructor(public opts?: ClientTypes.Options) {}
 
   public abstract on: IEvents["on"];
   public abstract once: IEvents["once"];
   public abstract off: IEvents["off"];
   public abstract removeListener: IEvents["removeListener"];
 
-  public abstract createSession: IEngine["createSession"];
+  public abstract connect: IEngine["createSession"];
   public abstract pair: IEngine["pair"];
-  public abstract approveSession: IEngine["approveSession"];
-  public abstract rejectSession: IEngine["rejectSession"];
+  public abstract approve: IEngine["approve"];
+  public abstract reject: IEngine["reject"];
   public abstract updateAccounts: IEngine["updateAccounts"];
   public abstract updateMethods: IEngine["updateMethods"];
   public abstract updateEvents: IEngine["updateEvents"];

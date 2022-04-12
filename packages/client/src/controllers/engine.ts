@@ -12,13 +12,9 @@ import {
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 import { RELAYER_EVENTS } from "../constants";
 
-export default class Engine implements IEngine {
-  constructor(
-    private relayer: IRelayer,
-    private crypto: ICrypto,
-    private session: ISession,
-    private pairing: IPairing,
-  ) {
+export default class Engine extends IEngine {
+  constructor(relayer: IRelayer, crypto: ICrypto, session: ISession, pairing: IPairing) {
+    super(relayer, crypto, session, pairing);
     this.registerRelayerEvents();
     this.registerExpirerEvents();
   }
@@ -51,11 +47,11 @@ export default class Engine implements IEngine {
     this.relayer.subscribe(topic);
   }
 
-  public async approveSession() {
+  public async approve() {
     // TODO
   }
 
-  public async rejectSession() {
+  public async reject() {
     // TODO
   }
 
