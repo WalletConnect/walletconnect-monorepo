@@ -32,7 +32,3 @@ export const CLIENT_EVENTS = {
     sync: "session_sync",
   },
 };
-
-export const CLIENT_STORAGE_OPTIONS = {
-  database: ":memory:",
-};

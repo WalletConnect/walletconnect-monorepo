@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
-import KeyValueStorage, { IKeyValueStorage } from "keyvaluestorage";
+import KeyValueStorage, { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import {
   IClient,
   ClientOptions,
@@ -32,7 +32,6 @@ import {
   CLIENT_DEFAULT,
   CLIENT_SHORT_TIMEOUT,
   CLIENT_EVENTS,
-  CLIENT_STORAGE_OPTIONS,
   PAIRING_DEFAULT_TTL,
   PAIRING_EVENTS,
   PAIRING_SIGNAL_METHOD_URI,
@@ -87,9 +86,7 @@ export class Client extends IClient {
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
 
-    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
-
-    this.storage = opts?.storage || new KeyValueStorage(storageOptions);
+    this.storage = new KeyValueStorage();
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
