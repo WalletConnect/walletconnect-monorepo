@@ -1,13 +1,12 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import {
-  AppMetadata,
   BlockchainTypes,
+  ClientTypes,
   JsonRpcPermissions,
   NotificationPermissions,
   PairingTypes,
   SequenceTypes,
   SessionTypes,
-  SignalTypes,
   Validation,
 } from "@walletconnect/types";
 import { ERROR } from "./error";
@@ -19,16 +18,6 @@ export function isString(input: unknown): input is string {
 
 export function isUndefined(input: unknown): input is undefined | null {
   return typeof input !== "undefined" && input !== null;
-}
-
-// -- signal -------------------------------------------------- //
-
-export function isSignalTypePairing(signal: SignalTypes.Base): signal is SignalTypes.Pairing {
-  return signal.method === "pairing";
-}
-
-export function isSignalTypeUri(signal: SignalTypes.Base): signal is SignalTypes.Uri {
-  return signal.method === "uri";
 }
 
 // -- sequence -------------------------------------------------- //
@@ -123,7 +112,9 @@ export function validateSessionProposeParamsPermissions(
   return formatValidResult();
 }
 
-export function validateSessionProposeParamsMetadata(metadata: AppMetadata): Validation.Result {
+export function validateSessionProposeParamsMetadata(
+  metadata: ClientTypes.Metadata,
+): Validation.Result {
   if (!isValidString(metadata.name)) {
     return formatInvalidResult(ERROR.MISSING_OR_INVALID.format({ name: "metadata name" }));
   }

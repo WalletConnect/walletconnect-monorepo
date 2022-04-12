@@ -23,10 +23,8 @@ export declare namespace JsonRpc {
   export interface PairingDeleteRequest extends BaseRequest {
     method: "wc_pairingDelete";
     params: {
-      reason: {
-        code: number;
-        message: string;
-      };
+      code: number;
+      message: string;
     };
   }
 
@@ -127,10 +125,8 @@ export declare namespace JsonRpc {
   export interface SessionDeleteRequest extends BaseRequest {
     method: "wc_sessionDelete";
     params: {
-      reason: {
-        code: number;
-        reason: string;
-      };
+      code: number;
+      reason: string;
     };
   }
 
@@ -148,8 +144,10 @@ export declare namespace JsonRpc {
   export interface SessionRequestRequest extends BaseRequest {
     method: "wc_sessionRequest";
     params: {
-      method: string;
-      params: unknown;
+      request: {
+        method: string;
+        params: unknown;
+      };
       chainId: string;
     };
   }
@@ -160,8 +158,10 @@ export declare namespace JsonRpc {
   export interface SessionEventRequest extends BaseRequest {
     method: "wc_sessionEvent";
     params: {
-      name: string;
-      data: unknown;
+      event: {
+        name: string;
+        data: unknown;
+      };
       chainId: string;
     };
   }

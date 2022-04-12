@@ -1,9 +1,9 @@
+import { fromMiliseconds, toMiliseconds } from "@walletconnect/time";
+import { ClientTypes, RelayClientMetadata } from "@walletconnect/types";
+import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
+import { getWindowMetadata } from "@walletconnect/window-metadata";
 import union from "lodash.union";
 import * as qs from "query-string";
-import { getWindowMetadata } from "@walletconnect/window-metadata";
-import { toMiliseconds, fromMiliseconds } from "@walletconnect/time";
-import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
-import { RelayClientMetadata, AppMetadata } from "@walletconnect/types";
 
 // -- constants -----------------------------------------//
 
@@ -65,7 +65,7 @@ export function appendToQueryString(queryString: string, newQueryParams: any): s
 
 // -- metadata ----------------------------------------------//
 
-export function getAppMetadata(): AppMetadata | undefined {
+export function getAppMetadata(): ClientTypes.Metadata | undefined {
   return getWindowMetadata() || undefined;
 }
 
