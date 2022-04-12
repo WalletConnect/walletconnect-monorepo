@@ -7,7 +7,6 @@ import {
   IRelayer,
   ISubscriber,
   ISubscriberTopicMap,
-  Reason,
   RelayerTypes,
   SubscriberEvents,
   SubscriberTypes,

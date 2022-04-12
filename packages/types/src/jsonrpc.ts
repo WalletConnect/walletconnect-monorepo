@@ -1,5 +1,6 @@
 import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
+import { SessionTypes } from "./session";
 
 export declare namespace JsonRpc {
   // -- shared types --------------------------------- //
@@ -43,10 +44,9 @@ export declare namespace JsonRpc {
     method: "wc_sessionPropose";
     params: {
       relays: RelayerTypes.ProtocolOptions[];
-      expiry: number;
-      chains: string[];
-      methods: string[];
-      events: string[];
+      chains: SessionTypes.Chains;
+      methods: SessionTypes.Methods;
+      events: SessionTypes.Events;
       proposer: {
         publicKey: string;
         metadata: ClientTypes.Metadata;
@@ -68,9 +68,9 @@ export declare namespace JsonRpc {
     method: "wc_sessionSettle";
     params: {
       relay: RelayerTypes.ProtocolOptions;
-      accounts: string[];
-      methods: string[];
-      events: string[];
+      accounts: SessionTypes.Accounts;
+      methods: SessionTypes.Methods;
+      events: SessionTypes.Events;
       expiry: number;
       controller: {
         publicKey: string;
@@ -85,7 +85,7 @@ export declare namespace JsonRpc {
   export interface SessionUpdateAccountsRequest extends BaseRequest {
     method: "wc_sessionUpdateAccounts";
     params: {
-      accounts: string[];
+      accounts: SessionTypes.Accounts;
     };
   }
 
@@ -95,7 +95,7 @@ export declare namespace JsonRpc {
   export interface SessionUpdateMethodsRequest extends BaseRequest {
     method: "wc_sessionUpdateMethods";
     params: {
-      methods: string[];
+      methods: SessionTypes.Methods;
     };
   }
 
@@ -105,7 +105,7 @@ export declare namespace JsonRpc {
   export interface SessionUpdateEventsRequest extends BaseRequest {
     method: "wc_sessionUpdateEvents";
     params: {
-      events: string[];
+      events: SessionTypes.Events;
     };
   }
 

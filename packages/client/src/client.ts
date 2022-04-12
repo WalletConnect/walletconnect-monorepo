@@ -101,9 +101,9 @@ export class Client extends IClient {
 
   // ---------- Engine ----------------------------------------------- //
 
-  public async createSession(params: EngineTypes.CreateSessionParams) {
+  public async connect(params: EngineTypes.CreateSessionParams) {
     try {
-      await this.engine.createSession(params);
+      return await this.engine.createSession(params);
     } catch (err) {
       this.logger.error(err);
       throw err;

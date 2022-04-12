@@ -1,4 +1,8 @@
-import { isJsonRpcRequest, isJsonRpcResponse } from "@walletconnect/jsonrpc-utils";
+import {
+  formatJsonRpcRequest,
+  isJsonRpcRequest,
+  isJsonRpcResponse,
+} from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
   EngineTypes,
@@ -7,10 +11,11 @@ import {
   IPairing,
   IRelayer,
   ISession,
+  JsonRpc,
   RelayerTypes,
 } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
-import { RELAYER_EVENTS } from "../constants";
+import { RELAYER_EVENTS, WC_RPC_METHODS } from "../constants";
 
 export default class Engine extends IEngine {
   constructor(relayer: IRelayer, crypto: ICrypto, session: ISession, pairing: IPairing) {
@@ -19,23 +24,42 @@ export default class Engine extends IEngine {
     this.registerExpirerEvents();
   }
 
+  // ---------- Public ------------------------------------------------ //
+
   public async createSession(params: EngineTypes.CreateSessionParams) {
     // TODO(ilja) validate params
-    const { pairingTopic, relay } = params;
-    let topic = pairingTopic;
+    let topic = params.pairingTopic;
+    let uri = "";
 
     if (topic) {
       // TODO(ilja) get and validate existing pairing
+      // TODO(ilja) set topic and uri
     } else {
-      const { pairingTopic: newTopic } = await this.createPairing(relay);
-      topic = newTopic;
+      const { pairingTopic, pairingUri } = await this.createPairing(params.relay);
+      topic = pairingTopic;
+      uri = pairingUri;
     }
 
-    const selfPublicKey = await this.crypto.generateKeyPair();
+    const proposerPublicKey = await this.crypto.generateKeyPair();
     const newSession = {};
     this.session.set(topic, newSession);
-    // const message = this.generateSessionMessage(session)
-    // this.send(topic, message)
+    const requestParams: JsonRpc.SessionProposeRequest["params"] = {
+      relays: params.relays,
+      methods: params.methods ?? [],
+      events: params.events ?? [],
+      chains: params.chains ?? [],
+      proposer: {
+        publicKey: proposerPublicKey,
+        metadata: params.metadata,
+      },
+    };
+    const request = formatJsonRpcRequest(WC_RPC_METHODS.WC_SESSION_PROPOSE, requestParams);
+    this.sendRequest(request);
+
+    return {
+      uri,
+      approval: new Promise(resolve => resolve()),
+    };
   }
 
   public async pair(pairingUri: string) {
@@ -121,22 +145,36 @@ export default class Engine extends IEngine {
     return { pairingTopic, pairingUri };
   }
 
+  private sendRequest() {
+    // Encode payload
+    // Send request to relay
+    // TODO(ilja) this.history.set()
+  }
+
+  private sendResponse() {
+    // Encode payload
+    // Send request to relay
+    // TODO(ilja) this.history.resolve()
+  }
+
   // ---------- Relay Events ------------------------------------------- //
 
   private registerRelayerEvents() {
     this.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
       const { topic, message } = event;
       const payload = await this.crypto.decode(topic, message);
-      if (this.pairing.topics.includes(topic)) {
-        if (isJsonRpcRequest(payload)) {
+      if (isJsonRpcRequest(payload)) {
+        // TODO(ilja) this.history.set()
+        if (this.pairing.topics.includes(topic)) {
           this.onPairingRelayEventRequest({ topic, payload });
-        } else if (isJsonRpcResponse(payload)) {
-          this.onPairingRelayEventResponse({ topic, payload });
-        }
-      } else if (this.session.topics.includes(topic)) {
-        if (isJsonRpcRequest(payload)) {
+        } else if (this.session.topics.includes(topic)) {
           this.onSessionRelayEventRequest({ topic, payload });
-        } else if (isJsonRpcResponse(payload)) {
+        }
+      } else if (isJsonRpcResponse(payload)) {
+        // TODO(ilja) this.history.resolve()
+        if (this.pairing.topics.includes(topic)) {
+          this.onPairingRelayEventResponse({ topic, payload });
+        } else if (this.session.topics.includes(topic)) {
           this.onSessionRelayEventResponse({ topic, payload });
         }
       }

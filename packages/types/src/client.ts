@@ -3,7 +3,7 @@ import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
-import { IEngine } from "./engine";
+import { EngineTypes, IEngine } from "./engine";
 import { IPairing } from "./pairing";
 import { IRelayer } from "./relayer";
 import { ISession } from "./session";
@@ -53,22 +53,22 @@ export abstract class IClient {
 
   constructor(public opts?: ClientTypes.Options) {}
 
-  public abstract on: IEvents["on"];
-  public abstract once: IEvents["once"];
-  public abstract off: IEvents["off"];
-  public abstract removeListener: IEvents["removeListener"];
+  public abstract on(event: string, listener: (...args: any[]) => void): void;
+  public abstract once(event: string, listener: (...args: any[]) => void): void;
+  public abstract off(event: string, listener: (...args: any[]) => void): void;
+  public abstract removeListener(event: string, listener: (...args: any[]) => void): void;
 
-  public abstract connect: IEngine["createSession"];
-  public abstract pair: IEngine["pair"];
-  public abstract approve: IEngine["approve"];
-  public abstract reject: IEngine["reject"];
-  public abstract updateAccounts: IEngine["updateAccounts"];
-  public abstract updateMethods: IEngine["updateMethods"];
-  public abstract updateEvents: IEngine["updateEvents"];
-  public abstract updateExpiry: IEngine["updateExpiry"];
-  public abstract request: IEngine["request"];
-  public abstract respond: IEngine["respond"];
-  public abstract ping: IEngine["ping"];
-  public abstract emit: IEngine["emit"];
-  public abstract disconnect: IEngine["disconnect"];
+  public abstract connect(params: EngineTypes.CreateSessionParams): EngineTypes.CreateSessionReturn;
+  public abstract pair(pairingUri: string): Promise<void>;
+  public abstract approve(): Promise<void>;
+  public abstract reject(): Promise<void>;
+  public abstract updateAccounts(): Promise<void>;
+  public abstract updateMethods(): Promise<void>;
+  public abstract updateEvents(): Promise<void>;
+  public abstract updateExpiry(): Promise<void>;
+  public abstract request(): Promise<void>;
+  public abstract respond(): Promise<void>;
+  public abstract ping(): Promise<void>;
+  public abstract emit(): Promise<void>;
+  public abstract disconnect(): Promise<void>;
 }

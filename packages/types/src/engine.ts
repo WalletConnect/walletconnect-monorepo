@@ -22,21 +22,29 @@ export declare namespace EngineTypes {
   type CreatePairingParams = RelayerTypes.ProtocolOptions;
 
   interface CreateSessionParams {
-    relay: RelayerTypes.ProtocolOptions;
+    relays: RelayerTypes.ProtocolOptions[];
+    metadata: ClientTypes.Metadata;
     pairingTopic?: string;
-    expiry?: number;
-    permissions?: SessionTypes.Permissions;
-    metadata?: ClientTypes.Metadata;
+    methods?: SessionTypes.Methods;
+    chains?: SessionTypes.Chains;
+    events?: SessionTypes.Events;
   }
+
+  type CreateSessionReturn = Promise<{ uri: string; approval: Promise<void> }>;
 }
 
 export abstract class IEngine {
-  constructor( private relayer: IRelayer,
-    private crypto: ICrypto,
-    private session: ISession,
-    private pairing: IPairing) {}
+  constructor(
+    public relayer: IRelayer,
+    public crypto: ICrypto,
+    public session: ISession,
+    public pairing: IPairing,
+  ) {}
 
-  public abstract createSession(params: EngineTypes.CreateSessionParams): Promise<void>;
+  public abstract createSession(
+    params: EngineTypes.CreateSessionParams,
+  ): EngineTypes.CreateSessionReturn;
+
   public abstract pair(pairingUri: string): Promise<void>;
   public abstract approve(): Promise<void>;
   public abstract reject(): Promise<void>;
