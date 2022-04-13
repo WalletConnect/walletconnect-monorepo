@@ -17,7 +17,6 @@ export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
   public readonly name: IClient["name"] = CLIENT_DEFAULT.name;
-  public readonly controller: IClient["controller"];
   public readonly metadata: IClient["metadata"];
   public readonly relayUrl: IClient["relayUrl"];
   public readonly projectId: IClient["projectId"];
@@ -43,7 +42,6 @@ export class Client extends IClient {
     super(opts);
 
     this.name = opts?.name || CLIENT_DEFAULT.name;
-    this.controller = opts?.controller || CLIENT_DEFAULT.controller;
     this.metadata = opts?.metadata || getAppMetadata();
     this.projectId = opts?.projectId;
     const logger =
@@ -51,7 +49,8 @@ export class Client extends IClient {
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
     this.logger = generateChildLogger(logger, this.name);
-    this.keyValueStorage = new KeyValueStorage(CLIENT_STORAGE_OPTIONS);
+    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
+    this.keyValueStorage = opts?.storage || new KeyValueStorage(storageOptions);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
     this.pairing = new Pairing(this, this.logger);

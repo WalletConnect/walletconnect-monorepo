@@ -6,6 +6,7 @@ export * from "./history";
 export * from "./jsonrpc";
 export * from "./messages";
 export * from "./pairing";
+export * from "./proposal";
 export * from "./publisher";
 export * from "./relayer";
 export * from "./session";
