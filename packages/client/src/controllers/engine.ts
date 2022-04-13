@@ -4,7 +4,7 @@ import {
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
-import { EngineTypes, IEngine, ProposalTypes, RelayerTypes } from "@walletconnect/types";
+import { EngineTypes, IEngine, RelayerTypes } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 import { RELAYER_EVENTS, WC_RPC_METHODS } from "../constants";
 
@@ -38,9 +38,7 @@ export default class Engine extends IEngine {
     }
 
     const proposerPublicKey = await this.crypto.generateKeyPair();
-    const newProposal = {};
-    this.proposal.set(topic, newProposal);
-    const requestParams: ProposalTypes.Struct = {
+    const proposal = {
       relays: params.relays,
       methods: params.methods ?? [],
       events: params.events ?? [],
@@ -50,12 +48,13 @@ export default class Engine extends IEngine {
         metadata: params.metadata,
       },
     };
-
-    this.sendRequest("WC_SESSION_PROPOSE", requestParams);
+    this.proposal.set(topic, proposal);
+    this.sendRequest("WC_SESSION_PROPOSE", proposal);
 
     return {
       uri,
-      approval: new Promise(resolve => resolve()) as Promise<void>,
+      // TODO(ilja) construct approval promise with timeout
+      approval: async () => null,
     };
   }
 
@@ -131,6 +130,7 @@ export default class Engine extends IEngine {
     });
     this.pairing.set(pairingTopic, pairing);
     this.relayer.subscribe(pairingTopic);
+    // TODO(ilja) set in expirer
 
     return { pairingTopic, pairingUri };
   }
