@@ -5,9 +5,9 @@ import { toMiliseconds } from "@walletconnect/time";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { IClient, IExpirer, Expiration, ExpirerEvents } from "@walletconnect/types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { ERROR, formatMessageContext } from "@walletconnect/utils";
+import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 
-import { EXPIRER_CONTEXT, EXPIRER_EVENTS } from "../constants";
+import { EXPIRER_CONTEXT, EXPIRER_EVENTS, EXPIRER_STORAGE_VERSION } from "../constants";
 
 export class Expirer extends IExpirer {
   public expirations = new Map<string, Expiration>();
@@ -15,6 +15,8 @@ export class Expirer extends IExpirer {
   public events = new EventEmitter();
 
   public name: string = EXPIRER_CONTEXT;
+
+  public version: string = EXPIRER_STORAGE_VERSION;
 
   private cached: Expiration[] = [];
 
@@ -27,6 +29,10 @@ export class Expirer extends IExpirer {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   get length(): number {
@@ -99,14 +105,23 @@ export class Expirer extends IExpirer {
 
   // ---------- Private ----------------------------------------------- //
 
+  private async setExpirations(expirations: Expiration[]): Promise<void> {
+    await this.client.storage.setItem<Expiration[]>(this.storageKey, expirations);
+  }
+
+  private async getExpirations(): Promise<Expiration[] | undefined> {
+    const expirations = await this.client.storage.getItem<Expiration[]>(this.storageKey);
+    return expirations;
+  }
+
   private async persist() {
-    await this.client.storage.setSequenceStore(this.context, this.values);
+    await this.setExpirations(this.values);
     this.events.emit(EXPIRER_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.client.storage.getSequenceStore(this.context);
+      const persisted = await this.getExpirations();
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.expirations.size) {
