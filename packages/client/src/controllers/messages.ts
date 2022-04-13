@@ -73,14 +73,14 @@ export class MessageTracker extends IMessageTracker {
   // ---------- Private ----------------------------------------------- //
 
   private async setRelayerMessages(messages: Map<string, MessageRecord>): Promise<void> {
-    await this.client.keyValueStorage.setItem<Record<string, MessageRecord>>(
+    await this.client.storage.setItem<Record<string, MessageRecord>>(
       this.storageKey,
       mapToObj(messages),
     );
   }
 
   private async getRelayerMessages(): Promise<Map<string, MessageRecord> | undefined> {
-    const messages = await this.client.keyValueStorage.getItem<Record<string, MessageRecord>>(
+    const messages = await this.client.storage.getItem<Record<string, MessageRecord>>(
       this.storageKey,
     );
     return typeof messages !== "undefined" ? objToMap(messages) : undefined;

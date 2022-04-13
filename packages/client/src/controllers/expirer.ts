@@ -104,14 +104,11 @@ export class Expirer extends IExpirer {
   // ---------- Private ----------------------------------------------- //
 
   private async setExpirations(expirations: ExpirerTypes.Expiration[]): Promise<void> {
-    await this.client.keyValueStorage.setItem<ExpirerTypes.Expiration[]>(
-      this.storageKey,
-      expirations,
-    );
+    await this.client.storage.setItem<ExpirerTypes.Expiration[]>(this.storageKey, expirations);
   }
 
   private async getExpirations(): Promise<ExpirerTypes.Expiration[] | undefined> {
-    const expirations = await this.client.keyValueStorage.getItem<ExpirerTypes.Expiration[]>(
+    const expirations = await this.client.storage.getItem<ExpirerTypes.Expiration[]>(
       this.storageKey,
     );
     return expirations;

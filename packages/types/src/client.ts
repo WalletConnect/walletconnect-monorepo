@@ -47,7 +47,7 @@ export abstract class IClient {
   public abstract heartbeat: IHeartBeat;
   public abstract crypto: ICrypto;
   public abstract relayer: IRelayer;
-  public abstract keyValueStorage: IKeyValueStorage;
+  public abstract storage: IKeyValueStorage;
   public abstract events: IEvents["events"];
   public abstract engine: IEngine;
 

@@ -68,16 +68,11 @@ export class KeyChain implements IKeyChain {
   // ---------- Private ----------------------------------------------- //
 
   private async setKeyChain(keychain: Map<string, string>): Promise<void> {
-    await this.client.keyValueStorage.setItem<Record<string, string>>(
-      this.storageKey,
-      mapToObj(keychain),
-    );
+    await this.client.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain));
   }
 
   private async getKeyChain(): Promise<Map<string, string> | undefined> {
-    const keychain = await this.client.keyValueStorage.getItem<Record<string, string>>(
-      this.storageKey,
-    );
+    const keychain = await this.client.storage.getItem<Record<string, string>>(this.storageKey);
     return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
 

@@ -152,11 +152,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   // ---------- Private ----------------------------------------------- //
 
   private async setJsonRpcRecords(records: JsonRpcRecord[]): Promise<void> {
-    await this.client.keyValueStorage.setItem<JsonRpcRecord[]>(this.storageKey, records);
+    await this.client.storage.setItem<JsonRpcRecord[]>(this.storageKey, records);
   }
 
   private async getJsonRpcRecords(): Promise<JsonRpcRecord[] | undefined> {
-    const records = await this.client.keyValueStorage.getItem<JsonRpcRecord[]>(this.storageKey);
+    const records = await this.client.storage.getItem<JsonRpcRecord[]>(this.storageKey);
     return records;
   }
 

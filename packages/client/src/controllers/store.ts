@@ -80,11 +80,11 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
   // ---------- Private ----------------------------------------------- //
 
   private async setDataStore(data: Data[]): Promise<void> {
-    await this.client.keyValueStorage.setItem<Data[]>(this.storageKey, data);
+    await this.client.storage.setItem<Data[]>(this.storageKey, data);
   }
 
   private async getDataStore(): Promise<Data[] | undefined> {
-    const data = await this.client.keyValueStorage.getItem<Data[]>(this.storageKey);
+    const data = await this.client.storage.getItem<Data[]>(this.storageKey);
     return data;
   }
 

@@ -30,7 +30,7 @@ export class Client extends IClient {
   public relayer: IClient["relayer"];
   public crypto: IClient["crypto"];
   public engine: IClient["engine"];
-  public keyValueStorage: IClient["keyValueStorage"];
+  public storage: IClient["storage"];
 
   static async init(opts?: ClientTypes.Options) {
     const client = new Client(opts);
@@ -51,7 +51,7 @@ export class Client extends IClient {
         : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
     this.logger = generateChildLogger(logger, this.name);
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
-    this.keyValueStorage = opts?.storage || new KeyValueStorage(storageOptions);
+    this.storage = opts?.storage || new KeyValueStorage(storageOptions);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
     this.pairing = new Pairing(this, this.logger);
