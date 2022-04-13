@@ -1,5 +1,6 @@
+import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, IStore, PairingTypes, Reason, SessionTypes } from "@walletconnect/types";
+import { IClient, IStore, PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { STORE_STORAGE_VERSION } from "../constants";
@@ -66,7 +67,7 @@ export class Store<Data extends SessionTypes.Struct | PairingTypes.Struct> exten
     this.persist();
   }
 
-  public async delete(topic: string, reason: Reason): Promise<void> {
+  public async delete(topic: string, reason: ErrorResponse): Promise<void> {
     if (!this.data.has(topic)) return;
     this.logger.debug(`Deleting data`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });

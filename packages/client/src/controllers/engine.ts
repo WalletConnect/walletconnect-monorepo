@@ -39,7 +39,7 @@ export default class Engine extends IEngine {
       // TODO(ilja) get and validate existing pairing
       // TODO(ilja) set topic and uri
     } else {
-      const { pairingTopic, pairingUri } = await this.createPairing(params.relay);
+      const { pairingTopic, pairingUri } = await this.createPairing(params.relays[0]);
       topic = pairingTopic;
       uri = pairingUri;
     }
@@ -58,9 +58,7 @@ export default class Engine extends IEngine {
       },
     };
 
-    // TODO(ilja) move this into request
-    const request = formatJsonRpcRequest(WC_RPC_METHODS.WC_SESSION_PROPOSE, requestParams);
-    this.sendRequest(request);
+    this.sendRequest("WC_SESSION_PROPOSE", requestParams);
 
     return {
       uri,
@@ -127,29 +125,28 @@ export default class Engine extends IEngine {
     const pairingTopic = generateRandomBytes32();
     const symKey = await this.crypto.generateSymKey(pairingTopic);
     const pairing = formatCreatePairingPayload(pairingTopic, relay);
-
     const pairingUri = formatUri({
       ...pairing,
       symKey,
       relayProtocol: relay.protocol,
       relayData: relay.data,
     });
-
     this.pairing.set(pairingTopic, pairing);
     this.relayer.subscribe(pairingTopic);
 
     return { pairingTopic, pairingUri };
   }
 
-  private sendRequest() {
-    // Encode payload
-    // Send request to relay
+  private sendRequest(method: keyof typeof WC_RPC_METHODS, params: Record<string, unknown>) {
+    const request = formatJsonRpcRequest(method, params);
+    // TODO(ilja) Encode payload
+    // TODO(ilja) Send request to relay
     // TODO(ilja) this.history.set()
   }
 
   private sendResponse() {
-    // Encode payload
-    // Send request to relay
+    // TODO(ilja) Encode payload
+    // TODO(ilja) Send request to relay
     // TODO(ilja) this.history.resolve()
   }
 
@@ -178,18 +175,21 @@ export default class Engine extends IEngine {
   }
 
   private onPairingRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // NOTE Some of these may not be needed
     // onSessionProposeRequest
     // onPairingDeleteRequest
     // onPairingPingRequest
   }
 
   private onPairingRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // NOTE Some of these may not be needed
     // onSessionProposeResponse
     // onPairingDeleteResponse
     // onPairingPingResponse
   }
 
   private onSessionRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // NOTE Some of these may not be needed
     // onSessionSettleRequest
     // onSessionUpdateAccountsRequest
     // onSessionUpdateMethodsRequest
@@ -202,6 +202,7 @@ export default class Engine extends IEngine {
   }
 
   private onSessionRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
+    // NOTE Some of these may not be needed
     // onSessionSettleResponse
     // onSessionUpdateAccountsResponse
     // onSessionUpdateMethodsResponse

@@ -1,3 +1,4 @@
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 import { IClient } from "./client";
 
@@ -22,5 +23,5 @@ export abstract class IStore<Data> {
 
   public abstract update(topic: string, update: Partial<Data>): Promise<void>;
 
-  public abstract delete(topic: string, reason: Reason): Promise<void>;
+  public abstract delete(topic: string, reason: ErrorResponse): Promise<void>;
 }

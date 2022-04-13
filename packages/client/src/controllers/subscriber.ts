@@ -1,5 +1,5 @@
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
-import { RequestArguments } from "@walletconnect/jsonrpc-types";
+import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import {
@@ -272,7 +272,7 @@ export class Subscriber extends ISubscriber {
     this.pending.delete(params.topic);
   }
 
-  private async onUnsubscribe(topic: string, id: string, reason: Reason) {
+  private async onUnsubscribe(topic: string, id: string, reason: ErrorResponse) {
     this.events.removeAllListeners(id);
     if (await this.hasSubscription(id, topic)) {
       await this.deleteSubscription(id, reason);
@@ -324,7 +324,7 @@ export class Subscriber extends ISubscriber {
     return subscription;
   }
 
-  private async deleteSubscription(id: string, reason: Reason): Promise<void> {
+  private async deleteSubscription(id: string, reason: ErrorResponse): Promise<void> {
     await this.isEnabled();
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "deleteSubscription", id, reason });
