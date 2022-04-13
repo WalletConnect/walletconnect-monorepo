@@ -106,6 +106,7 @@ export class Engine extends IEngine {
         );
       }
     }
+
     const message = await this.sequence.client.crypto.encode(settled.topic, payload);
     await this.sequence.client.relayer.publish(settled.topic, message, {
       relay: settled.relay,
@@ -409,7 +410,7 @@ export class Engine extends IEngine {
   public async settle(params: SequenceTypes.SettleParams): Promise<SequenceTypes.Settled> {
     this.sequence.logger.debug(`Settle ${this.sequence.context}`);
     this.sequence.logger.trace({ type: "method", method: "settle", params });
-    const topic = await this.sequence.client.crypto.generateSharedKey(params.self, params.peer);
+    const topic = await this.sequence.client.crypto.generateSessionKey(params.self, params.peer);
     const settled: SequenceTypes.Settled = {
       topic,
       relay: params.relay,
@@ -841,7 +842,7 @@ export class Engine extends IEngine {
         const pairing = await this.sequence.client.pairing.settled.get(
           pending.proposal.signal.params.topic,
         );
-        await this.sequence.client.crypto.generateSharedKey(
+        await this.sequence.client.crypto.generateSessionKey(
           pairing.self,
           pairing.peer,
           pending.proposal.topic,

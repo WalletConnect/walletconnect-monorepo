@@ -13,19 +13,20 @@ export declare namespace CryptoTypes {
     publicKey: string;
   }
 
-  export interface EncryptionKeys {
-    sharedKey: string;
-    publicKey: string;
+  export interface EncryptParams extends EncryptionKeys {
+    message: string;
+    symKey: string;
     iv?: string;
   }
 
-  export interface EncryptParams extends EncryptionKeys {
-    message: string;
+  export interface DecryptParams {
+    symKey: string;
+    encoded: string;
   }
 
-  export interface DecryptParams {
-    sharedKey: string;
-    encrypted: string;
+  export interface EncodingParams {
+    sealed: Uint8Array;
+    iv: Uint8Array;
   }
 }
 
@@ -64,27 +65,27 @@ export abstract class ICrypto {
 
   public abstract generateKeyPair(): Promise<string>;
 
-  public abstract generateSharedKey(
+  public abstract generateSessionKey(
     self: CryptoTypes.Participant,
     peer: CryptoTypes.Participant,
     overrideTopic?: string,
   ): Promise<string>;
 
-  public abstract generateSymKey(overrideTopic?: string): Promise<string>;
+  public abstract generatePairingKey(overrideTopic?: string): Promise<string>;
 
-  public abstract setSymKey(symKey: string, overrideTopic?: string): Promise<string>;
+  public abstract setPairingKey(symKey: string, overrideTopic?: string): Promise<string>;
 
   public abstract deleteKeyPair(publicKey: string): Promise<void>;
 
-  public abstract deleteSharedKey(topic: string): Promise<void>;
+  public abstract deleteSessionKey(topic: string): Promise<void>;
 
-  public abstract deleteSymKey(topic: string): Promise<void>;
+  public abstract deletePairingKey(topic: string): Promise<void>;
 
   public abstract encrypt(topic: string, message: string): Promise<string>;
 
-  public abstract decrypt(topic: string, encrypted: string): Promise<string>;
+  public abstract decrypt(topic: string, encoded: string): Promise<string>;
 
   public abstract encode(topic: string, payload: JsonRpcPayload): Promise<string>;
 
-  public abstract decode(topic: string, encrypted: string): Promise<JsonRpcPayload>;
+  public abstract decode(topic: string, encoded: string): Promise<JsonRpcPayload>;
 }
