@@ -33,5 +33,6 @@ export declare namespace SessionTypes {
 
 export interface ISession extends IStore<SessionTypes.Struct> {
   // TODO(ilja) need to handle this as concept of permissions was flattened
+  // @ts-expect-error
   find: (permissions) => SessionTypes.Struct[];
 }

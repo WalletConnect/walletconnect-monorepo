@@ -1,5 +1,5 @@
 import { fromMiliseconds, toMiliseconds } from "@walletconnect/time";
-import { ClientTypes } from "@walletconnect/types";
+import { ClientTypes, RelayerClientMetadata } from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import union from "lodash.union";
@@ -66,13 +66,14 @@ export function appendToQueryString(queryString: string, newQueryParams: any): s
 // -- metadata ----------------------------------------------//
 
 export function getAppMetadata(): ClientTypes.Metadata | undefined {
+  // @ts-expect-error
   return getWindowMetadata() || undefined;
 }
 
-export function getRelayClientMetadata(protocol: string, version: number): RelayClientMetadata {
+export function getRelayClientMetadata(protocol: string, version: number): RelayerClientMetadata {
   const env = getEnvironment();
 
-  const metadata: RelayClientMetadata = { protocol, version, env };
+  const metadata: RelayerClientMetadata = { protocol, version, env };
   if (env === "browser") {
     metadata.host = getLocation()?.host || "";
   }

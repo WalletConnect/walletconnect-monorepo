@@ -45,6 +45,13 @@ export interface RelayerOptions {
   relayProvider?: string | IJsonRpcProvider;
 }
 
+export interface RelayerClientMetadata {
+  protocol: string;
+  version: number;
+  env: string;
+  host?: string;
+}
+
 export abstract class IRelayer extends IEvents {
   public abstract logger: Logger;
 
@@ -66,6 +73,7 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connecting: boolean;
 
+  // @ts-expect-error
   constructor(opts: RelayerOptions) {
     super();
   }

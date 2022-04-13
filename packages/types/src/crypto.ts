@@ -56,6 +56,7 @@ export abstract class ICrypto {
 
   public abstract keychain: IKeyChain;
 
+  // @ts-expect-error
   constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {}
 
   public abstract init(): Promise<void>;
