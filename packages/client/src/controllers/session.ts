@@ -4,12 +4,13 @@ import { Logger } from "pino";
 import { SESSION_CONTEXT } from "../constants";
 import { Store } from "./store";
 
-export class Session extends Store<SessionTypes.Data> {
+export class Session extends Store<SessionTypes.Struct> {
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger, SESSION_CONTEXT);
   }
 
-  public find(permissions: Partial<SessionTypes.Permissions>): SessionTypes.Data[] {
+  // TODO(ilja) address permission flattening
+  public find(permissions: Partial<SessionTypes.Permissions>): SessionTypes.Struct[] {
     return this.values.filter(session => {
       let isCompatible = false;
       if (

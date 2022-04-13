@@ -5,7 +5,7 @@ import {
   JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, IJsonRpcHistory, JsonRpcRecord } from "@walletconnect/types";
+import { IClient, IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
 import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
