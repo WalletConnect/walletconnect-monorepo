@@ -3,6 +3,7 @@ export * from "./expirer";
 export * from "./history";
 export * from "./messages";
 export * from "./pairing";
+export * from "./proposal";
 export * from "./relayer";
 export * from "./session";
 export * from "./store";

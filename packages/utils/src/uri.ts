@@ -1,10 +1,8 @@
 import { EngineTypes } from "@walletconnect/types";
 
-// -- uri -------------------------------------------------- //
-
 export function formatUri(params: EngineTypes.UriParameters) {
-  const relayProtocol = `?relay-protocol=${params.relayProtocol}`;
-  const relayData = params.relayData ? `&relay-data=${params.relayData}` : "";
+  const relayProtocol = `?relay-protocol=${params.relay.protocol}`;
+  const relayData = params.relay.data ? `&relay-data=${params.relay.data}` : "";
   const symKey = `&symKey=${params.symKey}`;
 
   return `wc:${params.topic}@2${relayProtocol}${relayData}${symKey}`;

@@ -1,11 +1,13 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, IStore, PairingTypes, SessionTypes } from "@walletconnect/types";
+import { IClient, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { STORE_STORAGE_VERSION } from "../constants";
 
-export class Store<Data extends SessionTypes.Struct | PairingTypes.Struct> extends IStore<Data> {
+type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Struct;
+
+export class Store<Data extends StoreStruct> extends IStore<Data> {
   public data = new Map<string, Data>();
   public version: string = STORE_STORAGE_VERSION;
 

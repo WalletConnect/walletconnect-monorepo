@@ -3,27 +3,20 @@ import {
   isJsonRpcRequest,
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
-import {
-  EngineTypes,
-  ICrypto,
-  IEngine,
-  IPairing,
-  IRelayer,
-  ISession,
-  JsonRpc,
-  RelayerTypes,
-} from "@walletconnect/types";
-import {
-  formatCreatePairingPayload,
-  formatUri,
-  generateRandomBytes32,
-  parseUri,
-} from "@walletconnect/utils";
+import { FIVE_MINUTES } from "@walletconnect/time";
+import { EngineTypes, IEngine, ProposalTypes, RelayerTypes } from "@walletconnect/types";
+import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
 import { RELAYER_EVENTS, WC_RPC_METHODS } from "../constants";
 
 export default class Engine extends IEngine {
-  constructor(relayer: IRelayer, crypto: ICrypto, session: ISession, pairing: IPairing) {
-    super(relayer, crypto, session, pairing);
+  constructor(
+    relayer: IEngine["relayer"],
+    crypto: IEngine["crypto"],
+    session: IEngine["session"],
+    pairing: IEngine["pairing"],
+    proposal: IEngine["proposal"],
+  ) {
+    super(relayer, crypto, session, pairing, proposal);
     this.registerRelayerEvents();
     this.registerExpirerEvents();
   }
@@ -45,9 +38,9 @@ export default class Engine extends IEngine {
     }
 
     const proposerPublicKey = await this.crypto.generateKeyPair();
-    const newSession = {};
-    this.session.set(topic, newSession);
-    const requestParams: JsonRpc.SessionProposeRequest["params"] = {
+    const newProposal = {};
+    this.proposal.set(topic, newProposal);
+    const requestParams: ProposalTypes.Struct = {
       relays: params.relays,
       methods: params.methods ?? [],
       events: params.events ?? [],
@@ -124,12 +117,17 @@ export default class Engine extends IEngine {
   private async createPairing(relay: EngineTypes.CreatePairingParams) {
     const pairingTopic = generateRandomBytes32();
     const symKey = await this.crypto.generateSymKey(pairingTopic);
-    const pairing = formatCreatePairingPayload(pairingTopic, relay);
+    const expiry = calcExpiry(FIVE_MINUTES);
+    const pairing = {
+      topic: pairingTopic,
+      active: true,
+      expiry,
+      relay,
+    };
     const pairingUri = formatUri({
       ...pairing,
       symKey,
-      relayProtocol: relay.protocol,
-      relayData: relay.data,
+      relay,
     });
     this.pairing.set(pairingTopic, pairing);
     this.relayer.subscribe(pairingTopic);
@@ -139,14 +137,14 @@ export default class Engine extends IEngine {
 
   private sendRequest(method: keyof typeof WC_RPC_METHODS, params: Record<string, unknown>) {
     const request = formatJsonRpcRequest(method, params);
-    // TODO(ilja) Encode payload
-    // TODO(ilja) Send request to relay
+    // TODO(ilja) encode payload
+    // TODO(ilja) publish request to relay
     // TODO(ilja) this.history.set()
   }
 
   private sendResponse() {
-    // TODO(ilja) Encode payload
-    // TODO(ilja) Send request to relay
+    // TODO(ilja) encode payload
+    // TODO(ilja) publish request to relay
     // TODO(ilja) this.history.resolve()
   }
 
@@ -176,6 +174,7 @@ export default class Engine extends IEngine {
 
   private onPairingRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
+    // TODO(ilja) switch stateemnt on method
     // onSessionProposeRequest
     // onPairingDeleteRequest
     // onPairingPingRequest
@@ -183,6 +182,7 @@ export default class Engine extends IEngine {
 
   private onPairingRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
+    // TODO(ilja) switch stateemnt on method
     // onSessionProposeResponse
     // onPairingDeleteResponse
     // onPairingPingResponse
@@ -190,6 +190,7 @@ export default class Engine extends IEngine {
 
   private onSessionRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
+    // TODO(ilja) switch stateemnt on method
     // onSessionSettleRequest
     // onSessionUpdateAccountsRequest
     // onSessionUpdateMethodsRequest
@@ -203,6 +204,7 @@ export default class Engine extends IEngine {
 
   private onSessionRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
+    // TODO(ilja) switch stateemnt on method
     // onSessionSettleResponse
     // onSessionUpdateAccountsResponse
     // onSessionUpdateMethodsResponse

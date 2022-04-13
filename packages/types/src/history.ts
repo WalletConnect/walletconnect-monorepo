@@ -7,7 +7,6 @@ import {
 } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 import { IClient } from "./client";
-import { RequestEvent } from "./misc";
 
 export interface JsonRpcRecord {
   id: number;
@@ -15,6 +14,12 @@ export interface JsonRpcRecord {
   request: RequestArguments;
   chainId?: string;
   response?: { result: any } | { error: ErrorResponse };
+}
+
+export interface RequestEvent {
+  topic: string;
+  request: JsonRpcRequest;
+  chainId?: string;
 }
 
 export abstract class IJsonRpcHistory extends IEvents {

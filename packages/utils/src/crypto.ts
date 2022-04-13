@@ -1,6 +1,6 @@
-import { CryptoTypes } from "@walletconnect/types";
 import * as ecies25519 from "@walletconnect/ecies-25519";
 import * as encoding from "@walletconnect/encoding";
+import { CryptoTypes } from "@walletconnect/types";
 
 export function generateKeyPair(): CryptoTypes.KeyPair {
   const keyPair = ecies25519.generateKeyPair();

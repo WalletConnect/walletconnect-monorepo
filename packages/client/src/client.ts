@@ -10,7 +10,7 @@ import { EventEmitter } from "events";
 import KeyValueStorage from "keyvaluestorage";
 import pino from "pino";
 import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
-import { Crypto, Pairing, Relayer, Session } from "./controllers";
+import { Crypto, Pairing, Proposal, Relayer, Session } from "./controllers";
 import Engine from "./controllers/engine";
 
 export class Client extends IClient {
@@ -23,6 +23,7 @@ export class Client extends IClient {
 
   public pairing: IClient["pairing"];
   public session: IClient["session"];
+  public proposal: IClient["proposal"];
   public logger: IClient["logger"];
   public heartbeat: IClient["heartbeat"];
   public events: IClient["events"] = new EventEmitter();
@@ -55,6 +56,7 @@ export class Client extends IClient {
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
+    this.proposal = new Proposal(this, this.logger);
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
       this.version,
@@ -68,7 +70,7 @@ export class Client extends IClient {
       logger: this.logger,
       projectId: this.projectId,
     });
-    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing);
+    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing, this.proposal);
   }
 
   get context(): string {

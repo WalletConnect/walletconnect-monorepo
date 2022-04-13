@@ -5,6 +5,7 @@ import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
 import { EngineTypes, IEngine } from "./engine";
 import { IPairing } from "./pairing";
+import { IProposal } from "./proposal";
 import { IRelayer } from "./relayer";
 import { ISession } from "./session";
 
@@ -41,6 +42,7 @@ export abstract class IClient {
 
   public abstract pairing: IPairing;
   public abstract session: ISession;
+  public abstract proposal: IProposal;
   public abstract logger: Logger;
   public abstract heartbeat: IHeartBeat;
   public abstract crypto: ICrypto;

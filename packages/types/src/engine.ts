@@ -2,6 +2,7 @@ import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
 import { ICrypto } from "./crypto";
 import { IPairing } from "./pairing";
+import { IProposal } from "./proposal";
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 
@@ -9,8 +10,7 @@ export declare namespace EngineTypes {
   interface UriParameters {
     topic: string;
     symKey: string;
-    relayProtocol: string;
-    relayData?: string;
+    relay: RelayerTypes.ProtocolOptions;
   }
 
   interface DecodedRelayEvent {
@@ -38,6 +38,7 @@ export abstract class IEngine {
     public crypto: ICrypto,
     public session: ISession,
     public pairing: IPairing,
+    public proposal: IProposal,
   ) {}
 
   public abstract createSession(
