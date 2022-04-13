@@ -61,7 +61,7 @@ export class Client extends IClient {
   public events = new EventEmitter();
   public relayer: Relayer;
   public crypto: Crypto;
-  public keyValueStorage: IKeyValueStorage;
+  public storage: IKeyValueStorage;
 
   static async init(opts?: ClientOptions): Promise<Client> {
     const client = new Client(opts);
@@ -89,7 +89,7 @@ export class Client extends IClient {
 
     const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
 
-    this.keyValueStorage = opts?.storage || new KeyValueStorage(storageOptions);
+    this.storage = opts?.storage || new KeyValueStorage(storageOptions);
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,

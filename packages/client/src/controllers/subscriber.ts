@@ -283,14 +283,11 @@ export class Subscriber extends ISubscriber {
   }
 
   private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]): Promise<void> {
-    await this.client.keyValueStorage.setItem<SubscriberTypes.Active[]>(
-      this.storageKey,
-      subscriptions,
-    );
+    await this.client.storage.setItem<SubscriberTypes.Active[]>(this.storageKey, subscriptions);
   }
 
   private async getRelayerSubscriptions(): Promise<SubscriberTypes.Active[] | undefined> {
-    const subscriptions = await this.client.keyValueStorage.getItem<SubscriberTypes.Active[]>(
+    const subscriptions = await this.client.storage.getItem<SubscriberTypes.Active[]>(
       this.storageKey,
     );
     return subscriptions;

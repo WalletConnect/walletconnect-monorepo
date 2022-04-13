@@ -40,7 +40,7 @@ export abstract class IClient extends IEvents {
   public abstract heartbeat: IHeartBeat;
   public abstract crypto: ICrypto;
   public abstract relayer: IRelayer;
-  public abstract keyValueStorage: IKeyValueStorage;
+  public abstract storage: IKeyValueStorage;
 
   constructor(opts?: ClientOptions) {
     super();

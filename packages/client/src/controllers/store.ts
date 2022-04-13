@@ -116,11 +116,11 @@ export class Store<Sequence = any> extends IStore<Sequence> {
   // ---------- Private ----------------------------------------------- //
 
   private async setSequenceStore<Sequence = any>(sequences: Sequence[]): Promise<void> {
-    await this.client.keyValueStorage.setItem<Sequence[]>(this.storageKey, sequences);
+    await this.client.storage.setItem<Sequence[]>(this.storageKey, sequences);
   }
 
   private async getSequenceStore<Sequence = any>(): Promise<Sequence[] | undefined> {
-    const sequences = await this.client.keyValueStorage.getItem<Sequence[]>(this.storageKey);
+    const sequences = await this.client.storage.getItem<Sequence[]>(this.storageKey);
     return sequences;
   }
 
