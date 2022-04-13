@@ -409,7 +409,13 @@ export class Engine extends IEngine {
   public async settle(params: SequenceTypes.SettleParams): Promise<SequenceTypes.Settled> {
     this.sequence.logger.debug(`Settle ${this.sequence.context}`);
     this.sequence.logger.trace({ type: "method", method: "settle", params });
-    const topic = await this.sequence.client.crypto.generateSharedKey(params.self, params.peer);
+    // eslint-disable-next-line
+    console.log(this.sequence.client.name, `[settle]`, `self`, params.self);
+    // eslint-disable-next-line
+    console.log(this.sequence.client.name, `[settle]`, `peer`, params.peer);
+    const topic = await this.sequence.client.crypto.generateSessionKey(params.self, params.peer);
+    // eslint-disable-next-line
+    console.log(this.sequence.client.name, `[settle]`, `topic`, topic);
     const settled: SequenceTypes.Settled = {
       topic,
       relay: params.relay,
@@ -841,7 +847,18 @@ export class Engine extends IEngine {
         const pairing = await this.sequence.client.pairing.settled.get(
           pending.proposal.signal.params.topic,
         );
-        await this.sequence.client.crypto.generateSharedKey(
+        // eslint-disable-next-line
+        console.log(this.sequence.client.name, `[onPendingStatusEvent]`, `self`, pairing.self);
+        // eslint-disable-next-line
+        console.log(this.sequence.client.name, `[onPendingStatusEvent]`, `peer`, pairing.peer);
+        // eslint-disable-next-line
+        console.log(
+          this.sequence.client.name,
+          `[onPendingStatusEvent]`,
+          `topic`,
+          pending.proposal.topic,
+        );
+        await this.sequence.client.crypto.generateSessionKey(
           pairing.self,
           pairing.peer,
           pending.proposal.topic,

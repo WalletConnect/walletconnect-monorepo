@@ -4,7 +4,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IRelayer, IPublisher, PublisherTypes, RelayerTypes } from "@walletconnect/types";
 
-import { getRelayProtocolName, getRelayProtocolApi, sha256 } from "@walletconnect/utils";
+import { getRelayProtocolName, getRelayProtocolApi, hashMessage } from "@walletconnect/utils";
 import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 
@@ -45,7 +45,13 @@ export class Publisher extends IPublisher {
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
       const params = { topic, message, opts: { ttl, relay, prompt } };
-      const hash = await sha256(message);
+      // eslint-disable-next-line
+      console.log((this.relayer as any).client.name, `[outgoing]`, `topic`, topic);
+      // eslint-disable-next-line
+      console.log((this.relayer as any).client.name, `[outgoing]`, `message`, message);
+      const hash = await hashMessage(message);
+      // eslint-disable-next-line
+      console.log((this.relayer as any).client.name, `[outgoing]`, `hash`, hash);
       this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
       await this.onPublish(hash, params);
@@ -108,6 +114,9 @@ export class Publisher extends IPublisher {
   private async onPublish(hash: string, params: PublisherTypes.Params) {
     // const { topic, message } = params;
     // await this.relayer.recordPayloadEvent({ topic, message });
+    // eslint-disable-next-line
+    console.log((this.relayer as any).client.name, `[outgoing]`, `onPublish`);
+
     this.queue.delete(hash);
   }
 
@@ -118,7 +127,7 @@ export class Publisher extends IPublisher {
         message,
         opts: { ttl, relay },
       } = params;
-      const hash = await sha256(message);
+      const hash = await hashMessage(message);
       await this.rpcPublish(topic, message, ttl, relay);
       await this.onPublish(hash, params);
     });

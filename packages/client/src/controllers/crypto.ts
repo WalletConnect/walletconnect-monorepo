@@ -10,19 +10,22 @@ import {
   deriveSharedKey,
   encrypt,
   decrypt,
-  serialize,
-  deserialize,
-  sha256,
+  hashKey,
   generateRandomBytes32,
   deriveSymmetricKey,
+  objToMap,
+  mapToObj,
+  formatStorageKeyName,
 } from "@walletconnect/utils";
 
-import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT } from "../constants";
+import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
 
   public name: string = KEYCHAIN_CONTEXT;
+
+  public version: string = KEYCHAIN_STORAGE_VERSION;
 
   constructor(public client: IClient, public logger: Logger) {
     this.client = client;
@@ -31,6 +34,10 @@ export class KeyChain implements IKeyChain {
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   public async init(): Promise<void> {
@@ -61,15 +68,24 @@ export class KeyChain implements IKeyChain {
 
   // ---------- Private ----------------------------------------------- //
 
+  private async setKeyChain(keychain: Map<string, string>): Promise<void> {
+    await this.client.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain));
+  }
+
+  private async getKeyChain(): Promise<Map<string, string> | undefined> {
+    const keychain = await this.client.storage.getItem<Record<string, string>>(this.storageKey);
+    return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
+  }
+
   private async restore() {
-    const keychain = await this.client.storage.getKeyChain(this.context);
+    const keychain = await this.getKeyChain();
     if (typeof keychain !== "undefined") {
       this.keychain = keychain;
     }
   }
 
   private async persist() {
-    await this.client.storage.setKeyChain(this.context, this.keychain);
+    await this.setKeyChain(this.keychain);
   }
 }
 
@@ -101,24 +117,36 @@ export class Crypto implements ICrypto {
     return this.setKeyPair(keyPair);
   }
 
-  public async generateSharedKey(
+  public async generateSessionKey(
     self: CryptoTypes.Participant,
     peer: CryptoTypes.Participant,
     overrideTopic?: string,
   ): Promise<string> {
     const keyPair = await this.getKeyPair(self.publicKey);
+    // eslint-disable-next-line
+    console.log(this.client.name, `[generateSessionKey]`, `keyPair`, keyPair);
     const sharedKey = deriveSharedKey(keyPair.privateKey, peer.publicKey);
+    // eslint-disable-next-line
+    console.log(this.client.name, `[generateSessionKey]`, `sharedKey`, sharedKey);
     const symKey = deriveSymmetricKey(sharedKey);
+    // eslint-disable-next-line
+    console.log(this.client.name, `[generateSessionKey]`, `symKey`, symKey);
     return this.setEncryptionKeys({ symKey, publicKey: keyPair.publicKey }, overrideTopic);
   }
 
-  public async generateSymKey(overrideTopic?: string): Promise<string> {
+  public async generatePairingKey(overrideTopic?: string): Promise<string> {
     const symKey = generateRandomBytes32();
-    return this.setSymKey(symKey, overrideTopic);
+    // eslint-disable-next-line
+    console.log(this.client.name, `[generatePairingKey]`, `symKey`, symKey);
+    return this.setPairingKey(symKey, overrideTopic);
   }
 
-  public async setSymKey(symKey: string, overrideTopic?: string): Promise<string> {
-    const hash = await sha256(symKey);
+  public async setPairingKey(symKey: string, overrideTopic?: string): Promise<string> {
+    // eslint-disable-next-line
+    console.log(this.client.name, `[setPairingKey]`, `symKey`, symKey);
+    const hash = await hashKey(symKey);
+    // eslint-disable-next-line
+    console.log(this.client.name, `[setPairingKey]`, `hash`, hash);
     return this.setEncryptionKeys({ symKey, publicKey: hash }, overrideTopic);
   }
 
@@ -126,11 +154,11 @@ export class Crypto implements ICrypto {
     await this.keychain.del(publicKey);
   }
 
-  public async deleteSharedKey(topic: string): Promise<void> {
+  public async deleteSessionKey(topic: string): Promise<void> {
     await this.keychain.del(topic);
   }
 
-  public async deleteSymKey(topic: string): Promise<void> {
+  public async deletePairingKey(topic: string): Promise<void> {
     await this.keychain.del(topic);
   }
 
@@ -186,7 +214,12 @@ export class Crypto implements ICrypto {
     encryptionKeys: CryptoTypes.EncryptionKeys,
     overrideTopic?: string,
   ): Promise<string> {
-    const topic = overrideTopic || (await sha256(encryptionKeys.symKey));
+    // eslint-disable-next-line
+    console.log(this.client.name, `[setEncryptionKeys]`, `overrideTopic`, overrideTopic);
+    const topic = overrideTopic || (await hashKey(encryptionKeys.symKey));
+    // eslint-disable-next-line
+    console.log(this.client.name, `[setEncryptionKeys]`, `topic`, topic);
+
     const keys = this.concatKeys(encryptionKeys.symKey, encryptionKeys.publicKey);
     await this.keychain.set(topic, keys);
     return topic;

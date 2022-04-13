@@ -1,0 +1,98 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:6-alpine
+    networks:
+      - walletconnect-monorepo
+    ports:
+      - 6379:6379
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5 
+  waku-store:
+    image: statusteam/nim-waku:deploy-v2-prod
+    hostname: waku-store
+    networks:
+      - walletconnect-monorepo
+    ports:
+      - 6000:6000        
+    volumes:
+      - waku-store:/mnt      
+    command: 
+      - --nat=none 
+      - --nodekey=${WAKU_STORE_KEY:-c32c1d8caa1a15a4c37a559bd13aed2ebaaa42ecafe86984351d803eeb84d26a}
+      - --keep-alive=true 
+      - --store=true 
+      - --db-path=/store 
+    healthcheck:
+      test: ["CMD", "wget", "--post-data", "'{\"jsonrpc\":\"2.0\",\"id\":\"id\",\"method\":\"get_waku_v2_debug_v1_info\", \"params\":[]}'", "-qO-", "localhost:8545"]
+      interval: 5s
+      timeout: 5s
+      retries: 5      
+  waku:
+    image: statusteam/nim-waku:deploy-v2-prod
+    hostname: waku
+    networks:
+      - walletconnect-monorepo
+    ports:
+      - 8545:8545
+    volumes:
+      - waku:/mnt      
+    command:
+      - --nat=none
+      - --nodekey=${WAKU_KEY:-90246ef8d5261deaa1dfe9249e7c82d2cd5cb6c1b15028a8078e3775ea150756}
+      - --keep-alive=true
+      - --rln-relay=false 
+      - --rpc=true 
+      - --rpc-address=0.0.0.0
+      - --relay=true 
+      - --store=false
+      - --db-path=/store
+      - --storenode=/ip4/0.0.0.0/tcp/60000/p2p/16Uiu2HAmQjRahnLdiajA9n4Bjsx9yXFuGHPajo4RiknMw1wtPdjt
+    healthcheck:
+      test: ["CMD", "wget", "--post-data", "'{\"jsonrpc\":\"2.0\",\"id\":\"id\",\"method\":\"get_waku_v2_debug_v1_info\", \"params\":[]}'", "-qO-", "localhost:8545"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    links:
+      - waku-store
+    depends_on:
+      waku-store:
+        condition: service_healthy             
+  relay:
+    networks:
+      - walletconnect-monorepo
+    ports:
+      - 5000:5000
+    environment:
+      - REDIS_URL=redis://redis:6379/0          
+      - WAKU_URL=http://waku:8545
+      - RELAY_MODE=any
+    volumes:
+      - node_modules:/usr/src/app/node_modules
+      - ../../servers/relay/src:/usr/src/app/src
+      - ../../servers/relay/test:/usr/src/app/test
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5      
+    depends_on:
+      redis:
+        condition: service_healthy
+      waku:
+        condition: service_healthy
+         
+volumes:
+  redis:
+  waku-store:    
+  waku:       
+  node_modules:  
+
+networks:
+  walletconnect-monorepo:

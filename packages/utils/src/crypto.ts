@@ -1,23 +1,22 @@
-import {
-  CryptoTypes,
-  BASE16,
-  BASE64,
-  UTF8,
-  ZERO_INDEX,
-  IV_LENGTH,
-  KEY_LENGTH,
-} from "@walletconnect/types";
+import { CryptoTypes } from "@walletconnect/types";
 
 import { toString } from "uint8arrays/to-string";
 import { fromString } from "uint8arrays/from-string";
 import { concat } from "uint8arrays/concat";
-import { SupportedEncodings } from "uint8arrays/util/bases";
 
 import { HKDF } from "@stablelib/hkdf";
 import { SHA256, hash } from "@stablelib/sha256";
 import * as x25519 from "@stablelib/x25519";
 import { randomBytes } from "@stablelib/random";
 import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
+
+export const BASE16 = "base16";
+export const BASE64 = "base64";
+export const UTF8 = "utf8";
+
+const ZERO_INDEX = 0;
+const IV_LENGTH = 12;
+const KEY_LENGTH = 32;
 
 export function generateKeyPair(): CryptoTypes.KeyPair {
   const keyPair = x25519.generateKeyPair();
@@ -46,12 +45,14 @@ export function deriveSymmetricKey(sharedKey: string) {
   return toString(symKey, BASE16);
 }
 
-export async function sha256(
-  str: string,
-  inputEncoding: SupportedEncodings = BASE16,
-  outputEncoding: SupportedEncodings = BASE16,
-): Promise<string> {
-  return toString(hash(fromString(str, inputEncoding)), outputEncoding);
+export async function hashKey(key: string) {
+  const result = hash(fromString(key, BASE16));
+  return toString(result, BASE16);
+}
+
+export async function hashMessage(message: string) {
+  const result = hash(fromString(message, UTF8));
+  return toString(result, BASE16);
 }
 
 export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string> {

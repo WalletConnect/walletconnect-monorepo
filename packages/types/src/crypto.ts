@@ -3,14 +3,6 @@ import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 
 import { IClient } from "./client";
 
-export const BASE16 = "base16";
-export const BASE64 = "base64";
-export const UTF8 = "utf8";
-
-export const ZERO_INDEX = 0;
-export const IV_LENGTH = 12;
-export const KEY_LENGTH = 32;
-
 export declare namespace CryptoTypes {
   export interface Participant {
     publicKey: string;
@@ -79,21 +71,21 @@ export abstract class ICrypto {
 
   public abstract generateKeyPair(): Promise<string>;
 
-  public abstract generateSharedKey(
+  public abstract generateSessionKey(
     self: CryptoTypes.Participant,
     peer: CryptoTypes.Participant,
     overrideTopic?: string,
   ): Promise<string>;
 
-  public abstract generateSymKey(overrideTopic?: string): Promise<string>;
+  public abstract generatePairingKey(overrideTopic?: string): Promise<string>;
 
-  public abstract setSymKey(symKey: string, overrideTopic?: string): Promise<string>;
+  public abstract setPairingKey(symKey: string, overrideTopic?: string): Promise<string>;
 
   public abstract deleteKeyPair(publicKey: string): Promise<void>;
 
-  public abstract deleteSharedKey(topic: string): Promise<void>;
+  public abstract deleteSessionKey(topic: string): Promise<void>;
 
-  public abstract deleteSymKey(topic: string): Promise<void>;
+  public abstract deletePairingKey(topic: string): Promise<void>;
 
   public abstract encrypt(topic: string, message: string): Promise<string>;
 

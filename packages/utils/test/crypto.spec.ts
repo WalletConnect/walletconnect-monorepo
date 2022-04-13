@@ -1,17 +1,18 @@
 import "mocha";
 import { expect } from "chai";
 import { toString } from "uint8arrays/to-string";
-import { BASE16, BASE64 } from "@walletconnect/types";
 import { safeJsonStringify } from "@walletconnect/safe-json";
 
 import {
+  BASE16,
   deriveSharedKey,
   encrypt,
-  sha256,
   decrypt,
   deriveSymmetricKey,
   deserialize,
   generateKeyPair,
+  hashKey,
+  hashMessage,
 } from "../src";
 
 import { TEST_KEY_PAIRS, TEST_SHARED_KEY, TEST_HASHED_KEY, TEST_SYM_KEY } from "./shared";
@@ -29,7 +30,7 @@ const TEST_SEALED =
   "7a5a1e843debf98b01d6a75718b5ee27115eafa3caba9703ca1c5601a6af2419045320faec2073cc8b6b8dc439e63e21612ff3883c867e0bdcd72c833eb7f7bb2034a9ec35c2fb03d93732";
 const TEST_ENCODED =
   "cXdlY2ZhYXNkYWRzeloehD3r+YsB1qdXGLXuJxFer6PKupcDyhxWAaavJBkEUyD67CBzzItrjcQ55j4hYS/ziDyGfgvc1yyDPrf3uyA0qew1wvsD2Tcy";
-const TEST_HASHED_ENCODED = "4fb4d12d14891e560984914972a6f81f373141ece816ea085f9a32f4eb51a026";
+const TEST_HASHED_ENCODED = "50e7178d460f30f907c1744dd656aacbc2980f65de8d934c63ef83f607206603";
 
 describe("Crypto", () => {
   it("generateKeyPair", async () => {
@@ -39,21 +40,26 @@ describe("Crypto", () => {
     expect(keyPair.publicKey).to.not.be.undefined;
   });
   it("deriveSharedKey", async () => {
-    const sharedKey = deriveSharedKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
-    expect(sharedKey).to.eql(TEST_SHARED_KEY);
+    const sharedKeyA = deriveSharedKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
+    expect(sharedKeyA).to.eql(TEST_SHARED_KEY);
+    const sharedKeyB = deriveSharedKey(TEST_PEER.privateKey, TEST_SELF.publicKey);
+    expect(sharedKeyB).to.eql(TEST_SHARED_KEY);
   });
   it("deriveSymmetricKey", async () => {
-    const sharedKey = deriveSharedKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
-    const symKey = deriveSymmetricKey(sharedKey);
-    expect(symKey).to.eql(TEST_SYM_KEY);
+    const sharedKeyA = deriveSharedKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
+    const symKeyA = deriveSymmetricKey(sharedKeyA);
+    expect(symKeyA).to.eql(TEST_SYM_KEY);
+    const sharedKeyB = deriveSharedKey(TEST_PEER.privateKey, TEST_SELF.publicKey);
+    const symKeyB = deriveSymmetricKey(sharedKeyB);
+    expect(symKeyB).to.eql(TEST_SYM_KEY);
   });
-  it("sha256 (base16)", async () => {
-    const hash = await sha256(TEST_SHARED_KEY);
-    expect(hash).to.eql(TEST_HASHED_KEY);
+  it("hashKey", async () => {
+    const hashedKey = await hashKey(TEST_SHARED_KEY);
+    expect(hashedKey).to.eql(TEST_HASHED_KEY);
   });
-  it("sha256 (base64)", async () => {
-    const hash = await sha256(TEST_ENCODED, BASE64);
-    expect(hash).to.eql(TEST_HASHED_ENCODED);
+  it("hashMessage", async () => {
+    const hashedEncoded = await hashMessage(TEST_ENCODED);
+    expect(hashedEncoded).to.eql(TEST_HASHED_ENCODED);
   });
   it("encrypt", async () => {
     const encoded = await encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
