@@ -7,7 +7,6 @@ import { ISession, SessionTypes } from "./session";
 
 export declare namespace EngineTypes {
   interface UriParameters {
-    version: number;
     topic: string;
     symKey: string;
     relayProtocol: string;

@@ -3,7 +3,6 @@ import {
   isJsonRpcRequest,
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES } from "@walletconnect/time";
 import {
   EngineTypes,
   ICrypto,
@@ -14,7 +13,12 @@ import {
   JsonRpc,
   RelayerTypes,
 } from "@walletconnect/types";
-import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
+import {
+  formatCreatePairingPayload,
+  formatUri,
+  generateRandomBytes32,
+  parseUri,
+} from "@walletconnect/utils";
 import { RELAYER_EVENTS, WC_RPC_METHODS } from "../constants";
 
 export default class Engine extends IEngine {
@@ -53,6 +57,8 @@ export default class Engine extends IEngine {
         metadata: params.metadata,
       },
     };
+
+    // TODO(ilja) move this into request
     const request = formatJsonRpcRequest(WC_RPC_METHODS.WC_SESSION_PROPOSE, requestParams);
     this.sendRequest(request);
 
@@ -120,25 +126,16 @@ export default class Engine extends IEngine {
   private async createPairing(relay: EngineTypes.CreatePairingParams) {
     const pairingTopic = generateRandomBytes32();
     const symKey = await this.crypto.generateSymKey(pairingTopic);
-    const sharedPairingData = {
-      topic: pairingTopic,
-      version: 2,
-    };
+    const pairing = formatCreatePairingPayload(pairingTopic, relay);
+
     const pairingUri = formatUri({
-      ...sharedPairingData,
+      ...pairing,
       symKey,
       relayProtocol: relay.protocol,
       relayData: relay.data,
     });
-    const pairingExpiry = calcExpiry(FIVE_MINUTES);
-    const pairingData = {
-      ...sharedPairingData,
-      relay,
-      uri: pairingUri,
-      expiry: pairingExpiry,
-      active: true,
-    };
-    this.pairing.set(pairingTopic, pairingData);
+
+    this.pairing.set(pairingTopic, pairing);
     this.relayer.subscribe(pairingTopic);
 
     return { pairingTopic, pairingUri };

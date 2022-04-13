@@ -1,27 +1,13 @@
+import { JsonRpcError, JsonRpcRequest, JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
 
 export declare namespace JsonRpc {
-  // -- shared types --------------------------------- //
-  export interface BaseRequest {
-    id: string;
-    jsonrpc: "2.0";
-  }
-
-  export interface DefaultSuccessResponse {
-    result: true;
-  }
-
-  export interface DefaultFailureResponse {
-    code: number;
-    message: string;
-  }
-
-  export type DefaultResponse = DefaultSuccessResponse | DefaultFailureResponse;
+  export type DefaultResponse = JsonRpcResult<true> | JsonRpcError;
 
   // -- pairing delete ------------------------------------- //
-  export interface PairingDeleteRequest extends BaseRequest {
+  export interface PairingDeleteRequest extends JsonRpcRequest {
     method: "wc_pairingDelete";
     params: {
       code: number;
@@ -32,7 +18,7 @@ export declare namespace JsonRpc {
   export type PairingDeleteResponse = DefaultResponse;
 
   // -- pairing ping ---------------------------------------- //
-  export interface PairingPingRequest extends BaseRequest {
+  export interface PairingPingRequest extends JsonRpcRequest {
     method: "wc_pairingPing";
     params: {};
   }
@@ -40,7 +26,7 @@ export declare namespace JsonRpc {
   export type PairingPingResponse = DefaultResponse;
 
   // -- session propose ------------------------------------- //
-  export interface SessionProposeRequest extends BaseRequest {
+  export interface SessionProposeRequest extends JsonRpcRequest {
     method: "wc_sessionPropose";
     params: {
       relays: RelayerTypes.ProtocolOptions[];
@@ -55,16 +41,16 @@ export declare namespace JsonRpc {
   }
 
   export type SessionProposeResponse =
-    | {
+    | JsonRpcResult<{
         relay: RelayerTypes.ProtocolOptions;
         responder: {
           publicKey: string;
         };
-      }
-    | DefaultFailureResponse;
+      }>
+    | JsonRpcError;
 
   // -- session settle  -------------------------------------- //
-  export interface SessionSettleRequest extends BaseRequest {
+  export interface SessionSettleRequest extends JsonRpcRequest {
     method: "wc_sessionSettle";
     params: {
       relay: RelayerTypes.ProtocolOptions;
@@ -82,7 +68,7 @@ export declare namespace JsonRpc {
   export type SessionSettleResponse = DefaultResponse;
 
   // -- session update accounts  ------------------------------ //
-  export interface SessionUpdateAccountsRequest extends BaseRequest {
+  export interface SessionUpdateAccountsRequest extends JsonRpcRequest {
     method: "wc_sessionUpdateAccounts";
     params: {
       accounts: SessionTypes.Accounts;
@@ -92,7 +78,7 @@ export declare namespace JsonRpc {
   export type SessionUpdateAccountsResponse = DefaultResponse;
 
   // -- session update methods  --------------------------------- //
-  export interface SessionUpdateMethodsRequest extends BaseRequest {
+  export interface SessionUpdateMethodsRequest extends JsonRpcRequest {
     method: "wc_sessionUpdateMethods";
     params: {
       methods: SessionTypes.Methods;
@@ -102,7 +88,7 @@ export declare namespace JsonRpc {
   export type SessionUpdateMethodsResponse = DefaultResponse;
 
   // -- session update events ----------------------------------- //
-  export interface SessionUpdateEventsRequest extends BaseRequest {
+  export interface SessionUpdateEventsRequest extends JsonRpcRequest {
     method: "wc_sessionUpdateEvents";
     params: {
       events: SessionTypes.Events;
@@ -112,7 +98,7 @@ export declare namespace JsonRpc {
   export type SessionUpdateEventsResponse = DefaultResponse;
 
   // -- session update expiry ----------------------------------- //
-  export interface SessionUpdateExpiryRequest extends BaseRequest {
+  export interface SessionUpdateExpiryRequest extends JsonRpcRequest {
     method: "wc_sessionUpdateExpiry";
     params: {
       expiry: number;
@@ -122,7 +108,7 @@ export declare namespace JsonRpc {
   export type SessionUpdateExpiryResponse = DefaultResponse;
 
   // -- session delete  ----------------------------------------- //
-  export interface SessionDeleteRequest extends BaseRequest {
+  export interface SessionDeleteRequest extends JsonRpcRequest {
     method: "wc_sessionDelete";
     params: {
       code: number;
@@ -133,7 +119,7 @@ export declare namespace JsonRpc {
   export type SessionDeleteResponse = DefaultResponse;
 
   // -- session ping  -------------------------------------------- //
-  export interface SessionPingRequest extends BaseRequest {
+  export interface SessionPingRequest extends JsonRpcRequest {
     method: "wc_sessionPing";
     params: {};
   }
@@ -141,7 +127,7 @@ export declare namespace JsonRpc {
   export type SessionPingResponse = DefaultResponse;
 
   // -- session request -------------------------------------------- //
-  export interface SessionRequest extends BaseRequest {
+  export interface SessionRequest extends JsonRpcRequest {
     method: "wc_sessionRequest";
     params: {
       request: {
@@ -155,7 +141,7 @@ export declare namespace JsonRpc {
   export type SessionRequestResponse = DefaultResponse;
 
   // -- session event  -------------------------------------------- //
-  export interface SessionEventRequest extends BaseRequest {
+  export interface SessionEventRequest extends JsonRpcRequest {
     method: "wc_sessionEvent";
     params: {
       event: {
