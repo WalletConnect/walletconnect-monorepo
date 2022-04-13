@@ -1,14 +1,5 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import {
-  BlockchainTypes,
-  ClientTypes,
-  JsonRpcPermissions,
-  NotificationPermissions,
-  PairingTypes,
-  SequenceTypes,
-  SessionTypes,
-  Validation,
-} from "@walletconnect/types";
+import { ClientTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR } from "./error";
 
 // -- general -------------------------------------------------- //

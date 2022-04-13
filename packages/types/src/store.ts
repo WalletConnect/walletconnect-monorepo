@@ -1,6 +1,5 @@
 import { Logger } from "pino";
 import { IClient } from "./client";
-import { Reason } from "./misc";
 
 export abstract class IStore<Data> {
   public abstract data: Map<string, Data>;

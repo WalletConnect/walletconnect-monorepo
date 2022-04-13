@@ -8,7 +8,7 @@ export declare namespace PairingTypes {
     expiry: number;
     relay: RelayerTypes.ProtocolOptions;
     active: boolean;
-    peerMetadata?: ClientTypes.Options;
+    peerMetadata?: ClientTypes.Metadata;
   }
 }
 

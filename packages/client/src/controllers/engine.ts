@@ -58,7 +58,7 @@ export default class Engine extends IEngine {
 
     return {
       uri,
-      approval: new Promise(resolve => resolve()),
+      approval: new Promise(resolve => resolve()) as Promise<void>,
     };
   }
 

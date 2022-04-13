@@ -1,5 +1,5 @@
 import { fromMiliseconds, toMiliseconds } from "@walletconnect/time";
-import { ClientTypes, RelayClientMetadata } from "@walletconnect/types";
+import { ClientTypes } from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import union from "lodash.union";

@@ -1,6 +1,6 @@
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
-import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
+import { IKeyValueStorage } from "keyvaluestorage";
 import { Logger } from "pino";
 import { ICrypto, IKeyChain } from "./crypto";
 import { EngineTypes, IEngine } from "./engine";
@@ -16,17 +16,15 @@ export declare namespace ClientTypes {
     icons: [string];
   }
 
-  interface Options {
-    name?: string;
-    projectId?: string;
-    controller?: boolean;
-    metadata?: Metadata;
-    relayUrl?: string;
-    logger?: string | Logger;
-    keychain?: IKeyChain;
-    storage?: IKeyValueStorage;
-    storageOptions?: KeyValueStorageOptions;
-  }
+  type Options = Partial<{
+    projectId: string;
+    name: string;
+    controller: boolean;
+    metadata: Metadata;
+    relayUrl: string;
+    logger: string | Logger;
+    keychain: IKeyChain;
+  }> 
 }
 
 export abstract class IClient {
