@@ -13,15 +13,9 @@ export declare namespace CryptoTypes {
     publicKey: string;
   }
 
-  export interface EncryptionKeys {
-    publicKey: string;
-    symKey: string;
-    iv?: string;
-  }
-
-  export interface EncryptParams {
-    symKey: string;
+  export interface EncryptParams extends EncryptionKeys {
     message: string;
+    symKey: string;
     iv?: string;
   }
 

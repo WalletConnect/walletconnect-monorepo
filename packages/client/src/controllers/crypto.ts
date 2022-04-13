@@ -114,7 +114,7 @@ export class Crypto implements ICrypto {
 
   public async generateKeyPair(): Promise<string> {
     const keyPair = generateKeyPair();
-    return this.setKeyPair(keyPair);
+    return this.setPrivateKey(keyPair.privateKey, keyPair.publicKey);
   }
 
   public async generateSessionKey(
@@ -122,10 +122,10 @@ export class Crypto implements ICrypto {
     peer: CryptoTypes.Participant,
     overrideTopic?: string,
   ): Promise<string> {
-    const keyPair = await this.getKeyPair(self.publicKey);
-    const sharedKey = deriveSharedKey(keyPair.privateKey, peer.publicKey);
+    const privateKey = await this.getPrivateKey(self.publicKey);
+    const sharedKey = deriveSharedKey(privateKey, peer.publicKey);
     const symKey = deriveSymmetricKey(sharedKey);
-    return this.setEncryptionKeys({ symKey, publicKey: keyPair.publicKey }, overrideTopic);
+    return this.setSymKey(symKey, overrideTopic);
   }
 
   public async generatePairingKey(overrideTopic?: string): Promise<string> {
@@ -135,7 +135,7 @@ export class Crypto implements ICrypto {
 
   public async setPairingKey(symKey: string, overrideTopic?: string): Promise<string> {
     const hash = await hashKey(symKey);
-    return this.setEncryptionKeys({ symKey, publicKey: hash }, overrideTopic);
+    return this.setSymKey(symKey, overrideTopic);
   }
 
   public async deleteKeyPair(publicKey: string): Promise<void> {
@@ -151,13 +151,13 @@ export class Crypto implements ICrypto {
   }
 
   public async encrypt(topic: string, message: string): Promise<string> {
-    const { symKey } = await this.getEncryptionKeys(topic);
+    const symKey = await this.getSymKey(topic);
     const result = await encrypt({ symKey, message });
     return result;
   }
 
   public async decrypt(topic: string, encoded: string): Promise<string> {
-    const { symKey } = await this.getEncryptionKeys(topic);
+    const symKey = await this.getSymKey(topic);
     const result = await decrypt({ symKey, encoded });
     return result;
   }
@@ -178,39 +178,23 @@ export class Crypto implements ICrypto {
 
   // ---------- Private ----------------------------------------------- //
 
-  private concatKeys(keyA: string, keyB: string): string {
-    return encoding.arrayToHex(
-      encoding.concatArrays(encoding.hexToArray(keyA), encoding.hexToArray(keyB)),
-    );
+  private async setPrivateKey(privateKey: string, publicKey: string): Promise<string> {
+    await this.keychain.set(publicKey, privateKey);
+    return publicKey;
   }
 
-  private splitKeys(keys: string): string[] {
-    const arr = encoding.hexToArray(keys);
-    return [encoding.arrayToHex(arr.slice(0, 32)), encoding.arrayToHex(arr.slice(32, 64))];
+  private async getPrivateKey(publicKey: string): Promise<string> {
+    const privateKey = await this.keychain.get(publicKey);
+    return privateKey;
   }
 
-  private async setKeyPair(keyPair: CryptoTypes.KeyPair): Promise<string> {
-    const keys = this.concatKeys(keyPair.publicKey, keyPair.privateKey);
-    await this.keychain.set(keyPair.publicKey, keys);
-    return keyPair.publicKey;
-  }
-
-  private async getKeyPair(publicKey: string): Promise<CryptoTypes.KeyPair> {
-    const [_, privateKey] = this.splitKeys(await this.keychain.get(publicKey));
-    return { publicKey, privateKey };
-  }
-
-  private async setEncryptionKeys(
-    encryptionKeys: CryptoTypes.EncryptionKeys,
-    overrideTopic?: string,
-  ): Promise<string> {
-    const topic = overrideTopic || (await hashKey(encryptionKeys.symKey));
-    const keys = this.concatKeys(encryptionKeys.symKey, encryptionKeys.publicKey);
-    await this.keychain.set(topic, keys);
+  private async setSymKey(symKey: string, overrideTopic?: string): Promise<string> {
+    const topic = overrideTopic || (await hashKey(symKey));
+    await this.keychain.set(topic, symKey);
     return topic;
   }
-  private async getEncryptionKeys(topic: string): Promise<CryptoTypes.EncryptionKeys> {
-    const [symKey, publicKey] = this.splitKeys(await this.keychain.get(topic));
-    return { symKey, publicKey };
+  private async getSymKey(topic: string): Promise<string> {
+    const symKey = await this.keychain.get(topic);
+    return symKey;
   }
 }

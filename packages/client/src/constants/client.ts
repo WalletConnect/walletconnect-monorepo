@@ -7,7 +7,7 @@ export const CLIENT_DEFAULT = {
   relayUrl: "wss://relay.walletconnect.com",
 };
 
-export const CLIENT_SHORT_TIMEOUT = 500;
+export const CLIENT_SHORT_TIMEOUT = 50;
 
 export const CLIENT_EVENTS = {
   pairing: {
