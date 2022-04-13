@@ -13,7 +13,7 @@ export declare namespace CryptoTypes {
     publicKey: string;
   }
 
-  export interface EncryptParams extends EncryptionKeys {
+  export interface EncryptParams {
     message: string;
     symKey: string;
     iv?: string;
