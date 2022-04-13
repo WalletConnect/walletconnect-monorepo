@@ -2,7 +2,7 @@ import "mocha";
 import sinon from "sinon";
 
 import { ONE_SECOND, toMiliseconds } from "@walletconnect/time";
-import { generateRandomBytes32, sha256 } from "@walletconnect/utils";
+import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
 
 import { Client, RELAYER_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 
@@ -35,7 +35,7 @@ describe("Relayer", function() {
     // message
     const message = await encoder.encode(topic, request);
     // hash
-    const hash = await sha256(message);
+    const hash = await hashMessage(message);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     // subscribe
@@ -55,7 +55,7 @@ describe("Relayer", function() {
               expect(messageEvent.topic).to.eql(topic);
               expect(messageEvent.message).to.eql(message);
               expect(decoded).to.eql(request);
-              expect(await sha256(messageEvent.message)).to.eql(hash);
+              expect(await hashMessage(messageEvent.message)).to.eql(hash);
               resolve();
             } catch (e) {
               reject(e);
@@ -83,7 +83,7 @@ describe("Relayer", function() {
     // message
     const message = await encoder.encode(topic, request);
     // hash
-    const hash = await sha256(message);
+    const hash = await hashMessage(message);
     // setup
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     await Promise.all([
@@ -97,7 +97,7 @@ describe("Relayer", function() {
             expect(messageEvent.topic).to.eql(topic);
             expect(messageEvent.message).to.eql(message);
             expect(decoded).to.eql(request);
-            expect(await sha256(messageEvent.message)).to.eql(hash);
+            expect(await hashMessage(messageEvent.message)).to.eql(hash);
             resolve();
           } catch (e) {
             reject(e);

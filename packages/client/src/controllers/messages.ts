@@ -6,7 +6,7 @@ import {
   formatStorageKeyName,
   mapToObj,
   objToMap,
-  sha256,
+  hashMessage,
 } from "@walletconnect/utils";
 
 import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
@@ -38,7 +38,7 @@ export class MessageTracker extends IMessageTracker {
   }
 
   public async set(topic: string, message: string): Promise<string> {
-    const hash = await sha256(message);
+    const hash = await hashMessage(message);
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
       messages = {};
@@ -62,7 +62,7 @@ export class MessageTracker extends IMessageTracker {
 
   public async has(topic: string, message: string): Promise<boolean> {
     const messages = this.get(topic);
-    const hash = await sha256(message);
+    const hash = await hashMessage(message);
     return typeof messages[hash] !== "undefined";
   }
 
@@ -74,14 +74,14 @@ export class MessageTracker extends IMessageTracker {
   // ---------- Private ----------------------------------------------- //
 
   private async setRelayerMessages(messages: Map<string, MessageRecord>): Promise<void> {
-    await this.client.keyValueStorage.setItem<Record<string, MessageRecord>>(
+    await this.client.storage.setItem<Record<string, MessageRecord>>(
       this.storageKey,
       mapToObj(messages),
     );
   }
 
   private async getRelayerMessages(): Promise<Map<string, MessageRecord> | undefined> {
-    const messages = await this.client.keyValueStorage.getItem<Record<string, MessageRecord>>(
+    const messages = await this.client.storage.getItem<Record<string, MessageRecord>>(
       this.storageKey,
     );
     return typeof messages !== "undefined" ? objToMap(messages) : undefined;

@@ -16,6 +16,7 @@ import {
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { toMiliseconds } from "@walletconnect/time";
 import {
+  IClient,
   IMessageTracker,
   IPublisher,
   IRelayer,
@@ -23,7 +24,7 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl } from "@walletconnect/utils";
+import { formatRelayRpcUrl, hashMessage } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
 import {
@@ -52,8 +53,11 @@ export class Relayer extends IRelayer {
   public publisher: IPublisher;
   public name: string = RELAYER_CONTEXT;
 
+  private client: IClient;
+
   constructor(opts: RelayerOptions) {
     super(opts);
+    this.client = opts.client;
     this.logger =
       typeof opts.logger !== "undefined" && typeof opts.logger !== "string"
         ? generateChildLogger(opts.logger, this.name)
@@ -68,7 +72,7 @@ export class Relayer extends IRelayer {
         ? opts.relayProvider
         : new JsonRpcProvider(new WsConnection(rpcUrl));
     this.messages = new MessageTracker(this.logger, opts.client);
-    this.subscriber = new Subscriber(this, opts.client, this.logger);
+    this.subscriber = new Subscriber(this, this.client, this.logger);
     this.publisher = new Publisher(this, this.logger);
     this.registerEventListeners();
   }
@@ -149,6 +153,7 @@ export class Relayer extends IRelayer {
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
       const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
+      const hash = await hashMessage(message);
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);

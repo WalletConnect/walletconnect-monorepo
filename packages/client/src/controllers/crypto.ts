@@ -6,14 +6,15 @@ import { CryptoTypes, IClient, ICrypto, IKeyChain } from "@walletconnect/types";
 import {
   decrypt,
   deriveSharedKey,
+  deriveSymmetricKey,
   encrypt,
   ERROR,
   formatStorageKeyName,
   generateKeyPair,
   generateRandomBytes32,
+  hashKey,
   mapToObj,
   objToMap,
-  sha256,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
@@ -117,102 +118,87 @@ export class Crypto implements ICrypto {
 
   public async generateKeyPair(): Promise<string> {
     const keyPair = generateKeyPair();
-    return this.setKeyPair(keyPair);
+    return this.setPrivateKey(keyPair.privateKey, keyPair.publicKey);
   }
 
-  public async generateSharedKey(
+  public async generateSessionKey(
     self: CryptoTypes.Participant,
     peer: CryptoTypes.Participant,
     overrideTopic?: string,
   ): Promise<string> {
-    const keyPair = await this.getKeyPair(self.publicKey);
-    const sharedKey = deriveSharedKey(keyPair.privateKey, peer.publicKey);
-    return this.setEncryptionKeys({ sharedKey, publicKey: keyPair.publicKey }, overrideTopic);
-  }
-
-  public async generateSymKey(overrideTopic?: string): Promise<string> {
-    const symKey = generateRandomBytes32();
+    const privateKey = await this.getPrivateKey(self.publicKey);
+    const sharedKey = deriveSharedKey(privateKey, peer.publicKey);
+    const symKey = deriveSymmetricKey(sharedKey);
     return this.setSymKey(symKey, overrideTopic);
   }
 
-  public async setSymKey(symKey: string, overrideTopic?: string): Promise<string> {
-    const hash = await sha256(symKey);
-    return this.setEncryptionKeys({ sharedKey: symKey, publicKey: hash }, overrideTopic);
+  public async generatePairingKey(overrideTopic?: string): Promise<string> {
+    const symKey = generateRandomBytes32();
+    return this.setPairingKey(symKey, overrideTopic);
+  }
+
+  public async setPairingKey(symKey: string, overrideTopic?: string): Promise<string> {
+    const hash = await hashKey(symKey);
+    return this.setSymKey(symKey, overrideTopic);
   }
 
   public async deleteKeyPair(publicKey: string): Promise<void> {
     await this.keychain.del(publicKey);
   }
 
-  public async deleteSharedKey(topic: string): Promise<void> {
+  public async deleteSessionKey(topic: string): Promise<void> {
     await this.keychain.del(topic);
   }
 
-  public async deleteSymKey(topic: string): Promise<void> {
+  public async deletePairingKey(topic: string): Promise<void> {
     await this.keychain.del(topic);
   }
 
   public async encrypt(topic: string, message: string): Promise<string> {
-    const { sharedKey, publicKey } = await this.getEncryptionKeys(topic);
-    const result = await encrypt({ message, sharedKey, publicKey });
+    const symKey = await this.getSymKey(topic);
+    const result = await encrypt({ symKey, message });
     return result;
   }
 
-  public async decrypt(topic: string, encrypted: string): Promise<string> {
-    const { sharedKey } = await this.getEncryptionKeys(topic);
-    const result = await decrypt({ encrypted, sharedKey });
+  public async decrypt(topic: string, encoded: string): Promise<string> {
+    const symKey = await this.getSymKey(topic);
+    const result = await decrypt({ symKey, encoded });
     return result;
   }
 
   public async encode(topic: string, payload: JsonRpcPayload): Promise<string> {
-    const message = safeJsonStringify(payload);
     const hasKeys = await this.hasKeys(topic);
+    const message = safeJsonStringify(payload);
     const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
     return result;
   }
 
-  public async decode(topic: string, encrypted: string): Promise<JsonRpcPayload> {
+  public async decode(topic: string, encoded: string): Promise<JsonRpcPayload> {
     const hasKeys = await this.hasKeys(topic);
-    const message = hasKeys ? await this.decrypt(topic, encrypted) : encoding.hexToUtf8(encrypted);
+    const message = hasKeys ? await this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
     const payload = safeJsonParse(message);
     return payload;
   }
 
   // ---------- Private ----------------------------------------------- //
 
-  private concatKeys(keyA: string, keyB: string): string {
-    return encoding.arrayToHex(
-      encoding.concatArrays(encoding.hexToArray(keyA), encoding.hexToArray(keyB)),
-    );
+  private async setPrivateKey(privateKey: string, publicKey: string): Promise<string> {
+    await this.keychain.set(publicKey, privateKey);
+    return publicKey;
   }
 
-  private splitKeys(keys: string): string[] {
-    const arr = encoding.hexToArray(keys);
-    return [encoding.arrayToHex(arr.slice(0, 32)), encoding.arrayToHex(arr.slice(32, 64))];
+  private async getPrivateKey(publicKey: string): Promise<string> {
+    const privateKey = await this.keychain.get(publicKey);
+    return privateKey;
   }
 
-  private async setKeyPair(keyPair: CryptoTypes.KeyPair): Promise<string> {
-    const keys = this.concatKeys(keyPair.publicKey, keyPair.privateKey);
-    await this.keychain.set(keyPair.publicKey, keys);
-    return keyPair.publicKey;
-  }
-
-  private async getKeyPair(publicKey: string): Promise<CryptoTypes.KeyPair> {
-    const [_, privateKey] = this.splitKeys(await this.keychain.get(publicKey));
-    return { publicKey, privateKey };
-  }
-
-  private async setEncryptionKeys(
-    encryptionKeys: CryptoTypes.EncryptionKeys,
-    overrideTopic?: string,
-  ): Promise<string> {
-    const topic = overrideTopic || (await sha256(encryptionKeys.sharedKey));
-    const keys = this.concatKeys(encryptionKeys.sharedKey, encryptionKeys.publicKey);
-    await this.keychain.set(topic, keys);
+  private async setSymKey(symKey: string, overrideTopic?: string): Promise<string> {
+    const topic = overrideTopic || (await hashKey(symKey));
+    await this.keychain.set(topic, symKey);
     return topic;
   }
-  private async getEncryptionKeys(topic: string): Promise<CryptoTypes.EncryptionKeys> {
-    const [sharedKey, publicKey] = this.splitKeys(await this.keychain.get(topic));
-    return { sharedKey, publicKey };
+  private async getSymKey(topic: string): Promise<string> {
+    const symKey = await this.keychain.get(topic);
+    return symKey;
   }
 }

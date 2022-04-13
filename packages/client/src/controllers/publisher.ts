@@ -3,7 +3,7 @@ import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { IPublisher, IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
-import { getRelayProtocolApi, getRelayProtocolName, sha256 } from "@walletconnect/utils";
+import { getRelayProtocolApi, getRelayProtocolName, hashMessage } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
@@ -43,7 +43,7 @@ export class Publisher extends IPublisher {
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
       const params = { topic, message, opts: { ttl, relay, prompt } };
-      const hash = await sha256(message);
+      const hash = await hashMessage(message);
       this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
       await this.onPublish(hash, params);
@@ -106,6 +106,7 @@ export class Publisher extends IPublisher {
   private async onPublish(hash: string, params: PublisherTypes.Params) {
     // const { topic, message } = params;
     // await this.relayer.recordPayloadEvent({ topic, message });
+
     this.queue.delete(hash);
   }
 
@@ -116,7 +117,7 @@ export class Publisher extends IPublisher {
         message,
         opts: { ttl, relay },
       } = params;
-      const hash = await sha256(message);
+      const hash = await hashMessage(message);
       await this.rpcPublish(topic, message, ttl, relay);
       await this.onPublish(hash, params);
     });

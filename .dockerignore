@@ -1,6 +1,7 @@
 **/node_modules
 ./node_modules
 .git
+.github
 **/dist
 LICENSE.md
 README.md
