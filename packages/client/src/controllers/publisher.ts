@@ -45,13 +45,7 @@ export class Publisher extends IPublisher {
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
       const params = { topic, message, opts: { ttl, relay, prompt } };
-      // eslint-disable-next-line
-      console.log((this.relayer as any).client.name, `[outgoing]`, `topic`, topic);
-      // eslint-disable-next-line
-      console.log((this.relayer as any).client.name, `[outgoing]`, `message`, message);
       const hash = await hashMessage(message);
-      // eslint-disable-next-line
-      console.log((this.relayer as any).client.name, `[outgoing]`, `hash`, hash);
       this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
       await this.onPublish(hash, params);
@@ -114,8 +108,6 @@ export class Publisher extends IPublisher {
   private async onPublish(hash: string, params: PublisherTypes.Params) {
     // const { topic, message } = params;
     // await this.relayer.recordPayloadEvent({ topic, message });
-    // eslint-disable-next-line
-    console.log((this.relayer as any).client.name, `[outgoing]`, `onPublish`);
 
     this.queue.delete(hash);
   }

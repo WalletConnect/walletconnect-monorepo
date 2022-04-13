@@ -132,15 +132,7 @@ export class Subscriber extends ISubscriber {
       const relay = getRelayProtocolName(opts);
       const params = { topic, relay };
       this.pending.set(topic, params);
-      // eslint-disable-next-line
-      console.log(this.client.name, `[subscribe]`, `topic`, topic);
-      // eslint-disable-next-line
-      console.log(this.client.name, `[subscribe]`, `relay`, relay);
-
       const id = await this.rpcSubscribe(topic, relay);
-      // eslint-disable-next-line
-      console.log(this.client.name, `[subscribe]`, `id`, id);
-
       await this.onSubscribe(id, params);
       this.logger.debug(`Successfully Subscribed Topic`);
       this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });

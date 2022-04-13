@@ -157,21 +157,11 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Incoming Relay Payload`);
     this.logger.trace({ type: "payload", direction: "incoming", payload });
     if (isJsonRpcRequest(payload)) {
-      // eslint-disable-next-line
-      console.log(this.client.name, `[incoming]`, `payload.method`, payload.method);
-      // eslint-disable-next-line
-      console.log(this.client.name, `[incoming]`, `payload.params`, payload.params);
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
       const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
-      // eslint-disable-next-line
-      console.log(this.client.name, `[incoming]`, `topic`, topic);
-      // eslint-disable-next-line
-      console.log(this.client.name, `[incoming]`, `message`, message);
       const hash = await hashMessage(message);
-      // eslint-disable-next-line
-      console.log(this.client.name, `[incoming]`, `hash`, hash);
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);

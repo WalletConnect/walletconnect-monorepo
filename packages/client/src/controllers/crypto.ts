@@ -123,30 +123,18 @@ export class Crypto implements ICrypto {
     overrideTopic?: string,
   ): Promise<string> {
     const keyPair = await this.getKeyPair(self.publicKey);
-    // eslint-disable-next-line
-    console.log(this.client.name, `[generateSessionKey]`, `keyPair`, keyPair);
     const sharedKey = deriveSharedKey(keyPair.privateKey, peer.publicKey);
-    // eslint-disable-next-line
-    console.log(this.client.name, `[generateSessionKey]`, `sharedKey`, sharedKey);
     const symKey = deriveSymmetricKey(sharedKey);
-    // eslint-disable-next-line
-    console.log(this.client.name, `[generateSessionKey]`, `symKey`, symKey);
     return this.setEncryptionKeys({ symKey, publicKey: keyPair.publicKey }, overrideTopic);
   }
 
   public async generatePairingKey(overrideTopic?: string): Promise<string> {
     const symKey = generateRandomBytes32();
-    // eslint-disable-next-line
-    console.log(this.client.name, `[generatePairingKey]`, `symKey`, symKey);
     return this.setPairingKey(symKey, overrideTopic);
   }
 
   public async setPairingKey(symKey: string, overrideTopic?: string): Promise<string> {
-    // eslint-disable-next-line
-    console.log(this.client.name, `[setPairingKey]`, `symKey`, symKey);
     const hash = await hashKey(symKey);
-    // eslint-disable-next-line
-    console.log(this.client.name, `[setPairingKey]`, `hash`, hash);
     return this.setEncryptionKeys({ symKey, publicKey: hash }, overrideTopic);
   }
 
@@ -175,13 +163,15 @@ export class Crypto implements ICrypto {
   }
 
   public async encode(topic: string, payload: JsonRpcPayload): Promise<string> {
+    const hasKeys = await this.hasKeys(topic);
     const message = safeJsonStringify(payload);
-    const result = await this.encrypt(topic, message);
+    const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
     return result;
   }
 
   public async decode(topic: string, encoded: string): Promise<JsonRpcPayload> {
-    const message = await this.decrypt(topic, encoded);
+    const hasKeys = await this.hasKeys(topic);
+    const message = hasKeys ? await this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
     const payload = safeJsonParse(message);
     return payload;
   }
@@ -214,12 +204,7 @@ export class Crypto implements ICrypto {
     encryptionKeys: CryptoTypes.EncryptionKeys,
     overrideTopic?: string,
   ): Promise<string> {
-    // eslint-disable-next-line
-    console.log(this.client.name, `[setEncryptionKeys]`, `overrideTopic`, overrideTopic);
     const topic = overrideTopic || (await hashKey(encryptionKeys.symKey));
-    // eslint-disable-next-line
-    console.log(this.client.name, `[setEncryptionKeys]`, `topic`, topic);
-
     const keys = this.concatKeys(encryptionKeys.symKey, encryptionKeys.publicKey);
     await this.keychain.set(topic, keys);
     return topic;
