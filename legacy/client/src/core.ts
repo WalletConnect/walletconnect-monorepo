@@ -220,7 +220,7 @@ class Connector implements IConnector {
     return this._peerId;
   }
 
-  set clientMeta(value) {
+  set clientMeta(_value) {
     // empty
   }
 
@@ -314,7 +314,7 @@ class Connector implements IConnector {
     return rpcUrl;
   }
 
-  set connected(value) {
+  set connected(_value) {
     // empty
   }
 
@@ -322,7 +322,7 @@ class Connector implements IConnector {
     return this._connected;
   }
 
-  set pending(value) {
+  set pending(_value) {
     // empty
   }
 
@@ -1054,7 +1054,7 @@ class Connector implements IConnector {
       }
     });
 
-    this.on("call_request_sent", (error, payload) => {
+    this.on("call_request_sent", (_error, payload) => {
       const { request } = payload.params[0];
       if (isMobile() && this._signingMethods.includes(request.method)) {
         const mobileLinkUrl = getLocal(MOBILE_LINK_CHOICE_KEY);

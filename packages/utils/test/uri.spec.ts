@@ -5,14 +5,14 @@ import { formatUri, parseUri } from "../src";
 import { TEST_PAIRING_TOPIC, TEST_RELAY_OPTIONS, TEST_SYM_KEY } from "./shared";
 
 const TEST_URI_PARAMS: EngineTypes.UriParameters = {
+  protocol: "wc",
   version: 2,
   topic: TEST_PAIRING_TOPIC,
   symKey: TEST_SYM_KEY,
-  relayProtocol: TEST_RELAY_OPTIONS.protocol,
-  relayData: TEST_RELAY_OPTIONS.data,
+  relay: TEST_RELAY_OPTIONS,
 };
 
-const TEST_URI_STRING = `wc:${TEST_URI_PARAMS.topic}@${TEST_URI_PARAMS.version}${TEST_URI_PARAMS.relayProtocol}${TEST_URI_PARAMS.relayData}${TEST_URI_PARAMS.symKey}`;
+const TEST_URI_STRING = `${TEST_URI_PARAMS.protocol}:${TEST_URI_PARAMS.topic}@${TEST_URI_PARAMS.version}?relay-protocol=${TEST_RELAY_OPTIONS.protocol}&symKey=${TEST_URI_PARAMS.symKey}`;
 
 describe("URI", () => {
   it("formatUri", () => {
@@ -24,7 +24,7 @@ describe("URI", () => {
     expect(uriParams.version).to.eql(TEST_URI_PARAMS.version);
     expect(uriParams.topic).to.eql(TEST_URI_PARAMS.topic);
     expect(uriParams.symKey).to.eql(TEST_URI_PARAMS.symKey);
-    expect(uriParams.relayData).to.eql(TEST_URI_PARAMS.relayData);
-    expect(uriParams.relayProtocol).to.eql(TEST_URI_PARAMS.relayProtocol);
+    expect(uriParams.relay.data).to.eql(TEST_URI_PARAMS.relay.data);
+    expect(uriParams.relay.protocol).to.eql(TEST_URI_PARAMS.relay.protocol);
   });
 });

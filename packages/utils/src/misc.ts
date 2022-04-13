@@ -2,7 +2,6 @@ import { fromMiliseconds, toMiliseconds } from "@walletconnect/time";
 import { ClientTypes, RelayerClientMetadata } from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
-import union from "lodash.union";
 import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
@@ -126,10 +125,6 @@ export function hasOverlap(a: any[], b: any[]): boolean {
 
 export function getLastItems(arr: any[], depth = DEFAULT_DEPTH): any[] {
   return arr.slice(Math.max(arr.length - depth, 0));
-}
-
-export function mergeArrays(a: any[], b: any[]): any[] {
-  return union(a, b);
 }
 
 // -- map ------------------------------------------------- //

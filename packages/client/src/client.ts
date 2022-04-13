@@ -104,117 +104,117 @@ export class Client extends IClient {
   public async connect(params: EngineTypes.CreateSessionParams) {
     try {
       return await this.engine.createSession(params);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async pair(pairingUri: string) {
     try {
       await this.engine.pair(pairingUri);
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async approve() {
     try {
       await this.engine.approve();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async reject() {
     try {
       await this.engine.reject();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async updateAccounts() {
     try {
       await this.engine.updateAccounts();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async updateMethods() {
     try {
       await this.engine.updateMethods();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async updateEvents() {
     try {
       await this.engine.updateEvents();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async updateExpiry() {
     try {
       await this.engine.updateExpiry();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async request() {
     try {
       await this.engine.request();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async respond() {
     try {
       await this.engine.respond();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async ping() {
     try {
       await this.engine.ping();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async emit() {
     try {
       await this.engine.emit();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
   public async disconnect() {
     try {
       await this.engine.disconnect();
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 
@@ -229,10 +229,10 @@ export class Client extends IClient {
       await this.relayer.init();
       await this.heartbeat.init();
       this.logger.info(`Client Initilization Success`);
-    } catch (err) {
+    } catch (error) {
       this.logger.info(`Client Initilization Failure`);
-      this.logger.error(err);
-      throw err;
+      this.logger.error((error as any).message);
+      throw error;
     }
   }
 }

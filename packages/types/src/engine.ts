@@ -8,6 +8,8 @@ import { ISession, SessionTypes } from "./session";
 
 export declare namespace EngineTypes {
   interface UriParameters {
+    protocol: string;
+    version: number;
     topic: string;
     symKey: string;
     relay: RelayerTypes.ProtocolOptions;
