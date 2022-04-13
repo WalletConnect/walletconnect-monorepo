@@ -1,14 +1,13 @@
-import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IMessageTracker, MessageRecord, IClient } from "@walletconnect/types";
+import { IClient, IMessageTracker, MessageRecord } from "@walletconnect/types";
 import {
   formatMessageContext,
   formatStorageKeyName,
+  hashMessage,
   mapToObj,
   objToMap,
-  hashMessage,
 } from "@walletconnect/utils";
-
+import { Logger } from "pino";
 import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
 export class MessageTracker extends IMessageTracker {
@@ -74,14 +73,14 @@ export class MessageTracker extends IMessageTracker {
   // ---------- Private ----------------------------------------------- //
 
   private async setRelayerMessages(messages: Map<string, MessageRecord>): Promise<void> {
-    await this.client.storage.setItem<Record<string, MessageRecord>>(
+    await this.client.keyValueStorage.setItem<Record<string, MessageRecord>>(
       this.storageKey,
       mapToObj(messages),
     );
   }
 
   private async getRelayerMessages(): Promise<Map<string, MessageRecord> | undefined> {
-    const messages = await this.client.storage.getItem<Record<string, MessageRecord>>(
+    const messages = await this.client.keyValueStorage.getItem<Record<string, MessageRecord>>(
       this.storageKey,
     );
     return typeof messages !== "undefined" ? objToMap(messages) : undefined;
