@@ -64,9 +64,15 @@ export function appendToQueryString(queryString: string, newQueryParams: any): s
 
 // -- metadata ----------------------------------------------//
 
-export function getAppMetadata(): ClientTypes.Metadata | undefined {
-  // @ts-expect-error
-  return getWindowMetadata() || undefined;
+export function getAppMetadata(): ClientTypes.Metadata {
+  return (
+    getWindowMetadata() || {
+      name: "",
+      description: "",
+      url: "",
+      icons: [""],
+    }
+  );
 }
 
 export function getRelayClientMetadata(protocol: string, version: number): RelayerClientMetadata {

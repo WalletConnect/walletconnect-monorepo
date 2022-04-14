@@ -5,6 +5,7 @@ import { IPairing } from "./pairing";
 import { IProposal } from "./proposal";
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
+import { JsonRpc } from "./jsonrpc";
 
 export declare namespace EngineTypes {
   interface UriParameters {
@@ -20,27 +21,31 @@ export declare namespace EngineTypes {
     payload: JsonRpcPayload<string, unknown>;
   }
 
-  type CreatePairingParams = RelayerTypes.ProtocolOptions;
-
   interface CreateSessionParams {
-    relays: RelayerTypes.ProtocolOptions[];
-    metadata: ClientTypes.Metadata;
     pairingTopic?: string;
     methods?: SessionTypes.Methods;
     chains?: SessionTypes.Chains;
     events?: SessionTypes.Events;
+    relays?: RelayerTypes.ProtocolOptions[];
   }
 
   type CreateSessionReturn = Promise<{ uri: string; approval: Promise<void> }>;
+
+  interface SendRequestParams<T extends JsonRpc.WcMethod> {
+    method: T;
+  }
 }
 
 export abstract class IEngine {
   constructor(
+    public protocol: string,
+    public version: number,
     public relayer: IRelayer,
     public crypto: ICrypto,
     public session: ISession,
     public pairing: IPairing,
     public proposal: IProposal,
+    public metadata: ClientTypes.Metadata,
   ) {}
 
   public abstract createSession(

@@ -1,7 +1,7 @@
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
 import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { ClientOptions, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
+import { ClientTypes, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 
@@ -18,7 +18,7 @@ export const SIGNER_EVENTS = {
   notification: "signer_notification",
 };
 
-export type SignerConnectionClientOpts = IClient | ClientOptions;
+export type SignerConnectionClientOpts = IClient | ClientTypes.Options;
 export interface SignerConnectionOpts {
   chains?: string[];
   methods?: string[];

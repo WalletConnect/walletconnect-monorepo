@@ -10,20 +10,20 @@ import { IRelayer } from "./relayer";
 import { ISession } from "./session";
 
 export declare namespace ClientTypes {
-  interface Metadata {
+  type Metadata = {
     name: string;
     description: string;
     url: string;
-    icons: [string];
-  }
+    icons: string[];
+  };
 
   type Options = Partial<{
     projectId: string;
     name: string;
-    metadata: Metadata;
     relayUrl: string;
     logger: string | Logger;
     keychain: IKeyChain;
+    metadata?: Metadata;
     storage?: IKeyValueStorage;
     storageOptions?: KeyValueStorageOptions;
   }>;
@@ -36,7 +36,7 @@ export abstract class IClient {
   public abstract readonly name: string;
   public abstract readonly context: string;
   public abstract readonly storagePrefix: string;
-  public abstract readonly metadata: ClientTypes.Metadata | undefined;
+  public abstract readonly metadata: ClientTypes.Metadata;
   public abstract readonly relayUrl: string | undefined;
   public abstract readonly projectId: string | undefined;
 

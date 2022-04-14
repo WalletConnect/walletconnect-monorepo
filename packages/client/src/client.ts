@@ -70,7 +70,16 @@ export class Client extends IClient {
       logger: this.logger,
       projectId: this.projectId,
     });
-    this.engine = new Engine(this.relayer, this.crypto, this.session, this.pairing, this.proposal);
+    this.engine = new Engine(
+      this.protocol,
+      this.version,
+      this.relayer,
+      this.crypto,
+      this.session,
+      this.pairing,
+      this.proposal,
+      this.metadata,
+    );
   }
 
   get context(): string {

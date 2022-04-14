@@ -3,20 +3,23 @@ import {
   isJsonRpcRequest,
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES } from "@walletconnect/time";
+import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
 import { EngineTypes, IEngine, RelayerTypes } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
-import { RELAYER_EVENTS, WC_RPC_METHODS } from "../constants";
+import { RELAYER_EVENTS, WC_RPC_METHODS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
 
 export default class Engine extends IEngine {
   constructor(
+    protocol: IEngine["protocol"],
+    version: IEngine["version"],
     relayer: IEngine["relayer"],
     crypto: IEngine["crypto"],
     session: IEngine["session"],
     pairing: IEngine["pairing"],
     proposal: IEngine["proposal"],
+    metadata: IEngine["metadata"],
   ) {
-    super(relayer, crypto, session, pairing, proposal);
+    super(protocol, version, relayer, crypto, session, pairing, proposal, metadata);
     this.registerRelayerEvents();
     this.registerExpirerEvents();
   }
@@ -25,43 +28,46 @@ export default class Engine extends IEngine {
 
   public async createSession(params: EngineTypes.CreateSessionParams) {
     // TODO(ilja) validate params
-    let topic = params.pairingTopic;
-    let uri = "";
+
+    const { pairingTopic, methods, events, chains, relays } = params;
+    let topic = pairingTopic;
+    let uri: string | undefined = undefined;
 
     if (topic) {
-      // TODO(ilja) get and validate existing pairing
-      // TODO(ilja) set topic and uri
+      // TODO(ilja) verify topic has existing and active pairing
     } else {
-      const { pairingTopic, pairingUri } = await this.createPairing(params.relays[0]);
-      topic = pairingTopic;
-      uri = pairingUri;
+      const { newTopic, newUri } = await this.createPairing();
+      topic = newTopic;
+      uri = newUri;
     }
 
-    const proposerPublicKey = await this.crypto.generateKeyPair();
+    const publicKey = await this.crypto.generateKeyPair();
     const proposal = {
-      relays: params.relays,
-      methods: params.methods ?? [],
-      events: params.events ?? [],
-      chains: params.chains ?? [],
+      methods: methods ?? [],
+      events: events ?? [],
+      chains: chains ?? [],
+      relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
       proposer: {
-        publicKey: proposerPublicKey,
-        metadata: params.metadata,
+        publicKey,
+        metadata: this.metadata,
       },
     };
-    this.proposal.set(topic, proposal);
+    await this.proposal.set(publicKey, proposal);
     this.sendRequest("WC_SESSION_PROPOSE", proposal);
 
-    return {
-      uri,
-      // TODO(ilja) construct approval promise with timeout
-      approval: async () => null,
-    };
+    const approval = new Promise(async (resolve, reject) => {
+      setTimeout(reject, toMiliseconds(FIVE_MINUTES));
+      // TODO(ilja) - resolve on approval event
+      // TODO(ilja) - reject on reject event
+    });
+
+    return { uri, approval };
   }
 
   public async pair(pairingUri: string) {
     // TODO(ilja) validate pairing Uri
     const { topic, symKey, relay } = parseUri(pairingUri);
-    this.crypto.setSymKey(symKey, topic);
+    this.crypto.setPairingKey(symKey, topic);
     // TODO(ilja) this.generatePairing(params)
     // TODO(ilja) this.pairing.set(topic, params)
     this.relayer.subscribe(topic, relay);
@@ -113,30 +119,25 @@ export default class Engine extends IEngine {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async createPairing(relay: EngineTypes.CreatePairingParams) {
-    const pairingTopic = generateRandomBytes32();
-    const symKey = await this.crypto.generateSymKey(pairingTopic);
+  private async createPairing() {
+    const topic = generateRandomBytes32();
+    const symKey = await this.crypto.generatePairingKey(topic);
     const expiry = calcExpiry(FIVE_MINUTES);
-    const pairing = {
-      topic: pairingTopic,
-      active: true,
-      expiry,
-      relay,
-    };
-    const pairingUri = formatUri({
-      ...pairing,
-      symKey,
-      relay,
-    });
-    this.pairing.set(pairingTopic, pairing);
-    this.relayer.subscribe(pairingTopic);
-    // TODO(ilja) set in expirer
+    const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
+    const pairing = { topic, expiry, relay, active: true };
+    const uri = formatUri({ protocol: this.protocol, version: this.version, topic, symKey, relay });
+    await this.pairing.set(topic, pairing);
+    await this.relayer.subscribe(topic);
+    // TODO(ilja) set expirer
 
-    return { pairingTopic, pairingUri };
+    return { newTopic: topic, newUri: uri };
   }
 
   private sendRequest(method: keyof typeof WC_RPC_METHODS, params: Record<string, unknown>) {
+    // TODO(ilja) validate method
+
     const request = formatJsonRpcRequest(method, params);
+
     // TODO(ilja) encode payload
     // TODO(ilja) publish request to relay
     // TODO(ilja) this.history.set()

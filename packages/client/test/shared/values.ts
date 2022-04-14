@@ -1,5 +1,5 @@
 import path from "path";
-import { ClientOptions, SessionTypes, AppMetadata } from "@walletconnect/types";
+import { SessionTypes, ClientTypes } from "@walletconnect/types";
 import { ONE_SECOND, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
 
 import { CLIENT_SHORT_TIMEOUT, PAIRING_DEFAULT_TTL, SESSION_DEFAULT_TTL } from "../../src";
@@ -14,7 +14,7 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   ? process.env.TEST_PROJECT_ID
   : undefined;
 
-export const TEST_CLIENT_OPTIONS: ClientOptions = {
+export const TEST_CLIENT_OPTIONS: ClientTypes.Options = {
   logger: "fatal",
   relayUrl: TEST_RELAY_URL,
   projectId: TEST_PROJECT_ID,
@@ -41,14 +41,14 @@ export const TEST_PERMISSIONS: SessionTypes.BasePermissions = {
   },
 };
 
-export const TEST_APP_METADATA_A: AppMetadata = {
+export const TEST_APP_METADATA_A: ClientTypes.Metadata = {
   name: "App A (Proposer)",
   description: "Description of Proposer App run by client A",
   url: "https://walletconnect.com",
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
-export const TEST_APP_METADATA_B: AppMetadata = {
+export const TEST_APP_METADATA_B: ClientTypes.Metadata = {
   name: "App B (Responder)",
   description: "Description of Responder App run by client B",
   url: "https://walletconnect.com",
