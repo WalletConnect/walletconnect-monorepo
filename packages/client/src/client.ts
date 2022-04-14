@@ -86,7 +86,7 @@ export class Client extends IClient {
 
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
 
-    this.storage = new KeyValueStorage();
+    this.storage = new KeyValueStorage(opts?.storageOptions);
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
