@@ -4,6 +4,9 @@ import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
 
 export declare namespace JsonRpc {
+  // -- core ------------------------------------------------------- //
+  export type DefaultResponse = { result: true } | { error: ErrorResponse };
+
   export type WcMethod =
     | "wc_pairingDelete"
     | "wc_pairingPing"
@@ -18,117 +21,88 @@ export declare namespace JsonRpc {
     | "wc_sessionRequest"
     | "wc_sessionEvent";
 
-  export type DefaultResponse = { result: true } | { error: ErrorResponse };
+  // -- requests --------------------------------------------------- //
 
-  // -- wc_pairingDelete ------------------------------------- //
-  export interface PairingDeleteRequestParams {
-    code: number;
-    message: string;
-  }
-
-  export type PairingDeleteResponse = DefaultResponse;
-
-  // -- wc_pairingPing ---------------------------------------- //
-  export type PairingPingRequestParams = {};
-
-  export type PairingPingResponse = DefaultResponse;
-
-  // -- wc_sessionPropose ------------------------------------- //
-  export interface SessionProposeRequestParams {
-    relays: RelayerTypes.ProtocolOptions[];
-    chains: SessionTypes.Chains;
-    methods: SessionTypes.Methods;
-    events: SessionTypes.Events;
-    proposer: {
-      publicKey: string;
-      metadata: ClientTypes.Metadata;
+  export interface RequestParams {
+    wc_pairingDelete: {
+      code: number;
+      message: string;
+    };
+    wc_pairingPing: {};
+    wc_sessionPropose: {
+      relays: RelayerTypes.ProtocolOptions[];
+      chains: SessionTypes.Chains;
+      methods: SessionTypes.Methods;
+      events: SessionTypes.Events;
+      proposer: {
+        publicKey: string;
+        metadata: ClientTypes.Metadata;
+      };
+    };
+    wc_sessionSettle: {
+      relay: RelayerTypes.ProtocolOptions;
+      accounts: SessionTypes.Accounts;
+      methods: SessionTypes.Methods;
+      events: SessionTypes.Events;
+      expiry: number;
+      controller: {
+        publicKey: string;
+        metadata: ClientTypes.Metadata;
+      };
+    };
+    wc_sessionUpdateAccounts: {
+      accounts: SessionTypes.Accounts;
+    };
+    wc_sessionUpdateMethods: {
+      methods: SessionTypes.Methods;
+    };
+    wc_sessionUpdateEvents: {
+      events: SessionTypes.Events;
+    };
+    wc_sessionUpdateExpiry: {
+      expiry: number;
+    };
+    wc_sessionDelete: {
+      code: number;
+      reason: string;
+    };
+    wc_sessionPing: {};
+    wc_sessionRequest: {
+      request: {
+        method: string;
+        params: unknown;
+      };
+      chainId: string;
+    };
+    wc_sessionEvent: {
+      event: {
+        name: string;
+        data: unknown;
+      };
+      chainId: string;
     };
   }
 
-  export type SessionProposeResponse =
-    | {
-        relay: RelayerTypes.ProtocolOptions;
-        responder: {
-          publicKey: string;
-        };
-      }
-    | { error: ErrorResponse };
-
-  // -- wc_sessionSettle  -------------------------------------- //
-  export interface SessionSettleRequestParams {
-    relay: RelayerTypes.ProtocolOptions;
-    accounts: SessionTypes.Accounts;
-    methods: SessionTypes.Methods;
-    events: SessionTypes.Events;
-    expiry: number;
-    controller: {
-      publicKey: string;
-      metadata: ClientTypes.Metadata;
-    };
+  // -- responses -------------------------------------------------- //
+  export interface Responses {
+    wc_pairingDelete: DefaultResponse;
+    wc_pairingPing: DefaultResponse;
+    wc_sessionPropose:
+      | {
+          relay: RelayerTypes.ProtocolOptions;
+          responder: {
+            publicKey: string;
+          };
+        }
+      | { error: ErrorResponse };
+    wc_sessionSettle: DefaultResponse;
+    wc_sessionUpdateAccounts: DefaultResponse;
+    wc_sessionUpdateMethods: DefaultResponse;
+    wc_sessionUpdateEvents: DefaultResponse;
+    wc_sessionUpdateExpiry: DefaultResponse;
+    wc_sessionDelete: DefaultResponse;
+    wc_sessionPing: DefaultResponse;
+    wc_sessionRequest: DefaultResponse;
+    wc_sessionEvent: DefaultResponse;
   }
-
-  export type SessionSettleResponse = DefaultResponse;
-
-  // -- wc_sessionUpdateAccounts  ------------------------------ //
-  export interface SessionUpdateAccountsRequestParams {
-    accounts: SessionTypes.Accounts;
-  }
-
-  export type SessionUpdateAccountsResponse = DefaultResponse;
-
-  // -- wc_sessionUpdateMethods  --------------------------------- //
-  export interface SessionUpdateMethodsRequestParams {
-    methods: SessionTypes.Methods;
-  }
-
-  export type SessionUpdateMethodsResponse = DefaultResponse;
-
-  // -- wc_sessionUpdateEvents ----------------------------------- //
-  export interface SessionUpdateEventsRequestParams {
-    events: SessionTypes.Events;
-  }
-
-  export type SessionUpdateEventsResponse = DefaultResponse;
-
-  // -- wc_sessionUpdateExpiry ----------------------------------- //
-  export interface SessionUpdateExpiryRequestParams {
-    expiry: number;
-  }
-
-  export type SessionUpdateExpiryResponse = DefaultResponse;
-
-  // -- wc_sessionDelete  ----------------------------------------- //
-  export interface SessionDeleteRequestParams {
-    code: number;
-    reason: string;
-  }
-
-  export type SessionDeleteResponse = DefaultResponse;
-
-  // -- wc_sessionPing  -------------------------------------------- //
-  export type SessionPingRequestParams = {};
-
-  export type SessionPingResponse = DefaultResponse;
-
-  // -- wc_sessionRequest -------------------------------------------- //
-  export interface SessionRequestParams {
-    request: {
-      method: string;
-      params: unknown;
-    };
-    chainId: string;
-  }
-
-  export type SessionRequestResponse = DefaultResponse;
-
-  // -- wc_sessionEvent  -------------------------------------------- //
-  export interface SessionEventRequestParams {
-    event: {
-      name: string;
-      data: unknown;
-    };
-    chainId: string;
-  }
-
-  export type SessionEventResponse = DefaultResponse;
 }

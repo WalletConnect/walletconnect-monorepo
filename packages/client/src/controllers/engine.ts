@@ -4,9 +4,9 @@ import {
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
-import { EngineTypes, IEngine, RelayerTypes } from "@walletconnect/types";
+import { EngineTypes, IEngine, RelayerTypes, EnginePrivate } from "@walletconnect/types";
 import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
-import { RELAYER_EVENTS, WC_RPC_METHODS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
+import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
 
 export default class Engine extends IEngine {
   constructor(
@@ -26,7 +26,7 @@ export default class Engine extends IEngine {
 
   // ---------- Public ------------------------------------------------ //
 
-  public async createSession(params: EngineTypes.CreateSessionParams) {
+  public createSession: IEngine["createSession"] = async params => {
     // TODO(ilja) validate params
 
     const { pairingTopic, methods, events, chains, relays } = params;
@@ -52,70 +52,71 @@ export default class Engine extends IEngine {
         metadata: this.metadata,
       },
     };
-    await this.proposal.set(publicKey, proposal);
-    this.sendRequest("WC_SESSION_PROPOSE", proposal);
 
-    const approval = new Promise(async (resolve, reject) => {
+    await this.proposal.set(publicKey, proposal);
+    await this.sendRequest("wc_sessionPropose", proposal);
+
+    const approval = new Promise<void>(async (resolve, reject) => {
       setTimeout(reject, toMiliseconds(FIVE_MINUTES));
       // TODO(ilja) - resolve on approval event
       // TODO(ilja) - reject on reject event
     });
 
     return { uri, approval };
-  }
+  };
 
-  public async pair(pairingUri: string) {
+  public pair: IEngine["pair"] = async pairingUri => {
     // TODO(ilja) validate pairing Uri
     const { topic, symKey, relay } = parseUri(pairingUri);
     this.crypto.setPairingKey(symKey, topic);
     // TODO(ilja) this.generatePairing(params)
     // TODO(ilja) this.pairing.set(topic, params)
     this.relayer.subscribe(topic, relay);
-  }
+  };
 
-  public async approve() {
+  public approve: IEngine["approve"] = async () => {
     // TODO
-  }
+  };
 
-  public async reject() {
+  public reject: IEngine["reject"] = async () => {
     // TODO
-  }
+  };
 
-  public async updateAccounts() {
+  public updateAccounts: IEngine["updateAccounts"] = async () => {
     // TODO
-  }
+  };
 
-  public async updateMethods() {
+  public updateMethods: IEngine["updateMethods"] = async () => {
     // TODO
-  }
+  };
 
-  public async updateEvents() {
+  public updateEvents: IEngine["updateEvents"] = async () => {
     // TODO
-  }
+  };
 
-  public async updateExpiry() {
+  public updateExpiry: IEngine["updateExpiry"] = async () => {
     // TODO
-  }
+  };
 
-  public async request() {
+  public request: IEngine["request"] = async () => {
     // TODO
-  }
+  };
 
-  public async respond() {
+  public respond: IEngine["respond"] = async () => {
     // TODO
-  }
+  };
 
-  public async ping() {
+  public ping: IEngine["ping"] = async () => {
     // TODO
-  }
+  };
 
-  public async emit() {
+  public emit: IEngine["emit"] = async () => {
     // TODO
-  }
+  };
 
-  public async disconnect() {
+  public disconnect: IEngine["disconnect"] = async () => {
     // TODO
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
@@ -133,7 +134,7 @@ export default class Engine extends IEngine {
     return { newTopic: topic, newUri: uri };
   }
 
-  private sendRequest(method: keyof typeof WC_RPC_METHODS, params: Record<string, unknown>) {
+  private sendRequest: EnginePrivate["sendRequest"] = async (method, params) => {
     // TODO(ilja) validate method
 
     const request = formatJsonRpcRequest(method, params);
@@ -141,13 +142,13 @@ export default class Engine extends IEngine {
     // TODO(ilja) encode payload
     // TODO(ilja) publish request to relay
     // TODO(ilja) this.history.set()
-  }
+  };
 
-  private sendResponse() {
+  private sendResponse: EnginePrivate["sendResponse"] = async () => {
     // TODO(ilja) encode payload
     // TODO(ilja) publish request to relay
     // TODO(ilja) this.history.resolve()
-  }
+  };
 
   // ---------- Relay Events ------------------------------------------- //
 

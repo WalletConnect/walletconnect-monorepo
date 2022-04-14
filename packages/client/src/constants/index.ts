@@ -3,7 +3,6 @@ export * from "./crypto";
 export * from "./encoder";
 export * from "./expirer";
 export * from "./history";
-export * from "./jsonrpc";
 export * from "./messages";
 export * from "./pairing";
 export * from "./proposal";

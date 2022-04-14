@@ -29,12 +29,21 @@ export declare namespace EngineTypes {
     relays?: RelayerTypes.ProtocolOptions[];
   }
 
-  type CreateSessionReturn = Promise<{ uri: string; approval: Promise<void> }>;
-
-  interface SendRequestParams<T extends JsonRpc.WcMethod> {
-    method: T;
-  }
+  type CreateSessionReturn = Promise<{ uri?: string; approval: Promise<void> }>;
 }
+
+// -- private method interface -------------------------------------- //
+
+export interface EnginePrivate {
+  sendRequest<M extends JsonRpc.WcMethod>(
+    method: M,
+    params: JsonRpc.RequestParams[M],
+  ): Promise<void>;
+
+  sendResponse(): Promise<void>;
+}
+
+// -- class interface ----------------------------------------------- //
 
 export abstract class IEngine {
   constructor(
