@@ -127,11 +127,6 @@ export class Crypto implements ICrypto {
     return this.setSymKey(symKey, overrideTopic);
   }
 
-  public async generatePairingKey(overrideTopic?: string): Promise<string> {
-    const symKey = generateRandomBytes32();
-    return this.setPairingKey(symKey, overrideTopic);
-  }
-
   public async setPairingKey(symKey: string, overrideTopic?: string): Promise<string> {
     const hash = await hashKey(symKey);
     return this.setSymKey(symKey, overrideTopic);

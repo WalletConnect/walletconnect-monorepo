@@ -71,8 +71,6 @@ export abstract class ICrypto {
     overrideTopic?: string,
   ): Promise<string>;
 
-  public abstract generatePairingKey(overrideTopic?: string): Promise<string>;
-
   public abstract setPairingKey(symKey: string, overrideTopic?: string): Promise<string>;
 
   public abstract deleteKeyPair(publicKey: string): Promise<void>;

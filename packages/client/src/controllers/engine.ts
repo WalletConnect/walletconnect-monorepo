@@ -122,7 +122,8 @@ export default class Engine extends IEngine {
 
   private async createPairing() {
     const topic = generateRandomBytes32();
-    const symKey = await this.crypto.generatePairingKey(topic);
+    const symKey = generateRandomBytes32();
+    this.crypto.setPairingKey(symKey, topic);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
     const pairing = { topic, expiry, relay, active: true };
