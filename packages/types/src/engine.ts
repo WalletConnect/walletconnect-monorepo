@@ -1,4 +1,4 @@
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+import { JsonRpcResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
 import { ICrypto } from "./crypto";
 import { IPairing } from "./pairing";
@@ -17,9 +17,9 @@ export declare namespace EngineTypes {
     relay: RelayerTypes.ProtocolOptions;
   }
 
-  interface DecodedRelayEvent {
+  interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
     topic: string;
-    payload: JsonRpcPayload<string, unknown>;
+    payload: T;
   }
 
   interface CreateSessionParams {

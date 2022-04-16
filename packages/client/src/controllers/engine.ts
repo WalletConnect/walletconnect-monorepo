@@ -2,6 +2,8 @@ import {
   formatJsonRpcRequest,
   isJsonRpcRequest,
   isJsonRpcResponse,
+  JsonRpcRequest,
+  JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
 import { EngineTypes, IEngine, RelayerTypes, EnginePrivate } from "@walletconnect/types";
@@ -9,6 +11,9 @@ import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletc
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
 
 export default class Engine extends IEngine {
+  private proposalResolve?: (value?: void | PromiseLike<void> | undefined) => void;
+  private proposalReject?: (reason?: any) => void;
+
   constructor(
     history: IEngine["history"],
     protocol: IEngine["protocol"],
@@ -61,11 +66,11 @@ export default class Engine extends IEngine {
     await this.proposal.set(publicKey, proposal);
     await this.sendRequest(topic, "wc_sessionPropose", proposal);
 
-    // @ts-expect-error
     const approval = new Promise<void>(async (resolve, reject) => {
+      // TODO(ilja) format and pass error message to reject
       setTimeout(reject, toMiliseconds(FIVE_MINUTES));
-      // TODO(ilja) - resolve on approval event
-      // TODO(ilja) - reject on reject event
+      this.proposalResolve = resolve;
+      this.proposalReject = reject;
     });
 
     return { uri, approval };
@@ -167,69 +172,55 @@ export default class Engine extends IEngine {
       const { topic, message } = event;
       const payload = await this.crypto.decode(topic, message);
       if (isJsonRpcRequest(payload)) {
-        // TODO(ilja) this.history.set()
-        if (this.pairing.topics.includes(topic)) {
-          this.onPairingRelayEventRequest({ topic, payload });
-        } else if (this.session.topics.includes(topic)) {
-          this.onSessionRelayEventRequest({ topic, payload });
-        }
+        this.onRelayEventRequest({ topic, payload });
       } else if (isJsonRpcResponse(payload)) {
-        // TODO(ilja) this.history.resolve()
-        if (this.pairing.topics.includes(topic)) {
-          this.onPairingRelayEventResponse({ topic, payload });
-        } else if (this.session.topics.includes(topic)) {
-          this.onSessionRelayEventResponse({ topic, payload });
-        }
+        this.onRelayEventResponse({ topic, payload });
       }
     });
   }
 
-  // @ts-expect-error
-  private onPairingRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
-    // NOTE Some of these may not be needed
-    // TODO(ilja) switch stateemnt on method
-    // onSessionProposeRequest
-    // onPairingDeleteRequest
-    // onPairingPingRequest
+  private onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>) {
+    const { topic, payload } = event;
+    if (this.pairing.topics.includes(topic)) {
+      // onSessionProposeRequest
+      // onPairingDeleteRequest
+      // onPairingPingRequest
+    } else if (this.session.topics.includes(topic)) {
+      // onSessionSettleRequest
+      // onSessionUpdateAccountsRequest
+      // onSessionUpdateMethodsRequest
+      // onSessionUpdateEventsRequest
+      // onSessionUpdateExpiryRequest
+      // onSessionDeleteRequest
+      // onSessionPingRequest
+      // onSessionRequest
+      // onSessionEventRequest
+    }
   }
 
-  // @ts-expect-error
-  private onPairingRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
-    // NOTE Some of these may not be needed
-    // TODO(ilja) switch stateemnt on method
-    // onSessionProposeResponse
-    // onPairingDeleteResponse
-    // onPairingPingResponse
+  private onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>) {
+    const { topic, payload } = event;
+    if (this.pairing.topics.includes(topic)) {
+      // onSessionProposeResponse
+      // onPairingDeleteResponse
+      // onPairingPingResponse
+    } else if (this.session.topics.includes(topic)) {
+      // onSessionSettleResponse
+      // onSessionUpdateAccountsResponse
+      // onSessionUpdateMethodsResponse
+      // onSessionUpdateEventsResponse
+      // onSessionUpdateExpiryResponse
+      // onSessionDeleteResponse
+      // onSessionPingResponse
+      // onSessionRequestResponse
+      // onSessionEventResponse
+    }
   }
 
-  // @ts-expect-error
-  private onSessionRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
-    // NOTE Some of these may not be needed
-    // TODO(ilja) switch stateemnt on method
-    // onSessionSettleRequest
-    // onSessionUpdateAccountsRequest
-    // onSessionUpdateMethodsRequest
-    // onSessionUpdateEventsRequest
-    // onSessionUpdateExpiryRequest
-    // onSessionDeleteRequest
-    // onSessionPingRequest
-    // onSessionRequest
-    // onSessionEventRequest
-  }
+  // ---------- Relay Events Handlers ---------------------------------- //
 
-  // @ts-expect-error
-  private onSessionRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
-    // NOTE Some of these may not be needed
-    // TODO(ilja) switch stateemnt on method
-    // onSessionSettleResponse
-    // onSessionUpdateAccountsResponse
-    // onSessionUpdateMethodsResponse
-    // onSessionUpdateEventsResponse
-    // onSessionUpdateExpiryResponse
-    // onSessionDeleteResponse
-    // onSessionPingResponse
-    // onSessionRequestResponse
-    // onSessionEventResponse
+  private async onSessionProposeResponse() {
+    // TODO(ilja) call this.proposalResolve or this.proposalReject
   }
 
   // ---------- Expirer Events ----------------------------------------- //
