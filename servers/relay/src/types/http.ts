@@ -1,5 +1,4 @@
 import { RequestGenericInterface } from "fastify";
-import { Logger } from "pino";
 
 import { RelayModes } from "./relay";
 
@@ -9,7 +8,6 @@ export interface HttpServiceConfig {
   host: string;
   redis: {
     url: string;
-    prefix: string;
   };
   mode: RelayModes.All;
   waku: {

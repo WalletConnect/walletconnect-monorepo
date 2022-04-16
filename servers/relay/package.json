@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/relay-server",
   "description": "Relay Server for WalletConnect Protocol",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
@@ -23,7 +23,7 @@
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.json",
     "dev": "run-p -l watch nodemon",
-    "nodemon": "nodemon ./dist",
+    "nodemon": "LOG_LEVEL=DEBUG nodemon ./dist",
     "watch": "tsc -p tsconfig.json --watch",
     "build": "run-s clean compile",
     "start": "npm run build && node ./dist",

@@ -1,4 +1,4 @@
-import redis from "redis";
+import { createClient, RedisClientType } from "redis";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { Logger } from "pino";
 import { generateChildLogger } from "@walletconnect/logger";
@@ -11,210 +11,139 @@ import { REDIS_CONTEXT } from "./constants";
 import { Notification, LegacySocketMessage } from "./types";
 
 export class RedisService {
-  public client: any;
+  public client: RedisClientType;
   public context = REDIS_CONTEXT;
 
   constructor(public server: HttpService, public logger: Logger) {
     this.server = server;
-    this.client = redis.createClient(this.server.config.redis);
+    this.client = createClient({ url: this.server.config.redis.url });
     this.logger = generateChildLogger(logger, this.context);
     this.initialize();
   }
 
-  public setMessage(params: RelayJsonRpc.PublishParams): Promise<void> {
-    return new Promise((resolve, reject) => {
+  public async setMessage(params: RelayJsonRpc.PublishParams): Promise<void> {
       const { topic, message, ttl } = params;
       this.logger.debug(`Setting Message`);
       this.logger.trace({ type: "method", method: "setMessage", params });
       const key = `message:${topic}`;
       const hash = sha256(message);
       const val = `${hash}:${message}`;
-      this.client.sadd(key, val, (err: Error) => {
-        if (err) reject(err);
-        this.client.expire(key, ttl, (err: Error) => {
-          if (err) reject(err);
-          resolve();
-        });
-      });
-    });
+      await this.client.sAdd(key, val);
+      await this.client.expire(key, ttl);
+      return;
   }
 
-  public async getMessage(topic: string, hash: string): Promise<string> {
+  public async getMessage(topic: string, hash: string): Promise<string | undefined> {
     this.logger.debug(`Getting Message`);
     this.logger.trace({ type: "method", method: "getMessage", topic });
-    return (await this.sscan(`message:${topic}`, "MATCH", `${hash}:*`))[0]?.split(":")[1];
+    const options = { MATCH: `${hash}:*` };
+    for await (const member of this.client.sScanIterator(`message:${topic}`, options)) {
+      return member.split(":")[1];
+    }
+    return undefined;
   }
 
-  public getMessages(topic: string): Promise<string[]> {
-    return new Promise((resolve, reject) => {
-      this.logger.debug(`Getting Message`);
-      this.logger.trace({ type: "method", method: "getMessage", topic });
-      this.client.smembers(`message:${topic}`, (err: Error, res: string[]) => {
-        if (err) reject(err);
-        const messages: string[] = [];
-        if (typeof res !== "undefined" && res.length) {
-          res.forEach((m: string) => {
-            if (m != null) messages.push(m.split(":")[1]);
-          });
-        }
-        resolve(messages);
+  public async getMessages(topic: string): Promise<string[]> {
+    this.logger.debug(`Getting Message`);
+    this.logger.trace({ type: "method", method: "getMessage", topic });
+    const result = await this.client.sMembers(`message:${topic}`);
+    const messages: string[] = [];
+    if (typeof result !== "undefined" && result.length) {
+      result.forEach((m: string) => {
+        if (m != null) messages.push(m.split(":")[1]);
       });
-    });
+    }
+    return messages;
   }
 
-  public deleteMessage(topic: string, hash: string): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      this.logger.debug(`Deleting Message`);
-      this.logger.trace({ type: "method", method: "deleteMessage", topic });
-      const res = await this.sscan(`message:${topic}`, "MATCH", `${hash}:*`);
-      if (typeof res !== "undefined" && res.length) {
-        this.client.srem(`message:${topic}`, res[0], (err: Error) => {
-          if (err) reject(err);
-          resolve();
+  public async deleteMessage(topic: string, hash: string): Promise<void> {
+    this.logger.debug(`Deleting Message`);
+    this.logger.trace({ type: "method", method: "deleteMessage", topic });
+    const options = { MATCH: `${hash}:*` };
+    for await (const member of this.client.sScanIterator(`message:${topic}`, options)) {
+      await this.client.sRem(`message:${topic}`, member);
+    }
+    return;
+  }
+
+  public async setLegacyCached(message: LegacySocketMessage): Promise<void> {
+    this.logger.debug(`Setting Legacy Cached`);
+    this.logger.trace({ type: "method", method: "setLegacyCached", message });
+    await this.client.lPush(`legacy:${message.topic}`, safeJsonStringify(message));
+    await this.client.expire(`legacy:${message.topic}`, SIX_HOURS);
+    return;
+  }
+
+  public async getLegacyCached(topic: string): Promise<LegacySocketMessage[]> {
+    const result = await this.client.lRange(`legacy:${topic}`, 0, -1);
+    const messages: LegacySocketMessage[] = [];
+    if (typeof result !== "undefined" && result.length) {
+      result.forEach((data: string) => {
+        const message = safeJsonParse(data);
+        messages.push(message);
+      });
+    }
+    this.client.del(`legacy:${topic}`);
+    this.logger.debug(`Getting Legacy Published`);
+    this.logger.trace({ type: "method", method: "getLegacyCached", topic, messages });
+    return messages;
+  }
+
+  public async setNotification(notification: Notification): Promise<void> {
+    this.logger.debug(`Setting Notification`);
+    this.logger.trace({ type: "method", method: "setNotification", notification });
+    await this.client.lPush(`notification:${notification.topic}`, safeJsonStringify(notification));
+    return;
+  }
+
+  public async getNotification(topic: string): Promise<Notification[]> {
+      const result = await this.client.lRange(`notification:${topic}`, 0, -1);
+      const notifications: Notification[] = [];
+      if (typeof result !== "undefined" && result.length) {
+        result.forEach((item: string) => {
+          const notification = safeJsonParse(item);
+          notifications.push(notification);
         });
       }
-    });
+      this.logger.debug(`Getting Notification`);
+      this.logger.trace({ type: "method", method: "getNotification", topic, notifications });
+      return notifications;
   }
 
-  public setLegacyCached(message: LegacySocketMessage): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.logger.debug(`Setting Legacy Cached`);
-      this.logger.trace({ type: "method", method: "setLegacyCached", message });
-      this.client.lpush(
-        [`legacy:${message.topic}`, safeJsonStringify(message)],
-        (err: Error, res) => {
-          if (err) reject(err);
-          this.client.expire([`legacy:${message.topic}`, SIX_HOURS], (err: Error, res) => {
-            if (err) reject(err);
-            resolve();
-          });
-        },
-      );
-    });
-  }
-
-  public getLegacyCached(topic: string): Promise<LegacySocketMessage[]> {
-    return new Promise((resolve, reject) => {
-      this.client.lrange(`legacy:${topic}`, 0, -1, (err: Error, res: any) => {
-        if (err) reject(err);
-        const messages: LegacySocketMessage[] = [];
-        if (typeof res !== "undefined" && res.length) {
-          res.forEach((data: string) => {
-            const message = safeJsonParse(data);
-            messages.push(message);
-          });
-        }
-        this.client.del(`legacy:${topic}`);
-        this.logger.debug(`Getting Legacy Published`);
-        this.logger.trace({ type: "method", method: "getLegacyCached", topic, messages });
-        resolve(messages);
-      });
-    });
-  }
-
-  public setNotification(notification: Notification): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.logger.debug(`Setting Notification`);
-      this.logger.trace({ type: "method", method: "setNotification", notification });
-      this.client.lpush(
-        [`notification:${notification.topic}`, safeJsonStringify(notification)],
-        (err: Error) => {
-          if (err) reject(err);
-          resolve();
-        },
-      );
-    });
-  }
-
-  public getNotification(topic: string): Promise<Notification[]> {
-    return new Promise((resolve, reject) => {
-      this.client.lrange([`notification:${topic}`, 0, -1], (err: Error, res: any) => {
-        if (err) reject(err);
-        const notifications: Notification[] = [];
-        if (typeof res !== "undefined" && res.length) {
-          res.forEach((item: string) => {
-            const notification = safeJsonParse(item);
-            notifications.push(notification);
-          });
-        }
-        this.logger.debug(`Getting Notification`);
-        this.logger.trace({ type: "method", method: "getNotification", topic, notifications });
-        resolve(notifications);
-      });
-    });
-  }
-
-  public setPendingRequest(topic: string, id: number, message: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+  public async setPendingRequest(topic: string, id: number, message: string): Promise<void> {
       const key = `pending:${id}`;
       const hash = sha256(message);
       const val = `${topic}:${hash}`;
       this.logger.debug(`Setting Pending Request`);
       this.logger.trace({ type: "method", method: "setPendingRequest", topic, id, message });
-      this.client.set(key, val, (err: Error) => {
-        if (err) reject(err);
-        this.client.expire(key, this.server.config.maxTTL, (err: Error) => {
-          if (err) reject(err);
-          resolve();
-        });
-      });
-    });
+      await this.client.set(key, val);
+      await this.client.expire(key, this.server.config.maxTTL);
+      return;
   }
 
-  public getPendingRequest(id: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.get(`pending:${id}`, (err: Error, data: string) => {
-        if (err) reject(err);
-        this.logger.debug(`Getting Pending Request`);
-        this.logger.trace({ type: "method", method: "getPendingRequest", id, data });
-        resolve(data);
-      });
-    });
+  public async getPendingRequest(id: number): Promise<string> {
+    this.logger.debug(`Getting Pending Request`);
+    const data = await this.client.get(`pending:${id}`);
+    this.logger.trace({ type: "method", method: "getPendingRequest", id, data });
+    return data ? data : "";
   }
 
-  public deletePendingRequest(id: number): Promise<void> {
-    return new Promise((resolve, reject) => {
+  public async deletePendingRequest(id: number): Promise<void> {
       this.logger.debug(`Deleting Pending Request`);
       this.logger.trace({ type: "method", method: "deletePendingRequest", id });
-      this.client.del(`pending:${id}`, (err: Error) => {
-        if (err) reject(err);
-        resolve();
-      });
-    });
+      await this.client.del(`pending:${id}`);
+      return;
   }
 
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
-    this.logger.trace(`Initialized`);
-  }
-
-  private sscanAsync(
-    key: string,
-    match: string,
-    pattern: string,
-    cursor: string,
-  ): Promise<[string, string[]]> {
-    return new Promise((resolve, reject) => {
-      this.client.sscan(key, cursor, match, pattern, (err: Error, result: [string, string[]]) => {
-        if (err) reject(err);
-        resolve(result);
-      });
+    this.client.on("error", (e) => {
+     this.logger.error(e);
+    });
+    this.client.connect().then(() => {
+      this.logger.trace(`Initialized`);
     });
   }
 
-  private async sscan(key: string, match = "", pattern = "", cursor = "0"): Promise<string[]> {
-    const messages: string[] = [];
-    const [nextCursor, values] = await this.sscanAsync(key, match, pattern, cursor);
-    if (typeof values !== "undefined" && values.length) {
-      values.forEach((message: string) => {
-        if (!message) return;
-        messages.push(message);
-      });
-    }
-    if (nextCursor == "0") {
-      return messages;
-    }
-    return [...messages, ...(await this.sscan(key, match, pattern, nextCursor))];
-  }
 }

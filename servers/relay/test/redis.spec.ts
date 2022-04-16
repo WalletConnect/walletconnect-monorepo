@@ -8,7 +8,7 @@ import config from "../src/config";
 import { HttpService } from "../src/http";
 
 import { RedisService } from "../src/redis";
-import { ONE_DAY } from "../src/constants";
+import { ONE_DAY } from "@walletconnect/time";
 
 import { TEST_MESSAGE, TEST_TOPIC } from "./shared";
 
@@ -26,12 +26,7 @@ describe("Redis", () => {
       ttl: ONE_DAY,
     };
     await redis.setMessage(params);
-    const result = await new Promise((resolve, reject) => {
-      redis.client.ttl(`message:${params.topic}`, (err, res) => {
-        if (err) return reject(err);
-        resolve(res);
-      });
-    });
+    const result = await redis.client.TTL(`message:${params.topic}`);
     expect(result).to.be.equal(params.ttl);
     expect(result).to.be.gte(params.ttl - 1); // One second less
   });

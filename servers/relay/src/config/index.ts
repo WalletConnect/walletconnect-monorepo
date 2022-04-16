@@ -16,7 +16,6 @@ const maxTTL: number = process.env.REDIS_MAXTTL
   : REDIS_DEFAULT_MAXTTL;
 const redis = {
   url: process.env.REDIS_URL || `redis://localhost:6379/0`,
-  prefix: process.env.REDIS_PREFIX || "walletconnect-bridge",
 };
 const mode = (process.env.RELAY_MODE || "any") as RelayModes.All;
 const waku = {
