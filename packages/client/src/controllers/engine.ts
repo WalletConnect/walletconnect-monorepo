@@ -7,7 +7,13 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
 import { EngineTypes, IEngine, RelayerTypes, EnginePrivate } from "@walletconnect/types";
-import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
+import {
+  calcExpiry,
+  formatUri,
+  generateRandomBytes32,
+  parseUri,
+  ERROR,
+} from "@walletconnect/utils";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
 
 export default class Engine extends IEngine {
@@ -66,9 +72,13 @@ export default class Engine extends IEngine {
     await this.proposal.set(publicKey, proposal);
     await this.sendRequest(topic, "wc_sessionPropose", proposal);
 
+    const timeout = toMiliseconds(FIVE_MINUTES);
+    const context = this.proposal.name;
+
     const approval = new Promise<void>(async (resolve, reject) => {
-      // TODO(ilja) format and pass error message to reject
-      setTimeout(reject, toMiliseconds(FIVE_MINUTES));
+      setTimeout(() => {
+        reject(ERROR.SETTLE_TIMEOUT.format({ context, timeout }));
+      }, timeout);
       this.proposalResolve = resolve;
       this.proposalReject = reject;
     });
@@ -80,8 +90,8 @@ export default class Engine extends IEngine {
     // TODO(ilja) validate pairing Uri
     const { topic, symKey, relay } = parseUri(pairingUri);
     this.crypto.setPairingKey(symKey, topic);
-    // TODO(ilja) this.generatePairing(params)
     // TODO(ilja) this.pairing.set(topic, params)
+    // TODO(ilja) this.expirer ?
     this.relayer.subscribe(topic, { relay });
   };
 
@@ -141,7 +151,7 @@ export default class Engine extends IEngine {
     const uri = formatUri({ protocol: this.protocol, version: this.version, topic, symKey, relay });
     await this.pairing.set(topic, pairing);
     await this.relayer.subscribe(topic);
-    // TODO(ilja) set expirer
+    // TODO(ilja) this.expirer ?
 
     return { newTopic: topic, newUri: uri };
   }
