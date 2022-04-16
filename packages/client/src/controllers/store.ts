@@ -1,7 +1,13 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IClient, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
+import {
+  ERROR,
+  formatMessageContext,
+  formatStorageKeyName,
+  isProposalStruct,
+  isSessionStruct,
+} from "@walletconnect/utils";
 import { Logger } from "pino";
 import { STORE_STORAGE_VERSION } from "../constants";
 
@@ -9,6 +15,7 @@ type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Str
 
 export class Store<Data extends StoreStruct> extends IStore<Data> {
   public data = new Map<string, Data>();
+
   public version: string = STORE_STORAGE_VERSION;
 
   private cached: Data[] = [];
@@ -133,7 +140,13 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
   }
 
   private reset() {
-    this.cached.forEach(data => this.data.set(data.topic, data));
+    this.cached.forEach(data => {
+      if (isProposalStruct(data)) {
+        this.data.set(data.proposer.publicKey, data);
+      } else if (isSessionStruct(data)) {
+        this.data.set(data.topic, data);
+      }
+    });
   }
 
   private onInit() {

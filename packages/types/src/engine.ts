@@ -6,6 +6,7 @@ import { IProposal } from "./proposal";
 import { IRelayer, RelayerTypes } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 import { JsonRpc } from "./jsonrpc";
+import { IJsonRpcHistory } from "./history";
 
 export declare namespace EngineTypes {
   interface UriParameters {
@@ -36,17 +37,19 @@ export declare namespace EngineTypes {
 
 export interface EnginePrivate {
   sendRequest<M extends JsonRpc.WcMethod>(
+    topic: string,
     method: M,
     params: JsonRpc.RequestParams[M],
   ): Promise<void>;
 
-  sendResponse(): Promise<void>;
+  sendResponse(topic: string): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //
 
 export abstract class IEngine {
   constructor(
+    public history: IJsonRpcHistory,
     public protocol: string,
     public version: number,
     public relayer: IRelayer,

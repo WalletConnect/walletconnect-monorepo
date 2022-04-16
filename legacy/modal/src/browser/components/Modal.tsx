@@ -3,7 +3,6 @@ import {
   IMobileRegistryEntry,
   IQRCodeModalOptions,
   IAppRegistry,
-  IMobileLinkInfo,
 } from "@walletconnect/legacy-types";
 import {
   isMobile,

@@ -11,7 +11,6 @@ import {
   ERROR,
   formatStorageKeyName,
   generateKeyPair,
-  generateRandomBytes32,
   hashKey,
   mapToObj,
   objToMap,
@@ -43,16 +42,16 @@ export class KeyChain implements IKeyChain {
     await this.restore();
   }
 
-  public async has(tag: string, opts?: any): Promise<boolean> {
+  public async has(tag: string, _opts?: any): Promise<boolean> {
     return this.keychain.has(tag);
   }
 
-  public async set(tag: string, key: string, opts?: any): Promise<void> {
+  public async set(tag: string, key: string, _opts?: any): Promise<void> {
     this.keychain.set(tag, key);
     await this.persist();
   }
 
-  public async get(tag: string, opts?: any): Promise<string> {
+  public async get(tag: string, _opts?: any): Promise<string> {
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
       throw new Error(ERROR.NO_MATCHING_KEY.format({ tag }).message);
@@ -60,7 +59,7 @@ export class KeyChain implements IKeyChain {
     return key;
   }
 
-  public async del(tag: string, opts?: any): Promise<void> {
+  public async del(tag: string, _opts?: any): Promise<void> {
     this.keychain.delete(tag);
     await this.persist();
   }
@@ -128,7 +127,7 @@ export class Crypto implements ICrypto {
   }
 
   public async setPairingKey(symKey: string, overrideTopic?: string): Promise<string> {
-    const hash = await hashKey(symKey);
+    // const hash = await hashKey(symKey);
     return this.setSymKey(symKey, overrideTopic);
   }
 

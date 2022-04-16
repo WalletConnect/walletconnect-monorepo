@@ -1,5 +1,5 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import { SessionTypes } from "@walletconnect/types";
+import { SessionTypes, ProposalTypes } from "@walletconnect/types";
 
 import { getChains } from "./caip";
 import { hasOverlap } from "./misc";
@@ -110,4 +110,12 @@ export function formatValidResult(): Validation.Valid {
 
 export function formatInvalidResult(error: ErrorResponse): Validation.Invalid {
   return { valid: false, error };
+}
+
+export function isProposalStruct(input: any): input is ProposalTypes.Struct {
+  return input?.proposer?.publicKey;
+}
+
+export function isSessionStruct(input: any): input is SessionTypes.Struct {
+  return input?.topic;
 }

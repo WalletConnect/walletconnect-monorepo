@@ -103,7 +103,7 @@ export class Publisher extends IPublisher {
     return this.relayer.provider.request(request);
   }
 
-  private async onPublish(hash: string, params: PublisherTypes.Params) {
+  private async onPublish(hash: string, _params: PublisherTypes.Params) {
     // const { topic, message } = params;
     // await this.relayer.recordPayloadEvent({ topic, message });
 

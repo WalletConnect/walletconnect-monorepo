@@ -8,6 +8,7 @@ import { IPairing } from "./pairing";
 import { IProposal } from "./proposal";
 import { IRelayer } from "./relayer";
 import { ISession } from "./session";
+import { IJsonRpcHistory } from "./history";
 
 export declare namespace ClientTypes {
   type Metadata = {
@@ -50,6 +51,7 @@ export abstract class IClient {
   public abstract storage: IKeyValueStorage;
   public abstract events: IEvents["events"];
   public abstract engine: IEngine;
+  public abstract history: IJsonRpcHistory;
 
   constructor(public opts?: ClientTypes.Options) {}
 

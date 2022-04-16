@@ -10,7 +10,7 @@ import { EventEmitter } from "events";
 import KeyValueStorage from "keyvaluestorage";
 import pino from "pino";
 import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
-import { Crypto, Pairing, Proposal, Relayer, Session } from "./controllers";
+import { Crypto, Pairing, Proposal, Relayer, Session, JsonRpcHistory } from "./controllers";
 import Engine from "./controllers/engine";
 
 export class Client extends IClient {
@@ -31,6 +31,7 @@ export class Client extends IClient {
   public crypto: IClient["crypto"];
   public engine: IClient["engine"];
   public storage: IClient["storage"];
+  public history: IClient["history"];
 
   static async init(opts?: ClientTypes.Options) {
     const client = new Client(opts);
@@ -45,18 +46,20 @@ export class Client extends IClient {
     this.name = opts?.name || CLIENT_DEFAULT.name;
     this.metadata = opts?.metadata || getAppMetadata();
     this.projectId = opts?.projectId;
+    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
+
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
     this.logger = generateChildLogger(logger, this.name);
-    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
     this.storage = opts?.storage || new KeyValueStorage(storageOptions);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
     this.proposal = new Proposal(this, this.logger);
+    this.history = new JsonRpcHistory(this.logger, this.storage);
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
       this.version,
@@ -71,6 +74,7 @@ export class Client extends IClient {
       projectId: this.projectId,
     });
     this.engine = new Engine(
+      this.history,
       this.protocol,
       this.version,
       this.relayer,
@@ -232,11 +236,15 @@ export class Client extends IClient {
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
-      await this.pairing.init();
-      await this.session.init();
-      await this.crypto.init();
-      await this.relayer.init();
-      await this.heartbeat.init();
+      await Promise.all([
+        this.pairing.init(),
+        this.session.init(),
+        this.proposal.init(),
+        this.crypto.init(),
+        this.relayer.init(),
+        this.heartbeat.init(),
+        this.history.init(),
+      ]);
       this.logger.info(`Client Initilization Success`);
     } catch (error) {
       this.logger.info(`Client Initilization Failure`);

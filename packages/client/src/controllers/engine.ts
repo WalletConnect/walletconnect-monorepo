@@ -10,6 +10,7 @@ import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
 
 export default class Engine extends IEngine {
   constructor(
+    history: IEngine["history"],
     protocol: IEngine["protocol"],
     version: IEngine["version"],
     relayer: IEngine["relayer"],
@@ -19,7 +20,7 @@ export default class Engine extends IEngine {
     proposal: IEngine["proposal"],
     metadata: IEngine["metadata"],
   ) {
-    super(protocol, version, relayer, crypto, session, pairing, proposal, metadata);
+    super(history, protocol, version, relayer, crypto, session, pairing, proposal, metadata);
     this.registerRelayerEvents();
     this.registerExpirerEvents();
   }
@@ -32,10 +33,14 @@ export default class Engine extends IEngine {
     const { pairingTopic, methods, events, chains, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
+    let active = true;
 
     if (topic) {
-      // TODO(ilja) verify topic has existing and active pairing
-    } else {
+      const pairing = await this.pairing.get(topic);
+      active = pairing.active;
+    }
+
+    if (!topic || !active) {
       const { newTopic, newUri } = await this.createPairing();
       topic = newTopic;
       uri = newUri;
@@ -54,8 +59,9 @@ export default class Engine extends IEngine {
     };
 
     await this.proposal.set(publicKey, proposal);
-    await this.sendRequest("wc_sessionPropose", proposal);
+    await this.sendRequest(topic, "wc_sessionPropose", proposal);
 
+    // @ts-expect-error
     const approval = new Promise<void>(async (resolve, reject) => {
       setTimeout(reject, toMiliseconds(FIVE_MINUTES));
       // TODO(ilja) - resolve on approval event
@@ -71,7 +77,7 @@ export default class Engine extends IEngine {
     this.crypto.setPairingKey(symKey, topic);
     // TODO(ilja) this.generatePairing(params)
     // TODO(ilja) this.pairing.set(topic, params)
-    this.relayer.subscribe(topic, relay);
+    this.relayer.subscribe(topic, { relay });
   };
 
   public approve: IEngine["approve"] = async () => {
@@ -135,16 +141,19 @@ export default class Engine extends IEngine {
     return { newTopic: topic, newUri: uri };
   }
 
-  private sendRequest: EnginePrivate["sendRequest"] = async (method, params) => {
+  private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
     // TODO(ilja) validate method
 
     const request = formatJsonRpcRequest(method, params);
+    const message = await this.crypto.encode(topic, request);
+    await this.relayer.publish(topic, message);
 
-    // TODO(ilja) encode payload
-    // TODO(ilja) publish request to relay
-    // TODO(ilja) this.history.set()
+    if (method === "wc_sessionRequest") {
+      await this.history.set(topic, request);
+    }
   };
 
+  // @ts-ignore
   private sendResponse: EnginePrivate["sendResponse"] = async () => {
     // TODO(ilja) encode payload
     // TODO(ilja) publish request to relay
@@ -175,6 +184,7 @@ export default class Engine extends IEngine {
     });
   }
 
+  // @ts-expect-error
   private onPairingRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
     // TODO(ilja) switch stateemnt on method
@@ -183,6 +193,7 @@ export default class Engine extends IEngine {
     // onPairingPingRequest
   }
 
+  // @ts-expect-error
   private onPairingRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
     // TODO(ilja) switch stateemnt on method
@@ -191,6 +202,7 @@ export default class Engine extends IEngine {
     // onPairingPingResponse
   }
 
+  // @ts-expect-error
   private onSessionRelayEventRequest({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
     // TODO(ilja) switch stateemnt on method
@@ -205,6 +217,7 @@ export default class Engine extends IEngine {
     // onSessionEventRequest
   }
 
+  // @ts-expect-error
   private onSessionRelayEventResponse({ topic, payload }: EngineTypes.DecodedRelayEvent) {
     // NOTE Some of these may not be needed
     // TODO(ilja) switch stateemnt on method
