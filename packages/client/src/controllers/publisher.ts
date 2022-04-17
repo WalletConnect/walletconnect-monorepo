@@ -11,7 +11,7 @@ import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
 
-  public name: string = PUBLISHER_CONTEXT;
+  public name = PUBLISHER_CONTEXT;
 
   public queue = new Map<string, PublisherTypes.Params>();
 
@@ -26,16 +26,12 @@ export class Publisher extends IPublisher {
     return getLoggerContext(this.logger);
   }
 
-  public async init(): Promise<void> {
+  public init: IPublisher["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
-  public async publish(
-    topic: string,
-    message: string,
-    opts?: RelayerTypes.PublishOptions,
-  ): Promise<void> {
+  public publish: IPublisher["publish"] = async (topic, message, opts) => {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     try {
@@ -54,23 +50,23 @@ export class Publisher extends IPublisher {
       this.logger.error(e as any);
       throw e;
     }
-  }
+  };
 
-  public on(event: string, listener: any): void {
+  public on: IPublisher["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: any): void {
+  public once: IPublisher["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): void {
+  public off: IPublisher["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener: IPublisher["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
