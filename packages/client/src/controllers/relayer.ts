@@ -153,7 +153,6 @@ export class Relayer extends IRelayer {
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
       const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
-      // @ts-ignore
       const hash = await hashMessage(message);
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });

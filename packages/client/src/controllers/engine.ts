@@ -171,7 +171,6 @@ export default class Engine extends IEngine {
     }
   };
 
-  // @ts-ignore
   private sendResponse: EnginePrivate["sendResponse"] = async () => {
     // TODO(ilja) encode payload
     // TODO(ilja) publish request to relay
