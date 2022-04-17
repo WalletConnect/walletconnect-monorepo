@@ -15,8 +15,8 @@ import { IKeyValueStorage } from "keyvaluestorage";
 export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();
   public events = new EventEmitter();
-  public name: string = HISTORY_CONTEXT;
-  public version: string = HISTORY_STORAGE_VERSION;
+  public name = HISTORY_CONTEXT;
+  public version = HISTORY_STORAGE_VERSION;
   private cached: JsonRpcRecord[] = [];
 
   constructor(public logger: Logger, public storage: IKeyValueStorage) {
@@ -25,10 +25,10 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.registerEventListeners();
   }
 
-  public async init(): Promise<void> {
+  public init: IJsonRpcHistory["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
   get context(): string {
     return getLoggerContext(this.logger);
@@ -64,7 +64,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     return requests;
   }
 
-  public async set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void> {
+  public set: IJsonRpcHistory["set"] = async (topic, request, chainId) => {
     await this.isInitialized();
     this.logger.debug(`Setting JSON-RPC request history record`);
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
@@ -77,9 +77,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.created, record);
-  }
+  };
 
-  public async resolve(response: JsonRpcResponse): Promise<void> {
+  public resolve: IJsonRpcHistory["resolve"] = async response => {
     await this.isInitialized();
     this.logger.debug(`Updating JSON-RPC response history record`);
     this.logger.trace({ type: "method", method: "update", response });
@@ -91,9 +91,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       : { result: response.result };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.updated, record);
-  }
+  };
 
-  public async get(topic: string, id: number): Promise<JsonRpcRecord> {
+  public get: IJsonRpcHistory["get"] = async (topic, id) => {
     await this.isInitialized();
     this.logger.debug(`Getting record`);
     this.logger.trace({ type: "method", method: "get", topic, id });
@@ -108,9 +108,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       throw new Error(error.message);
     }
     return record;
-  }
+  };
 
-  public async delete(topic: string, id?: number): Promise<void> {
+  public delete: IJsonRpcHistory["delete"] = async (topic, id) => {
     await this.isInitialized();
     this.logger.debug(`Deleting record`);
     this.logger.trace({ type: "method", method: "delete", id });
@@ -121,30 +121,30 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         this.events.emit(HISTORY_EVENTS.deleted, record);
       }
     });
-  }
+  };
 
-  public async exists(topic: string, id: number): Promise<boolean> {
+  public exists: IJsonRpcHistory["exists"] = async (topic, id) => {
     await this.isInitialized();
     if (!this.records.has(id)) return false;
     const record = await this.getRecord(id);
     return record.topic === topic;
-  }
+  };
 
-  public on(event: string, listener: any): void {
+  public on: IJsonRpcHistory["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: any): void {
+  public once: IJsonRpcHistory["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): void {
+  public off: IJsonRpcHistory["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener: IJsonRpcHistory["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
