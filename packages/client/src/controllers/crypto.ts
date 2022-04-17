@@ -2,7 +2,7 @@ import * as encoding from "@walletconnect/encoding";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-import { CryptoTypes, IClient, ICrypto, IKeyChain } from "@walletconnect/types";
+import { IClient, ICrypto, IKeyChain } from "@walletconnect/types";
 import {
   decrypt,
   deriveSharedKey,
@@ -21,56 +21,56 @@ import { CRYPTO_CONTEXT, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../c
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
 
-  public name: string = KEYCHAIN_CONTEXT;
+  public name = KEYCHAIN_CONTEXT;
 
-  public version: string = KEYCHAIN_STORAGE_VERSION;
+  public version = KEYCHAIN_STORAGE_VERSION;
 
   constructor(public client: IClient, public logger: Logger) {
     this.client = client;
     this.logger = generateChildLogger(logger, this.name);
   }
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
+  get storageKey() {
     return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
-  public async init(): Promise<void> {
+  public init: IKeyChain["init"] = async () => {
     await this.restore();
-  }
+  };
 
-  public async has(tag: string, _opts?: any): Promise<boolean> {
+  public has: IKeyChain["has"] = async tag => {
     return this.keychain.has(tag);
-  }
+  };
 
-  public async set(tag: string, key: string, _opts?: any): Promise<void> {
+  public set: IKeyChain["set"] = async (tag, key) => {
     this.keychain.set(tag, key);
     await this.persist();
-  }
+  };
 
-  public async get(tag: string, _opts?: any): Promise<string> {
+  public get: IKeyChain["get"] = async tag => {
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
       throw new Error(ERROR.NO_MATCHING_KEY.format({ tag }).message);
     }
     return key;
-  }
+  };
 
-  public async del(tag: string, _opts?: any): Promise<void> {
+  public del: IKeyChain["del"] = async tag => {
     this.keychain.delete(tag);
     await this.persist();
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
-  private async setKeyChain(keychain: Map<string, string>): Promise<void> {
+  private async setKeyChain(keychain: Map<string, string>) {
     await this.client.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain));
   }
 
-  private async getKeyChain(): Promise<Map<string, string> | undefined> {
+  private async getKeyChain() {
     const keychain = await this.client.storage.getItem<Record<string, string>>(this.storageKey);
     return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
@@ -88,9 +88,9 @@ export class KeyChain implements IKeyChain {
 }
 
 export class Crypto implements ICrypto {
-  public name: string = CRYPTO_CONTEXT;
+  public name = CRYPTO_CONTEXT;
 
-  public keychain: IKeyChain;
+  public keychain: ICrypto["keychain"];
 
   constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {
     this.client = client;
@@ -98,76 +98,72 @@ export class Crypto implements ICrypto {
     this.keychain = keychain || new KeyChain(this.client, this.logger);
   }
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
 
-  public async init(): Promise<void> {
+  public init: ICrypto["init"] = async () => {
     await this.keychain.init();
-  }
+  };
 
-  public async hasKeys(tag: string): Promise<boolean> {
+  public hasKeys: ICrypto["hasKeys"] = async tag => {
     return this.keychain.has(tag);
-  }
+  };
 
-  public async generateKeyPair(): Promise<string> {
+  public generateKeyPair: ICrypto["generateKeyPair"] = async () => {
     const keyPair = generateKeyPair();
     return this.setPrivateKey(keyPair.privateKey, keyPair.publicKey);
-  }
+  };
 
-  public async generateSessionKey(
-    self: CryptoTypes.Participant,
-    peer: CryptoTypes.Participant,
-    overrideTopic?: string,
-  ): Promise<string> {
+  public generateSessionKey: ICrypto["generateSessionKey"] = async (self, peer, overrideTopic) => {
     const privateKey = await this.getPrivateKey(self.publicKey);
     const sharedKey = deriveSharedKey(privateKey, peer.publicKey);
     const symKey = deriveSymmetricKey(sharedKey);
     return this.setSymKey(symKey, overrideTopic);
-  }
+  };
 
-  public async setPairingKey(symKey: string, overrideTopic?: string): Promise<string> {
-    // const hash = await hashKey(symKey);
+  public setPairingKey: ICrypto["setPairingKey"] = async (symKey, overrideTopic) => {
+    const hash = await hashKey(symKey);
     return this.setSymKey(symKey, overrideTopic);
-  }
+  };
 
-  public async deleteKeyPair(publicKey: string): Promise<void> {
+  public deleteKeyPair: ICrypto["deleteKeyPair"] = async (publicKey: string) => {
     await this.keychain.del(publicKey);
-  }
+  };
 
-  public async deleteSessionKey(topic: string): Promise<void> {
+  public deleteSessionKey: ICrypto["deleteSessionKey"] = async (topic: string) => {
     await this.keychain.del(topic);
-  }
+  };
 
-  public async deletePairingKey(topic: string): Promise<void> {
+  public deletePairingKey: ICrypto["deletePairingKey"] = async (topic: string) => {
     await this.keychain.del(topic);
-  }
+  };
 
-  public async encrypt(topic: string, message: string): Promise<string> {
+  public encrypt: ICrypto["encrypt"] = async (topic, message) => {
     const symKey = await this.getSymKey(topic);
     const result = await encrypt({ symKey, message });
     return result;
-  }
+  };
 
-  public async decrypt(topic: string, encoded: string): Promise<string> {
+  public decrypt: ICrypto["decrypt"] = async (topic, encoded) => {
     const symKey = await this.getSymKey(topic);
     const result = await decrypt({ symKey, encoded });
     return result;
-  }
+  };
 
-  public async encode(topic: string, payload: JsonRpcPayload): Promise<string> {
+  public encode: ICrypto["encode"] = async (topic, payload) => {
     const hasKeys = await this.hasKeys(topic);
     const message = safeJsonStringify(payload);
     const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
     return result;
-  }
+  };
 
-  public async decode(topic: string, encoded: string): Promise<JsonRpcPayload> {
+  public decode: ICrypto["decode"] = async (topic, encoded) => {
     const hasKeys = await this.hasKeys(topic);
     const message = hasKeys ? await this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
     const payload = safeJsonParse(message);
     return payload;
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
