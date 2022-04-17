@@ -1,4 +1,3 @@
-import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IClient, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
 import {
@@ -16,7 +15,7 @@ type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Str
 export class Store<Data extends StoreStruct> extends IStore<Data> {
   public data = new Map<string, Data>();
 
-  public version: string = STORE_STORAGE_VERSION;
+  public version = STORE_STORAGE_VERSION;
 
   private cached: Data[] = [];
 
@@ -25,10 +24,10 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
     this.logger = generateChildLogger(logger, this.name);
   }
 
-  public async init(): Promise<void> {
+  public init: IStore<Data>["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
   get context(): string {
     return getLoggerContext(this.logger);
@@ -50,7 +49,7 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
     return Array.from(this.data.values());
   }
 
-  public async set(topic: string, data: Data): Promise<void> {
+  public set: IStore<Data>["set"] = async (topic, data) => {
     if (this.data.has(topic)) {
       this.update(topic, data);
     } else {
@@ -59,30 +58,30 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
       this.data.set(topic, data);
       this.persist();
     }
-  }
+  };
 
-  public async get(topic: string): Promise<Data> {
+  public get: IStore<Data>["get"] = async topic => {
     this.logger.debug(`Getting data`);
     this.logger.trace({ type: "method", method: "get", topic });
     const data = await this.getData(topic);
     return data;
-  }
+  };
 
-  public async update(topic: string, update: Partial<Data>): Promise<void> {
+  public update: IStore<Data>["update"] = async (topic, update) => {
     this.logger.debug(`Updating data`);
     this.logger.trace({ type: "method", method: "update", topic, update });
     const data = { ...(await this.getData(topic)), ...update };
     this.data.set(topic, data);
     this.persist();
-  }
+  };
 
-  public async delete(topic: string, reason: ErrorResponse): Promise<void> {
+  public delete: IStore<Data>["delete"] = async (topic, reason) => {
     if (!this.data.has(topic)) return;
     this.logger.debug(`Deleting data`);
     this.logger.trace({ type: "method", method: "delete", topic, reason });
     this.data.delete(topic);
     this.persist();
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
