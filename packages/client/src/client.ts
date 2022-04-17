@@ -4,7 +4,7 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { ClientTypes, EngineTypes, IClient } from "@walletconnect/types";
+import { ClientTypes, IClient } from "@walletconnect/types";
 import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import KeyValueStorage from "keyvaluestorage";
@@ -86,150 +86,150 @@ export class Client extends IClient {
     );
   }
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
 
-  get storagePrefix(): string {
+  get storagePrefix() {
     return `${this.protocol}@${this.version}:${this.context}:`;
   }
 
   // ---------- Events ----------------------------------------------- //
 
-  public on(event: string, listener: (...args: any[]) => void) {
+  public on: IClient["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: (...args: any[]) => void) {
+  public once: IClient["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: (...args: any[]) => void) {
+  public off: IClient["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: (...args: any[]) => void) {
+  public removeListener: IClient["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Engine ----------------------------------------------- //
 
-  public async connect(params: EngineTypes.CreateSessionParams) {
+  public connect: IClient["connect"] = async params => {
     try {
       return await this.engine.createSession(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async pair(pairingUri: string) {
+  public pair: IClient["pair"] = async pairingUri => {
     try {
       await this.engine.pair(pairingUri);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async approve() {
+  public approve: IClient["approve"] = async () => {
     try {
       await this.engine.approve();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async reject() {
+  public reject: IClient["reject"] = async () => {
     try {
       await this.engine.reject();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async updateAccounts() {
+  public updateAccounts: IClient["updateAccounts"] = async () => {
     try {
       await this.engine.updateAccounts();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async updateMethods() {
+  public updateMethods: IClient["updateMethods"] = async () => {
     try {
       await this.engine.updateMethods();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async updateEvents() {
+  public updateEvents: IClient["updateEvents"] = async () => {
     try {
       await this.engine.updateEvents();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async updateExpiry() {
+  public updateExpiry: IClient["updateExpiry"] = async () => {
     try {
       await this.engine.updateExpiry();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async request() {
+  public request: IClient["request"] = async () => {
     try {
       await this.engine.request();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async respond() {
+  public respond: IClient["respond"] = async () => {
     try {
       await this.engine.respond();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async ping() {
+  public ping: IClient["ping"] = async () => {
     try {
       await this.engine.ping();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async emit() {
+  public emit: IClient["emit"] = async () => {
     try {
       await this.engine.emit();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
-  public async disconnect() {
+  public disconnect: IClient["disconnect"] = async () => {
     try {
       await this.engine.disconnect();
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 

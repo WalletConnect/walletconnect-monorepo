@@ -79,6 +79,9 @@ export default class Engine extends IEngine {
       setTimeout(() => {
         reject(ERROR.SETTLE_TIMEOUT.format({ context, timeout }));
       }, timeout);
+
+      // store resolve / reject alongside topic / id
+
       this.proposalResolve = resolve;
       this.proposalReject = reject;
     });
