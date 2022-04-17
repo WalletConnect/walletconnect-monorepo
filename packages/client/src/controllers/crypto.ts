@@ -50,7 +50,6 @@ export class Crypto implements ICrypto {
   };
 
   public setPairingKey: ICrypto["setPairingKey"] = async (symKey, overrideTopic) => {
-    const hash = await hashKey(symKey);
     return this.setSymKey(symKey, overrideTopic);
   };
 
