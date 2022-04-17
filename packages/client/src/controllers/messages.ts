@@ -15,7 +15,7 @@ export class MessageTracker extends IMessageTracker {
 
   public name = MESSAGES_CONTEXT;
 
-  public version: string = MESSAGES_STORAGE_VERSION;
+  public version = MESSAGES_STORAGE_VERSION;
 
   constructor(public logger: Logger, public client: IClient) {
     super(logger, client);
@@ -31,12 +31,12 @@ export class MessageTracker extends IMessageTracker {
     return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
-  public async init(): Promise<void> {
+  public init: IMessageTracker["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
-  public async set(topic: string, message: string): Promise<string> {
+  public set: IMessageTracker["set"] = async (topic, message) => {
     const hash = await hashMessage(message);
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
@@ -49,26 +49,26 @@ export class MessageTracker extends IMessageTracker {
     this.messages.set(topic, messages);
     await this.persist();
     return hash;
-  }
+  };
 
-  public async get(topic: string): Promise<MessageRecord> {
+  public get: IMessageTracker["get"] = async topic => {
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
       messages = {};
     }
     return messages;
-  }
+  };
 
-  public async has(topic: string, message: string): Promise<boolean> {
+  public has: IMessageTracker["has"] = async (topic, message) => {
     const messages = this.get(topic);
     const hash = await hashMessage(message);
     return typeof messages[hash] !== "undefined";
-  }
+  };
 
-  public async del(topic: string) {
+  public del: IMessageTracker["del"] = async topic => {
     this.messages.delete(topic);
     await this.persist();
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
