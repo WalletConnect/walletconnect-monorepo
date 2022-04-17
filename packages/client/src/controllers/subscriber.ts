@@ -34,23 +34,23 @@ export class SubscriberTopicMap implements ISubscriberTopicMap {
     return Array.from(this.map.keys());
   }
 
-  public set(topic: string, id: string): void {
+  public set: ISubscriberTopicMap["set"] = (topic, id) => {
     const ids = this.get(topic);
     if (this.exists(topic, id)) return;
     this.map.set(topic, [...ids, id]);
-  }
+  };
 
-  public get(topic: string): string[] {
+  public get: ISubscriberTopicMap["get"] = topic => {
     const ids = this.map.get(topic);
     return ids || [];
-  }
+  };
 
-  public exists(topic: string, id: string): boolean {
+  public exists: ISubscriberTopicMap["exists"] = (topic, id) => {
     const ids = this.get(topic);
     return ids.includes(id);
-  }
+  };
 
-  public delete(topic: string, id?: string): void {
+  public delete: ISubscriberTopicMap["delete"] = (topic, id) => {
     if (typeof id === "undefined") {
       this.map.delete(topic);
       return;
@@ -64,11 +64,11 @@ export class SubscriberTopicMap implements ISubscriberTopicMap {
       return;
     }
     this.map.set(topic, remaining);
-  }
+  };
 
-  public clear(): void {
+  public clear: ISubscriberTopicMap["clear"] = () => {
     this.map.clear();
-  }
+  };
 }
 
 export class Subscriber extends ISubscriber {
@@ -78,9 +78,9 @@ export class Subscriber extends ISubscriber {
 
   public events = new EventEmitter();
 
-  public name: string = SUBSCRIBER_CONTEXT;
+  public name = SUBSCRIBER_CONTEXT;
 
-  public version: string = SUBSCRIBER_STORAGE_VERSION;
+  public version = SUBSCRIBER_STORAGE_VERSION;
 
   public pending = new Map<string, SubscriberTypes.Params>();
 
@@ -94,10 +94,10 @@ export class Subscriber extends ISubscriber {
     this.registerEventListeners();
   }
 
-  public async init(): Promise<void> {
+  public init: ISubscriber["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
   get context(): string {
     return getLoggerContext(this.logger);
@@ -123,7 +123,7 @@ export class Subscriber extends ISubscriber {
     return this.topicMap.topics;
   }
 
-  public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string> {
+  public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
@@ -140,31 +140,31 @@ export class Subscriber extends ISubscriber {
       this.logger.error(e as any);
       throw e;
     }
-  }
+  };
 
-  public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void> {
+  public unsubscribe: ISubscriber["unsubscribe"] = async (topic, opts) => {
     if (typeof opts?.id !== "undefined") {
       await this.unsubscribeById(topic, opts.id, opts);
     } else {
       await this.unsubscribeByTopic(topic, opts);
     }
-  }
+  };
 
-  public on(event: string, listener: any): void {
+  public on: ISubscriber["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: any): void {
+  public once: ISubscriber["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): void {
+  public off: ISubscriber["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener: ISubscriber["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
