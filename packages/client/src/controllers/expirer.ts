@@ -12,9 +12,9 @@ export class Expirer extends IExpirer {
 
   public events = new EventEmitter();
 
-  public name: string = EXPIRER_CONTEXT;
+  public name = EXPIRER_CONTEXT;
 
-  public version: string = EXPIRER_STORAGE_VERSION;
+  public version = EXPIRER_STORAGE_VERSION;
 
   private cached: ExpirerTypes.Expiration[] = [];
 
@@ -45,12 +45,12 @@ export class Expirer extends IExpirer {
     return Array.from(this.expirations.values());
   }
 
-  public async init(): Promise<void> {
+  public init: IExpirer["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
-  public async has(topic: string): Promise<boolean> {
+  public has: IExpirer["has"] = async topic => {
     try {
       const expiration = this.getExpiration(topic);
       return typeof expiration !== "undefined";
@@ -58,9 +58,9 @@ export class Expirer extends IExpirer {
       // ignore
       return false;
     }
-  }
+  };
 
-  public async set(topic: string, expiration: ExpirerTypes.Expiration): Promise<void> {
+  public set: IExpirer["set"] = async (topic, expiration) => {
     await this.isInitialized();
     this.expirations.set(topic, expiration);
     this.checkExpiry(topic, expiration);
@@ -68,14 +68,14 @@ export class Expirer extends IExpirer {
       topic,
       expiration,
     } as ExpirerTypes.Created);
-  }
+  };
 
-  public async get(topic: string): Promise<ExpirerTypes.Expiration> {
+  public get: IExpirer["get"] = async topic => {
     await this.isInitialized();
     return this.getExpiration(topic);
-  }
+  };
 
-  public async del(topic: string): Promise<void> {
+  public del: IExpirer["del"] = async topic => {
     await this.isInitialized();
     const expiration = this.getExpiration(topic);
     this.expirations.delete(topic);
@@ -83,23 +83,23 @@ export class Expirer extends IExpirer {
       topic,
       expiration,
     } as ExpirerTypes.Deleted);
-  }
+  };
 
-  public on(event: string, listener: any): void {
+  public on: IExpirer["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: any): void {
+  public once: IExpirer["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): void {
+  public off: IExpirer["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener: IExpirer["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
