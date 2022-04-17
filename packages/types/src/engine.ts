@@ -1,4 +1,9 @@
-import { JsonRpcResponse, JsonRpcRequest } from "@walletconnect/jsonrpc-types";
+import {
+  JsonRpcResponse,
+  JsonRpcRequest,
+  ErrorResponse,
+  RequestArguments,
+} from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
 import { ICrypto } from "./crypto";
 import { IPairing } from "./pairing";
@@ -30,7 +35,66 @@ export declare namespace EngineTypes {
     relays?: RelayerTypes.ProtocolOptions[];
   }
 
-  type CreateSessionReturn = Promise<{ uri?: string; approval: Promise<void> }>;
+  interface ApproveParams {
+    proposerPublicKey: string;
+    accounts: SessionTypes.Accounts;
+    methods: SessionTypes.Methods;
+    events: SessionTypes.Events;
+  }
+
+  interface RejectParams {
+    proposerPublicKey: string;
+    reason: ErrorResponse;
+  }
+
+  interface UpdateAccountsParams {
+    topic: string;
+    accounts: SessionTypes.Accounts;
+  }
+
+  interface UpdateMethodsParams {
+    topic: string;
+    methods: SessionTypes.Methods;
+  }
+
+  interface UpdateEventsParams {
+    topic: string;
+    events: SessionTypes.Events;
+  }
+
+  interface UpdateExpiryParams {
+    topic: string;
+    expiry: SessionTypes.Expiry;
+  }
+
+  interface RequestParams {
+    topic: string;
+    request: RequestArguments;
+    chainId?: string;
+  }
+
+  interface RespondParams {
+    topic: string;
+    response: JsonRpcResponse;
+  }
+
+  interface EmitParams {
+    topic: string;
+    event: {
+      name: string;
+      data: any;
+    };
+    chainId?: string;
+  }
+
+  interface PingParams {
+    topic: string;
+  }
+
+  interface DisconnectParams {
+    topic: string;
+    reason: ErrorResponse;
+  }
 }
 
 // -- private method interface -------------------------------------- //
@@ -62,18 +126,29 @@ export abstract class IEngine {
 
   public abstract createSession(
     params: EngineTypes.CreateSessionParams,
-  ): EngineTypes.CreateSessionReturn;
+  ): Promise<{ uri?: string; approval: Promise<void> }>;
 
   public abstract pair(pairingUri: string): Promise<void>;
-  public abstract approve(): Promise<void>;
-  public abstract reject(): Promise<void>;
-  public abstract request(): Promise<void>;
-  public abstract respond(): Promise<void>;
-  public abstract ping(): Promise<void>;
-  public abstract disconnect(): Promise<void>;
-  public abstract emit(): Promise<void>;
-  public abstract updateAccounts(): Promise<void>;
-  public abstract updateMethods(): Promise<void>;
-  public abstract updateEvents(): Promise<void>;
-  public abstract updateExpiry(): Promise<void>;
+
+  public abstract approve(params: EngineTypes.ApproveParams): Promise<SessionTypes.Struct>;
+
+  public abstract reject(params: EngineTypes.RejectParams): Promise<void>;
+
+  public abstract updateAccounts(params: EngineTypes.UpdateAccountsParams): Promise<void>;
+
+  public abstract updateMethods(params: EngineTypes.UpdateMethodsParams): Promise<void>;
+
+  public abstract updateEvents(params: EngineTypes.UpdateEventsParams): Promise<void>;
+
+  public abstract updateExpiry(params: EngineTypes.UpdateExpiryParams): Promise<void>;
+
+  public abstract request<T>(params: EngineTypes.RequestParams): Promise<T>;
+
+  public abstract respond(params: EngineTypes.RespondParams): Promise<void>;
+
+  public abstract emit(params: EngineTypes.EmitParams): Promise<void>;
+
+  public abstract ping(params: EngineTypes.PingParams): Promise<void>;
+
+  public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
 }
