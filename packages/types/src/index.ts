@@ -12,3 +12,4 @@ export * from "./relayer";
 export * from "./session";
 export * from "./store";
 export * from "./subscriber";
+export * from "./keychain";
