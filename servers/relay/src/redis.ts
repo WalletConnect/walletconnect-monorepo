@@ -8,11 +8,13 @@ import { SIX_HOURS } from "@walletconnect/time";
 import { sha256 } from "./utils";
 import { HttpService } from "./http";
 import { REDIS_CONTEXT } from "./constants";
-import { Notification, LegacySocketMessage } from "./types";
+import { IridiumV1MessageOptions, Notification, LegacySocketMessage } from "./types";
+import { IridiumEncoder } from "./encoder";
 
 export class RedisService {
   public client: RedisClientType;
   public context = REDIS_CONTEXT;
+  public encoder = new IridiumEncoder();
 
   constructor(public server: HttpService, public logger: Logger) {
     this.server = server;
@@ -22,15 +24,15 @@ export class RedisService {
   }
 
   public async setMessage(params: RelayJsonRpc.PublishParams): Promise<void> {
-      const { topic, message, ttl } = params;
-      this.logger.debug(`Setting Message`);
-      this.logger.trace({ type: "method", method: "setMessage", params });
-      const key = `message:${topic}`;
-      const hash = sha256(message);
-      const val = `${hash}:${message}`;
-      await this.client.sAdd(key, val);
-      await this.client.expire(key, ttl);
-      return;
+    const { topic, message, ttl } = params;
+    this.logger.debug(`Setting Message`);
+    this.logger.trace({ type: "method", method: "setMessage", params });
+    const key = `message:${topic}`;
+    const hash = sha256(message);
+    const val = `${hash}:${message}`;
+    await this.client.sAdd(key, val);
+    await this.client.expire(key, ttl);
+    return;
   }
 
   public async getMessage(topic: string, hash: string): Promise<string | undefined> {
@@ -97,28 +99,28 @@ export class RedisService {
   }
 
   public async getNotification(topic: string): Promise<Notification[]> {
-      const result = await this.client.lRange(`notification:${topic}`, 0, -1);
-      const notifications: Notification[] = [];
-      if (typeof result !== "undefined" && result.length) {
-        result.forEach((item: string) => {
-          const notification = safeJsonParse(item);
-          notifications.push(notification);
-        });
-      }
-      this.logger.debug(`Getting Notification`);
-      this.logger.trace({ type: "method", method: "getNotification", topic, notifications });
-      return notifications;
+    const result = await this.client.lRange(`notification:${topic}`, 0, -1);
+    const notifications: Notification[] = [];
+    if (typeof result !== "undefined" && result.length) {
+      result.forEach((item: string) => {
+        const notification = safeJsonParse(item);
+        notifications.push(notification);
+      });
+    }
+    this.logger.debug(`Getting Notification`);
+    this.logger.trace({ type: "method", method: "getNotification", topic, notifications });
+    return notifications;
   }
 
   public async setPendingRequest(topic: string, id: number, message: string): Promise<void> {
-      const key = `pending:${id}`;
-      const hash = sha256(message);
-      const val = `${topic}:${hash}`;
-      this.logger.debug(`Setting Pending Request`);
-      this.logger.trace({ type: "method", method: "setPendingRequest", topic, id, message });
-      await this.client.set(key, val);
-      await this.client.expire(key, this.server.config.maxTTL);
-      return;
+    const key = `pending:${id}`;
+    const hash = sha256(message);
+    const val = `${topic}:${hash}`;
+    this.logger.debug(`Setting Pending Request`);
+    this.logger.trace({ type: "method", method: "setPendingRequest", topic, id, message });
+    await this.client.set(key, val);
+    await this.client.expire(key, this.server.config.maxTTL);
+    return;
   }
 
   public async getPendingRequest(id: number): Promise<string> {
@@ -129,21 +131,29 @@ export class RedisService {
   }
 
   public async deletePendingRequest(id: number): Promise<void> {
-      this.logger.debug(`Deleting Pending Request`);
-      this.logger.trace({ type: "method", method: "deletePendingRequest", id });
-      await this.client.del(`pending:${id}`);
-      return;
+    this.logger.debug(`Deleting Pending Request`);
+    this.logger.trace({ type: "method", method: "deletePendingRequest", id });
+    await this.client.del(`pending:${id}`);
+    return;
+  }
+
+  public async publish(topic: string, message: string, opts?: IridiumV1MessageOptions) {
+    const payload = await this.encoder.encode(message, opts);
+    this.logger.info("Posting Iridium Message");
+    this.logger.debug({ type: "method", method: "publish", payload: { message, opts } });
+    await this.client.xAdd(topic, "*", {
+      payload: payload,
+    });
   }
 
   // ---------- Private ----------------------------------------------- //
 
   private initialize(): void {
     this.client.on("error", (e) => {
-     this.logger.error(e);
+      this.logger.error(e);
     });
     this.client.connect().then(() => {
       this.logger.trace(`Initialized`);
     });
   }
-
 }

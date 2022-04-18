@@ -20,7 +20,6 @@ import {
   SERVER_EVENTS,
 } from "./constants";
 import { SubscriptionService } from "./subscription";
-import { NetworkService } from "./network";
 import { MessageService } from "./message";
 
 export class HttpService {
@@ -31,7 +30,6 @@ export class HttpService {
   public redis: RedisService;
 
   public ws: WebSocketService;
-  public network: NetworkService | undefined;
   public message: MessageService;
   public subscription: SubscriptionService;
   public notification: NotificationService;
@@ -48,9 +46,6 @@ export class HttpService {
     this.metrics = this.setMetrics();
     this.redis = new RedisService(this, this.logger);
     this.ws = new WebSocketService(this, this.logger);
-    if (this.config.waku.url != undefined && !isJsonRpcDisabled(this.config.mode)) {
-      this.network = new NetworkService(this, this.logger);
-    }
     this.message = new MessageService(this, this.logger);
     this.subscription = new SubscriptionService(this, this.logger);
     this.notification = new NotificationService(this, this.logger);

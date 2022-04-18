@@ -36,8 +36,8 @@ export class MessageService {
     if (!message) {
       await this.server.redis.setMessage(params);
       this.server.events.emit(MESSAGE_EVENTS.added, params, socketId);
-      if (this.server.network) {
-        this.server.network.publish(params.topic, params.message, { prompt: params.prompt });
+      if (this.server.redis) {
+        this.server.redis.publish(params.topic, params.message, { prompt: params.prompt });
       }
     }
   }
@@ -79,7 +79,7 @@ export class MessageService {
   }
 
   private registerEventListeners(): void {
-    if (typeof this.server.network === "undefined") return;
+    if (typeof this.server.redis === "undefined") return;
     this.server.events.on(NETWORK_EVENTS.message, (topic, message, prompt) => {
       const params = { topic, message, ttl: SIX_HOURS, prompt };
       this.setMessage(params);

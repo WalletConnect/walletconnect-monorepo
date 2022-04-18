@@ -23,7 +23,7 @@
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.json",
     "dev": "run-p -l watch nodemon",
-    "nodemon": "LOG_LEVEL=DEBUG nodemon ./dist",
+    "nodemon": "nodemon ./dist",
     "watch": "tsc -p tsconfig.json --watch",
     "build": "run-s clean compile",
     "start": "npm run build && node ./dist",
