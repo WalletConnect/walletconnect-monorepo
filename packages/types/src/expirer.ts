@@ -1,5 +1,6 @@
-import { IEvents } from "@walletconnect/events";
 import { Logger } from "pino";
+import { IEvents } from "@walletconnect/events";
+
 import { IClient } from "./client";
 
 export declare namespace ExpirerTypes {

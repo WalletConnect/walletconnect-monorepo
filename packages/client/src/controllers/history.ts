@@ -1,9 +1,4 @@
-import {
-  formatJsonRpcRequest,
-  isJsonRpcError,
-  JsonRpcRequest,
-  JsonRpcResponse,
-} from "@walletconnect/jsonrpc-utils";
+import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IJsonRpcHistory, JsonRpcRecord, RequestEvent } from "@walletconnect/types";
 import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";

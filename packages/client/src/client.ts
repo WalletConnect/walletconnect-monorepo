@@ -123,108 +123,108 @@ export class Client extends IClient {
     }
   };
 
-  public pair: IClient["pair"] = async pairingUri => {
+  public pair: IClient["pair"] = async params => {
     try {
-      await this.engine.pair(pairingUri);
+      return await this.engine.pair(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public approve: IClient["approve"] = async () => {
+  public approve: IClient["approve"] = async params => {
     try {
-      await this.engine.approve();
+      return await this.engine.approve(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public reject: IClient["reject"] = async () => {
+  public reject: IClient["reject"] = async params => {
     try {
-      await this.engine.reject();
+      return await this.engine.reject(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public updateAccounts: IClient["updateAccounts"] = async () => {
+  public updateAccounts: IClient["updateAccounts"] = async params => {
     try {
-      await this.engine.updateAccounts();
+      return await this.engine.updateAccounts(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public updateMethods: IClient["updateMethods"] = async () => {
+  public updateMethods: IClient["updateMethods"] = async params => {
     try {
-      await this.engine.updateMethods();
+      return await this.engine.updateMethods(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public updateEvents: IClient["updateEvents"] = async () => {
+  public updateEvents: IClient["updateEvents"] = async params => {
     try {
-      await this.engine.updateEvents();
+      return await this.engine.updateEvents(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public updateExpiry: IClient["updateExpiry"] = async () => {
+  public updateExpiry: IClient["updateExpiry"] = async params => {
     try {
-      await this.engine.updateExpiry();
+      return await this.engine.updateExpiry(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public request: IClient["request"] = async () => {
+  public request: IClient["request"] = async params => {
     try {
-      await this.engine.request();
+      return await this.engine.request(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public respond: IClient["respond"] = async () => {
+  public respond: IClient["respond"] = async params => {
     try {
-      await this.engine.respond();
+      return await this.engine.respond(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public ping: IClient["ping"] = async () => {
+  public ping: IClient["ping"] = async params => {
     try {
-      await this.engine.ping();
+      return await this.engine.ping(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public emit: IClient["emit"] = async () => {
+  public emit: IClient["emit"] = async params => {
     try {
-      await this.engine.emit();
+      return await this.engine.emit(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public disconnect: IClient["disconnect"] = async () => {
+  public disconnect: IClient["disconnect"] = async params => {
     try {
-      await this.engine.disconnect();
+      return await this.engine.disconnect(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;

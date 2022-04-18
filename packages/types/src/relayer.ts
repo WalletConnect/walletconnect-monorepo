@@ -73,7 +73,10 @@ export abstract class IRelayer extends IEvents {
 
   public abstract readonly connecting: boolean;
 
-  constructor(opts: RelayerOptions) {
+  constructor(
+    // @ts-ignore
+    opts: RelayerOptions,
+  ) {
     super();
   }
 

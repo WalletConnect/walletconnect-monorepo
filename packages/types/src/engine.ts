@@ -35,11 +35,15 @@ export declare namespace EngineTypes {
     relays?: RelayerTypes.ProtocolOptions[];
   }
 
+  interface PairParams {
+    uri: string;
+  }
   interface ApproveParams {
     proposerPublicKey: string;
     accounts: SessionTypes.Accounts;
     methods: SessionTypes.Methods;
     events: SessionTypes.Events;
+    relayProtocol?: string;
   }
 
   interface RejectParams {
@@ -67,9 +71,9 @@ export declare namespace EngineTypes {
     expiry: SessionTypes.Expiry;
   }
 
-  interface RequestParams {
+  interface RequestParams<T = any> {
     topic: string;
-    request: RequestArguments;
+    request: RequestArguments<T>;
     chainId?: string;
   }
 
@@ -128,7 +132,7 @@ export abstract class IEngine {
     params: EngineTypes.CreateSessionParams,
   ): Promise<{ uri?: string; approval: Promise<void> }>;
 
-  public abstract pair(pairingUri: string): Promise<void>;
+  public abstract pair(params: EngineTypes.PairParams): Promise<void>;
 
   public abstract approve(params: EngineTypes.ApproveParams): Promise<SessionTypes.Struct>;
 
@@ -142,7 +146,7 @@ export abstract class IEngine {
 
   public abstract updateExpiry(params: EngineTypes.UpdateExpiryParams): Promise<void>;
 
-  public abstract request<T>(params: EngineTypes.RequestParams): Promise<T>;
+  public abstract request<T = any>(params: EngineTypes.RequestParams<T>): Promise<any>;
 
   public abstract respond(params: EngineTypes.RespondParams): Promise<void>;
 

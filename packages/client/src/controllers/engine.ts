@@ -6,7 +6,13 @@ import {
   JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
-import { EngineTypes, IEngine, RelayerTypes, EnginePrivate } from "@walletconnect/types";
+import {
+  EngineTypes,
+  IEngine,
+  RelayerTypes,
+  EnginePrivate,
+  SessionTypes,
+} from "@walletconnect/types";
 import {
   calcExpiry,
   formatUri,
@@ -89,9 +95,9 @@ export default class Engine extends IEngine {
     return { uri, approval };
   };
 
-  public pair: IEngine["pair"] = async pairingUri => {
+  public pair: IEngine["pair"] = async params => {
     // TODO(ilja) validate pairing Uri
-    const { topic, symKey, relay } = parseUri(pairingUri);
+    const { topic, symKey, relay } = parseUri(params.uri);
     this.crypto.setPairingKey(symKey, topic);
     // TODO(ilja) this.pairing.set(topic, params)
     // TODO(ilja) this.expirer ?
@@ -100,6 +106,7 @@ export default class Engine extends IEngine {
 
   public approve: IEngine["approve"] = async () => {
     // TODO
+    return {} as SessionTypes.Struct;
   };
 
   public reject: IEngine["reject"] = async () => {
@@ -145,9 +152,8 @@ export default class Engine extends IEngine {
   // ---------- Private ----------------------------------------------- //
 
   private async createPairing() {
-    const topic = generateRandomBytes32();
     const symKey = generateRandomBytes32();
-    this.crypto.setPairingKey(symKey, topic);
+    const topic = await this.crypto.setPairingKey(symKey);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
     const pairing = { topic, expiry, relay, active: true };

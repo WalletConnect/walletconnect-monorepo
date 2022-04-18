@@ -37,7 +37,12 @@ export abstract class ICrypto {
 
   public abstract keychain: IKeyChain;
 
-  constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {}
+  constructor(
+    public client: IClient,
+    public logger: Logger,
+    // @ts-ignore
+    keychain?: IKeyChain,
+  ) {}
 
   public abstract init(): Promise<void>;
 

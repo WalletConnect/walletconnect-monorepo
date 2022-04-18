@@ -24,7 +24,7 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, hashMessage } from "@walletconnect/utils";
+import { formatRelayRpcUrl } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
 import {
