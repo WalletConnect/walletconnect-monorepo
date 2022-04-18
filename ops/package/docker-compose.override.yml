@@ -33,7 +33,6 @@ services:
     volumes:
       - node_modules:/usr/src/app/node_modules
       - ../../servers/relay/src:/usr/src/app/src
-      - ../../servers/relay/dist:/usr/src/app/dist
         #healthcheck:
         #test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
         #interval: 5s

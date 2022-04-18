@@ -152,8 +152,10 @@ export class RedisService {
     this.client.on("error", (e) => {
       this.logger.error(e);
     });
+    /*
     this.client.connect().then(() => {
       this.logger.trace(`Initialized`);
     });
+    */
   }
 }

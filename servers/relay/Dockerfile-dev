@@ -9,4 +9,4 @@ RUN npm install --also=dev
 
 COPY ./src ./src
 
-CMD ["npm", "run", "nodemon", "./dist"]
+CMD ["npm", "run", "watch"]
