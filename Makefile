@@ -10,7 +10,8 @@ DOCKER_COMPOSE=-f ./ops/package/docker-compose.yml
 DOCKER_COMPOSE_DEV=-f ./ops/package/docker-compose.dev.yml -f ./ops/package/docker-compose.override.yml
 DOCKER_COMPOSE_TEST=-f ./ops/package/docker-compose.test.yml
 
-DEV_PROJECTS=health relay monorepo-tests
+DEV_PROJECTS=relay
+TEST_RELAY_URL=?ws://127.0.0.1:5000
 
 ### Production build/publish
 .PHONY: build
@@ -40,7 +41,7 @@ dev: ## start local dev environment
 ifeq (,$(fast))
 	@make build-dev
 endif
-	@docker-compose $(DOCKER_COMPOSE_DEV) up -d
+	@docker-compose $(DOCKER_COMPOSE_DEV) up
 
 .PHONY: stop
 stop: ## stop local environment 
@@ -64,9 +65,9 @@ test: test-relay test-client
 .PHONY: test-relay
 test-relay:  ## runs "./servers/relay" tests against the locally running relay
 	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
-		run --rm -e TEST_RELAY_URL=ws://relay:5000 \
+		run --rm -e TEST_RELAY_URL=$(TEST_RELAY_URL) \
 		monorepo-tests \
-		npm run test 
+		npm run test  --prefix servers/relay
 
 .PHONY: test-client
 test-client:  ## runs "./packages/client" tests against the locally running relay

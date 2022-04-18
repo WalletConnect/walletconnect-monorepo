@@ -1,18 +1,8 @@
-version: '3.9'
+version: "3.9"
 
-services:   
-  health:
-    image: walletconnect/health-server:${TAG:-dev}-dev
-    build:
-      context: ../../servers/health/
-      dockerfile: Dockerfile-dev
+services:
   relay:
     image: walletconnect/relay-server:${TAG:-dev}-dev
     build:
       context: ../../servers/relay/
       dockerfile: Dockerfile-dev
-  monorepo-tests:
-    image: walletconnect/monorepo-tests:${TAG:-dev}-dev
-    build:
-      context: ../../
-      dockerfile: ops/package/Dockerfile-dev      

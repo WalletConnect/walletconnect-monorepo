@@ -1,0 +1,19 @@
+
+
+
+~~Remove waku NETWORK.ts
+~~Upgrade redis to v4
+~~Get iridium message encoder test to pass
+Upgrade to redis streams for network emssaages
+    look for sub tasks, think of new tasks.
+    Look at listener function
+    Look at emitter function
+Create test for iridium encoding
+  Test for proper encoding
+  Test for errors
+Fix iridium encoding
+Test for gracefully handling Redis connection
+Share a single redis between two relays
+Get manium to push messages to redis. and the relay grab messages from relay
+
+Disable pretty print in production for increased performance
