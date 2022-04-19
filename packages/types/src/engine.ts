@@ -107,16 +107,30 @@ export interface EnginePrivate {
     params: JsonRpcTypes.RequestParams[M],
   ): Promise<{ id: number }>;
 
-  sendResponse(topic: string, response: JsonRpcResponse): Promise<void>;
+  sendResponse<M extends JsonRpcTypes.WcMethod>(
+    topic: string,
+    method: M,
+    response: JsonRpcTypes.Responses[M],
+  ): Promise<void>;
+
+  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
+
+  onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
 
   onSessionProposeRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
   ): Promise<void>;
 
-  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
+  onSessionUpdateAccountsRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateAccounts"]>,
+  ): Promise<void>;
 
-  onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
+  onSessionUpdateAccountsResponse(
+    topic: string,
+    payload: JsonRpcResponse<JsonRpcTypes.Responses["wc_sessionUpdateAccounts"]>,
+  ): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //

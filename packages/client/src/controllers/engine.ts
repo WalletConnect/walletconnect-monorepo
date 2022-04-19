@@ -1,7 +1,10 @@
 import {
   formatJsonRpcRequest,
+  formatJsonRpcResult,
   isJsonRpcRequest,
   isJsonRpcResponse,
+  isJsonRpcResult,
+  isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
 import {
@@ -84,8 +87,12 @@ export default class Engine extends IEngine {
     // TODO
   };
 
-  public updateAccounts: IEngine["updateAccounts"] = async () => {
-    // TODO
+  public updateAccounts: IEngine["updateAccounts"] = async params => {
+    const { topic, accounts } = params;
+    // TODO (ilja) validate session topic
+    // TODO (ilja) validate that self is controller
+    const { id } = await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
+    await this.promises.initiate(id, toMiliseconds(FIVE_MINUTES));
   };
 
   public updateMethods: IEngine["updateMethods"] = async () => {
@@ -152,7 +159,8 @@ export default class Engine extends IEngine {
     return { id: request.id };
   };
 
-  private sendResponse: EnginePrivate["sendResponse"] = async (topic, response) => {
+  private sendResponse: EnginePrivate["sendResponse"] = async (topic, resultOrError) => {
+    const response = formatJsonRpcResult(id, resultOrError);
     const message = await this.client.crypto.encode(topic, response);
     await this.client.relayer.publish(topic, message);
     await this.client.history.resolve(response);
@@ -182,9 +190,11 @@ export default class Engine extends IEngine {
     switch (reqMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeRequest(topic, payload);
+      case "wc_sessionUpdateAccounts":
+        return this.onSessionUpdateAccountsRequest(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
-        return false;
+        return;
     }
   };
 
@@ -196,9 +206,11 @@ export default class Engine extends IEngine {
     switch (resMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeResponse();
+      case "wc_sessionUpdateAccounts":
+        return this.onSessionUpdateAccountsResponse(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
-        return false;
+        return;
     }
   };
 
@@ -216,6 +228,29 @@ export default class Engine extends IEngine {
   private onSessionProposeResponse() {
     // TODO(ilja) reject or approve long running promise here
   }
+
+  private onSessionUpdateAccountsRequest: EnginePrivate["onSessionUpdateAccountsRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    const { params } = payload;
+    // TODO(ilja) validate session topic
+    // TODO(ilja) validate that self is NOT controller
+    await this.client.session.update(topic, { accounts: params.accounts });
+    await this.sendResponse(topic, "wc_sessionUpdateAccounts", { result: true });
+  };
+
+  private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      await this.promises.resolve(id);
+    } else if (isJsonRpcError(payload)) {
+      await this.promises.reject(id, payload.error);
+    }
+  };
 
   // ---------- Expirer Events ----------------------------------------- //
 
