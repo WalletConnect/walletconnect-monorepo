@@ -124,6 +124,11 @@ export interface EnginePrivate {
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
   ): Promise<void>;
 
+  onSessionProposeResponse(
+    topic: string,
+    payload: JsonRpcResponse<JsonRpcTypes.Results["wc_sessionPropose"] | JsonRpcTypes.Error>,
+  ): Promise<void>;
+
   onSessionUpdateAccountsRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateAccounts"]>,

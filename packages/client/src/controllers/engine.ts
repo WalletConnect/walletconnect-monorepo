@@ -7,7 +7,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
+import { FIVE_MINUTES, THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";
 import {
   IEngine,
   RelayerTypes,
@@ -81,9 +81,44 @@ export default class Engine extends IEngine {
     return {} as SessionTypes.Struct;
   };
 
-  public approve: IEngine["approve"] = async () => {
-    // TODO
-    return {} as SessionTypes.Struct;
+  public approve: IEngine["approve"] = async params => {
+    const { proposerPublicKey, relayProtocol, accounts, methods, events } = params;
+
+    const selfPublicKey = await this.client.crypto.generateKeyPair();
+    const sessionTopic = await this.client.crypto.generateSessionKey(
+      { publicKey: selfPublicKey },
+      { publicKey: proposerPublicKey },
+    );
+
+    await this.client.relayer.subscribe(sessionTopic);
+    const session = {
+      relay: {
+        protocol: relayProtocol ?? "waku",
+      },
+      accounts,
+      methods,
+      events,
+      controller: {
+        publicKey: selfPublicKey,
+        metadata: this.client.metadata,
+      },
+      expiry: calcExpiry(THIRTY_DAYS),
+    };
+    const { id } = await this.sendRequest(sessionTopic, "wc_sessionSettle", session);
+
+    const { pairingTopic } = await this.client.proposal.get(proposerPublicKey);
+    if (pairingTopic) {
+      await this.sendResult<"wc_sessionPropose">(12, pairingTopic, {
+        relay: {
+          protocol: relayProtocol ?? "waku",
+        },
+        responder: {
+          publicKey: selfPublicKey,
+        },
+      });
+    }
+
+    return this.promises.initiate(id, toMiliseconds(FIVE_MINUTES));
   };
 
   public reject: IEngine["reject"] = async () => {
@@ -216,7 +251,7 @@ export default class Engine extends IEngine {
 
     switch (resMethod) {
       case "wc_sessionPropose":
-        return this.onSessionProposeResponse();
+        return this.onSessionProposeResponse(topic, payload);
       case "wc_sessionUpdateAccounts":
         return this.onSessionUpdateAccountsResponse(topic, payload);
       default:
@@ -236,9 +271,18 @@ export default class Engine extends IEngine {
     this.client.events.emit("pairing_proposal", params);
   };
 
-  private onSessionProposeResponse() {
-    // TODO(ilja) reject or approve long running promise here
-  }
+  private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      // TODO(ilja) derrive topic_b
+      // TODO(ilja) subscribe to topic_b
+    } else if (isJsonRpcError(payload)) {
+      this.promises.reject(id);
+    }
+  };
 
   private onSessionUpdateAccountsRequest: EnginePrivate["onSessionUpdateAccountsRequest"] = async (
     topic,
