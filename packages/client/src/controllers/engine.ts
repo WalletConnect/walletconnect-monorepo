@@ -231,7 +231,7 @@ export default class Engine extends IEngine {
   ) => {
     const { params } = payload;
     await this.client.proposal.set(params.proposer.publicKey, params);
-    this.client.events.emit("pairing_proposal", params);
+    this.client.events.emit("pairing_proposal", { pairingTopic: topic, ...params });
   };
 
   private onSessionProposeResponse() {

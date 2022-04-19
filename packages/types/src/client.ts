@@ -6,20 +6,17 @@ import { ICrypto } from "./crypto";
 import { IKeyChain } from "./keychain";
 import { IEngine } from "./engine";
 import { IPairing } from "./pairing";
-import { IProposal } from "./proposal";
+import { IProposal, ProposalTypes } from "./proposal";
 import { IRelayer } from "./relayer";
 import { ISession } from "./session";
 import { IJsonRpcHistory } from "./history";
 
 export declare namespace ClientTypes {
-  type Events =
-    | "pairing_proposal"
-    | "pairing_updated"
-    | "pairing_upgraded"
-    | "pairing_extended"
-    | "pairing_created"
-    | "pairing_deleted"
-    | "pairing_sync";
+  type Event = "pairing_proposal";
+
+  interface EventArguments {
+    pairing_proposal: ProposalTypes.Struct;
+  }
 
   type Metadata = {
     name: string;
@@ -45,7 +42,10 @@ export abstract class IClientEvents extends EventEmmiter {
     super();
   }
 
-  public abstract emit: (event: ClientTypes.Events, ...args: any[]) => boolean;
+  public abstract emit: <E extends ClientTypes.Event>(
+    event: E,
+    args: ClientTypes.EventArguments[E],
+  ) => boolean;
 }
 
 export abstract class IClient {
@@ -73,10 +73,22 @@ export abstract class IClient {
 
   constructor(public opts?: ClientTypes.Options) {}
 
-  public abstract on: (event: ClientTypes.Events, listener: any) => void;
-  public abstract once: (event: ClientTypes.Events, listener: any) => void;
-  public abstract off: (event: ClientTypes.Events, listener: any) => void;
-  public abstract removeListener: (event: ClientTypes.Events, listener: any) => void;
+  public abstract on: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => void;
+  public abstract once: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => void;
+  public abstract off: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => void;
+  public abstract removeListener: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => void;
 
   public abstract connect: IEngine["createSession"];
   public abstract pair: IEngine["pair"];
