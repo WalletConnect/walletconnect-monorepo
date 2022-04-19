@@ -195,10 +195,19 @@ export default class Engine extends IEngine {
     return false;
   }
 
-  private onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>) {
+  private async onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>) {
     const { topic, payload } = event;
+    const record = await this.client.history.get(topic, payload.id);
+    const resMethod = record.request.method as JsonRpcTypes.WcMethod;
+
     if (this.client.pairing.topics.includes(topic)) {
-      // TODO
+      switch (resMethod) {
+        case "wc_sessionPropose":
+          break;
+
+        default:
+          break;
+      }
     } else if (this.client.session.topics.includes(topic)) {
       // TODO
     }
@@ -208,7 +217,7 @@ export default class Engine extends IEngine {
 
   private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = (topic, payload) => {
     this.client.proposal.set(topic, payload.params);
-    // TODO(ilja) call this.proposalResolve or this.proposalReject
+    // TODO(ilja) emit event for approval
   };
 
   // ---------- Expirer Events ----------------------------------------- //
