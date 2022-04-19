@@ -10,8 +10,9 @@ FROM base as build
 WORKDIR /monorepo
 
 COPY ./ ./
-RUN npm install 
-RUN npm run bootstrap
+RUN npm ci
+RUN npm run bootstrap -- --ci
 RUN npm run build
 
 CMD ["node", "-v"]
+
