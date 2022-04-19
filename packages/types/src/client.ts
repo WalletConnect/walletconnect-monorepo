@@ -1,4 +1,4 @@
-import { IEvents } from "@walletconnect/events";
+import EventEmmiter from "events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
@@ -12,6 +12,15 @@ import { ISession } from "./session";
 import { IJsonRpcHistory } from "./history";
 
 export declare namespace ClientTypes {
+  type Events =
+    | "pairing_proposal"
+    | "pairing_updated"
+    | "pairing_upgraded"
+    | "pairing_extended"
+    | "pairing_created"
+    | "pairing_deleted"
+    | "pairing_sync";
+
   type Metadata = {
     name: string;
     description: string;
@@ -29,6 +38,14 @@ export declare namespace ClientTypes {
     storage?: IKeyValueStorage;
     storageOptions?: KeyValueStorageOptions;
   }>;
+}
+
+export abstract class IClientEvents extends EventEmmiter {
+  constructor() {
+    super();
+  }
+
+  public abstract emit: (event: ClientTypes.Events, ...args: any[]) => boolean;
 }
 
 export abstract class IClient {
@@ -50,16 +67,16 @@ export abstract class IClient {
   public abstract crypto: ICrypto;
   public abstract relayer: IRelayer;
   public abstract storage: IKeyValueStorage;
-  public abstract events: IEvents["events"];
+  public abstract events: IClientEvents;
   public abstract engine: IEngine;
   public abstract history: IJsonRpcHistory;
 
   constructor(public opts?: ClientTypes.Options) {}
 
-  public abstract on: IEvents["on"];
-  public abstract once: IEvents["once"];
-  public abstract off: IEvents["off"];
-  public abstract removeListener: IEvents["removeListener"];
+  public abstract on: (event: ClientTypes.Events, listener: any) => void;
+  public abstract once: (event: ClientTypes.Events, listener: any) => void;
+  public abstract off: (event: ClientTypes.Events, listener: any) => void;
+  public abstract removeListener: (event: ClientTypes.Events, listener: any) => void;
 
   public abstract connect: IEngine["createSession"];
   public abstract pair: IEngine["pair"];

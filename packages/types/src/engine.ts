@@ -112,7 +112,11 @@ export interface EnginePrivate {
   onSessionProposeRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
-  ): void;
+  ): Promise<void>;
+
+  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
+
+  onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //

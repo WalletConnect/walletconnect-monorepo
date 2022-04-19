@@ -2,12 +2,9 @@ import {
   formatJsonRpcRequest,
   isJsonRpcRequest,
   isJsonRpcResponse,
-  JsonRpcRequest,
-  JsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
 import {
-  EngineTypes,
   IEngine,
   RelayerTypes,
   EnginePrivate,
@@ -71,10 +68,11 @@ export default class Engine extends IEngine {
   public pair: IEngine["pair"] = async params => {
     // TODO(ilja) validate pairing Uri
     const { topic, symKey, relay } = parseUri(params.uri);
-    this.client.crypto.setPairingKey(symKey, topic);
-    // TODO(ilja) this.pairing.set(topic, params)
-    // TODO(ilja) this.expirer ?
-    this.client.relayer.subscribe(topic, { relay });
+    const expiry = calcExpiry(FIVE_MINUTES);
+    await this.client.pairing.set(topic, { topic, relay, expiry, active: true });
+    await this.client.crypto.setPairingKey(symKey, topic);
+    await this.client.relayer.subscribe(topic, { relay });
+    // TODO(ilja) this.expirer / timeout pairing ?
   };
 
   public approve: IEngine["approve"] = async () => {
@@ -139,7 +137,7 @@ export default class Engine extends IEngine {
     });
     await this.client.pairing.set(topic, pairing);
     await this.client.relayer.subscribe(topic);
-    // TODO(ilja) this.expirer ?
+    // TODO(ilja) this.expirer / timeout pairing ?
 
     return { newTopic: topic, newUri: uri };
   }
@@ -158,67 +156,66 @@ export default class Engine extends IEngine {
     const message = await this.client.crypto.encode(topic, response);
     await this.client.relayer.publish(topic, message);
     await this.client.history.resolve(response);
-    // TODO(ilja) this.expirer?
   };
 
-  // ---------- Relay Events ------------------------------------------- //
+  // ---------- Relay Events Router ----------------------------------- //
 
   private registerRelayerEvents() {
     this.client.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
       const { topic, message } = event;
       const payload = await this.client.crypto.decode(topic, message);
+
       if (isJsonRpcRequest(payload)) {
+        await this.client.history.set(topic, payload);
         this.onRelayEventRequest({ topic, payload });
       } else if (isJsonRpcResponse(payload)) {
+        await this.client.history.resolve(payload);
         this.onRelayEventResponse({ topic, payload });
       }
     });
   }
 
-  private onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>) {
+  private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = event => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
-    if (this.client.pairing.topics.includes(topic)) {
-      switch (reqMethod) {
-        case "wc_sessionPropose":
-          return this.onSessionProposeRequest(topic, payload);
-        default:
-          // TODO(ilja) throw unsuported event
-          return false;
-      }
-    } else if (this.client.session.topics.includes(topic)) {
-      // TODO
+    switch (reqMethod) {
+      case "wc_sessionPropose":
+        return this.onSessionProposeRequest(topic, payload);
+      default:
+        // TODO(ilja) throw / log unsuported event?
+        return false;
     }
+  };
 
-    // TODO(ilja) throw unsuported event
-    return false;
-  }
-
-  private async onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>) {
+  private onRelayEventResponse: EnginePrivate["onRelayEventResponse"] = async event => {
     const { topic, payload } = event;
     const record = await this.client.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
 
-    if (this.client.pairing.topics.includes(topic)) {
-      switch (resMethod) {
-        case "wc_sessionPropose":
-          break;
-
-        default:
-          break;
-      }
-    } else if (this.client.session.topics.includes(topic)) {
-      // TODO
+    switch (resMethod) {
+      case "wc_sessionPropose":
+        return this.onSessionProposeResponse();
+      default:
+        // TODO(ilja) throw / log unsuported event?
+        return false;
     }
-  }
+  };
 
   // ---------- Relay Events Handlers ---------------------------------- //
 
-  private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = (topic, payload) => {
-    this.client.proposal.set(topic, payload.params);
-    // TODO(ilja) emit event for approval
+  private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    const { params } = payload;
+    await this.client.proposal.set(params.proposer.publicKey, params);
+    this.client.events.emit("pairing_proposal", params);
   };
+
+  private onSessionProposeResponse() {
+    // TODO(ilja) reject or approve long running promise here
+  }
 
   // ---------- Expirer Events ----------------------------------------- //
 
