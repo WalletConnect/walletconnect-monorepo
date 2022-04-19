@@ -27,6 +27,7 @@ zip
 .idea
 .rts2_cache_*
 .nyc_output
+**/coverage
 tsconfig.tsbuildinfo
 test.db
 setup

@@ -66,13 +66,15 @@ test-relay:  ## runs "./servers/relay" tests against the locally running relay
 	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
 		run --rm -e TEST_RELAY_URL=ws://relay:5000 \
 		monorepo-tests \
-		npm run test 
+		npm run coverage
+		npm run test
 
 .PHONY: test-client
 test-client:  ## runs "./packages/client" tests against the locally running relay
 	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
 		run --rm monorepo-tests \
 		npm run test --prefix packages/client
+		npm run coverage --prefix packages/client
 
 .PHONY: test-staging
 test-staging: ## runs "./packages/client" tests against the staging.walletconnect.com

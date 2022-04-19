@@ -23,6 +23,7 @@
     "lint": "lerna run lint",
     "build": "lerna run build",
     "test": "lerna run test",
+    "coverage": "lerna run coverage",
     "check": "run-s lint build test",
     "reset": "run-s clean bootstrap check",
     "commit-version": "node ops/js/commit-version.js",
