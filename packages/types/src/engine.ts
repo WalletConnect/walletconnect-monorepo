@@ -144,9 +144,9 @@ export abstract class IEngine {
 
   public abstract createSession(
     params: EngineTypes.CreateSessionParams,
-  ): Promise<{ uri?: string; approval: Promise<void> }>;
+  ): Promise<{ uri?: string; approval: Promise<SessionTypes.Struct> }>;
 
-  public abstract pair(params: EngineTypes.PairParams): Promise<void>;
+  public abstract pair(params: EngineTypes.PairParams): Promise<SessionTypes.Struct>;
 
   public abstract approve(params: EngineTypes.ApproveParams): Promise<SessionTypes.Struct>;
 

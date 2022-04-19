@@ -64,7 +64,7 @@ export default class Engine extends IEngine {
     await this.client.proposal.set(publicKey, proposal);
     const { id } = await this.sendRequest(topic, "wc_sessionPropose", proposal);
 
-    const approval = this.promises.initiate<void>(id, toMiliseconds(FIVE_MINUTES));
+    const approval = this.promises.initiate<SessionTypes.Struct>(id, toMiliseconds(FIVE_MINUTES));
 
     return { uri, approval };
   };
@@ -77,6 +77,8 @@ export default class Engine extends IEngine {
     await this.client.crypto.setPairingKey(symKey, topic);
     await this.client.relayer.subscribe(topic, { relay });
     // TODO(ilja) this.expirer / timeout pairing ?
+
+    return {} as SessionTypes.Struct;
   };
 
   public approve: IEngine["approve"] = async () => {
@@ -230,8 +232,8 @@ export default class Engine extends IEngine {
     payload,
   ) => {
     const { params } = payload;
-    await this.client.proposal.set(params.proposer.publicKey, params);
-    this.client.events.emit("pairing_proposal", { pairingTopic: topic, ...params });
+    await this.client.proposal.set(params.proposer.publicKey, { pairingTopic: topic, ...params });
+    this.client.events.emit("pairing_proposal", params);
   };
 
   private onSessionProposeResponse() {
