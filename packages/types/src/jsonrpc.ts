@@ -5,7 +5,7 @@ import { SessionTypes } from "./session";
 
 export declare namespace JsonRpcTypes {
   // -- core ------------------------------------------------------- //
-  export type DefaultResponse = { result: true } | { error: ErrorResponse };
+  export type DefaultResponse = true | ErrorResponse;
 
   export type WcMethod =
     | "wc_pairingDelete"
@@ -84,25 +84,25 @@ export declare namespace JsonRpcTypes {
   }
 
   // -- responses -------------------------------------------------- //
-  export interface Responses {
-    wc_pairingDelete: DefaultResponse;
-    wc_pairingPing: DefaultResponse;
-    wc_sessionPropose:
-      | {
-          relay: RelayerTypes.ProtocolOptions;
-          responder: {
-            publicKey: string;
-          };
-        }
-      | { error: ErrorResponse };
-    wc_sessionSettle: DefaultResponse;
-    wc_sessionUpdateAccounts: DefaultResponse;
-    wc_sessionUpdateMethods: DefaultResponse;
-    wc_sessionUpdateEvents: DefaultResponse;
-    wc_sessionUpdateExpiry: DefaultResponse;
-    wc_sessionDelete: DefaultResponse;
-    wc_sessionPing: DefaultResponse;
-    wc_sessionRequest: DefaultResponse;
-    wc_sessionEvent: DefaultResponse;
+  export interface Results {
+    wc_pairingDelete: true;
+    wc_pairingPing: true;
+    wc_sessionPropose: {
+      relay: RelayerTypes.ProtocolOptions;
+      responder: {
+        publicKey: string;
+      };
+    };
+    wc_sessionSettle: true;
+    wc_sessionUpdateAccounts: true;
+    wc_sessionUpdateMethods: true;
+    wc_sessionUpdateEvents: true;
+    wc_sessionUpdateExpiry: true;
+    wc_sessionDelete: true;
+    wc_sessionPing: true;
+    wc_sessionRequest: true;
+    wc_sessionEvent: true;
   }
+
+  export type Error = ErrorResponse;
 }

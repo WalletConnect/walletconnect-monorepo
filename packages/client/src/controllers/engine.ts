@@ -1,6 +1,7 @@
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
+  formatJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
   isJsonRpcResult,
@@ -93,6 +94,7 @@ export default class Engine extends IEngine {
     // TODO (ilja) validate that self is controller
     const { id } = await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
     await this.promises.initiate(id, toMiliseconds(FIVE_MINUTES));
+    await this.client.session.update(topic, { accounts });
   };
 
   public updateMethods: IEngine["updateMethods"] = async () => {
@@ -151,19 +153,26 @@ export default class Engine extends IEngine {
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
     // TODO(ilja) validate method
-    const request = formatJsonRpcRequest(method, params);
-    const message = await this.client.crypto.encode(topic, request);
+    const payload = formatJsonRpcRequest(method, params);
+    const message = await this.client.crypto.encode(topic, payload);
     await this.client.relayer.publish(topic, message);
-    await this.client.history.set(topic, request);
+    await this.client.history.set(topic, payload);
 
-    return { id: request.id };
+    return { id: payload.id };
   };
 
-  private sendResponse: EnginePrivate["sendResponse"] = async (topic, resultOrError) => {
-    const response = formatJsonRpcResult(id, resultOrError);
-    const message = await this.client.crypto.encode(topic, response);
+  private sendResult: EnginePrivate["sendResult"] = async (id, topic, method, result) => {
+    const payload = formatJsonRpcResult(id, result);
+    const message = await this.client.crypto.encode(topic, payload);
     await this.client.relayer.publish(topic, message);
-    await this.client.history.resolve(response);
+    await this.client.history.resolve(payload);
+  };
+
+  private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
+    const payload = formatJsonRpcError(id, error);
+    const message = await this.client.crypto.encode(topic, payload);
+    await this.client.relayer.publish(topic, message);
+    await this.client.history.resolve(payload);
   };
 
   // ---------- Relay Events Router ----------------------------------- //
@@ -233,11 +242,11 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { params } = payload;
+    const { params, id } = payload;
     // TODO(ilja) validate session topic
     // TODO(ilja) validate that self is NOT controller
     await this.client.session.update(topic, { accounts: params.accounts });
-    await this.sendResponse(topic, "wc_sessionUpdateAccounts", { result: true });
+    await this.sendResult(id, topic, "wc_sessionUpdateAccounts", true);
   };
 
   private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = async (

@@ -107,11 +107,14 @@ export interface EnginePrivate {
     params: JsonRpcTypes.RequestParams[M],
   ): Promise<{ id: number }>;
 
-  sendResponse<M extends JsonRpcTypes.WcMethod>(
+  sendResult<M extends JsonRpcTypes.WcMethod>(
+    id: number,
     topic: string,
     method: M,
-    response: JsonRpcTypes.Responses[M],
+    result: JsonRpcTypes.Results[M],
   ): Promise<void>;
+
+  sendError(id: number, topic: string, error: JsonRpcTypes.Error): Promise<void>;
 
   onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
 
@@ -129,7 +132,7 @@ export interface EnginePrivate {
 
   onSessionUpdateAccountsResponse(
     topic: string,
-    payload: JsonRpcResponse<JsonRpcTypes.Responses["wc_sessionUpdateAccounts"]>,
+    payload: JsonRpcResponse<JsonRpcTypes.Results["wc_sessionUpdateAccounts"] | JsonRpcTypes.Error>,
   ): Promise<void>;
 }
 

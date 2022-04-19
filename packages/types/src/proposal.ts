@@ -13,6 +13,7 @@ export declare namespace ProposalTypes {
     chains: SessionTypes.Chains;
     methods: SessionTypes.Methods;
     events: SessionTypes.Events;
+    pairingTopic?: string;
   }
 }
 
