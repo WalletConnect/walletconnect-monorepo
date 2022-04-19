@@ -1,6 +1,5 @@
 import "mocha";
 import sinon from "sinon";
-import { KeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { PairingTypes } from "@walletconnect/types";
 
 import {

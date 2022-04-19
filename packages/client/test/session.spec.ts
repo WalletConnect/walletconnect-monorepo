@@ -1,6 +1,5 @@
 import "mocha";
 import sinon from "sinon";
-import { KeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
 import { ONE_DAY, SEVEN_DAYS, THIRTY_DAYS, fromMiliseconds } from "@walletconnect/time";
 import { ERROR, generateRandomBytes32 } from "@walletconnect/utils";
