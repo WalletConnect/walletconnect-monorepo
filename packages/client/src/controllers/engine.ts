@@ -108,6 +108,7 @@ export default class Engine extends IEngine {
 
     const { pairingTopic } = await this.client.proposal.get(proposerPublicKey);
     if (pairingTopic) {
+      // TODO(ilja) use actual proposal rpc id here instead of 12
       await this.sendResult<"wc_sessionPropose">(12, pairingTopic, {
         relay: {
           protocol: relayProtocol ?? "waku",
