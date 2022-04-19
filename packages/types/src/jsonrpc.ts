@@ -3,7 +3,7 @@ import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
 
-export declare namespace JsonRpc {
+export declare namespace JsonRpcTypes {
   // -- core ------------------------------------------------------- //
   export type DefaultResponse = { result: true } | { error: ErrorResponse };
 

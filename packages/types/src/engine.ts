@@ -4,14 +4,11 @@ import {
   ErrorResponse,
   RequestArguments,
 } from "@walletconnect/jsonrpc-types";
-import { ClientTypes } from "./client";
-import { ICrypto } from "./crypto";
-import { IPairing } from "./pairing";
-import { IProposal } from "./proposal";
-import { IRelayer, RelayerTypes } from "./relayer";
-import { ISession, SessionTypes } from "./session";
-import { JsonRpc } from "./jsonrpc";
-import { IJsonRpcHistory } from "./history";
+import { IClient } from "./client";
+import { RelayerTypes } from "./relayer";
+import { SessionTypes } from "./session";
+import { IPromises } from "./promises";
+import { JsonRpcTypes } from "./jsonrpc";
 
 export declare namespace EngineTypes {
   interface UriParameters {
@@ -104,29 +101,26 @@ export declare namespace EngineTypes {
 // -- private method interface -------------------------------------- //
 
 export interface EnginePrivate {
-  sendRequest<M extends JsonRpc.WcMethod>(
+  sendRequest<M extends JsonRpcTypes.WcMethod>(
     topic: string,
     method: M,
-    params: JsonRpc.RequestParams[M],
-  ): Promise<void>;
+    params: JsonRpcTypes.RequestParams[M],
+  ): Promise<{ id: number }>;
 
-  sendResponse(topic: string): Promise<void>;
+  sendResponse(topic: string, response: JsonRpcResponse): Promise<void>;
+
+  onSessionProposeRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
+  ): void;
 }
 
 // -- class interface ----------------------------------------------- //
 
 export abstract class IEngine {
-  constructor(
-    public history: IJsonRpcHistory,
-    public protocol: string,
-    public version: number,
-    public relayer: IRelayer,
-    public crypto: ICrypto,
-    public session: ISession,
-    public pairing: IPairing,
-    public proposal: IProposal,
-    public metadata: ClientTypes.Metadata,
-  ) {}
+  public abstract promises: IPromises;
+
+  constructor(public client: IClient) {}
 
   public abstract createSession(
     params: EngineTypes.CreateSessionParams,

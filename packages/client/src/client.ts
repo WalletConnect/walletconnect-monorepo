@@ -59,7 +59,7 @@ export class Client extends IClient {
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
     this.proposal = new Proposal(this, this.logger);
-    this.history = new JsonRpcHistory(this.logger, this.storage);
+    this.history = new JsonRpcHistory(this, this.logger, this.storage);
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
       this.version,
@@ -73,17 +73,7 @@ export class Client extends IClient {
       logger: this.logger,
       projectId: this.projectId,
     });
-    this.engine = new Engine(
-      this.history,
-      this.protocol,
-      this.version,
-      this.relayer,
-      this.crypto,
-      this.session,
-      this.pairing,
-      this.proposal,
-      this.metadata,
-    );
+    this.engine = new Engine(this);
   }
 
   get context() {
