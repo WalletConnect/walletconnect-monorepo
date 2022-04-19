@@ -110,7 +110,6 @@ export interface EnginePrivate {
   sendResult<M extends JsonRpcTypes.WcMethod>(
     id: number,
     topic: string,
-    method: M,
     result: JsonRpcTypes.Results[M],
   ): Promise<void>;
 

@@ -161,7 +161,7 @@ export default class Engine extends IEngine {
     return { id: payload.id };
   };
 
-  private sendResult: EnginePrivate["sendResult"] = async (id, topic, method, result) => {
+  private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.crypto.encode(topic, payload);
     await this.client.relayer.publish(topic, message);
@@ -246,7 +246,7 @@ export default class Engine extends IEngine {
     // TODO(ilja) validate session topic
     // TODO(ilja) validate that self is NOT controller
     await this.client.session.update(topic, { accounts: params.accounts });
-    await this.sendResult(id, topic, "wc_sessionUpdateAccounts", true);
+    await this.sendResult<"wc_sessionUpdateAccounts">(id, topic, true);
   };
 
   private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = async (
