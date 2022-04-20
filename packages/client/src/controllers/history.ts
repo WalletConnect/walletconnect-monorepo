@@ -5,7 +5,7 @@ import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnec
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
-import { IKeyValueStorage } from "keyvaluestorage";
+import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 
 export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();

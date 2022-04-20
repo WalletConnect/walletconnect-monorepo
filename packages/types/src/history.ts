@@ -6,7 +6,7 @@ import {
   RequestArguments,
 } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
-import { IKeyValueStorage } from "keyvaluestorage";
+import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { IClient } from "./client";
 
 export interface JsonRpcRecord {
