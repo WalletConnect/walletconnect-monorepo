@@ -185,7 +185,7 @@ export function createDelayedPromise<T>() {
   let cacheReject: undefined | ((value?: any) => void);
   let cacheTimeout: undefined | NodeJS.Timeout;
 
-  const settled = () =>
+  const done = () =>
     new Promise<T>((promiseResolve, promiseReject) => {
       cacheTimeout = setTimeout(promiseReject, timeout);
       cacheResolve = promiseResolve;
@@ -207,6 +207,6 @@ export function createDelayedPromise<T>() {
   return {
     resolve,
     reject,
-    settled,
+    done,
   };
 }

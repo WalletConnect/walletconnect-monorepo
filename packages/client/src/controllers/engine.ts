@@ -64,9 +64,7 @@ export default class Engine extends IEngine {
       },
     };
 
-    await this.client.proposal.set(publicKey, proposal);
-
-    const { reject, resolve, settled } = createDelayedPromise<SessionTypes.Struct>();
+    const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
     this.client.events.once("session_settle_request", () => {
       // TODO(ilja) check for error and reject
       reject();
@@ -74,9 +72,10 @@ export default class Engine extends IEngine {
       resolve();
     });
 
-    await this.sendRequest(topic, "wc_sessionPropose", proposal);
+    const requestId = await this.sendRequest(topic, "wc_sessionPropose", proposal);
+    await this.client.proposal.set(publicKey, { requestId, ...proposal });
 
-    return { uri, approval: settled };
+    return { uri, approval };
   };
 
   public pair: IEngine["pair"] = async params => {
@@ -116,9 +115,9 @@ export default class Engine extends IEngine {
     await this.client.relayer.subscribe(sessionTopic);
     await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionPayload);
 
-    const { pairingTopic, pairingRequestId } = await this.client.proposal.get(proposerPublicKey);
-    if (pairingTopic && pairingRequestId) {
-      await this.sendResult<"wc_sessionPropose">(pairingRequestId, pairingTopic, {
+    const { pairingTopic, requestId } = await this.client.proposal.get(proposerPublicKey);
+    if (pairingTopic && requestId) {
+      await this.sendResult<"wc_sessionPropose">(requestId, pairingTopic, {
         relay: {
           protocol: relayProtocol ?? "waku",
         },
@@ -131,7 +130,7 @@ export default class Engine extends IEngine {
       });
     }
 
-    const { settled, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
+    const { done: settled, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
 
     // TODO(ilja) set up event listener to resolve promise when session is settled
     this.client.events.once("session_settle_response", () => {
@@ -153,9 +152,9 @@ export default class Engine extends IEngine {
     // TODO (ilja) validate session topic
     // TODO (ilja) validate that self is controller
     await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
-    const { resolve, reject, settled } = createDelayedPromise<void>();
+    const { done, resolve, reject } = createDelayedPromise<void>();
     // TODO(ilja) set up event listener for update accounts and resolve, reject promise
-    await settled();
+    await done();
     await this.client.session.update(topic, { accounts });
   };
 
@@ -220,7 +219,7 @@ export default class Engine extends IEngine {
     await this.client.relayer.publish(topic, message);
     await this.client.history.set(topic, payload);
 
-    return { id: payload.id };
+    return payload.id;
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
@@ -291,13 +290,13 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { params, id } = payload;
+    const { params, id: requestId } = payload;
     await this.client.proposal.set(params.proposer.publicKey, {
+      requestId,
       pairingTopic: topic,
-      pairingRequestId: id,
       ...params,
     });
-    this.client.events.emit("session_proposal_request", params);
+    this.client.events.emit("session_proposal_request", { requestId, ...params });
   };
 
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (

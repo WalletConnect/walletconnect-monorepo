@@ -107,7 +107,7 @@ export interface EnginePrivate {
     topic: string,
     method: M,
     params: JsonRpcTypes.RequestParams[M],
-  ): Promise<{ id: number }>;
+  ): Promise<number>;
 
   sendResult<M extends JsonRpcTypes.WcMethod>(
     id: number,
