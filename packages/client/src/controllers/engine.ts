@@ -122,9 +122,7 @@ export default class Engine extends IEngine {
         relay: {
           protocol: relayProtocol ?? "waku",
         },
-        responder: {
-          publicKey: selfPublicKey,
-        },
+        responderPublicKey: selfPublicKey,
       });
       await this.client.proposal.delete(proposerPublicKey, { code: 1, message: "TODO(ilja)" });
     }
@@ -302,10 +300,15 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      const selfPublicKey = await this.client.crypto.keychain.get(topic);
-      // TODO(ilja) subscribe to topic_b
+      const proposal = await this.client.proposal.get(topic);
+      const selfPublicKey = proposal.proposer.publicKey;
+      const peerPublicKey = payload.result.responderPublicKey;
+      const sessionTopic = await this.client.crypto.generateSessionKey(
+        { publicKey: selfPublicKey },
+        { publicKey: peerPublicKey },
+      );
+      await this.client.relayer.subscribe(sessionTopic);
     } else if (isJsonRpcError(payload)) {
       // TODO(ilja) handle error
     }

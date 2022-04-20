@@ -89,9 +89,7 @@ export declare namespace JsonRpcTypes {
     wc_pairingPing: true;
     wc_sessionPropose: {
       relay: RelayerTypes.ProtocolOptions;
-      responder: {
-        publicKey: string;
-      };
+      responderPublicKey: string;
     };
     wc_sessionSettle: true;
     wc_sessionUpdateAccounts: true;
