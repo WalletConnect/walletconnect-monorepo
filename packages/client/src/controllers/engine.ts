@@ -97,8 +97,8 @@ export default class Engine extends IEngine {
 
     const selfPublicKey = await this.client.crypto.generateKeyPair();
     const sessionTopic = await this.client.crypto.generateSessionKey(
-      { publicKey: selfPublicKey },
-      { publicKey: proposerPublicKey },
+      selfPublicKey,
+      proposerPublicKey,
     );
     const sessionPayload = {
       relay: {
@@ -122,9 +122,7 @@ export default class Engine extends IEngine {
         relay: {
           protocol: relayProtocol ?? "waku",
         },
-        responder: {
-          publicKey: selfPublicKey,
-        },
+        responderPublicKey: selfPublicKey,
       });
       await this.client.proposal.delete(proposerPublicKey, { code: 1, message: "TODO(ilja)" });
     }
@@ -302,9 +300,16 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      const selfPublicKey = await this.client.crypto.keychain.get(topic);
+      const { id, result } = payload;
+      const proposal = await this.client.proposal.get(topic);
+      const selfPublicKey = proposal.proposer.publicKey;
+      const peerPublicKey = result.responderPublicKey;
+      const sessionTopic = await this.client.crypto.generateSessionKey(
+        selfPublicKey,
+        peerPublicKey,
+      );
+      await this.client.relayer.subscribe(sessionTopic);
       // TODO(ilja) subscribe to topic_b
     } else if (isJsonRpcError(payload)) {
       // TODO(ilja) handle error
@@ -323,7 +328,8 @@ export default class Engine extends IEngine {
   };
 
   private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = async (
-    topic,
+    // TODO(pedro) remove underscore when its used
+    _topic,
     payload,
   ) => {
     const { id } = payload;

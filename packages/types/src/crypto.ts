@@ -51,8 +51,8 @@ export abstract class ICrypto {
   public abstract generateKeyPair(): Promise<string>;
 
   public abstract generateSessionKey(
-    self: CryptoTypes.Participant,
-    peer: CryptoTypes.Participant,
+    selfPublicKey: string,
+    peerPublicKey: string,
     overrideTopic?: string,
   ): Promise<string>;
 

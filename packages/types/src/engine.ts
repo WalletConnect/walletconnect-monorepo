@@ -3,6 +3,8 @@ import {
   JsonRpcRequest,
   ErrorResponse,
   RequestArguments,
+  JsonRpcResult,
+  JsonRpcError,
 } from "@walletconnect/jsonrpc-types";
 import { IClient } from "./client";
 import { RelayerTypes } from "./relayer";
@@ -126,7 +128,7 @@ export interface EnginePrivate {
 
   onSessionProposeResponse(
     topic: string,
-    payload: JsonRpcResponse<JsonRpcTypes.Results["wc_sessionPropose"] | JsonRpcTypes.Error>,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPropose"]> | JsonRpcError,
   ): Promise<void>;
 
   onSessionUpdateAccountsRequest(
@@ -136,7 +138,7 @@ export interface EnginePrivate {
 
   onSessionUpdateAccountsResponse(
     topic: string,
-    payload: JsonRpcResponse<JsonRpcTypes.Results["wc_sessionUpdateAccounts"] | JsonRpcTypes.Error>,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateAccounts"]> | JsonRpcError,
   ): Promise<void>;
 }
 

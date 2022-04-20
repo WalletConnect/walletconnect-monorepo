@@ -42,9 +42,13 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.privateKey, keyPair.publicKey);
   };
 
-  public generateSessionKey: ICrypto["generateSessionKey"] = async (self, peer, overrideTopic) => {
-    const privateKey = await this.getPrivateKey(self.publicKey);
-    const sharedKey = deriveSharedKey(privateKey, peer.publicKey);
+  public generateSessionKey: ICrypto["generateSessionKey"] = async (
+    selfPublicKey,
+    peerPublicKey,
+    overrideTopic,
+  ) => {
+    const privateKey = await this.getPrivateKey(selfPublicKey);
+    const sharedKey = deriveSharedKey(privateKey, peerPublicKey);
     const symKey = deriveSymmetricKey(sharedKey);
     return this.setSymKey(symKey, overrideTopic);
   };
