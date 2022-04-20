@@ -167,9 +167,7 @@ export abstract class IEngine {
     params: EngineTypes.ApproveParams,
   ): Promise<{ topic: string; acknowledged: () => Promise<SessionTypes.Struct> }>;
 
-  public abstract reject(
-    params: EngineTypes.RejectParams,
-  ): Promise<{ acknowledged: () => Promise<void> }>;
+  public abstract reject(params: EngineTypes.RejectParams): Promise<void>;
 
   public abstract updateAccounts(params: EngineTypes.UpdateAccountsParams): Promise<void>;
 

@@ -153,12 +153,14 @@ export default class Engine extends IEngine {
     return { topic, acknowledged };
   };
 
-  public reject: IEngine["reject"] = async () => {
-    return {
-      acknowledged: async () => {
-        // TODo
-      },
-    };
+  public reject: IEngine["reject"] = async params => {
+    const { proposerPublicKey, reason } = params;
+    const { pairingTopic, requestId } = await this.client.proposal.get(proposerPublicKey);
+
+    if (pairingTopic && requestId) {
+      await this.sendError(requestId, pairingTopic, reason);
+      await this.client.proposal.delete(proposerPublicKey, { code: 1, message: "TODO(ilja)" });
+    }
   };
 
   public updateAccounts: IEngine["updateAccounts"] = async params => {
