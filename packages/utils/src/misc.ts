@@ -179,14 +179,15 @@ export function calcExpiry(ttl: number, now?: number): number {
 }
 
 // -- promises --------------------------------------------- //
-export function createDelayedPromise<T>(timeout: number) {
+export function createDelayedPromise<T>() {
+  const FIVE_MIN = 300000;
   let cahcheResolve: undefined | ((value?: any) => void);
   let cacheReject: undefined | ((value?: any) => void);
   let cacheTimeout: undefined | NodeJS.Timeout;
 
   const settled = () =>
     new Promise<T>((promiseResolve, promiseReject) => {
-      cacheTimeout = setTimeout(promiseReject, timeout);
+      cacheTimeout = setTimeout(promiseReject, FIVE_MIN);
       cahcheResolve = promiseResolve;
       cacheReject = promiseReject;
     });

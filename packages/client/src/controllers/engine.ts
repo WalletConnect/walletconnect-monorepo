@@ -7,7 +7,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";
+import { FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
 import {
   IEngine,
   RelayerTypes,
@@ -35,6 +35,7 @@ export default class Engine extends IEngine {
 
   public createSession: IEngine["createSession"] = async params => {
     // TODO(ilja) validate params
+
     const { pairingTopic, methods, events, chains, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
@@ -64,17 +65,16 @@ export default class Engine extends IEngine {
     };
 
     await this.client.proposal.set(publicKey, proposal);
-    await this.sendRequest(topic, "wc_sessionPropose", proposal);
 
-    const { reject, resolve, settled } = createDelayedPromise<SessionTypes.Struct>(
-      toMiliseconds(FIVE_MINUTES),
-    );
-    this.client.events.once("session_settled", () => {
+    const { reject, resolve, settled } = createDelayedPromise<SessionTypes.Struct>();
+    this.client.events.once("session_settle_request", () => {
       // TODO(ilja) check for error and reject
       reject();
       // TODO(ilja) check for success / data and resolve
       resolve();
     });
+
+    await this.sendRequest(topic, "wc_sessionPropose", proposal);
 
     return { uri, approval: settled };
   };
@@ -83,12 +83,13 @@ export default class Engine extends IEngine {
     // TODO(ilja) validate pairing Uri
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
-    await this.client.pairing.set(topic, { topic, relay, expiry, active: true });
+    const pairing = { topic, relay, expiry, active: true };
+    await this.client.pairing.set(topic, pairing);
     await this.client.crypto.setPairingKey(symKey, topic);
     await this.client.relayer.subscribe(topic, { relay });
     // TODO(ilja) this.expirer / timeout pairing ?
 
-    return {} as SessionTypes.Struct;
+    return pairing;
   };
 
   public approve: IEngine["approve"] = async params => {
@@ -99,8 +100,6 @@ export default class Engine extends IEngine {
       { publicKey: selfPublicKey },
       { publicKey: proposerPublicKey },
     );
-
-    await this.client.relayer.subscribe(sessionTopic);
     const sessionPayload = {
       relay: {
         protocol: relayProtocol ?? "waku",
@@ -114,12 +113,12 @@ export default class Engine extends IEngine {
       },
       expiry: calcExpiry(THIRTY_DAYS),
     };
+    await this.client.relayer.subscribe(sessionTopic);
     await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionPayload);
 
-    const { pairingTopic } = await this.client.proposal.get(proposerPublicKey);
-    if (pairingTopic) {
-      // TODO(ilja) use actual proposal rpc id here instead of 12
-      await this.sendResult<"wc_sessionPropose">(12, pairingTopic, {
+    const { pairingTopic, pairingRequestId } = await this.client.proposal.get(proposerPublicKey);
+    if (pairingTopic && pairingRequestId) {
+      await this.sendResult<"wc_sessionPropose">(pairingRequestId, pairingTopic, {
         relay: {
           protocol: relayProtocol ?? "waku",
         },
@@ -127,13 +126,16 @@ export default class Engine extends IEngine {
           publicKey: selfPublicKey,
         },
       });
+      await this.client.proposal.delete(proposerPublicKey, { code: 1, message: "TODO(ilja)" });
     }
 
-    const { settled, resolve, reject } = createDelayedPromise<SessionTypes.Struct>(
-      toMiliseconds(FIVE_MINUTES),
-    );
+    const { settled, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
 
-    // TODO(ilja) set up event listener to resolve promise when session is approved
+    // TODO(ilja) set up event listener to resolve promise when session is settled
+    this.client.events.once("session_settle_response", () => {
+      resolve();
+      reject();
+    });
 
     const session = await settled();
 
@@ -149,7 +151,7 @@ export default class Engine extends IEngine {
     // TODO (ilja) validate session topic
     // TODO (ilja) validate that self is controller
     await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
-    const { resolve, reject, settled } = createDelayedPromise<void>(toMiliseconds(FIVE_MINUTES));
+    const { resolve, reject, settled } = createDelayedPromise<void>();
     // TODO(ilja) set up event listener for update accounts and resolve, reject promise
     await settled();
     await this.client.session.update(topic, { accounts });
@@ -287,9 +289,13 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { params } = payload;
-    await this.client.proposal.set(params.proposer.publicKey, { pairingTopic: topic, ...params });
-    this.client.events.emit("session_proposal", params);
+    const { params, id } = payload;
+    await this.client.proposal.set(params.proposer.publicKey, {
+      pairingTopic: topic,
+      pairingRequestId: id,
+      ...params,
+    });
+    this.client.events.emit("session_proposal_request", params);
   };
 
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
@@ -298,7 +304,7 @@ export default class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      // TODO(ilja) derrive topic_b
+      const selfPublicKey = await this.client.crypto.keychain.get(topic);
       // TODO(ilja) subscribe to topic_b
     } else if (isJsonRpcError(payload)) {
       // TODO(ilja) handle error
