@@ -70,9 +70,10 @@ export default class Engine extends IEngine {
       toMiliseconds(FIVE_MINUTES),
     );
     this.client.events.once("session_settled", () => {
-      // TODO(ilja) check for error and resolve with data
-      resolve();
+      // TODO(ilja) check for error and reject
       reject();
+      // TODO(ilja) check for success / data and resolve
+      resolve();
     });
 
     return { uri, approval: settled };
@@ -100,7 +101,7 @@ export default class Engine extends IEngine {
     );
 
     await this.client.relayer.subscribe(sessionTopic);
-    const session = {
+    const sessionPayload = {
       relay: {
         protocol: relayProtocol ?? "waku",
       },
@@ -113,7 +114,7 @@ export default class Engine extends IEngine {
       },
       expiry: calcExpiry(THIRTY_DAYS),
     };
-    await this.sendRequest(sessionTopic, "wc_sessionSettle", session);
+    await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionPayload);
 
     const { pairingTopic } = await this.client.proposal.get(proposerPublicKey);
     if (pairingTopic) {
@@ -133,9 +134,10 @@ export default class Engine extends IEngine {
     );
 
     // TODO(ilja) set up event listener to resolve promise when session is approved
-    const approvedSession = await settled();
 
-    return approvedSession;
+    const session = await settled();
+
+    return session;
   };
 
   public reject: IEngine["reject"] = async () => {
