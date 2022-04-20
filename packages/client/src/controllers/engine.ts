@@ -66,9 +66,13 @@ export default class Engine extends IEngine {
     };
 
     const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
-    this.client.events.once("internal_connect_done", ({ error, data }) => {
+    this.client.events.once("internal_connect_done", async ({ error, data }) => {
       if (error) reject(error);
-      else if (data) resolve(data);
+      else if (data) {
+        data.self.publicKey = publicKey;
+        await this.client.session.set(data.topic, data);
+        resolve(data);
+      }
     });
 
     const requestId = await this.sendRequest(topic, "wc_sessionPropose", proposal);
@@ -391,7 +395,6 @@ export default class Engine extends IEngine {
       },
     };
     await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
-    await this.client.session.set(topic, session);
     await this.client.events.emit("internal_connect_done", { data: session });
   };
 
