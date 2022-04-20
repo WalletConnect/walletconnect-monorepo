@@ -21,6 +21,7 @@ import {
   generateRandomBytes32,
   parseUri,
   createDelayedPromise,
+  ERROR,
 } from "@walletconnect/utils";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
 
@@ -121,7 +122,7 @@ export default class Engine extends IEngine {
         },
         responderPublicKey: selfPublicKey,
       });
-      await this.client.proposal.delete(proposerPublicKey, { code: 1, message: "TODO(ilja)" });
+      await this.client.proposal.delete(proposerPublicKey, ERROR.DELETED.format());
       await this.client.pairing.update(pairingTopic, {
         active: true,
         expiry: calcExpiry(THIRTY_DAYS),
@@ -159,7 +160,7 @@ export default class Engine extends IEngine {
 
     if (pairingTopic && requestId) {
       await this.sendError(requestId, pairingTopic, reason);
-      await this.client.proposal.delete(proposerPublicKey, { code: 1, message: "TODO(ilja)" });
+      await this.client.proposal.delete(proposerPublicKey, ERROR.DELETED.format());
     }
   };
 
@@ -334,7 +335,7 @@ export default class Engine extends IEngine {
       );
       await this.client.relayer.subscribe(sessionTopic);
     } else if (isJsonRpcError(payload)) {
-      await this.client.proposal.delete(topic, payload.error);
+      await this.client.proposal.delete(topic, ERROR.DELETED.format());
       await this.client.events.emit("internal_connect_done", { error: payload.error });
     }
   };
@@ -375,7 +376,7 @@ export default class Engine extends IEngine {
       await this.client.session.update(topic, { acknowledged: true });
       await this.client.events.emit("internal_approve_done", {});
     } else if (isJsonRpcError(payload)) {
-      await this.client.session.delete(topic, payload.error);
+      await this.client.session.delete(topic, ERROR.DELETED.format());
       await this.client.events.emit("internal_approve_done", { error: payload.error });
     }
   };

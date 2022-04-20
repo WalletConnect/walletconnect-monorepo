@@ -1,7 +1,6 @@
 export * from "./client";
 export * from "./crypto";
 export * from "./encoder";
-export * from "./engine";
 export * from "./expirer";
 export * from "./history";
 export * from "./messages";
