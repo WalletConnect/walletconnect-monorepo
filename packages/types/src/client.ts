@@ -17,19 +17,23 @@ export declare namespace ClientTypes {
     | "session_proposal"
     | "update_accounts"
     | "update_methods"
+    | "update_events"
     | "internal_connect_done"
     | "internal_approve_done"
     | "internal_update_accounts_done"
-    | "internal_update_methods_done";
+    | "internal_update_methods_done"
+    | "internal_update_events_done";
 
   interface EventArguments {
     internal_connect_done: { error?: ErrorResponse; data?: SessionTypes.Struct };
     internal_approve_done: { error?: ErrorResponse };
     internal_update_accounts_done: { error?: ErrorResponse };
     internal_update_methods_done: { error?: ErrorResponse };
+    internal_update_events_done: { error?: ErrorResponse };
     session_proposal: ProposalTypes.Struct;
     update_accounts: SessionTypes.Accounts;
     update_methods: SessionTypes.Methods;
+    update_events: SessionTypes.Events;
   }
 
   type Metadata = {

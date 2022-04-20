@@ -160,6 +160,16 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateMethods"]> | JsonRpcError,
   ): Promise<void>;
+
+  onSessionUpdateEventsRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateEvents"]>,
+  ): Promise<void>;
+
+  onSessionUpdateEventsResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateEvents"]> | JsonRpcError,
+  ): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //
