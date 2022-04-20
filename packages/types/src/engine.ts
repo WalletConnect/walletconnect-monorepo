@@ -149,7 +149,7 @@ export interface EnginePrivate {
   onSessionUpdateAccountsResponse(
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateAccounts"]> | JsonRpcError,
-  ): Promise<void>;
+  ): void;
 
   onSessionUpdateMethodsRequest(
     topic: string,
@@ -159,7 +159,7 @@ export interface EnginePrivate {
   onSessionUpdateMethodsResponse(
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateMethods"]> | JsonRpcError,
-  ): Promise<void>;
+  ): void;
 
   onSessionUpdateEventsRequest(
     topic: string,
@@ -169,7 +169,7 @@ export interface EnginePrivate {
   onSessionUpdateEventsResponse(
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateEvents"]> | JsonRpcError,
-  ): Promise<void>;
+  ): void;
 }
 
 // -- class interface ----------------------------------------------- //

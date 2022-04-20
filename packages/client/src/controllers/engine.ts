@@ -367,7 +367,7 @@ export default class Engine extends IEngine {
       await this.client.relayer.subscribe(sessionTopic);
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(topic, ERROR.DELETED.format());
-      await this.client.events.emit("internal_connect_done", { error: payload.error });
+      this.client.events.emit("internal_connect_done", { error: payload.error });
     }
   };
 
@@ -395,7 +395,7 @@ export default class Engine extends IEngine {
       },
     };
     await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
-    await this.client.events.emit("internal_connect_done", { data: session });
+    this.client.events.emit("internal_connect_done", { data: session });
   };
 
   private onSessionSettleResponse: EnginePrivate["onSessionSettleResponse"] = async (
@@ -404,10 +404,10 @@ export default class Engine extends IEngine {
   ) => {
     if (isJsonRpcResult(payload)) {
       await this.client.session.update(topic, { acknowledged: true });
-      await this.client.events.emit("internal_approve_done", {});
+      this.client.events.emit("internal_approve_done", {});
     } else if (isJsonRpcError(payload)) {
       await this.client.session.delete(topic, ERROR.DELETED.format());
-      await this.client.events.emit("internal_approve_done", { error: payload.error });
+      this.client.events.emit("internal_approve_done", { error: payload.error });
     }
   };
 
@@ -419,17 +419,17 @@ export default class Engine extends IEngine {
     // TODO(ilja) update method validation (is valid topic, is controller or not)
     await this.client.session.update(topic, { accounts: params.accounts });
     await this.sendResult<"wc_sessionUpdateAccounts">(id, topic, true);
-    await this.client.events.emit("update_accounts", params.accounts);
+    this.client.events.emit("update_accounts", params.accounts);
   };
 
-  private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = async (
+  private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = (
     _topic,
     payload,
   ) => {
     if (isJsonRpcResult(payload)) {
-      await this.client.events.emit("internal_update_accounts_done", {});
+      this.client.events.emit("internal_update_accounts_done", {});
     } else if (isJsonRpcError(payload)) {
-      await this.client.events.emit("internal_update_accounts_done", { error: payload.error });
+      this.client.events.emit("internal_update_accounts_done", { error: payload.error });
     }
   };
 
@@ -441,17 +441,17 @@ export default class Engine extends IEngine {
     const { params, id } = payload;
     await this.client.session.update(topic, { methods: params.methods });
     await this.sendResult<"wc_sessionUpdateMethods">(id, topic, true);
-    await this.client.events.emit("update_methods", params.methods);
+    this.client.events.emit("update_methods", params.methods);
   };
 
-  private onSessionUpdateMethodsResponse: EnginePrivate["onSessionUpdateMethodsResponse"] = async (
+  private onSessionUpdateMethodsResponse: EnginePrivate["onSessionUpdateMethodsResponse"] = (
     _topic,
     payload,
   ) => {
     if (isJsonRpcResult(payload)) {
-      await this.client.events.emit("internal_update_methods_done", {});
+      this.client.events.emit("internal_update_methods_done", {});
     } else if (isJsonRpcError(payload)) {
-      await this.client.events.emit("internal_update_methods_done", { error: payload.error });
+      this.client.events.emit("internal_update_methods_done", { error: payload.error });
     }
   };
 
@@ -463,17 +463,17 @@ export default class Engine extends IEngine {
     const { params, id } = payload;
     await this.client.session.update(topic, { events: params.events });
     await this.sendResult<"wc_sessionUpdateEvents">(id, topic, true);
-    await this.client.events.emit("update_events", params.events);
+    this.client.events.emit("update_events", params.events);
   };
 
-  private onSessionUpdateEventsResponse: EnginePrivate["onSessionUpdateEventsResponse"] = async (
+  private onSessionUpdateEventsResponse: EnginePrivate["onSessionUpdateEventsResponse"] = (
     _topic,
     payload,
   ) => {
     if (isJsonRpcResult(payload)) {
-      await this.client.events.emit("internal_update_events_done", {});
+      this.client.events.emit("internal_update_events_done", {});
     } else if (isJsonRpcError(payload)) {
-      await this.client.events.emit("internal_update_events_done", { error: payload.error });
+      this.client.events.emit("internal_update_events_done", { error: payload.error });
     }
   };
 
