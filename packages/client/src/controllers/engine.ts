@@ -64,7 +64,7 @@ export default class Engine extends IEngine {
       },
     };
 
-    const { reject, resolve, done: acknowledged } = createDelayedPromise<SessionTypes.Struct>();
+    const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
     this.client.events.once("session_settle_request", () => {
       // TODO(ilja) check for error and reject
       reject();
@@ -75,7 +75,7 @@ export default class Engine extends IEngine {
     const requestId = await this.sendRequest(topic, "wc_sessionPropose", proposal);
     await this.client.proposal.set(publicKey, { requestId, ...proposal });
 
-    return { uri, acknowledged };
+    return { uri, approval };
   };
 
   public pair: IEngine["pair"] = async params => {
@@ -259,6 +259,8 @@ export default class Engine extends IEngine {
     switch (reqMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeRequest(topic, payload);
+      case "wc_sessionSettle":
+        return this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdateAccounts":
         return this.onSessionUpdateAccountsRequest(topic, payload);
       default:
@@ -312,10 +314,16 @@ export default class Engine extends IEngine {
         peerPublicKey,
       );
       await this.client.relayer.subscribe(sessionTopic);
-      // TODO(ilja) subscribe to topic_b
     } else if (isJsonRpcError(payload)) {
       // TODO(ilja) handle error
     }
+  };
+
+  private onSessionSettleRequest: EnginePrivate["onSessionSettleRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    // TODO
   };
 
   private onSessionUpdateAccountsRequest: EnginePrivate["onSessionUpdateAccountsRequest"] = async (

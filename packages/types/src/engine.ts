@@ -131,6 +131,16 @@ export interface EnginePrivate {
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPropose"]> | JsonRpcError,
   ): Promise<void>;
 
+  onSessionSettleRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionSettle"]>,
+  ): Promise<void>;
+
+  onSessionSettleResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionSettle"]> | JsonRpcError,
+  ): Promise<void>;
+
   onSessionUpdateAccountsRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateAccounts"]>,
@@ -149,7 +159,7 @@ export abstract class IEngine {
 
   public abstract connect(
     params: EngineTypes.ConnectParams,
-  ): Promise<{ uri?: string; acknowledged: () => Promise<SessionTypes.Struct> }>;
+  ): Promise<{ uri?: string; approval: () => Promise<SessionTypes.Struct> }>;
 
   public abstract pair(params: EngineTypes.PairParams): Promise<PairingTypes.Struct>;
 
