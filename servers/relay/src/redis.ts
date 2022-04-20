@@ -47,7 +47,7 @@ export class RedisService {
 
   public async getMessages(topic: string): Promise<string[]> {
     this.logger.debug(`Getting Message`);
-    this.logger.trace({ type: "method", method: "getMessage", topic });
+    this.logger.trace({ type: "method", method: "getMessages", topic });
     const result = await this.client.sMembers(`message:${topic}`);
     const messages: string[] = [];
     if (typeof result !== "undefined" && result.length) {
@@ -152,10 +152,8 @@ export class RedisService {
     this.client.on("error", (e) => {
       this.logger.error(e);
     });
-    /*
     this.client.connect().then(() => {
       this.logger.trace(`Initialized`);
     });
-    */
   }
 }
