@@ -13,12 +13,19 @@ import { IJsonRpcHistory } from "./history";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 
 export declare namespace ClientTypes {
-  type Event = "session_proposal" | "internal_connect_done" | "internal_approve_done";
+  type Event =
+    | "session_proposal"
+    | "update_accounts"
+    | "internal_connect_done"
+    | "internal_approve_done"
+    | "internal_update_accounts_done";
 
   interface EventArguments {
     internal_connect_done: { error?: ErrorResponse; data?: SessionTypes.Struct };
     internal_approve_done: { error?: ErrorResponse };
+    internal_update_accounts_done: { error?: ErrorResponse };
     session_proposal: ProposalTypes.Struct;
+    update_accounts: SessionTypes.Accounts;
   }
 
   type Metadata = {

@@ -169,8 +169,16 @@ export default class Engine extends IEngine {
     // TODO (ilja) validate session topic
     // TODO (ilja) validate that self is controller
     await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
+
     const { done, resolve, reject } = createDelayedPromise<void>();
-    // TODO(ilja) set up event listener for update accounts and resolve, reject promise
+    this.client.events.once("internal_update_accounts_done", ({ error }) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+
     await done();
     await this.client.session.update(topic, { accounts });
   };
@@ -390,17 +398,17 @@ export default class Engine extends IEngine {
     // TODO(ilja) validate that self is NOT controller
     await this.client.session.update(topic, { accounts: params.accounts });
     await this.sendResult<"wc_sessionUpdateAccounts">(id, topic, true);
+    await this.client.events.emit("update_accounts", params.accounts);
   };
 
   private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = async (
-    // TODO(pedro) remove underscore when its used
     _topic,
     payload,
   ) => {
     if (isJsonRpcResult(payload)) {
-      // TODO(ilja) emit associated success event
+      await this.client.events.emit("internal_update_accounts_done", {});
     } else if (isJsonRpcError(payload)) {
-      // TODO(ilja) emit associated error event
+      await this.client.events.emit("internal_update_accounts_done", { error: payload.error });
     }
   };
 
