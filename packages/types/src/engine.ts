@@ -149,13 +149,17 @@ export abstract class IEngine {
 
   public abstract connect(
     params: EngineTypes.ConnectParams,
-  ): Promise<{ uri?: string; approval: () => Promise<SessionTypes.Struct> }>;
+  ): Promise<{ uri?: string; acknowledged: () => Promise<SessionTypes.Struct> }>;
 
   public abstract pair(params: EngineTypes.PairParams): Promise<PairingTypes.Struct>;
 
-  public abstract approve(params: EngineTypes.ApproveParams): Promise<SessionTypes.Struct>;
+  public abstract approve(
+    params: EngineTypes.ApproveParams,
+  ): Promise<{ topic: string; acknowledged: () => Promise<SessionTypes.Struct> }>;
 
-  public abstract reject(params: EngineTypes.RejectParams): Promise<void>;
+  public abstract reject(
+    params: EngineTypes.RejectParams,
+  ): Promise<{ acknowledged: () => Promise<void> }>;
 
   public abstract updateAccounts(params: EngineTypes.UpdateAccountsParams): Promise<void>;
 

@@ -64,7 +64,7 @@ export default class Engine extends IEngine {
       },
     };
 
-    const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
+    const { reject, resolve, done: acknowledged } = createDelayedPromise<SessionTypes.Struct>();
     this.client.events.once("session_settle_request", () => {
       // TODO(ilja) check for error and reject
       reject();
@@ -75,7 +75,7 @@ export default class Engine extends IEngine {
     const requestId = await this.sendRequest(topic, "wc_sessionPropose", proposal);
     await this.client.proposal.set(publicKey, { requestId, ...proposal });
 
-    return { uri, approval };
+    return { uri, acknowledged };
   };
 
   public pair: IEngine["pair"] = async params => {
@@ -95,10 +95,7 @@ export default class Engine extends IEngine {
     const { proposerPublicKey, relayProtocol, accounts, methods, events } = params;
 
     const selfPublicKey = await this.client.crypto.generateKeyPair();
-    const sessionTopic = await this.client.crypto.generateSessionKey(
-      selfPublicKey,
-      proposerPublicKey,
-    );
+    const topic = await this.client.crypto.generateSessionKey(selfPublicKey, proposerPublicKey);
     const sessionPayload = {
       relay: {
         protocol: relayProtocol ?? "waku",
@@ -112,8 +109,8 @@ export default class Engine extends IEngine {
       },
       expiry: calcExpiry(SEVEN_DAYS),
     };
-    await this.client.relayer.subscribe(sessionTopic);
-    await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionPayload);
+    await this.client.relayer.subscribe(topic);
+    await this.sendRequest(topic, "wc_sessionSettle", sessionPayload);
 
     const { pairingTopic, requestId } = await this.client.proposal.get(proposerPublicKey);
     if (pairingTopic && requestId) {
@@ -130,7 +127,7 @@ export default class Engine extends IEngine {
       });
     }
 
-    const { done: settled, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
+    const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
 
     // TODO(ilja) set up event listener to resolve promise when session is settled
     this.client.events.once("session_settle_response", () => {
@@ -138,13 +135,15 @@ export default class Engine extends IEngine {
       reject();
     });
 
-    const session = await settled();
-
-    return session;
+    return { topic, acknowledged };
   };
 
   public reject: IEngine["reject"] = async () => {
-    // TODO
+    return {
+      acknowledged: async () => {
+        // TODo
+      },
+    };
   };
 
   public updateAccounts: IEngine["updateAccounts"] = async params => {
