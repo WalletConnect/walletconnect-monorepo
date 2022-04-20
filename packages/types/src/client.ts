@@ -8,16 +8,17 @@ import { IEngine } from "./engine";
 import { IPairing } from "./pairing";
 import { IProposal, ProposalTypes } from "./proposal";
 import { IRelayer } from "./relayer";
-import { ISession } from "./session";
+import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "./history";
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 
 export declare namespace ClientTypes {
-  type Event = "session_proposal_request" | "session_settle_request" | "session_settle_response";
+  type Event = "session_proposal" | "internal_connect_done" | "internal_approve_done";
 
   interface EventArguments {
-    session_proposal_request: ProposalTypes.Struct;
-    session_settle_request: null;
-    session_settle_response: null;
+    internal_connect_done: { error?: ErrorResponse; data?: SessionTypes.Struct };
+    internal_approve_done: { error?: ErrorResponse };
+    session_proposal: ProposalTypes.Struct;
   }
 
   type Metadata = {
