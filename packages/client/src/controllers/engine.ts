@@ -7,7 +7,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
+import { FIVE_MINUTES, SEVEN_DAYS, THIRTY_DAYS } from "@walletconnect/time";
 import {
   IEngine,
   RelayerTypes,
@@ -111,7 +111,7 @@ export default class Engine extends IEngine {
         publicKey: selfPublicKey,
         metadata: this.client.metadata,
       },
-      expiry: calcExpiry(THIRTY_DAYS),
+      expiry: calcExpiry(SEVEN_DAYS),
     };
     await this.client.relayer.subscribe(sessionTopic);
     await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionPayload);
@@ -125,6 +125,10 @@ export default class Engine extends IEngine {
         responderPublicKey: selfPublicKey,
       });
       await this.client.proposal.delete(proposerPublicKey, { code: 1, message: "TODO(ilja)" });
+      await this.client.pairing.update(pairingTopic, {
+        active: true,
+        expiry: calcExpiry(THIRTY_DAYS),
+      });
     }
 
     const { settled, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
