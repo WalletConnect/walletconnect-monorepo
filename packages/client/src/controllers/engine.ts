@@ -301,7 +301,7 @@ export default class Engine extends IEngine {
     payload,
   ) => {
     if (isJsonRpcResult(payload)) {
-      const { id, result } = payload;
+      const { result } = payload;
       const proposal = await this.client.proposal.get(topic);
       const selfPublicKey = proposal.proposer.publicKey;
       const peerPublicKey = result.responderPublicKey;
