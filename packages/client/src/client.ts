@@ -1,3 +1,4 @@
+import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import { HeartBeat } from "@walletconnect/heartbeat";
 import {
   generateChildLogger,
@@ -7,11 +8,10 @@ import {
 import { ClientTypes, IClient } from "@walletconnect/types";
 import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import KeyValueStorage from "keyvaluestorage";
 import pino from "pino";
-import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
 import { Crypto, Pairing, Proposal, Relayer, Session, JsonRpcHistory } from "./controllers";
 import Engine from "./controllers/engine";
+import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
@@ -46,20 +46,19 @@ export class Client extends IClient {
     this.name = opts?.name || CLIENT_DEFAULT.name;
     this.metadata = opts?.metadata || getAppMetadata();
     this.projectId = opts?.projectId;
-    const storageOptions = { ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions };
-
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
     this.logger = generateChildLogger(logger, this.name);
-    this.storage = opts?.storage || new KeyValueStorage(storageOptions);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
+    this.storage = new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
     this.pairing = new Pairing(this, this.logger);
     this.session = new Session(this, this.logger);
     this.proposal = new Proposal(this, this.logger);
     this.history = new JsonRpcHistory(this, this.logger, this.storage);
+
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
       this.version,

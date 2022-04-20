@@ -1,7 +1,7 @@
 import EventEmmiter from "events";
-import { IHeartBeat } from "@walletconnect/heartbeat";
-import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
 import { Logger } from "pino";
+import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
+import { IHeartBeat } from "@walletconnect/heartbeat";
 import { ICrypto } from "./crypto";
 import { IKeyChain } from "./keychain";
 import { IEngine } from "./engine";
