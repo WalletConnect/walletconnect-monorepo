@@ -32,7 +32,6 @@ export declare namespace ClientTypes {
     logger: string | Logger;
     keychain: IKeyChain;
     metadata?: Metadata;
-    storage?: IKeyValueStorage;
     storageOptions?: KeyValueStorageOptions;
   }>;
 }
