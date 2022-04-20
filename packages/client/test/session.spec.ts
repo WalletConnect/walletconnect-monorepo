@@ -1,6 +1,5 @@
 import "mocha";
 import sinon from "sinon";
-import { KeyValueStorage } from "keyvaluestorage";
 import { SessionTypes } from "@walletconnect/types";
 import { ONE_DAY, SEVEN_DAYS, THIRTY_DAYS, fromMiliseconds } from "@walletconnect/time";
 import { ERROR, generateRandomBytes32 } from "@walletconnect/utils";
@@ -260,9 +259,9 @@ describe("Session", function() {
     );
   });
   it("clients ping each other after restart", async () => {
-    const storage = new KeyValueStorage({ database: TEST_CLIENT_DATABASE });
+    const storageOptions = { database: TEST_CLIENT_DATABASE };
     // setup
-    const before = await setupClientsForTesting({ shared: { options: { storage } } });
+    const before = await setupClientsForTesting({ shared: { options: { storageOptions } } });
     // connect
     const topic = await testApproveSession(before.setup, before.clients);
     // ping
@@ -271,7 +270,7 @@ describe("Session", function() {
     // delete
     delete before.clients;
     // restart
-    const after = await setupClientsForTesting({ shared: { options: { storage } } });
+    const after = await setupClientsForTesting({ shared: { options: { storageOptions } } });
     // ping
     await after.clients.a.session.ping(topic, TEST_TIMEOUT_DURATION);
     await after.clients.b.session.ping(topic, TEST_TIMEOUT_DURATION);

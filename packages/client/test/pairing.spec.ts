@@ -1,6 +1,5 @@
 import "mocha";
 import sinon from "sinon";
-import { KeyValueStorage } from "keyvaluestorage";
 import { PairingTypes } from "@walletconnect/types";
 
 import {
@@ -27,9 +26,9 @@ describe("Pairing", function() {
     await clients.b.pairing.ping(topic, TEST_TIMEOUT_DURATION);
   });
   it("clients ping each other after restart", async () => {
-    const storage = new KeyValueStorage({ database: TEST_CLIENT_DATABASE });
+    const storageOptions = { database: TEST_CLIENT_DATABASE };
     // setup
-    const before = await setupClientsForTesting({ shared: { options: { storage } } });
+    const before = await setupClientsForTesting({ shared: { options: { storageOptions } } });
     // pair
     const topic = await testPairingWithoutSession(before.clients);
     // ping
@@ -38,7 +37,7 @@ describe("Pairing", function() {
     // delete
     delete before.clients;
     // restart
-    const after = await setupClientsForTesting({ shared: { options: { storage } } });
+    const after = await setupClientsForTesting({ shared: { options: { storageOptions } } });
     // ping
     await after.clients.a.pairing.ping(topic, TEST_TIMEOUT_DURATION);
     await after.clients.b.pairing.ping(topic, TEST_TIMEOUT_DURATION);

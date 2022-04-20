@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
+import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
@@ -18,7 +18,6 @@ export interface ClientOptions {
   relayUrl?: string;
   logger?: string | Logger;
   keychain?: IKeyChain;
-  storage?: IKeyValueStorage;
   storageOptions?: KeyValueStorageOptions;
 }
 
