@@ -67,11 +67,8 @@ export default class Engine extends IEngine {
 
     const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
     this.client.events.once("internal_connect_done", ({ error, data }) => {
-      if (error) {
-        reject(error);
-      } else if (data) {
-        resolve(data);
-      }
+      if (error) reject(error);
+      else if (data) resolve(data);
     });
 
     const requestId = await this.sendRequest(topic, "wc_sessionPropose", proposal);
@@ -95,7 +92,6 @@ export default class Engine extends IEngine {
 
   public approve: IEngine["approve"] = async params => {
     const { proposerPublicKey, relayProtocol, accounts, methods, events } = params;
-
     const selfPublicKey = await this.client.crypto.generateKeyPair();
     const topic = await this.client.crypto.generateSessionKey(selfPublicKey, proposerPublicKey);
     const sessionSettle = {
@@ -144,11 +140,8 @@ export default class Engine extends IEngine {
 
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
     this.client.events.once("internal_approve_done", ({ error }) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(session);
-      }
+      if (error) reject(error);
+      else resolve(session);
     });
 
     return { topic, acknowledged };
@@ -166,25 +159,32 @@ export default class Engine extends IEngine {
 
   public updateAccounts: IEngine["updateAccounts"] = async params => {
     const { topic, accounts } = params;
-    // TODO (ilja) validate session topic
-    // TODO (ilja) validate that self is controller
-    await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
 
+    // TODO(ilja) update method validation (is valid topic, is controller or not)
+
+    await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
     const { done, resolve, reject } = createDelayedPromise<void>();
     this.client.events.once("internal_update_accounts_done", ({ error }) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve();
-      }
+      if (error) reject(error);
+      else resolve();
     });
-
     await done();
     await this.client.session.update(topic, { accounts });
   };
 
-  public updateMethods: IEngine["updateMethods"] = async () => {
-    // TODO
+  public updateMethods: IEngine["updateMethods"] = async params => {
+    const { topic, methods } = params;
+
+    // TODO(ilja) update method validation (is valid topic, is controller or not)
+
+    await this.sendRequest(topic, "wc_sessionUpdateMethods", { methods });
+    const { done, resolve, reject } = createDelayedPromise<void>();
+    this.client.events.once("internal_update_methods_done", ({ error }) => {
+      if (error) reject(error);
+      else resolve();
+    });
+    await done();
+    await this.client.session.update(topic, { methods });
   };
 
   public updateEvents: IEngine["updateEvents"] = async () => {
@@ -289,6 +289,8 @@ export default class Engine extends IEngine {
         return this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdateAccounts":
         return this.onSessionUpdateAccountsRequest(topic, payload);
+      case "wc_sessionUpdateMethods":
+        return this.onSessionUpdateMethodsRequest(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -307,6 +309,8 @@ export default class Engine extends IEngine {
         return this.onSessionSettleResponse(topic, payload);
       case "wc_sessionUpdateAccounts":
         return this.onSessionUpdateAccountsResponse(topic, payload);
+      case "wc_sessionUpdateMethods":
+        return this.onSessionUpdateMethodsResponse(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -394,8 +398,7 @@ export default class Engine extends IEngine {
     payload,
   ) => {
     const { params, id } = payload;
-    // TODO(ilja) validate session topic
-    // TODO(ilja) validate that self is NOT controller
+    // TODO(ilja) update method validation (is valid topic, is controller or not)
     await this.client.session.update(topic, { accounts: params.accounts });
     await this.sendResult<"wc_sessionUpdateAccounts">(id, topic, true);
     await this.client.events.emit("update_accounts", params.accounts);
@@ -409,6 +412,28 @@ export default class Engine extends IEngine {
       await this.client.events.emit("internal_update_accounts_done", {});
     } else if (isJsonRpcError(payload)) {
       await this.client.events.emit("internal_update_accounts_done", { error: payload.error });
+    }
+  };
+
+  private onSessionUpdateMethodsRequest: EnginePrivate["onSessionUpdateMethodsRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    // TODO(ilja) update method validation (is valid topic, is controller or not)
+    const { params, id } = payload;
+    await this.client.session.update(topic, { methods: params.methods });
+    await this.sendResult<"wc_sessionUpdateMethods">(id, topic, true);
+    await this.client.events.emit("update_methods", params.methods);
+  };
+
+  private onSessionUpdateMethodsResponse: EnginePrivate["onSessionUpdateMethodsResponse"] = async (
+    _topic,
+    payload,
+  ) => {
+    if (isJsonRpcResult(payload)) {
+      await this.client.events.emit("internal_update_methods_done", {});
+    } else if (isJsonRpcError(payload)) {
+      await this.client.events.emit("internal_update_methods_done", { error: payload.error });
     }
   };
 
