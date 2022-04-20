@@ -180,20 +180,20 @@ export function calcExpiry(ttl: number, now?: number): number {
 
 // -- promises --------------------------------------------- //
 export function createDelayedPromise<T>(timeout: number) {
-  let cahcheResolve: undefined | ((value?: any) => void);
+  let cacheResolve: undefined | ((value?: any) => void);
   let cacheReject: undefined | ((value?: any) => void);
   let cacheTimeout: undefined | NodeJS.Timeout;
 
   const settled = () =>
     new Promise<T>((promiseResolve, promiseReject) => {
       cacheTimeout = setTimeout(promiseReject, timeout);
-      cahcheResolve = promiseResolve;
+      cacheResolve = promiseResolve;
       cacheReject = promiseReject;
     });
   const resolve = (value?: any) => {
-    if (cacheTimeout && cahcheResolve) {
+    if (cacheTimeout && cacheResolve) {
       clearTimeout(cacheTimeout);
-      cahcheResolve(value);
+      cacheResolve(value);
     }
   };
   const reject = (value?: any) => {
