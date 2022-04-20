@@ -14,6 +14,7 @@ export declare namespace ProposalTypes {
     methods: SessionTypes.Methods;
     events: SessionTypes.Events;
     pairingTopic?: string;
+    pairingRequestId?: number;
   }
 }
 

@@ -7,6 +7,7 @@ import {
 import { IClient } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
+import { PairingTypes } from "./pairing";
 import { JsonRpcTypes } from "./jsonrpc";
 
 export declare namespace EngineTypes {
@@ -148,7 +149,7 @@ export abstract class IEngine {
     params: EngineTypes.CreateSessionParams,
   ): Promise<{ uri?: string; approval: () => Promise<SessionTypes.Struct> }>;
 
-  public abstract pair(params: EngineTypes.PairParams): Promise<SessionTypes.Struct>;
+  public abstract pair(params: EngineTypes.PairParams): Promise<PairingTypes.Struct>;
 
   public abstract approve(params: EngineTypes.ApproveParams): Promise<SessionTypes.Struct>;
 

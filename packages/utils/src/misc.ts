@@ -1,4 +1,4 @@
-import { fromMiliseconds, toMiliseconds } from "@walletconnect/time";
+import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
 import { ClientTypes, RelayerClientMetadata } from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
@@ -179,7 +179,8 @@ export function calcExpiry(ttl: number, now?: number): number {
 }
 
 // -- promises --------------------------------------------- //
-export function createDelayedPromise<T>(timeout: number) {
+export function createDelayedPromise<T>() {
+  const timeout = toMiliseconds(FIVE_MINUTES);
   let cacheResolve: undefined | ((value?: any) => void);
   let cacheReject: undefined | ((value?: any) => void);
   let cacheTimeout: undefined | NodeJS.Timeout;

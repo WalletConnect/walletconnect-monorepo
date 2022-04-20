@@ -12,11 +12,12 @@ import { ISession } from "./session";
 import { IJsonRpcHistory } from "./history";
 
 export declare namespace ClientTypes {
-  type Event = "session_proposal" | "session_settled";
+  type Event = "session_proposal_request" | "session_settle_request" | "session_settle_response";
 
   interface EventArguments {
-    session_proposal: ProposalTypes.Struct;
-    session_settled: null;
+    session_proposal_request: ProposalTypes.Struct;
+    session_settle_request: null;
+    session_settle_response: null;
   }
 
   type Metadata = {
