@@ -94,7 +94,7 @@ export abstract class IClient {
 
   constructor(public opts?: ClientTypes.Options) {}
 
-  public abstract connect: IEngine["createSession"];
+  public abstract connect: IEngine["connect"];
   public abstract pair: IEngine["pair"];
   public abstract approve: IEngine["approve"];
   public abstract reject: IEngine["reject"];

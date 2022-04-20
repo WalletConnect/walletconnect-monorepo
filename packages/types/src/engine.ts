@@ -26,7 +26,7 @@ export declare namespace EngineTypes {
     payload: T;
   }
 
-  interface CreateSessionParams {
+  interface ConnectParams {
     pairingTopic?: string;
     methods?: SessionTypes.Methods;
     chains?: SessionTypes.Chains;
@@ -147,8 +147,8 @@ export interface EnginePrivate {
 export abstract class IEngine {
   constructor(public client: IClient) {}
 
-  public abstract createSession(
-    params: EngineTypes.CreateSessionParams,
+  public abstract connect(
+    params: EngineTypes.ConnectParams,
   ): Promise<{ uri?: string; approval: () => Promise<SessionTypes.Struct> }>;
 
   public abstract pair(params: EngineTypes.PairParams): Promise<PairingTypes.Struct>;

@@ -97,7 +97,7 @@ export class Client extends IClient {
 
   public connect: IClient["connect"] = async params => {
     try {
-      return await this.engine.createSession(params);
+      return await this.engine.connect(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;

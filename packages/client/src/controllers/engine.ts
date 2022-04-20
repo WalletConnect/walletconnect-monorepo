@@ -33,7 +33,7 @@ export default class Engine extends IEngine {
 
   // ---------- Public ------------------------------------------------ //
 
-  public createSession: IEngine["createSession"] = async params => {
+  public connect: IEngine["connect"] = async params => {
     // TODO(ilja) validate params
 
     const { pairingTopic, methods, events, chains, relays } = params;
