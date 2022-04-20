@@ -23,6 +23,7 @@
     "sort-keys": ["off"],
     "space-before-function-paren": ["off"],
     "indent": ["off"],
+    "promise/param-names": "off",
     "no-console": ["error", { "allow": ["warn"] }]
   },
   "env": {

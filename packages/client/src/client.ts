@@ -85,21 +85,13 @@ export class Client extends IClient {
 
   // ---------- Events ----------------------------------------------- //
 
-  public on: IClient["on"] = (event, listener) => {
-    this.events.on(event, listener);
-  };
+  public on = this.events.on;
 
-  public once: IClient["once"] = (event, listener) => {
-    this.events.once(event, listener);
-  };
+  public once = this.events.once;
 
-  public off: IClient["off"] = (event, listener) => {
-    this.events.off(event, listener);
-  };
+  public off = this.events.off;
 
-  public removeListener: IClient["removeListener"] = (event, listener) => {
-    this.events.removeListener(event, listener);
-  };
+  public removeListener = this.events.removeAllListeners;
 
   // ---------- Engine ----------------------------------------------- //
 

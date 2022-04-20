@@ -177,3 +177,35 @@ export function capitalize(str: string) {
 export function calcExpiry(ttl: number, now?: number): number {
   return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
 }
+
+// -- promises --------------------------------------------- //
+export function createDelayedPromise<T>(timeout: number) {
+  let cahcheResolve: undefined | ((value?: any) => void);
+  let cacheReject: undefined | ((value?: any) => void);
+  let cacheTimeout: undefined | NodeJS.Timeout;
+
+  const settled = () =>
+    new Promise<T>((promiseResolve, promiseReject) => {
+      cacheTimeout = setTimeout(promiseReject, timeout);
+      cahcheResolve = promiseResolve;
+      cacheReject = promiseReject;
+    });
+  const resolve = (value?: any) => {
+    if (cacheTimeout && cahcheResolve) {
+      clearTimeout(cacheTimeout);
+      cahcheResolve(value);
+    }
+  };
+  const reject = (value?: any) => {
+    if (cacheTimeout && cacheReject) {
+      clearTimeout(cacheTimeout);
+      cacheReject(value);
+    }
+  };
+
+  return {
+    resolve,
+    reject,
+    settled,
+  };
+}

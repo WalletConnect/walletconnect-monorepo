@@ -7,7 +7,6 @@ import {
 import { IClient } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
-import { IPromises } from "./promises";
 import { JsonRpcTypes } from "./jsonrpc";
 
 export declare namespace EngineTypes {
@@ -143,13 +142,11 @@ export interface EnginePrivate {
 // -- class interface ----------------------------------------------- //
 
 export abstract class IEngine {
-  public abstract promises: IPromises;
-
   constructor(public client: IClient) {}
 
   public abstract createSession(
     params: EngineTypes.CreateSessionParams,
-  ): Promise<{ uri?: string; approval: Promise<SessionTypes.Struct> }>;
+  ): Promise<{ uri?: string; approval: () => Promise<SessionTypes.Struct> }>;
 
   public abstract pair(params: EngineTypes.PairParams): Promise<SessionTypes.Struct>;
 

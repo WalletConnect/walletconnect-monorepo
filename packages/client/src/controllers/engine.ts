@@ -15,16 +15,18 @@ import {
   SessionTypes,
   JsonRpcTypes,
 } from "@walletconnect/types";
-import { calcExpiry, formatUri, generateRandomBytes32, parseUri } from "@walletconnect/utils";
+import {
+  calcExpiry,
+  formatUri,
+  generateRandomBytes32,
+  parseUri,
+  createDelayedPromise,
+} from "@walletconnect/utils";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
-import { Promises } from "./promises";
 
 export default class Engine extends IEngine {
-  promises: IEngine["promises"];
-
   constructor(client: IEngine["client"]) {
     super(client);
-    this.promises = new Promises();
     this.registerRelayerEvents();
     this.registerExpirerEvents();
   }
@@ -62,11 +64,18 @@ export default class Engine extends IEngine {
     };
 
     await this.client.proposal.set(publicKey, proposal);
-    const { id } = await this.sendRequest(topic, "wc_sessionPropose", proposal);
+    await this.sendRequest(topic, "wc_sessionPropose", proposal);
 
-    const approval = this.promises.initiate<SessionTypes.Struct>(id, toMiliseconds(FIVE_MINUTES));
+    const { reject, resolve, settled } = createDelayedPromise<SessionTypes.Struct>(
+      toMiliseconds(FIVE_MINUTES),
+    );
+    this.client.events.once("session_settled", () => {
+      // TODO(ilja) check for error and resolve with data
+      resolve();
+      reject();
+    });
 
-    return { uri, approval };
+    return { uri, approval: settled };
   };
 
   public pair: IEngine["pair"] = async params => {
@@ -104,7 +113,7 @@ export default class Engine extends IEngine {
       },
       expiry: calcExpiry(THIRTY_DAYS),
     };
-    const { id } = await this.sendRequest(sessionTopic, "wc_sessionSettle", session);
+    await this.sendRequest(sessionTopic, "wc_sessionSettle", session);
 
     const { pairingTopic } = await this.client.proposal.get(proposerPublicKey);
     if (pairingTopic) {
@@ -119,7 +128,14 @@ export default class Engine extends IEngine {
       });
     }
 
-    return this.promises.initiate(id, toMiliseconds(FIVE_MINUTES));
+    const { settled, resolve, reject } = createDelayedPromise<SessionTypes.Struct>(
+      toMiliseconds(FIVE_MINUTES),
+    );
+
+    // TODO(ilja) set up event listener to resolve promise when session is approved
+    const approvedSession = await settled();
+
+    return approvedSession;
   };
 
   public reject: IEngine["reject"] = async () => {
@@ -130,8 +146,10 @@ export default class Engine extends IEngine {
     const { topic, accounts } = params;
     // TODO (ilja) validate session topic
     // TODO (ilja) validate that self is controller
-    const { id } = await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
-    await this.promises.initiate(id, toMiliseconds(FIVE_MINUTES));
+    await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
+    const { resolve, reject, settled } = createDelayedPromise<void>(toMiliseconds(FIVE_MINUTES));
+    // TODO(ilja) set up event listener for update accounts and resolve, reject promise
+    await settled();
     await this.client.session.update(topic, { accounts });
   };
 
@@ -269,7 +287,7 @@ export default class Engine extends IEngine {
   ) => {
     const { params } = payload;
     await this.client.proposal.set(params.proposer.publicKey, { pairingTopic: topic, ...params });
-    this.client.events.emit("pairing_proposal", params);
+    this.client.events.emit("session_proposal", params);
   };
 
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
@@ -281,7 +299,7 @@ export default class Engine extends IEngine {
       // TODO(ilja) derrive topic_b
       // TODO(ilja) subscribe to topic_b
     } else if (isJsonRpcError(payload)) {
-      this.promises.reject(id);
+      // TODO(ilja) handle error
     }
   };
 
@@ -302,9 +320,9 @@ export default class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      await this.promises.resolve(id);
+      // TODO(ilja) emit associated success event
     } else if (isJsonRpcError(payload)) {
-      await this.promises.reject(id, payload.error);
+      // TODO(ilja) emit associated error event
     }
   };
 

@@ -12,10 +12,11 @@ import { ISession } from "./session";
 import { IJsonRpcHistory } from "./history";
 
 export declare namespace ClientTypes {
-  type Event = "pairing_proposal";
+  type Event = "session_proposal" | "session_settled";
 
   interface EventArguments {
-    pairing_proposal: ProposalTypes.Struct;
+    session_proposal: ProposalTypes.Struct;
+    session_settled: null;
   }
 
   type Metadata = {
@@ -45,6 +46,26 @@ export abstract class IClientEvents extends EventEmmiter {
     event: E,
     args: ClientTypes.EventArguments[E],
   ) => boolean;
+
+  public abstract on: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
+
+  public abstract once: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
+
+  public abstract off: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
+
+  public abstract removeListener: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
 }
 
 export abstract class IClient {
@@ -71,23 +92,6 @@ export abstract class IClient {
   public abstract history: IJsonRpcHistory;
 
   constructor(public opts?: ClientTypes.Options) {}
-
-  public abstract on: <E extends ClientTypes.Event>(
-    event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
-  ) => void;
-  public abstract once: <E extends ClientTypes.Event>(
-    event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
-  ) => void;
-  public abstract off: <E extends ClientTypes.Event>(
-    event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
-  ) => void;
-  public abstract removeListener: <E extends ClientTypes.Event>(
-    event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
-  ) => void;
 
   public abstract connect: IEngine["createSession"];
   public abstract pair: IEngine["pair"];

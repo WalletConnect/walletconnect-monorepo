@@ -9,4 +9,3 @@ export * from "./session";
 export * from "./store";
 export * from "./subscriber";
 export * from "./keychain";
-export * from "./promises";
