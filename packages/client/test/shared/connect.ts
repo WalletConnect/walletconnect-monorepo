@@ -20,7 +20,10 @@ export interface TestConnectParams extends EngineTypes.ConnectParams {
   relays?: RelayerTypes.ProtocolOptions[];
 }
 
-export async function testConnectMethod(clients: Clients, params?: TestConnectParams) {
+export async function testConnectMethod(
+  clients: Clients,
+  params?: TestConnectParams,
+): Promise<SessionTypes.Struct["topic"]> {
   const { A, B } = clients;
 
   const connectParams: EngineTypes.ConnectParams = {
@@ -133,4 +136,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   expect(sessionA.controller).to.eql(sessionB.controller);
   expect(sessionA.controller).to.eql(sessionA.peer.publicKey);
   expect(sessionB.controller).to.eql(sessionB.self.publicKey);
+
+  return sessionA.topic;
 }
