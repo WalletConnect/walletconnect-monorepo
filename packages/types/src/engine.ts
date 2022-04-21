@@ -190,6 +190,26 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
   ): void;
+
+  onSessionDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionDelete"]>,
+  ): Promise<void>;
+
+  onSessionDeleteResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionDelete"]> | JsonRpcError,
+  ): Promise<void>;
+
+  onPairingDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
+  ): Promise<void>;
+
+  onPairingDeleteResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingDelete"]> | JsonRpcError,
+  ): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //

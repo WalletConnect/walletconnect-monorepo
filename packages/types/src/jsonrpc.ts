@@ -64,7 +64,7 @@ export declare namespace JsonRpcTypes {
     };
     wc_sessionDelete: {
       code: number;
-      reason: string;
+      message: string;
     };
     wc_sessionPing: {};
     wc_sessionRequest: {
