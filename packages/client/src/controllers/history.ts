@@ -1,7 +1,7 @@
 import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, IClient } from "@walletconnect/types";
-import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
+import { ERROR, formatStorageKeyName } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
@@ -95,7 +95,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record = await this.getRecord(id);
     if (record.topic !== topic) {
       const error = ERROR.MISMATCHED_TOPIC.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         id,
       });
       // silencing this for now
@@ -157,7 +157,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record = this.records.get(id);
     if (!record) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         id,
       });
       // silencing this for now
@@ -179,16 +179,16 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       if (!persisted.length) return;
       if (this.records.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: formatMessageContext(this.context),
+          context: this.name,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.logger.debug(`Successfully Restored records for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Successfully Restored records for ${this.name}`);
       this.logger.trace({ type: "method", method: "restore", records: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore records for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Failed to Restore records for ${this.name}`);
       this.logger.error(e as any);
     }
   }

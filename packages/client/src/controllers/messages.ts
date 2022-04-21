@@ -1,12 +1,6 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IClient, IMessageTracker, MessageRecord } from "@walletconnect/types";
-import {
-  formatMessageContext,
-  formatStorageKeyName,
-  hashMessage,
-  mapToObj,
-  objToMap,
-} from "@walletconnect/utils";
+import { formatStorageKeyName, hashMessage, mapToObj, objToMap } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
@@ -96,10 +90,10 @@ export class MessageTracker extends IMessageTracker {
       if (typeof messages !== "undefined") {
         this.messages = messages;
       }
-      this.logger.debug(`Successfully Restored records for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Successfully Restored records for ${this.name}`);
       this.logger.trace({ type: "method", method: "restore", size: this.messages.size });
     } catch (e) {
-      this.logger.debug(`Failed to Restore records for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Failed to Restore records for ${this.name}`);
       this.logger.error(e as any);
     }
   }

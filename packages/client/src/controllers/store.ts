@@ -2,7 +2,6 @@ import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IClient, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
 import {
   ERROR,
-  formatMessageContext,
   formatStorageKeyName,
   isProposalStruct,
   isSessionStruct,
@@ -98,7 +97,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     const value = this.map.get(key);
     if (!value) {
       const error = ERROR.NO_MATCHING_TOPIC.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         key,
       });
       this.logger.error(error.message);
@@ -118,16 +117,16 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
       if (!persisted.length) return;
       if (this.map.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: formatMessageContext(this.context),
+          context: this.name,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.logger.debug(`Successfully Restored value for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Successfully Restored value for ${this.name}`);
       this.logger.trace({ type: "method", method: "restore", value: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore value for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Failed to Restore value for ${this.name}`);
       this.logger.error(e as any);
     }
   }

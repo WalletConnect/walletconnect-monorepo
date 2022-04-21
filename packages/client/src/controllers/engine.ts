@@ -39,7 +39,7 @@ export default class Engine extends IEngine {
     const { pairingTopic, methods, events, chains, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
-    let active = true;
+    let active = false;
 
     if (topic) {
       const pairing = await this.client.pairing.get(topic);
@@ -47,7 +47,7 @@ export default class Engine extends IEngine {
     }
 
     if (!topic || !active) {
-      const { newTopic, newUri } = await this.createPairing();
+      const { topic: newTopic, uri: newUri } = await this.createPairing();
       topic = newTopic;
       uri = newUri;
     }
@@ -84,7 +84,7 @@ export default class Engine extends IEngine {
     // TODO(ilja) validation
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
-    const pairing = { topic, relay, expiry, active: true };
+    const pairing = { topic, relay, expiry, active: false };
     await this.client.pairing.set(topic, pairing);
     await this.client.crypto.setPairingKey(symKey, topic);
     await this.client.relayer.subscribe(topic, { relay });
@@ -124,10 +124,7 @@ export default class Engine extends IEngine {
         responderPublicKey: selfPublicKey,
       });
       await this.client.proposal.delete(id, ERROR.DELETED.format());
-      await this.client.pairing.update(pairingTopic, {
-        active: true,
-        expiry: calcExpiry(THIRTY_DAYS),
-      });
+      await this.activatePairing(pairingTopic);
     }
 
     const session = {
@@ -280,7 +277,14 @@ export default class Engine extends IEngine {
     await this.client.relayer.subscribe(topic);
     // TODO(ilja) this.expirer / timeout pairing ?
 
-    return { newTopic: topic, newUri: uri };
+    return { topic, uri };
+  }
+
+  private async activatePairing(topic: string) {
+    await this.client.pairing.update(topic, {
+      active: true,
+      expiry: calcExpiry(THIRTY_DAYS),
+    });
   }
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -403,7 +407,7 @@ export default class Engine extends IEngine {
   };
 
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
-    _topic,
+    topic,
     payload,
   ) => {
     // TODO(ilja) validation
@@ -440,6 +444,7 @@ export default class Engine extends IEngine {
         method: "onSessionProposeResponse",
         subscriptionId,
       });
+      await this.activatePairing(topic);
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(id, ERROR.DELETED.format());
       this.client.events.emit("internal_connect_done", { error: payload.error });

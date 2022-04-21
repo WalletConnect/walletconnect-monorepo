@@ -2,7 +2,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { toMiliseconds } from "@walletconnect/time";
 import { ExpirerTypes, IClient, IExpirer } from "@walletconnect/types";
-import { ERROR, formatMessageContext, formatStorageKeyName } from "@walletconnect/utils";
+import { ERROR, formatStorageKeyName } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { EXPIRER_CONTEXT, EXPIRER_EVENTS, EXPIRER_STORAGE_VERSION } from "../constants";
@@ -126,18 +126,16 @@ export class Expirer extends IExpirer {
       if (!persisted.length) return;
       if (this.expirations.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: formatMessageContext(this.context),
+          context: this.name,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.logger.debug(
-        `Successfully Restored expirations for ${formatMessageContext(this.context)}`,
-      );
+      this.logger.debug(`Successfully Restored expirations for ${this.name}`);
       this.logger.trace({ type: "method", method: "restore", expirations: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore expirations for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Failed to Restore expirations for ${this.name}`);
       this.logger.error(e as any);
     }
   }
@@ -168,7 +166,7 @@ export class Expirer extends IExpirer {
     const expiration = this.expirations.get(topic);
     if (!expiration) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         topic,
       });
       // this.logger.error(error.message);

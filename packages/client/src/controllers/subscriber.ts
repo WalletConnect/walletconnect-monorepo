@@ -13,7 +13,6 @@ import {
 } from "@walletconnect/types";
 import {
   ERROR,
-  formatMessageContext,
   formatStorageKeyName,
   getRelayProtocolApi,
   getRelayProtocolName,
@@ -220,7 +219,7 @@ export class Subscriber extends ISubscriber {
     try {
       const relay = getRelayProtocolName(opts);
       await this.rpcUnsubscribe(topic, id, relay);
-      const reason = ERROR.DELETED.format({ context: formatMessageContext(this.context) });
+      const reason = ERROR.DELETED.format({ context: this.name });
       await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
@@ -312,7 +311,7 @@ export class Subscriber extends ISubscriber {
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         id,
       });
       // this.logger.error(error.message);
@@ -346,20 +345,16 @@ export class Subscriber extends ISubscriber {
       if (!persisted.length) return;
       if (this.subscriptions.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: formatMessageContext(this.context),
+          context: this.name,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.logger.debug(
-        `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
-      );
+      this.logger.debug(`Successfully Restored subscriptions for ${this.name}`);
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
     } catch (e) {
-      this.logger.debug(
-        `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
-      );
+      this.logger.debug(`Failed to Restore subscriptions for ${this.name}`);
       this.logger.error(e as any);
     }
   }
