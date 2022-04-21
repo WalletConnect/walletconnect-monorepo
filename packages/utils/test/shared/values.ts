@@ -23,7 +23,7 @@ export const TEST_SYM_KEY = "0653ca620c7b4990392e1c53c4a51c14a2840cd20f0f1524cf4
 
 export const TEST_RELAY_OPTIONS = {
   protocol: "waku",
-  data: "",
+  data: undefined,
 };
 
 export const TEST_SESSION_METADATA = {

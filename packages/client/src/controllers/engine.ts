@@ -144,9 +144,9 @@ export default class Engine extends IEngine {
     await this.client.session.set(topic, session);
 
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
-    this.client.events.once("internal_approve_done", ({ error }) => {
+    this.client.events.once("internal_approve_done", async ({ error }) => {
       if (error) reject(error);
-      else resolve(session);
+      else resolve(await this.client.session.get(topic));
     });
 
     return { topic, acknowledged };
@@ -317,9 +317,6 @@ export default class Engine extends IEngine {
     this.client.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
       const { topic, message } = event;
       const payload = await this.client.crypto.decode(topic, message);
-      //eslint-disable-next-line
-      console.log(this.client.name, "INCOMING", payload);
-
       if (isJsonRpcRequest(payload)) {
         await this.client.history.set(topic, payload);
         this.onRelayEventRequest({ topic, payload });
@@ -396,15 +393,11 @@ export default class Engine extends IEngine {
     payload,
   ) => {
     const { params, id: id } = payload;
-    // eslint-disable-next-line
-    console.log(this.client.name, "[onSessionProposeRequest]", "params", params);
     await this.client.proposal.set(id, {
       id,
       pairingTopic: topic,
       ...params,
     });
-    // eslint-disable-next-line
-    console.log(this.client.name, "[onSessionProposeRequest]", "id", id);
 
     this.client.events.emit("session_proposal", { id, ...params });
   };
@@ -416,31 +409,14 @@ export default class Engine extends IEngine {
     const { id: id } = payload;
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "result", result);
-
       const proposal = await this.client.proposal.get(id);
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "proposal", proposal);
-
       const selfPublicKey = proposal.proposer.publicKey;
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "selfPublicKey", selfPublicKey);
-
       const peerPublicKey = result.responderPublicKey;
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "peerPublicKey", peerPublicKey);
-
       const sessionTopic = await this.client.crypto.generateSessionKey(
         selfPublicKey,
         peerPublicKey,
       );
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "sessionTopic", sessionTopic);
-
-      const subscriptionId = await this.client.relayer.subscribe(sessionTopic);
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "subscriptionId", subscriptionId);
+      await this.client.relayer.subscribe(sessionTopic);
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(id, ERROR.DELETED.format());
       this.client.events.emit("internal_connect_done", { error: payload.error });
