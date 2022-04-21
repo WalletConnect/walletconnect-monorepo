@@ -18,11 +18,15 @@ export declare namespace ClientTypes {
     | "update_accounts"
     | "update_methods"
     | "update_events"
+    | "session_ping"
+    | "pairing_ping"
     | "internal_connect_done"
     | "internal_approve_done"
     | "internal_update_accounts_done"
     | "internal_update_methods_done"
-    | "internal_update_events_done";
+    | "internal_update_events_done"
+    | "internal_session_ping_done"
+    | "internal_pairing_ping_done";
 
   interface EventArguments {
     internal_connect_done: { error?: ErrorResponse; data?: SessionTypes.Struct };
@@ -30,10 +34,14 @@ export declare namespace ClientTypes {
     internal_update_accounts_done: { error?: ErrorResponse };
     internal_update_methods_done: { error?: ErrorResponse };
     internal_update_events_done: { error?: ErrorResponse };
+    internal_session_ping_done: { error?: ErrorResponse };
+    internal_pairing_ping_done: { error?: ErrorResponse };
     session_proposal: ProposalTypes.Struct;
     update_accounts: SessionTypes.Accounts;
     update_methods: SessionTypes.Methods;
     update_events: SessionTypes.Events;
+    session_ping: {};
+    pairing_ping: {};
   }
 
   type Metadata = {

@@ -218,8 +218,25 @@ export default class Engine extends IEngine {
     // TODO
   };
 
-  public ping: IEngine["ping"] = async () => {
-    // TODO
+  public ping: IEngine["ping"] = async params => {
+    const { topic } = params;
+    if (this.client.session.topics.includes(topic)) {
+      await this.sendRequest(topic, "wc_sessionPing", {});
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.client.events.once("internal_session_ping_done", ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    } else if (this.client.pairing.topics.includes(topic)) {
+      await this.sendRequest(topic, "wc_pairingPing", {});
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.client.events.once("internal_pairing_ping_done", ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    }
   };
 
   public emit: IEngine["emit"] = async () => {
@@ -308,6 +325,10 @@ export default class Engine extends IEngine {
         return this.onSessionUpdateMethodsRequest(topic, payload);
       case "wc_sessionUpdateEvents":
         return this.onSessionUpdateEventsRequest(topic, payload);
+      case "wc_sessionPing":
+        return this.onSessionPingRequest(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingRequest(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -330,6 +351,10 @@ export default class Engine extends IEngine {
         return this.onSessionUpdateMethodsResponse(topic, payload);
       case "wc_sessionUpdateEvents":
         return this.onSessionUpdateEventsResponse(topic, payload);
+      case "wc_sessionPing":
+        return this.onSessionPingResponse(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingResponse(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -474,6 +499,34 @@ export default class Engine extends IEngine {
       this.client.events.emit("internal_update_events_done", {});
     } else if (isJsonRpcError(payload)) {
       this.client.events.emit("internal_update_events_done", { error: payload.error });
+    }
+  };
+
+  private onSessionPingRequest: EnginePrivate["onSessionPingRequest"] = async (topic, payload) => {
+    const { id } = payload;
+    await this.sendResult<"wc_sessionPing">(id, topic, true);
+    this.client.events.emit("session_ping", {});
+  };
+
+  private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
+    if (isJsonRpcResult(payload)) {
+      this.client.events.emit("internal_session_ping_done", {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit("internal_session_ping_done", { error: payload.error });
+    }
+  };
+
+  private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
+    const { id } = payload;
+    await this.sendResult<"wc_pairingPing">(id, topic, true);
+    this.client.events.emit("pairing_ping", {});
+  };
+
+  private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
+    if (isJsonRpcResult(payload)) {
+      this.client.events.emit("internal_pairing_ping_done", {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit("internal_pairing_ping_done", { error: payload.error });
     }
   };
 
