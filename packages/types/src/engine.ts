@@ -170,6 +170,46 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateEvents"]> | JsonRpcError,
   ): void;
+
+  onSessionPingRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPing"]>,
+  ): Promise<void>;
+
+  onSessionPingResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPing"]> | JsonRpcError,
+  ): void;
+
+  onPairingPingRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingPing"]>,
+  ): Promise<void>;
+
+  onPairingPingResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
+  ): void;
+
+  onSessionDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionDelete"]>,
+  ): Promise<void>;
+
+  onSessionDeleteResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionDelete"]> | JsonRpcError,
+  ): Promise<void>;
+
+  onPairingDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
+  ): Promise<void>;
+
+  onPairingDeleteResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingDelete"]> | JsonRpcError,
+  ): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //

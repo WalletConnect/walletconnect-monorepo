@@ -219,16 +219,50 @@ export default class Engine extends IEngine {
     // TODO
   };
 
-  public ping: IEngine["ping"] = async () => {
-    // TODO
+  public ping: IEngine["ping"] = async params => {
+    const { topic } = params;
+    if (this.client.session.topics.includes(topic)) {
+      await this.sendRequest(topic, "wc_sessionPing", {});
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.client.events.once("internal_session_ping_done", ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    } else if (this.client.pairing.topics.includes(topic)) {
+      await this.sendRequest(topic, "wc_pairingPing", {});
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.client.events.once("internal_pairing_ping_done", ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    }
   };
 
   public emit: IEngine["emit"] = async () => {
     // TODO
   };
 
-  public disconnect: IEngine["disconnect"] = async () => {
-    // TODO
+  public disconnect: IEngine["disconnect"] = async params => {
+    const { topic } = params;
+    if (this.client.session.topics.includes(topic)) {
+      await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.client.events.once("internal_session_delete_done", ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    } else if (this.client.pairing.topics.includes(topic)) {
+      await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.client.events.once("internal_pairing_delete_done", ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    }
   };
 
   // ---------- Private ----------------------------------------------- //
@@ -311,6 +345,14 @@ export default class Engine extends IEngine {
         return this.onSessionUpdateMethodsRequest(topic, payload);
       case "wc_sessionUpdateEvents":
         return this.onSessionUpdateEventsRequest(topic, payload);
+      case "wc_sessionPing":
+        return this.onSessionPingRequest(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingRequest(topic, payload);
+      case "wc_sessionDelete":
+        return this.onSessionDeleteRequest(topic, payload);
+      case "wc_pairingDelete":
+        return this.onPairingDeleteRequest(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -333,6 +375,14 @@ export default class Engine extends IEngine {
         return this.onSessionUpdateMethodsResponse(topic, payload);
       case "wc_sessionUpdateEvents":
         return this.onSessionUpdateEventsResponse(topic, payload);
+      case "wc_sessionPing":
+        return this.onSessionPingResponse(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingResponse(topic, payload);
+      case "wc_sessionDelete":
+        return this.onSessionDeleteResponse(topic, payload);
+      case "wc_pairingDelete":
+        return this.onPairingDeleteResponse(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -500,6 +550,88 @@ export default class Engine extends IEngine {
       this.client.events.emit("internal_update_events_done", {});
     } else if (isJsonRpcError(payload)) {
       this.client.events.emit("internal_update_events_done", { error: payload.error });
+    }
+  };
+
+  private onSessionPingRequest: EnginePrivate["onSessionPingRequest"] = async (topic, payload) => {
+    const { id } = payload;
+    await this.sendResult<"wc_sessionPing">(id, topic, true);
+    this.client.events.emit("session_ping", { topic });
+  };
+
+  private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
+    if (isJsonRpcResult(payload)) {
+      this.client.events.emit("internal_session_ping_done", {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit("internal_session_ping_done", { error: payload.error });
+    }
+  };
+
+  private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
+    const { id } = payload;
+    await this.sendResult<"wc_pairingPing">(id, topic, true);
+    this.client.events.emit("pairing_ping", { topic });
+  };
+
+  private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
+    if (isJsonRpcResult(payload)) {
+      this.client.events.emit("internal_pairing_ping_done", {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit("internal_pairing_ping_done", { error: payload.error });
+    }
+  };
+
+  private onSessionDeleteRequest: EnginePrivate["onSessionDeleteRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    // TODO(ilja) check if session topic exists
+    const { id } = payload;
+    await this.client.relayer.unsubscribe(topic);
+    await this.sendResult<"wc_sessionDelete">(id, topic, true);
+    await this.client.session.delete(topic, ERROR.DELETED.format());
+    await this.client.crypto.deleteSessionKey(topic);
+    this.client.events.emit("session_delete", { topic });
+  };
+
+  private onSessionDeleteResponse: EnginePrivate["onSessionDeleteResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    if (isJsonRpcResult(payload)) {
+      await this.client.relayer.unsubscribe(topic);
+      await this.client.session.delete(topic, ERROR.DELETED.format());
+      await this.client.crypto.deleteSessionKey(topic);
+      this.client.events.emit("internal_session_delete_done", {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit("internal_session_delete_done", { error: payload.error });
+    }
+  };
+
+  private onPairingDeleteRequest: EnginePrivate["onPairingDeleteRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    // TODO(ilja) check if pairing topic exists
+    const { id } = payload;
+    await this.client.relayer.unsubscribe(topic);
+    await this.sendResult<"wc_pairingDelete">(id, topic, true);
+    await this.client.pairing.delete(topic, ERROR.DELETED.format());
+    await this.client.crypto.deletePairingKey(topic);
+    this.client.events.emit("pairing_delete", { topic });
+  };
+
+  private onPairingDeleteResponse: EnginePrivate["onPairingDeleteResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    if (isJsonRpcResult(payload)) {
+      await this.client.relayer.unsubscribe(topic);
+      await this.client.pairing.delete(topic, ERROR.DELETED.format());
+      await this.client.crypto.deletePairingKey(topic);
+      this.client.events.emit("internal_pairing_delete_done", {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit("internal_pairing_delete_done", { error: payload.error });
     }
   };
 
