@@ -9,4 +9,4 @@ RUN npm install
 COPY ./src ./src
 RUN npm run compile
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "nodemon"]

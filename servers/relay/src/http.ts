@@ -41,7 +41,9 @@ export class HttpService {
   constructor(public config: HttpServiceConfig) {
     const logger = pino(getDefaultLoggerOptions({ level: config.logger }));
     this.config = config;
-    this.app = fastify({ logger });
+    //this.app = fastify({ logger });
+    // Disabling INFO logs from fastify because /health is too verbose
+    this.app = fastify();
     this.logger = generateChildLogger(logger, this.context);
     this.metrics = this.setMetrics();
     this.redis = new RedisService(this, this.logger);

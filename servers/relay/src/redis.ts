@@ -1,4 +1,4 @@
-import { createClient, RedisClientType } from "redis";
+import { createClient, commandOptions, RedisClientType } from "redis";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { Logger } from "pino";
 import { generateChildLogger } from "@walletconnect/logger";
@@ -7,8 +7,8 @@ import { SIX_HOURS } from "@walletconnect/time";
 
 import { sha256 } from "./utils";
 import { HttpService } from "./http";
-import { REDIS_CONTEXT } from "./constants";
-import { IridiumV1MessageOptions, Notification, LegacySocketMessage } from "./types";
+import { REDIS_CONTEXT, NETWORK_EVENTS, JSONRPC_EVENTS } from "./constants";
+import { IridiumV1MessageOptions, Notification, LegacySocketMessage, Subscription } from "./types";
 import { IridiumEncoder } from "./encoder";
 
 export class RedisService {
@@ -138,12 +138,43 @@ export class RedisService {
   }
 
   public async publish(topic: string, message: string, opts?: IridiumV1MessageOptions) {
-    const payload = await this.encoder.encode(message, opts);
-    this.logger.info("Posting Iridium Message");
-    this.logger.debug({ type: "method", method: "publish", payload: { message, opts } });
+    const payload = await this.encoder.encode(message, {prompt: true});
+    this.logger.debug("Publishing Iridium Message");
+    this.logger.trace({method: "publish", topic, payload });
     await this.client.xAdd(topic, "*", {
-      payload: payload,
+      payload,
     });
+  }
+  
+  // TODO implement all the historical getREAD
+  public async getStoreMessages(topic: string): Promise<void> {
+    return
+  }
+
+  public async streamListener(topic: string): Promise<void> {
+    this.logger.trace("Starting Redis Stream Read");
+    this.logger.trace({method: "streamListener", topic});
+    const response = await this.client.xRead(
+      commandOptions({isolated: true}),
+      [
+        {
+        key: topic,
+        id: "$",
+        }
+      ], {
+        COUNT: 1,
+        BLOCK: 0,
+      },
+    )
+    this.logger.trace({method: `BLOCK`, response});
+   let payload = "";
+    if (response !== null && response.length) {
+      let messages = response[0]
+      if (messages !== null) {
+         payload = messages.messages[0].message.payload
+      }
+    }
+    if (payload !== "")  this.emitWakuMessage(topic, payload)
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -154,6 +185,21 @@ export class RedisService {
     });
     this.client.connect().then(() => {
       this.logger.trace(`Initialized`);
+      this.server.on(JSONRPC_EVENTS.subscribe, (subscription: Subscription) => {
+        this.logger.debug(`Subcribe Event`);
+        this.logger.trace({method: `Subcribe Event`, subscription});
+        this.streamListener(subscription.topic)
+      })
     });
   }
+  private async emitWakuMessage(topic: string, payload: string) {
+    this.logger.debug("Received Iridium Message");
+    this.logger.trace({method: `emitWakuMessage`, topic, payload });
+    const {
+      message,
+      opts: { prompt },
+    } = await this.encoder.decode(payload);
+    this.logger.trace({method: `emitWakuMessage`, message, prompt});
+    this.server.events.emit(NETWORK_EVENTS.message, topic, message, prompt);
+   }
 }

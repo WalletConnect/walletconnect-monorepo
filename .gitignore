@@ -21,16 +21,12 @@ jspm_packages
 **/dist
 **/build
 .DS_Store
-.makeFlags*
 .env
 zip
 .idea
 .rts2_cache_*
-.nyc_output
 tsconfig.tsbuildinfo
 test.db
-setup
 result*
-ops/grafana/grafana.ini
 
 .vscode

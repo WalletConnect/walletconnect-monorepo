@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { Counter, Socket, TEST_WS_URL } from "./shared";
 import { getTestLegacy } from "./shared/message";
 
-describe("LEGACY", () => {
+describe.skip("LEGACY", () => {
   it("A can publish to B subscribed to same topic", async () => {
     const { pub, sub } = getTestLegacy();
 
