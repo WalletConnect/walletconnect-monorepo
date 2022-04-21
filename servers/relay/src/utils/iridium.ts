@@ -1,5 +1,5 @@
 import * as encoding from "@walletconnect/encoding";
-import { IRIDIUM_MESSAGE_PREFIX } from "../constants";
+import { IRIDIUM_MESSAGE_PREFIX, IRIDIUM_HEADER } from "../constants";
 
 import { IridiumV1Message, IridiumV1MessageOptions } from "../types";
 
@@ -27,23 +27,31 @@ export function encodeIridiumV1Message(msg: string, opts?: IridiumV1MessageOptio
   const prefix = IRIDIUM_MESSAGE_PREFIX;
   const version = encoding.numberToArray(1);
   const message = encoding.utf8ToArray(msg);
-  const length = encoding.numberToArray(message.length);
+  let length = new Uint8Array(IRIDIUM_HEADER?.["1"].LENGTH_SIZE);
+  // Little endian
+  encoding.numberToArray(message.length).forEach((val: number, index: number) => {
+    length[index] = val
+  })
+  length.reverse();
   const prompt = encoding.numberToArray(opts?.prompt ? 1 : 0);
-  return encoding.arrayToHex(encoding.concatArrays(prefix, version, length, message, prompt));
+  let rawArray = encoding.concatArrays(prefix, version, length, message, prompt);
+  return encoding.arrayToHex(rawArray);
 }
 
 export function decodeIridiumV1Message(hex: string, v?: number): IridiumV1Message {
-  const encoded = encoding.hexToArray(hex);
-  if (!hasIridiumMessagePrefix(encoded)) {
+  const raw = encoding.hexToArray(hex);
+  if (!hasIridiumMessagePrefix(raw)) {
     throw new Error(`Cannot decode Iridum message with missing prefix`);
   }
-  const version = getIridiumMessageVersion(encoded);
+  const version = getIridiumMessageVersion(raw);
   if (typeof v !== "undefined" && version !== v) {
     throw new Error(`Cannot decode Iridum message with version: ${version}`);
   }
-  const length = encoding.arrayToNumber(encoded.slice(4, 5));
-  const message = encoding.arrayToUtf8(encoded.slice(5, length));
-  const prompt = encoding.arrayToNumber(encoded.slice(length, length + 1));
+  const {LENGTH_SIZE, TOTAL_SIZE} = IRIDIUM_HEADER["1"]
+  const lengthHeaderStart = TOTAL_SIZE - LENGTH_SIZE
+  const msgLength = encoding.arrayToNumber(raw.slice(lengthHeaderStart, TOTAL_SIZE));
+  const message = encoding.arrayToUtf8(raw.slice(TOTAL_SIZE, msgLength+TOTAL_SIZE));
+  const prompt = encoding.arrayToNumber(raw.slice(msgLength+TOTAL_SIZE));
   return {
     version,
     message,

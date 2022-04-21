@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 
 services:
   redis:
@@ -10,7 +10,7 @@ services:
     volumes:
       - redis:/data
     healthcheck:
-      test: ["CMD", "redis-cli","ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,13 +30,11 @@ services:
       replicas: 2
     networks: [ walletconnect-monorepo ]
     environment:
-      - REDIS_URL=redis://redis:6379/0          
-      - WAKU_URL=http://waku:8545
+      - REDIS_URL=redis://redis:6379/0
       - RELAY_MODE=any
       - LOG_LEVEL=TRACE
     volumes:
       - node_modules:/usr/src/app/node_modules
-      - ../../servers/relay/src:/usr/src/app/src
       - ../../servers/relay/dist:/usr/src/app/dist
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
@@ -46,14 +44,13 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      waku:
-        condition: service_healthy
-         
+
 volumes:
   redis:
-  waku-store:    
-  waku:       
-  node_modules:  
+  waku-store:
+  waku:
+  node_modules:
 
 networks:
   walletconnect-monorepo:
+    driver: bridge

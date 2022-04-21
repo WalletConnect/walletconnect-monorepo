@@ -2,11 +2,11 @@ FROM node:16.14-alpine as base
 
 WORKDIR /usr/src/app
 
-COPY package.json package-lock.json ./
+COPY ./package.json ./package.json
+COPY ./package-lock.json ./package-lock.json
 COPY tsconfig.json ./
-RUN npm install 
+RUN npm install --also=dev
 
 COPY ./src ./src
-RUN npm run compile
 
 CMD ["npm", "run", "nodemon"]
