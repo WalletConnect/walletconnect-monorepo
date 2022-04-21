@@ -35,8 +35,7 @@ export default class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async params => {
-    // TODO(ilja) validate params
-
+    // TODO(ilja) validation
     const { pairingTopic, methods, events, chains, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
@@ -82,7 +81,7 @@ export default class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async params => {
-    // TODO(ilja) validate pairing Uri
+    // TODO(ilja) validation
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: true };
@@ -95,6 +94,7 @@ export default class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async params => {
+    // TODO(ilja) validation
     const { id, relayProtocol, accounts, methods, events } = params;
     const { pairingTopic, proposer } = await this.client.proposal.get(id);
     const selfPublicKey = await this.client.crypto.generateKeyPair();
@@ -153,9 +153,9 @@ export default class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async params => {
+    // TODO(ilja) validation
     const { id, reason } = params;
     const { pairingTopic } = await this.client.proposal.get(id);
-
     if (pairingTopic && id) {
       await this.sendError(id, pairingTopic, reason);
       await this.client.proposal.delete(id, ERROR.DELETED.format());
@@ -163,10 +163,8 @@ export default class Engine extends IEngine {
   };
 
   public updateAccounts: IEngine["updateAccounts"] = async params => {
+    // TODO(ilja) validation
     const { topic, accounts } = params;
-
-    // TODO(ilja) update method validation (is valid topic, is controller or not)
-
     await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
     const { done, resolve, reject } = createDelayedPromise<void>();
     this.client.events.once("internal_update_accounts_done", ({ error }) => {
@@ -178,10 +176,8 @@ export default class Engine extends IEngine {
   };
 
   public updateMethods: IEngine["updateMethods"] = async params => {
+    // TODO(ilja) validation
     const { topic, methods } = params;
-
-    // TODO(ilja) update method validation (is valid topic, is controller or not)
-
     await this.sendRequest(topic, "wc_sessionUpdateMethods", { methods });
     const { done, resolve, reject } = createDelayedPromise<void>();
     this.client.events.once("internal_update_methods_done", ({ error }) => {
@@ -193,10 +189,8 @@ export default class Engine extends IEngine {
   };
 
   public updateEvents: IEngine["updateEvents"] = async params => {
+    // TODO(ilja) validation
     const { topic, events } = params;
-
-    // TODO(ilja) update method validation (is valid topic, is controller or not)
-
     await this.sendRequest(topic, "wc_sessionUpdateEvents", { events });
     const { done, resolve, reject } = createDelayedPromise<void>();
     this.client.events.once("internal_update_events_done", ({ error }) => {
@@ -220,6 +214,7 @@ export default class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async params => {
+    // TODO(ilja) validation
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
       await this.sendRequest(topic, "wc_sessionPing", {});
@@ -245,6 +240,7 @@ export default class Engine extends IEngine {
   };
 
   public disconnect: IEngine["disconnect"] = async params => {
+    // TODO(ilja) validation
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
       await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
@@ -288,7 +284,7 @@ export default class Engine extends IEngine {
   }
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
-    // TODO(ilja) validate method
+    // TODO(ilja) validation
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.crypto.encode(topic, payload);
     await this.client.relayer.publish(topic, message);
@@ -298,6 +294,7 @@ export default class Engine extends IEngine {
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
+    // TODO(ilja) validation
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.crypto.encode(topic, payload);
     await this.client.relayer.publish(topic, message);
@@ -305,6 +302,7 @@ export default class Engine extends IEngine {
   };
 
   private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
+    // TODO(ilja) validation
     const payload = formatJsonRpcError(id, error);
     const message = await this.client.crypto.encode(topic, payload);
     await this.client.relayer.publish(topic, message);
@@ -328,6 +326,7 @@ export default class Engine extends IEngine {
   }
 
   private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = event => {
+    // TODO(ilja) validation
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
@@ -357,6 +356,7 @@ export default class Engine extends IEngine {
   };
 
   private onRelayEventResponse: EnginePrivate["onRelayEventResponse"] = async event => {
+    // TODO(ilja) validation
     const { topic, payload } = event;
     const record = await this.client.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
@@ -392,13 +392,13 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { params, id: id } = payload;
     await this.client.proposal.set(id, {
       id,
       pairingTopic: topic,
       ...params,
     });
-
     this.client.events.emit("session_proposal", { id, ...params });
   };
 
@@ -406,17 +406,40 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id: id } = payload;
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
+      this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", result });
       const proposal = await this.client.proposal.get(id);
+      this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", proposal });
       const selfPublicKey = proposal.proposer.publicKey;
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        selfPublicKey,
+      });
       const peerPublicKey = result.responderPublicKey;
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        peerPublicKey,
+      });
       const sessionTopic = await this.client.crypto.generateSessionKey(
         selfPublicKey,
         peerPublicKey,
       );
-      await this.client.relayer.subscribe(sessionTopic);
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        sessionTopic,
+      });
+      const subscriptionId = await this.client.relayer.subscribe(sessionTopic);
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        subscriptionId,
+      });
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(id, ERROR.DELETED.format());
       this.client.events.emit("internal_connect_done", { error: payload.error });
@@ -427,6 +450,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { relay, controller, expiry, accounts, methods, events } = payload.params;
     const session = {
       topic,
@@ -454,6 +478,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       await this.client.session.update(topic, { acknowledged: true });
       this.client.events.emit("internal_approve_done", {});
@@ -467,8 +492,8 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { params, id } = payload;
-    // TODO(ilja) update method validation (is valid topic, is controller or not)
     await this.client.session.update(topic, { accounts: params.accounts });
     await this.sendResult<"wc_sessionUpdateAccounts">(id, topic, true);
     this.client.events.emit("update_accounts", params.accounts);
@@ -478,6 +503,7 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       this.client.events.emit("internal_update_accounts_done", {});
     } else if (isJsonRpcError(payload)) {
@@ -489,7 +515,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    // TODO(ilja) update method validation (is valid topic, is controller or not)
+    // TODO(ilja) validation
     const { params, id } = payload;
     await this.client.session.update(topic, { methods: params.methods });
     await this.sendResult<"wc_sessionUpdateMethods">(id, topic, true);
@@ -500,6 +526,7 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       this.client.events.emit("internal_update_methods_done", {});
     } else if (isJsonRpcError(payload)) {
@@ -511,7 +538,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    // TODO(ilja) update method validation (is valid topic, is controller or not)
+    // TODO(ilja) validation
     const { params, id } = payload;
     await this.client.session.update(topic, { events: params.events });
     await this.sendResult<"wc_sessionUpdateEvents">(id, topic, true);
@@ -522,6 +549,7 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       this.client.events.emit("internal_update_events_done", {});
     } else if (isJsonRpcError(payload)) {
@@ -530,12 +558,14 @@ export default class Engine extends IEngine {
   };
 
   private onSessionPingRequest: EnginePrivate["onSessionPingRequest"] = async (topic, payload) => {
+    // TODO(ilja) validation
     const { id } = payload;
     await this.sendResult<"wc_sessionPing">(id, topic, true);
     this.client.events.emit("session_ping", { topic });
   };
 
   private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       this.client.events.emit("internal_session_ping_done", {});
     } else if (isJsonRpcError(payload)) {
@@ -544,12 +574,14 @@ export default class Engine extends IEngine {
   };
 
   private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
+    // TODO(ilja) validation
     const { id } = payload;
     await this.sendResult<"wc_pairingPing">(id, topic, true);
     this.client.events.emit("pairing_ping", { topic });
   };
 
   private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       this.client.events.emit("internal_pairing_ping_done", {});
     } else if (isJsonRpcError(payload)) {
@@ -561,7 +593,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    // TODO(ilja) check if session topic exists
+    // TODO(ilja) validation
     const { id } = payload;
     await this.client.relayer.unsubscribe(topic);
     await this.sendResult<"wc_sessionDelete">(id, topic, true);
@@ -574,6 +606,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       await this.client.relayer.unsubscribe(topic);
       await this.client.session.delete(topic, ERROR.DELETED.format());
@@ -588,7 +621,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    // TODO(ilja) check if pairing topic exists
+    // TODO(ilja) validation
     const { id } = payload;
     await this.client.relayer.unsubscribe(topic);
     await this.sendResult<"wc_pairingDelete">(id, topic, true);
@@ -601,6 +634,7 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     if (isJsonRpcResult(payload)) {
       await this.client.relayer.unsubscribe(topic);
       await this.client.pairing.delete(topic, ERROR.DELETED.format());
