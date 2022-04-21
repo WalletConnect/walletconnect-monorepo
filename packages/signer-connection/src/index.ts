@@ -1,7 +1,7 @@
-import { Client, CLIENT_EVENTS } from "@walletconnect/client";
+import { Client } from "@walletconnect/client";
 import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { ClientTypes, IClient, PairingTypes, SessionTypes } from "@walletconnect/types";
+import { ClientTypes, IClient, SessionTypes } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 
@@ -15,7 +15,7 @@ export const SIGNER_EVENTS = {
   created: "signer_created",
   updated: "signer_updated",
   deleted: "signer_deleted",
-  notification: "signer_notification",
+  event: "signer_event",
 };
 
 export type SignerConnectionClientOpts = IClient | ClientTypes.Options;
@@ -32,7 +32,7 @@ export class SignerConnection extends IJsonRpcConnection {
   public methods: string[];
 
   private pending = false;
-  private session: SessionTypes.Settled | undefined;
+  private session: SessionTypes.Struct | undefined;
 
   private opts: SignerConnectionClientOpts | undefined;
 
@@ -56,7 +56,7 @@ export class SignerConnection extends IJsonRpcConnection {
   }
 
   get accounts() {
-    return this.session?.state.accounts || [];
+    return this.session?.accounts || [];
   }
 
   public on(event: string, listener: any) {
@@ -79,7 +79,7 @@ export class SignerConnection extends IJsonRpcConnection {
     if (this.pending) {
       return new Promise((resolve, reject) => {
         this.events.once("open", () => {
-          this.events.once("open_error", error => {
+          this.events.once("open_error", (error: any) => {
             reject(error);
           });
           if (typeof this.client === "undefined") {
@@ -94,16 +94,16 @@ export class SignerConnection extends IJsonRpcConnection {
       this.pending = true;
       const client = await this.register();
       const compatible = await client.session.find({
-        blockchain: { chains: this.chains },
-        jsonrpc: { methods: this.methods },
+        chains: this.chains,
+        methods: this.methods,
       });
       if (compatible.length) return this.onOpen(compatible[0]);
-      this.session = await client.connect({
-        permissions: {
-          blockchain: { chains: this.chains },
-          jsonrpc: { methods: this.methods },
-        },
+      const { uri, approval } = await client.connect({
+        chains: this.chains,
+        methods: this.methods,
       });
+      this.events.emit(SIGNER_EVENTS.uri, { uri });
+      this.session = await approval();
       this.onOpen();
     } catch (e) {
       this.events.emit("open_error", e);
@@ -148,7 +148,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
     if (this.initializing) {
       return new Promise((resolve, reject) => {
-        this.events.once("register_error", error => {
+        this.events.once("register_error", (error: any) => {
           reject(error);
         });
         this.events.once(SIGNER_EVENTS.init, () => {
@@ -177,7 +177,7 @@ export class SignerConnection extends IJsonRpcConnection {
     }
   }
 
-  private onOpen(session?: SessionTypes.Settled) {
+  private onOpen(session?: SessionTypes.Struct) {
     this.pending = false;
     if (session) {
       this.session = session;
@@ -195,35 +195,52 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private registerEventListeners() {
     if (typeof this.client === "undefined") return;
-    this.client.on(CLIENT_EVENTS.session.created, (session: SessionTypes.Settled) => {
-      if (this.session && this.session?.topic !== session.topic) return;
-      this.session = session;
-      this.events.emit(SIGNER_EVENTS.created, session);
-    });
-    this.client.on(CLIENT_EVENTS.session.updated, (session: SessionTypes.Settled) => {
-      if (this.session && this.session?.topic !== session.topic) return;
-      this.session = session;
-      this.events.emit(SIGNER_EVENTS.updated, session);
-    });
+    // TODO(pedro) - add event handlers to IClient interface
+    // @ts-ignore
     this.client.on(
-      CLIENT_EVENTS.session.notification,
-      (notificationEvent: SessionTypes.NotificationEvent) => {
-        if (this.session && this.session?.topic !== notificationEvent.topic) return;
-        this.events.emit(SIGNER_EVENTS.notification, notificationEvent.notification);
+      "session_created",
+      // TODO(pedro) - add session created event
+      (session: SessionTypes.Struct) => {
+        if (this.session && this.session?.topic !== session.topic) return;
+        this.session = session;
+        this.events.emit(SIGNER_EVENTS.created, session);
       },
     );
-    this.client.on(CLIENT_EVENTS.session.deleted, (session: SessionTypes.Settled) => {
-      if (!this.session) return;
-      if (this.session && this.session?.topic !== session.topic) return;
-      this.onClose();
+    // TODO(pedro) - add event handlers to IClient interface
+    // @ts-ignore
+    this.client.on(
+      "session_updated",
+      // TODO(pedro) - add session updated event
+      (session: SessionTypes.Struct) => {
+        if (this.session && this.session?.topic !== session.topic) return;
+        this.session = session;
+        this.events.emit(SIGNER_EVENTS.updated, session);
+      },
+    );
+    // TODO(pedro) - add event handlers to IClient interface
+    // @ts-ignore
+    this.client.on(
+      "session_event",
+      // TODO(pedro) - add session event event
+      (sessionEvent: any) => {
+        if (this.session && this.session?.topic !== sessionEvent.topic) return;
+        this.events.emit(SIGNER_EVENTS.event, sessionEvent.event);
+      },
+    );
+    // TODO(pedro) - add event handlers to IClient interface
+    // @ts-ignore
+    this.client.on(
+      // TODO(pedro) - add session deleted event
+      "session_deleted",
+      (session: SessionTypes.Struct) => {
+        if (!this.session) return;
+        if (this.session && this.session?.topic !== session.topic) return;
+        this.onClose();
 
-      this.events.emit(SIGNER_EVENTS.deleted, session);
-      this.session = undefined;
-    });
-    this.client.on(CLIENT_EVENTS.pairing.proposal, async (proposal: PairingTypes.Proposal) => {
-      const uri = proposal.signal.params.uri;
-      this.events.emit(SIGNER_EVENTS.uri, { uri });
-    });
+        this.events.emit(SIGNER_EVENTS.deleted, session);
+        this.session = undefined;
+      },
+    );
   }
 }
 
