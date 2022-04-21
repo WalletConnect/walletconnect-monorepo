@@ -14,6 +14,8 @@ import {
   TEST_EVENTS,
   TEST_ACCOUNTS,
   TEST_RELAY_OPTIONS,
+  TEST_CLIENT_OPTIONS_A,
+  TEST_CLIENT_OPTIONS_B,
 } from "./shared";
 
 describe("Client", () => {
@@ -22,8 +24,8 @@ describe("Client", () => {
     expect(client).to.be.exist;
   });
   it("connect (with new pairing)", async () => {
-    const A = await Client.init({ ...TEST_CLIENT_OPTIONS, name: "client_a" });
-    const B = await Client.init({ ...TEST_CLIENT_OPTIONS, name: "client_b" });
+    const A = await Client.init(TEST_CLIENT_OPTIONS_A);
+    const B = await Client.init(TEST_CLIENT_OPTIONS_B);
 
     const { uri, approval } = await A.connect({
       methods: TEST_METHODS,
