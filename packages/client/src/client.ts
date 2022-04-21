@@ -5,7 +5,7 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { ClientTypes, IClient } from "@walletconnect/types";
+import { ClientTypes, IClient, IClientEvents } from "@walletconnect/types";
 import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino from "pino";
@@ -85,13 +85,21 @@ export class Client extends IClient {
 
   // ---------- Events ----------------------------------------------- //
 
-  public on = this.events.on;
+  public on: IClientEvents["on"] = (name, listener) => {
+    return this.events.on(name, listener);
+  };
 
-  public once = this.events.once;
+  public once: IClientEvents["once"] = (name, listener) => {
+    return this.events.once(name, listener);
+  };
 
-  public off = this.events.off;
+  public off: IClientEvents["off"] = (name, listener) => {
+    return this.events.off(name, listener);
+  };
 
-  public removeListener = this.events.removeAllListeners;
+  public removeListener: IClientEvents["removeListener"] = (name, listener) => {
+    return this.events.removeListener(name, listener);
+  };
 
   // ---------- Engine ----------------------------------------------- //
 

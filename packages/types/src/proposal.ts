@@ -18,4 +18,4 @@ export declare namespace ProposalTypes {
   }
 }
 
-export type IProposal = IStore<ProposalTypes.Struct>;
+export type IProposal = IStore<number, ProposalTypes.Struct>;

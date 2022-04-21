@@ -76,7 +76,7 @@ export default class Engine extends IEngine {
     });
 
     const requestId = await this.sendRequest(topic, "wc_sessionPropose", proposal);
-    await this.client.proposal.set(publicKey, { requestId, ...proposal });
+    await this.client.proposal.set(requestId, { requestId, ...proposal });
 
     return { uri, approval };
   };
@@ -95,9 +95,11 @@ export default class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async params => {
-    const { proposerPublicKey, relayProtocol, accounts, methods, events } = params;
+    const { requestId, relayProtocol, accounts, methods, events } = params;
+    const { pairingTopic, proposer } = await this.client.proposal.get(requestId);
     const selfPublicKey = await this.client.crypto.generateKeyPair();
-    const topic = await this.client.crypto.generateSessionKey(selfPublicKey, proposerPublicKey);
+    const peerPublicKey = proposer.publicKey;
+    const topic = await this.client.crypto.generateSessionKey(selfPublicKey, peerPublicKey);
     const sessionSettle = {
       relay: {
         protocol: relayProtocol ?? "waku",
@@ -114,7 +116,6 @@ export default class Engine extends IEngine {
     await this.client.relayer.subscribe(topic);
     await this.sendRequest(topic, "wc_sessionSettle", sessionSettle);
 
-    const { pairingTopic, requestId, proposer } = await this.client.proposal.get(proposerPublicKey);
     if (pairingTopic && requestId) {
       await this.sendResult<"wc_sessionPropose">(requestId, pairingTopic, {
         relay: {
@@ -122,7 +123,7 @@ export default class Engine extends IEngine {
         },
         responderPublicKey: selfPublicKey,
       });
-      await this.client.proposal.delete(proposerPublicKey, ERROR.DELETED.format());
+      await this.client.proposal.delete(requestId, ERROR.DELETED.format());
       await this.client.pairing.update(pairingTopic, {
         active: true,
         expiry: calcExpiry(THIRTY_DAYS),
@@ -135,7 +136,7 @@ export default class Engine extends IEngine {
       acknowledged: false,
       self: sessionSettle.controller,
       peer: {
-        publicKey: proposerPublicKey,
+        publicKey: proposer.publicKey,
         metadata: proposer.metadata,
       },
       controller: selfPublicKey,
@@ -152,12 +153,12 @@ export default class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async params => {
-    const { proposerPublicKey, reason } = params;
-    const { pairingTopic, requestId } = await this.client.proposal.get(proposerPublicKey);
+    const { requestId, reason } = params;
+    const { pairingTopic } = await this.client.proposal.get(requestId);
 
     if (pairingTopic && requestId) {
       await this.sendError(requestId, pairingTopic, reason);
-      await this.client.proposal.delete(proposerPublicKey, ERROR.DELETED.format());
+      await this.client.proposal.delete(requestId, ERROR.DELETED.format());
     }
   };
 
@@ -282,6 +283,8 @@ export default class Engine extends IEngine {
     this.client.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
       const { topic, message } = event;
       const payload = await this.client.crypto.decode(topic, message);
+      //eslint-disable-next-line
+      console.log(this.client.name, "INCOMING", payload);
 
       if (isJsonRpcRequest(payload)) {
         await this.client.history.set(topic, payload);
@@ -343,30 +346,53 @@ export default class Engine extends IEngine {
     payload,
   ) => {
     const { params, id: requestId } = payload;
-    await this.client.proposal.set(params.proposer.publicKey, {
+    // eslint-disable-next-line
+    console.log(this.client.name, "[onSessionProposeRequest]", "params", params);
+    await this.client.proposal.set(requestId, {
       requestId,
       pairingTopic: topic,
       ...params,
     });
+    // eslint-disable-next-line
+    console.log(this.client.name, "[onSessionProposeRequest]", "requestId", requestId);
+
     this.client.events.emit("session_proposal", { requestId, ...params });
   };
 
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
-    topic,
+    _topic,
     payload,
   ) => {
+    const { id: requestId } = payload;
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
-      const proposal = await this.client.proposal.get(topic);
+      // eslint-disable-next-line
+      console.log(this.client.name, "[onSessionProposeResponse]", "result", result);
+
+      const proposal = await this.client.proposal.get(requestId);
+      // eslint-disable-next-line
+      console.log(this.client.name, "[onSessionProposeResponse]", "proposal", proposal);
+
       const selfPublicKey = proposal.proposer.publicKey;
+      // eslint-disable-next-line
+      console.log(this.client.name, "[onSessionProposeResponse]", "selfPublicKey", selfPublicKey);
+
       const peerPublicKey = result.responderPublicKey;
+      // eslint-disable-next-line
+      console.log(this.client.name, "[onSessionProposeResponse]", "peerPublicKey", peerPublicKey);
+
       const sessionTopic = await this.client.crypto.generateSessionKey(
         selfPublicKey,
         peerPublicKey,
       );
-      await this.client.relayer.subscribe(sessionTopic);
+      // eslint-disable-next-line
+      console.log(this.client.name, "[onSessionProposeResponse]", "sessionTopic", sessionTopic);
+
+      const subscriptionId = await this.client.relayer.subscribe(sessionTopic);
+      // eslint-disable-next-line
+      console.log(this.client.name, "[onSessionProposeResponse]", "subscriptionId", subscriptionId);
     } else if (isJsonRpcError(payload)) {
-      await this.client.proposal.delete(topic, ERROR.DELETED.format());
+      await this.client.proposal.delete(requestId, ERROR.DELETED.format());
       this.client.events.emit("internal_connect_done", { error: payload.error });
     }
   };

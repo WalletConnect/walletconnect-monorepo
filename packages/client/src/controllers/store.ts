@@ -12,8 +12,8 @@ import { STORE_STORAGE_VERSION } from "../constants";
 
 type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Struct;
 
-export class Store<Data extends StoreStruct> extends IStore<Data> {
-  public data = new Map<string, Data>();
+export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
+  public map = new Map<Key, Data>();
 
   public version = STORE_STORAGE_VERSION;
 
@@ -24,7 +24,7 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
     this.logger = generateChildLogger(logger, this.name);
   }
 
-  public init: IStore<Data>["init"] = async () => {
+  public init: IStore<Key, Data>["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
   };
@@ -38,73 +38,73 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
   }
 
   get length(): number {
-    return this.data.size;
+    return this.map.size;
   }
 
-  get topics(): string[] {
-    return Array.from(this.data.keys());
+  get keys(): Key[] {
+    return Array.from(this.map.keys());
   }
 
   get values(): Data[] {
-    return Array.from(this.data.values());
+    return Array.from(this.map.values());
   }
 
-  public set: IStore<Data>["set"] = async (topic, data) => {
-    if (this.data.has(topic)) {
-      this.update(topic, data);
+  public set: IStore<Key, Data>["set"] = async (key, value) => {
+    if (this.map.has(key)) {
+      this.update(key, value);
     } else {
-      this.logger.debug(`Setting data`);
-      this.logger.trace({ type: "method", method: "set", topic, data });
-      this.data.set(topic, data);
+      this.logger.debug(`Setting value`);
+      this.logger.trace({ type: "method", method: "set", key, value });
+      this.map.set(key, value);
       this.persist();
     }
   };
 
-  public get: IStore<Data>["get"] = async topic => {
-    this.logger.debug(`Getting data`);
-    this.logger.trace({ type: "method", method: "get", topic });
-    const data = await this.getData(topic);
-    return data;
+  public get: IStore<Key, Data>["get"] = async key => {
+    this.logger.debug(`Getting value`);
+    this.logger.trace({ type: "method", method: "get", key });
+    const value = await this.getData(key);
+    return value;
   };
 
-  public update: IStore<Data>["update"] = async (topic, update) => {
-    this.logger.debug(`Updating data`);
-    this.logger.trace({ type: "method", method: "update", topic, update });
-    const data = { ...(await this.getData(topic)), ...update };
-    this.data.set(topic, data);
+  public update: IStore<Key, Data>["update"] = async (key, update) => {
+    this.logger.debug(`Updating value`);
+    this.logger.trace({ type: "method", method: "update", key, update });
+    const value = { ...(await this.getData(key)), ...update };
+    this.map.set(key, value);
     this.persist();
   };
 
-  public delete: IStore<Data>["delete"] = async (topic, reason) => {
-    if (!this.data.has(topic)) return;
-    this.logger.debug(`Deleting data`);
-    this.logger.trace({ type: "method", method: "delete", topic, reason });
-    this.data.delete(topic);
+  public delete: IStore<Key, Data>["delete"] = async (key, reason) => {
+    if (!this.map.has(key)) return;
+    this.logger.debug(`Deleting value`);
+    this.logger.trace({ type: "method", method: "delete", key, reason });
+    this.map.delete(key);
     this.persist();
   };
 
   // ---------- Private ----------------------------------------------- //
 
-  private async setDataStore(data: Data[]): Promise<void> {
-    await this.client.storage.setItem<Data[]>(this.storageKey, data);
+  private async setDataStore(value: Data[]): Promise<void> {
+    await this.client.storage.setItem<Data[]>(this.storageKey, value);
   }
 
   private async getDataStore(): Promise<Data[] | undefined> {
-    const data = await this.client.storage.getItem<Data[]>(this.storageKey);
-    return data;
+    const value = await this.client.storage.getItem<Data[]>(this.storageKey);
+    return value;
   }
 
-  private async getData(topic: string): Promise<Data> {
-    const data = this.data.get(topic);
-    if (!data) {
+  private async getData(key: Key): Promise<Data> {
+    const value = this.map.get(key);
+    if (!value) {
       const error = ERROR.NO_MATCHING_TOPIC.format({
         context: formatMessageContext(this.context),
-        topic,
+        key,
       });
       this.logger.error(error.message);
       throw new Error(error.message);
     }
-    return data;
+    return value;
   }
 
   private async persist() {
@@ -116,7 +116,7 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
       const persisted = await this.getDataStore();
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
-      if (this.data.size) {
+      if (this.map.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
           context: formatMessageContext(this.context),
         });
@@ -124,10 +124,10 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.logger.debug(`Successfully Restored data for ${formatMessageContext(this.context)}`);
-      this.logger.trace({ type: "method", method: "restore", data: this.values });
+      this.logger.debug(`Successfully Restored value for ${formatMessageContext(this.context)}`);
+      this.logger.trace({ type: "method", method: "restore", value: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore data for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Failed to Restore value for ${formatMessageContext(this.context)}`);
       this.logger.error(e as any);
     }
   }
@@ -139,11 +139,13 @@ export class Store<Data extends StoreStruct> extends IStore<Data> {
   }
 
   private reset() {
-    this.cached.forEach(data => {
-      if (isProposalStruct(data)) {
-        this.data.set(data.proposer.publicKey, data);
-      } else if (isSessionStruct(data)) {
-        this.data.set(data.topic, data);
+    this.cached.forEach(value => {
+      if (isProposalStruct(value)) {
+        // TODO(pedro) revert type casting as any
+        this.map.set(value.requestId as any, value);
+      } else if (isSessionStruct(value)) {
+        // TODO(pedro) revert type casting as any
+        this.map.set(value.topic as any, value);
       }
     });
   }

@@ -4,7 +4,7 @@ import { Logger } from "pino";
 import { SESSION_CONTEXT } from "../constants";
 import { Store } from "./store";
 
-export class Session extends Store<SessionTypes.Struct> {
+export class Session extends Store<string, SessionTypes.Struct> {
   constructor(public client: IClient, public logger: Logger) {
     super(client, logger, SESSION_CONTEXT);
   }

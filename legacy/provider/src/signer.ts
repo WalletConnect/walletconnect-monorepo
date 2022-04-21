@@ -66,7 +66,7 @@ export class SignerConnection extends IJsonRpcConnection {
       return;
     }
     return new Promise((resolve, reject): void => {
-      this.on("error", err => {
+      this.on("error", (err: any) => {
         reject(err);
       });
 
@@ -201,7 +201,7 @@ export class SignerConnection extends IJsonRpcConnection {
       this.events.emit("error", new Error("User closed modal"));
     });
 
-    this.wc.on("session_update", (error, payload) => {
+    this.wc.on("session_update", (_error, payload) => {
       const { accounts, chainId } = payload.params[0];
       if (!this.accounts || (accounts && this.accounts !== accounts)) {
         this.accounts = accounts;

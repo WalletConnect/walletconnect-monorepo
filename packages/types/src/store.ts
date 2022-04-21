@@ -2,26 +2,26 @@ import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 import { IClient } from "./client";
 
-export abstract class IStore<Data> {
-  public abstract data: Map<string, Data>;
+export abstract class IStore<Key, Value> {
+  public abstract map: Map<Key, Value>;
 
   public abstract readonly context: string;
 
   public abstract readonly length: number;
 
-  public abstract readonly topics: string[];
+  public abstract readonly keys: Key[];
 
-  public abstract readonly values: Data[];
+  public abstract readonly values: Value[];
 
   constructor(public client: IClient, public logger: Logger, public name: string) {}
 
   public abstract init(): Promise<void>;
 
-  public abstract set(topic: string, data: Data): Promise<void>;
+  public abstract set(key: Key, value: Value): Promise<void>;
 
-  public abstract get(topic: string): Promise<Data>;
+  public abstract get(key: Key): Promise<Value>;
 
-  public abstract update(topic: string, update: Partial<Data>): Promise<void>;
+  public abstract update(key: Key, update: Partial<Value>): Promise<void>;
 
-  public abstract delete(topic: string, reason: ErrorResponse): Promise<void>;
+  public abstract delete(key: Key, reason: ErrorResponse): Promise<void>;
 }

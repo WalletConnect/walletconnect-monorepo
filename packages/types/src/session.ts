@@ -43,6 +43,6 @@ export declare namespace SessionTypes {
   }
 }
 
-export interface ISession extends IStore<SessionTypes.Struct> {
+export interface ISession extends IStore<string, SessionTypes.Struct> {
   find: (filters: SessionTypes.Filters) => SessionTypes.Struct[];
 }

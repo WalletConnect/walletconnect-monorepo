@@ -1,10 +1,10 @@
-import path from "path";
+// import path from "path";
 import { SessionTypes, ClientTypes } from "@walletconnect/types";
 import { ONE_SECOND, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
 
 import { CLIENT_SHORT_TIMEOUT, PAIRING_DEFAULT_TTL, SESSION_DEFAULT_TTL } from "../../src";
 
-import { ROOT_DIR } from "../../../../ops/js/shared";
+// import { ROOT_DIR } from "../../../../ops/js/shared";
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
@@ -18,9 +18,12 @@ export const TEST_CLIENT_OPTIONS: ClientTypes.Options = {
   logger: "fatal",
   relayUrl: TEST_RELAY_URL,
   projectId: TEST_PROJECT_ID,
+  storageOptions: {
+    database: ":memory:",
+  },
 };
 
-export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");
+// export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");
 
 export const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
 
@@ -31,15 +34,6 @@ export const TEST_PERMISSIONS_JSONRPC_METHODS: string[] = [
   "eth_signTypedData",
   "personal_sign",
 ];
-
-export const TEST_PERMISSIONS: SessionTypes.BasePermissions = {
-  blockchain: {
-    chains: TEST_PERMISSIONS_CHAINS,
-  },
-  jsonrpc: {
-    methods: TEST_PERMISSIONS_JSONRPC_METHODS,
-  },
-};
 
 export const TEST_APP_METADATA_A: ClientTypes.Metadata = {
   name: "App A (Proposer)",

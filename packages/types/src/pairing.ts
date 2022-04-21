@@ -12,4 +12,4 @@ export declare namespace PairingTypes {
   }
 }
 
-export type IPairing = IStore<PairingTypes.Struct>;
+export type IPairing = IStore<string, PairingTypes.Struct>;
