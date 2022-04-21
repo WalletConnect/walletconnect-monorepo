@@ -317,9 +317,7 @@ export default class Engine extends IEngine {
     this.client.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
       const { topic, message } = event;
       const payload = await this.client.crypto.decode(topic, message);
-      //eslint-disable-next-line
-      console.log(this.client.name, "INCOMING", payload);
-
+      this.client.logger.trace({ type: "method", method: "registerRelayerEvents", payload });
       if (isJsonRpcRequest(payload)) {
         await this.client.history.set(topic, payload);
         this.onRelayEventRequest({ topic, payload });
@@ -396,16 +394,13 @@ export default class Engine extends IEngine {
     payload,
   ) => {
     const { params, id: id } = payload;
-    // eslint-disable-next-line
-    console.log(this.client.name, "[onSessionProposeRequest]", "params", params);
+    this.client.logger.trace({ type: "method", method: "onSessionProposeRequest", params });
     await this.client.proposal.set(id, {
       id,
       pairingTopic: topic,
       ...params,
     });
-    // eslint-disable-next-line
-    console.log(this.client.name, "[onSessionProposeRequest]", "id", id);
-
+    this.client.logger.trace({ type: "method", method: "onSessionProposeRequest", id });
     this.client.events.emit("session_proposal", { id, ...params });
   };
 
@@ -416,31 +411,36 @@ export default class Engine extends IEngine {
     const { id: id } = payload;
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "result", result);
-
+      this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", result });
       const proposal = await this.client.proposal.get(id);
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "proposal", proposal);
-
+      this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", proposal });
       const selfPublicKey = proposal.proposer.publicKey;
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "selfPublicKey", selfPublicKey);
-
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        selfPublicKey,
+      });
       const peerPublicKey = result.responderPublicKey;
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "peerPublicKey", peerPublicKey);
-
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        peerPublicKey,
+      });
       const sessionTopic = await this.client.crypto.generateSessionKey(
         selfPublicKey,
         peerPublicKey,
       );
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "sessionTopic", sessionTopic);
-
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        sessionTopic,
+      });
       const subscriptionId = await this.client.relayer.subscribe(sessionTopic);
-      // eslint-disable-next-line
-      console.log(this.client.name, "[onSessionProposeResponse]", "subscriptionId", subscriptionId);
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        subscriptionId,
+      });
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(id, ERROR.DELETED.format());
       this.client.events.emit("internal_connect_done", { error: payload.error });
