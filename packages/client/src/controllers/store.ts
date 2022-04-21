@@ -142,7 +142,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     this.cached.forEach(value => {
       if (isProposalStruct(value)) {
         // TODO(pedro) revert type casting as any
-        this.map.set(value.requestId as any, value);
+        this.map.set(value.id as any, value);
       } else if (isSessionStruct(value)) {
         // TODO(pedro) revert type casting as any
         this.map.set(value.topic as any, value);

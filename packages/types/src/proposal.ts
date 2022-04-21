@@ -5,7 +5,7 @@ import { IStore } from "./store";
 
 export declare namespace ProposalTypes {
   export interface Struct {
-    requestId: number;
+    id: number;
     relays: RelayerTypes.ProtocolOptions[];
     proposer: {
       publicKey: string;

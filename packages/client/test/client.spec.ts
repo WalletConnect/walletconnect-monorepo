@@ -46,7 +46,7 @@ describe("Client", () => {
 
           try {
             const { acknowledged } = await B.approve({
-              requestId: data.requestId,
+              id: data.id,
               accounts: TEST_SESSION_ACCOUNTS,
               methods: data.methods,
               events: data.events,

@@ -38,7 +38,7 @@ export declare namespace EngineTypes {
     uri: string;
   }
   interface ApproveParams {
-    requestId: number;
+    id: number;
     accounts: SessionTypes.Accounts;
     methods: SessionTypes.Methods;
     events: SessionTypes.Events;
@@ -46,7 +46,7 @@ export declare namespace EngineTypes {
   }
 
   interface RejectParams {
-    requestId: number;
+    id: number;
     reason: ErrorResponse;
   }
 
