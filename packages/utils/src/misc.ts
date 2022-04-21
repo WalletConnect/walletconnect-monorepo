@@ -1,5 +1,5 @@
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
-import { ClientTypes, RelayerClientMetadata } from "@walletconnect/types";
+import { ClientTypes, RelayerClientMetadata, EngineTypes } from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
@@ -210,4 +210,10 @@ export function createDelayedPromise<T>() {
     reject,
     done,
   };
+}
+
+// -- events ---------------------------------------------- //
+
+export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
+  return `${event}${id ?? ""}`;
 }

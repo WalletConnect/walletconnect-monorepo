@@ -10,7 +10,6 @@ import { IProposal, ProposalTypes } from "./proposal";
 import { IRelayer } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "./history";
-import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 
 export declare namespace ClientTypes {
   type Event =
@@ -22,29 +21,9 @@ export declare namespace ClientTypes {
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
-    | "pairing_delete"
-    | "internal_connect_done"
-    | "internal_approve_done"
-    | "internal_update_accounts_done"
-    | "internal_update_methods_done"
-    | "internal_update_events_done"
-    | "internal_update_expiry_done"
-    | "internal_session_ping_done"
-    | "internal_pairing_ping_done"
-    | "internal_session_delete_done"
-    | "internal_pairing_delete_done";
+    | "pairing_delete";
 
   interface EventArguments {
-    internal_connect_done: { error?: ErrorResponse; data?: SessionTypes.Struct };
-    internal_approve_done: { error?: ErrorResponse };
-    internal_update_accounts_done: { error?: ErrorResponse };
-    internal_update_methods_done: { error?: ErrorResponse };
-    internal_update_events_done: { error?: ErrorResponse };
-    internal_update_expiry_done: { error?: ErrorResponse };
-    internal_session_ping_done: { error?: ErrorResponse };
-    internal_pairing_ping_done: { error?: ErrorResponse };
-    internal_session_delete_done: { error?: ErrorResponse };
-    internal_pairing_delete_done: { error?: ErrorResponse };
     session_proposal: ProposalTypes.Struct;
     update_accounts: { topic: string; accounts: SessionTypes.Accounts };
     update_methods: { topic: string; methods: SessionTypes.Methods };

@@ -2,7 +2,6 @@ import {
   JsonRpcResponse,
   JsonRpcRequest,
   ErrorResponse,
-  RequestArguments,
   JsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-types";
@@ -11,8 +10,34 @@ import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
 import { PairingTypes } from "./pairing";
 import { JsonRpcTypes } from "./jsonrpc";
+import { EventEmitter } from "events";
 
 export declare namespace EngineTypes {
+  type Event =
+    | "connect"
+    | "approve"
+    | "update_accounts"
+    | "update_methods"
+    | "update_events"
+    | "update_expiry"
+    | "session_ping"
+    | "pairing_ping"
+    | "session_delete"
+    | "pairing_delete";
+
+  interface EventArguments {
+    connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
+    approve: { error?: ErrorResponse };
+    update_accounts: { error?: ErrorResponse };
+    update_methods: { error?: ErrorResponse };
+    update_events: { error?: ErrorResponse };
+    update_expiry: { error?: ErrorResponse };
+    session_ping: { error?: ErrorResponse };
+    pairing_ping: { error?: ErrorResponse };
+    session_delete: { error?: ErrorResponse };
+    pairing_delete: { error?: ErrorResponse };
+  }
+
   interface UriParameters {
     protocol: string;
     version: number;
@@ -37,6 +62,7 @@ export declare namespace EngineTypes {
   interface PairParams {
     uri: string;
   }
+
   interface ApproveParams {
     id: number;
     accounts: SessionTypes.Accounts;
@@ -70,9 +96,12 @@ export declare namespace EngineTypes {
     expiry: SessionTypes.Expiry;
   }
 
-  interface RequestParams<T = any> {
+  interface RequestParams {
     topic: string;
-    request: RequestArguments<T>;
+    request: {
+      method: string;
+      params: unknown;
+    };
     chainId?: string;
   }
 
@@ -98,6 +127,22 @@ export declare namespace EngineTypes {
     topic: string;
     reason: ErrorResponse;
   }
+}
+
+export abstract class IEngineEvents extends EventEmitter {
+  constructor() {
+    super();
+  }
+
+  public abstract emit: <E extends EngineTypes.Event>(
+    event: string,
+    args: EngineTypes.EventArguments[E],
+  ) => boolean;
+
+  public abstract once: <E extends EngineTypes.Event>(
+    event: string,
+    listener: (args: EngineTypes.EventArguments[E]) => any,
+  ) => this;
 }
 
 // -- private method interface -------------------------------------- //
@@ -247,7 +292,7 @@ export abstract class IEngine {
 
   public abstract updateExpiry(params: EngineTypes.UpdateExpiryParams): Promise<void>;
 
-  public abstract request<T = any>(params: EngineTypes.RequestParams<T>): Promise<any>;
+  public abstract request(params: EngineTypes.RequestParams): Promise<void>;
 
   public abstract respond(params: EngineTypes.RespondParams): Promise<void>;
 
