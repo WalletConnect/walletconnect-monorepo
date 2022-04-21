@@ -18,6 +18,7 @@ export declare namespace ClientTypes {
     | "update_accounts"
     | "update_methods"
     | "update_events"
+    | "update_expiry"
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
@@ -27,6 +28,7 @@ export declare namespace ClientTypes {
     | "internal_update_accounts_done"
     | "internal_update_methods_done"
     | "internal_update_events_done"
+    | "internal_update_expiry_done"
     | "internal_session_ping_done"
     | "internal_pairing_ping_done"
     | "internal_session_delete_done"
@@ -38,14 +40,16 @@ export declare namespace ClientTypes {
     internal_update_accounts_done: { error?: ErrorResponse };
     internal_update_methods_done: { error?: ErrorResponse };
     internal_update_events_done: { error?: ErrorResponse };
+    internal_update_expiry_done: { error?: ErrorResponse };
     internal_session_ping_done: { error?: ErrorResponse };
     internal_pairing_ping_done: { error?: ErrorResponse };
     internal_session_delete_done: { error?: ErrorResponse };
     internal_pairing_delete_done: { error?: ErrorResponse };
     session_proposal: ProposalTypes.Struct;
-    update_accounts: SessionTypes.Accounts;
-    update_methods: SessionTypes.Methods;
-    update_events: SessionTypes.Events;
+    update_accounts: { topic: string; accounts: SessionTypes.Accounts };
+    update_methods: { topic: string; methods: SessionTypes.Methods };
+    update_events: { topic: string; events: SessionTypes.Events };
+    update_expiry: { topic: string; expiry: number };
     session_ping: { topic: string };
     pairing_ping: { topic: string };
     session_delete: { topic: string };

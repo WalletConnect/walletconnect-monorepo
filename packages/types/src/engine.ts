@@ -171,6 +171,16 @@ export interface EnginePrivate {
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateEvents"]> | JsonRpcError,
   ): void;
 
+  onSessionUpdateExpiryRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateExpiry"]>,
+  ): Promise<void>;
+
+  onSessionUpdateExpiryResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateExpiry"]> | JsonRpcError,
+  ): void;
+
   onSessionPingRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPing"]>,

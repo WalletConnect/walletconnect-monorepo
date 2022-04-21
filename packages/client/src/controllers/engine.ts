@@ -201,8 +201,17 @@ export default class Engine extends IEngine {
     await this.client.session.update(topic, { events });
   };
 
-  public updateExpiry: IEngine["updateExpiry"] = async () => {
-    // TODO
+  public updateExpiry: IEngine["updateExpiry"] = async params => {
+    // TODO(ilja) validate
+    const { topic, expiry } = params;
+    await this.sendRequest(topic, "wc_sessionUpdateExpiry", { expiry });
+    const { done, resolve, reject } = createDelayedPromise<void>();
+    this.client.events.once("internal_update_expiry_done", ({ error }) => {
+      if (error) reject(error);
+      else resolve();
+    });
+    await done();
+    await this.client.session.update(topic, { expiry });
   };
 
   public request: IEngine["request"] = async () => {
@@ -341,6 +350,8 @@ export default class Engine extends IEngine {
         return this.onSessionUpdateMethodsRequest(topic, payload);
       case "wc_sessionUpdateEvents":
         return this.onSessionUpdateEventsRequest(topic, payload);
+      case "wc_sessionUpdateExpiry":
+        return this.onSessionUpdateExpiryRequest(topic, payload);
       case "wc_sessionPing":
         return this.onSessionPingRequest(topic, payload);
       case "wc_pairingPing":
@@ -372,6 +383,8 @@ export default class Engine extends IEngine {
         return this.onSessionUpdateMethodsResponse(topic, payload);
       case "wc_sessionUpdateEvents":
         return this.onSessionUpdateEventsResponse(topic, payload);
+      case "wc_sessionUpdateExpiry":
+        return this.onSessionUpdateExpiryResponse(topic, payload);
       case "wc_sessionPing":
         return this.onSessionPingResponse(topic, payload);
       case "wc_pairingPing":
@@ -496,7 +509,7 @@ export default class Engine extends IEngine {
     const { params, id } = payload;
     await this.client.session.update(topic, { accounts: params.accounts });
     await this.sendResult<"wc_sessionUpdateAccounts">(id, topic, true);
-    this.client.events.emit("update_accounts", params.accounts);
+    this.client.events.emit("update_accounts", { topic, accounts: params.accounts });
   };
 
   private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = (
@@ -519,7 +532,7 @@ export default class Engine extends IEngine {
     const { params, id } = payload;
     await this.client.session.update(topic, { methods: params.methods });
     await this.sendResult<"wc_sessionUpdateMethods">(id, topic, true);
-    this.client.events.emit("update_methods", params.methods);
+    this.client.events.emit("update_methods", { topic, methods: params.methods });
   };
 
   private onSessionUpdateMethodsResponse: EnginePrivate["onSessionUpdateMethodsResponse"] = (
@@ -542,7 +555,7 @@ export default class Engine extends IEngine {
     const { params, id } = payload;
     await this.client.session.update(topic, { events: params.events });
     await this.sendResult<"wc_sessionUpdateEvents">(id, topic, true);
-    this.client.events.emit("update_events", params.events);
+    this.client.events.emit("update_events", { topic, events: params.events });
   };
 
   private onSessionUpdateEventsResponse: EnginePrivate["onSessionUpdateEventsResponse"] = (
@@ -554,6 +567,29 @@ export default class Engine extends IEngine {
       this.client.events.emit("internal_update_events_done", {});
     } else if (isJsonRpcError(payload)) {
       this.client.events.emit("internal_update_events_done", { error: payload.error });
+    }
+  };
+
+  private onSessionUpdateExpiryRequest: EnginePrivate["onSessionUpdateExpiryRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    // TODO(ilja) validation
+    const { params, id } = payload;
+    await this.client.session.update(topic, { expiry: params.expiry });
+    await this.sendResult<"wc_sessionUpdateExpiry">(id, topic, true);
+    this.client.events.emit("update_expiry", { topic, expiry: params.expiry });
+  };
+
+  private onSessionUpdateExpiryResponse: EnginePrivate["onSessionUpdateExpiryResponse"] = (
+    _topic,
+    payload,
+  ) => {
+    // TODO(ilja) validation
+    if (isJsonRpcResult(payload)) {
+      this.client.events.emit("internal_update_expiry_done", {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit("internal_update_expiry_done", { error: payload.error });
     }
   };
 
