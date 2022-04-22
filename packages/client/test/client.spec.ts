@@ -203,4 +203,21 @@ describe("Client", () => {
       expect(result).to.eql(eventsAfter);
     });
   });
+
+  describe("updateExpiry", () => {
+    it("updates session expiry state with provided expiry", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+      const expiryBefore = (await clients.A.session.get(topic)).expiry;
+      const expiryAfter = expiryBefore + 1000;
+      await clients.A.updateExpiry({
+        topic,
+        expiry: expiryAfter,
+      });
+      const result = (await clients.A.session.get(topic)).expiry;
+      expect(result).to.eql(expiryAfter);
+    });
+  });
 });
