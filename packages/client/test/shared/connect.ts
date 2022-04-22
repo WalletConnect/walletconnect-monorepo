@@ -20,10 +20,7 @@ export interface TestConnectParams extends EngineTypes.ConnectParams {
   relays?: RelayerTypes.ProtocolOptions[];
 }
 
-export async function testConnectMethod(
-  clients: Clients,
-  params?: TestConnectParams,
-): Promise<SessionTypes.Struct["topic"]> {
+export async function testConnectMethod(clients: Clients, params?: TestConnectParams) {
   const { A, B } = clients;
 
   const connectParams: EngineTypes.ConnectParams = {
@@ -53,7 +50,11 @@ export async function testConnectMethod(
     pairingA = await A.pairing.get(uriParams.topic);
     expect(pairingA.topic).to.eql(uriParams.topic);
     expect(pairingA.relay).to.eql(uriParams.relay);
+  } else {
+    pairingA = await A.pairing.get(connectParams.pairingTopic);
   }
+
+  if (!pairingA) throw new Error("expect pairing A to be defined");
 
   let sessionA: SessionTypes.Struct | undefined;
   let sessionB: SessionTypes.Struct | undefined;
@@ -137,5 +138,5 @@ export async function testConnectMethod(
   expect(sessionA.controller).to.eql(sessionA.peer.publicKey);
   expect(sessionB.controller).to.eql(sessionB.self.publicKey);
 
-  return sessionA.topic;
+  return { pairingA, sessionA };
 }
