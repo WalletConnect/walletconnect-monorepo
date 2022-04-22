@@ -169,4 +169,21 @@ describe("Client", () => {
       expect(result).to.eql(accountsAfter);
     });
   });
+
+  describe("updateMethods", () => {
+    it("updates session methods state with provided methods", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+      const methodsBefore = (await clients.A.session.get(topic)).methods;
+      const methodsAfter = [...methodsBefore, "eth_sign"];
+      await clients.A.updateMethods({
+        topic,
+        methods: methodsAfter,
+      });
+      const result = (await clients.A.session.get(topic)).methods;
+      expect(result).to.eql(methodsAfter);
+    });
+  });
 });
