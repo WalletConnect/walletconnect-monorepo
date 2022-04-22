@@ -149,4 +149,24 @@ describe("Client", () => {
       });
     });
   });
+
+  describe("updateAccounts", () => {
+    it("updates session account state with provided accounts", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+      const accountsBefore = (await clients.A.session.get(topic)).accounts;
+      const accountsAfter = [
+        ...accountsBefore,
+        "eip155:42:0x3c582121909DE92Dc89A36898633C1aE4790382b",
+      ];
+      await clients.A.updateAccounts({
+        topic,
+        accounts: accountsAfter,
+      });
+      const result = (await clients.A.session.get(topic)).accounts;
+      expect(result).to.eql(accountsAfter);
+    });
+  });
 });
