@@ -41,7 +41,7 @@ dev: ## start local dev environment
 ifeq (,$(fast))
 	@make build-dev
 endif
-	@docker-compose $(DOCKER_COMPOSE_DEV) up
+	@docker-compose $(DOCKER_COMPOSE_DEV) up -d
 
 .PHONY: stop
 stop: ## stop local environment 
