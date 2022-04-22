@@ -50,19 +50,17 @@ export abstract class ICrypto {
 
   public abstract generateKeyPair(): Promise<string>;
 
-  public abstract generateSessionKey(
+  public abstract generateSharedKey(
     selfPublicKey: string,
     peerPublicKey: string,
     overrideTopic?: string,
   ): Promise<string>;
 
-  public abstract setPairingKey(symKey: string, overrideTopic?: string): Promise<string>;
+  public abstract setSymKey(symKey: string, overrideTopic?: string): Promise<string>;
 
   public abstract deleteKeyPair(publicKey: string): Promise<void>;
 
-  public abstract deleteSessionKey(topic: string): Promise<void>;
-
-  public abstract deletePairingKey(topic: string): Promise<void>;
+  public abstract deleteSymKey(topic: string): Promise<void>;
 
   public abstract encrypt(topic: string, message: string): Promise<string>;
 

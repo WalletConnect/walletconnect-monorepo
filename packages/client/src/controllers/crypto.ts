@@ -39,10 +39,10 @@ export class Crypto implements ICrypto {
 
   public generateKeyPair: ICrypto["generateKeyPair"] = async () => {
     const keyPair = generateKeyPair();
-    return this.setPrivateKey(keyPair.privateKey, keyPair.publicKey);
+    return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public generateSessionKey: ICrypto["generateSessionKey"] = async (
+  public generateSharedKey: ICrypto["generateSharedKey"] = async (
     selfPublicKey,
     peerPublicKey,
     overrideTopic,
@@ -53,19 +53,17 @@ export class Crypto implements ICrypto {
     return this.setSymKey(symKey, overrideTopic);
   };
 
-  public setPairingKey: ICrypto["setPairingKey"] = async (symKey, overrideTopic) => {
-    return this.setSymKey(symKey, overrideTopic);
+  public setSymKey: ICrypto["setSymKey"] = async (symKey, overrideTopic) => {
+    const topic = overrideTopic || (await hashKey(symKey));
+    await this.keychain.set(topic, symKey);
+    return topic;
   };
 
   public deleteKeyPair: ICrypto["deleteKeyPair"] = async (publicKey: string) => {
     await this.keychain.del(publicKey);
   };
 
-  public deleteSessionKey: ICrypto["deleteSessionKey"] = async (topic: string) => {
-    await this.keychain.del(topic);
-  };
-
-  public deletePairingKey: ICrypto["deletePairingKey"] = async (topic: string) => {
+  public deleteSymKey: ICrypto["deleteSymKey"] = async (topic: string) => {
     await this.keychain.del(topic);
   };
 
@@ -97,7 +95,7 @@ export class Crypto implements ICrypto {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async setPrivateKey(privateKey: string, publicKey: string): Promise<string> {
+  private async setPrivateKey(publicKey: string, privateKey: string): Promise<string> {
     await this.keychain.set(publicKey, privateKey);
     return publicKey;
   }
@@ -107,11 +105,6 @@ export class Crypto implements ICrypto {
     return privateKey;
   }
 
-  private async setSymKey(symKey: string, overrideTopic?: string): Promise<string> {
-    const topic = overrideTopic || (await hashKey(symKey));
-    await this.keychain.set(topic, symKey);
-    return topic;
-  }
   private async getSymKey(topic: string): Promise<string> {
     const symKey = await this.keychain.get(topic);
     return symKey;

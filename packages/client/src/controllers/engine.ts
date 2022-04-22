@@ -79,6 +79,8 @@ export default class Engine extends IEngine {
       }
     });
 
+    if (!topic) throw new Error(ERROR.MISSING_OR_INVALID.stringify({ name: "topic" }));
+
     const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
     await this.client.proposal.set(id, { id, ...proposal });
 
@@ -91,7 +93,7 @@ export default class Engine extends IEngine {
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.client.pairing.set(topic, pairing);
-    await this.client.crypto.setPairingKey(symKey, topic);
+    await this.client.crypto.setSymKey(symKey, topic);
     await this.client.relayer.subscribe(topic, { relay });
     // TODO(ilja) this.expirer / timeout pairing ?
 
@@ -104,7 +106,7 @@ export default class Engine extends IEngine {
     const { pairingTopic, proposer } = await this.client.proposal.get(id);
     const selfPublicKey = await this.client.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
-    const topic = await this.client.crypto.generateSessionKey(selfPublicKey, peerPublicKey);
+    const topic = await this.client.crypto.generateSharedKey(selfPublicKey, peerPublicKey);
     const sessionSettle = {
       relay: {
         protocol: relayProtocol ?? "waku",
@@ -278,7 +280,7 @@ export default class Engine extends IEngine {
 
   private async createPairing() {
     const symKey = generateRandomBytes32();
-    const topic = await this.client.crypto.setPairingKey(symKey);
+    const topic = await this.client.crypto.setSymKey(symKey);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
     const pairing = { topic, expiry, relay, active: false };
@@ -449,10 +451,7 @@ export default class Engine extends IEngine {
         method: "onSessionProposeResponse",
         peerPublicKey,
       });
-      const sessionTopic = await this.client.crypto.generateSessionKey(
-        selfPublicKey,
-        peerPublicKey,
-      );
+      const sessionTopic = await this.client.crypto.generateSharedKey(selfPublicKey, peerPublicKey);
       this.client.logger.trace({
         type: "method",
         method: "onSessionProposeResponse",
@@ -646,7 +645,7 @@ export default class Engine extends IEngine {
     await this.client.relayer.unsubscribe(topic);
     await this.sendResult<"wc_sessionDelete">(id, topic, true);
     await this.client.session.delete(topic, ERROR.DELETED.format());
-    await this.client.crypto.deleteSessionKey(topic);
+    await this.client.crypto.deleteSymKey(topic);
     this.client.events.emit("session_delete", { topic });
   };
 
@@ -658,7 +657,7 @@ export default class Engine extends IEngine {
     if (isJsonRpcResult(payload)) {
       await this.client.relayer.unsubscribe(topic);
       await this.client.session.delete(topic, ERROR.DELETED.format());
-      await this.client.crypto.deleteSessionKey(topic);
+      await this.client.crypto.deleteSymKey(topic);
       this.events.emit(engineEvent("session_delete"), {});
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_delete"), { error: payload.error });
@@ -674,7 +673,7 @@ export default class Engine extends IEngine {
     await this.client.relayer.unsubscribe(topic);
     await this.sendResult<"wc_pairingDelete">(id, topic, true);
     await this.client.pairing.delete(topic, ERROR.DELETED.format());
-    await this.client.crypto.deletePairingKey(topic);
+    await this.client.crypto.deleteSymKey(topic);
     this.client.events.emit("pairing_delete", { topic });
   };
 
@@ -686,7 +685,7 @@ export default class Engine extends IEngine {
     if (isJsonRpcResult(payload)) {
       await this.client.relayer.unsubscribe(topic);
       await this.client.pairing.delete(topic, ERROR.DELETED.format());
-      await this.client.crypto.deletePairingKey(topic);
+      await this.client.crypto.deleteSymKey(topic);
       this.events.emit(engineEvent("pairing_delete"), {});
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("pairing_delete"), { error: payload.error });
