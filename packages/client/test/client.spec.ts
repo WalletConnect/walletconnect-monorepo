@@ -38,10 +38,8 @@ describe("Client", () => {
       const topic = await testConnectMethod(clients);
       const reason = ERROR.USER_DISCONNECTED.format();
       await clients.A.disconnect({ topic, reason });
-      // FIXME: `topic` is logged as `undefined` here on the rejection.
       await expect(clients.A.session.get(topic)).to.eventually.be.rejectedWith(
-        // `No matching session with topic: ${topic}`,
-        `No matching session with topic: undefined`,
+        `No matching session with topic: ${topic}`,
       );
       // FIXME: engine.ping is not handling this base case currently, this doesn't throw/reject.
       // const promise = clients.A.ping({ topic });

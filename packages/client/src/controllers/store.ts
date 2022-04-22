@@ -98,7 +98,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     if (!value) {
       const error = ERROR.NO_MATCHING_TOPIC.format({
         context: this.name,
-        key,
+        topic: key,
       });
       this.logger.error(error.message);
       throw new Error(error.message);
