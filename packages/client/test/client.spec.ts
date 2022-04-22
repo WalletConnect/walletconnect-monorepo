@@ -186,4 +186,21 @@ describe("Client", () => {
       expect(result).to.eql(methodsAfter);
     });
   });
+
+  describe("updateEvents", () => {
+    it("updates session events state with provided events", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+      const eventsBefore = (await clients.A.session.get(topic)).events;
+      const eventsAfter = [...eventsBefore, "connect", "disconnect"];
+      await clients.A.updateEvents({
+        topic,
+        events: eventsAfter,
+      });
+      const result = (await clients.A.session.get(topic)).events;
+      expect(result).to.eql(eventsAfter);
+    });
+  });
 });
