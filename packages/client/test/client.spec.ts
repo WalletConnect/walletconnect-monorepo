@@ -1,8 +1,6 @@
 import { ERROR } from "@walletconnect/utils";
 import "mocha";
-
 import Client from "../src";
-
 import { expect, initTwoClients, testConnectMethod, TEST_CLIENT_OPTIONS } from "./shared";
 
 describe("Client", () => {
