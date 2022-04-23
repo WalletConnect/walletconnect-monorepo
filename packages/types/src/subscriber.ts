@@ -1,7 +1,7 @@
+import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import { Logger } from "pino";
-import { IClient } from "./client";
+
 import { IRelayer, RelayerTypes } from "./relayer";
 
 export declare namespace SubscriberTypes {
@@ -57,7 +57,7 @@ export abstract class ISubscriber extends IEvents {
 
   public abstract readonly context: string;
 
-  constructor(public relayer: IRelayer, public client: IClient, public logger: Logger) {
+  constructor(public relayer: IRelayer, public logger: Logger) {
     super();
   }
 

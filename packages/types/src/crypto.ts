@@ -1,6 +1,6 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
-import { IClient } from "./client";
+import { ICore } from "./core";
 import { IKeyChain } from "./keychain";
 
 export declare namespace CryptoTypes {
@@ -38,7 +38,7 @@ export abstract class ICrypto {
   public abstract keychain: IKeyChain;
 
   constructor(
-    public client: IClient,
+    public core: ICore,
     public logger: Logger,
     // @ts-ignore
     keychain?: IKeyChain,

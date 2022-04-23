@@ -1,6 +1,6 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
-import { IClient } from "./client";
+import { ICore } from "./core";
 
 export abstract class IStore<Key, Value> {
   public abstract map: Map<Key, Value>;
@@ -13,7 +13,7 @@ export abstract class IStore<Key, Value> {
 
   public abstract readonly values: Value[];
 
-  constructor(public client: IClient, public logger: Logger, public name: string) {}
+  constructor(public core: ICore, public logger: Logger, public name: string) {}
 
   public abstract init(): Promise<void>;
 

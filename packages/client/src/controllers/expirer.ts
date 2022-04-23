@@ -1,7 +1,7 @@
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { toMiliseconds } from "@walletconnect/time";
-import { ExpirerTypes, IClient, IExpirer } from "@walletconnect/types";
+import { ExpirerTypes, ICore, IExpirer } from "@walletconnect/types";
 import { ERROR, formatStorageKeyName } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
@@ -18,9 +18,9 @@ export class Expirer extends IExpirer {
 
   private cached: ExpirerTypes.Expiration[] = [];
 
-  constructor(public client: IClient, public logger: Logger) {
-    super(client, logger);
-    this.client;
+  constructor(public core: ICore, public logger: Logger) {
+    super(core, logger);
+    this.core;
     this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
   }
@@ -30,7 +30,7 @@ export class Expirer extends IExpirer {
   }
 
   get storageKey(): string {
-    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   get length(): number {
@@ -104,13 +104,11 @@ export class Expirer extends IExpirer {
   // ---------- Private ----------------------------------------------- //
 
   private async setExpirations(expirations: ExpirerTypes.Expiration[]): Promise<void> {
-    await this.client.storage.setItem<ExpirerTypes.Expiration[]>(this.storageKey, expirations);
+    await this.core.storage.setItem<ExpirerTypes.Expiration[]>(this.storageKey, expirations);
   }
 
   private async getExpirations(): Promise<ExpirerTypes.Expiration[] | undefined> {
-    const expirations = await this.client.storage.getItem<ExpirerTypes.Expiration[]>(
-      this.storageKey,
-    );
+    const expirations = await this.core.storage.getItem<ExpirerTypes.Expiration[]>(this.storageKey);
     return expirations;
   }
 
@@ -194,7 +192,7 @@ export class Expirer extends IExpirer {
   }
 
   private registerEventListeners(): void {
-    this.client.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkExpirations());
+    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => this.checkExpirations());
     this.events.on(EXPIRER_EVENTS.created, (createdEvent: ExpirerTypes.Created) => {
       const eventName = EXPIRER_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);

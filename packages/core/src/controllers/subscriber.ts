@@ -1,12 +1,12 @@
+import { Logger } from "pino";
+import { EventEmitter } from "events";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import {
-  IClient,
   IRelayer,
   ISubscriber,
-  ISubscriberTopicMap,
   RelayerTypes,
   SubscriberEvents,
   SubscriberTypes,
@@ -17,58 +17,14 @@ import {
   getRelayProtocolApi,
   getRelayProtocolName,
 } from "@walletconnect/utils";
-import { EventEmitter } from "events";
-import { Logger } from "pino";
+
 import {
   RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
 } from "../constants";
-
-export class SubscriberTopicMap implements ISubscriberTopicMap {
-  public map = new Map<string, string[]>();
-
-  get topics(): string[] {
-    return Array.from(this.map.keys());
-  }
-
-  public set: ISubscriberTopicMap["set"] = (topic, id) => {
-    const ids = this.get(topic);
-    if (this.exists(topic, id)) return;
-    this.map.set(topic, [...ids, id]);
-  };
-
-  public get: ISubscriberTopicMap["get"] = topic => {
-    const ids = this.map.get(topic);
-    return ids || [];
-  };
-
-  public exists: ISubscriberTopicMap["exists"] = (topic, id) => {
-    const ids = this.get(topic);
-    return ids.includes(id);
-  };
-
-  public delete: ISubscriberTopicMap["delete"] = (topic, id) => {
-    if (typeof id === "undefined") {
-      this.map.delete(topic);
-      return;
-    }
-    if (!this.map.has(topic)) return;
-    const ids = this.get(topic);
-    if (!this.exists(topic, id)) return;
-    const remaining = ids.filter(x => x !== id);
-    if (!remaining.length) {
-      this.map.delete(topic);
-      return;
-    }
-    this.map.set(topic, remaining);
-  };
-
-  public clear: ISubscriberTopicMap["clear"] = () => {
-    this.map.clear();
-  };
-}
+import { SubscriberTopicMap } from "./topicmap";
 
 export class Subscriber extends ISubscriber {
   public subscriptions = new Map<string, SubscriberTypes.Active>();
@@ -85,9 +41,8 @@ export class Subscriber extends ISubscriber {
 
   private cached: SubscriberTypes.Active[] = [];
 
-  constructor(public relayer: IRelayer, public client: IClient, public logger: Logger) {
-    super(relayer, client, logger);
-    this.client = client;
+  constructor(public relayer: IRelayer, public logger: Logger) {
+    super(relayer, logger);
     this.relayer = relayer;
     this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
@@ -103,7 +58,9 @@ export class Subscriber extends ISubscriber {
   }
 
   get storageKey(): string {
-    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return (
+      this.relayer.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context)
+    );
   }
 
   get length(): number {
@@ -280,11 +237,14 @@ export class Subscriber extends ISubscriber {
   }
 
   private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]): Promise<void> {
-    await this.client.storage.setItem<SubscriberTypes.Active[]>(this.storageKey, subscriptions);
+    await this.relayer.core.storage.setItem<SubscriberTypes.Active[]>(
+      this.storageKey,
+      subscriptions,
+    );
   }
 
   private async getRelayerSubscriptions(): Promise<SubscriberTypes.Active[] | undefined> {
-    const subscriptions = await this.client.storage.getItem<SubscriberTypes.Active[]>(
+    const subscriptions = await this.relayer.core.storage.getItem<SubscriberTypes.Active[]>(
       this.storageKey,
     );
     return subscriptions;
@@ -406,7 +366,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private registerEventListeners(): void {
-    this.relayer.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+    this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
     this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {

@@ -120,7 +120,7 @@ export class Publisher extends IPublisher {
   }
 
   private registerEventListeners(): void {
-    this.relayer.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+    this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkQueue();
     });
   }

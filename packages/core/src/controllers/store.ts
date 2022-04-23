@@ -1,5 +1,5 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
+import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
 import {
   ERROR,
   formatStorageKeyName,
@@ -18,8 +18,8 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
   private cached: Data[] = [];
 
-  constructor(public client: IClient, public logger: Logger, public name: string) {
-    super(client, logger, name);
+  constructor(public core: ICore, public logger: Logger, public name: string) {
+    super(core, logger, name);
     this.logger = generateChildLogger(logger, this.name);
   }
 
@@ -33,7 +33,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   }
 
   get storageKey(): string {
-    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   get length(): number {
@@ -85,11 +85,11 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   // ---------- Private ----------------------------------------------- //
 
   private async setDataStore(value: Data[]): Promise<void> {
-    await this.client.storage.setItem<Data[]>(this.storageKey, value);
+    await this.core.storage.setItem<Data[]>(this.storageKey, value);
   }
 
   private async getDataStore(): Promise<Data[] | undefined> {
-    const value = await this.client.storage.getItem<Data[]>(this.storageKey);
+    const value = await this.core.storage.getItem<Data[]>(this.storageKey);
     return value;
   }
 

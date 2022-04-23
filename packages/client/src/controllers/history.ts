@@ -1,11 +1,10 @@
 import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, IClient } from "@walletconnect/types";
+import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
 import { ERROR, formatStorageKeyName } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
-import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 
 export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();
@@ -14,8 +13,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   public version = HISTORY_STORAGE_VERSION;
   private cached: JsonRpcRecord[] = [];
 
-  constructor(public client: IClient, public logger: Logger, public storage: IKeyValueStorage) {
-    super(client, logger, storage);
+  constructor(public core: ICore, public logger: Logger) {
+    super(core, logger);
     this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
   }
@@ -30,7 +29,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   get storageKey(): string {
-    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   get size(): number {
@@ -144,11 +143,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   // ---------- Private ----------------------------------------------- //
 
   private async setJsonRpcRecords(records: JsonRpcRecord[]): Promise<void> {
-    await this.storage.setItem<JsonRpcRecord[]>(this.storageKey, records);
+    await this.core.storage.setItem<JsonRpcRecord[]>(this.storageKey, records);
   }
 
   private async getJsonRpcRecords(): Promise<JsonRpcRecord[] | undefined> {
-    const records = await this.storage.getItem<JsonRpcRecord[]>(this.storageKey);
+    const records = await this.core.storage.getItem<JsonRpcRecord[]>(this.storageKey);
     return records;
   }
 

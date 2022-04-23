@@ -1,5 +1,5 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, IMessageTracker, MessageRecord } from "@walletconnect/types";
+import { ICore, IMessageTracker, MessageRecord } from "@walletconnect/types";
 import { formatStorageKeyName, hashMessage, mapToObj, objToMap } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
@@ -11,10 +11,10 @@ export class MessageTracker extends IMessageTracker {
 
   public version = MESSAGES_STORAGE_VERSION;
 
-  constructor(public logger: Logger, public client: IClient) {
-    super(logger, client);
+  constructor(public logger: Logger, public core: ICore) {
+    super(logger, core);
     this.logger = generateChildLogger(logger, this.name);
-    this.client = client;
+    this.core = core;
   }
 
   get context(): string {
@@ -22,7 +22,7 @@ export class MessageTracker extends IMessageTracker {
   }
 
   get storageKey(): string {
-    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   public init: IMessageTracker["init"] = async () => {
@@ -67,14 +67,14 @@ export class MessageTracker extends IMessageTracker {
   // ---------- Private ----------------------------------------------- //
 
   private async setRelayerMessages(messages: Map<string, MessageRecord>): Promise<void> {
-    await this.client.storage.setItem<Record<string, MessageRecord>>(
+    await this.core.storage.setItem<Record<string, MessageRecord>>(
       this.storageKey,
       mapToObj(messages),
     );
   }
 
   private async getRelayerMessages(): Promise<Map<string, MessageRecord> | undefined> {
-    const messages = await this.client.storage.getItem<Record<string, MessageRecord>>(
+    const messages = await this.core.storage.getItem<Record<string, MessageRecord>>(
       this.storageKey,
     );
     return typeof messages !== "undefined" ? objToMap(messages) : undefined;

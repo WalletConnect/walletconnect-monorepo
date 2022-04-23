@@ -1,8 +1,8 @@
-import { IEvents } from "@walletconnect/events";
-import { IHeartBeat } from "@walletconnect/heartbeat";
-import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
-import { IClient } from "./client";
+import { IEvents } from "@walletconnect/events";
+import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
+
+import { ICore } from "./core";
 import { IMessageTracker } from "./messages";
 import { IPublisher } from "./publisher";
 import { ISubscriber } from "./subscriber";
@@ -37,8 +37,7 @@ export declare namespace RelayerTypes {
 }
 
 export interface RelayerOptions {
-  client: IClient;
-  heartbeat?: IHeartBeat;
+  core: ICore;
   logger?: string | Logger;
   rpcUrl?: string;
   projectId?: string;
@@ -53,9 +52,9 @@ export interface RelayerClientMetadata {
 }
 
 export abstract class IRelayer extends IEvents {
-  public abstract logger: Logger;
+  public abstract core: ICore;
 
-  public abstract heartbeat: IHeartBeat;
+  public abstract logger: Logger;
 
   public abstract subscriber: ISubscriber;
 

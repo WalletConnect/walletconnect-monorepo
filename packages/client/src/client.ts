@@ -1,36 +1,30 @@
-import KeyValueStorage from "@walletconnect/keyvaluestorage";
-import { HeartBeat } from "@walletconnect/heartbeat";
+import pino from "pino";
+import { EventEmitter } from "events";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
 import { ClientTypes, IClient, IClientEvents } from "@walletconnect/types";
-import { formatRelayRpcUrl, getAppMetadata } from "@walletconnect/utils";
-import { EventEmitter } from "events";
-import pino from "pino";
-import { Crypto, Pairing, Proposal, Relayer, Session, JsonRpcHistory } from "./controllers";
-import Engine from "./controllers/engine";
-import { CLIENT_DEFAULT, CLIENT_STORAGE_OPTIONS } from "./constants";
+import { getAppMetadata } from "@walletconnect/utils";
+
+import { Engine, Pairing, Proposal, Session, JsonRpcHistory } from "./controllers";
+import { CLIENT_DEFAULT } from "./constants";
+import { Core } from "@walletconnect/core";
 
 export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
   public readonly name: IClient["name"] = CLIENT_DEFAULT.name;
   public readonly metadata: IClient["metadata"];
-  public readonly relayUrl: IClient["relayUrl"];
-  public readonly projectId: IClient["projectId"];
 
+  public core: IClient["core"];
+  public logger: IClient["logger"];
+  public events: IClient["events"] = new EventEmitter();
+  public engine: IClient["engine"];
   public pairing: IClient["pairing"];
   public session: IClient["session"];
   public proposal: IClient["proposal"];
-  public logger: IClient["logger"];
-  public heartbeat: IClient["heartbeat"];
-  public events: IClient["events"] = new EventEmitter();
-  public relayer: IClient["relayer"];
-  public crypto: IClient["crypto"];
-  public engine: IClient["engine"];
-  public storage: IClient["storage"];
   public history: IClient["history"];
 
   static async init(opts?: ClientTypes.Options) {
@@ -45,33 +39,19 @@ export class Client extends IClient {
 
     this.name = opts?.name || CLIENT_DEFAULT.name;
     this.metadata = opts?.metadata || getAppMetadata();
-    this.projectId = opts?.projectId;
+
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
-    this.logger = generateChildLogger(logger, this.name);
-    this.heartbeat = new HeartBeat();
-    this.crypto = new Crypto(this, this.logger, opts?.keychain);
-    this.storage = new KeyValueStorage({ ...CLIENT_STORAGE_OPTIONS, ...opts?.storageOptions });
-    this.pairing = new Pairing(this, this.logger);
-    this.session = new Session(this, this.logger);
-    this.proposal = new Proposal(this, this.logger);
-    this.history = new JsonRpcHistory(this, this.logger, this.storage);
 
-    this.relayUrl = formatRelayRpcUrl(
-      this.protocol,
-      this.version,
-      opts?.relayUrl || CLIENT_DEFAULT.relayUrl,
-      this.projectId,
-    );
-    this.relayer = new Relayer({
-      client: this,
-      rpcUrl: this.relayUrl,
-      heartbeat: this.heartbeat,
-      logger: this.logger,
-      projectId: this.projectId,
-    });
+    this.core = opts?.core || new Core(opts);
+    this.logger = generateChildLogger(logger, this.name);
+    this.pairing = new Pairing(this.core, this.logger);
+    this.session = new Session(this.core, this.logger);
+    this.proposal = new Proposal(this.core, this.logger);
+    this.history = new JsonRpcHistory(this.core, this.logger);
+
     this.engine = new Engine(this);
   }
 
@@ -229,10 +209,8 @@ export class Client extends IClient {
         this.pairing.init(),
         this.session.init(),
         this.proposal.init(),
-        this.crypto.init(),
-        this.relayer.init(),
-        this.heartbeat.init(),
         this.history.init(),
+        this.core.start(),
       ]);
       this.logger.info(`Client Initilization Success`);
     } catch (error) {

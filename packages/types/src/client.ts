@@ -1,15 +1,12 @@
 import EventEmmiter from "events";
 import { Logger } from "pino";
-import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
-import { IHeartBeat } from "@walletconnect/heartbeat";
-import { ICrypto } from "./crypto";
-import { IKeyChain } from "./keychain";
+
 import { IEngine } from "./engine";
 import { IPairing } from "./pairing";
 import { IProposal, ProposalTypes } from "./proposal";
-import { IRelayer } from "./relayer";
 import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "./history";
+import { CoreTypes, ICore } from "./core";
 
 export declare namespace ClientTypes {
   type Event =
@@ -42,15 +39,10 @@ export declare namespace ClientTypes {
     icons: string[];
   };
 
-  type Options = Partial<{
-    projectId: string;
-    name: string;
-    relayUrl: string;
-    logger: string | Logger;
-    keychain: IKeyChain;
+  interface Options extends CoreTypes.Options {
+    core?: ICore;
     metadata?: Metadata;
-    storageOptions?: KeyValueStorageOptions;
-  }>;
+  }
 }
 
 export abstract class IClientEvents extends EventEmmiter {
@@ -92,19 +84,14 @@ export abstract class IClient {
   public abstract readonly context: string;
   public abstract readonly storagePrefix: string;
   public abstract readonly metadata: ClientTypes.Metadata;
-  public abstract readonly relayUrl?: string;
-  public abstract readonly projectId?: string;
 
+  public abstract core: ICore;
+  public abstract logger: Logger;
+  public abstract events: IClientEvents;
+  public abstract engine: IEngine;
   public abstract pairing: IPairing;
   public abstract session: ISession;
   public abstract proposal: IProposal;
-  public abstract logger: Logger;
-  public abstract heartbeat: IHeartBeat;
-  public abstract crypto: ICrypto;
-  public abstract relayer: IRelayer;
-  public abstract storage: IKeyValueStorage;
-  public abstract events: IClientEvents;
-  public abstract engine: IEngine;
   public abstract history: IJsonRpcHistory;
 
   constructor(public opts?: ClientTypes.Options) {}
