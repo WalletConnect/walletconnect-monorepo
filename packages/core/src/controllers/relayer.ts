@@ -1,77 +1,65 @@
-import { EventEmitter } from "events";
 import pino, { Logger } from "pino";
+import { EventEmitter } from "events";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import {
+  formatJsonRpcResult,
+  IJsonRpcProvider,
+  isJsonRpcRequest,
+  JsonRpcPayload,
+  JsonRpcRequest,
+} from "@walletconnect/jsonrpc-utils";
+import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
+import { toMiliseconds } from "@walletconnect/time";
 import {
-  RelayerTypes,
+  ICore,
+  IMessageTracker,
+  IPublisher,
   IRelayer,
   ISubscriber,
-  IPublisher,
   RelayerOptions,
-  IMessageTracker,
-  IClient,
+  RelayerTypes,
 } from "@walletconnect/types";
-import { IHeartBeat, HeartBeat } from "@walletconnect/heartbeat";
-import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { formatRelayRpcUrl, hashMessage } from "@walletconnect/utils";
-import { toMiliseconds } from "@walletconnect/time";
-import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
-import WsConnection from "@walletconnect/jsonrpc-ws-connection";
-import {
-  IJsonRpcProvider,
-  JsonRpcPayload,
-  isJsonRpcRequest,
-  JsonRpcRequest,
-  formatJsonRpcResult,
-} from "@walletconnect/jsonrpc-utils";
+import { formatRelayRpcUrl } from "@walletconnect/utils";
 
-import { Subscriber } from "./subscriber";
 import {
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
+  RELAYER_DEFAULT_RELAY_URL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
-  RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_RECONNECT_TIMEOUT,
-  RELAYER_DEFAULT_RELAY_URL,
+  RELAYER_SUBSCRIBER_SUFFIX,
 } from "../constants";
-import { Publisher } from "./publisher";
 import { MessageTracker } from "./messages";
+import { Publisher } from "./publisher";
+import { Subscriber } from "./subscriber";
 
 export class Relayer extends IRelayer {
   public readonly protocol = "irn";
   public readonly version = 1;
 
+  public core: ICore;
   public logger: Logger;
-
-  public heartbeat: IHeartBeat;
-
   public events = new EventEmitter();
-
   public provider: IJsonRpcProvider;
-
   public messages: IMessageTracker;
-
   public subscriber: ISubscriber;
-
   public publisher: IPublisher;
-
   public name: string = RELAYER_CONTEXT;
-
-  private client: IClient;
 
   constructor(opts: RelayerOptions) {
     super(opts);
-    this.client = opts.client;
+    this.core = opts.core;
     this.logger =
       typeof opts.logger !== "undefined" && typeof opts.logger !== "string"
         ? generateChildLogger(opts.logger, this.name)
         : pino(getDefaultLoggerOptions({ level: opts.logger || RELAYER_DEFAULT_LOGGER }));
-
-    this.heartbeat = opts.heartbeat || new HeartBeat();
     const rpcUrl =
       opts.rpcUrl ||
       formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts.projectId);
@@ -79,8 +67,8 @@ export class Relayer extends IRelayer {
       typeof opts.relayProvider !== "string" && typeof opts.relayProvider !== "undefined"
         ? opts.relayProvider
         : new JsonRpcProvider(new WsConnection(rpcUrl));
-    this.messages = new MessageTracker(this.logger, opts.client);
-    this.subscriber = new Subscriber(this, this.client, this.logger);
+    this.messages = new MessageTracker(this.logger, opts.core);
+    this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);
     this.registerEventListeners();
   }
@@ -161,7 +149,6 @@ export class Relayer extends IRelayer {
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message } = event.data;
       const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
-      const hash = await hashMessage(message);
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);
@@ -195,6 +182,8 @@ export class Relayer extends IRelayer {
         this.provider.connect();
       }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
+    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
+      this.events.emit(RELAYER_EVENTS.error, err),
+    );
   }
 }

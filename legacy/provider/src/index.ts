@@ -105,10 +105,10 @@ class WalletConnectProvider implements IEthereumProvider {
   // ---------- Private ----------------------------------------------- //
 
   private registerEventListeners() {
-    this.signer.connection.on("accountsChanged", accounts => {
+    this.signer.connection.on("accountsChanged", (accounts: string[]) => {
       this.events.emit("accountsChanged", accounts);
     });
-    this.signer.connection.on("chainChanged", chainId => {
+    this.signer.connection.on("chainChanged", (chainId: number) => {
       this.http = this.setHttpProvider(chainId);
       this.events.emit("chainChanged", chainId);
     });

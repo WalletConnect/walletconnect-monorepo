@@ -10,7 +10,7 @@ export function getDappRegistryUrl(): string {
   return API_URL + "/data/dapps.json";
 }
 
-export function getAppLogoUrl(id): string {
+export function getAppLogoUrl(id: string): string {
   return API_URL + "/logo/sm/" + id + ".jpeg";
 }
 

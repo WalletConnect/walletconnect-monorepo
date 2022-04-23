@@ -1,9 +1,8 @@
-import { IEvents } from "@walletconnect/events";
 import { Logger } from "pino";
+import { IEvents } from "@walletconnect/events";
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 
-import { Reason } from "./misc";
 import { IRelayer, RelayerTypes } from "./relayer";
-import { IClient } from "./client";
 
 export declare namespace SubscriberTypes {
   export interface Params extends RelayerTypes.SubscribeOptions {
@@ -19,7 +18,7 @@ export declare namespace SubscriberEvents {
   export type Created = SubscriberTypes.Active;
 
   export interface Deleted extends SubscriberTypes.Active {
-    reason: Reason;
+    reason: ErrorResponse;
   }
 
   export type Expired = Deleted;
@@ -58,7 +57,7 @@ export abstract class ISubscriber extends IEvents {
 
   public abstract readonly context: string;
 
-  constructor(public relayer: IRelayer, public client: IClient, public logger: Logger) {
+  constructor(public relayer: IRelayer, public logger: Logger) {
     super();
   }
 

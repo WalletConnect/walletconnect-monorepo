@@ -1,3 +1,5 @@
+import { ClientTypes, SessionTypes } from "@walletconnect/types";
+
 export const TEST_PAIRING_TOPIC =
   "c9e6d30fb34afe70a15c14e9337ba8e4d5a35dd695c39b94884b0ee60c69d168";
 
@@ -21,7 +23,7 @@ export const TEST_SYM_KEY = "0653ca620c7b4990392e1c53c4a51c14a2840cd20f0f1524cf4
 
 export const TEST_RELAY_OPTIONS = {
   protocol: "waku",
-  params: {},
+  data: undefined,
 };
 
 export const TEST_SESSION_METADATA = {
@@ -31,34 +33,43 @@ export const TEST_SESSION_METADATA = {
   icons: ["http://myapp.com/logo.png"],
 };
 
-export const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
+export const TEST_ETHEREUM_CHAIN = "eip155:1";
 
-export const TEST_PERMISSIONS_CHAINS: string[] = [TEST_ETHEREUM_CHAIN_ID];
+export const TEST_ETHEREUM_ADDRESS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
-export const TEST_BLOCKCHAIN_PERMISSIONS = {
-  chains: TEST_PERMISSIONS_CHAINS,
-};
+export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
 
-export const TEST_JSONRPC_PERMISSIONS = {
-  methods: ["personal_sign", "eth_signTypedData", "eth_sendTransaction"],
-};
+export const TEST_CHAINS: string[] = [TEST_ETHEREUM_CHAIN];
 
-export const TEST_NOTIFICATIONS_PERMISSIONS = {
-  types: [],
-};
+export const TEST_ACCOUNTS: string[] = [TEST_ETHEREUM_ACCOUNT];
 
-export const TEST_SESSION_PERMISSIONS = {
-  blockchain: TEST_BLOCKCHAIN_PERMISSIONS,
-  jsonrpc: TEST_JSONRPC_PERMISSIONS,
-  notifications: TEST_NOTIFICATIONS_PERMISSIONS,
-};
+export const TEST_METHODS = ["personal_sign", "eth_signTypedData", "eth_sendTransaction"];
 
-export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
+export const TEST_EVENTS = ["chainChanged", "accountsChanged"];
 
-export const TEST_SESSION_ACCOUNTS = TEST_ETHEREUM_ACCOUNTS.map(
-  address => `${TEST_ETHEREUM_CHAIN_ID}:${address}`,
-);
+export const TEST_DATE_NOW = 1649874082376;
 
-export const TEST_SESSION_STATE = {
-  accounts: TEST_SESSION_ACCOUNTS,
+export const TEST_EXPIRY_1D = 1649960482376;
+
+export const TEST_EXPIRY_7D = 1650478882376;
+
+export const TEST_EXPIRY_30D = 1652466082376;
+
+export const TEST_SESSION: SessionTypes.Struct = {
+  accounts: TEST_ACCOUNTS,
+  methods: TEST_METHODS,
+  events: TEST_EVENTS,
+  expiry: TEST_EXPIRY_7D,
+  topic: TEST_SESSION_TOPIC,
+  relay: TEST_RELAY_OPTIONS,
+  acknowledged: true,
+  controller: TEST_KEY_PAIRS.A.publicKey,
+  self: {
+    publicKey: TEST_KEY_PAIRS.A.publicKey,
+    metadata: TEST_SESSION_METADATA as ClientTypes.Metadata,
+  },
+  peer: {
+    publicKey: TEST_KEY_PAIRS.B.publicKey,
+    metadata: TEST_SESSION_METADATA as ClientTypes.Metadata,
+  },
 };

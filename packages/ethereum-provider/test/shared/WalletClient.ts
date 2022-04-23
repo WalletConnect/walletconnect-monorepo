@@ -1,10 +1,9 @@
-import { ethers, utils } from "ethers";
 import Client, { CLIENT_EVENTS } from "@walletconnect/client";
-import { ClientOptions, IClient, SessionTypes } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
-import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-
+import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
+import { ClientTypes, IClient, SessionTypes } from "@walletconnect/types";
+import { ERROR } from "@walletconnect/utils";
+import { ethers, utils } from "ethers";
 import EthereumProvider from "../../src";
 
 export interface WalletClientOpts {
@@ -13,7 +12,7 @@ export interface WalletClientOpts {
   rpcUrl: string;
 }
 
-export type WalletClientAsyncOpts = WalletClientOpts & ClientOptions;
+export type WalletClientAsyncOpts = WalletClientOpts & ClientTypes.Options;
 
 export class WalletClient {
   public provider: EthereumProvider;

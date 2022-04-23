@@ -1,3 +1,4 @@
+export * from "./caip";
 export * from "./crypto";
 export * from "./error";
 export * from "./misc";

@@ -15,22 +15,10 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_SUBSCRIBER_SUFFIX,
-} from "../../src";
-import * as encoding from "@walletconnect/encoding";
+} from "@walletconnect/core";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { toMiliseconds } from "@walletconnect/time";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-
-export class MockWakuEncoder {
-  public async encode(topic: string, payload: JsonRpcPayload) {
-    return encoding.utf8ToHex(safeJsonStringify(payload));
-  }
-
-  public async decode(topic: string, message: string) {
-    return safeJsonParse(encoding.hexToUtf8(message));
-  }
-}
 
 export class MockWakuRelayer implements IEvents {
   public events = new EventEmitter();
@@ -74,7 +62,7 @@ export class MockWakuRelayer implements IEvents {
     this.events.removeListener(event, listener);
   }
 
-  public async publish(topic: string, message: string): Promise<void> {
+  public publish(topic: string, message: string): Promise<void> {
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
       method: this.jsonRpc.publish,
       params: {
@@ -86,7 +74,7 @@ export class MockWakuRelayer implements IEvents {
     return this.provider.request(request);
   }
 
-  public async subscribe(topic: string): Promise<string> {
+  public subscribe(topic: string): Promise<string> {
     const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
       method: this.jsonRpc.subscribe,
       params: {
@@ -96,7 +84,7 @@ export class MockWakuRelayer implements IEvents {
     return this.provider.request(request);
   }
 
-  public async unsubscribe(topic: string, id: string): Promise<void> {
+  public unsubscribe(topic: string, id: string): Promise<void> {
     const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
       method: this.jsonRpc.unsubscribe,
       params: {
@@ -142,6 +130,8 @@ export class MockWakuRelayer implements IEvents {
         this.provider.connect();
       }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.error, e => this.events.emit(RELAYER_EVENTS.error, e));
+    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (e: any) =>
+      this.events.emit(RELAYER_EVENTS.error, e),
+    );
   }
 }

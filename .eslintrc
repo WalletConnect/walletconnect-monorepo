@@ -11,6 +11,7 @@
     "@typescript-eslint/no-unused-vars": ["off"],
     "@typescript-eslint/no-namespace": ["off"],
     "comma-dangle": ["error", "always-multiline"],
+    "require-await": "warn",
     "no-async-promise-executor": ["off"],
     "no-empty-pattern": ["off"],
     "no-undef": ["error"],
@@ -23,6 +24,7 @@
     "sort-keys": ["off"],
     "space-before-function-paren": ["off"],
     "indent": ["off"],
+    "promise/param-names": "off",
     "no-console": ["error", { "allow": ["warn"] }]
   },
   "env": {

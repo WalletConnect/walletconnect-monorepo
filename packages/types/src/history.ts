@@ -1,15 +1,13 @@
+import { Logger } from "pino";
+import { IEvents } from "@walletconnect/events";
 import {
   ErrorResponse,
   JsonRpcRequest,
   JsonRpcResponse,
   RequestArguments,
 } from "@walletconnect/jsonrpc-types";
-import { IEvents } from "@walletconnect/events";
 
-import { Logger } from "pino";
-
-import { RequestEvent } from "./misc";
-import { IClient } from "./client";
+import { ICore } from "./core";
 
 export interface JsonRpcRecord {
   id: number;
@@ -17,6 +15,12 @@ export interface JsonRpcRecord {
   request: RequestArguments;
   chainId?: string;
   response?: { result: any } | { error: ErrorResponse };
+}
+
+export interface RequestEvent {
+  topic: string;
+  request: JsonRpcRequest;
+  chainId?: string;
 }
 
 export abstract class IJsonRpcHistory extends IEvents {
@@ -32,7 +36,7 @@ export abstract class IJsonRpcHistory extends IEvents {
 
   public abstract readonly pending: RequestEvent[];
 
-  constructor(public logger: Logger, public client: IClient) {
+  constructor(public core: ICore, public logger: Logger) {
     super();
   }
 

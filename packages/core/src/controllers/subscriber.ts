@@ -1,77 +1,30 @@
-import { EventEmitter } from "events";
 import { Logger } from "pino";
+import { EventEmitter } from "events";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
 import {
+  IRelayer,
   ISubscriber,
-  ISubscriberTopicMap,
-  Reason,
+  RelayerTypes,
   SubscriberEvents,
   SubscriberTypes,
-  RelayerTypes,
-  IRelayer,
-  IClient,
 } from "@walletconnect/types";
-import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
-import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import {
   ERROR,
-  formatMessageContext,
-  getRelayProtocolName,
-  getRelayProtocolApi,
   formatStorageKeyName,
+  getRelayProtocolApi,
+  getRelayProtocolName,
 } from "@walletconnect/utils";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 
 import {
+  RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
-  RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
 } from "../constants";
-
-export class SubscriberTopicMap implements ISubscriberTopicMap {
-  public map = new Map<string, string[]>();
-
-  get topics(): string[] {
-    return Array.from(this.map.keys());
-  }
-
-  public set(topic: string, id: string): void {
-    const ids = this.get(topic);
-    if (this.exists(topic, id)) return;
-    this.map.set(topic, [...ids, id]);
-  }
-
-  public get(topic: string): string[] {
-    const ids = this.map.get(topic);
-    return ids || [];
-  }
-
-  public exists(topic: string, id: string): boolean {
-    const ids = this.get(topic);
-    return ids.includes(id);
-  }
-
-  public delete(topic: string, id?: string): void {
-    if (typeof id === "undefined") {
-      this.map.delete(topic);
-      return;
-    }
-    if (!this.map.has(topic)) return;
-    const ids = this.get(topic);
-    if (!this.exists(topic, id)) return;
-    const remaining = ids.filter(x => x !== id);
-    if (!remaining.length) {
-      this.map.delete(topic);
-      return;
-    }
-    this.map.set(topic, remaining);
-  }
-
-  public clear(): void {
-    this.map.clear();
-  }
-}
+import { SubscriberTopicMap } from "./topicmap";
 
 export class Subscriber extends ISubscriber {
   public subscriptions = new Map<string, SubscriberTypes.Active>();
@@ -80,33 +33,34 @@ export class Subscriber extends ISubscriber {
 
   public events = new EventEmitter();
 
-  public name: string = SUBSCRIBER_CONTEXT;
+  public name = SUBSCRIBER_CONTEXT;
 
-  public version: string = SUBSCRIBER_STORAGE_VERSION;
+  public version = SUBSCRIBER_STORAGE_VERSION;
 
   public pending = new Map<string, SubscriberTypes.Params>();
 
   private cached: SubscriberTypes.Active[] = [];
 
-  constructor(public relayer: IRelayer, public client: IClient, public logger: Logger) {
-    super(relayer, client, logger);
-    this.client = client;
+  constructor(public relayer: IRelayer, public logger: Logger) {
+    super(relayer, logger);
     this.relayer = relayer;
     this.logger = generateChildLogger(logger, this.name);
     this.registerEventListeners();
   }
 
-  public async init(): Promise<void> {
+  public init: ISubscriber["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
   get context(): string {
     return getLoggerContext(this.logger);
   }
 
   get storageKey(): string {
-    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return (
+      this.relayer.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context)
+    );
   }
 
   get length(): number {
@@ -125,7 +79,7 @@ export class Subscriber extends ISubscriber {
     return this.topicMap.topics;
   }
 
-  public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string> {
+  public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
@@ -142,31 +96,31 @@ export class Subscriber extends ISubscriber {
       this.logger.error(e as any);
       throw e;
     }
-  }
+  };
 
-  public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void> {
+  public unsubscribe: ISubscriber["unsubscribe"] = async (topic, opts) => {
     if (typeof opts?.id !== "undefined") {
       await this.unsubscribeById(topic, opts.id, opts);
     } else {
       await this.unsubscribeByTopic(topic, opts);
     }
-  }
+  };
 
-  public on(event: string, listener: any): void {
+  public on: ISubscriber["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: any): void {
+  public once: ISubscriber["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): void {
+  public off: ISubscriber["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener: ISubscriber["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
@@ -222,7 +176,7 @@ export class Subscriber extends ISubscriber {
     try {
       const relay = getRelayProtocolName(opts);
       await this.rpcUnsubscribe(topic, id, relay);
-      const reason = ERROR.DELETED.format({ context: formatMessageContext(this.context) });
+      const reason = ERROR.DELETED.format({ context: this.name });
       await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
@@ -274,7 +228,7 @@ export class Subscriber extends ISubscriber {
     this.pending.delete(params.topic);
   }
 
-  private async onUnsubscribe(topic: string, id: string, reason: Reason) {
+  private async onUnsubscribe(topic: string, id: string, reason: ErrorResponse) {
     this.events.removeAllListeners(id);
     if (await this.hasSubscription(id, topic)) {
       await this.deleteSubscription(id, reason);
@@ -283,11 +237,14 @@ export class Subscriber extends ISubscriber {
   }
 
   private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]): Promise<void> {
-    await this.client.storage.setItem<SubscriberTypes.Active[]>(this.storageKey, subscriptions);
+    await this.relayer.core.storage.setItem<SubscriberTypes.Active[]>(
+      this.storageKey,
+      subscriptions,
+    );
   }
 
   private async getRelayerSubscriptions(): Promise<SubscriberTypes.Active[] | undefined> {
-    const subscriptions = await this.client.storage.getItem<SubscriberTypes.Active[]>(
+    const subscriptions = await this.relayer.core.storage.getItem<SubscriberTypes.Active[]>(
       this.storageKey,
     );
     return subscriptions;
@@ -314,7 +271,7 @@ export class Subscriber extends ISubscriber {
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         id,
       });
       // this.logger.error(error.message);
@@ -323,7 +280,7 @@ export class Subscriber extends ISubscriber {
     return subscription;
   }
 
-  private async deleteSubscription(id: string, reason: Reason): Promise<void> {
+  private async deleteSubscription(id: string, reason: ErrorResponse): Promise<void> {
     await this.isEnabled();
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "deleteSubscription", id, reason });
@@ -348,20 +305,16 @@ export class Subscriber extends ISubscriber {
       if (!persisted.length) return;
       if (this.subscriptions.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: formatMessageContext(this.context),
+          context: this.name,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.logger.debug(
-        `Successfully Restored subscriptions for ${formatMessageContext(this.context)}`,
-      );
+      this.logger.debug(`Successfully Restored subscriptions for ${this.name}`);
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
     } catch (e) {
-      this.logger.debug(
-        `Failed to Restore subscriptions for ${formatMessageContext(this.context)}`,
-      );
+      this.logger.debug(`Failed to Restore subscriptions for ${this.name}`);
       this.logger.error(e as any);
     }
   }
@@ -413,7 +366,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private registerEventListeners(): void {
-    this.relayer.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+    this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
     this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {

@@ -1,50 +1,27 @@
-import { IEvents } from "@walletconnect/events";
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
+import { ICore } from "./core";
 
-import { IClient } from "./client";
-import { Reason } from "./misc";
-
-export declare namespace StoreEvent {
-  export interface Created<T> {
-    topic: string;
-    sequence: T;
-  }
-
-  export interface Updated<T> {
-    topic: string;
-    sequence: T;
-    update: Partial<T>;
-  }
-
-  export interface Deleted<T> {
-    topic: string;
-    sequence: T;
-    reason: Reason;
-  }
-}
-
-export abstract class IStore<Sequence> extends IEvents {
-  public abstract sequences: Map<string, Sequence>;
+export abstract class IStore<Key, Value> {
+  public abstract map: Map<Key, Value>;
 
   public abstract readonly context: string;
 
   public abstract readonly length: number;
 
-  public abstract readonly topics: string[];
+  public abstract readonly keys: Key[];
 
-  public abstract readonly values: Sequence[];
+  public abstract readonly values: Value[];
 
-  constructor(public client: IClient, public logger: Logger, public name: string) {
-    super();
-  }
+  constructor(public core: ICore, public logger: Logger, public name: string) {}
 
   public abstract init(): Promise<void>;
 
-  public abstract set(topic: string, sequence: Sequence): Promise<void>;
+  public abstract set(key: Key, value: Value): Promise<void>;
 
-  public abstract get(topic: string): Promise<Sequence>;
+  public abstract get(key: Key): Promise<Value>;
 
-  public abstract update(topic: string, update: Partial<Sequence>): Promise<void>;
+  public abstract update(key: Key, update: Partial<Value>): Promise<void>;
 
-  public abstract delete(topic: string, reason: Reason): Promise<void>;
+  public abstract delete(key: Key, reason: ErrorResponse): Promise<void>;
 }

@@ -1,9 +1,9 @@
-import union from "lodash.union";
-import * as qs from "query-string";
-import { getWindowMetadata } from "@walletconnect/window-metadata";
-import { toMiliseconds, fromMiliseconds } from "@walletconnect/time";
+import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
+import { ClientTypes, RelayerClientMetadata, EngineTypes } from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
-import { RelayClientMetadata, AppMetadata } from "@walletconnect/types";
+import { getWindowMetadata } from "@walletconnect/window-metadata";
+import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
+import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
 
@@ -65,14 +65,21 @@ export function appendToQueryString(queryString: string, newQueryParams: any): s
 
 // -- metadata ----------------------------------------------//
 
-export function getAppMetadata(): AppMetadata | undefined {
-  return getWindowMetadata() || undefined;
+export function getAppMetadata(): ClientTypes.Metadata {
+  return (
+    getWindowMetadata() || {
+      name: "",
+      description: "",
+      url: "",
+      icons: [""],
+    }
+  );
 }
 
-export function getRelayClientMetadata(protocol: string, version: number): RelayClientMetadata {
+export function getRelayClientMetadata(protocol: string, version: number): RelayerClientMetadata {
   const env = getEnvironment();
 
-  const metadata: RelayClientMetadata = { protocol, version, env };
+  const metadata: RelayerClientMetadata = { protocol, version, env };
   if (env === "browser") {
     metadata.host = getLocation()?.host || "";
   }
@@ -127,10 +134,6 @@ export function getLastItems(arr: any[], depth = DEFAULT_DEPTH): any[] {
   return arr.slice(Math.max(arr.length - depth, 0));
 }
 
-export function mergeArrays(a: any[], b: any[]): any[] {
-  return union(a, b);
-}
-
 // -- map ------------------------------------------------- //
 
 export function mapToObj<T = any>(map: Map<string, T>): Record<string, T> {
@@ -174,4 +177,43 @@ export function capitalize(str: string) {
 
 export function calcExpiry(ttl: number, now?: number): number {
   return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
+}
+
+// -- promises --------------------------------------------- //
+export function createDelayedPromise<T>() {
+  const timeout = toMiliseconds(FIVE_MINUTES);
+  let cacheResolve: undefined | ((value?: T) => void);
+  let cacheReject: undefined | ((value?: ErrorResponse) => void);
+  let cacheTimeout: undefined | NodeJS.Timeout;
+
+  const done = () =>
+    new Promise<T>((promiseResolve, promiseReject) => {
+      cacheTimeout = setTimeout(promiseReject, timeout);
+      cacheResolve = promiseResolve;
+      cacheReject = promiseReject;
+    });
+  const resolve = (value?: T) => {
+    if (cacheTimeout && cacheResolve) {
+      clearTimeout(cacheTimeout);
+      cacheResolve(value);
+    }
+  };
+  const reject = (value?: ErrorResponse) => {
+    if (cacheTimeout && cacheReject) {
+      clearTimeout(cacheTimeout);
+      cacheReject(value);
+    }
+  };
+
+  return {
+    resolve,
+    reject,
+    done,
+  };
+}
+
+// -- events ---------------------------------------------- //
+
+export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
+  return `${event}${id ?? ""}`;
 }

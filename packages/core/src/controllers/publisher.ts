@@ -1,19 +1,17 @@
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+import { RequestArguments } from "@walletconnect/jsonrpc-types";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { RelayJsonRpc } from "@walletconnect/relay-api";
+import { IPublisher, IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
+import { getRelayProtocolApi, getRelayProtocolName, hashMessage } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IRelayer, IPublisher, PublisherTypes, RelayerTypes } from "@walletconnect/types";
-
-import { getRelayProtocolName, getRelayProtocolApi, hashMessage } from "@walletconnect/utils";
-import { RequestArguments } from "@walletconnect/jsonrpc-types";
-import { RelayJsonRpc } from "@walletconnect/relay-api";
-
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
 
-  public name: string = PUBLISHER_CONTEXT;
+  public name = PUBLISHER_CONTEXT;
 
   public queue = new Map<string, PublisherTypes.Params>();
 
@@ -28,16 +26,12 @@ export class Publisher extends IPublisher {
     return getLoggerContext(this.logger);
   }
 
-  public async init(): Promise<void> {
+  public init: IPublisher["init"] = async () => {
     this.logger.trace(`Initialized`);
     await this.initialize();
-  }
+  };
 
-  public async publish(
-    topic: string,
-    message: string,
-    opts?: RelayerTypes.PublishOptions,
-  ): Promise<void> {
+  public publish: IPublisher["publish"] = async (topic, message, opts) => {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     try {
@@ -56,23 +50,23 @@ export class Publisher extends IPublisher {
       this.logger.error(e as any);
       throw e;
     }
-  }
+  };
 
-  public on(event: string, listener: any): void {
+  public on: IPublisher["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: any): void {
+  public once: IPublisher["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): void {
+  public off: IPublisher["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener: IPublisher["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
@@ -105,7 +99,7 @@ export class Publisher extends IPublisher {
     return this.relayer.provider.request(request);
   }
 
-  private async onPublish(hash: string, params: PublisherTypes.Params) {
+  private async onPublish(hash: string, _params: PublisherTypes.Params) {
     // const { topic, message } = params;
     // await this.relayer.recordPayloadEvent({ topic, message });
 
@@ -126,7 +120,7 @@ export class Publisher extends IPublisher {
   }
 
   private registerEventListeners(): void {
-    this.relayer.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+    this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkQueue();
     });
   }

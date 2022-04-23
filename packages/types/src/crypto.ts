@@ -1,7 +1,7 @@
-import { Logger } from "pino";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
-
-import { IClient } from "./client";
+import { Logger } from "pino";
+import { ICore } from "./core";
+import { IKeyChain } from "./keychain";
 
 export declare namespace CryptoTypes {
   export interface Participant {
@@ -30,26 +30,6 @@ export declare namespace CryptoTypes {
   }
 }
 
-export abstract class IKeyChain {
-  public abstract keychain: Map<string, string>;
-
-  public abstract name: string;
-
-  public abstract readonly context: string;
-
-  constructor(public client: IClient, public logger: Logger) {}
-
-  public abstract init(): Promise<void>;
-
-  public abstract has(tag: string, opts?: any): Promise<boolean>;
-
-  public abstract set(tag: string, key: string, opts?: any): Promise<void>;
-
-  public abstract get(tag: string, opts?: any): Promise<string>;
-
-  public abstract del(tag: string, opts?: any): Promise<void>;
-}
-
 export abstract class ICrypto {
   public abstract name: string;
 
@@ -57,7 +37,12 @@ export abstract class ICrypto {
 
   public abstract keychain: IKeyChain;
 
-  constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {}
+  constructor(
+    public core: ICore,
+    public logger: Logger,
+    // @ts-ignore
+    keychain?: IKeyChain,
+  ) {}
 
   public abstract init(): Promise<void>;
 
@@ -65,21 +50,17 @@ export abstract class ICrypto {
 
   public abstract generateKeyPair(): Promise<string>;
 
-  public abstract generateSessionKey(
-    self: CryptoTypes.Participant,
-    peer: CryptoTypes.Participant,
+  public abstract generateSharedKey(
+    selfPublicKey: string,
+    peerPublicKey: string,
     overrideTopic?: string,
   ): Promise<string>;
 
-  public abstract generatePairingKey(overrideTopic?: string): Promise<string>;
-
-  public abstract setPairingKey(symKey: string, overrideTopic?: string): Promise<string>;
+  public abstract setSymKey(symKey: string, overrideTopic?: string): Promise<string>;
 
   public abstract deleteKeyPair(publicKey: string): Promise<void>;
 
-  public abstract deleteSessionKey(topic: string): Promise<void>;
-
-  public abstract deletePairingKey(topic: string): Promise<void>;
+  public abstract deleteSymKey(topic: string): Promise<void>;
 
   public abstract encrypt(topic: string, message: string): Promise<string>;
 

@@ -1,14 +1,12 @@
-import { CryptoTypes } from "@walletconnect/types";
-
-import { toString } from "uint8arrays/to-string";
-import { fromString } from "uint8arrays/from-string";
-import { concat } from "uint8arrays/concat";
-
-import { HKDF } from "@stablelib/hkdf";
-import { SHA256, hash } from "@stablelib/sha256";
-import * as x25519 from "@stablelib/x25519";
-import { randomBytes } from "@stablelib/random";
 import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
+import { HKDF } from "@stablelib/hkdf";
+import { randomBytes } from "@stablelib/random";
+import { hash, SHA256 } from "@stablelib/sha256";
+import * as x25519 from "@stablelib/x25519";
+import { CryptoTypes } from "@walletconnect/types";
+import { concat } from "uint8arrays/concat";
+import { fromString } from "uint8arrays/from-string";
+import { toString } from "uint8arrays/to-string";
 
 export const BASE16 = "base16";
 export const BASE64 = "base64";

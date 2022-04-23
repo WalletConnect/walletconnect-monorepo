@@ -1,11 +1,10 @@
-import { Watch } from "@walletconnect/time";
-import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { ClientTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
-
-import { metadata, permissions, state, chainId, request, result } from "../constants";
-import { getWsUrl } from "../utils";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { Watch } from "@walletconnect/time";
+import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import config from "../config";
+import { chainId, metadata, permissions, request, result, state } from "../constants";
+import { getWsUrl } from "../utils";
 
 export async function testRelayProvider(url: string, url2?: string) {
   // client opts
