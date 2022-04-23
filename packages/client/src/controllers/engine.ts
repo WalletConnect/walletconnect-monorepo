@@ -121,19 +121,12 @@ export default class Engine extends IEngine {
       expiry: calcExpiry(SEVEN_DAYS),
     };
     await this.client.relayer.subscribe(topic);
-    await this.sendRequest(topic, "wc_sessionSettle", sessionSettle);
-
-    if (pairingTopic && id) {
-      await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
-        relay: {
-          protocol: relayProtocol ?? "waku",
-        },
-        responderPublicKey: selfPublicKey,
-      });
-      await this.client.proposal.delete(id, ERROR.DELETED.format());
-      await this.activatePairing(pairingTopic);
-    }
-
+    const requestId = await this.sendRequest(topic, "wc_sessionSettle", sessionSettle);
+    const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
+    this.events.once(engineEvent("approve", requestId), async ({ error }) => {
+      if (error) reject(error);
+      else resolve(await this.client.session.get(topic));
+    });
     const session = {
       ...sessionSettle,
       topic,
@@ -147,11 +140,16 @@ export default class Engine extends IEngine {
     };
     await this.client.session.set(topic, session);
 
-    const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once(engineEvent("approve"), async ({ error }) => {
-      if (error) reject(error);
-      else resolve(await this.client.session.get(topic));
-    });
+    if (pairingTopic && id) {
+      await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
+        relay: {
+          protocol: relayProtocol ?? "waku",
+        },
+        responderPublicKey: selfPublicKey,
+      });
+      await this.client.proposal.delete(id, ERROR.DELETED.format());
+      await this.activatePairing(pairingTopic);
+    }
 
     return { topic, acknowledged };
   };
@@ -169,9 +167,9 @@ export default class Engine extends IEngine {
   public updateAccounts: IEngine["updateAccounts"] = async params => {
     // TODO(ilja) validation
     const { topic, accounts } = params;
-    await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
+    const id = await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_accounts"), ({ error }) => {
+    this.events.once(engineEvent("update_accounts", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
@@ -183,9 +181,9 @@ export default class Engine extends IEngine {
   public updateMethods: IEngine["updateMethods"] = async params => {
     // TODO(ilja) validation
     const { topic, methods } = params;
-    await this.sendRequest(topic, "wc_sessionUpdateMethods", { methods });
+    const id = await this.sendRequest(topic, "wc_sessionUpdateMethods", { methods });
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_methods"), ({ error }) => {
+    this.events.once(engineEvent("update_methods", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
@@ -196,9 +194,9 @@ export default class Engine extends IEngine {
   public updateEvents: IEngine["updateEvents"] = async params => {
     // TODO(ilja) validation
     const { topic, events } = params;
-    await this.sendRequest(topic, "wc_sessionUpdateEvents", { events });
+    const id = await this.sendRequest(topic, "wc_sessionUpdateEvents", { events });
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_events"), ({ error }) => {
+    this.events.once(engineEvent("update_events", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
@@ -209,9 +207,9 @@ export default class Engine extends IEngine {
   public updateExpiry: IEngine["updateExpiry"] = async params => {
     // TODO(ilja) validate
     const { topic, expiry } = params;
-    await this.sendRequest(topic, "wc_sessionUpdateExpiry", { expiry });
+    const id = await this.sendRequest(topic, "wc_sessionUpdateExpiry", { expiry });
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_expiry"), ({ error }) => {
+    this.events.once(engineEvent("update_expiry", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
@@ -232,17 +230,17 @@ export default class Engine extends IEngine {
     // TODO(ilja) validation
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_sessionPing", {});
+      const id = await this.sendRequest(topic, "wc_sessionPing", {});
       const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("session_ping"), ({ error }) => {
+      this.events.once(engineEvent("session_ping", id), ({ error }) => {
         if (error) reject(error);
         else resolve();
       });
       await done();
     } else if (this.client.pairing.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_pairingPing", {});
+      const id = await this.sendRequest(topic, "wc_pairingPing", {});
       const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("pairing_ping"), ({ error }) => {
+      this.events.once(engineEvent("pairing_ping", id), ({ error }) => {
         if (error) reject(error);
         else resolve();
       });
@@ -258,17 +256,17 @@ export default class Engine extends IEngine {
     // TODO(ilja) validation
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
+      const id = await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
       const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("session_delete"), ({ error }) => {
+      this.events.once(engineEvent("session_delete", id), ({ error }) => {
         if (error) reject(error);
         else resolve();
       });
       await done();
     } else if (this.client.pairing.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
+      const id = await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
       const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("pairing_delete"), ({ error }) => {
+      this.events.once(engineEvent("pairing_delete", id), ({ error }) => {
         if (error) reject(error);
         else resolve();
       });
@@ -503,12 +501,13 @@ export default class Engine extends IEngine {
     payload,
   ) => {
     // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
       await this.client.session.update(topic, { acknowledged: true });
-      this.events.emit(engineEvent("approve"), {});
+      this.events.emit(engineEvent("approve", id), {});
     } else if (isJsonRpcError(payload)) {
       await this.client.session.delete(topic, ERROR.DELETED.format());
-      this.events.emit(engineEvent("approve"), { error: payload.error });
+      this.events.emit(engineEvent("approve", id), { error: payload.error });
     }
   };
 
@@ -527,11 +526,11 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_accounts"), {});
+      this.events.emit(engineEvent("update_accounts", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_accounts"), { error: payload.error });
+      this.events.emit(engineEvent("update_accounts", id), { error: payload.error });
     }
   };
 
@@ -550,11 +549,11 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_methods"), {});
+      this.events.emit(engineEvent("update_methods", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_methods"), { error: payload.error });
+      this.events.emit(engineEvent("update_methods", id), { error: payload.error });
     }
   };
 
@@ -573,11 +572,11 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_events"), {});
+      this.events.emit(engineEvent("update_events", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_events"), { error: payload.error });
+      this.events.emit(engineEvent("update_events", id), { error: payload.error });
     }
   };
 
@@ -596,11 +595,11 @@ export default class Engine extends IEngine {
     _topic,
     payload,
   ) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_expiry"), {});
+      this.events.emit(engineEvent("update_expiry", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_expiry"), { error: payload.error });
+      this.events.emit(engineEvent("update_expiry", id), { error: payload.error });
     }
   };
 
@@ -612,11 +611,11 @@ export default class Engine extends IEngine {
   };
 
   private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("session_ping"), {});
+      this.events.emit(engineEvent("session_ping", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("session_ping"), { error: payload.error });
+      this.events.emit(engineEvent("session_ping", id), { error: payload.error });
     }
   };
 
@@ -628,11 +627,11 @@ export default class Engine extends IEngine {
   };
 
   private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("pairing_ping"), {});
+      this.events.emit(engineEvent("pairing_ping", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("pairing_ping"), { error: payload.error });
+      this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
     }
   };
 
@@ -653,14 +652,14 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
       await this.client.relayer.unsubscribe(topic);
       await this.client.session.delete(topic, ERROR.DELETED.format());
       await this.client.crypto.deleteSymKey(topic);
-      this.events.emit(engineEvent("session_delete"), {});
+      this.events.emit(engineEvent("session_delete", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("session_delete"), { error: payload.error });
+      this.events.emit(engineEvent("session_delete", id), { error: payload.error });
     }
   };
 
@@ -681,14 +680,14 @@ export default class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    // TODO(ilja) validation
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
       await this.client.relayer.unsubscribe(topic);
       await this.client.pairing.delete(topic, ERROR.DELETED.format());
       await this.client.crypto.deleteSymKey(topic);
-      this.events.emit(engineEvent("pairing_delete"), {});
+      this.events.emit(engineEvent("pairing_delete", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("pairing_delete"), { error: payload.error });
+      this.events.emit(engineEvent("pairing_delete", id), { error: payload.error });
     }
   };
 
