@@ -1,4 +1,4 @@
-import { ErrorResponse } from "@walletconnect/jsonrpc-types";
+import { ErrorResponse, JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
@@ -70,7 +70,7 @@ export declare namespace JsonRpcTypes {
     wc_sessionRequest: {
       request: {
         method: string;
-        params: unknown;
+        params: any;
       };
       chainId?: string;
     };
@@ -98,7 +98,7 @@ export declare namespace JsonRpcTypes {
     wc_sessionUpdateExpiry: true;
     wc_sessionDelete: true;
     wc_sessionPing: true;
-    wc_sessionRequest: true;
+    wc_sessionRequest: JsonRpcResult;
     wc_sessionEvent: true;
   }
 

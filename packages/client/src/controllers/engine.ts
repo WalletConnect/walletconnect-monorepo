@@ -27,6 +27,7 @@ import {
   ERROR,
   engineEvent,
 } from "@walletconnect/utils";
+import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
@@ -220,12 +221,25 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async params => {
+    // TODO(ilja) Validation
     const { chainId, request, topic } = params;
-    await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
+    const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
+    const { done, resolve, reject } = createDelayedPromise<JsonRpcResponse>();
+    this.events.once<"request">(engineEvent("request", id), ({ error, data }) => {
+      if (error) reject(error);
+      else if (data) resolve(data);
+    });
+    return await done();
   };
 
-  public respond: IEngine["respond"] = async () => {
-    // TODO
+  public respond: IEngine["respond"] = async params => {
+    const { topic, response } = params;
+    const { id } = response;
+    if (isJsonRpcResult(response)) {
+      await this.sendResult(id, topic, response.result);
+    } else if (isJsonRpcError(response)) {
+      await this.sendError(id, topic, response.error);
+    }
   };
 
   public ping: IEngine["ping"] = async params => {
@@ -376,6 +390,8 @@ export class Engine extends IEngine {
         return this.onSessionDeleteRequest(topic, payload);
       case "wc_pairingDelete":
         return this.onPairingDeleteRequest(topic, payload);
+      case "wc_sessionRequest":
+        return this.onSessionRequest(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -409,6 +425,8 @@ export class Engine extends IEngine {
         return this.onSessionDeleteResponse(topic, payload);
       case "wc_pairingDelete":
         return this.onPairingDeleteResponse(topic, payload);
+      case "wc_sessionRequest":
+        return this.onSessionRequestResponse(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -696,6 +714,31 @@ export class Engine extends IEngine {
       this.events.emit(engineEvent("pairing_delete", id), {});
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("pairing_delete", id), { error: payload.error });
+    }
+  };
+
+  private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
+    // TODO(ilja) validation
+    const { methods } = await this.client.session.get(topic);
+    const { id, params } = payload;
+    if (!methods.includes(params.request.method)) {
+      await this.sendError(id, topic, ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format());
+    } else if (!params.chainId) {
+      await this.sendError(id, topic, ERROR.UNSUPPORTED_CHAINS.format());
+    } else {
+      this.client.events.emit("request", { topic, request: payload });
+    }
+  };
+
+  private onSessionRequestResponse: EnginePrivate["onSessionRequestResponse"] = (
+    _topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      this.events.emit(engineEvent("request", id), { data: payload.result });
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("request", id), { error: payload.error });
     }
   };
 

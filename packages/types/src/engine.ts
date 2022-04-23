@@ -23,7 +23,8 @@ export declare namespace EngineTypes {
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
-    | "pairing_delete";
+    | "pairing_delete"
+    | "request";
 
   interface EventArguments {
     connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
@@ -36,6 +37,7 @@ export declare namespace EngineTypes {
     pairing_ping: { error?: ErrorResponse };
     session_delete: { error?: ErrorResponse };
     pairing_delete: { error?: ErrorResponse };
+    request: { error?: ErrorResponse; data?: JsonRpcResponse };
   }
 
   interface UriParameters {
@@ -100,7 +102,7 @@ export declare namespace EngineTypes {
     topic: string;
     request: {
       method: string;
-      params: unknown;
+      params: any;
     };
     chainId?: string;
   }
@@ -265,6 +267,16 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingDelete"]> | JsonRpcError,
   ): Promise<void>;
+
+  onSessionRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
+  ): Promise<void>;
+
+  onSessionRequestResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionRequest"]> | JsonRpcError,
+  ): void;
 }
 
 // -- class interface ----------------------------------------------- //
@@ -292,7 +304,7 @@ export abstract class IEngine {
 
   public abstract updateExpiry(params: EngineTypes.UpdateExpiryParams): Promise<void>;
 
-  public abstract request(params: EngineTypes.RequestParams): Promise<void>;
+  public abstract request(params: EngineTypes.RequestParams): Promise<JsonRpcResponse>;
 
   public abstract respond(params: EngineTypes.RespondParams): Promise<void>;
 

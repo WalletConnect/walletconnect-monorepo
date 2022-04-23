@@ -41,6 +41,7 @@ export const ERROR_TYPE = enumify({
   UNAUTHORIZED_UPGRADE_REQUEST: "UNAUTHORIZED_UPGRADE_REQUEST",
   UNAUTHORIZED_EXTEND_REQUEST: "UNAUTHORIZED_EXTEND_REQUEST",
   UNAUTHORIZED_MATCHING_CONTROLLER: "UNAUTHORIZED_MATCHING_CONTROLLER",
+  UNAUTHORIZED_METHOD: "UNAUTHORIZED_METHOD",
   // 4000 (EIP-1193)
   JSONRPC_REQUEST_METHOD_REJECTED: "JSONRPC_REQUEST_METHOD_REJECTED",
   JSONRPC_REQUEST_METHOD_UNAUTHORIZED: "JSONRPC_REQUEST_METHOD_UNAUTHORIZED",
@@ -406,10 +407,21 @@ export const ERROR: Record<ErrorType, Error> = {
     type: ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER,
     code: 3100,
     stringify: (params?: any) =>
-      `Unauthorized: peer is also ${params?.controller ? "" : "not "}controller`,
+      `Unauthorized: method ${params?.request?.method ?? "unknown"} not allowed`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER].code,
       message: ERROR[ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER].stringify(params),
+    }),
+  },
+
+  [ERROR_TYPE.UNAUTHORIZED_METHOD]: {
+    type: ERROR_TYPE.UNAUTHORIZED_METHOD,
+    code: 3100,
+    stringify: (params?: any) =>
+      `Unauthorized: peer is also ${params?.controller ? "" : "not "}controller`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.UNAUTHORIZED_METHOD].code,
+      message: ERROR[ERROR_TYPE.UNAUTHORIZED_METHOD].stringify(params),
     }),
   },
   // 4000 (EIP-1193)

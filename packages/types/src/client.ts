@@ -1,12 +1,13 @@
 import EventEmmiter from "events";
+import { JsonRpcTypes } from "./jsonrpc";
 import { Logger } from "pino";
-
 import { IEngine } from "./engine";
 import { IPairing } from "./pairing";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "./history";
 import { CoreTypes, ICore } from "./core";
+import { JsonRpcRequest } from "@walletconnect/jsonrpc-types";
 
 export declare namespace ClientTypes {
   type Event =
@@ -18,7 +19,8 @@ export declare namespace ClientTypes {
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
-    | "pairing_delete";
+    | "pairing_delete"
+    | "request";
 
   interface EventArguments {
     session_proposal: ProposalTypes.Struct;
@@ -30,6 +32,10 @@ export declare namespace ClientTypes {
     pairing_ping: { topic: string };
     session_delete: { topic: string };
     pairing_delete: { topic: string };
+    request: {
+      topic: string;
+      request: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>;
+    };
   }
 
   type Metadata = {
