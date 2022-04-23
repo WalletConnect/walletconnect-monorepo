@@ -1,7 +1,7 @@
 import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-import { IClient, ICrypto, IKeyChain } from "@walletconnect/types";
+import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import {
   decrypt,
   deriveSharedKey,
@@ -19,10 +19,10 @@ export class Crypto implements ICrypto {
 
   public keychain: ICrypto["keychain"];
 
-  constructor(public client: IClient, public logger: Logger, keychain?: IKeyChain) {
-    this.client = client;
+  constructor(public core: ICore, public logger: Logger, keychain?: IKeyChain) {
+    this.core = core;
     this.logger = generateChildLogger(logger, this.name);
-    this.keychain = keychain || new KeyChain(this.client, this.logger);
+    this.keychain = keychain || new KeyChain(this.core, this.logger);
   }
 
   get context() {

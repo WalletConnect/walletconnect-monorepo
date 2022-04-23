@@ -1,4 +1,5 @@
-import { HeartBeat, IHeartBeat } from "@walletconnect/heartbeat";
+import pino, { Logger } from "pino";
+import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
   formatJsonRpcResult,
@@ -16,7 +17,7 @@ import {
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { toMiliseconds } from "@walletconnect/time";
 import {
-  IClient,
+  ICore,
   IMessageTracker,
   IPublisher,
   IRelayer,
@@ -25,8 +26,7 @@ import {
   RelayerTypes,
 } from "@walletconnect/types";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
-import { EventEmitter } from "events";
-import pino, { Logger } from "pino";
+
 import {
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
@@ -44,8 +44,8 @@ export class Relayer extends IRelayer {
   public readonly protocol = "irn";
   public readonly version = 1;
 
+  public core: ICore;
   public logger: Logger;
-  public heartbeat: IHeartBeat;
   public events = new EventEmitter();
   public provider: IJsonRpcProvider;
   public messages: IMessageTracker;
@@ -53,17 +53,13 @@ export class Relayer extends IRelayer {
   public publisher: IPublisher;
   public name: string = RELAYER_CONTEXT;
 
-  private client: IClient;
-
   constructor(opts: RelayerOptions) {
     super(opts);
-    this.client = opts.client;
+    this.core = opts.core;
     this.logger =
       typeof opts.logger !== "undefined" && typeof opts.logger !== "string"
         ? generateChildLogger(opts.logger, this.name)
         : pino(getDefaultLoggerOptions({ level: opts.logger || RELAYER_DEFAULT_LOGGER }));
-
-    this.heartbeat = opts.heartbeat || new HeartBeat();
     const rpcUrl =
       opts.rpcUrl ||
       formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts.projectId);
@@ -71,8 +67,8 @@ export class Relayer extends IRelayer {
       typeof opts.relayProvider !== "string" && typeof opts.relayProvider !== "undefined"
         ? opts.relayProvider
         : new JsonRpcProvider(new WsConnection(rpcUrl));
-    this.messages = new MessageTracker(this.logger, opts.client);
-    this.subscriber = new Subscriber(this, this.client, this.logger);
+    this.messages = new MessageTracker(this.logger, opts.core);
+    this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);
     this.registerEventListeners();
   }

@@ -1,7 +1,7 @@
 import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 
-import { IClient } from "./client";
+import { ICore } from "./core";
 
 export declare namespace ExpirerTypes {
   interface Expiration {
@@ -29,7 +29,7 @@ export abstract class IExpirer extends IEvents {
   public abstract name: string;
   public abstract readonly context: string;
 
-  constructor(public client: IClient, public logger: Logger) {
+  constructor(public core: ICore, public logger: Logger) {
     super();
   }
 

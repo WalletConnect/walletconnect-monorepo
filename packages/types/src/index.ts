@@ -1,4 +1,5 @@
 export * from "./client";
+export * from "./core";
 export * from "./crypto";
 export * from "./engine";
 export * from "./expirer";

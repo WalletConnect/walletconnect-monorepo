@@ -1,5 +1,6 @@
 import { Logger } from "pino";
-import { IClient } from "./client";
+
+import { ICore } from "./core";
 
 export type MessageRecord = Record<string, string>;
 
@@ -10,7 +11,7 @@ export abstract class IMessageTracker {
 
   public abstract readonly context: string;
 
-  constructor(public logger: Logger, public client: IClient) {}
+  constructor(public logger: Logger, public core: ICore) {}
 
   public abstract init(): Promise<void>;
 

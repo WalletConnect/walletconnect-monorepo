@@ -1,5 +1,5 @@
 import { Logger } from "pino";
-import { IClient } from "./client";
+import { ICore } from "./core";
 
 export abstract class IKeyChain {
   public abstract keychain: Map<string, string>;
@@ -8,7 +8,7 @@ export abstract class IKeyChain {
 
   public abstract readonly context: string;
 
-  constructor(public client: IClient, public logger: Logger) {}
+  constructor(public core: ICore, public logger: Logger) {}
 
   public abstract init(): Promise<void>;
 

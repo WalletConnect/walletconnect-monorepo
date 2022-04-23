@@ -1,7 +1,8 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { IClient, IKeyChain } from "@walletconnect/types";
-import { ERROR, formatStorageKeyName, mapToObj, objToMap } from "@walletconnect/utils";
 import { Logger } from "pino";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { ICore, IKeyChain } from "@walletconnect/types";
+import { ERROR, formatStorageKeyName, mapToObj, objToMap } from "@walletconnect/utils";
+
 import { KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
 export class KeyChain implements IKeyChain {
@@ -11,8 +12,8 @@ export class KeyChain implements IKeyChain {
 
   public version = KEYCHAIN_STORAGE_VERSION;
 
-  constructor(public client: IClient, public logger: Logger) {
-    this.client = client;
+  constructor(public core: ICore, public logger: Logger) {
+    this.core = core;
     this.logger = generateChildLogger(logger, this.name);
   }
 
@@ -21,7 +22,7 @@ export class KeyChain implements IKeyChain {
   }
 
   get storageKey() {
-    return this.client.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
   }
 
   public init: IKeyChain["init"] = async () => {
@@ -53,11 +54,11 @@ export class KeyChain implements IKeyChain {
   // ---------- Private ----------------------------------------------- //
 
   private async setKeyChain(keychain: Map<string, string>) {
-    await this.client.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain));
+    await this.core.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain));
   }
 
   private async getKeyChain() {
-    const keychain = await this.client.storage.getItem<Record<string, string>>(this.storageKey);
+    const keychain = await this.core.storage.getItem<Record<string, string>>(this.storageKey);
     return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
 

@@ -15,12 +15,10 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_SUBSCRIBER_SUFFIX,
-} from "../../src";
-import * as encoding from "@walletconnect/encoding";
+} from "@walletconnect/core";
 import { formatJsonRpcResult, isJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { toMiliseconds } from "@walletconnect/time";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 
 export class MockWakuRelayer implements IEvents {
   public events = new EventEmitter();

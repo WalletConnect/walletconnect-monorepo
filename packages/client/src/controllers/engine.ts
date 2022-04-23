@@ -1,3 +1,5 @@
+import EventEmmiter from "events";
+import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -25,10 +27,8 @@ import {
   ERROR,
   engineEvent,
 } from "@walletconnect/utils";
-import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "../constants";
-import EventEmmiter from "events";
 
-export default class Engine extends IEngine {
+export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
 
   constructor(client: IEngine["client"]) {
@@ -57,7 +57,7 @@ export default class Engine extends IEngine {
       uri = newUri;
     }
 
-    const publicKey = await this.client.crypto.generateKeyPair();
+    const publicKey = await this.client.core.crypto.generateKeyPair();
     const proposal = {
       methods: methods ?? [],
       events: events ?? [],
@@ -93,8 +93,8 @@ export default class Engine extends IEngine {
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.client.pairing.set(topic, pairing);
-    await this.client.crypto.setSymKey(symKey, topic);
-    await this.client.relayer.subscribe(topic, { relay });
+    await this.client.core.crypto.setSymKey(symKey, topic);
+    await this.client.core.relayer.subscribe(topic, { relay });
     // TODO(ilja) this.expirer / timeout pairing ?
 
     return pairing;
@@ -104,9 +104,9 @@ export default class Engine extends IEngine {
     // TODO(ilja) validation
     const { id, relayProtocol, accounts, methods, events } = params;
     const { pairingTopic, proposer } = await this.client.proposal.get(id);
-    const selfPublicKey = await this.client.crypto.generateKeyPair();
+    const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
-    const topic = await this.client.crypto.generateSharedKey(selfPublicKey, peerPublicKey);
+    const topic = await this.client.core.crypto.generateSharedKey(selfPublicKey, peerPublicKey);
     const sessionSettle = {
       relay: {
         protocol: relayProtocol ?? "waku",
@@ -120,13 +120,15 @@ export default class Engine extends IEngine {
       },
       expiry: calcExpiry(SEVEN_DAYS),
     };
-    await this.client.relayer.subscribe(topic);
+
+    await this.client.core.relayer.subscribe(topic);
     const requestId = await this.sendRequest(topic, "wc_sessionSettle", sessionSettle);
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
     this.events.once(engineEvent("approve", requestId), async ({ error }) => {
       if (error) reject(error);
       else resolve(await this.client.session.get(topic));
     });
+
     const session = {
       ...sessionSettle,
       topic,
@@ -278,7 +280,7 @@ export default class Engine extends IEngine {
 
   private async createPairing() {
     const symKey = generateRandomBytes32();
-    const topic = await this.client.crypto.setSymKey(symKey);
+    const topic = await this.client.core.crypto.setSymKey(symKey);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
     const pairing = { topic, expiry, relay, active: false };
@@ -290,7 +292,7 @@ export default class Engine extends IEngine {
       relay,
     });
     await this.client.pairing.set(topic, pairing);
-    await this.client.relayer.subscribe(topic);
+    await this.client.core.relayer.subscribe(topic);
     // TODO(ilja) this.expirer / timeout pairing ?
 
     return { topic, uri };
@@ -306,8 +308,8 @@ export default class Engine extends IEngine {
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
     // TODO(ilja) validation
     const payload = formatJsonRpcRequest(method, params);
-    const message = await this.client.crypto.encode(topic, payload);
-    await this.client.relayer.publish(topic, message);
+    const message = await this.client.core.crypto.encode(topic, payload);
+    await this.client.core.relayer.publish(topic, message);
     await this.client.history.set(topic, payload);
 
     return payload.id;
@@ -316,33 +318,36 @@ export default class Engine extends IEngine {
   private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
     // TODO(ilja) validation
     const payload = formatJsonRpcResult(id, result);
-    const message = await this.client.crypto.encode(topic, payload);
-    await this.client.relayer.publish(topic, message);
+    const message = await this.client.core.crypto.encode(topic, payload);
+    await this.client.core.relayer.publish(topic, message);
     await this.client.history.resolve(payload);
   };
 
   private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
     // TODO(ilja) validation
     const payload = formatJsonRpcError(id, error);
-    const message = await this.client.crypto.encode(topic, payload);
-    await this.client.relayer.publish(topic, message);
+    const message = await this.client.core.crypto.encode(topic, payload);
+    await this.client.core.relayer.publish(topic, message);
     await this.client.history.resolve(payload);
   };
 
   // ---------- Relay Events Router ----------------------------------- //
 
   private registerRelayerEvents() {
-    this.client.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
-      const { topic, message } = event;
-      const payload = await this.client.crypto.decode(topic, message);
-      if (isJsonRpcRequest(payload)) {
-        await this.client.history.set(topic, payload);
-        this.onRelayEventRequest({ topic, payload });
-      } else if (isJsonRpcResponse(payload)) {
-        await this.client.history.resolve(payload);
-        this.onRelayEventResponse({ topic, payload });
-      }
-    });
+    this.client.core.relayer.on(
+      RELAYER_EVENTS.message,
+      async (event: RelayerTypes.MessageEvent) => {
+        const { topic, message } = event;
+        const payload = await this.client.core.crypto.decode(topic, message);
+        if (isJsonRpcRequest(payload)) {
+          await this.client.history.set(topic, payload);
+          this.onRelayEventRequest({ topic, payload });
+        } else if (isJsonRpcResponse(payload)) {
+          await this.client.history.resolve(payload);
+          this.onRelayEventResponse({ topic, payload });
+        }
+      },
+    );
   }
 
   private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = event => {
@@ -449,13 +454,16 @@ export default class Engine extends IEngine {
         method: "onSessionProposeResponse",
         peerPublicKey,
       });
-      const sessionTopic = await this.client.crypto.generateSharedKey(selfPublicKey, peerPublicKey);
+      const sessionTopic = await this.client.core.crypto.generateSharedKey(
+        selfPublicKey,
+        peerPublicKey,
+      );
       this.client.logger.trace({
         type: "method",
         method: "onSessionProposeResponse",
         sessionTopic,
       });
-      const subscriptionId = await this.client.relayer.subscribe(sessionTopic);
+      const subscriptionId = await this.client.core.relayer.subscribe(sessionTopic);
       this.client.logger.trace({
         type: "method",
         method: "onSessionProposeResponse",
@@ -641,10 +649,10 @@ export default class Engine extends IEngine {
   ) => {
     // TODO(ilja) validation
     const { id } = payload;
-    await this.client.relayer.unsubscribe(topic);
+    await this.client.core.relayer.unsubscribe(topic);
     await this.sendResult<"wc_sessionDelete">(id, topic, true);
     await this.client.session.delete(topic, ERROR.DELETED.format());
-    await this.client.crypto.deleteSymKey(topic);
+    await this.client.core.crypto.deleteSymKey(topic);
     this.client.events.emit("session_delete", { topic });
   };
 
@@ -654,9 +662,9 @@ export default class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      await this.client.relayer.unsubscribe(topic);
+      await this.client.core.relayer.unsubscribe(topic);
       await this.client.session.delete(topic, ERROR.DELETED.format());
-      await this.client.crypto.deleteSymKey(topic);
+      await this.client.core.crypto.deleteSymKey(topic);
       this.events.emit(engineEvent("session_delete", id), {});
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_delete", id), { error: payload.error });
@@ -669,10 +677,10 @@ export default class Engine extends IEngine {
   ) => {
     // TODO(ilja) validation
     const { id } = payload;
-    await this.client.relayer.unsubscribe(topic);
+    await this.client.core.relayer.unsubscribe(topic);
     await this.sendResult<"wc_pairingDelete">(id, topic, true);
     await this.client.pairing.delete(topic, ERROR.DELETED.format());
-    await this.client.crypto.deleteSymKey(topic);
+    await this.client.core.crypto.deleteSymKey(topic);
     this.client.events.emit("pairing_delete", { topic });
   };
 
@@ -682,9 +690,9 @@ export default class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      await this.client.relayer.unsubscribe(topic);
+      await this.client.core.relayer.unsubscribe(topic);
       await this.client.pairing.delete(topic, ERROR.DELETED.format());
-      await this.client.crypto.deleteSymKey(topic);
+      await this.client.core.crypto.deleteSymKey(topic);
       this.events.emit(engineEvent("pairing_delete", id), {});
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("pairing_delete", id), { error: payload.error });
