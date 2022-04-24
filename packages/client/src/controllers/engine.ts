@@ -265,6 +265,7 @@ export class Engine extends IEngine {
   };
 
   public emit: IEngine["emit"] = async params => {
+    // TODO(ilja) validation
     const { topic, event, chainId } = params;
     await this.sendRequest(topic, "wc_sessionEvent", { event, chainId });
   };
@@ -313,12 +314,12 @@ export class Engine extends IEngine {
     return { topic, uri };
   }
 
-  private async activatePairing(topic: string) {
+  private activatePairing: EnginePrivate["activatePairing"] = async topic => {
     await this.client.pairing.update(topic, {
       active: true,
       expiry: calcExpiry(THIRTY_DAYS),
     });
-  }
+  };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
     // TODO(ilja) validation
@@ -555,6 +556,7 @@ export class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("update_accounts", id), {});
@@ -578,6 +580,7 @@ export class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("update_methods", id), {});
@@ -601,6 +604,7 @@ export class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("update_events", id), {});
@@ -624,6 +628,7 @@ export class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("update_expiry", id), {});
@@ -640,6 +645,7 @@ export class Engine extends IEngine {
   };
 
   private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_ping", id), {});
@@ -656,6 +662,7 @@ export class Engine extends IEngine {
   };
 
   private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("pairing_ping", id), {});
@@ -681,6 +688,7 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       await this.client.core.relayer.unsubscribe(topic);
@@ -709,6 +717,7 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       await this.client.core.relayer.unsubscribe(topic);
@@ -738,6 +747,7 @@ export class Engine extends IEngine {
     _topic,
     payload,
   ) => {
+    // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("request", id), { data: payload.result });
@@ -747,6 +757,7 @@ export class Engine extends IEngine {
   };
 
   private onSessionEventRequest: EnginePrivate["onSessionEventRequest"] = (topic, payload) => {
+    // TODO(ilja) validation
     const { event, chainId } = payload.params;
     this.client.events.emit("event", { topic, event, chainId });
   };

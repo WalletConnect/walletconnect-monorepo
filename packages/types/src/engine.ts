@@ -168,6 +168,8 @@ export interface EnginePrivate {
 
   onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
 
+  activatePairing(topic: string): Promise<void>;
+
   onSessionProposeRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
