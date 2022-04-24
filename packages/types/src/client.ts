@@ -20,7 +20,8 @@ export declare namespace ClientTypes {
     | "pairing_ping"
     | "session_delete"
     | "pairing_delete"
-    | "request";
+    | "request"
+    | "event";
 
   interface EventArguments {
     session_proposal: ProposalTypes.Struct;
@@ -34,7 +35,19 @@ export declare namespace ClientTypes {
     pairing_delete: { topic: string };
     request: {
       topic: string;
-      request: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>;
+      request: {
+        method: string;
+        params: any;
+      };
+      chainId?: string;
+    };
+    event: {
+      topic: string;
+      event: {
+        name: string;
+        data: any;
+      };
+      chainId?: string;
     };
   }
 

@@ -277,6 +277,11 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionRequest"]> | JsonRpcError,
   ): void;
+
+  onSessionEventRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionEvent"]>,
+  ): void;
 }
 
 // -- class interface ----------------------------------------------- //

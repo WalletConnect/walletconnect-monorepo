@@ -264,8 +264,9 @@ export class Engine extends IEngine {
     }
   };
 
-  public emit: IEngine["emit"] = async () => {
-    // TODO
+  public emit: IEngine["emit"] = async params => {
+    const { topic, event, chainId } = params;
+    await this.sendRequest(topic, "wc_sessionEvent", { event, chainId });
   };
 
   public disconnect: IEngine["disconnect"] = async params => {
@@ -392,6 +393,8 @@ export class Engine extends IEngine {
         return this.onPairingDeleteRequest(topic, payload);
       case "wc_sessionRequest":
         return this.onSessionRequest(topic, payload);
+      case "wc_sessionEvent":
+        return this.onSessionEventRequest(topic, payload);
       default:
         // TODO(ilja) throw / log unsuported event?
         return;
@@ -721,12 +724,13 @@ export class Engine extends IEngine {
     // TODO(ilja) validation
     const { methods } = await this.client.session.get(topic);
     const { id, params } = payload;
+    const { chainId, request } = params;
     if (!methods.includes(params.request.method)) {
       await this.sendError(id, topic, ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format());
     } else if (!params.chainId) {
       await this.sendError(id, topic, ERROR.UNSUPPORTED_CHAINS.format());
     } else {
-      this.client.events.emit("request", { topic, request: payload });
+      this.client.events.emit("request", { topic, request, chainId });
     }
   };
 
@@ -740,6 +744,11 @@ export class Engine extends IEngine {
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("request", id), { error: payload.error });
     }
+  };
+
+  private onSessionEventRequest: EnginePrivate["onSessionEventRequest"] = (topic, payload) => {
+    const { event, chainId } = payload.params;
+    this.client.events.emit("event", { topic, event, chainId });
   };
 
   // ---------- Expirer Events ----------------------------------------- //
