@@ -1003,7 +1003,7 @@ class Connector implements IConnector {
         this._handleSessionResponse(error.message);
         return;
       }
-      if (payload.result) {
+      if (isJsonRpcResponseSuccess(payload)) {
         this._handleSessionResponse(errorMsg, payload.result);
       } else if (payload.error && payload.error.message) {
         this._handleSessionResponse(payload.error.message);
@@ -1020,7 +1020,7 @@ class Connector implements IConnector {
           reject(error);
           return;
         }
-        if (payload.result) {
+        if (isJsonRpcResponseSuccess(payload)) {
           resolve(payload.result);
         } else if (payload.error && payload.error.message) {
           reject(new Error(payload.error.message));
