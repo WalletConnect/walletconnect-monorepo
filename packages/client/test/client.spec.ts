@@ -42,11 +42,10 @@ describe("Client", () => {
         await expect(clients.A.pairing.get(topic)).to.eventually.be.rejectedWith(
           `No matching pairing with topic: ${topic}`,
         );
-        // FIXME: engine.ping is not handling this base case currently, this doesn't throw/reject.
-        // const promise = clients.A.ping({ topic });
-        // await expect(promise).to.eventually.be.rejectedWith(
-        //   `No matching pairing with topic: ${topic}`,
-        // );
+        const promise = clients.A.ping({ topic });
+        await expect(promise).to.eventually.be.rejectedWith(
+          `No matching pairing or session with topic: ${topic}`,
+        );
       });
     });
     describe("session", () => {
@@ -60,22 +59,20 @@ describe("Client", () => {
         await expect(clients.A.session.get(topic)).to.eventually.be.rejectedWith(
           `No matching session with topic: ${topic}`,
         );
-        // FIXME: engine.ping is not handling this base case currently, this doesn't throw/reject.
-        // const promise = clients.A.ping({ topic });
-        // await expect(promise).to.eventually.be.rejectedWith(
-        //   `No matching session settled with topic: ${topic}`,
-        // );
+        const promise = clients.A.ping({ topic });
+        await expect(promise).to.eventually.be.rejectedWith(
+          `No matching pairing or session with topic: ${topic}`,
+        );
       });
     });
   });
 
   describe("ping", () => {
-    // FIXME: engine.ping is not handling this base case currently, this doesn't throw/reject.
-    it.skip("throws if the topic is not a known pairing or session topic", async () => {
+    it("throws if the topic is not a known pairing or session topic", async () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
-        `No matching session with topic: ${fakeTopic}`,
+        `No matching pairing or session with topic: ${fakeTopic}`,
       );
     });
     describe("pairing", () => {
