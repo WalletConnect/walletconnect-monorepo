@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/WalletConnect/walletconnect-monorepo/discussions/new
+    about: Ask questions and discuss with other community members.
+  - name: View our FAQ
+    url: https://walletconnect.com/faq
+    about: See our frequently asked questions
