@@ -1,4 +1,8 @@
+import path from "path";
 import { ClientTypes, RelayerTypes } from "@walletconnect/types";
+
+// @ts-ignore
+import { ROOT_DIR } from "../../../../ops/js/shared";
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
@@ -16,6 +20,8 @@ export const TEST_CLIENT_OPTIONS: ClientTypes.Options = {
     database: ":memory:",
   },
 };
+
+export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");
 
 export const TEST_CLIENT_NAME_A = "client_a";
 export const TEST_APP_METADATA_A: ClientTypes.Metadata = {
