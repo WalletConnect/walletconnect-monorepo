@@ -66,16 +66,16 @@ export function parseTransactionData(txData: Partial<ITxData>): Partial<ITxData>
   const txDataRPC = {
     from: sanitizeHex(txData.from),
     to: typeof txData.to === "undefined" ? null : sanitizeHex(txData.to),
-    gasPrice: typeof txData.gasPrice === "undefined" ? null : parseHexValues(txData.gasPrice),
+    gasPrice: typeof txData.gasPrice === "undefined" ? "" : parseHexValues(txData.gasPrice),
     gas:
       typeof txData.gas === "undefined"
         ? typeof txData.gasLimit === "undefined"
-          ? null
+          ? ""
           : parseHexValues(txData.gasLimit)
         : parseHexValues(txData.gas),
-    value: typeof txData.value === "undefined" ? null : parseHexValues(txData.value),
-    nonce: typeof txData.nonce === "undefined" ? null : parseHexValues(txData.nonce),
-    data: typeof txData.data === "undefined" ? null : sanitizeHex(txData.data) || "0x",
+    value: typeof txData.value === "undefined" ? "" : parseHexValues(txData.value),
+    nonce: typeof txData.nonce === "undefined" ? "" : parseHexValues(txData.nonce),
+    data: typeof txData.data === "undefined" ? "" : sanitizeHex(txData.data) || "0x",
   };
 
   const prunable = ["gasPrice", "gas", "value", "nonce"];
