@@ -76,6 +76,7 @@ export class Engine extends IEngine {
       else if (data) {
         data.self.publicKey = publicKey;
         await this.client.session.set(data.topic, data);
+        await this.setExpiry(data.topic, data.expiry);
         resolve(data);
       }
     });
@@ -96,7 +97,7 @@ export class Engine extends IEngine {
     await this.client.pairing.set(topic, pairing);
     await this.client.core.crypto.setSymKey(symKey, topic);
     await this.client.core.relayer.subscribe(topic, { relay });
-    // TODO(ilja) this.expirer / timeout pairing ?
+    await this.setExpiry(topic, expiry);
 
     return pairing;
   };
@@ -105,9 +106,14 @@ export class Engine extends IEngine {
     // TODO(ilja) validation
     const { id, relayProtocol, accounts, namespaces } = params;
     const { pairingTopic, proposer } = await this.client.proposal.get(id);
+
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
-    const topic = await this.client.core.crypto.generateSharedKey(selfPublicKey, peerPublicKey);
+    const sessionTopic = await this.client.core.crypto.generateSharedKey(
+      selfPublicKey,
+      peerPublicKey,
+    );
+    const sessionExpiry = calcExpiry(SEVEN_DAYS);
     const sessionSettle = {
       relay: {
         protocol: relayProtocol ?? "waku",
@@ -118,20 +124,20 @@ export class Engine extends IEngine {
         publicKey: selfPublicKey,
         metadata: this.client.metadata,
       },
-      expiry: calcExpiry(SEVEN_DAYS),
+      expiry: sessionExpiry,
     };
 
-    await this.client.core.relayer.subscribe(topic);
-    const requestId = await this.sendRequest(topic, "wc_sessionSettle", sessionSettle);
+    await this.client.core.relayer.subscribe(sessionTopic);
+    const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
     this.events.once(engineEvent("approve", requestId), async ({ error }) => {
       if (error) reject(error);
-      else resolve(await this.client.session.get(topic));
+      else resolve(await this.client.session.get(sessionTopic));
     });
 
     const session = {
       ...sessionSettle,
-      topic,
+      topic: sessionTopic,
       acknowledged: false,
       self: sessionSettle.controller,
       peer: {
@@ -140,7 +146,8 @@ export class Engine extends IEngine {
       },
       controller: selfPublicKey,
     };
-    await this.client.session.set(topic, session);
+    await this.client.session.set(sessionTopic, session);
+    await this.setExpiry(sessionTopic, sessionExpiry);
 
     if (pairingTopic && id) {
       await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
@@ -153,7 +160,7 @@ export class Engine extends IEngine {
       await this.activatePairing(pairingTopic);
     }
 
-    return { topic, acknowledged };
+    return { topic: sessionTopic, acknowledged };
   };
 
   public reject: IEngine["reject"] = async params => {
@@ -203,7 +210,7 @@ export class Engine extends IEngine {
       else resolve();
     });
     await done();
-    await this.client.session.update(topic, { expiry });
+    await this.setExpiry(topic, expiry);
   };
 
   public request: IEngine["request"] = async params => {
@@ -295,16 +302,14 @@ export class Engine extends IEngine {
     });
     await this.client.pairing.set(topic, pairing);
     await this.client.core.relayer.subscribe(topic);
-    // TODO(ilja) this.expirer / timeout pairing ?
+    await this.setExpiry(topic, expiry);
 
     return { topic, uri };
   }
 
   private activatePairing: EnginePrivate["activatePairing"] = async topic => {
-    await this.client.pairing.update(topic, {
-      active: true,
-      expiry: calcExpiry(THIRTY_DAYS),
-    });
+    await this.client.pairing.update(topic, { active: true });
+    await this.setExpiry(topic, calcExpiry(THIRTY_DAYS));
   };
 
   private deleteSession: EnginePrivate["deleteSession"] = async topic => {
@@ -323,6 +328,15 @@ export class Engine extends IEngine {
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
     ]);
+  };
+
+  private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
+    if (this.client.pairing.keys.includes(topic)) {
+      await this.client.pairing.update(topic, { expiry });
+    } else if (this.client.session.keys.includes(topic)) {
+      await this.client.session.update(topic, { expiry });
+    }
+    await this.client.expirer.set(topic, { topic, expiry });
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -594,7 +608,7 @@ export class Engine extends IEngine {
   ) => {
     // TODO(ilja) validation
     const { params, id } = payload;
-    await this.client.session.update(topic, { expiry: params.expiry });
+    await this.setExpiry(topic, params.expiry);
     await this.sendResult<"wc_sessionUpdateExpiry">(id, topic, true);
     this.client.events.emit("update_expiry", { topic, expiry: params.expiry });
   };

@@ -164,6 +164,8 @@ export interface EnginePrivate {
 
   deletePairing(topic: string): Promise<void>;
 
+  setExpiry(topic: string, expiry: number): Promise<void>;
+
   onSessionProposeRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
