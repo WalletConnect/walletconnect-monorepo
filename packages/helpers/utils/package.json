@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/utils",
-  "version": "1.7.7",
+  "version": "1.7.8",
   "description": "Utility Library for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -62,10 +62,10 @@
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/browser-utils": "^1.7.7",
+    "@walletconnect/browser-utils": "^1.7.8",
     "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/types": "^1.7.7",
+    "@walletconnect/types": "^1.7.8",
     "bn.js": "4.11.8",
     "js-sha3": "0.8.0",
     "query-string": "6.13.5"
