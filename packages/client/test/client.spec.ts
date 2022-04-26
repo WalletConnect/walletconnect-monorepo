@@ -1,7 +1,13 @@
 import { ERROR } from "@walletconnect/utils";
 import "mocha";
 import Client from "../src";
-import { expect, initTwoClients, testConnectMethod, TEST_CLIENT_OPTIONS } from "./shared";
+import {
+  expect,
+  initTwoClients,
+  testConnectMethod,
+  TEST_CLIENT_DATABASE,
+  TEST_CLIENT_OPTIONS,
+} from "./shared";
 
 describe("Client", () => {
   it("init", async () => {
@@ -90,9 +96,12 @@ describe("Client", () => {
         } = await testConnectMethod(clients);
         await clients.B.ping({ topic });
       });
-      // TODO: this test requires `engine.ping` to handle unknown topics to avoid false positives.
-      it.skip("clients ping each other after restart", async () => {
-        const beforeClients = await initTwoClients();
+      // FIXME: Bug: This is failing because session topics are being restored to `client.pairing`.
+      // Restoring session topics works (see equivalent test below).
+      it.skip("clients can ping each other after restart", async () => {
+        const beforeClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         const {
           pairingA: { topic },
         } = await testConnectMethod(beforeClients);
@@ -103,7 +112,9 @@ describe("Client", () => {
         delete beforeClients.A;
         delete beforeClients.B;
         // restart
-        const afterClients = await initTwoClients();
+        const afterClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.A.ping({ topic });
@@ -124,9 +135,10 @@ describe("Client", () => {
         } = await testConnectMethod(clients);
         await clients.B.ping({ topic });
       });
-      // TODO: this test requires `engine.ping` to handle unknown topics to avoid false positives.
-      it.skip("clients ping each other after restart", async () => {
-        const beforeClients = await initTwoClients();
+      it("clients can ping each other after restart", async () => {
+        const beforeClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         const {
           sessionA: { topic },
         } = await testConnectMethod(beforeClients);
@@ -137,7 +149,9 @@ describe("Client", () => {
         delete beforeClients.A;
         delete beforeClients.B;
         // restart
-        const afterClients = await initTwoClients();
+        const afterClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.A.ping({ topic });
