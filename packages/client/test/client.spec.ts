@@ -22,9 +22,7 @@ describe("Client", () => {
       const { topic: pairingTopic } = await A.pairing.get(A.pairing.keys[0]);
       await testConnectMethod(clients, {
         pairingTopic,
-        chains: [],
-        events: [],
-        methods: [],
+        namespaces: [],
         accounts: [],
       });
     });
@@ -168,37 +166,23 @@ describe("Client", () => {
     });
   });
 
-  describe("updateMethods", () => {
-    it("updates session methods state with provided methods", async () => {
+  describe("updateNamespaces", () => {
+    it("updates session namespaces state with provided namespaces", async () => {
       const clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const methodsBefore = (await clients.A.session.get(topic)).methods;
-      const methodsAfter = [...methodsBefore, "eth_sign"];
-      await clients.A.updateMethods({
+      const namespacesBefore = (await clients.A.session.get(topic)).namespaces;
+      const namespacesAfter = [
+        ...namespacesBefore,
+        { chains: ["eip155:12"], methods: ["eth_sendTransaction"], events: ["accountsChanged"] },
+      ];
+      await clients.A.updateNamespaces({
         topic,
-        methods: methodsAfter,
+        namespaces: namespacesAfter,
       });
-      const result = (await clients.A.session.get(topic)).methods;
-      expect(result).to.eql(methodsAfter);
-    });
-  });
-
-  describe("updateEvents", () => {
-    it("updates session events state with provided events", async () => {
-      const clients = await initTwoClients();
-      const {
-        sessionA: { topic },
-      } = await testConnectMethod(clients);
-      const eventsBefore = (await clients.A.session.get(topic)).events;
-      const eventsAfter = [...eventsBefore, "connect", "disconnect"];
-      await clients.A.updateEvents({
-        topic,
-        events: eventsAfter,
-      });
-      const result = (await clients.A.session.get(topic)).events;
-      expect(result).to.eql(eventsAfter);
+      const result = (await clients.A.session.get(topic)).namespaces;
+      expect(result).to.eql(namespacesAfter);
     });
   });
 

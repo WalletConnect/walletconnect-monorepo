@@ -63,6 +63,14 @@ export const TEST_METHODS = [
 ];
 export const TEST_EVENTS = ["chainChanged", "accountsChanged"];
 
+export const TEST_NAMESPACES = [
+  {
+    methods: TEST_METHODS,
+    chains: TEST_CHAINS,
+    events: TEST_EVENTS,
+  },
+];
+
 export const TEST_ETHEREUM_ADDRESS = "0x3c582121909DE92Dc89A36898633C1aE4790382b";
 
 export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;

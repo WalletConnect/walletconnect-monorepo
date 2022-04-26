@@ -5,13 +5,7 @@ import { parseUri } from "@walletconnect/utils";
 import { EngineTypes, PairingTypes, RelayerTypes, SessionTypes } from "@walletconnect/types";
 
 import { expect } from "./chai";
-import {
-  TEST_CHAINS,
-  TEST_METHODS,
-  TEST_EVENTS,
-  TEST_ACCOUNTS,
-  TEST_RELAY_OPTIONS,
-} from "./values";
+import { TEST_ACCOUNTS, TEST_RELAY_OPTIONS, TEST_NAMESPACES } from "./values";
 
 import { Clients } from "./init";
 
@@ -24,17 +18,14 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   const { A, B } = clients;
 
   const connectParams: EngineTypes.ConnectParams = {
-    methods: params?.methods || TEST_METHODS,
-    chains: params?.chains || TEST_CHAINS,
-    events: params?.events || TEST_EVENTS,
+    namespaces: params?.namespaces || TEST_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
 
   const approveParams: Omit<EngineTypes.ApproveParams, "id"> = {
     accounts: params?.accounts || TEST_ACCOUNTS,
-    methods: params?.methods || TEST_METHODS,
-    events: params?.events || TEST_EVENTS,
+    namespaces: params?.namespaces || TEST_NAMESPACES,
   };
 
   const { uri, approval } = await A.connect(connectParams);
@@ -63,9 +54,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     new Promise<void>((resolve, reject) => {
       B.on("session_proposal", async proposal => {
         try {
-          expect(proposal.chains).to.eql(connectParams.chains);
-          expect(proposal.methods).to.eql(connectParams.methods);
-          expect(proposal.events).to.eql(connectParams.events);
+          expect(proposal.namespaces).to.eql(connectParams.namespaces);
 
           const { acknowledged } = await B.approve({
             id: proposal.id,
@@ -120,12 +109,9 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // accounts
   expect(sessionA.accounts).to.eql(approveParams.accounts);
   expect(sessionA.accounts).to.eql(sessionB.accounts);
-  // methods
-  expect(sessionA.methods).to.eql(approveParams.methods);
-  expect(sessionA.methods).to.eql(sessionB.methods);
-  // events
-  expect(sessionA.events).to.eql(approveParams.events);
-  expect(sessionA.events).to.eql(sessionB.events);
+  // namespaces
+  expect(sessionA.namespaces).to.eql(approveParams.namespaces);
+  expect(sessionA.namespaces).to.eql(sessionB.namespaces);
   // expiry
   expect(sessionA.expiry).to.eql(sessionB.expiry);
   // acknowledged
