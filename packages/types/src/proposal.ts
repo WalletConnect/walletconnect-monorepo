@@ -11,9 +11,7 @@ export declare namespace ProposalTypes {
       publicKey: string;
       metadata: ClientTypes.Metadata;
     };
-    chains: SessionTypes.Chains;
-    methods: SessionTypes.Methods;
-    events: SessionTypes.Events;
+    namespaces: SessionTypes.Namespace[];
     pairingTopic?: string;
   }
 }

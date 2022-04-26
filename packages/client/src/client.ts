@@ -128,18 +128,9 @@ export class Client extends IClient {
     }
   };
 
-  public updateMethods: IClient["updateMethods"] = async params => {
+  public updateNamespaces: IClient["updateNamespaces"] = async params => {
     try {
-      return await this.engine.updateMethods(params);
-    } catch (error) {
-      this.logger.error((error as any).message);
-      throw error;
-    }
-  };
-
-  public updateEvents: IClient["updateEvents"] = async params => {
-    try {
-      return await this.engine.updateEvents(params);
+      return await this.engine.updateNamespaces(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;

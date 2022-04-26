@@ -13,8 +13,7 @@ export declare namespace JsonRpcTypes {
     | "wc_sessionPropose"
     | "wc_sessionSettle"
     | "wc_sessionUpdateAccounts"
-    | "wc_sessionUpdateMethods"
-    | "wc_sessionUpdateEvents"
+    | "wc_sessionUpdateNamespaces"
     | "wc_sessionUpdateExpiry"
     | "wc_sessionDelete"
     | "wc_sessionPing"
@@ -31,9 +30,7 @@ export declare namespace JsonRpcTypes {
     wc_pairingPing: {};
     wc_sessionPropose: {
       relays: RelayerTypes.ProtocolOptions[];
-      chains: SessionTypes.Chains;
-      methods: SessionTypes.Methods;
-      events: SessionTypes.Events;
+      namespaces: SessionTypes.Namespace[];
       proposer: {
         publicKey: string;
         metadata: ClientTypes.Metadata;
@@ -42,8 +39,7 @@ export declare namespace JsonRpcTypes {
     wc_sessionSettle: {
       relay: RelayerTypes.ProtocolOptions;
       accounts: SessionTypes.Accounts;
-      methods: SessionTypes.Methods;
-      events: SessionTypes.Events;
+      namespaces: SessionTypes.Namespace[];
       expiry: number;
       controller: {
         publicKey: string;
@@ -53,11 +49,8 @@ export declare namespace JsonRpcTypes {
     wc_sessionUpdateAccounts: {
       accounts: SessionTypes.Accounts;
     };
-    wc_sessionUpdateMethods: {
-      methods: SessionTypes.Methods;
-    };
-    wc_sessionUpdateEvents: {
-      events: SessionTypes.Events;
+    wc_sessionUpdateNamespaces: {
+      namespaces: SessionTypes.Namespace[];
     };
     wc_sessionUpdateExpiry: {
       expiry: number;
@@ -93,8 +86,7 @@ export declare namespace JsonRpcTypes {
     };
     wc_sessionSettle: true;
     wc_sessionUpdateAccounts: true;
-    wc_sessionUpdateMethods: true;
-    wc_sessionUpdateEvents: true;
+    wc_sessionUpdateNamespaces: true;
     wc_sessionUpdateExpiry: true;
     wc_sessionDelete: true;
     wc_sessionPing: true;

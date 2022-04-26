@@ -1,5 +1,4 @@
 import EventEmmiter from "events";
-import { JsonRpcTypes } from "./jsonrpc";
 import { Logger } from "pino";
 import { IEngine } from "./engine";
 import { IPairing } from "./pairing";
@@ -7,14 +6,12 @@ import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "./history";
 import { CoreTypes, ICore } from "./core";
-import { JsonRpcRequest } from "@walletconnect/jsonrpc-types";
 
 export declare namespace ClientTypes {
   type Event =
     | "session_proposal"
     | "update_accounts"
-    | "update_methods"
-    | "update_events"
+    | "update_namespaces"
     | "update_expiry"
     | "session_ping"
     | "pairing_ping"
@@ -26,8 +23,7 @@ export declare namespace ClientTypes {
   interface EventArguments {
     session_proposal: ProposalTypes.Struct;
     update_accounts: { topic: string; accounts: SessionTypes.Accounts };
-    update_methods: { topic: string; methods: SessionTypes.Methods };
-    update_events: { topic: string; events: SessionTypes.Events };
+    update_namespaces: { topic: string; namespaces: SessionTypes.Namespace[] };
     update_expiry: { topic: string; expiry: number };
     session_ping: { topic: string };
     pairing_ping: { topic: string };
@@ -120,8 +116,7 @@ export abstract class IClient {
   public abstract approve: IEngine["approve"];
   public abstract reject: IEngine["reject"];
   public abstract updateAccounts: IEngine["updateAccounts"];
-  public abstract updateMethods: IEngine["updateMethods"];
-  public abstract updateEvents: IEngine["updateEvents"];
+  public abstract updateNamespaces: IEngine["updateNamespaces"];
   public abstract updateExpiry: IEngine["updateExpiry"];
   public abstract request: IEngine["request"];
   public abstract respond: IEngine["respond"];
