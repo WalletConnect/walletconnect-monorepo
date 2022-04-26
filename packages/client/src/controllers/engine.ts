@@ -1,5 +1,6 @@
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
+import { EXPIRER_EVENTS } from "../constants";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -17,6 +18,7 @@ import {
   EnginePrivate,
   SessionTypes,
   JsonRpcTypes,
+  ExpirerTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -303,6 +305,24 @@ export class Engine extends IEngine {
       active: true,
       expiry: calcExpiry(THIRTY_DAYS),
     });
+  };
+
+  private deleteSession: EnginePrivate["deleteSession"] = async topic => {
+    await Promise.all([
+      this.client.core.relayer.unsubscribe(topic),
+      this.client.session.delete(topic, ERROR.DELETED.format()),
+      this.client.core.crypto.deleteKeyPair(topic),
+      this.client.expirer.del(topic),
+    ]);
+  };
+
+  private deletePairing: EnginePrivate["deleteSession"] = async topic => {
+    await Promise.all([
+      this.client.core.relayer.unsubscribe(topic),
+      this.client.pairing.delete(topic, ERROR.DELETED.format()),
+      this.client.core.crypto.deleteSymKey(topic),
+      this.client.expirer.del(topic),
+    ]);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -632,10 +652,8 @@ export class Engine extends IEngine {
   ) => {
     // TODO(ilja) validation
     const { id } = payload;
-    await this.client.core.relayer.unsubscribe(topic);
     await this.sendResult<"wc_sessionDelete">(id, topic, true);
-    await this.client.session.delete(topic, ERROR.DELETED.format());
-    await this.client.core.crypto.deleteSymKey(topic);
+    await this.deleteSession(topic);
     this.client.events.emit("session_delete", { topic });
   };
 
@@ -646,9 +664,7 @@ export class Engine extends IEngine {
     // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      await this.client.core.relayer.unsubscribe(topic);
-      await this.client.session.delete(topic, ERROR.DELETED.format());
-      await this.client.core.crypto.deleteSymKey(topic);
+      await this.deleteSession(topic);
       this.events.emit(engineEvent("session_delete", id), {});
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_delete", id), { error: payload.error });
@@ -661,10 +677,8 @@ export class Engine extends IEngine {
   ) => {
     // TODO(ilja) validation
     const { id } = payload;
-    await this.client.core.relayer.unsubscribe(topic);
     await this.sendResult<"wc_pairingDelete">(id, topic, true);
-    await this.client.pairing.delete(topic, ERROR.DELETED.format());
-    await this.client.core.crypto.deleteSymKey(topic);
+    await this.deletePairing(topic);
     this.client.events.emit("pairing_delete", { topic });
   };
 
@@ -675,9 +689,7 @@ export class Engine extends IEngine {
     // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      await this.client.core.relayer.unsubscribe(topic);
-      await this.client.pairing.delete(topic, ERROR.DELETED.format());
-      await this.client.core.crypto.deleteSymKey(topic);
+      await this.deletePairing(topic);
       this.events.emit(engineEvent("pairing_delete", id), {});
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("pairing_delete", id), { error: payload.error });
@@ -723,6 +735,15 @@ export class Engine extends IEngine {
   // ---------- Expirer Events ----------------------------------------- //
 
   private registerExpirerEvents() {
-    // TODO
+    this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
+      const { topic } = event;
+      if (this.client.session.keys.includes(topic)) {
+        await this.deleteSession(topic);
+        this.client.events.emit("session_delete", { topic });
+      } else if (this.client.pairing.keys.includes(topic)) {
+        await this.deletePairing(topic);
+        this.client.events.emit("pairing_delete", { topic });
+      }
+    });
   }
 }
