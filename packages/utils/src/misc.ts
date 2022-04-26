@@ -119,10 +119,6 @@ export function formatMessageContext(context: string): string {
   return parseContextNames(context).join(EMPTY_SPACE);
 }
 
-export function formatStorageKeyName(context: string): string {
-  return parseContextNames(context).join(COLON);
-}
-
 // -- array ------------------------------------------------- //
 
 export function hasOverlap(a: any[], b: any[]): boolean {
