@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IMessageTracker, MessageRecord } from "@walletconnect/types";
-import { formatStorageKeyName, hashMessage, mapToObj, objToMap } from "@walletconnect/utils";
+import { hashMessage, mapToObj, objToMap } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
@@ -22,7 +22,7 @@ export class MessageTracker extends IMessageTracker {
   }
 
   get storageKey(): string {
-    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + this.name;
   }
 
   public init: IMessageTracker["init"] = async () => {
