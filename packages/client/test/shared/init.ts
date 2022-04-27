@@ -1,3 +1,4 @@
+import { ClientTypes } from "@walletconnect/types";
 import "mocha";
 // import { expect } from "chai";
 
@@ -10,8 +11,8 @@ export interface Clients {
   B: Client;
 }
 
-export async function initTwoClients() {
-  const A = await Client.init(TEST_CLIENT_OPTIONS_A);
-  const B = await Client.init(TEST_CLIENT_OPTIONS_B);
+export async function initTwoClients(clientOpts: ClientTypes.Options = {}) {
+  const A = await Client.init({ ...TEST_CLIENT_OPTIONS_A, ...clientOpts });
+  const B = await Client.init({ ...TEST_CLIENT_OPTIONS_B, ...clientOpts });
   return { A, B };
 }
