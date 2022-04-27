@@ -1,11 +1,6 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
-import {
-  ERROR,
-  formatStorageKeyName,
-  isProposalStruct,
-  isSessionStruct,
-} from "@walletconnect/utils";
+import { ERROR, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { STORE_STORAGE_VERSION } from "../constants";
 
@@ -33,7 +28,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   }
 
   get storageKey(): string {
-    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + this.name;
   }
 
   get length(): number {

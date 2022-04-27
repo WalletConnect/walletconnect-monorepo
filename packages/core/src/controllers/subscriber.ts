@@ -11,12 +11,7 @@ import {
   SubscriberEvents,
   SubscriberTypes,
 } from "@walletconnect/types";
-import {
-  ERROR,
-  formatStorageKeyName,
-  getRelayProtocolApi,
-  getRelayProtocolName,
-} from "@walletconnect/utils";
+import { ERROR, getRelayProtocolApi, getRelayProtocolName } from "@walletconnect/utils";
 
 import {
   RELAYER_PROVIDER_EVENTS,
@@ -58,9 +53,7 @@ export class Subscriber extends ISubscriber {
   }
 
   get storageKey(): string {
-    return (
-      this.relayer.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context)
-    );
+    return this.relayer.core.storagePrefix + this.version + "//" + this.name;
   }
 
   get length(): number {

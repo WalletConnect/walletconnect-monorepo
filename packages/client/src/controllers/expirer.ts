@@ -2,7 +2,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { toMiliseconds } from "@walletconnect/time";
 import { ExpirerTypes, ICore, IExpirer } from "@walletconnect/types";
-import { ERROR, formatStorageKeyName } from "@walletconnect/utils";
+import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { EXPIRER_CONTEXT, EXPIRER_EVENTS, EXPIRER_STORAGE_VERSION } from "../constants";
@@ -30,7 +30,7 @@ export class Expirer extends IExpirer {
   }
 
   get storageKey(): string {
-    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + this.name;
   }
 
   get length(): number {
