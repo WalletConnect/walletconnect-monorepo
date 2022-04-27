@@ -130,7 +130,10 @@ export function formatStorageKeyName(context: string): string {
 
 // -- object ------------------------------------------------ //
 export function isNamespaceEqual(a: SessionTypes.Namespace, b: SessionTypes.Namespace) {
-  return JSON.stringify(a) === JSON.stringify(b);
+  const sortedA = Object.fromEntries(Object.entries(a).sort());
+  const sortedB = Object.fromEntries(Object.entries(b).sort());
+
+  return JSON.stringify(sortedA) === JSON.stringify(sortedB);
 }
 
 // -- array ------------------------------------------------- //

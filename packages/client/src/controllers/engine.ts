@@ -715,8 +715,8 @@ export class Engine extends IEngine {
     const { namespaces } = await this.client.session.get(topic);
     const { id, params } = payload;
     const { chainId, request } = params;
-    const isChain = Boolean(chainId && namespaces.filter(n => n.chains.includes(chainId)).length);
-    const isMethod = Boolean(namespaces.filter(n => n.chains.includes(request.method)).length);
+    const isChain = chainId && namespaces.some(n => n.chains.includes(chainId));
+    const isMethod = namespaces.some(n => n.methods.includes(request.method));
 
     if (!isChain) {
       await this.sendError(id, topic, ERROR.UNSUPPORTED_CHAINS.format());
