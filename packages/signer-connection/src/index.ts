@@ -94,13 +94,21 @@ export class SignerConnection extends IJsonRpcConnection {
       this.pending = true;
       const client = await this.register();
       const compatible = await client.session.find({
-        chains: this.chains,
-        methods: this.methods,
+        namespace: {
+          chains: this.chains,
+          methods: this.methods,
+          events: [],
+        },
       });
       if (compatible.length) return this.onOpen(compatible[0]);
       const { uri, approval } = await client.connect({
-        chains: this.chains,
-        methods: this.methods,
+        namespaces: [
+          {
+            chains: this.chains,
+            methods: this.methods,
+            events: [],
+          },
+        ],
       });
       this.events.emit(SIGNER_EVENTS.uri, { uri });
       this.session = await approval();
