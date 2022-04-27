@@ -1,7 +1,13 @@
 import { ERROR } from "@walletconnect/utils";
 import "mocha";
 import Client from "../src";
-import { expect, initTwoClients, testConnectMethod, TEST_CLIENT_OPTIONS } from "./shared";
+import {
+  expect,
+  initTwoClients,
+  testConnectMethod,
+  TEST_CLIENT_DATABASE,
+  TEST_CLIENT_OPTIONS,
+} from "./shared";
 
 describe("Client", () => {
   it("init", async () => {
@@ -42,11 +48,10 @@ describe("Client", () => {
         await expect(clients.A.pairing.get(topic)).to.eventually.be.rejectedWith(
           `No matching pairing with topic: ${topic}`,
         );
-        // FIXME: engine.ping is not handling this base case currently, this doesn't throw/reject.
-        // const promise = clients.A.ping({ topic });
-        // await expect(promise).to.eventually.be.rejectedWith(
-        //   `No matching pairing with topic: ${topic}`,
-        // );
+        const promise = clients.A.ping({ topic });
+        await expect(promise).to.eventually.be.rejectedWith(
+          `No matching pairing or session with topic: ${topic}`,
+        );
       });
     });
     describe("session", () => {
@@ -60,22 +65,20 @@ describe("Client", () => {
         await expect(clients.A.session.get(topic)).to.eventually.be.rejectedWith(
           `No matching session with topic: ${topic}`,
         );
-        // FIXME: engine.ping is not handling this base case currently, this doesn't throw/reject.
-        // const promise = clients.A.ping({ topic });
-        // await expect(promise).to.eventually.be.rejectedWith(
-        //   `No matching session settled with topic: ${topic}`,
-        // );
+        const promise = clients.A.ping({ topic });
+        await expect(promise).to.eventually.be.rejectedWith(
+          `No matching pairing or session with topic: ${topic}`,
+        );
       });
     });
   });
 
   describe("ping", () => {
-    // FIXME: engine.ping is not handling this base case currently, this doesn't throw/reject.
-    it.skip("throws if the topic is not a known pairing or session topic", async () => {
+    it("throws if the topic is not a known pairing or session topic", async () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
-        `No matching session with topic: ${fakeTopic}`,
+        `No matching pairing or session with topic: ${fakeTopic}`,
       );
     });
     describe("pairing", () => {
@@ -93,9 +96,10 @@ describe("Client", () => {
         } = await testConnectMethod(clients);
         await clients.B.ping({ topic });
       });
-      // TODO: this test requires `engine.ping` to handle unknown topics to avoid false positives.
-      it.skip("clients ping each other after restart", async () => {
-        const beforeClients = await initTwoClients();
+      it("clients can ping each other after restart", async () => {
+        const beforeClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         const {
           pairingA: { topic },
         } = await testConnectMethod(beforeClients);
@@ -106,7 +110,9 @@ describe("Client", () => {
         delete beforeClients.A;
         delete beforeClients.B;
         // restart
-        const afterClients = await initTwoClients();
+        const afterClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.A.ping({ topic });
@@ -127,9 +133,10 @@ describe("Client", () => {
         } = await testConnectMethod(clients);
         await clients.B.ping({ topic });
       });
-      // TODO: this test requires `engine.ping` to handle unknown topics to avoid false positives.
-      it.skip("clients ping each other after restart", async () => {
-        const beforeClients = await initTwoClients();
+      it("clients can ping each other after restart", async () => {
+        const beforeClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         const {
           sessionA: { topic },
         } = await testConnectMethod(beforeClients);
@@ -140,7 +147,9 @@ describe("Client", () => {
         delete beforeClients.A;
         delete beforeClients.B;
         // restart
-        const afterClients = await initTwoClients();
+        const afterClients = await initTwoClients({
+          storageOptions: { database: TEST_CLIENT_DATABASE },
+        });
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.A.ping({ topic });
