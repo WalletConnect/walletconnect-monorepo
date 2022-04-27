@@ -1,7 +1,7 @@
 import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
-import { ERROR, formatStorageKeyName } from "@walletconnect/utils";
+import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
@@ -29,7 +29,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   get storageKey(): string {
-    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + this.name;
   }
 
   get size(): number {
