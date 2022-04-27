@@ -254,6 +254,12 @@ export class Engine extends IEngine {
         else resolve();
       });
       await done();
+    } else {
+      const error = ERROR.NO_MATCHING_TOPIC.format({
+        context: "pairing or session",
+        topic,
+      });
+      throw new Error(error.message);
     }
   };
 
