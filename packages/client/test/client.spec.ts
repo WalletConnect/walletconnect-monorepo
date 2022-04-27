@@ -96,9 +96,7 @@ describe("Client", () => {
         } = await testConnectMethod(clients);
         await clients.B.ping({ topic });
       });
-      // FIXME: Bug: This is failing because session topics are being restored to `client.pairing`.
-      // Restoring session topics works (see equivalent test below).
-      it.skip("clients can ping each other after restart", async () => {
+      it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients({
           storageOptions: { database: TEST_CLIENT_DATABASE },
         });
