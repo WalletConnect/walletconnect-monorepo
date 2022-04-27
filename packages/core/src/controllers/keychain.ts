@@ -3,7 +3,7 @@ import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IKeyChain } from "@walletconnect/types";
 import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
 
-import { KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
+import { CORE_STORAGE_PREFIX, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
@@ -11,6 +11,8 @@ export class KeyChain implements IKeyChain {
   public name = KEYCHAIN_CONTEXT;
 
   public version = KEYCHAIN_STORAGE_VERSION;
+
+  private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public core: ICore, public logger: Logger) {
     this.core = core;
@@ -22,7 +24,7 @@ export class KeyChain implements IKeyChain {
   }
 
   get storageKey() {
-    return this.core.storagePrefix + this.version + "//" + this.name;
+    return this.storagePrefix + this.version + "//" + this.name;
   }
 
   public init: IKeyChain["init"] = async () => {

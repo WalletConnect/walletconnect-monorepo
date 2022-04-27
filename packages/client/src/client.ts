@@ -9,12 +9,12 @@ import { ClientTypes, IClient, IClientEvents } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
 
 import { Engine, Pairing, Proposal, Session, JsonRpcHistory } from "./controllers";
-import { CLIENT_DEFAULT } from "./constants";
+import { CLIENT_DEFAULT, CLIENT_PROTOCOL, CLIENT_VERSION } from "./constants";
 import { Core } from "@walletconnect/core";
 
 export class Client extends IClient {
-  public readonly protocol = "wc";
-  public readonly version = 2;
+  public readonly protocol = CLIENT_PROTOCOL;
+  public readonly version = CLIENT_VERSION;
   public readonly name: IClient["name"] = CLIENT_DEFAULT.name;
   public readonly metadata: IClient["metadata"];
 
@@ -57,10 +57,6 @@ export class Client extends IClient {
 
   get context() {
     return getLoggerContext(this.logger);
-  }
-
-  get storagePrefix() {
-    return `${this.protocol}@${this.version}:${this.context}:`;
   }
 
   // ---------- Events ----------------------------------------------- //

@@ -97,7 +97,6 @@ export abstract class IClient {
 
   public abstract readonly name: string;
   public abstract readonly context: string;
-  public abstract readonly storagePrefix: string;
   public abstract readonly metadata: ClientTypes.Metadata;
 
   public abstract core: ICore;

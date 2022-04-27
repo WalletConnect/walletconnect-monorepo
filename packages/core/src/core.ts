@@ -11,11 +11,17 @@ import { CoreTypes, ICore } from "@walletconnect/types";
 import { formatRelayRpcUrl } from "@walletconnect/utils";
 
 import { Crypto, Relayer } from "./controllers";
-import { CORE_CONTEXT, CORE_DEFAULT, CORE_STORAGE_OPTIONS } from "./constants";
+import {
+  CORE_CONTEXT,
+  CORE_DEFAULT,
+  CORE_PROTOCOL,
+  CORE_STORAGE_OPTIONS,
+  CORE_VERSION,
+} from "./constants";
 
 export class Core extends ICore {
-  public readonly protocol = "wc";
-  public readonly version = 2;
+  public readonly protocol = CORE_PROTOCOL;
+  public readonly version = CORE_VERSION;
 
   public readonly name: ICore["name"] = CORE_CONTEXT;
 
@@ -68,10 +74,6 @@ export class Core extends ICore {
 
   get context() {
     return getLoggerContext(this.logger);
-  }
-
-  get storagePrefix() {
-    return `${this.protocol}@${this.version}:${this.context}:`;
   }
 
   // ---------- Public ----------------------------------------------- //
