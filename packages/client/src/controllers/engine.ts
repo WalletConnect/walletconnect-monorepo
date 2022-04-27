@@ -319,10 +319,12 @@ export class Engine extends IEngine {
   };
 
   private deleteSession: EnginePrivate["deleteSession"] = async topic => {
+    const { self } = await this.client.session.get(topic);
     await Promise.all([
       this.client.core.relayer.unsubscribe(topic),
       this.client.session.delete(topic, ERROR.DELETED.format()),
-      this.client.core.crypto.deleteKeyPair(topic),
+      this.client.core.crypto.deleteKeyPair(self.publicKey),
+      this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
     ]);
   };
