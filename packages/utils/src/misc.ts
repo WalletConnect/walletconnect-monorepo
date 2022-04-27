@@ -124,10 +124,6 @@ export function formatMessageContext(context: string): string {
   return parseContextNames(context).join(EMPTY_SPACE);
 }
 
-export function formatStorageKeyName(context: string): string {
-  return parseContextNames(context).join(COLON);
-}
-
 // -- object ------------------------------------------------ //
 export function isNamespaceEqual(a: SessionTypes.Namespace, b: SessionTypes.Namespace) {
   return JSON.stringify(a) === JSON.stringify(b);

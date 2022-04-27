@@ -1,7 +1,7 @@
 import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IKeyChain } from "@walletconnect/types";
-import { ERROR, formatStorageKeyName, mapToObj, objToMap } from "@walletconnect/utils";
+import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
 
 import { KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
@@ -22,7 +22,7 @@ export class KeyChain implements IKeyChain {
   }
 
   get storageKey() {
-    return this.core.storagePrefix + this.version + "//" + formatStorageKeyName(this.context);
+    return this.core.storagePrefix + this.version + "//" + this.name;
   }
 
   public init: IKeyChain["init"] = async () => {
