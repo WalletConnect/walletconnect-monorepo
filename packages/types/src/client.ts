@@ -6,6 +6,7 @@ import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "./history";
 import { CoreTypes, ICore } from "./core";
+import { IExpirer } from "./expirer";
 
 export declare namespace ClientTypes {
   type Event =
@@ -108,6 +109,7 @@ export abstract class IClient {
   public abstract session: ISession;
   public abstract proposal: IProposal;
   public abstract history: IJsonRpcHistory;
+  public abstract expirer: IExpirer;
 
   constructor(public opts?: ClientTypes.Options) {}
 

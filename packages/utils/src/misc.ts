@@ -9,6 +9,7 @@ import { getDocument, getLocation, getNavigator } from "@walletconnect/window-ge
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import * as qs from "query-string";
+import isEqual from "lodash.isequal";
 
 // -- constants -----------------------------------------//
 
@@ -126,7 +127,7 @@ export function formatMessageContext(context: string): string {
 
 // -- object ------------------------------------------------ //
 export function isNamespaceEqual(a: SessionTypes.Namespace, b: SessionTypes.Namespace) {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return isEqual(a, b);
 }
 
 // -- array ------------------------------------------------- //
