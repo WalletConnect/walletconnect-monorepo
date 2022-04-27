@@ -291,7 +291,7 @@ export class Engine extends IEngine {
     }
   };
 
-  // ---------- Private ----------------------------------------------- //
+  // ---------- Private Helpers --------------------------------------- //
 
   private async createPairing() {
     const symKey = generateRandomBytes32();
