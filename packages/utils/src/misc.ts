@@ -9,6 +9,7 @@ import { getDocument, getLocation, getNavigator } from "@walletconnect/window-ge
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import * as qs from "query-string";
+import isEqual from "lodash.isequal";
 
 // -- constants -----------------------------------------//
 
@@ -126,10 +127,7 @@ export function formatMessageContext(context: string): string {
 
 // -- object ------------------------------------------------ //
 export function isNamespaceEqual(a: SessionTypes.Namespace, b: SessionTypes.Namespace) {
-  const sortedA = Object.fromEntries(Object.entries(a).sort());
-  const sortedB = Object.fromEntries(Object.entries(b).sort());
-
-  return JSON.stringify(sortedA) === JSON.stringify(sortedB);
+  return isEqual(a, b);
 }
 
 // -- array ------------------------------------------------- //
