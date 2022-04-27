@@ -42,7 +42,7 @@ export class Engine extends IEngine {
 
   public connect: IEngine["connect"] = async params => {
     // TODO(ilja) validation
-    const { pairingTopic, methods, events, chains, relays } = params;
+    const { pairingTopic, namespaces, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
     let active = false;
@@ -60,9 +60,7 @@ export class Engine extends IEngine {
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
     const proposal = {
-      methods: methods ?? [],
-      events: events ?? [],
-      chains: chains ?? [],
+      namespaces: namespaces ?? [],
       relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
       proposer: {
         publicKey,
@@ -103,7 +101,7 @@ export class Engine extends IEngine {
 
   public approve: IEngine["approve"] = async params => {
     // TODO(ilja) validation
-    const { id, relayProtocol, accounts, methods, events } = params;
+    const { id, relayProtocol, accounts, namespaces } = params;
     const { pairingTopic, proposer } = await this.client.proposal.get(id);
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -113,8 +111,7 @@ export class Engine extends IEngine {
         protocol: relayProtocol ?? "waku",
       },
       accounts,
-      methods,
-      events,
+      namespaces,
       controller: {
         publicKey: selfPublicKey,
         metadata: this.client.metadata,
@@ -181,30 +178,17 @@ export class Engine extends IEngine {
     await this.client.session.update(topic, { accounts });
   };
 
-  public updateMethods: IEngine["updateMethods"] = async params => {
+  public updateNamespaces: IEngine["updateNamespaces"] = async params => {
     // TODO(ilja) validation
-    const { topic, methods } = params;
-    const id = await this.sendRequest(topic, "wc_sessionUpdateMethods", { methods });
+    const { topic, namespaces } = params;
+    const id = await this.sendRequest(topic, "wc_sessionUpdateNamespaces", { namespaces });
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_methods", id), ({ error }) => {
+    this.events.once(engineEvent("update_namespaces", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
     await done();
-    await this.client.session.update(topic, { methods });
-  };
-
-  public updateEvents: IEngine["updateEvents"] = async params => {
-    // TODO(ilja) validation
-    const { topic, events } = params;
-    const id = await this.sendRequest(topic, "wc_sessionUpdateEvents", { events });
-    const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_events", id), ({ error }) => {
-      if (error) reject(error);
-      else resolve();
-    });
-    await done();
-    await this.client.session.update(topic, { events });
+    await this.client.session.update(topic, { namespaces });
   };
 
   public updateExpiry: IEngine["updateExpiry"] = async params => {
@@ -384,10 +368,8 @@ export class Engine extends IEngine {
         return this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdateAccounts":
         return this.onSessionUpdateAccountsRequest(topic, payload);
-      case "wc_sessionUpdateMethods":
-        return this.onSessionUpdateMethodsRequest(topic, payload);
-      case "wc_sessionUpdateEvents":
-        return this.onSessionUpdateEventsRequest(topic, payload);
+      case "wc_sessionUpdateNamespaces":
+        return this.onSessionUpdateNamespacesRequest(topic, payload);
       case "wc_sessionUpdateExpiry":
         return this.onSessionUpdateExpiryRequest(topic, payload);
       case "wc_sessionPing":
@@ -421,10 +403,8 @@ export class Engine extends IEngine {
         return this.onSessionSettleResponse(topic, payload);
       case "wc_sessionUpdateAccounts":
         return this.onSessionUpdateAccountsResponse(topic, payload);
-      case "wc_sessionUpdateMethods":
-        return this.onSessionUpdateMethodsResponse(topic, payload);
-      case "wc_sessionUpdateEvents":
-        return this.onSessionUpdateEventsResponse(topic, payload);
+      case "wc_sessionUpdateNamespaces":
+        return this.onSessionUpdateNamespacesResponse(topic, payload);
       case "wc_sessionUpdateExpiry":
         return this.onSessionUpdateExpiryResponse(topic, payload);
       case "wc_sessionPing":
@@ -509,14 +489,13 @@ export class Engine extends IEngine {
     payload,
   ) => {
     // TODO(ilja) validation
-    const { relay, controller, expiry, accounts, methods, events } = payload.params;
+    const { relay, controller, expiry, accounts, namespaces } = payload.params;
     const session = {
       topic,
       relay,
       expiry,
       accounts,
-      methods,
-      events,
+      namespaces,
       acknowledged: true,
       controller: controller.publicKey,
       self: {
@@ -571,51 +550,27 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionUpdateMethodsRequest: EnginePrivate["onSessionUpdateMethodsRequest"] = async (
+  private onSessionUpdateNamespacesRequest: EnginePrivate["onSessionUpdateNamespacesRequest"] = async (
     topic,
     payload,
   ) => {
     // TODO(ilja) validation
     const { params, id } = payload;
-    await this.client.session.update(topic, { methods: params.methods });
-    await this.sendResult<"wc_sessionUpdateMethods">(id, topic, true);
-    this.client.events.emit("update_methods", { topic, methods: params.methods });
+    await this.client.session.update(topic, { namespaces: params.namespaces });
+    await this.sendResult<"wc_sessionUpdateNamespaces">(id, topic, true);
+    this.client.events.emit("update_namespaces", { topic, namespaces: params.namespaces });
   };
 
-  private onSessionUpdateMethodsResponse: EnginePrivate["onSessionUpdateMethodsResponse"] = (
+  private onSessionUpdateNamespacesResponse: EnginePrivate["onSessionUpdateNamespacesResponse"] = (
     _topic,
     payload,
   ) => {
     // TODO(ilja) validation
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_methods", id), {});
+      this.events.emit(engineEvent("update_namespaces", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_methods", id), { error: payload.error });
-    }
-  };
-
-  private onSessionUpdateEventsRequest: EnginePrivate["onSessionUpdateEventsRequest"] = async (
-    topic,
-    payload,
-  ) => {
-    // TODO(ilja) validation
-    const { params, id } = payload;
-    await this.client.session.update(topic, { events: params.events });
-    await this.sendResult<"wc_sessionUpdateEvents">(id, topic, true);
-    this.client.events.emit("update_events", { topic, events: params.events });
-  };
-
-  private onSessionUpdateEventsResponse: EnginePrivate["onSessionUpdateEventsResponse"] = (
-    _topic,
-    payload,
-  ) => {
-    // TODO(ilja) validation
-    const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_events", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_events", id), { error: payload.error });
+      this.events.emit(engineEvent("update_namespaces", id), { error: payload.error });
     }
   };
 
@@ -737,13 +692,16 @@ export class Engine extends IEngine {
 
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
     // TODO(ilja) validation
-    const { methods } = await this.client.session.get(topic);
+    const { namespaces } = await this.client.session.get(topic);
     const { id, params } = payload;
     const { chainId, request } = params;
-    if (!methods.includes(params.request.method)) {
-      await this.sendError(id, topic, ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format());
-    } else if (!params.chainId) {
+    const isChain = Boolean(chainId && namespaces.filter(n => n.chains.includes(chainId)).length);
+    const isMethod = Boolean(namespaces.filter(n => n.chains.includes(request.method)).length);
+
+    if (!isChain) {
       await this.sendError(id, topic, ERROR.UNSUPPORTED_CHAINS.format());
+    } else if (!isMethod) {
+      await this.sendError(id, topic, ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format());
     } else {
       this.client.events.emit("request", { topic, request, chainId });
     }

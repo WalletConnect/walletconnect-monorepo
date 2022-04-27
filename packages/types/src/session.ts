@@ -3,15 +3,15 @@ import { RelayerTypes } from "./relayer";
 import { IStore } from "./store";
 
 export declare namespace SessionTypes {
-  type Chains = string[];
-
-  type Methods = string[];
-
-  type Events = string[];
-
   type Accounts = string[];
 
   type Expiry = number;
+
+  interface Namespace {
+    methods: string[];
+    events: string[];
+    chains: string[];
+  }
 
   interface Struct {
     topic: string;
@@ -20,8 +20,7 @@ export declare namespace SessionTypes {
     acknowledged: boolean;
     controller: string;
     accounts: Accounts;
-    methods: Methods;
-    events: Events;
+    namespaces: Namespace[];
     self: {
       publicKey: string;
       metadata: ClientTypes.Metadata;
@@ -34,15 +33,11 @@ export declare namespace SessionTypes {
 
   interface Updatable {
     accounts?: Accounts;
-    methods?: Methods;
-    events?: Events;
+    namespace?: Namespace;
     expiry?: Expiry;
-  }
-  interface Filters extends Updatable {
-    chains?: Chains;
   }
 }
 
 export interface ISession extends IStore<string, SessionTypes.Struct> {
-  find: (filters: SessionTypes.Filters) => SessionTypes.Struct[];
+  find: (filters: SessionTypes.Updatable) => SessionTypes.Struct[];
 }

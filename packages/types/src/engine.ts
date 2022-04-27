@@ -17,8 +17,7 @@ export declare namespace EngineTypes {
     | "connect"
     | "approve"
     | "update_accounts"
-    | "update_methods"
-    | "update_events"
+    | "update_namespaces"
     | "update_expiry"
     | "session_ping"
     | "pairing_ping"
@@ -30,8 +29,7 @@ export declare namespace EngineTypes {
     connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
     approve: { error?: ErrorResponse };
     update_accounts: { error?: ErrorResponse };
-    update_methods: { error?: ErrorResponse };
-    update_events: { error?: ErrorResponse };
+    update_namespaces: { error?: ErrorResponse };
     update_expiry: { error?: ErrorResponse };
     session_ping: { error?: ErrorResponse };
     pairing_ping: { error?: ErrorResponse };
@@ -55,9 +53,7 @@ export declare namespace EngineTypes {
 
   interface ConnectParams {
     pairingTopic?: string;
-    methods?: SessionTypes.Methods;
-    chains?: SessionTypes.Chains;
-    events?: SessionTypes.Events;
+    namespaces?: SessionTypes.Namespace[];
     relays?: RelayerTypes.ProtocolOptions[];
   }
 
@@ -68,8 +64,7 @@ export declare namespace EngineTypes {
   interface ApproveParams {
     id: number;
     accounts: SessionTypes.Accounts;
-    methods: SessionTypes.Methods;
-    events: SessionTypes.Events;
+    namespaces: SessionTypes.Namespace[];
     relayProtocol?: string;
   }
 
@@ -83,14 +78,9 @@ export declare namespace EngineTypes {
     accounts: SessionTypes.Accounts;
   }
 
-  interface UpdateMethodsParams {
+  interface UpdateNamespacesParams {
     topic: string;
-    methods: SessionTypes.Methods;
-  }
-
-  interface UpdateEventsParams {
-    topic: string;
-    events: SessionTypes.Events;
+    namespaces: SessionTypes.Namespace[];
   }
 
   interface UpdateExpiryParams {
@@ -200,24 +190,14 @@ export interface EnginePrivate {
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateAccounts"]> | JsonRpcError,
   ): void;
 
-  onSessionUpdateMethodsRequest(
+  onSessionUpdateNamespacesRequest(
     topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateMethods"]>,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateNamespaces"]>,
   ): Promise<void>;
 
-  onSessionUpdateMethodsResponse(
+  onSessionUpdateNamespacesResponse(
     topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateMethods"]> | JsonRpcError,
-  ): void;
-
-  onSessionUpdateEventsRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateEvents"]>,
-  ): Promise<void>;
-
-  onSessionUpdateEventsResponse(
-    topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateEvents"]> | JsonRpcError,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateNamespaces"]> | JsonRpcError,
   ): void;
 
   onSessionUpdateExpiryRequest(
@@ -305,9 +285,7 @@ export abstract class IEngine {
 
   public abstract updateAccounts(params: EngineTypes.UpdateAccountsParams): Promise<void>;
 
-  public abstract updateMethods(params: EngineTypes.UpdateMethodsParams): Promise<void>;
-
-  public abstract updateEvents(params: EngineTypes.UpdateEventsParams): Promise<void>;
+  public abstract updateNamespaces(params: EngineTypes.UpdateNamespacesParams): Promise<void>;
 
   public abstract updateExpiry(params: EngineTypes.UpdateExpiryParams): Promise<void>;
 

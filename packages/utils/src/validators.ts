@@ -1,8 +1,6 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { SessionTypes, ProposalTypes } from "@walletconnect/types";
-
-import { getChains } from "./caip";
-import { hasOverlap } from "./misc";
+import { hasOverlap, isNamespaceEqual } from "./misc";
 
 declare namespace Validation {
   export interface Valid {
@@ -17,22 +15,19 @@ declare namespace Validation {
   export type Result = Valid | Invalid;
 }
 
-export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Filters) {
+export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
   const results = [];
-  if (session.accounts && filters.chains) {
-    results.push(hasOverlap(filters.chains, getChains(session.accounts)));
+  const { accounts, namespace, expiry } = filters;
+  if (session.accounts && accounts) {
+    results.push(hasOverlap(accounts, session.accounts));
   }
-  if (session.accounts && filters.accounts) {
-    results.push(hasOverlap(filters.accounts, session.accounts));
+  if (session.namespaces && namespace) {
+    session.namespaces.forEach(n => {
+      results.push(isNamespaceEqual(namespace, n));
+    });
   }
-  if (session.methods && filters.methods) {
-    results.push(hasOverlap(filters.methods, session.methods));
-  }
-  if (session.events && filters.events) {
-    results.push(hasOverlap(filters.events, session.events));
-  }
-  if (session.expiry && filters.expiry) {
-    results.push(session.expiry >= filters.expiry);
+  if (session.expiry && expiry) {
+    results.push(session.expiry >= expiry);
   }
   return !results.includes(false);
 }

@@ -1,5 +1,10 @@
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
-import { ClientTypes, RelayerClientMetadata, EngineTypes } from "@walletconnect/types";
+import {
+  ClientTypes,
+  RelayerClientMetadata,
+  EngineTypes,
+  SessionTypes,
+} from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
@@ -117,6 +122,11 @@ export function parseContextNames(context: string, depth = DEFAULT_DEPTH) {
 
 export function formatMessageContext(context: string): string {
   return parseContextNames(context).join(EMPTY_SPACE);
+}
+
+// -- object ------------------------------------------------ //
+export function isNamespaceEqual(a: SessionTypes.Namespace, b: SessionTypes.Namespace) {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 // -- array ------------------------------------------------- //
