@@ -114,7 +114,7 @@ describe("Client", () => {
         });
         // ping
         await afterClients.A.ping({ topic });
-        await afterClients.A.ping({ topic });
+        await afterClients.B.ping({ topic });
       });
     });
     describe("session", () => {
@@ -151,7 +151,7 @@ describe("Client", () => {
         });
         // ping
         await afterClients.A.ping({ topic });
-        await afterClients.A.ping({ topic });
+        await afterClients.B.ping({ topic });
       });
     });
   });

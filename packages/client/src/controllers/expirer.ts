@@ -84,12 +84,15 @@ export class Expirer extends IExpirer {
 
   public del: IExpirer["del"] = async topic => {
     await this.isInitialized();
-    const expiration = this.getExpiration(topic);
-    this.expirations.delete(topic);
-    this.events.emit(EXPIRER_EVENTS.deleted, {
-      topic,
-      expiration,
-    } as ExpirerTypes.Deleted);
+    const exists = await this.has(topic);
+    if (exists) {
+      const expiration = this.getExpiration(topic);
+      this.expirations.delete(topic);
+      this.events.emit(EXPIRER_EVENTS.deleted, {
+        topic,
+        expiration,
+      } as ExpirerTypes.Deleted);
+    }
   };
 
   public on: IExpirer["on"] = (event, listener) => {

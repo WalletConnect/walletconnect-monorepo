@@ -8,7 +8,7 @@ import {
 import { ClientTypes, IClient, IClientEvents } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
 
-import { Engine, Pairing, Proposal, Session, JsonRpcHistory } from "./controllers";
+import { Engine, Pairing, Proposal, Session, JsonRpcHistory, Expirer } from "./controllers";
 import { CLIENT_DEFAULT, CLIENT_PROTOCOL, CLIENT_VERSION } from "./constants";
 import { Core } from "@walletconnect/core";
 
@@ -26,6 +26,7 @@ export class Client extends IClient {
   public session: IClient["session"];
   public proposal: IClient["proposal"];
   public history: IClient["history"];
+  public expirer: IClient["expirer"];
 
   static async init(opts?: ClientTypes.Options) {
     const client = new Client(opts);
@@ -51,6 +52,7 @@ export class Client extends IClient {
     this.session = new Session(this.core, this.logger);
     this.proposal = new Proposal(this.core, this.logger);
     this.history = new JsonRpcHistory(this.core, this.logger);
+    this.expirer = new Expirer(this.core, this.logger);
 
     this.engine = new Engine(this);
   }
