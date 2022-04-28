@@ -8,11 +8,9 @@ type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Str
 
 export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   public map = new Map<Key, Data>();
-
   public version = STORE_STORAGE_VERSION;
 
   private cached: Data[] = [];
-
   private initialized = false;
 
   constructor(public core: ICore, public logger: Logger, public name: string) {
@@ -21,27 +19,60 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   }
 
   public init: IStore<Key, Data>["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+
+      try {
+        const persisted = await this.getDataStore();
+        if (typeof persisted === "undefined") return;
+        if (!persisted.length) return;
+        if (this.map.size) {
+          const error = ERROR.RESTORE_WILL_OVERRIDE.format({
+            context: this.name,
+          });
+          this.logger.error(error.message);
+          throw new Error(error.message);
+        }
+        this.cached = persisted;
+        this.logger.debug(`Successfully Restored value for ${this.name}`);
+        this.logger.trace({ type: "method", method: "restore", value: this.values });
+      } catch (e) {
+        this.logger.debug(`Failed to Restore value for ${this.name}`);
+        this.logger.error(e as any);
+      }
+
+      this.cached.forEach(value => {
+        if (isProposalStruct(value)) {
+          // TODO(pedro) revert type casting as any
+          this.map.set(value.id as any, value);
+        } else if (isSessionStruct(value)) {
+          // TODO(pedro) revert type casting as any
+          this.map.set(value.topic as any, value);
+        }
+      });
+
+      this.cached = [];
+      this.initialized = true;
+    }
   };
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
+  get storageKey() {
     return this.core.storagePrefix + this.version + "//" + this.name;
   }
 
-  get length(): number {
+  get length() {
     return this.map.size;
   }
 
-  get keys(): Key[] {
+  get keys() {
     return Array.from(this.map.keys());
   }
 
-  get values(): Data[] {
+  get values() {
     return Array.from(this.map.values());
   }
 
@@ -111,53 +142,9 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     await this.setDataStore(this.values);
   }
 
-  private async restore() {
-    try {
-      const persisted = await this.getDataStore();
-      if (typeof persisted === "undefined") return;
-      if (!persisted.length) return;
-      if (this.map.size) {
-        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.name,
-        });
-        this.logger.error(error.message);
-        throw new Error(error.message);
-      }
-      this.cached = persisted;
-      this.logger.debug(`Successfully Restored value for ${this.name}`);
-      this.logger.trace({ type: "method", method: "restore", value: this.values });
-    } catch (e) {
-      this.logger.debug(`Failed to Restore value for ${this.name}`);
-      this.logger.error(e as any);
-    }
-  }
-
-  private async initialize() {
-    await this.restore();
-    this.reset();
-    this.onInit();
-  }
-
-  private reset() {
-    this.cached.forEach(value => {
-      if (isProposalStruct(value)) {
-        // TODO(pedro) revert type casting as any
-        this.map.set(value.id as any, value);
-      } else if (isSessionStruct(value)) {
-        // TODO(pedro) revert type casting as any
-        this.map.set(value.topic as any, value);
-      }
-    });
-  }
-
-  private onInit() {
-    this.cached = [];
-    this.initialized = true;
-  }
-
   private isInitialized() {
     if (!this.initialized) {
-      throw new Error(ERROR.GENERIC.stringify());
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
     }
   }
 }

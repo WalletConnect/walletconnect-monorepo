@@ -21,8 +21,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   public init: IJsonRpcHistory["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+      await this.restore();
+      this.cached.forEach(record => this.records.set(record.id, record));
+      this.cached = [];
+      this.initialized = true;
+    }
   };
 
   get context(): string {
@@ -191,22 +196,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     }
   }
 
-  private async initialize() {
-    await this.restore();
-    this.reset();
-    this.onInit();
-  }
-
-  private reset() {
-    this.cached.forEach(record => this.records.set(record.id, record));
-  }
-
-  private onInit() {
-    this.cached = [];
-    this.initialized = true;
-    this.events.emit(HISTORY_EVENTS.init);
-  }
-
   private registerEventListeners(): void {
     this.events.on(HISTORY_EVENTS.created, (record: JsonRpcRecord) => {
       const eventName = HISTORY_EVENTS.created;
@@ -231,7 +220,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw new Error(ERROR.GENERIC.stringify());
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
     }
   }
 }

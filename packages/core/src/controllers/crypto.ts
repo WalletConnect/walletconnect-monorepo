@@ -9,6 +9,7 @@ import {
   encrypt,
   generateKeyPair,
   hashKey,
+  ERROR,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT } from "../constants";
@@ -16,8 +17,9 @@ import { KeyChain } from "./keychain";
 
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;
-
   public keychain: ICrypto["keychain"];
+
+  private initialized = false;
 
   constructor(public core: ICore, public logger: Logger, keychain?: IKeyChain) {
     this.core = core;
@@ -30,10 +32,14 @@ export class Crypto implements ICrypto {
   }
 
   public init: ICrypto["init"] = async () => {
-    await this.keychain.init();
+    if (!this.initialized) {
+      await this.keychain.init();
+      this.initialized = true;
+    }
   };
 
   public hasKeys: ICrypto["hasKeys"] = tag => {
+    this.isInitialized();
     return this.keychain.has(tag);
   };
 
@@ -54,16 +60,19 @@ export class Crypto implements ICrypto {
   };
 
   public setSymKey: ICrypto["setSymKey"] = async (symKey, overrideTopic) => {
+    this.isInitialized();
     const topic = overrideTopic || hashKey(symKey);
     await this.keychain.set(topic, symKey);
     return topic;
   };
 
   public deleteKeyPair: ICrypto["deleteKeyPair"] = async (publicKey: string) => {
+    this.isInitialized();
     await this.keychain.del(publicKey);
   };
 
   public deleteSymKey: ICrypto["deleteSymKey"] = async (topic: string) => {
+    this.isInitialized();
     await this.keychain.del(topic);
   };
 
@@ -108,5 +117,11 @@ export class Crypto implements ICrypto {
   private async getSymKey(topic: string): Promise<string> {
     const symKey = await this.keychain.get(topic);
     return symKey;
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    }
   }
 }

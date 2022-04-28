@@ -199,11 +199,11 @@ export class Client extends IClient {
     this.logger.trace(`Initialized`);
     try {
       await Promise.all([
+        this.core.start(),
         this.pairing.init(),
         this.session.init(),
         this.proposal.init(),
         this.history.init(),
-        this.core.start(),
         this.expirer.init(),
       ]);
       this.logger.info(`Client Initilization Success`);

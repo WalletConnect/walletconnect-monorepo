@@ -1,15 +1,15 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IMessageTracker, MessageRecord } from "@walletconnect/types";
-import { hashMessage, mapToObj, objToMap } from "@walletconnect/utils";
+import { hashMessage, mapToObj, objToMap, ERROR } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
 export class MessageTracker extends IMessageTracker {
   public messages = new Map<string, MessageRecord>();
-
   public name = MESSAGES_CONTEXT;
-
   public version = MESSAGES_STORAGE_VERSION;
+
+  private initialized = false;
 
   constructor(public logger: Logger, public core: ICore) {
     super(logger, core);
@@ -26,11 +26,27 @@ export class MessageTracker extends IMessageTracker {
   }
 
   public init: IMessageTracker["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+      try {
+        const messages = await this.getRelayerMessages();
+        if (typeof messages !== "undefined") {
+          this.messages = messages;
+        }
+
+        this.logger.debug(`Successfully Restored records for ${this.name}`);
+        this.logger.trace({ type: "method", method: "restore", size: this.messages.size });
+      } catch (e) {
+        this.logger.debug(`Failed to Restore records for ${this.name}`);
+        this.logger.error(e as any);
+      } finally {
+        this.initialized = true;
+      }
+    }
   };
 
   public set: IMessageTracker["set"] = async (topic, message) => {
+    this.isInitialized();
     const hash = hashMessage(message);
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
@@ -46,6 +62,7 @@ export class MessageTracker extends IMessageTracker {
   };
 
   public get: IMessageTracker["get"] = topic => {
+    this.isInitialized();
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
       messages = {};
@@ -54,12 +71,14 @@ export class MessageTracker extends IMessageTracker {
   };
 
   public has: IMessageTracker["has"] = (topic, message) => {
+    this.isInitialized();
     const messages = this.get(topic);
     const hash = hashMessage(message);
     return typeof messages[hash] !== "undefined";
   };
 
   public del: IMessageTracker["del"] = async topic => {
+    this.isInitialized();
     this.messages.delete(topic);
     await this.persist();
   };
@@ -84,21 +103,9 @@ export class MessageTracker extends IMessageTracker {
     await this.setRelayerMessages(this.messages);
   }
 
-  private async restore() {
-    try {
-      const messages = await this.getRelayerMessages();
-      if (typeof messages !== "undefined") {
-        this.messages = messages;
-      }
-      this.logger.debug(`Successfully Restored records for ${this.name}`);
-      this.logger.trace({ type: "method", method: "restore", size: this.messages.size });
-    } catch (e) {
-      this.logger.debug(`Failed to Restore records for ${this.name}`);
-      this.logger.error(e as any);
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
     }
-  }
-
-  private async initialize() {
-    await this.restore();
   }
 }

@@ -9,15 +9,11 @@ import { EXPIRER_CONTEXT, EXPIRER_EVENTS, EXPIRER_STORAGE_VERSION } from "../con
 
 export class Expirer extends IExpirer {
   public expirations = new Map<string, ExpirerTypes.Expiration>();
-
   public events = new EventEmitter();
-
   public name = EXPIRER_CONTEXT;
-
   public version = EXPIRER_STORAGE_VERSION;
 
   private cached: ExpirerTypes.Expiration[] = [];
-
   private initialized = false;
 
   constructor(public core: ICore, public logger: Logger) {
@@ -48,8 +44,13 @@ export class Expirer extends IExpirer {
   }
 
   public init: IExpirer["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+      await this.restore();
+      this.cached.forEach(expiration => this.expirations.set(expiration.topic, expiration));
+      this.cached = [];
+      this.initialized = true;
+    }
   };
 
   public has: IExpirer["has"] = topic => {
@@ -143,28 +144,6 @@ export class Expirer extends IExpirer {
     }
   }
 
-  private async initialize() {
-    await this.restore();
-    this.reset();
-    this.onInit();
-  }
-
-  private reset() {
-    this.cached.forEach(expiration => this.expirations.set(expiration.topic, expiration));
-  }
-
-  private onInit() {
-    this.cached = [];
-    this.initialized = true;
-    this.events.emit(EXPIRER_EVENTS.init);
-  }
-
-  private isInitialized() {
-    if (!this.initialized) {
-      throw new Error(ERROR.GENERIC.stringify());
-    }
-  }
-
   private getExpiration(topic: string): ExpirerTypes.Expiration {
     const expiration = this.expirations.get(topic);
     if (!expiration) {
@@ -216,5 +195,11 @@ export class Expirer extends IExpirer {
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
       this.persist();
     });
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    }
   }
 }

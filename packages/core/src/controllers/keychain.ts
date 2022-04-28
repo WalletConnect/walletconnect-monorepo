@@ -7,10 +7,10 @@ import { KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
-
   public name = KEYCHAIN_CONTEXT;
-
   public version = KEYCHAIN_STORAGE_VERSION;
+
+  private initialized = false;
 
   constructor(public core: ICore, public logger: Logger) {
     this.core = core;
@@ -26,19 +26,28 @@ export class KeyChain implements IKeyChain {
   }
 
   public init: IKeyChain["init"] = async () => {
-    await this.restore();
+    if (!this.initialized) {
+      const keychain = await this.getKeyChain();
+      if (typeof keychain !== "undefined") {
+        this.keychain = keychain;
+      }
+      this.initialized = true;
+    }
   };
 
   public has: IKeyChain["has"] = tag => {
+    this.isInitialized();
     return this.keychain.has(tag);
   };
 
   public set: IKeyChain["set"] = async (tag, key) => {
+    this.isInitialized();
     this.keychain.set(tag, key);
     await this.persist();
   };
 
   public get: IKeyChain["get"] = tag => {
+    this.isInitialized();
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
       throw new Error(ERROR.NO_MATCHING_KEY.format({ tag }).message);
@@ -47,6 +56,7 @@ export class KeyChain implements IKeyChain {
   };
 
   public del: IKeyChain["del"] = async tag => {
+    this.isInitialized();
     this.keychain.delete(tag);
     await this.persist();
   };
@@ -62,14 +72,13 @@ export class KeyChain implements IKeyChain {
     return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
 
-  private async restore() {
-    const keychain = await this.getKeyChain();
-    if (typeof keychain !== "undefined") {
-      this.keychain = keychain;
-    }
-  }
-
   private async persist() {
     await this.setKeyChain(this.keychain);
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    }
   }
 }

@@ -23,20 +23,14 @@ import { SubscriberTopicMap } from "./topicmap";
 
 export class Subscriber extends ISubscriber {
   public subscriptions = new Map<string, SubscriberTypes.Active>();
-
   public topicMap = new SubscriberTopicMap();
-
   public events = new EventEmitter();
-
   public name = SUBSCRIBER_CONTEXT;
-
   public version = SUBSCRIBER_STORAGE_VERSION;
-
   public pending = new Map<string, SubscriberTypes.Params>();
 
   private cached: SubscriberTypes.Active[] = [];
-
-  private enabled = false;
+  private initialized = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
@@ -46,8 +40,32 @@ export class Subscriber extends ISubscriber {
   }
 
   public init: ISubscriber["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+
+      try {
+        const persisted = await this.getRelayerSubscriptions();
+        if (typeof persisted === "undefined") return;
+        if (!persisted.length) return;
+        if (this.subscriptions.size) {
+          const error = ERROR.RESTORE_WILL_OVERRIDE.format({
+            context: this.name,
+          });
+          this.logger.error(error.message);
+          throw new Error(error.message);
+        }
+        this.cached = persisted;
+        this.logger.debug(`Successfully Restored subscriptions for ${this.name}`);
+        this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
+      } catch (e) {
+        this.logger.debug(`Failed to Restore subscriptions for ${this.name}`);
+        this.logger.error(e as any);
+      }
+
+      await this.reset();
+
+      this.onEnable();
+    }
   };
 
   get context() {
@@ -75,6 +93,7 @@ export class Subscriber extends ISubscriber {
   }
 
   public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
+    this.isInitialized();
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
@@ -82,7 +101,7 @@ export class Subscriber extends ISubscriber {
       const params = { topic, relay };
       this.pending.set(topic, params);
       const id = await this.rpcSubscribe(topic, relay);
-      await this.onSubscribe(id, params);
+      this.onSubscribe(id, params);
       this.logger.debug(`Successfully Subscribed Topic`);
       this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
       return id;
@@ -94,6 +113,7 @@ export class Subscriber extends ISubscriber {
   };
 
   public unsubscribe: ISubscriber["unsubscribe"] = async (topic, opts) => {
+    this.isInitialized();
     if (typeof opts?.id !== "undefined") {
       await this.unsubscribeById(topic, opts.id, opts);
     } else {
@@ -119,11 +139,10 @@ export class Subscriber extends ISubscriber {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async hasSubscription(id: string, topic: string) {
-    this.isEnabled();
+  private hasSubscription(id: string, topic: string) {
     let result = false;
     try {
-      const subscription = await this.getSubscription(id);
+      const subscription = this.getSubscription(id);
       result = subscription.topic === topic;
     } catch (e) {
       // ignore error
@@ -133,16 +152,14 @@ export class Subscriber extends ISubscriber {
 
   private onEnable() {
     this.cached = [];
-    this.enabled = true;
-    this.events.emit(SUBSCRIBER_EVENTS.enabled);
+    this.initialized = true;
   }
 
   private onDisable() {
     this.cached = this.values;
     this.subscriptions.clear();
     this.topicMap.clear();
-    this.enabled = false;
-    this.events.emit(SUBSCRIBER_EVENTS.disabled);
+    this.initialized = false;
   }
 
   private async unsubscribeByTopic(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
@@ -194,20 +211,20 @@ export class Subscriber extends ISubscriber {
     return this.relayer.provider.request(request);
   }
 
-  private async onSubscribe(id: string, params: SubscriberTypes.Params) {
-    await this.setSubscription(id, { ...params, id });
+  private onSubscribe(id: string, params: SubscriberTypes.Params) {
+    this.setSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
   }
 
-  private async onResubscribe(id: string, params: SubscriberTypes.Params) {
-    await this.addSubscription(id, { ...params, id });
+  private onResubscribe(id: string, params: SubscriberTypes.Params) {
+    this.addSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
   }
 
   private async onUnsubscribe(topic: string, id: string, reason: ErrorResponse) {
     this.events.removeAllListeners(id);
-    if (await this.hasSubscription(id, topic)) {
-      await this.deleteSubscription(id, reason);
+    if (this.hasSubscription(id, topic)) {
+      this.deleteSubscription(id, reason);
     }
     await this.relayer.messages.del(topic);
   }
@@ -227,7 +244,6 @@ export class Subscriber extends ISubscriber {
   }
 
   private setSubscription(id: string, subscription: SubscriberTypes.Active) {
-    this.isEnabled();
     if (this.subscriptions.has(id)) return;
     this.logger.debug(`Setting subscription`);
     this.logger.trace({ type: "method", method: "setSubscription", id, subscription });
@@ -241,7 +257,6 @@ export class Subscriber extends ISubscriber {
   }
 
   private getSubscription(id: string) {
-    this.isEnabled();
     this.logger.debug(`Getting subscription`);
     this.logger.trace({ type: "method", method: "getSubscription", id });
     const subscription = this.subscriptions.get(id);
@@ -256,7 +271,6 @@ export class Subscriber extends ISubscriber {
   }
 
   private deleteSubscription(id: string, reason: ErrorResponse) {
-    this.isEnabled();
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "deleteSubscription", id, reason });
     const subscription = this.getSubscription(id);
@@ -273,39 +287,6 @@ export class Subscriber extends ISubscriber {
     this.events.emit(SUBSCRIBER_EVENTS.sync);
   }
 
-  private async restore() {
-    try {
-      const persisted = await this.getRelayerSubscriptions();
-      if (typeof persisted === "undefined") return;
-      if (!persisted.length) return;
-      if (this.subscriptions.size) {
-        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.name,
-        });
-        this.logger.error(error.message);
-        throw new Error(error.message);
-      }
-      this.cached = persisted;
-      this.logger.debug(`Successfully Restored subscriptions for ${this.name}`);
-      this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
-    } catch (e) {
-      this.logger.debug(`Failed to Restore subscriptions for ${this.name}`);
-      this.logger.error(e as any);
-    }
-  }
-
-  private async initialize() {
-    await this.restore();
-    await this.reset();
-    this.onEnable();
-  }
-
-  private isEnabled() {
-    if (!this.enabled) {
-      throw new Error(ERROR.GENERIC.stringify());
-    }
-  }
-
   private async reset() {
     if (!this.cached.length) return;
     await Promise.all(this.cached.map(async subscription => await this.resubscribe(subscription)));
@@ -316,10 +297,10 @@ export class Subscriber extends ISubscriber {
     const params = { topic, relay };
     this.pending.set(params.topic, params);
     const id = await this.rpcSubscribe(params.topic, params.relay);
-    await this.onResubscribe(id, params);
+    this.onResubscribe(id, params);
     if (this.ids.includes(subscription.id)) {
       const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
-      await this.deleteSubscription(subscription.id, reason);
+      this.deleteSubscription(subscription.id, reason);
     }
   }
 
@@ -335,7 +316,7 @@ export class Subscriber extends ISubscriber {
   private checkPending() {
     this.pending.forEach(async params => {
       const id = await this.rpcSubscribe(params.topic, params.relay);
-      await this.onSubscribe(id, params);
+      this.onSubscribe(id, params);
     });
   }
 
@@ -361,5 +342,11 @@ export class Subscriber extends ISubscriber {
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
       await this.persist();
     });
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    }
   }
 }

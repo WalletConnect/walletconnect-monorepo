@@ -10,9 +10,7 @@ import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
-
   public name = PUBLISHER_CONTEXT;
-
   public queue = new Map<string, PublisherTypes.Params>();
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -22,14 +20,9 @@ export class Publisher extends IPublisher {
     this.registerEventListeners();
   }
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
-
-  public init: IPublisher["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
-  };
 
   public publish: IPublisher["publish"] = async (topic, message, opts) => {
     this.logger.debug(`Publishing Payload`);
@@ -69,10 +62,6 @@ export class Publisher extends IPublisher {
   };
 
   // ---------- Private ----------------------------------------------- //
-
-  private async initialize() {
-    // if needed
-  }
 
   private rpcPublish(
     topic: string,
