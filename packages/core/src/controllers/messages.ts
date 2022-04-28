@@ -31,7 +31,7 @@ export class MessageTracker extends IMessageTracker {
   };
 
   public set: IMessageTracker["set"] = async (topic, message) => {
-    const hash = await hashMessage(message);
+    const hash = hashMessage(message);
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
       messages = {};
@@ -45,7 +45,7 @@ export class MessageTracker extends IMessageTracker {
     return hash;
   };
 
-  public get: IMessageTracker["get"] = async topic => {
+  public get: IMessageTracker["get"] = topic => {
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
       messages = {};
@@ -53,9 +53,9 @@ export class MessageTracker extends IMessageTracker {
     return messages;
   };
 
-  public has: IMessageTracker["has"] = async (topic, message) => {
+  public has: IMessageTracker["has"] = (topic, message) => {
     const messages = this.get(topic);
-    const hash = await hashMessage(message);
+    const hash = hashMessage(message);
     return typeof messages[hash] !== "undefined";
   };
 

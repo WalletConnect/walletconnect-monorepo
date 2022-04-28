@@ -33,19 +33,19 @@ const TEST_ENCODED =
 const TEST_HASHED_ENCODED = "50e7178d460f30f907c1744dd656aacbc2980f65de8d934c63ef83f607206603";
 
 describe("Crypto", () => {
-  it("generateKeyPair", async () => {
+  it("generateKeyPair", () => {
     const keyPair = generateKeyPair();
     expect(keyPair).to.not.be.undefined;
     expect(keyPair.privateKey).to.not.be.undefined;
     expect(keyPair.publicKey).to.not.be.undefined;
   });
-  it("deriveSharedKey", async () => {
+  it("deriveSharedKey", () => {
     const sharedKeyA = deriveSharedKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
     expect(sharedKeyA).to.eql(TEST_SHARED_KEY);
     const sharedKeyB = deriveSharedKey(TEST_PEER.privateKey, TEST_SELF.publicKey);
     expect(sharedKeyB).to.eql(TEST_SHARED_KEY);
   });
-  it("deriveSymmetricKey", async () => {
+  it("deriveSymmetricKey", () => {
     const sharedKeyA = deriveSharedKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
     const symKeyA = deriveSymmetricKey(sharedKeyA);
     expect(symKeyA).to.eql(TEST_SYM_KEY);
@@ -53,16 +53,16 @@ describe("Crypto", () => {
     const symKeyB = deriveSymmetricKey(sharedKeyB);
     expect(symKeyB).to.eql(TEST_SYM_KEY);
   });
-  it("hashKey", async () => {
-    const hashedKey = await hashKey(TEST_SHARED_KEY);
+  it("hashKey", () => {
+    const hashedKey = hashKey(TEST_SHARED_KEY);
     expect(hashedKey).to.eql(TEST_HASHED_KEY);
   });
-  it("hashMessage", async () => {
-    const hashedEncoded = await hashMessage(TEST_ENCODED);
+  it("hashMessage", () => {
+    const hashedEncoded = hashMessage(TEST_ENCODED);
     expect(hashedEncoded).to.eql(TEST_HASHED_ENCODED);
   });
-  it("encrypt", async () => {
-    const encoded = await encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
+  it("encrypt", () => {
+    const encoded = encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
     expect(encoded).to.eql(TEST_ENCODED);
     const deserialized = deserialize(encoded);
     const iv = toString(deserialized.iv, BASE16);
@@ -70,8 +70,8 @@ describe("Crypto", () => {
     const sealed = toString(deserialized.sealed, BASE16);
     expect(sealed).to.eql(TEST_SEALED);
   });
-  it("decrypt", async () => {
-    const decrypted = await decrypt({ symKey: TEST_SYM_KEY, encoded: TEST_ENCODED });
+  it("decrypt", () => {
+    const decrypted = decrypt({ symKey: TEST_SYM_KEY, encoded: TEST_ENCODED });
     expect(decrypted).to.eql(TEST_MESSAGE);
   });
 });

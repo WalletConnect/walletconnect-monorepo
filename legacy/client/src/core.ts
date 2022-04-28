@@ -810,7 +810,7 @@ class Connector implements IConnector {
     this._transport.send(payload, topic, silent);
   }
 
-  protected async _sendSessionRequest(
+  protected _sendSessionRequest(
     request: IJsonRpcRequest,
     errorMsg: string,
     options?: IInternalRequestOptions,

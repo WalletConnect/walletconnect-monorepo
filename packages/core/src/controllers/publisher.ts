@@ -39,10 +39,10 @@ export class Publisher extends IPublisher {
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
       const params = { topic, message, opts: { ttl, relay, prompt } };
-      const hash = await hashMessage(message);
+      const hash = hashMessage(message);
       this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
-      await this.onPublish(hash, params);
+      this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     } catch (e) {
@@ -99,10 +99,7 @@ export class Publisher extends IPublisher {
     return this.relayer.provider.request(request);
   }
 
-  private async onPublish(hash: string, _params: PublisherTypes.Params) {
-    // const { topic, message } = params;
-    // await this.relayer.recordPayloadEvent({ topic, message });
-
+  private onPublish(hash: string, _params: PublisherTypes.Params) {
     this.queue.delete(hash);
   }
 
@@ -113,9 +110,9 @@ export class Publisher extends IPublisher {
         message,
         opts: { ttl, relay },
       } = params;
-      const hash = await hashMessage(message);
+      const hash = hashMessage(message);
       await this.rpcPublish(topic, message, ttl, relay);
-      await this.onPublish(hash, params);
+      this.onPublish(hash, params);
     });
   }
 

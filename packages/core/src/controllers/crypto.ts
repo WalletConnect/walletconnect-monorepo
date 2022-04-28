@@ -54,7 +54,7 @@ export class Crypto implements ICrypto {
   };
 
   public setSymKey: ICrypto["setSymKey"] = async (symKey, overrideTopic) => {
-    const topic = overrideTopic || (await hashKey(symKey));
+    const topic = overrideTopic || hashKey(symKey);
     await this.keychain.set(topic, symKey);
     return topic;
   };
@@ -69,13 +69,13 @@ export class Crypto implements ICrypto {
 
   public encrypt: ICrypto["encrypt"] = async (topic, message) => {
     const symKey = await this.getSymKey(topic);
-    const result = await encrypt({ symKey, message });
+    const result = encrypt({ symKey, message });
     return result;
   };
 
   public decrypt: ICrypto["decrypt"] = async (topic, encoded) => {
     const symKey = await this.getSymKey(topic);
-    const result = await decrypt({ symKey, encoded });
+    const result = decrypt({ symKey, encoded });
     return result;
   };
 
