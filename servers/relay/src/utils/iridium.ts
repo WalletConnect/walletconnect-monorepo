@@ -30,8 +30,8 @@ export function encodeIridiumV1Message(msg: string, opts?: IridiumV1MessageOptio
   let length = new Uint8Array(IRIDIUM_HEADER?.["1"].LENGTH_SIZE);
   // Little endian
   encoding.numberToArray(message.length).forEach((val: number, index: number) => {
-    length[index] = val
-  })
+    length[index] = val;
+  });
   length.reverse();
   const prompt = encoding.numberToArray(opts?.prompt ? 1 : 0);
   let rawArray = encoding.concatArrays(prefix, version, length, message, prompt);
@@ -47,11 +47,11 @@ export function decodeIridiumV1Message(hex: string, v?: number): IridiumV1Messag
   if (typeof v !== "undefined" && version !== v) {
     throw new Error(`Cannot decode Iridum message with version: ${version}`);
   }
-  const {LENGTH_SIZE, TOTAL_SIZE} = IRIDIUM_HEADER["1"]
-  const lengthHeaderStart = TOTAL_SIZE - LENGTH_SIZE
+  const { LENGTH_SIZE, TOTAL_SIZE } = IRIDIUM_HEADER["1"];
+  const lengthHeaderStart = TOTAL_SIZE - LENGTH_SIZE;
   const msgLength = encoding.arrayToNumber(raw.slice(lengthHeaderStart, TOTAL_SIZE));
-  const message = encoding.arrayToUtf8(raw.slice(TOTAL_SIZE, msgLength+TOTAL_SIZE));
-  const prompt = encoding.arrayToNumber(raw.slice(msgLength+TOTAL_SIZE));
+  const message = encoding.arrayToUtf8(raw.slice(TOTAL_SIZE, msgLength + TOTAL_SIZE));
+  const prompt = encoding.arrayToNumber(raw.slice(msgLength + TOTAL_SIZE));
   return {
     version,
     message,
