@@ -5,4 +5,4 @@ export * from "./legacy";
 export * from "./notification";
 export * from "./relay";
 export * from "./ws";
-export * from "./waku";
+export * from "./redis";
