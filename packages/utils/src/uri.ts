@@ -13,11 +13,6 @@ export function parseRelayParams(params: any, delimiter = "-"): RelayerTypes.Pro
       relay[name] = value;
     }
   });
-  // TODO(pedro) this was removed to match engine behavior
-  //
-  // if (!relay.data) {
-  //   relay.data = "";
-  // }
   return relay;
 }
 
