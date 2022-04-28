@@ -7,7 +7,7 @@ import { sha256, generateRandomBytes32 } from "../src/utils";
 import config from "../src/config";
 import { HttpService } from "../src/http";
 
-import { RedisService } from "../src/redis";
+import { RedisService, RedisStreamID } from "../src/redis";
 import { ONE_DAY } from "@walletconnect/time";
 
 import { TEST_MESSAGE, TEST_TOPIC } from "./shared";
@@ -73,5 +73,21 @@ describe("Redis", () => {
     );
     await redis.deleteMessage(TEST_TOPIC, sha256(testMessage.message));
     expect(await redis.getMessage(testMessage.topic, sha256(testMessage.message))).to.be.undefined;
+  });
+});
+describe("RedisStreamID", () => {
+  it.only("isHigher", async () => {
+    let idOne = new RedisStreamID("1651146414395-42");
+    let idTwo = new RedisStreamID("1651146414395-43");
+    expect(idOne.isHigher(idTwo)).to.be.false;
+    idOne = new RedisStreamID("0-0");
+    idTwo = new RedisStreamID("1651146414395-43");
+    expect(idOne.isHigher(idTwo)).to.be.false;
+    idOne = new RedisStreamID("0-0");
+    idTwo = new RedisStreamID("0-0");
+    expect(idOne.isHigher(idTwo)).to.be.false;
+    idOne = new RedisStreamID("0-1");
+    idTwo = new RedisStreamID("0-0");
+    expect(idOne.isHigher(idTwo)).to.be.true;
   });
 });

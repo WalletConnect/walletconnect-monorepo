@@ -4,12 +4,33 @@ import { Logger } from "pino";
 import { generateChildLogger } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { SIX_HOURS } from "@walletconnect/time";
+import * as encoding from "@walletconnect/encoding";
 
 import { sha256 } from "./utils";
 import { HttpService } from "./http";
 import { REDIS_CONTEXT, NETWORK_EVENTS, JSONRPC_EVENTS } from "./constants";
 import { IridiumV1MessageOptions, Notification, LegacySocketMessage, Subscription } from "./types";
 import { IridiumEncoder } from "./encoder";
+
+export class RedisStreamID extends String {
+  private sequence: number;
+  private timestamp: number;
+  constructor(value: string) {
+    super(value);
+    const [timestamp, sequence] = value.split("-");
+    this.sequence = encoding.utf8ToNumber(sequence);
+    this.timestamp = encoding.utf8ToNumber(timestamp);
+  }
+
+  isHigher(id: RedisStreamID): boolean {
+    const [ts, seq] = id.split("-");
+    const sequence = encoding.utf8ToNumber(seq);
+    const timestamp = encoding.utf8ToNumber(ts);
+    if (this.timestamp > timestamp) return true;
+    if (this.sequence > sequence) return true;
+    return false;
+  }
+}
 
 export class RedisService {
   public client: RedisClientType;
