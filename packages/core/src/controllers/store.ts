@@ -22,24 +22,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
 
-      try {
-        const persisted = await this.getDataStore();
-        if (typeof persisted === "undefined") return;
-        if (!persisted.length) return;
-        if (this.map.size) {
-          const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-            context: this.name,
-          });
-          this.logger.error(error.message);
-          throw new Error(error.message);
-        }
-        this.cached = persisted;
-        this.logger.debug(`Successfully Restored value for ${this.name}`);
-        this.logger.trace({ type: "method", method: "restore", value: this.values });
-      } catch (e) {
-        this.logger.debug(`Failed to Restore value for ${this.name}`);
-        this.logger.error(e as any);
-      }
+      await this.restore();
 
       this.cached.forEach(value => {
         if (isProposalStruct(value)) {
@@ -140,6 +123,27 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
   private async persist() {
     await this.setDataStore(this.values);
+  }
+
+  private async restore() {
+    try {
+      const persisted = await this.getDataStore();
+      if (typeof persisted === "undefined") return;
+      if (!persisted.length) return;
+      if (this.map.size) {
+        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
+          context: this.name,
+        });
+        this.logger.error(error.message);
+        throw new Error(error.message);
+      }
+      this.cached = persisted;
+      this.logger.debug(`Successfully Restored value for ${this.name}`);
+      this.logger.trace({ type: "method", method: "restore", value: this.values });
+    } catch (e) {
+      this.logger.debug(`Failed to Restore value for ${this.name}`);
+      this.logger.error(e as any);
+    }
   }
 
   private isInitialized() {

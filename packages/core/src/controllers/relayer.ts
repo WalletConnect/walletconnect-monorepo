@@ -51,7 +51,7 @@ export class Relayer extends IRelayer {
   public messages: IMessageTracker;
   public subscriber: ISubscriber;
   public publisher: IPublisher;
-  public name: string = RELAYER_CONTEXT;
+  public name = RELAYER_CONTEXT;
 
   private initialized = false;
 

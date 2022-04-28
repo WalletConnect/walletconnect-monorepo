@@ -12,6 +12,8 @@ import { Engine, Pairing, Proposal, Session, JsonRpcHistory, Expirer } from "./c
 import { CLIENT_DEFAULT } from "./constants";
 import { Core } from "@walletconnect/core";
 
+process.on("warning", e => console.warn(e.stack));
+
 export class Client extends IClient {
   public readonly protocol = "wc";
   public readonly version = 2;
@@ -21,6 +23,7 @@ export class Client extends IClient {
   public core: IClient["core"];
   public logger: IClient["logger"];
   public events: IClient["events"] = new EventEmitter();
+
   public engine: IClient["engine"];
   public pairing: IClient["pairing"];
   public session: IClient["session"];

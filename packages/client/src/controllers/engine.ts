@@ -50,7 +50,7 @@ export class Engine extends IEngine {
     let active = false;
 
     if (topic) {
-      const pairing = await this.client.pairing.get(topic);
+      const pairing = this.client.pairing.get(topic);
       active = pairing.active;
     }
 
@@ -105,7 +105,7 @@ export class Engine extends IEngine {
   public approve: IEngine["approve"] = async params => {
     // TODO(ilja) validation
     const { id, relayProtocol, accounts, namespaces } = params;
-    const { pairingTopic, proposer } = await this.client.proposal.get(id);
+    const { pairingTopic, proposer } = this.client.proposal.get(id);
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -130,9 +130,9 @@ export class Engine extends IEngine {
     await this.client.core.relayer.subscribe(sessionTopic);
     const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once(engineEvent("approve", requestId), async ({ error }) => {
+    this.events.once(engineEvent("approve", requestId), ({ error }) => {
       if (error) reject(error);
-      else resolve(await this.client.session.get(sessionTopic));
+      else resolve(this.client.session.get(sessionTopic));
     });
 
     const session = {
@@ -166,7 +166,7 @@ export class Engine extends IEngine {
   public reject: IEngine["reject"] = async params => {
     // TODO(ilja) validation
     const { id, reason } = params;
-    const { pairingTopic } = await this.client.proposal.get(id);
+    const { pairingTopic } = this.client.proposal.get(id);
     if (pairingTopic && id) {
       await this.sendError(id, pairingTopic, reason);
       await this.client.proposal.delete(id, ERROR.DELETED.format());
@@ -319,7 +319,7 @@ export class Engine extends IEngine {
   };
 
   private deleteSession: EnginePrivate["deleteSession"] = async topic => {
-    const { self } = await this.client.session.get(topic);
+    const { self } = this.client.session.get(topic);
     await Promise.all([
       this.client.core.relayer.unsubscribe(topic),
       this.client.session.delete(topic, ERROR.DELETED.format()),
@@ -484,7 +484,7 @@ export class Engine extends IEngine {
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
       this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", result });
-      const proposal = await this.client.proposal.get(id);
+      const proposal = this.client.proposal.get(id);
       this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", proposal });
       const selfPublicKey = proposal.proposer.publicKey;
       this.client.logger.trace({
@@ -720,7 +720,7 @@ export class Engine extends IEngine {
 
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
     // TODO(ilja) validation
-    const { namespaces } = await this.client.session.get(topic);
+    const { namespaces } = this.client.session.get(topic);
     const { id, params } = payload;
     const { chainId, request } = params;
     const isChain = chainId && namespaces.some(n => n.chains.includes(chainId));
