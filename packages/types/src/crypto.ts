@@ -46,7 +46,7 @@ export abstract class ICrypto {
 
   public abstract init(): Promise<void>;
 
-  public abstract hasKeys(tag: string): Promise<boolean>;
+  public abstract hasKeys(tag: string): boolean;
 
   public abstract generateKeyPair(): Promise<string>;
 

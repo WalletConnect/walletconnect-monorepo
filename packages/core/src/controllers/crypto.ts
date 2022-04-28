@@ -33,11 +33,11 @@ export class Crypto implements ICrypto {
     await this.keychain.init();
   };
 
-  public hasKeys: ICrypto["hasKeys"] = async tag => {
+  public hasKeys: ICrypto["hasKeys"] = tag => {
     return this.keychain.has(tag);
   };
 
-  public generateKeyPair: ICrypto["generateKeyPair"] = async () => {
+  public generateKeyPair: ICrypto["generateKeyPair"] = () => {
     const keyPair = generateKeyPair();
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };

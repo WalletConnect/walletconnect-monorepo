@@ -36,6 +36,8 @@ export class Subscriber extends ISubscriber {
 
   private cached: SubscriberTypes.Active[] = [];
 
+  private enabled = false;
+
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -48,27 +50,27 @@ export class Subscriber extends ISubscriber {
     await this.initialize();
   };
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
+  get storageKey() {
     return this.relayer.core.storagePrefix + this.version + "//" + this.name;
   }
 
-  get length(): number {
+  get length() {
     return this.subscriptions.size;
   }
 
-  get ids(): string[] {
+  get ids() {
     return Array.from(this.subscriptions.keys());
   }
 
-  get values(): SubscriberTypes.Active[] {
+  get values() {
     return Array.from(this.subscriptions.values());
   }
 
-  get topics(): string[] {
+  get topics() {
     return this.topicMap.topics;
   }
 
@@ -117,18 +119,8 @@ export class Subscriber extends ISubscriber {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async enable(): Promise<void> {
-    if (!this.cached.length) return;
-    this.onEnable();
-  }
-
-  private async disable(): Promise<void> {
-    if (this.cached.length) return;
-    this.onDisable();
-  }
-
-  private async hasSubscription(id: string, topic: string): Promise<boolean> {
-    await this.isEnabled();
+  private async hasSubscription(id: string, topic: string) {
+    this.isEnabled();
     let result = false;
     try {
       const subscription = await this.getSubscription(id);
@@ -141,6 +133,7 @@ export class Subscriber extends ISubscriber {
 
   private onEnable() {
     this.cached = [];
+    this.enabled = true;
     this.events.emit(SUBSCRIBER_EVENTS.enabled);
   }
 
@@ -148,22 +141,16 @@ export class Subscriber extends ISubscriber {
     this.cached = this.values;
     this.subscriptions.clear();
     this.topicMap.clear();
+    this.enabled = false;
     this.events.emit(SUBSCRIBER_EVENTS.disabled);
   }
 
-  private async unsubscribeByTopic(
-    topic: string,
-    opts?: RelayerTypes.UnsubscribeOptions,
-  ): Promise<void> {
+  private async unsubscribeByTopic(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
     const ids = this.topicMap.get(topic);
     await Promise.all(ids.map(async id => await this.unsubscribeById(topic, id, opts)));
   }
 
-  private async unsubscribeById(
-    topic: string,
-    id: string,
-    opts?: RelayerTypes.UnsubscribeOptions,
-  ): Promise<void> {
+  private async unsubscribeById(topic: string, id: string, opts?: RelayerTypes.UnsubscribeOptions) {
     this.logger.debug(`Unsubscribing Topic`);
     this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     try {
@@ -180,7 +167,7 @@ export class Subscriber extends ISubscriber {
     }
   }
 
-  private async rpcSubscribe(topic: string, relay: RelayerTypes.ProtocolOptions): Promise<string> {
+  private async rpcSubscribe(topic: string, relay: RelayerTypes.ProtocolOptions) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
       method: api.subscribe,
@@ -190,14 +177,10 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    return this.relayer.provider.request(request);
+    return await this.relayer.provider.request(request);
   }
 
-  private async rpcUnsubscribe(
-    topic: string,
-    id: string,
-    relay: RelayerTypes.ProtocolOptions,
-  ): Promise<void> {
+  private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
       method: api.unsubscribe,
@@ -229,36 +212,36 @@ export class Subscriber extends ISubscriber {
     await this.relayer.messages.del(topic);
   }
 
-  private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]): Promise<void> {
+  private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]) {
     await this.relayer.core.storage.setItem<SubscriberTypes.Active[]>(
       this.storageKey,
       subscriptions,
     );
   }
 
-  private async getRelayerSubscriptions(): Promise<SubscriberTypes.Active[] | undefined> {
+  private async getRelayerSubscriptions() {
     const subscriptions = await this.relayer.core.storage.getItem<SubscriberTypes.Active[]>(
       this.storageKey,
     );
     return subscriptions;
   }
 
-  private async setSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {
-    await this.isEnabled();
+  private setSubscription(id: string, subscription: SubscriberTypes.Active) {
+    this.isEnabled();
     if (this.subscriptions.has(id)) return;
     this.logger.debug(`Setting subscription`);
     this.logger.trace({ type: "method", method: "setSubscription", id, subscription });
-    await this.addSubscription(id, subscription);
+    this.addSubscription(id, subscription);
   }
 
-  private async addSubscription(id: string, subscription: SubscriberTypes.Active): Promise<void> {
+  private addSubscription(id: string, subscription: SubscriberTypes.Active) {
     this.subscriptions.set(id, { ...subscription });
     this.topicMap.set(subscription.topic, id);
     this.events.emit(SUBSCRIBER_EVENTS.created, subscription);
   }
 
-  private async getSubscription(id: string): Promise<SubscriberTypes.Active> {
-    await this.isEnabled();
+  private getSubscription(id: string) {
+    this.isEnabled();
     this.logger.debug(`Getting subscription`);
     this.logger.trace({ type: "method", method: "getSubscription", id });
     const subscription = this.subscriptions.get(id);
@@ -267,17 +250,16 @@ export class Subscriber extends ISubscriber {
         context: this.name,
         id,
       });
-      // this.logger.error(error.message);
       throw new Error(error.message);
     }
     return subscription;
   }
 
-  private async deleteSubscription(id: string, reason: ErrorResponse): Promise<void> {
-    await this.isEnabled();
+  private deleteSubscription(id: string, reason: ErrorResponse) {
+    this.isEnabled();
     this.logger.debug(`Deleting subscription`);
     this.logger.trace({ type: "method", method: "deleteSubscription", id, reason });
-    const subscription = await this.getSubscription(id);
+    const subscription = this.getSubscription(id);
     this.subscriptions.delete(id);
     this.topicMap.delete(subscription.topic, id);
     this.events.emit(SUBSCRIBER_EVENTS.deleted, {
@@ -315,19 +297,18 @@ export class Subscriber extends ISubscriber {
   private async initialize() {
     await this.restore();
     await this.reset();
-    await this.enable();
+    this.onEnable();
   }
 
-  private async isEnabled(): Promise<void> {
-    if (!this.cached.length) return;
-    return new Promise(resolve => {
-      this.events.once(SUBSCRIBER_EVENTS.enabled, () => resolve());
-    });
+  private isEnabled() {
+    if (!this.enabled) {
+      throw new Error(ERROR.GENERIC.stringify());
+    }
   }
 
   private async reset() {
     if (!this.cached.length) return;
-    await Promise.all(this.cached.map(async subscription => this.resubscribe(subscription)));
+    await Promise.all(this.cached.map(async subscription => await this.resubscribe(subscription)));
   }
 
   private async resubscribe(subscription: SubscriberTypes.Active) {
@@ -344,29 +325,29 @@ export class Subscriber extends ISubscriber {
 
   private async onConnect() {
     await this.reset();
-    await this.enable();
+    this.onEnable();
   }
 
-  private async onDisconnect() {
-    await this.disable();
+  private onDisconnect() {
+    this.onDisable();
   }
 
-  private checkPending(): void {
+  private checkPending() {
     this.pending.forEach(async params => {
       const id = await this.rpcSubscribe(params.topic, params.relay);
       await this.onSubscribe(id, params);
     });
   }
 
-  private registerEventListeners(): void {
+  private registerEventListeners() {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
     this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
       await this.onConnect();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, async () => {
-      await this.onDisconnect();
+    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+      this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
       const eventName = SUBSCRIBER_EVENTS.created;

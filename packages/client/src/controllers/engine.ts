@@ -344,7 +344,7 @@ export class Engine extends IEngine {
     } else if (this.client.session.keys.includes(topic)) {
       await this.client.session.update(topic, { expiry });
     }
-    await this.client.expirer.set(topic, { topic, expiry });
+    this.client.expirer.set(topic, { topic, expiry });
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -352,7 +352,7 @@ export class Engine extends IEngine {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload);
     await this.client.core.relayer.publish(topic, message);
-    await this.client.history.set(topic, payload);
+    this.client.history.set(topic, payload);
 
     return payload.id;
   };
@@ -382,7 +382,7 @@ export class Engine extends IEngine {
         const { topic, message } = event;
         const payload = await this.client.core.crypto.decode(topic, message);
         if (isJsonRpcRequest(payload)) {
-          await this.client.history.set(topic, payload);
+          this.client.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
         } else if (isJsonRpcResponse(payload)) {
           await this.client.history.resolve(payload);

@@ -18,6 +18,8 @@ export class Expirer extends IExpirer {
 
   private cached: ExpirerTypes.Expiration[] = [];
 
+  private initialized = false;
+
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
     this.core;
@@ -50,7 +52,7 @@ export class Expirer extends IExpirer {
     await this.initialize();
   };
 
-  public has: IExpirer["has"] = async topic => {
+  public has: IExpirer["has"] = topic => {
     try {
       const expiration = this.getExpiration(topic);
       return typeof expiration !== "undefined";
@@ -60,8 +62,8 @@ export class Expirer extends IExpirer {
     }
   };
 
-  public set: IExpirer["set"] = async (topic, expiration) => {
-    await this.isInitialized();
+  public set: IExpirer["set"] = (topic, expiration) => {
+    this.isInitialized();
     this.expirations.set(topic, expiration);
     this.checkExpiry(topic, expiration);
     this.events.emit(EXPIRER_EVENTS.created, {
@@ -70,13 +72,13 @@ export class Expirer extends IExpirer {
     } as ExpirerTypes.Created);
   };
 
-  public get: IExpirer["get"] = async topic => {
-    await this.isInitialized();
+  public get: IExpirer["get"] = topic => {
+    this.isInitialized();
     return this.getExpiration(topic);
   };
 
   public del: IExpirer["del"] = async topic => {
-    await this.isInitialized();
+    this.isInitialized();
     const exists = await this.has(topic);
     if (exists) {
       const expiration = this.getExpiration(topic);
@@ -153,14 +155,14 @@ export class Expirer extends IExpirer {
 
   private onInit() {
     this.cached = [];
+    this.initialized = true;
     this.events.emit(EXPIRER_EVENTS.init);
   }
 
-  private async isInitialized(): Promise<void> {
-    if (!this.cached.length) return;
-    return new Promise(resolve => {
-      this.events.once(EXPIRER_EVENTS.init, () => resolve());
-    });
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.GENERIC.stringify());
+    }
   }
 
   private getExpiration(topic: string): ExpirerTypes.Expiration {

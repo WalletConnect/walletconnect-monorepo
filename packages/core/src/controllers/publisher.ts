@@ -74,13 +74,13 @@ export class Publisher extends IPublisher {
     // if needed
   }
 
-  private async rpcPublish(
+  private rpcPublish(
     topic: string,
     message: string,
     ttl: number,
     relay: RelayerTypes.ProtocolOptions,
     prompt?: boolean,
-  ): Promise<void> {
+  ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
       method: api.publish,
@@ -103,7 +103,7 @@ export class Publisher extends IPublisher {
     this.queue.delete(hash);
   }
 
-  private checkQueue(): void {
+  private checkQueue() {
     this.queue.forEach(async params => {
       const {
         topic,
@@ -116,7 +116,7 @@ export class Publisher extends IPublisher {
     });
   }
 
-  private registerEventListeners(): void {
+  private registerEventListeners() {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkQueue();
     });

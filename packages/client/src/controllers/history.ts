@@ -12,6 +12,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   public name = HISTORY_CONTEXT;
   public version = HISTORY_STORAGE_VERSION;
   private cached: JsonRpcRecord[] = [];
+  private initialized = false;
 
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
@@ -58,8 +59,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     return requests;
   }
 
-  public set: IJsonRpcHistory["set"] = async (topic, request, chainId) => {
-    await this.isInitialized();
+  public set: IJsonRpcHistory["set"] = (topic, request, chainId) => {
+    this.isInitialized();
     this.logger.debug(`Setting JSON-RPC request history record`);
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
     if (this.records.has(request.id)) return;
@@ -74,7 +75,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   };
 
   public resolve: IJsonRpcHistory["resolve"] = async response => {
-    await this.isInitialized();
+    this.isInitialized();
     this.logger.debug(`Updating JSON-RPC response history record`);
     this.logger.trace({ type: "method", method: "update", response });
     if (!this.records.has(response.id)) return;
@@ -88,7 +89,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   };
 
   public get: IJsonRpcHistory["get"] = async (topic, id) => {
-    await this.isInitialized();
+    this.isInitialized();
     this.logger.debug(`Getting record`);
     this.logger.trace({ type: "method", method: "get", topic, id });
     const record = await this.getRecord(id);
@@ -104,8 +105,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     return record;
   };
 
-  public delete: IJsonRpcHistory["delete"] = async (topic, id) => {
-    await this.isInitialized();
+  public delete: IJsonRpcHistory["delete"] = (topic, id) => {
+    this.isInitialized();
     this.logger.debug(`Deleting record`);
     this.logger.trace({ type: "method", method: "delete", id });
     this.values.forEach((record: JsonRpcRecord) => {
@@ -118,7 +119,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   };
 
   public exists: IJsonRpcHistory["exists"] = async (topic, id) => {
-    await this.isInitialized();
+    this.isInitialized();
     if (!this.records.has(id)) return false;
     const record = await this.getRecord(id);
     return record.topic === topic;
@@ -151,16 +152,14 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     return records;
   }
 
-  private async getRecord(id: number): Promise<JsonRpcRecord> {
-    await this.isInitialized();
+  private getRecord(id: number) {
+    this.isInitialized();
     const record = this.records.get(id);
     if (!record) {
       const error = ERROR.NO_MATCHING_ID.format({
         context: this.name,
         id,
       });
-      // silencing this for now
-      // this.logger.error(error.message);
       throw new Error(error.message);
     }
     return record;
@@ -204,14 +203,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private onInit() {
     this.cached = [];
+    this.initialized = true;
     this.events.emit(HISTORY_EVENTS.init);
-  }
-
-  private async isInitialized(): Promise<void> {
-    if (!this.cached.length) return;
-    return new Promise(resolve => {
-      this.events.once(HISTORY_EVENTS.init, () => resolve());
-    });
   }
 
   private registerEventListeners(): void {
@@ -234,5 +227,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       this.logger.debug({ type: "event", event: eventName, record });
       this.persist();
     });
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.GENERIC.stringify());
+    }
   }
 }

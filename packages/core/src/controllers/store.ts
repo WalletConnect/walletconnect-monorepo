@@ -13,6 +13,8 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
   private cached: Data[] = [];
 
+  private initialized = false;
+
   constructor(public core: ICore, public logger: Logger, public name: string) {
     super(core, logger, name);
     this.logger = generateChildLogger(logger, this.name);
@@ -44,51 +46,55 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   }
 
   public set: IStore<Key, Data>["set"] = async (key, value) => {
+    this.isInitialized();
     if (this.map.has(key)) {
-      this.update(key, value);
+      await this.update(key, value);
     } else {
       this.logger.debug(`Setting value`);
       this.logger.trace({ type: "method", method: "set", key, value });
       this.map.set(key, value);
-      this.persist();
+      await this.persist();
     }
   };
 
-  public get: IStore<Key, Data>["get"] = async key => {
+  public get: IStore<Key, Data>["get"] = key => {
+    this.isInitialized();
     this.logger.debug(`Getting value`);
     this.logger.trace({ type: "method", method: "get", key });
-    const value = await this.getData(key);
+    const value = this.getData(key);
     return value;
   };
 
   public update: IStore<Key, Data>["update"] = async (key, update) => {
+    this.isInitialized();
     this.logger.debug(`Updating value`);
     this.logger.trace({ type: "method", method: "update", key, update });
-    const value = { ...(await this.getData(key)), ...update };
+    const value = { ...this.getData(key), ...update };
     this.map.set(key, value);
-    this.persist();
+    await this.persist();
   };
 
   public delete: IStore<Key, Data>["delete"] = async (key, reason) => {
+    this.isInitialized();
     if (!this.map.has(key)) return;
     this.logger.debug(`Deleting value`);
     this.logger.trace({ type: "method", method: "delete", key, reason });
     this.map.delete(key);
-    this.persist();
+    await this.persist();
   };
 
   // ---------- Private ----------------------------------------------- //
 
-  private async setDataStore(value: Data[]): Promise<void> {
+  private async setDataStore(value: Data[]) {
     await this.core.storage.setItem<Data[]>(this.storageKey, value);
   }
 
-  private async getDataStore(): Promise<Data[] | undefined> {
+  private async getDataStore() {
     const value = await this.core.storage.getItem<Data[]>(this.storageKey);
     return value;
   }
 
-  private async getData(key: Key): Promise<Data> {
+  private getData(key: Key) {
     const value = this.map.get(key);
     if (!value) {
       const error = ERROR.NO_MATCHING_TOPIC.format({
@@ -146,5 +152,12 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
   private onInit() {
     this.cached = [];
+    this.initialized = true;
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.GENERIC.stringify());
+    }
   }
 }

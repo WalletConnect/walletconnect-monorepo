@@ -29,7 +29,7 @@ export class KeyChain implements IKeyChain {
     await this.restore();
   };
 
-  public has: IKeyChain["has"] = async tag => {
+  public has: IKeyChain["has"] = tag => {
     return this.keychain.has(tag);
   };
 
@@ -38,7 +38,7 @@ export class KeyChain implements IKeyChain {
     await this.persist();
   };
 
-  public get: IKeyChain["get"] = async tag => {
+  public get: IKeyChain["get"] = tag => {
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
       throw new Error(ERROR.NO_MATCHING_KEY.format({ tag }).message);

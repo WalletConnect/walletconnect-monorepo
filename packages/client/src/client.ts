@@ -204,6 +204,7 @@ export class Client extends IClient {
         this.proposal.init(),
         this.history.init(),
         this.core.start(),
+        this.expirer.init(),
       ]);
       this.logger.info(`Client Initilization Success`);
     } catch (error) {

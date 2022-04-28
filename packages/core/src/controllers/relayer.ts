@@ -87,10 +87,12 @@ export class Relayer extends IRelayer {
 
   public async init(): Promise<void> {
     this.logger.trace(`Initialized`);
-    await this.messages.init();
-    await this.provider.connect();
-    await this.subscriber.init();
-    await this.publisher.init();
+    await Promise.all([
+      await this.messages.init(),
+      await this.provider.connect(),
+      await this.subscriber.init(),
+      await this.publisher.init(),
+    ]);
   }
 
   public async publish(
@@ -134,10 +136,10 @@ export class Relayer extends IRelayer {
     await this.messages.set(topic, message);
   }
 
-  private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+  private shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
     if (!this.subscriber.topics.includes(topic)) return true;
-    const exists = await this.messages.has(topic, message);
+    const exists = this.messages.has(topic, message);
     return exists;
   }
 
@@ -158,7 +160,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
-    if (await this.shouldIgnoreMessageEvent(messageEvent)) return;
+    if (this.shouldIgnoreMessageEvent(messageEvent)) return;
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
     await this.recordMessageEvent(messageEvent);
   }
@@ -172,10 +174,10 @@ export class Relayer extends IRelayer {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
       this.onProviderPayload(payload),
     );
-    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
       this.events.emit(RELAYER_EVENTS.connect);
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, async () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       this.events.emit(RELAYER_EVENTS.disconnect);
       // Attempt reconnection after one second.
       setTimeout(() => {
