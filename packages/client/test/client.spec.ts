@@ -1,4 +1,3 @@
-import { delay } from "@walletconnect/time";
 import { ERROR } from "@walletconnect/utils";
 import "mocha";
 import Client from "../src";
