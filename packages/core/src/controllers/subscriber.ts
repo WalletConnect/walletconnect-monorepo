@@ -14,6 +14,7 @@ import {
 import { ERROR, getRelayProtocolApi, getRelayProtocolName } from "@walletconnect/utils";
 
 import {
+  CORE_STORAGE_PREFIX,
   RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
@@ -31,6 +32,8 @@ export class Subscriber extends ISubscriber {
 
   private cached: SubscriberTypes.Active[] = [];
   private initialized = false;
+
+  private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
@@ -52,8 +55,8 @@ export class Subscriber extends ISubscriber {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey() {
-    return this.relayer.core.storagePrefix + this.version + "//" + this.name;
+  get storageKey(): string {
+    return this.storagePrefix + this.version + "//" + this.name;
   }
 
   get length() {

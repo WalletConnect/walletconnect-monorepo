@@ -24,7 +24,6 @@ export abstract class ICore extends IEvents {
 
   public abstract readonly name: string;
   public abstract readonly context: string;
-  public abstract readonly storagePrefix: string;
   public abstract readonly relayUrl?: string;
   public abstract readonly projectId?: string;
 

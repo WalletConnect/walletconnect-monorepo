@@ -4,7 +4,12 @@ import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconn
 import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { HISTORY_CONTEXT, HISTORY_EVENTS, HISTORY_STORAGE_VERSION } from "../constants";
+import {
+  CLIENT_STORAGE_PREFIX,
+  HISTORY_CONTEXT,
+  HISTORY_EVENTS,
+  HISTORY_STORAGE_VERSION,
+} from "../constants";
 
 export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();
@@ -13,6 +18,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   public version = HISTORY_STORAGE_VERSION;
   private cached: JsonRpcRecord[] = [];
   private initialized = false;
+
+  private storagePrefix = CLIENT_STORAGE_PREFIX;
 
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
@@ -35,7 +42,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   get storageKey(): string {
-    return this.core.storagePrefix + this.version + "//" + this.name;
+    return this.storagePrefix + this.version + "//" + this.name;
   }
 
   get size(): number {

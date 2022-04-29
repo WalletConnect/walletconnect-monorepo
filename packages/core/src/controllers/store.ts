@@ -2,7 +2,7 @@ import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { STORE_STORAGE_VERSION } from "../constants";
+import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
 
 type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Struct;
 
@@ -13,9 +13,17 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   private cached: Data[] = [];
   private initialized = false;
 
-  constructor(public core: ICore, public logger: Logger, public name: string) {
-    super(core, logger, name);
+  private storagePrefix = CORE_STORAGE_PREFIX;
+
+  constructor(
+    public core: ICore,
+    public logger: Logger,
+    public name: string,
+    storagePrefix = CORE_STORAGE_PREFIX,
+  ) {
+    super(core, logger, name, storagePrefix);
     this.logger = generateChildLogger(logger, this.name);
+    this.storagePrefix = storagePrefix;
   }
 
   public init: IStore<Key, Data>["init"] = async () => {
@@ -43,8 +51,8 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey() {
-    return this.core.storagePrefix + this.version + "//" + this.name;
+  get storageKey(): string {
+    return this.storagePrefix + this.version + "//" + this.name;
   }
 
   get length() {

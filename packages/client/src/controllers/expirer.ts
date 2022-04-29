@@ -5,7 +5,12 @@ import { ExpirerTypes, ICore, IExpirer } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { EXPIRER_CONTEXT, EXPIRER_EVENTS, EXPIRER_STORAGE_VERSION } from "../constants";
+import {
+  CLIENT_STORAGE_PREFIX,
+  EXPIRER_CONTEXT,
+  EXPIRER_EVENTS,
+  EXPIRER_STORAGE_VERSION,
+} from "../constants";
 
 export class Expirer extends IExpirer {
   public expirations = new Map<string, ExpirerTypes.Expiration>();
@@ -15,6 +20,8 @@ export class Expirer extends IExpirer {
 
   private cached: ExpirerTypes.Expiration[] = [];
   private initialized = false;
+
+  private storagePrefix = CLIENT_STORAGE_PREFIX;
 
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
@@ -38,7 +45,7 @@ export class Expirer extends IExpirer {
   }
 
   get storageKey(): string {
-    return this.core.storagePrefix + this.version + "//" + this.name;
+    return this.storagePrefix + this.version + "//" + this.name;
   }
 
   get length(): number {
