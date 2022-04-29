@@ -30,6 +30,7 @@ export const ERROR_TYPE = enumify({
   EXPIRED: "EXPIRED",
   DELETED: "DELETED",
   RESUBSCRIBED: "RESUBSCRIBED",
+  NOT_INITIALIZED: "NOT_INITIALIZED",
   // 2000 (Timeout)
   SETTLE_TIMEOUT: "SETTLE_TIMEOUT",
   JSONRPC_REQUEST_TIMEOUT: "JSONRPC_REQUEST_TIMEOUT",
@@ -57,8 +58,6 @@ export const ERROR_TYPE = enumify({
   UNSUPPORTED_NOTIFICATION: "UNSUPPORTED_NOTIFICATION",
   UNSUPPORTED_SIGNAL: "UNSUPPORTED_SIGNAL",
   USER_DISCONNECTED: "USER_DISCONNECTED",
-  // 8000 (Not Initialized)
-  NOT_INITIALIZED: "NOT_INITIALIZED",
   // 9000 (Unknown)
   UNKNOWN: "UNKNOWN",
 });
@@ -321,6 +320,16 @@ export const ERROR: Record<ErrorType, Error> = {
       message: ERROR[ERROR_TYPE.RESUBSCRIBED].stringify(params),
     }),
   },
+  [ERROR_TYPE.NOT_INITIALIZED]: {
+    type: ERROR_TYPE.NOT_INITIALIZED,
+    code: 1607,
+    stringify: (params?: any) => `Not Initialized ${params ? `: ${params?.toString()}` : ""}`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.NOT_INITIALIZED].code,
+      message: ERROR[ERROR_TYPE.NOT_INITIALIZED].stringify(params),
+    }),
+  },
+
   // 2000 (Timeout)
   [ERROR_TYPE.SETTLE_TIMEOUT]: {
     type: ERROR_TYPE.SETTLE_TIMEOUT,
@@ -549,16 +558,6 @@ export const ERROR: Record<ErrorType, Error> = {
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.USER_DISCONNECTED].code,
       message: ERROR[ERROR_TYPE.USER_DISCONNECTED].stringify(params),
-    }),
-  },
-  // 8000 (Not Initialized)
-  [ERROR_TYPE.NOT_INITIALIZED]: {
-    type: ERROR_TYPE.NOT_INITIALIZED,
-    code: 8000,
-    stringify: (params?: any) => `Not Initialized ${params ? `: ${params?.toString()}` : ""}`,
-    format: (params?: any) => ({
-      code: ERROR[ERROR_TYPE.NOT_INITIALIZED].code,
-      message: ERROR[ERROR_TYPE.NOT_INITIALIZED].stringify(params),
     }),
   },
   // 9000 (Unknown)
