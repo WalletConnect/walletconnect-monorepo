@@ -48,12 +48,12 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public generateSharedKey: ICrypto["generateSharedKey"] = async (
+  public generateSharedKey: ICrypto["generateSharedKey"] = (
     selfPublicKey,
     peerPublicKey,
     overrideTopic,
   ) => {
-    const privateKey = await this.getPrivateKey(selfPublicKey);
+    const privateKey = this.getPrivateKey(selfPublicKey);
     const sharedKey = deriveSharedKey(privateKey, peerPublicKey);
     const symKey = deriveSymmetricKey(sharedKey);
     return this.setSymKey(symKey, overrideTopic);
@@ -76,28 +76,28 @@ export class Crypto implements ICrypto {
     await this.keychain.del(topic);
   };
 
-  public encrypt: ICrypto["encrypt"] = async (topic, message) => {
-    const symKey = await this.getSymKey(topic);
+  public encrypt: ICrypto["encrypt"] = (topic, message) => {
+    const symKey = this.getSymKey(topic);
     const result = encrypt({ symKey, message });
     return result;
   };
 
-  public decrypt: ICrypto["decrypt"] = async (topic, encoded) => {
-    const symKey = await this.getSymKey(topic);
+  public decrypt: ICrypto["decrypt"] = (topic, encoded) => {
+    const symKey = this.getSymKey(topic);
     const result = decrypt({ symKey, encoded });
     return result;
   };
 
-  public encode: ICrypto["encode"] = async (topic, payload) => {
-    const hasKeys = await this.hasKeys(topic);
+  public encode: ICrypto["encode"] = (topic, payload) => {
+    const hasKeys = this.hasKeys(topic);
     const message = safeJsonStringify(payload);
-    const result = hasKeys ? await this.encrypt(topic, message) : encoding.utf8ToHex(message);
+    const result = hasKeys ? this.encrypt(topic, message) : encoding.utf8ToHex(message);
     return result;
   };
 
-  public decode: ICrypto["decode"] = async (topic, encoded) => {
-    const hasKeys = await this.hasKeys(topic);
-    const message = hasKeys ? await this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
+  public decode: ICrypto["decode"] = (topic, encoded) => {
+    const hasKeys = this.hasKeys(topic);
+    const message = hasKeys ? this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
     const payload = safeJsonParse(message);
     return payload;
   };
@@ -109,13 +109,13 @@ export class Crypto implements ICrypto {
     return publicKey;
   }
 
-  private async getPrivateKey(publicKey: string): Promise<string> {
-    const privateKey = await this.keychain.get(publicKey);
+  private getPrivateKey(publicKey: string) {
+    const privateKey = this.keychain.get(publicKey);
     return privateKey;
   }
 
-  private async getSymKey(topic: string): Promise<string> {
-    const symKey = await this.keychain.get(topic);
+  private getSymKey(topic: string) {
+    const symKey = this.keychain.get(topic);
     return symKey;
   }
 

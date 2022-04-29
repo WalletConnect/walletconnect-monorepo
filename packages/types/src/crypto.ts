@@ -62,11 +62,11 @@ export abstract class ICrypto {
 
   public abstract deleteSymKey(topic: string): Promise<void>;
 
-  public abstract encrypt(topic: string, message: string): Promise<string>;
+  public abstract encrypt(topic: string, message: string): string;
 
-  public abstract decrypt(topic: string, encoded: string): Promise<string>;
+  public abstract decrypt(topic: string, encoded: string): string;
 
-  public abstract encode(topic: string, payload: JsonRpcPayload): Promise<string>;
+  public abstract encode(topic: string, payload: JsonRpcPayload): string;
 
-  public abstract decode(topic: string, encoded: string): Promise<JsonRpcPayload>;
+  public abstract decode(topic: string, encoded: string): JsonRpcPayload;
 }

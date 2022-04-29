@@ -360,7 +360,7 @@ export class Engine extends IEngine {
   private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
     // TODO(ilja) validation
     const payload = formatJsonRpcResult(id, result);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = this.client.core.crypto.encode(topic, payload);
     await this.client.core.relayer.publish(topic, message);
     await this.client.history.resolve(payload);
   };
@@ -368,7 +368,7 @@ export class Engine extends IEngine {
   private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
     // TODO(ilja) validation
     const payload = formatJsonRpcError(id, error);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = this.client.core.crypto.encode(topic, payload);
     await this.client.core.relayer.publish(topic, message);
     await this.client.history.resolve(payload);
   };
@@ -380,7 +380,7 @@ export class Engine extends IEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
-        const payload = await this.client.core.crypto.decode(topic, message);
+        const payload = this.client.core.crypto.decode(topic, message);
         if (isJsonRpcRequest(payload)) {
           this.client.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
