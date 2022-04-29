@@ -13,7 +13,13 @@ export abstract class IStore<Key, Value> {
 
   public abstract readonly values: Value[];
 
-  constructor(public core: ICore, public logger: Logger, public name: string) {}
+  constructor(
+    public core: ICore,
+    public logger: Logger,
+    public name: string,
+    // @ts-ignore
+    storagePrefix?: string,
+  ) {}
 
   public abstract init(): Promise<void>;
 

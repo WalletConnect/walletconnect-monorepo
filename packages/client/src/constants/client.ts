@@ -1,6 +1,10 @@
 import { ClientTypes } from "@walletconnect/types";
 
+export const CLIENT_PROTOCOL = "wc";
+export const CLIENT_VERSION = 2;
 export const CLIENT_CONTEXT = "client";
+
+export const CLIENT_STORAGE_PREFIX = `${CLIENT_PROTOCOL}@${CLIENT_VERSION}:${CLIENT_CONTEXT}:`;
 
 export const CLIENT_DEFAULT = {
   name: CLIENT_CONTEXT,
