@@ -1,14 +1,10 @@
 import "mocha";
 import sinon from "sinon";
 
-import Core, { CORE_CONTEXT, CORE_PROTOCOL, CORE_VERSION } from "../src";
+import Core from "../src";
 import { expect, TEST_CORE_OPTIONS } from "./shared";
 
 describe("Core", () => {
-  it("provides the expected `storagePrefix` format", () => {
-    const core = new Core(TEST_CORE_OPTIONS);
-    expect(core.storagePrefix).to.equal(`${CORE_PROTOCOL}@${CORE_VERSION}:${CORE_CONTEXT}:`);
-  });
   it("does not duplicate initilization if `Core.start()` is called repeatedly", async () => {
     const core = new Core(TEST_CORE_OPTIONS);
     const initSpy = sinon.spy();

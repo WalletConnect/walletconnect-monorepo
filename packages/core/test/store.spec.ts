@@ -2,7 +2,7 @@ import "mocha";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import pino from "pino";
 
-import { Core, CORE_DEFAULT, Store, STORE_STORAGE_VERSION } from "../src";
+import { Core, CORE_DEFAULT, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
 import { expect, TEST_CORE_OPTIONS } from "./shared";
 import { ICore, SessionTypes } from "@walletconnect/types";
 
@@ -21,7 +21,7 @@ describe("Store", () => {
   it("provides the expected `storageKey` format", () => {
     const store = new Store(core, logger, MOCK_STORE_NAME);
     expect(store.storageKey).to.equal(
-      core.storagePrefix + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME,
+      CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME,
     );
   });
 
