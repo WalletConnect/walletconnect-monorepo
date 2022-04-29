@@ -72,7 +72,13 @@ export class Relayer extends IRelayer {
     this.messages = new MessageTracker(this.logger, opts.core);
     this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);
+  }
+
+  public async init() {
+    this.logger.trace(`Initialized`);
+    await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
+    this.initialized = true;
   }
 
   get context() {
@@ -85,12 +91,6 @@ export class Relayer extends IRelayer {
 
   get connecting() {
     return this.provider.connection.connecting;
-  }
-
-  public async init() {
-    this.logger.trace(`Initialized`);
-    await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
-    this.initialized = true;
   }
 
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {

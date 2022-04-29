@@ -17,14 +17,6 @@ export class MessageTracker extends IMessageTracker {
     this.core = core;
   }
 
-  get context(): string {
-    return getLoggerContext(this.logger);
-  }
-
-  get storageKey(): string {
-    return this.core.storagePrefix + this.version + "//" + this.name;
-  }
-
   public init: IMessageTracker["init"] = async () => {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
@@ -44,6 +36,14 @@ export class MessageTracker extends IMessageTracker {
       }
     }
   };
+
+  get context(): string {
+    return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    return this.core.storagePrefix + this.version + "//" + this.name;
+  }
 
   public set: IMessageTracker["set"] = async (topic, message) => {
     this.isInitialized();

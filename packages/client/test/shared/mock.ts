@@ -121,7 +121,7 @@ export class MockWakuRelayer implements IEvents {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
       this.onPayload(payload),
     );
-    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {

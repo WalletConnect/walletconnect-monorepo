@@ -36,34 +36,14 @@ export class Subscriber extends ISubscriber {
     super(relayer, logger);
     this.relayer = relayer;
     this.logger = generateChildLogger(logger, this.name);
-    this.registerEventListeners();
   }
 
   public init: ISubscriber["init"] = async () => {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
-
-      try {
-        const persisted = await this.getRelayerSubscriptions();
-        if (typeof persisted === "undefined") return;
-        if (!persisted.length) return;
-        if (this.subscriptions.size) {
-          const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-            context: this.name,
-          });
-          this.logger.error(error.message);
-          throw new Error(error.message);
-        }
-        this.cached = persisted;
-        this.logger.debug(`Successfully Restored subscriptions for ${this.name}`);
-        this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
-      } catch (e) {
-        this.logger.debug(`Failed to Restore subscriptions for ${this.name}`);
-        this.logger.error(e as any);
-      }
-
+      await this.restore();
       await this.reset();
-
+      this.registerEventListeners();
       this.onEnable();
     }
   };
@@ -290,6 +270,27 @@ export class Subscriber extends ISubscriber {
   private async reset() {
     if (!this.cached.length) return;
     await Promise.all(this.cached.map(async subscription => await this.resubscribe(subscription)));
+  }
+
+  private async restore() {
+    try {
+      const persisted = await this.getRelayerSubscriptions();
+      if (typeof persisted === "undefined") return;
+      if (!persisted.length) return;
+      if (this.subscriptions.size) {
+        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
+          context: this.name,
+        });
+        this.logger.error(error.message);
+        throw new Error(error.message);
+      }
+      this.cached = persisted;
+      this.logger.debug(`Successfully Restored subscriptions for ${this.name}`);
+      this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
+    } catch (e) {
+      this.logger.debug(`Failed to Restore subscriptions for ${this.name}`);
+      this.logger.error(e as any);
+    }
   }
 
   private async resubscribe(subscription: SubscriberTypes.Active) {

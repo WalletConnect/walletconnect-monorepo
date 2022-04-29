@@ -27,16 +27,16 @@ export class Crypto implements ICrypto {
     this.keychain = keychain || new KeyChain(this.core, this.logger);
   }
 
-  get context() {
-    return getLoggerContext(this.logger);
-  }
-
   public init: ICrypto["init"] = async () => {
     if (!this.initialized) {
       await this.keychain.init();
       this.initialized = true;
     }
   };
+
+  get context() {
+    return getLoggerContext(this.logger);
+  }
 
   public hasKeys: ICrypto["hasKeys"] = tag => {
     this.isInitialized();

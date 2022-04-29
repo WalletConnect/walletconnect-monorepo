@@ -17,7 +17,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
     this.logger = generateChildLogger(logger, this.name);
-    this.registerEventListeners();
   }
 
   public init: IJsonRpcHistory["init"] = async () => {
@@ -26,6 +25,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       await this.restore();
       this.cached.forEach(record => this.records.set(record.id, record));
       this.cached = [];
+      this.registerEventListeners();
       this.initialized = true;
     }
   };

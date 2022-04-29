@@ -20,8 +20,18 @@ export class Expirer extends IExpirer {
     super(core, logger);
     this.core;
     this.logger = generateChildLogger(logger, this.name);
-    this.registerEventListeners();
   }
+
+  public init: IExpirer["init"] = async () => {
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+      await this.restore();
+      this.cached.forEach(expiration => this.expirations.set(expiration.topic, expiration));
+      this.cached = [];
+      this.registerEventListeners();
+      this.initialized = true;
+    }
+  };
 
   get context(): string {
     return getLoggerContext(this.logger);
@@ -42,16 +52,6 @@ export class Expirer extends IExpirer {
   get values(): ExpirerTypes.Expiration[] {
     return Array.from(this.expirations.values());
   }
-
-  public init: IExpirer["init"] = async () => {
-    if (!this.initialized) {
-      this.logger.trace(`Initialized`);
-      await this.restore();
-      this.cached.forEach(expiration => this.expirations.set(expiration.topic, expiration));
-      this.cached = [];
-      this.initialized = true;
-    }
-  };
 
   public has: IExpirer["has"] = topic => {
     try {

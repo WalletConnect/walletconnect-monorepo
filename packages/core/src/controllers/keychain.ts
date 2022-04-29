@@ -17,14 +17,6 @@ export class KeyChain implements IKeyChain {
     this.logger = generateChildLogger(logger, this.name);
   }
 
-  get context() {
-    return getLoggerContext(this.logger);
-  }
-
-  get storageKey() {
-    return this.core.storagePrefix + this.version + "//" + this.name;
-  }
-
   public init: IKeyChain["init"] = async () => {
     if (!this.initialized) {
       const keychain = await this.getKeyChain();
@@ -34,6 +26,14 @@ export class KeyChain implements IKeyChain {
       this.initialized = true;
     }
   };
+
+  get context() {
+    return getLoggerContext(this.logger);
+  }
+
+  get storageKey() {
+    return this.core.storagePrefix + this.version + "//" + this.name;
+  }
 
   public has: IKeyChain["has"] = tag => {
     this.isInitialized();
