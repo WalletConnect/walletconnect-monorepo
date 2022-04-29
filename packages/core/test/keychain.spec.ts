@@ -1,0 +1,31 @@
+import "mocha";
+import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import pino from "pino";
+
+import {
+  Core,
+  CORE_DEFAULT,
+  CORE_STORAGE_PREFIX,
+  KeyChain,
+  KEYCHAIN_CONTEXT,
+  KEYCHAIN_STORAGE_VERSION,
+} from "../src";
+import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { ICore } from "@walletconnect/types";
+
+describe("Keychain", () => {
+  const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
+
+  let core: ICore;
+
+  beforeEach(() => {
+    core = new Core(TEST_CORE_OPTIONS);
+  });
+
+  it("provides the expected `storageKey` format", () => {
+    const keychain = new KeyChain(core, logger);
+    expect(keychain.storageKey).to.equal(
+      CORE_STORAGE_PREFIX + KEYCHAIN_STORAGE_VERSION + "//" + KEYCHAIN_CONTEXT,
+    );
+  });
+});
