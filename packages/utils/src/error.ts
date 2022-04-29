@@ -323,7 +323,7 @@ export const ERROR: Record<ErrorType, Error> = {
   [ERROR_TYPE.NOT_INITIALIZED]: {
     type: ERROR_TYPE.NOT_INITIALIZED,
     code: 1607,
-    stringify: (params?: any) => `Not Initialized ${params ? `: ${params?.toString()}` : ""}`,
+    stringify: (params?: any) => `${params ? `: ${params?.toString()}` : ""} was not initialized`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.NOT_INITIALIZED].code,
       message: ERROR[ERROR_TYPE.NOT_INITIALIZED].stringify(params),
