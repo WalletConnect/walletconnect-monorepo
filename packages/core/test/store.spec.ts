@@ -4,7 +4,7 @@ import pino from "pino";
 
 import { Core, CORE_DEFAULT, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
 import { expect, TEST_CORE_OPTIONS } from "./shared";
-import { ICore, SessionTypes } from "@walletconnect/types";
+import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
 const MOCK_STORE_NAME = "mock-entity";
 
@@ -13,9 +13,12 @@ describe("Store", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
 
   let core: ICore;
+  let store: IStore<any, any>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
+    store = new Store(core, logger, MOCK_STORE_NAME);
+    await store.init();
   });
 
   it("provides the expected `storageKey` format", () => {
@@ -27,7 +30,6 @@ describe("Store", () => {
 
   describe("set", () => {
     it("creates a new entry for a new key", async () => {
-      const store = new Store(core, logger, MOCK_STORE_NAME);
       const key = "newKey";
       const value = {
         topic: "abc123",
@@ -39,7 +41,6 @@ describe("Store", () => {
       expect(store.values.includes(value)).to.be.true;
     });
     it("updates an existing entry for a a known key", async () => {
-      const store = new Store(core, logger, MOCK_STORE_NAME);
       const key = "key";
       const value = {
         topic: "111",
@@ -59,7 +60,6 @@ describe("Store", () => {
 
   describe("get", () => {
     it("returns the value for a known key", async () => {
-      const store = new Store(core, logger, MOCK_STORE_NAME);
       const key = "key";
       const value = {
         topic: "abc123",
@@ -69,9 +69,8 @@ describe("Store", () => {
       expect(await store.get(key)).to.equal(value);
     });
     it("throws with expected error if passed an unknown key", async () => {
-      const store = new Store(core, logger, MOCK_STORE_NAME);
       const unknownKey = "unknown";
-      await expect(store.get(unknownKey)).to.eventually.be.rejectedWith(
+      expect(() => store.get(unknownKey)).to.throw(
         `No matching ${MOCK_STORE_NAME} with topic: ${unknownKey}`,
       );
     });
@@ -79,7 +78,6 @@ describe("Store", () => {
 
   describe("delete", () => {
     it("removes a known key from the map", async () => {
-      const store = new Store(core, logger, MOCK_STORE_NAME);
       const key = "key";
       const value = {
         topic: "abc123",
@@ -91,7 +89,6 @@ describe("Store", () => {
       expect(store.length).to.equal(0);
     });
     it("does nothing if key is unknown", async () => {
-      const store = new Store(core, logger, MOCK_STORE_NAME);
       await store.delete("key", { code: 0, message: "reason" });
       expect(store.length).to.equal(0);
     });

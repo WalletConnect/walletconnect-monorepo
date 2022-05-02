@@ -24,20 +24,13 @@ describe("Relayer", () => {
   beforeEach(() => {
     core = new Core(TEST_CORE_OPTIONS);
     relayer = new Relayer({ core, logger });
-  });
-
-  it("registers event listeners when constructed", () => {
-    const emitSpy = Sinon.spy();
-    relayer.events.emit = emitSpy;
-    relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
-    expect(emitSpy.calledOnceWith(RELAYER_EVENTS.connect)).to.be.true;
+    // Mock `provider.connect` to avoid dependency on relay server here.
+    relayer.provider.connect = () => Promise.resolve();
   });
 
   describe("init", () => {
     let initSpy: Sinon.SinonSpy;
     beforeEach(() => {
-      // Mock `provider.connect` to avoid dependency on relay server here.
-      relayer.provider.connect = () => Promise.resolve();
       initSpy = Sinon.spy();
     });
 
@@ -61,9 +54,19 @@ describe("Relayer", () => {
       await relayer.init();
       expect(initSpy.calledOnce).to.be.true;
     });
+    it("registers event listeners", async () => {
+      const emitSpy = Sinon.spy();
+      relayer.events.emit = emitSpy;
+      await relayer.init();
+      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
+      expect(emitSpy.calledOnceWith(RELAYER_EVENTS.connect)).to.be.true;
+    });
   });
 
   describe("publish", () => {
+    beforeEach(async () => {
+      await relayer.init();
+    });
     const topic = "abc123";
     const message = "publish me";
     it("calls `publisher.publish` with provided args", async () => {
@@ -82,6 +85,9 @@ describe("Relayer", () => {
   });
 
   describe("subscribe", () => {
+    beforeEach(async () => {
+      await relayer.init();
+    });
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
       const spy = Sinon.spy(() => "mock-id");
       relayer.subscriber.subscribe = spy;
@@ -92,6 +98,9 @@ describe("Relayer", () => {
   });
 
   describe("unsubscribe", () => {
+    beforeEach(async () => {
+      await relayer.init();
+    });
     it("calls `subscriber.unsubscribe` with the passed topic", async () => {
       const spy = Sinon.spy();
       relayer.subscriber.unsubscribe = spy;
@@ -101,6 +110,9 @@ describe("Relayer", () => {
   });
 
   describe("onProviderPayload", () => {
+    beforeEach(async () => {
+      await relayer.init();
+    });
     const validPayload: JsonRpcRequest = {
       id: 123,
       jsonrpc: "2.0",
