@@ -1,5 +1,4 @@
-import pino from "pino";
-import { EventEmitter } from "events";
+import { Core } from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
@@ -7,10 +6,10 @@ import {
 } from "@walletconnect/logger";
 import { ClientTypes, IClient, IClientEvents } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
-
-import { Engine, Pairing, Proposal, Session, JsonRpcHistory, Expirer } from "./controllers";
+import { EventEmitter } from "events";
+import pino from "pino";
 import { CLIENT_DEFAULT, CLIENT_PROTOCOL, CLIENT_VERSION } from "./constants";
-import { Core } from "@walletconnect/core";
+import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
 
 export class Client extends IClient {
   public readonly protocol = CLIENT_PROTOCOL;
@@ -195,14 +194,13 @@ export class Client extends IClient {
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
-      await Promise.all([
-        this.core.start(),
-        this.pairing.init(),
-        this.session.init(),
-        this.proposal.init(),
-        this.history.init(),
-        this.expirer.init(),
-      ]);
+      await this.core.start();
+      await this.pairing.init();
+      await this.session.init();
+      await this.proposal.init();
+      await this.history.init();
+      await this.expirer.init();
+
       this.logger.info(`Client Initilization Success`);
     } catch (error) {
       this.logger.info(`Client Initilization Failure`);
