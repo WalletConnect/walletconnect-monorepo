@@ -8,10 +8,10 @@ type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Str
 
 export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   public map = new Map<Key, Data>();
-
   public version = STORE_STORAGE_VERSION;
 
   private cached: Data[] = [];
+  private initialized = false;
 
   private storagePrefix = CORE_STORAGE_PREFIX;
 
@@ -27,11 +27,27 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   }
 
   public init: IStore<Key, Data>["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+
+      await this.restore();
+
+      this.cached.forEach(value => {
+        if (isProposalStruct(value)) {
+          // TODO(pedro) revert type casting as any
+          this.map.set(value.id as any, value);
+        } else if (isSessionStruct(value)) {
+          // TODO(pedro) revert type casting as any
+          this.map.set(value.topic as any, value);
+        }
+      });
+
+      this.cached = [];
+      this.initialized = true;
+    }
   };
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
 
@@ -39,64 +55,68 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     return this.storagePrefix + this.version + "//" + this.name;
   }
 
-  get length(): number {
+  get length() {
     return this.map.size;
   }
 
-  get keys(): Key[] {
+  get keys() {
     return Array.from(this.map.keys());
   }
 
-  get values(): Data[] {
+  get values() {
     return Array.from(this.map.values());
   }
 
   public set: IStore<Key, Data>["set"] = async (key, value) => {
+    this.isInitialized();
     if (this.map.has(key)) {
-      this.update(key, value);
+      await this.update(key, value);
     } else {
       this.logger.debug(`Setting value`);
       this.logger.trace({ type: "method", method: "set", key, value });
       this.map.set(key, value);
-      this.persist();
+      await this.persist();
     }
   };
 
-  public get: IStore<Key, Data>["get"] = async key => {
+  public get: IStore<Key, Data>["get"] = key => {
+    this.isInitialized();
     this.logger.debug(`Getting value`);
     this.logger.trace({ type: "method", method: "get", key });
-    const value = await this.getData(key);
+    const value = this.getData(key);
     return value;
   };
 
   public update: IStore<Key, Data>["update"] = async (key, update) => {
+    this.isInitialized();
     this.logger.debug(`Updating value`);
     this.logger.trace({ type: "method", method: "update", key, update });
-    const value = { ...(await this.getData(key)), ...update };
+    const value = { ...this.getData(key), ...update };
     this.map.set(key, value);
-    this.persist();
+    await this.persist();
   };
 
   public delete: IStore<Key, Data>["delete"] = async (key, reason) => {
+    this.isInitialized();
     if (!this.map.has(key)) return;
     this.logger.debug(`Deleting value`);
     this.logger.trace({ type: "method", method: "delete", key, reason });
     this.map.delete(key);
-    this.persist();
+    await this.persist();
   };
 
   // ---------- Private ----------------------------------------------- //
 
-  private async setDataStore(value: Data[]): Promise<void> {
+  private async setDataStore(value: Data[]) {
     await this.core.storage.setItem<Data[]>(this.storageKey, value);
   }
 
-  private async getDataStore(): Promise<Data[] | undefined> {
+  private async getDataStore() {
     const value = await this.core.storage.getItem<Data[]>(this.storageKey);
     return value;
   }
 
-  private async getData(key: Key): Promise<Data> {
+  private getData(key: Key) {
     const value = this.map.get(key);
     if (!value) {
       const error = ERROR.NO_MATCHING_TOPIC.format({
@@ -134,25 +154,9 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     }
   }
 
-  private async initialize() {
-    await this.restore();
-    this.reset();
-    this.onInit();
-  }
-
-  private reset() {
-    this.cached.forEach(value => {
-      if (isProposalStruct(value)) {
-        // TODO(pedro) revert type casting as any
-        this.map.set(value.id as any, value);
-      } else if (isSessionStruct(value)) {
-        // TODO(pedro) revert type casting as any
-        this.map.set(value.topic as any, value);
-      }
-    });
-  }
-
-  private onInit() {
-    this.cached = [];
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    }
   }
 }

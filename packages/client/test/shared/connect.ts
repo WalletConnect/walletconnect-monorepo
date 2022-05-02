@@ -38,11 +38,11 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
     const uriParams = parseUri(uri);
 
-    pairingA = await A.pairing.get(uriParams.topic);
+    pairingA = A.pairing.get(uriParams.topic);
     expect(pairingA.topic).to.eql(uriParams.topic);
     expect(pairingA.relay).to.eql(uriParams.relay);
   } else {
-    pairingA = await A.pairing.get(connectParams.pairingTopic);
+    pairingA = A.pairing.get(connectParams.pairingTopic);
   }
 
   if (!pairingA) throw new Error("expect pairing A to be defined");

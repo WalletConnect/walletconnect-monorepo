@@ -25,7 +25,7 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl } from "@walletconnect/utils";
+import { formatRelayRpcUrl, ERROR } from "@walletconnect/utils";
 
 import {
   RELAYER_CONTEXT,
@@ -51,7 +51,9 @@ export class Relayer extends IRelayer {
   public messages: IMessageTracker;
   public subscriber: ISubscriber;
   public publisher: IPublisher;
-  public name: string = RELAYER_CONTEXT;
+  public name = RELAYER_CONTEXT;
+
+  private initialized = false;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -70,60 +72,57 @@ export class Relayer extends IRelayer {
     this.messages = new MessageTracker(this.logger, opts.core);
     this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);
-    this.registerEventListeners();
   }
 
-  get context(): string {
+  public async init() {
+    this.logger.trace(`Initialized`);
+    await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
+    this.registerEventListeners();
+    this.initialized = true;
+  }
+
+  get context() {
     return getLoggerContext(this.logger);
   }
 
-  get connected(): boolean {
+  get connected() {
     return this.provider.connection.connected;
   }
 
-  get connecting(): boolean {
+  get connecting() {
     return this.provider.connection.connecting;
   }
 
-  public async init(): Promise<void> {
-    this.logger.trace(`Initialized`);
-    await this.messages.init();
-    await this.provider.connect();
-    await this.subscriber.init();
-    await this.publisher.init();
-  }
-
-  public async publish(
-    topic: string,
-    message: string,
-    opts?: RelayerTypes.PublishOptions,
-  ): Promise<void> {
+  public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
+    this.isInitialized();
     await this.publisher.publish(topic, message, opts);
     await this.recordMessageEvent({ topic, message });
   }
 
-  public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string> {
+  public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
+    this.isInitialized();
     const id = await this.subscriber.subscribe(topic, opts);
     return id;
   }
 
-  public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void> {
+  public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
+    this.isInitialized();
     await this.subscriber.unsubscribe(topic, opts);
   }
 
-  public on(event: string, listener: any): void {
+  public on(event: string, listener: any) {
     this.events.on(event, listener);
   }
 
-  public once(event: string, listener: any): void {
+  public once(event: string, listener: any) {
     this.events.once(event, listener);
   }
 
-  public off(event: string, listener: any): void {
+  public off(event: string, listener: any) {
     this.events.off(event, listener);
   }
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener(event: string, listener: any) {
     this.events.removeListener(event, listener);
   }
 
@@ -134,10 +133,10 @@ export class Relayer extends IRelayer {
     await this.messages.set(topic, message);
   }
 
-  private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+  private shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
     if (!this.subscriber.topics.includes(topic)) return true;
-    const exists = await this.messages.has(topic, message);
+    const exists = this.messages.has(topic, message);
     return exists;
   }
 
@@ -158,7 +157,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
-    if (await this.shouldIgnoreMessageEvent(messageEvent)) return;
+    if (this.shouldIgnoreMessageEvent(messageEvent)) return;
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
     await this.recordMessageEvent(messageEvent);
   }
@@ -168,14 +167,14 @@ export class Relayer extends IRelayer {
     await this.provider.connection.send(response);
   }
 
-  private registerEventListeners(): void {
+  private registerEventListeners() {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
       this.onProviderPayload(payload),
     );
-    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
       this.events.emit(RELAYER_EVENTS.connect);
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, async () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       this.events.emit(RELAYER_EVENTS.disconnect);
       // Attempt reconnection after one second.
       setTimeout(() => {
@@ -185,5 +184,11 @@ export class Relayer extends IRelayer {
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
       this.events.emit(RELAYER_EVENTS.error, err),
     );
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    }
   }
 }

@@ -25,7 +25,7 @@ describe("Client", () => {
       await testConnectMethod(clients);
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
-      const { topic: pairingTopic } = await A.pairing.get(A.pairing.keys[0]);
+      const { topic: pairingTopic } = A.pairing.get(A.pairing.keys[0]);
       await testConnectMethod(clients, {
         pairingTopic,
         namespaces: [],
@@ -43,7 +43,7 @@ describe("Client", () => {
         } = await testConnectMethod(clients);
         const reason = ERROR.USER_DISCONNECTED.format();
         await clients.A.disconnect({ topic, reason });
-        await expect(clients.A.pairing.get(topic)).to.eventually.be.rejectedWith(
+        expect(() => clients.A.pairing.get(topic)).to.throw(
           `No matching pairing with topic: ${topic}`,
         );
         const promise = clients.A.ping({ topic });
@@ -60,7 +60,7 @@ describe("Client", () => {
         } = await testConnectMethod(clients);
         const reason = ERROR.USER_DISCONNECTED.format();
         await clients.A.disconnect({ topic, reason });
-        await expect(clients.A.session.get(topic)).to.eventually.be.rejectedWith(
+        expect(() => clients.A.session.get(topic)).to.throw(
           `No matching session with topic: ${topic}`,
         );
         const promise = clients.A.ping({ topic });
@@ -161,7 +161,7 @@ describe("Client", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const accountsBefore = (await clients.A.session.get(topic)).accounts;
+      const accountsBefore = clients.A.session.get(topic).accounts;
       const accountsAfter = [
         ...accountsBefore,
         "eip155:42:0x3c582121909DE92Dc89A36898633C1aE4790382b",
@@ -170,7 +170,7 @@ describe("Client", () => {
         topic,
         accounts: accountsAfter,
       });
-      const result = (await clients.A.session.get(topic)).accounts;
+      const result = clients.A.session.get(topic).accounts;
       expect(result).to.eql(accountsAfter);
     });
   });
@@ -181,7 +181,7 @@ describe("Client", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const namespacesBefore = (await clients.A.session.get(topic)).namespaces;
+      const namespacesBefore = clients.A.session.get(topic).namespaces;
       const namespacesAfter = [
         ...namespacesBefore,
         { chains: ["eip155:12"], methods: ["eth_sendTransaction"], events: ["accountsChanged"] },
@@ -190,7 +190,7 @@ describe("Client", () => {
         topic,
         namespaces: namespacesAfter,
       });
-      const result = (await clients.A.session.get(topic)).namespaces;
+      const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
     });
   });
@@ -201,13 +201,13 @@ describe("Client", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const expiryBefore = (await clients.A.session.get(topic)).expiry;
+      const expiryBefore = clients.A.session.get(topic).expiry;
       const expiryAfter = expiryBefore + 1000;
       await clients.A.updateExpiry({
         topic,
         expiry: expiryAfter,
       });
-      const result = (await clients.A.session.get(topic)).expiry;
+      const result = clients.A.session.get(topic).expiry;
       expect(result).to.eql(expiryAfter);
     });
   });

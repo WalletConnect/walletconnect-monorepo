@@ -43,17 +43,17 @@ export function deriveSymmetricKey(sharedKey: string) {
   return toString(symKey, BASE16);
 }
 
-export async function hashKey(key: string) {
+export function hashKey(key: string) {
   const result = hash(fromString(key, BASE16));
   return toString(result, BASE16);
 }
 
-export async function hashMessage(message: string) {
+export function hashMessage(message: string) {
   const result = hash(fromString(message, UTF8));
   return toString(result, BASE16);
 }
 
-export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string> {
+export function encrypt(params: CryptoTypes.EncryptParams) {
   const iv =
     typeof params.iv !== "undefined" ? fromString(params.iv, BASE16) : randomBytes(IV_LENGTH);
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
@@ -61,7 +61,7 @@ export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string
   return serialize({ sealed, iv });
 }
 
-export async function decrypt(params: CryptoTypes.DecryptParams): Promise<string> {
+export function decrypt(params: CryptoTypes.DecryptParams) {
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const { sealed, iv } = deserialize(params.encoded);
   const message = box.open(iv, sealed);

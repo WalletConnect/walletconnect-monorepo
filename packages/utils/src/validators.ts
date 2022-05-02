@@ -1,19 +1,5 @@
-import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { SessionTypes, ProposalTypes } from "@walletconnect/types";
 import { hasOverlap, isNamespaceEqual } from "./misc";
-
-declare namespace Validation {
-  export interface Valid {
-    valid: true;
-  }
-
-  export interface Invalid {
-    valid: false;
-    error: ErrorResponse;
-  }
-
-  export type Result = Valid | Invalid;
-}
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
   const results = [];
@@ -32,15 +18,7 @@ export function isSessionCompatible(session: SessionTypes.Struct, filters: Sessi
   return !results.includes(false);
 }
 
-export function isString(input: unknown): input is string {
-  return typeof input === "string";
-}
-
-export function isUndefined(input: unknown): input is undefined | null {
-  return typeof input !== "undefined" && input !== null;
-}
-
-export function isValidArray(arr: any, itemCondition?: (item: any) => boolean): boolean {
+export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
   if (Array.isArray(arr)) {
     if (typeof itemCondition !== "undefined" && arr.length) {
       const matches = arr.filter(itemCondition);
@@ -52,11 +30,11 @@ export function isValidArray(arr: any, itemCondition?: (item: any) => boolean): 
   return false;
 }
 
-export function isValidString(value: any): boolean {
+export function isValidString(value: any) {
   return typeof value === "string" && !!value.trim();
 }
 
-export function isValidChainId(value: any): boolean {
+export function isValidChainId(value: any) {
   if (isValidString(value) && value.includes(":")) {
     const split = value.split(":");
     return split.length === 2;
@@ -64,7 +42,7 @@ export function isValidChainId(value: any): boolean {
   return false;
 }
 
-export function isValidAccountId(value: any): boolean {
+export function isValidAccountId(value: any) {
   if (isValidString(value) && value.includes(":")) {
     const split = value.split(":");
     if (split.length === 3) {
@@ -75,7 +53,7 @@ export function isValidAccountId(value: any): boolean {
   return false;
 }
 
-export function isValidUrl(value: any): boolean {
+export function isValidUrl(value: any) {
   if (isValidString(value)) {
     try {
       const url = new URL(value);
@@ -85,26 +63,6 @@ export function isValidUrl(value: any): boolean {
     }
   }
   return false;
-}
-
-export function isValidationInvalid(
-  validation: Validation.Result,
-): validation is Validation.Invalid {
-  return (
-    "valid" in validation &&
-    validation.valid === false &&
-    "error" in validation &&
-    typeof validation.error.code === "number" &&
-    typeof validation.error.message === "string"
-  );
-}
-
-export function formatValidResult(): Validation.Valid {
-  return { valid: true };
-}
-
-export function formatInvalidResult(error: ErrorResponse): Validation.Invalid {
-  return { valid: false, error };
 }
 
 export function isProposalStruct(input: any): input is ProposalTypes.Struct {

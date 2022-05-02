@@ -17,9 +17,9 @@ export abstract class IMessageTracker {
 
   public abstract set(topic: string, message: string): Promise<string>;
 
-  public abstract get(topic: string): Promise<MessageRecord>;
+  public abstract get(topic: string): MessageRecord;
 
-  public abstract has(topic: string, message: string): Promise<boolean>;
+  public abstract has(topic: string, message: string): boolean;
 
   public abstract del(topic: string): Promise<void>;
 }

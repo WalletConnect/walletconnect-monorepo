@@ -10,9 +10,7 @@ import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
-
   public name = PUBLISHER_CONTEXT;
-
   public queue = new Map<string, PublisherTypes.Params>();
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -22,14 +20,9 @@ export class Publisher extends IPublisher {
     this.registerEventListeners();
   }
 
-  get context(): string {
+  get context() {
     return getLoggerContext(this.logger);
   }
-
-  public init: IPublisher["init"] = async () => {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
-  };
 
   public publish: IPublisher["publish"] = async (topic, message, opts) => {
     this.logger.debug(`Publishing Payload`);
@@ -39,10 +32,10 @@ export class Publisher extends IPublisher {
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
       const params = { topic, message, opts: { ttl, relay, prompt } };
-      const hash = await hashMessage(message);
+      const hash = hashMessage(message);
       this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
-      await this.onPublish(hash, params);
+      this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     } catch (e) {
@@ -70,17 +63,13 @@ export class Publisher extends IPublisher {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async initialize() {
-    // if needed
-  }
-
-  private async rpcPublish(
+  private rpcPublish(
     topic: string,
     message: string,
     ttl: number,
     relay: RelayerTypes.ProtocolOptions,
     prompt?: boolean,
-  ): Promise<void> {
+  ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
       method: api.publish,
@@ -99,27 +88,24 @@ export class Publisher extends IPublisher {
     return this.relayer.provider.request(request);
   }
 
-  private async onPublish(hash: string, _params: PublisherTypes.Params) {
-    // const { topic, message } = params;
-    // await this.relayer.recordPayloadEvent({ topic, message });
-
+  private onPublish(hash: string, _params: PublisherTypes.Params) {
     this.queue.delete(hash);
   }
 
-  private checkQueue(): void {
+  private checkQueue() {
     this.queue.forEach(async params => {
       const {
         topic,
         message,
         opts: { ttl, relay },
       } = params;
-      const hash = await hashMessage(message);
+      const hash = hashMessage(message);
       await this.rpcPublish(topic, message, ttl, relay);
-      await this.onPublish(hash, params);
+      this.onPublish(hash, params);
     });
   }
 
-  private registerEventListeners(): void {
+  private registerEventListeners() {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkQueue();
     });

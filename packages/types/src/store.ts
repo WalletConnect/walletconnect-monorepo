@@ -25,7 +25,7 @@ export abstract class IStore<Key, Value> {
 
   public abstract set(key: Key, value: Value): Promise<void>;
 
-  public abstract get(key: Key): Promise<Value>;
+  public abstract get(key: Key): Value;
 
   public abstract update(key: Key, update: Partial<Value>): Promise<void>;
 
