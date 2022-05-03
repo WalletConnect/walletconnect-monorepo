@@ -31,6 +31,8 @@ import {
   isValidNamespaces,
   isValidRelays,
   isValidUrl,
+  isValidId,
+  isValidParams,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -106,7 +108,7 @@ export class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async params => {
-    // TODO(ilja) validation
+    this.isValidApprove(params);
     const { id, relayProtocol, accounts, namespaces } = params;
     const { pairingTopic, proposer } = this.client.proposal.get(id);
 
@@ -774,20 +776,26 @@ export class Engine extends IEngine {
 
   // ---------- Validation ---------------------------------------------- //
   private isValidConnect: EnginePrivate["isValidConnect"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "connect params" });
+
     const { pairingTopic, namespaces, relays } = params;
 
     if (pairingTopic && (!pairingTopic.length || !this.client.pairing.get(pairingTopic)))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
-
     if (!isValidNamespaces(namespaces, true))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "namespaces" });
-
-    if (!isValidRelays(relays, true)) throw ERROR.MISSING_OR_INVALID.format({ name: "relays" });
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect namespaces" });
+    if (!isValidRelays(relays, true))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect relays" });
   };
 
   private isValidPair: EnginePrivate["isValidPair"] = params => {
-    if (!isValidUrl(params?.uri)) {
-      throw ERROR.MISSING_OR_INVALID.format({ name: "uri" });
-    }
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "pair params" });
+    if (!isValidUrl(params.uri)) throw ERROR.MISSING_OR_INVALID.format({ name: "pair uri" });
+  };
+
+  private isValidApprove: EnginePrivate["isValidApprove"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve params" });
+    const { id } = params;
+    if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve id" });
   };
 }

@@ -10,7 +10,7 @@ import {
   deleteClients,
 } from "./shared";
 
-describe("Client", () => {
+describe("Client Integration", () => {
   it("init", async () => {
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     expect(client).to.be.exist;
@@ -32,35 +32,6 @@ describe("Client", () => {
         pairingTopic,
       });
       deleteClients(clients);
-    });
-    it("throws when invalid pairingTopic is provided", async () => {
-      const clients = await initTwoClients();
-      const promise = testConnectMethod(clients, { pairingTopic: "123" });
-      await expect(promise).to.eventually.be.rejectedWith("No matching pairing with topic: 123");
-      deleteClients(clients);
-    });
-    it("throws when invalid or empty namespaces are provided", async () => {
-      const clients = await initTwoClients();
-      const promise1 = testConnectMethod(clients, { namespaces: [] });
-      await expect(promise1).to.eventually.be.rejectedWith("Missing or invalid namespaces");
-      // @ts-ignore
-      const promise2 = testConnectMethod(clients, { namespaces: {} });
-      await expect(promise2).to.eventually.be.rejectedWith("Missing or invalid namespaces");
-      deleteClients(clients);
-    });
-  });
-
-  describe("pair", () => {
-    it("throws when no or invalid uri is provided", async () => {
-      const client = await Client.init(TEST_CLIENT_OPTIONS);
-      // @ts-expect-error
-      const promise1 = client.pair();
-      await expect(promise1).to.eventually.be.rejectedWith("Missing or invalid uri");
-      const promise2 = client.pair({ uri: "" });
-      await expect(promise2).to.eventually.be.rejectedWith("Missing or invalid uri");
-      // @ts-expect-error
-      const promise3 = client.pair({ uri: 123 });
-      await expect(promise3).to.eventually.be.rejectedWith("Missing or invalid uri");
     });
   });
 

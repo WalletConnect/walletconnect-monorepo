@@ -113,3 +113,11 @@ export function isValidRelays(
 
   return valid;
 }
+
+export function isValidId(input: any) {
+  return typeof input === "number";
+}
+
+export function isValidParams(input: any) {
+  return typeof input !== "undefined" && typeof input !== null;
+}
