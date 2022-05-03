@@ -1,4 +1,4 @@
-import { SessionTypes, ProposalTypes } from "@walletconnect/types";
+import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
 import { hasOverlap, isNamespaceEqual } from "./misc";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
@@ -71,4 +71,45 @@ export function isProposalStruct(input: any): input is ProposalTypes.Struct {
 
 export function isSessionStruct(input: any): input is SessionTypes.Struct {
   return input?.topic;
+}
+
+export function isValidNamespace(input: any): input is SessionTypes.Namespace {
+  const { methods, events, chains } = input;
+  return isValidArray(methods) && isValidArray(events) && isValidArray(chains);
+}
+
+export function isValidRelay(input: any): input is RelayerTypes.ProtocolOptions {
+  return input.length && isValidString(input.protocol);
+}
+
+export function isValidNamespaces(
+  input: any,
+  optional: boolean,
+): input is SessionTypes.Namespace[] {
+  let valid = false;
+
+  if (optional && !input) valid = true;
+  else if (input && isValidArray(input) && input.length) {
+    input.forEach((namespace: SessionTypes.Namespace) => {
+      valid = isValidNamespace(namespace);
+    });
+  }
+
+  return valid;
+}
+
+export function isValidRelays(
+  input: any,
+  optional: boolean,
+): input is RelayerTypes.ProtocolOptions[] {
+  let valid = false;
+
+  if (optional && !input) valid = true;
+  else if (input && isValidArray(input) && input.length) {
+    input.forEach((namespace: SessionTypes.Namespace) => {
+      valid = isValidRelay(namespace);
+    });
+  }
+
+  return valid;
 }

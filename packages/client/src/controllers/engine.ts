@@ -19,6 +19,7 @@ import {
   SessionTypes,
   JsonRpcTypes,
   ExpirerTypes,
+  EngineTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -28,6 +29,8 @@ import {
   createDelayedPromise,
   ERROR,
   engineEvent,
+  isValidNamespaces,
+  isValidRelays,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -43,7 +46,7 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async params => {
-    // TODO(ilja) validation
+    this.isValidConnect(params);
     const { pairingTopic, namespaces, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
@@ -767,5 +770,18 @@ export class Engine extends IEngine {
         this.client.events.emit("pairing_delete", { topic });
       }
     });
+  }
+
+  // ---------- Validation ---------------------------------------------- //
+  private isValidConnect(params: EngineTypes.ConnectParams) {
+    const { pairingTopic, namespaces, relays } = params;
+
+    if (pairingTopic && (!pairingTopic.length || !this.client.pairing.get(pairingTopic)))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
+
+    if (!isValidNamespaces(namespaces, true))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "namespaces" });
+
+    if (!isValidRelays(relays, true)) throw ERROR.MISSING_OR_INVALID.format({ name: "relays" });
   }
 }

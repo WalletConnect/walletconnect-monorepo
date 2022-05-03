@@ -28,9 +28,22 @@ describe("Client", () => {
       const { topic: pairingTopic } = A.pairing.get(A.pairing.keys[0]);
       await testConnectMethod(clients, {
         pairingTopic,
-        namespaces: [],
-        accounts: [],
       });
+    });
+    it("throws when invalid pairingTopic is provided", async () => {
+      const clients = await initTwoClients();
+      const promise = testConnectMethod(clients, { pairingTopic: "invalid" });
+      await expect(promise).to.eventually.be.rejectedWith(
+        "No matching pairing with topic: invalid",
+      );
+    });
+    it("throws when invalid or empty namespaces are provided", async () => {
+      const clients = await initTwoClients();
+      const promise1 = testConnectMethod(clients, { namespaces: [] });
+      await expect(promise1).to.eventually.be.rejectedWith("Missing or invalid namespaces");
+      // @ts-ignore
+      const promise2 = testConnectMethod(clients, { namespaces: {} });
+      await expect(promise2).to.eventually.be.rejectedWith("Missing or invalid namespaces");
     });
   });
 
