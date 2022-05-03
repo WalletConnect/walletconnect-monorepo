@@ -50,6 +50,20 @@ describe("Client", () => {
     });
   });
 
+  describe("pair", () => {
+    it("throws when no or invalid uri is provided", async () => {
+      const client = await Client.init(TEST_CLIENT_OPTIONS);
+      // @ts-expect-error
+      const promise1 = client.pair();
+      await expect(promise1).to.eventually.be.rejectedWith("Missing or invalid uri");
+      const promise2 = client.pair({ uri: "" });
+      await expect(promise2).to.eventually.be.rejectedWith("Missing or invalid uri");
+      // @ts-expect-error
+      const promise3 = client.pair({ uri: 123 });
+      await expect(promise3).to.eventually.be.rejectedWith("Missing or invalid uri");
+    });
+  });
+
   describe("disconnect", () => {
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {

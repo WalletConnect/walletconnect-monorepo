@@ -19,7 +19,6 @@ import {
   SessionTypes,
   JsonRpcTypes,
   ExpirerTypes,
-  EngineTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -31,6 +30,7 @@ import {
   engineEvent,
   isValidNamespaces,
   isValidRelays,
+  isValidUrl,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -93,7 +93,7 @@ export class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async params => {
-    // TODO(ilja) validation
+    this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
@@ -773,7 +773,7 @@ export class Engine extends IEngine {
   }
 
   // ---------- Validation ---------------------------------------------- //
-  private isValidConnect(params: EngineTypes.ConnectParams) {
+  private isValidConnect: EnginePrivate["isValidConnect"] = params => {
     const { pairingTopic, namespaces, relays } = params;
 
     if (pairingTopic && (!pairingTopic.length || !this.client.pairing.get(pairingTopic)))
@@ -783,5 +783,11 @@ export class Engine extends IEngine {
       throw ERROR.MISSING_OR_INVALID.format({ name: "namespaces" });
 
     if (!isValidRelays(relays, true)) throw ERROR.MISSING_OR_INVALID.format({ name: "relays" });
-  }
+  };
+
+  private isValidPair: EnginePrivate["isValidPair"] = params => {
+    if (!isValidUrl(params?.uri)) {
+      throw ERROR.MISSING_OR_INVALID.format({ name: "uri" });
+    }
+  };
 }

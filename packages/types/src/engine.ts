@@ -270,6 +270,11 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionEvent"]>,
   ): void;
+
+  // -- Validators ---------------------------------------------------- //
+  isValidConnect(params: EngineTypes.ConnectParams): void;
+
+  isValidPair(params: EngineTypes.PairParams): void;
 }
 
 // -- class interface ----------------------------------------------- //
