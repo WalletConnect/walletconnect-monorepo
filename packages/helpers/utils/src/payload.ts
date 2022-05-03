@@ -29,8 +29,9 @@ export function promisify(
 
 export function formatRpcError(
   error: Partial<IJsonRpcErrorMessage>,
-): { code: number; message: string } {
+): { code: number; message: string; data?: any } {
   const message = error.message || "Failed or Rejected Request";
+  const data = error.data;
   let code = -32000;
   if (error && !error.code) {
     switch (message) {
@@ -57,6 +58,7 @@ export function formatRpcError(
   const result = {
     code,
     message,
+    data,
   };
   return result;
 }

@@ -145,6 +145,7 @@ declare module "@walletconnect/types" {
 
   export interface IJsonRpcErrorMessage {
     code?: number;
+    data?: any;
     message: string;
   }
 
