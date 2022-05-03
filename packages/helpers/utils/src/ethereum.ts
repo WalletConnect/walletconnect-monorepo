@@ -65,7 +65,7 @@ export function parseTransactionData(txData: Partial<ITxData>): Partial<ITxData>
 
   const txDataRPC = {
     from: sanitizeHex(txData.from),
-    to: typeof txData.to === "undefined" ? "" : sanitizeHex(txData.to),
+    to: typeof txData.to === "undefined" ? undefined : sanitizeHex(txData.to),
     gasPrice: typeof txData.gasPrice === "undefined" ? "" : parseHexValues(txData.gasPrice),
     gas:
       typeof txData.gas === "undefined"
@@ -80,7 +80,11 @@ export function parseTransactionData(txData: Partial<ITxData>): Partial<ITxData>
 
   const prunable = ["gasPrice", "gas", "value", "nonce"];
   Object.keys(txDataRPC).forEach((key: string) => {
-    if (!txDataRPC[key].trim().length && prunable.includes(key)) {
+    if (
+      (typeof txDataRPC[key] === "undefined" ||
+        (typeof txDataRPC[key] === "string" && !txDataRPC[key].trim().length)) &&
+      prunable.includes(key)
+    ) {
       delete txDataRPC[key];
     }
   });

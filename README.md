@@ -49,4 +49,4 @@ All contributions are welcome! Feel free to create an Issue or make a PR in this
 
 ## License
 
-LGPL-3.0
+Apache 2.0

@@ -72,7 +72,8 @@ function Modal(props: ModalProps) {
             props.qrcodeModalOptions && props.qrcodeModalOptions.registryUrl
               ? props.qrcodeModalOptions.registryUrl
               : getWalletRegistryUrl();
-          const registry = (await fetch(url).then(x => x.json())) as IAppRegistry;
+          const registryResponse = await fetch(url)
+          const registry = (await registryResponse.json()).listings as IAppRegistry;
           const platform = mobile ? "mobile" : "desktop";
           const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
           setLoading(false);

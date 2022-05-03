@@ -12,7 +12,7 @@ import {
 
 import { WalletClient } from "./shared";
 
-import WalletConnectProvider from "../src";
+import EthereumProvider from "../src";
 
 const CHAIN_ID = 123;
 const PORT = 8547;
@@ -57,10 +57,10 @@ const TEST_ETH_TRANSFER = {
   data: "0x",
 };
 
-describe("WalletConnectProvider", function() {
+describe("EthereumProvider", function() {
   this.timeout(30_000);
   let testNetwork: TestNetwork;
-  let provider: WalletConnectProvider;
+  let provider: EthereumProvider;
   let walletClient: WalletClient;
   let walletAddress: string;
   let receiverAddress: string;
@@ -70,7 +70,7 @@ describe("WalletConnectProvider", function() {
       port: PORT,
       genesisAccounts: [ACCOUNTS.a, ACCOUNTS.b],
     });
-    provider = new WalletConnectProvider(TEST_PROVIDER_OPTS);
+    provider = new EthereumProvider(TEST_PROVIDER_OPTS);
     walletClient = new WalletClient(provider, TEST_WALLET_CLIENT_OPTS);
     walletAddress = walletClient.signer.address;
     receiverAddress = ACCOUNTS.b.address;
@@ -262,6 +262,22 @@ describe("WalletConnectProvider", function() {
       const signature = await web3.eth.sign(msg, walletAddress);
       const verify = utils.verifyMessage(msg, signature);
       expect(verify).eq(walletAddress);
+    });
+    it("sign transaction and send via sendAsync", async () => {
+      const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
+      const signedTx = await web3.eth.signTransaction(TEST_ETH_TRANSFER);
+      const callback = async (error, result) => {
+        expect(!!result).to.be.true;
+        const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
+        expect(balanceAfter.lt(balanceBefore)).to.be.true;
+      };
+      provider.sendAsync(
+        {
+          method: "eth_sendRawTransaction",
+          params: [signedTx],
+        },
+        callback,
+      );
     });
   });
   describe("Ethers", () => {
