@@ -11,16 +11,10 @@ import {
   KEYCHAIN_STORAGE_VERSION,
 } from "../src";
 import { expect, TEST_CORE_OPTIONS } from "./shared";
-import { ICore } from "@walletconnect/types";
 
 describe("Keychain", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
-
-  let core: ICore;
-
-  beforeEach(() => {
-    core = new Core(TEST_CORE_OPTIONS);
-  });
+  const core = new Core(TEST_CORE_OPTIONS);
 
   it("provides the expected `storageKey` format", () => {
     const keychain = new KeyChain(core, logger);
