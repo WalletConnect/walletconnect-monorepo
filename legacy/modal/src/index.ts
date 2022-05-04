@@ -6,7 +6,8 @@ import * as browserLib from "./browser";
 const isNode = () =>
   typeof process !== "undefined" &&
   typeof process.versions !== "undefined" &&
-  typeof process.versions.node !== "undefined";
+  typeof process.versions.node !== "undefined" &&
+  typeof process.versions.electron === "undefined";
 
 function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
   // eslint-disable-next-line no-console
