@@ -293,18 +293,32 @@ describe("Client Validation", () => {
     });
 
     it("throws when invalid accounts are provided", async () => {
+      await expect(client.updateAccounts({ topic, accounts: [123] })).to.eventually.be.rejectedWith(
+        "Missing or invalid updateAccounts accounts",
+      );
       await expect(
-        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic, accounts: [123] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
-      await expect(
-        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic, accounts: ["123"] }),
+        client.updateAccounts({ topic, accounts: ["123"] }),
       ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
     });
 
     it("throws when no accounts are provided", async () => {
       await expect(
-        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic, accounts: undefined }),
+        client.updateAccounts({ topic, accounts: undefined }),
       ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
+    });
+
+    it("throws when provided accounts are not in session namespace", async () => {
+      await expect(
+        client.updateAccounts({
+          topic,
+          accounts: [
+            "eip155:42:0x3c582121909DE92Dc89A36898633C1aE4790382b",
+            "eip155:10:0x3c582121909DE92Dc89A36898633C1aE4790382b",
+          ],
+        }),
+      ).to.eventually.be.rejectedWith(
+        "Invalid accounts with mismatched chains: eip155:42,eip155:10",
+      );
     });
   });
 });

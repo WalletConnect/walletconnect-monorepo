@@ -834,7 +834,10 @@ export class Engine extends IEngine {
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
     if (!isValidAccounts(accounts, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts accounts" });
-    if (!areAccountsInNamespaces(accounts, this.client.session.get(topic).namespaces))
-      throw ERROR.MISMATCHED_ACCOUNTS.format({ name: "updateAccounts topic" });
+    const { valid, mismatched } = areAccountsInNamespaces(
+      accounts,
+      this.client.session.get(topic).namespaces,
+    );
+    if (!valid) throw ERROR.MISMATCHED_ACCOUNTS.format({ mismatched });
   };
 }

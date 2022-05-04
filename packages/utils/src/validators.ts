@@ -166,6 +166,18 @@ export function areAccountsInNamespaces(
 ) {
   const accountChains = getChains(accounts);
   const namespacesChains = getNamespacesChains(namespaces);
+  const mismatched: string[] = [];
+  let valid = true;
 
-  return accountChains.every(chain => namespacesChains.includes(chain));
+  accountChains.forEach(chain => {
+    if (!namespacesChains.includes(chain)) {
+      mismatched.push(chain);
+      valid = false;
+    }
+  });
+
+  return {
+    valid,
+    mismatched,
+  };
 }
