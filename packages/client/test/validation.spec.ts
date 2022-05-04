@@ -9,15 +9,14 @@ import {
 } from "./shared";
 import Client from "../src";
 
-describe("Client Validation", () => {
-  let client: Client;
-  let pairingTopic: string;
+let client: Client;
+let pairingTopic: string;
 
+describe("Client Validation", () => {
   before(async () => {
     const clients = await initTwoClients();
     await testConnectMethod(clients);
-    const { A } = clients;
-    client = A;
+    client = clients.A;
     pairingTopic = client.pairing.keys[0];
   });
 
@@ -37,43 +36,45 @@ describe("Client Validation", () => {
     it("throws when empty namespaces are provided", async () => {
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, namespaces: [] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid namespaces");
+      ).to.eventually.be.rejectedWith("Missing or invalid connect namespaces");
     });
 
     it("throws when invalid namespaces are provided", async () => {
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, namespaces: {} }),
-      ).to.eventually.be.rejectedWith("Missing or invalid namespaces");
+      ).to.eventually.be.rejectedWith("Missing or invalid connect namespaces");
     });
   });
 
   describe("pair", () => {
     it("throws when undefined params are passed", async () => {
-      await expect(client.pair()).to.eventually.be.rejectedWith("Missing or invalid uri");
+      await expect(client.pair()).to.eventually.be.rejectedWith("Missing or invalid pair params");
     });
 
     it("throws when empty uri is provided", async () => {
       await expect(client.pair({ uri: "" })).to.eventually.be.rejectedWith(
-        "Missing or invalid uri",
+        "Missing or invalid pair uri",
       );
     });
 
     it("throws when invalid uri is provided", async () => {
       await expect(client.pair({ uri: 123 })).to.eventually.be.rejectedWith(
-        "Missing or invalid uri",
+        "Missing or invalid pair uri",
       );
     });
   });
 
   describe("approve", () => {
     it("throws when undefined params are passed", async () => {
-      await expect(client.approve()).to.eventually.be.rejectedWith("Missing or invalid uri");
+      await expect(client.approve()).to.eventually.be.rejectedWith(
+        "Missing or invalid approve params",
+      );
     });
 
     it("throws when invalid id is provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: "123" }),
-      ).to.eventually.be.rejectedWith("balegdeh");
+      ).to.eventually.be.rejectedWith("Missing or invalid approve id");
     });
   });
 });
