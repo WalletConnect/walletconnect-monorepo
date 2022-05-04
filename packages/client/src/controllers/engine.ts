@@ -176,7 +176,7 @@ export class Engine extends IEngine {
     this.isValidReject(params);
     const { id, reason } = params;
     const { pairingTopic } = this.client.proposal.get(id);
-    if (pairingTopic && id) {
+    if (pairingTopic) {
       await this.sendError(id, pairingTopic, reason);
       await this.client.proposal.delete(id, ERROR.DELETED.format());
     }
