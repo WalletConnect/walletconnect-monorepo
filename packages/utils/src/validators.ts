@@ -2,6 +2,8 @@ import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types"
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 
 import { hasOverlap, isNamespaceEqual } from "./misc";
+import { getChains } from "./caip";
+import { getNamespacesChains } from "./namespaces";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
   const results = [];
@@ -92,10 +94,6 @@ export function isValidNamespace(input: any): input is SessionTypes.Namespace {
   return isValidArray(methods) && isValidArray(events) && isValidArray(chains);
 }
 
-export function isValidRelay(input: any): input is RelayerTypes.ProtocolOptions {
-  return isValidString(input.protocol, true);
-}
-
 export function isValidNamespaces(
   input: any,
   optional: boolean,
@@ -110,6 +108,10 @@ export function isValidNamespaces(
   }
 
   return valid;
+}
+
+export function isValidRelay(input: any): input is RelayerTypes.ProtocolOptions {
+  return isValidString(input.protocol, true);
 }
 
 export function isValidRelays(
@@ -156,4 +158,14 @@ export function isValidErrorReason(input: any): input is ErrorResponse {
   if (!input.message || !isValidString(input.message, false)) return false;
 
   return true;
+}
+
+export function areAccountsInNamespaces(
+  accounts: SessionTypes.Accounts,
+  namespaces: SessionTypes.Namespace[],
+) {
+  const accountChains = getChains(accounts);
+  const namespacesChains = getNamespacesChains(namespaces);
+
+  return accountChains.every(chain => namespacesChains.includes(chain));
 }

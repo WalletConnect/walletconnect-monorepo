@@ -56,11 +56,11 @@ export const TEST_CLIENT_OPTIONS_B = {
   metadata: TEST_APP_METADATA_B,
 };
 
-export const TEST_ETHEREUM_CHAIN_ID = 1;
+export const TEST_ETHEREUM_CHAIN = "eip155:1";
+export const TEST_ARBITRUM_CHAIN = "eip155:42161";
+export const TEST_AVALANCHE_CHAIN = "eip155:43114";
 
-export const TEST_ETHEREUM_CHAIN = `eip155:${TEST_ETHEREUM_CHAIN_ID}`;
-
-export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN];
+export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN, TEST_ARBITRUM_CHAIN, TEST_AVALANCHE_CHAIN];
 export const TEST_METHODS = [
   "eth_sendTransaction",
   "eth_signTransaction",
@@ -110,6 +110,10 @@ export const TEST_REJECT_PARAMS = {
     code: 0,
     message: "GENERIC",
   },
+};
+
+export const TEST_UPDATE_ACCOUNTS_PARAMS = {
+  accounts: TEST_ACCOUNTS,
 };
 
 // export const TEST_TIMEOUT_SHORT = CLIENT_SHORT_TIMEOUT;

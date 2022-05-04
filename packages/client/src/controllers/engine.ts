@@ -36,6 +36,7 @@ import {
   isValidAccounts,
   isValidString,
   isValidErrorReason,
+  areAccountsInNamespaces,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -182,7 +183,7 @@ export class Engine extends IEngine {
   };
 
   public updateAccounts: IEngine["updateAccounts"] = async params => {
-    // TODO(ilja) validation
+    this.isValidUpdateAccounts(params);
     const { topic, accounts } = params;
     const id = await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
     const { done, resolve, reject } = createDelayedPromise<void>();
@@ -191,7 +192,6 @@ export class Engine extends IEngine {
       else resolve();
     });
     await done();
-
     await this.client.session.update(topic, { accounts });
   };
 
@@ -783,7 +783,9 @@ export class Engine extends IEngine {
 
     const { pairingTopic, namespaces, relays } = params;
 
-    if (pairingTopic && (!pairingTopic.length || !this.client.pairing.get(pairingTopic)))
+    if (!isValidString(pairingTopic, true))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect pairingTopic" });
+    if (pairingTopic && !this.client.pairing.get(pairingTopic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
     if (!isValidNamespaces(namespaces, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect namespaces" });
@@ -798,7 +800,9 @@ export class Engine extends IEngine {
 
   private isValidApprove: EnginePrivate["isValidApprove"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve params" });
+
     const { id, namespaces, accounts, relayProtocol } = params;
+
     if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve id" });
     if (!isValidNamespaces(namespaces, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "approve namespaces" });
@@ -810,9 +814,27 @@ export class Engine extends IEngine {
 
   private isValidReject: EnginePrivate["isValidReject"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject params" });
+
     const { id, reason } = params;
+
     if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject id" });
     if (!isValidErrorReason(reason))
       throw ERROR.MISSING_OR_INVALID.format({ name: "reject reason" });
+  };
+
+  private isValidUpdateAccounts: EnginePrivate["isValidUpdateAccounts"] = params => {
+    if (!isValidParams(params))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts params" });
+
+    const { topic, accounts } = params;
+
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts topic" });
+    if (!this.client.session.get(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    if (!isValidAccounts(accounts, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts accounts" });
+    if (!areAccountsInNamespaces(accounts, this.client.session.get(topic).namespaces))
+      throw ERROR.MISMATCHED_ACCOUNTS.format({ name: "updateAccounts topic" });
   };
 }

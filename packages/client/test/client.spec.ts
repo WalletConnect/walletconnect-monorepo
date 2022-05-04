@@ -172,7 +172,7 @@ describe("Client Integration", () => {
       const accountsBefore = clients.A.session.get(topic).accounts;
       const accountsAfter = [
         ...accountsBefore,
-        "eip155:42:0x3c582121909DE92Dc89A36898633C1aE4790382b",
+        "eip155:43114:0x3c582121909DE92Dc89A36898633C1aE4790382b",
       ];
       await clients.A.updateAccounts({
         topic,

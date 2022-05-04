@@ -7,11 +7,13 @@ import {
   TEST_APPROVE_PARAMS,
   TEST_CONNECT_PARAMS,
   TEST_REJECT_PARAMS,
+  TEST_UPDATE_ACCOUNTS_PARAMS,
 } from "./shared";
 import Client from "../src";
 
 let client: Client;
 let pairingTopic: string;
+let topic: string;
 
 describe("Client Validation", () => {
   before(async () => {
@@ -19,6 +21,7 @@ describe("Client Validation", () => {
     await testConnectMethod(clients);
     client = clients.A;
     pairingTopic = client.pairing.keys[0];
+    topic = client.session.keys[0];
   });
 
   describe("connect", () => {
@@ -26,6 +29,18 @@ describe("Client Validation", () => {
       await expect(client.connect()).to.eventually.be.rejectedWith(
         "Missing or invalid connect params",
       );
+    });
+
+    it("throws when invalid pairingTopic is provided", async () => {
+      await expect(
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect pairingTopic");
+    });
+
+    it("throws when empty pairingTopic is provided", async () => {
+      await expect(
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect pairingTopic");
     });
 
     it("throws when non existant pairingTopic is provided", async () => {
@@ -63,6 +78,12 @@ describe("Client Validation", () => {
         "Missing or invalid pair uri",
       );
     });
+
+    it("throws when no uri is provided", async () => {
+      await expect(client.pair({ uri: undefined })).to.eventually.be.rejectedWith(
+        "Missing or invalid pair uri",
+      );
+    });
   });
 
   describe("approve", () => {
@@ -84,6 +105,12 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith("Missing or invalid approve id");
     });
 
+    it("throws when no id is provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, id: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve id");
+    });
+
     it("throws when invalid accounts are provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, accounts: [123] }),
@@ -99,6 +126,12 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
     });
 
+    it("throws when no accounts are provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, accounts: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
+    });
+
     it("throws when invalid namespaces are provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, namespaces: {} }),
@@ -108,6 +141,12 @@ describe("Client Validation", () => {
     it("throws when empty namespaces are provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, namespaces: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+    });
+
+    it("throws when no namespaces are provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: undefined }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
     });
 
@@ -143,6 +182,12 @@ describe("Client Validation", () => {
       );
     });
 
+    it("throws when no id is provided", async () => {
+      await expect(
+        client.reject({ ...TEST_REJECT_PARAMS, id: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject id");
+    });
+
     it("throws when empty reason is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, reason: {} }),
@@ -152,6 +197,12 @@ describe("Client Validation", () => {
     it("throws when invalid reason is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, reason: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
+    it("throws when no reason is provided", async () => {
+      await expect(
+        client.reject({ ...TEST_REJECT_PARAMS, reason: undefined }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
     });
 
@@ -173,6 +224,15 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
     });
 
+    it("throws when no reason code is provided", async () => {
+      await expect(
+        client.reject({
+          ...TEST_REJECT_PARAMS,
+          reason: { ...TEST_REJECT_PARAMS.reason, code: undefined },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
     it("throws when invalid reason message is provided", async () => {
       await expect(
         client.reject({
@@ -189,6 +249,62 @@ describe("Client Validation", () => {
           reason: { ...TEST_REJECT_PARAMS.reason, message: "" },
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
+    it("throws when no reason message is provided", async () => {
+      await expect(
+        client.reject({
+          ...TEST_REJECT_PARAMS,
+          reason: { ...TEST_REJECT_PARAMS.reason, message: undefined },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+  });
+
+  describe("updateAccounts", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.updateAccounts()).to.eventually.be.rejectedWith(
+        "Missing or invalid updateAccounts params",
+      );
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(
+        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts topic");
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(
+        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts topic");
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(
+        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts topic");
+    });
+
+    it("throws when non existant topic is provided", async () => {
+      await expect(
+        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: "none" }),
+      ).to.eventually.be.rejectedWith("No matching session with topic: none");
+    });
+
+    it("throws when invalid accounts are provided", async () => {
+      await expect(
+        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic, accounts: [123] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
+      await expect(
+        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic, accounts: ["123"] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
+    });
+
+    it("throws when no accounts are provided", async () => {
+      await expect(
+        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic, accounts: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
     });
   });
 });
