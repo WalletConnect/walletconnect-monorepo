@@ -8,6 +8,7 @@ import {
   TEST_CONNECT_PARAMS,
   TEST_REJECT_PARAMS,
   TEST_UPDATE_ACCOUNTS_PARAMS,
+  TEST_UPDATE_EXPIRY_PARAMS,
 } from "./shared";
 import Client from "../src";
 
@@ -319,6 +320,42 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith(
         "Invalid accounts with mismatched chains: eip155:42,eip155:10",
       );
+    });
+  });
+
+  describe("updateNamespaces", () => {
+    // TODO
+  });
+
+  describe("updateExpiry", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.updateExpiry()).to.eventually.be.rejectedWith(
+        "Missing or invalid updateExpiry params",
+      );
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(
+        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateExpiry topic");
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(
+        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateExpiry topic");
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(
+        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateExpiry topic");
+    });
+
+    it("throws when non existant topic is provided", async () => {
+      await expect(
+        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "none" }),
+      ).to.eventually.be.rejectedWith("No matching session with topic: none");
     });
   });
 });

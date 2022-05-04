@@ -281,6 +281,8 @@ export interface EnginePrivate {
   isValidReject(params: EngineTypes.RejectParams): void;
 
   isValidUpdateAccounts(params: EngineTypes.UpdateAccountsParams): void;
+
+  isValidUpdateExpiry(params: EngineTypes.UpdateExpiryParams): void;
 }
 
 // -- class interface ----------------------------------------------- //

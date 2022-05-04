@@ -209,7 +209,7 @@ export class Engine extends IEngine {
   };
 
   public updateExpiry: IEngine["updateExpiry"] = async params => {
-    // TODO(ilja) validate
+    this.isValidUpdateExpiry(params);
     const { topic, expiry } = params;
     const id = await this.sendRequest(topic, "wc_sessionUpdateExpiry", { expiry });
     const { done, resolve, reject } = createDelayedPromise<void>();
@@ -839,5 +839,17 @@ export class Engine extends IEngine {
       this.client.session.get(topic).namespaces,
     );
     if (!valid) throw ERROR.MISMATCHED_ACCOUNTS.format({ mismatched });
+  };
+
+  private isValidUpdateExpiry: EnginePrivate["isValidUpdateExpiry"] = params => {
+    if (!isValidParams(params))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateExpiry params" });
+
+    const { topic, expiry } = params;
+
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateExpiry topic" });
+    if (!this.client.session.get(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
   };
 }

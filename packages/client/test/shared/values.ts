@@ -1,5 +1,7 @@
 import path from "path";
 import { ClientTypes, RelayerTypes } from "@walletconnect/types";
+import { calcExpiry } from "@walletconnect/utils";
+import { FIVE_MINUTES } from "@walletconnect/time";
 
 // @ts-ignore
 import { ROOT_DIR } from "../../../../ops/js/shared";
@@ -114,6 +116,10 @@ export const TEST_REJECT_PARAMS = {
 
 export const TEST_UPDATE_ACCOUNTS_PARAMS = {
   accounts: TEST_ACCOUNTS,
+};
+
+export const TEST_UPDATE_EXPIRY_PARAMS = {
+  expiry: calcExpiry(FIVE_MINUTES),
 };
 
 // export const TEST_TIMEOUT_SHORT = CLIENT_SHORT_TIMEOUT;
