@@ -6,6 +6,7 @@ import {
   testConnectMethod,
   TEST_APPROVE_PARAMS,
   TEST_CONNECT_PARAMS,
+  TEST_REJECT_PARAMS,
 } from "./shared";
 import Client from "../src";
 
@@ -120,6 +121,74 @@ describe("Client Validation", () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, relayProtocol: "" }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve relayProtocol");
+    });
+  });
+
+  describe("reject", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.reject()).to.eventually.be.rejectedWith(
+        "Missing or invalid reject params",
+      );
+    });
+
+    it("throws when invalid id is provided", async () => {
+      await expect(
+        client.reject({ ...TEST_REJECT_PARAMS, id: "123" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject id");
+    });
+
+    it("throws when empty id is provided", async () => {
+      await expect(client.reject({ ...TEST_REJECT_PARAMS, id: "" })).to.eventually.be.rejectedWith(
+        "Missing or invalid reject id",
+      );
+    });
+
+    it("throws when empty reason is provided", async () => {
+      await expect(
+        client.reject({ ...TEST_REJECT_PARAMS, reason: {} }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
+    it("throws when invalid reason is provided", async () => {
+      await expect(
+        client.reject({ ...TEST_REJECT_PARAMS, reason: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
+    it("throws when invalid reason code is provided", async () => {
+      await expect(
+        client.reject({
+          ...TEST_REJECT_PARAMS,
+          reason: { ...TEST_REJECT_PARAMS.reason, code: "1" },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
+    it("throws when empty reason code is provided", async () => {
+      await expect(
+        client.reject({
+          ...TEST_REJECT_PARAMS,
+          reason: { ...TEST_REJECT_PARAMS.reason, code: "" },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
+    it("throws when invalid reason message is provided", async () => {
+      await expect(
+        client.reject({
+          ...TEST_REJECT_PARAMS,
+          reason: { ...TEST_REJECT_PARAMS.reason, message: 123 },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+    });
+
+    it("throws when empty reason message is provided", async () => {
+      await expect(
+        client.reject({
+          ...TEST_REJECT_PARAMS,
+          reason: { ...TEST_REJECT_PARAMS.reason, message: "" },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
     });
   });
 });

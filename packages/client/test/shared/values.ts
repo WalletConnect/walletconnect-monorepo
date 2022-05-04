@@ -93,15 +93,23 @@ export const TEST_SIGN_REQUEST = { method: TEST_SIGN_METHOD, params: TEST_SIGN_P
 
 export const TEST_RANDOM_REQUEST = { method: "random_method", params: [] };
 
+export const TEST_CONNECT_PARAMS = {
+  namespaces: TEST_NAMESPACES,
+  relays: [TEST_RELAY_OPTIONS],
+};
+
 export const TEST_APPROVE_PARAMS = {
   id: 123,
   accounts: TEST_ACCOUNTS,
   namespaces: TEST_NAMESPACES,
 };
 
-export const TEST_CONNECT_PARAMS = {
-  namespaces: TEST_NAMESPACES,
-  relays: [TEST_RELAY_OPTIONS],
+export const TEST_REJECT_PARAMS = {
+  id: 123,
+  reason: {
+    code: 0,
+    message: "GENERIC",
+  },
 };
 
 // export const TEST_TIMEOUT_SHORT = CLIENT_SHORT_TIMEOUT;

@@ -35,6 +35,7 @@ import {
   isValidParams,
   isValidAccounts,
   isValidString,
+  isValidErrorReason,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -171,7 +172,7 @@ export class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async params => {
-    // TODO(ilja) validation
+    this.isValidReject(params);
     const { id, reason } = params;
     const { pairingTopic } = this.client.proposal.get(id);
     if (pairingTopic && id) {
@@ -805,5 +806,13 @@ export class Engine extends IEngine {
       throw ERROR.MISSING_OR_INVALID.format({ name: "approve accounts" });
     if (!isValidString(relayProtocol, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "approve relayProtocol" });
+  };
+
+  private isValidReject: EnginePrivate["isValidReject"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject params" });
+    const { id, reason } = params;
+    if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject id" });
+    if (!isValidErrorReason(reason))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "reject reason" });
   };
 }

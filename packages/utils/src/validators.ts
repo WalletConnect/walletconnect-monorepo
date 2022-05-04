@@ -1,4 +1,6 @@
 import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
+
 import { hasOverlap, isNamespaceEqual } from "./misc";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
@@ -38,6 +40,12 @@ export function isValidString(input: any, optional: boolean) {
   if (optional && isUndefined(input)) return true;
 
   return typeof input === "string" && Boolean(input.trim().length);
+}
+
+export function isValidNumber(input: any, optional: boolean) {
+  if (optional && isUndefined(input)) return true;
+
+  return typeof input === "number";
 }
 
 export function isValidChainId(value: any) {
@@ -139,4 +147,13 @@ export function isValidAccounts(input: any, optional: boolean): input is string[
   }
 
   return valid;
+}
+
+export function isValidErrorReason(input: any): input is ErrorResponse {
+  if (!input) return false;
+  if (typeof input !== "object") return false;
+  if (!input.code || !isValidNumber(input.code, false)) return false;
+  if (!input.message || !isValidString(input.message, false)) return false;
+
+  return true;
 }
