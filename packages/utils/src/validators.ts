@@ -30,12 +30,18 @@ export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
   return false;
 }
 
-export function isValidString(value: any) {
-  return typeof value === "string" && !!value.trim();
+export function isUndefined(input: any): input is undefined {
+  return typeof input === "undefined";
+}
+
+export function isValidString(input: any, optional: boolean) {
+  if (optional && isUndefined(input)) return true;
+
+  return typeof input === "string" && Boolean(input.trim().length);
 }
 
 export function isValidChainId(value: any) {
-  if (isValidString(value) && value.includes(":")) {
+  if (isValidString(value, false) && value.includes(":")) {
     const split = value.split(":");
     return split.length === 2;
   }
@@ -43,7 +49,7 @@ export function isValidChainId(value: any) {
 }
 
 export function isValidAccountId(value: any) {
-  if (isValidString(value) && value.includes(":")) {
+  if (isValidString(value, false) && value.includes(":")) {
     const split = value.split(":");
     if (split.length === 3) {
       const chainId = split[0] + ":" + split[1];
@@ -54,7 +60,7 @@ export function isValidAccountId(value: any) {
 }
 
 export function isValidUrl(value: any) {
-  if (isValidString(value)) {
+  if (isValidString(value, false)) {
     try {
       const url = new URL(value);
       return typeof url !== "undefined";
@@ -79,7 +85,7 @@ export function isValidNamespace(input: any): input is SessionTypes.Namespace {
 }
 
 export function isValidRelay(input: any): input is RelayerTypes.ProtocolOptions {
-  return input.length && isValidString(input.protocol);
+  return isValidString(input.protocol, true);
 }
 
 export function isValidNamespaces(
@@ -120,4 +126,17 @@ export function isValidId(input: any) {
 
 export function isValidParams(input: any) {
   return typeof input !== "undefined" && typeof input !== null;
+}
+
+export function isValidAccounts(input: any, optional: boolean): input is string[] {
+  let valid = false;
+
+  if (optional && !input) valid = true;
+  else if (input && isValidArray(input) && input.length) {
+    input.forEach((account: string) => {
+      valid = isValidAccountId(account);
+    });
+  }
+
+  return valid;
 }

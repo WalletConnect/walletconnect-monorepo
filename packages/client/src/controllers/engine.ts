@@ -33,6 +33,8 @@ import {
   isValidUrl,
   isValidId,
   isValidParams,
+  isValidAccounts,
+  isValidString,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -795,7 +797,13 @@ export class Engine extends IEngine {
 
   private isValidApprove: EnginePrivate["isValidApprove"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve params" });
-    const { id } = params;
+    const { id, namespaces, accounts, relayProtocol } = params;
     if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve id" });
+    if (!isValidNamespaces(namespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "approve namespaces" });
+    if (!isValidAccounts(accounts, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "approve accounts" });
+    if (!isValidString(relayProtocol, true))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "approve relayProtocol" });
   };
 }

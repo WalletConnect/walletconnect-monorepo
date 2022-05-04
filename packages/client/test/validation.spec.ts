@@ -47,7 +47,7 @@ describe("Client Validation", () => {
   });
 
   describe("pair", () => {
-    it("throws when undefined params are passed", async () => {
+    it("throws when no params are passed", async () => {
       await expect(client.pair()).to.eventually.be.rejectedWith("Missing or invalid pair params");
     });
 
@@ -65,7 +65,7 @@ describe("Client Validation", () => {
   });
 
   describe("approve", () => {
-    it("throws when undefined params are passed", async () => {
+    it("throws when no params are passed", async () => {
       await expect(client.approve()).to.eventually.be.rejectedWith(
         "Missing or invalid approve params",
       );
@@ -75,6 +75,51 @@ describe("Client Validation", () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: "123" }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve id");
+    });
+
+    it("throws when empty id is provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, id: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve id");
+    });
+
+    it("throws when invalid accounts are provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, accounts: [123] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, accounts: ["123"] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
+    });
+
+    it("throws when empty accounts are provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, accounts: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
+    });
+
+    it("throws when invalid namespaces are provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: {} }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+    });
+
+    it("throws when empty namespaces are provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+    });
+
+    it("throws when invalid relayProtocol are provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, relayProtocol: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve relayProtocol");
+    });
+
+    it("throws when empty relayProtocol is provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, relayProtocol: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve relayProtocol");
     });
   });
 });
