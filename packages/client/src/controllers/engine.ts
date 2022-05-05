@@ -854,7 +854,7 @@ export class Engine extends IEngine {
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
     if (!isValidExpiry(expiry))
       throw ERROR.MISSING_OR_INVALID.format({
-        name: "updateExpiry expiry (min 5 min, max 30 days)",
+        name: "updateExpiry expiry (min 5 min, max 7 days)",
       });
   };
 }

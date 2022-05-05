@@ -4,7 +4,7 @@ import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { hasOverlap, isNamespaceEqual, calcExpiry } from "./misc";
 import { getChains } from "./caip";
 import { getNamespacesChains } from "./namespaces";
-import { toMiliseconds, FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
+import { FIVE_MINUTES, SEVEN_DAYS } from "@walletconnect/time";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
   const results = [];
@@ -187,7 +187,7 @@ export function isValidExpiry(input: any): input is number {
   if (!isValidNumber(input, false)) return false;
 
   const MIN_FUTURE = calcExpiry(FIVE_MINUTES);
-  const MAX_FUTURE = calcExpiry(THIRTY_DAYS);
+  const MAX_FUTURE = calcExpiry(SEVEN_DAYS);
 
   return input >= MIN_FUTURE && input <= MAX_FUTURE;
 }
