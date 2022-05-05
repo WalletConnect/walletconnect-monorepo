@@ -9,6 +9,7 @@ import {
   TEST_REJECT_PARAMS,
   TEST_UPDATE_ACCOUNTS_PARAMS,
   TEST_UPDATE_EXPIRY_PARAMS,
+  TEST_EMIT_PARAMS,
 } from "./shared";
 import Client from "../src";
 import { calcExpiry } from "@walletconnect/utils";
@@ -416,6 +417,90 @@ describe("Client Validation", () => {
       await expect(client.ping({ topic: "none" })).to.eventually.be.rejectedWith(
         "No matching pairing or session with topic: none",
       );
+    });
+  });
+
+  describe("emit", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.emit()).to.eventually.be.rejectedWith("Missing or invalid emit params");
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(client.emit({ ...TEST_EMIT_PARAMS, topic: 123 })).to.eventually.be.rejectedWith(
+        "Missing or invalid emit topic",
+      );
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(client.emit({ ...TEST_EMIT_PARAMS, topic: "" })).to.eventually.be.rejectedWith(
+        "Missing or invalid emit topic",
+      );
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit topic");
+    });
+
+    it("throws when non existant topic is provided", async () => {
+      await expect(
+        client.ping({ ...TEST_EMIT_PARAMS, topic: "none" }),
+      ).to.eventually.be.rejectedWith("No matching pairing or session with topic: none");
+    });
+
+    it("throws when invalid chainId is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, chainId: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit chainId");
+    });
+
+    it("throws when empty chainId is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, chainId: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit chainId");
+    });
+
+    it("throws when invalid event is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, event: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit event");
+    });
+
+    it("throws when empty event is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, event: {} }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit event");
+    });
+
+    it("throws when no event is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, event: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit event");
+    });
+
+    it("throws when invalid event name is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, event: { name: 123 } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit event");
+    });
+
+    it("throws when empty event name is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, event: { name: "" } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit event");
+    });
+
+    it("throws when no event name is provided", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, event: { name: undefined } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit event");
+    });
+
+    it("throws when event doesn't exist for given chainId", async () => {
+      await expect(
+        client.emit({ ...TEST_EMIT_PARAMS, topic, event: { name: "unknown" } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid emit event");
     });
   });
 });

@@ -1,9 +1,8 @@
 import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-
 import { hasOverlap, isNamespaceEqual, calcExpiry } from "./misc";
 import { getChains } from "./caip";
-import { getNamespacesChains } from "./namespaces";
+import { getNamespacesChains, getNamespacesEventsForChainId } from "./namespaces";
 import { FIVE_MINUTES, SEVEN_DAYS } from "@walletconnect/time";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
@@ -51,7 +50,8 @@ export function isValidNumber(input: any, optional: boolean) {
   return typeof input === "number";
 }
 
-export function isValidChainId(value: any) {
+export function isValidChainId(value: any, optional: boolean) {
+  if (typeof value === "undefined" && optional) return true;
   if (isValidString(value, false) && value.includes(":")) {
     const split = value.split(":");
     return split.length === 2;
@@ -64,7 +64,7 @@ export function isValidAccountId(value: any) {
     const split = value.split(":");
     if (split.length === 3) {
       const chainId = split[0] + ":" + split[1];
-      return !!split[2] && isValidChainId(chainId);
+      return !!split[2] && isValidChainId(chainId, false);
     }
   }
   return false;
@@ -190,4 +190,31 @@ export function isValidExpiry(input: any): input is number {
   const MAX_FUTURE = calcExpiry(SEVEN_DAYS);
 
   return input >= MIN_FUTURE && input <= MAX_FUTURE;
+}
+
+export function isValidEvent(event: any) {
+  if (isUndefined(event)) return false;
+  if (!isValidString(event.name, false)) return false;
+  return true;
+}
+
+export function isValidNamespacesChainId(namespaces: SessionTypes.Namespace[], chainId?: string) {
+  if (!isValidChainId(chainId, true)) return false;
+
+  if (chainId) {
+    const chains = getNamespacesChains(namespaces);
+    if (!chains.includes(chainId)) return false;
+  }
+
+  return true;
+}
+
+export function isValidNamespacesEvent(
+  namespaces: SessionTypes.Namespace[],
+  chainId: string,
+  eventName: string,
+) {
+  if (!isValidString(eventName, false)) return false;
+  const events = getNamespacesEventsForChainId(namespaces, chainId);
+  return events.includes(eventName);
 }

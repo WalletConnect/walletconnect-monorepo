@@ -122,6 +122,11 @@ export const TEST_UPDATE_EXPIRY_PARAMS = {
   expiry: calcExpiry(FIVE_MINUTES),
 };
 
+export const TEST_EMIT_PARAMS = {
+  event: TEST_EVENTS[0],
+  chainId: TEST_CHAINS[0],
+};
+
 // export const TEST_TIMEOUT_SHORT = CLIENT_SHORT_TIMEOUT;
 // export const TEST_TIMEOUT_SAFEGUARD = toMiliseconds(ONE_SECOND);
 // export const TEST_TIMEOUT_DURATION = toMiliseconds(THIRTY_SECONDS);

@@ -6,3 +6,15 @@ export function getNamespacesChains(namespaces: SessionTypes.Namespace[]) {
 
   return chains;
 }
+
+export function getNamespacesEventsForChainId(
+  namespaces: SessionTypes.Namespace[],
+  chainId: string,
+) {
+  const events: SessionTypes.Namespace["events"] = [];
+  namespaces.forEach(namespace => {
+    if (namespace.chains.includes(chainId)) events.push(...namespace.events);
+  });
+
+  return events;
+}

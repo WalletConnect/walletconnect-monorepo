@@ -38,6 +38,9 @@ import {
   isValidErrorReason,
   areAccountsInNamespaces,
   isValidExpiry,
+  isValidNamespacesChainId,
+  isValidNamespacesEvent,
+  isValidEvent,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -267,7 +270,7 @@ export class Engine extends IEngine {
   };
 
   public emit: IEngine["emit"] = async params => {
-    // TODO(ilja) validation
+    this.isValidEmit(params);
     const { topic, event, chainId } = params;
     await this.sendRequest(topic, "wc_sessionEvent", { event, chainId });
   };
@@ -860,5 +863,25 @@ export class Engine extends IEngine {
     if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping topic" });
     if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
+  };
+
+  private isValidEmit: EnginePrivate["isValidEmit"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit params" });
+
+    const { topic, event, chainId } = params;
+
+    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+
+    const { namespaces } = this.client.session.get(topic);
+
+    if (!isValidNamespacesChainId(namespaces, chainId))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "emit chainId" });
+
+    if (!isValidEvent(event)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+
+    if (chainId && !isValidNamespacesEvent(namespaces, chainId, event.name))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
   };
 }
