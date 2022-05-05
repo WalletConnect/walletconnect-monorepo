@@ -245,7 +245,7 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async params => {
-    // TODO(ilja) validation
+    this.isValidPing(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_sessionPing", {});
@@ -263,12 +263,6 @@ export class Engine extends IEngine {
         else resolve();
       });
       await done();
-    } else {
-      const error = ERROR.NO_MATCHING_TOPIC.format({
-        context: "pairing or session",
-        topic,
-      });
-      throw new Error(error.message);
     }
   };
 
@@ -786,7 +780,7 @@ export class Engine extends IEngine {
 
     if (!isValidString(pairingTopic, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect pairingTopic" });
-    if (pairingTopic && !this.client.pairing.get(pairingTopic))
+    if (pairingTopic && !this.client.pairing.keys.includes(pairingTopic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
     if (!isValidNamespaces(namespaces, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect namespaces" });
@@ -831,7 +825,7 @@ export class Engine extends IEngine {
 
     if (!isValidString(topic, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts topic" });
-    if (!this.client.session.get(topic))
+    if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
     if (!isValidAccounts(accounts, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts accounts" });
@@ -850,11 +844,21 @@ export class Engine extends IEngine {
 
     if (!isValidString(topic, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "updateExpiry topic" });
-    if (!this.client.session.get(topic))
+    if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
     if (!isValidExpiry(expiry))
       throw ERROR.MISSING_OR_INVALID.format({
         name: "updateExpiry expiry (min 5 min, max 7 days)",
       });
+  };
+
+  private isValidPing: EnginePrivate["isValidPing"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping params" });
+
+    const { topic } = params;
+
+    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping topic" });
+    if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
   };
 }

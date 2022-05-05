@@ -283,6 +283,8 @@ export interface EnginePrivate {
   isValidUpdateAccounts(params: EngineTypes.UpdateAccountsParams): void;
 
   isValidUpdateExpiry(params: EngineTypes.UpdateExpiryParams): void;
+
+  isValidPing(params: EngineTypes.PingParams): void;
 }
 
 // -- class interface ----------------------------------------------- //

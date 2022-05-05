@@ -388,4 +388,34 @@ describe("Client Validation", () => {
       );
     });
   });
+
+  describe("ping", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.ping()).to.eventually.be.rejectedWith("Missing or invalid ping params");
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(client.ping({ topic: 123 })).to.eventually.be.rejectedWith(
+        "Missing or invalid ping topic",
+      );
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(client.ping({ topic: "" })).to.eventually.be.rejectedWith(
+        "Missing or invalid ping topic",
+      );
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(client.ping({ topic: undefined })).to.eventually.be.rejectedWith(
+        "Missing or invalid ping topic",
+      );
+    });
+
+    it("throws when non existant topic is provided", async () => {
+      await expect(client.ping({ topic: "none" })).to.eventually.be.rejectedWith(
+        "No matching pairing or session with topic: none",
+      );
+    });
+  });
 });
