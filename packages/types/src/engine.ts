@@ -287,6 +287,8 @@ export interface EnginePrivate {
   isValidPing(params: EngineTypes.PingParams): void;
 
   isValidEmit(params: EngineTypes.EmitParams): void;
+
+  isValidDisconnect(params: EngineTypes.DisconnectParams): void;
 }
 
 // -- class interface ----------------------------------------------- //

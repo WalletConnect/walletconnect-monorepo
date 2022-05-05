@@ -276,7 +276,7 @@ export class Engine extends IEngine {
   };
 
   public disconnect: IEngine["disconnect"] = async params => {
-    // TODO(ilja) validation
+    this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
@@ -883,5 +883,17 @@ export class Engine extends IEngine {
 
     if (chainId && !isValidNamespacesEvent(namespaces, chainId, event.name))
       throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+  };
+
+  private isValidDisconnect: EnginePrivate["isValidDisconnect"] = params => {
+    if (!isValidParams(params))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect params" });
+
+    const { topic } = params;
+
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect topic" });
+    if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
   };
 }

@@ -503,4 +503,36 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith("Missing or invalid emit event");
     });
   });
+
+  describe("disconnect", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.disconnect()).to.eventually.be.rejectedWith(
+        "Missing or invalid disconnect params",
+      );
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(client.disconnect({ topic: 123 })).to.eventually.be.rejectedWith(
+        "Missing or invalid disconnect topic",
+      );
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(client.disconnect({ topic: "" })).to.eventually.be.rejectedWith(
+        "Missing or invalid disconnect topic",
+      );
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(client.disconnect({ topic: undefined })).to.eventually.be.rejectedWith(
+        "Missing or invalid disconnect topic",
+      );
+    });
+
+    it("throws when non existant topic is provided", async () => {
+      await expect(client.disconnect({ topic: "none" })).to.eventually.be.rejectedWith(
+        "No matching pairing or session with topic: none",
+      );
+    });
+  });
 });
