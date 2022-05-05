@@ -37,6 +37,7 @@ import {
   isValidString,
   isValidErrorReason,
   areAccountsInNamespaces,
+  isValidExpiry,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -851,5 +852,9 @@ export class Engine extends IEngine {
       throw ERROR.MISSING_OR_INVALID.format({ name: "updateExpiry topic" });
     if (!this.client.session.get(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    if (!isValidExpiry(expiry))
+      throw ERROR.MISSING_OR_INVALID.format({
+        name: "updateExpiry expiry (min 5 min, max 30 days)",
+      });
   };
 }

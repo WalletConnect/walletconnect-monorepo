@@ -1,9 +1,10 @@
 import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 
-import { hasOverlap, isNamespaceEqual } from "./misc";
+import { hasOverlap, isNamespaceEqual, calcExpiry } from "./misc";
 import { getChains } from "./caip";
 import { getNamespacesChains } from "./namespaces";
+import { toMiliseconds, FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
   const results = [];
@@ -180,4 +181,13 @@ export function areAccountsInNamespaces(
     valid,
     mismatched,
   };
+}
+
+export function isValidExpiry(input: any): input is number {
+  if (!isValidNumber(input, false)) return false;
+
+  const MIN_FUTURE = calcExpiry(FIVE_MINUTES);
+  const MAX_FUTURE = calcExpiry(THIRTY_DAYS);
+
+  return input >= MIN_FUTURE && input <= MAX_FUTURE;
 }

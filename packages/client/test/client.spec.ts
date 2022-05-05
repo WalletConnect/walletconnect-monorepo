@@ -1,4 +1,4 @@
-import { ERROR } from "@walletconnect/utils";
+import { ERROR, calcExpiry } from "@walletconnect/utils";
 import "mocha";
 import Client from "../src";
 import {
@@ -9,6 +9,7 @@ import {
   TEST_CLIENT_OPTIONS,
   deleteClients,
 } from "./shared";
+import { FIVE_MINUTES } from "@walletconnect/time";
 
 describe("Client Integration", () => {
   it("init", async () => {
@@ -211,8 +212,7 @@ describe("Client Integration", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const expiryBefore = clients.A.session.get(topic).expiry;
-      const expiryAfter = expiryBefore + 1000;
+      const expiryAfter = calcExpiry(FIVE_MINUTES);
       await clients.A.updateExpiry({
         topic,
         expiry: expiryAfter,

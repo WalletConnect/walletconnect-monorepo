@@ -11,6 +11,8 @@ import {
   TEST_UPDATE_EXPIRY_PARAMS,
 } from "./shared";
 import Client from "../src";
+import { calcExpiry } from "@walletconnect/utils";
+import { ONE_MINUTE, THIRTY_DAYS } from "@walletconnect/time";
 
 let client: Client;
 let pairingTopic: string;
@@ -356,6 +358,34 @@ describe("Client Validation", () => {
       await expect(
         client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "none" }),
       ).to.eventually.be.rejectedWith("No matching session with topic: none");
+    });
+
+    it("throws when invalid expiry is provided", async () => {
+      await expect(client.updateExpiry({ topic, expiry: "1" })).to.eventually.be.rejectedWith(
+        "Missing or invalid updateExpiry expiry (min 5 min, max 30 days)",
+      );
+    });
+
+    it("throws when no expiry is provided", async () => {
+      await expect(client.updateExpiry({ topic, expiry: undefined })).to.eventually.be.rejectedWith(
+        "Missing or invalid updateExpiry expiry (min 5 min, max 30 days)",
+      );
+    });
+
+    it("throws when expiry is less than 5 minutes", async () => {
+      await expect(
+        client.updateExpiry({ topic, expiry: calcExpiry(ONE_MINUTE) }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid updateExpiry expiry (min 5 min, max 30 days)",
+      );
+    });
+
+    it("throws when expiry is more than 30 days", async () => {
+      await expect(
+        client.updateExpiry({ topic, expiry: calcExpiry(THIRTY_DAYS + ONE_MINUTE) }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid updateExpiry expiry (min 5 min, max 30 days)",
+      );
     });
   });
 });
