@@ -94,7 +94,7 @@ export declare namespace EngineTypes {
       method: string;
       params: any;
     };
-    chainId?: string;
+    chainId: string;
   }
 
   interface RespondParams {
@@ -108,7 +108,7 @@ export declare namespace EngineTypes {
       name: string;
       data: any;
     };
-    chainId?: string;
+    chainId: string;
   }
 
   interface PingParams {
