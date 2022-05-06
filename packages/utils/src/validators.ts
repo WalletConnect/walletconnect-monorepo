@@ -196,6 +196,12 @@ export function isValidExpiry(input: any): input is number {
   return input >= MIN_FUTURE && input <= MAX_FUTURE;
 }
 
+export function isValidRequest(request: any) {
+  if (isUndefined(request)) return false;
+  if (!isValidString(request.method, false)) return false;
+  return true;
+}
+
 export function isValidEvent(event: any) {
   if (isUndefined(event)) return false;
   if (!isValidString(event.name, false)) return false;

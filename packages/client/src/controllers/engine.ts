@@ -41,6 +41,7 @@ import {
   isValidNamespacesChainId,
   isValidNamespacesRequest,
   isValidNamespacesEvent,
+  isValidRequest,
   isValidEvent,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
@@ -862,17 +863,20 @@ export class Engine extends IEngine {
 
     const { topic, request, chainId } = params;
 
-    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit topic" });
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "request topic" });
     if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
 
     const { namespaces } = this.client.session.get(topic);
 
     if (!isValidNamespacesChainId(namespaces, chainId))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "emit chainId" });
+      throw ERROR.MISSING_OR_INVALID.format({ name: "request chainId" });
+
+    if (!isValidRequest(request)) throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
 
     if (!isValidNamespacesRequest(namespaces, chainId, request.method))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+      throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
   };
 
   private isValidPing: EnginePrivate["isValidPing"] = params => {

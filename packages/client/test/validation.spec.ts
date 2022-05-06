@@ -9,6 +9,7 @@ import {
   TEST_REJECT_PARAMS,
   TEST_UPDATE_ACCOUNTS_PARAMS,
   TEST_UPDATE_EXPIRY_PARAMS,
+  TEST_REQUEST_PARAMS,
   TEST_EMIT_PARAMS,
 } from "./shared";
 import Client from "../src";
@@ -387,6 +388,92 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith(
         "Missing or invalid updateExpiry expiry (min 5 min, max 7 days)",
       );
+    });
+  });
+
+  describe("request", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.request()).to.eventually.be.rejectedWith(
+        "Missing or invalid request params",
+      );
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request topic");
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request topic");
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request topic");
+    });
+
+    it("throws when non existant topic is provided", async () => {
+      await expect(
+        client.ping({ ...TEST_REQUEST_PARAMS, topic: "none" }),
+      ).to.eventually.be.rejectedWith("No matching pairing or session with topic: none");
+    });
+
+    it("throws when invalid chainId is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, chainId: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request chainId");
+    });
+
+    it("throws when empty chainId is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, chainId: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request chainId");
+    });
+
+    it("throws when invalid request is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, request: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request method");
+    });
+
+    it("throws when empty request is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, request: {} }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request method");
+    });
+
+    it("throws when no request is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, request: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request method");
+    });
+
+    it("throws when invalid request method is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, request: { method: 123 } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request method");
+    });
+
+    it("throws when empty request method is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, request: { method: "" } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request method");
+    });
+
+    it("throws when no request method is provided", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, request: { method: undefined } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request method");
+    });
+
+    it("throws when request doesn't exist for given chainId", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, request: { method: "unknown" } }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request method");
     });
   });
 
