@@ -39,6 +39,7 @@ import {
   areAccountsInNamespaces,
   isValidExpiry,
   isValidNamespacesChainId,
+  isValidNamespacesRequest,
   isValidNamespacesEvent,
   isValidEvent,
 } from "@walletconnect/utils";
@@ -226,7 +227,7 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async params => {
-    // TODO(ilja) Validation
+    this.isValidRequest(params);
     const { chainId, request, topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
     const { done, resolve, reject } = createDelayedPromise<JsonRpcResponse>();
@@ -238,6 +239,7 @@ export class Engine extends IEngine {
   };
 
   public respond: IEngine["respond"] = async params => {
+    // TODO(ilja) validation
     const { topic, response } = params;
     const { id } = response;
     if (isJsonRpcResult(response)) {
@@ -855,6 +857,24 @@ export class Engine extends IEngine {
       });
   };
 
+  private isValidRequest: EnginePrivate["isValidRequest"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "request params" });
+
+    const { topic, request, chainId } = params;
+
+    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+
+    const { namespaces } = this.client.session.get(topic);
+
+    if (!isValidNamespacesChainId(namespaces, chainId))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "emit chainId" });
+
+    if (!isValidNamespacesRequest(namespaces, chainId, request.method))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+  };
+
   private isValidPing: EnginePrivate["isValidPing"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping params" });
 
@@ -881,7 +901,7 @@ export class Engine extends IEngine {
 
     if (!isValidEvent(event)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
 
-    if (chainId && !isValidNamespacesEvent(namespaces, chainId, event.name))
+    if (!isValidNamespacesEvent(namespaces, chainId, event.name))
       throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
   };
 
