@@ -286,6 +286,8 @@ export interface EnginePrivate {
 
   isValidRequest(params: EngineTypes.RequestParams): void;
 
+  isValidRespond(params: EngineTypes.RespondParams): void;
+
   isValidPing(params: EngineTypes.PingParams): void;
 
   isValidEmit(params: EngineTypes.EmitParams): void;

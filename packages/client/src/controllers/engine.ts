@@ -43,6 +43,7 @@ import {
   isValidNamespacesEvent,
   isValidRequest,
   isValidEvent,
+  isValidResponse,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -240,7 +241,7 @@ export class Engine extends IEngine {
   };
 
   public respond: IEngine["respond"] = async params => {
-    // TODO(ilja) validation
+    this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
     if (isJsonRpcResult(response)) {
@@ -877,6 +878,20 @@ export class Engine extends IEngine {
 
     if (!isValidNamespacesRequest(namespaces, chainId, request.method))
       throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
+  };
+
+  private isValidRespond: EnginePrivate["isValidRespond"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "respond params" });
+
+    const { topic, response } = params;
+
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "respond topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+
+    if (!isValidResponse(response))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "respond response" });
   };
 
   private isValidPing: EnginePrivate["isValidPing"] = params => {

@@ -127,6 +127,14 @@ export const TEST_REQUEST_PARAMS = {
   chainId: TEST_CHAINS[0],
 };
 
+export const TEST_RESPOND_PARAMS = {
+  response: {
+    id: 1,
+    jsonrpc: "2.0",
+    result: {},
+  },
+};
+
 export const TEST_EMIT_PARAMS = {
   event: { name: TEST_EVENTS[0], data: "" },
   chainId: TEST_CHAINS[0],

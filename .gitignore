@@ -33,5 +33,3 @@ test.db-journal
 setup
 result*
 ops/grafana/grafana.ini
-
-.vscode

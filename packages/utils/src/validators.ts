@@ -202,6 +202,14 @@ export function isValidRequest(request: any) {
   return true;
 }
 
+export function isValidResponse(response: any) {
+  if (isUndefined(response)) return false;
+  if (isUndefined(response.result) && isUndefined(response.error)) return false;
+  if (!isValidNumber(response.id, false)) return false;
+  if (!isValidString(response.jsonrpc, false)) return false;
+  return true;
+}
+
 export function isValidEvent(event: any) {
   if (isUndefined(event)) return false;
   if (!isValidString(event.name, false)) return false;

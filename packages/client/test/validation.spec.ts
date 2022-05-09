@@ -11,6 +11,7 @@ import {
   TEST_UPDATE_EXPIRY_PARAMS,
   TEST_REQUEST_PARAMS,
   TEST_EMIT_PARAMS,
+  TEST_RESPOND_PARAMS,
 } from "./shared";
 import Client from "../src";
 import { calcExpiry } from "@walletconnect/utils";
@@ -418,8 +419,8 @@ describe("Client Validation", () => {
 
     it("throws when non existant topic is provided", async () => {
       await expect(
-        client.ping({ ...TEST_REQUEST_PARAMS, topic: "none" }),
-      ).to.eventually.be.rejectedWith("No matching pairing or session with topic: none");
+        client.request({ ...TEST_REQUEST_PARAMS, topic: "none" }),
+      ).to.eventually.be.rejectedWith("No matching session with topic: none");
     });
 
     it("throws when invalid chainId is provided", async () => {
@@ -474,6 +475,88 @@ describe("Client Validation", () => {
       await expect(
         client.request({ ...TEST_REQUEST_PARAMS, topic, request: { method: "unknown" } }),
       ).to.eventually.be.rejectedWith("Missing or invalid request method");
+    });
+  });
+
+  describe("respond", () => {
+    it("throws when no params are passed", async () => {
+      await expect(client.respond()).to.eventually.be.rejectedWith(
+        "Missing or invalid respond params",
+      );
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(
+        client.respond({ ...TEST_REQUEST_PARAMS, topic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond topic");
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(
+        client.respond({ ...TEST_RESPOND_PARAMS, topic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond topic");
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(
+        client.respond({ ...TEST_RESPOND_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond topic");
+    });
+
+    it("throws when no response or error is passed", async () => {
+      await expect(
+        client.respond({ ...TEST_RESPOND_PARAMS, topic, response: undefined, error: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond response");
+    });
+
+    it("throws when no id is passed", async () => {
+      await expect(
+        client.respond({
+          ...TEST_RESPOND_PARAMS,
+          topic,
+          response: { ...TEST_RESPOND_PARAMS.response, id: undefined },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond response");
+    });
+
+    it("throws when invalid id is passed", async () => {
+      await expect(
+        client.respond({
+          ...TEST_RESPOND_PARAMS,
+          topic,
+          response: { ...TEST_RESPOND_PARAMS.response, id: "123" },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond response");
+    });
+
+    it("throws when no jsonrpc is passed", async () => {
+      await expect(
+        client.respond({
+          ...TEST_RESPOND_PARAMS,
+          topic,
+          response: { ...TEST_RESPOND_PARAMS.response, jsonrpc: undefined },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond response");
+    });
+
+    it("throws when invalid jsonrpc is passed", async () => {
+      await expect(
+        client.respond({
+          ...TEST_RESPOND_PARAMS,
+          topic,
+          response: { ...TEST_RESPOND_PARAMS.response, jsonrpc: 123 },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond response");
+    });
+
+    it("throws when empty jsonrpc is passed", async () => {
+      await expect(
+        client.respond({
+          ...TEST_RESPOND_PARAMS,
+          topic,
+          response: { ...TEST_RESPOND_PARAMS.response, jsonrpc: "" },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid respond response");
     });
   });
 
@@ -532,8 +615,8 @@ describe("Client Validation", () => {
 
     it("throws when non existant topic is provided", async () => {
       await expect(
-        client.ping({ ...TEST_EMIT_PARAMS, topic: "none" }),
-      ).to.eventually.be.rejectedWith("No matching pairing or session with topic: none");
+        client.emit({ ...TEST_EMIT_PARAMS, topic: "none" }),
+      ).to.eventually.be.rejectedWith("No matching session with topic: none");
     });
 
     it("throws when invalid chainId is provided", async () => {
