@@ -7,6 +7,18 @@ export function getNamespacesChains(namespaces: SessionTypes.Namespace[]) {
   return chains;
 }
 
+export function getNamespacesMethodsForChainId(
+  namespaces: SessionTypes.Namespace[],
+  chainId: string,
+) {
+  const methods: SessionTypes.Namespace["methods"] = [];
+  namespaces.forEach(namespace => {
+    if (namespace.chains.includes(chainId)) methods.push(...namespace.methods);
+  });
+
+  return methods;
+}
+
 export function getNamespacesEventsForChainId(
   namespaces: SessionTypes.Namespace[],
   chainId: string,

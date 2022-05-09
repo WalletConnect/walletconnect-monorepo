@@ -2,7 +2,11 @@ import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types"
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { hasOverlap, isNamespaceEqual, calcExpiry } from "./misc";
 import { getChains } from "./caip";
-import { getNamespacesChains, getNamespacesEventsForChainId } from "./namespaces";
+import {
+  getNamespacesChains,
+  getNamespacesMethodsForChainId,
+  getNamespacesEventsForChainId,
+} from "./namespaces";
 import { FIVE_MINUTES, SEVEN_DAYS } from "@walletconnect/time";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
@@ -192,6 +196,12 @@ export function isValidExpiry(input: any): input is number {
   return input >= MIN_FUTURE && input <= MAX_FUTURE;
 }
 
+export function isValidRequest(request: any) {
+  if (isUndefined(request)) return false;
+  if (!isValidString(request.method, false)) return false;
+  return true;
+}
+
 export function isValidEvent(event: any) {
   if (isUndefined(event)) return false;
   if (!isValidString(event.name, false)) return false;
@@ -207,6 +217,16 @@ export function isValidNamespacesChainId(namespaces: SessionTypes.Namespace[], c
   }
 
   return true;
+}
+
+export function isValidNamespacesRequest(
+  namespaces: SessionTypes.Namespace[],
+  chainId: string,
+  method: string,
+) {
+  if (!isValidString(method, false)) return false;
+  const methods = getNamespacesMethodsForChainId(namespaces, chainId);
+  return methods.includes(method);
 }
 
 export function isValidNamespacesEvent(

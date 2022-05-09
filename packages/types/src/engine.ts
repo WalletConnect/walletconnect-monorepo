@@ -94,7 +94,7 @@ export declare namespace EngineTypes {
       method: string;
       params: any;
     };
-    chainId?: string;
+    chainId: string;
   }
 
   interface RespondParams {
@@ -108,7 +108,7 @@ export declare namespace EngineTypes {
       name: string;
       data: any;
     };
-    chainId?: string;
+    chainId: string;
   }
 
   interface PingParams {
@@ -283,6 +283,8 @@ export interface EnginePrivate {
   isValidUpdateAccounts(params: EngineTypes.UpdateAccountsParams): void;
 
   isValidUpdateExpiry(params: EngineTypes.UpdateExpiryParams): void;
+
+  isValidRequest(params: EngineTypes.RequestParams): void;
 
   isValidPing(params: EngineTypes.PingParams): void;
 

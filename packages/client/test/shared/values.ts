@@ -122,8 +122,13 @@ export const TEST_UPDATE_EXPIRY_PARAMS = {
   expiry: calcExpiry(FIVE_MINUTES),
 };
 
+export const TEST_REQUEST_PARAMS = {
+  request: { method: TEST_METHODS[0], params: [] },
+  chainId: TEST_CHAINS[0],
+};
+
 export const TEST_EMIT_PARAMS = {
-  event: TEST_EVENTS[0],
+  event: { name: TEST_EVENTS[0], data: "" },
   chainId: TEST_CHAINS[0],
 };
 
