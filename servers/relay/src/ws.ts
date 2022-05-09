@@ -96,7 +96,8 @@ export class WebSocketService {
       this.logger.trace({ type: "message", direction: "incoming", message });
 
       if (!message || !message.trim()) {
-        this.send(socketId, "Missing or invalid socket data");
+        //this.send(socketId, "Missing or invalid socket data");
+        // this gets triggered by web sockets that send ping packets
         return;
       }
       const payload = safeJsonParse(message);
