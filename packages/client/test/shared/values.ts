@@ -122,6 +122,10 @@ export const TEST_UPDATE_EXPIRY_PARAMS = {
   expiry: calcExpiry(FIVE_MINUTES),
 };
 
+export const TEST_UPDATE_NAMESPACES_PARAMS = {
+  namespaces: TEST_NAMESPACES,
+};
+
 export const TEST_REQUEST_PARAMS = {
   request: { method: TEST_METHODS[0], params: [] },
   chainId: TEST_CHAINS[0],

@@ -203,7 +203,7 @@ export class Engine extends IEngine {
   };
 
   public updateNamespaces: IEngine["updateNamespaces"] = async params => {
-    // TODO(ilja) validation
+    this.isValidUpdateNamespaces(params);
     const { topic, namespaces } = params;
     const id = await this.sendRequest(topic, "wc_sessionUpdateNamespaces", { namespaces });
     const { done, resolve, reject } = createDelayedPromise<void>();
@@ -841,6 +841,20 @@ export class Engine extends IEngine {
       this.client.session.get(topic).namespaces,
     );
     if (!valid) throw ERROR.MISMATCHED_ACCOUNTS.format({ mismatched });
+  };
+
+  private isValidUpdateNamespaces: EnginePrivate["isValidUpdateNamespaces"] = params => {
+    if (!isValidParams(params))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateNamespaces params" });
+
+    const { topic, namespaces } = params;
+
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateNamespaces topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    if (!isValidNamespaces(namespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "updateNamespaces namespaces" });
   };
 
   private isValidUpdateExpiry: EnginePrivate["isValidUpdateExpiry"] = params => {

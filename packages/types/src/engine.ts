@@ -284,6 +284,8 @@ export interface EnginePrivate {
 
   isValidUpdateExpiry(params: EngineTypes.UpdateExpiryParams): void;
 
+  isValidUpdateNamespaces(params: EngineTypes.UpdateNamespacesParams): void;
+
   isValidRequest(params: EngineTypes.RequestParams): void;
 
   isValidRespond(params: EngineTypes.RespondParams): void;

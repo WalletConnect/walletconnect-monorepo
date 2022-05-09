@@ -12,6 +12,7 @@ import {
   TEST_REQUEST_PARAMS,
   TEST_EMIT_PARAMS,
   TEST_RESPOND_PARAMS,
+  TEST_UPDATE_NAMESPACES_PARAMS,
 } from "./shared";
 import Client from "../src";
 import { calcExpiry } from "@walletconnect/utils";
@@ -329,7 +330,53 @@ describe("Client Validation", () => {
   });
 
   describe("updateNamespaces", () => {
-    // TODO
+    it("throws when no params are passed", async () => {
+      await expect(client.updateNamespaces()).to.eventually.be.rejectedWith(
+        "Missing or invalid updateNamespaces params",
+      );
+    });
+
+    it("throws when invalid topic is provided", async () => {
+      await expect(
+        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces topic");
+    });
+
+    it("throws when empty topic is provided", async () => {
+      await expect(
+        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces topic");
+    });
+
+    it("throws when no topic is provided", async () => {
+      await expect(
+        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces topic");
+    });
+
+    it("throws when non existant topic is provided", async () => {
+      await expect(
+        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "none" }),
+      ).to.eventually.be.rejectedWith("No matching session with topic: none");
+    });
+
+    it("throws when invalid namespaces are provided", async () => {
+      await expect(
+        client.updateNamespaces({ topic, namespaces: {} }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces namespaces");
+    });
+
+    it("throws when empty namespaces are provided", async () => {
+      await expect(
+        client.updateNamespaces({ topic, namespaces: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces namespaces");
+    });
+
+    it("throws when no namespaces are provided", async () => {
+      await expect(
+        client.updateNamespaces({ topic, namespaces: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces namespaces");
+    });
   });
 
   describe("updateExpiry", () => {
