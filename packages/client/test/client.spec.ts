@@ -1,4 +1,4 @@
-import { ERROR } from "@walletconnect/utils";
+import { ERROR, calcExpiry } from "@walletconnect/utils";
 import "mocha";
 import Client from "../src";
 import {
@@ -7,9 +7,11 @@ import {
   testConnectMethod,
   TEST_CLIENT_DATABASE,
   TEST_CLIENT_OPTIONS,
+  deleteClients,
 } from "./shared";
+import { FIVE_MINUTES } from "@walletconnect/time";
 
-describe("Client", () => {
+describe("Client Integration", () => {
   it("init", async () => {
     const client = await Client.init(TEST_CLIENT_OPTIONS);
     expect(client).to.be.exist;
@@ -19,6 +21,7 @@ describe("Client", () => {
     it("connect (with new pairing)", async () => {
       const clients = await initTwoClients();
       await testConnectMethod(clients);
+      deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {
       const clients = await initTwoClients();
@@ -28,9 +31,8 @@ describe("Client", () => {
       const { topic: pairingTopic } = A.pairing.get(A.pairing.keys[0]);
       await testConnectMethod(clients, {
         pairingTopic,
-        namespaces: [],
-        accounts: [],
       });
+      deleteClients(clients);
     });
   });
 
@@ -50,6 +52,7 @@ describe("Client", () => {
         await expect(promise).to.eventually.be.rejectedWith(
           `No matching pairing or session with topic: ${topic}`,
         );
+        deleteClients(clients);
       });
     });
     describe("session", () => {
@@ -67,6 +70,7 @@ describe("Client", () => {
         await expect(promise).to.eventually.be.rejectedWith(
           `No matching pairing or session with topic: ${topic}`,
         );
+        deleteClients(clients);
       });
     });
   });
@@ -78,6 +82,7 @@ describe("Client", () => {
       await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
         `No matching pairing or session with topic: ${fakeTopic}`,
       );
+      deleteClients(clients);
     });
     describe("pairing", () => {
       it("A pings B with existing pairing", async () => {
@@ -86,6 +91,7 @@ describe("Client", () => {
           pairingA: { topic },
         } = await testConnectMethod(clients);
         await clients.A.ping({ topic });
+        deleteClients(clients);
       });
       it("B pings A with existing pairing", async () => {
         const clients = await initTwoClients();
@@ -93,6 +99,7 @@ describe("Client", () => {
           pairingA: { topic },
         } = await testConnectMethod(clients);
         await clients.B.ping({ topic });
+        deleteClients(clients);
       });
       it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients({
@@ -105,8 +112,7 @@ describe("Client", () => {
         await beforeClients.A.ping({ topic });
         await beforeClients.B.ping({ topic });
         // delete
-        delete beforeClients.A;
-        delete beforeClients.B;
+        deleteClients(beforeClients);
         // restart
         const afterClients = await initTwoClients({
           storageOptions: { database: TEST_CLIENT_DATABASE },
@@ -114,6 +120,7 @@ describe("Client", () => {
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
+        deleteClients(afterClients);
       });
     });
     describe("session", () => {
@@ -123,6 +130,7 @@ describe("Client", () => {
           sessionA: { topic },
         } = await testConnectMethod(clients);
         await clients.A.ping({ topic });
+        deleteClients(clients);
       });
       it("B pings A with existing session", async () => {
         const clients = await initTwoClients();
@@ -130,6 +138,7 @@ describe("Client", () => {
           sessionA: { topic },
         } = await testConnectMethod(clients);
         await clients.B.ping({ topic });
+        deleteClients(clients);
       });
       it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients({
@@ -142,8 +151,7 @@ describe("Client", () => {
         await beforeClients.A.ping({ topic });
         await beforeClients.B.ping({ topic });
         // delete
-        delete beforeClients.A;
-        delete beforeClients.B;
+        deleteClients(beforeClients);
         // restart
         const afterClients = await initTwoClients({
           storageOptions: { database: TEST_CLIENT_DATABASE },
@@ -151,6 +159,7 @@ describe("Client", () => {
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
+        deleteClients(afterClients);
       });
     });
   });
@@ -164,7 +173,7 @@ describe("Client", () => {
       const accountsBefore = clients.A.session.get(topic).accounts;
       const accountsAfter = [
         ...accountsBefore,
-        "eip155:42:0x3c582121909DE92Dc89A36898633C1aE4790382b",
+        "eip155:43114:0x3c582121909DE92Dc89A36898633C1aE4790382b",
       ];
       await clients.A.updateAccounts({
         topic,
@@ -172,6 +181,7 @@ describe("Client", () => {
       });
       const result = clients.A.session.get(topic).accounts;
       expect(result).to.eql(accountsAfter);
+      deleteClients(clients);
     });
   });
 
@@ -192,6 +202,7 @@ describe("Client", () => {
       });
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
+      deleteClients(clients);
     });
   });
 
@@ -201,14 +212,14 @@ describe("Client", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const expiryBefore = clients.A.session.get(topic).expiry;
-      const expiryAfter = expiryBefore + 1000;
+      const expiryAfter = calcExpiry(FIVE_MINUTES);
       await clients.A.updateExpiry({
         topic,
         expiry: expiryAfter,
       });
       const result = clients.A.session.get(topic).expiry;
       expect(result).to.eql(expiryAfter);
+      deleteClients(clients);
     });
   });
 });

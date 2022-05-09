@@ -5,3 +5,4 @@ export * from "./misc";
 export * from "./relay";
 export * from "./uri";
 export * from "./validators";
+export * from "./namespaces";

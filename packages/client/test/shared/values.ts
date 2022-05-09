@@ -1,5 +1,7 @@
 import path from "path";
 import { ClientTypes, RelayerTypes } from "@walletconnect/types";
+import { calcExpiry } from "@walletconnect/utils";
+import { FIVE_MINUTES } from "@walletconnect/time";
 
 // @ts-ignore
 import { ROOT_DIR } from "../../../../ops/js/shared";
@@ -56,11 +58,11 @@ export const TEST_CLIENT_OPTIONS_B = {
   metadata: TEST_APP_METADATA_B,
 };
 
-export const TEST_ETHEREUM_CHAIN_ID = 1;
+export const TEST_ETHEREUM_CHAIN = "eip155:1";
+export const TEST_ARBITRUM_CHAIN = "eip155:42161";
+export const TEST_AVALANCHE_CHAIN = "eip155:43114";
 
-export const TEST_ETHEREUM_CHAIN = `eip155:${TEST_ETHEREUM_CHAIN_ID}`;
-
-export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN];
+export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN, TEST_ARBITRUM_CHAIN, TEST_AVALANCHE_CHAIN];
 export const TEST_METHODS = [
   "eth_sendTransaction",
   "eth_signTransaction",
@@ -92,6 +94,55 @@ export const TEST_SIGN_PARAMS = [TEST_MESSAGE, TEST_ETHEREUM_ADDRESS];
 export const TEST_SIGN_REQUEST = { method: TEST_SIGN_METHOD, params: TEST_SIGN_PARAMS };
 
 export const TEST_RANDOM_REQUEST = { method: "random_method", params: [] };
+
+export const TEST_CONNECT_PARAMS = {
+  namespaces: TEST_NAMESPACES,
+  relays: [TEST_RELAY_OPTIONS],
+};
+
+export const TEST_APPROVE_PARAMS = {
+  id: 123,
+  accounts: TEST_ACCOUNTS,
+  namespaces: TEST_NAMESPACES,
+};
+
+export const TEST_REJECT_PARAMS = {
+  id: 123,
+  reason: {
+    code: 0,
+    message: "GENERIC",
+  },
+};
+
+export const TEST_UPDATE_ACCOUNTS_PARAMS = {
+  accounts: TEST_ACCOUNTS,
+};
+
+export const TEST_UPDATE_EXPIRY_PARAMS = {
+  expiry: calcExpiry(FIVE_MINUTES),
+};
+
+export const TEST_UPDATE_NAMESPACES_PARAMS = {
+  namespaces: TEST_NAMESPACES,
+};
+
+export const TEST_REQUEST_PARAMS = {
+  request: { method: TEST_METHODS[0], params: [] },
+  chainId: TEST_CHAINS[0],
+};
+
+export const TEST_RESPOND_PARAMS = {
+  response: {
+    id: 1,
+    jsonrpc: "2.0",
+    result: {},
+  },
+};
+
+export const TEST_EMIT_PARAMS = {
+  event: { name: TEST_EVENTS[0], data: "" },
+  chainId: TEST_CHAINS[0],
+};
 
 // export const TEST_TIMEOUT_SHORT = CLIENT_SHORT_TIMEOUT;
 // export const TEST_TIMEOUT_SAFEGUARD = toMiliseconds(ONE_SECOND);

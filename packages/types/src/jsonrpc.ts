@@ -65,14 +65,14 @@ export declare namespace JsonRpcTypes {
         method: string;
         params: any;
       };
-      chainId?: string;
+      chainId: string;
     };
     wc_sessionEvent: {
       event: {
         name: string;
         data: unknown;
       };
-      chainId?: string;
+      chainId: string;
     };
   }
 

@@ -94,7 +94,7 @@ export declare namespace EngineTypes {
       method: string;
       params: any;
     };
-    chainId?: string;
+    chainId: string;
   }
 
   interface RespondParams {
@@ -108,7 +108,7 @@ export declare namespace EngineTypes {
       name: string;
       data: any;
     };
-    chainId?: string;
+    chainId: string;
   }
 
   interface PingParams {
@@ -270,6 +270,31 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionEvent"]>,
   ): void;
+
+  // -- Validators ---------------------------------------------------- //
+  isValidConnect(params: EngineTypes.ConnectParams): void;
+
+  isValidPair(params: EngineTypes.PairParams): void;
+
+  isValidApprove(params: EngineTypes.ApproveParams): void;
+
+  isValidReject(params: EngineTypes.RejectParams): void;
+
+  isValidUpdateAccounts(params: EngineTypes.UpdateAccountsParams): void;
+
+  isValidUpdateExpiry(params: EngineTypes.UpdateExpiryParams): void;
+
+  isValidUpdateNamespaces(params: EngineTypes.UpdateNamespacesParams): void;
+
+  isValidRequest(params: EngineTypes.RequestParams): void;
+
+  isValidRespond(params: EngineTypes.RespondParams): void;
+
+  isValidPing(params: EngineTypes.PingParams): void;
+
+  isValidEmit(params: EngineTypes.EmitParams): void;
+
+  isValidDisconnect(params: EngineTypes.DisconnectParams): void;
 }
 
 // -- class interface ----------------------------------------------- //
