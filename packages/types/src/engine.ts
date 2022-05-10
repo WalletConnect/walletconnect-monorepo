@@ -8,6 +8,7 @@ import {
 import { IClient } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
+import { ProposalTypes } from "./proposal";
 import { PairingTypes } from "./pairing";
 import { JsonRpcTypes } from "./jsonrpc";
 import { EventEmitter } from "events";
@@ -50,7 +51,7 @@ export declare namespace EngineTypes {
   }
 
   interface ConnectParams {
-    proposedNamespaces: SessionTypes.ProposedNamespace[];
+    proposedNamespaces: ProposalTypes.ProposedNamespace[];
     pairingTopic?: string;
     relays?: RelayerTypes.ProtocolOptions[];
   }

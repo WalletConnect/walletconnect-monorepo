@@ -1,12 +1,18 @@
 import "mocha";
 import { parseUri } from "@walletconnect/utils";
-import { EngineTypes, PairingTypes, RelayerTypes, SessionTypes } from "@walletconnect/types";
+import {
+  EngineTypes,
+  PairingTypes,
+  RelayerTypes,
+  ProposalTypes,
+  SessionTypes,
+} from "@walletconnect/types";
 import { expect } from "./chai";
 import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_PROPOSED_NAMESPACES } from "./values";
 import { Clients } from "./init";
 
 export interface TestConnectParams {
-  proposedNamespaces?: SessionTypes.ProposedNamespace[];
+  proposedNamespaces?: ProposalTypes.ProposedNamespace[];
   namespaces?: SessionTypes.Namespace[];
   relays?: RelayerTypes.ProtocolOptions[];
   pairingTopic?: string;

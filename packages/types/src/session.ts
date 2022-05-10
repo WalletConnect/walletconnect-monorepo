@@ -11,12 +11,6 @@ export declare namespace SessionTypes {
     accounts: string[];
   }
 
-  interface ProposedNamespace {
-    methods: string[];
-    events: string[];
-    chains: string[];
-  }
-
   interface Struct {
     topic: string;
     relay: RelayerTypes.ProtocolOptions;

@@ -2,6 +2,7 @@ import { ErrorResponse, JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
 import { SessionTypes } from "./session";
+import { ProposalTypes } from "./proposal";
 
 export declare namespace JsonRpcTypes {
   // -- core ------------------------------------------------------- //
@@ -29,7 +30,7 @@ export declare namespace JsonRpcTypes {
     wc_pairingPing: {};
     wc_sessionPropose: {
       relays: RelayerTypes.ProtocolOptions[];
-      proposedNamespaces: SessionTypes.ProposedNamespace[];
+      proposedNamespaces: ProposalTypes.ProposedNamespace[];
       proposer: {
         publicKey: string;
         metadata: ClientTypes.Metadata;

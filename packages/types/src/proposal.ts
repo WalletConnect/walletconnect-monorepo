@@ -1,9 +1,14 @@
 import { ClientTypes } from "./client";
 import { RelayerTypes } from "./relayer";
-import { SessionTypes } from "./session";
 import { IStore } from "./store";
 
 export declare namespace ProposalTypes {
+  interface ProposedNamespace {
+    methods: string[];
+    events: string[];
+    chains: string[];
+  }
+
   export interface Struct {
     id: number;
     relays: RelayerTypes.ProtocolOptions[];
@@ -11,7 +16,7 @@ export declare namespace ProposalTypes {
       publicKey: string;
       metadata: ClientTypes.Metadata;
     };
-    proposedNamespaces: SessionTypes.ProposedNamespace[];
+    proposedNamespaces: ProposedNamespace[];
     pairingTopic?: string;
   }
 }

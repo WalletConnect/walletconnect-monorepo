@@ -91,7 +91,7 @@ export function isSessionStruct(input: any): input is SessionTypes.Struct {
   return input?.topic;
 }
 
-export function isValidProposedNamespace(input: any): input is SessionTypes.ProposedNamespace {
+export function isValidProposedNamespace(input: any): input is ProposalTypes.ProposedNamespace {
   const { methods, events, chains } = input;
   let validChains = true;
   const validProposedNamespace =
@@ -105,12 +105,12 @@ export function isValidProposedNamespace(input: any): input is SessionTypes.Prop
 export function isValidProposedNamespaces(
   input: any,
   optional: boolean,
-): input is SessionTypes.ProposedNamespace[] {
+): input is ProposalTypes.ProposedNamespace[] {
   let valid = true;
 
   if (optional && !input) valid = true;
   else if (input && isValidArray(input) && input.length) {
-    input.forEach((namespace: SessionTypes.ProposedNamespace) => {
+    input.forEach((namespace: ProposalTypes.ProposedNamespace) => {
       if (!isValidProposedNamespace(namespace)) valid = false;
     });
   }
