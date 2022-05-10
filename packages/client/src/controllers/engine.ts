@@ -1,6 +1,6 @@
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
-import { EXPIRER_EVENTS } from "../constants";
+import { EXPIRER_EVENTS, SESSION_EXPIRY } from "../constants";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -10,7 +10,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, SEVEN_DAYS, THIRTY_DAYS } from "@walletconnect/time";
+import { FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
 import {
   IEngine,
   IEngineEvents,
@@ -126,7 +126,6 @@ export class Engine extends IEngine {
       selfPublicKey,
       peerPublicKey,
     );
-    const sessionExpiry = calcExpiry(SEVEN_DAYS);
     const sessionSettle = {
       relay: {
         protocol: relayProtocol ?? "waku",
@@ -136,7 +135,7 @@ export class Engine extends IEngine {
         publicKey: selfPublicKey,
         metadata: this.client.metadata,
       },
-      expiry: sessionExpiry,
+      expiry: SESSION_EXPIRY,
     };
 
     await this.client.core.relayer.subscribe(sessionTopic);
@@ -159,7 +158,7 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
     };
     await this.client.session.set(sessionTopic, session);
-    await this.setExpiry(sessionTopic, sessionExpiry);
+    await this.setExpiry(sessionTopic, SESSION_EXPIRY);
 
     if (pairingTopic && id) {
       await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
@@ -208,7 +207,7 @@ export class Engine extends IEngine {
       else resolve();
     });
     await done();
-    await this.setExpiry(topic, calcExpiry(SEVEN_DAYS));
+    await this.setExpiry(topic, SESSION_EXPIRY);
   };
 
   public request: IEngine["request"] = async params => {
@@ -565,7 +564,7 @@ export class Engine extends IEngine {
     payload,
   ) => {
     const { id } = payload;
-    await this.setExpiry(topic, calcExpiry(SEVEN_DAYS));
+    await this.setExpiry(topic, SESSION_EXPIRY);
     await this.sendResult<"wc_sessionExtend">(id, topic, true);
     this.client.events.emit("extend", { topic });
   };
