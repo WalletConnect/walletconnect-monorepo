@@ -41,6 +41,7 @@ import {
   isValidRequest,
   isValidEvent,
   isValidResponse,
+  isValidProposedNamespaces,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -659,9 +660,8 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     const { chainId, request } = params;
 
-    // Move this to validation
-    const isChain = chainId && namespaces.some(n => n.chains.includes(chainId));
-    const isMethod = namespaces.some(n => n.methods.includes(request.method));
+    const isChain = isValidNamespacesChainId(namespaces, chainId);
+    const isMethod = isValidNamespacesRequest(namespaces, chainId, request.method);
 
     if (!isChain) {
       await this.sendError(id, topic, ERROR.UNSUPPORTED_CHAINS.format());

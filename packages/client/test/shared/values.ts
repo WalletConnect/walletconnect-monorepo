@@ -71,7 +71,13 @@ export const TEST_METHODS = [
 ];
 export const TEST_EVENTS = ["chainChanged", "accountsChanged"];
 
-export const TEST_NAMESPACES = [
+export const TEST_ETHEREUM_ADDRESS = "0x3c582121909DE92Dc89A36898633C1aE4790382b";
+
+export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+
+export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT];
+
+export const TEST_PROPOSED_NAMESPACES = [
   {
     methods: TEST_METHODS,
     chains: TEST_CHAINS,
@@ -79,11 +85,13 @@ export const TEST_NAMESPACES = [
   },
 ];
 
-export const TEST_ETHEREUM_ADDRESS = "0x3c582121909DE92Dc89A36898633C1aE4790382b";
-
-export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
-
-export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT];
+export const TEST_NAMESPACES = [
+  {
+    methods: TEST_METHODS,
+    accounts: TEST_ACCOUNTS,
+    events: TEST_EVENTS,
+  },
+];
 
 export const TEST_MESSAGE = "My name is John Doe";
 export const TEST_SIGNATURE =

@@ -106,12 +106,12 @@ export function isValidProposedNamespaces(
   input: any,
   optional: boolean,
 ): input is SessionTypes.ProposedNamespace[] {
-  let valid = false;
+  let valid = true;
 
   if (optional && !input) valid = true;
   else if (input && isValidArray(input) && input.length) {
     input.forEach((namespace: SessionTypes.ProposedNamespace) => {
-      valid = isValidProposedNamespace(namespace);
+      if (!isValidProposedNamespace(namespace)) valid = false;
     });
   }
 
@@ -132,12 +132,12 @@ export function isValidNamespaces(
   input: any,
   optional: boolean,
 ): input is SessionTypes.Namespace[] {
-  let valid = false;
+  let valid = true;
 
   if (optional && !input) valid = true;
   else if (input && isValidArray(input) && input.length) {
     input.forEach((namespace: SessionTypes.Namespace) => {
-      valid = isValidNamespace(namespace);
+      if (!isValidNamespace(namespace)) valid = false;
     });
   }
 

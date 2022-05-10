@@ -9,7 +9,7 @@ import {
   TEST_CLIENT_OPTIONS,
   deleteClients,
 } from "./shared";
-import { FIVE_MINUTES } from "@walletconnect/time";
+import { SEVEN_DAYS } from "@walletconnect/time";
 
 describe("Client Integration", () => {
   it("init", async () => {
@@ -173,7 +173,11 @@ describe("Client Integration", () => {
       const namespacesBefore = clients.A.session.get(topic).namespaces;
       const namespacesAfter = [
         ...namespacesBefore,
-        { chains: ["eip155:12"], methods: ["eth_sendTransaction"], events: ["accountsChanged"] },
+        {
+          accounts: ["eip155:1:0x000000000000000000000000000000000000dead"],
+          methods: ["eth_sendTransaction"],
+          events: ["accountsChanged"],
+        },
       ];
       await clients.A.update({
         topic,
@@ -186,17 +190,17 @@ describe("Client Integration", () => {
   });
 
   describe("extend", () => {
-    it("updates session expiry state with provided expiry", async () => {
+    it("updates session expiry state", async () => {
       const clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const expiryAfter = calcExpiry(FIVE_MINUTES);
+      const newExpiry = calcExpiry(SEVEN_DAYS);
       await clients.A.extend({
         topic,
       });
-      const result = clients.A.session.get(topic).expiry;
-      expect(result).to.eql(expiryAfter);
+      const expiry = clients.A.session.get(topic).expiry;
+      expect(expiry).to.be.greaterThanOrEqual(newExpiry);
       deleteClients(clients);
     });
   });
