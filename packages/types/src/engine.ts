@@ -241,7 +241,7 @@ export interface EnginePrivate {
   onSessionRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
-  ): Promise<void>;
+  ): void;
 
   onSessionRequestResponse(
     topic: string,

@@ -449,13 +449,18 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { params, id: id } = payload;
-    await this.client.proposal.set(id, {
-      id,
-      pairingTopic: topic,
-      ...params,
-    });
-    this.client.events.emit("session_proposal", { id, ...params });
+    try {
+      this.isValidConnect({ ...payload.params });
+      const { params, id: id } = payload;
+      await this.client.proposal.set(id, {
+        id,
+        pairingTopic: topic,
+        ...params,
+      });
+      this.client.events.emit("session_proposal", { id, ...params });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
@@ -506,25 +511,30 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { relay, controller, expiry, namespaces } = payload.params;
-    const session = {
-      topic,
-      relay,
-      expiry,
-      namespaces,
-      acknowledged: true,
-      controller: controller.publicKey,
-      self: {
-        publicKey: "",
-        metadata: this.client.metadata,
-      },
-      peer: {
-        publicKey: controller.publicKey,
-        metadata: controller.metadata,
-      },
-    };
-    await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
-    this.events.emit(engineEvent("connect"), { data: session });
+    try {
+      this.isValidApprove({ id: payload.id, ...payload.params });
+      const { relay, controller, expiry, namespaces } = payload.params;
+      const session = {
+        topic,
+        relay,
+        expiry,
+        namespaces,
+        acknowledged: true,
+        controller: controller.publicKey,
+        self: {
+          publicKey: "",
+          metadata: this.client.metadata,
+        },
+        peer: {
+          publicKey: controller.publicKey,
+          metadata: controller.metadata,
+        },
+      };
+      await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
+      this.events.emit(engineEvent("connect"), { data: session });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onSessionSettleResponse: EnginePrivate["onSessionSettleResponse"] = async (
@@ -545,10 +555,15 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { params, id } = payload;
-    await this.client.session.update(topic, { namespaces: params.namespaces });
-    await this.sendResult<"wc_sessionUpdate">(id, topic, true);
-    this.client.events.emit("update", { topic, namespaces: params.namespaces });
+    try {
+      this.isValidUpdate({ topic, ...payload.params });
+      const { params, id } = payload;
+      await this.client.session.update(topic, { namespaces: params.namespaces });
+      await this.sendResult<"wc_sessionUpdate">(id, topic, true);
+      this.client.events.emit("update", { topic, namespaces: params.namespaces });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onSessionUpdateResponse: EnginePrivate["onSessionUpdateResponse"] = (_topic, payload) => {
@@ -564,10 +579,15 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { id } = payload;
-    await this.setExpiry(topic, SESSION_EXPIRY);
-    await this.sendResult<"wc_sessionExtend">(id, topic, true);
-    this.client.events.emit("extend", { topic });
+    try {
+      this.isValidExtend({ topic });
+      const { id } = payload;
+      await this.setExpiry(topic, SESSION_EXPIRY);
+      await this.sendResult<"wc_sessionExtend">(id, topic, true);
+      this.client.events.emit("extend", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onSessionExtendResponse: EnginePrivate["onSessionExtendResponse"] = (_topic, payload) => {
@@ -580,9 +600,14 @@ export class Engine extends IEngine {
   };
 
   private onSessionPingRequest: EnginePrivate["onSessionPingRequest"] = async (topic, payload) => {
-    const { id } = payload;
-    await this.sendResult<"wc_sessionPing">(id, topic, true);
-    this.client.events.emit("session_ping", { topic });
+    try {
+      this.isValidPing({ topic });
+      const { id } = payload;
+      await this.sendResult<"wc_sessionPing">(id, topic, true);
+      this.client.events.emit("session_ping", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
@@ -595,9 +620,14 @@ export class Engine extends IEngine {
   };
 
   private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
-    const { id } = payload;
-    await this.sendResult<"wc_pairingPing">(id, topic, true);
-    this.client.events.emit("pairing_ping", { topic });
+    try {
+      this.isValidPing({ topic });
+      const { id } = payload;
+      await this.sendResult<"wc_pairingPing">(id, topic, true);
+      this.client.events.emit("pairing_ping", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
@@ -613,10 +643,15 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { id } = payload;
-    await this.sendResult<"wc_sessionDelete">(id, topic, true);
-    await this.deleteSession(topic);
-    this.client.events.emit("session_delete", { topic });
+    try {
+      this.isValidDisconnect({ topic, reason: payload.params });
+      const { id } = payload;
+      await this.sendResult<"wc_sessionDelete">(id, topic, true);
+      await this.deleteSession(topic);
+      this.client.events.emit("session_delete", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onSessionDeleteResponse: EnginePrivate["onSessionDeleteResponse"] = async (
@@ -636,10 +671,15 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { id } = payload;
-    await this.sendResult<"wc_pairingDelete">(id, topic, true);
-    await this.deletePairing(topic);
-    this.client.events.emit("pairing_delete", { topic });
+    try {
+      this.isValidDisconnect({ topic, reason: payload.params });
+      const { id } = payload;
+      await this.sendResult<"wc_pairingDelete">(id, topic, true);
+      await this.deletePairing(topic);
+      this.client.events.emit("pairing_delete", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   private onPairingDeleteResponse: EnginePrivate["onPairingDeleteResponse"] = async (
@@ -655,20 +695,14 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
-    const { namespaces } = this.client.session.get(topic);
-    const { id, params } = payload;
-    const { chainId, request } = params;
-
-    const isChain = isValidNamespacesChainId(namespaces, chainId);
-    const isMethod = isValidNamespacesRequest(namespaces, chainId, request.method);
-
-    if (!isChain) {
-      await this.sendError(id, topic, ERROR.UNSUPPORTED_CHAINS.format());
-    } else if (!isMethod) {
-      await this.sendError(id, topic, ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format());
-    } else {
+  private onSessionRequest: EnginePrivate["onSessionRequest"] = (topic, payload) => {
+    try {
+      this.isValidRequest({ topic, ...payload.params });
+      const { params } = payload;
+      const { chainId, request } = params;
       this.client.events.emit("request", { topic, request, chainId });
+    } catch (err) {
+      this.client.logger.error(err);
     }
   };
 
@@ -685,8 +719,13 @@ export class Engine extends IEngine {
   };
 
   private onSessionEventRequest: EnginePrivate["onSessionEventRequest"] = (topic, payload) => {
-    const { event, chainId } = payload.params;
-    this.client.events.emit("event", { topic, event, chainId });
+    try {
+      this.isValidEmit({ topic, ...payload.params });
+      const { event, chainId } = payload.params;
+      this.client.events.emit("event", { topic, event, chainId });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
   };
 
   // ---------- Expirer Events ----------------------------------------- //

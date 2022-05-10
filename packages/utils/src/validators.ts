@@ -1,13 +1,11 @@
 import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import { isNamespaceEqual, calcExpiry } from "./misc";
-import { getChains } from "./caip";
+import { isNamespaceEqual } from "./misc";
 import {
   getNamespacesChains,
   getNamespacesMethodsForChainId,
   getNamespacesEventsForChainId,
 } from "./namespaces";
-import { FIVE_MINUTES, SEVEN_DAYS } from "@walletconnect/time";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
   const results = [];
