@@ -44,6 +44,7 @@ export class Crypto implements ICrypto {
   };
 
   public generateKeyPair: ICrypto["generateKeyPair"] = () => {
+    this.isInitialized();
     const keyPair = generateKeyPair();
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
@@ -53,6 +54,7 @@ export class Crypto implements ICrypto {
     peerPublicKey,
     overrideTopic,
   ) => {
+    this.isInitialized();
     const privateKey = this.getPrivateKey(selfPublicKey);
     const sharedKey = deriveSharedKey(privateKey, peerPublicKey);
     const symKey = deriveSymmetricKey(sharedKey);
@@ -77,18 +79,21 @@ export class Crypto implements ICrypto {
   };
 
   public encrypt: ICrypto["encrypt"] = (topic, message) => {
+    this.isInitialized();
     const symKey = this.getSymKey(topic);
     const result = encrypt({ symKey, message });
     return result;
   };
 
   public decrypt: ICrypto["decrypt"] = (topic, encoded) => {
+    this.isInitialized();
     const symKey = this.getSymKey(topic);
     const result = decrypt({ symKey, encoded });
     return result;
   };
 
   public encode: ICrypto["encode"] = (topic, payload) => {
+    this.isInitialized();
     const hasKeys = this.hasKeys(topic);
     const message = safeJsonStringify(payload);
     const result = hasKeys ? this.encrypt(topic, message) : encoding.utf8ToHex(message);
@@ -96,6 +101,7 @@ export class Crypto implements ICrypto {
   };
 
   public decode: ICrypto["decode"] = (topic, encoded) => {
+    this.isInitialized();
     const hasKeys = this.hasKeys(topic);
     const message = hasKeys ? this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
     const payload = safeJsonParse(message);
