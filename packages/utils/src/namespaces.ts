@@ -3,8 +3,8 @@ import { SessionTypes } from "@walletconnect/types";
 export function getAccountsChains(accounts: SessionTypes.Namespace["accounts"]) {
   const chains: string[] = [];
   accounts.forEach(account => {
-    const [chain] = account.split(":");
-    chains.push(chain);
+    const [chain, chainId] = account.split(":");
+    chains.push(`${chain}:${chainId}`);
   });
 
   return chains;

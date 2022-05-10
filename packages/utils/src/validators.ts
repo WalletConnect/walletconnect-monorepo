@@ -216,13 +216,10 @@ export function isValidEvent(event: any) {
   return true;
 }
 
-export function isValidNamespacesChainId(namespaces: SessionTypes.Namespace[], chainId?: string) {
-  if (!isValidChainId(chainId, true)) return false;
-
-  if (chainId) {
-    const chains = getNamespacesChains(namespaces);
-    if (!chains.includes(chainId)) return false;
-  }
+export function isValidNamespacesChainId(namespaces: SessionTypes.Namespace[], chainId: string) {
+  if (!isValidChainId(chainId, false)) return false;
+  const chains = getNamespacesChains(namespaces);
+  if (!chains.includes(chainId)) return false;
 
   return true;
 }

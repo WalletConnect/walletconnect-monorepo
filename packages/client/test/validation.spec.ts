@@ -374,6 +374,12 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith("Missing or invalid request chainId");
     });
 
+    it("throws when chain id is not in session namespace", async () => {
+      await expect(
+        client.request({ ...TEST_REQUEST_PARAMS, topic, chainId: "eip000:0" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid request chainId");
+    });
+
     it("throws when invalid request is provided", async () => {
       await expect(
         client.request({ ...TEST_REQUEST_PARAMS, topic, request: 123 }),
