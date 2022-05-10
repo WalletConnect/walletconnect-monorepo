@@ -11,7 +11,7 @@ export declare namespace ProposalTypes {
       publicKey: string;
       metadata: ClientTypes.Metadata;
     };
-    proposedNamespaces: SessionTypes.ProposedNamespaces[];
+    proposedNamespaces: SessionTypes.ProposedNamespace[];
     pairingTopic?: string;
   }
 }

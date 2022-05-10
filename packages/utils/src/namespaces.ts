@@ -1,8 +1,20 @@
 import { SessionTypes } from "@walletconnect/types";
 
+export function getAccountsChains(accounts: SessionTypes.Namespace["accounts"]) {
+  const chains: string[] = [];
+  accounts.forEach(account => {
+    const [chain] = account.split(":");
+    chains.push(chain);
+  });
+
+  return chains;
+}
+
 export function getNamespacesChains(namespaces: SessionTypes.Namespace[]) {
-  const chains: SessionTypes.Namespace["chains"] = [];
-  namespaces.forEach(namespace => chains.push(...namespace.chains));
+  const chains: string[] = [];
+  namespaces.forEach(namespace => {
+    chains.push(...getAccountsChains(namespace.accounts));
+  });
 
   return chains;
 }
@@ -13,7 +25,8 @@ export function getNamespacesMethodsForChainId(
 ) {
   const methods: SessionTypes.Namespace["methods"] = [];
   namespaces.forEach(namespace => {
-    if (namespace.chains.includes(chainId)) methods.push(...namespace.methods);
+    const chains = getAccountsChains(namespace.accounts);
+    if (chains.includes(chainId)) methods.push(...namespace.methods);
   });
 
   return methods;
@@ -25,7 +38,8 @@ export function getNamespacesEventsForChainId(
 ) {
   const events: SessionTypes.Namespace["events"] = [];
   namespaces.forEach(namespace => {
-    if (namespace.chains.includes(chainId)) events.push(...namespace.events);
+    const chains = getAccountsChains(namespace.accounts);
+    if (chains.includes(chainId)) events.push(...namespace.events);
   });
 
   return events;

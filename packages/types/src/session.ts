@@ -11,7 +11,7 @@ export declare namespace SessionTypes {
     accounts: string[];
   }
 
-  interface ProposedNamespaces {
+  interface ProposedNamespace {
     methods: string[];
     events: string[];
     chains: string[];

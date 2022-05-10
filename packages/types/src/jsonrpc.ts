@@ -29,7 +29,7 @@ export declare namespace JsonRpcTypes {
     wc_pairingPing: {};
     wc_sessionPropose: {
       relays: RelayerTypes.ProtocolOptions[];
-      proposedNamespaces: SessionTypes.ProposedNamespaces[];
+      proposedNamespaces: SessionTypes.ProposedNamespace[];
       proposer: {
         publicKey: string;
         metadata: ClientTypes.Metadata;

@@ -1,6 +1,6 @@
 import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import { hasOverlap, isNamespaceEqual, calcExpiry } from "./misc";
+import { isNamespaceEqual, calcExpiry } from "./misc";
 import { getChains } from "./caip";
 import {
   getNamespacesChains,
@@ -11,10 +11,7 @@ import { FIVE_MINUTES, SEVEN_DAYS } from "@walletconnect/time";
 
 export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
   const results = [];
-  const { accounts, namespace, expiry } = filters;
-  if (session.accounts && accounts) {
-    results.push(hasOverlap(accounts, session.accounts));
-  }
+  const { namespace, expiry } = filters;
   if (session.namespaces && namespace) {
     session.namespaces.forEach(n => {
       results.push(isNamespaceEqual(namespace, n));
@@ -94,9 +91,41 @@ export function isSessionStruct(input: any): input is SessionTypes.Struct {
   return input?.topic;
 }
 
-export function isValidNamespace(input: any): input is SessionTypes.Namespace {
+export function isValidProposedNamespace(input: any): input is SessionTypes.ProposedNamespace {
   const { methods, events, chains } = input;
-  return isValidArray(methods) && isValidArray(events) && isValidArray(chains);
+  let validChains = true;
+  const validProposedNamespace =
+    isValidArray(methods) && isValidArray(events) && isValidArray(chains);
+  chains.forEach((chain: string) => {
+    if (!isValidChainId(chain, false)) validChains = false;
+  });
+  return validProposedNamespace && validChains;
+}
+
+export function isValidProposedNamespaces(
+  input: any,
+  optional: boolean,
+): input is SessionTypes.ProposedNamespace[] {
+  let valid = false;
+
+  if (optional && !input) valid = true;
+  else if (input && isValidArray(input) && input.length) {
+    input.forEach((namespace: SessionTypes.ProposedNamespace) => {
+      valid = isValidProposedNamespace(namespace);
+    });
+  }
+
+  return valid;
+}
+
+export function isValidNamespace(input: any): input is SessionTypes.Namespace[] {
+  const { methods, events, accounts } = input;
+  let validAccounts = true;
+  const validNamespace = isValidArray(methods) && isValidArray(events) && isValidArray(accounts);
+  accounts.forEach((account: string) => {
+    if (!isValidAccountId(account)) validAccounts = false;
+  });
+  return validNamespace && validAccounts;
 }
 
 export function isValidNamespaces(
@@ -163,37 +192,6 @@ export function isValidErrorReason(input: any): input is ErrorResponse {
   if (!input.message || !isValidString(input.message, false)) return false;
 
   return true;
-}
-
-export function areAccountsInNamespaces(
-  accounts: SessionTypes.Accounts,
-  namespaces: SessionTypes.Namespace[],
-) {
-  const accountChains = getChains(accounts);
-  const namespacesChains = getNamespacesChains(namespaces);
-  const mismatched: string[] = [];
-  let valid = true;
-
-  accountChains.forEach(chain => {
-    if (!namespacesChains.includes(chain)) {
-      mismatched.push(chain);
-      valid = false;
-    }
-  });
-
-  return {
-    valid,
-    mismatched,
-  };
-}
-
-export function isValidExpiry(input: any): input is number {
-  if (!isValidNumber(input, false)) return false;
-
-  const MIN_FUTURE = calcExpiry(FIVE_MINUTES);
-  const MAX_FUTURE = calcExpiry(SEVEN_DAYS);
-
-  return input >= MIN_FUTURE && input <= MAX_FUTURE;
 }
 
 export function isValidRequest(request: any) {

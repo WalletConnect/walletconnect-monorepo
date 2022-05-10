@@ -50,7 +50,7 @@ export declare namespace EngineTypes {
   }
 
   interface ConnectParams {
-    proposedNamespaces: SessionTypes.ProposedNamespaces[];
+    proposedNamespaces: SessionTypes.ProposedNamespace[];
     pairingTopic?: string;
     relays?: RelayerTypes.ProtocolOptions[];
   }
