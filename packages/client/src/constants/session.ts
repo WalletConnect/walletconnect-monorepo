@@ -5,4 +5,4 @@ export const SESSION_CONTEXT = "session";
 
 export const SESSION_DEFAULT_TTL = SEVEN_DAYS;
 
-export const SESSION_EXPIRY = calcExpiry(SEVEN_DAYS);
+export const SESSION_EXPIRY = calcExpiry(SESSION_DEFAULT_TTL);
