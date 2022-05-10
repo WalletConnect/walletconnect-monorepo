@@ -7,7 +7,6 @@ import {
   TEST_APPROVE_PARAMS,
   TEST_CONNECT_PARAMS,
   TEST_REJECT_PARAMS,
-  TEST_UPDATE_ACCOUNTS_PARAMS,
   TEST_UPDATE_EXPIRY_PARAMS,
   TEST_REQUEST_PARAMS,
   TEST_EMIT_PARAMS,
@@ -15,8 +14,6 @@ import {
   TEST_UPDATE_NAMESPACES_PARAMS,
 } from "./shared";
 import Client from "../src";
-import { calcExpiry } from "@walletconnect/utils";
-import { ONE_MINUTE, SEVEN_DAYS } from "@walletconnect/time";
 
 let client: Client;
 let pairingTopic: string;
@@ -268,174 +265,85 @@ describe("Client Validation", () => {
     });
   });
 
-  describe("updateAccounts", () => {
+  describe("update", () => {
     it("throws when no params are passed", async () => {
-      await expect(client.updateAccounts()).to.eventually.be.rejectedWith(
-        "Missing or invalid updateAccounts params",
+      await expect(client.update()).to.eventually.be.rejectedWith(
+        "Missing or invalid update params",
       );
     });
 
     it("throws when invalid topic is provided", async () => {
       await expect(
-        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts topic");
+        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid update topic");
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(
-        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts topic");
+        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid update topic");
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
-        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts topic");
+        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid update topic");
     });
 
     it("throws when non existant topic is provided", async () => {
       await expect(
-        client.updateAccounts({ ...TEST_UPDATE_ACCOUNTS_PARAMS, topic: "none" }),
-      ).to.eventually.be.rejectedWith("No matching session with topic: none");
-    });
-
-    it("throws when invalid accounts are provided", async () => {
-      await expect(client.updateAccounts({ topic, accounts: [123] })).to.eventually.be.rejectedWith(
-        "Missing or invalid updateAccounts accounts",
-      );
-      await expect(
-        client.updateAccounts({ topic, accounts: ["123"] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
-    });
-
-    it("throws when no accounts are provided", async () => {
-      await expect(
-        client.updateAccounts({ topic, accounts: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateAccounts accounts");
-    });
-
-    it("throws when provided accounts are not in session namespace", async () => {
-      await expect(
-        client.updateAccounts({
-          topic,
-          accounts: [
-            "eip155:42:0x3c582121909DE92Dc89A36898633C1aE4790382b",
-            "eip155:10:0x3c582121909DE92Dc89A36898633C1aE4790382b",
-          ],
-        }),
-      ).to.eventually.be.rejectedWith(
-        "Invalid accounts with mismatched chains: eip155:42,eip155:10",
-      );
-    });
-  });
-
-  describe("updateNamespaces", () => {
-    it("throws when no params are passed", async () => {
-      await expect(client.updateNamespaces()).to.eventually.be.rejectedWith(
-        "Missing or invalid updateNamespaces params",
-      );
-    });
-
-    it("throws when invalid topic is provided", async () => {
-      await expect(
-        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces topic");
-    });
-
-    it("throws when empty topic is provided", async () => {
-      await expect(
-        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces topic");
-    });
-
-    it("throws when no topic is provided", async () => {
-      await expect(
-        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces topic");
-    });
-
-    it("throws when non existant topic is provided", async () => {
-      await expect(
-        client.updateNamespaces({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "none" }),
+        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "none" }),
       ).to.eventually.be.rejectedWith("No matching session with topic: none");
     });
 
     it("throws when invalid namespaces are provided", async () => {
-      await expect(
-        client.updateNamespaces({ topic, namespaces: {} }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces namespaces");
+      await expect(client.update({ topic, namespaces: {} })).to.eventually.be.rejectedWith(
+        "Missing or invalid update namespaces",
+      );
     });
 
     it("throws when empty namespaces are provided", async () => {
-      await expect(
-        client.updateNamespaces({ topic, namespaces: [] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces namespaces");
+      await expect(client.update({ topic, namespaces: [] })).to.eventually.be.rejectedWith(
+        "Missing or invalid update namespaces",
+      );
     });
 
     it("throws when no namespaces are provided", async () => {
-      await expect(
-        client.updateNamespaces({ topic, namespaces: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateNamespaces namespaces");
+      await expect(client.update({ topic, namespaces: undefined })).to.eventually.be.rejectedWith(
+        "Missing or invalid update namespaces",
+      );
     });
   });
 
-  describe("updateExpiry", () => {
+  describe("extend", () => {
     it("throws when no params are passed", async () => {
-      await expect(client.updateExpiry()).to.eventually.be.rejectedWith(
-        "Missing or invalid updateExpiry params",
+      await expect(client.extend()).to.eventually.be.rejectedWith(
+        "Missing or invalid extend params",
       );
     });
 
     it("throws when invalid topic is provided", async () => {
       await expect(
-        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateExpiry topic");
+        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: 123 }),
+      ).to.eventually.be.rejectedWith("Missing or invalid extend topic");
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(
-        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateExpiry topic");
+        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "" }),
+      ).to.eventually.be.rejectedWith("Missing or invalid extend topic");
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
-        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid updateExpiry topic");
+        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid extend topic");
     });
 
     it("throws when non existant topic is provided", async () => {
       await expect(
-        client.updateExpiry({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "none" }),
+        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "none" }),
       ).to.eventually.be.rejectedWith("No matching session with topic: none");
-    });
-
-    it("throws when invalid expiry is provided", async () => {
-      await expect(client.updateExpiry({ topic, expiry: "1" })).to.eventually.be.rejectedWith(
-        "Missing or invalid updateExpiry expiry (min 5 min, max 7 days)",
-      );
-    });
-
-    it("throws when no expiry is provided", async () => {
-      await expect(client.updateExpiry({ topic, expiry: undefined })).to.eventually.be.rejectedWith(
-        "Missing or invalid updateExpiry expiry (min 5 min, max 7 days)",
-      );
-    });
-
-    it("throws when expiry is less than 5 minutes", async () => {
-      await expect(
-        client.updateExpiry({ topic, expiry: calcExpiry(ONE_MINUTE) }),
-      ).to.eventually.be.rejectedWith(
-        "Missing or invalid updateExpiry expiry (min 5 min, max 7 days)",
-      );
-    });
-
-    it("throws when expiry is more than 7 days", async () => {
-      await expect(
-        client.updateExpiry({ topic, expiry: calcExpiry(SEVEN_DAYS + ONE_MINUTE) }),
-      ).to.eventually.be.rejectedWith(
-        "Missing or invalid updateExpiry expiry (min 5 min, max 7 days)",
-      );
     });
   });
 

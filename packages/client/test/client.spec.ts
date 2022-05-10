@@ -164,28 +164,7 @@ describe("Client Integration", () => {
     });
   });
 
-  describe("updateAccounts", () => {
-    it("updates session account state with provided accounts", async () => {
-      const clients = await initTwoClients();
-      const {
-        sessionA: { topic },
-      } = await testConnectMethod(clients);
-      const accountsBefore = clients.A.session.get(topic).accounts;
-      const accountsAfter = [
-        ...accountsBefore,
-        "eip155:43114:0x3c582121909DE92Dc89A36898633C1aE4790382b",
-      ];
-      await clients.A.updateAccounts({
-        topic,
-        accounts: accountsAfter,
-      });
-      const result = clients.A.session.get(topic).accounts;
-      expect(result).to.eql(accountsAfter);
-      deleteClients(clients);
-    });
-  });
-
-  describe("updateNamespaces", () => {
+  describe("update", () => {
     it("updates session namespaces state with provided namespaces", async () => {
       const clients = await initTwoClients();
       const {
@@ -196,7 +175,7 @@ describe("Client Integration", () => {
         ...namespacesBefore,
         { chains: ["eip155:12"], methods: ["eth_sendTransaction"], events: ["accountsChanged"] },
       ];
-      await clients.A.updateNamespaces({
+      await clients.A.update({
         topic,
         namespaces: namespacesAfter,
       });
@@ -206,16 +185,15 @@ describe("Client Integration", () => {
     });
   });
 
-  describe("updateExpiry", () => {
+  describe("extend", () => {
     it("updates session expiry state with provided expiry", async () => {
       const clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
       const expiryAfter = calcExpiry(FIVE_MINUTES);
-      await clients.A.updateExpiry({
+      await clients.A.extend({
         topic,
-        expiry: expiryAfter,
       });
       const result = clients.A.session.get(topic).expiry;
       expect(result).to.eql(expiryAfter);
