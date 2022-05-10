@@ -712,8 +712,8 @@ export class Engine extends IEngine {
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect pairingTopic" });
     if (pairingTopic && !this.client.pairing.keys.includes(pairingTopic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
-    if (!isValidProposedNamespaces(proposedNamespaces, true))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "connect namespaces" });
+    if (!isValidProposedNamespaces(proposedNamespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect proposedNamespaces" });
     if (!isValidRelays(relays, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect relays" });
   };

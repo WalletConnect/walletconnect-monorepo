@@ -195,7 +195,8 @@ describe("Client Integration", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      const newExpiry = calcExpiry(SEVEN_DAYS);
+      // Adjusted due to tests sometimes being ahead by 1s
+      const newExpiry = calcExpiry(SEVEN_DAYS) - 10;
       await clients.A.extend({
         topic,
       });

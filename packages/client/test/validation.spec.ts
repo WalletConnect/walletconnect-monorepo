@@ -7,11 +7,10 @@ import {
   TEST_APPROVE_PARAMS,
   TEST_CONNECT_PARAMS,
   TEST_REJECT_PARAMS,
-  TEST_UPDATE_EXPIRY_PARAMS,
+  TEST_UPDATE_PARAMS,
   TEST_REQUEST_PARAMS,
   TEST_EMIT_PARAMS,
   TEST_RESPOND_PARAMS,
-  TEST_UPDATE_NAMESPACES_PARAMS,
 } from "./shared";
 import Client from "../src";
 
@@ -53,16 +52,22 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith("No matching pairing with topic: none");
     });
 
-    it("throws when empty namespaces are provided", async () => {
+    it("throws when empty proposedNamespaces are provided", async () => {
       await expect(
-        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, namespaces: [] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect namespaces");
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, proposedNamespaces: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect proposedNamespaces");
     });
 
-    it("throws when invalid namespaces are provided", async () => {
+    it("throws when invalid proposedNamespaces are provided", async () => {
       await expect(
-        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, namespaces: {} }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect namespaces");
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, proposedNamespaces: {} }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect proposedNamespaces");
+    });
+
+    it("throws when no proposedNamespaces are provided", async () => {
+      await expect(
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, proposedNamespaces: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect proposedNamespaces");
     });
   });
 
@@ -113,27 +118,6 @@ describe("Client Validation", () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: undefined }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve id");
-    });
-
-    it("throws when invalid accounts are provided", async () => {
-      await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, accounts: [123] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
-      await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, accounts: ["123"] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
-    });
-
-    it("throws when empty accounts are provided", async () => {
-      await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, accounts: [] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
-    });
-
-    it("throws when no accounts are provided", async () => {
-      await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, accounts: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve accounts");
     });
 
     it("throws when invalid namespaces are provided", async () => {
@@ -274,25 +258,25 @@ describe("Client Validation", () => {
 
     it("throws when invalid topic is provided", async () => {
       await expect(
-        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: 123 }),
+        client.update({ ...TEST_UPDATE_PARAMS, topic: 123 }),
       ).to.eventually.be.rejectedWith("Missing or invalid update topic");
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(
-        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "" }),
+        client.update({ ...TEST_UPDATE_PARAMS, topic: "" }),
       ).to.eventually.be.rejectedWith("Missing or invalid update topic");
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
-        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: undefined }),
+        client.update({ ...TEST_UPDATE_PARAMS, topic: undefined }),
       ).to.eventually.be.rejectedWith("Missing or invalid update topic");
     });
 
     it("throws when non existant topic is provided", async () => {
       await expect(
-        client.update({ ...TEST_UPDATE_NAMESPACES_PARAMS, topic: "none" }),
+        client.update({ ...TEST_UPDATE_PARAMS, topic: "none" }),
       ).to.eventually.be.rejectedWith("No matching session with topic: none");
     });
 
@@ -323,27 +307,27 @@ describe("Client Validation", () => {
     });
 
     it("throws when invalid topic is provided", async () => {
-      await expect(
-        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid extend topic");
+      await expect(client.extend({ topic: 123 })).to.eventually.be.rejectedWith(
+        "Missing or invalid extend topic",
+      );
     });
 
     it("throws when empty topic is provided", async () => {
-      await expect(
-        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid extend topic");
+      await expect(client.extend({ topic: "" })).to.eventually.be.rejectedWith(
+        "Missing or invalid extend topic",
+      );
     });
 
     it("throws when no topic is provided", async () => {
-      await expect(
-        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid extend topic");
+      await expect(client.extend({ topic: undefined })).to.eventually.be.rejectedWith(
+        "Missing or invalid extend topic",
+      );
     });
 
     it("throws when non existant topic is provided", async () => {
-      await expect(
-        client.extend({ ...TEST_UPDATE_EXPIRY_PARAMS, topic: "none" }),
-      ).to.eventually.be.rejectedWith("No matching session with topic: none");
+      await expect(client.extend({ topic: "none" })).to.eventually.be.rejectedWith(
+        "No matching session with topic: none",
+      );
     });
   });
 
