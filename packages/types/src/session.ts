@@ -3,11 +3,15 @@ import { RelayerTypes } from "./relayer";
 import { IStore } from "./store";
 
 export declare namespace SessionTypes {
-  type Accounts = string[];
-
   type Expiry = number;
 
   interface Namespace {
+    methods: string[];
+    events: string[];
+    accounts: string[];
+  }
+
+  interface ProposedNamespaces {
     methods: string[];
     events: string[];
     chains: string[];
@@ -19,7 +23,6 @@ export declare namespace SessionTypes {
     expiry: Expiry;
     acknowledged: boolean;
     controller: string;
-    accounts: Accounts;
     namespaces: Namespace[];
     self: {
       publicKey: string;
@@ -32,7 +35,6 @@ export declare namespace SessionTypes {
   }
 
   interface Updatable {
-    accounts?: Accounts;
     namespace?: Namespace;
     expiry?: Expiry;
   }

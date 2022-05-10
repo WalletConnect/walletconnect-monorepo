@@ -33,11 +33,8 @@ import {
   isValidUrl,
   isValidId,
   isValidParams,
-  isValidAccounts,
   isValidString,
   isValidErrorReason,
-  areAccountsInNamespaces,
-  isValidExpiry,
   isValidNamespacesChainId,
   isValidNamespacesRequest,
   isValidNamespacesEvent,
@@ -60,7 +57,7 @@ export class Engine extends IEngine {
 
   public connect: IEngine["connect"] = async params => {
     this.isValidConnect(params);
-    const { pairingTopic, namespaces, relays } = params;
+    const { pairingTopic, proposedNamespaces, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
     let active = false;
@@ -78,7 +75,7 @@ export class Engine extends IEngine {
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
     const proposal = {
-      namespaces: namespaces ?? [],
+      proposedNamespaces: proposedNamespaces ?? [],
       relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
       proposer: {
         publicKey,
@@ -120,7 +117,7 @@ export class Engine extends IEngine {
 
   public approve: IEngine["approve"] = async params => {
     this.isValidApprove(params);
-    const { id, relayProtocol, accounts, namespaces } = params;
+    const { id, relayProtocol, namespaces } = params;
     const { pairingTopic, proposer } = this.client.proposal.get(id);
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
@@ -134,7 +131,6 @@ export class Engine extends IEngine {
       relay: {
         protocol: relayProtocol ?? "waku",
       },
-      accounts,
       namespaces,
       controller: {
         publicKey: selfPublicKey,
@@ -189,25 +185,12 @@ export class Engine extends IEngine {
     }
   };
 
-  public updateAccounts: IEngine["updateAccounts"] = async params => {
-    this.isValidUpdateAccounts(params);
-    const { topic, accounts } = params;
-    const id = await this.sendRequest(topic, "wc_sessionUpdateAccounts", { accounts });
-    const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_accounts", id), ({ error }) => {
-      if (error) reject(error);
-      else resolve();
-    });
-    await done();
-    await this.client.session.update(topic, { accounts });
-  };
-
-  public updateNamespaces: IEngine["updateNamespaces"] = async params => {
-    this.isValidUpdateNamespaces(params);
+  public update: IEngine["update"] = async params => {
+    this.isValidUpdate(params);
     const { topic, namespaces } = params;
-    const id = await this.sendRequest(topic, "wc_sessionUpdateNamespaces", { namespaces });
+    const id = await this.sendRequest(topic, "wc_sessionUpdate", { namespaces });
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_namespaces", id), ({ error }) => {
+    this.events.once(engineEvent("update", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
@@ -215,17 +198,17 @@ export class Engine extends IEngine {
     await this.client.session.update(topic, { namespaces });
   };
 
-  public updateExpiry: IEngine["updateExpiry"] = async params => {
-    this.isValidUpdateExpiry(params);
-    const { topic, expiry } = params;
-    const id = await this.sendRequest(topic, "wc_sessionUpdateExpiry", { expiry });
+  public extend: IEngine["extend"] = async params => {
+    this.isValidExtend(params);
+    const { topic } = params;
+    const id = await this.sendRequest(topic, "wc_sessionExtend", {});
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update_expiry", id), ({ error }) => {
+    this.events.once(engineEvent("extend", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
     await done();
-    await this.setExpiry(topic, expiry);
+    await this.setExpiry(topic, calcExpiry(SEVEN_DAYS));
   };
 
   public request: IEngine["request"] = async params => {
@@ -408,12 +391,10 @@ export class Engine extends IEngine {
         return this.onSessionProposeRequest(topic, payload);
       case "wc_sessionSettle":
         return this.onSessionSettleRequest(topic, payload);
-      case "wc_sessionUpdateAccounts":
-        return this.onSessionUpdateAccountsRequest(topic, payload);
-      case "wc_sessionUpdateNamespaces":
-        return this.onSessionUpdateNamespacesRequest(topic, payload);
-      case "wc_sessionUpdateExpiry":
-        return this.onSessionUpdateExpiryRequest(topic, payload);
+      case "wc_sessionUpdate":
+        return this.onSessionUpdateRequest(topic, payload);
+      case "wc_sessionExtend":
+        return this.onSessionExtendRequest(topic, payload);
       case "wc_sessionPing":
         return this.onSessionPingRequest(topic, payload);
       case "wc_pairingPing":
@@ -442,12 +423,10 @@ export class Engine extends IEngine {
         return this.onSessionProposeResponse(topic, payload);
       case "wc_sessionSettle":
         return this.onSessionSettleResponse(topic, payload);
-      case "wc_sessionUpdateAccounts":
-        return this.onSessionUpdateAccountsResponse(topic, payload);
-      case "wc_sessionUpdateNamespaces":
-        return this.onSessionUpdateNamespacesResponse(topic, payload);
-      case "wc_sessionUpdateExpiry":
-        return this.onSessionUpdateExpiryResponse(topic, payload);
+      case "wc_sessionUpdate":
+        return this.onSessionUpdateResponse(topic, payload);
+      case "wc_sessionExtend":
+        return this.onSessionExtendResponse(topic, payload);
       case "wc_sessionPing":
         return this.onSessionPingResponse(topic, payload);
       case "wc_pairingPing":
@@ -527,12 +506,11 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { relay, controller, expiry, accounts, namespaces } = payload.params;
+    const { relay, controller, expiry, namespaces } = payload.params;
     const session = {
       topic,
       relay,
       expiry,
-      accounts,
       namespaces,
       acknowledged: true,
       controller: controller.publicKey,
@@ -563,69 +541,41 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionUpdateAccountsRequest: EnginePrivate["onSessionUpdateAccountsRequest"] = async (
-    topic,
-    payload,
-  ) => {
-    const { params, id } = payload;
-    await this.client.session.update(topic, { accounts: params.accounts });
-    await this.sendResult<"wc_sessionUpdateAccounts">(id, topic, true);
-    this.client.events.emit("update_accounts", { topic, accounts: params.accounts });
-  };
-
-  private onSessionUpdateAccountsResponse: EnginePrivate["onSessionUpdateAccountsResponse"] = (
-    _topic,
-    payload,
-  ) => {
-    const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_accounts", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_accounts", id), { error: payload.error });
-    }
-  };
-
-  private onSessionUpdateNamespacesRequest: EnginePrivate["onSessionUpdateNamespacesRequest"] = async (
+  private onSessionUpdateRequest: EnginePrivate["onSessionUpdateRequest"] = async (
     topic,
     payload,
   ) => {
     const { params, id } = payload;
     await this.client.session.update(topic, { namespaces: params.namespaces });
-    await this.sendResult<"wc_sessionUpdateNamespaces">(id, topic, true);
-    this.client.events.emit("update_namespaces", { topic, namespaces: params.namespaces });
+    await this.sendResult<"wc_sessionUpdate">(id, topic, true);
+    this.client.events.emit("update", { topic, namespaces: params.namespaces });
   };
 
-  private onSessionUpdateNamespacesResponse: EnginePrivate["onSessionUpdateNamespacesResponse"] = (
-    _topic,
-    payload,
-  ) => {
+  private onSessionUpdateResponse: EnginePrivate["onSessionUpdateResponse"] = (_topic, payload) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_namespaces", id), {});
+      this.events.emit(engineEvent("update", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_namespaces", id), { error: payload.error });
+      this.events.emit(engineEvent("update", id), { error: payload.error });
     }
   };
 
-  private onSessionUpdateExpiryRequest: EnginePrivate["onSessionUpdateExpiryRequest"] = async (
+  private onSessionExtendRequest: EnginePrivate["onSessionExtendRequest"] = async (
     topic,
     payload,
   ) => {
-    const { params, id } = payload;
-    await this.setExpiry(topic, params.expiry);
-    await this.sendResult<"wc_sessionUpdateExpiry">(id, topic, true);
-    this.client.events.emit("update_expiry", { topic, expiry: params.expiry });
+    const { id } = payload;
+    await this.setExpiry(topic, calcExpiry(SEVEN_DAYS));
+    await this.sendResult<"wc_sessionExtend">(id, topic, true);
+    this.client.events.emit("extend", { topic });
   };
 
-  private onSessionUpdateExpiryResponse: EnginePrivate["onSessionUpdateExpiryResponse"] = (
-    _topic,
-    payload,
-  ) => {
+  private onSessionExtendResponse: EnginePrivate["onSessionExtendResponse"] = (_topic, payload) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update_expiry", id), {});
+      this.events.emit(engineEvent("extend", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update_expiry", id), { error: payload.error });
+      this.events.emit(engineEvent("extend", id), { error: payload.error });
     }
   };
 
@@ -709,6 +659,8 @@ export class Engine extends IEngine {
     const { namespaces } = this.client.session.get(topic);
     const { id, params } = payload;
     const { chainId, request } = params;
+
+    // Move this to validation
     const isChain = chainId && namespaces.some(n => n.chains.includes(chainId));
     const isMethod = namespaces.some(n => n.methods.includes(request.method));
 
@@ -756,14 +708,12 @@ export class Engine extends IEngine {
   // ---------- Validation ---------------------------------------------- //
   private isValidConnect: EnginePrivate["isValidConnect"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "connect params" });
-
-    const { pairingTopic, namespaces, relays } = params;
-
+    const { pairingTopic, proposedNamespaces, relays } = params;
     if (!isValidString(pairingTopic, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect pairingTopic" });
     if (pairingTopic && !this.client.pairing.keys.includes(pairingTopic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
-    if (!isValidNamespaces(namespaces, true))
+    if (!isValidProposedNamespaces(proposedNamespaces, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect namespaces" });
     if (!isValidRelays(relays, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect relays" });
@@ -776,117 +726,71 @@ export class Engine extends IEngine {
 
   private isValidApprove: EnginePrivate["isValidApprove"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve params" });
-
-    const { id, namespaces, accounts, relayProtocol } = params;
-
+    const { id, namespaces, relayProtocol } = params;
     if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve id" });
     if (!isValidNamespaces(namespaces, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "approve namespaces" });
-    if (!isValidAccounts(accounts, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "approve accounts" });
     if (!isValidString(relayProtocol, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "approve relayProtocol" });
   };
 
   private isValidReject: EnginePrivate["isValidReject"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject params" });
-
     const { id, reason } = params;
-
     if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject id" });
     if (!isValidErrorReason(reason))
       throw ERROR.MISSING_OR_INVALID.format({ name: "reject reason" });
   };
 
-  private isValidUpdateAccounts: EnginePrivate["isValidUpdateAccounts"] = params => {
-    if (!isValidParams(params))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts params" });
-
-    const { topic, accounts } = params;
-
-    if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts topic" });
-    if (!this.client.session.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
-    if (!isValidAccounts(accounts, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateAccounts accounts" });
-    const { valid, mismatched } = areAccountsInNamespaces(
-      accounts,
-      this.client.session.get(topic).namespaces,
-    );
-    if (!valid) throw ERROR.MISMATCHED_ACCOUNTS.format({ mismatched });
-  };
-
-  private isValidUpdateNamespaces: EnginePrivate["isValidUpdateNamespaces"] = params => {
-    if (!isValidParams(params))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateNamespaces params" });
-
+  private isValidUpdate: EnginePrivate["isValidUpdate"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "update params" });
     const { topic, namespaces } = params;
-
     if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateNamespaces topic" });
+      throw ERROR.MISSING_OR_INVALID.format({ name: "update topic" });
     if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
     if (!isValidNamespaces(namespaces, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateNamespaces namespaces" });
+      throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
   };
 
-  private isValidUpdateExpiry: EnginePrivate["isValidUpdateExpiry"] = params => {
-    if (!isValidParams(params))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateExpiry params" });
-
-    const { topic, expiry } = params;
-
+  private isValidExtend: EnginePrivate["isValidExtend"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "extend params" });
+    const { topic } = params;
     if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "updateExpiry topic" });
+      throw ERROR.MISSING_OR_INVALID.format({ name: "extend topic" });
     if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
-    if (!isValidExpiry(expiry))
-      throw ERROR.MISSING_OR_INVALID.format({
-        name: "updateExpiry expiry (min 5 min, max 7 days)",
-      });
   };
 
   private isValidRequest: EnginePrivate["isValidRequest"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "request params" });
-
     const { topic, request, chainId } = params;
-
     if (!isValidString(topic, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "request topic" });
     if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
-
     const { namespaces } = this.client.session.get(topic);
-
     if (!isValidNamespacesChainId(namespaces, chainId))
       throw ERROR.MISSING_OR_INVALID.format({ name: "request chainId" });
-
     if (!isValidRequest(request)) throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
-
     if (!isValidNamespacesRequest(namespaces, chainId, request.method))
       throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
   };
 
   private isValidRespond: EnginePrivate["isValidRespond"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "respond params" });
-
     const { topic, response } = params;
-
     if (!isValidString(topic, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "respond topic" });
     if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
-
     if (!isValidResponse(response))
       throw ERROR.MISSING_OR_INVALID.format({ name: "respond response" });
   };
 
   private isValidPing: EnginePrivate["isValidPing"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping params" });
-
     const { topic } = params;
-
     if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping topic" });
     if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
@@ -894,20 +798,14 @@ export class Engine extends IEngine {
 
   private isValidEmit: EnginePrivate["isValidEmit"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit params" });
-
     const { topic, event, chainId } = params;
-
     if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit topic" });
     if (!this.client.session.keys.includes(topic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
-
     const { namespaces } = this.client.session.get(topic);
-
     if (!isValidNamespacesChainId(namespaces, chainId))
       throw ERROR.MISSING_OR_INVALID.format({ name: "emit chainId" });
-
     if (!isValidEvent(event)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
-
     if (!isValidNamespacesEvent(namespaces, chainId, event.name))
       throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
   };
@@ -915,9 +813,7 @@ export class Engine extends IEngine {
   private isValidDisconnect: EnginePrivate["isValidDisconnect"] = params => {
     if (!isValidParams(params))
       throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect params" });
-
     const { topic } = params;
-
     if (!isValidString(topic, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect topic" });
     if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))

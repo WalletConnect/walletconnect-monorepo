@@ -11,9 +11,8 @@ import { IExpirer } from "./expirer";
 export declare namespace ClientTypes {
   type Event =
     | "session_proposal"
-    | "update_accounts"
-    | "update_namespaces"
-    | "update_expiry"
+    | "update"
+    | "extend"
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
@@ -23,9 +22,8 @@ export declare namespace ClientTypes {
 
   interface EventArguments {
     session_proposal: ProposalTypes.Struct;
-    update_accounts: { topic: string; accounts: SessionTypes.Accounts };
-    update_namespaces: { topic: string; namespaces: SessionTypes.Namespace[] };
-    update_expiry: { topic: string; expiry: number };
+    update: { topic: string; namespaces: SessionTypes.Namespace[] };
+    extend: { topic: string };
     session_ping: { topic: string };
     pairing_ping: { topic: string };
     session_delete: { topic: string };
@@ -116,9 +114,8 @@ export abstract class IClient {
   public abstract pair: IEngine["pair"];
   public abstract approve: IEngine["approve"];
   public abstract reject: IEngine["reject"];
-  public abstract updateAccounts: IEngine["updateAccounts"];
-  public abstract updateNamespaces: IEngine["updateNamespaces"];
-  public abstract updateExpiry: IEngine["updateExpiry"];
+  public abstract update: IEngine["update"];
+  public abstract extend: IEngine["extend"];
   public abstract request: IEngine["request"];
   public abstract respond: IEngine["respond"];
   public abstract ping: IEngine["ping"];

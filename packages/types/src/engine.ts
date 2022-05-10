@@ -16,9 +16,8 @@ export declare namespace EngineTypes {
   type Event =
     | "connect"
     | "approve"
-    | "update_accounts"
-    | "update_namespaces"
-    | "update_expiry"
+    | "update"
+    | "extend"
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
@@ -28,9 +27,8 @@ export declare namespace EngineTypes {
   interface EventArguments {
     connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
     approve: { error?: ErrorResponse };
-    update_accounts: { error?: ErrorResponse };
-    update_namespaces: { error?: ErrorResponse };
-    update_expiry: { error?: ErrorResponse };
+    update: { error?: ErrorResponse };
+    extend: { error?: ErrorResponse };
     session_ping: { error?: ErrorResponse };
     pairing_ping: { error?: ErrorResponse };
     session_delete: { error?: ErrorResponse };
@@ -52,8 +50,8 @@ export declare namespace EngineTypes {
   }
 
   interface ConnectParams {
+    proposedNamespaces: SessionTypes.ProposedNamespaces[];
     pairingTopic?: string;
-    namespaces?: SessionTypes.Namespace[];
     relays?: RelayerTypes.ProtocolOptions[];
   }
 
@@ -63,7 +61,6 @@ export declare namespace EngineTypes {
 
   interface ApproveParams {
     id: number;
-    accounts: SessionTypes.Accounts;
     namespaces: SessionTypes.Namespace[];
     relayProtocol?: string;
   }
@@ -73,19 +70,13 @@ export declare namespace EngineTypes {
     reason: ErrorResponse;
   }
 
-  interface UpdateAccountsParams {
-    topic: string;
-    accounts: SessionTypes.Accounts;
-  }
-
-  interface UpdateNamespacesParams {
+  interface UpdateParams {
     topic: string;
     namespaces: SessionTypes.Namespace[];
   }
 
-  interface UpdateExpiryParams {
+  interface ExtendParams {
     topic: string;
-    expiry: SessionTypes.Expiry;
   }
 
   interface RequestParams {
@@ -186,34 +177,24 @@ export interface EnginePrivate {
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionSettle"]> | JsonRpcError,
   ): Promise<void>;
 
-  onSessionUpdateAccountsRequest(
+  onSessionUpdateRequest(
     topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateAccounts"]>,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdate"]>,
   ): Promise<void>;
 
-  onSessionUpdateAccountsResponse(
+  onSessionUpdateResponse(
     topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateAccounts"]> | JsonRpcError,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdate"]> | JsonRpcError,
   ): void;
 
-  onSessionUpdateNamespacesRequest(
+  onSessionExtendRequest(
     topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateNamespaces"]>,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionExtend"]>,
   ): Promise<void>;
 
-  onSessionUpdateNamespacesResponse(
+  onSessionExtendResponse(
     topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateNamespaces"]> | JsonRpcError,
-  ): void;
-
-  onSessionUpdateExpiryRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdateExpiry"]>,
-  ): Promise<void>;
-
-  onSessionUpdateExpiryResponse(
-    topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdateExpiry"]> | JsonRpcError,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionExtend"]> | JsonRpcError,
   ): void;
 
   onSessionPingRequest(
@@ -280,11 +261,9 @@ export interface EnginePrivate {
 
   isValidReject(params: EngineTypes.RejectParams): void;
 
-  isValidUpdateAccounts(params: EngineTypes.UpdateAccountsParams): void;
+  isValidUpdate(params: EngineTypes.UpdateParams): void;
 
-  isValidUpdateExpiry(params: EngineTypes.UpdateExpiryParams): void;
-
-  isValidUpdateNamespaces(params: EngineTypes.UpdateNamespacesParams): void;
+  isValidExtend(params: EngineTypes.ExtendParams): void;
 
   isValidRequest(params: EngineTypes.RequestParams): void;
 
@@ -314,11 +293,9 @@ export abstract class IEngine {
 
   public abstract reject(params: EngineTypes.RejectParams): Promise<void>;
 
-  public abstract updateAccounts(params: EngineTypes.UpdateAccountsParams): Promise<void>;
+  public abstract update(params: EngineTypes.UpdateParams): Promise<void>;
 
-  public abstract updateNamespaces(params: EngineTypes.UpdateNamespacesParams): Promise<void>;
-
-  public abstract updateExpiry(params: EngineTypes.UpdateExpiryParams): Promise<void>;
+  public abstract extend(params: EngineTypes.ExtendParams): Promise<void>;
 
   public abstract request(params: EngineTypes.RequestParams): Promise<JsonRpcResponse>;
 
