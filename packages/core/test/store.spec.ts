@@ -10,7 +10,7 @@ const MOCK_STORE_NAME = "mock-entity";
 
 // TODO: Test persistence behavior
 describe("Store", () => {
-  const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
+  const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
 
   let core: ICore;
   let store: IStore<any, any>;
