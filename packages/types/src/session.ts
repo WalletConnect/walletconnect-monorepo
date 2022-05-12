@@ -13,7 +13,7 @@ export declare namespace SessionTypes {
       accounts: string[];
       methods?: string[];
       events?: string[];
-    };
+    }[];
   }
 
   type Namespaces = Record<string, NamespaceBody>;

@@ -11,7 +11,7 @@ export declare namespace ProposalTypes {
       chains: string[];
       methods?: string[];
       events?: string[];
-    };
+    }[];
   }
 
   type RequiredNamespaces = Record<string, RequiredNamespaceBody>;

@@ -91,35 +91,37 @@ export function isSessionStruct(input: any): input is SessionTypes.Struct {
   return input?.topic;
 }
 
-export function isValidProposedNamespace(input: any): input is ProposalTypes.ProposedNamespace {
+export function isValidRequiredNamespaceBody(
+  input: any,
+): input is ProposalTypes.RequiredNamespaceBody {
   const { methods, events, chains } = input;
   let validChains = true;
-  const validProposedNamespace =
+  const validRequiredNamespace =
     isValidArray(methods) && isValidArray(events) && isValidArray(chains);
   chains.forEach((chain: string) => {
     if (!isValidChainId(chain, false)) validChains = false;
   });
-  return validProposedNamespace && validChains;
+
+  return validRequiredNamespace && validChains;
 }
 
-export function isValidProposedNamespaces(
+export function isValidRequiredNamespaces(
   input: any,
   optional: boolean,
-): input is ProposalTypes.ProposedNamespace[] {
+): input is ProposalTypes.RequiredNamespaces {
   let valid = false;
-
   if (optional && !input) valid = true;
   else if (input && isValidArray(input) && input.length) {
     valid = true;
-    input.forEach((namespace: ProposalTypes.ProposedNamespace) => {
-      if (!isValidProposedNamespace(namespace)) valid = false;
+    Object.values(input).forEach(namespace => {
+      if (!isValidRequiredNamespaceBody(namespace)) valid = false;
     });
   }
 
   return valid;
 }
 
-export function isValidNamespace(input: any): input is SessionTypes.Namespace[] {
+export function isValidNamespaceBody(input: any): input is SessionTypes.NamespaceBody {
   const { methods, events, accounts } = input;
   let validAccounts = true;
   const validNamespace = isValidArray(methods) && isValidArray(events) && isValidArray(accounts);
@@ -129,17 +131,14 @@ export function isValidNamespace(input: any): input is SessionTypes.Namespace[] 
   return validNamespace && validAccounts;
 }
 
-export function isValidNamespaces(
-  input: any,
-  optional: boolean,
-): input is SessionTypes.Namespace[] {
+export function isValidNamespaces(input: any, optional: boolean): input is SessionTypes.Namespaces {
   let valid = false;
 
   if (optional && !input) valid = true;
   else if (input && isValidArray(input) && input.length) {
     valid = true;
-    input.forEach((namespace: SessionTypes.Namespace) => {
-      if (!isValidNamespace(namespace)) valid = false;
+    Object.values(input).forEach(namespace => {
+      if (!isValidNamespaceBody(namespace)) valid = false;
     });
   }
 
@@ -158,8 +157,8 @@ export function isValidRelays(
 
   if (optional && !input) valid = true;
   else if (input && isValidArray(input) && input.length) {
-    input.forEach((namespace: SessionTypes.Namespace) => {
-      valid = isValidRelay(namespace);
+    input.forEach((relay: RelayerTypes.ProtocolOptions) => {
+      valid = isValidRelay(relay);
     });
   }
 
@@ -216,7 +215,7 @@ export function isValidEvent(event: any) {
   return true;
 }
 
-export function isValidNamespacesChainId(namespaces: SessionTypes.Namespace[], chainId: string) {
+export function isValidNamespacesChainId(namespaces: SessionTypes.Namespaces, chainId: string) {
   if (!isValidChainId(chainId, false)) return false;
   const chains = getNamespacesChains(namespaces);
   if (!chains.includes(chainId)) return false;
@@ -225,7 +224,7 @@ export function isValidNamespacesChainId(namespaces: SessionTypes.Namespace[], c
 }
 
 export function isValidNamespacesRequest(
-  namespaces: SessionTypes.Namespace[],
+  namespaces: SessionTypes.Namespaces,
   chainId: string,
   method: string,
 ) {
@@ -235,7 +234,7 @@ export function isValidNamespacesRequest(
 }
 
 export function isValidNamespacesEvent(
-  namespaces: SessionTypes.Namespace[],
+  namespaces: SessionTypes.Namespaces,
   chainId: string,
   eventName: string,
 ) {
