@@ -171,14 +171,14 @@ describe("Client Integration", () => {
         sessionA: { topic },
       } = await testConnectMethod(clients);
       const namespacesBefore = clients.A.session.get(topic).namespaces;
-      const namespacesAfter = [
+      const namespacesAfter = {
         ...namespacesBefore,
-        {
+        eip000: {
           accounts: ["eip155:1:0x000000000000000000000000000000000000dead"],
           methods: ["eth_sendTransaction"],
           events: ["accountsChanged"],
         },
-      ];
+      };
       await clients.A.update({
         topic,
         namespaces: namespacesAfter,

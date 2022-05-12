@@ -30,7 +30,7 @@ export declare namespace JsonRpcTypes {
     wc_pairingPing: {};
     wc_sessionPropose: {
       relays: RelayerTypes.ProtocolOptions[];
-      proposedNamespaces: ProposalTypes.ProposedNamespace[];
+      requiredNamespaces: ProposalTypes.RequiredNamespaces;
       proposer: {
         publicKey: string;
         metadata: ClientTypes.Metadata;
@@ -38,7 +38,7 @@ export declare namespace JsonRpcTypes {
     };
     wc_sessionSettle: {
       relay: RelayerTypes.ProtocolOptions;
-      namespaces: SessionTypes.Namespace[];
+      namespaces: SessionTypes.Namespaces;
       expiry: number;
       controller: {
         publicKey: string;
@@ -46,7 +46,7 @@ export declare namespace JsonRpcTypes {
       };
     };
     wc_sessionUpdate: {
-      namespaces: SessionTypes.Namespace[];
+      namespaces: SessionTypes.Namespaces;
     };
     wc_sessionExtend: {};
     wc_sessionDelete: {

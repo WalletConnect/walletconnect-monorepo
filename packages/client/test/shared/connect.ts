@@ -12,8 +12,8 @@ import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_PROPOSED_NAMESPACES } from ".
 import { Clients } from "./init";
 
 export interface TestConnectParams {
-  proposedNamespaces?: ProposalTypes.ProposedNamespace[];
-  namespaces?: SessionTypes.Namespace[];
+  requiredNamespaces?: ProposalTypes.RequiredNamespaces;
+  namespaces?: SessionTypes.Namespaces;
   relays?: RelayerTypes.ProtocolOptions[];
   pairingTopic?: string;
 }
@@ -22,7 +22,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   const { A, B } = clients;
 
   const connectParams: EngineTypes.ConnectParams = {
-    proposedNamespaces: params?.proposedNamespaces || TEST_PROPOSED_NAMESPACES,
+    requiredNamespaces: params?.requiredNamespaces || TEST_PROPOSED_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
@@ -57,7 +57,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     new Promise<void>((resolve, reject) => {
       B.once("session_proposal", async proposal => {
         try {
-          expect(proposal.proposedNamespaces).to.eql(connectParams.proposedNamespaces);
+          expect(proposal.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
 
           const { acknowledged } = await B.approve({
             id: proposal.id,

@@ -41,7 +41,7 @@ import {
   isValidRequest,
   isValidEvent,
   isValidResponse,
-  isValidProposedNamespaces,
+  isValidRequiredNamespaces,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -58,7 +58,7 @@ export class Engine extends IEngine {
 
   public connect: IEngine["connect"] = async params => {
     this.isValidConnect(params);
-    const { pairingTopic, proposedNamespaces, relays } = params;
+    const { pairingTopic, requiredNamespaces, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
     let active = false;
@@ -76,7 +76,7 @@ export class Engine extends IEngine {
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
     const proposal = {
-      proposedNamespaces: proposedNamespaces ?? [],
+      requiredNamespaces,
       relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
       proposer: {
         publicKey,
@@ -746,13 +746,13 @@ export class Engine extends IEngine {
   // ---------- Validation ---------------------------------------------- //
   private isValidConnect: EnginePrivate["isValidConnect"] = params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "connect params" });
-    const { pairingTopic, proposedNamespaces, relays } = params;
+    const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isValidString(pairingTopic, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect pairingTopic" });
     if (pairingTopic && !this.client.pairing.keys.includes(pairingTopic))
       throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
-    if (!isValidProposedNamespaces(proposedNamespaces, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "connect proposedNamespaces" });
+    if (!isValidRequiredNamespaces(requiredNamespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect requiredNamespaces" });
     if (!isValidRelays(relays, true))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect relays" });
   };

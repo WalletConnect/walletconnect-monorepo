@@ -52,22 +52,22 @@ describe("Client Validation", () => {
       ).to.eventually.be.rejectedWith("No matching pairing with topic: none");
     });
 
-    it("throws when empty proposedNamespaces are provided", async () => {
+    it("throws when empty requiredNamespaces are provided", async () => {
       await expect(
-        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, proposedNamespaces: [] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect proposedNamespaces");
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces: {} }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
     });
 
-    it("throws when invalid proposedNamespaces are provided", async () => {
+    it("throws when invalid requiredNamespaces are provided", async () => {
       await expect(
-        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, proposedNamespaces: {} }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect proposedNamespaces");
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces: [] }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
     });
 
-    it("throws when no proposedNamespaces are provided", async () => {
+    it("throws when no requiredNamespaces are provided", async () => {
       await expect(
-        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, proposedNamespaces: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect proposedNamespaces");
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
     });
   });
 

@@ -35,6 +35,10 @@ export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
   return false;
 }
 
+export function isValidObject(obj: any) {
+  return Object.getPrototypeOf(obj) === Object.prototype && Object.keys(obj).length;
+}
+
 export function isUndefined(input: any): input is undefined {
   return typeof input === "undefined";
 }
@@ -111,7 +115,7 @@ export function isValidRequiredNamespaces(
 ): input is ProposalTypes.RequiredNamespaces {
   let valid = false;
   if (optional && !input) valid = true;
-  else if (input && isValidArray(input) && input.length) {
+  else if (input && isValidObject(input)) {
     valid = true;
     Object.values(input).forEach(namespace => {
       if (!isValidRequiredNamespaceBody(namespace)) valid = false;
@@ -135,7 +139,7 @@ export function isValidNamespaces(input: any, optional: boolean): input is Sessi
   let valid = false;
 
   if (optional && !input) valid = true;
-  else if (input && isValidArray(input) && input.length) {
+  else if (input && isValidObject(input)) {
     valid = true;
     Object.values(input).forEach(namespace => {
       if (!isValidNamespaceBody(namespace)) valid = false;

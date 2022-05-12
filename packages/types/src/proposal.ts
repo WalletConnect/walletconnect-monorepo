@@ -23,7 +23,7 @@ export declare namespace ProposalTypes {
       publicKey: string;
       metadata: ClientTypes.Metadata;
     };
-    requiredNamespaces: RequiredNamespaces[];
+    requiredNamespaces: RequiredNamespaces;
     pairingTopic?: string;
   }
 }

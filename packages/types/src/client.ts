@@ -22,7 +22,7 @@ export declare namespace ClientTypes {
 
   interface EventArguments {
     session_proposal: ProposalTypes.Struct;
-    update: { topic: string; namespaces: SessionTypes.Namespace[] };
+    update: { topic: string; namespaces: SessionTypes.Namespaces };
     extend: { topic: string };
     session_ping: { topic: string };
     pairing_ping: { topic: string };

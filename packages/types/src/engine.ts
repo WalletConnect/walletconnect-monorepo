@@ -51,7 +51,7 @@ export declare namespace EngineTypes {
   }
 
   interface ConnectParams {
-    proposedNamespaces: ProposalTypes.ProposedNamespace[];
+    requiredNamespaces: ProposalTypes.RequiredNamespaces;
     pairingTopic?: string;
     relays?: RelayerTypes.ProtocolOptions[];
   }
@@ -62,7 +62,7 @@ export declare namespace EngineTypes {
 
   interface ApproveParams {
     id: number;
-    namespaces: SessionTypes.Namespace[];
+    namespaces: SessionTypes.Namespaces;
     relayProtocol?: string;
   }
 
@@ -73,7 +73,7 @@ export declare namespace EngineTypes {
 
   interface UpdateParams {
     topic: string;
-    namespaces: SessionTypes.Namespace[];
+    namespaces: SessionTypes.Namespaces;
   }
 
   interface ExtendParams {
