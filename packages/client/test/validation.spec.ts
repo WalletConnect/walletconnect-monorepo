@@ -122,13 +122,13 @@ describe("Client Validation", () => {
 
     it("throws when invalid namespaces are provided", async () => {
       await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: {} }),
+        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: [] }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
     });
 
     it("throws when empty namespaces are provided", async () => {
       await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: [] }),
+        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: {} }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
     });
 
