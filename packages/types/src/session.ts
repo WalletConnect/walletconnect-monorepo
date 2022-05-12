@@ -5,11 +5,18 @@ import { IStore } from "./store";
 export declare namespace SessionTypes {
   type Expiry = number;
 
-  interface Namespace {
+  interface NamespaceBody {
+    accounts: string[];
     methods: string[];
     events: string[];
-    accounts: string[];
+    extension?: {
+      accounts: string[];
+      methods?: string[];
+      events?: string[];
+    };
   }
+
+  type Namespaces = Record<string, NamespaceBody>;
 
   interface Struct {
     topic: string;
@@ -17,7 +24,7 @@ export declare namespace SessionTypes {
     expiry: Expiry;
     acknowledged: boolean;
     controller: string;
-    namespaces: Namespace[];
+    namespaces: Namespaces;
     self: {
       publicKey: string;
       metadata: ClientTypes.Metadata;
@@ -29,7 +36,10 @@ export declare namespace SessionTypes {
   }
 
   interface Updatable {
-    namespace?: Namespace;
+    namespace?: {
+      key: string;
+      body: NamespaceBody;
+    };
     expiry?: Expiry;
   }
 }

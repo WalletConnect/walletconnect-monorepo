@@ -1,6 +1,6 @@
 import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import { isNamespaceEqual } from "./misc";
+import isEqual from "lodash.isequal";
 import {
   getNamespacesChains,
   getNamespacesMethodsForChainId,
@@ -11,8 +11,10 @@ export function isSessionCompatible(session: SessionTypes.Struct, filters: Sessi
   const results = [];
   const { namespace, expiry } = filters;
   if (session.namespaces && namespace) {
-    session.namespaces.forEach(n => {
-      results.push(isNamespaceEqual(namespace, n));
+    Object.keys(session.namespaces).forEach(key => {
+      if (key === namespace.key) {
+        results.push(isEqual(session.namespaces[key], namespace.body));
+      }
     });
   }
   if (session.expiry && expiry) {
