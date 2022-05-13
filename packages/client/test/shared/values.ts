@@ -75,7 +75,7 @@ export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADD
 
 export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT];
 
-export const TEST_PROPOSED_NAMESPACES = {
+export const TEST_REQUIRED_NAMESPACES = {
   eip155: {
     methods: TEST_METHODS,
     chains: TEST_CHAINS,
@@ -102,7 +102,7 @@ export const TEST_SIGN_REQUEST = { method: TEST_SIGN_METHOD, params: TEST_SIGN_P
 export const TEST_RANDOM_REQUEST = { method: "random_method", params: [] };
 
 export const TEST_CONNECT_PARAMS = {
-  proposedNamespaces: TEST_PROPOSED_NAMESPACES,
+  requiredNamespaces: TEST_REQUIRED_NAMESPACES,
   relays: [TEST_RELAY_OPTIONS],
 };
 

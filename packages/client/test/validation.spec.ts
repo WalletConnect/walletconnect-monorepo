@@ -11,6 +11,8 @@ import {
   TEST_REQUEST_PARAMS,
   TEST_EMIT_PARAMS,
   TEST_RESPOND_PARAMS,
+  TEST_NAMESPACES,
+  TEST_REQUIRED_NAMESPACES,
 } from "./shared";
 import Client from "../src";
 
@@ -67,6 +69,43 @@ describe("Client Validation", () => {
     it("throws when no requiredNamespaces are provided", async () => {
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+    });
+
+    it("throws when empty extension is provided", async () => {
+      await expect(
+        client.connect({
+          ...TEST_CONNECT_PARAMS,
+          pairingTopic,
+          requiredNamespaces: { ...TEST_REQUIRED_NAMESPACES, extension: [] },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+      await expect(
+        client.connect({
+          ...TEST_CONNECT_PARAMS,
+          pairingTopic,
+          requiredNamespaces: { ...TEST_REQUIRED_NAMESPACES, extension: [{}] },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+    });
+
+    it("throws when invalid extension is provided", async () => {
+      await expect(
+        client.connect({
+          ...TEST_CONNECT_PARAMS,
+          pairingTopic,
+          requiredNamespaces: { ...TEST_REQUIRED_NAMESPACES, extension: {} },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+    });
+
+    it("throws when invalid extension values are provided", async () => {
+      await expect(
+        client.connect({
+          ...TEST_CONNECT_PARAMS,
+          pairingTopic,
+          requiredNamespaces: { ...TEST_REQUIRED_NAMESPACES, extension: { invalid: [""] } },
+        }),
       ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
     });
   });
@@ -135,6 +174,39 @@ describe("Client Validation", () => {
     it("throws when no namespaces are provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, namespaces: undefined }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+    });
+
+    it("throws when empty extension is provided", async () => {
+      await expect(
+        client.approve({
+          ...TEST_APPROVE_PARAMS,
+          namespaces: { ...TEST_NAMESPACES, extension: [] },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+      await expect(
+        client.approve({
+          ...TEST_APPROVE_PARAMS,
+          namespaces: { ...TEST_NAMESPACES, extension: [{}] },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+    });
+
+    it("throws when invalid extension is provided", async () => {
+      await expect(
+        client.approve({
+          ...TEST_APPROVE_PARAMS,
+          namespaces: { ...TEST_NAMESPACES, extension: {} },
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+    });
+
+    it("throws when invalid extension values are provided", async () => {
+      await expect(
+        client.approve({
+          ...TEST_APPROVE_PARAMS,
+          namespaces: { ...TEST_NAMESPACES, extension: { invalid: [""] } },
+        }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
     });
 

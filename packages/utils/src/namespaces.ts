@@ -14,6 +14,11 @@ export function getNamespacesChains(namespaces: SessionTypes.Namespaces) {
   const chains: string[] = [];
   Object.values(namespaces).forEach(namespace => {
     chains.push(...getAccountsChains(namespace.accounts));
+    if (namespace.extension) {
+      namespace.extension.forEach(extension => {
+        chains.push(...getAccountsChains(extension.accounts));
+      });
+    }
   });
 
   return chains;
@@ -27,6 +32,12 @@ export function getNamespacesMethodsForChainId(
   Object.values(namespaces).forEach(namespace => {
     const chains = getAccountsChains(namespace.accounts);
     if (chains.includes(chainId)) methods.push(...namespace.methods);
+    if (namespace.extension) {
+      namespace.extension.forEach(extension => {
+        const extensionChains = getAccountsChains(extension.accounts);
+        if (extensionChains.includes(chainId)) methods.push(...extension.methods);
+      });
+    }
   });
 
   return methods;
@@ -40,6 +51,12 @@ export function getNamespacesEventsForChainId(
   Object.values(namespaces).forEach(namespace => {
     const chains = getAccountsChains(namespace.accounts);
     if (chains.includes(chainId)) events.push(...namespace.events);
+    if (namespace.extension) {
+      namespace.extension.forEach(extension => {
+        const extensionChains = getAccountsChains(extension.accounts);
+        if (extensionChains.includes(chainId)) events.push(...extension.events);
+      });
+    }
   });
 
   return events;

@@ -8,7 +8,7 @@ import {
   SessionTypes,
 } from "@walletconnect/types";
 import { expect } from "./chai";
-import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_PROPOSED_NAMESPACES } from "./values";
+import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./values";
 import { Clients } from "./init";
 
 export interface TestConnectParams {
@@ -22,7 +22,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   const { A, B } = clients;
 
   const connectParams: EngineTypes.ConnectParams = {
-    requiredNamespaces: params?.requiredNamespaces || TEST_PROPOSED_NAMESPACES,
+    requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };

@@ -102,9 +102,11 @@ export function isValidRequiredNamespaceBody(
   let validChains = true;
   const validRequiredNamespace =
     isValidArray(methods) && isValidArray(events) && isValidArray(chains);
-  chains.forEach((chain: string) => {
-    if (!isValidChainId(chain, false)) validChains = false;
-  });
+  if (validRequiredNamespace) {
+    chains.forEach((chain: string) => {
+      if (!isValidChainId(chain, false)) validChains = false;
+    });
+  }
 
   return validRequiredNamespace && validChains;
 }
@@ -114,11 +116,17 @@ export function isValidRequiredNamespaces(
   optional: boolean,
 ): input is ProposalTypes.RequiredNamespaces {
   let valid = false;
-  if (optional && !input) valid = true;
+  if (optional && !input) return true;
   else if (input && isValidObject(input)) {
     valid = true;
-    Object.values(input).forEach(namespace => {
+    Object.values(input).forEach((namespace: any) => {
       if (!isValidRequiredNamespaceBody(namespace)) valid = false;
+      if (valid && namespace?.extension) {
+        if (!isValidArray(namespace.extension)) valid = false;
+        namespace.extension.forEach((extension: any) => {
+          if (!isValidRequiredNamespaceBody(extension)) valid = false;
+        });
+      }
     });
   }
 
@@ -129,20 +137,28 @@ export function isValidNamespaceBody(input: any): input is SessionTypes.Namespac
   const { methods, events, accounts } = input;
   let validAccounts = true;
   const validNamespace = isValidArray(methods) && isValidArray(events) && isValidArray(accounts);
-  accounts.forEach((account: string) => {
-    if (!isValidAccountId(account)) validAccounts = false;
-  });
+  if (validNamespace) {
+    accounts.forEach((account: string) => {
+      if (!isValidAccountId(account)) validAccounts = false;
+    });
+  }
+
   return validNamespace && validAccounts;
 }
 
 export function isValidNamespaces(input: any, optional: boolean): input is SessionTypes.Namespaces {
   let valid = false;
-
-  if (optional && !input) valid = true;
+  if (optional && !input) return true;
   else if (input && isValidObject(input)) {
     valid = true;
-    Object.values(input).forEach(namespace => {
+    Object.values(input).forEach((namespace: any) => {
       if (!isValidNamespaceBody(namespace)) valid = false;
+      if (valid && namespace?.extension) {
+        if (!isValidArray(namespace.extension)) valid = false;
+        namespace.extension.forEach((extension: any) => {
+          if (!isValidNamespaceBody(extension)) valid = false;
+        });
+      }
     });
   }
 
