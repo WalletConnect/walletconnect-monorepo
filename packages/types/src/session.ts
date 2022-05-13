@@ -9,11 +9,7 @@ export declare namespace SessionTypes {
     accounts: string[];
     methods: string[];
     events: string[];
-    extension?: {
-      accounts: string[];
-      methods?: string[];
-      events?: string[];
-    }[];
+    extension?: Omit<NamespaceBody, "extension">[];
   }
 
   type Namespaces = Record<string, NamespaceBody>;

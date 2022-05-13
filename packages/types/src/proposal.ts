@@ -7,11 +7,7 @@ export declare namespace ProposalTypes {
     chains: string[];
     methods: string[];
     events: string[];
-    extension?: {
-      chains: string[];
-      methods?: string[];
-      events?: string[];
-    }[];
+    extension?: Omit<RequiredNamespaceBody, "extension">[];
   }
 
   type RequiredNamespaces = Record<string, RequiredNamespaceBody>;
