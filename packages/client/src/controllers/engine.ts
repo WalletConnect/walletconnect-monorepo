@@ -1,6 +1,6 @@
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
-import { EXPIRER_EVENTS, SESSION_EXPIRY } from "../constants";
+import { EXPIRER_EVENTS, SESSION_EXPIRY, PROPOSAL_EXPIRY } from "../constants";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -307,8 +307,8 @@ export class Engine extends IEngine {
   }
 
   private activatePairing: EnginePrivate["activatePairing"] = async topic => {
-    await this.client.pairing.update(topic, { active: true });
-    await this.setExpiry(topic, calcExpiry(THIRTY_DAYS));
+    await this.client.pairing.update(topic, { active: true, expiry: PROPOSAL_EXPIRY });
+    await this.setExpiry(topic, PROPOSAL_EXPIRY);
   };
 
   private deleteSession: EnginePrivate["deleteSession"] = async topic => {
