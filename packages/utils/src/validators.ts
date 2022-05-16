@@ -22,8 +22,8 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
     const requiredNamespace = requiredNamespaces[key];
 
     if (
-      !hasOverlap(chains, requiredNamespace.chains) &&
-      !hasOverlap(methods, requiredNamespace.methods) &&
+      !hasOverlap(chains, requiredNamespace.chains) ||
+      !hasOverlap(methods, requiredNamespace.methods) ||
       !hasOverlap(events, requiredNamespace.events)
     ) {
       compatible = false;
