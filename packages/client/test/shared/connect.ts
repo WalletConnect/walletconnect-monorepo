@@ -1,30 +1,33 @@
 import "mocha";
-// import { expect } from "chai";
-
 import { parseUri } from "@walletconnect/utils";
-import { EngineTypes, PairingTypes, RelayerTypes, SessionTypes } from "@walletconnect/types";
-
+import {
+  EngineTypes,
+  PairingTypes,
+  RelayerTypes,
+  ProposalTypes,
+  SessionTypes,
+} from "@walletconnect/types";
 import { expect } from "./chai";
-import { TEST_ACCOUNTS, TEST_RELAY_OPTIONS, TEST_NAMESPACES } from "./values";
-
+import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./values";
 import { Clients } from "./init";
 
-export interface TestConnectParams extends EngineTypes.ConnectParams {
-  accounts?: string[];
+export interface TestConnectParams {
+  requiredNamespaces?: ProposalTypes.RequiredNamespaces;
+  namespaces?: SessionTypes.Namespaces;
   relays?: RelayerTypes.ProtocolOptions[];
+  pairingTopic?: string;
 }
 
 export async function testConnectMethod(clients: Clients, params?: TestConnectParams) {
   const { A, B } = clients;
 
   const connectParams: EngineTypes.ConnectParams = {
-    namespaces: params?.namespaces || TEST_NAMESPACES,
+    requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
 
   const approveParams: Omit<EngineTypes.ApproveParams, "id"> = {
-    accounts: params?.accounts || TEST_ACCOUNTS,
     namespaces: params?.namespaces || TEST_NAMESPACES,
   };
 
@@ -54,7 +57,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     new Promise<void>((resolve, reject) => {
       B.once("session_proposal", async proposal => {
         try {
-          expect(proposal.namespaces).to.eql(connectParams.namespaces);
+          expect(proposal.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
 
           const { acknowledged } = await B.approve({
             id: proposal.id,
@@ -106,9 +109,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // relay
   expect(sessionA.relay).to.eql(TEST_RELAY_OPTIONS);
   expect(sessionA.relay).to.eql(sessionB.relay);
-  // accounts
-  expect(sessionA.accounts).to.eql(approveParams.accounts);
-  expect(sessionA.accounts).to.eql(sessionB.accounts);
   // namespaces
   expect(sessionA.namespaces).to.eql(approveParams.namespaces);
   expect(sessionA.namespaces).to.eql(sessionB.namespaces);

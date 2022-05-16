@@ -1,23 +1,20 @@
 import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import { hasOverlap, isNamespaceEqual, calcExpiry } from "./misc";
-import { getChains } from "./caip";
+import isEqual from "lodash.isequal";
 import {
   getNamespacesChains,
   getNamespacesMethodsForChainId,
   getNamespacesEventsForChainId,
 } from "./namespaces";
-import { FIVE_MINUTES, SEVEN_DAYS } from "@walletconnect/time";
 
-export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
+export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Filters) {
   const results = [];
-  const { accounts, namespace, expiry } = filters;
-  if (session.accounts && accounts) {
-    results.push(hasOverlap(accounts, session.accounts));
-  }
+  const { namespace, expiry } = filters;
   if (session.namespaces && namespace) {
-    session.namespaces.forEach(n => {
-      results.push(isNamespaceEqual(namespace, n));
+    Object.keys(session.namespaces).forEach(key => {
+      if (key === namespace.key) {
+        results.push(isEqual(session.namespaces[key], namespace.body));
+      }
     });
   }
   if (session.expiry && expiry) {
@@ -36,6 +33,10 @@ export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
     }
   }
   return false;
+}
+
+export function isValidObject(obj: any) {
+  return Object.getPrototypeOf(obj) === Object.prototype && Object.keys(obj).length;
 }
 
 export function isUndefined(input: any): input is undefined {
@@ -94,21 +95,70 @@ export function isSessionStruct(input: any): input is SessionTypes.Struct {
   return input?.topic;
 }
 
-export function isValidNamespace(input: any): input is SessionTypes.Namespace {
+export function isValidRequiredNamespaceBody(
+  input: any,
+): input is ProposalTypes.BaseRequiredNamespace {
   const { methods, events, chains } = input;
-  return isValidArray(methods) && isValidArray(events) && isValidArray(chains);
+  let validChains = true;
+  const validRequiredNamespace =
+    isValidArray(methods) && isValidArray(events) && isValidArray(chains);
+  if (validRequiredNamespace) {
+    chains.forEach((chain: string) => {
+      if (!isValidChainId(chain, false)) validChains = false;
+    });
+  }
+
+  return validRequiredNamespace && validChains;
 }
 
-export function isValidNamespaces(
+export function isValidRequiredNamespaces(
   input: any,
   optional: boolean,
-): input is SessionTypes.Namespace[] {
+): input is ProposalTypes.RequiredNamespaces {
   let valid = false;
+  if (optional && !input) return true;
+  else if (input && isValidObject(input)) {
+    valid = true;
+    Object.values(input).forEach((namespace: any) => {
+      if (!isValidRequiredNamespaceBody(namespace)) valid = false;
+      if (valid && namespace?.extension) {
+        if (!isValidArray(namespace.extension)) valid = false;
+        namespace.extension.forEach((extension: any) => {
+          if (!isValidRequiredNamespaceBody(extension)) valid = false;
+        });
+      }
+    });
+  }
 
-  if (optional && !input) valid = true;
-  else if (input && isValidArray(input) && input.length) {
-    input.forEach((namespace: SessionTypes.Namespace) => {
-      valid = isValidNamespace(namespace);
+  return valid;
+}
+
+export function isValidNamespaceBody(input: any): input is SessionTypes.BaseNamespace {
+  const { methods, events, accounts } = input;
+  let validAccounts = true;
+  const validNamespace = isValidArray(methods) && isValidArray(events) && isValidArray(accounts);
+  if (validNamespace) {
+    accounts.forEach((account: string) => {
+      if (!isValidAccountId(account)) validAccounts = false;
+    });
+  }
+
+  return validNamespace && validAccounts;
+}
+
+export function isValidNamespaces(input: any, optional: boolean): input is SessionTypes.Namespaces {
+  let valid = false;
+  if (optional && !input) return true;
+  else if (input && isValidObject(input)) {
+    valid = true;
+    Object.values(input).forEach((namespace: any) => {
+      if (!isValidNamespaceBody(namespace)) valid = false;
+      if (valid && namespace?.extension) {
+        if (!isValidArray(namespace.extension)) valid = false;
+        namespace.extension.forEach((extension: any) => {
+          if (!isValidNamespaceBody(extension)) valid = false;
+        });
+      }
     });
   }
 
@@ -127,8 +177,8 @@ export function isValidRelays(
 
   if (optional && !input) valid = true;
   else if (input && isValidArray(input) && input.length) {
-    input.forEach((namespace: SessionTypes.Namespace) => {
-      valid = isValidRelay(namespace);
+    input.forEach((relay: RelayerTypes.ProtocolOptions) => {
+      valid = isValidRelay(relay);
     });
   }
 
@@ -165,37 +215,6 @@ export function isValidErrorReason(input: any): input is ErrorResponse {
   return true;
 }
 
-export function areAccountsInNamespaces(
-  accounts: SessionTypes.Accounts,
-  namespaces: SessionTypes.Namespace[],
-) {
-  const accountChains = getChains(accounts);
-  const namespacesChains = getNamespacesChains(namespaces);
-  const mismatched: string[] = [];
-  let valid = true;
-
-  accountChains.forEach(chain => {
-    if (!namespacesChains.includes(chain)) {
-      mismatched.push(chain);
-      valid = false;
-    }
-  });
-
-  return {
-    valid,
-    mismatched,
-  };
-}
-
-export function isValidExpiry(input: any): input is number {
-  if (!isValidNumber(input, false)) return false;
-
-  const MIN_FUTURE = calcExpiry(FIVE_MINUTES);
-  const MAX_FUTURE = calcExpiry(SEVEN_DAYS);
-
-  return input >= MIN_FUTURE && input <= MAX_FUTURE;
-}
-
 export function isValidRequest(request: any) {
   if (isUndefined(request)) return false;
   if (!isValidString(request.method, false)) return false;
@@ -216,19 +235,16 @@ export function isValidEvent(event: any) {
   return true;
 }
 
-export function isValidNamespacesChainId(namespaces: SessionTypes.Namespace[], chainId?: string) {
-  if (!isValidChainId(chainId, true)) return false;
-
-  if (chainId) {
-    const chains = getNamespacesChains(namespaces);
-    if (!chains.includes(chainId)) return false;
-  }
+export function isValidNamespacesChainId(namespaces: SessionTypes.Namespaces, chainId: string) {
+  if (!isValidChainId(chainId, false)) return false;
+  const chains = getNamespacesChains(namespaces);
+  if (!chains.includes(chainId)) return false;
 
   return true;
 }
 
 export function isValidNamespacesRequest(
-  namespaces: SessionTypes.Namespace[],
+  namespaces: SessionTypes.Namespaces,
   chainId: string,
   method: string,
 ) {
@@ -238,7 +254,7 @@ export function isValidNamespacesRequest(
 }
 
 export function isValidNamespacesEvent(
-  namespaces: SessionTypes.Namespace[],
+  namespaces: SessionTypes.Namespaces,
   chainId: string,
   eventName: string,
 ) {

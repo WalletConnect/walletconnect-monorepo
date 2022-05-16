@@ -10,7 +10,7 @@ export class Session extends Store<string, SessionTypes.Struct> {
     super(core, logger, SESSION_CONTEXT, CLIENT_STORAGE_PREFIX);
   }
 
-  public find(filters: SessionTypes.Updatable): SessionTypes.Struct[] {
+  public find(filters: SessionTypes.Filters): SessionTypes.Struct[] {
     return this.values.filter((session: SessionTypes.Struct) =>
       isSessionCompatible(session, filters),
     );

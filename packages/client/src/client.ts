@@ -117,27 +117,18 @@ export class Client extends IClient {
     }
   };
 
-  public updateAccounts: IClient["updateAccounts"] = async params => {
+  public update: IClient["update"] = async params => {
     try {
-      return await this.engine.updateAccounts(params);
+      return await this.engine.update(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
     }
   };
 
-  public updateNamespaces: IClient["updateNamespaces"] = async params => {
+  public extend: IClient["extend"] = async params => {
     try {
-      return await this.engine.updateNamespaces(params);
-    } catch (error) {
-      this.logger.error((error as any).message);
-      throw error;
-    }
-  };
-
-  public updateExpiry: IClient["updateExpiry"] = async params => {
-    try {
-      return await this.engine.updateExpiry(params);
+      return await this.engine.extend(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
