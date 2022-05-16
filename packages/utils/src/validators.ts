@@ -14,7 +14,7 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
   const paramsKeys = Object.keys(requiredNamespaces);
   let compatible = true;
 
-  if (!hasOverlap(sessionKeys, paramsKeys)) return false;
+  if (!hasOverlap(paramsKeys, sessionKeys)) return false;
 
   sessionKeys.forEach(key => {
     const { accounts, methods, events, extension } = session.namespaces[key];
@@ -22,9 +22,9 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
     const requiredNamespace = requiredNamespaces[key];
 
     if (
-      !hasOverlap(chains, requiredNamespace.chains) ||
-      !hasOverlap(methods, requiredNamespace.methods) ||
-      !hasOverlap(events, requiredNamespace.events)
+      !hasOverlap(requiredNamespace.chains, chains) ||
+      !hasOverlap(requiredNamespace.methods, methods) ||
+      !hasOverlap(requiredNamespace.events, events)
     ) {
       compatible = false;
     }
@@ -35,9 +35,9 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
         const chains = getAccountsChains(accounts);
         const overlap = requiredNamespace.extension?.find(
           ext =>
-            hasOverlap(chains, ext.chains) &&
-            hasOverlap(methods, ext.methods) &&
-            hasOverlap(events, ext.events),
+            hasOverlap(ext.chains, chains) &&
+            hasOverlap(ext.methods, methods) &&
+            hasOverlap(ext.events, events),
         );
         if (!overlap) compatible = false;
       });

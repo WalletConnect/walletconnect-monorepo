@@ -33,15 +33,21 @@ export const TEST_SESSION_METADATA = {
   icons: ["http://myapp.com/logo.png"],
 };
 
-export const TEST_ETHEREUM_CHAIN = "eip155:1";
+export const TEST_ETHEREUM_NAMESPACE = "eip155";
+
+export const TEST_ETHEREUM_CHAIN_A = `${TEST_ETHEREUM_NAMESPACE}:1`;
+
+export const TEST_ETHEREUM_CHAIN_B = `${TEST_ETHEREUM_NAMESPACE}:137`;
 
 export const TEST_ETHEREUM_ADDRESS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
-export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+export const TEST_ETHEREUM_ACCOUNT_A = `${TEST_ETHEREUM_CHAIN_A}:${TEST_ETHEREUM_ADDRESS}`;
 
-export const TEST_CHAINS: string[] = [TEST_ETHEREUM_CHAIN];
+export const TEST_ETHEREUM_ACCOUNT_B = `${TEST_ETHEREUM_CHAIN_B}:${TEST_ETHEREUM_ADDRESS}`;
 
-export const TEST_ACCOUNTS: string[] = [TEST_ETHEREUM_ACCOUNT];
+export const TEST_CHAINS: string[] = [TEST_ETHEREUM_CHAIN_A, TEST_ETHEREUM_CHAIN_B];
+
+export const TEST_ACCOUNTS: string[] = [TEST_ETHEREUM_ACCOUNT_A, TEST_ETHEREUM_ACCOUNT_B];
 
 export const TEST_METHODS = ["personal_sign", "eth_signTypedData", "eth_sendTransaction"];
 
@@ -56,9 +62,6 @@ export const TEST_EXPIRY_7D = 1650478882376;
 export const TEST_EXPIRY_30D = 1652466082376;
 
 export const TEST_SESSION: SessionTypes.Struct = {
-  accounts: TEST_ACCOUNTS,
-  methods: TEST_METHODS,
-  events: TEST_EVENTS,
   expiry: TEST_EXPIRY_7D,
   topic: TEST_SESSION_TOPIC,
   relay: TEST_RELAY_OPTIONS,
@@ -71,5 +74,12 @@ export const TEST_SESSION: SessionTypes.Struct = {
   peer: {
     publicKey: TEST_KEY_PAIRS.B.publicKey,
     metadata: TEST_SESSION_METADATA as ClientTypes.Metadata,
+  },
+  namespaces: {
+    [TEST_ETHEREUM_NAMESPACE]: {
+      accounts: TEST_ACCOUNTS,
+      methods: TEST_METHODS,
+      events: TEST_EVENTS,
+    },
   },
 };

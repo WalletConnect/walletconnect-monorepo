@@ -1,12 +1,10 @@
 import "mocha";
 import { expect } from "chai";
 import {
-  TEST_ACCOUNTS,
   TEST_CHAINS,
-  TEST_ETHEREUM_ADDRESS,
+  TEST_ETHEREUM_CHAIN_A,
+  TEST_ETHEREUM_NAMESPACE,
   TEST_EVENTS,
-  TEST_EXPIRY_30D,
-  TEST_EXPIRY_7D,
   TEST_METHODS,
   TEST_SESSION,
 } from "./shared/values";
@@ -15,78 +13,97 @@ import { isSessionCompatible } from "../src";
 
 describe("Validators", () => {
   it("isSessionCompatible", () => {
+    // exact
+    expect(
+      isSessionCompatible(TEST_SESSION, {
+        requiredNamespaces: {
+          [TEST_ETHEREUM_NAMESPACE]: {
+            chains: TEST_CHAINS,
+            methods: TEST_METHODS,
+            events: TEST_EVENTS,
+          },
+        },
+      }),
+    ).to.be.true;
     // chains
     expect(
       isSessionCompatible(TEST_SESSION, {
-        chains: TEST_CHAINS,
+        requiredNamespaces: {
+          [TEST_ETHEREUM_NAMESPACE]: {
+            chains: [TEST_ETHEREUM_CHAIN_A],
+            methods: TEST_METHODS,
+            events: TEST_EVENTS,
+          },
+        },
       }),
     ).to.be.true;
     expect(
       isSessionCompatible(TEST_SESSION, {
-        chains: ["eip155:100"],
-      }),
-    ).to.be.false;
-    // accounts
-    expect(
-      isSessionCompatible(TEST_SESSION, {
-        accounts: TEST_ACCOUNTS,
-      }),
-    ).to.be.true;
-    expect(
-      isSessionCompatible(TEST_SESSION, {
-        accounts: [`eip155:100:${TEST_ETHEREUM_ADDRESS}`],
+        requiredNamespaces: {
+          [TEST_ETHEREUM_NAMESPACE]: {
+            chains: [...TEST_CHAINS, "eip155:100"],
+            methods: TEST_METHODS,
+            events: TEST_EVENTS,
+          },
+        },
       }),
     ).to.be.false;
     // methods
     expect(
       isSessionCompatible(TEST_SESSION, {
-        methods: TEST_METHODS,
+        requiredNamespaces: {
+          [TEST_ETHEREUM_NAMESPACE]: {
+            chains: TEST_CHAINS,
+            methods: ["personal_sign"],
+            events: TEST_EVENTS,
+          },
+        },
       }),
     ).to.be.true;
     expect(
       isSessionCompatible(TEST_SESSION, {
-        methods: [`blockchain_signMessage`],
+        requiredNamespaces: {
+          [TEST_ETHEREUM_NAMESPACE]: {
+            chains: TEST_CHAINS,
+            methods: [...TEST_METHODS, "blockchain_signMessage"],
+            events: TEST_EVENTS,
+          },
+        },
       }),
     ).to.be.false;
     // events
     expect(
       isSessionCompatible(TEST_SESSION, {
-        events: TEST_EVENTS,
+        requiredNamespaces: {
+          [TEST_ETHEREUM_NAMESPACE]: {
+            chains: TEST_CHAINS,
+            methods: TEST_METHODS,
+            events: ["accountsChanged"],
+          },
+        },
       }),
     ).to.be.true;
     expect(
       isSessionCompatible(TEST_SESSION, {
-        events: [`colorChanged`],
+        requiredNamespaces: {
+          [TEST_ETHEREUM_NAMESPACE]: {
+            chains: TEST_CHAINS,
+            methods: TEST_METHODS,
+            events: [...TEST_EVENTS, `colorChanged`],
+          },
+        },
       }),
     ).to.be.false;
-    // expiry
+    // wrong namespace
     expect(
       isSessionCompatible(TEST_SESSION, {
-        expiry: TEST_EXPIRY_7D,
-      }),
-    ).to.be.true;
-    expect(
-      isSessionCompatible(TEST_SESSION, {
-        expiry: TEST_EXPIRY_30D,
-      }),
-    ).to.be.false;
-    // chains & methods
-    expect(
-      isSessionCompatible(TEST_SESSION, {
-        chains: TEST_CHAINS,
-        methods: TEST_METHODS,
-      }),
-    ).to.be.true;
-    expect(
-      isSessionCompatible(TEST_SESSION, {
-        chains: ["eip155:100"],
-        methods: TEST_METHODS,
-      }),
-    ).to.be.false;
-    expect(
-      isSessionCompatible(TEST_SESSION, {
-        chains: TEST_CHAINS,
-        methods: [`blockchain_signMessage`],
+        requiredNamespaces: {
+          ["cosmos"]: {
+            chains: TEST_CHAINS,
+            methods: TEST_METHODS,
+            events: TEST_EVENTS,
+          },
+        },
       }),
     ).to.be.false;
   });
