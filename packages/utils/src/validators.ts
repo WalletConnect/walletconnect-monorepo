@@ -7,7 +7,7 @@ import {
   getNamespacesEventsForChainId,
 } from "./namespaces";
 
-export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Updatable) {
+export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Filters) {
   const results = [];
   const { namespace, expiry } = filters;
   if (session.namespaces && namespace) {
@@ -97,7 +97,7 @@ export function isSessionStruct(input: any): input is SessionTypes.Struct {
 
 export function isValidRequiredNamespaceBody(
   input: any,
-): input is ProposalTypes.RequiredNamespaceBody {
+): input is ProposalTypes.BaseRequiredNamespace {
   const { methods, events, chains } = input;
   let validChains = true;
   const validRequiredNamespace =
@@ -133,7 +133,7 @@ export function isValidRequiredNamespaces(
   return valid;
 }
 
-export function isValidNamespaceBody(input: any): input is SessionTypes.NamespaceBody {
+export function isValidNamespaceBody(input: any): input is SessionTypes.BaseNamespace {
   const { methods, events, accounts } = input;
   let validAccounts = true;
   const validNamespace = isValidArray(methods) && isValidArray(events) && isValidArray(accounts);

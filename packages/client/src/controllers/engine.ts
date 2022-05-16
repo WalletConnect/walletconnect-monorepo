@@ -10,7 +10,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
+import { FIVE_MINUTES } from "@walletconnect/time";
 import {
   IEngine,
   IEngineEvents,
@@ -85,7 +85,7 @@ export class Engine extends IEngine {
     };
 
     const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once<"connect">(engineEvent("connect"), async ({ error, data }) => {
+    this.events.once<"session_connect">(engineEvent("session_connect"), async ({ error, data }) => {
       if (error) reject(error);
       else if (data) {
         data.self.publicKey = publicKey;
@@ -142,7 +142,7 @@ export class Engine extends IEngine {
     await this.client.core.relayer.subscribe(sessionTopic);
     const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once(engineEvent("approve", requestId), ({ error }) => {
+    this.events.once(engineEvent("session_approve", requestId), ({ error }) => {
       if (error) reject(error);
       else resolve(this.client.session.get(sessionTopic));
     });
@@ -190,7 +190,7 @@ export class Engine extends IEngine {
     const { topic, namespaces } = params;
     const id = await this.sendRequest(topic, "wc_sessionUpdate", { namespaces });
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("update", id), ({ error }) => {
+    this.events.once(engineEvent("session_update", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
@@ -203,7 +203,7 @@ export class Engine extends IEngine {
     const { topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionExtend", {});
     const { done, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("extend", id), ({ error }) => {
+    this.events.once(engineEvent("session_extend", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
@@ -503,7 +503,7 @@ export class Engine extends IEngine {
       await this.activatePairing(topic);
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(id, ERROR.DELETED.format());
-      this.events.emit(engineEvent("connect"), { error: payload.error });
+      this.events.emit(engineEvent("session_connect"), { error: payload.error });
     }
   };
 
@@ -531,7 +531,7 @@ export class Engine extends IEngine {
         },
       };
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
-      this.events.emit(engineEvent("connect"), { data: session });
+      this.events.emit(engineEvent("session_connect"), { data: session });
     } catch (err) {
       this.client.logger.error(err);
     }
@@ -544,10 +544,10 @@ export class Engine extends IEngine {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       await this.client.session.update(topic, { acknowledged: true });
-      this.events.emit(engineEvent("approve", id), {});
+      this.events.emit(engineEvent("session_approve", id), {});
     } else if (isJsonRpcError(payload)) {
       await this.client.session.delete(topic, ERROR.DELETED.format());
-      this.events.emit(engineEvent("approve", id), { error: payload.error });
+      this.events.emit(engineEvent("session_approve", id), { error: payload.error });
     }
   };
 
@@ -560,7 +560,7 @@ export class Engine extends IEngine {
       const { params, id } = payload;
       await this.client.session.update(topic, { namespaces: params.namespaces });
       await this.sendResult<"wc_sessionUpdate">(id, topic, true);
-      this.client.events.emit("update", { topic, namespaces: params.namespaces });
+      this.client.events.emit("session_update", { topic, namespaces: params.namespaces });
     } catch (err) {
       this.client.logger.error(err);
     }
@@ -569,9 +569,9 @@ export class Engine extends IEngine {
   private onSessionUpdateResponse: EnginePrivate["onSessionUpdateResponse"] = (_topic, payload) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("update", id), {});
+      this.events.emit(engineEvent("session_update", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("update", id), { error: payload.error });
+      this.events.emit(engineEvent("session_update", id), { error: payload.error });
     }
   };
 
@@ -584,7 +584,7 @@ export class Engine extends IEngine {
       const { id } = payload;
       await this.setExpiry(topic, SESSION_EXPIRY);
       await this.sendResult<"wc_sessionExtend">(id, topic, true);
-      this.client.events.emit("extend", { topic });
+      this.client.events.emit("session_extend", { topic });
     } catch (err) {
       this.client.logger.error(err);
     }
@@ -593,9 +593,9 @@ export class Engine extends IEngine {
   private onSessionExtendResponse: EnginePrivate["onSessionExtendResponse"] = (_topic, payload) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("extend", id), {});
+      this.events.emit(engineEvent("session_extend", id), {});
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("extend", id), { error: payload.error });
+      this.events.emit(engineEvent("session_extend", id), { error: payload.error });
     }
   };
 

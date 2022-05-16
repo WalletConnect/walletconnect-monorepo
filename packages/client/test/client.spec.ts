@@ -173,8 +173,8 @@ describe("Client Integration", () => {
       const namespacesBefore = clients.A.session.get(topic).namespaces;
       const namespacesAfter = {
         ...namespacesBefore,
-        eip000: {
-          accounts: ["eip155:1:0x000000000000000000000000000000000000dead"],
+        eip9001: {
+          accounts: ["eip9001:1:0x000000000000000000000000000000000000dead"],
           methods: ["eth_sendTransaction"],
           events: ["accountsChanged"],
         },

@@ -5,14 +5,17 @@ import { IStore } from "./store";
 export declare namespace SessionTypes {
   type Expiry = number;
 
-  interface NamespaceBody {
+  interface BaseNamespace {
     accounts: string[];
     methods: string[];
     events: string[];
-    extension?: Omit<NamespaceBody, "extension">[];
   }
 
-  type Namespaces = Record<string, NamespaceBody>;
+  interface Namespace extends BaseNamespace {
+    extension?: BaseNamespace[];
+  }
+
+  type Namespaces = Record<string, Namespace>;
 
   interface Struct {
     topic: string;
@@ -31,15 +34,15 @@ export declare namespace SessionTypes {
     };
   }
 
-  interface Updatable {
+  interface Filters {
     namespace?: {
       key: string;
-      body: NamespaceBody;
+      body: BaseNamespace;
     };
     expiry?: Expiry;
   }
 }
 
 export interface ISession extends IStore<string, SessionTypes.Struct> {
-  find: (filters: SessionTypes.Updatable) => SessionTypes.Struct[];
+  find: (filters: SessionTypes.Filters) => SessionTypes.Struct[];
 }

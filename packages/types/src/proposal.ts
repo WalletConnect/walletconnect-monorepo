@@ -3,14 +3,17 @@ import { RelayerTypes } from "./relayer";
 import { IStore } from "./store";
 
 export declare namespace ProposalTypes {
-  interface RequiredNamespaceBody {
+  interface BaseRequiredNamespace {
     chains: string[];
     methods: string[];
     events: string[];
-    extension?: Omit<RequiredNamespaceBody, "extension">[];
   }
 
-  type RequiredNamespaces = Record<string, RequiredNamespaceBody>;
+  interface RequiredNamespace extends BaseRequiredNamespace {
+    extension?: BaseRequiredNamespace[];
+  }
+
+  type RequiredNamespaces = Record<string, RequiredNamespace>;
 
   export interface Struct {
     id: number;

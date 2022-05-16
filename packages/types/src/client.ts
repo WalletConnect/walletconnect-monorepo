@@ -11,8 +11,8 @@ import { IExpirer } from "./expirer";
 export declare namespace ClientTypes {
   type Event =
     | "session_proposal"
-    | "update"
-    | "extend"
+    | "session_update"
+    | "session_extend"
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
@@ -22,8 +22,8 @@ export declare namespace ClientTypes {
 
   interface EventArguments {
     session_proposal: ProposalTypes.Struct;
-    update: { topic: string; namespaces: SessionTypes.Namespaces };
-    extend: { topic: string };
+    session_update: { topic: string; namespaces: SessionTypes.Namespaces };
+    session_extend: { topic: string };
     session_ping: { topic: string };
     pairing_ping: { topic: string };
     session_delete: { topic: string };

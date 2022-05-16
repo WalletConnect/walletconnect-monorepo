@@ -1,6 +1,6 @@
 import { SessionTypes } from "@walletconnect/types";
 
-export function getAccountsChains(accounts: SessionTypes.NamespaceBody["accounts"]) {
+export function getAccountsChains(accounts: SessionTypes.Namespace["accounts"]) {
   const chains: string[] = [];
   accounts.forEach(account => {
     const [chain, chainId] = account.split(":");
@@ -28,7 +28,7 @@ export function getNamespacesMethodsForChainId(
   namespaces: SessionTypes.Namespaces,
   chainId: string,
 ) {
-  const methods: SessionTypes.NamespaceBody["methods"] = [];
+  const methods: SessionTypes.Namespace["methods"] = [];
   Object.values(namespaces).forEach(namespace => {
     const chains = getAccountsChains(namespace.accounts);
     if (chains.includes(chainId)) methods.push(...namespace.methods);
@@ -47,7 +47,7 @@ export function getNamespacesEventsForChainId(
   namespaces: SessionTypes.Namespaces,
   chainId: string,
 ) {
-  const events: SessionTypes.NamespaceBody["events"] = [];
+  const events: SessionTypes.Namespace["events"] = [];
   Object.values(namespaces).forEach(namespace => {
     const chains = getAccountsChains(namespace.accounts);
     if (chains.includes(chainId)) events.push(...namespace.events);

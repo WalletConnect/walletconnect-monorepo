@@ -15,10 +15,10 @@ import { EventEmitter } from "events";
 
 export declare namespace EngineTypes {
   type Event =
-    | "connect"
-    | "approve"
-    | "update"
-    | "extend"
+    | "session_connect"
+    | "session_approve"
+    | "session_update"
+    | "session_extend"
     | "session_ping"
     | "pairing_ping"
     | "session_delete"
@@ -26,10 +26,10 @@ export declare namespace EngineTypes {
     | "request";
 
   interface EventArguments {
-    connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
-    approve: { error?: ErrorResponse };
-    update: { error?: ErrorResponse };
-    extend: { error?: ErrorResponse };
+    session_connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
+    session_approve: { error?: ErrorResponse };
+    session_update: { error?: ErrorResponse };
+    session_extend: { error?: ErrorResponse };
     session_ping: { error?: ErrorResponse };
     pairing_ping: { error?: ErrorResponse };
     session_delete: { error?: ErrorResponse };
