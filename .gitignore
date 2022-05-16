@@ -29,8 +29,7 @@ zip
 .nyc_output
 tsconfig.tsbuildinfo
 test.db
+test.db-journal
 setup
 result*
 ops/grafana/grafana.ini
-
-.vscode

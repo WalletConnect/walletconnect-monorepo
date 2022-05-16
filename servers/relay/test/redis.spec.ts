@@ -1,6 +1,7 @@
 import "mocha";
 import pino from "pino";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { ONE_DAY } from "@walletconnect/time";
 import { expect } from "chai";
 import { sha256, generateRandomBytes32 } from "../src/utils";
 
@@ -8,7 +9,6 @@ import config from "../src/config";
 import { HttpService } from "../src/http";
 
 import { RedisService } from "../src/redis";
-import { ONE_DAY } from "../src/constants";
 
 import { TEST_MESSAGE, TEST_TOPIC } from "./shared";
 

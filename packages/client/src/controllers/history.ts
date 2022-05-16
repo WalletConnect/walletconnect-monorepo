@@ -1,40 +1,48 @@
+import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
+import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
+import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
-import { IJsonRpcHistory, JsonRpcRecord, IStorage, RequestEvent } from "@walletconnect/types";
-import { ERROR, formatMessageContext } from "@walletconnect/utils";
 import {
-  formatJsonRpcRequest,
-  isJsonRpcError,
-  JsonRpcRequest,
-  JsonRpcResponse,
-} from "@walletconnect/jsonrpc-utils";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-
-import { HISTORY_CONTEXT, HISTORY_EVENTS } from "../constants";
+  CLIENT_STORAGE_PREFIX,
+  HISTORY_CONTEXT,
+  HISTORY_EVENTS,
+  HISTORY_STORAGE_VERSION,
+} from "../constants";
 
 export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();
-
   public events = new EventEmitter();
-
-  public name: string = HISTORY_CONTEXT;
-
+  public name = HISTORY_CONTEXT;
+  public version = HISTORY_STORAGE_VERSION;
   private cached: JsonRpcRecord[] = [];
+  private initialized = false;
 
-  constructor(public logger: Logger, public storage: IStorage) {
-    super(logger, storage);
+  private storagePrefix = CLIENT_STORAGE_PREFIX;
+
+  constructor(public core: ICore, public logger: Logger) {
+    super(core, logger);
     this.logger = generateChildLogger(logger, this.name);
-    this.storage = storage;
-    this.registerEventListeners();
   }
 
-  public async init(): Promise<void> {
-    this.logger.trace(`Initialized`);
-    await this.initialize();
-  }
+  public init: IJsonRpcHistory["init"] = async () => {
+    if (!this.initialized) {
+      this.logger.trace(`Initialized`);
+      await this.restore();
+      this.cached.forEach(record => this.records.set(record.id, record));
+      this.cached = [];
+      this.registerEventListeners();
+      this.initialized = true;
+    }
+  };
 
   get context(): string {
     return getLoggerContext(this.logger);
+  }
+
+  get storageKey(): string {
+    return this.storagePrefix + this.version + "//" + this.name;
   }
 
   get size(): number {
@@ -63,8 +71,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     return requests;
   }
 
-  public async set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void> {
-    await this.isInitialized();
+  public set: IJsonRpcHistory["set"] = (topic, request, chainId) => {
+    this.isInitialized();
     this.logger.debug(`Setting JSON-RPC request history record`);
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
     if (this.records.has(request.id)) return;
@@ -76,10 +84,10 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.created, record);
-  }
+  };
 
-  public async resolve(response: JsonRpcResponse): Promise<void> {
-    await this.isInitialized();
+  public resolve: IJsonRpcHistory["resolve"] = async response => {
+    this.isInitialized();
     this.logger.debug(`Updating JSON-RPC response history record`);
     this.logger.trace({ type: "method", method: "update", response });
     if (!this.records.has(response.id)) return;
@@ -90,16 +98,16 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       : { result: response.result };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.updated, record);
-  }
+  };
 
-  public async get(topic: string, id: number): Promise<JsonRpcRecord> {
-    await this.isInitialized();
+  public get: IJsonRpcHistory["get"] = async (topic, id) => {
+    this.isInitialized();
     this.logger.debug(`Getting record`);
     this.logger.trace({ type: "method", method: "get", topic, id });
     const record = await this.getRecord(id);
     if (record.topic !== topic) {
       const error = ERROR.MISMATCHED_TOPIC.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         id,
       });
       // silencing this for now
@@ -107,10 +115,10 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       throw new Error(error.message);
     }
     return record;
-  }
+  };
 
-  public async delete(topic: string, id?: number): Promise<void> {
-    await this.isInitialized();
+  public delete: IJsonRpcHistory["delete"] = (topic, id) => {
+    this.isInitialized();
     this.logger.debug(`Deleting record`);
     this.logger.trace({ type: "method", method: "delete", id });
     this.values.forEach((record: JsonRpcRecord) => {
@@ -120,94 +128,79 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         this.events.emit(HISTORY_EVENTS.deleted, record);
       }
     });
-  }
+  };
 
-  public async exists(topic: string, id: number): Promise<boolean> {
-    await this.isInitialized();
+  public exists: IJsonRpcHistory["exists"] = async (topic, id) => {
+    this.isInitialized();
     if (!this.records.has(id)) return false;
     const record = await this.getRecord(id);
     return record.topic === topic;
-  }
+  };
 
-  public on(event: string, listener: any): void {
+  public on: IJsonRpcHistory["on"] = (event, listener) => {
     this.events.on(event, listener);
-  }
+  };
 
-  public once(event: string, listener: any): void {
+  public once: IJsonRpcHistory["once"] = (event, listener) => {
     this.events.once(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): void {
+  public off: IJsonRpcHistory["off"] = (event, listener) => {
     this.events.off(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): void {
+  public removeListener: IJsonRpcHistory["removeListener"] = (event, listener) => {
     this.events.removeListener(event, listener);
-  }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
-  private async getRecord(id: number): Promise<JsonRpcRecord> {
-    await this.isInitialized();
+  private async setJsonRpcRecords(records: JsonRpcRecord[]): Promise<void> {
+    await this.core.storage.setItem<JsonRpcRecord[]>(this.storageKey, records);
+  }
+
+  private async getJsonRpcRecords(): Promise<JsonRpcRecord[] | undefined> {
+    const records = await this.core.storage.getItem<JsonRpcRecord[]>(this.storageKey);
+    return records;
+  }
+
+  private getRecord(id: number) {
+    this.isInitialized();
     const record = this.records.get(id);
     if (!record) {
       const error = ERROR.NO_MATCHING_ID.format({
-        context: formatMessageContext(this.context),
+        context: this.name,
         id,
       });
-      // silencing this for now
-      // this.logger.error(error.message);
       throw new Error(error.message);
     }
     return record;
   }
 
   private async persist() {
-    await this.storage.setJsonRpcRecords(this.context, this.values);
+    await this.setJsonRpcRecords(this.values);
     this.events.emit(HISTORY_EVENTS.sync);
   }
 
   private async restore() {
     try {
-      const persisted = await this.storage.getJsonRpcRecords(this.context);
+      const persisted = await this.getJsonRpcRecords();
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {
         const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: formatMessageContext(this.context),
+          context: this.name,
         });
         this.logger.error(error.message);
         throw new Error(error.message);
       }
       this.cached = persisted;
-      this.logger.debug(`Successfully Restored records for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Successfully Restored records for ${this.name}`);
       this.logger.trace({ type: "method", method: "restore", records: this.values });
     } catch (e) {
-      this.logger.debug(`Failed to Restore records for ${formatMessageContext(this.context)}`);
+      this.logger.debug(`Failed to Restore records for ${this.name}`);
       this.logger.error(e as any);
     }
-  }
-
-  private async initialize() {
-    await this.restore();
-    this.reset();
-    this.onInit();
-  }
-
-  private reset() {
-    this.cached.forEach(record => this.records.set(record.id, record));
-  }
-
-  private onInit() {
-    this.cached = [];
-    this.events.emit(HISTORY_EVENTS.init);
-  }
-
-  private async isInitialized(): Promise<void> {
-    if (!this.cached.length) return;
-    return new Promise(resolve => {
-      this.events.once(HISTORY_EVENTS.init, () => resolve());
-    });
   }
 
   private registerEventListeners(): void {
@@ -230,5 +223,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       this.logger.debug({ type: "event", event: eventName, record });
       this.persist();
     });
+  }
+
+  private isInitialized() {
+    if (!this.initialized) {
+      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    }
   }
 }

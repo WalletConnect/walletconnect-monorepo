@@ -30,6 +30,7 @@ export const ERROR_TYPE = enumify({
   EXPIRED: "EXPIRED",
   DELETED: "DELETED",
   RESUBSCRIBED: "RESUBSCRIBED",
+  NOT_INITIALIZED: "NOT_INITIALIZED",
   // 2000 (Timeout)
   SETTLE_TIMEOUT: "SETTLE_TIMEOUT",
   JSONRPC_REQUEST_TIMEOUT: "JSONRPC_REQUEST_TIMEOUT",
@@ -41,6 +42,7 @@ export const ERROR_TYPE = enumify({
   UNAUTHORIZED_UPGRADE_REQUEST: "UNAUTHORIZED_UPGRADE_REQUEST",
   UNAUTHORIZED_EXTEND_REQUEST: "UNAUTHORIZED_EXTEND_REQUEST",
   UNAUTHORIZED_MATCHING_CONTROLLER: "UNAUTHORIZED_MATCHING_CONTROLLER",
+  UNAUTHORIZED_METHOD: "UNAUTHORIZED_METHOD",
   // 4000 (EIP-1193)
   JSONRPC_REQUEST_METHOD_REJECTED: "JSONRPC_REQUEST_METHOD_REJECTED",
   JSONRPC_REQUEST_METHOD_UNAUTHORIZED: "JSONRPC_REQUEST_METHOD_UNAUTHORIZED",
@@ -318,6 +320,16 @@ export const ERROR: Record<ErrorType, Error> = {
       message: ERROR[ERROR_TYPE.RESUBSCRIBED].stringify(params),
     }),
   },
+  [ERROR_TYPE.NOT_INITIALIZED]: {
+    type: ERROR_TYPE.NOT_INITIALIZED,
+    code: 1607,
+    stringify: (params?: any) => `${params ? `: ${params?.toString()}` : ""} was not initialized`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.NOT_INITIALIZED].code,
+      message: ERROR[ERROR_TYPE.NOT_INITIALIZED].stringify(params),
+    }),
+  },
+
   // 2000 (Timeout)
   [ERROR_TYPE.SETTLE_TIMEOUT]: {
     type: ERROR_TYPE.SETTLE_TIMEOUT,
@@ -406,17 +418,28 @@ export const ERROR: Record<ErrorType, Error> = {
     type: ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER,
     code: 3100,
     stringify: (params?: any) =>
-      `Unauthorized: peer is also ${params?.controller ? "" : "not "}controller`,
+      `Unauthorized: method ${params?.request?.method ?? "unknown"} not allowed`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER].code,
       message: ERROR[ERROR_TYPE.UNAUTHORIZED_MATCHING_CONTROLLER].stringify(params),
+    }),
+  },
+
+  [ERROR_TYPE.UNAUTHORIZED_METHOD]: {
+    type: ERROR_TYPE.UNAUTHORIZED_METHOD,
+    code: 3100,
+    stringify: (params?: any) =>
+      `Unauthorized: peer is also ${params?.controller ? "" : "not "}controller`,
+    format: (params?: any) => ({
+      code: ERROR[ERROR_TYPE.UNAUTHORIZED_METHOD].code,
+      message: ERROR[ERROR_TYPE.UNAUTHORIZED_METHOD].stringify(params),
     }),
   },
   // 4000 (EIP-1193)
   [ERROR_TYPE.JSONRPC_REQUEST_METHOD_REJECTED]: {
     type: ERROR_TYPE.JSONRPC_REQUEST_METHOD_REJECTED,
     code: 4001,
-    stringify: (params?: any) => "User rejected the request.",
+    stringify: () => "User rejected the request.",
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.JSONRPC_REQUEST_METHOD_REJECTED].code,
       message: ERROR[ERROR_TYPE.JSONRPC_REQUEST_METHOD_REJECTED].stringify(params),
@@ -425,8 +448,7 @@ export const ERROR: Record<ErrorType, Error> = {
   [ERROR_TYPE.JSONRPC_REQUEST_METHOD_UNAUTHORIZED]: {
     type: ERROR_TYPE.JSONRPC_REQUEST_METHOD_UNAUTHORIZED,
     code: 4100,
-    stringify: (params?: any) =>
-      "The requested account and/or method has not been authorized by the user.",
+    stringify: () => "The requested account and/or method has not been authorized by the user.",
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.JSONRPC_REQUEST_METHOD_UNAUTHORIZED].code,
       message: ERROR[ERROR_TYPE.JSONRPC_REQUEST_METHOD_UNAUTHORIZED].stringify(params),
@@ -446,7 +468,7 @@ export const ERROR: Record<ErrorType, Error> = {
   [ERROR_TYPE.DISCONNECTED_ALL_CHAINS]: {
     type: ERROR_TYPE.DISCONNECTED_ALL_CHAINS,
     code: 4900,
-    stringify: (params?: any) => "The provider is disconnected from all chains.",
+    stringify: () => "The provider is disconnected from all chains.",
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.DISCONNECTED_ALL_CHAINS].code,
       message: ERROR[ERROR_TYPE.DISCONNECTED_ALL_CHAINS].stringify(params),
@@ -455,7 +477,7 @@ export const ERROR: Record<ErrorType, Error> = {
   [ERROR_TYPE.DISCONNECTED_TARGET_CHAIN]: {
     type: ERROR_TYPE.DISCONNECTED_TARGET_CHAIN,
     code: 4901,
-    stringify: (params?: any) => "The provider is disconnected from the specified chain.",
+    stringify: () => "The provider is disconnected from the specified chain.",
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.DISCONNECTED_TARGET_CHAIN].code,
       message: ERROR[ERROR_TYPE.DISCONNECTED_TARGET_CHAIN].stringify(params),
@@ -465,7 +487,7 @@ export const ERROR: Record<ErrorType, Error> = {
   [ERROR_TYPE.DISAPPROVED_CHAINS]: {
     type: ERROR_TYPE.DISAPPROVED_CHAINS,
     code: 5000,
-    stringify: (params?: any) => `User disapproved requested chains`,
+    stringify: () => `User disapproved requested chains`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.DISAPPROVED_CHAINS].code,
       message: ERROR[ERROR_TYPE.DISAPPROVED_CHAINS].stringify(params),
@@ -474,7 +496,7 @@ export const ERROR: Record<ErrorType, Error> = {
   [ERROR_TYPE.DISAPPROVED_JSONRPC]: {
     type: ERROR_TYPE.DISAPPROVED_JSONRPC,
     code: 5001,
-    stringify: (params?: any) => `User disapproved requested json-rpc methods`,
+    stringify: () => `User disapproved requested json-rpc methods`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.DISAPPROVED_JSONRPC].code,
       message: ERROR[ERROR_TYPE.DISAPPROVED_JSONRPC].stringify(params),
@@ -483,7 +505,7 @@ export const ERROR: Record<ErrorType, Error> = {
   [ERROR_TYPE.DISAPPROVED_NOTIFICATION]: {
     type: ERROR_TYPE.DISAPPROVED_NOTIFICATION,
     code: 5002,
-    stringify: (params?: any) => `User disapproved requested notification types`,
+    stringify: () => `User disapproved requested notification types`,
     format: (params?: any) => ({
       code: ERROR[ERROR_TYPE.DISAPPROVED_NOTIFICATION].code,
       message: ERROR[ERROR_TYPE.DISAPPROVED_NOTIFICATION].stringify(params),

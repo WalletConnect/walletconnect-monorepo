@@ -1,15 +1,13 @@
+import { Logger } from "pino";
+import { IEvents } from "@walletconnect/events";
 import {
   ErrorResponse,
   JsonRpcRequest,
   JsonRpcResponse,
   RequestArguments,
 } from "@walletconnect/jsonrpc-types";
-import { IEvents } from "@walletconnect/events";
 
-import { Logger } from "pino";
-
-import { IStorage } from "./storage";
-import { RequestEvent } from "./misc";
+import { ICore } from "./core";
 
 export interface JsonRpcRecord {
   id: number;
@@ -17,6 +15,12 @@ export interface JsonRpcRecord {
   request: RequestArguments;
   chainId?: string;
   response?: { result: any } | { error: ErrorResponse };
+}
+
+export interface RequestEvent {
+  topic: string;
+  request: JsonRpcRequest;
+  chainId?: string;
 }
 
 export abstract class IJsonRpcHistory extends IEvents {
@@ -32,19 +36,19 @@ export abstract class IJsonRpcHistory extends IEvents {
 
   public abstract readonly pending: RequestEvent[];
 
-  constructor(public logger: Logger, public storage: IStorage) {
+  constructor(public core: ICore, public logger: Logger) {
     super();
   }
 
   public abstract init(): Promise<void>;
 
-  public abstract set(topic: string, request: JsonRpcRequest, chainId?: string): Promise<void>;
+  public abstract set(topic: string, request: JsonRpcRequest, chainId?: string): void;
 
   public abstract get(topic: string, id: number): Promise<JsonRpcRecord>;
 
   public abstract resolve(response: JsonRpcResponse): Promise<void>;
 
-  public abstract delete(topic: string, id?: number): Promise<void>;
+  public abstract delete(topic: string, id?: number): void;
 
   public abstract exists(topic: string, id: number): Promise<boolean>;
 }

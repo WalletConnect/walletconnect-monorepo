@@ -20,8 +20,6 @@ export abstract class IPublisher extends IEvents {
     super();
   }
 
-  public abstract init(): Promise<void>;
-
   public abstract publish(
     topic: string,
     message: string,

@@ -85,7 +85,6 @@ export class HttpService {
   private registerApi() {
     this.app.register(helmet);
     this.app.register(ws);
-
     this.app.get("/", { websocket: true }, connection => {
       connection.on("error", (e: Error) => {
         if (!e.message.includes("Invalid WebSocket frame")) {

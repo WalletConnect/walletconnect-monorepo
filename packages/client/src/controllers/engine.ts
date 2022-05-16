@@ -1,1039 +1,860 @@
+import EventEmmiter from "events";
+import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
+import { EXPIRER_EVENTS, SESSION_EXPIRY, PROPOSAL_EXPIRY } from "../constants";
 import {
-  SequenceTypes,
-  ISequence,
-  IEngine,
-  SessionTypes,
-  StoreEvent,
-  RelayerTypes,
-  JsonRpcRecord,
-  ExpirerEvents,
-} from "@walletconnect/types";
-import {
-  formatMessageContext,
-  calcExpiry,
-  generateRandomBytes32,
-  hasOverlap,
-  isSignalTypePairing,
-  isSequenceFailed,
-  isSequenceResponded,
-  isStoreUpdatedEvent,
-  ERROR,
-  isSequenceRejected,
-} from "@walletconnect/utils";
-import {
-  JsonRpcPayload,
-  JsonRpcRequest,
-  JsonRpcResponse,
-  formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  isJsonRpcError,
+  formatJsonRpcError,
   isJsonRpcRequest,
-  ErrorResponse,
   isJsonRpcResponse,
+  isJsonRpcResult,
+  isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { toMiliseconds, FIVE_MINUTES, THIRTY_SECONDS, ONE_DAY } from "@walletconnect/time";
-
+import { FIVE_MINUTES } from "@walletconnect/time";
 import {
-  STORE_EVENTS,
-  EXPIRER_EVENTS,
-  RELAYER_DEFAULT_PROTOCOL,
-  RELAYER_EVENTS,
-} from "../constants";
+  IEngine,
+  IEngineEvents,
+  RelayerTypes,
+  EnginePrivate,
+  SessionTypes,
+  JsonRpcTypes,
+  ExpirerTypes,
+} from "@walletconnect/types";
+import {
+  calcExpiry,
+  formatUri,
+  generateRandomBytes32,
+  parseUri,
+  createDelayedPromise,
+  ERROR,
+  engineEvent,
+  isValidNamespaces,
+  isValidRelays,
+  isValidUrl,
+  isValidId,
+  isValidParams,
+  isValidString,
+  isValidErrorReason,
+  isValidNamespacesChainId,
+  isValidNamespacesRequest,
+  isValidNamespacesEvent,
+  isValidRequest,
+  isValidEvent,
+  isValidResponse,
+  isValidRequiredNamespaces,
+} from "@walletconnect/utils";
+import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 export class Engine extends IEngine {
-  public sequence: ISequence;
+  private events: IEngineEvents = new EventEmmiter();
 
-  constructor(sequence: any) {
-    super(sequence);
-    this.sequence = sequence;
-    this.registerEventListeners();
+  constructor(client: IEngine["client"]) {
+    super(client);
+    this.registerRelayerEvents();
+    this.registerExpirerEvents();
   }
 
-  public async find(
-    permissions: Partial<SequenceTypes.Permissions>,
-  ): Promise<SequenceTypes.Settled[]> {
-    return this.sequence.values.filter((settled: SequenceTypes.Settled) => {
-      let isCompatible = false;
-      if (
-        settled.permissions?.jsonrpc &&
-        permissions.jsonrpc?.methods &&
-        hasOverlap(permissions.jsonrpc.methods, settled.permissions.jsonrpc.methods)
-      ) {
-        isCompatible = true;
-      }
-      if (
-        settled.permissions?.blockchain &&
-        permissions.blockchain?.chains &&
-        hasOverlap(permissions.blockchain.chains, settled.permissions.blockchain.chains)
-      ) {
-        isCompatible = true;
-      }
-      if (
-        settled.permissions?.notifications &&
-        permissions.notifications?.types &&
-        hasOverlap(permissions.notifications.types, settled.permissions.notifications.types)
-      ) {
-        isCompatible = true;
-      }
-      return isCompatible;
-    });
-  }
+  // ---------- Public ------------------------------------------------ //
 
-  public async ping(topic: string, timeout?: number): Promise<void> {
-    const request = { method: this.sequence.config.jsonrpc.ping, params: {} };
-    return this.request({ topic, request, timeout: timeout || toMiliseconds(THIRTY_SECONDS) });
-  }
+  public connect: IEngine["connect"] = async params => {
+    this.isValidConnect(params);
+    const { pairingTopic, requiredNamespaces, relays } = params;
+    let topic = pairingTopic;
+    let uri: string | undefined = undefined;
+    let active = false;
 
-  public async send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void> {
-    const originalPayload = payload;
-    const settled = await this.sequence.settled.get(topic);
-    let prompt = false;
-    if (isJsonRpcRequest(payload)) {
-      if (!Object.values(this.sequence.config.jsonrpc).includes(payload.method)) {
-        await this.isJsonRpcAuthorized(topic, settled.self, payload);
-        await this.sequence.validateRequest({ topic, request: payload, chainId });
-        const params = {
-          chainId,
-          request: { method: payload.method, params: payload.params },
-        };
-        if (!params.chainId) delete params.chainId;
-        prompt = true;
-        payload = formatJsonRpcRequest<SequenceTypes.Request>(
-          this.sequence.config.jsonrpc.payload,
-          params,
-          payload.id,
-        );
-      }
+    if (topic) {
+      const pairing = this.client.pairing.get(topic);
+      active = pairing.active;
     }
-    const message = await this.sequence.client.crypto.encode(settled.topic, payload);
-    await this.sequence.client.relayer.publish(settled.topic, message, {
-      relay: settled.relay,
-      prompt,
-    });
-    if (
-      isJsonRpcResponse(originalPayload) ||
-      (isJsonRpcRequest(originalPayload) &&
-        !Object.values(this.sequence.config.jsonrpc).includes(originalPayload.method))
-    ) {
-      await this.recordPayloadEvent({ topic, payload: originalPayload, chainId });
+
+    if (!topic || !active) {
+      const { topic: newTopic, uri: newUri } = await this.createPairing();
+      topic = newTopic;
+      uri = newUri;
     }
-  }
 
-  get length(): number {
-    return this.sequence.settled.length;
-  }
-
-  get topics(): string[] {
-    return this.sequence.settled.topics;
-  }
-
-  get values(): SequenceTypes.Settled[] {
-    return this.sequence.settled.values;
-  }
-
-  public create(params?: SequenceTypes.CreateParams): Promise<SequenceTypes.Settled> {
-    return new Promise(async (resolve, reject) => {
-      this.sequence.logger.debug(`Create ${this.sequence.context}`);
-      this.sequence.logger.trace({ type: "method", method: "create", params });
-      const maxTimeout = params?.timeout || toMiliseconds(FIVE_MINUTES);
-      const timeout = setTimeout(() => {
-        const error = ERROR.SETTLE_TIMEOUT.format({
-          context: this.sequence.name,
-          timeout: maxTimeout,
-        });
-        this.sequence.logger.error(error.message);
-        reject(error.message);
-      }, maxTimeout);
-      let pending: SequenceTypes.Pending;
-      try {
-        pending = await this.propose(params);
-      } catch (e) {
-        clearTimeout(timeout);
-        return reject(e);
-      }
-      this.sequence.pending.on(
-        STORE_EVENTS.updated,
-        async (updatedEvent: StoreEvent.Updated<SequenceTypes.Pending>) => {
-          if (pending.topic !== updatedEvent.sequence.topic) return;
-          if (isSequenceResponded(updatedEvent.sequence)) {
-            const outcome = updatedEvent.sequence.outcome;
-            clearTimeout(timeout);
-            if (isSequenceFailed(outcome)) {
-              try {
-                await this.sequence.pending.delete(pending.topic, outcome.reason);
-              } catch (e) {
-                return reject(e);
-              }
-              reject(new Error(outcome.reason.message));
-            } else {
-              try {
-                const settled = await this.sequence.settled.get(outcome.topic);
-                const reason = ERROR.SETTLED.format({ context: this.sequence.name });
-                await this.sequence.pending.delete(pending.topic, reason);
-                resolve(settled);
-              } catch (e) {
-                return reject(e);
-              }
-            }
-          }
-        },
-      );
-    });
-  }
-
-  public async respond(params: SequenceTypes.RespondParams): Promise<SequenceTypes.Pending> {
-    this.sequence.logger.debug(`Respond ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "respond", params });
-    await this.sequence.validateRespond(params);
-    const { approved, proposal, response } = params;
-    const { relay, ttl } = proposal;
-    const self = {
-      publicKey: await this.sequence.client.crypto.generateKeyPair(),
-      metadata: response?.metadata,
+    const publicKey = await this.client.core.crypto.generateKeyPair();
+    const proposal = {
+      requiredNamespaces,
+      relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
+      proposer: {
+        publicKey,
+        metadata: this.client.metadata,
+      },
     };
-    if (!self.metadata) delete self.metadata;
-    if (approved) {
-      try {
-        const responder: SequenceTypes.Participant = {
-          publicKey: self.publicKey,
-          metadata: response?.metadata,
-        };
-        if (!responder.metadata) delete responder.metadata;
-        const expiry = calcExpiry(proposal.ttl);
-        const state: SequenceTypes.State = response?.state || {};
-        const peer: SequenceTypes.Participant = {
-          publicKey: proposal.proposer.publicKey,
-          metadata: proposal.proposer.metadata,
-        };
-        if (!peer.metadata) delete peer.metadata;
-        const controller = proposal.proposer.controller
-          ? { publicKey: peer.publicKey }
-          : { publicKey: self.publicKey };
-        const permissions: SequenceTypes.Permissions = {
-          ...proposal.permissions,
-          controller,
-        };
-        const settled = await this.settle({
-          relay,
-          self,
-          peer,
-          permissions,
-          state,
-          ttl,
-          expiry,
-        });
-        const outcome: SequenceTypes.Outcome = {
-          topic: settled.topic,
-          relay,
-          state,
-          responder,
-          expiry,
-        };
-        const pending: SequenceTypes.Pending = {
-          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-          topic: proposal.topic,
-          relay,
-          self,
-          proposal,
-          outcome,
-        };
-        await this.sequence.pending.set(pending.topic, pending);
-        return pending;
-      } catch (e) {
-        const reason = ERROR.GENERIC.format({ message: (e as any).message });
-        const outcome: SequenceTypes.Outcome = { reason };
-        const pending: SequenceTypes.Pending = {
-          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-          topic: proposal.topic,
-          relay,
-          self,
-          proposal,
-          outcome,
-        };
-        await this.sequence.pending.set(pending.topic, pending);
-        return pending;
-      }
-    } else {
-      const defaultReason = ERROR.NOT_APPROVED.format({ context: this.sequence.name });
-      const outcome: SequenceTypes.Outcome = { reason: params?.reason || defaultReason };
-      const pending: SequenceTypes.Pending = {
-        status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-        topic: proposal.topic,
-        relay,
-        self,
-        proposal,
-        outcome,
-      };
-      await this.sequence.pending.set(pending.topic, pending);
-      return pending;
-    }
-  }
 
-  public async update(params: SequenceTypes.UpdateParams): Promise<SequenceTypes.Settled> {
-    this.sequence.logger.debug(`Update ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "update", params });
-    const settled = await this.sequence.settled.get(params.topic);
-    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
-    const update = await this.handleUpdate(params.topic, params, participant);
-    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.update, update);
-    await this.send(settled.topic, request);
-    return settled;
-  }
-
-  public async upgrade(params: SequenceTypes.UpgradeParams): Promise<SequenceTypes.Settled> {
-    this.sequence.logger.debug(`Upgrade ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "upgrade", params });
-    const settled = await this.sequence.settled.get(params.topic);
-    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
-    const upgrade = await this.handleUpgrade(params.topic, params, participant);
-    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.upgrade, upgrade);
-    await this.send(settled.topic, request);
-    return settled;
-  }
-
-  public async extend(params: SequenceTypes.ExtendParams): Promise<SequenceTypes.Settled> {
-    this.sequence.logger.debug(`Extend ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "extend", params });
-    const settled = await this.sequence.settled.get(params.topic);
-    const participant: SequenceTypes.Participant = { publicKey: settled.self.publicKey };
-    if (params.ttl > (await this.sequence.getDefaultTTL())) {
-      const error = ERROR.INVALID_EXTEND_REQUEST.format({ context: this.sequence.name });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    let extension = { expiry: calcExpiry(params.ttl) };
-    extension = await this.handleExtension(params.topic, extension, participant);
-    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.extend, extension);
-    await this.send(settled.topic, request);
-    return settled;
-  }
-
-  public async request(params: SequenceTypes.RequestParams): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        await this.sequence.validateRequest(params);
-      } catch (e) {
-        return reject(e);
-      }
-      const request = formatJsonRpcRequest(params.request.method, params.request.params);
-      const maxTimeout = params?.timeout || toMiliseconds(FIVE_MINUTES);
-      const timeout = setTimeout(() => {
-        const error = ERROR.JSONRPC_REQUEST_TIMEOUT.format({
-          method: request.method,
-          timeout: maxTimeout,
-        });
-        this.sequence.logger.error(error.message);
-        reject(error.message);
-      }, maxTimeout);
-      this.sequence.events.on(
-        this.sequence.config.events.response,
-        (responseEvent: SequenceTypes.ResponseEvent) => {
-          if (params.topic !== responseEvent.topic) return;
-          const response = responseEvent.response;
-          if (response.id !== request.id) return;
-          clearTimeout(timeout);
-          if (isJsonRpcError(response)) {
-            const errorMessage = response.error.message;
-            this.sequence.logger.error(errorMessage);
-            return reject(new Error(errorMessage));
-          }
-          return resolve(response.result);
-        },
-      );
-      try {
-        await this.send(params.topic, request, params?.chainId);
-      } catch (e) {
-        clearTimeout(timeout);
-        return reject(e);
+    const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
+    this.events.once<"session_connect">(engineEvent("session_connect"), async ({ error, data }) => {
+      if (error) reject(error);
+      else if (data) {
+        data.self.publicKey = publicKey;
+        await this.client.session.set(data.topic, data);
+        await this.setExpiry(data.topic, data.expiry);
+        resolve(data);
       }
     });
-  }
 
-  public async delete(params: SequenceTypes.DeleteParams): Promise<void> {
-    this.sequence.logger.debug(`Delete ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "delete", params });
-    await this.sequence.settled.delete(params.topic, params.reason);
-  }
+    if (!topic) throw new Error(ERROR.MISSING_OR_INVALID.stringify({ name: "topic" }));
 
-  public async notify(params: SequenceTypes.NotifyParams): Promise<void> {
-    const { topic, notification } = params;
-    const settled = await this.sequence.settled.get(params.topic);
-    await this.isNotificationAuthorized(params.topic, settled.self, notification.type);
-    const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.notification, notification);
-    await this.send(params.topic, request);
-  }
+    const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
+    await this.client.proposal.set(id, { id, ...proposal });
 
-  // ---------- Protected ----------------------------------------------- //
+    return { uri, approval };
+  };
 
-  public async propose(params?: SequenceTypes.ProposeParams): Promise<SequenceTypes.Pending> {
-    this.sequence.logger.debug(`Propose ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "propose", params });
-    await this.sequence.validatePropose(params);
-    const relay = params?.relay || { protocol: RELAYER_DEFAULT_PROTOCOL };
-    const topic = generateRandomBytes32();
-    const self: SequenceTypes.Participant = {
-      publicKey: await this.sequence.client.crypto.generateKeyPair(),
-      metadata: params?.metadata,
+  public pair: IEngine["pair"] = async params => {
+    this.isValidPair(params);
+    const { topic, symKey, relay } = parseUri(params.uri);
+    const expiry = calcExpiry(FIVE_MINUTES);
+    const pairing = { topic, relay, expiry, active: false };
+    await this.client.pairing.set(topic, pairing);
+    await this.client.core.crypto.setSymKey(symKey, topic);
+    await this.client.core.relayer.subscribe(topic, { relay });
+    await this.setExpiry(topic, expiry);
+
+    return pairing;
+  };
+
+  public approve: IEngine["approve"] = async params => {
+    this.isValidApprove(params);
+    const { id, relayProtocol, namespaces } = params;
+    const { pairingTopic, proposer } = this.client.proposal.get(id);
+
+    const selfPublicKey = await this.client.core.crypto.generateKeyPair();
+    const peerPublicKey = proposer.publicKey;
+    const sessionTopic = await this.client.core.crypto.generateSharedKey(
+      selfPublicKey,
+      peerPublicKey,
+    );
+    const sessionSettle = {
+      relay: {
+        protocol: relayProtocol ?? "waku",
+      },
+      namespaces,
+      controller: {
+        publicKey: selfPublicKey,
+        metadata: this.client.metadata,
+      },
+      expiry: SESSION_EXPIRY,
     };
-    if (!self.metadata) delete self.metadata;
-    const proposer: SequenceTypes.ProposedPeer = {
-      publicKey: self.publicKey,
-      controller: this.sequence.client.controller,
-      metadata: self.metadata,
-    };
-    if (!proposer.metadata) delete proposer.metadata;
-    const signal =
-      params?.signal || (await this.sequence.getDefaultSignal({ topic, relay, proposer }));
-    const permissions = params?.permissions || (await this.sequence.getDefaultPermissions());
-    const ttl = params?.ttl || (await this.sequence.getDefaultTTL());
-    const proposal: SequenceTypes.Proposal = {
-      relay,
-      topic,
-      proposer,
-      signal,
-      permissions,
-      ttl,
-    };
-    const pending: SequenceTypes.Pending = {
-      status: this.sequence.config.status.proposed as SequenceTypes.ProposedStatus,
-      topic: proposal.topic,
-      relay: proposal.relay,
-      self,
-      proposal,
-    };
-    await this.sequence.pending.set(pending.topic, pending);
-    return pending;
-  }
 
-  public async settle(params: SequenceTypes.SettleParams): Promise<SequenceTypes.Settled> {
-    this.sequence.logger.debug(`Settle ${this.sequence.context}`);
-    this.sequence.logger.trace({ type: "method", method: "settle", params });
-    const topic = await this.sequence.client.crypto.generateSharedKey(params.self, params.peer);
-    const settled: SequenceTypes.Settled = {
-      topic,
-      relay: params.relay,
-      self: params.self,
-      peer: params.peer,
-      permissions: params.permissions,
-      expiry: params.expiry,
-      state: params.state,
+    await this.client.core.relayer.subscribe(sessionTopic);
+    const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
+    const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
+    this.events.once(engineEvent("session_approve", requestId), ({ error }) => {
+      if (error) reject(error);
+      else resolve(this.client.session.get(sessionTopic));
+    });
+
+    const session = {
+      ...sessionSettle,
+      topic: sessionTopic,
       acknowledged: false,
+      self: sessionSettle.controller,
+      peer: {
+        publicKey: proposer.publicKey,
+        metadata: proposer.metadata,
+      },
+      controller: selfPublicKey,
     };
-    await this.sequence.settled.set(settled.topic, settled);
-    return settled;
-  }
+    await this.client.session.set(sessionTopic, session);
+    await this.setExpiry(sessionTopic, SESSION_EXPIRY);
 
-  public async onResponse(payloadEvent: SequenceTypes.PayloadEvent): Promise<void> {
-    const { topic, payload } = payloadEvent;
-    this.sequence.logger.debug(`Receiving ${this.sequence.context} response`);
-    this.sequence.logger.trace({ type: "method", method: "onResponse", topic, payload });
-    const request = payload as JsonRpcRequest<SequenceTypes.Response>;
-    const response = request.params;
-    const pending = await this.sequence.pending.get(topic);
-    let error: ErrorResponse | undefined;
-    let outcome: SequenceTypes.Outcome | undefined;
-    if (!isSequenceRejected(response)) {
-      try {
-        const controller = pending.proposal.proposer.controller
-          ? { publicKey: pending.proposal.proposer.publicKey }
-          : { publicKey: response.responder.publicKey };
-        const peer: SequenceTypes.Participant = {
-          publicKey: response.responder.publicKey,
-          metadata: response.responder.metadata,
-        };
-        if (!peer.metadata) delete peer.metadata;
-        const state: SequenceTypes.State = response.state || {};
-        const permissions: SequenceTypes.Permissions = {
-          ...pending.proposal.permissions,
-          controller,
-        };
-        const settled = await this.settle({
-          relay: pending.relay,
-          self: pending.self,
-          peer,
-          permissions,
-          ttl: pending.proposal.ttl,
-          expiry: response.expiry,
-          state,
-        });
-        const outcome = {
-          topic: settled.topic,
-          relay: settled.relay,
-          responder: response.responder,
-          expiry: settled.expiry,
-          state: settled.state,
-        };
-        await this.sequence.pending.update(topic, {
-          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-          outcome,
-        });
-      } catch (e) {
-        this.sequence.logger.error(e as any);
-        error = ERROR.GENERIC.format({ message: (e as any).message });
-        outcome = { reason: error };
-        await this.sequence.pending.update(topic, {
-          status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-          outcome,
-        });
-      }
-      const message = await this.sequence.client.crypto.encode(
-        pending.topic,
-        typeof error === "undefined"
-          ? formatJsonRpcResult(request.id, true)
-          : formatJsonRpcError(request.id, error),
-      );
-      await this.sequence.client.relayer.publish(pending.topic, message, {
-        relay: pending.relay,
+    if (pairingTopic && id) {
+      await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
+        relay: {
+          protocol: relayProtocol ?? "waku",
+        },
+        responderPublicKey: selfPublicKey,
       });
-      if (typeof outcome !== "undefined" && !isSequenceFailed(outcome)) {
-        await this.sequence.settled.update(outcome.topic, { acknowledged: true });
-      }
-    } else {
-      this.sequence.logger.error(response.reason);
-      await this.sequence.pending.update(topic, {
-        status: this.sequence.config.status.responded as SequenceTypes.RespondedStatus,
-        outcome: { reason: response.reason },
-      });
+      await this.client.proposal.delete(id, ERROR.DELETED.format());
+      await this.activatePairing(pairingTopic);
     }
-  }
 
-  public async onAcknowledge(payloadEvent: SequenceTypes.PayloadEvent): Promise<void> {
-    const { topic, payload } = payloadEvent;
-    this.sequence.logger.debug(`Receiving ${this.sequence.context} acknowledge`);
-    this.sequence.logger.trace({ type: "method", method: "onAcknowledge", topic, payload });
-    const response = payload as JsonRpcResponse;
-    const pending = await this.sequence.pending.get(topic);
-    if (!isSequenceResponded(pending)) return;
-    const { outcome } = pending;
-    if (isJsonRpcError(response) && !isSequenceFailed(outcome)) {
-      await this.sequence.settled.delete(outcome.topic, response.error);
-    }
-    if (typeof outcome !== "undefined" && !isSequenceFailed(outcome)) {
-      await this.sequence.settled.update(outcome.topic, { acknowledged: true });
-    }
-    const reason = ERROR.RESPONSE_ACKNOWLEDGED.format({ context: this.sequence.name });
-    await this.sequence.pending.delete(topic, reason);
-  }
+    return { topic: sessionTopic, acknowledged };
+  };
 
-  public async onMessage(payloadEvent: SequenceTypes.PayloadEvent): Promise<void> {
-    const { topic, payload } = payloadEvent;
-    this.sequence.logger.debug(`Receiving ${this.sequence.context} message`);
-    this.sequence.logger.trace({ type: "method", method: "onMessage", topic, payload });
-    if (isJsonRpcRequest(payload)) {
-      const request = payload as JsonRpcRequest;
-      const settled = await this.sequence.settled.get(payloadEvent.topic);
-      let error: ErrorResponse | undefined;
-      switch (request.method) {
-        case this.sequence.config.jsonrpc.payload:
-          await this.onPayload(payloadEvent);
-          break;
-        case this.sequence.config.jsonrpc.update:
-          await this.onUpdate(payloadEvent);
-          break;
-        case this.sequence.config.jsonrpc.upgrade:
-          await this.onUpgrade(payloadEvent);
-          break;
-        case this.sequence.config.jsonrpc.extend:
-          await this.onExtension(payloadEvent);
-          break;
-        case this.sequence.config.jsonrpc.notification:
-          await this.onNotification(payloadEvent);
-          break;
-        case this.sequence.config.jsonrpc.delete:
-          await this.sequence.settled.delete(settled.topic, request.params.reason);
-          break;
-        case this.sequence.config.jsonrpc.ping:
-          await this.send(settled.topic, formatJsonRpcResult(request.id, true));
-          break;
-        default:
-          error = ERROR.UNKNOWN_JSONRPC_METHOD.format({ method: request.method });
-          this.sequence.logger.error(error.message);
-          await this.send(settled.topic, formatJsonRpcError(request.id, error));
-          break;
-      }
-    } else {
-      this.onPayloadEvent(payloadEvent);
+  public reject: IEngine["reject"] = async params => {
+    this.isValidReject(params);
+    const { id, reason } = params;
+    const { pairingTopic } = this.client.proposal.get(id);
+    if (pairingTopic) {
+      await this.sendError(id, pairingTopic, reason);
+      await this.client.proposal.delete(id, ERROR.DELETED.format());
     }
-  }
+  };
 
-  public async onPayload(payloadEvent: SequenceTypes.PayloadEvent): Promise<void> {
-    const { topic, payload } = payloadEvent;
-    if (isJsonRpcRequest(payload)) {
-      const { id, params } = payload as JsonRpcRequest<SequenceTypes.Request>;
-      const { chainId } = params;
-      const request = formatJsonRpcRequest(params.request.method, params.request.params, id);
-      const settled = await this.sequence.settled.get(topic);
-      await this.isJsonRpcAuthorized(topic, settled.peer, request);
-      await this.sequence.validateRequest({ topic, request, chainId });
-      const settledPayloadEvent: SequenceTypes.PayloadEvent = {
-        topic,
-        payload: request,
-        chainId,
-      };
-      this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
-      this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
-      this.onPayloadEvent(settledPayloadEvent);
-    } else {
-      const settledPayloadEvent: SequenceTypes.PayloadEvent = {
-        topic,
-        payload,
-      };
-      this.sequence.logger.debug(`Receiving ${this.sequence.context} payload`);
-      this.sequence.logger.trace({ type: "method", method: "onPayload", ...settledPayloadEvent });
-      this.onPayloadEvent(settledPayloadEvent);
-    }
-  }
-
-  public async onUpdate(payloadEvent: SequenceTypes.PayloadEvent): Promise<void> {
-    const { topic, payload } = payloadEvent;
-    this.sequence.logger.debug(`Receiving ${this.sequence.context} update`);
-    this.sequence.logger.trace({ type: "method", method: "onUpdate", topic, payload });
-    const request = payloadEvent.payload as JsonRpcRequest;
-    const settled = await this.sequence.settled.get(payloadEvent.topic);
-    try {
-      const participant: SequenceTypes.Participant = { publicKey: settled.peer.publicKey };
-      await this.handleUpdate(topic, request.params, participant);
-      const response = formatJsonRpcResult(request.id, true);
-      await this.send(settled.topic, response);
-    } catch (e) {
-      this.sequence.logger.error(e as any);
-      const response = formatJsonRpcError(request.id, (e as any).message);
-      await this.send(settled.topic, response);
-    }
-  }
-
-  public async onUpgrade(payloadEvent: SequenceTypes.PayloadEvent): Promise<void> {
-    const { topic, payload } = payloadEvent;
-    this.sequence.logger.debug(`Receiving ${this.sequence.context} upgrade`);
-    this.sequence.logger.trace({ type: "method", method: "onUpgrade", topic, payload });
-    const request = payloadEvent.payload as JsonRpcRequest;
-    const settled = await this.sequence.settled.get(payloadEvent.topic);
-    try {
-      const participant: SequenceTypes.Participant = { publicKey: settled.peer.publicKey };
-      await this.handleUpgrade(topic, request.params, participant);
-      const response = formatJsonRpcResult(request.id, true);
-      await this.send(settled.topic, response);
-    } catch (e) {
-      this.sequence.logger.error(e as any);
-      const response = formatJsonRpcError(request.id, (e as any).message);
-      await this.send(settled.topic, response);
-    }
-  }
-
-  public async onExtension(payloadEvent: SequenceTypes.PayloadEvent): Promise<void> {
-    const { topic, payload } = payloadEvent;
-    this.sequence.logger.debug(`Receiving ${this.sequence.context} extension`);
-    this.sequence.logger.trace({ type: "method", method: "onExtension", topic, payload });
-    const request = payloadEvent.payload as JsonRpcRequest;
-    const settled = await this.sequence.settled.get(payloadEvent.topic);
-    try {
-      const participant: SequenceTypes.Participant = { publicKey: settled.peer.publicKey };
-      await this.handleExtension(topic, request.params, participant);
-      const response = formatJsonRpcResult(request.id, true);
-      await this.send(settled.topic, response);
-    } catch (e) {
-      this.sequence.logger.error(e as any);
-      const response = formatJsonRpcError(request.id, (e as any).message);
-      await this.send(settled.topic, response);
-    }
-  }
-
-  protected async onNotification(payloadEvent: SequenceTypes.PayloadEvent) {
-    const { params: notification } = payloadEvent.payload as JsonRpcRequest<
-      SessionTypes.Notification
-    >;
-    const request = payloadEvent.payload as JsonRpcRequest;
-    const settled = await this.sequence.settled.get(payloadEvent.topic);
-    try {
-      await this.isNotificationAuthorized(payloadEvent.topic, settled.peer, notification.type);
-      const notificationEvent: SessionTypes.NotificationEvent = {
-        topic: payloadEvent.topic,
-        notification,
-      };
-      const eventName = this.sequence.config.events.notification;
-      this.sequence.logger.info(`Emitting ${eventName}`);
-      this.sequence.logger.debug({ type: "event", event: eventName, notificationEvent });
-      this.sequence.events.emit(eventName, notificationEvent);
-      const response = formatJsonRpcResult(request.id, true);
-      await this.send(settled.topic, response);
-    } catch (e) {
-      this.sequence.logger.error(e as any);
-      const response = formatJsonRpcError(request.id, (e as any).message);
-      await this.send(settled.topic, response);
-    }
-  }
-
-  public async handleUpdate(
-    topic: string,
-    update: SequenceTypes.Update,
-    participant: SequenceTypes.Participant,
-  ): Promise<SequenceTypes.Update> {
-    if (typeof update.state === "undefined") {
-      const error = ERROR.INVALID_UPDATE_REQUEST.format({ context: this.sequence.name });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    const settled = await this.sequence.settled.get(topic);
-    if (participant.publicKey !== settled.permissions.controller.publicKey) {
-      const error = ERROR.UNAUTHORIZED_UPDATE_REQUEST.format({
-        context: this.sequence.name,
-      });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    const state = await this.sequence.mergeUpdate(topic, update);
-    await this.sequence.settled.update(settled.topic, { state });
-    return update;
-  }
-
-  public async handleUpgrade(
-    topic: string,
-    upgrade: SequenceTypes.Upgrade,
-    participant: SequenceTypes.Participant,
-  ): Promise<SequenceTypes.Upgrade> {
-    if (typeof upgrade.permissions === "undefined") {
-      const error = ERROR.INVALID_UPGRADE_REQUEST.format({ context: this.sequence.name });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    const settled = await this.sequence.settled.get(topic);
-    if (participant.publicKey !== settled.permissions.controller.publicKey) {
-      const error = ERROR.UNAUTHORIZED_UPGRADE_REQUEST.format({
-        context: this.sequence.name,
-      });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    const permissions = await this.sequence.mergeUpgrade(topic, upgrade);
-    await this.sequence.settled.update(settled.topic, { permissions });
-    return upgrade;
-  }
-
-  public async handleExtension(
-    topic: string,
-    extension: SequenceTypes.Extension,
-    participant: SequenceTypes.Participant,
-  ): Promise<SequenceTypes.Extension> {
-    if (typeof extension.expiry === "undefined") {
-      const error = ERROR.INVALID_EXTEND_REQUEST.format({ context: this.sequence.name });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    const settled = await this.sequence.settled.get(topic);
-    if (participant.publicKey !== settled.permissions.controller.publicKey) {
-      const error = ERROR.UNAUTHORIZED_EXTEND_REQUEST.format({
-        context: this.sequence.name,
-      });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-    extension = await this.sequence.mergeExtension(topic, extension);
-    await this.sequence.settled.update(settled.topic, extension);
-    return extension;
-  }
-  // ---------- Private ----------------------------------------------- //
-
-  private async isJsonRpcAuthorized(
-    topic: string,
-    participant: SequenceTypes.Participant,
-    request: JsonRpcRequest,
-  ) {
-    const settled = await this.sequence.settled.get(topic);
-    if (participant.publicKey === settled.permissions.controller.publicKey) return;
-    if (!settled.permissions.jsonrpc.methods.includes(request.method)) {
-      const error = ERROR.UNAUTHORIZED_JSON_RPC_METHOD.format({
-        method: request.method,
-      });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-  }
-
-  private async isNotificationAuthorized(
-    topic: string,
-    participant: SequenceTypes.Participant,
-    type: string,
-  ) {
-    const settled = await this.sequence.settled.get(topic);
-    if (participant.publicKey === settled.permissions.controller.publicKey) return;
-    if (
-      settled.self.publicKey !== settled.permissions.controller.publicKey &&
-      !settled.permissions.notifications.types.includes(type)
-    ) {
-      const error = ERROR.UNAUTHORIZED_NOTIFICATION_TYPE.format({ type });
-      this.sequence.logger.error(error.message);
-      throw new Error(error.message);
-    }
-  }
-
-  private async recordPayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
-    const { topic, payload, chainId } = payloadEvent;
-    if (isJsonRpcRequest(payload)) {
-      await this.sequence.history.set(topic, payload, chainId);
-    } else {
-      await this.sequence.history.resolve(payload);
-    }
-  }
-
-  private async shouldIgnorePayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
-    const { topic, payload } = payloadEvent;
-    if (!this.sequence.settled.sequences.has(topic)) return true;
-    let exists = false;
-    try {
-      if (isJsonRpcRequest(payload)) {
-        exists = await this.sequence.history.exists(topic, payload.id);
-      } else {
-        let record: JsonRpcRecord | undefined;
-        try {
-          record = await this.sequence.history.get(topic, payload.id);
-        } catch (e) {
-          // skip error
-        }
-        exists = typeof record !== "undefined" && typeof record.response !== "undefined";
-      }
-    } catch (e) {
-      // skip error
-    }
-    return exists;
-  }
-
-  private async onPayloadEvent(payloadEvent: SequenceTypes.PayloadEvent) {
-    const { topic, payload, chainId } = payloadEvent;
-    if (await this.shouldIgnorePayloadEvent(payloadEvent)) return;
-    if (isJsonRpcRequest(payload)) {
-      const requestEvent: SequenceTypes.RequestEvent = { topic, request: payload, chainId };
-      const eventName = this.sequence.config.events.request;
-      this.sequence.logger.info(`Emitting ${eventName}`);
-      this.sequence.logger.debug({ type: "event", event: eventName, sequence: requestEvent });
-      this.sequence.events.emit(eventName, requestEvent);
-    } else {
-      const responseEvent: SequenceTypes.ResponseEvent = { topic, response: payload, chainId };
-      const eventName = this.sequence.config.events.response;
-      this.sequence.logger.info(`Emitting ${eventName}`);
-      this.sequence.logger.debug({ type: "event", event: eventName, sequence: responseEvent });
-      this.sequence.events.emit(eventName, responseEvent);
-    }
-    await this.recordPayloadEvent(payloadEvent);
-  }
-
-  private async onPendingPayloadEvent(event: SequenceTypes.PayloadEvent) {
-    if (isJsonRpcRequest(event.payload)) {
-      switch (event.payload.method) {
-        case this.sequence.config.jsonrpc.approve:
-        case this.sequence.config.jsonrpc.reject:
-          this.onResponse(event);
-          break;
-        default:
-          break;
-      }
-    } else {
-      this.onAcknowledge(event);
-    }
-  }
-
-  private async onPendingStatusEvent(
-    event: StoreEvent.Created<SequenceTypes.Pending> | StoreEvent.Updated<SequenceTypes.Pending>,
-  ) {
-    const { sequence: pending } = event;
-    if (isSignalTypePairing(pending.proposal.signal)) {
-      if (!(await this.sequence.client.crypto.hasKeys(pending.proposal.topic))) {
-        const pairing = await this.sequence.client.pairing.settled.get(
-          pending.proposal.signal.params.topic,
-        );
-        await this.sequence.client.crypto.generateSharedKey(
-          pairing.self,
-          pairing.peer,
-          pending.proposal.topic,
-        );
-      }
-    }
-    if (isSequenceResponded(pending)) {
-      const eventName = this.sequence.config.events.responded;
-      this.sequence.logger.info(`Emitting ${eventName}`);
-      this.sequence.logger.debug({ type: "event", event: eventName, sequence: pending });
-      this.sequence.events.emit(eventName, pending);
-      if (!isStoreUpdatedEvent(event)) {
-        const { topic, outcome, relay } = pending;
-        const method = !isSequenceFailed(outcome)
-          ? this.sequence.config.jsonrpc.approve
-          : this.sequence.config.jsonrpc.reject;
-        const params: SequenceTypes.Response = !isSequenceFailed(outcome)
-          ? {
-              relay: outcome.relay,
-              responder: outcome.responder,
-              expiry: outcome.expiry,
-              state: outcome.state,
-            }
-          : {
-              reason: outcome.reason,
-            };
-        const request = formatJsonRpcRequest(method, params);
-        const message = await this.sequence.client.crypto.encode(topic, request);
-        await this.sequence.client.relayer.publish(topic, message, { relay });
-      }
-    } else {
-      const eventName = this.sequence.config.events.proposed;
-      this.sequence.logger.info(`Emitting ${eventName}`);
-      this.sequence.logger.debug({ type: "event", event: eventName, sequence: pending });
-      this.sequence.events.emit(eventName, pending);
-      if (isSignalTypePairing(pending.proposal.signal)) {
-        // send proposal signal through existing pairing
-        const request = formatJsonRpcRequest(
-          this.sequence.config.jsonrpc.propose,
-          pending.proposal,
-        );
-        await this.sequence.client.pairing.send(pending.proposal.signal.params.topic, request);
-      }
-    }
-  }
-
-  private async subscribeNewPending(createdEvent: StoreEvent.Created<SequenceTypes.Pending>) {
-    const { topic, sequence: pending } = createdEvent;
-    const expiry = calcExpiry(ONE_DAY);
-    await this.sequence.client.relayer.subscribe(topic, {
-      relay: pending.relay,
+  public update: IEngine["update"] = async params => {
+    this.isValidUpdate(params);
+    const { topic, namespaces } = params;
+    const id = await this.sendRequest(topic, "wc_sessionUpdate", { namespaces });
+    const { done, resolve, reject } = createDelayedPromise<void>();
+    this.events.once(engineEvent("session_update", id), ({ error }) => {
+      if (error) reject(error);
+      else resolve();
     });
-    await this.sequence.expirer.set(topic, { topic, expiry });
-  }
+    await done();
+    await this.client.session.update(topic, { namespaces });
+  };
 
-  private async subscribeNewSettled(createdEvent: StoreEvent.Created<SequenceTypes.Settled>) {
-    const { topic, sequence: settled } = createdEvent;
-    const { expiry } = settled;
-    await this.sequence.client.relayer.subscribe(topic, {
-      relay: settled.relay,
+  public extend: IEngine["extend"] = async params => {
+    this.isValidExtend(params);
+    const { topic } = params;
+    const id = await this.sendRequest(topic, "wc_sessionExtend", {});
+    const { done, resolve, reject } = createDelayedPromise<void>();
+    this.events.once(engineEvent("session_extend", id), ({ error }) => {
+      if (error) reject(error);
+      else resolve();
     });
-    await this.sequence.expirer.set(topic, { topic, expiry });
+    await done();
+    await this.setExpiry(topic, SESSION_EXPIRY);
+  };
+
+  public request: IEngine["request"] = async params => {
+    this.isValidRequest(params);
+    const { chainId, request, topic } = params;
+    const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
+    const { done, resolve, reject } = createDelayedPromise<JsonRpcResponse>();
+    this.events.once<"request">(engineEvent("request", id), ({ error, data }) => {
+      if (error) reject(error);
+      else if (data) resolve(data);
+    });
+    return await done();
+  };
+
+  public respond: IEngine["respond"] = async params => {
+    this.isValidRespond(params);
+    const { topic, response } = params;
+    const { id } = response;
+    if (isJsonRpcResult(response)) {
+      await this.sendResult(id, topic, response.result);
+    } else if (isJsonRpcError(response)) {
+      await this.sendError(id, topic, response.error);
+    }
+  };
+
+  public ping: IEngine["ping"] = async params => {
+    this.isValidPing(params);
+    const { topic } = params;
+    if (this.client.session.keys.includes(topic)) {
+      const id = await this.sendRequest(topic, "wc_sessionPing", {});
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.events.once(engineEvent("session_ping", id), ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    } else if (this.client.pairing.keys.includes(topic)) {
+      const id = await this.sendRequest(topic, "wc_pairingPing", {});
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.events.once(engineEvent("pairing_ping", id), ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    }
+  };
+
+  public emit: IEngine["emit"] = async params => {
+    this.isValidEmit(params);
+    const { topic, event, chainId } = params;
+    await this.sendRequest(topic, "wc_sessionEvent", { event, chainId });
+  };
+
+  public disconnect: IEngine["disconnect"] = async params => {
+    this.isValidDisconnect(params);
+    const { topic } = params;
+    if (this.client.session.keys.includes(topic)) {
+      const id = await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.events.once(engineEvent("session_delete", id), ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    } else if (this.client.pairing.keys.includes(topic)) {
+      const id = await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.events.once(engineEvent("pairing_delete", id), ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    }
+  };
+
+  // ---------- Private Helpers --------------------------------------- //
+
+  private async createPairing() {
+    const symKey = generateRandomBytes32();
+    const topic = await this.client.core.crypto.setSymKey(symKey);
+    const expiry = calcExpiry(FIVE_MINUTES);
+    const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
+    const pairing = { topic, expiry, relay, active: false };
+    const uri = formatUri({
+      protocol: this.client.protocol,
+      version: this.client.version,
+      topic,
+      symKey,
+      relay,
+    });
+    await this.client.pairing.set(topic, pairing);
+    await this.client.core.relayer.subscribe(topic);
+    await this.setExpiry(topic, expiry);
+
+    return { topic, uri };
   }
 
-  private registerEventListeners(): void {
-    // Pending Events
-    this.sequence.pending.on(
-      STORE_EVENTS.created,
-      async (createdEvent: StoreEvent.Created<SequenceTypes.Pending>) => {
-        await this.subscribeNewPending(createdEvent);
-        await this.onPendingStatusEvent(createdEvent);
-      },
-    );
-    this.sequence.pending.on(
-      STORE_EVENTS.updated,
-      async (updatedEvent: StoreEvent.Updated<SequenceTypes.Pending>) =>
-        await this.onPendingStatusEvent(updatedEvent),
-    );
-    this.sequence.pending.on(
-      STORE_EVENTS.deleted,
-      async (deletedEvent: StoreEvent.Deleted<SequenceTypes.Pending>) => {
-        const { sequence: pending } = deletedEvent;
-        await this.sequence.client.relayer.unsubscribe(pending.topic, {
-          relay: pending.relay,
-        });
-        await this.sequence.expirer.del(pending.topic);
-      },
-    );
-    // Settled Events
-    this.sequence.settled.on(
-      STORE_EVENTS.created,
-      async (createdEvent: StoreEvent.Created<SequenceTypes.Settled>) => {
-        await this.subscribeNewSettled(createdEvent);
-        const { sequence: settled } = createdEvent;
-        const eventName = this.sequence.config.events.settled;
-        this.sequence.logger.info(`Emitting ${eventName}`);
-        this.sequence.logger.debug({ type: "event", event: eventName, sequence: settled });
-        this.sequence.events.emit(eventName, settled);
-      },
-    );
-    this.sequence.settled.on(
-      STORE_EVENTS.updated,
-      async (updatedEvent: StoreEvent.Updated<SequenceTypes.Settled>) => {
-        const { sequence: settled, update } = updatedEvent;
-        if (typeof update.state !== "undefined") {
-          const eventName = this.sequence.config.events.updated;
-          this.sequence.logger.info(`Emitting ${eventName}`);
-          this.sequence.logger.debug({
-            type: "event",
-            event: eventName,
-            sequence: settled,
-            update,
-          });
-          this.sequence.events.emit(eventName, settled, update);
-        } else if (typeof update.permissions !== "undefined") {
-          const eventName = this.sequence.config.events.upgraded;
-          const upgrade = update;
-          this.sequence.logger.info(`Emitting ${eventName}`);
-          this.sequence.logger.debug({
-            type: "event",
-            event: eventName,
-            sequence: settled,
-            upgrade,
-          });
-          this.sequence.events.emit(eventName, settled, upgrade);
-        } else if (typeof update.expiry !== "undefined") {
-          const eventName = this.sequence.config.events.extended;
-          const extension = update;
-          this.sequence.logger.info(`Emitting ${eventName}`);
-          this.sequence.logger.debug({
-            type: "event",
-            event: eventName,
-            sequence: settled,
-            extension,
-          });
-          this.sequence.events.emit(eventName, settled, extension);
-        }
-      },
-    );
-    this.sequence.settled.on(
-      STORE_EVENTS.deleted,
-      async (deletedEvent: StoreEvent.Deleted<SequenceTypes.Settled>) => {
-        const { sequence: settled, reason } = deletedEvent;
-        const eventName = this.sequence.config.events.deleted;
-        this.sequence.logger.info(`Emitting ${eventName}`);
-        this.sequence.logger.debug({ type: "event", event: eventName, sequence: settled, reason });
-        this.sequence.events.emit(eventName, settled, reason);
-        const request = formatJsonRpcRequest(this.sequence.config.jsonrpc.delete, { reason });
-        const message = await this.sequence.client.crypto.encode(settled.topic, request);
-        await this.sequence.history.delete(settled.topic);
-        await this.sequence.client.relayer.publish(settled.topic, message, {
-          relay: settled.relay,
-        });
-        await this.sequence.client.relayer.unsubscribe(settled.topic, {
-          relay: settled.relay,
-        });
-        await this.sequence.expirer.del(settled.topic);
-      },
-    );
-    this.sequence.settled.on(STORE_EVENTS.sync, () =>
-      this.sequence.events.emit(this.sequence.config.events.sync),
-    );
-    // Relayer Events
-    this.sequence.client.relayer.on(
+  private activatePairing: EnginePrivate["activatePairing"] = async topic => {
+    await this.client.pairing.update(topic, { active: true, expiry: PROPOSAL_EXPIRY });
+    await this.setExpiry(topic, PROPOSAL_EXPIRY);
+  };
+
+  private deleteSession: EnginePrivate["deleteSession"] = async topic => {
+    const { self } = this.client.session.get(topic);
+    await Promise.all([
+      this.client.core.relayer.unsubscribe(topic),
+      this.client.session.delete(topic, ERROR.DELETED.format()),
+      this.client.core.crypto.deleteKeyPair(self.publicKey),
+      this.client.core.crypto.deleteSymKey(topic),
+      this.client.expirer.del(topic),
+    ]);
+  };
+
+  private deletePairing: EnginePrivate["deleteSession"] = async topic => {
+    await Promise.all([
+      this.client.core.relayer.unsubscribe(topic),
+      this.client.pairing.delete(topic, ERROR.DELETED.format()),
+      this.client.core.crypto.deleteSymKey(topic),
+      this.client.expirer.del(topic),
+    ]);
+  };
+
+  private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
+    if (this.client.pairing.keys.includes(topic)) {
+      await this.client.pairing.update(topic, { expiry });
+    } else if (this.client.session.keys.includes(topic)) {
+      await this.client.session.update(topic, { expiry });
+    }
+    this.client.expirer.set(topic, { topic, expiry });
+  };
+
+  private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
+    const payload = formatJsonRpcRequest(method, params);
+    const message = await this.client.core.crypto.encode(topic, payload);
+    await this.client.core.relayer.publish(topic, message);
+    this.client.history.set(topic, payload);
+
+    return payload.id;
+  };
+
+  private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
+    const payload = formatJsonRpcResult(id, result);
+    const message = this.client.core.crypto.encode(topic, payload);
+    await this.client.core.relayer.publish(topic, message);
+    await this.client.history.resolve(payload);
+  };
+
+  private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
+    const payload = formatJsonRpcError(id, error);
+    const message = this.client.core.crypto.encode(topic, payload);
+    await this.client.core.relayer.publish(topic, message);
+    await this.client.history.resolve(payload);
+  };
+
+  // ---------- Relay Events Router ----------------------------------- //
+
+  private registerRelayerEvents() {
+    this.client.core.relayer.on(
       RELAYER_EVENTS.message,
-      async (messageEvent: RelayerTypes.MessageEvent) => {
-        const { topic, message } = messageEvent;
-        const payload = await this.sequence.client.crypto.decode(topic, message);
-        const payloadEvent = { topic, payload };
-        if (this.sequence.pending.sequences.has(topic)) {
-          this.onPendingPayloadEvent(payloadEvent);
-        } else if (this.sequence.settled.sequences.has(topic)) {
-          this.onMessage(payloadEvent);
-        }
-      },
-    );
-    // Expirer Events
-    this.sequence.expirer.on(
-      EXPIRER_EVENTS.expired,
-      async (expiredEvent: ExpirerEvents.Expired) => {
-        if (this.sequence.pending.sequences.has(expiredEvent.topic)) {
-          const reason = ERROR.EXPIRED.format({
-            context: formatMessageContext(this.sequence.pending.context),
-          });
-          this.sequence.pending.delete(expiredEvent.topic, reason);
-        } else {
-          const reason = ERROR.EXPIRED.format({
-            context: formatMessageContext(this.sequence.settled.context),
-          });
-          this.sequence.settled.delete(expiredEvent.topic, reason);
+      async (event: RelayerTypes.MessageEvent) => {
+        const { topic, message } = event;
+        const payload = this.client.core.crypto.decode(topic, message);
+        if (isJsonRpcRequest(payload)) {
+          this.client.history.set(topic, payload);
+          this.onRelayEventRequest({ topic, payload });
+        } else if (isJsonRpcResponse(payload)) {
+          await this.client.history.resolve(payload);
+          this.onRelayEventResponse({ topic, payload });
         }
       },
     );
   }
+
+  private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = event => {
+    const { topic, payload } = event;
+    const reqMethod = payload.method as JsonRpcTypes.WcMethod;
+
+    switch (reqMethod) {
+      case "wc_sessionPropose":
+        return this.onSessionProposeRequest(topic, payload);
+      case "wc_sessionSettle":
+        return this.onSessionSettleRequest(topic, payload);
+      case "wc_sessionUpdate":
+        return this.onSessionUpdateRequest(topic, payload);
+      case "wc_sessionExtend":
+        return this.onSessionExtendRequest(topic, payload);
+      case "wc_sessionPing":
+        return this.onSessionPingRequest(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingRequest(topic, payload);
+      case "wc_sessionDelete":
+        return this.onSessionDeleteRequest(topic, payload);
+      case "wc_pairingDelete":
+        return this.onPairingDeleteRequest(topic, payload);
+      case "wc_sessionRequest":
+        return this.onSessionRequest(topic, payload);
+      case "wc_sessionEvent":
+        return this.onSessionEventRequest(topic, payload);
+      default:
+        // TODO(ilja) throw / log unsuported event?
+        return;
+    }
+  };
+
+  private onRelayEventResponse: EnginePrivate["onRelayEventResponse"] = async event => {
+    const { topic, payload } = event;
+    const record = await this.client.history.get(topic, payload.id);
+    const resMethod = record.request.method as JsonRpcTypes.WcMethod;
+
+    switch (resMethod) {
+      case "wc_sessionPropose":
+        return this.onSessionProposeResponse(topic, payload);
+      case "wc_sessionSettle":
+        return this.onSessionSettleResponse(topic, payload);
+      case "wc_sessionUpdate":
+        return this.onSessionUpdateResponse(topic, payload);
+      case "wc_sessionExtend":
+        return this.onSessionExtendResponse(topic, payload);
+      case "wc_sessionPing":
+        return this.onSessionPingResponse(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingResponse(topic, payload);
+      case "wc_sessionDelete":
+        return this.onSessionDeleteResponse(topic, payload);
+      case "wc_pairingDelete":
+        return this.onPairingDeleteResponse(topic, payload);
+      case "wc_sessionRequest":
+        return this.onSessionRequestResponse(topic, payload);
+      default:
+        // TODO(ilja) throw / log unsuported event?
+        return;
+    }
+  };
+
+  // ---------- Relay Events Handlers ---------------------------------- //
+
+  private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    try {
+      this.isValidConnect({ ...payload.params });
+      const { params, id: id } = payload;
+      await this.client.proposal.set(id, {
+        id,
+        pairingTopic: topic,
+        ...params,
+      });
+      this.client.events.emit("session_proposal", { id, ...params });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id: id } = payload;
+    if (isJsonRpcResult(payload)) {
+      const { result } = payload;
+      this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", result });
+      const proposal = this.client.proposal.get(id);
+      this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", proposal });
+      const selfPublicKey = proposal.proposer.publicKey;
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        selfPublicKey,
+      });
+      const peerPublicKey = result.responderPublicKey;
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        peerPublicKey,
+      });
+      const sessionTopic = await this.client.core.crypto.generateSharedKey(
+        selfPublicKey,
+        peerPublicKey,
+      );
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        sessionTopic,
+      });
+      const subscriptionId = await this.client.core.relayer.subscribe(sessionTopic);
+      this.client.logger.trace({
+        type: "method",
+        method: "onSessionProposeResponse",
+        subscriptionId,
+      });
+      await this.activatePairing(topic);
+    } else if (isJsonRpcError(payload)) {
+      await this.client.proposal.delete(id, ERROR.DELETED.format());
+      this.events.emit(engineEvent("session_connect"), { error: payload.error });
+    }
+  };
+
+  private onSessionSettleRequest: EnginePrivate["onSessionSettleRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    try {
+      this.isValidApprove({ id: payload.id, ...payload.params });
+      const { relay, controller, expiry, namespaces } = payload.params;
+      const session = {
+        topic,
+        relay,
+        expiry,
+        namespaces,
+        acknowledged: true,
+        controller: controller.publicKey,
+        self: {
+          publicKey: "",
+          metadata: this.client.metadata,
+        },
+        peer: {
+          publicKey: controller.publicKey,
+          metadata: controller.metadata,
+        },
+      };
+      await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
+      this.events.emit(engineEvent("session_connect"), { data: session });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onSessionSettleResponse: EnginePrivate["onSessionSettleResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      await this.client.session.update(topic, { acknowledged: true });
+      this.events.emit(engineEvent("session_approve", id), {});
+    } else if (isJsonRpcError(payload)) {
+      await this.client.session.delete(topic, ERROR.DELETED.format());
+      this.events.emit(engineEvent("session_approve", id), { error: payload.error });
+    }
+  };
+
+  private onSessionUpdateRequest: EnginePrivate["onSessionUpdateRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    try {
+      this.isValidUpdate({ topic, ...payload.params });
+      const { params, id } = payload;
+      await this.client.session.update(topic, { namespaces: params.namespaces });
+      await this.sendResult<"wc_sessionUpdate">(id, topic, true);
+      this.client.events.emit("session_update", { topic, namespaces: params.namespaces });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onSessionUpdateResponse: EnginePrivate["onSessionUpdateResponse"] = (_topic, payload) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      this.events.emit(engineEvent("session_update", id), {});
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("session_update", id), { error: payload.error });
+    }
+  };
+
+  private onSessionExtendRequest: EnginePrivate["onSessionExtendRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    try {
+      this.isValidExtend({ topic });
+      const { id } = payload;
+      await this.setExpiry(topic, SESSION_EXPIRY);
+      await this.sendResult<"wc_sessionExtend">(id, topic, true);
+      this.client.events.emit("session_extend", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onSessionExtendResponse: EnginePrivate["onSessionExtendResponse"] = (_topic, payload) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      this.events.emit(engineEvent("session_extend", id), {});
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("session_extend", id), { error: payload.error });
+    }
+  };
+
+  private onSessionPingRequest: EnginePrivate["onSessionPingRequest"] = async (topic, payload) => {
+    try {
+      this.isValidPing({ topic });
+      const { id } = payload;
+      await this.sendResult<"wc_sessionPing">(id, topic, true);
+      this.client.events.emit("session_ping", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      this.events.emit(engineEvent("session_ping", id), {});
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("session_ping", id), { error: payload.error });
+    }
+  };
+
+  private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
+    try {
+      this.isValidPing({ topic });
+      const { id } = payload;
+      await this.sendResult<"wc_pairingPing">(id, topic, true);
+      this.client.events.emit("pairing_ping", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      this.events.emit(engineEvent("pairing_ping", id), {});
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
+    }
+  };
+
+  private onSessionDeleteRequest: EnginePrivate["onSessionDeleteRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    try {
+      this.isValidDisconnect({ topic, reason: payload.params });
+      const { id } = payload;
+      await this.sendResult<"wc_sessionDelete">(id, topic, true);
+      await this.deleteSession(topic);
+      this.client.events.emit("session_delete", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onSessionDeleteResponse: EnginePrivate["onSessionDeleteResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      await this.deleteSession(topic);
+      this.events.emit(engineEvent("session_delete", id), {});
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("session_delete", id), { error: payload.error });
+    }
+  };
+
+  private onPairingDeleteRequest: EnginePrivate["onPairingDeleteRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    try {
+      this.isValidDisconnect({ topic, reason: payload.params });
+      const { id } = payload;
+      await this.sendResult<"wc_pairingDelete">(id, topic, true);
+      await this.deletePairing(topic);
+      this.client.events.emit("pairing_delete", { topic });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onPairingDeleteResponse: EnginePrivate["onPairingDeleteResponse"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      await this.deletePairing(topic);
+      this.events.emit(engineEvent("pairing_delete", id), {});
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("pairing_delete", id), { error: payload.error });
+    }
+  };
+
+  private onSessionRequest: EnginePrivate["onSessionRequest"] = (topic, payload) => {
+    try {
+      this.isValidRequest({ topic, ...payload.params });
+      const { params } = payload;
+      const { chainId, request } = params;
+      this.client.events.emit("request", { topic, request, chainId });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  private onSessionRequestResponse: EnginePrivate["onSessionRequestResponse"] = (
+    _topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      this.events.emit(engineEvent("request", id), { data: payload.result });
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("request", id), { error: payload.error });
+    }
+  };
+
+  private onSessionEventRequest: EnginePrivate["onSessionEventRequest"] = (topic, payload) => {
+    try {
+      this.isValidEmit({ topic, ...payload.params });
+      const { event, chainId } = payload.params;
+      this.client.events.emit("event", { topic, event, chainId });
+    } catch (err) {
+      this.client.logger.error(err);
+    }
+  };
+
+  // ---------- Expirer Events ----------------------------------------- //
+
+  private registerExpirerEvents() {
+    this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
+      const { topic } = event;
+      if (this.client.session.keys.includes(topic)) {
+        await this.deleteSession(topic);
+        this.client.events.emit("session_delete", { topic });
+      } else if (this.client.pairing.keys.includes(topic)) {
+        await this.deletePairing(topic);
+        this.client.events.emit("pairing_delete", { topic });
+      }
+    });
+  }
+
+  // ---------- Validation ---------------------------------------------- //
+  private isValidConnect: EnginePrivate["isValidConnect"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "connect params" });
+    const { pairingTopic, requiredNamespaces, relays } = params;
+    if (!isValidString(pairingTopic, true))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect pairingTopic" });
+    if (pairingTopic && !this.client.pairing.keys.includes(pairingTopic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
+    if (!isValidRequiredNamespaces(requiredNamespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect requiredNamespaces" });
+    if (!isValidRelays(relays, true))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "connect relays" });
+  };
+
+  private isValidPair: EnginePrivate["isValidPair"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "pair params" });
+    if (!isValidUrl(params.uri)) throw ERROR.MISSING_OR_INVALID.format({ name: "pair uri" });
+  };
+
+  private isValidApprove: EnginePrivate["isValidApprove"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve params" });
+    const { id, namespaces, relayProtocol } = params;
+    if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve id" });
+    if (!isValidNamespaces(namespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "approve namespaces" });
+    if (!isValidString(relayProtocol, true))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "approve relayProtocol" });
+  };
+
+  private isValidReject: EnginePrivate["isValidReject"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject params" });
+    const { id, reason } = params;
+    if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject id" });
+    if (!isValidErrorReason(reason))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "reject reason" });
+  };
+
+  private isValidUpdate: EnginePrivate["isValidUpdate"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "update params" });
+    const { topic, namespaces } = params;
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "update topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    if (!isValidNamespaces(namespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
+  };
+
+  private isValidExtend: EnginePrivate["isValidExtend"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "extend params" });
+    const { topic } = params;
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "extend topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+  };
+
+  private isValidRequest: EnginePrivate["isValidRequest"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "request params" });
+    const { topic, request, chainId } = params;
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "request topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    const { namespaces } = this.client.session.get(topic);
+    if (!isValidNamespacesChainId(namespaces, chainId))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "request chainId" });
+    if (!isValidRequest(request)) throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
+    if (!isValidNamespacesRequest(namespaces, chainId, request.method))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
+  };
+
+  private isValidRespond: EnginePrivate["isValidRespond"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "respond params" });
+    const { topic, response } = params;
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "respond topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    if (!isValidResponse(response))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "respond response" });
+  };
+
+  private isValidPing: EnginePrivate["isValidPing"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping params" });
+    const { topic } = params;
+    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping topic" });
+    if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
+  };
+
+  private isValidEmit: EnginePrivate["isValidEmit"] = params => {
+    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit params" });
+    const { topic, event, chainId } = params;
+    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit topic" });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    const { namespaces } = this.client.session.get(topic);
+    if (!isValidNamespacesChainId(namespaces, chainId))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "emit chainId" });
+    if (!isValidEvent(event)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+    if (!isValidNamespacesEvent(namespaces, chainId, event.name))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+  };
+
+  private isValidDisconnect: EnginePrivate["isValidDisconnect"] = params => {
+    if (!isValidParams(params))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect params" });
+    const { topic } = params;
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect topic" });
+    if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
+  };
 }

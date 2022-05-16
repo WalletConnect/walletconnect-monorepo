@@ -1,63 +1,310 @@
-import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
+import {
+  JsonRpcResponse,
+  JsonRpcRequest,
+  ErrorResponse,
+  JsonRpcResult,
+  JsonRpcError,
+} from "@walletconnect/jsonrpc-types";
+import { IClient } from "./client";
+import { RelayerTypes } from "./relayer";
+import { SessionTypes } from "./session";
+import { ProposalTypes } from "./proposal";
+import { PairingTypes } from "./pairing";
+import { JsonRpcTypes } from "./jsonrpc";
+import { EventEmitter } from "events";
 
-import { ISequence, SequenceTypes } from "./sequence";
+export declare namespace EngineTypes {
+  type Event =
+    | "session_connect"
+    | "session_approve"
+    | "session_update"
+    | "session_extend"
+    | "session_ping"
+    | "pairing_ping"
+    | "session_delete"
+    | "pairing_delete"
+    | "request";
 
-export abstract class IEngine<
-  Pending = SequenceTypes.Pending,
-  Settled = SequenceTypes.Settled,
-  Update = SequenceTypes.Update,
-  Upgrade = SequenceTypes.Upgrade,
-  Extension = SequenceTypes.Extension,
-  CreateParams = SequenceTypes.CreateParams,
-  RespondParams = SequenceTypes.RespondParams,
-  RequestParams = SequenceTypes.RequestParams,
-  UpdateParams = SequenceTypes.UpdateParams,
-  UpgradeParams = SequenceTypes.UpgradeParams,
-  ExtendParams = SequenceTypes.ExtendParams,
-  DeleteParams = SequenceTypes.DeleteParams,
-  ProposeParams = SequenceTypes.ProposeParams,
-  SettleParams = SequenceTypes.SettleParams,
-  NotifyParams = SequenceTypes.NotifyParams,
-  Participant = SequenceTypes.Participant,
-  Permissions = SequenceTypes.Permissions
-> {
-  constructor(public sequence: ISequence) {}
+  interface EventArguments {
+    session_connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
+    session_approve: { error?: ErrorResponse };
+    session_update: { error?: ErrorResponse };
+    session_extend: { error?: ErrorResponse };
+    session_ping: { error?: ErrorResponse };
+    pairing_ping: { error?: ErrorResponse };
+    session_delete: { error?: ErrorResponse };
+    pairing_delete: { error?: ErrorResponse };
+    request: { error?: ErrorResponse; data?: JsonRpcResponse };
+  }
 
-  public abstract find(permissions: Partial<Permissions>): Promise<Settled[]>;
-  public abstract ping(topic: string, timeout?: number): Promise<void>;
-  public abstract send(topic: string, payload: JsonRpcPayload, chainId?: string): Promise<void>;
-  public abstract create(params?: CreateParams): Promise<Settled>;
-  public abstract respond(params: RespondParams): Promise<Pending>;
-  public abstract update(params: UpdateParams): Promise<Settled>;
-  public abstract upgrade(params: UpgradeParams): Promise<Settled>;
-  public abstract extend(params: ExtendParams): Promise<Settled>;
-  public abstract request(params: RequestParams): Promise<any>;
-  public abstract delete(params: DeleteParams): Promise<void>;
-  public abstract notify(params: NotifyParams): Promise<void>;
+  interface UriParameters {
+    protocol: string;
+    version: number;
+    topic: string;
+    symKey: string;
+    relay: RelayerTypes.ProtocolOptions;
+  }
 
-  protected abstract propose(params?: ProposeParams): Promise<Pending>;
-  protected abstract settle(params: SettleParams): Promise<Settled>;
-  protected abstract onResponse(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
-  protected abstract onAcknowledge(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
-  protected abstract onMessage(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
-  protected abstract onPayload(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
-  protected abstract onUpdate(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
-  protected abstract onUpgrade(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
-  protected abstract onNotification(payloadEvent: SequenceTypes.PayloadEvent): Promise<void>;
+  interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
+    topic: string;
+    payload: T;
+  }
 
-  protected abstract handleUpdate(
+  interface ConnectParams {
+    requiredNamespaces: ProposalTypes.RequiredNamespaces;
+    pairingTopic?: string;
+    relays?: RelayerTypes.ProtocolOptions[];
+  }
+
+  interface PairParams {
+    uri: string;
+  }
+
+  interface ApproveParams {
+    id: number;
+    namespaces: SessionTypes.Namespaces;
+    relayProtocol?: string;
+  }
+
+  interface RejectParams {
+    id: number;
+    reason: ErrorResponse;
+  }
+
+  interface UpdateParams {
+    topic: string;
+    namespaces: SessionTypes.Namespaces;
+  }
+
+  interface ExtendParams {
+    topic: string;
+  }
+
+  interface RequestParams {
+    topic: string;
+    request: {
+      method: string;
+      params: any;
+    };
+    chainId: string;
+  }
+
+  interface RespondParams {
+    topic: string;
+    response: JsonRpcResponse;
+  }
+
+  interface EmitParams {
+    topic: string;
+    event: {
+      name: string;
+      data: any;
+    };
+    chainId: string;
+  }
+
+  interface PingParams {
+    topic: string;
+  }
+
+  interface DisconnectParams {
+    topic: string;
+    reason: ErrorResponse;
+  }
+}
+
+export abstract class IEngineEvents extends EventEmitter {
+  constructor() {
+    super();
+  }
+
+  public abstract emit: <E extends EngineTypes.Event>(
+    event: string,
+    args: EngineTypes.EventArguments[E],
+  ) => boolean;
+
+  public abstract once: <E extends EngineTypes.Event>(
+    event: string,
+    listener: (args: EngineTypes.EventArguments[E]) => any,
+  ) => this;
+}
+
+// -- private method interface -------------------------------------- //
+
+export interface EnginePrivate {
+  sendRequest<M extends JsonRpcTypes.WcMethod>(
     topic: string,
-    update: Update,
-    participant: Participant,
-  ): Promise<Update>;
-  protected abstract handleUpgrade(
+    method: M,
+    params: JsonRpcTypes.RequestParams[M],
+  ): Promise<number>;
+
+  sendResult<M extends JsonRpcTypes.WcMethod>(
+    id: number,
     topic: string,
-    upgrade: Upgrade,
-    participant: Participant,
-  ): Promise<Upgrade>;
-  protected abstract handleExtension(
+    result: JsonRpcTypes.Results[M],
+  ): Promise<void>;
+
+  sendError(id: number, topic: string, error: JsonRpcTypes.Error): Promise<void>;
+
+  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
+
+  onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
+
+  activatePairing(topic: string): Promise<void>;
+
+  deleteSession(topic: string): Promise<void>;
+
+  deletePairing(topic: string): Promise<void>;
+
+  setExpiry(topic: string, expiry: number): Promise<void>;
+
+  onSessionProposeRequest(
     topic: string,
-    extension: Extension,
-    participant: Participant,
-  ): Promise<Extension>;
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
+  ): Promise<void>;
+
+  onSessionProposeResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPropose"]> | JsonRpcError,
+  ): Promise<void>;
+
+  onSessionSettleRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionSettle"]>,
+  ): Promise<void>;
+
+  onSessionSettleResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionSettle"]> | JsonRpcError,
+  ): Promise<void>;
+
+  onSessionUpdateRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionUpdate"]>,
+  ): Promise<void>;
+
+  onSessionUpdateResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionUpdate"]> | JsonRpcError,
+  ): void;
+
+  onSessionExtendRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionExtend"]>,
+  ): Promise<void>;
+
+  onSessionExtendResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionExtend"]> | JsonRpcError,
+  ): void;
+
+  onSessionPingRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPing"]>,
+  ): Promise<void>;
+
+  onSessionPingResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPing"]> | JsonRpcError,
+  ): void;
+
+  onPairingPingRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingPing"]>,
+  ): Promise<void>;
+
+  onPairingPingResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
+  ): void;
+
+  onSessionDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionDelete"]>,
+  ): Promise<void>;
+
+  onSessionDeleteResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionDelete"]> | JsonRpcError,
+  ): Promise<void>;
+
+  onPairingDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
+  ): Promise<void>;
+
+  onPairingDeleteResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingDelete"]> | JsonRpcError,
+  ): Promise<void>;
+
+  onSessionRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
+  ): void;
+
+  onSessionRequestResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionRequest"]> | JsonRpcError,
+  ): void;
+
+  onSessionEventRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionEvent"]>,
+  ): void;
+
+  // -- Validators ---------------------------------------------------- //
+  isValidConnect(params: EngineTypes.ConnectParams): void;
+
+  isValidPair(params: EngineTypes.PairParams): void;
+
+  isValidApprove(params: EngineTypes.ApproveParams): void;
+
+  isValidReject(params: EngineTypes.RejectParams): void;
+
+  isValidUpdate(params: EngineTypes.UpdateParams): void;
+
+  isValidExtend(params: EngineTypes.ExtendParams): void;
+
+  isValidRequest(params: EngineTypes.RequestParams): void;
+
+  isValidRespond(params: EngineTypes.RespondParams): void;
+
+  isValidPing(params: EngineTypes.PingParams): void;
+
+  isValidEmit(params: EngineTypes.EmitParams): void;
+
+  isValidDisconnect(params: EngineTypes.DisconnectParams): void;
+}
+
+// -- class interface ----------------------------------------------- //
+
+export abstract class IEngine {
+  constructor(public client: IClient) {}
+
+  public abstract connect(
+    params: EngineTypes.ConnectParams,
+  ): Promise<{ uri?: string; approval: () => Promise<SessionTypes.Struct> }>;
+
+  public abstract pair(params: EngineTypes.PairParams): Promise<PairingTypes.Struct>;
+
+  public abstract approve(
+    params: EngineTypes.ApproveParams,
+  ): Promise<{ topic: string; acknowledged: () => Promise<SessionTypes.Struct> }>;
+
+  public abstract reject(params: EngineTypes.RejectParams): Promise<void>;
+
+  public abstract update(params: EngineTypes.UpdateParams): Promise<void>;
+
+  public abstract extend(params: EngineTypes.ExtendParams): Promise<void>;
+
+  public abstract request(params: EngineTypes.RequestParams): Promise<JsonRpcResponse>;
+
+  public abstract respond(params: EngineTypes.RespondParams): Promise<void>;
+
+  public abstract emit(params: EngineTypes.EmitParams): Promise<void>;
+
+  public abstract ping(params: EngineTypes.PingParams): Promise<void>;
+
+  public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
 }

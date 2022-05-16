@@ -1,191 +1,48 @@
-import { JsonRpcRequest, JsonRpcResponse } from "@walletconnect/jsonrpc-types";
-
-import { ISequence, SequenceTypes } from "./sequence";
-import { SignalTypes, BlockchainTypes, AppMetadata, NotificationPermissions } from "./misc";
-import { CryptoTypes } from "./crypto";
-import { IEngine } from "./engine";
+import { ClientTypes } from "./client";
+import { RelayerTypes } from "./relayer";
+import { IStore } from "./store";
 
 export declare namespace SessionTypes {
-  export type Status = SequenceTypes.Status;
+  type Expiry = number;
 
-  export type JsonRpc = SequenceTypes.JsonRpc;
-
-  export type Events = SequenceTypes.Events;
-
-  export type Config = SequenceTypes.Config<Events, JsonRpc, Status>;
-
-  export type Relay = SequenceTypes.Relay;
-
-  export interface BasePermissions extends SequenceTypes.BasePermissions {
-    blockchain: BlockchainTypes.Permissions;
+  interface BaseNamespace {
+    accounts: string[];
+    methods: string[];
+    events: string[];
   }
 
-  export interface ProposedPermissions extends SequenceTypes.ProposedPermissions {
-    blockchain: BlockchainTypes.Permissions;
-    notifications: NotificationPermissions;
+  interface Namespace extends BaseNamespace {
+    extension?: BaseNamespace[];
   }
 
-  export interface SettledPermissions extends SequenceTypes.SettledPermissions {
-    controller: CryptoTypes.Participant;
-  }
+  type Namespaces = Record<string, Namespace>;
 
-  export type Permissions = SettledPermissions;
-
-  export interface ProposeParams extends SequenceTypes.ProposeParams {
-    signal: Signal;
-    metadata: AppMetadata;
-    permissions: ProposedPermissions;
-    ttl?: number;
-  }
-
-  export type CreateParams = ProposeParams;
-
-  // Pairing method is specific to Session
-  export type Signal = SignalTypes.Pairing;
-
-  // Peer requires metadata in Session
-  export interface Participant extends SequenceTypes.Participant {
-    metadata: AppMetadata;
-  }
-
-  export interface ProposedPeer extends Participant {
-    controller: boolean;
-  }
-
-  export type Proposal = SequenceTypes.Proposal<Signal, ProposedPeer, ProposedPermissions>;
-
-  export type ProposedStatus = SequenceTypes.ProposedStatus;
-
-  export type RespondedStatus = SequenceTypes.RespondedStatus;
-
-  export type PendingStatus = SequenceTypes.PendingStatus;
-
-  export type BasePending = SequenceTypes.BasePending<Participant, Proposal>;
-
-  export type ProposedPending = SequenceTypes.ProposedPending<Participant, Proposal>;
-
-  export type RespondedPending = SequenceTypes.RespondedPending<Participant, Proposal, State>;
-
-  export type Pending = SequenceTypes.Pending<Participant, Proposal, State>;
-
-  export interface RespondParams extends SequenceTypes.RespondParams<Proposal> {
-    response: ResponseInput;
-  }
-
-  export type SettleParams = SequenceTypes.SettleParams<State, Participant, Permissions>;
-
-  export interface UpdateParams extends Update {
+  interface Struct {
     topic: string;
+    relay: RelayerTypes.ProtocolOptions;
+    expiry: Expiry;
+    acknowledged: boolean;
+    controller: string;
+    namespaces: Namespaces;
+    self: {
+      publicKey: string;
+      metadata: ClientTypes.Metadata;
+    };
+    peer: {
+      publicKey: string;
+      metadata: ClientTypes.Metadata;
+    };
   }
 
-  export interface UpgradeParams extends Upgrade {
-    topic: string;
+  interface Filters {
+    namespace?: {
+      key: string;
+      body: BaseNamespace;
+    };
+    expiry?: Expiry;
   }
-
-  export type ExtendParams = SequenceTypes.ExtendParams;
-
-  export interface RequestParams extends SequenceTypes.RequestParams {
-    chainId?: string;
-  }
-
-  export type Update = SequenceTypes.Update<State>;
-
-  export type Upgrade = SequenceTypes.Upgrade<Permissions>;
-
-  export type Extension = SequenceTypes.Extension;
-
-  export interface Request extends SequenceTypes.Request {
-    chainId?: string;
-  }
-
-  export interface PayloadEvent extends SequenceTypes.PayloadEvent {
-    chainId?: string;
-  }
-
-  export interface RequestEvent extends Omit<PayloadEvent, "payload"> {
-    request: JsonRpcRequest;
-  }
-
-  export interface ResponseEvent extends Omit<PayloadEvent, "payload"> {
-    response: JsonRpcResponse;
-  }
-
-  export type DeleteParams = SequenceTypes.DeleteParams;
-
-  export type Settled = SequenceTypes.Settled<State, Participant, Permissions>;
-
-  export type Created = Settled;
-
-  export type Approval = SequenceTypes.Approval<State, Participant>;
-
-  export type Rejection = SequenceTypes.Rejection;
-
-  export type Response = Rejection | Approval;
-
-  export type Success = SequenceTypes.Success<State, Participant>;
-
-  export type Failed = SequenceTypes.Failed;
-
-  export type Outcome = Failed | Success;
-
-  export type State = BlockchainTypes.State;
-
-  export interface ResponseInput {
-    state: State;
-    metadata: AppMetadata;
-  }
-
-  export type DefaultSignalParams = SequenceTypes.DefaultSignalParams<ProposedPeer>;
-
-  export type Notification = SequenceTypes.Notification;
-
-  export type NotificationEvent = SequenceTypes.NotificationEvent;
-
-  export type NotifyParams = SequenceTypes.NotifyParams;
-
-  export type Engine = IEngine<
-    Pending,
-    Settled,
-    Update,
-    Upgrade,
-    Extension,
-    CreateParams,
-    RespondParams,
-    RequestParams,
-    UpdateParams,
-    UpgradeParams,
-    ExtendParams,
-    DeleteParams,
-    ProposeParams,
-    SettleParams,
-    NotifyParams,
-    Participant,
-    Permissions
-  >;
 }
 
-export abstract class ISession extends ISequence<
-  SessionTypes.Engine,
-  SessionTypes.Config,
-  SessionTypes.Pending,
-  SessionTypes.Settled,
-  SessionTypes.Update,
-  SessionTypes.Upgrade,
-  SessionTypes.Extension,
-  SessionTypes.State,
-  SessionTypes.Permissions,
-  SessionTypes.CreateParams,
-  SessionTypes.RespondParams,
-  SessionTypes.RequestParams,
-  SessionTypes.UpdateParams,
-  SessionTypes.UpgradeParams,
-  SessionTypes.ExtendParams,
-  SessionTypes.DeleteParams,
-  SessionTypes.ProposeParams,
-  SessionTypes.SettleParams,
-  SessionTypes.NotifyParams,
-  SessionTypes.Participant,
-  SessionTypes.Signal,
-  SessionTypes.DefaultSignalParams,
-  SessionTypes.ProposedPermissions
-> {}
+export interface ISession extends IStore<string, SessionTypes.Struct> {
+  find: (filters: SessionTypes.Filters) => SessionTypes.Struct[];
+}

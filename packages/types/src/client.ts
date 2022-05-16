@@ -1,132 +1,124 @@
+import EventEmmiter from "events";
 import { Logger } from "pino";
-import { IKeyValueStorage, KeyValueStorageOptions } from "keyvaluestorage";
-import { IEvents } from "@walletconnect/events";
-import { IHeartBeat } from "@walletconnect/heartbeat";
-import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
-
-import { IRelayer, RelayerTypes } from "./relayer";
+import { IEngine } from "./engine";
+import { IPairing } from "./pairing";
+import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
-import { IPairing, PairingTypes } from "./pairing";
-import { SignalTypes, AppMetadata, Reason } from "./misc";
-import { ICrypto, IKeyChain } from "./crypto";
-import { IStorage } from "./storage";
+import { IJsonRpcHistory } from "./history";
+import { CoreTypes, ICore } from "./core";
+import { IExpirer } from "./expirer";
 
-export interface ClientOptions {
-  name?: string;
-  projectId?: string;
-  controller?: boolean;
-  metadata?: AppMetadata;
-  relayUrl?: string;
-  logger?: string | Logger;
-  keychain?: IKeyChain;
-  storage?: IKeyValueStorage;
-  storageOptions?: KeyValueStorageOptions;
+export declare namespace ClientTypes {
+  type Event =
+    | "session_proposal"
+    | "session_update"
+    | "session_extend"
+    | "session_ping"
+    | "pairing_ping"
+    | "session_delete"
+    | "pairing_delete"
+    | "request"
+    | "event";
+
+  interface EventArguments {
+    session_proposal: ProposalTypes.Struct;
+    session_update: { topic: string; namespaces: SessionTypes.Namespaces };
+    session_extend: { topic: string };
+    session_ping: { topic: string };
+    pairing_ping: { topic: string };
+    session_delete: { topic: string };
+    pairing_delete: { topic: string };
+    request: {
+      topic: string;
+      request: {
+        method: string;
+        params: any;
+      };
+      chainId?: string;
+    };
+    event: {
+      topic: string;
+      event: {
+        name: string;
+        data: any;
+      };
+      chainId?: string;
+    };
+  }
+
+  type Metadata = {
+    name: string;
+    description: string;
+    url: string;
+    icons: string[];
+  };
+
+  interface Options extends CoreTypes.Options {
+    core?: ICore;
+    metadata?: Metadata;
+  }
 }
 
-export abstract class IClient extends IEvents {
-  public readonly protocol = "wc";
-  public readonly version = 2;
-
-  public abstract logger: Logger;
-
-  public abstract heartbeat: IHeartBeat;
-
-  public abstract crypto: ICrypto;
-
-  public abstract storage: IStorage;
-  public abstract relayer: IRelayer;
-
-  public abstract pairing: IPairing;
-  public abstract session: ISession;
-
-  public abstract readonly name: string;
-  public abstract readonly context: string;
-
-  public abstract readonly controller: boolean;
-  public abstract readonly metadata: AppMetadata | undefined;
-
-  public abstract readonly relayUrl: string | undefined;
-  public abstract readonly projectId: string | undefined;
-
-  constructor(opts?: ClientOptions) {
+export abstract class IClientEvents extends EventEmmiter {
+  constructor() {
     super();
   }
 
-  // for proposer to propose a session to a responder
-  public abstract connect(params: ClientTypes.ConnectParams): Promise<SessionTypes.Settled>;
-  // for responder to receive a session proposal from a proposer
-  public abstract pair(params: ClientTypes.PairParams): Promise<PairingTypes.Settled>;
+  public abstract emit: <E extends ClientTypes.Event>(
+    event: E,
+    args: ClientTypes.EventArguments[E],
+  ) => boolean;
 
-  // for responder to approve a session proposal
-  public abstract approve(params: ClientTypes.ApproveParams): Promise<SessionTypes.Settled>;
-  // for responder to reject a session proposal
-  public abstract reject(params: ClientTypes.RejectParams): Promise<void>;
+  public abstract on: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
 
-  // for controller to update session state
-  public abstract update(params: ClientTypes.UpdateParams): Promise<void>;
-  // for controller to upgrade session permissions
-  public abstract upgrade(params: ClientTypes.UpgradeParams): Promise<void>;
-  // for controller to extend session expiry
-  public abstract extend(params: ClientTypes.ExtendParams): Promise<void>;
+  public abstract once: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
 
-  // for proposer to request JSON-RPC
-  public abstract request(params: ClientTypes.RequestParams): Promise<any>;
-  // for responder to respond JSON-RPC
-  public abstract respond(params: ClientTypes.RespondParams): Promise<void>;
+  public abstract off: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
 
-  // for either to ping and verify peer is online
-  public abstract ping(params: ClientTypes.PingParams): Promise<void>;
-  // for either to send notifications
-  public abstract notify(params: ClientTypes.NotifyParams): Promise<void>;
-  // for either to disconnect a session
-  public abstract disconnect(params: ClientTypes.DisconnectParams): Promise<void>;
+  public abstract removeListener: <E extends ClientTypes.Event>(
+    event: E,
+    listener: (args: ClientTypes.EventArguments[E]) => any,
+  ) => this;
 }
 
-export declare namespace ClientTypes {
-  export interface ConnectParams {
-    permissions: SessionTypes.BasePermissions;
-    metadata?: AppMetadata;
-    relay?: RelayerTypes.ProtocolOptions;
-    pairing?: SignalTypes.ParamsPairing;
-  }
+export abstract class IClient {
+  public readonly protocol = "wc";
+  public readonly version = 2;
 
-  export interface PairParams {
-    uri: string;
-  }
+  public abstract readonly name: string;
+  public abstract readonly context: string;
+  public abstract readonly metadata: ClientTypes.Metadata;
 
-  export interface ResponseInput {
-    state: SessionTypes.State;
-    metadata?: AppMetadata;
-  }
+  public abstract core: ICore;
+  public abstract logger: Logger;
+  public abstract events: IClientEvents;
+  public abstract engine: IEngine;
+  public abstract pairing: IPairing;
+  public abstract session: ISession;
+  public abstract proposal: IProposal;
+  public abstract history: IJsonRpcHistory;
+  public abstract expirer: IExpirer;
 
-  export interface ApproveParams {
-    proposal: SessionTypes.Proposal;
-    response: ResponseInput;
-  }
-  export interface RejectParams {
-    proposal: SessionTypes.Proposal;
-    reason?: Reason;
-  }
+  constructor(public opts?: ClientTypes.Options) {}
 
-  export type UpdateParams = SessionTypes.UpdateParams;
-
-  export type UpgradeParams = SessionTypes.UpgradeParams;
-
-  export type ExtendParams = SessionTypes.ExtendParams;
-
-  export type RequestParams = SessionTypes.RequestParams;
-
-  export interface RespondParams {
-    topic: string;
-    response: JsonRpcResponse;
-  }
-
-  export interface PingParams {
-    topic: string;
-    timeout?: number;
-  }
-
-  export type NotifyParams = SessionTypes.NotifyParams;
-
-  export type DisconnectParams = SessionTypes.DeleteParams;
+  public abstract connect: IEngine["connect"];
+  public abstract pair: IEngine["pair"];
+  public abstract approve: IEngine["approve"];
+  public abstract reject: IEngine["reject"];
+  public abstract update: IEngine["update"];
+  public abstract extend: IEngine["extend"];
+  public abstract request: IEngine["request"];
+  public abstract respond: IEngine["respond"];
+  public abstract ping: IEngine["ping"];
+  public abstract emit: IEngine["emit"];
+  public abstract disconnect: IEngine["disconnect"];
 }

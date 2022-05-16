@@ -1,0 +1,128 @@
+import "mocha";
+import { parseUri } from "@walletconnect/utils";
+import {
+  EngineTypes,
+  PairingTypes,
+  RelayerTypes,
+  ProposalTypes,
+  SessionTypes,
+} from "@walletconnect/types";
+import { expect } from "./chai";
+import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./values";
+import { Clients } from "./init";
+
+export interface TestConnectParams {
+  requiredNamespaces?: ProposalTypes.RequiredNamespaces;
+  namespaces?: SessionTypes.Namespaces;
+  relays?: RelayerTypes.ProtocolOptions[];
+  pairingTopic?: string;
+}
+
+export async function testConnectMethod(clients: Clients, params?: TestConnectParams) {
+  const { A, B } = clients;
+
+  const connectParams: EngineTypes.ConnectParams = {
+    requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
+    relays: params?.relays || undefined,
+    pairingTopic: params?.pairingTopic || undefined,
+  };
+
+  const approveParams: Omit<EngineTypes.ApproveParams, "id"> = {
+    namespaces: params?.namespaces || TEST_NAMESPACES,
+  };
+
+  const { uri, approval } = await A.connect(connectParams);
+
+  let pairingA: PairingTypes.Struct | undefined;
+  let pairingB: PairingTypes.Struct | undefined;
+
+  if (!connectParams.pairingTopic) {
+    if (!uri) throw new Error("uri is missing");
+
+    const uriParams = parseUri(uri);
+
+    pairingA = A.pairing.get(uriParams.topic);
+    expect(pairingA.topic).to.eql(uriParams.topic);
+    expect(pairingA.relay).to.eql(uriParams.relay);
+  } else {
+    pairingA = A.pairing.get(connectParams.pairingTopic);
+  }
+
+  if (!pairingA) throw new Error("expect pairing A to be defined");
+
+  let sessionA: SessionTypes.Struct | undefined;
+  let sessionB: SessionTypes.Struct | undefined;
+
+  await Promise.all([
+    new Promise<void>((resolve, reject) => {
+      B.once("session_proposal", async proposal => {
+        try {
+          expect(proposal.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
+
+          const { acknowledged } = await B.approve({
+            id: proposal.id,
+            ...approveParams,
+          });
+          if (!sessionB) {
+            sessionB = await acknowledged();
+          }
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }),
+    new Promise<void>(async (resolve, reject) => {
+      // immediatelly resolve if pairingTopic is provided
+      if (connectParams.pairingTopic) return resolve();
+      try {
+        if (uri) {
+          pairingB = await B.pair({ uri });
+          if (!pairingA) throw new Error("pairingA is missing");
+          expect(pairingB.topic).to.eql(pairingA.topic);
+          expect(pairingB.relay).to.eql(pairingA.relay);
+
+          resolve();
+        } else {
+          reject(new Error("missing uri"));
+        }
+      } catch (error) {
+        reject(error);
+      }
+    }),
+    new Promise<void>(async (resolve, reject) => {
+      try {
+        if (!sessionA) {
+          sessionA = await approval();
+        }
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    }),
+  ]);
+
+  if (!sessionA) throw new Error("expect session A to be defined");
+  if (!sessionB) throw new Error("expect session B to be defined");
+
+  expect(sessionA.topic).to.eql(sessionB.topic);
+  // relay
+  expect(sessionA.relay).to.eql(TEST_RELAY_OPTIONS);
+  expect(sessionA.relay).to.eql(sessionB.relay);
+  // namespaces
+  expect(sessionA.namespaces).to.eql(approveParams.namespaces);
+  expect(sessionA.namespaces).to.eql(sessionB.namespaces);
+  // expiry
+  expect(sessionA.expiry).to.eql(sessionB.expiry);
+  // acknowledged
+  expect(sessionA.acknowledged).to.eql(sessionB.acknowledged);
+  // participants
+  expect(sessionA.self).to.eql(sessionB.peer);
+  expect(sessionA.peer).to.eql(sessionB.self);
+  // controller
+  expect(sessionA.controller).to.eql(sessionB.controller);
+  expect(sessionA.controller).to.eql(sessionA.peer.publicKey);
+  expect(sessionB.controller).to.eql(sessionB.self.publicKey);
+
+  return { pairingA, sessionA };
+}

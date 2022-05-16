@@ -52,7 +52,7 @@ class SocketTransport implements ITransportLib {
     this._netMonitor.on("online", () => this._socketCreate());
   }
 
-  set readyState(value) {
+  set readyState(_value) {
     // empty
   }
 
@@ -60,7 +60,7 @@ class SocketTransport implements ITransportLib {
     return this._socket ? this._socket.readyState : -1;
   }
 
-  set connecting(value) {
+  set connecting(_value) {
     // empty
   }
 
@@ -68,7 +68,7 @@ class SocketTransport implements ITransportLib {
     return this.readyState === 0;
   }
 
-  set connected(value) {
+  set connected(_value) {
     // empty
   }
 
@@ -76,7 +76,7 @@ class SocketTransport implements ITransportLib {
     return this.readyState === 1;
   }
 
-  set closing(value) {
+  set closing(_value) {
     // empty
   }
 
@@ -84,7 +84,7 @@ class SocketTransport implements ITransportLib {
     return this.readyState === 2;
   }
 
-  set closed(value) {
+  set closed(_value) {
     // empty
   }
 

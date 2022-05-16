@@ -1,64 +1,63 @@
 import {
-  IConnector,
-  IConnectorOpts,
-  ICryptoLib,
-  ITransportLib,
-  ISessionStorage,
-  IEncryptionPayload,
-  ISocketMessage,
-  ISessionStatus,
-  ISessionError,
-  IJsonRpcResponseSuccess,
-  IJsonRpcResponseError,
-  IJsonRpcRequest,
-  ITxData,
-  IClientMeta,
-  IParseURIResult,
-  ISessionParams,
-  IUpdateChainParams,
-  IRequestOptions,
-  IInternalRequestOptions,
-  ICreateSessionOptions,
-  IQRCodeModal,
-  IPushSubscription,
-  IPushServerOptions,
-  IWalletConnectSession,
-  IQRCodeModalOptions,
+  ERROR_INVALID_RESPONSE,
+  ERROR_INVALID_URI,
+  ERROR_MISSING_ERROR,
+  ERROR_MISSING_ID,
+  ERROR_MISSING_JSON_RPC,
+  ERROR_MISSING_METHOD,
+  ERROR_MISSING_REQUIRED,
+  ERROR_MISSING_RESULT,
+  ERROR_QRCODE_MODAL_NOT_PROVIDED,
+  ERROR_QRCODE_MODAL_USER_CLOSED,
   ERROR_SESSION_CONNECTED,
   ERROR_SESSION_DISCONNECTED,
   ERROR_SESSION_REJECTED,
-  ERROR_MISSING_JSON_RPC,
-  ERROR_MISSING_RESULT,
-  ERROR_MISSING_ERROR,
-  ERROR_MISSING_METHOD,
-  ERROR_MISSING_ID,
-  ERROR_INVALID_RESPONSE,
-  ERROR_INVALID_URI,
-  ERROR_MISSING_REQUIRED,
-  ERROR_QRCODE_MODAL_NOT_PROVIDED,
-  ERROR_QRCODE_MODAL_USER_CLOSED,
-  SIGNING_METHODS,
+  IClientMeta,
+  IConnector,
+  IConnectorOpts,
+  ICreateSessionOptions,
+  ICryptoLib,
+  IEncryptionPayload,
+  IInternalRequestOptions,
+  IJsonRpcRequest,
+  IJsonRpcResponseError,
+  IJsonRpcResponseSuccess,
+  IParseURIResult,
+  IPushServerOptions,
+  IPushSubscription,
+  IQRCodeModal,
+  IQRCodeModalOptions,
+  IRequestOptions,
+  ISessionError,
+  ISessionParams,
+  ISessionStatus,
+  ISessionStorage,
+  ISocketMessage,
+  ITransportLib,
+  ITxData,
+  IUpdateChainParams,
+  IWalletConnectSession,
   MOBILE_LINK_CHOICE_KEY,
+  SIGNING_METHODS,
 } from "@walletconnect/legacy-types";
 import {
   convertArrayBufferToHex,
   convertHexToArrayBuffer,
-  payloadId,
-  uuid,
-  formatRpcError,
-  parseWalletConnectUri,
   convertNumberToHex,
-  isJsonRpcResponseSuccess,
-  isJsonRpcResponseError,
-  isSilentPayload,
-  getLocal,
-  removeLocal,
+  formatRpcError,
   getClientMeta,
+  getLocal,
+  isJsonRpcResponseError,
+  isJsonRpcResponseSuccess,
   isMobile,
+  isSilentPayload,
+  parseWalletConnectUri,
+  payloadId,
+  removeLocal,
+  uuid,
 } from "@walletconnect/legacy-utils";
-
-import SocketTransport from "./socket";
 import EventManager from "./events";
+import SocketTransport from "./socket";
 import SessionStorage from "./storage";
 import { getBridgeUrl } from "./url";
 
@@ -221,7 +220,7 @@ class Connector implements IConnector {
     return this._peerId;
   }
 
-  set clientMeta(value) {
+  set clientMeta(_value) {
     // empty
   }
 
@@ -315,7 +314,7 @@ class Connector implements IConnector {
     return rpcUrl;
   }
 
-  set connected(value) {
+  set connected(_value) {
     // empty
   }
 
@@ -323,7 +322,7 @@ class Connector implements IConnector {
     return this._connected;
   }
 
-  set pending(value) {
+  set pending(_value) {
     // empty
   }
 
@@ -811,7 +810,7 @@ class Connector implements IConnector {
     this._transport.send(payload, topic, silent);
   }
 
-  protected async _sendSessionRequest(
+  protected _sendSessionRequest(
     request: IJsonRpcRequest,
     errorMsg: string,
     options?: IInternalRequestOptions,
@@ -1055,7 +1054,7 @@ class Connector implements IConnector {
       }
     });
 
-    this.on("call_request_sent", (error, payload) => {
+    this.on("call_request_sent", (_error, payload) => {
       const { request } = payload.params[0];
       if (isMobile() && this._signingMethods.includes(request.method)) {
         const mobileLinkUrl = getLocal(MOBILE_LINK_CHOICE_KEY);

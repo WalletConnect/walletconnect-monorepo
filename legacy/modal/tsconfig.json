@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "dist/cjs",
     "rootDir": "src",
+    "noImplicitAny": false,
     "jsx": "react"
   },
   "include": ["./src/**/*"],

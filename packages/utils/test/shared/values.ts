@@ -1,3 +1,5 @@
+import { ClientTypes, SessionTypes } from "@walletconnect/types";
+
 export const TEST_PAIRING_TOPIC =
   "c9e6d30fb34afe70a15c14e9337ba8e4d5a35dd695c39b94884b0ee60c69d168";
 
@@ -6,21 +8,22 @@ export const TEST_SESSION_TOPIC =
 
 export const TEST_KEY_PAIRS = {
   A: {
-    privateKey: "0a857b942485fee18e4c55b6ec02fef6fc0c1c3872c10e669c7790f315fd3d0b",
-    publicKey: "7ff3e362f825ab868e20e767fe580d0311181632707e7c878cbeca0238d45b8b",
+    privateKey: "1fb63fca5c6ac731246f2f069d3bc2454345d5208254aa8ea7bffc6d110c8862",
+    publicKey: "ff7a7d5767c362b0a17ad92299ebdb7831dcbd9a56959c01368c7404543b3342",
   },
   B: {
-    privateKey: "a2582f40f38e32546df2cd8f25f19265386820347237c234a223a0d4704f3940",
-    publicKey: "45c59ad0c053925072f4503a39fe579ca8b7b8fa6bf0c7297e6db8f6585ee77f",
+    privateKey: "36bf507903537de91f5e573666eaa69b1fa313974f23b2b59645f20fea505854",
+    publicKey: "590c2c627be7af08597091ff80dd41f7fa28acd10ef7191d7e830e116d3a186a",
   },
 };
 
-export const TEST_SHARED_KEY = "1b665e13f74b54aa2401bb8762b6fe06b3fdcf4c248ff0bde8781c3b02f23b06";
-export const TEST_HASHED_KEY = "08ca02463e7c45383d43efaee4bbe33f700df0658e99726a755fd77f9a040988";
+export const TEST_SHARED_KEY = "9c87e48e69b33a613907515bcd5b1b4cc10bbaf15167b19804b00f0a9217e607";
+export const TEST_HASHED_KEY = "a492906ccc809a411bb53a84572b57329375378c6ad7566f3e1c688200123e77";
+export const TEST_SYM_KEY = "0653ca620c7b4990392e1c53c4a51c14a2840cd20f0f1524cf435b17b6fe988c";
 
 export const TEST_RELAY_OPTIONS = {
   protocol: "waku",
-  params: {},
+  data: undefined,
 };
 
 export const TEST_SESSION_METADATA = {
@@ -30,34 +33,43 @@ export const TEST_SESSION_METADATA = {
   icons: ["http://myapp.com/logo.png"],
 };
 
-export const TEST_ETHEREUM_CHAIN_ID = "eip155:1";
+export const TEST_ETHEREUM_CHAIN = "eip155:1";
 
-export const TEST_PERMISSIONS_CHAINS: string[] = [TEST_ETHEREUM_CHAIN_ID];
+export const TEST_ETHEREUM_ADDRESS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
 
-export const TEST_BLOCKCHAIN_PERMISSIONS = {
-  chains: TEST_PERMISSIONS_CHAINS,
-};
+export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
 
-export const TEST_JSONRPC_PERMISSIONS = {
-  methods: ["personal_sign", "eth_signTypedData", "eth_sendTransaction"],
-};
+export const TEST_CHAINS: string[] = [TEST_ETHEREUM_CHAIN];
 
-export const TEST_NOTIFICATIONS_PERMISSIONS = {
-  types: [],
-};
+export const TEST_ACCOUNTS: string[] = [TEST_ETHEREUM_ACCOUNT];
 
-export const TEST_SESSION_PERMISSIONS = {
-  blockchain: TEST_BLOCKCHAIN_PERMISSIONS,
-  jsonrpc: TEST_JSONRPC_PERMISSIONS,
-  notifications: TEST_NOTIFICATIONS_PERMISSIONS,
-};
+export const TEST_METHODS = ["personal_sign", "eth_signTypedData", "eth_sendTransaction"];
 
-export const TEST_ETHEREUM_ACCOUNTS = ["0x1d85568eEAbad713fBB5293B45ea066e552A90De"];
+export const TEST_EVENTS = ["chainChanged", "accountsChanged"];
 
-export const TEST_SESSION_ACCOUNTS = TEST_ETHEREUM_ACCOUNTS.map(
-  address => `${TEST_ETHEREUM_CHAIN_ID}:${address}`,
-);
+export const TEST_DATE_NOW = 1649874082376;
 
-export const TEST_SESSION_STATE = {
-  accounts: TEST_SESSION_ACCOUNTS,
+export const TEST_EXPIRY_1D = 1649960482376;
+
+export const TEST_EXPIRY_7D = 1650478882376;
+
+export const TEST_EXPIRY_30D = 1652466082376;
+
+export const TEST_SESSION: SessionTypes.Struct = {
+  accounts: TEST_ACCOUNTS,
+  methods: TEST_METHODS,
+  events: TEST_EVENTS,
+  expiry: TEST_EXPIRY_7D,
+  topic: TEST_SESSION_TOPIC,
+  relay: TEST_RELAY_OPTIONS,
+  acknowledged: true,
+  controller: TEST_KEY_PAIRS.A.publicKey,
+  self: {
+    publicKey: TEST_KEY_PAIRS.A.publicKey,
+    metadata: TEST_SESSION_METADATA as ClientTypes.Metadata,
+  },
+  peer: {
+    publicKey: TEST_KEY_PAIRS.B.publicKey,
+    metadata: TEST_SESSION_METADATA as ClientTypes.Metadata,
+  },
 };

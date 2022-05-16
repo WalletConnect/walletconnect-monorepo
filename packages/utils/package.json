@@ -28,8 +28,11 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/ecies-25519": "^1.0.2",
-    "@walletconnect/encoding": "^1.0.1",
+    "@stablelib/chacha20poly1305": "^1.0.1",
+    "@stablelib/hkdf": "^1.0.1",
+    "@stablelib/random": "^1.0.1",
+    "@stablelib/sha256": "^1.0.1",
+    "@stablelib/x25519": "^1.0.2",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/relay-api": "^1.0.2",
@@ -38,8 +41,9 @@
     "@walletconnect/types": "^2.0.0-beta.26",
     "@walletconnect/window-getters": "^1.0.0",
     "@walletconnect/window-metadata": "^1.0.0",
-    "lodash.union": "^4.6.0",
-    "query-string": "^6.13.5"
+    "lodash.isequal": "4.5.0",
+    "query-string": "^6.13.5",
+    "uint8arrays": "^3.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
@@ -53,6 +57,7 @@
     "@types/jest": "^22.2.3",
     "@types/mocha": "^8.0.4",
     "@types/node": "^14.14.2",
+    "@types/lodash.isequal": "4.5.6",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
     "chai": "^4.2.0",

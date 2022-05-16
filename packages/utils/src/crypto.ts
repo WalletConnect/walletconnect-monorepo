@@ -1,44 +1,81 @@
+import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
+import { HKDF } from "@stablelib/hkdf";
+import { randomBytes } from "@stablelib/random";
+import { hash, SHA256 } from "@stablelib/sha256";
+import * as x25519 from "@stablelib/x25519";
 import { CryptoTypes } from "@walletconnect/types";
-import * as ecies25519 from "@walletconnect/ecies-25519";
-import * as encoding from "@walletconnect/encoding";
+import { concat } from "uint8arrays/concat";
+import { fromString } from "uint8arrays/from-string";
+import { toString } from "uint8arrays/to-string";
+
+export const BASE16 = "base16";
+export const BASE64 = "base64";
+export const UTF8 = "utf8";
+
+const ZERO_INDEX = 0;
+const IV_LENGTH = 12;
+const KEY_LENGTH = 32;
 
 export function generateKeyPair(): CryptoTypes.KeyPair {
-  const keyPair = ecies25519.generateKeyPair();
+  const keyPair = x25519.generateKeyPair();
   return {
-    privateKey: encoding.arrayToHex(keyPair.privateKey),
-    publicKey: encoding.arrayToHex(keyPair.publicKey),
+    privateKey: toString(keyPair.secretKey, BASE16),
+    publicKey: toString(keyPair.publicKey, BASE16),
   };
 }
 
 export function generateRandomBytes32(): string {
-  return encoding.arrayToHex(ecies25519.randomBytes(32));
+  const random = randomBytes(KEY_LENGTH);
+  return toString(random, BASE16);
 }
 
 export function deriveSharedKey(privateKeyA: string, publicKeyB: string): string {
-  const sharedKey = ecies25519.derive(
-    encoding.hexToArray(privateKeyA),
-    encoding.hexToArray(publicKeyB),
+  const sharedKey = x25519.sharedKey(
+    fromString(privateKeyA, BASE16),
+    fromString(publicKeyB, BASE16),
   );
-  return encoding.arrayToHex(sharedKey);
+  return toString(sharedKey, BASE16);
 }
 
-export async function sha256(msg: string): Promise<string> {
-  const hash = await ecies25519.sha256(encoding.hexToArray(msg));
-  return encoding.arrayToHex(hash);
+export function deriveSymmetricKey(sharedKey: string) {
+  const hkdf = new HKDF(SHA256, fromString(sharedKey, BASE16));
+  const symKey = hkdf.expand(KEY_LENGTH);
+  return toString(symKey, BASE16);
 }
 
-export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string> {
-  const msg = encoding.utf8ToArray(params.message);
-  const sharedKey = encoding.hexToArray(params.sharedKey);
-  const publicKey = encoding.hexToArray(params.publicKey);
-  const iv = typeof params.iv !== "undefined" ? encoding.hexToArray(params.iv) : undefined;
-  const encrypted = await ecies25519.encryptWithSharedKey(msg, sharedKey, publicKey, iv);
-  return encoding.arrayToHex(encrypted);
+export function hashKey(key: string) {
+  const result = hash(fromString(key, BASE16));
+  return toString(result, BASE16);
 }
 
-export async function decrypt(params: CryptoTypes.DecryptParams): Promise<string> {
-  const encrypted = encoding.hexToArray(params.encrypted);
-  const sharedKey = encoding.hexToArray(params.sharedKey);
-  const msg = await ecies25519.decryptWithSharedKey(encrypted, sharedKey);
-  return encoding.arrayToUtf8(msg);
+export function hashMessage(message: string) {
+  const result = hash(fromString(message, UTF8));
+  return toString(result, BASE16);
+}
+
+export function encrypt(params: CryptoTypes.EncryptParams) {
+  const iv =
+    typeof params.iv !== "undefined" ? fromString(params.iv, BASE16) : randomBytes(IV_LENGTH);
+  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
+  const sealed = box.seal(iv, fromString(params.message, UTF8));
+  return serialize({ sealed, iv });
+}
+
+export function decrypt(params: CryptoTypes.DecryptParams) {
+  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
+  const { sealed, iv } = deserialize(params.encoded);
+  const message = box.open(iv, sealed);
+  if (message === null) throw new Error("Failed to decrypt");
+  return toString(message, UTF8);
+}
+
+export function serialize(params: CryptoTypes.EncodingParams): string {
+  return toString(concat([params.iv, params.sealed]), BASE64);
+}
+
+export function deserialize(encoded: string): CryptoTypes.EncodingParams {
+  const array = fromString(encoded, BASE64);
+  const iv = array.slice(ZERO_INDEX, IV_LENGTH);
+  const sealed = array.slice(IV_LENGTH);
+  return { sealed, iv };
 }
