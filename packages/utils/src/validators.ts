@@ -1,26 +1,27 @@
-import { SessionTypes, ProposalTypes, RelayerTypes } from "@walletconnect/types";
+import { SessionTypes, ProposalTypes, RelayerTypes, EngineTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-import isEqual from "lodash.isequal";
+// import isEqual from "lodash.isequal";
 import {
   getNamespacesChains,
   getNamespacesMethodsForChainId,
   getNamespacesEventsForChainId,
 } from "./namespaces";
 
-export function isSessionCompatible(session: SessionTypes.Struct, filters: SessionTypes.Filters) {
-  const results = [];
-  const { namespace, expiry } = filters;
-  if (session.namespaces && namespace) {
-    Object.keys(session.namespaces).forEach(key => {
-      if (key === namespace.key) {
-        results.push(isEqual(session.namespaces[key], namespace.body));
-      }
-    });
-  }
-  if (session.expiry && expiry) {
-    results.push(session.expiry >= expiry);
-  }
-  return !results.includes(false);
+export function isSessionCompatible(session: SessionTypes.Struct, params: EngineTypes.FindParams) {
+  // 1. compare namespace keys and requiredNamespace keys have overlap
+  // 2. parse accounts into chains from session namespaces
+  // 3. compare each namespace has overlap with requiredNamespace (chains, method, events)
+  //
+  // const results = [];
+  // const { namespace } = params;
+  // if (session.namespaces && namespace) {
+  //   Object.keys(session.namespaces).forEach(key => {
+  //     if (key === namespace.key) {
+  //       results.push(isEqual(session.namespaces[key], namespace.body));
+  //     }
+  //   });
+  // }
+  // return !results.includes(false);
 }
 
 export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {

@@ -33,16 +33,6 @@ export declare namespace SessionTypes {
       metadata: ClientTypes.Metadata;
     };
   }
-
-  interface Filters {
-    namespace?: {
-      key: string;
-      body: BaseNamespace;
-    };
-    expiry?: Expiry;
-  }
 }
 
-export interface ISession extends IStore<string, SessionTypes.Struct> {
-  find: (filters: SessionTypes.Filters) => SessionTypes.Struct[];
-}
+export type ISession = IStore<string, SessionTypes.Struct>;
