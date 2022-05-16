@@ -1,7 +1,7 @@
 import { Client } from "@walletconnect/client";
 import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { ClientTypes, IClient, SessionTypes } from "@walletconnect/types";
+import { ClientTypes, IClient, SessionTypes, ProposalTypes } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 
@@ -20,15 +20,14 @@ export const SIGNER_EVENTS = {
 
 export type SignerConnectionClientOpts = IClient | ClientTypes.Options;
 export interface SignerConnectionOpts {
-  chains?: string[];
-  methods?: string[];
+  requiredNamespaces?: ProposalTypes.RequiredNamespaces;
   client?: SignerConnectionClientOpts;
 }
 
 export class SignerConnection extends IJsonRpcConnection {
   public events: any = new EventEmitter();
 
-  public chains: string[];
+  public requiredNamespaces: ProposalTypes.RequiredNamespaces;
   public methods: string[];
 
   private pending = false;
@@ -42,8 +41,7 @@ export class SignerConnection extends IJsonRpcConnection {
   constructor(opts?: SignerConnectionOpts) {
     super();
 
-    this.chains = opts?.chains || [];
-    this.methods = opts?.methods || [];
+    this.requiredNamespaces = opts?.requiredNamespaces || {};
     this.opts = opts?.client;
   }
 
@@ -94,21 +92,11 @@ export class SignerConnection extends IJsonRpcConnection {
       this.pending = true;
       const client = await this.register();
       const compatible = await client.session.find({
-        namespace: {
-          chains: this.chains,
-          methods: this.methods,
-          events: [],
-        },
+        requiredNamespaces: this.requiredNamespaces,
       });
       if (compatible.length) return this.onOpen(compatible[0]);
       const { uri, approval } = await client.connect({
-        namespaces: [
-          {
-            chains: this.chains,
-            methods: this.methods,
-            events: [],
-          },
-        ],
+        requiredNamespaces: this.requiredNamespaces,
       });
       this.events.emit(SIGNER_EVENTS.uri, { uri });
       this.session = await approval();
