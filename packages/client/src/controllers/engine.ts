@@ -285,10 +285,8 @@ export class Engine extends IEngine {
     }
   };
 
-  public find: IEngine["find"] = async params => {
-    return this.client.session.values.filter((session: SessionTypes.Struct) =>
-      isSessionCompatible(session, params),
-    );
+  public find: IEngine["find"] = params => {
+    return this.client.session.values.filter(session => isSessionCompatible(session, params));
   };
 
   // ---------- Private Helpers --------------------------------------- //

@@ -1,27 +1,50 @@
 import { SessionTypes, ProposalTypes, RelayerTypes, EngineTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
-// import isEqual from "lodash.isequal";
 import {
   getNamespacesChains,
   getNamespacesMethodsForChainId,
   getNamespacesEventsForChainId,
+  getAccountsChains,
 } from "./namespaces";
+import { hasOverlap } from "./misc";
 
 export function isSessionCompatible(session: SessionTypes.Struct, params: EngineTypes.FindParams) {
-  // 1. compare namespace keys and requiredNamespace keys have overlap
-  // 2. parse accounts into chains from session namespaces
-  // 3. compare each namespace has overlap with requiredNamespace (chains, method, events)
-  //
-  // const results = [];
-  // const { namespace } = params;
-  // if (session.namespaces && namespace) {
-  //   Object.keys(session.namespaces).forEach(key => {
-  //     if (key === namespace.key) {
-  //       results.push(isEqual(session.namespaces[key], namespace.body));
-  //     }
-  //   });
-  // }
-  // return !results.includes(false);
+  const { requiredNamespaces } = params;
+  const sessionKeys = Object.keys(session.namespaces);
+  const paramsKeys = Object.keys(requiredNamespaces);
+  let compatible = true;
+
+  if (!hasOverlap(sessionKeys, paramsKeys)) return false;
+
+  sessionKeys.forEach(key => {
+    const { accounts, methods, events, extension } = session.namespaces[key];
+    const chains = getAccountsChains(accounts);
+    const requiredNamespace = requiredNamespaces[key];
+
+    if (
+      !hasOverlap(chains, requiredNamespace.chains) &&
+      !hasOverlap(methods, requiredNamespace.methods) &&
+      !hasOverlap(events, requiredNamespace.events)
+    ) {
+      compatible = false;
+    }
+
+    if (compatible && extension) {
+      extension.forEach(extensionNamespace => {
+        const { accounts, methods, events } = extensionNamespace;
+        const chains = getAccountsChains(accounts);
+        const overlap = requiredNamespace.extension?.find(
+          ext =>
+            hasOverlap(chains, ext.chains) &&
+            hasOverlap(methods, ext.methods) &&
+            hasOverlap(events, ext.events),
+        );
+        if (!overlap) compatible = false;
+      });
+    }
+  });
+
+  return compatible;
 }
 
 export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
