@@ -180,6 +180,15 @@ export class Client extends IClient {
     }
   };
 
+  public find: IClient["find"] = params => {
+    try {
+      return this.engine.find(params);
+    } catch (error) {
+      this.logger.error((error as any).message);
+      throw error;
+    }
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {

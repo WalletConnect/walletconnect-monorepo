@@ -42,6 +42,7 @@ import {
   isValidEvent,
   isValidResponse,
   isValidRequiredNamespaces,
+  isSessionCompatible,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -282,6 +283,10 @@ export class Engine extends IEngine {
       });
       await done();
     }
+  };
+
+  public find: IEngine["find"] = params => {
+    return this.client.session.values.filter(session => isSessionCompatible(session, params));
   };
 
   // ---------- Private Helpers --------------------------------------- //

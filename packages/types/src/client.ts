@@ -121,4 +121,5 @@ export abstract class IClient {
   public abstract ping: IEngine["ping"];
   public abstract emit: IEngine["emit"];
   public abstract disconnect: IEngine["disconnect"];
+  public abstract find: IEngine["find"];
 }

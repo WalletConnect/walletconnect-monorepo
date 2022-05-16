@@ -28,7 +28,6 @@ export class SignerConnection extends IJsonRpcConnection {
   public events: any = new EventEmitter();
 
   public requiredNamespaces: ProposalTypes.RequiredNamespaces;
-  public methods: string[];
 
   private pending = false;
   private session: SessionTypes.Struct | undefined;
@@ -54,7 +53,12 @@ export class SignerConnection extends IJsonRpcConnection {
   }
 
   get accounts() {
-    return this.session?.accounts || [];
+    if (this.session) {
+      const accounts: string[] = [];
+      Object.values(this.session.namespaces).map(ns => accounts.push(...ns.accounts));
+      return accounts;
+    }
+    return [];
   }
 
   public on(event: string, listener: any) {
@@ -91,7 +95,7 @@ export class SignerConnection extends IJsonRpcConnection {
     try {
       this.pending = true;
       const client = await this.register();
-      const compatible = await client.session.find({
+      const compatible = client.find({
         requiredNamespaces: this.requiredNamespaces,
       });
       if (compatible.length) return this.onOpen(compatible[0]);

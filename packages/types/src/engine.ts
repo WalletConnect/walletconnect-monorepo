@@ -111,6 +111,10 @@ export declare namespace EngineTypes {
     topic: string;
     reason: ErrorResponse;
   }
+
+  interface FindParams {
+    requiredNamespaces: ProposalTypes.RequiredNamespaces;
+  }
 }
 
 export abstract class IEngineEvents extends EventEmitter {
@@ -307,4 +311,6 @@ export abstract class IEngine {
   public abstract ping(params: EngineTypes.PingParams): Promise<void>;
 
   public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
+
+  public abstract find: (params: EngineTypes.FindParams) => SessionTypes.Struct[];
 }
