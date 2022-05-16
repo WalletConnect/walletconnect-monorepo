@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/signer-connection",
   "description": "Signer Connection for WalletConnect Protocol",
-  "version": "2.0.0-beta.26",
+  "version": "2.0.0-beta.50",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -29,11 +29,11 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/client": "^2.0.0-beta.26",
+    "@walletconnect/client": "^2.0.0-beta.50",
     "@walletconnect/jsonrpc-types": "^1.0.0",
     "@walletconnect/jsonrpc-utils": "^1.0.0",
-    "@walletconnect/types": "^2.0.0-beta.26",
-    "@walletconnect/utils": "^2.0.0-beta.26"
+    "@walletconnect/types": "^2.0.0-beta.50",
+    "@walletconnect/utils": "^2.0.0-beta.50"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
