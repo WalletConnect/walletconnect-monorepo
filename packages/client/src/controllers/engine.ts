@@ -562,7 +562,10 @@ export class Engine extends IEngine {
       const { params, id } = payload;
       await this.client.session.update(topic, { namespaces: params.namespaces });
       await this.sendResult<"wc_sessionUpdate">(id, topic, true);
-      this.client.events.emit("session_update", payload);
+      this.client.events.emit("session_update", {
+        ...payload,
+        params: { ...payload.params, topic },
+      });
     } catch (err) {
       this.client.logger.error(err);
     }
