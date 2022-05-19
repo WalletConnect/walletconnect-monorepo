@@ -734,10 +734,10 @@ export class Engine extends IEngine {
       const { topic } = event;
       if (this.client.session.keys.includes(topic)) {
         await this.deleteSession(topic);
-        this.client.events.emit("session_expired", { topic });
+        this.client.events.emit("session_expire", { topic });
       } else if (this.client.pairing.keys.includes(topic)) {
         await this.deletePairing(topic);
-        this.client.events.emit("pairing_expired", { topic });
+        this.client.events.emit("pairing_expire", { topic });
       }
     });
   }

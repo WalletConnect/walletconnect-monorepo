@@ -18,8 +18,8 @@ export declare namespace ClientTypes {
     | "pairing_ping"
     | "session_delete"
     | "pairing_delete"
-    | "session_expired"
-    | "pairing_expired"
+    | "session_expire"
+    | "pairing_expire"
     | "request"
     | "event";
 
@@ -31,8 +31,8 @@ export declare namespace ClientTypes {
     pairing_ping: JsonRpcRequest<{ topic: string }>;
     session_delete: JsonRpcRequest<{ topic: string }>;
     pairing_delete: JsonRpcRequest<{ topic: string }>;
-    session_expired: { topic: string };
-    pairing_expired: { topic: string };
+    session_expire: { topic: string };
+    pairing_expire: { topic: string };
     request: JsonRpcRequest<{
       topic: string;
       request: {
