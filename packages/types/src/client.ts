@@ -25,7 +25,7 @@ export declare namespace ClientTypes {
 
   interface EventArguments {
     session_proposal: JsonRpcRequest<ProposalTypes.Struct>;
-    session_update: JsonRpcRequest<{ namespaces: SessionTypes.Namespaces }>;
+    session_update: JsonRpcRequest<{ topic: string; namespaces: SessionTypes.Namespaces }>;
     session_extend: JsonRpcRequest<{ topic: string }>;
     session_ping: JsonRpcRequest<{ topic: string }>;
     pairing_ping: JsonRpcRequest<{ topic: string }>;
