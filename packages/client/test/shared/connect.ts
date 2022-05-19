@@ -57,7 +57,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     new Promise<void>((resolve, reject) => {
       B.once("session_proposal", async proposal => {
         try {
-          expect(proposal.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
+          expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
 
           const { acknowledged } = await B.approve({
             id: proposal.id,

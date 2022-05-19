@@ -22,7 +22,9 @@ export const CLIENT_EVENTS: Record<ClientTypes.Event, ClientTypes.Event> = {
   session_ping: "session_ping",
   pairing_ping: "pairing_ping",
   session_delete: "session_delete",
+  session_expired: "session_expired",
   pairing_delete: "pairing_delete",
+  pairing_expired: "pairing_expired",
   request: "request",
   event: "event",
 };
