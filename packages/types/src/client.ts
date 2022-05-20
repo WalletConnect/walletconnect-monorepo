@@ -7,7 +7,6 @@ import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "./history";
 import { CoreTypes, ICore } from "./core";
 import { IExpirer } from "./expirer";
-import { JsonRpcRequest } from "@walletconnect/jsonrpc-types";
 
 export declare namespace ClientTypes {
   type Event =
@@ -23,30 +22,28 @@ export declare namespace ClientTypes {
     | "request"
     | "event";
 
+  interface BaseEventArgs<T> {
+    id: number;
+    topic: string;
+    params: T;
+  }
+
   interface EventArguments {
-    session_proposal: JsonRpcRequest<ProposalTypes.Struct>;
-    session_update: JsonRpcRequest<{ topic: string; namespaces: SessionTypes.Namespaces }>;
-    session_extend: JsonRpcRequest<{ topic: string }>;
-    session_ping: JsonRpcRequest<{ topic: string }>;
-    pairing_ping: JsonRpcRequest<{ topic: string }>;
-    session_delete: JsonRpcRequest<{ topic: string }>;
-    pairing_delete: JsonRpcRequest<{ topic: string }>;
+    session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
+    session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
+    session_extend: Omit<BaseEventArgs<unknown>, "params">;
+    session_ping: Omit<BaseEventArgs<unknown>, "params">;
+    pairing_ping: Omit<BaseEventArgs<unknown>, "params">;
+    session_delete: Omit<BaseEventArgs<unknown>, "params">;
+    pairing_delete: Omit<BaseEventArgs<unknown>, "params">;
     session_expire: { topic: string };
     pairing_expire: { topic: string };
-    request: JsonRpcRequest<{
-      topic: string;
-      request: {
-        method: string;
-        params: any;
-      };
+    request: BaseEventArgs<{
+      request: { method: string; params: any };
       chainId?: string;
     }>;
-    event: JsonRpcRequest<{
-      topic: string;
-      event: {
-        name: string;
-        data: any;
-      };
+    event: BaseEventArgs<{
+      event: { name: string; data: any };
       chainId?: string;
     }>;
   }
