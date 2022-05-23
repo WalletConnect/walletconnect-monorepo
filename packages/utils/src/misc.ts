@@ -175,6 +175,10 @@ export function calcExpiry(ttl: number, now?: number): number {
   return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
 }
 
+export function isExpired(expiry: number) {
+  return fromMiliseconds(Date.now()) >= toMiliseconds(expiry);
+}
+
 // -- promises --------------------------------------------- //
 export function createDelayedPromise<T>() {
   const timeout = toMiliseconds(FIVE_MINUTES);

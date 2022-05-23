@@ -1,6 +1,6 @@
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
-import { EXPIRER_EVENTS, SESSION_EXPIRY, PROPOSAL_EXPIRY } from "../constants";
+import { EXPIRER_EVENTS, SESSION_EXPIRY, PROPOSAL_EXPIRY, ENGINE_CONTEXT } from "../constants";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -43,21 +43,32 @@ import {
   isValidResponse,
   isValidRequiredNamespaces,
   isSessionCompatible,
+  isExpired,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
 export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
+  private initialized = false;
+  public name = ENGINE_CONTEXT;
 
   constructor(client: IEngine["client"]) {
     super(client);
-    this.registerRelayerEvents();
-    this.registerExpirerEvents();
   }
+
+  public init: IEngine["init"] = async () => {
+    if (!this.initialized) {
+      await this.cleanup();
+      this.registerRelayerEvents();
+      this.registerExpirerEvents();
+      this.initialized = true;
+    }
+  };
 
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async params => {
+    this.isInitialized();
     this.isValidConnect(params);
     const { pairingTopic, requiredNamespaces, relays } = params;
     let topic = pairingTopic;
@@ -105,6 +116,7 @@ export class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async params => {
+    this.isInitialized();
     this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
@@ -118,6 +130,7 @@ export class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async params => {
+    this.isInitialized();
     this.isValidApprove(params);
     const { id, relayProtocol, namespaces } = params;
     const { pairingTopic, proposer } = this.client.proposal.get(id);
@@ -177,6 +190,7 @@ export class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async params => {
+    this.isInitialized();
     this.isValidReject(params);
     const { id, reason } = params;
     const { pairingTopic } = this.client.proposal.get(id);
@@ -187,6 +201,7 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async params => {
+    this.isInitialized();
     this.isValidUpdate(params);
     const { topic, namespaces } = params;
     const id = await this.sendRequest(topic, "wc_sessionUpdate", { namespaces });
@@ -200,6 +215,7 @@ export class Engine extends IEngine {
   };
 
   public extend: IEngine["extend"] = async params => {
+    this.isInitialized();
     this.isValidExtend(params);
     const { topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionExtend", {});
@@ -213,6 +229,7 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async params => {
+    this.isInitialized();
     this.isValidRequest(params);
     const { chainId, request, topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
@@ -225,6 +242,7 @@ export class Engine extends IEngine {
   };
 
   public respond: IEngine["respond"] = async params => {
+    this.isInitialized();
     this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
@@ -236,6 +254,7 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async params => {
+    this.isInitialized();
     this.isValidPing(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
@@ -258,12 +277,14 @@ export class Engine extends IEngine {
   };
 
   public emit: IEngine["emit"] = async params => {
+    this.isInitialized();
     this.isValidEmit(params);
     const { topic, event, chainId } = params;
     await this.sendRequest(topic, "wc_sessionEvent", { event, chainId });
   };
 
   public disconnect: IEngine["disconnect"] = async params => {
+    this.isInitialized();
     this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
@@ -286,6 +307,7 @@ export class Engine extends IEngine {
   };
 
   public find: IEngine["find"] = params => {
+    this.isInitialized();
     return this.client.session.values.filter(session => isSessionCompatible(session, params));
   };
 
@@ -367,6 +389,25 @@ export class Engine extends IEngine {
     await this.client.core.relayer.publish(topic, message);
     await this.client.history.resolve(payload);
   };
+
+  private cleanup: EnginePrivate["cleanup"] = async () => {
+    const sessionTopics: string[] = [];
+    const pairingTopics: string[] = [];
+    this.client.session.values.forEach(session => {
+      if (isExpired(session.expiry)) sessionTopics.push(session.topic);
+    });
+    this.client.pairing.values.forEach(pairing => {
+      if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
+    });
+    await Promise.all([
+      ...sessionTopics.map(this.deleteSession),
+      ...pairingTopics.map(this.deletePairing),
+    ]);
+  };
+
+  private isInitialized() {
+    if (!this.initialized) throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+  }
 
   // ---------- Relay Events Router ----------------------------------- //
 

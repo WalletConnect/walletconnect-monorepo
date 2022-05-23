@@ -162,6 +162,8 @@ export interface EnginePrivate {
 
   setExpiry(topic: string, expiry: number): Promise<void>;
 
+  cleanup(): Promise<void>;
+
   onSessionProposeRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
@@ -285,6 +287,8 @@ export interface EnginePrivate {
 
 export abstract class IEngine {
   constructor(public client: IClient) {}
+
+  public abstract init(): Promise<void>;
 
   public abstract connect(
     params: EngineTypes.ConnectParams,

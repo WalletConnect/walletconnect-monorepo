@@ -20,7 +20,6 @@ export class Client extends IClient {
   public core: IClient["core"];
   public logger: IClient["logger"];
   public events: IClient["events"] = new EventEmitter();
-
   public engine: IClient["engine"];
   public pairing: IClient["pairing"];
   public session: IClient["session"];
@@ -53,7 +52,6 @@ export class Client extends IClient {
     this.proposal = new Proposal(this.core, this.logger);
     this.history = new JsonRpcHistory(this.core, this.logger);
     this.expirer = new Expirer(this.core, this.logger);
-
     this.engine = new Engine(this);
   }
 
@@ -200,7 +198,7 @@ export class Client extends IClient {
       await this.proposal.init();
       await this.history.init();
       await this.expirer.init();
-
+      await this.engine.init();
       this.logger.info(`Client Initilization Success`);
     } catch (error) {
       this.logger.info(`Client Initilization Failure`);
