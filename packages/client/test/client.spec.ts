@@ -44,14 +44,13 @@ describe("Client Integration", () => {
           pairingA: { topic },
         } = await testConnectMethod(clients);
         const reason = ERROR.USER_DISCONNECTED.format();
-        await clients.A.disconnect({ topic, reason });
+        const { acknowledged } = await clients.A.disconnect({ topic, reason });
+        await acknowledged();
         expect(() => clients.A.pairing.get(topic)).to.throw(
           `No matching pairing with topic: ${topic}`,
         );
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith(
-          `No matching pairing or session with topic: ${topic}`,
-        );
+        await expect(promise).to.eventually.be.rejectedWith("Missing or invalid topic");
         deleteClients(clients);
       });
     });
@@ -62,14 +61,13 @@ describe("Client Integration", () => {
           sessionA: { topic },
         } = await testConnectMethod(clients);
         const reason = ERROR.USER_DISCONNECTED.format();
-        await clients.A.disconnect({ topic, reason });
+        const { acknowledged } = await clients.A.disconnect({ topic, reason });
+        await acknowledged();
         expect(() => clients.A.session.get(topic)).to.throw(
           `No matching session with topic: ${topic}`,
         );
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith(
-          `No matching pairing or session with topic: ${topic}`,
-        );
+        await expect(promise).to.eventually.be.rejectedWith("Missing or invalid topic");
         deleteClients(clients);
       });
     });
@@ -80,7 +78,7 @@ describe("Client Integration", () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
-        `No matching pairing or session with topic: ${fakeTopic}`,
+        "Missing or invalid topic",
       );
       deleteClients(clients);
     });
@@ -179,10 +177,11 @@ describe("Client Integration", () => {
           events: ["accountsChanged"],
         },
       };
-      await clients.A.update({
+      const { acknowledged } = await clients.A.update({
         topic,
         namespaces: namespacesAfter,
       });
+      await acknowledged();
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
       deleteClients(clients);
@@ -197,9 +196,10 @@ describe("Client Integration", () => {
       } = await testConnectMethod(clients);
       // Adjusted due to tests sometimes being ahead by 1s
       const newExpiry = calcExpiry(SEVEN_DAYS) - 10;
-      await clients.A.extend({
+      const { acknowledged } = await clients.A.extend({
         topic,
       });
+      await acknowledged();
       const expiry = clients.A.session.get(topic).expiry;
       expect(expiry).to.be.greaterThanOrEqual(newExpiry);
       deleteClients(clients);

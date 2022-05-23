@@ -39,13 +39,13 @@ describe("Client Validation", () => {
     it("throws when invalid pairingTopic is provided", async () => {
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect pairingTopic");
+      ).to.eventually.be.rejectedWith("Missing or invalid pairing topic");
     });
 
     it("throws when empty pairingTopic is provided", async () => {
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect pairingTopic");
+      ).to.eventually.be.rejectedWith("Missing or invalid pairing topic");
     });
 
     it("throws when non existant pairingTopic is provided", async () => {
@@ -331,19 +331,19 @@ describe("Client Validation", () => {
     it("throws when invalid topic is provided", async () => {
       await expect(
         client.update({ ...TEST_UPDATE_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid update topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(
         client.update({ ...TEST_UPDATE_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid update topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
         client.update({ ...TEST_UPDATE_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid update topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when non existant topic is provided", async () => {
@@ -380,19 +380,19 @@ describe("Client Validation", () => {
 
     it("throws when invalid topic is provided", async () => {
       await expect(client.extend({ topic: 123 })).to.eventually.be.rejectedWith(
-        "Missing or invalid extend topic",
+        "Missing or invalid session topic",
       );
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(client.extend({ topic: "" })).to.eventually.be.rejectedWith(
-        "Missing or invalid extend topic",
+        "Missing or invalid session topic",
       );
     });
 
     it("throws when no topic is provided", async () => {
       await expect(client.extend({ topic: undefined })).to.eventually.be.rejectedWith(
-        "Missing or invalid extend topic",
+        "Missing or invalid session topic",
       );
     });
 
@@ -413,19 +413,19 @@ describe("Client Validation", () => {
     it("throws when invalid topic is provided", async () => {
       await expect(
         client.request({ ...TEST_REQUEST_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid request topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(
         client.request({ ...TEST_REQUEST_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid request topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
         client.request({ ...TEST_REQUEST_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid request topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when non existant topic is provided", async () => {
@@ -505,19 +505,19 @@ describe("Client Validation", () => {
     it("throws when invalid topic is provided", async () => {
       await expect(
         client.respond({ ...TEST_REQUEST_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid respond topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(
         client.respond({ ...TEST_RESPOND_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid respond topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
         client.respond({ ...TEST_RESPOND_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid respond topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when no response or error is passed", async () => {
@@ -584,25 +584,25 @@ describe("Client Validation", () => {
 
     it("throws when invalid topic is provided", async () => {
       await expect(client.ping({ topic: 123 })).to.eventually.be.rejectedWith(
-        "Missing or invalid ping topic",
+        "Missing or invalid topic",
       );
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(client.ping({ topic: "" })).to.eventually.be.rejectedWith(
-        "Missing or invalid ping topic",
+        "Missing or invalid topic",
       );
     });
 
     it("throws when no topic is provided", async () => {
       await expect(client.ping({ topic: undefined })).to.eventually.be.rejectedWith(
-        "Missing or invalid ping topic",
+        "Missing or invalid topic",
       );
     });
 
     it("throws when non existant topic is provided", async () => {
       await expect(client.ping({ topic: "none" })).to.eventually.be.rejectedWith(
-        "No matching pairing or session with topic: none",
+        "Missing or invalid topic",
       );
     });
   });
@@ -614,20 +614,20 @@ describe("Client Validation", () => {
 
     it("throws when invalid topic is provided", async () => {
       await expect(client.emit({ ...TEST_EMIT_PARAMS, topic: 123 })).to.eventually.be.rejectedWith(
-        "Missing or invalid emit topic",
+        "Missing or invalid session topic",
       );
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(client.emit({ ...TEST_EMIT_PARAMS, topic: "" })).to.eventually.be.rejectedWith(
-        "Missing or invalid emit topic",
+        "Missing or invalid session topic",
       );
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
         client.emit({ ...TEST_EMIT_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid emit topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
     });
 
     it("throws when non existant topic is provided", async () => {
@@ -700,25 +700,25 @@ describe("Client Validation", () => {
 
     it("throws when invalid topic is provided", async () => {
       await expect(client.disconnect({ topic: 123 })).to.eventually.be.rejectedWith(
-        "Missing or invalid disconnect topic",
+        "Missing or invalid topic",
       );
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(client.disconnect({ topic: "" })).to.eventually.be.rejectedWith(
-        "Missing or invalid disconnect topic",
+        "Missing or invalid topic",
       );
     });
 
     it("throws when no topic is provided", async () => {
       await expect(client.disconnect({ topic: undefined })).to.eventually.be.rejectedWith(
-        "Missing or invalid disconnect topic",
+        "Missing or invalid topic",
       );
     });
 
     it("throws when non existant topic is provided", async () => {
       await expect(client.disconnect({ topic: "none" })).to.eventually.be.rejectedWith(
-        "No matching pairing or session with topic: none",
+        "Missing or invalid topic",
       );
     });
   });

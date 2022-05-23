@@ -6,3 +6,13 @@
 4. Verify installation `npm run check`
 5. Start relay server `PORT=5555 npm run start --prefix=servers/relay`
 6. If you update npm packages, run `npm run test --prefix=packages/client`
+
+# Troubleshooting
+
+1. If you are experiencing issues with installation ensure you install `npm i -g node-gyp`
+2. You will need to have xcode command line tools installed
+3. If there are issues with xcode command line tools try running
+```zsh
+sudo xcode-select --switch /Library/Developer/CommandLineTools
+sudo xcode-select --reset
+```

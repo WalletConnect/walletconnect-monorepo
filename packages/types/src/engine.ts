@@ -23,7 +23,7 @@ export declare namespace EngineTypes {
     | "pairing_ping"
     | "session_delete"
     | "pairing_delete"
-    | "request";
+    | "session_request";
 
   interface EventArguments {
     session_connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
@@ -34,7 +34,7 @@ export declare namespace EngineTypes {
     pairing_ping: { error?: ErrorResponse };
     session_delete: { error?: ErrorResponse };
     pairing_delete: { error?: ErrorResponse };
-    request: { error?: ErrorResponse; data?: JsonRpcResponse };
+    session_request: { error?: ErrorResponse; data?: JsonRpcResponse };
   }
 
   interface UriParameters {
@@ -115,6 +115,8 @@ export declare namespace EngineTypes {
   interface FindParams {
     requiredNamespaces: ProposalTypes.RequiredNamespaces;
   }
+
+  type AcknowledgedPromise = Promise<{ acknowledged: () => Promise<void> }>;
 }
 
 export abstract class IEngineEvents extends EventEmitter {
@@ -161,6 +163,8 @@ export interface EnginePrivate {
   deletePairing(topic: string): Promise<void>;
 
   setExpiry(topic: string, expiry: number): Promise<void>;
+
+  cleanup(): Promise<void>;
 
   onSessionProposeRequest(
     topic: string,
@@ -245,7 +249,7 @@ export interface EnginePrivate {
   onSessionRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
-  ): void;
+  ): Promise<void>;
 
   onSessionRequestResponse(
     topic: string,
@@ -255,10 +259,10 @@ export interface EnginePrivate {
   onSessionEventRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionEvent"]>,
-  ): void;
+  ): Promise<void>;
 
   // -- Validators ---------------------------------------------------- //
-  isValidConnect(params: EngineTypes.ConnectParams): void;
+  isValidConnect(params: EngineTypes.ConnectParams): Promise<void>;
 
   isValidPair(params: EngineTypes.PairParams): void;
 
@@ -266,25 +270,27 @@ export interface EnginePrivate {
 
   isValidReject(params: EngineTypes.RejectParams): void;
 
-  isValidUpdate(params: EngineTypes.UpdateParams): void;
+  isValidUpdate(params: EngineTypes.UpdateParams): Promise<void>;
 
-  isValidExtend(params: EngineTypes.ExtendParams): void;
+  isValidExtend(params: EngineTypes.ExtendParams): Promise<void>;
 
-  isValidRequest(params: EngineTypes.RequestParams): void;
+  isValidRequest(params: EngineTypes.RequestParams): Promise<void>;
 
-  isValidRespond(params: EngineTypes.RespondParams): void;
+  isValidRespond(params: EngineTypes.RespondParams): Promise<void>;
 
-  isValidPing(params: EngineTypes.PingParams): void;
+  isValidPing(params: EngineTypes.PingParams): Promise<void>;
 
-  isValidEmit(params: EngineTypes.EmitParams): void;
+  isValidEmit(params: EngineTypes.EmitParams): Promise<void>;
 
-  isValidDisconnect(params: EngineTypes.DisconnectParams): void;
+  isValidDisconnect(params: EngineTypes.DisconnectParams): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //
 
 export abstract class IEngine {
   constructor(public client: IClient) {}
+
+  public abstract init(): Promise<void>;
 
   public abstract connect(
     params: EngineTypes.ConnectParams,
@@ -298,9 +304,9 @@ export abstract class IEngine {
 
   public abstract reject(params: EngineTypes.RejectParams): Promise<void>;
 
-  public abstract update(params: EngineTypes.UpdateParams): Promise<void>;
+  public abstract update(params: EngineTypes.UpdateParams): EngineTypes.AcknowledgedPromise;
 
-  public abstract extend(params: EngineTypes.ExtendParams): Promise<void>;
+  public abstract extend(params: EngineTypes.ExtendParams): EngineTypes.AcknowledgedPromise;
 
   public abstract request(params: EngineTypes.RequestParams): Promise<JsonRpcResponse>;
 
@@ -310,7 +316,7 @@ export abstract class IEngine {
 
   public abstract ping(params: EngineTypes.PingParams): Promise<void>;
 
-  public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
+  public abstract disconnect(params: EngineTypes.DisconnectParams): EngineTypes.AcknowledgedPromise;
 
   public abstract find: (params: EngineTypes.FindParams) => SessionTypes.Struct[];
 }

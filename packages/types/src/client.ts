@@ -19,8 +19,8 @@ export declare namespace ClientTypes {
     | "pairing_delete"
     | "session_expire"
     | "pairing_expire"
-    | "request"
-    | "event";
+    | "session_request"
+    | "session_event";
 
   interface BaseEventArgs<T> {
     id: number;
@@ -38,11 +38,11 @@ export declare namespace ClientTypes {
     pairing_delete: Omit<BaseEventArgs<unknown>, "params">;
     session_expire: { topic: string };
     pairing_expire: { topic: string };
-    request: BaseEventArgs<{
+    session_request: BaseEventArgs<{
       request: { method: string; params: any };
       chainId?: string;
     }>;
-    event: BaseEventArgs<{
+    session_event: BaseEventArgs<{
       event: { name: string; data: any };
       chainId?: string;
     }>;
