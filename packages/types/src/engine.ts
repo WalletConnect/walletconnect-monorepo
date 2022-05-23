@@ -262,7 +262,7 @@ export interface EnginePrivate {
   ): Promise<void>;
 
   // -- Validators ---------------------------------------------------- //
-  isValidConnect(params: EngineTypes.ConnectParams): void;
+  isValidConnect(params: EngineTypes.ConnectParams): Promise<void>;
 
   isValidPair(params: EngineTypes.PairParams): void;
 
@@ -270,19 +270,19 @@ export interface EnginePrivate {
 
   isValidReject(params: EngineTypes.RejectParams): void;
 
-  isValidUpdate(params: EngineTypes.UpdateParams): void;
+  isValidUpdate(params: EngineTypes.UpdateParams): Promise<void>;
 
-  isValidExtend(params: EngineTypes.ExtendParams): void;
+  isValidExtend(params: EngineTypes.ExtendParams): Promise<void>;
 
-  isValidRequest(params: EngineTypes.RequestParams): void;
+  isValidRequest(params: EngineTypes.RequestParams): Promise<void>;
 
-  isValidRespond(params: EngineTypes.RespondParams): void;
+  isValidRespond(params: EngineTypes.RespondParams): Promise<void>;
 
-  isValidPing(params: EngineTypes.PingParams): void;
+  isValidPing(params: EngineTypes.PingParams): Promise<void>;
 
-  isValidEmit(params: EngineTypes.EmitParams): void;
+  isValidEmit(params: EngineTypes.EmitParams): Promise<void>;
 
-  isValidDisconnect(params: EngineTypes.DisconnectParams): void;
+  isValidDisconnect(params: EngineTypes.DisconnectParams): Promise<void>;
 }
 
 // -- class interface ----------------------------------------------- //

@@ -44,6 +44,7 @@ import {
   isValidRequiredNamespaces,
   isSessionCompatible,
   isExpired,
+  isUndefined,
 } from "@walletconnect/utils";
 import { JsonRpcResponse } from "@walletconnect/jsonrpc-types";
 
@@ -69,7 +70,7 @@ export class Engine extends IEngine {
 
   public connect: IEngine["connect"] = async params => {
     this.isInitialized();
-    this.isValidConnect(params);
+    await this.isValidConnect(params);
     const { pairingTopic, requiredNamespaces, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined = undefined;
@@ -202,7 +203,7 @@ export class Engine extends IEngine {
 
   public update: IEngine["update"] = async params => {
     this.isInitialized();
-    this.isValidUpdate(params);
+    await this.isValidUpdate(params);
     const { topic, namespaces } = params;
     const id = await this.sendRequest(topic, "wc_sessionUpdate", { namespaces });
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
@@ -217,7 +218,7 @@ export class Engine extends IEngine {
 
   public extend: IEngine["extend"] = async params => {
     this.isInitialized();
-    this.isValidExtend(params);
+    await this.isValidExtend(params);
     const { topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionExtend", {});
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
@@ -232,7 +233,7 @@ export class Engine extends IEngine {
 
   public request: IEngine["request"] = async params => {
     this.isInitialized();
-    this.isValidRequest(params);
+    await this.isValidRequest(params);
     const { chainId, request, topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
     const { done, resolve, reject } = createDelayedPromise<JsonRpcResponse>();
@@ -245,7 +246,7 @@ export class Engine extends IEngine {
 
   public respond: IEngine["respond"] = async params => {
     this.isInitialized();
-    this.isValidRespond(params);
+    await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
     if (isJsonRpcResult(response)) {
@@ -257,7 +258,7 @@ export class Engine extends IEngine {
 
   public ping: IEngine["ping"] = async params => {
     this.isInitialized();
-    this.isValidPing(params);
+    await this.isValidPing(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_sessionPing", {});
@@ -280,14 +281,14 @@ export class Engine extends IEngine {
 
   public emit: IEngine["emit"] = async params => {
     this.isInitialized();
-    this.isValidEmit(params);
+    await this.isValidEmit(params);
     const { topic, event, chainId } = params;
     await this.sendRequest(topic, "wc_sessionEvent", { event, chainId });
   };
 
   public disconnect: IEngine["disconnect"] = async params => {
     this.isInitialized();
-    this.isValidDisconnect(params);
+    await this.isValidDisconnect(params);
     const { topic } = params;
 
     if (this.client.session.keys.includes(topic)) {
@@ -807,13 +808,38 @@ export class Engine extends IEngine {
   }
 
   // ---------- Validation ---------------------------------------------- //
-  private isValidConnect: EnginePrivate["isValidConnect"] = params => {
+  private async isValidPairingTopic(topic: string) {
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: `pairing topic` });
+    if (!this.client.pairing.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic });
+    if (isExpired(this.client.pairing.get(topic).expiry)) {
+      await this.deletePairing(topic);
+      throw ERROR.EXPIRED.format({ context: "pairing", topic });
+    }
+  }
+
+  private async isValidSessionTopic(topic: string) {
+    if (!isValidString(topic, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: `session topic` });
+    if (!this.client.session.keys.includes(topic))
+      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    if (isExpired(this.client.session.get(topic).expiry)) {
+      await this.deleteSession(topic);
+      throw ERROR.EXPIRED.format({ context: "session", topic });
+    }
+  }
+
+  private async isValidSessionOrPairingTopic(topic: string) {
+    if (this.client.session.keys.includes(topic)) await this.isValidSessionTopic(topic);
+    else if (this.client.pairing.keys.includes(topic)) await this.isValidPairingTopic(topic);
+    else throw ERROR.MISSING_OR_INVALID.format({ name: "topic" });
+  }
+
+  private isValidConnect: EnginePrivate["isValidConnect"] = async params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "connect params" });
     const { pairingTopic, requiredNamespaces, relays } = params;
-    if (!isValidString(pairingTopic, true))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "connect pairingTopic" });
-    if (pairingTopic && !this.client.pairing.keys.includes(pairingTopic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic: pairingTopic });
+    if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
     if (!isValidRequiredNamespaces(requiredNamespaces, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "connect requiredNamespaces" });
     if (!isValidRelays(relays, true))
@@ -843,33 +869,24 @@ export class Engine extends IEngine {
       throw ERROR.MISSING_OR_INVALID.format({ name: "reject reason" });
   };
 
-  private isValidUpdate: EnginePrivate["isValidUpdate"] = params => {
+  private isValidUpdate: EnginePrivate["isValidUpdate"] = async params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "update params" });
     const { topic, namespaces } = params;
-    if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "update topic" });
-    if (!this.client.session.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    await this.isValidSessionTopic(topic);
     if (!isValidNamespaces(namespaces, false))
       throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
   };
 
-  private isValidExtend: EnginePrivate["isValidExtend"] = params => {
+  private isValidExtend: EnginePrivate["isValidExtend"] = async params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "extend params" });
     const { topic } = params;
-    if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "extend topic" });
-    if (!this.client.session.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    await this.isValidSessionTopic(topic);
   };
 
-  private isValidRequest: EnginePrivate["isValidRequest"] = params => {
+  private isValidRequest: EnginePrivate["isValidRequest"] = async params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "request params" });
     const { topic, request, chainId } = params;
-    if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "request topic" });
-    if (!this.client.session.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
     if (!isValidNamespacesChainId(namespaces, chainId))
       throw ERROR.MISSING_OR_INVALID.format({ name: "request chainId" });
@@ -878,31 +895,24 @@ export class Engine extends IEngine {
       throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
   };
 
-  private isValidRespond: EnginePrivate["isValidRespond"] = params => {
+  private isValidRespond: EnginePrivate["isValidRespond"] = async params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "respond params" });
     const { topic, response } = params;
-    if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "respond topic" });
-    if (!this.client.session.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    await this.isValidSessionTopic(topic);
     if (!isValidResponse(response))
       throw ERROR.MISSING_OR_INVALID.format({ name: "respond response" });
   };
 
-  private isValidPing: EnginePrivate["isValidPing"] = params => {
+  private isValidPing: EnginePrivate["isValidPing"] = async params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping params" });
     const { topic } = params;
-    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping topic" });
-    if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
+    await this.isValidSessionOrPairingTopic(topic);
   };
 
-  private isValidEmit: EnginePrivate["isValidEmit"] = params => {
+  private isValidEmit: EnginePrivate["isValidEmit"] = async params => {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit params" });
     const { topic, event, chainId } = params;
-    if (!isValidString(topic, false)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit topic" });
-    if (!this.client.session.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+    await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
     if (!isValidNamespacesChainId(namespaces, chainId))
       throw ERROR.MISSING_OR_INVALID.format({ name: "emit chainId" });
@@ -911,13 +921,10 @@ export class Engine extends IEngine {
       throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
   };
 
-  private isValidDisconnect: EnginePrivate["isValidDisconnect"] = params => {
+  private isValidDisconnect: EnginePrivate["isValidDisconnect"] = async params => {
     if (!isValidParams(params))
       throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect params" });
     const { topic } = params;
-    if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect topic" });
-    if (!this.client.session.keys.includes(topic) && !this.client.pairing.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing or session", topic });
+    await this.isValidSessionOrPairingTopic(topic);
   };
 }

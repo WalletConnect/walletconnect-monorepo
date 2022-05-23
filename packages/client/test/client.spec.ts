@@ -50,9 +50,7 @@ describe("Client Integration", () => {
           `No matching pairing with topic: ${topic}`,
         );
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith(
-          `No matching pairing or session with topic: ${topic}`,
-        );
+        await expect(promise).to.eventually.be.rejectedWith("Missing or invalid topic");
         deleteClients(clients);
       });
     });
@@ -69,9 +67,7 @@ describe("Client Integration", () => {
           `No matching session with topic: ${topic}`,
         );
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith(
-          `No matching pairing or session with topic: ${topic}`,
-        );
+        await expect(promise).to.eventually.be.rejectedWith("Missing or invalid topic");
         deleteClients(clients);
       });
     });
@@ -82,7 +78,7 @@ describe("Client Integration", () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
-        `No matching pairing or session with topic: ${fakeTopic}`,
+        "Missing or invalid topi",
       );
       deleteClients(clients);
     });
