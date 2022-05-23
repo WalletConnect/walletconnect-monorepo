@@ -756,7 +756,7 @@ export class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("session_request", id), { data: payload.result });
+      this.events.emit(engineEvent("session_request", id), { data: payload });
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_request", id), { error: payload.error });
     }
