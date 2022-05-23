@@ -13,6 +13,7 @@ import {
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
   IEngine,
+  EngineTypes,
   IEngineEvents,
   RelayerTypes,
   EnginePrivate,
@@ -46,7 +47,6 @@ import {
   isExpired,
   isUndefined,
 } from "@walletconnect/utils";
-import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 
 export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
@@ -234,12 +234,12 @@ export class Engine extends IEngine {
     return { acknowledged };
   };
 
-  public request: IEngine["request"] = async params => {
+  public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
     this.isInitialized();
     await this.isValidRequest(params);
     const { chainId, request, topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
-    const { done, resolve, reject } = createDelayedPromise<JsonRpcResult>();
+    const { done, resolve, reject } = createDelayedPromise<T>();
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
       if (error) reject(error);
       else if (result) resolve(result);
@@ -775,7 +775,7 @@ export class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("session_request", id), { result: payload });
+      this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_request", id), { error: payload.error });
     }

@@ -4,7 +4,7 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { ClientTypes, IClient, IClientEvents } from "@walletconnect/types";
+import { ClientTypes, IClient, IClientEvents, EngineTypes } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino from "pino";
@@ -133,9 +133,9 @@ export class Client extends IClient {
     }
   };
 
-  public request: IClient["request"] = async params => {
+  public request: IClient["request"] = async <T>(params: EngineTypes.RequestParams) => {
     try {
-      return await this.engine.request(params);
+      return await this.engine.request<T>(params);
     } catch (error) {
       this.logger.error((error as any).message);
       throw error;
