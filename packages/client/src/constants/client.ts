@@ -25,8 +25,8 @@ export const CLIENT_EVENTS: Record<ClientTypes.Event, ClientTypes.Event> = {
   session_expire: "session_expire",
   pairing_delete: "pairing_delete",
   pairing_expire: "pairing_expire",
-  request: "request",
-  event: "event",
+  session_request: "session_request",
+  session_event: "session_event",
 };
 
 export const CLIENT_STORAGE_OPTIONS = {

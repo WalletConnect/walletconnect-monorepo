@@ -648,8 +648,8 @@ export class Engine extends IEngine {
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
       const { id } = payload;
-      await this.sendResult<"wc_sessionDelete">(id, topic, true);
       await this.deleteSession(topic);
+      await this.sendResult<"wc_sessionDelete">(id, topic, true);
       this.client.events.emit("session_delete", { id, topic });
     } catch (err) {
       this.client.logger.error(err);
@@ -676,8 +676,8 @@ export class Engine extends IEngine {
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
       const { id } = payload;
-      await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
+      await this.sendResult<"wc_pairingDelete">(id, topic, true);
       this.client.events.emit("pairing_delete", { id, topic });
     } catch (err) {
       this.client.logger.error(err);
@@ -701,7 +701,7 @@ export class Engine extends IEngine {
     try {
       const { id, params } = payload;
       this.isValidRequest({ topic, ...params });
-      this.client.events.emit("request", { id, topic, params });
+      this.client.events.emit("session_request", { id, topic, params });
     } catch (err) {
       this.client.logger.error(err);
     }
@@ -723,7 +723,7 @@ export class Engine extends IEngine {
     try {
       const { id, params } = payload;
       this.isValidEmit({ topic, ...params });
-      this.client.events.emit("event", { id, topic, params });
+      this.client.events.emit("session_event", { id, topic, params });
     } catch (err) {
       this.client.logger.error(err);
     }
