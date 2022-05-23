@@ -78,7 +78,7 @@ describe("Client Integration", () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
-        "Missing or invalid topi",
+        "Missing or invalid topic",
       );
       deleteClients(clients);
     });
