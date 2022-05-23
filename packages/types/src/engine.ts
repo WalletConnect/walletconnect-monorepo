@@ -115,6 +115,8 @@ export declare namespace EngineTypes {
   interface FindParams {
     requiredNamespaces: ProposalTypes.RequiredNamespaces;
   }
+
+  type AcknowledgedPromise = Promise<{ acknowledged: () => Promise<void> }>;
 }
 
 export abstract class IEngineEvents extends EventEmitter {
@@ -302,9 +304,9 @@ export abstract class IEngine {
 
   public abstract reject(params: EngineTypes.RejectParams): Promise<void>;
 
-  public abstract update(params: EngineTypes.UpdateParams): Promise<void>;
+  public abstract update(params: EngineTypes.UpdateParams): EngineTypes.AcknowledgedPromise;
 
-  public abstract extend(params: EngineTypes.ExtendParams): Promise<void>;
+  public abstract extend(params: EngineTypes.ExtendParams): EngineTypes.AcknowledgedPromise;
 
   public abstract request(params: EngineTypes.RequestParams): Promise<JsonRpcResponse>;
 
@@ -314,7 +316,7 @@ export abstract class IEngine {
 
   public abstract ping(params: EngineTypes.PingParams): Promise<void>;
 
-  public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
+  public abstract disconnect(params: EngineTypes.DisconnectParams): EngineTypes.AcknowledgedPromise;
 
   public abstract find: (params: EngineTypes.FindParams) => SessionTypes.Struct[];
 }

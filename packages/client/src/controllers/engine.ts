@@ -205,13 +205,14 @@ export class Engine extends IEngine {
     this.isValidUpdate(params);
     const { topic, namespaces } = params;
     const id = await this.sendRequest(topic, "wc_sessionUpdate", { namespaces });
-    const { done, resolve, reject } = createDelayedPromise<void>();
+    const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_update", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
-    await done();
     await this.client.session.update(topic, { namespaces });
+
+    return { acknowledged };
   };
 
   public extend: IEngine["extend"] = async params => {
@@ -219,13 +220,14 @@ export class Engine extends IEngine {
     this.isValidExtend(params);
     const { topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionExtend", {});
-    const { done, resolve, reject } = createDelayedPromise<void>();
+    const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_extend", id), ({ error }) => {
       if (error) reject(error);
       else resolve();
     });
-    await done();
     await this.setExpiry(topic, SESSION_EXPIRY);
+
+    return { acknowledged };
   };
 
   public request: IEngine["request"] = async params => {
@@ -287,23 +289,26 @@ export class Engine extends IEngine {
     this.isInitialized();
     this.isValidDisconnect(params);
     const { topic } = params;
+
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
-      const { done, resolve, reject } = createDelayedPromise<void>();
+      const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
       this.events.once(engineEvent("session_delete", id), ({ error }) => {
         if (error) reject(error);
         else resolve();
       });
-      await done();
-    } else if (this.client.pairing.keys.includes(topic)) {
-      const id = await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
-      const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("pairing_delete", id), ({ error }) => {
-        if (error) reject(error);
-        else resolve();
-      });
-      await done();
+
+      return { acknowledged };
     }
+
+    const id = await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
+    const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
+    this.events.once(engineEvent("pairing_delete", id), ({ error }) => {
+      if (error) reject(error);
+      else resolve();
+    });
+
+    return { acknowledged };
   };
 
   public find: IEngine["find"] = params => {
