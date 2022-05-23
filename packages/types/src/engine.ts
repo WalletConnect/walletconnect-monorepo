@@ -34,7 +34,7 @@ export declare namespace EngineTypes {
     pairing_ping: { error?: ErrorResponse };
     session_delete: { error?: ErrorResponse };
     pairing_delete: { error?: ErrorResponse };
-    session_request: { error?: ErrorResponse; response?: JsonRpcResponse };
+    session_request: { error?: ErrorResponse; result?: any };
   }
 
   interface UriParameters {
@@ -308,7 +308,7 @@ export abstract class IEngine {
 
   public abstract extend(params: EngineTypes.ExtendParams): EngineTypes.AcknowledgedPromise;
 
-  public abstract request(params: EngineTypes.RequestParams): Promise<JsonRpcResponse>;
+  public abstract request<T>(params: EngineTypes.RequestParams): Promise<T>;
 
   public abstract respond(params: EngineTypes.RespondParams): Promise<void>;
 
