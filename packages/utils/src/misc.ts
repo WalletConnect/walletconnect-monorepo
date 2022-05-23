@@ -215,5 +215,5 @@ export function createDelayedPromise<T>() {
 // -- events ---------------------------------------------- //
 
 export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
-  return `${event}:${id ?? ""}`;
+  return `${event}${id ? `:${id}` : ""}`;
 }
