@@ -98,15 +98,18 @@ export class Engine extends IEngine {
     };
 
     const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once<"session_connect">(engineEvent("session_connect"), async ({ error, data }) => {
-      if (error) reject(error);
-      else if (data) {
-        data.self.publicKey = publicKey;
-        await this.client.session.set(data.topic, data);
-        await this.setExpiry(data.topic, data.expiry);
-        resolve(data);
-      }
-    });
+    this.events.once<"session_connect">(
+      engineEvent("session_connect"),
+      async ({ error, session }) => {
+        if (error) reject(error);
+        else if (session) {
+          session.self.publicKey = publicKey;
+          await this.client.session.set(session.topic, session);
+          await this.setExpiry(session.topic, session.expiry);
+          resolve(session);
+        }
+      },
+    );
 
     if (!topic) throw new Error(ERROR.MISSING_OR_INVALID.stringify({ name: "topic" }));
 
@@ -237,10 +240,13 @@ export class Engine extends IEngine {
     const { chainId, request, topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
     const { done, resolve, reject } = createDelayedPromise<JsonRpcResponse>();
-    this.events.once<"session_request">(engineEvent("session_request", id), ({ error, data }) => {
-      if (error) reject(error);
-      else if (data) resolve(data);
-    });
+    this.events.once<"session_request">(
+      engineEvent("session_request", id),
+      ({ error, response }) => {
+        if (error) reject(error);
+        else if (response) resolve(response);
+      },
+    );
     return await done();
   };
 
@@ -582,7 +588,7 @@ export class Engine extends IEngine {
         },
       };
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
-      this.events.emit(engineEvent("session_connect"), { data: session });
+      this.events.emit(engineEvent("session_connect"), { session });
     } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -772,7 +778,7 @@ export class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("session_request", id), { data: payload });
+      this.events.emit(engineEvent("session_request", id), { response: payload });
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_request", id), { error: payload.error });
     }

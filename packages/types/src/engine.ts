@@ -26,7 +26,7 @@ export declare namespace EngineTypes {
     | "session_request";
 
   interface EventArguments {
-    session_connect: { error?: ErrorResponse; data?: SessionTypes.Struct };
+    session_connect: { error?: ErrorResponse; session?: SessionTypes.Struct };
     session_approve: { error?: ErrorResponse };
     session_update: { error?: ErrorResponse };
     session_extend: { error?: ErrorResponse };
@@ -34,7 +34,7 @@ export declare namespace EngineTypes {
     pairing_ping: { error?: ErrorResponse };
     session_delete: { error?: ErrorResponse };
     pairing_delete: { error?: ErrorResponse };
-    session_request: { error?: ErrorResponse; data?: JsonRpcResponse };
+    session_request: { error?: ErrorResponse; response?: JsonRpcResponse };
   }
 
   interface UriParameters {

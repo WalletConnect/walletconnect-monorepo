@@ -22,7 +22,7 @@ export declare namespace ClientTypes {
     | "session_request"
     | "session_event";
 
-  interface BaseEventArgs<T> {
+  interface BaseEventArgs<T = unknown> {
     id: number;
     topic: string;
     params: T;
@@ -31,20 +31,20 @@ export declare namespace ClientTypes {
   interface EventArguments {
     session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
     session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
-    session_extend: Omit<BaseEventArgs<unknown>, "params">;
-    session_ping: Omit<BaseEventArgs<unknown>, "params">;
-    pairing_ping: Omit<BaseEventArgs<unknown>, "params">;
-    session_delete: Omit<BaseEventArgs<unknown>, "params">;
-    pairing_delete: Omit<BaseEventArgs<unknown>, "params">;
+    session_extend: Omit<BaseEventArgs, "params">;
+    session_ping: Omit<BaseEventArgs, "params">;
+    pairing_ping: Omit<BaseEventArgs, "params">;
+    session_delete: Omit<BaseEventArgs, "params">;
+    pairing_delete: Omit<BaseEventArgs, "params">;
     session_expire: { topic: string };
     pairing_expire: { topic: string };
     session_request: BaseEventArgs<{
       request: { method: string; params: any };
-      chainId?: string;
+      chainId: string;
     }>;
     session_event: BaseEventArgs<{
       event: { name: string; data: any };
-      chainId?: string;
+      chainId: string;
     }>;
   }
 
