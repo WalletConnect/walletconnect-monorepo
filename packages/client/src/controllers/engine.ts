@@ -495,13 +495,14 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    const { params, id } = payload;
     try {
       this.isValidConnect({ ...payload.params });
-      const { params, id } = payload;
       const proposal = { id, pairingTopic: topic, ...params };
       await this.client.proposal.set(id, proposal);
       this.client.events.emit("session_proposal", { id, params: proposal });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -554,8 +555,9 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    const { id, params } = payload;
     try {
-      this.isValidApprove({ id: payload.id, ...payload.params });
+      this.isValidApprove({ id, ...params });
       const { relay, controller, expiry, namespaces } = payload.params;
       const session = {
         topic,
@@ -576,6 +578,7 @@ export class Engine extends IEngine {
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
       this.events.emit(engineEvent("session_connect"), { data: session });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -598,13 +601,14 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    const { params, id } = payload;
     try {
-      this.isValidUpdate({ topic, ...payload.params });
-      const { params, id } = payload;
+      this.isValidUpdate({ topic, ...params });
       await this.client.session.update(topic, { namespaces: params.namespaces });
       await this.sendResult<"wc_sessionUpdate">(id, topic, true);
       this.client.events.emit("session_update", { id, topic, params });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -622,13 +626,14 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    const { id } = payload;
     try {
       this.isValidExtend({ topic });
-      const { id } = payload;
       await this.setExpiry(topic, SESSION_EXPIRY);
       await this.sendResult<"wc_sessionExtend">(id, topic, true);
       this.client.events.emit("session_extend", { id, topic });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -643,12 +648,13 @@ export class Engine extends IEngine {
   };
 
   private onSessionPingRequest: EnginePrivate["onSessionPingRequest"] = async (topic, payload) => {
+    const { id } = payload;
     try {
       this.isValidPing({ topic });
-      const { id } = payload;
       await this.sendResult<"wc_sessionPing">(id, topic, true);
       this.client.events.emit("session_ping", { id, topic });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -663,12 +669,13 @@ export class Engine extends IEngine {
   };
 
   private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
+    const { id } = payload;
     try {
       this.isValidPing({ topic });
-      const { id } = payload;
       await this.sendResult<"wc_pairingPing">(id, topic, true);
       this.client.events.emit("pairing_ping", { id, topic });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -686,14 +693,15 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    const { id } = payload;
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
-      const { id } = payload;
       // RPC request needs to happen before deletion as it utalises session encryption
       await this.sendResult<"wc_sessionDelete">(id, topic, true);
       await this.deleteSession(topic);
       this.client.events.emit("session_delete", { id, topic });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -715,14 +723,15 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
+    const { id } = payload;
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
-      const { id } = payload;
       // RPC request needs to happen before deletion as it utalises pairing encryption
       await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
       this.client.events.emit("pairing_delete", { id, topic });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -740,12 +749,13 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionRequest: EnginePrivate["onSessionRequest"] = (topic, payload) => {
+  private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
+    const { id, params } = payload;
     try {
-      const { id, params } = payload;
       this.isValidRequest({ topic, ...params });
       this.client.events.emit("session_request", { id, topic, params });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
@@ -762,12 +772,16 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionEventRequest: EnginePrivate["onSessionEventRequest"] = (topic, payload) => {
+  private onSessionEventRequest: EnginePrivate["onSessionEventRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id, params } = payload;
     try {
-      const { id, params } = payload;
       this.isValidEmit({ topic, ...params });
       this.client.events.emit("session_event", { id, topic, params });
     } catch (err) {
+      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };

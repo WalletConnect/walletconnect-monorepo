@@ -247,7 +247,7 @@ export interface EnginePrivate {
   onSessionRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
-  ): void;
+  ): Promise<void>;
 
   onSessionRequestResponse(
     topic: string,
@@ -257,7 +257,7 @@ export interface EnginePrivate {
   onSessionEventRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionEvent"]>,
-  ): void;
+  ): Promise<void>;
 
   // -- Validators ---------------------------------------------------- //
   isValidConnect(params: EngineTypes.ConnectParams): void;
