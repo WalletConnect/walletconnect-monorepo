@@ -234,7 +234,7 @@ export class Engine extends IEngine {
     const { chainId, request, topic } = params;
     const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
     const { done, resolve, reject } = createDelayedPromise<JsonRpcResponse>();
-    this.events.once<"request">(engineEvent("request", id), ({ error, data }) => {
+    this.events.once<"session_request">(engineEvent("session_request", id), ({ error, data }) => {
       if (error) reject(error);
       else if (data) resolve(data);
     });
@@ -689,8 +689,9 @@ export class Engine extends IEngine {
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
       const { id } = payload;
-      await this.deleteSession(topic);
+      // RPC request needs to happen before deletion as it utalises session encryption
       await this.sendResult<"wc_sessionDelete">(id, topic, true);
+      await this.deleteSession(topic);
       this.client.events.emit("session_delete", { id, topic });
     } catch (err) {
       this.client.logger.error(err);
@@ -717,8 +718,9 @@ export class Engine extends IEngine {
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
       const { id } = payload;
-      await this.deletePairing(topic);
+      // RPC request needs to happen before deletion as it utalises pairing encryption
       await this.sendResult<"wc_pairingDelete">(id, topic, true);
+      await this.deletePairing(topic);
       this.client.events.emit("pairing_delete", { id, topic });
     } catch (err) {
       this.client.logger.error(err);
@@ -754,9 +756,9 @@ export class Engine extends IEngine {
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("request", id), { data: payload.result });
+      this.events.emit(engineEvent("session_request", id), { data: payload.result });
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("request", id), { error: payload.error });
+      this.events.emit(engineEvent("session_request", id), { error: payload.error });
     }
   };
 
