@@ -5,8 +5,8 @@ import {
   JsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-types";
-import { IClient } from "./client";
-import { RelayerTypes } from "./relayer";
+import { ISignClient } from "./client";
+import { RelayerTypes } from "../core/relayer";
 import { SessionTypes } from "./session";
 import { ProposalTypes } from "./proposal";
 import { PairingTypes } from "./pairing";
@@ -274,7 +274,7 @@ export interface EnginePrivate {
 // -- class interface ----------------------------------------------- //
 
 export abstract class IEngine {
-  constructor(public client: IClient) {}
+  constructor(public client: ISignClient) {}
 
   public abstract init(): Promise<void>;
 

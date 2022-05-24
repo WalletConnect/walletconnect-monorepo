@@ -5,7 +5,7 @@ import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
-  CLIENT_STORAGE_PREFIX,
+  SIGN_CLIENT_STORAGE_PREFIX,
   HISTORY_CONTEXT,
   HISTORY_EVENTS,
   HISTORY_STORAGE_VERSION,
@@ -19,7 +19,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   private cached: JsonRpcRecord[] = [];
   private initialized = false;
 
-  private storagePrefix = CLIENT_STORAGE_PREFIX;
+  private storagePrefix = SIGN_CLIENT_STORAGE_PREFIX;
 
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);

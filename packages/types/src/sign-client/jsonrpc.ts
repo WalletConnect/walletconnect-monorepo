@@ -1,6 +1,6 @@
 import { ErrorResponse, JsonRpcResult } from "@walletconnect/jsonrpc-types";
-import { ClientTypes } from "./client";
-import { RelayerTypes } from "./relayer";
+import { SignClientTypes } from "./client";
+import { RelayerTypes } from "../core/relayer";
 import { SessionTypes } from "./session";
 import { ProposalTypes } from "./proposal";
 
@@ -33,7 +33,7 @@ export declare namespace JsonRpcTypes {
       requiredNamespaces: ProposalTypes.RequiredNamespaces;
       proposer: {
         publicKey: string;
-        metadata: ClientTypes.Metadata;
+        metadata: SignClientTypes.Metadata;
       };
     };
     wc_sessionSettle: {
@@ -42,7 +42,7 @@ export declare namespace JsonRpcTypes {
       expiry: number;
       controller: {
         publicKey: string;
-        metadata: ClientTypes.Metadata;
+        metadata: SignClientTypes.Metadata;
       };
     };
     wc_sessionUpdate: {

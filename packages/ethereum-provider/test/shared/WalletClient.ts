@@ -1,7 +1,7 @@
-import Client, { CLIENT_EVENTS } from "@walletconnect/client";
+import SignClient, { SIGN_CLIENT_EVENTS } from "@walletconnect/sign-client";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
-import { ClientTypes, IClient, SessionTypes } from "@walletconnect/types";
+import { SignClientTypes, ISignClient, SessionTypes } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
 import { ethers, utils } from "ethers";
 import EthereumProvider from "../../src";
@@ -12,7 +12,7 @@ export interface WalletClientOpts {
   rpcUrl: string;
 }
 
-export type WalletClientAsyncOpts = WalletClientOpts & ClientTypes.Options;
+export type WalletClientAsyncOpts = WalletClientOpts & SignClientTypes.Options;
 
 export class WalletClient {
   public provider: EthereumProvider;
@@ -20,7 +20,7 @@ export class WalletClient {
   public chainId: number;
   public rpcUrl: string;
 
-  public client?: IClient;
+  public client?: ISignClient;
   public topic?: string;
 
   static async init(
@@ -148,27 +148,27 @@ export class WalletClient {
   }
 
   private async initialize(opts?: ClientOptions) {
-    this.client = await Client.init({ ...opts, controller: true });
+    this.client = await SignClient.init({ ...opts, controller: true });
     this.registerEventListeners();
   }
 
   private registerEventListeners() {
     if (typeof this.client === "undefined") {
-      throw new Error("Client not inititialized");
+      throw new Error("Sign Client not inititialized");
     }
 
     // auto-pair
     this.provider.signer.connection.on(SIGNER_EVENTS.uri, async ({ uri }) => {
       if (typeof this.client === "undefined") {
-        throw new Error("Client not inititialized");
+        throw new Error("Sign Client not inititialized");
       }
       await this.client.pair({ uri });
     });
 
     // auto-approve
-    this.client.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+    this.client.on(SIGN_CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
       if (typeof this.client === "undefined") {
-        throw new Error("Client not inititialized");
+        throw new Error("Sign Client not inititialized");
       }
       const response = { state: this.getSessionState() };
       const session = await this.client.approve({ proposal, response });
@@ -177,10 +177,10 @@ export class WalletClient {
 
     // auto-respond
     this.client.on(
-      CLIENT_EVENTS.session.request,
+      SIGN_CLIENT_EVENTS.session.request,
       async (requestEvent: SessionTypes.RequestEvent) => {
         if (typeof this.client === "undefined") {
-          throw new Error("Client not inititialized");
+          throw new Error("Sign Client not inititialized");
         }
         const { topic, chainId, request } = requestEvent;
 

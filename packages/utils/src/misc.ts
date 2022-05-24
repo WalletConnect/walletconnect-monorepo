@@ -1,5 +1,5 @@
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
-import { ClientTypes, RelayerClientMetadata, EngineTypes } from "@walletconnect/types";
+import { SignClientTypes, RelayerClientMetadata, EngineTypes } from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
@@ -65,7 +65,7 @@ export function appendToQueryString(queryString: string, newQueryParams: any): s
 
 // -- metadata ----------------------------------------------//
 
-export function getAppMetadata(): ClientTypes.Metadata {
+export function getAppMetadata(): SignClientTypes.Metadata {
   return (
     getWindowMetadata() || {
       name: "",

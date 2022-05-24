@@ -1,12 +1,12 @@
-import { Client } from "@walletconnect/client";
+import { SignClient } from "@walletconnect/sign-client";
 import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { ClientTypes, IClient, SessionTypes, ProposalTypes } from "@walletconnect/types";
+import { SignClientTypes, ISignClient, SessionTypes, ProposalTypes } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 
-function isClient(opts?: SignerConnectionClientOpts): opts is IClient {
-  return typeof opts !== "undefined" && typeof (opts as IClient).context !== "undefined";
+function isClient(opts?: SignerConnectionClientOpts): opts is ISignClient {
+  return typeof opts !== "undefined" && typeof (opts as ISignClient).context !== "undefined";
 }
 
 export const SIGNER_EVENTS = {
@@ -18,7 +18,7 @@ export const SIGNER_EVENTS = {
   event: "signer_event",
 };
 
-export type SignerConnectionClientOpts = IClient | ClientTypes.Options;
+export type SignerConnectionClientOpts = ISignClient | SignClientTypes.Options;
 export interface SignerConnectionOpts {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;
   client?: SignerConnectionClientOpts;
@@ -34,7 +34,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private opts: SignerConnectionClientOpts | undefined;
 
-  private client: IClient | undefined;
+  private client: ISignClient | undefined;
   private initializing = false;
 
   constructor(opts?: SignerConnectionOpts) {
@@ -85,7 +85,7 @@ export class SignerConnection extends IJsonRpcConnection {
             reject(error);
           });
           if (typeof this.client === "undefined") {
-            return reject(new Error("Client not initialized"));
+            return reject(new Error("Sign Client not initialized"));
           }
           resolve();
         });
@@ -141,7 +141,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private async register(
     opts: SignerConnectionClientOpts | undefined = this.opts,
-  ): Promise<IClient> {
+  ): Promise<ISignClient> {
     if (typeof this.client !== "undefined") {
       return this.client;
     }
@@ -153,7 +153,7 @@ export class SignerConnection extends IJsonRpcConnection {
         });
         this.events.once(SIGNER_EVENTS.init, () => {
           if (typeof this.client === "undefined") {
-            return reject(new Error("Client not initialized"));
+            return reject(new Error("Sign Client not initialized"));
           }
           resolve(this.client);
         });
@@ -166,7 +166,7 @@ export class SignerConnection extends IJsonRpcConnection {
     }
     try {
       this.initializing = true;
-      this.client = await Client.init(opts);
+      this.client = await SignClient.init(opts);
       this.initializing = false;
       this.registerEventListeners();
       this.events.emit(SIGNER_EVENTS.init);
@@ -195,7 +195,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private registerEventListeners() {
     if (typeof this.client === "undefined") return;
-    // TODO(pedro) - add event handlers to IClient interface
+    // TODO(pedro) - add event handlers to ISignClient interface
     // @ts-ignore
     this.client.on(
       "session_created",
@@ -206,7 +206,7 @@ export class SignerConnection extends IJsonRpcConnection {
         this.events.emit(SIGNER_EVENTS.created, session);
       },
     );
-    // TODO(pedro) - add event handlers to IClient interface
+    // TODO(pedro) - add event handlers to ISignClient interface
     // @ts-ignore
     this.client.on(
       "session_updated",
@@ -217,7 +217,7 @@ export class SignerConnection extends IJsonRpcConnection {
         this.events.emit(SIGNER_EVENTS.updated, session);
       },
     );
-    // TODO(pedro) - add event handlers to IClient interface
+    // TODO(pedro) - add event handlers to ISignClient interface
     // @ts-ignore
     this.client.on(
       "session_event",
@@ -227,7 +227,7 @@ export class SignerConnection extends IJsonRpcConnection {
         this.events.emit(SIGNER_EVENTS.event, sessionEvent.event);
       },
     );
-    // TODO(pedro) - add event handlers to IClient interface
+    // TODO(pedro) - add event handlers to ISignClient interface
     // @ts-ignore
     this.client.on(
       // TODO(pedro) - add session deleted event

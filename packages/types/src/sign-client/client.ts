@@ -4,11 +4,11 @@ import { IEngine } from "./engine";
 import { IPairing } from "./pairing";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
-import { IJsonRpcHistory } from "./history";
-import { CoreTypes, ICore } from "./core";
+import { IJsonRpcHistory } from "../core/history";
+import { CoreTypes, ICore } from "../core/core";
 import { IExpirer } from "./expirer";
 
-export declare namespace ClientTypes {
+export declare namespace SignClientTypes {
   type Event =
     | "session_proposal"
     | "session_update"
@@ -61,48 +61,48 @@ export declare namespace ClientTypes {
   }
 }
 
-export abstract class IClientEvents extends EventEmmiter {
+export abstract class ISignClientEvents extends EventEmmiter {
   constructor() {
     super();
   }
 
-  public abstract emit: <E extends ClientTypes.Event>(
+  public abstract emit: <E extends SignClientTypes.Event>(
     event: E,
-    args: ClientTypes.EventArguments[E],
+    args: SignClientTypes.EventArguments[E],
   ) => boolean;
 
-  public abstract on: <E extends ClientTypes.Event>(
+  public abstract on: <E extends SignClientTypes.Event>(
     event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
+    listener: (args: SignClientTypes.EventArguments[E]) => any,
   ) => this;
 
-  public abstract once: <E extends ClientTypes.Event>(
+  public abstract once: <E extends SignClientTypes.Event>(
     event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
+    listener: (args: SignClientTypes.EventArguments[E]) => any,
   ) => this;
 
-  public abstract off: <E extends ClientTypes.Event>(
+  public abstract off: <E extends SignClientTypes.Event>(
     event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
+    listener: (args: SignClientTypes.EventArguments[E]) => any,
   ) => this;
 
-  public abstract removeListener: <E extends ClientTypes.Event>(
+  public abstract removeListener: <E extends SignClientTypes.Event>(
     event: E,
-    listener: (args: ClientTypes.EventArguments[E]) => any,
+    listener: (args: SignClientTypes.EventArguments[E]) => any,
   ) => this;
 }
 
-export abstract class IClient {
+export abstract class ISignClient {
   public readonly protocol = "wc";
   public readonly version = 2;
 
   public abstract readonly name: string;
   public abstract readonly context: string;
-  public abstract readonly metadata: ClientTypes.Metadata;
+  public abstract readonly metadata: SignClientTypes.Metadata;
 
   public abstract core: ICore;
   public abstract logger: Logger;
-  public abstract events: IClientEvents;
+  public abstract events: ISignClientEvents;
   public abstract engine: IEngine;
   public abstract pairing: IPairing;
   public abstract session: ISession;
@@ -110,7 +110,7 @@ export abstract class IClient {
   public abstract history: IJsonRpcHistory;
   public abstract expirer: IExpirer;
 
-  constructor(public opts?: ClientTypes.Options) {}
+  constructor(public opts?: SignClientTypes.Options) {}
 
   public abstract connect: IEngine["connect"];
   public abstract pair: IEngine["pair"];

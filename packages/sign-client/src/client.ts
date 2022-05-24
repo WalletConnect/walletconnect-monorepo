@@ -4,46 +4,46 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { ClientTypes, IClient, IClientEvents, EngineTypes } from "@walletconnect/types";
+import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino from "pino";
-import { CLIENT_DEFAULT, CLIENT_PROTOCOL, CLIENT_VERSION } from "./constants";
+import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
 import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
 
-export class Client extends IClient {
-  public readonly protocol = CLIENT_PROTOCOL;
-  public readonly version = CLIENT_VERSION;
-  public readonly name: IClient["name"] = CLIENT_DEFAULT.name;
-  public readonly metadata: IClient["metadata"];
+export class SignClient extends ISignClient {
+  public readonly protocol = SIGN_CLIENT_PROTOCOL;
+  public readonly version = SIGN_CLIENT_VERSION;
+  public readonly name: ISignClient["name"] = SIGN_CLIENT_DEFAULT.name;
+  public readonly metadata: ISignClient["metadata"];
 
-  public core: IClient["core"];
-  public logger: IClient["logger"];
-  public events: IClient["events"] = new EventEmitter();
-  public engine: IClient["engine"];
-  public pairing: IClient["pairing"];
-  public session: IClient["session"];
-  public proposal: IClient["proposal"];
-  public history: IClient["history"];
-  public expirer: IClient["expirer"];
+  public core: ISignClient["core"];
+  public logger: ISignClient["logger"];
+  public events: ISignClient["events"] = new EventEmitter();
+  public engine: ISignClient["engine"];
+  public pairing: ISignClient["pairing"];
+  public session: ISignClient["session"];
+  public proposal: ISignClient["proposal"];
+  public history: ISignClient["history"];
+  public expirer: ISignClient["expirer"];
 
-  static async init(opts?: ClientTypes.Options) {
-    const client = new Client(opts);
+  static async init(opts?: SignClientTypes.Options) {
+    const client = new SignClient(opts);
     await client.initialize();
 
     return client;
   }
 
-  constructor(opts?: ClientTypes.Options) {
+  constructor(opts?: SignClientTypes.Options) {
     super(opts);
 
-    this.name = opts?.name || CLIENT_DEFAULT.name;
+    this.name = opts?.name || SIGN_CLIENT_DEFAULT.name;
     this.metadata = opts?.metadata || getAppMetadata();
 
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || CLIENT_DEFAULT.logger }));
+        : pino(getDefaultLoggerOptions({ level: opts?.logger || SIGN_CLIENT_DEFAULT.logger }));
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
@@ -61,25 +61,25 @@ export class Client extends IClient {
 
   // ---------- Events ----------------------------------------------- //
 
-  public on: IClientEvents["on"] = (name, listener) => {
+  public on: ISignClientEvents["on"] = (name, listener) => {
     return this.events.on(name, listener);
   };
 
-  public once: IClientEvents["once"] = (name, listener) => {
+  public once: ISignClientEvents["once"] = (name, listener) => {
     return this.events.once(name, listener);
   };
 
-  public off: IClientEvents["off"] = (name, listener) => {
+  public off: ISignClientEvents["off"] = (name, listener) => {
     return this.events.off(name, listener);
   };
 
-  public removeListener: IClientEvents["removeListener"] = (name, listener) => {
+  public removeListener: ISignClientEvents["removeListener"] = (name, listener) => {
     return this.events.removeListener(name, listener);
   };
 
   // ---------- Engine ----------------------------------------------- //
 
-  public connect: IClient["connect"] = async params => {
+  public connect: ISignClient["connect"] = async params => {
     try {
       return await this.engine.connect(params);
     } catch (error) {
@@ -88,7 +88,7 @@ export class Client extends IClient {
     }
   };
 
-  public pair: IClient["pair"] = async params => {
+  public pair: ISignClient["pair"] = async params => {
     try {
       return await this.engine.pair(params);
     } catch (error) {
@@ -97,7 +97,7 @@ export class Client extends IClient {
     }
   };
 
-  public approve: IClient["approve"] = async params => {
+  public approve: ISignClient["approve"] = async params => {
     try {
       return await this.engine.approve(params);
     } catch (error) {
@@ -106,7 +106,7 @@ export class Client extends IClient {
     }
   };
 
-  public reject: IClient["reject"] = async params => {
+  public reject: ISignClient["reject"] = async params => {
     try {
       return await this.engine.reject(params);
     } catch (error) {
@@ -115,7 +115,7 @@ export class Client extends IClient {
     }
   };
 
-  public update: IClient["update"] = async params => {
+  public update: ISignClient["update"] = async params => {
     try {
       return await this.engine.update(params);
     } catch (error) {
@@ -124,7 +124,7 @@ export class Client extends IClient {
     }
   };
 
-  public extend: IClient["extend"] = async params => {
+  public extend: ISignClient["extend"] = async params => {
     try {
       return await this.engine.extend(params);
     } catch (error) {
@@ -133,7 +133,7 @@ export class Client extends IClient {
     }
   };
 
-  public request: IClient["request"] = async <T>(params: EngineTypes.RequestParams) => {
+  public request: ISignClient["request"] = async <T>(params: EngineTypes.RequestParams) => {
     try {
       return await this.engine.request<T>(params);
     } catch (error) {
@@ -142,7 +142,7 @@ export class Client extends IClient {
     }
   };
 
-  public respond: IClient["respond"] = async params => {
+  public respond: ISignClient["respond"] = async params => {
     try {
       return await this.engine.respond(params);
     } catch (error) {
@@ -151,7 +151,7 @@ export class Client extends IClient {
     }
   };
 
-  public ping: IClient["ping"] = async params => {
+  public ping: ISignClient["ping"] = async params => {
     try {
       return await this.engine.ping(params);
     } catch (error) {
@@ -160,7 +160,7 @@ export class Client extends IClient {
     }
   };
 
-  public emit: IClient["emit"] = async params => {
+  public emit: ISignClient["emit"] = async params => {
     try {
       return await this.engine.emit(params);
     } catch (error) {
@@ -169,7 +169,7 @@ export class Client extends IClient {
     }
   };
 
-  public disconnect: IClient["disconnect"] = async params => {
+  public disconnect: ISignClient["disconnect"] = async params => {
     try {
       return await this.engine.disconnect(params);
     } catch (error) {
@@ -178,7 +178,7 @@ export class Client extends IClient {
     }
   };
 
-  public find: IClient["find"] = params => {
+  public find: ISignClient["find"] = params => {
     try {
       return this.engine.find(params);
     } catch (error) {
@@ -199,9 +199,9 @@ export class Client extends IClient {
       await this.history.init();
       await this.expirer.init();
       await this.engine.init();
-      this.logger.info(`Client Initilization Success`);
+      this.logger.info(`SignClient Initilization Success`);
     } catch (error) {
-      this.logger.info(`Client Initilization Failure`);
+      this.logger.info(`SignClient Initilization Failure`);
       this.logger.error((error as any).message);
       throw error;
     }

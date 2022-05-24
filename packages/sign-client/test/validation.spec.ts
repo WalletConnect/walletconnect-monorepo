@@ -14,13 +14,13 @@ import {
   TEST_NAMESPACES,
   TEST_REQUIRED_NAMESPACES,
 } from "./shared";
-import Client from "../src";
+import SignClient from "../src";
 
-let client: Client;
+let client: SignClient;
 let pairingTopic: string;
 let topic: string;
 
-describe("Client Validation", () => {
+describe("Sign Client Validation", () => {
   before(async () => {
     const clients = await initTwoClients();
     await testConnectMethod(clients);
