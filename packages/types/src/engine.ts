@@ -21,8 +21,6 @@ export declare namespace EngineTypes {
     | "session_extend"
     | "session_ping"
     | "pairing_ping"
-    | "session_delete"
-    | "pairing_delete"
     | "session_request";
 
   interface EventArguments {
@@ -32,8 +30,6 @@ export declare namespace EngineTypes {
     session_extend: { error?: ErrorResponse };
     session_ping: { error?: ErrorResponse };
     pairing_ping: { error?: ErrorResponse };
-    session_delete: { error?: ErrorResponse };
-    pairing_delete: { error?: ErrorResponse };
     session_request: { error?: ErrorResponse; result?: any };
   }
 
@@ -231,19 +227,9 @@ export interface EnginePrivate {
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionDelete"]>,
   ): Promise<void>;
 
-  onSessionDeleteResponse(
-    topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionDelete"]> | JsonRpcError,
-  ): Promise<void>;
-
   onPairingDeleteRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
-  ): Promise<void>;
-
-  onPairingDeleteResponse(
-    topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingDelete"]> | JsonRpcError,
   ): Promise<void>;
 
   onSessionRequest(
@@ -316,7 +302,7 @@ export abstract class IEngine {
 
   public abstract ping(params: EngineTypes.PingParams): Promise<void>;
 
-  public abstract disconnect(params: EngineTypes.DisconnectParams): EngineTypes.AcknowledgedPromise;
+  public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
 
   public abstract find: (params: EngineTypes.FindParams) => SessionTypes.Struct[];
 }
