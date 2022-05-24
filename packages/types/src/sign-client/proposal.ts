@@ -1,6 +1,6 @@
-import { ClientTypes } from "./client";
-import { RelayerTypes } from "./relayer";
-import { IStore } from "./store";
+import { SignClientTypes } from "./client";
+import { RelayerTypes } from "../core/relayer";
+import { IStore } from "../core/store";
 
 export declare namespace ProposalTypes {
   interface BaseRequiredNamespace {
@@ -20,7 +20,7 @@ export declare namespace ProposalTypes {
     relays: RelayerTypes.ProtocolOptions[];
     proposer: {
       publicKey: string;
-      metadata: ClientTypes.Metadata;
+      metadata: SignClientTypes.Metadata;
     };
     requiredNamespaces: RequiredNamespaces;
     pairingTopic?: string;

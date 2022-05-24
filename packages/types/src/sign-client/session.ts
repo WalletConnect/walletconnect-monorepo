@@ -1,6 +1,6 @@
-import { ClientTypes } from "./client";
-import { RelayerTypes } from "./relayer";
-import { IStore } from "./store";
+import { SignClientTypes } from "./client";
+import { RelayerTypes } from "../core/relayer";
+import { IStore } from "../core/store";
 
 export declare namespace SessionTypes {
   type Expiry = number;
@@ -26,11 +26,11 @@ export declare namespace SessionTypes {
     namespaces: Namespaces;
     self: {
       publicKey: string;
-      metadata: ClientTypes.Metadata;
+      metadata: SignClientTypes.Metadata;
     };
     peer: {
       publicKey: string;
-      metadata: ClientTypes.Metadata;
+      metadata: SignClientTypes.Metadata;
     };
   }
 }

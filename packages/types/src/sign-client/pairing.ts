@@ -1,6 +1,6 @@
-import { ClientTypes } from "./client";
-import { RelayerTypes } from "./relayer";
-import { IStore } from "./store";
+import { SignClientTypes } from "./client";
+import { RelayerTypes } from "../core/relayer";
+import { IStore } from "../core/store";
 
 export declare namespace PairingTypes {
   export interface Struct {
@@ -8,7 +8,7 @@ export declare namespace PairingTypes {
     expiry: number;
     relay: RelayerTypes.ProtocolOptions;
     active: boolean;
-    peerMetadata?: ClientTypes.Metadata;
+    peerMetadata?: SignClientTypes.Metadata;
   }
 }
 

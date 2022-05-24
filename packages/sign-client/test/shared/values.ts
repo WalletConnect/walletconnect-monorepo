@@ -1,8 +1,10 @@
 import path from "path";
-import { ClientTypes, RelayerTypes } from "@walletconnect/types";
+import { SignClientTypes, RelayerTypes } from "@walletconnect/types";
 
 // @ts-ignore
 import { ROOT_DIR } from "../../../../ops/js/shared";
+
+export const PACKAGE_NAME = "sign-client";
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
@@ -12,7 +14,7 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   ? process.env.TEST_PROJECT_ID
   : undefined;
 
-export const TEST_CLIENT_OPTIONS: ClientTypes.Options = {
+export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
   logger: "fatal",
   relayUrl: TEST_RELAY_URL,
   projectId: TEST_PROJECT_ID,
@@ -21,18 +23,24 @@ export const TEST_CLIENT_OPTIONS: ClientTypes.Options = {
   },
 };
 
-export const TEST_CLIENT_DATABASE = path.join(ROOT_DIR, "packages", "client", "test", "test.db");
+export const TEST_SIGN_CLIENT_DATABASE = path.join(
+  ROOT_DIR,
+  "packages",
+  PACKAGE_NAME,
+  "test",
+  "test.db",
+);
 
-export const TEST_CLIENT_NAME_A = "client_a";
-export const TEST_APP_METADATA_A: ClientTypes.Metadata = {
+export const TEST_SIGN_CLIENT_NAME_A = "client_a";
+export const TEST_APP_METADATA_A: SignClientTypes.Metadata = {
   name: "App A (Proposer)",
   description: "Description of Proposer App run by client A",
   url: "https://walletconnect.com",
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
-export const TEST_CLIENT_NAME_B = "client_b";
-export const TEST_APP_METADATA_B: ClientTypes.Metadata = {
+export const TEST_SIGN_CLIENT_NAME_B = "client_b";
+export const TEST_APP_METADATA_B: SignClientTypes.Metadata = {
   name: "App B (Responder)",
   description: "Description of Responder App run by client B",
   url: "https://walletconnect.com",
@@ -44,15 +52,15 @@ export const TEST_RELAY_OPTIONS: RelayerTypes.ProtocolOptions = {
   protocol: TEST_RELAY_PROTOCOL,
 };
 
-export const TEST_CLIENT_OPTIONS_A = {
-  ...TEST_CLIENT_OPTIONS,
-  name: TEST_CLIENT_NAME_A,
+export const TEST_SIGN_CLIENT_OPTIONS_A = {
+  ...TEST_SIGN_CLIENT_OPTIONS,
+  name: TEST_SIGN_CLIENT_NAME_A,
   metadata: TEST_APP_METADATA_A,
 };
 
-export const TEST_CLIENT_OPTIONS_B = {
-  ...TEST_CLIENT_OPTIONS,
-  name: TEST_CLIENT_NAME_B,
+export const TEST_SIGN_CLIENT_OPTIONS_B = {
+  ...TEST_SIGN_CLIENT_OPTIONS,
+  name: TEST_SIGN_CLIENT_NAME_B,
   metadata: TEST_APP_METADATA_B,
 };
 

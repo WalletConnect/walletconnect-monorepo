@@ -11,7 +11,7 @@ import Long from "long";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { AccountData, coins, makeSignDoc, makeAuthInfoBytes } from "@cosmjs/proto-signing";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
-import { Client, CLIENT_EVENTS } from "@walletconnect/client";
+import { SignClient, SIGN_CLIENT_EVENTS } from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
 
 import CosmosProvider from "./../src/index";
@@ -105,7 +105,7 @@ async function signAmino(wallet: CosmosWallet, signerAddress: string, signDoc: a
 describe("@walletconnect/cosmos-provider", () => {
   it("Test connect and sign", async () => {
     const wallet = await CosmosWallet.init(TEST_COSMOS_KEYPAIR.privateKey);
-    const walletClient = await Client.init({
+    const walletClient = await SignClient.init({
       controller: true,
       relayUrl: TEST_RELAY_URL,
       metadata: TEST_WALLET_METADATA,
@@ -129,16 +129,19 @@ describe("@walletconnect/cosmos-provider", () => {
     let accounts: string[] = [];
     await Promise.all([
       new Promise<void>((resolve, reject) => {
-        walletClient.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
-          const response = {
-            state: { accounts: [`${NAMESPACE}:${CHAIN_ID}:${TEST_COSMOS_ADDRESS}`] },
-          };
-          await walletClient.approve({
-            proposal,
-            response,
-          });
-          resolve();
-        });
+        walletClient.on(
+          SIGN_CLIENT_EVENTS.session.proposal,
+          async (proposal: SessionTypes.Proposal) => {
+            const response = {
+              state: { accounts: [`${NAMESPACE}:${CHAIN_ID}:${TEST_COSMOS_ADDRESS}`] },
+            };
+            await walletClient.approve({
+              proposal,
+              response,
+            });
+            resolve();
+          },
+        );
       }),
       new Promise<void>(async (resolve, reject) => {
         await provider.connect();
@@ -150,7 +153,7 @@ describe("@walletconnect/cosmos-provider", () => {
 
     // auto-respond
     walletClient.on(
-      CLIENT_EVENTS.session.request,
+      SIGN_CLIENT_EVENTS.session.request,
       async (requestEvent: SessionTypes.RequestEvent) => {
         let response: JsonRpcResponse;
         try {

@@ -1,4 +1,4 @@
-import { ClientTypes, SessionTypes } from "@walletconnect/types";
+import { SignClientTypes, SessionTypes } from "@walletconnect/types";
 
 export const TEST_PAIRING_TOPIC =
   "c9e6d30fb34afe70a15c14e9337ba8e4d5a35dd695c39b94884b0ee60c69d168";
@@ -69,11 +69,11 @@ export const TEST_SESSION: SessionTypes.Struct = {
   controller: TEST_KEY_PAIRS.A.publicKey,
   self: {
     publicKey: TEST_KEY_PAIRS.A.publicKey,
-    metadata: TEST_SESSION_METADATA as ClientTypes.Metadata,
+    metadata: TEST_SESSION_METADATA as SignClientTypes.Metadata,
   },
   peer: {
     publicKey: TEST_KEY_PAIRS.B.publicKey,
-    metadata: TEST_SESSION_METADATA as ClientTypes.Metadata,
+    metadata: TEST_SESSION_METADATA as SignClientTypes.Metadata,
   },
   namespaces: {
     [TEST_ETHEREUM_NAMESPACE]: {

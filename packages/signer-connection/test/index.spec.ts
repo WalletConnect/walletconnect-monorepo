@@ -2,8 +2,8 @@ import "mocha";
 import * as chai from "chai";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { Client, CLIENT_EVENTS } from "@walletconnect/client";
-import { IClient, RequestEvent, SessionTypes } from "@walletconnect/types";
+import { SignClient, SIGN_CLIENT_EVENTS } from "@walletconnect/sign-client";
+import { ISignClient, RequestEvent, SessionTypes } from "@walletconnect/types";
 
 import { SignerConnection, SIGNER_EVENTS } from "../src";
 
@@ -42,7 +42,7 @@ async function setup() {
     },
   });
   const provider = new JsonRpcProvider(connection);
-  const clientB = await Client.init({
+  const clientB = await SignClient.init({
     controller: true,
     relayUrl: TEST_RELAY_URL,
     metadata: TEST_WALLET_METADATA,
@@ -50,7 +50,7 @@ async function setup() {
   return { provider, wallet: clientB };
 }
 
-async function testConnect(provider: JsonRpcProvider, wallet: IClient) {
+async function testConnect(provider: JsonRpcProvider, wallet: ISignClient) {
   let topic = "";
   // auto-pair
   provider.connection.on(SIGNER_EVENTS.uri, async ({ uri }) => {
@@ -59,7 +59,7 @@ async function testConnect(provider: JsonRpcProvider, wallet: IClient) {
   // connect
   await Promise.all([
     new Promise<void>((resolve, reject) => {
-      wallet.on(CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
+      wallet.on(SIGN_CLIENT_EVENTS.session.proposal, async (proposal: SessionTypes.Proposal) => {
         await wallet.approve({ proposal, response: { state: { accounts: [] } } });
         resolve();
       });
@@ -69,7 +69,7 @@ async function testConnect(provider: JsonRpcProvider, wallet: IClient) {
       resolve();
     }),
     new Promise<void>(async (resolve, reject) => {
-      wallet.on(CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
+      wallet.on(SIGN_CLIENT_EVENTS.session.created, async (session: SessionTypes.Created) => {
         topic = session.topic;
         resolve();
       });
@@ -78,9 +78,9 @@ async function testConnect(provider: JsonRpcProvider, wallet: IClient) {
   return topic;
 }
 
-async function testRequest(provider: JsonRpcProvider, wallet: IClient, topic: string) {
+async function testRequest(provider: JsonRpcProvider, wallet: ISignClient, topic: string) {
   // auto-respond
-  wallet.on(CLIENT_EVENTS.session.request, async (requestEvent: RequestEvent) => {
+  wallet.on(SIGN_CLIENT_EVENTS.session.request, async (requestEvent: RequestEvent) => {
     chai.expect(requestEvent.request.method).to.eql(TEST_JSONRPC_METHOD);
     await wallet.respond({
       topic: requestEvent.topic,

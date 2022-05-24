@@ -1,19 +1,19 @@
 import { ERROR, calcExpiry } from "@walletconnect/utils";
 import "mocha";
-import Client from "../src";
+import SignClient from "../src";
 import {
   expect,
   initTwoClients,
   testConnectMethod,
-  TEST_CLIENT_DATABASE,
-  TEST_CLIENT_OPTIONS,
+  TEST_SIGN_CLIENT_DATABASE,
+  TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
 } from "./shared";
 import { SEVEN_DAYS } from "@walletconnect/time";
 
-describe("Client Integration", () => {
+describe("Sign Client Integration", () => {
   it("init", async () => {
-    const client = await Client.init(TEST_CLIENT_OPTIONS);
+    const client = await SignClient.init(TEST_SIGN_CLIENT_OPTIONS);
     expect(client).to.be.exist;
   });
 
@@ -99,7 +99,7 @@ describe("Client Integration", () => {
       });
       it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients({
-          storageOptions: { database: TEST_CLIENT_DATABASE },
+          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
         });
         const {
           pairingA: { topic },
@@ -111,7 +111,7 @@ describe("Client Integration", () => {
         deleteClients(beforeClients);
         // restart
         const afterClients = await initTwoClients({
-          storageOptions: { database: TEST_CLIENT_DATABASE },
+          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
         });
         // ping
         await afterClients.A.ping({ topic });
@@ -138,7 +138,7 @@ describe("Client Integration", () => {
       });
       it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients({
-          storageOptions: { database: TEST_CLIENT_DATABASE },
+          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
         });
         const {
           sessionA: { topic },
@@ -150,7 +150,7 @@ describe("Client Integration", () => {
         deleteClients(beforeClients);
         // restart
         const afterClients = await initTwoClients({
-          storageOptions: { database: TEST_CLIENT_DATABASE },
+          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
         });
         // ping
         await afterClients.A.ping({ topic });

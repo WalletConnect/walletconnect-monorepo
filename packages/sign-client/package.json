@@ -1,6 +1,6 @@
 {
-  "name": "@walletconnect/client",
-  "description": "Client for WalletConnect Protocol",
+  "name": "@walletconnect/sign-client",
+  "description": "Sign Client for WalletConnect Protocol",
   "version": "2.0.0-beta.55",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",

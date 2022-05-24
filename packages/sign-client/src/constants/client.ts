@@ -1,21 +1,19 @@
-import { ClientTypes } from "@walletconnect/types";
+import { SignClientTypes } from "@walletconnect/types";
 
-export const CLIENT_PROTOCOL = "wc";
-export const CLIENT_VERSION = 2;
-export const CLIENT_CONTEXT = "client";
+export const SIGN_CLIENT_PROTOCOL = "wc";
+export const SIGN_CLIENT_VERSION = 2;
+export const SIGN_CLIENT_CONTEXT = "client";
 
-export const CLIENT_STORAGE_PREFIX = `${CLIENT_PROTOCOL}@${CLIENT_VERSION}:${CLIENT_CONTEXT}:`;
+export const SIGN_CLIENT_STORAGE_PREFIX = `${SIGN_CLIENT_PROTOCOL}@${SIGN_CLIENT_VERSION}:${SIGN_CLIENT_CONTEXT}:`;
 
-export const CLIENT_DEFAULT = {
-  name: CLIENT_CONTEXT,
+export const SIGN_CLIENT_DEFAULT = {
+  name: SIGN_CLIENT_CONTEXT,
   logger: "error",
   controller: false,
   relayUrl: "wss://relay.walletconnect.com",
 };
 
-export const CLIENT_SHORT_TIMEOUT = 50;
-
-export const CLIENT_EVENTS: Record<ClientTypes.Event, ClientTypes.Event> = {
+export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.Event> = {
   session_proposal: "session_proposal",
   session_update: "session_update",
   session_extend: "session_extend",
@@ -29,6 +27,6 @@ export const CLIENT_EVENTS: Record<ClientTypes.Event, ClientTypes.Event> = {
   session_event: "session_event",
 };
 
-export const CLIENT_STORAGE_OPTIONS = {
+export const SIGN_CLIENT_STORAGE_OPTIONS = {
   database: ":memory:",
 };
