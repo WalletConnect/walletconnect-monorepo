@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/client",
   "description": "Client for WalletConnect Protocol",
-  "version": "2.0.0-beta.54",
+  "version": "2.0.0-beta.55",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -31,7 +31,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/core": "^2.0.0-beta.54",
+    "@walletconnect/core": "^2.0.0-beta.55",
     "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/events": "^1.0.0",
     "@walletconnect/heartbeat": "^1.0.0",
@@ -43,8 +43,8 @@
     "@walletconnect/relay-api": "^1.0.2",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/time": "^1.0.1",
-    "@walletconnect/types": "^2.0.0-beta.54",
-    "@walletconnect/utils": "^2.0.0-beta.54",
+    "@walletconnect/types": "^2.0.0-beta.55",
+    "@walletconnect/utils": "^2.0.0-beta.55",
     "ws": "^8.3.0"
   },
   "devDependencies": {
@@ -64,6 +64,7 @@
     "@types/sinon": "^4.3.1",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
+    "better-sqlite3": "7.5.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "core-js": "^3.6.5",
@@ -83,7 +84,6 @@
     "ts-node": "^9.0.0",
     "typescript": "^3.7.5",
     "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10",
-    "better-sqlite3": "7.5.3"
+    "webpack-cli": "^3.3.10"
   }
 }
