@@ -44,8 +44,7 @@ describe("Client Integration", () => {
           pairingA: { topic },
         } = await testConnectMethod(clients);
         const reason = ERROR.USER_DISCONNECTED.format();
-        const { acknowledged } = await clients.A.disconnect({ topic, reason });
-        await acknowledged();
+        await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.pairing.get(topic)).to.throw(
           `No matching pairing with topic: ${topic}`,
         );
@@ -61,8 +60,7 @@ describe("Client Integration", () => {
           sessionA: { topic },
         } = await testConnectMethod(clients);
         const reason = ERROR.USER_DISCONNECTED.format();
-        const { acknowledged } = await clients.A.disconnect({ topic, reason });
-        await acknowledged();
+        await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.session.get(topic)).to.throw(
           `No matching session with topic: ${topic}`,
         );

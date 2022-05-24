@@ -293,26 +293,13 @@ export class Engine extends IEngine {
     this.isInitialized();
     await this.isValidDisconnect(params);
     const { topic } = params;
-
     if (this.client.session.keys.includes(topic)) {
-      const id = await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
-      const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("session_delete", id), ({ error }) => {
-        if (error) reject(error);
-        else resolve();
-      });
-
-      return { acknowledged };
+      await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
+      await this.deleteSession(topic);
+    } else if (this.client.pairing.keys.includes(topic)) {
+      await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
+      await this.deletePairing(topic);
     }
-
-    const id = await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
-    const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("pairing_delete", id), ({ error }) => {
-      if (error) reject(error);
-      else resolve();
-    });
-
-    return { acknowledged };
   };
 
   public find: IEngine["find"] = params => {
@@ -486,10 +473,6 @@ export class Engine extends IEngine {
         return this.onSessionPingResponse(topic, payload);
       case "wc_pairingPing":
         return this.onPairingPingResponse(topic, payload);
-      case "wc_sessionDelete":
-        return this.onSessionDeleteResponse(topic, payload);
-      case "wc_pairingDelete":
-        return this.onPairingDeleteResponse(topic, payload);
       case "wc_sessionRequest":
         return this.onSessionRequestResponse(topic, payload);
       default:
@@ -715,19 +698,6 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionDeleteResponse: EnginePrivate["onSessionDeleteResponse"] = async (
-    topic,
-    payload,
-  ) => {
-    const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      await this.deleteSession(topic);
-      this.events.emit(engineEvent("session_delete", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("session_delete", id), { error: payload.error });
-    }
-  };
-
   private onPairingDeleteRequest: EnginePrivate["onPairingDeleteRequest"] = async (
     topic,
     payload,
@@ -742,19 +712,6 @@ export class Engine extends IEngine {
     } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
-    }
-  };
-
-  private onPairingDeleteResponse: EnginePrivate["onPairingDeleteResponse"] = async (
-    topic,
-    payload,
-  ) => {
-    const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      await this.deletePairing(topic);
-      this.events.emit(engineEvent("pairing_delete", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("pairing_delete", id), { error: payload.error });
     }
   };
 

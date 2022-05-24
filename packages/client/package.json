@@ -45,7 +45,6 @@
     "@walletconnect/time": "^1.0.1",
     "@walletconnect/types": "^2.0.0-beta.54",
     "@walletconnect/utils": "^2.0.0-beta.54",
-    "better-sqlite3": "7.5.3",
     "ws": "^8.3.0"
   },
   "devDependencies": {
@@ -84,6 +83,7 @@
     "ts-node": "^9.0.0",
     "typescript": "^3.7.5",
     "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
+    "webpack-cli": "^3.3.10",
+    "better-sqlite3": "7.5.3"
   }
 }
