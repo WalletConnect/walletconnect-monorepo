@@ -1,6 +1,6 @@
-import { SignClient as WalletConnectClient } from "./client";
+import { SignClient as Client } from "./client";
 
 export * from "./constants";
 
-export const SignClient = WalletConnectClient;
-export default WalletConnectClient;
+export const SignClient = Client;
+export default Client;
