@@ -20,7 +20,8 @@ export declare namespace SignClientTypes {
     | "session_expire"
     | "pairing_expire"
     | "session_request"
-    | "session_event";
+    | "session_event"
+    | "proposal_expire";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -46,6 +47,7 @@ export declare namespace SignClientTypes {
       event: { name: string; data: any };
       chainId: string;
     }>;
+    proposal_expire: { id: number };
   }
 
   type Metadata = {

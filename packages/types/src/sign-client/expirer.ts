@@ -5,29 +5,36 @@ import { ICore } from "../core/core";
 
 export declare namespace ExpirerTypes {
   interface Expiration {
-    topic: string;
+    target: string;
     expiry: number;
   }
 
   interface Created {
-    topic: string;
+    target: string;
     expiration: Expiration;
   }
 
   interface Deleted {
-    topic: string;
+    target: string;
     expiration: Expiration;
   }
 
   interface Expired {
-    topic: string;
+    target: string;
     expiration: Expiration;
   }
 }
 
 export abstract class IExpirer extends IEvents {
   public abstract name: string;
+
   public abstract readonly context: string;
+
+  public abstract readonly length: number;
+
+  public abstract readonly keys: string[];
+
+  public abstract readonly values: ExpirerTypes.Expiration[];
 
   constructor(public core: ICore, public logger: Logger) {
     super();
@@ -35,11 +42,11 @@ export abstract class IExpirer extends IEvents {
 
   public abstract init(): Promise<void>;
 
-  public abstract has(tag: string): boolean;
+  public abstract has(target: string): boolean;
 
-  public abstract set(tag: string, expiration: ExpirerTypes.Expiration): void;
+  public abstract set(target: string, expiration: ExpirerTypes.Expiration): void;
 
-  public abstract get(tag: string): ExpirerTypes.Expiration;
+  public abstract get(target: string): ExpirerTypes.Expiration;
 
-  public abstract del(tag: string): Promise<void>;
+  public abstract del(target: string): Promise<void>;
 }

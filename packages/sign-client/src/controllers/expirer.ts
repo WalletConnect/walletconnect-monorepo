@@ -33,7 +33,7 @@ export class Expirer extends IExpirer {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       await this.restore();
-      this.cached.forEach(expiration => this.expirations.set(expiration.topic, expiration));
+      this.cached.forEach(expiration => this.expirations.set(expiration.target, expiration));
       this.cached = [];
       this.registerEventListeners();
       this.initialized = true;
@@ -52,7 +52,7 @@ export class Expirer extends IExpirer {
     return this.expirations.size;
   }
 
-  get topics(): string[] {
+  get keys(): string[] {
     return Array.from(this.expirations.keys());
   }
 
@@ -60,9 +60,9 @@ export class Expirer extends IExpirer {
     return Array.from(this.expirations.values());
   }
 
-  public has: IExpirer["has"] = topic => {
+  public has: IExpirer["has"] = target => {
     try {
-      const expiration = this.getExpiration(topic);
+      const expiration = this.getExpiration(target);
       return typeof expiration !== "undefined";
     } catch (e) {
       // ignore
@@ -70,29 +70,29 @@ export class Expirer extends IExpirer {
     }
   };
 
-  public set: IExpirer["set"] = (topic, expiration) => {
+  public set: IExpirer["set"] = (target, expiration) => {
     this.isInitialized();
-    this.expirations.set(topic, expiration);
-    this.checkExpiry(topic, expiration);
+    this.expirations.set(target, expiration);
+    this.checkExpiry(target, expiration);
     this.events.emit(EXPIRER_EVENTS.created, {
-      topic,
+      target,
       expiration,
     } as ExpirerTypes.Created);
   };
 
-  public get: IExpirer["get"] = topic => {
+  public get: IExpirer["get"] = target => {
     this.isInitialized();
-    return this.getExpiration(topic);
+    return this.getExpiration(target);
   };
 
-  public del: IExpirer["del"] = async topic => {
+  public del: IExpirer["del"] = async target => {
     this.isInitialized();
-    const exists = await this.has(topic);
+    const exists = await this.has(target);
     if (exists) {
-      const expiration = this.getExpiration(topic);
-      this.expirations.delete(topic);
+      const expiration = this.getExpiration(target);
+      this.expirations.delete(target);
       this.events.emit(EXPIRER_EVENTS.deleted, {
-        topic,
+        target,
         expiration,
       } as ExpirerTypes.Deleted);
     }
@@ -151,12 +151,12 @@ export class Expirer extends IExpirer {
     }
   }
 
-  private getExpiration(topic: string): ExpirerTypes.Expiration {
-    const expiration = this.expirations.get(topic);
+  private getExpiration(target: string): ExpirerTypes.Expiration {
+    const expiration = this.expirations.get(target);
     if (!expiration) {
       const error = ERROR.NO_MATCHING_ID.format({
         context: this.name,
-        topic,
+        target,
       });
       // this.logger.error(error.message);
       throw new Error(error.message);
@@ -164,22 +164,22 @@ export class Expirer extends IExpirer {
     return expiration;
   }
 
-  private checkExpiry(topic: string, expiration: ExpirerTypes.Expiration): void {
+  private checkExpiry(target: string, expiration: ExpirerTypes.Expiration): void {
     const { expiry } = expiration;
     const msToTimeout = toMiliseconds(expiry) - Date.now();
-    if (msToTimeout <= 0) this.expire(topic, expiration);
+    if (msToTimeout <= 0) this.expire(target, expiration);
   }
 
-  private expire(topic: string, expiration: ExpirerTypes.Expiration): void {
-    this.expirations.delete(topic);
+  private expire(target: string, expiration: ExpirerTypes.Expiration): void {
+    this.expirations.delete(target);
     this.events.emit(EXPIRER_EVENTS.expired, {
-      topic,
+      target,
       expiration,
     } as ExpirerTypes.Expired);
   }
 
   private checkExpirations(): void {
-    this.expirations.forEach((expiration, topic) => this.checkExpiry(topic, expiration));
+    this.expirations.forEach((expiration, target) => this.checkExpiry(target, expiration));
   }
 
   private registerEventListeners(): void {
