@@ -2,7 +2,12 @@ import { SignClient } from "@walletconnect/sign-client";
 import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SignClientTypes, ISignClient, SessionTypes, ProposalTypes } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
+import {
+  ERROR,
+  getAccountsFromNamespaces,
+  getChainsFromNamespaces,
+  getChainsFromRequiredNamespaces,
+} from "@walletconnect/utils";
 import { EventEmitter } from "events";
 
 function isClient(opts?: SignerConnectionClientOpts): opts is ISignClient {
@@ -52,11 +57,16 @@ export class SignerConnection extends IJsonRpcConnection {
     return this.pending;
   }
 
+  get chains() {
+    if (this.session) {
+      return getChainsFromNamespaces(this.session.namespaces);
+    }
+    return getChainsFromRequiredNamespaces(this.requiredNamespaces);
+  }
+
   get accounts() {
     if (this.session) {
-      const accounts: string[] = [];
-      Object.values(this.session.namespaces).map(ns => accounts.push(...ns.accounts));
-      return accounts;
+      return getAccountsFromNamespaces(this.session.namespaces);
     }
     return [];
   }

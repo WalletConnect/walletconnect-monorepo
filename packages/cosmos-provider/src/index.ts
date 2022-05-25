@@ -108,11 +108,11 @@ class CosmosProvider {
       const accounts = (this.signer.connection as SignerConnection).accounts;
       if (accounts && accounts.length) this.setAccounts(accounts);
     });
-    this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Settled) => {
+    this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Struct) => {
       this.setChainId(session.permissions.blockchain.chains);
       this.setAccounts(session.state.accounts);
     });
-    this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Settled) => {
+    this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Struct) => {
       this.setChainId(session.permissions.blockchain.chains);
       if (session.state.accounts !== this.accounts) {
         this.setAccounts(session.state.accounts);

@@ -1,3 +1,5 @@
+import { SessionTypes, ProposalTypes } from "@walletconnect/types";
+
 interface ChainIdParams {
   namespace: string;
   reference: string;
@@ -55,10 +57,49 @@ export function formatAccountWithChain(address: string, chain: string) {
   return account;
 }
 
-export function getAddresses(accounts: string[]) {
+export function getAddressesFromAccounts(accounts: string[]) {
   return getUniqueValues(accounts, getAddressFromAccount);
 }
 
-export function getChains(accounts: string[]) {
+export function getChainsFromAccounts(accounts: string[]) {
   return getUniqueValues(accounts, getChainFromAccount);
+}
+
+export function getAccountsFromNamespaces(
+  namespaces: SessionTypes.Namespaces,
+  keys: string[] = [],
+): string[] {
+  const accounts: string[] = [];
+  Object.keys(namespaces).forEach(key => {
+    if (keys.length && !keys.includes(key)) return;
+    const ns = namespaces[key];
+    accounts.push(...ns.accounts);
+  });
+  return accounts;
+}
+
+export function getChainsFromNamespaces(
+  namespaces: SessionTypes.Namespaces,
+  keys: string[] = [],
+): string[] {
+  const chains: string[] = [];
+  Object.keys(namespaces).forEach(key => {
+    if (keys.length && !keys.includes(key)) return;
+    const ns = namespaces[key];
+    chains.push(...getChainsFromAccounts(ns.accounts));
+  });
+  return chains;
+}
+
+export function getChainsFromRequiredNamespaces(
+  requiredNamespaces: ProposalTypes.RequiredNamespaces,
+  keys: string[] = [],
+): string[] {
+  const chains: string[] = [];
+  Object.keys(requiredNamespaces).forEach(key => {
+    if (keys.length && !keys.includes(key)) return;
+    const ns = requiredNamespaces[key];
+    chains.push(...ns.chains);
+  });
+  return chains;
 }
