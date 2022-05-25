@@ -5,7 +5,7 @@
 3. Bootstrap lerna (install npm packages) `npm run bootstrap`
 4. Verify installation `npm run check`
 5. Start relay server `PORT=5555 npm run start --prefix=servers/relay`
-6. If you update npm packages, run `npm run test --prefix=packages/client`
+6. If you update npm packages, run `npm run test --prefix=packages/sign-client`
 
 # Troubleshooting
 

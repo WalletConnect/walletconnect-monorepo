@@ -108,6 +108,8 @@ export class Engine extends IEngine {
           session.self.publicKey = publicKey;
           await this.client.session.set(session.topic, session);
           await this.setExpiry(session.topic, session.expiry);
+          if (topic)
+            await this.client.pairing.update(topic, { peerMetadata: session.peer.metadata });
           resolve(session);
         }
       },
@@ -180,6 +182,8 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     await this.setExpiry(sessionTopic, SESSION_EXPIRY);
+    if (pairingTopic)
+      await this.client.pairing.update(pairingTopic, { peerMetadata: session.peer.metadata });
 
     if (pairingTopic && id) {
       await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
