@@ -46,6 +46,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     expect(pairingA.relay).to.eql(uriParams.relay);
   } else {
     pairingA = A.pairing.get(connectParams.pairingTopic);
+    pairingB = B.pairing.get(connectParams.pairingTopic);
   }
 
   if (!pairingA) throw new Error("expect pairing A to be defined");
@@ -105,6 +106,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   if (!sessionA) throw new Error("expect session A to be defined");
   if (!sessionB) throw new Error("expect session B to be defined");
 
+  // topic
   expect(sessionA.topic).to.eql(sessionB.topic);
   // relay
   expect(sessionA.relay).to.eql(TEST_RELAY_OPTIONS);
@@ -123,6 +125,28 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   expect(sessionA.controller).to.eql(sessionB.controller);
   expect(sessionA.controller).to.eql(sessionA.peer.publicKey);
   expect(sessionB.controller).to.eql(sessionB.self.publicKey);
+  // metadata
+  expect(sessionA.self.metadata).to.eql(sessionB.peer.metadata);
+  expect(sessionB.self.metadata).to.eql(sessionA.peer.metadata);
+
+  if (!pairingA) throw new Error("expect pairing A to be defined");
+  if (!pairingB) throw new Error("expect pairing B to be defined");
+
+  // update pairing state beforehand
+  pairingA = A.pairing.get(pairingA.topic);
+  pairingB = B.pairing.get(pairingB.topic);
+
+  // topic
+  expect(pairingA.topic).to.eql(pairingB.topic);
+  // relay
+  expect(pairingA.relay).to.eql(TEST_RELAY_OPTIONS);
+  expect(pairingA.relay).to.eql(pairingB.relay);
+  // active
+  expect(pairingA.active).to.eql(true);
+  expect(pairingA.active).to.eql(pairingB.active);
+  // metadata
+  expect(pairingA.peerMetadata).to.eql(sessionA.peer.metadata);
+  expect(pairingB.peerMetadata).to.eql(sessionB.peer.metadata);
 
   return { pairingA, sessionA };
 }
