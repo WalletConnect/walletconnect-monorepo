@@ -118,7 +118,8 @@ export class Engine extends IEngine {
     if (!topic) throw new Error(ERROR.MISSING_OR_INVALID.stringify({ name: "topic" }));
 
     const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
-    await this.setProposal(id, { id, ...proposal });
+    const expiry = calcExpiry(FIVE_MINUTES);
+    await this.setProposal(id, { id, expiry, ...proposal });
 
     return { uri, approval };
   };
@@ -380,8 +381,7 @@ export class Engine extends IEngine {
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
     const target = formatIdTarget(id);
-    const expiry = calcExpiry(FIVE_MINUTES);
-    await this.client.expirer.set(target, { target, expiry });
+    this.client.expirer.set(target, { target, expiry: proposal.expiry });
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -410,15 +410,20 @@ export class Engine extends IEngine {
   private cleanup: EnginePrivate["cleanup"] = async () => {
     const sessionTopics: string[] = [];
     const pairingTopics: string[] = [];
+    const proposalIds: number[] = [];
     this.client.session.values.forEach(session => {
       if (isExpired(session.expiry)) sessionTopics.push(session.topic);
     });
     this.client.pairing.values.forEach(pairing => {
       if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
     });
+    this.client.proposal.values.forEach(proposal => {
+      if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
+    });
     await Promise.all([
       ...sessionTopics.map(this.deleteSession),
       ...pairingTopics.map(this.deletePairing),
+      ...proposalIds.map(this.deleteProposal),
     ]);
   };
 
@@ -511,7 +516,8 @@ export class Engine extends IEngine {
     const { params, id } = payload;
     try {
       this.isValidConnect({ ...payload.params });
-      const proposal = { id, pairingTopic: topic, ...params };
+      const expiry = calcExpiry(FIVE_MINUTES);
+      const proposal = { id, pairingTopic: topic, expiry, ...params };
       await this.setProposal(id, proposal);
       this.client.events.emit("session_proposal", { id, params: proposal });
     } catch (err) {
