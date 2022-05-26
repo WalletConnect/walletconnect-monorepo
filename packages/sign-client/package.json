@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/sign-client",
   "description": "Sign Client for WalletConnect Protocol",
-  "version": "2.0.0-beta.57",
+  "version": "2.0.0-beta.58",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -31,7 +31,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/core": "^2.0.0-beta.57",
+    "@walletconnect/core": "^2.0.0-beta.58",
     "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/events": "^1.0.0",
     "@walletconnect/heartbeat": "^1.0.0",
@@ -43,8 +43,8 @@
     "@walletconnect/relay-api": "^1.0.2",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/time": "^1.0.1",
-    "@walletconnect/types": "^2.0.0-beta.57",
-    "@walletconnect/utils": "^2.0.0-beta.57",
+    "@walletconnect/types": "^2.0.0-beta.58",
+    "@walletconnect/utils": "^2.0.0-beta.58",
     "ws": "^8.3.0"
   },
   "devDependencies": {
