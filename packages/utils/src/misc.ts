@@ -212,6 +212,29 @@ export function createDelayedPromise<T>() {
   };
 }
 
+// -- expirer --------------------------------------------- //
+
+export function formatExpirerTarget(type: string, value: string | number): string {
+  if (type.toLowerCase() === "topic") {
+    if (typeof value !== "string")
+      throw new Error(`Value must be "string" for expirer target type: topic`);
+    return `topic:${value}`;
+  } else if (type.toLowerCase() === "id") {
+    if (typeof value !== "number")
+      throw new Error(`Value must be "number" for expirer target type: id`);
+    return `id:${value}`;
+  }
+  throw new Error(`Unknown expirer target type: ${type}`);
+}
+
+export function formatTopicTarget(topic: string): string {
+  return formatExpirerTarget("topic", topic);
+}
+
+export function formatIdTarget(id: number): string {
+  return formatExpirerTarget("id", id);
+}
+
 // -- events ---------------------------------------------- //
 
 export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
