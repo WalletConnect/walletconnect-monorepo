@@ -114,6 +114,7 @@ export class SignerConnection extends IJsonRpcConnection {
       });
       this.events.emit(SIGNER_EVENTS.uri, { uri });
       this.session = await approval();
+      this.events.emit(SIGNER_EVENTS.created, this.session);
       this.onOpen();
     } catch (e) {
       this.events.emit("open_error", e);
@@ -205,52 +206,29 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private registerEventListeners() {
     if (typeof this.client === "undefined") return;
-    // TODO(pedro) - add event handlers to ISignClient interface
+    // TODO: fix these ts-ignore
     // @ts-ignore
-    this.client.on(
-      "session_created",
-      // TODO(pedro) - add session created event
-      (session: SessionTypes.Struct) => {
-        if (this.session && this.session?.topic !== session.topic) return;
-        this.session = session;
-        this.events.emit(SIGNER_EVENTS.created, session);
-      },
-    );
-    // TODO(pedro) - add event handlers to ISignClient interface
+    this.client.on("session_event", (args: SignClientTypes.EventArguments["session_event"]) => {
+      if (this.session && this.session?.topic !== args.topic) return;
+      this.events.emit(SIGNER_EVENTS.event, args.params);
+    });
+    // TODO: fix these ts-ignore
     // @ts-ignore
-    this.client.on(
-      "session_updated",
-      // TODO(pedro) - add session updated event
-      (session: SessionTypes.Struct) => {
-        if (this.session && this.session?.topic !== session.topic) return;
-        this.session = session;
-        this.events.emit(SIGNER_EVENTS.updated, session);
-      },
-    );
-    // TODO(pedro) - add event handlers to ISignClient interface
+    this.client.on("session_update", (args: SignClientTypes.EventArguments["session_update"]) => {
+      if (typeof this.client === "undefined") return;
+      if (this.session && this.session?.topic !== args.topic) return;
+      this.session = this.client.session.get(args.topic);
+      this.events.emit(SIGNER_EVENTS.updated, this.session);
+    });
+    // TODO: fix these ts-ignore
     // @ts-ignore
-    this.client.on(
-      "session_event",
-      // TODO(pedro) - add session event event
-      (sessionEvent: any) => {
-        if (this.session && this.session?.topic !== sessionEvent.topic) return;
-        this.events.emit(SIGNER_EVENTS.event, sessionEvent.event);
-      },
-    );
-    // TODO(pedro) - add event handlers to ISignClient interface
-    // @ts-ignore
-    this.client.on(
-      // TODO(pedro) - add session deleted event
-      "session_deleted",
-      (session: SessionTypes.Struct) => {
-        if (!this.session) return;
-        if (this.session && this.session?.topic !== session.topic) return;
-        this.onClose();
-
-        this.events.emit(SIGNER_EVENTS.deleted, session);
-        this.session = undefined;
-      },
-    );
+    this.client.on("session_delete", (args: SignClientTypes.EventArguments["session_delete"]) => {
+      if (!this.session) return;
+      if (this.session && this.session?.topic !== args.topic) return;
+      this.onClose();
+      this.events.emit(SIGNER_EVENTS.deleted, this.session);
+      this.session = undefined;
+    });
   }
 }
 

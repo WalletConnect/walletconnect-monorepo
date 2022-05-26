@@ -69,21 +69,21 @@ test-relay:  ## runs "./servers/relay" tests against the locally running relay
 		npm run test 
 
 .PHONY: test-client
-test-client:  ## runs "./packages/client" tests against the locally running relay
+test-client:  ## runs "./packages/sign-client" tests against the locally running relay
 	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
 		run --rm monorepo-tests \
-		npm run test --prefix packages/client
+		npm run test --prefix packages/sign-client
 
 .PHONY: test-staging
-test-staging: ## runs "./packages/client" tests against the staging.walletconnect.com
+test-staging: ## runs "./packages/sign-client" tests against the staging.walletconnect.com
 	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
 		run --rm -e TEST_RELAY_URL=ws://staging.walletconnect.com \
 		monorepo-tests \
-		npm run test --prefix packages/client	
+		npm run test --prefix packages/sign-client	
 
 .PHONY: test-production
-test-production: build-lerna ## runs "./packages/client" tests against the relay.walletconnect.com
+test-production: build-lerna ## runs "./packages/sign-client" tests against the relay.walletconnect.com
 	@docker-compose $(DOCKER_COMPOSE_DEV) $(DOCKER_COMPOSE_TEST) \
 		run --rm -e TEST_RELAY_URL=ws://relay.walletconnect.com \
 		monorepo-tests \
-		npm run test --prefix packages/client	
+		npm run test --prefix packages/sign-client	

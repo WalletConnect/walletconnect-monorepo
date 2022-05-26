@@ -49,7 +49,7 @@ export async function connectTwoClients(opts?: IConnectTwoClients) {
         }
 
         // Subscribe to session requests
-        connectorB.on("session_request", (error, payload) => {
+        connectorB.on("session_request", (error, _payload) => {
           if (error) {
             reject(error);
           }

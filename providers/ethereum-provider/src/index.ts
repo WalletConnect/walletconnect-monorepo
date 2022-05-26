@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import { SessionTypes } from "@walletconnect/types";
+import { getChainsFromNamespaces, getAccountsFromNamespaces } from "@walletconnect/utils";
 import {
   SignerConnection,
   SIGNER_EVENTS,
@@ -20,76 +21,68 @@ export const signerMethods = [
   "personal_sign",
 ];
 
-export const infuraNetworks = {
-  1: "mainnet",
-  3: "ropsten",
-  4: "rinkeby",
-  5: "goerli",
-  42: "kovan",
-};
+export const signerEvents = ["chainChanged", "accountsChanged"];
 
-export const providerEvents = {
-  changed: {
-    chain: "chainChanged",
-    accounts: "accountsChanged",
-  },
-};
-
+export interface EthereumRpcMap {
+  [chainId: string]: string;
+}
 export interface EthereumRpcConfig {
-  infuraId?: string;
-  custom?: {
-    [chainId: number]: string;
+  chains: string[];
+  methods: string[];
+  events: string[];
+  rpcMap?: EthereumRpcMap;
+}
+
+export function getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
+  return {
+    chains: opts?.chainId ? [`eip155:${opts.chainId}`] : [],
+    methods: opts?.methods || [],
+    events: opts?.events || [],
+    rpcMap: opts?.rpcMap || undefined,
   };
 }
 
-export function getInfuraRpcUrl(chainId: number, infuraId?: string): string | undefined {
+export function getRpcUrl(chainId: string, rpc: EthereumRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
-  const network = infuraNetworks[chainId];
-  if (network) {
-    rpcUrl = `https://${network}.infura.io/v3/${infuraId}`;
+  if (rpc.rpcMap) {
+    rpcUrl = rpc.rpcMap[getEthereumChainId([chainId])];
   }
   return rpcUrl;
 }
 
-export function getRpcUrl(chainId: number, rpc?: EthereumRpcConfig): string | undefined {
-  let rpcUrl: string | undefined;
-  const infuraUrl = getInfuraRpcUrl(chainId, rpc?.infuraId);
-  if (rpc && rpc.custom) {
-    rpcUrl = rpc.custom[chainId];
-  } else if (infuraUrl) {
-    rpcUrl = infuraUrl;
-  }
-  return rpcUrl;
+export function getEthereumChainId(chains: string[]): number {
+  return Number(chains[0].split(":")[1]);
 }
 
 export interface EthereumProviderOptions {
   chainId: number;
   methods?: string[];
-  rpc?: EthereumRpcConfig;
+  events?: string[];
+  rpcMap?: EthereumRpcMap;
   client?: SignerConnectionClientOpts;
 }
 
 class EthereumProvider implements IEthereumProvider {
   public events: any = new EventEmitter();
 
-  private rpc: EthereumRpcConfig | undefined;
+  private rpc: EthereumRpcConfig;
 
   public namespace = "eip155";
-  public chainId = 1;
-  public methods = signerMethods;
 
   public accounts: string[] = [];
 
   public signer: JsonRpcProvider;
   public http: JsonRpcProvider | undefined;
 
-  constructor(opts?: EthereumProviderOptions) {
-    this.rpc = opts?.rpc;
-    this.chainId = opts?.chainId || this.chainId;
-    this.methods = opts?.methods ? [...opts?.methods, ...this.methods] : this.methods;
+  constructor(opts: EthereumProviderOptions) {
+    this.rpc = getRpcConfig(opts);
     this.signer = this.setSignerProvider(opts?.client);
     this.http = this.setHttpProvider(this.chainId);
     this.registerEventListeners();
+  }
+
+  get chainId() {
+    return getEthereumChainId(this.rpc.chains);
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
@@ -104,7 +97,7 @@ class EthereumProvider implements IEthereumProvider {
       default:
         break;
     }
-    if (args.method.startsWith("eth_signTypedData") || this.methods.includes(args.method)) {
+    if (args.method.startsWith("eth_signTypedData") || this.rpc.methods.includes(args.method)) {
       return this.signer.request(args, { chainId: this.formatChainId(this.chainId) });
     }
     if (typeof this.http === "undefined") {
@@ -164,55 +157,61 @@ class EthereumProvider implements IEthereumProvider {
 
   private registerEventListeners() {
     this.signer.on("connect", async () => {
-      const chains = (this.signer.connection as SignerConnection).requiredNamespaces;
+      const chains = (this.signer.connection as SignerConnection).chains;
       if (chains && chains.length) this.setChainId(chains);
       const accounts = (this.signer.connection as SignerConnection).accounts;
       if (accounts && accounts.length) this.setAccounts(accounts);
     });
-    this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Settled) => {
-      this.setChainId(session.permissions.blockchain.chains);
-      this.setAccounts(session.state.accounts);
+    this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Struct) => {
+      const chains = getChainsFromNamespaces(session.namespaces, [this.namespace]);
+      this.setChainId(chains);
+      const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+      this.setAccounts(accounts);
     });
-    this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Settled) => {
-      const chain = this.formatChainId(this.chainId);
-      if (!session.permissions.blockchain.chains.includes(chain)) {
-        this.setChainId(session.permissions.blockchain.chains);
-      }
-      if (session.state.accounts !== this.accounts) {
-        this.setAccounts(session.state.accounts);
+    this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Struct) => {
+      const chains = getChainsFromNamespaces(session.namespaces, [this.namespace]);
+      this.setChainId(chains);
+      const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+      if (accounts !== this.accounts) {
+        this.setAccounts(accounts);
       }
     });
-    this.signer.connection.on(
-      SIGNER_EVENTS.notification,
-      (notification: SessionTypes.Notification) => {
-        if (notification.type === providerEvents.changed.accounts) {
-          this.accounts = notification.data;
-          this.events.emit(providerEvents.changed.accounts, this.accounts);
-        } else if (notification.type === providerEvents.changed.chain) {
-          this.chainId = notification.data;
-          this.events.emit(providerEvents.changed.chain, this.chainId);
-        } else {
-          this.events.emit(notification.type, notification.data);
-        }
-      },
-    );
+    // TODO: fix this params with any type casting
+    this.signer.connection.on(SIGNER_EVENTS.event, (params: any) => {
+      if (!this.rpc.chains.includes(params.chainId)) return;
+      const { event } = params;
+      if (event.type === "accountsChanges") {
+        // this.accounts = event.data;
+        this.events.emit("accountsChanged", this.accounts);
+      } else if (event.type === "chainChanged") {
+        // this.setChainId([event.data]);
+        this.events.emit("chainChanged", this.chainId);
+      } else {
+        this.events.emit(event.type, event.data);
+      }
+    });
     this.signer.on("disconnect", () => {
       this.events.emit("disconnect");
     });
-    this.events.on(providerEvents.changed.chain, chainId => this.setHttpProvider(chainId));
+    this.events.on("chainChanged", (chainId: number) => this.setHttpProvider(chainId));
   }
 
   private setSignerProvider(client?: SignerConnectionClientOpts) {
     const connection = new SignerConnection({
-      chains: [this.formatChainId(this.chainId)],
-      methods: this.methods,
+      requiredNamespaces: {
+        [this.namespace]: {
+          chains: this.rpc.chains,
+          methods: this.rpc.methods,
+          events: this.rpc.events,
+        },
+      },
       client,
     });
     return new JsonRpcProvider(connection);
   }
 
   private setHttpProvider(chainId: number): JsonRpcProvider | undefined {
-    const rpcUrl = getRpcUrl(chainId, this.rpc);
+    const rpcUrl = getRpcUrl(`${this.namespace}:${chainId}`, this.rpc);
     if (typeof rpcUrl === "undefined") return undefined;
     const http = new JsonRpcProvider(new HttpConnection(rpcUrl));
     return http;
@@ -233,8 +232,9 @@ class EthereumProvider implements IEthereumProvider {
   private setChainId(chains: string[]) {
     const compatible = chains.filter(x => this.isCompatibleChainId(x));
     if (compatible.length) {
-      this.chainId = this.parseChainId(compatible[0]);
-      this.events.emit(providerEvents.changed.chain, this.chainId);
+      // TODO: needs to be fixed
+      // this.chainId = this.parseChainId(compatible[0]);
+      this.events.emit("chainChanged", this.chainId);
     }
   }
 
@@ -248,7 +248,7 @@ class EthereumProvider implements IEthereumProvider {
     this.accounts = accounts
       .filter(x => this.parseChainId(this.parseAccountId(x).chainId) === this.chainId)
       .map(x => this.parseAccountId(x).address);
-    this.events.emit(providerEvents.changed.accounts, this.accounts);
+    this.events.emit("accountsChanged", this.accounts);
   }
 }
 

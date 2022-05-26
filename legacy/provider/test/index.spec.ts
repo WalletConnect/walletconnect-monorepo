@@ -110,7 +110,7 @@ describe("WalletConnectProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", chainId => {
+        provider.on("chainChanged", (chainId: number) => {
           try {
             expect(chainId).to.eql(42);
             resolve();
@@ -132,7 +132,7 @@ describe("WalletConnectProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", chainId => {
+        provider.on("chainChanged", (chainId: number) => {
           try {
             expect(chainId).to.eql(CHAIN_ID);
             resolve();
@@ -156,7 +156,7 @@ describe("WalletConnectProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("accountsChanged", accounts => {
+        provider.on("accountsChanged", (accounts: string[]) => {
           try {
             expect(accounts[0]).to.eql(ACCOUNTS.c.address);
             resolve();
@@ -178,7 +178,7 @@ describe("WalletConnectProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("accountsChanged", accounts => {
+        provider.on("accountsChanged", (accounts: string[]) => {
           try {
             expect(accounts[0]).to.eql(ACCOUNTS.a.address);
             resolve();

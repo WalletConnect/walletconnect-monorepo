@@ -57,7 +57,7 @@ export class WalletClient {
     return wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
   }
 
-  private parseTxParams = payload => {
+  private parseTxParams = (payload: any) => {
     let txParams: ethers.providers.TransactionRequest = {
       from: payload.params[0].from,
       data: payload.params[0].data,
@@ -89,7 +89,7 @@ export class WalletClient {
   }
 
   private initialize() {
-    this.provider.connector.on("display_uri", (error, payload) => {
+    this.provider.connector.on("display_uri", (error: any, payload: any) => {
       if (error) {
         throw error;
       }
@@ -97,7 +97,7 @@ export class WalletClient {
       this.client = new WalletConnect({ uri: payload.params[0] });
 
       // subscribe to session request and approve automatically
-      this.client.on("session_request", (error, payload) => {
+      this.client.on("session_request", (error: any, payload: any) => {
         if (!this.client) throw Error("Client(session) needs to be initiated first");
         if (error) {
           throw error;
@@ -109,7 +109,7 @@ export class WalletClient {
       });
 
       // subscribe to call request and resolve JSON-RPC payloads
-      this.client.on("call_request", async (error, payload) => {
+      this.client.on("call_request", async (error: any, payload: any) => {
         if (!this.client) throw Error("Client(session) needs to be initiated first");
 
         if (error) {

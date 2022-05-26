@@ -2,32 +2,42 @@ import EventEmitter from "eventemitter3";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { RequestArguments } from "@walletconnect/jsonrpc-utils";
 import { SessionTypes } from "@walletconnect/types";
+import HttpConnection from "@walletconnect/jsonrpc-http-connection";
+import { getChainsFromNamespaces, getAccountsFromNamespaces } from "@walletconnect/utils";
 import {
   SignerConnection,
   SIGNER_EVENTS,
   SignerConnectionClientOpts,
 } from "@walletconnect/signer-connection";
-import HttpConnection from "@walletconnect/jsonrpc-http-connection";
 
 export const signerMethods = ["cosmos_getAccounts", "cosmos_signDirect", "cosmos_signAmino"];
 
-export const providerEvents = {
-  changed: {
-    chains: "chainsChanged",
-    accounts: "accountsChanged",
-  },
-};
+export const signerEvents = ["chainsChanged", "accountsChanged"];
+
+export interface CosmosRpcMap {
+  [chainId: string]: string;
+}
 
 export interface CosmosRpcConfig {
-  custom?: {
-    [chainId: string]: string;
+  chains: string[];
+  methods: string[];
+  events: string[];
+  rpcMap?: CosmosRpcMap;
+}
+
+export function getRpcConfig(opts: CosmosProviderOptions): CosmosRpcConfig {
+  return {
+    chains: opts?.chains || [],
+    methods: opts?.methods || [],
+    events: opts?.events || [],
+    rpcMap: opts?.rpcMap || undefined,
   };
 }
 
-export function getRpcUrl(chainId: string, rpc?: CosmosRpcConfig): string | undefined {
+export function getRpcUrl(chainId: string, rpc: CosmosRpcConfig): string | undefined {
   let rpcUrl: string | undefined;
-  if (rpc && rpc.custom) {
-    rpcUrl = rpc.custom[chainId];
+  if (rpc.rpcMap) {
+    rpcUrl = rpc.rpcMap[chainId];
   }
   return rpcUrl;
 }
@@ -35,35 +45,32 @@ export function getRpcUrl(chainId: string, rpc?: CosmosRpcConfig): string | unde
 export interface CosmosProviderOptions {
   chains: string[];
   methods?: string[];
-  rpc?: CosmosRpcConfig;
+  events?: string[];
+  rpcMap?: CosmosRpcMap;
   client?: SignerConnectionClientOpts;
 }
 
 class CosmosProvider {
   public events: any = new EventEmitter();
 
-  private rpc: CosmosRpcConfig | undefined;
+  public rpc: CosmosRpcConfig;
 
   public namespace = "cosmos";
-  public chains: string[] = [];
-  public methods: string[] = signerMethods;
 
   public accounts: string[] = [];
 
   public signer: JsonRpcProvider;
   public http: JsonRpcProvider | undefined;
 
-  constructor(opts?: CosmosProviderOptions) {
-    this.rpc = opts?.rpc;
-    this.chains = opts?.chains || this.chains;
-    this.methods = opts?.methods ? [...opts?.methods, ...this.methods] : this.methods;
+  constructor(opts: CosmosProviderOptions) {
+    this.rpc = getRpcConfig(opts);
     this.signer = this.setSignerProvider(opts?.client);
-    this.http = this.setHttpProvider(this.chains);
+    this.http = this.setHttpProvider(this.rpc.chains);
     this.registerEventListeners();
   }
 
   public async request<T = unknown>(args: RequestArguments, chainId?: string): Promise<T> {
-    if (this.methods.includes(args.method)) {
+    if (this.rpc.methods.includes(args.method)) {
       const context =
         typeof chainId !== "undefined" ? { chainId: this.formatChainId(chainId) } : undefined;
       return this.signer.request(args, context);
@@ -109,31 +116,39 @@ class CosmosProvider {
       if (accounts && accounts.length) this.setAccounts(accounts);
     });
     this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Struct) => {
-      this.setChainId(session.permissions.blockchain.chains);
-      this.setAccounts(session.state.accounts);
+      const chains = getChainsFromNamespaces(session.namespaces, [this.namespace]);
+      this.setChainId(chains);
+      const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+      this.setAccounts(accounts);
     });
     this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Struct) => {
-      this.setChainId(session.permissions.blockchain.chains);
-      if (session.state.accounts !== this.accounts) {
-        this.setAccounts(session.state.accounts);
+      const chains = getChainsFromNamespaces(session.namespaces, [this.namespace]);
+      this.setChainId(chains);
+      const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+      if (accounts !== this.accounts) {
+        this.setAccounts(accounts);
       }
     });
-    this.signer.connection.on(
-      SIGNER_EVENTS.notification,
-      (notification: SessionTypes.Notification) => {
-        this.events.emit(notification.type, notification.data);
-      },
-    );
+    // TODO: fix this params with any type casting
+    this.signer.connection.on(SIGNER_EVENTS.event, (params: any) => {
+      if (!this.rpc.chains.includes(params.chainId)) return;
+      this.events.emit(params.event.type, params.event.data);
+    });
     this.signer.on("disconnect", () => {
       this.events.emit("disconnect");
     });
-    this.events.on(providerEvents.changed.chains, chains => this.setHttpProvider(chains));
+    this.events.on("chainsChanged", (chains: string[]) => this.setHttpProvider(chains));
   }
 
   private setSignerProvider(client?: SignerConnectionClientOpts) {
     const connection = new SignerConnection({
-      chains: this.chains.map(x => this.formatChainId(x)),
-      methods: this.methods,
+      requiredNamespaces: {
+        [this.namespace]: {
+          chains: this.rpc.chains,
+          methods: this.rpc.methods,
+          events: this.rpc.events,
+        },
+      },
       client,
     });
     return new JsonRpcProvider(connection);
@@ -163,8 +178,8 @@ class CosmosProvider {
       .filter(x => this.isCompatibleChainId(x))
       .map(x => this.parseChainId(x));
     if (compatible.length) {
-      this.chains = compatible;
-      this.events.emit(providerEvents.changed.chains, this.chains);
+      this.rpc.chains = compatible;
+      this.events.emit("chainsChanged", this.rpc.chains);
     }
   }
 
@@ -176,9 +191,9 @@ class CosmosProvider {
 
   private setAccounts(accounts: string[]) {
     this.accounts = accounts
-      .filter(x => this.chains.includes(this.parseChainId(this.parseAccountId(x).chainId)))
+      .filter(x => this.rpc.chains.includes(this.parseChainId(this.parseAccountId(x).chainId)))
       .map(x => this.parseAccountId(x).address);
-    this.events.emit(providerEvents.changed.accounts, this.accounts);
+    this.events.emit("accountsChanged", this.accounts);
   }
 }
 
