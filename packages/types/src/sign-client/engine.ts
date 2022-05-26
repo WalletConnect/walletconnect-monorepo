@@ -158,7 +158,11 @@ export interface EnginePrivate {
 
   deletePairing(topic: string): Promise<void>;
 
+  deleteProposal(id: number): Promise<void>;
+
   setExpiry(topic: string, expiry: number): Promise<void>;
+
+  setProposal(id: number, proposal: ProposalTypes.Struct): Promise<void>;
 
   cleanup(): Promise<void>;
 

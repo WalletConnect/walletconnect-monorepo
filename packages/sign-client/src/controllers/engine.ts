@@ -25,6 +25,8 @@ import {
   calcExpiry,
   formatUri,
   generateRandomBytes32,
+  formatTopicTarget,
+  formatIdTarget,
   parseUri,
   createDelayedPromise,
   ERROR,
@@ -116,7 +118,8 @@ export class Engine extends IEngine {
     if (!topic) throw new Error(ERROR.MISSING_OR_INVALID.stringify({ name: "topic" }));
 
     const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
-    await this.client.proposal.set(id, { id, ...proposal });
+    const expiry = calcExpiry(FIVE_MINUTES);
+    await this.setProposal(id, { id, expiry, ...proposal });
 
     return { uri, approval };
   };
@@ -345,7 +348,7 @@ export class Engine extends IEngine {
       this.client.session.delete(topic, ERROR.DELETED.format()),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(topic),
+      this.client.expirer.del(formatTopicTarget(topic)),
     ]);
   };
 
@@ -354,7 +357,14 @@ export class Engine extends IEngine {
       this.client.core.relayer.unsubscribe(topic),
       this.client.pairing.delete(topic, ERROR.DELETED.format()),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(topic),
+      this.client.expirer.del(formatTopicTarget(topic)),
+    ]);
+  };
+
+  private deleteProposal: EnginePrivate["deleteProposal"] = async id => {
+    await Promise.all([
+      this.client.proposal.delete(id, ERROR.DELETED.format()),
+      this.client.expirer.del(formatIdTarget(id)),
     ]);
   };
 
@@ -364,7 +374,14 @@ export class Engine extends IEngine {
     } else if (this.client.session.keys.includes(topic)) {
       await this.client.session.update(topic, { expiry });
     }
-    this.client.expirer.set(topic, { topic, expiry });
+    const target = formatTopicTarget(topic);
+    this.client.expirer.set(target, { target, expiry });
+  };
+
+  private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
+    await this.client.proposal.set(id, proposal);
+    const target = formatIdTarget(id);
+    this.client.expirer.set(target, { target, expiry: proposal.expiry });
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -393,15 +410,20 @@ export class Engine extends IEngine {
   private cleanup: EnginePrivate["cleanup"] = async () => {
     const sessionTopics: string[] = [];
     const pairingTopics: string[] = [];
+    const proposalIds: number[] = [];
     this.client.session.values.forEach(session => {
       if (isExpired(session.expiry)) sessionTopics.push(session.topic);
     });
     this.client.pairing.values.forEach(pairing => {
       if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
     });
+    this.client.proposal.values.forEach(proposal => {
+      if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
+    });
     await Promise.all([
       ...sessionTopics.map(this.deleteSession),
       ...pairingTopics.map(this.deletePairing),
+      ...proposalIds.map(this.deleteProposal),
     ]);
   };
 
@@ -494,8 +516,9 @@ export class Engine extends IEngine {
     const { params, id } = payload;
     try {
       this.isValidConnect({ ...payload.params });
-      const proposal = { id, pairingTopic: topic, ...params };
-      await this.client.proposal.set(id, proposal);
+      const expiry = calcExpiry(FIVE_MINUTES);
+      const proposal = { id, pairingTopic: topic, expiry, ...params };
+      await this.setProposal(id, proposal);
       this.client.events.emit("session_proposal", { id, params: proposal });
     } catch (err) {
       await this.sendError(id, topic, err);
@@ -760,13 +783,19 @@ export class Engine extends IEngine {
 
   private registerExpirerEvents() {
     this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-      const { topic } = event;
-      if (this.client.session.keys.includes(topic)) {
-        await this.deleteSession(topic);
-        this.client.events.emit("session_expire", { topic });
-      } else if (this.client.pairing.keys.includes(topic)) {
-        await this.deletePairing(topic);
-        this.client.events.emit("pairing_expire", { topic });
+      const [type, value] = event.target.split(":");
+      if (type === "topic" && typeof value === "string") {
+        const topic = value;
+        if (this.client.session.keys.includes(topic)) {
+          await this.deleteSession(topic);
+          this.client.events.emit("session_expire", { topic });
+        } else if (this.client.pairing.keys.includes(topic)) {
+          await this.deletePairing(topic);
+          this.client.events.emit("pairing_expire", { topic });
+        }
+      } else if (type === "id" && typeof value === "number") {
+        const id = value;
+        await this.deleteProposal(id);
       }
     });
   }

@@ -17,6 +17,7 @@ export declare namespace ProposalTypes {
 
   export interface Struct {
     id: number;
+    expiry: number;
     relays: RelayerTypes.ProtocolOptions[];
     proposer: {
       publicKey: string;
