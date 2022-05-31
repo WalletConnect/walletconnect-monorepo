@@ -14,6 +14,7 @@ export declare namespace CoreTypes {
     relayUrl?: string;
     logger?: string | Logger;
     keychain?: IKeyChain;
+    storage?: IKeyValueStorage;
     storageOptions?: KeyValueStorageOptions;
   }
 }
