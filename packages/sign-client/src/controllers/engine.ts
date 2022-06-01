@@ -311,7 +311,7 @@ export class Engine extends IEngine {
 
   public find: IEngine["find"] = params => {
     this.isInitialized();
-    return this.client.session.values.filter(session => isSessionCompatible(session, params));
+    return this.client.session.getAll().filter(session => isSessionCompatible(session, params));
   };
 
   // ---------- Private Helpers --------------------------------------- //
@@ -411,13 +411,13 @@ export class Engine extends IEngine {
     const sessionTopics: string[] = [];
     const pairingTopics: string[] = [];
     const proposalIds: number[] = [];
-    this.client.session.values.forEach(session => {
+    this.client.session.getAll().forEach(session => {
       if (isExpired(session.expiry)) sessionTopics.push(session.topic);
     });
-    this.client.pairing.values.forEach(pairing => {
+    this.client.pairing.getAll().forEach(pairing => {
       if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
     });
-    this.client.proposal.values.forEach(proposal => {
+    this.client.proposal.getAll().forEach(proposal => {
       if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
     });
     await Promise.all([

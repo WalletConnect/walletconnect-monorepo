@@ -27,6 +27,8 @@ export abstract class IStore<Key, Value> {
 
   public abstract get(key: Key): Value;
 
+  public abstract getAll(filter?: Partial<Value>): Value[];
+
   public abstract update(key: Key, update: Partial<Value>): Promise<void>;
 
   public abstract delete(key: Key, reason: ErrorResponse): Promise<void>;
