@@ -87,6 +87,14 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     return value;
   };
 
+  public getAll: IStore<Key, Data>["getAll"] = filter => {
+    if (!filter) return this.values;
+
+    return this.values.filter(value =>
+      Object.keys(filter).every(key => value[key] === filter[key]),
+    );
+  };
+
   public update: IStore<Key, Data>["update"] = async (key, update) => {
     this.isInitialized();
     this.logger.debug(`Updating value`);

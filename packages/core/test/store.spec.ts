@@ -93,4 +93,25 @@ describe("Store", () => {
       expect(store.length).to.equal(0);
     });
   });
+
+  describe("getAll", () => {
+    const key1 = "key1";
+    const key2 = "key2";
+    const value1 = { topic: "abc123", expiry: 1000, active: false };
+    const value2 = { topic: "abc456", expiry: 1000, active: true };
+
+    it("returns all values if no filter was provided", async () => {
+      await store.set(key1, value1);
+      await store.set(key2, value2);
+      const all = store.getAll();
+      expect(all.length).to.equal(2);
+    });
+    it("only returns values that satisfy filter", async () => {
+      await store.set(key1, value1);
+      await store.set(key2, value2);
+      const filtered = store.getAll({ active: true });
+      expect(filtered.length).to.equal(1);
+      expect(filtered[0].active).to.equal(true);
+    });
+  });
 });
