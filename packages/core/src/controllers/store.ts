@@ -3,6 +3,7 @@ import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walle
 import { ERROR, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
+import isEqual from "lodash.isequal";
 
 type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Struct;
 
@@ -91,7 +92,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     if (!filter) return this.values;
 
     return this.values.filter(value =>
-      Object.keys(filter).every(key => value[key] === filter[key]),
+      Object.keys(filter).every(key => isEqual(value[key], filter[key])),
     );
   };
 
