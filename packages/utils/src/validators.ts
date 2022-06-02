@@ -291,5 +291,5 @@ export function isValidNamespacesChange(
   requiredNamespaces: ProposalTypes.RequiredNamespaces,
   namespaces: SessionTypes.Namespaces,
 ) {
-  return !Object.keys(getDeletedDiff(requiredNamespaces, namespaces)).length;
+  return Object.keys(getDeletedDiff(requiredNamespaces, namespaces)).length === 0;
 }

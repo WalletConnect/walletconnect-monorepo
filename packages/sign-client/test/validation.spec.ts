@@ -372,7 +372,7 @@ describe("Sign Client Validation", () => {
       );
     });
 
-    it("thorws when incompatible namespaces params are provided", async () => {
+    it("throws when incompatible namespaces params are provided", async () => {
       await expect(
         client.update({
           topic,
