@@ -75,6 +75,13 @@ export const TEST_SESSION: SessionTypes.Struct = {
     publicKey: TEST_KEY_PAIRS.B.publicKey,
     metadata: TEST_SESSION_METADATA as SignClientTypes.Metadata,
   },
+  requiredNamespaces: {
+    [TEST_ETHEREUM_NAMESPACE]: {
+      chains: TEST_CHAINS,
+      methods: TEST_METHODS,
+      events: TEST_EVENTS,
+    },
+  },
   namespaces: {
     [TEST_ETHEREUM_NAMESPACE]: {
       accounts: TEST_ACCOUNTS,

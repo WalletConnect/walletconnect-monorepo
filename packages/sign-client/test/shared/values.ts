@@ -99,6 +99,9 @@ export const TEST_NAMESPACES = {
   },
 };
 
+export const TEST_NAMESPACES_INVALID_METHODS = { ...TEST_NAMESPACES, methods: ["eth_invalid"] };
+export const TEST_NAMESPACES_INVALID_CHAIN = { eip1111: { ...TEST_NAMESPACES.eip155 } };
+
 export const TEST_MESSAGE = "My name is John Doe";
 export const TEST_SIGNATURE =
   "0xc8906b32c9f74d0805226ffff5ecd6897ea55cdf58f54a53a2e5b5d5a21fb67f43ef1d4c2ed790a724a1549b4cc40137403048c4aed9825cfd5ba6c1d15bd0721c";

@@ -48,6 +48,7 @@ import {
   isSessionCompatible,
   isExpired,
   isUndefined,
+  isValidNamespacesChange,
 } from "@walletconnect/utils";
 
 export class Engine extends IEngine {
@@ -106,11 +107,12 @@ export class Engine extends IEngine {
         if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
-          await this.client.session.set(session.topic, session);
+          const completeSession = { ...session, requiredNamespaces };
+          await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
           if (topic)
             await this.client.pairing.update(topic, { peerMetadata: session.peer.metadata });
-          resolve(session);
+          resolve(completeSession);
         }
       },
     );
@@ -142,7 +144,7 @@ export class Engine extends IEngine {
     this.isInitialized();
     this.isValidApprove(params);
     const { id, relayProtocol, namespaces } = params;
-    const { pairingTopic, proposer } = this.client.proposal.get(id);
+    const { pairingTopic, proposer, requiredNamespaces } = this.client.proposal.get(id);
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -151,14 +153,10 @@ export class Engine extends IEngine {
       peerPublicKey,
     );
     const sessionSettle = {
-      relay: {
-        protocol: relayProtocol ?? "waku",
-      },
+      relay: { protocol: relayProtocol ?? "waku" },
       namespaces,
-      controller: {
-        publicKey: selfPublicKey,
-        metadata: this.client.metadata,
-      },
+      requiredNamespaces,
+      controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: SESSION_EXPIRY,
     };
 
@@ -866,7 +864,10 @@ export class Engine extends IEngine {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "update params" });
     const { topic, namespaces } = params;
     await this.isValidSessionTopic(topic);
+    const session = this.client.session.get(topic);
     if (!isValidNamespaces(namespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
+    if (!isValidNamespacesChange(session.requiredNamespaces, namespaces))
       throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
   };
 
