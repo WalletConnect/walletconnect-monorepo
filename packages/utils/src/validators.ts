@@ -6,7 +6,7 @@ import {
   getNamespacesEventsForChainId,
   getAccountsChains,
 } from "./namespaces";
-import { hasOverlap } from "./misc";
+import { hasOverlap, getDeletedDiff } from "./misc";
 
 export function isSessionCompatible(session: SessionTypes.Struct, params: EngineTypes.FindParams) {
   const { requiredNamespaces } = params;
@@ -285,4 +285,11 @@ export function isValidNamespacesEvent(
   if (!isValidString(eventName, false)) return false;
   const events = getNamespacesEventsForChainId(namespaces, chainId);
   return events.includes(eventName);
+}
+
+export function isValidNamespacesChange(
+  requiredNamespaces: ProposalTypes.RequiredNamespaces,
+  namespaces: SessionTypes.Namespaces,
+) {
+  return !Object.keys(getDeletedDiff(requiredNamespaces, namespaces)).length;
 }

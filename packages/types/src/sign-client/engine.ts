@@ -24,7 +24,10 @@ export declare namespace EngineTypes {
     | "session_request";
 
   interface EventArguments {
-    session_connect: { error?: ErrorResponse; session?: SessionTypes.Struct };
+    session_connect: {
+      error?: ErrorResponse;
+      session?: Omit<SessionTypes.Struct, "requiredNamespaces">;
+    };
     session_approve: { error?: ErrorResponse };
     session_update: { error?: ErrorResponse };
     session_extend: { error?: ErrorResponse };
