@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@walletconnect/encoding": "^1.0.1",
-    "@walletconnect/jsonrpc-utils": "^1.0.0",
+    "@walletconnect/jsonrpc-utils": "^1.0.1",
     "@walletconnect/legacy-types": "^2.0.0-beta.100",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/window-getters": "^1.0.0",
