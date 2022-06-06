@@ -1,4 +1,4 @@
-import { SignClient } from "@walletconnect/sign-client";
+import SignClient from "@walletconnect/sign-client";
 import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SignClientTypes, ISignClient, SessionTypes, ProposalTypes } from "@walletconnect/types";
@@ -10,8 +10,8 @@ import {
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 
-function isClient(opts?: SignerConnectionClientOpts): opts is ISignClient {
-  return typeof opts !== "undefined" && typeof (opts as ISignClient).context !== "undefined";
+function isClient(opts?: SignerConnectionClientOpts): opts is SignClient {
+  return typeof opts !== "undefined" && typeof (opts as SignClient).context !== "undefined";
 }
 
 export const SIGNER_EVENTS = {
@@ -39,7 +39,7 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private opts: SignerConnectionClientOpts | undefined;
 
-  private client: ISignClient | undefined;
+  private client?: SignClient;
   private initializing = false;
 
   constructor(opts?: SignerConnectionOpts) {
@@ -145,14 +145,14 @@ export class SignerConnection extends IJsonRpcConnection {
     this.client
       .request({ topic: this.session.topic, request: payload, chainId: context?.chainId })
       .then((result: any) => this.events.emit("payload", formatJsonRpcResult(payload.id, result)))
-      .catch(e => this.events.emit("payload", formatJsonRpcError(payload.id, e.message)));
+      .catch((e: any) => this.events.emit("payload", formatJsonRpcError(payload.id, e.message)));
   }
 
   // ---------- Private ----------------------------------------------- //
 
   private async register(
     opts: SignerConnectionClientOpts | undefined = this.opts,
-  ): Promise<ISignClient> {
+  ): Promise<SignClient> {
     if (typeof this.client !== "undefined") {
       return this.client;
     }
@@ -206,22 +206,16 @@ export class SignerConnection extends IJsonRpcConnection {
 
   private registerEventListeners() {
     if (typeof this.client === "undefined") return;
-    // TODO: fix these ts-ignore
-    // @ts-ignore
     this.client.on("session_event", (args: SignClientTypes.EventArguments["session_event"]) => {
       if (this.session && this.session?.topic !== args.topic) return;
       this.events.emit(SIGNER_EVENTS.event, args.params);
     });
-    // TODO: fix these ts-ignore
-    // @ts-ignore
     this.client.on("session_update", (args: SignClientTypes.EventArguments["session_update"]) => {
       if (typeof this.client === "undefined") return;
       if (this.session && this.session?.topic !== args.topic) return;
       this.session = this.client.session.get(args.topic);
       this.events.emit(SIGNER_EVENTS.updated, this.session);
     });
-    // TODO: fix these ts-ignore
-    // @ts-ignore
     this.client.on("session_delete", (args: SignClientTypes.EventArguments["session_delete"]) => {
       if (!this.session) return;
       if (this.session && this.session?.topic !== args.topic) return;
