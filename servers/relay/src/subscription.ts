@@ -34,7 +34,7 @@ export class SubscriptionService {
 
   public get(topic: string, senderSocketId: string, legacy?: boolean): Subscription[] {
     const subscriptions = this.subscriptions.filter(
-      sub => sub.topic === topic && sub.socketId !== senderSocketId && !!sub.legacy === !!legacy,
+      (sub) => sub.topic === topic && sub.socketId !== senderSocketId && !!sub.legacy === !!legacy,
     );
     this.logger.debug(`Getting Subscriptions`);
     this.logger.trace({ type: "method", method: "get", topic, subscriptions });
@@ -44,14 +44,18 @@ export class SubscriptionService {
   public remove(id: string): void {
     this.logger.debug(`Removing Subscription`);
     this.logger.trace({ type: "method", method: "remove", id });
-    this.subscriptions = this.subscriptions.filter(sub => sub.id !== id);
+    this.subscriptions = this.subscriptions.filter((sub) => sub.id !== id);
     this.server.events.emit(SUBSCRIPTION_EVENTS.removed, id);
   }
 
   public removeSocket(socketId: string): void {
     this.logger.debug(`Removing Socket Subscriptions`);
     this.logger.trace({ type: "method", method: "removeSocket", socketId });
-    this.subscriptions = this.subscriptions.filter(sub => sub.socketId !== socketId);
+    this.subscriptions = this.subscriptions.filter((sub) => {
+      const toRemove = sub.socketId !== socketId;
+      if (!toRemove) this.server.redis.removeStream(sub.topic);
+      return toRemove;
+    });
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -62,7 +66,7 @@ export class SubscriptionService {
   }
 
   private clearInactiveSubscriptions() {
-    this.subscriptions = this.subscriptions.filter(sub =>
+    this.subscriptions = this.subscriptions.filter((sub) =>
       this.server.ws.isSocketConnected(sub.socketId),
     );
   }

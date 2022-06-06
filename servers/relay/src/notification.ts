@@ -57,8 +57,9 @@ export class NotificationService {
     this.server.events.on(JSONRPC_EVENTS.publish, async (params: RelayJsonRpc.PublishParams) =>
       this.onNewMessage(params.topic, params.prompt),
     );
-    this.server.events.on(NETWORK_EVENTS.message, async (topic, message, prompt) =>
-      this.onNewMessage(topic, prompt),
-    );
+    this.server.events.on(NETWORK_EVENTS.message, async (topic, message, prompt) => {
+      console.log("SEBAS", topic, message, prompt);
+      this.onNewMessage(topic, prompt);
+    });
   }
 }

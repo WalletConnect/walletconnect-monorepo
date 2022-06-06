@@ -74,7 +74,7 @@ export class WebSocketService {
   public isSocketConnected(socketId: string): boolean {
     try {
       const socket = this.getSocket(socketId);
-      if (typeof socket == "undefined") return false;
+      if (typeof socket === "undefined") return false;
       return socket.readyState === 1;
     } catch (e) {
       return false;
@@ -88,21 +88,19 @@ export class WebSocketService {
     this.logger.debug({ type: "event", event: "connection", socketId });
     this.sockets.set(socketId, socket);
     this.server.events.emit(WEBSOCKET_EVENTS.open, socketId);
-    socket.on("message", async data => {
+    socket.on("message", async (data) => {
       this.metrics.totalMessages.inc();
       const message = data.toString();
       this.logger.debug(`Incoming Socket Message`);
       this.logger.trace({ type: "message", direction: "incoming", message });
 
       if (!message || !message.trim()) {
-        //this.send(socketId, "Missing or invalid socket data");
-        // this gets triggered by web sockets that send ping packets
+        this.send(socketId, "Missing or invalid socket data");
         return;
       }
       const payload = safeJsonParse(message);
       if (typeof payload === "string") {
         this.send(socketId, "Socket message is invalid");
-        return;
       } else if (isLegacySocketMessage(payload)) {
         if (isLegacyDisabled(this.server.config.mode)) {
           this.send(socketId, "Legacy messages are disabled");
@@ -117,7 +115,6 @@ export class WebSocketService {
         this.jsonrpc.onPayload(socketId, payload);
       } else {
         this.send(socketId, "Socket message unsupported");
-        return;
       }
     });
 

@@ -77,8 +77,8 @@ export class MessageService {
   }
 
   private registerEventListeners(): void {
-    if (typeof this.server.redis === "undefined") return;
     this.server.events.on(NETWORK_EVENTS.message, (topic, message, prompt) => {
+      console.log("SEBAS2", topic, message, prompt);
       const params = { topic, message, ttl: SIX_HOURS, prompt };
       this.setMessage(params);
     });

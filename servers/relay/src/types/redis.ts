@@ -9,4 +9,4 @@ export declare type StreamMessagesReply = Array<StreamMessageReply>;
 export declare type StreamsMessagesReply = Array<{
   name: RedisCommandArgument;
   messages: StreamMessagesReply;
-}> | null;
+}>;
