@@ -73,7 +73,7 @@ class CosmosProvider {
     if (this.rpc.methods.includes(args.method)) {
       const context =
         typeof chainId !== "undefined" ? { chainId: this.formatChainId(chainId) } : undefined;
-      return this.signer.request(args, context);
+      return await this.signer.request(args, context);
     }
     if (typeof this.http === "undefined") {
       throw new Error(`Cannot request JSON-RPC method (${args.method}) without provided rpc url`);

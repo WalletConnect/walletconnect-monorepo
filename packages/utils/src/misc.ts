@@ -241,8 +241,10 @@ export function parseExpirerTarget(target: string) {
   const parsed: { id?: number; topic?: string } = { id: undefined, topic: undefined };
   if (type === "topic" && typeof value === "string") {
     parsed.topic = value;
-  } else if (type === "id" && typeof value === "number") {
-    parsed.id = value;
+  } else if (type === "id" && Number.isInteger(Number(value))) {
+    parsed.id = Number(value);
+  } else {
+    throw new Error(`Invalid target, expected id:number or topic:string, got ${type}:${value}`);
   }
 
   return parsed;
