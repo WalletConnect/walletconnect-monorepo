@@ -26,6 +26,7 @@ import {
   formatUri,
   generateRandomBytes32,
   parseUri,
+  parseExpirerTarget,
   createDelayedPromise,
   ERROR,
   engineEvent,
@@ -777,9 +778,8 @@ export class Engine extends IEngine {
 
   private registerExpirerEvents() {
     this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-      const [type, value] = event.target.split(":");
-      if (type === "topic" && typeof value === "string") {
-        const topic = value;
+      const { topic, id } = parseExpirerTarget(event.target);
+      if (topic) {
         if (this.client.session.keys.includes(topic)) {
           await this.deleteSession(topic);
           this.client.events.emit("session_expire", { topic });
@@ -787,8 +787,7 @@ export class Engine extends IEngine {
           await this.deletePairing(topic);
           this.client.events.emit("pairing_expire", { topic });
         }
-      } else if (type === "id" && typeof value === "number") {
-        const id = value;
+      } else if (id) {
         await this.deleteProposal(id);
       }
     });

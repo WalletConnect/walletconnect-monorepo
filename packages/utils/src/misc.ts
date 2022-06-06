@@ -236,6 +236,18 @@ export function formatIdTarget(id: number): string {
   return formatExpirerTarget("id", id);
 }
 
+export function parseExpirerTarget(target: string) {
+  const [type, value] = target.split(":");
+  const parsed: { id?: number; topic?: string } = { id: undefined, topic: undefined };
+  if (type === "topic" && typeof value === "string") {
+    parsed.topic = value;
+  } else if (type === "id" && typeof value === "number") {
+    parsed.id = value;
+  }
+
+  return parsed;
+}
+
 // -- events ---------------------------------------------- //
 
 export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
