@@ -215,7 +215,7 @@ export function createDelayedPromise<T>() {
 
 // -- expirer --------------------------------------------- //
 
-export function formatExpirerTarget(type: string, value: string | number): string {
+export function formatExpirerTarget(type: "topic" | "id", value: string | number): string {
   if (type.toLowerCase() === "topic") {
     if (typeof value !== "string")
       throw new Error(`Value must be "string" for expirer target type: topic`);

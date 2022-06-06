@@ -25,8 +25,6 @@ import {
   calcExpiry,
   formatUri,
   generateRandomBytes32,
-  formatTopicTarget,
-  formatIdTarget,
   parseUri,
   createDelayedPromise,
   ERROR,
@@ -346,7 +344,7 @@ export class Engine extends IEngine {
       this.client.session.delete(topic, ERROR.DELETED.format()),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(formatTopicTarget(topic)),
+      this.client.expirer.del(topic),
     ]);
   };
 
@@ -355,14 +353,14 @@ export class Engine extends IEngine {
       this.client.core.relayer.unsubscribe(topic),
       this.client.pairing.delete(topic, ERROR.DELETED.format()),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(formatTopicTarget(topic)),
+      this.client.expirer.del(topic),
     ]);
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async id => {
     await Promise.all([
       this.client.proposal.delete(id, ERROR.DELETED.format()),
-      this.client.expirer.del(formatIdTarget(id)),
+      this.client.expirer.del(id),
     ]);
   };
 
@@ -372,14 +370,12 @@ export class Engine extends IEngine {
     } else if (this.client.session.keys.includes(topic)) {
       await this.client.session.update(topic, { expiry });
     }
-    const target = formatTopicTarget(topic);
-    this.client.expirer.set(target, { target, expiry });
+    this.client.expirer.set(topic, expiry);
   };
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
-    const target = formatIdTarget(id);
-    this.client.expirer.set(target, { target, expiry: proposal.expiry });
+    this.client.expirer.set(id, proposal.expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {

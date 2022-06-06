@@ -2,7 +2,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { toMiliseconds } from "@walletconnect/time";
 import { ExpirerTypes, ICore, IExpirer } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
+import { ERROR, formatIdTarget, formatTopicTarget } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
@@ -60,8 +60,9 @@ export class Expirer extends IExpirer {
     return Array.from(this.expirations.values());
   }
 
-  public has: IExpirer["has"] = target => {
+  public has: IExpirer["has"] = key => {
     try {
+      const target = this.formatTarget(key);
       const expiration = this.getExpiration(target);
       return typeof expiration !== "undefined";
     } catch (e) {
@@ -70,8 +71,10 @@ export class Expirer extends IExpirer {
     }
   };
 
-  public set: IExpirer["set"] = (target, expiration) => {
+  public set: IExpirer["set"] = (key, expiry) => {
     this.isInitialized();
+    const target = this.formatTarget(key);
+    const expiration = { target, expiry };
     this.expirations.set(target, expiration);
     this.checkExpiry(target, expiration);
     this.events.emit(EXPIRER_EVENTS.created, {
@@ -80,14 +83,16 @@ export class Expirer extends IExpirer {
     } as ExpirerTypes.Created);
   };
 
-  public get: IExpirer["get"] = target => {
+  public get: IExpirer["get"] = key => {
     this.isInitialized();
+    const target = this.formatTarget(key);
     return this.getExpiration(target);
   };
 
-  public del: IExpirer["del"] = async target => {
+  public del: IExpirer["del"] = key => {
     this.isInitialized();
-    const exists = await this.has(target);
+    const target = this.formatTarget(key);
+    const exists = this.has(target);
     if (exists) {
       const expiration = this.getExpiration(target);
       this.expirations.delete(target);
@@ -115,6 +120,15 @@ export class Expirer extends IExpirer {
   };
 
   // ---------- Private ----------------------------------------------- //
+
+  private formatTarget(key: string | number) {
+    if (typeof key === "string") {
+      return formatTopicTarget(key);
+    } else if (typeof key === "number") {
+      return formatIdTarget(key);
+    }
+    throw new Error(`Unknown expirer target type: ${typeof key}`);
+  }
 
   private async setExpirations(expirations: ExpirerTypes.Expiration[]): Promise<void> {
     await this.core.storage.setItem<ExpirerTypes.Expiration[]>(this.storageKey, expirations);
