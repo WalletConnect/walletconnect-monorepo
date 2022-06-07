@@ -1,7 +1,7 @@
 import SignClient from "@walletconnect/sign-client";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
-import { SignClientTypes, ISignClient, SessionTypes, EngineTypes } from "@walletconnect/types";
+import { SignClientTypes, SessionTypes } from "@walletconnect/types";
 import { ERROR } from "@walletconnect/utils";
 import { ethers, utils } from "ethers";
 import EthereumProvider from "../../src";
