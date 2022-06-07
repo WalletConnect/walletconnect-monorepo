@@ -156,7 +156,7 @@ class EthereumProvider implements IEthereumProvider {
   // ---------- Private ----------------------------------------------- //
 
   private registerEventListeners() {
-    this.signer.on("connect", async () => {
+    this.signer.on("connect", () => {
       const chains = (this.signer.connection as SignerConnection).chains;
       if (chains && chains.length) this.setChainId(chains);
       const accounts = (this.signer.connection as SignerConnection).accounts;

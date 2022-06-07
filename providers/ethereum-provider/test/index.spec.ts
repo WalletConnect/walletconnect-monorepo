@@ -16,7 +16,7 @@ import EthereumProvider from "../src";
 
 const CHAIN_ID = 123;
 const PORT = 8545;
-const RPC_URL = `http://localhost:${PORT}`;
+const RPC_URL = `http://0.0.0.0:${PORT}`;
 const ACCOUNTS = {
   a: {
     balance: utils.parseEther("5").toHexString(),
@@ -37,7 +37,7 @@ const ACCOUNTS = {
 
 const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
-  : "ws://localhost:5555";
+  : "ws://0.0.0.0:5555";
 
 const TEST_APP_METADATA = {
   name: "Test App",
@@ -107,7 +107,7 @@ describe("EthereumProvider", function() {
     await testNetwork.close();
     // disconnect provider
     await Promise.all([
-      new Promise<void>(async resolve => {
+      new Promise<void>(resolve => {
         provider.on("disconnect", () => {
           resolve();
         });
@@ -134,7 +134,7 @@ describe("EthereumProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", chainId => {
+        provider.on("chainChanged", (chainId: number) => {
           try {
             expect(chainId).to.eql(42);
             resolve();
@@ -156,7 +156,7 @@ describe("EthereumProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", chainId => {
+        provider.on("chainChanged", (chainId: number) => {
           try {
             expect(chainId).to.eql(CHAIN_ID);
             resolve();
@@ -181,7 +181,7 @@ describe("EthereumProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("accountsChanged", accounts => {
+        provider.on("accountsChanged", (accounts: string) => {
           try {
             expect(accounts[0]).to.eql(ACCOUNTS.c.address);
             resolve();
@@ -203,7 +203,7 @@ describe("EthereumProvider", function() {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("accountsChanged", accounts => {
+        provider.on("accountsChanged", (accounts: string) => {
           try {
             expect(accounts[0]).to.eql(ACCOUNTS.a.address);
             resolve();
@@ -216,7 +216,7 @@ describe("EthereumProvider", function() {
   });
   describe("Web3", () => {
     let web3: Web3;
-    before(async () => {
+    before(() => {
       web3 = new Web3(provider);
     });
     it("matches accounts", async () => {
@@ -286,7 +286,7 @@ describe("EthereumProvider", function() {
     it("sign transaction and send via sendAsync", async () => {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
       const signedTx = await web3.eth.signTransaction(TEST_ETH_TRANSFER);
-      const callback = async (error, result) => {
+      const callback = async (_error: any, result: any) => {
         expect(!!result).to.be.true;
         const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
         expect(balanceAfter.lt(balanceBefore)).to.be.true;
@@ -302,7 +302,7 @@ describe("EthereumProvider", function() {
   });
   describe("Ethers", () => {
     let web3Provider: providers.Web3Provider;
-    before(async () => {
+    before(() => {
       web3Provider = new providers.Web3Provider(provider);
     });
     it("matches accounts", async () => {

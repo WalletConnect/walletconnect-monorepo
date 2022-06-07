@@ -22,6 +22,7 @@ export class WalletClient {
 
   public client?: SignClient;
   public topic?: string;
+  public namespaces?: SessionTypes.Namespaces;
 
   static async init(
     provider: EthereumProvider,
@@ -119,17 +120,8 @@ export class WalletClient {
   private async updateSession() {
     if (typeof this.client === "undefined") return;
     if (typeof this.topic === "undefined") return;
-    await this.client.update({ topic: this.topic, state: this.getSessionState() });
-  }
-
-  private async upgradeSession() {
-    if (typeof this.client === "undefined") return;
-    if (typeof this.topic === "undefined") return;
-    await this.client.upgrade({
-      topic: this.topic,
-      permissions: { blockchain: { chains: [`eip155:${this.chainId}`] } },
-    });
-    await this.updateAccounts();
+    if (typeof this.namespaces === "undefined") return;
+    await this.client.update({ topic: this.topic, namespaces: this.namespaces });
   }
 
   private async updateAccounts() {
@@ -138,7 +130,7 @@ export class WalletClient {
   }
 
   private async updateChainId() {
-    await this.upgradeSession();
+    await this.updateSession();
     await this.emitChainChangedEvent();
   }
 
@@ -153,7 +145,7 @@ export class WalletClient {
     }
 
     // auto-pair
-    this.provider.signer.connection.on(SIGNER_EVENTS.uri, async ({ uri }) => {
+    this.provider.signer.connection.on(SIGNER_EVENTS.uri, async ({ uri }: { uri: string }) => {
       if (typeof this.client === "undefined") throw new Error("Sign Client not inititialized");
       await this.client.pair({ uri });
     });
@@ -165,7 +157,18 @@ export class WalletClient {
         if (typeof this.client === "undefined") throw new Error("Sign Client not inititialized");
         const { id, requiredNamespaces, relays } = proposal.params;
         const namespaces = {};
-        Object.entries(requiredNamespaces).map(([key, value]) => {});
+        Object.entries(requiredNamespaces).forEach(([key, value]) => {
+          namespaces[key] = {
+            methods: value.methods,
+            events: value.events,
+            accounts: value.chains.map(chain => `${chain}:${this.accounts[0]}`),
+            extension: value.extension?.map(ext => ({
+              methods: ext.methods,
+              events: ext.events,
+              accounts: ext.chains.map(chain => `${chain}:${this.accounts[0]}`),
+            })),
+          };
+        });
         const { acknowledged } = await this.client.approve({
           id,
           relayProtocol: relays[0].protocol,
@@ -173,6 +176,7 @@ export class WalletClient {
         });
         const session = await acknowledged();
         this.topic = session.topic;
+        this.namespaces = namespaces;
       },
     );
 
