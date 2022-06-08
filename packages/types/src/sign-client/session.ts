@@ -1,6 +1,7 @@
 import { SignClientTypes } from "./client";
 import { RelayerTypes } from "../core/relayer";
 import { IStore } from "../core/store";
+import { ProposalTypes } from "./proposal";
 
 export declare namespace SessionTypes {
   type Expiry = number;
@@ -24,6 +25,7 @@ export declare namespace SessionTypes {
     acknowledged: boolean;
     controller: string;
     namespaces: Namespaces;
+    requiredNamespaces: ProposalTypes.RequiredNamespaces;
     self: {
       publicKey: string;
       metadata: SignClientTypes.Metadata;

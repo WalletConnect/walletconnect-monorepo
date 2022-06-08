@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@walletconnect/jsonrpc-types": "^1.0.0",
-    "@walletconnect/jsonrpc-utils": "^1.0.0",
+    "@walletconnect/jsonrpc-utils": "^1.0.1",
     "@walletconnect/sign-client": "^2.0.0-beta.100",
     "@walletconnect/types": "^2.0.0-beta.100",
     "@walletconnect/utils": "^2.0.0-beta.100"

@@ -4,6 +4,7 @@ import { getDocument, getLocation, getNavigator } from "@walletconnect/window-ge
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import * as qs from "query-string";
+import { isValidObject } from "./validators";
 
 // -- constants -----------------------------------------//
 
@@ -239,4 +240,22 @@ export function formatIdTarget(id: number): string {
 
 export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
   return `${event}${id ? `:${id}` : ""}`;
+}
+
+// -- objects --------------------------------------------- //
+
+export function getDeletedDiff(lhs: Record<string, any>, rhs: Record<string, any>) {
+  if (lhs === rhs || !isValidObject(lhs) || !isValidObject(rhs)) return {};
+
+  return Object.keys(lhs).reduce((acc, key) => {
+    if (rhs.hasOwnProperty(key)) {
+      const difference = getDeletedDiff(lhs[key], rhs[key]);
+      if (isValidObject(difference)) return acc;
+      acc[key] = difference;
+      return acc;
+    }
+
+    acc[key] = undefined;
+    return acc;
+  }, {});
 }

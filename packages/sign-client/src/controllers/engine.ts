@@ -48,6 +48,7 @@ import {
   isSessionCompatible,
   isExpired,
   isUndefined,
+  isValidNamespacesChange,
 } from "@walletconnect/utils";
 
 export class Engine extends IEngine {
@@ -106,11 +107,12 @@ export class Engine extends IEngine {
         if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
-          await this.client.session.set(session.topic, session);
+          const completeSession = { ...session, requiredNamespaces };
+          await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
           if (topic)
             await this.client.pairing.update(topic, { peerMetadata: session.peer.metadata });
-          resolve(session);
+          resolve(completeSession);
         }
       },
     );
@@ -142,7 +144,7 @@ export class Engine extends IEngine {
     this.isInitialized();
     this.isValidApprove(params);
     const { id, relayProtocol, namespaces } = params;
-    const { pairingTopic, proposer } = this.client.proposal.get(id);
+    const { pairingTopic, proposer, requiredNamespaces } = this.client.proposal.get(id);
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -151,14 +153,10 @@ export class Engine extends IEngine {
       peerPublicKey,
     );
     const sessionSettle = {
-      relay: {
-        protocol: relayProtocol ?? "waku",
-      },
+      relay: { protocol: relayProtocol ?? "waku" },
       namespaces,
-      controller: {
-        publicKey: selfPublicKey,
-        metadata: this.client.metadata,
-      },
+      requiredNamespaces,
+      controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: SESSION_EXPIRY,
     };
 
@@ -311,7 +309,7 @@ export class Engine extends IEngine {
 
   public find: IEngine["find"] = params => {
     this.isInitialized();
-    return this.client.session.values.filter(session => isSessionCompatible(session, params));
+    return this.client.session.getAll().filter(session => isSessionCompatible(session, params));
   };
 
   // ---------- Private Helpers --------------------------------------- //
@@ -411,13 +409,13 @@ export class Engine extends IEngine {
     const sessionTopics: string[] = [];
     const pairingTopics: string[] = [];
     const proposalIds: number[] = [];
-    this.client.session.values.forEach(session => {
+    this.client.session.getAll().forEach(session => {
       if (isExpired(session.expiry)) sessionTopics.push(session.topic);
     });
-    this.client.pairing.values.forEach(pairing => {
+    this.client.pairing.getAll().forEach(pairing => {
       if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
     });
-    this.client.proposal.values.forEach(proposal => {
+    this.client.proposal.getAll().forEach(proposal => {
       if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
     });
     await Promise.all([
@@ -866,7 +864,10 @@ export class Engine extends IEngine {
     if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "update params" });
     const { topic, namespaces } = params;
     await this.isValidSessionTopic(topic);
+    const session = this.client.session.get(topic);
     if (!isValidNamespaces(namespaces, false))
+      throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
+    if (!isValidNamespacesChange(session.requiredNamespaces, namespaces))
       throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
   };
 

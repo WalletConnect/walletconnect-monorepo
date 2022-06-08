@@ -29,7 +29,7 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/jsonrpc-utils": "^1.0.0",
+    "@walletconnect/jsonrpc-utils": "^1.0.1",
     "axios": "^0.21.1",
     "bluebird": "^3.5.5",
     "@walletconnect/encoding": "^1.0.1",

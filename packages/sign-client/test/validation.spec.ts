@@ -13,6 +13,8 @@ import {
   TEST_RESPOND_PARAMS,
   TEST_NAMESPACES,
   TEST_REQUIRED_NAMESPACES,
+  TEST_NAMESPACES_INVALID_METHODS,
+  TEST_NAMESPACES_INVALID_CHAIN,
 } from "./shared";
 import SignClient from "../src";
 
@@ -368,6 +370,21 @@ describe("Sign Client Validation", () => {
       await expect(client.update({ topic, namespaces: undefined })).to.eventually.be.rejectedWith(
         "Missing or invalid update namespaces",
       );
+    });
+
+    it("throws when incompatible namespaces params are provided", async () => {
+      await expect(
+        client.update({
+          topic,
+          namespaces: TEST_NAMESPACES_INVALID_METHODS,
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid update namespaces");
+      await expect(
+        client.update({
+          topic,
+          namespaces: TEST_NAMESPACES_INVALID_CHAIN,
+        }),
+      ).to.eventually.be.rejectedWith("Missing or invalid update namespaces");
     });
   });
 
