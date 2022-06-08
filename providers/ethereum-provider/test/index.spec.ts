@@ -1,6 +1,5 @@
 import "mocha";
 import { expect } from "chai";
-
 import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
@@ -9,75 +8,17 @@ import {
   _abi,
   _bytecode,
 } from "ethereum-test-network/lib/utils/ERC20Token__factory";
-
 import { WalletClient } from "./shared";
-
 import EthereumProvider from "../src";
-
-const CHAIN_ID = 123;
-const PORT = 8545;
-const RPC_URL = `http://localhost:${PORT}`;
-const ACCOUNTS = {
-  a: {
-    balance: utils.parseEther("5").toHexString(),
-    address: "0xaaE062157B53077da1414ec3579b4CBdF7a4116f",
-    privateKey: "0xa3dac6ca0b1c61f5f0a0b3a0acf93c9a52fd94e8e33d243d3b3a8b8c5dc37f0b",
-  },
-  b: {
-    balance: utils.parseEther("1").toHexString(),
-    address: "0xa5961EaaF8f5F1544c8bA79328A704bffb6e47CF",
-    privateKey: "0xa647cd9040eddd8cd6e0bcbea3154f7c1729e3258ba8f6e555f1e516c9dbfbcc",
-  },
-  c: {
-    balance: utils.parseEther("10").toHexString(),
-    address: "0x874C1377Aa5a256de7554776e59cf01A5319502C",
-    privateKey: "0x6c99734035225d3d34bd3b07a46594f8eb66269454c3f7a4a19ca505f2a46b15",
-  },
-};
-
-const TEST_RELAY_URL = process.env.TEST_RELAY_URL
-  ? process.env.TEST_RELAY_URL
-  : "ws://0.0.0.0:5555";
-
-const TEST_APP_METADATA = {
-  name: "Test App",
-  description: "Test App for WalletConnect",
-  url: "https://walletconnect.com/",
-  icons: ["https://avatars.githubusercontent.com/u/37784886"],
-};
-
-const TEST_WALLET_METADATA = {
-  name: "Test Wallet",
-  description: "Test Wallet for WalletConnect",
-  url: "https://walletconnect.com/",
-  icons: ["https://avatars.githubusercontent.com/u/37784886"],
-};
-
-const TEST_PROVIDER_OPTS = {
-  chainId: CHAIN_ID,
-  rpcMap: {
-    [CHAIN_ID]: RPC_URL,
-  },
-  client: {
-    relayUrl: TEST_RELAY_URL,
-    metadata: TEST_APP_METADATA,
-  },
-};
-
-const TEST_WALLET_CLIENT_OPTS = {
-  chainId: CHAIN_ID,
-  rpcUrl: RPC_URL,
-  privateKey: ACCOUNTS.a.privateKey,
-  relayUrl: TEST_RELAY_URL,
-  metadata: TEST_WALLET_METADATA,
-};
-
-const TEST_ETH_TRANSFER = {
-  from: ACCOUNTS.a.address,
-  to: ACCOUNTS.b.address,
-  value: utils.parseEther("1").toHexString(),
-  data: "0x",
-};
+import {
+  CHAIN_ID,
+  PORT,
+  RPC_URL,
+  ACCOUNTS,
+  TEST_PROVIDER_OPTS,
+  TEST_WALLET_CLIENT_OPTS,
+  TEST_ETH_TRANSFER,
+} from "./shared/constants";
 
 describe("EthereumProvider", function() {
   this.timeout(30_000);
@@ -93,10 +34,6 @@ describe("EthereumProvider", function() {
       genesisAccounts: [ACCOUNTS.a, ACCOUNTS.b],
     });
     provider = new EthereumProvider(TEST_PROVIDER_OPTS);
-    console.log({
-      opt: JSON.stringify(TEST_PROVIDER_OPTS, null, 2),
-      provider: provider.rpc,
-    });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     walletAddress = walletClient.signer.address;
     receiverAddress = ACCOUNTS.b.address;
@@ -123,7 +60,8 @@ describe("EthereumProvider", function() {
     expect(walletClient.client?.session.values.length).to.eql(0);
     expect(provider.connected).to.be.false;
   });
-  it("chainChanged", async () => {
+
+  it.skip("chainChanged", async () => {
     // change to Kovan
     await Promise.all([
       new Promise<void>(async (resolve, reject) => {

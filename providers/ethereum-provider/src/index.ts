@@ -64,25 +64,19 @@ export interface EthereumProviderOptions {
 
 class EthereumProvider implements IEthereumProvider {
   public events: any = new EventEmitter();
-
   public rpc: EthereumRpcConfig;
-
   public namespace = "eip155";
-
   public accounts: string[] = [];
-
   public signer: JsonRpcProvider;
   public http: JsonRpcProvider | undefined;
+  public chainId: number;
 
   constructor(opts: EthereumProviderOptions) {
     this.rpc = getRpcConfig(opts);
     this.signer = this.setSignerProvider(opts?.client);
+    this.chainId = getEthereumChainId(this.rpc.chains);
     this.http = this.setHttpProvider(this.chainId);
     this.registerEventListeners();
-  }
-
-  get chainId() {
-    return getEthereumChainId(this.rpc.chains);
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
@@ -176,7 +170,6 @@ class EthereumProvider implements IEthereumProvider {
         this.setAccounts(accounts);
       }
     });
-    // TODO: fix this params with any type casting
     this.signer.connection.on(SIGNER_EVENTS.event, (params: any) => {
       if (!this.rpc.chains.includes(params.chainId)) return;
       const { event } = params;
@@ -232,8 +225,7 @@ class EthereumProvider implements IEthereumProvider {
   private setChainId(chains: string[]) {
     const compatible = chains.filter(x => this.isCompatibleChainId(x));
     if (compatible.length) {
-      // TODO: needs to be fixed
-      // this.chainId = this.parseChainId(compatible[0]);
+      this.chainId = this.parseChainId(compatible[0]);
       this.events.emit("chainChanged", this.chainId);
     }
   }
