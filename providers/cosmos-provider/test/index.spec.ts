@@ -111,10 +111,8 @@ describe("@walletconnect/cosmos-provider", () => {
     });
     const provider = new CosmosProvider({
       chains: TEST_CHAINS,
-      rpc: {
-        custom: {
-          [CHAIN_ID]: RPC_URL,
-        },
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
       },
       client: {
         relayUrl: TEST_RELAY_URL,

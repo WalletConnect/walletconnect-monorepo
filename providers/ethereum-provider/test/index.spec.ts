@@ -16,7 +16,7 @@ import EthereumProvider from "../src";
 
 const CHAIN_ID = 123;
 const PORT = 8545;
-const RPC_URL = `http://0.0.0.0:${PORT}`;
+const RPC_URL = `http://localhost:${PORT}`;
 const ACCOUNTS = {
   a: {
     balance: utils.parseEther("5").toHexString(),
@@ -55,10 +55,8 @@ const TEST_WALLET_METADATA = {
 
 const TEST_PROVIDER_OPTS = {
   chainId: CHAIN_ID,
-  rpc: {
-    custom: {
-      [CHAIN_ID]: RPC_URL,
-    },
+  rpcMap: {
+    [CHAIN_ID]: RPC_URL,
   },
   client: {
     relayUrl: TEST_RELAY_URL,
@@ -95,6 +93,10 @@ describe("EthereumProvider", function() {
       genesisAccounts: [ACCOUNTS.a, ACCOUNTS.b],
     });
     provider = new EthereumProvider(TEST_PROVIDER_OPTS);
+    console.log({
+      opt: JSON.stringify(TEST_PROVIDER_OPTS, null, 2),
+      provider: provider.rpc,
+    });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     walletAddress = walletClient.signer.address;
     receiverAddress = ACCOUNTS.b.address;

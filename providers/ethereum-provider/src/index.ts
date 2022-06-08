@@ -65,7 +65,7 @@ export interface EthereumProviderOptions {
 class EthereumProvider implements IEthereumProvider {
   public events: any = new EventEmitter();
 
-  private rpc: EthereumRpcConfig;
+  public rpc: EthereumRpcConfig;
 
   public namespace = "eip155";
 
