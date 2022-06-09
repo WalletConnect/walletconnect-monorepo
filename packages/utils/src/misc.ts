@@ -215,7 +215,7 @@ export function createDelayedPromise<T>() {
 
 // -- expirer --------------------------------------------- //
 
-export function formatExpirerTarget(type: string, value: string | number): string {
+export function formatExpirerTarget(type: "topic" | "id", value: string | number): string {
   if (type.toLowerCase() === "topic") {
     if (typeof value !== "string")
       throw new Error(`Value must be "string" for expirer target type: topic`);
@@ -234,6 +234,20 @@ export function formatTopicTarget(topic: string): string {
 
 export function formatIdTarget(id: number): string {
   return formatExpirerTarget("id", id);
+}
+
+export function parseExpirerTarget(target: string) {
+  const [type, value] = target.split(":");
+  const parsed: { id?: number; topic?: string } = { id: undefined, topic: undefined };
+  if (type === "topic" && typeof value === "string") {
+    parsed.topic = value;
+  } else if (type === "id" && Number.isInteger(Number(value))) {
+    parsed.id = Number(value);
+  } else {
+    throw new Error(`Invalid target, expected id:number or topic:string, got ${type}:${value}`);
+  }
+
+  return parsed;
 }
 
 // -- events ---------------------------------------------- //

@@ -25,9 +25,8 @@ import {
   calcExpiry,
   formatUri,
   generateRandomBytes32,
-  formatTopicTarget,
-  formatIdTarget,
   parseUri,
+  parseExpirerTarget,
   createDelayedPromise,
   ERROR,
   engineEvent,
@@ -346,7 +345,7 @@ export class Engine extends IEngine {
       this.client.session.delete(topic, ERROR.DELETED.format()),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(formatTopicTarget(topic)),
+      this.client.expirer.del(topic),
     ]);
   };
 
@@ -355,14 +354,14 @@ export class Engine extends IEngine {
       this.client.core.relayer.unsubscribe(topic),
       this.client.pairing.delete(topic, ERROR.DELETED.format()),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(formatTopicTarget(topic)),
+      this.client.expirer.del(topic),
     ]);
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async id => {
     await Promise.all([
       this.client.proposal.delete(id, ERROR.DELETED.format()),
-      this.client.expirer.del(formatIdTarget(id)),
+      this.client.expirer.del(id),
     ]);
   };
 
@@ -372,14 +371,12 @@ export class Engine extends IEngine {
     } else if (this.client.session.keys.includes(topic)) {
       await this.client.session.update(topic, { expiry });
     }
-    const target = formatTopicTarget(topic);
-    this.client.expirer.set(target, { target, expiry });
+    this.client.expirer.set(topic, expiry);
   };
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
-    const target = formatIdTarget(id);
-    this.client.expirer.set(target, { target, expiry: proposal.expiry });
+    this.client.expirer.set(id, proposal.expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -781,9 +778,8 @@ export class Engine extends IEngine {
 
   private registerExpirerEvents() {
     this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-      const [type, value] = event.target.split(":");
-      if (type === "topic" && typeof value === "string") {
-        const topic = value;
+      const { topic, id } = parseExpirerTarget(event.target);
+      if (topic) {
         if (this.client.session.keys.includes(topic)) {
           await this.deleteSession(topic);
           this.client.events.emit("session_expire", { topic });
@@ -791,8 +787,7 @@ export class Engine extends IEngine {
           await this.deletePairing(topic);
           this.client.events.emit("pairing_expire", { topic });
         }
-      } else if (type === "id" && typeof value === "number") {
-        const id = value;
+      } else if (id) {
         await this.deleteProposal(id);
       }
     });

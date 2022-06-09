@@ -42,11 +42,11 @@ export abstract class IExpirer extends IEvents {
 
   public abstract init(): Promise<void>;
 
-  public abstract has(target: string): boolean;
+  public abstract has(key: string | number): boolean;
 
-  public abstract set(target: string, expiration: ExpirerTypes.Expiration): void;
+  public abstract set(key: string | number, expiry: number): void;
 
-  public abstract get(target: string): ExpirerTypes.Expiration;
+  public abstract get(key: string | number): ExpirerTypes.Expiration;
 
-  public abstract del(target: string): Promise<void>;
+  public abstract del(key: string | number): void;
 }
