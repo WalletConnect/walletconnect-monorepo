@@ -56,7 +56,9 @@ export class Core extends ICore {
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
-    this.storage = new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...opts?.storageOptions });
+    this.storage = opts?.storage ?
+      opts.storage :
+      new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...opts?.storageOptions });
 
     this.relayUrl = formatRelayRpcUrl(
       this.protocol,
