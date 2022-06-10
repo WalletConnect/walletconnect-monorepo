@@ -246,7 +246,7 @@ export class Engine extends IEngine {
     const { done, resolve, reject } = createDelayedPromise<T>();
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
       if (error) reject(error);
-      else if (typeof result === "undefined") resolve(result);
+      else resolve(result);
     });
     return await done();
   };
