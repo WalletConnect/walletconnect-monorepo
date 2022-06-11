@@ -152,12 +152,16 @@ export class SignerConnection extends IJsonRpcConnection {
     payload: any,
     message = "Failed or Rejected Request",
     code = -32000,
+    data?: string,
   ): JsonRpcError {
-    const errorPayload = {
+    const errorPayload: JsonRpcError = {
       id: payload.id,
       jsonrpc: payload.jsonrpc,
       error: { code, message },
     };
+    if (typeof data !== "undefined") {
+      errorPayload.error.data = data;
+    }
     this.events.emit("payload", errorPayload);
     return errorPayload;
   }
@@ -229,7 +233,11 @@ export class SignerConnection extends IJsonRpcConnection {
   ): JsonRpcResponse {
     return typeof (response as IJsonRpcResponseError).error !== "undefined" &&
       typeof (response as IJsonRpcResponseError).error.code === "undefined"
-      ? formatJsonRpcError(response.id, (response as IJsonRpcResponseError).error.message)
+      ? formatJsonRpcError(
+          response.id,
+          (response as IJsonRpcResponseError).error.message,
+          (response as IJsonRpcResponseError).error.data,
+        )
       : (response as JsonRpcResponse);
   }
 }

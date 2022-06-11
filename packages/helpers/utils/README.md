@@ -54,7 +54,7 @@ function promisify (originalFn: (...args: any[]) => void, thisArg?: any): (...ca
 function parsePersonalSign (params: string[]): string[]
 function parseTransactionData (txData: Partial<ITxData>): Partial<ITxData>
 
-function formatRpcError (error: Partial<IJsonRpcErrorMessage>): { code: number; message: string }
+function formatRpcError (error: Partial<IJsonRpcErrorMessage>): { code: number, message: string, data?: string}
 
 function isJsonRpcSubscription (object: any): boolean
 function isJsonRpcRequest (object: any): boolean

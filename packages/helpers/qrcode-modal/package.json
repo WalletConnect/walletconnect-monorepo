@@ -9,7 +9,7 @@
     "build:pre": "run-s clean build:svg build:css",
     "build:umd": "webpack",
     "build:cjs": "microbundle --no-compress -f cjs --alias react=preact/compat,react-dom/test-utils=preact/test-utils,react-dom=preact/compat --tsconfig ./tsconfig.cjs.json",
-    "build": "run-s build:pre build:cjs build:umd",
+    "build": "run-s build:pre build:cjs",
     "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha -r ts-node/register ./test/**/*.spec.ts --exit"
   },
   "keywords": [
@@ -63,7 +63,7 @@
     "style-loader": "1.2.0",
     "svg-url-loader": "5.0.0",
     "ts-loader": "6.2.2",
-    "ts-node": "9.0.0",
+    "ts-node": "10.8.1",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
   },
