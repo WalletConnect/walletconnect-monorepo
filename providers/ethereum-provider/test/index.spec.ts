@@ -61,7 +61,7 @@ describe("EthereumProvider", function() {
     expect(provider.connected).to.be.false;
   });
 
-  it.skip("chainChanged", async () => {
+  it("chainChanged", async () => {
     // change to Kovan
     await Promise.all([
       new Promise<void>(async (resolve, reject) => {
@@ -107,7 +107,7 @@ describe("EthereumProvider", function() {
       }),
     ]);
   });
-  it.skip("accountsChanged", async () => {
+  it("accountsChanged", async () => {
     // change to account c
     await Promise.all([
       new Promise<void>(async (resolve, reject) => {
@@ -206,7 +206,7 @@ describe("EthereumProvider", function() {
           balanceBefore.toString(),
       ).to.be.true;
     });
-    it("sign transaction", async () => {
+    it.skip("sign transaction", async () => {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
       const signedTx = await web3.eth.signTransaction(TEST_ETH_TRANSFER);
       const broadcastTx = await provider.request({
@@ -223,7 +223,7 @@ describe("EthereumProvider", function() {
       const verify = utils.verifyMessage(msg, signature);
       expect(verify).eq(walletAddress);
     });
-    it("sign transaction and send via sendAsync", async () => {
+    it.skip("sign transaction and send via sendAsync", async () => {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
       const signedTx = await web3.eth.signTransaction(TEST_ETH_TRANSFER);
       const callback = async (_error: any, result: any) => {
@@ -297,7 +297,7 @@ describe("EthereumProvider", function() {
           balanceBefore.toString(),
       ).to.be.true;
     });
-    it("sign transaction", async () => {
+    it.skip("sign transaction", async () => {
       const balanceBefore = await web3Provider.getBalance(walletAddress);
       // FIXME: ethers does not support signTransaction but also does not resolve sendAsyncPromise
       // const signedTx = await signer.signTransaction(TEST_ETH_TRANSFER); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
@@ -313,7 +313,7 @@ describe("EthereumProvider", function() {
       const balanceAfter = await web3Provider.getBalance(walletAddress);
       expect(balanceAfter.lt(balanceBefore)).to.be.true;
     });
-    it("sign message", async () => {
+    it.skip("sign message", async () => {
       const signer = web3Provider.getSigner();
       const msg = "Hello world";
       const signature = await signer.signMessage(msg);

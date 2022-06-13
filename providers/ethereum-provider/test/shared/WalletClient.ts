@@ -2,7 +2,7 @@ import SignClient from "@walletconnect/sign-client";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { SignClientTypes, SessionTypes } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
+import { ERROR, getChainsFromAccounts } from "@walletconnect/utils";
 import { ethers, utils } from "ethers";
 import EthereumProvider from "../../src";
 
@@ -65,8 +65,13 @@ export class WalletClient {
   }
 
   private setChainId(chainId: number, rpcUrl: string) {
-    if (this.chainId !== chainId) {
+    if (this.chainId !== chainId && this.namespaces?.eip155) {
       this.chainId = chainId;
+      const chains = getChainsFromAccounts(this.namespaces.eip155.accounts);
+      if (!chains.includes(`eip155:${chainId}`))
+        this.namespaces.eip155.accounts.push(`eip155:${chainId}:${this.accounts[0]}`);
+      if (!this.namespaces.eip155.events.includes("chainChanged"))
+        this.namespaces.eip155.events.push("chainChanged");
     }
     if (this.rpcUrl !== rpcUrl) {
       this.rpcUrl = rpcUrl;

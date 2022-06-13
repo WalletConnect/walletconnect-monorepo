@@ -26,6 +26,7 @@ export const signerEvents = ["chainChanged", "accountsChanged"];
 export interface EthereumRpcMap {
   [chainId: string]: string;
 }
+
 export interface EthereumRpcConfig {
   chains: string[];
   methods: string[];
