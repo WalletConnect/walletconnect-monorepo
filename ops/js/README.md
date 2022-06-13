@@ -12,6 +12,7 @@
 1. If you are experiencing issues with installation ensure you install `npm i -g node-gyp`
 2. You will need to have xcode command line tools installed
 3. If there are issues with xcode command line tools try running
+
 ```zsh
 sudo xcode-select --switch /Library/Developer/CommandLineTools
 sudo xcode-select --reset

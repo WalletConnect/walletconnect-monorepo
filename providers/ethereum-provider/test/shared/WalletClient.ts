@@ -61,11 +61,15 @@ export class WalletClient {
   }
 
   private setAccount(privateKey: string) {
+    if (!this.namespaces?.eip155) return;
+    if (!this.namespaces.eip155.events.includes("accountsChanged"))
+      this.namespaces.eip155.events.push("accountsChanged");
     this.signer = this.getWallet(privateKey);
   }
 
   private setChainId(chainId: number, rpcUrl: string) {
-    if (this.chainId !== chainId && this.namespaces?.eip155) {
+    if (!this.namespaces?.eip155) return;
+    if (this.chainId !== chainId) {
       this.chainId = chainId;
       const chains = getChainsFromAccounts(this.namespaces.eip155.accounts);
       if (!chains.includes(`eip155:${chainId}`))

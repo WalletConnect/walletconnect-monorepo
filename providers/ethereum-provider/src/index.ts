@@ -175,10 +175,10 @@ class EthereumProvider implements IEthereumProvider {
       if (!this.rpc.chains.includes(params.chainId)) return;
       const { event } = params;
       if (event.type === "accountsChanges") {
-        // this.accounts = event.data;
+        this.accounts = event.data;
         this.events.emit("accountsChanged", this.accounts);
       } else if (event.type === "chainChanged") {
-        // this.setChainId([event.data]);
+        this.setChainId([event.data]);
         this.events.emit("chainChanged", this.chainId);
       } else {
         this.events.emit(event.type, event.data);
@@ -225,8 +225,9 @@ class EthereumProvider implements IEthereumProvider {
 
   private setChainId(chains: string[]) {
     const compatible = chains.filter(x => this.isCompatibleChainId(x));
-    if (compatible.length) {
-      this.chainId = this.parseChainId(compatible[0]);
+    const chainIds = compatible.map(c => this.parseChainId(c)).filter(c => c !== this.chainId);
+    if (chainIds.length) {
+      this.chainId = chainIds[0];
       this.events.emit("chainChanged", this.chainId);
     }
   }

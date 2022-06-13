@@ -113,7 +113,6 @@ describe("EthereumProvider", function() {
       new Promise<void>(async (resolve, reject) => {
         try {
           await walletClient.changeAccount(ACCOUNTS.c.privateKey);
-
           resolve();
         } catch (e) {
           reject(e);
