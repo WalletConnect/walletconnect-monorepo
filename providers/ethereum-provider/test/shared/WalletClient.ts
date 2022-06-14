@@ -19,7 +19,6 @@ export class WalletClient {
   public signer: ethers.Wallet;
   public chainId: number;
   public rpcUrl: string;
-
   public client?: SignClient;
   public topic?: string;
   public namespaces?: SessionTypes.Namespaces;
@@ -65,6 +64,9 @@ export class WalletClient {
     if (!this.namespaces.eip155.events.includes("accountsChanged"))
       this.namespaces.eip155.events.push("accountsChanged");
     this.signer = this.getWallet(privateKey);
+    const { accounts } = this.namespaces.eip155;
+    const caipAddress = `eip155:${this.chainId}:${this.signer.address}`;
+    if (!accounts.includes(caipAddress)) this.namespaces.eip155.accounts.push(caipAddress);
   }
 
   private setChainId(chainId: number, rpcUrl: string) {

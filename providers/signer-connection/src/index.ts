@@ -31,20 +31,16 @@ export interface SignerConnectionOpts {
 
 export class SignerConnection extends IJsonRpcConnection {
   public events: any = new EventEmitter();
-
   public requiredNamespaces: ProposalTypes.RequiredNamespaces;
 
   private pending = false;
   private session: SessionTypes.Struct | undefined;
-
   private opts: SignerConnectionClientOpts | undefined;
-
   private client?: SignClient;
   private initializing = false;
 
   constructor(opts?: SignerConnectionOpts) {
     super();
-
     this.requiredNamespaces = opts?.requiredNamespaces || {};
     this.opts = opts?.client;
   }

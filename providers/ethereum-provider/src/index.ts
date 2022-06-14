@@ -153,19 +153,19 @@ class EthereumProvider implements IEthereumProvider {
   private registerEventListeners() {
     this.signer.on("connect", () => {
       const chains = (this.signer.connection as SignerConnection).chains;
-      if (chains && chains.length) this.setChainId(chains);
+      if (chains && chains.length) this.setChainIds(chains);
       const accounts = (this.signer.connection as SignerConnection).accounts;
       if (accounts && accounts.length) this.setAccounts(accounts);
     });
     this.signer.connection.on(SIGNER_EVENTS.created, (session: SessionTypes.Struct) => {
       const chains = getChainsFromNamespaces(session.namespaces, [this.namespace]);
-      this.setChainId(chains);
+      this.setChainIds(chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
       this.setAccounts(accounts);
     });
     this.signer.connection.on(SIGNER_EVENTS.updated, (session: SessionTypes.Struct) => {
       const chains = getChainsFromNamespaces(session.namespaces, [this.namespace]);
-      this.setChainId(chains);
+      this.setChainIds(chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
       if (accounts !== this.accounts) {
         this.setAccounts(accounts);
@@ -174,14 +174,13 @@ class EthereumProvider implements IEthereumProvider {
     this.signer.connection.on(SIGNER_EVENTS.event, (params: any) => {
       if (!this.rpc.chains.includes(params.chainId)) return;
       const { event } = params;
-      if (event.type === "accountsChanges") {
+      if (event.name === "accountsChanged") {
         this.accounts = event.data;
         this.events.emit("accountsChanged", this.accounts);
-      } else if (event.type === "chainChanged") {
-        this.setChainId([event.data]);
-        this.events.emit("chainChanged", this.chainId);
+      } else if (event.name === "chainChanged") {
+        this.setChainId(event.data);
       } else {
-        this.events.emit(event.type, event.data);
+        this.events.emit(event.name, event.data);
       }
     });
     this.signer.on("disconnect", () => {
@@ -212,7 +211,7 @@ class EthereumProvider implements IEthereumProvider {
   }
 
   private isCompatibleChainId(chainId: string): boolean {
-    return chainId.startsWith(`${this.namespace}:`);
+    return typeof chainId === "string" ? chainId.startsWith(`${this.namespace}:`) : false;
   }
 
   private formatChainId(chainId: number): string {
@@ -223,11 +222,19 @@ class EthereumProvider implements IEthereumProvider {
     return Number(chainId.split(":")[1]);
   }
 
-  private setChainId(chains: string[]) {
+  private setChainIds(chains: string[]) {
     const compatible = chains.filter(x => this.isCompatibleChainId(x));
     const chainIds = compatible.map(c => this.parseChainId(c)).filter(c => c !== this.chainId);
     if (chainIds.length) {
       this.chainId = chainIds[0];
+      this.events.emit("chainChanged", this.chainId);
+    }
+  }
+
+  private setChainId(chain: string) {
+    if (this.isCompatibleChainId(chain)) {
+      const chainId = this.parseChainId(chain);
+      this.chainId = chainId;
       this.events.emit("chainChanged", this.chainId);
     }
   }
