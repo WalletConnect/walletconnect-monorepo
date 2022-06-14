@@ -18,6 +18,7 @@ import {
   TEST_PROVIDER_OPTS,
   TEST_WALLET_CLIENT_OPTS,
   TEST_ETH_TRANSFER,
+  TEST_SIGN_TRANSACTION,
 } from "./shared/constants";
 
 describe("EthereumProvider", function() {
@@ -160,7 +161,7 @@ describe("EthereumProvider", function() {
     });
     it("matches accounts", async () => {
       const accounts = await web3.eth.getAccounts();
-      expect(accounts).to.eql([walletAddress]);
+      expect(accounts).to.include(walletAddress);
     });
     it("matches chainId", async () => {
       const chainId = await web3.eth.getChainId();
@@ -205,12 +206,15 @@ describe("EthereumProvider", function() {
           balanceBefore.toString(),
       ).to.be.true;
     });
-    it.skip("sign transaction", async () => {
+    it("sign transaction", async () => {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
-      const signedTx = await web3.eth.signTransaction(TEST_ETH_TRANSFER);
+      const { rawTransaction } = await web3.eth.accounts.signTransaction(
+        TEST_SIGN_TRANSACTION,
+        walletClient.signer.privateKey,
+      );
       const broadcastTx = await provider.request({
         method: "eth_sendRawTransaction",
-        params: [signedTx],
+        params: [rawTransaction],
       });
       expect(!!broadcastTx).to.be.true;
       const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
@@ -222,9 +226,12 @@ describe("EthereumProvider", function() {
       const verify = utils.verifyMessage(msg, signature);
       expect(verify).eq(walletAddress);
     });
-    it.skip("sign transaction and send via sendAsync", async () => {
+    it("sign transaction and send via sendAsync", async () => {
       const balanceBefore = BigNumber.from(await web3.eth.getBalance(walletAddress));
-      const signedTx = await web3.eth.signTransaction(TEST_ETH_TRANSFER);
+      const { rawTransaction } = await web3.eth.accounts.signTransaction(
+        TEST_SIGN_TRANSACTION,
+        walletClient.signer.privateKey,
+      );
       const callback = async (_error: any, result: any) => {
         expect(!!result).to.be.true;
         const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
@@ -233,7 +240,7 @@ describe("EthereumProvider", function() {
       provider.sendAsync(
         {
           method: "eth_sendRawTransaction",
-          params: [signedTx],
+          params: [rawTransaction],
         },
         callback,
       );
@@ -246,7 +253,7 @@ describe("EthereumProvider", function() {
     });
     it("matches accounts", async () => {
       const accounts = await web3Provider.listAccounts();
-      expect(accounts).to.eql([walletAddress]);
+      expect(accounts).to.include(walletAddress);
     });
     it("matches chainId", async () => {
       const network = await web3Provider.getNetwork();
@@ -282,7 +289,6 @@ describe("EthereumProvider", function() {
     it("send transaction", async () => {
       const balanceBefore = await web3Provider.getBalance(walletAddress);
       const signer = web3Provider.getSigner();
-
       const transferTx = await signer.sendTransaction(TEST_ETH_TRANSFER);
       await transferTx.wait(2);
 
@@ -299,11 +305,7 @@ describe("EthereumProvider", function() {
     it.skip("sign transaction", async () => {
       const balanceBefore = await web3Provider.getBalance(walletAddress);
       // FIXME: ethers does not support signTransaction but also does not resolve sendAsyncPromise
-      // const signedTx = await signer.signTransaction(TEST_ETH_TRANSFER); // ERROR "signing transactions is unsupported (operation=\"signTransaction\", code=UNSUPPORTED_OPERATION, version=providers/5.1.0)"
-      const signedTx = await provider.request({
-        method: "eth_signTransaction",
-        params: [TEST_ETH_TRANSFER],
-      });
+      const signedTx = await web3Provider.getSigner().signTransaction(TEST_SIGN_TRANSACTION);
       const broadcastTx = await provider.request({
         method: "eth_sendRawTransaction",
         params: [signedTx],
@@ -313,9 +315,9 @@ describe("EthereumProvider", function() {
       expect(balanceAfter.lt(balanceBefore)).to.be.true;
     });
     it.skip("sign message", async () => {
-      const signer = web3Provider.getSigner();
       const msg = "Hello world";
-      const signature = await signer.signMessage(msg);
+      // FIXME: Method personal_sign not found is thrown
+      const signature = await web3Provider.getSigner(walletClient.signer.address).signMessage(msg);
       const verify = utils.verifyMessage(msg, signature);
       expect(verify).eq(walletAddress);
     });

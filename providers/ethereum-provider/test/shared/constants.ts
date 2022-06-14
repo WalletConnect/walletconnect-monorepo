@@ -67,3 +67,9 @@ export const TEST_ETH_TRANSFER = {
   value: utils.parseEther("1").toHexString(),
   data: "0x",
 };
+
+export const TEST_SIGN_TRANSACTION = {
+  to: "0xF0109fC8DF283027b6285cc889F5aA624EaC1F55",
+  value: "1000000000",
+  gas: 2000000,
+};
