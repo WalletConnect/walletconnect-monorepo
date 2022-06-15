@@ -65,12 +65,13 @@ export interface EthereumProviderOptions {
 
 class EthereumProvider implements IEthereumProvider {
   public events: any = new EventEmitter();
-  public rpc: EthereumRpcConfig;
   public namespace = "eip155";
   public accounts: string[] = [];
   public signer: JsonRpcProvider;
   public http: JsonRpcProvider | undefined;
   public chainId: number;
+
+  private rpc: EthereumRpcConfig;
 
   constructor(opts: EthereumProviderOptions) {
     this.rpc = getRpcConfig(opts);
