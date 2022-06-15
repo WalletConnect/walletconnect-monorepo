@@ -103,6 +103,9 @@ const INTERNAL_ERRORS = {
   RESUBSCRIBED: {
     message: "Resubscribed.",
   },
+  MISSING_OR_INVALID: {
+    message: "Missing or invalid.",
+  },
 };
 
 /**

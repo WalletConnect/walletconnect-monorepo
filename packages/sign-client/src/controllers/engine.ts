@@ -28,7 +28,8 @@ import {
   parseUri,
   parseExpirerTarget,
   createDelayedPromise,
-  ERROR,
+  getError,
+  getErrorObject,
   engineEvent,
   isValidNamespaces,
   isValidRelays,
@@ -116,7 +117,9 @@ export class Engine extends IEngine {
       },
     );
 
-    if (!topic) throw new Error(ERROR.MISSING_OR_INVALID.stringify({ name: "topic" }));
+    if (!topic) {
+      throw getError("NO_MATCHING_KEY", `${this.name}, ${topic}`);
+    }
 
     const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
     const expiry = calcExpiry(FIVE_MINUTES);
@@ -190,7 +193,7 @@ export class Engine extends IEngine {
         },
         responderPublicKey: selfPublicKey,
       });
-      await this.client.proposal.delete(id, ERROR.DELETED.format());
+      await this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED"));
       await this.activatePairing(pairingTopic);
     }
 
@@ -204,7 +207,7 @@ export class Engine extends IEngine {
     const { pairingTopic } = this.client.proposal.get(id);
     if (pairingTopic) {
       await this.sendError(id, pairingTopic, reason);
-      await this.client.proposal.delete(id, ERROR.DELETED.format());
+      await this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED"));
     }
   };
 
@@ -298,10 +301,10 @@ export class Engine extends IEngine {
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_sessionDelete", ERROR.DELETED.format());
+      await this.sendRequest(topic, "wc_sessionDelete", getErrorObject("USER_DISCONNECTED"));
       await this.deleteSession(topic);
     } else if (this.client.pairing.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_pairingDelete", ERROR.DELETED.format());
+      await this.sendRequest(topic, "wc_pairingDelete", getErrorObject("USER_DISCONNECTED"));
       await this.deletePairing(topic);
     }
   };
@@ -342,7 +345,7 @@ export class Engine extends IEngine {
     const { self } = this.client.session.get(topic);
     await Promise.all([
       this.client.core.relayer.unsubscribe(topic),
-      this.client.session.delete(topic, ERROR.DELETED.format()),
+      this.client.session.delete(topic, getErrorObject("USER_DISCONNECTED")),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
@@ -352,7 +355,7 @@ export class Engine extends IEngine {
   private deletePairing: EnginePrivate["deleteSession"] = async topic => {
     await Promise.all([
       this.client.core.relayer.unsubscribe(topic),
-      this.client.pairing.delete(topic, ERROR.DELETED.format()),
+      this.client.pairing.delete(topic, getErrorObject("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
     ]);
@@ -360,7 +363,7 @@ export class Engine extends IEngine {
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async id => {
     await Promise.all([
-      this.client.proposal.delete(id, ERROR.DELETED.format()),
+      this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED")),
       this.client.expirer.del(id),
     ]);
   };
@@ -423,7 +426,7 @@ export class Engine extends IEngine {
   };
 
   private isInitialized() {
-    if (!this.initialized) throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+    if (!this.initialized) throw getError("NOT_INITIALIZED", this.name);
   }
 
   // ---------- Relay Events Router ----------------------------------- //
@@ -560,7 +563,7 @@ export class Engine extends IEngine {
       });
       await this.activatePairing(topic);
     } else if (isJsonRpcError(payload)) {
-      await this.client.proposal.delete(id, ERROR.DELETED.format());
+      await this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED"));
       this.events.emit(engineEvent("session_connect"), { error: payload.error });
     }
   };
@@ -606,7 +609,7 @@ export class Engine extends IEngine {
       await this.client.session.update(topic, { acknowledged: true });
       this.events.emit(engineEvent("session_approve", id), {});
     } else if (isJsonRpcError(payload)) {
-      await this.client.session.delete(topic, ERROR.DELETED.format());
+      await this.client.session.delete(topic, getErrorObject("USER_DISCONNECTED"));
       this.events.emit(engineEvent("session_approve", id), { error: payload.error });
     }
   };
@@ -796,9 +799,9 @@ export class Engine extends IEngine {
   // ---------- Validation ---------------------------------------------- //
   private async isValidPairingTopic(topic: string) {
     if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: `pairing topic` });
+      throw getError("MISSING_OR_INVALID", `Pairing topic, ${topic}`);
     if (!this.client.pairing.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "pairing", topic });
+      throw getError("NO_MATCHING_KEY", `Pairing topic, ${topic}`);
     if (isExpired(this.client.pairing.get(topic).expiry)) {
       await this.deletePairing(topic);
       throw ERROR.EXPIRED.format({ context: "pairing", topic });
@@ -807,9 +810,9 @@ export class Engine extends IEngine {
 
   private async isValidSessionTopic(topic: string) {
     if (!isValidString(topic, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: `session topic` });
+      throw getError("MISSING_OR_INVALID", `Session topic, ${topic}`);
     if (!this.client.session.keys.includes(topic))
-      throw ERROR.NO_MATCHING_TOPIC.format({ context: "session", topic });
+      throw getError("NO_MATCHING_KEY", `Session topic, ${topic}`);
     if (isExpired(this.client.session.get(topic).expiry)) {
       await this.deleteSession(topic);
       throw ERROR.EXPIRED.format({ context: "session", topic });
@@ -819,51 +822,51 @@ export class Engine extends IEngine {
   private async isValidSessionOrPairingTopic(topic: string) {
     if (this.client.session.keys.includes(topic)) await this.isValidSessionTopic(topic);
     else if (this.client.pairing.keys.includes(topic)) await this.isValidPairingTopic(topic);
-    else throw ERROR.MISSING_OR_INVALID.format({ name: "topic" });
+    else throw getError("MISSING_OR_INVALID", `Session or pairing topic, ${topic}`);
   }
 
   private isValidConnect: EnginePrivate["isValidConnect"] = async params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "connect params" });
+    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Connect params, ${params}`);
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
     if (!isValidRequiredNamespaces(requiredNamespaces, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "connect requiredNamespaces" });
+      throw getError("MISSING_OR_INVALID", `Connect requiredNamespaces, ${requiredNamespaces}`);
     if (!isValidRelays(relays, true))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "connect relays" });
+      throw getError("MISSING_OR_INVALID", `Connect relays ${relays}`);
   };
 
   private isValidPair: EnginePrivate["isValidPair"] = params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "pair params" });
-    if (!isValidUrl(params.uri)) throw ERROR.MISSING_OR_INVALID.format({ name: "pair uri" });
+    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Pair params, ${params}`);
+    if (!isValidUrl(params.uri)) throw getError("MISSING_OR_INVALID", `Pair uri, ${params.uri}`);
   };
 
   private isValidApprove: EnginePrivate["isValidApprove"] = params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve params" });
+    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Approve params, ${params}`);
     const { id, namespaces, relayProtocol } = params;
-    if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "approve id" });
+    if (!isValidId(id)) throw getError("MISSING_OR_INVALID", `Approve id, ${id}`);
     if (!isValidNamespaces(namespaces, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "approve namespaces" });
+      throw getError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
     if (!isValidString(relayProtocol, true))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "approve relayProtocol" });
+      throw getError("MISSING_OR_INVALID", `Approve relayProtocol, ${relayProtocol}`);
   };
 
   private isValidReject: EnginePrivate["isValidReject"] = params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject params" });
+    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Reject params, ${params}`);
     const { id, reason } = params;
-    if (!isValidId(id)) throw ERROR.MISSING_OR_INVALID.format({ name: "reject id" });
+    if (!isValidId(id)) throw getError("MISSING_OR_INVALID", `Reject id, ${id}`);
     if (!isValidErrorReason(reason))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "reject reason" });
+      throw getError("MISSING_OR_INVALID", `Reject reason, ${reason}`);
   };
 
   private isValidUpdate: EnginePrivate["isValidUpdate"] = async params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "update params" });
+    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Update params, ${params}`);
     const { topic, namespaces } = params;
     await this.isValidSessionTopic(topic);
     const session = this.client.session.get(topic);
     if (!isValidNamespaces(namespaces, false))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
+      throw getError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
     if (!isValidNamespacesChange(session.requiredNamespaces, namespaces))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "update namespaces" });
+      throw getError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
   };
 
   private isValidExtend: EnginePrivate["isValidExtend"] = async params => {
