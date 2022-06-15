@@ -2,7 +2,7 @@ import SignClient from "@walletconnect/sign-client";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { SignClientTypes, SessionTypes } from "@walletconnect/types";
-import { ERROR, getChainsFromAccounts } from "@walletconnect/utils";
+import { getErrorObject, getChainsFromAccounts } from "@walletconnect/utils";
 import { ethers, utils } from "ethers";
 import EthereumProvider from "../../src";
 
@@ -56,7 +56,10 @@ export class WalletClient {
   public async disconnect() {
     if (!this.client) return;
     if (!this.topic) return;
-    await this.client.disconnect({ topic: this.topic, reason: ERROR.USER_DISCONNECTED.format() });
+    await this.client.disconnect({
+      topic: this.topic,
+      reason: getErrorObject("USER_DISCONNECTED"),
+    });
   }
 
   private setAccount(privateKey: string) {

@@ -1,7 +1,7 @@
 import { Logger } from "pino";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IKeyChain } from "@walletconnect/types";
-import { ERROR, mapToObj, objToMap } from "@walletconnect/utils";
+import { getError, mapToObj, objToMap } from "@walletconnect/utils";
 
 import { CORE_STORAGE_PREFIX, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
 
@@ -51,7 +51,7 @@ export class KeyChain implements IKeyChain {
     this.isInitialized();
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
-      throw new Error(ERROR.NO_MATCHING_KEY.format({ tag }).message);
+      throw getError("NO_MATCHING_KEY", `${this.name}, ${tag}`);
     }
     return key;
   };
@@ -79,7 +79,7 @@ export class KeyChain implements IKeyChain {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+      throw getError("NOT_INITIALIZED", this.name);
     }
   }
 }

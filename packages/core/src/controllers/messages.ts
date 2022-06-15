@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IMessageTracker, MessageRecord } from "@walletconnect/types";
-import { hashMessage, mapToObj, objToMap, ERROR } from "@walletconnect/utils";
+import { hashMessage, mapToObj, objToMap, getError } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
@@ -106,7 +106,7 @@ export class MessageTracker extends IMessageTracker {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+      throw getError("NOT_INITIALIZED", this.name);
     }
   }
 }
