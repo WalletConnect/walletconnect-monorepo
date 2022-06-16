@@ -830,7 +830,7 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `Connect params, ${params}`);
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
-    if (!isValidRequiredNamespaces(requiredNamespaces, false))
+    if (!isValidRequiredNamespaces(requiredNamespaces))
       throw getInternalError(
         "MISSING_OR_INVALID",
         `Connect requiredNamespaces, ${requiredNamespaces}`,
@@ -851,7 +851,7 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `Approve params, ${params}`);
     const { id, namespaces, relayProtocol } = params;
     if (!isValidId(id)) throw getInternalError("MISSING_OR_INVALID", `Approve id, ${id}`);
-    if (!isValidNamespaces(namespaces, false))
+    if (!isValidNamespaces(namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
     if (!isValidString(relayProtocol, true))
       throw getInternalError("MISSING_OR_INVALID", `Approve relayProtocol, ${relayProtocol}`);
@@ -872,7 +872,7 @@ export class Engine extends IEngine {
     const { topic, namespaces } = params;
     await this.isValidSessionTopic(topic);
     const session = this.client.session.get(topic);
-    if (!isValidNamespaces(namespaces, false))
+    if (!isValidNamespaces(namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
     if (!isValidNamespacesChange(session.requiredNamespaces, namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
