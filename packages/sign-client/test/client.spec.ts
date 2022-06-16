@@ -1,4 +1,4 @@
-import { ERROR, calcExpiry } from "@walletconnect/utils";
+import { getSdkError, calcExpiry } from "@walletconnect/utils";
 import "mocha";
 import SignClient from "../src";
 import {
@@ -43,7 +43,7 @@ describe("Sign Client Integration", () => {
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
-        const reason = ERROR.USER_DISCONNECTED.format();
+        const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.pairing.get(topic)).to.throw(
           `No matching pairing with topic: ${topic}`,
@@ -59,7 +59,7 @@ describe("Sign Client Integration", () => {
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
-        const reason = ERROR.USER_DISCONNECTED.format();
+        const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.session.get(topic)).to.throw(
           `No matching session with topic: ${topic}`,

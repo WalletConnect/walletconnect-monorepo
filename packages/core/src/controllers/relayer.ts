@@ -25,7 +25,7 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, getError } from "@walletconnect/utils";
+import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
   RELAYER_CONTEXT,
@@ -188,7 +188,7 @@ export class Relayer extends IRelayer {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getError("NOT_INITIALIZED", this.name);
+      throw getInternalError("NOT_INITIALIZED", this.name);
     }
   }
 }

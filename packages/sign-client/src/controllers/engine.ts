@@ -28,8 +28,8 @@ import {
   parseUri,
   parseExpirerTarget,
   createDelayedPromise,
-  getError,
-  getErrorObject,
+  getInternalError,
+  getSdkError,
   engineEvent,
   isValidNamespaces,
   isValidRelays,
@@ -118,7 +118,7 @@ export class Engine extends IEngine {
     );
 
     if (!topic) {
-      throw getError("NO_MATCHING_KEY", `${this.name}, ${topic}`);
+      throw getInternalError("NO_MATCHING_KEY", `${this.name}, ${topic}`);
     }
 
     const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
@@ -193,7 +193,7 @@ export class Engine extends IEngine {
         },
         responderPublicKey: selfPublicKey,
       });
-      await this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED"));
+      await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
       await this.activatePairing(pairingTopic);
     }
 
@@ -207,7 +207,7 @@ export class Engine extends IEngine {
     const { pairingTopic } = this.client.proposal.get(id);
     if (pairingTopic) {
       await this.sendError(id, pairingTopic, reason);
-      await this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED"));
+      await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
     }
   };
 
@@ -301,10 +301,10 @@ export class Engine extends IEngine {
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_sessionDelete", getErrorObject("USER_DISCONNECTED"));
+      await this.sendRequest(topic, "wc_sessionDelete", getSdkError("USER_DISCONNECTED"));
       await this.deleteSession(topic);
     } else if (this.client.pairing.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_pairingDelete", getErrorObject("USER_DISCONNECTED"));
+      await this.sendRequest(topic, "wc_pairingDelete", getSdkError("USER_DISCONNECTED"));
       await this.deletePairing(topic);
     }
   };
@@ -345,7 +345,7 @@ export class Engine extends IEngine {
     const { self } = this.client.session.get(topic);
     await Promise.all([
       this.client.core.relayer.unsubscribe(topic),
-      this.client.session.delete(topic, getErrorObject("USER_DISCONNECTED")),
+      this.client.session.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
@@ -355,7 +355,7 @@ export class Engine extends IEngine {
   private deletePairing: EnginePrivate["deleteSession"] = async topic => {
     await Promise.all([
       this.client.core.relayer.unsubscribe(topic),
-      this.client.pairing.delete(topic, getErrorObject("USER_DISCONNECTED")),
+      this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
     ]);
@@ -363,7 +363,7 @@ export class Engine extends IEngine {
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async id => {
     await Promise.all([
-      this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED")),
+      this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
       this.client.expirer.del(id),
     ]);
   };
@@ -426,7 +426,7 @@ export class Engine extends IEngine {
   };
 
   private isInitialized() {
-    if (!this.initialized) throw getError("NOT_INITIALIZED", this.name);
+    if (!this.initialized) throw getInternalError("NOT_INITIALIZED", this.name);
   }
 
   // ---------- Relay Events Router ----------------------------------- //
@@ -563,7 +563,7 @@ export class Engine extends IEngine {
       });
       await this.activatePairing(topic);
     } else if (isJsonRpcError(payload)) {
-      await this.client.proposal.delete(id, getErrorObject("USER_DISCONNECTED"));
+      await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
       this.events.emit(engineEvent("session_connect"), { error: payload.error });
     }
   };
@@ -609,7 +609,7 @@ export class Engine extends IEngine {
       await this.client.session.update(topic, { acknowledged: true });
       this.events.emit(engineEvent("session_approve", id), {});
     } else if (isJsonRpcError(payload)) {
-      await this.client.session.delete(topic, getErrorObject("USER_DISCONNECTED"));
+      await this.client.session.delete(topic, getSdkError("USER_DISCONNECTED"));
       this.events.emit(engineEvent("session_approve", id), { error: payload.error });
     }
   };
@@ -799,123 +799,138 @@ export class Engine extends IEngine {
   // ---------- Validation ---------------------------------------------- //
   private async isValidPairingTopic(topic: string) {
     if (!isValidString(topic, false))
-      throw getError("MISSING_OR_INVALID", `Pairing topic, ${topic}`);
+      throw getInternalError("MISSING_OR_INVALID", `Pairing topic, ${topic}`);
     if (!this.client.pairing.keys.includes(topic))
-      throw getError("NO_MATCHING_KEY", `Pairing topic, ${topic}`);
+      throw getInternalError("NO_MATCHING_KEY", `Pairing topic, ${topic}`);
     if (isExpired(this.client.pairing.get(topic).expiry)) {
       await this.deletePairing(topic);
-      throw ERROR.EXPIRED.format({ context: "pairing", topic });
+      throw getInternalError("EXPIRED", `Pairing topic: ${topic}`);
     }
   }
 
   private async isValidSessionTopic(topic: string) {
     if (!isValidString(topic, false))
-      throw getError("MISSING_OR_INVALID", `Session topic, ${topic}`);
+      throw getInternalError("MISSING_OR_INVALID", `Session topic, ${topic}`);
     if (!this.client.session.keys.includes(topic))
-      throw getError("NO_MATCHING_KEY", `Session topic, ${topic}`);
+      throw getInternalError("NO_MATCHING_KEY", `Session topic, ${topic}`);
     if (isExpired(this.client.session.get(topic).expiry)) {
       await this.deleteSession(topic);
-      throw ERROR.EXPIRED.format({ context: "session", topic });
+      throw getInternalError("EXPIRED", `Session topic: ${topic}`);
     }
   }
 
   private async isValidSessionOrPairingTopic(topic: string) {
     if (this.client.session.keys.includes(topic)) await this.isValidSessionTopic(topic);
     else if (this.client.pairing.keys.includes(topic)) await this.isValidPairingTopic(topic);
-    else throw getError("MISSING_OR_INVALID", `Session or pairing topic, ${topic}`);
+    else throw getInternalError("MISSING_OR_INVALID", `Session or pairing topic, ${topic}`);
   }
 
   private isValidConnect: EnginePrivate["isValidConnect"] = async params => {
-    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Connect params, ${params}`);
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Connect params, ${params}`);
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
     if (!isValidRequiredNamespaces(requiredNamespaces, false))
-      throw getError("MISSING_OR_INVALID", `Connect requiredNamespaces, ${requiredNamespaces}`);
+      throw getInternalError(
+        "MISSING_OR_INVALID",
+        `Connect requiredNamespaces, ${requiredNamespaces}`,
+      );
     if (!isValidRelays(relays, true))
-      throw getError("MISSING_OR_INVALID", `Connect relays ${relays}`);
+      throw getInternalError("MISSING_OR_INVALID", `Connect relays ${relays}`);
   };
 
   private isValidPair: EnginePrivate["isValidPair"] = params => {
-    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Pair params, ${params}`);
-    if (!isValidUrl(params.uri)) throw getError("MISSING_OR_INVALID", `Pair uri, ${params.uri}`);
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Pair params, ${params}`);
+    if (!isValidUrl(params.uri))
+      throw getInternalError("MISSING_OR_INVALID", `Pair uri, ${params.uri}`);
   };
 
   private isValidApprove: EnginePrivate["isValidApprove"] = params => {
-    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Approve params, ${params}`);
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Approve params, ${params}`);
     const { id, namespaces, relayProtocol } = params;
-    if (!isValidId(id)) throw getError("MISSING_OR_INVALID", `Approve id, ${id}`);
+    if (!isValidId(id)) throw getInternalError("MISSING_OR_INVALID", `Approve id, ${id}`);
     if (!isValidNamespaces(namespaces, false))
-      throw getError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
+      throw getInternalError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
     if (!isValidString(relayProtocol, true))
-      throw getError("MISSING_OR_INVALID", `Approve relayProtocol, ${relayProtocol}`);
+      throw getInternalError("MISSING_OR_INVALID", `Approve relayProtocol, ${relayProtocol}`);
   };
 
   private isValidReject: EnginePrivate["isValidReject"] = params => {
-    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Reject params, ${params}`);
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Reject params, ${params}`);
     const { id, reason } = params;
-    if (!isValidId(id)) throw getError("MISSING_OR_INVALID", `Reject id, ${id}`);
+    if (!isValidId(id)) throw getInternalError("MISSING_OR_INVALID", `Reject id, ${id}`);
     if (!isValidErrorReason(reason))
-      throw getError("MISSING_OR_INVALID", `Reject reason, ${reason}`);
+      throw getInternalError("MISSING_OR_INVALID", `Reject reason, ${reason}`);
   };
 
   private isValidUpdate: EnginePrivate["isValidUpdate"] = async params => {
-    if (!isValidParams(params)) throw getError("MISSING_OR_INVALID", `Update params, ${params}`);
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Update params, ${params}`);
     const { topic, namespaces } = params;
     await this.isValidSessionTopic(topic);
     const session = this.client.session.get(topic);
     if (!isValidNamespaces(namespaces, false))
-      throw getError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
+      throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
     if (!isValidNamespacesChange(session.requiredNamespaces, namespaces))
-      throw getError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
+      throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
   };
 
   private isValidExtend: EnginePrivate["isValidExtend"] = async params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "extend params" });
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Extend params, ${params}`);
     const { topic } = params;
     await this.isValidSessionTopic(topic);
   };
 
   private isValidRequest: EnginePrivate["isValidRequest"] = async params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "request params" });
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Request params, ${params}`);
     const { topic, request, chainId } = params;
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
     if (!isValidNamespacesChainId(namespaces, chainId))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "request chainId" });
-    if (!isValidRequest(request)) throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
+      throw getInternalError("MISSING_OR_INVALID", `Request chainId, ${chainId}`);
+    if (!isValidRequest(request))
+      throw getInternalError("MISSING_OR_INVALID", `Request method, ${request.method}`);
     if (!isValidNamespacesRequest(namespaces, chainId, request.method))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "request method" });
+      throw getInternalError("MISSING_OR_INVALID", `Request method, ${request.method}`);
   };
 
   private isValidRespond: EnginePrivate["isValidRespond"] = async params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "respond params" });
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Respond params, ${params}`);
     const { topic, response } = params;
     await this.isValidSessionTopic(topic);
     if (!isValidResponse(response))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "respond response" });
+      throw getInternalError("MISSING_OR_INVALID", `Respond response, ${response}`);
   };
 
   private isValidPing: EnginePrivate["isValidPing"] = async params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "ping params" });
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Ping params, ${params}`);
     const { topic } = params;
     await this.isValidSessionOrPairingTopic(topic);
   };
 
   private isValidEmit: EnginePrivate["isValidEmit"] = async params => {
-    if (!isValidParams(params)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit params" });
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `Emit params, ${params}`);
     const { topic, event, chainId } = params;
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
     if (!isValidNamespacesChainId(namespaces, chainId))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "emit chainId" });
-    if (!isValidEvent(event)) throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+      throw getInternalError("MISSING_OR_INVALID", `Emit chainId, ${chainId}`);
+    if (!isValidEvent(event)) throw getInternalError("MISSING_OR_INVALID", `Emit event, ${event}`);
     if (!isValidNamespacesEvent(namespaces, chainId, event.name))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "emit event" });
+      throw getInternalError("MISSING_OR_INVALID", `Emit event, ${event}`);
   };
 
   private isValidDisconnect: EnginePrivate["isValidDisconnect"] = async params => {
     if (!isValidParams(params))
-      throw ERROR.MISSING_OR_INVALID.format({ name: "disconnect params" });
+      throw getInternalError("MISSING_OR_INVALID", `Disconnect params, ${params}`);
     const { topic } = params;
     await this.isValidSessionOrPairingTopic(topic);
   };

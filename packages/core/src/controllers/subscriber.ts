@@ -12,8 +12,8 @@ import {
   SubscriberTypes,
 } from "@walletconnect/types";
 import {
-  getErrorObject,
-  getError,
+  getSdkError,
+  getInternalError,
   getRelayProtocolApi,
   getRelayProtocolName,
 } from "@walletconnect/utils";
@@ -161,7 +161,7 @@ export class Subscriber extends ISubscriber {
     try {
       const relay = getRelayProtocolName(opts);
       await this.rpcUnsubscribe(topic, id, relay);
-      const reason = getErrorObject("USER_DISCONNECTED", `${this.name}, ${topic}`);
+      const reason = getSdkError("USER_DISCONNECTED", `${this.name}, ${topic}`);
       await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
@@ -249,7 +249,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "method", method: "getSubscription", id });
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
-      throw getError("NO_MATCHING_KEY", `${this.name}, ${id}`);
+      throw getInternalError("NO_MATCHING_KEY", `${this.name}, ${id}`);
     }
     return subscription;
   }
@@ -282,7 +282,7 @@ export class Subscriber extends ISubscriber {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
-        const error = getError("RESTORE_WILL_OVERRIDE", this.name);
+        const error = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
         this.logger.error(error.message);
         throw error;
       }
@@ -347,7 +347,7 @@ export class Subscriber extends ISubscriber {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getError("NOT_INITIALIZED", this.name);
+      throw getInternalError("NOT_INITIALIZED", this.name);
     }
   }
 }

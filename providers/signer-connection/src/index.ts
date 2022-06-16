@@ -3,7 +3,7 @@ import { IJsonRpcConnection } from "@walletconnect/jsonrpc-types";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SignClientTypes, ISignClient, SessionTypes, ProposalTypes } from "@walletconnect/types";
 import {
-  getErrorObject,
+  getSdkError,
   getAccountsFromNamespaces,
   getChainsFromNamespaces,
   getChainsFromRequiredNamespaces,
@@ -125,7 +125,7 @@ export class SignerConnection extends IJsonRpcConnection {
     const client = await this.register();
     await client.disconnect({
       topic: this.session.topic,
-      reason: getErrorObject("USER_DISCONNECTED"),
+      reason: getSdkError("USER_DISCONNECTED"),
     });
     this.onClose();
   }

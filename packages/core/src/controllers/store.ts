@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { getError, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
+import { getInternalError, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
 import isEqual from "lodash.isequal";
@@ -128,7 +128,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   private getData(key: Key) {
     const value = this.map.get(key);
     if (!value) {
-      const error = getError("NO_MATCHING_KEY", `${this.name}, ${key}`);
+      const error = getInternalError("NO_MATCHING_KEY", `${this.name}, ${key}`);
       this.logger.error(error.message);
       throw error;
     }
@@ -145,7 +145,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.map.size) {
-        const error = getError("RESTORE_WILL_OVERRIDE", this.name);
+        const error = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
         this.logger.error(error.message);
         throw error;
       }
@@ -160,7 +160,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getError("NOT_INITIALIZED", this.name);
+      throw getInternalError("NOT_INITIALIZED", this.name);
     }
   }
 }

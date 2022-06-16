@@ -106,17 +106,26 @@ const INTERNAL_ERRORS = {
   MISSING_OR_INVALID: {
     message: "Missing or invalid.",
   },
+  EXPIRED: {
+    message: "Expired.",
+  },
+  UNKNOWN_TYPE: {
+    message: "Unknown type.",
+  },
+  MISMATCHED_TOPIC: {
+    message: "Mismatched topic.",
+  },
 };
 
 /**
  * Utilities
  */
-export function getError(key: SdkErrorKey | InternalErrorKey, context?: string | number) {
-  const { message } = { ...SDK_ERRORS, ...INTERNAL_ERRORS }[key];
+export function getInternalError(key: SdkErrorKey | InternalErrorKey, context?: string | number) {
+  const { message } = INTERNAL_ERRORS[key];
   return new Error(context ? `${message} ${context}` : message);
 }
 
-export function getErrorObject(key: keyof typeof SDK_ERRORS, context?: string | number) {
+export function getSdkError(key: keyof typeof SDK_ERRORS, context?: string | number) {
   const { message, code } = SDK_ERRORS[key];
   return {
     message: context ? `${message} ${context}` : message,

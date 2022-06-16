@@ -9,7 +9,7 @@ import {
   encrypt,
   generateKeyPair,
   hashKey,
-  getError,
+  getInternalError,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT } from "../constants";
@@ -127,7 +127,7 @@ export class Crypto implements ICrypto {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getError("NOT_INITIALIZED", this.name);
+      throw getInternalError("NOT_INITIALIZED", this.name);
     }
   }
 }

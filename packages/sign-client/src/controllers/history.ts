@@ -1,7 +1,7 @@
 import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
-import { ERROR } from "@walletconnect/utils";
+import { getInternalError } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
@@ -106,13 +106,10 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.trace({ type: "method", method: "get", topic, id });
     const record = await this.getRecord(id);
     if (record.topic !== topic) {
-      const error = ERROR.MISMATCHED_TOPIC.format({
-        context: this.name,
-        id,
-      });
-      // silencing this for now
-      // this.logger.error(error.message);
-      throw new Error(error.message);
+      const error = getInternalError("MISMATCHED_TOPIC", `${this.name}, ${id}`);
+
+      this.logger.error(error.message);
+      throw error;
     }
     return record;
   };
@@ -168,11 +165,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.isInitialized();
     const record = this.records.get(id);
     if (!record) {
-      const error = ERROR.NO_MATCHING_ID.format({
-        context: this.name,
-        id,
-      });
-      throw new Error(error.message);
+      const error = getInternalError("NO_MATCHING_KEY", `${this.name}, id: ${id}`);
+      throw error;
     }
     return record;
   }
@@ -188,11 +182,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.records.size) {
-        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.name,
-        });
+        const error = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
         this.logger.error(error.message);
-        throw new Error(error.message);
+        throw error;
       }
       this.cached = persisted;
       this.logger.debug(`Successfully Restored records for ${this.name}`);
@@ -227,7 +219,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+      throw getInternalError("NOT_INITIALIZED", this.name);
     }
   }
 }
