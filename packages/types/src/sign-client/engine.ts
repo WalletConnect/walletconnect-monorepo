@@ -259,7 +259,7 @@ export interface EnginePrivate {
 
   isValidPair(params: EngineTypes.PairParams): void;
 
-  isValidApprove(params: EngineTypes.ApproveParams): void;
+  isValidApprove(params: EngineTypes.ApproveParams): Promise<void>;
 
   isValidReject(params: EngineTypes.RejectParams): void;
 

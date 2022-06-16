@@ -107,7 +107,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     const record = await this.getRecord(id);
     if (record.topic !== topic) {
       const error = getInternalError("MISMATCHED_TOPIC", `${this.name}, ${id}`);
-
       this.logger.error(error.message);
       throw error;
     }
@@ -164,10 +163,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   private getRecord(id: number) {
     this.isInitialized();
     const record = this.records.get(id);
-    if (!record) {
-      const error = getInternalError("NO_MATCHING_KEY", `${this.name}, id: ${id}`);
-      throw error;
-    }
+    if (!record) throw getInternalError("NO_MATCHING_KEY", `${this.name}, id: ${id}`);
     return record;
   }
 

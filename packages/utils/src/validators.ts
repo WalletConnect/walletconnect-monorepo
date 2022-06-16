@@ -268,7 +268,7 @@ export function isValidNamespacesEvent(
   return events.includes(eventName);
 }
 
-export function isValidNamespacesChange(
+export function isConformingNamespaces(
   requiredNamespaces: ProposalTypes.RequiredNamespaces,
   namespaces: SessionTypes.Namespaces,
 ) {

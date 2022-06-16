@@ -48,7 +48,7 @@ import {
   isSessionCompatible,
   isExpired,
   isUndefined,
-  isValidNamespacesChange,
+  isConformingNamespaces,
 } from "@walletconnect/utils";
 
 export class Engine extends IEngine {
@@ -474,7 +474,7 @@ export class Engine extends IEngine {
       case "wc_sessionEvent":
         return this.onSessionEventRequest(topic, payload);
       default:
-        // TODO(ilja) throw / log unsuported event?
+        this.client.logger.info(`Unsuported request method ${reqMethod}`);
         return;
     }
   };
@@ -500,7 +500,7 @@ export class Engine extends IEngine {
       case "wc_sessionRequest":
         return this.onSessionRequestResponse(topic, payload);
       default:
-        // TODO(ilja) throw / log unsuported event?
+        this.client.logger.info(`Unsuported response method ${resMethod}`);
         return;
     }
   };
@@ -797,22 +797,22 @@ export class Engine extends IEngine {
   }
 
   // ---------- Validation ---------------------------------------------- //
-  private async isValidPairingTopic(topic: string) {
+  private async isValidPairingTopic(topic: any) {
     if (!isValidString(topic, false))
-      throw getInternalError("MISSING_OR_INVALID", `Pairing topic, ${topic}`);
+      throw getInternalError("MISSING_OR_INVALID", `Pairing topic: ${topic}`);
     if (!this.client.pairing.keys.includes(topic))
-      throw getInternalError("NO_MATCHING_KEY", `Pairing topic, ${topic}`);
+      throw getInternalError("NO_MATCHING_KEY", `Pairing topic: ${topic}`);
     if (isExpired(this.client.pairing.get(topic).expiry)) {
       await this.deletePairing(topic);
       throw getInternalError("EXPIRED", `Pairing topic: ${topic}`);
     }
   }
 
-  private async isValidSessionTopic(topic: string) {
+  private async isValidSessionTopic(topic: any) {
     if (!isValidString(topic, false))
-      throw getInternalError("MISSING_OR_INVALID", `Session topic, ${topic}`);
+      throw getInternalError("MISSING_OR_INVALID", `Session topic: ${topic}`);
     if (!this.client.session.keys.includes(topic))
-      throw getInternalError("NO_MATCHING_KEY", `Session topic, ${topic}`);
+      throw getInternalError("NO_MATCHING_KEY", `Session topic: ${topic}`);
     if (isExpired(this.client.session.get(topic).expiry)) {
       await this.deleteSession(topic);
       throw getInternalError("EXPIRED", `Session topic: ${topic}`);
@@ -822,18 +822,28 @@ export class Engine extends IEngine {
   private async isValidSessionOrPairingTopic(topic: string) {
     if (this.client.session.keys.includes(topic)) await this.isValidSessionTopic(topic);
     else if (this.client.pairing.keys.includes(topic)) await this.isValidPairingTopic(topic);
-    else throw getInternalError("MISSING_OR_INVALID", `Session or pairing topic, ${topic}`);
+    else throw getInternalError("MISSING_OR_INVALID", `Session or pairing topic: ${topic}`);
+  }
+
+  private async isValidProposalId(id: any) {
+    if (!isValidId(id)) throw getInternalError("MISSING_OR_INVALID", `Proposal id: ${id}`);
+    if (!this.client.proposal.keys.includes(id))
+      throw getInternalError("NO_MATCHING_KEY", `Proposal id: ${id}`);
+    if (isExpired(this.client.proposal.get(id).expiry)) {
+      await this.deleteProposal(id);
+      throw getInternalError("EXPIRED", `Proposal id: ${id}`);
+    }
   }
 
   private isValidConnect: EnginePrivate["isValidConnect"] = async params => {
     if (!isValidParams(params))
-      throw getInternalError("MISSING_OR_INVALID", `Connect params, ${params}`);
+      throw getInternalError("MISSING_OR_INVALID", `Connect params: ${params}`);
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
     if (!isValidRequiredNamespaces(requiredNamespaces))
       throw getInternalError(
         "MISSING_OR_INVALID",
-        `Connect requiredNamespaces, ${requiredNamespaces}`,
+        `Connect requiredNamespaces: ${requiredNamespaces}`,
       );
     if (!isValidRelays(relays, true))
       throw getInternalError("MISSING_OR_INVALID", `Connect relays ${relays}`);
@@ -846,12 +856,15 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `Pair uri, ${params.uri}`);
   };
 
-  private isValidApprove: EnginePrivate["isValidApprove"] = params => {
+  private isValidApprove: EnginePrivate["isValidApprove"] = async params => {
     if (!isValidParams(params))
       throw getInternalError("MISSING_OR_INVALID", `Approve params, ${params}`);
     const { id, namespaces, relayProtocol } = params;
-    if (!isValidId(id)) throw getInternalError("MISSING_OR_INVALID", `Approve id, ${id}`);
+    await this.isValidProposalId(id);
+    const proposal = this.client.proposal.get(id);
     if (!isValidNamespaces(namespaces))
+      throw getInternalError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
+    if (!isConformingNamespaces(proposal.requiredNamespaces, namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
     if (!isValidString(relayProtocol, true))
       throw getInternalError("MISSING_OR_INVALID", `Approve relayProtocol, ${relayProtocol}`);
@@ -874,7 +887,7 @@ export class Engine extends IEngine {
     const session = this.client.session.get(topic);
     if (!isValidNamespaces(namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
-    if (!isValidNamespacesChange(session.requiredNamespaces, namespaces))
+    if (!isConformingNamespaces(session.requiredNamespaces, namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
   };
 

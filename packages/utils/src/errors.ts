@@ -93,39 +93,50 @@ const SDK_ERRORS = {
 const INTERNAL_ERRORS = {
   NOT_INITIALIZED: {
     message: "Not initialized.",
+    code: 1,
   },
   NO_MATCHING_KEY: {
     message: "No matching key.",
+    code: 2,
   },
   RESTORE_WILL_OVERRIDE: {
     message: "Restore will override.",
+    code: 3,
   },
   RESUBSCRIBED: {
     message: "Resubscribed.",
+    code: 4,
   },
   MISSING_OR_INVALID: {
     message: "Missing or invalid.",
+    code: 5,
   },
   EXPIRED: {
     message: "Expired.",
+    code: 6,
   },
   UNKNOWN_TYPE: {
     message: "Unknown type.",
+    code: 7,
   },
   MISMATCHED_TOPIC: {
     message: "Mismatched topic.",
+    code: 8,
   },
 };
 
 /**
  * Utilities
  */
-export function getInternalError(key: SdkErrorKey | InternalErrorKey, context?: string | number) {
-  const { message } = INTERNAL_ERRORS[key];
-  return new Error(context ? `${message} ${context}` : message);
+export function getInternalError(key: InternalErrorKey, context?: string | number) {
+  const { message, code } = INTERNAL_ERRORS[key];
+  return {
+    message: context ? `${message} ${context}` : message,
+    code,
+  };
 }
 
-export function getSdkError(key: keyof typeof SDK_ERRORS, context?: string | number) {
+export function getSdkError(key: SdkErrorKey, context?: string | number) {
   const { message, code } = SDK_ERRORS[key];
   return {
     message: context ? `${message} ${context}` : message,
