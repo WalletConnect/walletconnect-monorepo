@@ -505,7 +505,7 @@ export class Engine extends IEngine {
     }
   };
 
-  // ---------- Relay Events Handlers ---------------------------------- //
+  // ---------- Relay Events Handlers --------------------------------- //
 
   private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (
     topic,
@@ -777,7 +777,7 @@ export class Engine extends IEngine {
     }
   };
 
-  // ---------- Expirer Events ----------------------------------------- //
+  // ---------- Expirer Events ---------------------------------------- //
 
   private registerExpirerEvents() {
     this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
@@ -796,7 +796,7 @@ export class Engine extends IEngine {
     });
   }
 
-  // ---------- Validation ---------------------------------------------- //
+  // ---------- Validation Helpers ------------------------------------ //
   private async isValidPairingTopic(topic: any) {
     if (!isValidString(topic, false))
       throw getInternalError("MISSING_OR_INVALID", `Pairing topic: ${topic}`);
@@ -834,6 +834,8 @@ export class Engine extends IEngine {
       throw getInternalError("EXPIRED", `Proposal id: ${id}`);
     }
   }
+
+  // ---------- Validation  ------------------------------------------- //
 
   private isValidConnect: EnginePrivate["isValidConnect"] = async params => {
     if (!isValidParams(params))
@@ -889,6 +891,7 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
     if (!isConformingNamespaces(session.requiredNamespaces, namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
+    // TODO(ilja) - check if wallet
   };
 
   private isValidExtend: EnginePrivate["isValidExtend"] = async params => {
@@ -896,6 +899,7 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `Extend params, ${params}`);
     const { topic } = params;
     await this.isValidSessionTopic(topic);
+    // TODO(ilja) - check if wallet
   };
 
   private isValidRequest: EnginePrivate["isValidRequest"] = async params => {
