@@ -135,7 +135,7 @@ export function isValidNamespaceMethodsOrEvents(input: any): input is string {
 }
 
 export function isValidChains(key: string, chains: any, context: string) {
-  let valid = false;
+  let valid = true;
   let error = { message: "", code: 0 };
 
   if (isValidArray(chains)) {
@@ -152,27 +152,35 @@ export function isValidChains(key: string, chains: any, context: string) {
     valid = false;
     error = getSdkError(
       "UNSUPPORTED_CHAINS",
-      `${context}, chains should be an array of strings conforming to "namespace:chainId" format`,
+      `${context}, chains ${chains} should be an array of strings conforming to "namespace:chainId" format`,
     );
   }
 
   return { valid, error };
 }
 
-export function isValidNamespaceChains(input: any, method: string) {
-  let valid = false;
+export function isValidNamespaceChains(namespaces: any, method: string) {
+  let valid = true;
   let error = { message: "", code: 0 };
 
-  Object.entries(input).forEach(([key, namespace]: [string, any]) => {
-    const validChains = isValidChains(key, namespace?.chais, `${method} namespace`);
+  Object.entries(namespaces).forEach(([key, namespace]: [string, any]) => {
+    const validChains = isValidChains(key, namespace?.chains, `${method} namespace`);
     if (!validChains.valid) {
       valid = false;
       error = validChains.error;
-    } else if (valid && isValidArray(namespace?.extension)) {
-      const validChains = isValidChains(key, namespace.extension.chais, `${method} extension`);
-      if (!validChains.valid) {
+    } else if (valid && !isUndefined(namespace?.extension)) {
+      if (isValidArray(namespace?.extension)) {
+        const validChains = isValidChains(key, namespace.extension.chains, `${method} extension`);
+        if (!validChains.valid) {
+          valid = false;
+          error = validChains.error;
+        }
+      } else {
         valid = false;
-        error = validChains.error;
+        error = getInternalError(
+          "MISSING_OR_INVALID",
+          `${method} extension should be an array of namespaces, or omitted`,
+        );
       }
     }
   });
@@ -181,7 +189,7 @@ export function isValidNamespaceChains(input: any, method: string) {
 }
 
 export function isValidAccounts(key: string, accounts: any, context: string) {
-  let valid = false;
+  let valid = true;
   let error = { message: "", code: 0 };
 
   if (isValidArray(accounts)) {
@@ -206,7 +214,7 @@ export function isValidAccounts(key: string, accounts: any, context: string) {
 }
 
 export function isValidNamespaceAccounts(input: any, method: string) {
-  let valid = false;
+  let valid = true;
   let error = { message: "", code: 0 };
 
   Object.entries(input).forEach(([key, namespace]: [string, any]) => {
@@ -214,15 +222,23 @@ export function isValidNamespaceAccounts(input: any, method: string) {
     if (!validAccounts.valid) {
       valid = false;
       error = validAccounts.error;
-    } else if (valid && isValidArray(namespace?.extension)) {
-      const validAccounts = isValidAccounts(
-        key,
-        namespace.extension.accounts,
-        `${method} extension`,
-      );
-      if (!validAccounts.valid) {
+    } else if (valid && !isUndefined(namespace?.extension)) {
+      if (isValidArray(namespace?.extension)) {
+        const validAccounts = isValidAccounts(
+          key,
+          namespace.extension.accounts,
+          `${method} extension`,
+        );
+        if (!validAccounts.valid) {
+          valid = false;
+          error = validAccounts.error;
+        }
+      } else {
         valid = false;
-        error = validAccounts.error;
+        error = getInternalError(
+          "MISSING_OR_INVALID",
+          `${method} extension should be an array of namespaces, or omitted`,
+        );
       }
     }
   });
@@ -231,7 +247,7 @@ export function isValidNamespaceAccounts(input: any, method: string) {
 }
 
 export function isValidActions(namespace: any, context: string) {
-  let valid = false;
+  let valid = true;
   let error = { message: "", code: 0 };
   if (!isValidNamespaceMethodsOrEvents(namespace?.methods)) {
     valid = false;
@@ -251,7 +267,7 @@ export function isValidActions(namespace: any, context: string) {
 }
 
 export function isValidNamespaceActions(input: any, method: string) {
-  let valid = false;
+  let valid = true;
   let error = { message: "", code: 0 };
   Object.values(input).forEach((namespace: any) => {
     const validActions = isValidActions(namespace, `${method}, namespace`);
@@ -259,20 +275,22 @@ export function isValidNamespaceActions(input: any, method: string) {
       valid = false;
       error = validActions.error;
     }
-    if (valid && isValidArray(namespace?.extension)) {
-      namespace.extension.forEach((extension: any) => {
-        const validActions = isValidActions(extension, `${method}, extension`);
-        if (!validActions.valid) {
-          valid = false;
-          error = validActions.error;
-        }
-      });
-    } else {
-      valid = false;
-      error = getInternalError(
-        "MISSING_OR_INVALID",
-        `${method} extension should be an array of namespaces, or omitted`,
-      );
+    if (valid && !isUndefined(namespace?.extension)) {
+      if (isValidArray(namespace?.extension)) {
+        namespace.extension.forEach((extension: any) => {
+          const validActions = isValidActions(extension, `${method}, extension`);
+          if (!validActions.valid) {
+            valid = false;
+            error = validActions.error;
+          }
+        });
+      } else {
+        valid = false;
+        error = getInternalError(
+          "MISSING_OR_INVALID",
+          `${method} extension should be an array of namespaces, or omitted`,
+        );
+      }
     }
   });
 
@@ -280,7 +298,7 @@ export function isValidNamespaceActions(input: any, method: string) {
 }
 
 export function isValidRequiredNamespaces(input: any, method: string) {
-  let valid = false;
+  let valid = true;
   let error = { message: "", code: 0 };
   if (input && isValidObject(input)) {
     const validActions = isValidNamespaceActions(input, method);
@@ -305,7 +323,7 @@ export function isValidRequiredNamespaces(input: any, method: string) {
 }
 
 export function isValidNamespaces(input: any, method: string) {
-  let valid = false;
+  let valid = true;
   let error = { message: "", code: 0 };
   if (input && isValidObject(input)) {
     const validActions = isValidActions(input, method);

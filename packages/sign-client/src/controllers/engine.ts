@@ -847,11 +847,8 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `Connect params: ${JSON.stringify(params)}`);
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
-    if (!isValidRequiredNamespaces(requiredNamespaces))
-      throw getInternalError(
-        "MISSING_OR_INVALID",
-        `Connect requiredNamespaces: ${JSON.stringify(requiredNamespaces)}`,
-      );
+    const validRequiredNamespaces = isValidRequiredNamespaces(requiredNamespaces, "connect");
+    if (!validRequiredNamespaces.valid) throw validRequiredNamespaces.error;
     if (!isValidRelays(relays, true))
       throw getInternalError("MISSING_OR_INVALID", `Connect relays ${relays}`);
   };
@@ -869,8 +866,8 @@ export class Engine extends IEngine {
     const { id, namespaces, relayProtocol } = params;
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);
-    if (!isValidNamespaces(namespaces))
-      throw getInternalError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
+    const validNamespaces = isValidNamespaces(namespaces, "approve");
+    if (!validNamespaces.valid) throw validNamespaces.error;
     if (!isConformingNamespaces(proposal.requiredNamespaces, namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Approve namespaces, ${namespaces}`);
     if (!isValidString(relayProtocol, true))
@@ -892,8 +889,8 @@ export class Engine extends IEngine {
     const { topic, namespaces } = params;
     await this.isValidSessionTopic(topic);
     const session = this.client.session.get(topic);
-    if (!isValidNamespaces(namespaces))
-      throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
+    const validNamespaces = isValidNamespaces(namespaces, "update");
+    if (!validNamespaces.valid) throw validNamespaces.error;
     if (!isConformingNamespaces(session.requiredNamespaces, namespaces))
       throw getInternalError("MISSING_OR_INVALID", `Update namespaces, ${namespaces}`);
     // TODO(ilja) - check if wallet
