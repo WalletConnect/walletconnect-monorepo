@@ -6,6 +6,7 @@ import {
   getNamespacesEventsForChainId,
   getAccountsChains,
 } from "./namespaces";
+import { getSdkError, getInternalError } from "./errors";
 import { hasOverlap, getDeletedDiff } from "./misc";
 
 export function isSessionCompatible(session: SessionTypes.Struct, params: EngineTypes.FindParams) {
@@ -118,69 +119,211 @@ export function isSessionStruct(input: any): input is SessionTypes.Struct {
   return input?.topic;
 }
 
-export function isValidRequiredNamespaceBody(
-  input: any,
-): input is ProposalTypes.BaseRequiredNamespace {
-  const { methods, events, chains } = input;
-  let validChains = true;
-  const validRequiredNamespace =
-    isValidArray(methods) && isValidArray(events) && isValidArray(chains);
-  if (validRequiredNamespace) {
-    chains.forEach((chain: string) => {
-      if (!isValidChainId(chain)) validChains = false;
-    });
-  }
-
-  return validRequiredNamespace && validChains;
-}
-
-export function isValidRequiredNamespaces(input: any): input is ProposalTypes.RequiredNamespaces {
-  let valid = false;
-  if (input && isValidObject(input)) {
-    valid = true;
-    Object.values(input).forEach((namespace: any) => {
-      if (!isValidRequiredNamespaceBody(namespace)) valid = false;
-      if (valid && namespace?.extension) {
-        if (!isValidArray(namespace.extension)) valid = false;
-        namespace.extension.forEach((extension: any) => {
-          if (!isValidRequiredNamespaceBody(extension)) valid = false;
-        });
-      }
-    });
+export function isValidNamespaceMethodsOrEvents(input: any): input is string {
+  let valid = true;
+  if (isValidArray(input)) {
+    if (input.length) {
+      input.forEach((item: any) => {
+        if (!isValidString(item, false)) valid = false;
+      });
+    }
+  } else {
+    valid = false;
   }
 
   return valid;
 }
 
-export function isValidNamespaceBody(input: any): input is SessionTypes.BaseNamespace {
-  const { methods, events, accounts } = input;
-  let validAccounts = true;
-  const validNamespace = isValidArray(methods) && isValidArray(events) && isValidArray(accounts);
-  if (validNamespace) {
-    accounts.forEach((account: string) => {
-      if (!isValidAccountId(account)) validAccounts = false;
-    });
-  }
-
-  return validNamespace && validAccounts;
-}
-
-export function isValidNamespaces(input: any): input is SessionTypes.Namespaces {
+export function isValidChains(key: string, chains: any, context: string) {
   let valid = false;
-  if (input && isValidObject(input)) {
-    valid = true;
-    Object.values(input).forEach((namespace: any) => {
-      if (!isValidNamespaceBody(namespace)) valid = false;
-      if (valid && namespace?.extension) {
-        if (!isValidArray(namespace.extension)) valid = false;
-        namespace.extension.forEach((extension: any) => {
-          if (!isValidNamespaceBody(extension)) valid = false;
-        });
+  let error = { message: "", code: 0 };
+
+  if (isValidArray(chains)) {
+    chains.forEach((chain: any) => {
+      if (!isValidChainId(chain) || !chain.includes(key)) {
+        valid = false;
+        error = getSdkError(
+          "UNSUPPORTED_CHAINS",
+          `${context}, chain ${chain} should be a string and conform to "namespace:chainId" format`,
+        );
       }
     });
+  } else {
+    valid = false;
+    error = getSdkError(
+      "UNSUPPORTED_CHAINS",
+      `${context}, chains should be an array of strings conforming to "namespace:chainId" format`,
+    );
   }
 
-  return valid;
+  return { valid, error };
+}
+
+export function isValidNamespaceChains(input: any, method: string) {
+  let valid = false;
+  let error = { message: "", code: 0 };
+
+  Object.entries(input).forEach(([key, namespace]: [string, any]) => {
+    const validChains = isValidChains(key, namespace?.chais, `${method} namespace`);
+    if (!validChains.valid) {
+      valid = false;
+      error = validChains.error;
+    } else if (valid && isValidArray(namespace?.extension)) {
+      const validChains = isValidChains(key, namespace.extension.chais, `${method} extension`);
+      if (!validChains.valid) {
+        valid = false;
+        error = validChains.error;
+      }
+    }
+  });
+
+  return { valid, error };
+}
+
+export function isValidAccounts(key: string, accounts: any, context: string) {
+  let valid = false;
+  let error = { message: "", code: 0 };
+
+  if (isValidArray(accounts)) {
+    accounts.forEach((account: any) => {
+      if (!isValidAccountId(account) || !account.includes(key)) {
+        valid = false;
+        error = getSdkError(
+          "UNSUPPORTED_ACCOUNTS",
+          `${context}, account ${account} should be a string and conform to "namespace:chainId:address" format`,
+        );
+      }
+    });
+  } else {
+    valid = false;
+    error = getSdkError(
+      "UNSUPPORTED_ACCOUNTS",
+      `${context}, accounts should be an array of strings conforming to "namespace:chainId:address" format`,
+    );
+  }
+
+  return { valid, error };
+}
+
+export function isValidNamespaceAccounts(input: any, method: string) {
+  let valid = false;
+  let error = { message: "", code: 0 };
+
+  Object.entries(input).forEach(([key, namespace]: [string, any]) => {
+    const validAccounts = isValidAccounts(key, namespace?.accounts, `${method} namespace`);
+    if (!validAccounts.valid) {
+      valid = false;
+      error = validAccounts.error;
+    } else if (valid && isValidArray(namespace?.extension)) {
+      const validAccounts = isValidAccounts(
+        key,
+        namespace.extension.accounts,
+        `${method} extension`,
+      );
+      if (!validAccounts.valid) {
+        valid = false;
+        error = validAccounts.error;
+      }
+    }
+  });
+
+  return { valid, error };
+}
+
+export function isValidActions(namespace: any, context: string) {
+  let valid = false;
+  let error = { message: "", code: 0 };
+  if (!isValidNamespaceMethodsOrEvents(namespace?.methods)) {
+    valid = false;
+    error = getSdkError(
+      "UNSUPPORTED_METHODS",
+      `${context}, methods should be an array of strings or empty array for no methods`,
+    );
+  } else if (!isValidNamespaceMethodsOrEvents(namespace?.events)) {
+    valid = false;
+    error = getSdkError(
+      "UNSUPPORTED_EVENTS",
+      `${context}, events should be an array of strings or empty array for no events`,
+    );
+  }
+
+  return { valid, error };
+}
+
+export function isValidNamespaceActions(input: any, method: string) {
+  let valid = false;
+  let error = { message: "", code: 0 };
+  Object.values(input).forEach((namespace: any) => {
+    const validActions = isValidActions(namespace, `${method}, namespace`);
+    if (!validActions.valid) {
+      valid = false;
+      error = validActions.error;
+    }
+    if (valid && isValidArray(namespace?.extension)) {
+      namespace.extension.forEach((extension: any) => {
+        const validActions = isValidActions(extension, `${method}, extension`);
+        if (!validActions.valid) {
+          valid = false;
+          error = validActions.error;
+        }
+      });
+    } else {
+      valid = false;
+      error = getInternalError(
+        "MISSING_OR_INVALID",
+        `${method} extension should be an array of namespaces, or omitted`,
+      );
+    }
+  });
+
+  return { valid, error };
+}
+
+export function isValidRequiredNamespaces(input: any, method: string) {
+  let valid = false;
+  let error = { message: "", code: 0 };
+  if (input && isValidObject(input)) {
+    const validActions = isValidNamespaceActions(input, method);
+    if (!validActions.valid) {
+      valid = false;
+      error = validActions.error;
+    }
+    const validChains = isValidNamespaceChains(input, method);
+    if (!validChains.valid) {
+      valid = false;
+      error = validChains.error;
+    }
+  } else {
+    valid = false;
+    error = getInternalError(
+      "MISSING_OR_INVALID",
+      `${method}, requiredNamespaces should be an object`,
+    );
+  }
+
+  return { valid, error };
+}
+
+export function isValidNamespaces(input: any, method: string) {
+  let valid = false;
+  let error = { message: "", code: 0 };
+  if (input && isValidObject(input)) {
+    const validActions = isValidActions(input, method);
+    if (!validActions.valid) {
+      valid = false;
+      error = validActions.error;
+    }
+    const validAccounts = isValidNamespaceAccounts(input, method);
+    if (!validAccounts.valid) {
+      valid = false;
+      error = validAccounts.error;
+    }
+  } else {
+    valid = false;
+    error = getInternalError("MISSING_OR_INVALID", `${method}, namespaces should be an object`);
+  }
+
+  return { valid, error };
 }
 
 export function isValidRelay(input: any): input is RelayerTypes.ProtocolOptions {

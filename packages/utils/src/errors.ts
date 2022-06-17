@@ -76,7 +76,7 @@ const SDK_ERRORS = {
     message: "Unsupported accounts.",
     code: 5103,
   },
-  UNSUPORTED_NAMESPACE_KEY: {
+  UNSUPPORTED_NAMESPACE_KEY: {
     message: "Unsupported namespace key.",
     code: 5104,
   },

@@ -799,9 +799,9 @@ export class Engine extends IEngine {
   // ---------- Validation Helpers ------------------------------------ //
   private async isValidPairingTopic(topic: any) {
     if (!isValidString(topic, false))
-      throw getInternalError("MISSING_OR_INVALID", `Pairing topic: ${topic}`);
+      throw getInternalError("MISSING_OR_INVALID", `Pairing topic: ${topic}, should be a string`);
     if (!this.client.pairing.keys.includes(topic))
-      throw getInternalError("NO_MATCHING_KEY", `Pairing topic: ${topic}`);
+      throw getInternalError("NO_MATCHING_KEY", `Pairing topic: ${topic}, doesn't exist`);
     if (isExpired(this.client.pairing.get(topic).expiry)) {
       await this.deletePairing(topic);
       throw getInternalError("EXPIRED", `Pairing topic: ${topic}`);
@@ -810,9 +810,9 @@ export class Engine extends IEngine {
 
   private async isValidSessionTopic(topic: any) {
     if (!isValidString(topic, false))
-      throw getInternalError("MISSING_OR_INVALID", `Session topic: ${topic}`);
+      throw getInternalError("MISSING_OR_INVALID", `Session topic: ${topic}, should be a string`);
     if (!this.client.session.keys.includes(topic))
-      throw getInternalError("NO_MATCHING_KEY", `Session topic: ${topic}`);
+      throw getInternalError("NO_MATCHING_KEY", `Session topic: ${topic}, doesn't exist`);
     if (isExpired(this.client.session.get(topic).expiry)) {
       await this.deleteSession(topic);
       throw getInternalError("EXPIRED", `Session topic: ${topic}`);
@@ -822,13 +822,18 @@ export class Engine extends IEngine {
   private async isValidSessionOrPairingTopic(topic: string) {
     if (this.client.session.keys.includes(topic)) await this.isValidSessionTopic(topic);
     else if (this.client.pairing.keys.includes(topic)) await this.isValidPairingTopic(topic);
-    else throw getInternalError("MISSING_OR_INVALID", `Session or pairing topic: ${topic}`);
+    else
+      throw getInternalError(
+        "MISSING_OR_INVALID",
+        `Session or pairing topic: ${topic}, should be a string`,
+      );
   }
 
   private async isValidProposalId(id: any) {
-    if (!isValidId(id)) throw getInternalError("MISSING_OR_INVALID", `Proposal id: ${id}`);
+    if (!isValidId(id))
+      throw getInternalError("MISSING_OR_INVALID", `Proposal id: ${id}, should be a number`);
     if (!this.client.proposal.keys.includes(id))
-      throw getInternalError("NO_MATCHING_KEY", `Proposal id: ${id}`);
+      throw getInternalError("NO_MATCHING_KEY", `Proposal id: ${id}, doesn't exist`);
     if (isExpired(this.client.proposal.get(id).expiry)) {
       await this.deleteProposal(id);
       throw getInternalError("EXPIRED", `Proposal id: ${id}`);
@@ -839,13 +844,13 @@ export class Engine extends IEngine {
 
   private isValidConnect: EnginePrivate["isValidConnect"] = async params => {
     if (!isValidParams(params))
-      throw getInternalError("MISSING_OR_INVALID", `Connect params: ${params}`);
+      throw getInternalError("MISSING_OR_INVALID", `Connect params: ${JSON.stringify(params)}`);
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
     if (!isValidRequiredNamespaces(requiredNamespaces))
       throw getInternalError(
         "MISSING_OR_INVALID",
-        `Connect requiredNamespaces: ${requiredNamespaces}`,
+        `Connect requiredNamespaces: ${JSON.stringify(requiredNamespaces)}`,
       );
     if (!isValidRelays(relays, true))
       throw getInternalError("MISSING_OR_INVALID", `Connect relays ${relays}`);
