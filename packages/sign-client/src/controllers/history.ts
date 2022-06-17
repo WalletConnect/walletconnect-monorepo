@@ -163,7 +163,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   private getRecord(id: number) {
     this.isInitialized();
     const record = this.records.get(id);
-    if (!record) throw getInternalError("NO_MATCHING_KEY", `${this.name}, id: ${id}`);
+    if (!record) throw getInternalError("NO_MATCHING_KEY", `${this.name}: ${id}`);
     return record;
   }
 

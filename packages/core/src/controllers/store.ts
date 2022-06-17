@@ -128,7 +128,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   private getData(key: Key) {
     const value = this.map.get(key);
     if (!value) {
-      const error = getInternalError("NO_MATCHING_KEY", `${this.name}, ${key}`);
+      const error = getInternalError("NO_MATCHING_KEY", `${this.name}: ${key}`);
       this.logger.error(error.message);
       throw error;
     }

@@ -166,7 +166,7 @@ export class Expirer extends IExpirer {
   private getExpiration(target: string): ExpirerTypes.Expiration {
     const expiration = this.expirations.get(target);
     if (!expiration) {
-      const error = getInternalError("NO_MATCHING_KEY", `${this.name}, ${target}`);
+      const error = getInternalError("NO_MATCHING_KEY", `${this.name}: ${target}`);
       this.logger.error(error.message);
       throw error;
     }

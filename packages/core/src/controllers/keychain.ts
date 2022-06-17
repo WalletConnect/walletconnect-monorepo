@@ -51,7 +51,7 @@ export class KeyChain implements IKeyChain {
     this.isInitialized();
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
-      throw getInternalError("NO_MATCHING_KEY", `${this.name}, ${tag}`);
+      throw getInternalError("NO_MATCHING_KEY", `${this.name}: ${tag}`);
     }
     return key;
   };

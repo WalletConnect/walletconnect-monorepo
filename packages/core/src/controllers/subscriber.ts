@@ -249,7 +249,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "method", method: "getSubscription", id });
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
-      throw getInternalError("NO_MATCHING_KEY", `${this.name}, ${id}`);
+      throw getInternalError("NO_MATCHING_KEY", `${this.name}: ${id}`);
     }
     return subscription;
   }
