@@ -164,7 +164,7 @@ export function isValidNamespaceChains(namespaces: any, method: string) {
   let error = { message: "", code: 0 };
 
   Object.entries(namespaces).forEach(([key, namespace]: [string, any]) => {
-    const validChains = isValidChains(key, namespace?.chains, `${method} namespace`);
+    const validChains = isValidChains(key, namespace?.chains, `${method} requiredNamespace`);
     if (!validChains.valid) {
       valid = false;
       error = validChains.error;
@@ -315,7 +315,7 @@ export function isValidRequiredNamespaces(input: any, method: string) {
     valid = false;
     error = getInternalError(
       "MISSING_OR_INVALID",
-      `${method}, requiredNamespaces should be an object`,
+      `${method}, requiredNamespaces should be an object with data`,
     );
   }
 
@@ -338,7 +338,10 @@ export function isValidNamespaces(input: any, method: string) {
     }
   } else {
     valid = false;
-    error = getInternalError("MISSING_OR_INVALID", `${method}, namespaces should be an object`);
+    error = getInternalError(
+      "MISSING_OR_INVALID",
+      `${method}, namespaces should be an object with data`,
+    );
   }
 
   return { valid, error };
