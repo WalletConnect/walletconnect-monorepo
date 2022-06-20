@@ -10,6 +10,42 @@ import { getSdkError, getInternalError } from "./errors";
 import { hasOverlap } from "./misc";
 import { deletedDiff } from "deep-object-diff";
 
+// -- types ----------------------------------------------------- //
+
+export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
+  if (Array.isArray(arr)) {
+    if (typeof itemCondition !== "undefined" && arr.length) {
+      const matches = arr.filter(itemCondition);
+      return matches.length === arr.length;
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function isValidObject(obj: any) {
+  return Object.getPrototypeOf(obj) === Object.prototype && Object.keys(obj).length;
+}
+
+export function isUndefined(input: any): input is undefined {
+  return typeof input === "undefined";
+}
+
+export function isValidString(input: any, optional: boolean) {
+  if (optional && isUndefined(input)) return true;
+
+  return typeof input === "string" && Boolean(input.trim().length);
+}
+
+export function isValidNumber(input: any, optional: boolean) {
+  if (optional && isUndefined(input)) return true;
+
+  return typeof input === "number";
+}
+
+// -- protocol -------------------------------------------------- //
+
 export function isSessionCompatible(session: SessionTypes.Struct, params: EngineTypes.FindParams) {
   const { requiredNamespaces } = params;
   const sessionKeys = Object.keys(session.namespaces);
@@ -47,38 +83,6 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
   });
 
   return compatible;
-}
-
-export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
-  if (Array.isArray(arr)) {
-    if (typeof itemCondition !== "undefined" && arr.length) {
-      const matches = arr.filter(itemCondition);
-      return matches.length === arr.length;
-    } else {
-      return true;
-    }
-  }
-  return false;
-}
-
-export function isValidObject(obj: any) {
-  return Object.getPrototypeOf(obj) === Object.prototype && Object.keys(obj).length;
-}
-
-export function isUndefined(input: any): input is undefined {
-  return typeof input === "undefined";
-}
-
-export function isValidString(input: any, optional: boolean) {
-  if (optional && isUndefined(input)) return true;
-
-  return typeof input === "string" && Boolean(input.trim().length);
-}
-
-export function isValidNumber(input: any, optional: boolean) {
-  if (optional && isUndefined(input)) return true;
-
-  return typeof input === "number";
 }
 
 export function isValidChainId(value: any) {
@@ -120,6 +124,36 @@ export function isSessionStruct(input: any): input is SessionTypes.Struct {
   return input?.topic;
 }
 
+export function isValidController(input: any, method: string) {
+  let valid = true;
+  let error = { message: "", code: 0 };
+  if (!isValidString(input?.publicKey, false)) {
+    valid = false;
+    error = getInternalError(
+      "MISSING_OR_INVALID",
+      `${method} controller public key should be a string`,
+    );
+  }
+
+  return { valid, error };
+}
+
+export function isValidExtension(namespace: any, method: string) {
+  let valid = true;
+  let error = { message: "", code: 0 };
+  if (!isUndefined(namespace?.extension)) {
+    if (!isValidArray(namespace.extension) || !namespace.extension.length) {
+      valid = false;
+      error = getInternalError(
+        "MISSING_OR_INVALID",
+        `${method} extension should be an array of namespaces, or omitted`,
+      );
+    }
+  }
+
+  return { valid, error };
+}
+
 export function isValidNamespaceMethodsOrEvents(input: any): input is string {
   let valid = true;
   if (isValidArray(input)) {
@@ -154,20 +188,6 @@ export function isValidChains(key: string, chains: any, context: string) {
     error = getSdkError(
       "UNSUPPORTED_CHAINS",
       `${context}, chains ${chains} should be an array of strings conforming to "namespace:chainId" format`,
-    );
-  }
-
-  return { valid, error };
-}
-
-export function isValidController(input: any, method: string) {
-  let valid = true;
-  let error = { message: "", code: 0 };
-  if (!isValidString(input?.publicKey, false)) {
-    valid = false;
-    error = getInternalError(
-      "MISSING_OR_INVALID",
-      `${method} controller public key should be a string`,
     );
   }
 
@@ -270,22 +290,6 @@ export function isValidActions(namespace: any, context: string) {
       "UNSUPPORTED_EVENTS",
       `${context}, events should be an array of strings or empty array for no events`,
     );
-  }
-
-  return { valid, error };
-}
-
-export function isValidExtension(namespace: any, method: string) {
-  let valid = true;
-  let error = { message: "", code: 0 };
-  if (!isUndefined(namespace?.extension)) {
-    if (!isValidArray(namespace.extension) || !namespace.extension.length) {
-      valid = false;
-      error = getInternalError(
-        "MISSING_OR_INVALID",
-        `${method} extension should be an array of namespaces, or omitted`,
-      );
-    }
   }
 
   return { valid, error };
@@ -463,6 +467,7 @@ export function isConformingNamespaces(
   let error = { message: "", code: 0 };
   Object.entries(deletedDiff(requiredNamespaces, namespaces)).forEach(([key, namespace]) => {
     // TODO check keys as well
+    // TODO use hasOverlap here instead
     if (!valid) return;
     if (namespace.methods) {
       valid = false;
