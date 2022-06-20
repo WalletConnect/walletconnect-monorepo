@@ -19,6 +19,7 @@ import {
 import SignClient from "../src";
 
 let client: SignClient;
+let proposalId: number;
 let pairingTopic: string;
 let topic: string;
 
@@ -28,6 +29,7 @@ describe("Sign Client Validation", () => {
     await testConnectMethod(clients);
     client = clients.A;
     pairingTopic = client.pairing.keys[0];
+    proposalId = client.proposal.keys[0];
     topic = client.session.keys[0];
   });
 
@@ -150,88 +152,109 @@ describe("Sign Client Validation", () => {
   describe("approve", () => {
     it("throws when no params are passed", async () => {
       await expect(client.approve()).to.eventually.be.rejectedWith(
-        "Missing or invalid approve params",
+        "Missing or invalid. approve() params: undefined",
       );
     });
 
     it("throws when invalid id is provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: "123" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve id");
+      ).to.eventually.be.rejectedWith("Missing or invalid. proposal id should be a number: 123");
     });
 
     it("throws when empty id is provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve id");
+      ).to.eventually.be.rejectedWith("Missing or invalid. proposal id should be a number: ");
     });
 
     it("throws when no id is provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve id");
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. proposal id should be a number: undefined",
+      );
+    });
+
+    it("throws when non existant id is provided", async () => {
+      await expect(
+        client.approve({ ...TEST_APPROVE_PARAMS, id: 123 }),
+      ).to.eventually.be.rejectedWith("No matching key. proposal id doesn't exist: 123");
     });
 
     it("throws when invalid namespaces are provided", async () => {
       await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: [] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces: [] }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. approve(), namespaces should be an object with data",
+      );
     });
 
     it("throws when empty namespaces are provided", async () => {
       await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: {} }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces: {} }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. approve(), namespaces should be an object with data",
+      );
     });
 
     it("throws when no namespaces are provided", async () => {
       await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, namespaces: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces: undefined }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. approve(), namespaces should be an object with data",
+      );
     });
 
     it("throws when empty extension is provided", async () => {
+      const namespaces = TEST_NAMESPACES;
+      namespaces.eip155.extension = [];
       await expect(
-        client.approve({
-          ...TEST_APPROVE_PARAMS,
-          namespaces: { ...TEST_NAMESPACES, extension: [] },
-        }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. approve() extension should be an array of namespaces, or omitted",
+      );
+    });
+
+    it("throws when empty extension body is provided", async () => {
+      const namespaces = TEST_NAMESPACES;
+      namespaces.eip155.extension = [{}];
       await expect(
-        client.approve({
-          ...TEST_APPROVE_PARAMS,
-          namespaces: { ...TEST_NAMESPACES, extension: [{}] },
-        }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
+      ).to.eventually.be.rejectedWith(
+        `Unsupported accounts. approve() extension, accounts should be an array of strings conforming to "namespace:chainId:address" format`,
+      );
     });
 
     it("throws when invalid extension is provided", async () => {
+      const namespaces = TEST_NAMESPACES;
+      namespaces.eip155.extension = {};
       await expect(
-        client.approve({
-          ...TEST_APPROVE_PARAMS,
-          namespaces: { ...TEST_NAMESPACES, extension: {} },
-        }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. approve() extension should be an array of namespaces, or omitted",
+      );
     });
 
     it("throws when invalid extension values are provided", async () => {
+      const namespaces = TEST_NAMESPACES;
+      namespaces.eip155.extension = [{ invalid: [""] }];
       await expect(
-        client.approve({
-          ...TEST_APPROVE_PARAMS,
-          namespaces: { ...TEST_NAMESPACES, extension: { invalid: [""] } },
-        }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve namespaces");
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
+      ).to.eventually.be.rejectedWith(
+        `Unsupported accounts. approve() extension, accounts should be an array of strings conforming to "namespace:chainId:address" format`,
+      );
     });
 
     it("throws when invalid relayProtocol are provided", async () => {
       await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, relayProtocol: 123 }),
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, relayProtocol: 123 }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve relayProtocol");
     });
 
     it("throws when empty relayProtocol is provided", async () => {
       await expect(
-        client.approve({ ...TEST_APPROVE_PARAMS, relayProtocol: "" }),
+        client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, relayProtocol: "" }),
       ).to.eventually.be.rejectedWith("Missing or invalid approve relayProtocol");
     });
   });
@@ -263,19 +286,19 @@ describe("Sign Client Validation", () => {
 
     it("throws when empty reason is provided", async () => {
       await expect(
-        client.reject({ ...TEST_REJECT_PARAMS, reason: {} }),
+        client.reject({ ...TEST_REJECT_PARAMS, id: proposalId, reason: {} }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
     });
 
     it("throws when invalid reason is provided", async () => {
       await expect(
-        client.reject({ ...TEST_REJECT_PARAMS, reason: [] }),
+        client.reject({ ...TEST_REJECT_PARAMS, id: proposalId, reason: [] }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
     });
 
     it("throws when no reason is provided", async () => {
       await expect(
-        client.reject({ ...TEST_REJECT_PARAMS, reason: undefined }),
+        client.reject({ ...TEST_REJECT_PARAMS, id: proposalId, reason: undefined }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
     });
 
@@ -283,6 +306,7 @@ describe("Sign Client Validation", () => {
       await expect(
         client.reject({
           ...TEST_REJECT_PARAMS,
+          id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, code: "1" },
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
@@ -292,6 +316,7 @@ describe("Sign Client Validation", () => {
       await expect(
         client.reject({
           ...TEST_REJECT_PARAMS,
+          id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, code: "" },
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
@@ -301,6 +326,7 @@ describe("Sign Client Validation", () => {
       await expect(
         client.reject({
           ...TEST_REJECT_PARAMS,
+          id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, code: undefined },
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
@@ -310,6 +336,7 @@ describe("Sign Client Validation", () => {
       await expect(
         client.reject({
           ...TEST_REJECT_PARAMS,
+          id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, message: 123 },
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
@@ -319,6 +346,7 @@ describe("Sign Client Validation", () => {
       await expect(
         client.reject({
           ...TEST_REJECT_PARAMS,
+          id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, message: "" },
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
@@ -328,6 +356,7 @@ describe("Sign Client Validation", () => {
       await expect(
         client.reject({
           ...TEST_REJECT_PARAMS,
+          id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, message: undefined },
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid reject reason");

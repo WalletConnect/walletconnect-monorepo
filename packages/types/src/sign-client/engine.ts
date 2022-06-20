@@ -259,9 +259,11 @@ export interface EnginePrivate {
 
   isValidPair(params: EngineTypes.PairParams): void;
 
+  isValidSessionSettleRequest(params: JsonRpcTypes.RequestParams["wc_sessionSettle"]): void;
+
   isValidApprove(params: EngineTypes.ApproveParams): Promise<void>;
 
-  isValidReject(params: EngineTypes.RejectParams): void;
+  isValidReject(params: EngineTypes.RejectParams): Promise<void>;
 
   isValidUpdate(params: EngineTypes.UpdateParams): Promise<void>;
 

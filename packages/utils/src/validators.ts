@@ -159,6 +159,20 @@ export function isValidChains(key: string, chains: any, context: string) {
   return { valid, error };
 }
 
+export function isValidController(input: any, method: string) {
+  let valid = true;
+  let error = { message: "", code: 0 };
+  if (!isValidString(input?.publicKey, false)) {
+    valid = false;
+    error = getInternalError(
+      "MISSING_OR_INVALID",
+      `${method} controller public key should be a string`,
+    );
+  }
+
+  return { valid, error };
+}
+
 export function isValidNamespaceChains(namespaces: any, method: string) {
   let valid = true;
   let error = { message: "", code: 0 };

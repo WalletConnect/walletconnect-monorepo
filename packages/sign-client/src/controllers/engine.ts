@@ -34,6 +34,7 @@ import {
   isValidNamespaces,
   isValidRelays,
   isValidUrl,
+  isValidRelay,
   isValidId,
   isValidParams,
   isValidString,
@@ -49,6 +50,7 @@ import {
   isExpired,
   isUndefined,
   isConformingNamespaces,
+  isValidController,
 } from "@walletconnect/utils";
 
 export class Engine extends IEngine {
@@ -144,7 +146,7 @@ export class Engine extends IEngine {
 
   public approve: IEngine["approve"] = async params => {
     this.isInitialized();
-    this.isValidApprove(params);
+    await this.isValidApprove(params);
     const { id, relayProtocol, namespaces } = params;
     const { pairingTopic, proposer, requiredNamespaces } = this.client.proposal.get(id);
 
@@ -202,7 +204,7 @@ export class Engine extends IEngine {
 
   public reject: IEngine["reject"] = async params => {
     this.isInitialized();
-    this.isValidReject(params);
+    await this.isValidReject(params);
     const { id, reason } = params;
     const { pairingTopic } = this.client.proposal.get(id);
     if (pairingTopic) {
@@ -574,7 +576,7 @@ export class Engine extends IEngine {
   ) => {
     const { id, params } = payload;
     try {
-      this.isValidApprove({ id, ...params });
+      this.isValidSessionSettleRequest(params);
       const { relay, controller, expiry, namespaces } = payload.params;
       const session = {
         topic,
@@ -860,8 +862,6 @@ export class Engine extends IEngine {
   private isValidApprove: EnginePrivate["isValidApprove"] = async params => {
     if (!isValidParams(params))
       throw getInternalError("MISSING_OR_INVALID", `approve() params: ${params}`);
-    // eslint-disable-next-line no-console
-    console.log(params);
     const { id, namespaces, relayProtocol } = params;
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);
@@ -873,13 +873,29 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `approve() relayProtocol: ${relayProtocol}`);
   };
 
-  private isValidReject: EnginePrivate["isValidReject"] = params => {
+  private isValidReject: EnginePrivate["isValidReject"] = async params => {
     if (!isValidParams(params))
-      throw getInternalError("MISSING_OR_INVALID", `reject() params, ${params}`);
+      throw getInternalError("MISSING_OR_INVALID", `reject() params: ${params}`);
     const { id, reason } = params;
-    if (!isValidId(id)) throw getInternalError("MISSING_OR_INVALID", `reject() id: ${id}`);
+    await this.isValidProposalId(id);
     if (!isValidErrorReason(reason))
       throw getInternalError("MISSING_OR_INVALID", `reject() reason: ${reason}`);
+  };
+
+  private isValidSessionSettleRequest: EnginePrivate["isValidSessionSettleRequest"] = params => {
+    if (!isValidParams(params))
+      throw getInternalError("MISSING_OR_INVALID", `onSessionSettleRequest() params: ${params}`);
+    const { relay, controller, namespaces, expiry } = params;
+    if (!isValidRelay(relay))
+      throw getInternalError(
+        "MISSING_OR_INVALID",
+        `onSessionSettleRequest() relay protocol should be a string`,
+      );
+    const validController = isValidController(controller, "onSessionSettleRequest()");
+    if (!validController.valid) throw validController.error;
+    const validNamespaces = isValidNamespaces(namespaces, "onSessionSettleRequest()");
+    if (!validNamespaces.valid) throw validNamespaces.error;
+    if (isExpired(expiry)) throw getInternalError("EXPIRED", `onSessionSettleRequest()`);
   };
 
   private isValidUpdate: EnginePrivate["isValidUpdate"] = async params => {
