@@ -85,7 +85,9 @@ describe("Sign Client Validation", () => {
       requiredNamespaces.eip155.extension = [];
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. connect() extension should be an array of namespaces, or omitted",
+      );
     });
 
     it("throws when empty extension body is provided", async () => {
@@ -93,50 +95,54 @@ describe("Sign Client Validation", () => {
       requiredNamespaces.eip155.extension = [{}];
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+      ).to.eventually.be.rejectedWith(
+        `Unsupported chains. connect() extension, chains undefined should be an array of strings conforming to "namespace:chainId" format`,
+      );
     });
 
     it("throws when invalid extension is provided", async () => {
+      const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
+      requiredNamespaces.eip155.extension = {};
       await expect(
-        client.connect({
-          ...TEST_CONNECT_PARAMS,
-          pairingTopic,
-          requiredNamespaces: { ...TEST_REQUIRED_NAMESPACES, extension: {} },
-        }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. connect() extension should be an array of namespaces, or omitted",
+      );
     });
 
     it("throws when invalid extension values are provided", async () => {
+      const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
+      requiredNamespaces.eip155.extension = [{ invalid: [""] }];
       await expect(
-        client.connect({
-          ...TEST_CONNECT_PARAMS,
-          pairingTopic,
-          requiredNamespaces: { ...TEST_REQUIRED_NAMESPACES, extension: { invalid: [""] } },
-        }),
-      ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
+        client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
+      ).to.eventually.be.rejectedWith(
+        `Unsupported chains. connect() extension, chains undefined should be an array of strings conforming to "namespace:chainId" format`,
+      );
     });
   });
 
   describe("pair", () => {
     it("throws when no params are passed", async () => {
-      await expect(client.pair()).to.eventually.be.rejectedWith("Missing or invalid pair params");
+      await expect(client.pair()).to.eventually.be.rejectedWith(
+        "Missing or invalid. pair() params: undefined",
+      );
     });
 
     it("throws when empty uri is provided", async () => {
       await expect(client.pair({ uri: "" })).to.eventually.be.rejectedWith(
-        "Missing or invalid pair uri",
+        "Missing or invalid. pair() uri: ",
       );
     });
 
     it("throws when invalid uri is provided", async () => {
       await expect(client.pair({ uri: 123 })).to.eventually.be.rejectedWith(
-        "Missing or invalid pair uri",
+        "Missing or invalid. pair() uri: 123",
       );
     });
 
     it("throws when no uri is provided", async () => {
       await expect(client.pair({ uri: undefined })).to.eventually.be.rejectedWith(
-        "Missing or invalid pair uri",
+        "Missing or invalid. pair() uri: undefined",
       );
     });
   });

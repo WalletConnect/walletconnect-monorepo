@@ -859,7 +859,9 @@ export class Engine extends IEngine {
 
   private isValidApprove: EnginePrivate["isValidApprove"] = async params => {
     if (!isValidParams(params))
-      throw getInternalError("MISSING_OR_INVALID", `approve() params, ${params}`);
+      throw getInternalError("MISSING_OR_INVALID", `approve() params: ${params}`);
+    // eslint-disable-next-line no-console
+    console.log(params);
     const { id, namespaces, relayProtocol } = params;
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);
