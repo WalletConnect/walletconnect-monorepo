@@ -82,11 +82,15 @@ describe("Sign Client Validation", () => {
 
     it("throws when empty extension is provided", async () => {
       const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
-      requiredNamespaces.eip155.extensions = [];
+      requiredNamespaces.eip155.extension = [];
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
       ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");
-      requiredNamespaces.eip155.extensions = [{}];
+    });
+
+    it("throws when empty extension body is provided", async () => {
+      const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
+      requiredNamespaces.eip155.extension = [{}];
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
       ).to.eventually.be.rejectedWith("Missing or invalid connect requiredNamespaces");

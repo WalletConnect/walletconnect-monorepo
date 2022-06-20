@@ -137,9 +137,9 @@ export function isValidNamespaceMethodsOrEvents(input: any): input is string {
 export function isValidChains(key: string, chains: any, context: string) {
   let valid = true;
   let error = { message: "", code: 0 };
-
   if (isValidArray(chains)) {
     chains.forEach((chain: any) => {
+      if (!valid) return;
       if (!isValidChainId(chain) || !chain.includes(key)) {
         valid = false;
         error = getSdkError(
@@ -162,26 +162,25 @@ export function isValidChains(key: string, chains: any, context: string) {
 export function isValidNamespaceChains(namespaces: any, method: string) {
   let valid = true;
   let error = { message: "", code: 0 };
-
   Object.entries(namespaces).forEach(([key, namespace]: [string, any]) => {
+    if (!valid) return;
     const validChains = isValidChains(key, namespace?.chains, `${method} requiredNamespace`);
+    const validExtension = isValidExtension(namespace, method);
     if (!validChains.valid) {
       valid = false;
       error = validChains.error;
-    } else if (valid && !isUndefined(namespace?.extension)) {
-      if (isValidArray(namespace?.extension)) {
-        const validChains = isValidChains(key, namespace.extension.chains, `${method} extension`);
+    } else if (!validExtension.valid) {
+      valid = false;
+      error = validExtension.error;
+    } else if (namespace.extension) {
+      namespace.extension.forEach((extension: any) => {
+        if (!valid) return;
+        const validChains = isValidChains(key, extension.chains, `${method} extension`);
         if (!validChains.valid) {
           valid = false;
           error = validChains.error;
         }
-      } else {
-        valid = false;
-        error = getInternalError(
-          "MISSING_OR_INVALID",
-          `${method} extension should be an array of namespaces, or omitted`,
-        );
-      }
+      });
     }
   });
 
@@ -191,9 +190,9 @@ export function isValidNamespaceChains(namespaces: any, method: string) {
 export function isValidAccounts(key: string, accounts: any, context: string) {
   let valid = true;
   let error = { message: "", code: 0 };
-
   if (isValidArray(accounts)) {
     accounts.forEach((account: any) => {
+      if (!valid) return;
       if (!isValidAccountId(account) || !account.includes(key)) {
         valid = false;
         error = getSdkError(
@@ -216,30 +215,25 @@ export function isValidAccounts(key: string, accounts: any, context: string) {
 export function isValidNamespaceAccounts(input: any, method: string) {
   let valid = true;
   let error = { message: "", code: 0 };
-
   Object.entries(input).forEach(([key, namespace]: [string, any]) => {
+    if (!valid) return;
     const validAccounts = isValidAccounts(key, namespace?.accounts, `${method} namespace`);
+    const validExtension = isValidExtension(namespace, method);
     if (!validAccounts.valid) {
       valid = false;
       error = validAccounts.error;
-    } else if (valid && !isUndefined(namespace?.extension)) {
-      if (isValidArray(namespace?.extension)) {
-        const validAccounts = isValidAccounts(
-          key,
-          namespace.extension.accounts,
-          `${method} extension`,
-        );
+    } else if (!validExtension.valid) {
+      valid = false;
+      error = validExtension.error;
+    } else if (namespace.extension) {
+      namespace.extension.forEach((extension: any) => {
+        if (!valid) return;
+        const validAccounts = isValidAccounts(key, extension.accounts, `${method} extension`);
         if (!validAccounts.valid) {
           valid = false;
           error = validAccounts.error;
         }
-      } else {
-        valid = false;
-        error = getInternalError(
-          "MISSING_OR_INVALID",
-          `${method} extension should be an array of namespaces, or omitted`,
-        );
-      }
+      });
     }
   });
 
@@ -249,7 +243,6 @@ export function isValidNamespaceAccounts(input: any, method: string) {
 export function isValidActions(namespace: any, context: string) {
   let valid = true;
   let error = { message: "", code: 0 };
-
   if (!isValidNamespaceMethodsOrEvents(namespace?.methods)) {
     valid = false;
     error = getSdkError(
@@ -267,31 +260,44 @@ export function isValidActions(namespace: any, context: string) {
   return { valid, error };
 }
 
+export function isValidExtension(namespace: any, method: string) {
+  let valid = true;
+  let error = { message: "", code: 0 };
+  if (!isUndefined(namespace?.extension)) {
+    if (!isValidArray(namespace.extension) || !namespace.extension.length) {
+      valid = false;
+      error = getInternalError(
+        "MISSING_OR_INVALID",
+        `${method} extension should be an array of namespaces, or omitted`,
+      );
+    }
+  }
+
+  return { valid, error };
+}
+
 export function isValidNamespaceActions(input: any, method: string) {
   let valid = true;
   let error = { message: "", code: 0 };
   Object.values(input).forEach((namespace: any) => {
+    if (!valid) return;
     const validActions = isValidActions(namespace, `${method}, namespace`);
+    const validExtension = isValidExtension(namespace, method);
     if (!validActions.valid) {
       valid = false;
       error = validActions.error;
-    }
-    if (valid && !isUndefined(namespace?.extension)) {
-      if (isValidArray(namespace?.extension)) {
-        namespace.extension.forEach((extension: any) => {
-          const validActions = isValidActions(extension, `${method}, extension`);
-          if (!validActions.valid) {
-            valid = false;
-            error = validActions.error;
-          }
-        });
-      } else {
-        valid = false;
-        error = getInternalError(
-          "MISSING_OR_INVALID",
-          `${method} extension should be an array of namespaces, or omitted`,
-        );
-      }
+    } else if (!validExtension.valid) {
+      valid = false;
+      error = validExtension.error;
+    } else if (namespace.extension) {
+      namespace.extension.forEach((extension: any) => {
+        if (!valid) return;
+        const validActions = isValidActions(extension, `${method}, extension`);
+        if (!validActions.valid) {
+          valid = false;
+          error = validActions.error;
+        }
+      });
     }
   });
 
