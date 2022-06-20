@@ -45,11 +45,11 @@ describe("Sign Client Integration", () => {
         } = await testConnectMethod(clients);
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        expect(() => clients.A.pairing.get(topic)).to.throw(
-          `No matching pairing with topic: ${topic}`,
-        );
+        expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith("Missing or invalid topic");
+        await expect(promise).to.eventually.be.rejectedWith(
+          `No matching key. session or pairing topic doesn't exist: ${topic}`,
+        );
         deleteClients(clients);
       });
     });
@@ -61,11 +61,11 @@ describe("Sign Client Integration", () => {
         } = await testConnectMethod(clients);
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        expect(() => clients.A.session.get(topic)).to.throw(
-          `No matching session with topic: ${topic}`,
-        );
+        expect(() => clients.A.session.get(topic)).to.throw(`No matching key. session: ${topic}`);
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith("Missing or invalid topic");
+        await expect(promise).to.eventually.be.rejectedWith(
+          `No matching key. session or pairing topic doesn't exist: ${topic}`,
+        );
         deleteClients(clients);
       });
     });
@@ -76,7 +76,7 @@ describe("Sign Client Integration", () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
-        "Missing or invalid topic",
+        `No matching key. session or pairing topic doesn't exist: ${fakeTopic}`,
       );
       deleteClients(clients);
     });

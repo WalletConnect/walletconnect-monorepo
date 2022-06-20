@@ -249,6 +249,7 @@ export function isValidNamespaceAccounts(input: any, method: string) {
 export function isValidActions(namespace: any, context: string) {
   let valid = true;
   let error = { message: "", code: 0 };
+
   if (!isValidNamespaceMethodsOrEvents(namespace?.methods)) {
     valid = false;
     error = getSdkError(
@@ -326,7 +327,7 @@ export function isValidNamespaces(input: any, method: string) {
   let valid = true;
   let error = { message: "", code: 0 };
   if (input && isValidObject(input)) {
-    const validActions = isValidActions(input, method);
+    const validActions = isValidNamespaceActions(input, method);
     if (!validActions.valid) {
       valid = false;
       error = validActions.error;
