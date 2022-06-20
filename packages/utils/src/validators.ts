@@ -457,24 +457,26 @@ export function isValidNamespacesEvent(
 export function isConformingNamespaces(
   requiredNamespaces: ProposalTypes.RequiredNamespaces,
   namespaces: SessionTypes.Namespaces,
+  context: string,
 ) {
   let valid = true;
   let error = { message: "", code: 0 };
-  Object.values(deletedDiff(requiredNamespaces, namespaces)).forEach(namespace => {
+  Object.entries(deletedDiff(requiredNamespaces, namespaces)).forEach(([key, namespace]) => {
+    // TODO check keys as well
     if (!valid) return;
     if (namespace.methods) {
       valid = false;
-      error = getSdkError("INVALID_METHOD");
+      error = getSdkError("INVALID_METHOD", `${context}`);
     } else if (namespace.events) {
       valid = false;
-      error = getSdkError("INVALID_EVENT");
+      error = getSdkError("INVALID_EVENT", `${context}`);
     } else if (namespace.extension) {
       if (namespace.extension.methods) {
         valid = false;
-        error = getSdkError("INVALID_METHOD", "extension");
+        error = getSdkError("INVALID_METHOD", `${context}`);
       } else if (namespace.extension.events) {
         valid = false;
-        error = getSdkError("INVALID_EVENT", "extension");
+        error = getSdkError("INVALID_EVENT", `${context}`);
       }
     }
   });

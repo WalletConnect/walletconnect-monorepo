@@ -867,7 +867,11 @@ export class Engine extends IEngine {
     const proposal = this.client.proposal.get(id);
     const validNamespaces = isValidNamespaces(namespaces, "approve()");
     if (!validNamespaces.valid) throw validNamespaces.error;
-    const conformingNamespaces = isConformingNamespaces(proposal.requiredNamespaces, namespaces);
+    const conformingNamespaces = isConformingNamespaces(
+      proposal.requiredNamespaces,
+      namespaces,
+      "update()",
+    );
     if (!conformingNamespaces.valid) throw conformingNamespaces.error;
     if (!isValidString(relayProtocol, true))
       throw getInternalError("MISSING_OR_INVALID", `approve() relayProtocol: ${relayProtocol}`);
@@ -906,7 +910,11 @@ export class Engine extends IEngine {
     const session = this.client.session.get(topic);
     const validNamespaces = isValidNamespaces(namespaces, "update()");
     if (!validNamespaces.valid) throw validNamespaces.error;
-    const conformingNamespaces = isConformingNamespaces(session.requiredNamespaces, namespaces);
+    const conformingNamespaces = isConformingNamespaces(
+      session.requiredNamespaces,
+      namespaces,
+      "update()",
+    );
     if (!conformingNamespaces.valid) throw conformingNamespaces.error;
     // TODO(ilja) - check if wallet
   };
