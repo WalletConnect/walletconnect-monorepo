@@ -7,7 +7,8 @@ import {
   getAccountsChains,
 } from "./namespaces";
 import { getSdkError, getInternalError } from "./errors";
-import { hasOverlap, getDeletedDiff } from "./misc";
+import { hasOverlap } from "./misc";
+import { deletedDiff } from "deep-object-diff";
 
 export function isSessionCompatible(session: SessionTypes.Struct, params: EngineTypes.FindParams) {
   const { requiredNamespaces } = params;
@@ -457,5 +458,26 @@ export function isConformingNamespaces(
   requiredNamespaces: ProposalTypes.RequiredNamespaces,
   namespaces: SessionTypes.Namespaces,
 ) {
-  return Object.keys(getDeletedDiff(requiredNamespaces, namespaces)).length === 0;
+  let valid = true;
+  let error = { message: "", code: 0 };
+  Object.values(deletedDiff(requiredNamespaces, namespaces)).forEach(namespace => {
+    if (!valid) return;
+    if (namespace.methods) {
+      valid = false;
+      error = getSdkError("INVALID_METHOD");
+    } else if (namespace.events) {
+      valid = false;
+      error = getSdkError("INVALID_EVENT");
+    } else if (namespace.extension) {
+      if (namespace.extension.methods) {
+        valid = false;
+        error = getSdkError("INVALID_METHOD", "extension");
+      } else if (namespace.extension.events) {
+        valid = false;
+        error = getSdkError("INVALID_EVENT", "extension");
+      }
+    }
+  });
+
+  return { valid, error };
 }

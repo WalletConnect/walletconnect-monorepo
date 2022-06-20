@@ -99,7 +99,9 @@ export const TEST_NAMESPACES = {
   },
 };
 
-export const TEST_NAMESPACES_INVALID_METHODS = { ...TEST_NAMESPACES, methods: ["eth_invalid"] };
+export const TEST_NAMESPACES_INVALID_METHODS = {
+  eip155: { ...TEST_NAMESPACES.eip155, methods: ["eth_invalid"] },
+};
 export const TEST_NAMESPACES_INVALID_CHAIN = { eip1111: { ...TEST_NAMESPACES.eip155 } };
 
 export const TEST_MESSAGE = "My name is John Doe";

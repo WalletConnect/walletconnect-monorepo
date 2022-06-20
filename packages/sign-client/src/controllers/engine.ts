@@ -867,8 +867,8 @@ export class Engine extends IEngine {
     const proposal = this.client.proposal.get(id);
     const validNamespaces = isValidNamespaces(namespaces, "approve()");
     if (!validNamespaces.valid) throw validNamespaces.error;
-    if (!isConformingNamespaces(proposal.requiredNamespaces, namespaces))
-      throw getInternalError("MISSING_OR_INVALID", `approve() namespaces: ${namespaces}`);
+    const conformingNamespaces = isConformingNamespaces(proposal.requiredNamespaces, namespaces);
+    if (!conformingNamespaces.valid) throw conformingNamespaces.error;
     if (!isValidString(relayProtocol, true))
       throw getInternalError("MISSING_OR_INVALID", `approve() relayProtocol: ${relayProtocol}`);
   };
@@ -879,7 +879,7 @@ export class Engine extends IEngine {
     const { id, reason } = params;
     await this.isValidProposalId(id);
     if (!isValidErrorReason(reason))
-      throw getInternalError("MISSING_OR_INVALID", `reject() reason: ${reason}`);
+      throw getInternalError("MISSING_OR_INVALID", `reject() reason: ${JSON.stringify(reason)}`);
   };
 
   private isValidSessionSettleRequest: EnginePrivate["isValidSessionSettleRequest"] = params => {
@@ -906,8 +906,8 @@ export class Engine extends IEngine {
     const session = this.client.session.get(topic);
     const validNamespaces = isValidNamespaces(namespaces, "update()");
     if (!validNamespaces.valid) throw validNamespaces.error;
-    if (!isConformingNamespaces(session.requiredNamespaces, namespaces))
-      throw getInternalError("MISSING_OR_INVALID", `update() namespaces: ${namespaces}`);
+    const conformingNamespaces = isConformingNamespaces(session.requiredNamespaces, namespaces);
+    if (!conformingNamespaces.valid) throw conformingNamespaces.error;
     // TODO(ilja) - check if wallet
   };
 

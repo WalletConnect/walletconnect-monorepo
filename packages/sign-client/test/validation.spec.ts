@@ -83,8 +83,7 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when empty extension is provided", async () => {
-      const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
-      requiredNamespaces.eip155.extension = [];
+      const requiredNamespaces = { eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: [] } };
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
       ).to.eventually.be.rejectedWith(
@@ -93,8 +92,9 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when empty extension body is provided", async () => {
-      const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
-      requiredNamespaces.eip155.extension = [{}];
+      const requiredNamespaces = {
+        eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: [{}] },
+      };
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
       ).to.eventually.be.rejectedWith(
@@ -103,8 +103,7 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when invalid extension is provided", async () => {
-      const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
-      requiredNamespaces.eip155.extension = {};
+      const requiredNamespaces = { eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: {} } };
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
       ).to.eventually.be.rejectedWith(
@@ -113,8 +112,9 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when invalid extension values are provided", async () => {
-      const requiredNamespaces = { ...TEST_REQUIRED_NAMESPACES };
-      requiredNamespaces.eip155.extension = [{ invalid: [""] }];
+      const requiredNamespaces = {
+        eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: [{ invalid: [""] }] },
+      };
       await expect(
         client.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
       ).to.eventually.be.rejectedWith(
@@ -207,8 +207,7 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when empty extension is provided", async () => {
-      const namespaces = TEST_NAMESPACES;
-      namespaces.eip155.extension = [];
+      const namespaces = { eip155: { ...TEST_NAMESPACES.eip155, extension: [] } };
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
       ).to.eventually.be.rejectedWith(
@@ -217,8 +216,7 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when empty extension body is provided", async () => {
-      const namespaces = TEST_NAMESPACES;
-      namespaces.eip155.extension = [{}];
+      const namespaces = { eip155: { ...TEST_NAMESPACES.eip155, extension: [{}] } };
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
       ).to.eventually.be.rejectedWith(
@@ -227,8 +225,7 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when invalid extension is provided", async () => {
-      const namespaces = TEST_NAMESPACES;
-      namespaces.eip155.extension = {};
+      const namespaces = { eip155: { ...TEST_NAMESPACES.eip155, extension: {} } };
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
       ).to.eventually.be.rejectedWith(
@@ -237,8 +234,7 @@ describe("Sign Client Validation", () => {
     });
 
     it("throws when invalid extension values are provided", async () => {
-      const namespaces = TEST_NAMESPACES;
-      namespaces.eip155.extension = [{ invalid: [""] }];
+      const namespaces = { eip155: { ...TEST_NAMESPACES.eip155, extension: [{ invalid: [""] }] } };
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
       ).to.eventually.be.rejectedWith(
@@ -246,60 +242,62 @@ describe("Sign Client Validation", () => {
       );
     });
 
-    it("throws when invalid relayProtocol are provided", async () => {
+    it("throws when invalid relayProtocol is provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, relayProtocol: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve relayProtocol");
+      ).to.eventually.be.rejectedWith("Missing or invalid. approve() relayProtocol: 123");
     });
 
     it("throws when empty relayProtocol is provided", async () => {
       await expect(
         client.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, relayProtocol: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid approve relayProtocol");
+      ).to.eventually.be.rejectedWith("Missing or invalid. approve() relayProtocol: ");
     });
   });
 
   describe("reject", () => {
     it("throws when no params are passed", async () => {
       await expect(client.reject()).to.eventually.be.rejectedWith(
-        "Missing or invalid reject params",
+        "Missing or invalid. reject() params: undefined",
       );
     });
 
     it("throws when invalid id is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, id: "123" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject id");
+      ).to.eventually.be.rejectedWith("Missing or invalid. proposal id should be a number: 123");
     });
 
     it("throws when empty id is provided", async () => {
       await expect(client.reject({ ...TEST_REJECT_PARAMS, id: "" })).to.eventually.be.rejectedWith(
-        "Missing or invalid reject id",
+        "Missing or invalid. proposal id should be a number: ",
       );
     });
 
     it("throws when no id is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, id: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject id");
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. proposal id should be a number: undefined",
+      );
     });
 
     it("throws when empty reason is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, id: proposalId, reason: {} }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith("Missing or invalid. reject() reason: {}");
     });
 
     it("throws when invalid reason is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, id: proposalId, reason: [] }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith("Missing or invalid. reject() reason: []");
     });
 
     it("throws when no reason is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, id: proposalId, reason: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith("Missing or invalid. reject() reason: undefined");
     });
 
     it("throws when invalid reason code is provided", async () => {
@@ -309,7 +307,9 @@ describe("Sign Client Validation", () => {
           id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, code: "1" },
         }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith(
+        `Missing or invalid. reject() reason: {"code":"1","message":"GENERIC"}`,
+      );
     });
 
     it("throws when empty reason code is provided", async () => {
@@ -319,7 +319,9 @@ describe("Sign Client Validation", () => {
           id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, code: "" },
         }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith(
+        `Missing or invalid. reject() reason: {"code":"","message":"GENERIC"}`,
+      );
     });
 
     it("throws when no reason code is provided", async () => {
@@ -329,7 +331,7 @@ describe("Sign Client Validation", () => {
           id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, code: undefined },
         }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith(`Missing or invalid. reject() reason: {"message":"GENERIC"}`);
     });
 
     it("throws when invalid reason message is provided", async () => {
@@ -339,7 +341,9 @@ describe("Sign Client Validation", () => {
           id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, message: 123 },
         }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith(
+        `Missing or invalid. reject() reason: {"code":0,"message":123}`,
+      );
     });
 
     it("throws when empty reason message is provided", async () => {
@@ -349,7 +353,9 @@ describe("Sign Client Validation", () => {
           id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, message: "" },
         }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith(
+        `Missing or invalid. reject() reason: {"code":0,"message":""}`,
+      );
     });
 
     it("throws when no reason message is provided", async () => {
@@ -359,66 +365,71 @@ describe("Sign Client Validation", () => {
           id: proposalId,
           reason: { ...TEST_REJECT_PARAMS.reason, message: undefined },
         }),
-      ).to.eventually.be.rejectedWith("Missing or invalid reject reason");
+      ).to.eventually.be.rejectedWith(`Missing or invalid. reject() reason: {"code":0}`);
     });
   });
 
   describe("update", () => {
     it("throws when no params are passed", async () => {
       await expect(client.update()).to.eventually.be.rejectedWith(
-        "Missing or invalid update params",
+        "Missing or invalid. update() params: undefined",
       );
     });
 
     it("throws when invalid topic is provided", async () => {
       await expect(
         client.update({ ...TEST_UPDATE_PARAMS, topic: 123 }),
-      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid. session topic should be a string: 123");
     });
 
     it("throws when empty topic is provided", async () => {
       await expect(
         client.update({ ...TEST_UPDATE_PARAMS, topic: "" }),
-      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
+      ).to.eventually.be.rejectedWith("Missing or invalid. session topic should be a string: ");
     });
 
     it("throws when no topic is provided", async () => {
       await expect(
         client.update({ ...TEST_UPDATE_PARAMS, topic: undefined }),
-      ).to.eventually.be.rejectedWith("Missing or invalid session topic");
+      ).to.eventually.be.rejectedWith(
+        "Missing or invalid. session topic should be a string: undefined",
+      );
     });
 
     it("throws when non existant topic is provided", async () => {
       await expect(
         client.update({ ...TEST_UPDATE_PARAMS, topic: "none" }),
-      ).to.eventually.be.rejectedWith("No matching session with topic: none");
+      ).to.eventually.be.rejectedWith("No matching key. session topic doesn't exist: none");
     });
 
     it("throws when invalid namespaces are provided", async () => {
       await expect(client.update({ topic, namespaces: {} })).to.eventually.be.rejectedWith(
-        "Missing or invalid update namespaces",
+        "Missing or invalid. update(), namespaces should be an object with data",
       );
     });
 
     it("throws when empty namespaces are provided", async () => {
       await expect(client.update({ topic, namespaces: [] })).to.eventually.be.rejectedWith(
-        "Missing or invalid update namespaces",
+        "Missing or invalid. update(), namespaces should be an object with data",
       );
     });
 
     it("throws when no namespaces are provided", async () => {
       await expect(client.update({ topic, namespaces: undefined })).to.eventually.be.rejectedWith(
-        "Missing or invalid update namespaces",
+        "Missing or invalid. update(), namespaces should be an object with data",
       );
     });
 
-    it("throws when incompatible namespaces params are provided", async () => {
+    it("throws when incompatible namespaces methods are provided", async () => {
       await expect(
         client.update({
           topic,
           namespaces: TEST_NAMESPACES_INVALID_METHODS,
         }),
       ).to.eventually.be.rejectedWith("Missing or invalid update namespaces");
+    });
+
+    it("throws when incompatible namespaces chains are provided", async () => {
       await expect(
         client.update({
           topic,
