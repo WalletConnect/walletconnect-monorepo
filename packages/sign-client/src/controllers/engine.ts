@@ -824,6 +824,11 @@ export class Engine extends IEngine {
   private async isValidSessionOrPairingTopic(topic: string) {
     if (this.client.session.keys.includes(topic)) await this.isValidSessionTopic(topic);
     else if (this.client.pairing.keys.includes(topic)) await this.isValidPairingTopic(topic);
+    else if (!isValidString(topic, false))
+      throw getInternalError(
+        "MISSING_OR_INVALID",
+        `session or pairing topic should be a string: ${topic}`,
+      );
     else
       throw getInternalError("NO_MATCHING_KEY", `session or pairing topic doesn't exist: ${topic}`);
   }
@@ -936,7 +941,7 @@ export class Engine extends IEngine {
     if (!isValidNamespacesChainId(namespaces, chainId))
       throw getInternalError("MISSING_OR_INVALID", `request() chainId: ${chainId}`);
     if (!isValidRequest(request))
-      throw getInternalError("MISSING_OR_INVALID", `request() method: ${request.method}`);
+      throw getInternalError("MISSING_OR_INVALID", `request() ${JSON.stringify(request)}`);
     if (!isValidNamespacesRequest(namespaces, chainId, request.method))
       throw getInternalError("MISSING_OR_INVALID", `request() method: ${request.method}`);
   };
@@ -947,7 +952,10 @@ export class Engine extends IEngine {
     const { topic, response } = params;
     await this.isValidSessionTopic(topic);
     if (!isValidResponse(response))
-      throw getInternalError("MISSING_OR_INVALID", `respond() response: ${response}`);
+      throw getInternalError(
+        "MISSING_OR_INVALID",
+        `respond() response: ${JSON.stringify(response)}`,
+      );
   };
 
   private isValidPing: EnginePrivate["isValidPing"] = async params => {
@@ -966,9 +974,9 @@ export class Engine extends IEngine {
     if (!isValidNamespacesChainId(namespaces, chainId))
       throw getInternalError("MISSING_OR_INVALID", `emit() chainId: ${chainId}`);
     if (!isValidEvent(event))
-      throw getInternalError("MISSING_OR_INVALID", `emit() event: ${event}`);
+      throw getInternalError("MISSING_OR_INVALID", `emit() event: ${JSON.stringify(event)}`);
     if (!isValidNamespacesEvent(namespaces, chainId, event.name))
-      throw getInternalError("MISSING_OR_INVALID", `emit() event: ${event}`);
+      throw getInternalError("MISSING_OR_INVALID", `emit() event: ${JSON.stringify(event)}`);
   };
 
   private isValidDisconnect: EnginePrivate["isValidDisconnect"] = async params => {

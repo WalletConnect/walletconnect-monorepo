@@ -212,12 +212,12 @@ export function isValidNamespaceChains(namespaces: any, method: string) {
   return error;
 }
 
-export function isValidAccounts(key: string, accounts: any, context: string) {
+export function isValidAccounts(accounts: any, context: string) {
   let error: ErrorObject = null;
   if (isValidArray(accounts)) {
     accounts.forEach((account: any) => {
       if (error) return;
-      if (!isValidAccountId(account) || !account.includes(key)) {
+      if (!isValidAccountId(account)) {
         error = getSdkError(
           "UNSUPPORTED_ACCOUNTS",
           `${context}, account ${account} should be a string and conform to "namespace:chainId:address" format`,
@@ -236,9 +236,9 @@ export function isValidAccounts(key: string, accounts: any, context: string) {
 
 export function isValidNamespaceAccounts(input: any, method: string) {
   let error: ErrorObject = null;
-  Object.entries(input).forEach(([key, namespace]: [string, any]) => {
+  Object.values(input).forEach((namespace: any) => {
     if (error) return;
-    const validAccountsError = isValidAccounts(key, namespace?.accounts, `${method} namespace`);
+    const validAccountsError = isValidAccounts(namespace?.accounts, `${method} namespace`);
     const validExtensionError = isValidExtension(namespace, method);
     if (validAccountsError) {
       error = validAccountsError;
@@ -247,7 +247,7 @@ export function isValidNamespaceAccounts(input: any, method: string) {
     } else if (namespace.extension) {
       namespace.extension.forEach((extension: any) => {
         if (error) return;
-        const validAccountsError = isValidAccounts(key, extension.accounts, `${method} extension`);
+        const validAccountsError = isValidAccounts(extension.accounts, `${method} extension`);
         if (validAccountsError) {
           error = validAccountsError;
         }
@@ -461,6 +461,11 @@ export function isConformingNamespaces(
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
           `${context} namespaces events don't satisfy requiredNamespaces events for ${key}`,
+        );
+      } else if (requiredNamespaces[key].extension && !namespaces[key].extension) {
+        error = getInternalError(
+          "NON_CONFORMING_NAMESPACES",
+          `${context} namespaces extension doesn't satisfy requiredNamespaces extension for ${key}`,
         );
       }
     });
