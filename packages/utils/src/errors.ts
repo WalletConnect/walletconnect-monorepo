@@ -123,6 +123,10 @@ const INTERNAL_ERRORS = {
     message: "Mismatched topic.",
     code: 8,
   },
+  NON_CONFORMING_NAMESPACES: {
+    message: "Non conforming namespaces.",
+    code: 9,
+  },
 };
 
 /**

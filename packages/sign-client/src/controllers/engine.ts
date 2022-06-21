@@ -846,8 +846,8 @@ export class Engine extends IEngine {
       throw getInternalError("MISSING_OR_INVALID", `connect() params: ${JSON.stringify(params)}`);
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
-    const validRequiredNamespaces = isValidRequiredNamespaces(requiredNamespaces, "connect()");
-    if (!validRequiredNamespaces.valid) throw validRequiredNamespaces.error;
+    const validRequiredNamespacesError = isValidRequiredNamespaces(requiredNamespaces, "connect()");
+    if (validRequiredNamespacesError) throw validRequiredNamespacesError;
     if (!isValidRelays(relays, true))
       throw getInternalError("MISSING_OR_INVALID", `connect() relays: ${relays}`);
   };
@@ -865,14 +865,14 @@ export class Engine extends IEngine {
     const { id, namespaces, relayProtocol } = params;
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);
-    const validNamespaces = isValidNamespaces(namespaces, "approve()");
-    if (!validNamespaces.valid) throw validNamespaces.error;
-    const conformingNamespaces = isConformingNamespaces(
+    const validNamespacesError = isValidNamespaces(namespaces, "approve()");
+    if (validNamespacesError) throw validNamespacesError;
+    const conformingNamespacesError = isConformingNamespaces(
       proposal.requiredNamespaces,
       namespaces,
       "update()",
     );
-    if (!conformingNamespaces.valid) throw conformingNamespaces.error;
+    if (conformingNamespacesError) throw conformingNamespacesError;
     if (!isValidString(relayProtocol, true))
       throw getInternalError("MISSING_OR_INVALID", `approve() relayProtocol: ${relayProtocol}`);
   };
@@ -895,10 +895,10 @@ export class Engine extends IEngine {
         "MISSING_OR_INVALID",
         `onSessionSettleRequest() relay protocol should be a string`,
       );
-    const validController = isValidController(controller, "onSessionSettleRequest()");
-    if (!validController.valid) throw validController.error;
-    const validNamespaces = isValidNamespaces(namespaces, "onSessionSettleRequest()");
-    if (!validNamespaces.valid) throw validNamespaces.error;
+    const validControllerError = isValidController(controller, "onSessionSettleRequest()");
+    if (validControllerError) throw validControllerError;
+    const validNamespacesError = isValidNamespaces(namespaces, "onSessionSettleRequest()");
+    if (validNamespacesError) throw validNamespacesError;
     if (isExpired(expiry)) throw getInternalError("EXPIRED", `onSessionSettleRequest()`);
   };
 
@@ -908,14 +908,14 @@ export class Engine extends IEngine {
     const { topic, namespaces } = params;
     await this.isValidSessionTopic(topic);
     const session = this.client.session.get(topic);
-    const validNamespaces = isValidNamespaces(namespaces, "update()");
-    if (!validNamespaces.valid) throw validNamespaces.error;
-    const conformingNamespaces = isConformingNamespaces(
+    const validNamespacesError = isValidNamespaces(namespaces, "update()");
+    if (validNamespacesError) throw validNamespacesError;
+    const conformingNamespacesError = isConformingNamespaces(
       session.requiredNamespaces,
       namespaces,
       "update()",
     );
-    if (!conformingNamespaces.valid) throw conformingNamespaces.error;
+    if (conformingNamespacesError) throw conformingNamespacesError;
     // TODO(ilja) - check if wallet
   };
 
