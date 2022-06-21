@@ -467,6 +467,25 @@ export function isConformingNamespaces(
           "NON_CONFORMING_NAMESPACES",
           `${context} namespaces extension doesn't satisfy requiredNamespaces extension for ${key}`,
         );
+      } else if (requiredNamespaces[key].extension && namespaces[key].extension) {
+        requiredNamespaces[key].extension?.forEach(({ methods, events, chains }) => {
+          if (error) return;
+          const isOverlap = namespaces[key].extension?.find(namespace => {
+            const accChains = getAccountsChains(namespace.accounts);
+            return (
+              hasOverlap(chains, accChains) &&
+              hasOverlap(events, namespace.events) &&
+              hasOverlap(methods, namespace.methods)
+            );
+          });
+
+          if (!isOverlap) {
+            error = getInternalError(
+              "NON_CONFORMING_NAMESPACES",
+              `${context} namespaces extension doesn't satisfy requiredNamespaces extension for ${key}`,
+            );
+          }
+        });
       }
     });
   }
