@@ -106,7 +106,8 @@ export class MessageTracker extends IMessageTracker {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getInternalError("NOT_INITIALIZED", this.name);
+      const { message } = getInternalError("NOT_INITIALIZED", this.name);
+      throw new Error(message);
     }
   }
 }

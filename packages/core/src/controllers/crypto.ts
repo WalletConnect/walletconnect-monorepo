@@ -127,7 +127,8 @@ export class Crypto implements ICrypto {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getInternalError("NOT_INITIALIZED", this.name);
+      const { message } = getInternalError("NOT_INITIALIZED", this.name);
+      throw new Error(message);
     }
   }
 }

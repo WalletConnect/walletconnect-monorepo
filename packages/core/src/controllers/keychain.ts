@@ -51,7 +51,8 @@ export class KeyChain implements IKeyChain {
     this.isInitialized();
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
-      throw getInternalError("NO_MATCHING_KEY", `${this.name}: ${tag}`);
+      const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${tag}`);
+      throw new Error(message);
     }
     return key;
   };
@@ -79,7 +80,8 @@ export class KeyChain implements IKeyChain {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getInternalError("NOT_INITIALIZED", this.name);
+      const { message } = getInternalError("NOT_INITIALIZED", this.name);
+      throw new Error(message);
     }
   }
 }

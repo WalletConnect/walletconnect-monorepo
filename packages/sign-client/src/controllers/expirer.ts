@@ -127,7 +127,8 @@ export class Expirer extends IExpirer {
     } else if (typeof key === "number") {
       return formatIdTarget(key);
     }
-    throw getInternalError("UNKNOWN_TYPE", `Target type: ${typeof key}`);
+    const { message } = getInternalError("UNKNOWN_TYPE", `Target type: ${typeof key}`);
+    throw new Error(message);
   }
 
   private async setExpirations(expirations: ExpirerTypes.Expiration[]): Promise<void> {
@@ -150,9 +151,9 @@ export class Expirer extends IExpirer {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.expirations.size) {
-        const error = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
-        this.logger.error(error.message);
-        throw error;
+        const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
+        this.logger.error(message);
+        throw new Error(message);
       }
       this.cached = persisted;
       this.logger.debug(`Successfully Restored expirations for ${this.name}`);
@@ -166,9 +167,9 @@ export class Expirer extends IExpirer {
   private getExpiration(target: string): ExpirerTypes.Expiration {
     const expiration = this.expirations.get(target);
     if (!expiration) {
-      const error = getInternalError("NO_MATCHING_KEY", `${this.name}: ${target}`);
-      this.logger.error(error.message);
-      throw error;
+      const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${target}`);
+      this.logger.error(message);
+      throw new Error(message);
     }
     return expiration;
   }
@@ -215,7 +216,8 @@ export class Expirer extends IExpirer {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getInternalError("NOT_INITIALIZED", this.name);
+      const { message } = getInternalError("NOT_INITIALIZED", this.name);
+      throw new Error(message);
     }
   }
 }

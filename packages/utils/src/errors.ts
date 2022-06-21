@@ -8,6 +8,7 @@ type InternalErrorKey = keyof typeof INTERNAL_ERRORS;
  * Constants
  */
 const SDK_ERRORS = {
+  /* ----- INVALID (1xxx) ----- */
   INVALID_METHOD: {
     message: "Invalid method.",
     code: 1001,
@@ -28,6 +29,7 @@ const SDK_ERRORS = {
     message: "Invalid session settle request.",
     code: 1005,
   },
+  /* ----- UNAUTHORIZED (3xxx) ----- */
   UNAUTHORIZED_METHOD: {
     message: "Unauthorized method.",
     code: 3001,
@@ -44,11 +46,12 @@ const SDK_ERRORS = {
     message: "Unauthorized extend request.",
     code: 3004,
   },
-  USER_REJECED: {
+  /* ----- REJECTED (5xxx) ----- */
+  USER_REJECTED: {
     message: "User rejected.",
     code: 5000,
   },
-  USER_REJECED_CHAINS: {
+  USER_REJECTED_CHAINS: {
     message: "User rejected chains.",
     code: 5001,
   },
@@ -80,10 +83,12 @@ const SDK_ERRORS = {
     message: "Unsupported namespace key.",
     code: 5104,
   },
+  /* ----- REASON (6xxx) ----- */
   USER_DISCONNECTED: {
     message: "User disconnected.",
     code: 6000,
   },
+  /* ----- FAILURE (7xxx) ----- */
   SESSION_SETTLEMENT_FAILED: {
     message: "Session settlement failed.",
     code: 7000,

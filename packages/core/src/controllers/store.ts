@@ -128,9 +128,9 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   private getData(key: Key) {
     const value = this.map.get(key);
     if (!value) {
-      const error = getInternalError("NO_MATCHING_KEY", `${this.name}: ${key}`);
-      this.logger.error(error.message);
-      throw error;
+      const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${key}`);
+      this.logger.error(message);
+      throw new Error(message);
     }
     return value;
   }
@@ -145,9 +145,9 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.map.size) {
-        const error = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
-        this.logger.error(error.message);
-        throw error;
+        const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
+        this.logger.error(message);
+        throw new Error(message);
       }
       this.cached = persisted;
       this.logger.debug(`Successfully Restored value for ${this.name}`);
@@ -160,7 +160,8 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw getInternalError("NOT_INITIALIZED", this.name);
+      const { message } = getInternalError("NOT_INITIALIZED", this.name);
+      throw new Error(message);
     }
   }
 }

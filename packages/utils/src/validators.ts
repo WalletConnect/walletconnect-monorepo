@@ -16,8 +16,7 @@ export type ErrorObject = { message: string; code: number } | null;
 export function isValidArray(arr: any, itemCondition?: (item: any) => boolean) {
   if (Array.isArray(arr)) {
     if (typeof itemCondition !== "undefined" && arr.length) {
-      const matches = arr.filter(itemCondition);
-      return matches.length === arr.length;
+      return arr.every(itemCondition);
     } else {
       return true;
     }
@@ -42,7 +41,7 @@ export function isValidString(input: any, optional: boolean) {
 export function isValidNumber(input: any, optional: boolean) {
   if (optional && isUndefined(input)) return true;
 
-  return typeof input === "number";
+  return typeof input === "number" && !isNaN(input);
 }
 
 // -- protocol validation -------------------------------------------------- //
@@ -155,9 +154,7 @@ export function isValidNamespaceMethodsOrEvents(input: any): input is string {
   let valid = true;
   if (isValidArray(input)) {
     if (input.length) {
-      input.forEach((item: any) => {
-        if (!isValidString(item, false)) valid = false;
-      });
+      valid = input.every((item: any) => isValidString(item, false));
     }
   } else {
     valid = false;
