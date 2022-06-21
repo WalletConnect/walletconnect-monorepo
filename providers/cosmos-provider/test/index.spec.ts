@@ -12,7 +12,7 @@
 // import { AccountData, coins, makeSignDoc, makeAuthInfoBytes } from "@cosmjs/proto-signing";
 // import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 // import { SignClient, SIGN_CLIENT_EVENTS } from "@walletconnect/sign-client";
-// import { SessionTypes } from "@walletconnect/types";
+// import { SessionTypes, SignClientTypes } from "@walletconnect/types";
 
 // import CosmosProvider from "./../src/index";
 // import {
@@ -106,16 +106,13 @@
 //   it("Test connect and sign", async () => {
 //     const wallet = await CosmosWallet.init(TEST_COSMOS_KEYPAIR.privateKey);
 //     const walletClient = await SignClient.init({
-//       controller: true,
 //       relayUrl: TEST_RELAY_URL,
 //       metadata: TEST_WALLET_METADATA,
 //     });
 //     const provider = new CosmosProvider({
 //       chains: TEST_CHAINS,
-//       rpc: {
-//         custom: {
-//           [CHAIN_ID]: RPC_URL,
-//         },
+//       rpcMap: {
+//         [CHAIN_ID]: RPC_URL,
 //       },
 //       client: {
 //         relayUrl: TEST_RELAY_URL,
@@ -153,35 +150,36 @@
 
 //     // auto-respond
 //     walletClient.on(
-//       SIGN_CLIENT_EVENTS.session.request,
-//       async (requestEvent: SessionTypes.RequestEvent) => {
+//       "session_request",
+//       async (requestEvent: SignClientTypes.EventArguments["session_request"]) => {
 //         let response: JsonRpcResponse;
+//         const { params, id } = requestEvent;
 //         try {
 //           let result: any;
-//           switch (requestEvent.request.method) {
+//           switch (params.request.method) {
 //             case "cosmos_getAccounts":
 //               result = await getAccounts(wallet);
 //               break;
 //             case "cosmos_signDirect":
 //               result = await signDirect(
 //                 wallet,
-//                 requestEvent.request.params.signerAddress,
-//                 requestEvent.request.params.signDoc,
+//                 params.request.params.signerAddress,
+//                 params.request.params.signDoc,
 //               );
 //               break;
 //             case "cosmos_signAmino":
 //               result = await signAmino(
 //                 wallet,
-//                 requestEvent.request.params.signerAddress,
-//                 requestEvent.request.params.signDoc,
+//                 params.request.params.signerAddress,
+//                 params.request.params.signDoc,
 //               );
 //               break;
 //             default:
 //               throw new Error("Unsupported method");
 //           }
-//           response = formatJsonRpcResult(requestEvent.request.id, result);
+//           response = formatJsonRpcResult(id, result);
 //         } catch (e) {
-//           response = formatJsonRpcError(requestEvent.request.id, e.message);
+//           response = formatJsonRpcError(id, e.message);
 //         }
 //         await walletClient.respond({
 //           topic: requestEvent.topic,

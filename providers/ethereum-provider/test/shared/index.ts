@@ -1,1 +1,1 @@
-// export * from "./WalletClient";
+export * from "./WalletClient";
