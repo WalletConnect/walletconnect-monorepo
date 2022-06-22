@@ -80,8 +80,16 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
+    // eslint-disable-next-line no-console
+    const clientId = await this.core.crypto.getClientId();
+    // eslint-disable-next-line no-console
+    console.log({ clientId });
     // TODO(ilja) replace this with url from options once we agree on opts strategy for this
-    const { nonce } = await (await crossFetch("http://0.0.0.0:5555/auth-nonce")).json();
+    const { nonce } = await (
+      await crossFetch(`http://0.0.0.0:5555/auth-nonce?did=${clientId}`)
+    ).json();
+    // eslint-disable-next-line no-console
+    console.log({ nonce });
     const auth = await this.core.crypto.signJWT(nonce);
     this.provider = this.createProvider(this.providerOpts, auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
