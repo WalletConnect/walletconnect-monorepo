@@ -2,6 +2,7 @@ import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
+import * as relayAuth from "@walletconnect/relay-auth";
 import {
   decrypt,
   deriveSharedKey,
@@ -10,9 +11,11 @@ import {
   generateKeyPair,
   hashKey,
   getInternalError,
+  generateRandomBytes32,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { CRYPTO_CONTEXT } from "../constants";
+
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
 import { KeyChain } from "./keychain";
 
 export class Crypto implements ICrypto {
@@ -41,6 +44,14 @@ export class Crypto implements ICrypto {
   public hasKeys: ICrypto["hasKeys"] = tag => {
     this.isInitialized();
     return this.keychain.has(tag);
+  };
+
+  public getClientId: ICrypto["getClientId"] = async () => {
+    this.isInitialized();
+    const seed = await this.getClientSeed();
+    const keyPair = await relayAuth.generateKeyPair(seed);
+    const clientId = relayAuth.encodeIss(keyPair.publicKey);
+    return clientId;
   };
 
   public generateKeyPair: ICrypto["generateKeyPair"] = () => {
@@ -108,6 +119,14 @@ export class Crypto implements ICrypto {
     return payload;
   };
 
+  public signJWT: ICrypto["signJWT"] = async subject => {
+    this.isInitialized();
+    const seed = await this.getClientSeed();
+    const keyPair = await relayAuth.generateKeyPair(seed);
+    const jwt = await relayAuth.signJWT(subject, keyPair);
+    return jwt;
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async setPrivateKey(publicKey: string, privateKey: string): Promise<string> {
@@ -118,6 +137,22 @@ export class Crypto implements ICrypto {
   private getPrivateKey(publicKey: string) {
     const privateKey = this.keychain.get(publicKey);
     return privateKey;
+  }
+
+  private async setClientSeed(seed: string): Promise<void> {
+    if (await this.keychain.get(CRYPTO_CLIENT_SEED)) {
+      throw new Error("Client seed already set");
+    }
+    await this.keychain.set(CRYPTO_CLIENT_SEED, seed);
+  }
+
+  private async getClientSeed(): Promise<string> {
+    let seed = await this.keychain.get(CRYPTO_CLIENT_SEED);
+    if (typeof seed === "undefined") {
+      seed = generateRandomBytes32();
+      await this.setClientSeed(seed);
+    }
+    return seed;
   }
 
   private getSymKey(topic: string) {
