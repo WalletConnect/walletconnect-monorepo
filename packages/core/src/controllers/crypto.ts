@@ -48,6 +48,8 @@ export class Crypto implements ICrypto {
   public getClientId: ICrypto["getClientId"] = async () => {
     this.isInitialized();
     const seed = await this.getClientSeed();
+    // eslint-disable-next-line no-console
+    console.log({ seed });
     const keyPair = relayAuth.generateKeyPair(seed as any);
     const clientId = relayAuth.encodeIss(keyPair.publicKey);
     return clientId;
