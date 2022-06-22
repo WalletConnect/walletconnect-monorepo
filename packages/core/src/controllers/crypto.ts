@@ -7,7 +7,7 @@ import {
   deriveSharedKey,
   deriveSymmetricKey,
   encrypt,
-  generateKeyPair,
+  generateKeyPair as generateKeyPairUtil,
   hashKey,
   getInternalError,
   generateRandomBytes32,
@@ -55,7 +55,7 @@ export class Crypto implements ICrypto {
 
   public generateKeyPair: ICrypto["generateKeyPair"] = () => {
     this.isInitialized();
-    const keyPair = generateKeyPair();
+    const keyPair = generateKeyPairUtil();
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
@@ -138,20 +138,16 @@ export class Crypto implements ICrypto {
     return privateKey;
   }
 
-  private async setClientSeed(seed: string): Promise<void> {
-    if (this.keychain.get(CRYPTO_CLIENT_SEED)) {
-      throw new Error("Client seed already set");
-    }
-    await this.keychain.set(CRYPTO_CLIENT_SEED, seed);
-  }
-
   private async getClientSeed(): Promise<string> {
-    let seed = this.keychain.get(CRYPTO_CLIENT_SEED);
-    if (typeof seed === "undefined") {
+    let seed = "";
+    try {
+      seed = this.keychain.get(CRYPTO_CLIENT_SEED);
+      return seed;
+    } catch {
       seed = generateRandomBytes32();
-      await this.setClientSeed(seed);
+      await this.keychain.set(CRYPTO_CLIENT_SEED, seed);
+      return seed;
     }
-    return seed;
   }
 
   private getSymKey(topic: string) {

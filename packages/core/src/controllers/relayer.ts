@@ -31,7 +31,6 @@ import {
   isUndefined,
   isValidString,
 } from "@walletconnect/utils";
-import { generateKeyPair, signJWT } from "@walletconnect/relay-auth";
 import crossFetch from "cross-fetch";
 
 import {
