@@ -1,3 +1,4 @@
+import fetch from "cross-fetch";
 import pino, { Logger } from "pino";
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -80,9 +81,8 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    const api = fetch ?? require("node-fetch");
     // TODO(ilja) replace this with url from options once we agree on opts strategy for this
-    const { nonce } = await (await api("https://beta.relay.walletconnect.com/auth-nonce")).json();
+    const { nonce } = await (await fetch("https://beta.relay.walletconnect.com/auth-nonce")).json();
     const publicKey = await this.core.crypto.generateKeyPair();
     // TODO(ilja) solve this, publicKey is a string, but generateKeyPair expects Uint8Array type
     const keyPair = generateKeyPair(publicKey as any);
