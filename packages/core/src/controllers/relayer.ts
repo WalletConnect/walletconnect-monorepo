@@ -32,6 +32,7 @@ import {
   isValidString,
 } from "@walletconnect/utils";
 import { generateKeyPair, signJWT } from "@walletconnect/relay-auth";
+import crossFetch from "cross-fetch";
 
 import {
   RELAYER_CONTEXT,
@@ -80,11 +81,10 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    const api = fetch ?? require("node-fetch");
     // TODO(ilja) replace this with url from options once we agree on opts strategy for this
-    const { nonce } = await (await api("https://beta.relay.walletconnect.com/auth-nonce")).json();
+    const { nonce } = await (await crossFetch("http://0.0.0.0:5555/auth-nonce")).json();
     const publicKey = await this.core.crypto.generateKeyPair();
-    // TODO(ilja) solve this, publicKey is a string, but generateKeyPair expects Uint8Array type
+    // TODO(ilja) fix type issue, Utf8Array is expected, but string is provided
     const keyPair = generateKeyPair(publicKey as any);
     const auth = await signJWT(nonce, keyPair);
     this.provider = this.createProvider(this.providerOpts, auth);
