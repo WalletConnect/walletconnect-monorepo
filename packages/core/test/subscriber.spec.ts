@@ -75,7 +75,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.calledOnceWith(
           Sinon.match({
-            method: "waku_subscribe",
+            method: "iridium_subscribe",
             params: {
               topic,
             },
@@ -114,7 +114,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.calledOnceWith(
           Sinon.match({
-            method: "waku_unsubscribe",
+            method: "iridium_unsubscribe",
             params: {
               topic,
             },
@@ -130,7 +130,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.getCall(1).calledWith(
           Sinon.match({
-            method: "waku_unsubscribe",
+            method: "iridium_unsubscribe",
             params: {
               topic,
             },

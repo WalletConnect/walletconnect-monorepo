@@ -1,6 +1,6 @@
 import { ONE_SECOND } from "@walletconnect/time";
 
-export const RELAYER_DEFAULT_PROTOCOL = "waku";
+export const RELAYER_DEFAULT_PROTOCOL = "iridium";
 
 export const RELAYER_DEFAULT_LOGGER = "error";
 
