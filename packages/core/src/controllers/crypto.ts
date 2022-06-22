@@ -10,10 +10,12 @@ import {
   generateKeyPair,
   hashKey,
   getInternalError,
+  generateRandomBytes32,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { CRYPTO_CONTEXT } from "../constants";
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
 import { KeyChain } from "./keychain";
+import * as relayAuth from "@walletconnect/relay-auth";
 
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;
@@ -43,10 +45,26 @@ export class Crypto implements ICrypto {
     return this.keychain.has(tag);
   };
 
+  public getClientId: ICrypto["getClientId"] = async () => {
+    this.isInitialized();
+    const seed = await this.getClientSeed();
+    const keyPair = relayAuth.generateKeyPair(seed as any);
+    const clientId = relayAuth.encodeIss(keyPair.publicKey);
+    return clientId;
+  };
+
   public generateKeyPair: ICrypto["generateKeyPair"] = () => {
     this.isInitialized();
     const keyPair = generateKeyPair();
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
+  };
+
+  public signJWT: ICrypto["signJWT"] = async subject => {
+    this.isInitialized();
+    const seed = await this.getClientSeed();
+    const keyPair = relayAuth.generateKeyPair(seed as any);
+    const jwt = await relayAuth.signJWT(subject, keyPair);
+    return jwt;
   };
 
   public generateSharedKey: ICrypto["generateSharedKey"] = (
@@ -118,6 +136,22 @@ export class Crypto implements ICrypto {
   private getPrivateKey(publicKey: string) {
     const privateKey = this.keychain.get(publicKey);
     return privateKey;
+  }
+
+  private async setClientSeed(seed: string): Promise<void> {
+    if (this.keychain.get(CRYPTO_CLIENT_SEED)) {
+      throw new Error("Client seed already set");
+    }
+    await this.keychain.set(CRYPTO_CLIENT_SEED, seed);
+  }
+
+  private async getClientSeed(): Promise<string> {
+    let seed = this.keychain.get(CRYPTO_CLIENT_SEED);
+    if (typeof seed === "undefined") {
+      seed = generateRandomBytes32();
+      await this.setClientSeed(seed);
+    }
+    return seed;
   }
 
   private getSymKey(topic: string) {

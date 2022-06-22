@@ -83,10 +83,7 @@ export class Relayer extends IRelayer {
     this.logger.trace(`Initialized`);
     // TODO(ilja) replace this with url from options once we agree on opts strategy for this
     const { nonce } = await (await crossFetch("http://0.0.0.0:5555/auth-nonce")).json();
-    const publicKey = await this.core.crypto.generateKeyPair();
-    // TODO(ilja) fix type issue, Utf8Array is expected, but string is provided
-    const keyPair = generateKeyPair(publicKey as any);
-    const auth = await signJWT(nonce, keyPair);
+    const auth = await this.core.crypto.signJWT(nonce);
     this.provider = this.createProvider(this.providerOpts, auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
