@@ -32,7 +32,7 @@ export function isUndefined(input: any): input is undefined {
   return typeof input === "undefined";
 }
 
-export function isValidString(input: any, optional: boolean) {
+export function isValidString(input: any, optional: boolean): input is string {
   if (optional && isUndefined(input)) return true;
 
   return typeof input === "string" && Boolean(input.trim().length);

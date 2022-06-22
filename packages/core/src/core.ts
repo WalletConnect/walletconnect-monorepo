@@ -8,7 +8,6 @@ import {
   getLoggerContext,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
-import { formatRelayRpcUrl } from "@walletconnect/utils";
 
 import { Crypto, Relayer } from "./controllers";
 import {
@@ -24,12 +23,9 @@ export class Core extends ICore {
   public readonly version = CORE_VERSION;
 
   public readonly name: ICore["name"] = CORE_CONTEXT;
-
   public readonly relayUrl: ICore["relayUrl"];
   public readonly projectId: ICore["projectId"];
-
   public events: ICore["events"] = new EventEmitter();
-
   public logger: ICore["logger"];
   public heartbeat: ICore["heartbeat"];
   public relayer: ICore["relayer"];
@@ -59,17 +55,12 @@ export class Core extends ICore {
     this.storage = opts?.storage
       ? opts.storage
       : new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...opts?.storageOptions });
-
-    this.relayUrl = formatRelayRpcUrl(
-      this.protocol,
-      this.version,
-      opts?.relayUrl || CORE_DEFAULT.relayUrl,
-      this.projectId,
-    );
     this.relayer = new Relayer({
       core: this,
-      rpcUrl: this.relayUrl,
       logger: this.logger,
+      protocol: this.protocol,
+      version: this.version,
+      relayUrl: opts?.relayUrl,
       projectId: this.projectId,
     });
   }

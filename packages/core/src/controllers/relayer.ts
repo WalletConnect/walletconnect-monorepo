@@ -25,16 +25,22 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
+import {
+  formatRelayRpcUrl,
+  getInternalError,
+  isUndefined,
+  isValidString,
+} from "@walletconnect/utils";
+import { generateKeyPair, signJWT } from "@walletconnect/relay-auth";
 
 import {
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
-  RELAYER_DEFAULT_RELAY_URL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_SUBSCRIBER_SUFFIX,
+  RELAYER_DEFAULT_RELAY_URL,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -54,6 +60,7 @@ export class Relayer extends IRelayer {
   public name = RELAYER_CONTEXT;
 
   private initialized = false;
+  private providerOpts: RelayerOptions;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -62,20 +69,25 @@ export class Relayer extends IRelayer {
       typeof opts.logger !== "undefined" && typeof opts.logger !== "string"
         ? generateChildLogger(opts.logger, this.name)
         : pino(getDefaultLoggerOptions({ level: opts.logger || RELAYER_DEFAULT_LOGGER }));
-    const rpcUrl =
-      opts.rpcUrl ||
-      formatRelayRpcUrl(this.protocol, this.version, RELAYER_DEFAULT_RELAY_URL, opts.projectId);
-    this.provider =
-      typeof opts.relayProvider !== "string" && typeof opts.relayProvider !== "undefined"
-        ? opts.relayProvider
-        : new JsonRpcProvider(new WsConnection(rpcUrl));
     this.messages = new MessageTracker(this.logger, opts.core);
     this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);
+
+    // re-assigned during init()
+    this.providerOpts = { ...opts };
+    this.provider = {} as IJsonRpcProvider;
   }
 
   public async init() {
     this.logger.trace(`Initialized`);
+    const api = fetch ?? require("node-fetch");
+    // TODO(ilja) replace this with url from options once we agree on opts strategy for this
+    const { nonce } = await (await api("https://beta.relay.walletconnect.com/auth-nonce")).json();
+    const publicKey = await this.core.crypto.generateKeyPair();
+    // TODO(ilja) solve this, publicKey is a string, but generateKeyPair expects Uint8Array type
+    const keyPair = generateKeyPair(publicKey as any);
+    const auth = await signJWT(nonce, keyPair);
+    this.provider = this.createProvider(this.providerOpts, auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
@@ -127,6 +139,23 @@ export class Relayer extends IRelayer {
   }
 
   // ---------- Private ----------------------------------------------- //
+
+  private createProvider(opts: RelayerOptions, auth: string) {
+    if (!isValidString(opts.relayProvider, false) && !isUndefined(opts.relayProvider)) {
+      return opts.relayProvider;
+    }
+    return new JsonRpcProvider(
+      new WsConnection(
+        formatRelayRpcUrl({
+          protocol: opts.protocol,
+          version: opts.version,
+          relayUrl: opts.relayUrl || RELAYER_DEFAULT_RELAY_URL,
+          projectId: opts.projectId,
+          auth,
+        }),
+      ),
+    );
+  }
 
   private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
