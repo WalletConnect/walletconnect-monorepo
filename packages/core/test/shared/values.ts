@@ -1,8 +1,5 @@
 import { CoreTypes } from "@walletconnect/types";
 
-// @ts-ignore
-import { ROOT_DIR } from "../../../../ops/js/shared";
-
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
   : "ws://localhost:5555";
