@@ -80,8 +80,10 @@ export const TEST_EVENTS = ["chainChanged", "accountsChanged"];
 export const TEST_ETHEREUM_ADDRESS = "0x3c582121909DE92Dc89A36898633C1aE4790382b";
 
 export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+export const TEST_ARBITRUM_ACCOUNT = `${TEST_ARBITRUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+export const TEST_AVALANCHE_ACCOUNT = `${TEST_AVALANCHE_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
 
-export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT];
+export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT, TEST_ARBITRUM_ACCOUNT, TEST_AVALANCHE_ACCOUNT];
 
 export const TEST_REQUIRED_NAMESPACES = {
   eip155: {
@@ -99,7 +101,9 @@ export const TEST_NAMESPACES = {
   },
 };
 
-export const TEST_NAMESPACES_INVALID_METHODS = { ...TEST_NAMESPACES, methods: ["eth_invalid"] };
+export const TEST_NAMESPACES_INVALID_METHODS = {
+  eip155: { ...TEST_NAMESPACES.eip155, methods: ["eth_invalid"] },
+};
 export const TEST_NAMESPACES_INVALID_CHAIN = { eip1111: { ...TEST_NAMESPACES.eip155 } };
 
 export const TEST_MESSAGE = "My name is John Doe";

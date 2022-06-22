@@ -11,7 +11,12 @@ import {
   SubscriberEvents,
   SubscriberTypes,
 } from "@walletconnect/types";
-import { ERROR, getRelayProtocolApi, getRelayProtocolName } from "@walletconnect/utils";
+import {
+  getSdkError,
+  getInternalError,
+  getRelayProtocolApi,
+  getRelayProtocolName,
+} from "@walletconnect/utils";
 
 import {
   CORE_STORAGE_PREFIX,
@@ -156,7 +161,7 @@ export class Subscriber extends ISubscriber {
     try {
       const relay = getRelayProtocolName(opts);
       await this.rpcUnsubscribe(topic, id, relay);
-      const reason = ERROR.DELETED.format({ context: this.name });
+      const reason = getSdkError("USER_DISCONNECTED", `${this.name}, ${topic}`);
       await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
@@ -244,11 +249,8 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "method", method: "getSubscription", id });
     const subscription = this.subscriptions.get(id);
     if (!subscription) {
-      const error = ERROR.NO_MATCHING_ID.format({
-        context: this.name,
-        id,
-      });
-      throw new Error(error.message);
+      const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${id}`);
+      throw new Error(message);
     }
     return subscription;
   }
@@ -281,11 +283,9 @@ export class Subscriber extends ISubscriber {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.subscriptions.size) {
-        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.name,
-        });
-        this.logger.error(error.message);
-        throw new Error(error.message);
+        const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
+        this.logger.error(message);
+        throw new Error(message);
       }
       this.cached = persisted;
       this.logger.debug(`Successfully Restored subscriptions for ${this.name}`);
@@ -297,14 +297,12 @@ export class Subscriber extends ISubscriber {
   }
 
   private async resubscribe(subscription: SubscriberTypes.Active) {
-    const { topic, relay } = subscription;
-    const params = { topic, relay };
-    this.pending.set(params.topic, params);
-    const id = await this.rpcSubscribe(params.topic, params.relay);
-    this.onResubscribe(id, params);
-    if (this.ids.includes(subscription.id)) {
-      const reason = ERROR.RESUBSCRIBED.format({ topic: subscription.topic });
-      this.deleteSubscription(subscription.id, reason);
+    if (!this.ids.includes(subscription.id)) {
+      const { topic, relay } = subscription;
+      const params = { topic, relay };
+      this.pending.set(params.topic, params);
+      const id = await this.rpcSubscribe(params.topic, params.relay);
+      this.onResubscribe(id, params);
     }
   }
 
@@ -350,7 +348,8 @@ export class Subscriber extends ISubscriber {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+      const { message } = getInternalError("NOT_INITIALIZED", this.name);
+      throw new Error(message);
     }
   }
 }

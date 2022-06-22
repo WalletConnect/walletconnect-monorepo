@@ -2,7 +2,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { toMiliseconds } from "@walletconnect/time";
 import { ExpirerTypes, ICore, IExpirer } from "@walletconnect/types";
-import { ERROR, formatIdTarget, formatTopicTarget } from "@walletconnect/utils";
+import { getInternalError, formatIdTarget, formatTopicTarget } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
@@ -127,7 +127,8 @@ export class Expirer extends IExpirer {
     } else if (typeof key === "number") {
       return formatIdTarget(key);
     }
-    throw new Error(`Unknown expirer target type: ${typeof key}`);
+    const { message } = getInternalError("UNKNOWN_TYPE", `Target type: ${typeof key}`);
+    throw new Error(message);
   }
 
   private async setExpirations(expirations: ExpirerTypes.Expiration[]): Promise<void> {
@@ -150,11 +151,9 @@ export class Expirer extends IExpirer {
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.expirations.size) {
-        const error = ERROR.RESTORE_WILL_OVERRIDE.format({
-          context: this.name,
-        });
-        this.logger.error(error.message);
-        throw new Error(error.message);
+        const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
+        this.logger.error(message);
+        throw new Error(message);
       }
       this.cached = persisted;
       this.logger.debug(`Successfully Restored expirations for ${this.name}`);
@@ -168,12 +167,9 @@ export class Expirer extends IExpirer {
   private getExpiration(target: string): ExpirerTypes.Expiration {
     const expiration = this.expirations.get(target);
     if (!expiration) {
-      const error = ERROR.NO_MATCHING_ID.format({
-        context: this.name,
-        target,
-      });
-      // this.logger.error(error.message);
-      throw new Error(error.message);
+      const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${target}`);
+      this.logger.error(message);
+      throw new Error(message);
     }
     return expiration;
   }
@@ -220,7 +216,8 @@ export class Expirer extends IExpirer {
 
   private isInitialized() {
     if (!this.initialized) {
-      throw new Error(ERROR.NOT_INITIALIZED.stringify(this.name));
+      const { message } = getInternalError("NOT_INITIALIZED", this.name);
+      throw new Error(message);
     }
   }
 }
