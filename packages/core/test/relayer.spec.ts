@@ -1,5 +1,6 @@
 import "mocha";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import pino from "pino";
 
 import {
@@ -25,8 +26,6 @@ describe("Relayer", () => {
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
     relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
-    // Mock `provider.connect` to avoid dependency on relay server here.
-    relayer.provider.connect = () => Promise.resolve();
   });
 
   describe("init", () => {
@@ -50,10 +49,11 @@ describe("Relayer", () => {
       await relayer.init();
       expect(initSpy.calledOnce).to.be.true;
     });
-    it("calls provider.connect", async () => {
-      relayer.provider.connect = initSpy;
+    it("initializes a JsonRpcProvider", async () => {
+      expect(relayer.provider).to.be.empty;
       await relayer.init();
-      expect(initSpy.calledOnce).to.be.true;
+      expect(relayer.provider).not.to.be.empty;
+      expect(relayer.provider instanceof JsonRpcProvider).to.be.true;
     });
     it("registers event listeners", async () => {
       const emitSpy = Sinon.spy();
