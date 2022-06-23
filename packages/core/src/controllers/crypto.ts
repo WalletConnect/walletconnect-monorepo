@@ -2,17 +2,20 @@ import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
+import * as relayAuth from "@walletconnect/relay-auth";
+import { fromString } from "uint8arrays/from-string";
 import {
   decrypt,
   deriveSharedKey,
   deriveSymmetricKey,
   encrypt,
-  generateKeyPair,
+  generateKeyPair as generateKeyPairUtil,
   hashKey,
   getInternalError,
+  generateRandomBytes32,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { CRYPTO_CONTEXT } from "../constants";
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
 import { KeyChain } from "./keychain";
 
 export class Crypto implements ICrypto {
@@ -43,10 +46,26 @@ export class Crypto implements ICrypto {
     return this.keychain.has(tag);
   };
 
+  public getClientId: ICrypto["getClientId"] = async () => {
+    this.isInitialized();
+    const seed = await this.getClientSeed();
+    const keyPair = relayAuth.generateKeyPair(seed);
+    const clientId = relayAuth.encodeIss(keyPair.publicKey);
+    return clientId;
+  };
+
   public generateKeyPair: ICrypto["generateKeyPair"] = () => {
     this.isInitialized();
-    const keyPair = generateKeyPair();
+    const keyPair = generateKeyPairUtil();
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
+  };
+
+  public signJWT: ICrypto["signJWT"] = async subject => {
+    this.isInitialized();
+    const seed = await this.getClientSeed();
+    const keyPair = relayAuth.generateKeyPair(seed);
+    const jwt = await relayAuth.signJWT(subject, keyPair);
+    return jwt;
   };
 
   public generateSharedKey: ICrypto["generateSharedKey"] = (
@@ -118,6 +137,17 @@ export class Crypto implements ICrypto {
   private getPrivateKey(publicKey: string) {
     const privateKey = this.keychain.get(publicKey);
     return privateKey;
+  }
+
+  private async getClientSeed(): Promise<Uint8Array> {
+    let seed = "";
+    try {
+      seed = this.keychain.get(CRYPTO_CLIENT_SEED);
+    } catch {
+      seed = generateRandomBytes32();
+      await this.keychain.set(CRYPTO_CLIENT_SEED, seed);
+    }
+    return fromString(seed, "base16");
   }
 
   private getSymKey(topic: string) {

@@ -25,7 +25,9 @@ describe("Subscriber", () => {
 
   beforeEach(async () => {
     const core = new Core(TEST_CORE_OPTIONS);
-    relayer = new Relayer({ core, logger });
+    await core.start();
+    relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
+    await relayer.init();
     subscriber = new Subscriber(relayer, logger);
     subscriber.relayer.provider.request = () => Promise.resolve({} as any);
     await subscriber.init();
@@ -67,7 +69,7 @@ describe("Subscriber", () => {
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
       await expect(subscriber.subscribe(topic)).to.eventually.be.rejectedWith(
-        "subscription was not initialized",
+        "Not initialized. subscription",
       );
     });
     it("calls `provider.request` with the expected request shape", async () => {
@@ -75,7 +77,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.calledOnceWith(
           Sinon.match({
-            method: "waku_subscribe",
+            method: "iridium_subscribe",
             params: {
               topic,
             },
@@ -104,7 +106,7 @@ describe("Subscriber", () => {
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
       await expect(subscriber.unsubscribe(topic)).to.eventually.be.rejectedWith(
-        "subscription was not initialized",
+        "Not initialized. subscription",
       );
     });
     it("unsubscribes by individual id if `opts.id` is provided", async () => {
@@ -114,7 +116,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.calledOnceWith(
           Sinon.match({
-            method: "waku_unsubscribe",
+            method: "iridium_unsubscribe",
             params: {
               topic,
             },
@@ -130,7 +132,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.getCall(1).calledWith(
           Sinon.match({
-            method: "waku_unsubscribe",
+            method: "iridium_unsubscribe",
             params: {
               topic,
             },

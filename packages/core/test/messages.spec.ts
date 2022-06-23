@@ -36,7 +36,7 @@ describe("Messages", () => {
     it("throws if not initialized", async () => {
       const invalidMessageTracker = new MessageTracker(logger, new Core(TEST_CORE_OPTIONS));
       await expect(invalidMessageTracker.set(topic, "some message")).to.eventually.be.rejectedWith(
-        "messages was not initialized",
+        "Not initialized. messages",
       );
     });
     it("sets an entry on the messages map for a new topic-message pair", async () => {
@@ -51,7 +51,7 @@ describe("Messages", () => {
   describe("get", () => {
     it("throws if not initialized", () => {
       const invalidMessageTracker = new MessageTracker(logger, new Core(TEST_CORE_OPTIONS));
-      expect(() => invalidMessageTracker.get(topic)).to.throw("messages was not initialized");
+      expect(() => invalidMessageTracker.get(topic)).to.throw("Not initialized. messages");
     });
     it("returns an empty object for an unknown topic", () => {
       const message = messageTracker.get("fakeTopic");
@@ -68,7 +68,7 @@ describe("Messages", () => {
     it("throws if not initialized", () => {
       const invalidMessageTracker = new MessageTracker(logger, new Core(TEST_CORE_OPTIONS));
       expect(() => invalidMessageTracker.has(topic, "message")).to.throw(
-        "messages was not initialized",
+        "Not initialized. messages",
       );
     });
     it("returns `false` by default", () => {
@@ -85,7 +85,7 @@ describe("Messages", () => {
     it("throws if not initialized", async () => {
       const invalidMessageTracker = new MessageTracker(logger, new Core(TEST_CORE_OPTIONS));
       await expect(invalidMessageTracker.del(topic)).to.eventually.be.rejectedWith(
-        "messages was not initialized",
+        "Not initialized. messages",
       );
     });
     it("removes the matching topic-message pair for the provided topic", async () => {

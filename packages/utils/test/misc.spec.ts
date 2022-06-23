@@ -14,23 +14,35 @@ const VERSION = 2;
 
 const ENV = "node";
 
-const EXPECTED_RPC_URL_1 = RELAY_URL + `?env=${ENV}&protocol=${PROTOCOL}&version=${VERSION}`;
+const AUTH = "auth.jwt.example";
+
+const EXPECTED_RPC_URL_1 =
+  RELAY_URL + `?auth=${AUTH}&env=${ENV}&protocol=${PROTOCOL}&version=${VERSION}`;
 
 const EXPECTED_RPC_URL_2 =
-  RELAY_URL + `?env=${ENV}&projectId=${PROJECT_ID}&protocol=${PROTOCOL}&version=${VERSION}`;
+  RELAY_URL +
+  `?auth=${AUTH}&env=${ENV}&projectId=${PROJECT_ID}&protocol=${PROTOCOL}&version=${VERSION}`;
 
 const SEVEN_DAYS = 604800;
 
 const TEST_MILISECONDS = 1628166822000;
 
-const TEST_SECONDS = 1628166822;
-
 const EXPECTED_EXPIRY = 1628771622;
 
 describe("Misc", () => {
   it("formatRpcRelayUrl", () => {
-    expect(formatRelayRpcUrl(PROTOCOL, VERSION, RELAY_URL)).to.eql(EXPECTED_RPC_URL_1);
-    expect(formatRelayRpcUrl(PROTOCOL, VERSION, RELAY_URL, PROJECT_ID)).to.eql(EXPECTED_RPC_URL_2);
+    expect(
+      formatRelayRpcUrl({ protocol: PROTOCOL, version: VERSION, relayUrl: RELAY_URL, auth: AUTH }),
+    ).to.eql(EXPECTED_RPC_URL_1);
+    expect(
+      formatRelayRpcUrl({
+        protocol: PROTOCOL,
+        version: VERSION,
+        relayUrl: RELAY_URL,
+        projectId: PROJECT_ID,
+        auth: AUTH,
+      }),
+    ).to.eql(EXPECTED_RPC_URL_2);
   });
   it("hasOverlap", () => {
     expect(hasOverlap([], [])).to.be.true;

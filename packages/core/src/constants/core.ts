@@ -7,7 +7,6 @@ export const CORE_STORAGE_PREFIX = `${CORE_PROTOCOL}@${CORE_VERSION}:${CORE_CONT
 export const CORE_DEFAULT = {
   name: CORE_CONTEXT,
   logger: "error",
-  relayUrl: "wss://relay.walletconnect.com",
 };
 
 export const CORE_STORAGE_OPTIONS = {

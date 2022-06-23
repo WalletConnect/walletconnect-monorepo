@@ -1,5 +1,10 @@
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
-import { SignClientTypes, RelayerClientMetadata, EngineTypes } from "@walletconnect/types";
+import {
+  SignClientTypes,
+  RelayerClientMetadata,
+  EngineTypes,
+  RelayerTypes,
+} from "@walletconnect/types";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
@@ -88,17 +93,27 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 
 // -- rpcUrl ----------------------------------------------//
 
-export function formatRelayRpcUrl(
-  protocol: string,
-  version: number,
-  url: string,
-  projectId?: string,
-): string {
-  const splitUrl = url.split("?");
-  const metadata = getRelayClientMetadata(protocol, version);
+export function formatRelayRpcUrl({
+  protocol,
+  version,
+  relayUrl,
+  auth,
+  projectId,
+}: RelayerTypes.RpcUrlParams) {
+  const splitUrl = relayUrl.split("?");
+  const metadata = { ...getRelayClientMetadata(protocol, version), auth };
   const params = projectId ? { ...metadata, projectId } : metadata;
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
+}
+
+export function getHttpUrl(url: string) {
+  // regex from https://stackoverflow.com/questions/3883871/regexp-to-grab-protocol-from-url
+  const matches = url.match(/^[^:]+(?=:\/\/)/gi) || [];
+  let protocol = matches[0];
+  const domain = typeof protocol !== "undefined" ? url.split("://")[1] : url;
+  protocol = protocol === "wss" ? "https" : "http";
+  return [protocol, domain].join("://");
 }
 
 // -- assert ------------------------------------------------- //
@@ -215,6 +230,7 @@ export function createDelayedPromise<T>() {
 // -- expirer --------------------------------------------- //
 
 export function formatExpirerTarget(type: "topic" | "id", value: string | number): string {
+  if (typeof value === "string" && value.startsWith(`${type}:`)) return value;
   if (type.toLowerCase() === "topic") {
     if (typeof value !== "string")
       throw new Error(`Value must be "string" for expirer target type: topic`);
