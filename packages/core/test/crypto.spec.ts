@@ -136,52 +136,6 @@ describe("Crypto", () => {
     });
   });
 
-  describe("encrypt", () => {
-    it("throws if not initialized", () => {
-      const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.encrypt("topic", "message")).to.throw("Not initialized. crypto");
-    });
-    it("throws if the passed topic is not known", () => {
-      const topic = utils.generateRandomBytes32();
-      expect(() => crypto.encrypt(topic, "message")).to.throw();
-    });
-    it("resolves symKey from `topic` param and encrypts with `message` param", async () => {
-      const message = "some message";
-      const symKey = utils.generateRandomBytes32();
-      // Set a topic-symKey pair in the keychain to later retrieve via `encrypt`.
-      const topic = await crypto.setSymKey(symKey);
-      const spy = Sinon.spy();
-      // @ts-ignore
-      utils.encrypt = spy;
-      crypto.encrypt(topic, message);
-      const [payload] = spy.getCall(0).args;
-      expect(payload).to.deep.equal({ symKey, message });
-    });
-  });
-
-  describe("decrypt", () => {
-    it("throws if not initialized", () => {
-      const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.decrypt("topic", "encoded")).to.throw("Not initialized. crypto");
-    });
-    it("throws if the passed topic is not known", () => {
-      const topic = utils.generateRandomBytes32();
-      expect(() => crypto.decrypt(topic, "encoded")).to.throw();
-    });
-    it("resolves symKey from `topic` param and decrypts `encoded` param", async () => {
-      const encoded = "encoded";
-      const symKey = utils.generateRandomBytes32();
-      // Set a topic-symKey pair in the keychain to later retrieve via `decrypt`.
-      const topic = await crypto.setSymKey(symKey);
-      const spy = Sinon.spy();
-      // @ts-ignore
-      utils.decrypt = spy;
-      crypto.decrypt(topic, encoded);
-      const [payload] = spy.getCall(0).args;
-      expect(payload).to.deep.equal({ symKey, encoded });
-    });
-  });
-
   describe("encode", () => {
     const payload = { id: 1, jsonrpc: "2.0", result: "result" };
 
