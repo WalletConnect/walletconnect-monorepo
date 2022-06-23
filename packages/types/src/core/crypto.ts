@@ -14,9 +14,11 @@ export declare namespace CryptoTypes {
   }
 
   export interface EncryptParams {
+    type: number;
     message: string;
     symKey: string;
     iv?: string;
+    publicKey?: string;
   }
 
   export interface DecryptParams {
@@ -82,13 +84,13 @@ export abstract class ICrypto {
     topic: string,
     payload: JsonRpcPayload,
     opts?: CryptoTypes.EncodeOptions,
-  ): string;
+  ): Promise<string>;
 
   public abstract decode(
     topic: string,
     encoded: string,
     opts?: CryptoTypes.DecodeOptions,
-  ): JsonRpcPayload;
+  ): Promise<JsonRpcPayload>;
 
   public abstract signJWT(subject: string): Promise<string>;
 }

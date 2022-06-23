@@ -8,6 +8,7 @@ import { concat } from "uint8arrays/concat";
 import { fromString } from "uint8arrays/from-string";
 import { toString } from "uint8arrays/to-string";
 
+export const BASE10 = "base10";
 export const BASE16 = "base16";
 export const BASE64 = "base64pad";
 export const UTF8 = "utf8";
