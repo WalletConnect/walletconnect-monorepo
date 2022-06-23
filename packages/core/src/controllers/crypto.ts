@@ -1,8 +1,9 @@
-import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
+import { concat } from "uint8arrays/concat";
+import { toString } from "uint8arrays/to-string";
 import { fromString } from "uint8arrays/from-string";
 import {
   decrypt,
@@ -15,7 +16,7 @@ import {
   generateRandomBytes32,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_DEFAULT_TYPE_EVENELOPE } from "../constants";
 import { KeyChain } from "./keychain";
 
 export class Crypto implements ICrypto {
@@ -111,18 +112,28 @@ export class Crypto implements ICrypto {
     return result;
   };
 
-  public encode: ICrypto["encode"] = (topic, payload) => {
+  public encode: ICrypto["encode"] = async (topic, payload, opts) => {
     this.isInitialized();
-    const hasKeys = this.hasKeys(topic);
+    const type = opts?.type || CRYPTO_DEFAULT_TYPE_EVENELOPE;
     const message = safeJsonStringify(payload);
-    const result = hasKeys ? this.encrypt(topic, message) : encoding.utf8ToHex(message);
-    return result;
+    if (type === 1) {
+      if (typeof opts?.senderPublicKey === "undefined") {
+        throw new Error("missing sender public key");
+      }
+      if (typeof opts?.receiverPublicKey === "undefined") {
+        throw new Error("missing receiver public key");
+      }
+      topic = await this.generateSharedKey(opts.senderPublicKey, opts.receiverPublicKey);
+    }
+    const result = this.encrypt(topic, message);
+    const bytes = concat([fromString(`${type}`, "base10"), fromString(result, "base64pad")]);
+    return toString(bytes, "base64pad");
   };
 
-  public decode: ICrypto["decode"] = (topic, encoded) => {
+  public decode: ICrypto["decode"] = (topic, encoded, opts) => {
     this.isInitialized();
-    const hasKeys = this.hasKeys(topic);
-    const message = hasKeys ? this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
+
+    const message = this.decrypt(topic, encoded);
     const payload = safeJsonParse(message);
     return payload;
   };

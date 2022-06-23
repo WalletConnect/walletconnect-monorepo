@@ -28,6 +28,16 @@ export declare namespace CryptoTypes {
     sealed: Uint8Array;
     iv: Uint8Array;
   }
+
+  export interface EncodeOptions {
+    type?: number;
+    senderPublicKey?: string;
+    receiverPublicKey?: string;
+  }
+
+  export interface DecodeOptions {
+    receiverPublicKey?: string;
+  }
 }
 
 export abstract class ICrypto {
@@ -68,9 +78,17 @@ export abstract class ICrypto {
 
   public abstract decrypt(topic: string, encoded: string): string;
 
-  public abstract encode(topic: string, payload: JsonRpcPayload): string;
+  public abstract encode(
+    topic: string,
+    payload: JsonRpcPayload,
+    opts?: CryptoTypes.EncodeOptions,
+  ): string;
 
-  public abstract decode(topic: string, encoded: string): JsonRpcPayload;
+  public abstract decode(
+    topic: string,
+    encoded: string,
+    opts?: CryptoTypes.DecodeOptions,
+  ): JsonRpcPayload;
 
   public abstract signJWT(subject: string): Promise<string>;
 }
