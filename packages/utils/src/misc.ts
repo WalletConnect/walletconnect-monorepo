@@ -230,6 +230,7 @@ export function createDelayedPromise<T>() {
 // -- expirer --------------------------------------------- //
 
 export function formatExpirerTarget(type: "topic" | "id", value: string | number): string {
+  if (typeof value === "string" && value.startsWith(`${type}:`)) return value;
   if (type.toLowerCase() === "topic") {
     if (typeof value !== "string")
       throw new Error(`Value must be "string" for expirer target type: topic`);
@@ -243,8 +244,7 @@ export function formatExpirerTarget(type: "topic" | "id", value: string | number
 }
 
 export function formatTopicTarget(topic: string): string {
-  const value = topic.includes("topic:") ? topic.split("topic:")[1] : topic;
-  return formatExpirerTarget("topic", value);
+  return formatExpirerTarget("topic", topic);
 }
 
 export function formatIdTarget(id: number): string {
