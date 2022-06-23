@@ -99,7 +99,9 @@ export class Core extends ICore {
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
-      await Promise.all([this.crypto.init(), this.relayer.init(), this.heartbeat.init()]);
+      await this.crypto.init();
+      await this.relayer.init();
+      await this.heartbeat.init();
       this.initialized = true;
       this.logger.info(`Core Initilization Success`);
     } catch (error) {

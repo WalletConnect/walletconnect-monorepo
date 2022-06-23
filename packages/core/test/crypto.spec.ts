@@ -32,7 +32,7 @@ describe("Crypto", () => {
   describe("generateKeyPair", () => {
     it("throws if not initialized", () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.generateKeyPair()).to.throw("crypto was not initialized");
+      expect(() => invalidCrypto.generateKeyPair()).to.throw("Not initialized. crypto");
     });
     it("generates a keyPair, sets it in the keychain and returns publicKey", async () => {
       const privateKey = utils.generateRandomBytes32();
@@ -52,9 +52,7 @@ describe("Crypto", () => {
   describe("generateSharedKey", () => {
     it("throws if not initialized", () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.generateSharedKey("a", "b")).to.throw(
-        "crypto was not initialized",
-      );
+      expect(() => invalidCrypto.generateSharedKey("a", "b")).to.throw("Not initialized. crypto");
     });
     it("generates a shared symKey, sets it in the keychain and returns the topic", async () => {
       const overrideTopic = utils.generateRandomBytes32();
@@ -77,7 +75,7 @@ describe("Crypto", () => {
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
       await expect(invalidCrypto.setSymKey("key")).to.eventually.be.rejectedWith(
-        "crypto was not initialized",
+        "Not initialized. crypto",
       );
     });
     it("sets expected topic-symKey pair in keychain, returns topic", async () => {
@@ -108,7 +106,7 @@ describe("Crypto", () => {
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
       await expect(invalidCrypto.deleteKeyPair("key")).to.eventually.be.rejectedWith(
-        "crypto was not initialized",
+        "Not initialized. crypto",
       );
     });
     it("deletes the expected topic-symKey pair from keychain", async () => {
@@ -125,7 +123,7 @@ describe("Crypto", () => {
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
       await expect(invalidCrypto.deleteSymKey("key")).to.eventually.be.rejectedWith(
-        "crypto was not initialized",
+        "Not initialized. crypto",
       );
     });
     it("deletes the expected topic-symKey pair from keychain", async () => {
@@ -141,9 +139,7 @@ describe("Crypto", () => {
   describe("encrypt", () => {
     it("throws if not initialized", () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.encrypt("topic", "message")).to.throw(
-        "crypto was not initialized",
-      );
+      expect(() => invalidCrypto.encrypt("topic", "message")).to.throw("Not initialized. crypto");
     });
     it("throws if the passed topic is not known", () => {
       const topic = utils.generateRandomBytes32();
@@ -166,9 +162,7 @@ describe("Crypto", () => {
   describe("decrypt", () => {
     it("throws if not initialized", () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.decrypt("topic", "encoded")).to.throw(
-        "crypto was not initialized",
-      );
+      expect(() => invalidCrypto.decrypt("topic", "encoded")).to.throw("Not initialized. crypto");
     });
     it("throws if the passed topic is not known", () => {
       const topic = utils.generateRandomBytes32();
@@ -193,7 +187,7 @@ describe("Crypto", () => {
 
     it("throws if not initialized", () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.encode("topic", payload)).to.throw("crypto was not initialized");
+      expect(() => invalidCrypto.encode("topic", payload)).to.throw("Not initialized. crypto");
     });
     it("encodes `payload` as hex string if the passed topic is not known", () => {
       const topic = utils.generateRandomBytes32();
@@ -218,7 +212,7 @@ describe("Crypto", () => {
 
     it("throws if not initialized", () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.decode("topic", "encoded")).to.throw("crypto was not initialized");
+      expect(() => invalidCrypto.decode("topic", "encoded")).to.throw("Not initialized. crypto");
     });
     it("decodes `encoded` from hex to utf8 string if the passed topic is not known", () => {
       const topic = utils.generateRandomBytes32();

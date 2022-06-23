@@ -107,6 +107,17 @@ export function formatRelayRpcUrl({
   return splitUrl[0] + "?" + queryString;
 }
 
+export function getHttpUrl(url: string) {
+  const domain = url.split("://")[1];
+  if (!domain) {
+    throw new Error("Invalid url provided");
+  }
+  if (domain.includes("localhost") || domain.includes("0.0.0.0")) {
+    return `http://${domain}`;
+  }
+  return `https://${domain}`;
+}
+
 // -- assert ------------------------------------------------- //
 
 export function assertType(obj: any, key: string, type: string) {

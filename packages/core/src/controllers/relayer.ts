@@ -26,13 +26,8 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import {
-  formatRelayRpcUrl,
-  getInternalError,
-  isUndefined,
-  isValidString,
-} from "@walletconnect/utils";
-import { generateKeyPair, signJWT } from "@walletconnect/relay-auth";
+import { formatRelayRpcUrl, getInternalError, getHttpUrl } from "@walletconnect/utils";
+import crossFetch from "cross-fetch";
 
 import {
   RELAYER_CONTEXT,
@@ -81,12 +76,10 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    // TODO(ilja) replace this with url from options once we agree on opts strategy for this
-    const { nonce } = await (await fetch("https://beta.relay.walletconnect.com/auth-nonce")).json();
-    const publicKey = await this.core.crypto.generateKeyPair();
-    // TODO(ilja) solve this, publicKey is a string, but generateKeyPair expects Uint8Array type
-    const keyPair = generateKeyPair(publicKey as any);
-    const auth = await signJWT(nonce, keyPair);
+    const clientId = await this.core.crypto.getClientId();
+    const endpoint = getHttpUrl(this.providerOpts.relayUrl ?? RELAYER_DEFAULT_RELAY_URL);
+    const { nonce } = await (await crossFetch(`${endpoint}/auth-nonce?did=${clientId}`)).json();
+    const auth = await this.core.crypto.signJWT(nonce);
     this.provider = this.createProvider(this.providerOpts, auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
@@ -141,9 +134,6 @@ export class Relayer extends IRelayer {
   // ---------- Private ----------------------------------------------- //
 
   private createProvider(opts: RelayerOptions, auth: string) {
-    if (!isValidString(opts.relayProvider, false) && !isUndefined(opts.relayProvider)) {
-      return opts.relayProvider;
-    }
     return new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({

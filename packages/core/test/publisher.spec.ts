@@ -16,9 +16,11 @@ describe("Publisher", () => {
   let relayer: IRelayer;
   let publisher: Publisher;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const core = new Core(TEST_CORE_OPTIONS);
-    relayer = new Relayer({ core, logger });
+    await core.start();
+    relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
+    await relayer.init();
     publisher = new Publisher(relayer, logger);
   });
 
