@@ -21,9 +21,10 @@ describe("Relayer", () => {
   let core: ICore;
   let relayer: IRelayer;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
-    relayer = new Relayer({ core, logger });
+    await core.start();
+    relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
     // Mock `provider.connect` to avoid dependency on relay server here.
     relayer.provider.connect = () => Promise.resolve();
   });

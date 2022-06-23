@@ -25,12 +25,7 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import {
-  formatRelayRpcUrl,
-  getInternalError,
-  isUndefined,
-  isValidString,
-} from "@walletconnect/utils";
+import { formatRelayRpcUrl, getInternalError, getHttpUrl } from "@walletconnect/utils";
 import crossFetch from "cross-fetch";
 
 import {
@@ -80,16 +75,9 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    // eslint-disable-next-line no-console
     const clientId = await this.core.crypto.getClientId();
-    // eslint-disable-next-line no-console
-    console.log({ clientId });
-    // TODO(ilja) replace this with url from options once we agree on opts strategy for this
-    const { nonce } = await (
-      await crossFetch(`http://0.0.0.0:5555/auth-nonce?did=${clientId}`)
-    ).json();
-    // eslint-disable-next-line no-console
-    console.log({ nonce });
+    const endpoint = getHttpUrl(this.providerOpts.relayUrl ?? RELAYER_DEFAULT_RELAY_URL);
+    const { nonce } = await (await crossFetch(`${endpoint}/auth-nonce?did=${clientId}`)).json();
     const auth = await this.core.crypto.signJWT(nonce);
     this.provider = this.createProvider(this.providerOpts, auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
@@ -145,9 +133,6 @@ export class Relayer extends IRelayer {
   // ---------- Private ----------------------------------------------- //
 
   private createProvider(opts: RelayerOptions, auth: string) {
-    if (!isValidString(opts.relayProvider, false) && !isUndefined(opts.relayProvider)) {
-      return opts.relayProvider;
-    }
     return new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({

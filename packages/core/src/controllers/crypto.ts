@@ -16,6 +16,7 @@ import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
 import { KeyChain } from "./keychain";
 import * as relayAuth from "@walletconnect/relay-auth";
+import { fromString } from "uint8arrays/from-string";
 
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;
@@ -48,9 +49,7 @@ export class Crypto implements ICrypto {
   public getClientId: ICrypto["getClientId"] = async () => {
     this.isInitialized();
     const seed = await this.getClientSeed();
-    // eslint-disable-next-line no-console
-    console.log({ seed });
-    const keyPair = relayAuth.generateKeyPair(seed as any);
+    const keyPair = relayAuth.generateKeyPair(seed);
     const clientId = relayAuth.encodeIss(keyPair.publicKey);
     return clientId;
   };
@@ -64,7 +63,7 @@ export class Crypto implements ICrypto {
   public signJWT: ICrypto["signJWT"] = async subject => {
     this.isInitialized();
     const seed = await this.getClientSeed();
-    const keyPair = relayAuth.generateKeyPair(seed as any);
+    const keyPair = relayAuth.generateKeyPair(seed);
     const jwt = await relayAuth.signJWT(subject, keyPair);
     return jwt;
   };
@@ -140,16 +139,15 @@ export class Crypto implements ICrypto {
     return privateKey;
   }
 
-  private async getClientSeed(): Promise<string> {
+  private async getClientSeed(): Promise<Uint8Array> {
     let seed = "";
     try {
       seed = this.keychain.get(CRYPTO_CLIENT_SEED);
-      return seed;
     } catch {
       seed = generateRandomBytes32();
       await this.keychain.set(CRYPTO_CLIENT_SEED, seed);
-      return seed;
     }
+    return fromString(seed, "base16");
   }
 
   private getSymKey(topic: string) {

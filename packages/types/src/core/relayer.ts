@@ -35,7 +35,7 @@ export declare namespace RelayerTypes {
     message: string;
   }
 
-  export interface RpcUrlParams extends Omit<RelayerOptions, "core" | "logger" | "relayProvider"> {
+  export interface RpcUrlParams extends Omit<RelayerOptions, "core" | "logger"> {
     auth: string;
     relayUrl: string;
   }
@@ -48,7 +48,6 @@ export interface RelayerOptions {
   relayUrl?: string;
   projectId?: string;
   logger?: string | Logger;
-  relayProvider?: string | IJsonRpcProvider;
 }
 
 export interface RelayerClientMetadata {
