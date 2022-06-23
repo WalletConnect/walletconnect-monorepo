@@ -152,7 +152,7 @@ describe("Crypto", () => {
       const symKey = utils.generateRandomBytes32();
       const topic = await crypto.setSymKey(symKey);
       const spy = Sinon.spy();
-      crypto.encrypt = spy;
+      // crypto.encrypt = spy;
       crypto.encode(topic, payload);
       const [calledTopic, calledMessage] = spy.getCall(0).args;
       expect(calledTopic).to.equal(topic);
@@ -177,7 +177,7 @@ describe("Crypto", () => {
       const symKey = utils.generateRandomBytes32();
       const topic = await crypto.setSymKey(symKey);
       const spy = Sinon.spy(() => "message");
-      crypto.decrypt = spy;
+      // crypto.decrypt = spy;
       crypto.decode(topic, hexPayload);
       const [calledTopic, calledEncoded] = spy.getCall(0).args;
       expect(calledTopic).to.equal(topic);
