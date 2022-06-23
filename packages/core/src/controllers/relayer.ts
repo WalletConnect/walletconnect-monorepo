@@ -1,3 +1,4 @@
+import crossFetch from "cross-fetch";
 import pino, { Logger } from "pino";
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -26,7 +27,6 @@ import {
   RelayerTypes,
 } from "@walletconnect/types";
 import { formatRelayRpcUrl, getInternalError, getHttpUrl } from "@walletconnect/utils";
-import crossFetch from "cross-fetch";
 
 import {
   RELAYER_CONTEXT,
