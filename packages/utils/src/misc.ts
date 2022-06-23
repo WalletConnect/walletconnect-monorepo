@@ -245,7 +245,8 @@ export function formatExpirerTarget(type: "topic" | "id", value: string | number
 }
 
 export function formatTopicTarget(topic: string): string {
-  return formatExpirerTarget("topic", topic);
+  const value = topic.includes("topic:") ? topic.split("topic:")[1] : topic;
+  return formatExpirerTarget("topic", value);
 }
 
 export function formatIdTarget(id: number): string {
