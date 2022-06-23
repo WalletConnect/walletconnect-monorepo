@@ -127,14 +127,6 @@ export class Crypto implements ICrypto {
     return payload;
   };
 
-  public signJWT: ICrypto["signJWT"] = async subject => {
-    this.isInitialized();
-    const seed = await this.getClientSeed();
-    const keyPair = await relayAuth.generateKeyPair(seed);
-    const jwt = await relayAuth.signJWT(subject, keyPair);
-    return jwt;
-  };
-
   // ---------- Private ----------------------------------------------- //
 
   private async setPrivateKey(publicKey: string, privateKey: string): Promise<string> {
