@@ -4,7 +4,6 @@ import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
 import { fromString } from "uint8arrays/from-string";
 import {
-  TYPE_1,
   decrypt,
   deriveSharedKey,
   deriveSymmetricKey,
@@ -15,6 +14,7 @@ import {
   generateRandomBytes32,
   validateEncoding,
   validateDecoding,
+  isTypeOneEvelope,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
@@ -101,25 +101,22 @@ export class Crypto implements ICrypto {
 
   public encode: ICrypto["encode"] = async (topic, payload, opts) => {
     this.isInitialized();
-    const { type, senderPublicKey, receiverPublicKey } = validateEncoding(opts);
+    const params = validateEncoding(opts);
     const message = safeJsonStringify(payload);
-    if (type === TYPE_1) {
-      if (typeof senderPublicKey === "undefined") return;
-      if (typeof receiverPublicKey === "undefined") return;
-      topic = await this.generateSharedKey(senderPublicKey, receiverPublicKey);
+    if (isTypeOneEvelope(params)) {
+      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
     }
     const symKey = this.getSymKey(topic);
+    const { type, senderPublicKey } = params;
     const result = encrypt({ type, symKey, message, senderPublicKey });
     return result;
   };
 
   public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
     this.isInitialized();
-    const { type, senderPublicKey, receiverPublicKey } = validateDecoding(encoded, opts);
-    if (type === TYPE_1) {
-      if (typeof senderPublicKey === "undefined") return;
-      if (typeof receiverPublicKey === "undefined") return;
-      topic = await this.generateSharedKey(senderPublicKey, receiverPublicKey);
+    const params = validateDecoding(encoded, opts);
+    if (isTypeOneEvelope(params)) {
+      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
     }
     const symKey = this.getSymKey(topic);
     const message = decrypt({ symKey, encoded });

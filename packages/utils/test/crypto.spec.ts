@@ -29,8 +29,8 @@ const TEST_IV = "717765636661617364616473";
 const TEST_SEALED =
   "7a5a1e843debf98b01d6a75718b5ee27115eafa3caba9703ca1c5601a6af2419045320faec2073cc8b6b8dc439e63e21612ff3883c867e0bdcd72c833eb7f7bb2034a9ec35c2fb03d93732";
 const TEST_ENCODED =
-  "cXdlY2ZhYXNkYWRzeloehD3r+YsB1qdXGLXuJxFer6PKupcDyhxWAaavJBkEUyD67CBzzItrjcQ55j4hYS/ziDyGfgvc1yyDPrf3uyA0qew1wvsD2Tcy";
-const TEST_HASHED_ENCODED = "50e7178d460f30f907c1744dd656aacbc2980f65de8d934c63ef83f607206603";
+  "AHF3ZWNmYWFzZGFkc3paHoQ96/mLAdanVxi17icRXq+jyrqXA8ocVgGmryQZBFMg+uwgc8yLa43EOeY+IWEv84g8hn4L3Ncsgz6397sgNKnsNcL7A9k3Mg==";
+const TEST_HASHED_ENCODED = "7e7847e8640aae6d0805ae6a98dc7b7e5083b521e69467dc54c8c46d41e60f22";
 
 describe("Crypto", () => {
   it("generateKeyPair", () => {
@@ -61,7 +61,7 @@ describe("Crypto", () => {
     const hashedEncoded = hashMessage(TEST_ENCODED);
     expect(hashedEncoded).to.eql(TEST_HASHED_ENCODED);
   });
-  it("encrypt", () => {
+  it("encrypt (type 0)", () => {
     const encoded = encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
     expect(encoded).to.eql(TEST_ENCODED);
     const deserialized = deserialize(encoded);
@@ -70,7 +70,7 @@ describe("Crypto", () => {
     const sealed = toString(deserialized.sealed, BASE16);
     expect(sealed).to.eql(TEST_SEALED);
   });
-  it("decrypt", () => {
+  it("decrypt (type 0)", () => {
     const decrypted = decrypt({ symKey: TEST_SYM_KEY, encoded: TEST_ENCODED });
     expect(decrypted).to.eql(TEST_MESSAGE);
   });

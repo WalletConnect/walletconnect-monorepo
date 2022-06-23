@@ -13,7 +13,7 @@ export const BASE16 = "base16";
 export const BASE64 = "base64pad";
 export const UTF8 = "utf8";
 
-export const TYPE_0 = 1;
+export const TYPE_0 = 0;
 export const TYPE_1 = 1;
 
 const ZERO_INDEX = 0;
@@ -67,10 +67,10 @@ export function decodeTypeByte(byte: Uint8Array): number {
 }
 
 export function encrypt(params: CryptoTypes.EncryptParams) {
-  if (params.type === TYPE_1 && typeof params.senderPublicKey === "undefined") {
+  const type = encodeTypeByte(typeof params.type !== "undefined" ? params.type : TYPE_0);
+  if (decodeTypeByte(type) === TYPE_1 && typeof params.senderPublicKey === "undefined") {
     throw new Error("Missing sender public key for type 1 envelope");
   }
-  const type = encodeTypeByte(typeof params.type === "undefined" ? TYPE_0 : TYPE_1);
   const senderPublicKey =
     typeof params.senderPublicKey !== "undefined"
       ? fromString(params.senderPublicKey, BASE16)
@@ -108,15 +108,19 @@ export function serialize(params: CryptoTypes.EncodingParams): string {
 export function deserialize(encoded: string): CryptoTypes.EncodingParams {
   const bytes = fromString(encoded, BASE64);
   const type = bytes.slice(ZERO_INDEX, TYPE_LENGTH);
+  const slice1 = TYPE_LENGTH;
   if (decodeTypeByte(type) === TYPE_1) {
-    const senderPublicKey = bytes.slice(TYPE_LENGTH, KEY_LENGTH);
-    const iv = bytes.slice(TYPE_LENGTH + KEY_LENGTH, IV_LENGTH);
-    const sealed = bytes.slice(TYPE_LENGTH + KEY_LENGTH + IV_LENGTH);
+    const slice2 = slice1 + KEY_LENGTH;
+    const slice3 = slice2 + IV_LENGTH;
+    const senderPublicKey = bytes.slice(slice1, slice2);
+    const iv = bytes.slice(slice2, slice3);
+    const sealed = bytes.slice(slice3);
     return { type, sealed, iv, senderPublicKey };
   }
   // default to type 0 envelope
-  const iv = bytes.slice(TYPE_LENGTH, IV_LENGTH);
-  const sealed = bytes.slice(TYPE_LENGTH + IV_LENGTH);
+  const slice2 = slice1 + IV_LENGTH;
+  const iv = bytes.slice(slice1, slice2);
+  const sealed = bytes.slice(slice2);
   return { type, sealed, iv };
 }
 
@@ -146,4 +150,14 @@ export function validateEncoding(opts?: CryptoTypes.EncodeOptions): CryptoTypes.
     }
   }
   return { type, senderPublicKey: opts?.senderPublicKey };
+}
+
+export function isTypeOneEvelope(
+  result: CryptoTypes.EncodingValidation,
+): result is CryptoTypes.TypeOneParams {
+  return (
+    result.type === TYPE_1 &&
+    typeof result.senderPublicKey === "string" &&
+    typeof result.receiverPublicKey === "string"
+  );
 }
