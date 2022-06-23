@@ -14,11 +14,11 @@ export declare namespace CryptoTypes {
   }
 
   export interface EncryptParams {
-    type: number;
     message: string;
     symKey: string;
+    type?: number;
     iv?: string;
-    publicKey?: string;
+    senderPublicKey?: string;
   }
 
   export interface DecryptParams {
@@ -27,8 +27,10 @@ export declare namespace CryptoTypes {
   }
 
   export interface EncodingParams {
+    type: Uint8Array;
     sealed: Uint8Array;
     iv: Uint8Array;
+    senderPublicKey?: Uint8Array;
   }
 
   export interface EncodeOptions {
@@ -38,6 +40,12 @@ export declare namespace CryptoTypes {
   }
 
   export interface DecodeOptions {
+    receiverPublicKey?: string;
+  }
+
+  export interface EncodingValidation {
+    type: number;
+    senderPublicKey?: string;
     receiverPublicKey?: string;
   }
 }
@@ -75,10 +83,6 @@ export abstract class ICrypto {
   public abstract deleteKeyPair(publicKey: string): Promise<void>;
 
   public abstract deleteSymKey(topic: string): Promise<void>;
-
-  public abstract encrypt(topic: string, message: string): string;
-
-  public abstract decrypt(topic: string, encoded: string): string;
 
   public abstract encode(
     topic: string,

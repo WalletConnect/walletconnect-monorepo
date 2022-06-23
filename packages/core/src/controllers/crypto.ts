@@ -2,10 +2,9 @@ import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
-import { concat } from "uint8arrays/concat";
-import { toString } from "uint8arrays/to-string";
 import { fromString } from "uint8arrays/from-string";
 import {
+  TYPE_1,
   decrypt,
   deriveSharedKey,
   deriveSymmetricKey,
@@ -14,9 +13,11 @@ import {
   hashKey,
   getInternalError,
   generateRandomBytes32,
+  validateEncoding,
+  validateDecoding,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_DEFAULT_TYPE_EVENELOPE } from "../constants";
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
 import { KeyChain } from "./keychain";
 
 export class Crypto implements ICrypto {
@@ -98,42 +99,30 @@ export class Crypto implements ICrypto {
     await this.keychain.del(topic);
   };
 
-  public encrypt: ICrypto["encrypt"] = (topic, message) => {
-    this.isInitialized();
-    const symKey = this.getSymKey(topic);
-    const result = encrypt({ symKey, message });
-    return result;
-  };
-
-  public decrypt: ICrypto["decrypt"] = (topic, encoded) => {
-    this.isInitialized();
-    const symKey = this.getSymKey(topic);
-    const result = decrypt({ symKey, encoded });
-    return result;
-  };
-
   public encode: ICrypto["encode"] = async (topic, payload, opts) => {
     this.isInitialized();
-    const type = opts?.type || CRYPTO_DEFAULT_TYPE_EVENELOPE;
+    const { type, senderPublicKey, receiverPublicKey } = validateEncoding(opts);
     const message = safeJsonStringify(payload);
-    if (type === 1) {
-      if (typeof opts?.senderPublicKey === "undefined") {
-        throw new Error("missing sender public key");
-      }
-      if (typeof opts?.receiverPublicKey === "undefined") {
-        throw new Error("missing receiver public key");
-      }
-      topic = await this.generateSharedKey(opts.senderPublicKey, opts.receiverPublicKey);
+    if (type === TYPE_1) {
+      if (typeof senderPublicKey === "undefined") return;
+      if (typeof receiverPublicKey === "undefined") return;
+      topic = await this.generateSharedKey(senderPublicKey, receiverPublicKey);
     }
-    const result = this.encrypt(topic, message);
-    const bytes = concat([fromString(`${type}`, "base10"), fromString(result, "base64pad")]);
-    return toString(bytes, "base64pad");
+    const symKey = this.getSymKey(topic);
+    const result = encrypt({ type, symKey, message, senderPublicKey });
+    return result;
   };
 
-  public decode: ICrypto["decode"] = (topic, encoded, opts) => {
+  public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
     this.isInitialized();
-
-    const message = this.decrypt(topic, encoded);
+    const { type, senderPublicKey, receiverPublicKey } = validateDecoding(encoded, opts);
+    if (type === TYPE_1) {
+      if (typeof senderPublicKey === "undefined") return;
+      if (typeof receiverPublicKey === "undefined") return;
+      topic = await this.generateSharedKey(senderPublicKey, receiverPublicKey);
+    }
+    const symKey = this.getSymKey(topic);
+    const message = decrypt({ symKey, encoded });
     const payload = safeJsonParse(message);
     return payload;
   };

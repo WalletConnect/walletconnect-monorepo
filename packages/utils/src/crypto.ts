@@ -13,7 +13,11 @@ export const BASE16 = "base16";
 export const BASE64 = "base64pad";
 export const UTF8 = "utf8";
 
+export const TYPE_0 = 1;
+export const TYPE_1 = 1;
+
 const ZERO_INDEX = 0;
+const TYPE_LENGTH = 1;
 const IV_LENGTH = 12;
 const KEY_LENGTH = 32;
 
@@ -54,12 +58,29 @@ export function hashMessage(message: string) {
   return toString(result, BASE16);
 }
 
+export function encodeTypeByte(type: number): Uint8Array {
+  return fromString(`${type}`, BASE10);
+}
+
+export function decodeTypeByte(byte: Uint8Array): number {
+  return Number(toString(byte, BASE10));
+}
+
 export function encrypt(params: CryptoTypes.EncryptParams) {
+  if (params.type === TYPE_1 && typeof params.senderPublicKey === "undefined") {
+    throw new Error("Missing sender public key for type 1 envelope");
+  }
+  const type = encodeTypeByte(typeof params.type === "undefined" ? TYPE_0 : TYPE_1);
+  const senderPublicKey =
+    typeof params.senderPublicKey !== "undefined"
+      ? fromString(params.senderPublicKey, BASE16)
+      : undefined;
+
   const iv =
     typeof params.iv !== "undefined" ? fromString(params.iv, BASE16) : randomBytes(IV_LENGTH);
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const sealed = box.seal(iv, fromString(params.message, UTF8));
-  return serialize({ sealed, iv });
+  return serialize({ type, sealed, iv, senderPublicKey });
 }
 
 export function decrypt(params: CryptoTypes.DecryptParams) {
@@ -71,12 +92,58 @@ export function decrypt(params: CryptoTypes.DecryptParams) {
 }
 
 export function serialize(params: CryptoTypes.EncodingParams): string {
-  return toString(concat([params.iv, params.sealed]), BASE64);
+  if (decodeTypeByte(params.type) === TYPE_1) {
+    if (typeof params.senderPublicKey === "undefined") {
+      throw new Error("Missing sender public key for type 1 envelope");
+    }
+    return toString(
+      concat([params.type, params.senderPublicKey, params.iv, params.sealed]),
+      BASE64,
+    );
+  }
+  // default to type 0 envelope
+  return toString(concat([params.type, params.iv, params.sealed]), BASE64);
 }
 
 export function deserialize(encoded: string): CryptoTypes.EncodingParams {
-  const array = fromString(encoded, BASE64);
-  const iv = array.slice(ZERO_INDEX, IV_LENGTH);
-  const sealed = array.slice(IV_LENGTH);
-  return { sealed, iv };
+  const bytes = fromString(encoded, BASE64);
+  const type = bytes.slice(ZERO_INDEX, TYPE_LENGTH);
+  if (decodeTypeByte(type) === TYPE_1) {
+    const senderPublicKey = bytes.slice(TYPE_LENGTH, KEY_LENGTH);
+    const iv = bytes.slice(TYPE_LENGTH + KEY_LENGTH, IV_LENGTH);
+    const sealed = bytes.slice(TYPE_LENGTH + KEY_LENGTH + IV_LENGTH);
+    return { type, sealed, iv, senderPublicKey };
+  }
+  // default to type 0 envelope
+  const iv = bytes.slice(TYPE_LENGTH, IV_LENGTH);
+  const sealed = bytes.slice(TYPE_LENGTH + IV_LENGTH);
+  return { type, sealed, iv };
+}
+
+export function validateDecoding(
+  encoded: string,
+  opts?: CryptoTypes.DecodeOptions,
+): CryptoTypes.EncodingValidation {
+  const deserialized = deserialize(encoded);
+  return validateEncoding({
+    type: decodeTypeByte(deserialized.type),
+    senderPublicKey:
+      typeof deserialized.senderPublicKey !== "undefined"
+        ? toString(deserialized.senderPublicKey)
+        : undefined,
+    receiverPublicKey: opts?.receiverPublicKey,
+  });
+}
+
+export function validateEncoding(opts?: CryptoTypes.EncodeOptions): CryptoTypes.EncodingValidation {
+  const type = opts?.type || TYPE_0;
+  if (type === TYPE_1) {
+    if (typeof opts?.senderPublicKey === "undefined") {
+      throw new Error("missing sender public key");
+    }
+    if (typeof opts?.receiverPublicKey === "undefined") {
+      throw new Error("missing receiver public key");
+    }
+  }
+  return { type, senderPublicKey: opts?.senderPublicKey };
 }
