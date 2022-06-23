@@ -2,6 +2,8 @@ import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
+import * as relayAuth from "@walletconnect/relay-auth";
+import { fromString } from "uint8arrays/from-string";
 import {
   decrypt,
   deriveSharedKey,
@@ -15,8 +17,6 @@ import {
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
 import { KeyChain } from "./keychain";
-import * as relayAuth from "@walletconnect/relay-auth";
-import { fromString } from "uint8arrays/from-string";
 
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;

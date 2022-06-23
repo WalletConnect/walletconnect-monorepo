@@ -108,14 +108,12 @@ export function formatRelayRpcUrl({
 }
 
 export function getHttpUrl(url: string) {
-  const domain = url.split("://")[1];
-  if (!domain) {
-    throw new Error("Invalid url provided");
-  }
-  if (domain.includes("localhost") || domain.includes("0.0.0.0")) {
-    return `http://${domain}`;
-  }
-  return `https://${domain}`;
+  // regex from https://stackoverflow.com/questions/3883871/regexp-to-grab-protocol-from-url
+  const matches = url.match(/^[^:]+(?=:\/\/)/gi) || [];
+  let protocol = matches[0];
+  const domain = typeof protocol !== "undefined" ? url.split("://")[1] : url;
+  protocol = protocol === "wss" ? "https" : "http";
+  return [protocol, domain].join("://");
 }
 
 // -- assert ------------------------------------------------- //
