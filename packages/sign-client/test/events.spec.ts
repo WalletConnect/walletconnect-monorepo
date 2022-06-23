@@ -9,7 +9,7 @@ import {
   deleteClients,
   TEST_NAMESPACES,
   TEST_REQUIRED_NAMESPACES,
-  TEST_EMIT_PARAMS
+  TEST_EMIT_PARAMS,
 } from "./shared";
 import { EngineTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
 
@@ -19,9 +19,8 @@ describe("Sign Client Events Validation", () => {
     expect(client).to.be.exist;
   });
 
-  describe("Events", () => {
-    it("session_proposal", async () => {
-
+  describe("session_proposal", () => {
+    it("emits and handles a valid session_proposal", async () => {
       const clients = await initTwoClients();
       const { A, B } = clients;
 
@@ -85,8 +84,7 @@ describe("Sign Client Events Validation", () => {
           } catch (error) {
             reject(error);
           }
-        })
-        ,
+        }),
         new Promise<void>(async (resolve, reject) => {
           try {
             if (!sessionA) {
@@ -96,21 +94,19 @@ describe("Sign Client Events Validation", () => {
           } catch (error) {
             reject(error);
           }
-        })
+        }),
       ]);
 
-      deleteClients(clients)
+      deleteClients(clients);
     });
-
-    it("session_update", async () => {
+  });
+  describe("session_update", () => {
+    it("emits and handles a valid session_update", async () => {
       const clients = await initTwoClients();
-      const {
-        sessionA,
-      } = await testConnectMethod(clients);
+      const { sessionA } = await testConnectMethod(clients);
 
       await new Promise<void>(async (resolve, reject) => {
         try {
-          
           const namespacesBefore = sessionA.namespaces;
           const namespacesAfter = {
             ...namespacesBefore,
@@ -125,22 +121,24 @@ describe("Sign Client Events Validation", () => {
             expect(clients.A.session.get(sessionA.topic).namespaces).to.eql(namespacesAfter);
             resolve();
           });
-          
-          const { acknowledged } = await clients.A.update({ topic: sessionA.topic , namespaces: namespacesAfter })
-          await acknowledged()
+
+          const { acknowledged } = await clients.A.update({
+            topic: sessionA.topic,
+            namespaces: namespacesAfter,
+          });
+          await acknowledged();
         } catch (e) {
           reject(e);
         }
-      })
+      });
 
       deleteClients(clients);
     });
-
-    it("session_ping", async () => {
+  });
+  describe("session_ping", () => {
+    it("emits and handles a valid session_ping", async () => {
       const clients = await initTwoClients();
-      const {
-        sessionA,
-      } = await testConnectMethod(clients);
+      const { sessionA } = await testConnectMethod(clients);
 
       await new Promise<void>(async (resolve, reject) => {
         try {
@@ -148,50 +146,18 @@ describe("Sign Client Events Validation", () => {
             expect(sessionA.topic).to.eql(event.topic);
             resolve();
           });
-          
-          await clients.A.ping({ topic: sessionA.topic }) 
+
+          await clients.A.ping({ topic: sessionA.topic });
         } catch (e) {
           reject(e);
         }
-      })
+      });
 
       deleteClients(clients);
     });
-
-    it("session_event", async () => {
-        const clients = await initTwoClients();
-
-        const connectParams: EngineTypes.ConnectParams = {
-          requiredNamespaces: TEST_REQUIRED_NAMESPACES,
-          relays: undefined,
-          pairingTopic: undefined,
-        };
-
-        const {
-          sessionA,
-        } = await testConnectMethod(clients, connectParams);
-
-        const eventPayload: EngineTypes.EmitParams = {
-          topic: sessionA.topic,
-          ...TEST_EMIT_PARAMS
-        }
-
-        await new Promise<void>(async (resolve, reject) => {
-          try {
-            clients.B.on("session_event", event => {
-              expect(TEST_EMIT_PARAMS).to.eql(event.params);
-              expect(eventPayload.topic).to.eql(event.topic);
-              resolve();
-            });
-            
-            clients.A.emit(eventPayload)
-          } catch (e) {
-            reject(e);
-          }
-        })
-        deleteClients(clients);
-      });
-    it("session_delete", async () => {
+  });
+  describe("session_event", () => {
+    it("emits and handles a valid session_event", async () => {
       const clients = await initTwoClients();
 
       const connectParams: EngineTypes.ConnectParams = {
@@ -200,14 +166,45 @@ describe("Sign Client Events Validation", () => {
         pairingTopic: undefined,
       };
 
-      const {
-        sessionA,
-      } = await testConnectMethod(clients, connectParams);
+      const { sessionA } = await testConnectMethod(clients, connectParams);
 
       const eventPayload: EngineTypes.EmitParams = {
         topic: sessionA.topic,
-        ...TEST_EMIT_PARAMS
-      }
+        ...TEST_EMIT_PARAMS,
+      };
+
+      await new Promise<void>(async (resolve, reject) => {
+        try {
+          clients.B.on("session_event", event => {
+            expect(TEST_EMIT_PARAMS).to.eql(event.params);
+            expect(eventPayload.topic).to.eql(event.topic);
+            resolve();
+          });
+
+          clients.A.emit(eventPayload);
+        } catch (e) {
+          reject(e);
+        }
+      });
+      deleteClients(clients);
+    });
+  });
+  describe("session_delete", () => {
+    it("emits and handles a valid session_delete", async () => {
+      const clients = await initTwoClients();
+
+      const connectParams: EngineTypes.ConnectParams = {
+        requiredNamespaces: TEST_REQUIRED_NAMESPACES,
+        relays: undefined,
+        pairingTopic: undefined,
+      };
+
+      const { sessionA } = await testConnectMethod(clients, connectParams);
+
+      const eventPayload: EngineTypes.EmitParams = {
+        topic: sessionA.topic,
+        ...TEST_EMIT_PARAMS,
+      };
 
       await new Promise<void>(async (resolve, reject) => {
         try {
@@ -215,12 +212,12 @@ describe("Sign Client Events Validation", () => {
             expect(eventPayload.topic).to.eql(event.topic);
             resolve();
           });
-          
-          clients.A.disconnect({ topic: sessionA.topic, reason: getSdkError('USER_DISCONNECTED')});
+
+          clients.A.disconnect({ topic: sessionA.topic, reason: getSdkError("USER_DISCONNECTED") });
         } catch (e) {
           reject(e);
         }
-      })
+      });
       deleteClients(clients);
     });
   });
