@@ -1,7 +1,5 @@
 import { expect, describe, it } from "vitest";
-
-import { calcExpiry, formatRelayRpcUrl } from "../src";
-import { hasOverlap } from "../dist/cjs";
+import { calcExpiry, formatRelayRpcUrl, hasOverlap } from "../src";
 
 const RELAY_URL = "wss://relay.walletconnect.com";
 

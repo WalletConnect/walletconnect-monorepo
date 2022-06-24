@@ -1,5 +1,5 @@
 // @ts-nocheck
-import "mocha";
+import { expect, describe, it, before } from "vitest";
 import {
   expect,
   initTwoClients,

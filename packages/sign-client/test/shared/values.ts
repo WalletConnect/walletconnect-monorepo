@@ -1,7 +1,5 @@
 import path from "path";
 import { SignClientTypes, RelayerTypes } from "@walletconnect/types";
-
-// @ts-ignore
 import { ROOT_DIR } from "../../../../ops/js/shared";
 
 export const PACKAGE_NAME = "sign-client";

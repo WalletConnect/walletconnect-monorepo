@@ -1,8 +1,7 @@
 import { getSdkError, parseUri } from "@walletconnect/utils";
-import "mocha";
+import { expect, describe, it } from "vitest";
 import SignClient from "../src";
 import {
-  expect,
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
