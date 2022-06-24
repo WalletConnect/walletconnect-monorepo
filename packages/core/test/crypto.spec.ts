@@ -146,13 +146,8 @@ describe("Crypto", () => {
     });
     it.skip("encrypts `payload` if the passed topic is known", async () => {
       const topic = await crypto.setSymKey(symKey);
-      // const spy = Sinon.spy();
-      // crypto.encrypt = spy;
       // FIXME: needs to be tested dynamically because of random IV generation
       await crypto.encode(topic, payload);
-      // const [calledTopic, calledMessage] = spy.getCall(0).args;
-      // expect(calledTopic).to.equal(topic);
-      // expect(calledMessage).to.equal(safeJsonStringify(payload));
     });
   });
 
@@ -170,13 +165,8 @@ describe("Crypto", () => {
     });
     it("decrypts `payload` if the passed topic is known", async () => {
       const topic = await crypto.setSymKey(symKey);
-      // const spy = Sinon.spy(() => "message");
-      // crypto.decrypt = spy;
       const decoded = await crypto.decode(topic, encoded);
       expect(decoded).to.eql(payload);
-      // const [calledTopic, calledEncoded] = spy.getCall(0).args;
-      // expect(calledTopic).to.equal(topic);
-      // expect(calledEncoded).to.equal(hexPayload);
     });
   });
 });
