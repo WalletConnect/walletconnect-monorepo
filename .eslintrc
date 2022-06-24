@@ -32,6 +32,7 @@
     "no-useless-constructor": "off",
     "no-use-before-define": "off"
   },
+  "ignorePatterns": ["dist", "example", "**/node_modules/*"],
   "env": {
     "browser": true,
     "es6": true
