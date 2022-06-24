@@ -53,7 +53,7 @@ jobs:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
     steps:
-       - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v3
         with:
           name: build-artifact
       - run: npm run test --prefix=${{ matrix.test-prefix }}
