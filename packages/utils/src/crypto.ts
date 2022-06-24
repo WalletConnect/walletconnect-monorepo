@@ -34,26 +34,22 @@ export function generateRandomBytes32(): string {
   return toString(random, BASE16);
 }
 
-export function deriveSharedKey(privateKeyA: string, publicKeyB: string): string {
+export function deriveSymKey(privateKeyA: string, publicKeyB: string): string {
   const sharedKey = x25519.sharedKey(
     fromString(privateKeyA, BASE16),
     fromString(publicKeyB, BASE16),
   );
-  return toString(sharedKey, BASE16);
-}
-
-export function deriveSymmetricKey(sharedKey: string) {
-  const hkdf = new HKDF(SHA256, fromString(sharedKey, BASE16));
+  const hkdf = new HKDF(SHA256, sharedKey);
   const symKey = hkdf.expand(KEY_LENGTH);
   return toString(symKey, BASE16);
 }
 
-export function hashKey(key: string) {
+export function hashKey(key: string): string {
   const result = hash(fromString(key, BASE16));
   return toString(result, BASE16);
 }
 
-export function hashMessage(message: string) {
+export function hashMessage(message: string): string {
   const result = hash(fromString(message, UTF8));
   return toString(result, BASE16);
 }
@@ -66,7 +62,7 @@ export function decodeTypeByte(byte: Uint8Array): number {
   return Number(toString(byte, BASE10));
 }
 
-export function encrypt(params: CryptoTypes.EncryptParams) {
+export function encrypt(params: CryptoTypes.EncryptParams): string {
   const type = encodeTypeByte(typeof params.type !== "undefined" ? params.type : TYPE_0);
   if (decodeTypeByte(type) === TYPE_1 && typeof params.senderPublicKey === "undefined") {
     throw new Error("Missing sender public key for type 1 envelope");
@@ -83,7 +79,7 @@ export function encrypt(params: CryptoTypes.EncryptParams) {
   return serialize({ type, sealed, iv, senderPublicKey });
 }
 
-export function decrypt(params: CryptoTypes.DecryptParams) {
+export function decrypt(params: CryptoTypes.DecryptParams): string {
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const { sealed, iv } = deserialize(params.encoded);
   const message = box.open(iv, sealed);
@@ -133,7 +129,7 @@ export function validateDecoding(
     type: decodeTypeByte(deserialized.type),
     senderPublicKey:
       typeof deserialized.senderPublicKey !== "undefined"
-        ? toString(deserialized.senderPublicKey)
+        ? toString(deserialized.senderPublicKey, BASE16)
         : undefined,
     receiverPublicKey: opts?.receiverPublicKey,
   });
@@ -149,7 +145,11 @@ export function validateEncoding(opts?: CryptoTypes.EncodeOptions): CryptoTypes.
       throw new Error("missing receiver public key");
     }
   }
-  return { type, senderPublicKey: opts?.senderPublicKey };
+  return {
+    type,
+    senderPublicKey: opts?.senderPublicKey,
+    receiverPublicKey: opts?.receiverPublicKey,
+  };
 }
 
 export function isTypeOneEvelope(
