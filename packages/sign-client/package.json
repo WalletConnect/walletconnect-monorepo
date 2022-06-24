@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "@walletconnect/core": "^2.0.0-beta.101",
-    "@walletconnect/encoding": "^1.0.1",
     "@walletconnect/events": "^1.0.0",
     "@walletconnect/heartbeat": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.3",
