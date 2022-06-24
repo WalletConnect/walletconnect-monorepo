@@ -25,11 +25,18 @@ jobs:
         run: npm run bootstrap
       - name: build
         run: npm run build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact
+          path: ./
     
   lint:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-artifact
       - run: npm run lint
 
   test:
@@ -46,5 +53,8 @@ jobs:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
     steps:
+       - uses: actions/download-artifact@v3
+        with:
+          name: build-artifact
       - run: npm run test --prefix=${{ matrix.test-prefix }}
     
