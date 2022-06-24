@@ -1,7 +1,5 @@
-// @ts-nocheck
-import { expect, describe, it, before } from "vitest";
+import { expect, describe, it, beforeAll } from "vitest";
 import {
-  expect,
   initTwoClients,
   testConnectMethod,
   TEST_APPROVE_PARAMS,
@@ -24,7 +22,7 @@ let pairingTopic: string;
 let topic: string;
 
 describe("Sign Client Validation", () => {
-  before(async () => {
+  beforeAll(async () => {
     const clients = await initTwoClients();
     await testConnectMethod(clients);
     client = clients.A;

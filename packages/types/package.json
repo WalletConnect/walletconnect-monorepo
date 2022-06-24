@@ -5,24 +5,15 @@
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
-  "main": "dist/types/src/index.d.ts",
-  "browser": "dist/types/src/index.d.ts",
-  "types": "dist/types/src/index.d.ts",
-  "unpkg": "dist/types/src/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "main": "src/index.ts",
+  "browser": "src/index.ts",
+  "types": "src/index.ts",
+  "unpkg": "src/index.ts",
   "keywords": [
     "wallet",
     "walletconnect"
   ],
   "scripts": {
-    "clean": "rm -rf dist",
-    "help": "tsc --help",
-    "build:pre": "run-s clean",
-    "build:types": "tsc",
-    "build:source": "vite build",
-    "build": "run-s build:pre build:source build:types",
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "vitest run --dir test",
     "test": "run-s test:pre test:run",

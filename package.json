@@ -62,6 +62,7 @@
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-standard": "^4.0.1",
     "prettier": "^1.19.1",
-    "sinon": "^9.2.2"
+    "sinon": "^9.2.2",
+    "rollup-plugin-analyzer": "4.0.0"
   }
 }
