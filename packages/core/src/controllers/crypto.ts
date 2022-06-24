@@ -1,4 +1,3 @@
-import * as encoding from "@walletconnect/encoding";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
@@ -6,13 +5,15 @@ import * as relayAuth from "@walletconnect/relay-auth";
 import { fromString } from "uint8arrays/from-string";
 import {
   decrypt,
-  deriveSharedKey,
-  deriveSymmetricKey,
+  deriveSymKey,
   encrypt,
   generateKeyPair as generateKeyPairUtil,
   hashKey,
   getInternalError,
   generateRandomBytes32,
+  validateEncoding,
+  validateDecoding,
+  isTypeOneEnvelope,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
@@ -74,9 +75,8 @@ export class Crypto implements ICrypto {
     overrideTopic,
   ) => {
     this.isInitialized();
-    const privateKey = this.getPrivateKey(selfPublicKey);
-    const sharedKey = deriveSharedKey(privateKey, peerPublicKey);
-    const symKey = deriveSymmetricKey(sharedKey);
+    const selfPrivateKey = this.getPrivateKey(selfPublicKey);
+    const symKey = deriveSymKey(selfPrivateKey, peerPublicKey);
     return this.setSymKey(symKey, overrideTopic);
   };
 
@@ -97,32 +97,27 @@ export class Crypto implements ICrypto {
     await this.keychain.del(topic);
   };
 
-  public encrypt: ICrypto["encrypt"] = (topic, message) => {
+  public encode: ICrypto["encode"] = async (topic, payload, opts) => {
     this.isInitialized();
-    const symKey = this.getSymKey(topic);
-    const result = encrypt({ symKey, message });
-    return result;
-  };
-
-  public decrypt: ICrypto["decrypt"] = (topic, encoded) => {
-    this.isInitialized();
-    const symKey = this.getSymKey(topic);
-    const result = decrypt({ symKey, encoded });
-    return result;
-  };
-
-  public encode: ICrypto["encode"] = (topic, payload) => {
-    this.isInitialized();
-    const hasKeys = this.hasKeys(topic);
+    const params = validateEncoding(opts);
     const message = safeJsonStringify(payload);
-    const result = hasKeys ? this.encrypt(topic, message) : encoding.utf8ToHex(message);
+    if (isTypeOneEnvelope(params)) {
+      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
+    }
+    const symKey = this.getSymKey(topic);
+    const { type, senderPublicKey } = params;
+    const result = encrypt({ type, symKey, message, senderPublicKey });
     return result;
   };
 
-  public decode: ICrypto["decode"] = (topic, encoded) => {
+  public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
     this.isInitialized();
-    const hasKeys = this.hasKeys(topic);
-    const message = hasKeys ? this.decrypt(topic, encoded) : encoding.hexToUtf8(encoded);
+    const params = validateDecoding(encoded, opts);
+    if (isTypeOneEnvelope(params)) {
+      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
+    }
+    const symKey = this.getSymKey(topic);
+    const message = decrypt({ symKey, encoded });
     const payload = safeJsonParse(message);
     return payload;
   };

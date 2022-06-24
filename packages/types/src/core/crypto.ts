@@ -16,7 +16,9 @@ export declare namespace CryptoTypes {
   export interface EncryptParams {
     message: string;
     symKey: string;
+    type?: number;
     iv?: string;
+    senderPublicKey?: string;
   }
 
   export interface DecryptParams {
@@ -25,8 +27,32 @@ export declare namespace CryptoTypes {
   }
 
   export interface EncodingParams {
+    type: Uint8Array;
     sealed: Uint8Array;
     iv: Uint8Array;
+    senderPublicKey?: Uint8Array;
+  }
+
+  export interface EncodeOptions {
+    type?: number;
+    senderPublicKey?: string;
+    receiverPublicKey?: string;
+  }
+
+  export interface DecodeOptions {
+    receiverPublicKey?: string;
+  }
+
+  export interface EncodingValidation {
+    type: number;
+    senderPublicKey?: string;
+    receiverPublicKey?: string;
+  }
+  
+  export interface TypeOneParams {
+    type: 1;
+    senderPublicKey: string;
+    receiverPublicKey: string;
   }
 }
 
@@ -64,13 +90,17 @@ export abstract class ICrypto {
 
   public abstract deleteSymKey(topic: string): Promise<void>;
 
-  public abstract encrypt(topic: string, message: string): string;
+  public abstract encode(
+    topic: string,
+    payload: JsonRpcPayload,
+    opts?: CryptoTypes.EncodeOptions,
+  ): Promise<string>;
 
-  public abstract decrypt(topic: string, encoded: string): string;
-
-  public abstract encode(topic: string, payload: JsonRpcPayload): string;
-
-  public abstract decode(topic: string, encoded: string): JsonRpcPayload;
+  public abstract decode(
+    topic: string,
+    encoded: string,
+    opts?: CryptoTypes.DecodeOptions,
+  ): Promise<JsonRpcPayload>;
 
   public abstract signJWT(subject: string): Promise<string>;
 }

@@ -1,8 +1,6 @@
 import "mocha";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import * as utils from "@walletconnect/utils";
-import * as encoding from "@walletconnect/encoding";
-import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import pino from "pino";
 import Sinon from "sinon";
 
@@ -59,9 +57,7 @@ describe("Crypto", () => {
       const peerPublicKey = utils.generateRandomBytes32();
       const selfPublicKey = await crypto.generateKeyPair();
       const selfPrivateKey = crypto.keychain.get(selfPublicKey);
-      const expectedSymKey = utils.deriveSymmetricKey(
-        utils.deriveSharedKey(selfPrivateKey, peerPublicKey),
-      );
+      const expectedSymKey = utils.deriveSymKey(selfPrivateKey, peerPublicKey);
       const spy = Sinon.spy();
       crypto.setSymKey = spy;
       await crypto.generateSharedKey(selfPublicKey, peerPublicKey, overrideTopic);
@@ -136,98 +132,41 @@ describe("Crypto", () => {
     });
   });
 
-  describe("encrypt", () => {
-    it("throws if not initialized", () => {
-      const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.encrypt("topic", "message")).to.throw("Not initialized. crypto");
-    });
-    it("throws if the passed topic is not known", () => {
-      const topic = utils.generateRandomBytes32();
-      expect(() => crypto.encrypt(topic, "message")).to.throw();
-    });
-    it("resolves symKey from `topic` param and encrypts with `message` param", async () => {
-      const message = "some message";
-      const symKey = utils.generateRandomBytes32();
-      // Set a topic-symKey pair in the keychain to later retrieve via `encrypt`.
-      const topic = await crypto.setSymKey(symKey);
-      const spy = Sinon.spy();
-      // @ts-ignore
-      utils.encrypt = spy;
-      crypto.encrypt(topic, message);
-      const [payload] = spy.getCall(0).args;
-      expect(payload).to.deep.equal({ symKey, message });
-    });
-  });
-
-  describe("decrypt", () => {
-    it("throws if not initialized", () => {
-      const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.decrypt("topic", "encoded")).to.throw("Not initialized. crypto");
-    });
-    it("throws if the passed topic is not known", () => {
-      const topic = utils.generateRandomBytes32();
-      expect(() => crypto.decrypt(topic, "encoded")).to.throw();
-    });
-    it("resolves symKey from `topic` param and decrypts `encoded` param", async () => {
-      const encoded = "encoded";
-      const symKey = utils.generateRandomBytes32();
-      // Set a topic-symKey pair in the keychain to later retrieve via `decrypt`.
-      const topic = await crypto.setSymKey(symKey);
-      const spy = Sinon.spy();
-      // @ts-ignore
-      utils.decrypt = spy;
-      crypto.decrypt(topic, encoded);
-      const [payload] = spy.getCall(0).args;
-      expect(payload).to.deep.equal({ symKey, encoded });
-    });
-  });
-
   describe("encode", () => {
+    const symKey = "5720435e682cd03ee45b484f9a213f0e3246a0ccc2cca183b72ab1cbfbefb702";
     const payload = { id: 1, jsonrpc: "2.0", result: "result" };
+    // const encoded =
+    //   "AG7iJl9mMl9K04REnuWaKLQU6kwMcQWUd69OxGOJ5/A+VRRKkxnKhBeIAl4JRaIft3qZKEfnBvc7/Fife1DWcERqAfJwzPI=";
 
-    it("throws if not initialized", () => {
+    it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.encode("topic", payload)).to.throw("Not initialized. crypto");
+      await expect(invalidCrypto.encode("topic", payload)).to.eventually.be.rejectedWith(
+        "Not initialized. crypto",
+      );
     });
-    it("encodes `payload` as hex string if the passed topic is not known", () => {
-      const topic = utils.generateRandomBytes32();
-      const result = crypto.encode(topic, payload);
-      expect(result).to.equal(encoding.utf8ToHex(safeJsonStringify(payload)));
-    });
-    it("encrypts `payload` if the passed topic is known", async () => {
-      const symKey = utils.generateRandomBytes32();
+    it.skip("encrypts `payload` if the passed topic is known", async () => {
       const topic = await crypto.setSymKey(symKey);
-      const spy = Sinon.spy();
-      crypto.encrypt = spy;
-      crypto.encode(topic, payload);
-      const [calledTopic, calledMessage] = spy.getCall(0).args;
-      expect(calledTopic).to.equal(topic);
-      expect(calledMessage).to.equal(safeJsonStringify(payload));
+      // FIXME: needs to be tested dynamically because of random IV generation
+      await crypto.encode(topic, payload);
     });
   });
 
   describe("decode", () => {
+    const symKey = "5720435e682cd03ee45b484f9a213f0e3246a0ccc2cca183b72ab1cbfbefb702";
     const payload = { id: 1, jsonrpc: "2.0", result: "result" };
-    const hexPayload = encoding.utf8ToHex(safeJsonStringify(payload));
+    const encoded =
+      "AG7iJl9mMl9K04REnuWaKLQU6kwMcQWUd69OxGOJ5/A+VRRKkxnKhBeIAl4JRaIft3qZKEfnBvc7/Fife1DWcERqAfJwzPI=";
 
-    it("throws if not initialized", () => {
+    it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
-      expect(() => invalidCrypto.decode("topic", "encoded")).to.throw("Not initialized. crypto");
-    });
-    it("decodes `encoded` from hex to utf8 string if the passed topic is not known", () => {
-      const topic = utils.generateRandomBytes32();
-      const result = crypto.decode(topic, hexPayload);
-      expect(result).to.deep.equal(safeJsonParse(encoding.hexToUtf8(hexPayload)));
+      await expect(invalidCrypto.decode("topic", "encoded")).to.eventually.be.rejectedWith(
+        "Not initialized. crypto",
+      );
     });
     it("decrypts `payload` if the passed topic is known", async () => {
-      const symKey = utils.generateRandomBytes32();
       const topic = await crypto.setSymKey(symKey);
-      const spy = Sinon.spy(() => "message");
-      crypto.decrypt = spy;
-      crypto.decode(topic, hexPayload);
-      const [calledTopic, calledEncoded] = spy.getCall(0).args;
-      expect(calledTopic).to.equal(topic);
-      expect(calledEncoded).to.equal(hexPayload);
+      const decoded = await crypto.decode(topic, encoded);
+      expect(decoded).to.eql(payload);
     });
   });
 });
