@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "chai";
+import { expect, describe, it } from "vitest";
 
 import { calcExpiry, formatRelayRpcUrl } from "../src";
 import { hasOverlap } from "../dist/cjs";

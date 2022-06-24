@@ -18,13 +18,14 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
+    "help": "tsc --help",
     "build:pre": "run-s clean",
-    "build:cjs": "npx tsc -p tsconfig.cjs.json",
-    "build:umd": "webpack",
-    "build:esm": "npx tsc -p tsconfig.esm.json",
-    "build": "run-s build:pre build:cjs build:esm build:umd",
-    "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --exit -r ts-node/register ./test/**/*.spec.ts",
-    "watch": "tsc -p tsconfig.json --watch",
+    "build:types": "tsc",
+    "build:source": "vite build",
+    "build": "run-s build:pre build:source build:types",
+    "test:pre": "rm -rf ./test/test.db",
+    "test:run": "vitest run --dir test",
+    "test": "run-s test:pre test:run",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {

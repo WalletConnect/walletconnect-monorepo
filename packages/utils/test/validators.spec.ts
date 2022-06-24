@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "chai";
+import { expect, describe, it } from "vitest";
 import {
   TEST_CHAINS,
   TEST_ETHEREUM_CHAIN_A,

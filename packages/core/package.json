@@ -26,7 +26,6 @@
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "vitest run --dir test",
     "test": "run-s test:pre test:run",
-    "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
