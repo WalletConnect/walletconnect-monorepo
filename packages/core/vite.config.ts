@@ -14,6 +14,7 @@ export default defineConfig({
         exports: "named",
       },
     },
+
     outDir: resolve(__dirname, "dist"),
   },
 });

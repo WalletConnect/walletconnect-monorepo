@@ -3,7 +3,6 @@ import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import utils from "@walletconnect/utils";
 import pino from "pino";
 import Sinon from "sinon";
-
 import { Core, CORE_DEFAULT, Crypto } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";
 
