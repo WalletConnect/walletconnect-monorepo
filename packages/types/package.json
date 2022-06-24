@@ -6,17 +6,12 @@
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
   "main": "src/index.ts",
-  "browser": "src/index.ts",
   "types": "src/index.ts",
-  "unpkg": "src/index.ts",
   "keywords": [
     "wallet",
     "walletconnect"
   ],
   "scripts": {
-    "test:pre": "rm -rf ./test/test.db",
-    "test:run": "vitest run --dir test",
-    "test": "run-s test:pre test:run",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {

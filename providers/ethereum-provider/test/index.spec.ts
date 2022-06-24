@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "chai";
+import { describe, beforeAll, expect, it, afterAll } from "vitest";
 import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
@@ -28,7 +27,7 @@ describe("EthereumProvider", function() {
   let walletClient: WalletClient;
   let walletAddress: string;
   let receiverAddress: string;
-  before(async () => {
+  beforeAll(async () => {
     testNetwork = await TestNetwork.init({
       chainId: CHAIN_ID,
       port: PORT,
@@ -42,7 +41,7 @@ describe("EthereumProvider", function() {
     const providerAccounts = await provider.enable();
     expect(providerAccounts).to.eql([walletAddress]);
   });
-  after(async () => {
+  afterAll(async () => {
     // close test network
     await testNetwork.close();
     // disconnect provider
@@ -156,7 +155,7 @@ describe("EthereumProvider", function() {
   });
   describe("Web3", () => {
     let web3: Web3;
-    before(() => {
+    beforeAll(() => {
       web3 = new Web3(provider);
     });
     it("matches accounts", async () => {
@@ -248,7 +247,7 @@ describe("EthereumProvider", function() {
   });
   describe("Ethers", () => {
     let web3Provider: providers.Web3Provider;
-    before(() => {
+    beforeAll(() => {
       web3Provider = new providers.Web3Provider(provider);
     });
     it("matches accounts", async () => {

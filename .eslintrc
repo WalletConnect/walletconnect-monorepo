@@ -11,6 +11,8 @@
     "@typescript-eslint/no-unused-vars": ["off"],
     "@typescript-eslint/no-namespace": ["off"],
     "@typescript-eslint/ban-ts-comment": "off",
+    "camelcase": "off",
+    "no-unused-expressions": "off",
     "comma-dangle": ["error", "always-multiline"],
     "require-await": "warn",
     "no-async-promise-executor": ["off"],

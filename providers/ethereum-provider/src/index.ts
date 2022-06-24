@@ -135,12 +135,15 @@ class EthereumProvider implements IEthereumProvider {
   public on(event: any, listener: any): void {
     this.events.on(event, listener);
   }
+
   public once(event: string, listener: any): void {
     this.events.once(event, listener);
   }
+
   public removeListener(event: string, listener: any): void {
     this.events.removeListener(event, listener);
   }
+
   public off(event: string, listener: any): void {
     this.events.off(event, listener);
   }
