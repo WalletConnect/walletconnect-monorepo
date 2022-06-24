@@ -5,10 +5,10 @@
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
-  "main": "dist/cjs/index.js",
-  "browser": "dist/esm/index.js",
+  "main": "dist/index.cjs.js",
+  "browser": "dist/index.es.js",
   "types": "dist/cjs/index.d.ts",
-  "unpkg": "dist/umd/index.min.js",
+  "unpkg": "dist/index.umd.js",
   "files": [
     "dist"
   ],
@@ -20,10 +20,7 @@
     "clean": "rm -rf dist",
     "build:pre": "run-s clean",
     "help": "tsc --help",
-    "build:cjs": "npx tsc -p tsconfig.cjs.json",
-    "build:umd": "webpack",
-    "build:esm": "npx tsc -p tsconfig.esm.json",
-    "build": "run-s build:pre build:cjs build:esm build:umd",
+    "build": "run-s build:pre; vite build",
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 20000 --exit -r ts-node/register ./test/**/*.spec.ts",
     "test": "run-s test:pre test:run",
@@ -48,13 +45,6 @@
     "cross-fetch": "^3.1.5"
   },
   "devDependencies": {
-    "@babel/cli": "^7.12.1",
-    "@babel/core": "^7.12.3",
-    "@babel/node": "^7.12.1",
-    "@babel/polyfill": "^7.12.1",
-    "@babel/preset-env": "^7.12.1",
-    "@babel/preset-typescript": "^7.12.1",
-    "@babel/register": "^7.12.1",
     "@types/chai": "^4.2.14",
     "@types/chai-as-promised": "^7.1.0",
     "@types/jest": "^22.2.3",
@@ -82,7 +72,6 @@
     "sinon": "^9.2.2",
     "ts-node": "^9.0.0",
     "typescript": "^3.7.5",
-    "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
+    "vite": "2.9.12"
   }
 }
