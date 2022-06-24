@@ -5,38 +5,44 @@ on:
     branches:
       - v2.0
 
-jobs: 
-  build_lint_test:
+jobs:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: github.event.action == 'opened' || github.event.action == 'synchronize'
-
-    env:
-      TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
-      TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
-
     steps:
       - name: checkout
         uses: actions/checkout@v3
-
       - name: setup-node
         uses: actions/setup-node@v3
         with:
           node-version: 16.x
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
-      
       - name: install
         run: npm ci
-
       - name: bootstrap
         run: npm run bootstrap
-
       - name: build
         run: npm run build
+    
+  lint:
+    needs: build
+    steps:
+      run: npm run lint
 
-      - name: eslint
-        run: npm run lint
-
-      - name: test
-        run: npm run test
+  test:
+    needs: build
+    strategy:
+      matrix:
+        test-prefix:
+          - packages/sign-client
+          - packages/core
+          - packages/utils
+          - providers/ethereum-provider
+    env:
+      TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
+      TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
+    steps:
+      run: npm run test --prefix=${{ matrix.test-prefix }}
+    
