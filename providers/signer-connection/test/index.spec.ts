@@ -9,7 +9,7 @@
 
 // export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
 //   ? process.env.TEST_RELAY_URL
-//   : "ws://localhost:5555";
+//   : "ws://0.0.0.0:5555";
 
 // const TEST_JSONRPC_METHOD = "test_method";
 // const TEST_JSONRPC_REQUEST = { method: TEST_JSONRPC_METHOD, params: [] };

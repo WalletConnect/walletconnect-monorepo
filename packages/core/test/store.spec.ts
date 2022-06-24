@@ -1,8 +1,7 @@
 import "mocha";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import pino from "pino";
-
-import { Core, CORE_DEFAULT, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
+import { Core, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
 import { expect, TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
@@ -68,10 +67,10 @@ describe("Store", () => {
       await store.set(key, value);
       expect(await store.get(key)).to.equal(value);
     });
-    it("throws with expected error if passed an unknown key", async () => {
+    it("throws with expected error if passed an unknown key", () => {
       const unknownKey = "unknown";
       expect(() => store.get(unknownKey)).to.throw(
-        `No matching ${MOCK_STORE_NAME} with topic: ${unknownKey}`,
+        `No matching key. ${MOCK_STORE_NAME}: ${unknownKey}`,
       );
     });
   });

@@ -16,15 +16,17 @@ describe("Publisher", () => {
   let relayer: IRelayer;
   let publisher: Publisher;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const core = new Core(TEST_CORE_OPTIONS);
-    relayer = new Relayer({ core, logger });
+    await core.start();
+    relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
+    await relayer.init();
     publisher = new Publisher(relayer, logger);
   });
 
   describe("init", () => {
     it("registers event listeners", () => {
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "waku" } };
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" } };
       const itemA = { topic: generateRandomBytes32(), message: "itemA", opts };
       const itemB = { topic: generateRandomBytes32(), message: "itemB", opts };
       const requestSpy = Sinon.spy();
@@ -59,7 +61,7 @@ describe("Publisher", () => {
       await publisher.publish(topic, message);
       expect(requestSpy.callCount).to.equal(1);
       expect(requestSpy.getCall(0).args[0]).to.deep.equal({
-        method: "waku_publish",
+        method: "iridium_publish",
         params: {
           topic,
           message,
@@ -70,11 +72,11 @@ describe("Publisher", () => {
     });
     it("allows overriding of defaults via `opts` param", async () => {
       const message = "test message";
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "waku" } };
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" } };
       await publisher.publish(topic, message, opts);
       expect(requestSpy.callCount).to.equal(1);
       expect(requestSpy.getCall(0).args[0]).to.deep.equal({
-        method: "waku_publish",
+        method: "iridium_publish",
         params: {
           topic,
           message,

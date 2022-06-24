@@ -35,16 +35,18 @@
     "@walletconnect/events": "^1.0.0",
     "@walletconnect/heartbeat": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.3",
-    "@walletconnect/jsonrpc-utils": "^1.0.1",
+    "@walletconnect/jsonrpc-utils": "1.0.3",
     "@walletconnect/jsonrpc-ws-connection": "^1.0.0",
     "@walletconnect/keyvaluestorage": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
-    "@walletconnect/relay-api": "^1.0.2",
+    "@walletconnect/relay-api": "1.0.4",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/time": "^1.0.1",
     "@walletconnect/types": "^2.0.0-beta.101",
     "@walletconnect/utils": "^2.0.0-beta.101",
-    "ws": "^8.3.0"
+    "@walletconnect/relay-auth": "1.0.0",
+    "ws": "^8.3.0",
+    "cross-fetch": "^3.1.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
