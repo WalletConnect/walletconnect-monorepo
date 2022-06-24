@@ -45,28 +45,5 @@
     "@walletconnect/relay-auth": "1.0.0",
     "ws": "^8.3.0",
     "cross-fetch": "^3.1.5"
-  },
-  "devDependencies": {
-    "@types/node": "^14.14.2",
-    "@types/pino": "^6.3.3",
-    "@types/sinon": "^4.3.1",
-    "@typescript-eslint/eslint-plugin": "^2.24.0",
-    "@typescript-eslint/parser": "^2.24.0",
-    "core-js": "^3.6.5",
-    "eslint": "^5.16.0",
-    "eslint-config-prettier": "^6.10.0",
-    "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.20.1",
-    "eslint-plugin-node": "^9.2.0",
-    "eslint-plugin-prettier": "^3.1.2",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-react": "^7.19.0",
-    "eslint-plugin-standard": "^4.0.1",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^1.19.1",
-    "sinon": "^9.2.2",
-    "typescript": "4.7.4",
-    "vite": "2.9.12",
-    "vitest": "0.15.2"
   }
 }

@@ -68,9 +68,7 @@ describe("Subscriber", () => {
 
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
-      await expect(subscriber.subscribe(topic)).to.eventually.be.rejectedWith(
-        "Not initialized. subscription",
-      );
+      await expect(subscriber.subscribe(topic)).rejects.toThrow("Not initialized. subscription");
     });
     it("calls `provider.request` with the expected request shape", async () => {
       await subscriber.subscribe(topic);
@@ -105,9 +103,7 @@ describe("Subscriber", () => {
     });
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
-      await expect(subscriber.unsubscribe(topic)).to.eventually.be.rejectedWith(
-        "Not initialized. subscription",
-      );
+      await expect(subscriber.unsubscribe(topic)).rejects.toThrow("Not initialized. subscription");
     });
     it("unsubscribes by individual id if `opts.id` is provided", async () => {
       const id = "test-id";

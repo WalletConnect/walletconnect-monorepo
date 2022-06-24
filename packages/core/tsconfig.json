@@ -3,7 +3,6 @@
   "include": ["./src/**/*"],
   "compilerOptions": {
     "outDir": "./dist/types",
-    "emitDeclarationOnly": true,
-    "types": ["vitest/globals"]
+    "emitDeclarationOnly": true
   }
 }
