@@ -6,30 +6,35 @@ on:
       - v2.0
 
 jobs: 
-  build:
+  checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: github.event.action == 'opened' || github.event.action == 'synchronize'
+
+    env:
+      TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
+      TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: setup-node
+        uses: actions/setup-node@v3
         with:
           node-version: 18.x
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
-      - run: npm ci
-      - run: npm run bootstrap
-      - run: npm run build
-    
-    eslint:
-      needs: build
-      steps:
-        - run: npm run lint
+      
+      - name: install
+        run: npm ci
+        run: npm run bootstrap
 
-    test:
-      needs: build
-      env:
-        TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
-        TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
-      steps:
-        - run: npm run test
+      - name: build
+        run: npm run build
+
+      - name: eslint
+        run: npm run lint
+
+      - name: test
+        run: npm run test
