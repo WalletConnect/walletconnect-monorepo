@@ -144,7 +144,7 @@ describe("Crypto", () => {
         "Not initialized. crypto",
       );
     });
-    it("encrypts `payload` if the passed topic is known", async () => {
+    it.skip("encrypts `payload` if the passed topic is known", async () => {
       const topic = await crypto.setSymKey(symKey);
       // const spy = Sinon.spy();
       // crypto.encrypt = spy;
