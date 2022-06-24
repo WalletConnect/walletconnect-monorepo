@@ -1,4 +1,4 @@
-import "mocha";
+import { expect, describe, it, beforeEach } from "vitest";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
 import pino from "pino";
@@ -11,7 +11,7 @@ import {
   MESSAGES_STORAGE_VERSION,
   MessageTracker,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Messages", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));

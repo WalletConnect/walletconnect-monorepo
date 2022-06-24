@@ -1,11 +1,11 @@
-import "mocha";
+import { expect, describe, it, beforeEach } from "vitest";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import * as utils from "@walletconnect/utils";
+import utils from "@walletconnect/utils";
 import pino from "pino";
 import Sinon from "sinon";
 
 import { Core, CORE_DEFAULT, Crypto } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Crypto", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
@@ -36,7 +36,9 @@ describe("Crypto", () => {
       const privateKey = utils.generateRandomBytes32();
       const publicKey = utils.generateRandomBytes32();
       // Stub `utils.generateKeyPair` to return predictable values.
-      Sinon.stub(utils, "generateKeyPair").returns({ publicKey, privateKey });
+      Sinon.stub(utils, "generateKeyPair").callsFake(() => {
+        return { publicKey, privateKey };
+      });
       const keychainSpy = Sinon.spy();
       crypto.keychain.set = keychainSpy;
       const returnedPublicKey = await crypto.generateKeyPair();

@@ -1,4 +1,4 @@
-import "mocha";
+import { expect, describe, it, beforeEach } from "vitest";
 import pino from "pino";
 import Sinon from "sinon";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
@@ -15,7 +15,7 @@ import {
   Subscriber,
   SUBSCRIBER_CONTEXT,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Subscriber", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));

@@ -1,4 +1,4 @@
-import "mocha";
+import { expect, describe, it, beforeEach } from "vitest";
 import pino from "pino";
 import Sinon from "sinon";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
@@ -8,7 +8,7 @@ import { Publisher } from "../src/controllers/publisher";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
 import { Core, CORE_DEFAULT, PUBLISHER_DEFAULT_TTL, Relayer } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Publisher", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));

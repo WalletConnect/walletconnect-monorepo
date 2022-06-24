@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "main": "dist/index.cjs.js",
   "browser": "dist/index.es.js",
-  "types": "dist/cjs/index.d.ts",
+  "types": "dist/types/src/index.d.ts",
   "unpkg": "dist/index.umd.js",
   "files": [
     "dist"
@@ -18,11 +18,13 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build:pre": "run-s clean",
     "help": "tsc --help",
-    "build": "run-s build:pre; vite build",
+    "build:pre": "run-s clean",
+    "build:types": "tsc",
+    "build:source": "vite build",
+    "build": "run-s build:pre build:source build:types",
     "test:pre": "rm -rf ./test/test.db",
-    "test:run": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 20000 --exit -r ts-node/register ./test/**/*.spec.ts",
+    "test:run": "vitest run --dir test",
     "test": "run-s test:pre test:run",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
@@ -45,17 +47,11 @@
     "cross-fetch": "^3.1.5"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.14",
-    "@types/chai-as-promised": "^7.1.0",
-    "@types/jest": "^22.2.3",
-    "@types/mocha": "^8.0.4",
     "@types/node": "^14.14.2",
     "@types/pino": "^6.3.3",
     "@types/sinon": "^4.3.1",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
     "core-js": "^3.6.5",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^6.10.0",
@@ -66,12 +62,11 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-standard": "^4.0.1",
-    "mocha": "^8.2.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.19.1",
     "sinon": "^9.2.2",
-    "ts-node": "^9.0.0",
-    "typescript": "^3.7.5",
-    "vite": "2.9.12"
+    "typescript": "4.7.4",
+    "vite": "2.9.12",
+    "vitest": "0.15.2"
   }
 }

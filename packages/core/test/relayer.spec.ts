@@ -1,4 +1,4 @@
-import "mocha";
+import { expect, describe, it, beforeEach } from "vitest";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import pino from "pino";
@@ -11,7 +11,7 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IRelayer } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
