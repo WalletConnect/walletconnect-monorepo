@@ -5,8 +5,7 @@ import * as relayAuth from "@walletconnect/relay-auth";
 import { fromString } from "uint8arrays/from-string";
 import {
   decrypt,
-  deriveSharedKey,
-  deriveSymmetricKey,
+  deriveSymKey,
   encrypt,
   generateKeyPair as generateKeyPairUtil,
   hashKey,
@@ -76,9 +75,8 @@ export class Crypto implements ICrypto {
     overrideTopic,
   ) => {
     this.isInitialized();
-    const privateKey = this.getPrivateKey(selfPublicKey);
-    const sharedKey = deriveSharedKey(privateKey, peerPublicKey);
-    const symKey = deriveSymmetricKey(sharedKey);
+    const selfPrivateKey = this.getPrivateKey(selfPublicKey);
+    const symKey = deriveSymKey(selfPrivateKey, peerPublicKey);
     return this.setSymKey(symKey, overrideTopic);
   };
 

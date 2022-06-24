@@ -57,9 +57,7 @@ describe("Crypto", () => {
       const peerPublicKey = utils.generateRandomBytes32();
       const selfPublicKey = await crypto.generateKeyPair();
       const selfPrivateKey = crypto.keychain.get(selfPublicKey);
-      const expectedSymKey = utils.deriveSymmetricKey(
-        utils.deriveSharedKey(selfPrivateKey, peerPublicKey),
-      );
+      const expectedSymKey = utils.deriveSymKey(selfPrivateKey, peerPublicKey);
       const spy = Sinon.spy();
       crypto.setSymKey = spy;
       await crypto.generateSharedKey(selfPublicKey, peerPublicKey, overrideTopic);
