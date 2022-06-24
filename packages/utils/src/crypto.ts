@@ -152,7 +152,7 @@ export function validateEncoding(opts?: CryptoTypes.EncodeOptions): CryptoTypes.
   };
 }
 
-export function isTypeOneEvelope(
+export function isTypeOneEnvelope(
   result: CryptoTypes.EncodingValidation,
 ): result is CryptoTypes.TypeOneParams {
   return (

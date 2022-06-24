@@ -13,7 +13,7 @@ import {
   generateRandomBytes32,
   validateEncoding,
   validateDecoding,
-  isTypeOneEvelope,
+  isTypeOneEnvelope,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
@@ -101,7 +101,7 @@ export class Crypto implements ICrypto {
     this.isInitialized();
     const params = validateEncoding(opts);
     const message = safeJsonStringify(payload);
-    if (isTypeOneEvelope(params)) {
+    if (isTypeOneEnvelope(params)) {
       topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
     }
     const symKey = this.getSymKey(topic);
@@ -113,7 +113,7 @@ export class Crypto implements ICrypto {
   public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
     this.isInitialized();
     const params = validateDecoding(encoded, opts);
-    if (isTypeOneEvelope(params)) {
+    if (isTypeOneEnvelope(params)) {
       topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
     }
     const symKey = this.getSymKey(topic);

@@ -13,7 +13,7 @@ import {
   hashKey,
   hashMessage,
   validateDecoding,
-  isTypeOneEvelope,
+  isTypeOneEnvelope,
 } from "../src";
 
 import { TEST_KEY_PAIRS, TEST_SHARED_KEY, TEST_HASHED_KEY, TEST_SYM_KEY } from "./shared";
@@ -95,8 +95,8 @@ describe("Crypto", () => {
     const params = validateDecoding(encoded, {
       receiverPublicKey: TEST_PEER.publicKey,
     });
-    expect(isTypeOneEvelope(params)).to.eql(true);
-    if (!isTypeOneEvelope(params)) return;
+    expect(isTypeOneEnvelope(params)).to.eql(true);
+    if (!isTypeOneEnvelope(params)) return;
     expect(params.type).to.eql(1);
     expect(params.senderPublicKey).to.eql(TEST_SELF.publicKey);
     expect(params.receiverPublicKey).to.eql(TEST_PEER.publicKey);
