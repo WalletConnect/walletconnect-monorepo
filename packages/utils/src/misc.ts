@@ -137,7 +137,7 @@ export function formatMessageContext(context: string): string {
 // -- array ------------------------------------------------- //
 
 export function hasOverlap(a: any[], b: any[]): boolean {
-  const matches = a.filter(x => b.includes(x));
+  const matches = a.filter((x) => b.includes(x));
   return matches.length === a.length;
 }
 
@@ -160,7 +160,7 @@ export function mapEntries<A = any, B = any>(
   cb: (x: A) => B,
 ): Record<string, B> {
   const res = {};
-  Object.keys(obj).forEach(key => {
+  Object.keys(obj).forEach((key) => {
     res[key] = cb(obj[key]);
   });
   return res;
@@ -174,13 +174,13 @@ export const enumify = <T extends { [index: string]: U }, U extends string>(x: T
 // -- string ------------------------------------------------- //
 
 export function capitalizeWord(word: string) {
-  return word.trim().replace(/^\w/, c => c.toUpperCase());
+  return word.trim().replace(/^\w/, (c) => c.toUpperCase());
 }
 
 export function capitalize(str: string) {
   return str
     .split(EMPTY_SPACE)
-    .map(w => capitalizeWord(w))
+    .map((w) => capitalizeWord(w))
     .join(EMPTY_SPACE);
 }
 
@@ -197,7 +197,7 @@ export function isExpired(expiry: number) {
 // -- promises --------------------------------------------- //
 export function createDelayedPromise<T>() {
   const timeout = toMiliseconds(FIVE_MINUTES);
-  let cacheResolve: undefined | ((value?: T) => void);
+  let cacheResolve: undefined | ((value: T | PromiseLike<T>) => void);
   let cacheReject: undefined | ((value?: ErrorResponse) => void);
   let cacheTimeout: undefined | NodeJS.Timeout;
 
@@ -210,7 +210,7 @@ export function createDelayedPromise<T>() {
   const resolve = (value?: T) => {
     if (cacheTimeout && cacheResolve) {
       clearTimeout(cacheTimeout);
-      cacheResolve(value);
+      cacheResolve(value as T);
     }
   };
   const reject = (value?: ErrorResponse) => {
@@ -232,12 +232,14 @@ export function createDelayedPromise<T>() {
 export function formatExpirerTarget(type: "topic" | "id", value: string | number): string {
   if (typeof value === "string" && value.startsWith(`${type}:`)) return value;
   if (type.toLowerCase() === "topic") {
-    if (typeof value !== "string")
+    if (typeof value !== "string") {
       throw new Error(`Value must be "string" for expirer target type: topic`);
+    }
     return `topic:${value}`;
   } else if (type.toLowerCase() === "id") {
-    if (typeof value !== "number")
+    if (typeof value !== "number") {
       throw new Error(`Value must be "number" for expirer target type: id`);
+    }
     return `id:${value}`;
   }
   throw new Error(`Unknown expirer target type: ${type}`);

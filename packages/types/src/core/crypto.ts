@@ -48,7 +48,7 @@ export declare namespace CryptoTypes {
     senderPublicKey?: string;
     receiverPublicKey?: string;
   }
-  
+
   export interface TypeOneParams {
     type: 1;
     senderPublicKey: string;
