@@ -28,11 +28,13 @@ jobs:
     
   lint:
     needs: build
+    runs-on: ubuntu-latest
     steps:
       - run: npm run lint
 
   test:
     needs: build
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         test-prefix:
