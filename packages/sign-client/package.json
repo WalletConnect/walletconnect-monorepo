@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "main": "dist/index.umd.js",
   "module": "dist/index.es.js",
-  "types": "dist/types/src/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.es.js",

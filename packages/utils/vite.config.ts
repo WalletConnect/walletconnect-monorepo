@@ -6,8 +6,13 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
       name: "@walletconnect/utils",
-      formats: ["cjs", "es", "umd"],
+      formats: ["es", "umd"],
       fileName: "index",
+    },
+    rollupOptions: {
+      output: {
+        exports: "named",
+      },
     },
     outDir: resolve(__dirname, "dist"),
   },

@@ -1,2 +1,6 @@
-import { SignClient } from "./client";
-export default SignClient;
+import { SignClient as Client } from "./client";
+
+export * from "./constants";
+
+export const SignClient = Client;
+export default Client;

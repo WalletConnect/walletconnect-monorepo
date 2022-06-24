@@ -9,7 +9,11 @@ export default defineConfig({
       formats: ["es", "umd"],
       fileName: "index",
     },
-
+    rollupOptions: {
+      output: {
+        exports: "named",
+      },
+    },
     outDir: resolve(__dirname, "dist"),
   },
 });
