@@ -33,3 +33,4 @@ test.db-journal
 setup
 result*
 ops/grafana/grafana.ini
+.rollup.cache
