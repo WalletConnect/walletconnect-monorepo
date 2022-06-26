@@ -1,5 +1,5 @@
-import { resolve } from "path";
 import { defineConfig } from "vite";
+import nodePolyfills from "rollup-plugin-polyfill-node";
 
 interface IConfigOptions {
   name: string;
@@ -21,6 +21,7 @@ export default function createConfig({ name, entry, outDir }: IConfigOptions) {
         output: {
           exports: "named",
         },
+        plugins: [nodePolyfills({ include: ["events"] })],
       },
 
       outDir,

@@ -13,6 +13,7 @@ import {
   hashMessage,
   validateDecoding,
   isTypeOneEnvelope,
+  generateRandomBytes32,
 } from "../src";
 
 import { TEST_KEY_PAIRS, TEST_SHARED_KEY, TEST_HASHED_KEY, TEST_SYM_KEY } from "./shared";
@@ -24,8 +25,8 @@ const TEST_MESSAGE = safeJsonStringify({
   params: {},
 });
 
-const TEST_SELF = TEST_KEY_PAIRS["A"];
-const TEST_PEER = TEST_KEY_PAIRS["B"];
+const TEST_SELF = TEST_KEY_PAIRS.A;
+const TEST_PEER = TEST_KEY_PAIRS.B;
 
 const TEST_IV = "717765636661617364616473";
 
@@ -103,5 +104,8 @@ describe("Crypto", () => {
     expect(symKey).to.eql(TEST_SYM_KEY);
     const decrypted = decrypt({ symKey, encoded });
     expect(decrypted).to.eql(TEST_MESSAGE);
+  });
+  it("calls generateRandomBytes32", () => {
+    expect(generateRandomBytes32()).toBeTruthy();
   });
 });
