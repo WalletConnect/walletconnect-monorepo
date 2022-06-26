@@ -97,7 +97,7 @@ describe("Validators", () => {
     expect(
       isSessionCompatible(TEST_SESSION, {
         requiredNamespaces: {
-          ["cosmos"]: {
+          cosmos: {
             chains: TEST_CHAINS,
             methods: TEST_METHODS,
             events: TEST_EVENTS,
