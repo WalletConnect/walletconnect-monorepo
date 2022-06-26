@@ -40,9 +40,6 @@
   "bugs": {
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
-  "dependencies": {
-    "events": "3.3.0"
-  },
   "devDependencies": {
     "lerna": "5.1.6",
     "npm-run-all": "4.1.5",
@@ -64,6 +61,7 @@
     "eslint-plugin-react": "7.30.1",
     "eslint-plugin-standard": "5.0.0",
     "prettier": "2.7.1",
-    "sinon": "14.0.0"
+    "sinon": "14.0.0",
+    "rollup-plugin-polyfill-node": "0.9.0"
   }
 }
