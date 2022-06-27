@@ -1,7 +1,7 @@
 import esbuild from "rollup-plugin-esbuild";
 import nodePolyfills from "rollup-plugin-polyfill-node";
 
-export default function createConfig(name) {
+export default function createConfig(name, dependencies) {
   return {
     input: "./src/index.ts",
     output: [

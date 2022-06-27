@@ -21,13 +21,11 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
       - name: build
         run: npm run build
       - uses: actions/upload-artifact@v3
         with:
-          name: build-artifact
+          name: build-artifacts
           path: |
             packages/core/dist
             packages/sign-client/dist
@@ -49,8 +47,6 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
       - name: eslint
         run: npm run lint
 
@@ -78,9 +74,7 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
       - uses: actions/download-artifact@v3
         with:
-          name: build-artifact
+          name: build-artifacts
       - run: npm run test --prefix=${{ matrix.test-prefix }}
