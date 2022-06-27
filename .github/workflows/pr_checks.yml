@@ -25,16 +25,16 @@ jobs:
         run: npm run bootstrap
       - name: build
         run: npm run build
-      - uses: actions/upload-artifact@v3
-        with:
-          name: build-artifact
-          path: |
-            packages/core/dist
-            packages/sign-client/dist
-            packages/types/dist
-            packages/utils/dist
-            providers/ethereum-provider/dist
-            providers/signer-connection/dist
+      # - uses: actions/upload-artifact@v3
+      #   with:
+      #     name: build-artifact
+      #     path: |
+      #       packages/core/dist
+      #       packages/sign-client/dist
+      #       packages/types/dist
+      #       packages/utils/dist
+      #       providers/ethereum-provider/dist
+      #       providers/signer-connection/dist
 
   lint:
     runs-on: ubuntu-latest
@@ -54,33 +54,33 @@ jobs:
       - name: eslint
         run: npm run lint
 
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        test-prefix:
-          - packages/sign-client
-          - packages/core
-          - packages/utils
-          - providers/ethereum-provider
-    env:
-      TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
-      TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: setup-node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-          cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
-      - name: install
-        run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
-      - uses: actions/download-artifact@v3
-        with:
-          name: build-artifact
-      - run: npm run test --prefix=${{ matrix.test-prefix }}
+  # test:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       test-prefix:
+  #         - packages/sign-client
+  #         - packages/core
+  #         - packages/utils
+  #         - providers/ethereum-provider
+  #   env:
+  #     TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
+  #     TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v3
+  #     - name: setup-node
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16.x
+  #         cache: "npm"
+  #         cache-dependency-path: "**/package-lock.json"
+  #     - name: install
+  #       run: npm ci
+  #     - name: bootstrap
+  #       run: npm run bootstrap
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: build-artifact
+  #     - run: npm run test --prefix=${{ matrix.test-prefix }}
