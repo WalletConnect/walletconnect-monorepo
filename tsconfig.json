@@ -34,5 +34,5 @@
     "suppressImplicitAnyIndexErrors": true,
     "target": "ES2020"
   },
-  "include": ["**/package.json"]
+  "include": ["**/package.json", "packages", "providers"]
 }

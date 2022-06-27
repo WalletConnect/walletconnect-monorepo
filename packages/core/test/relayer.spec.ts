@@ -91,8 +91,10 @@ describe("Relayer", () => {
     });
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
       const spy = Sinon.spy(() => "mock-id");
+      // @ts-expect-error
       relayer.subscriber.subscribe = spy;
       const id = await relayer.subscribe("abc123");
+      // @ts-expect-error
       expect(spy.calledOnceWith("abc123")).to.be.true;
       expect(id).to.eq("mock-id");
     });

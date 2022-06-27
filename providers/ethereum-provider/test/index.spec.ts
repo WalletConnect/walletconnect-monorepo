@@ -20,8 +20,7 @@ import {
   TEST_SIGN_TRANSACTION,
 } from "./shared/constants";
 
-describe("EthereumProvider", function() {
-  this.timeout(30_000);
+describe("EthereumProvider", function () {
   let testNetwork: TestNetwork;
   let provider: EthereumProvider;
   let walletClient: WalletClient;
@@ -46,12 +45,12 @@ describe("EthereumProvider", function() {
     await testNetwork.close();
     // disconnect provider
     await Promise.all([
-      new Promise<void>(resolve => {
+      new Promise<void>((resolve) => {
         provider.on("disconnect", () => {
           resolve();
         });
       }),
-      new Promise<void>(async resolve => {
+      new Promise<void>(async (resolve) => {
         await walletClient.disconnect();
         resolve();
       }),

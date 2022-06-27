@@ -5,21 +5,33 @@
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "unpkg": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "wallet",
     "walletconnect"
   ],
   "scripts": {
+    "clean": "rm -rf dist",
+    "help": "tsc --help",
+    "build:pre": "npm run clean",
+    "build:types": "tsc",
+    "build:source": "rollup --config rollup.config.js",
+    "build": "npm run build:pre; npm run build:source; npm run build:types",
+    "test:pre": "echo 'not required'",
+    "test:run": "echo 'not required'",
+    "test": "echo 'not required'",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
     "@walletconnect/events": "1.0.0",
     "@walletconnect/heartbeat": "1.0.0",
     "@walletconnect/jsonrpc-types": "1.0.1",
-    "@walletconnect/keyvaluestorage": "1.0.0",
-    "pino": "6.7.0",
-    "pino-pretty": "4.3.0"
+    "@walletconnect/keyvaluestorage": "1.0.0"
   }
 }

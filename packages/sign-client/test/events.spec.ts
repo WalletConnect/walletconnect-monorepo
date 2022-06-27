@@ -42,6 +42,7 @@ describe("Sign Client Events Validation", () => {
 
       const uriParams = parseUri(uri);
 
+      // eslint-disable-next-line prefer-const
       pairingA = A.pairing.get(uriParams.topic);
       expect(pairingA.topic).to.eql(uriParams.topic);
       expect(pairingA.relay).to.eql(uriParams.relay);
@@ -53,7 +54,7 @@ describe("Sign Client Events Validation", () => {
 
       await Promise.all([
         new Promise<void>((resolve, reject) => {
-          B.once("session_proposal", async proposal => {
+          B.once("session_proposal", async (proposal) => {
             try {
               expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
               const { acknowledged } = await B.approve({
@@ -141,7 +142,7 @@ describe("Sign Client Events Validation", () => {
 
       await new Promise<void>(async (resolve, reject) => {
         try {
-          clients.B.once("session_ping", event => {
+          clients.B.once("session_ping", (event) => {
             expect(sessionA.topic).to.eql(event.topic);
             resolve();
           });
@@ -174,7 +175,7 @@ describe("Sign Client Events Validation", () => {
 
       await new Promise<void>(async (resolve, reject) => {
         try {
-          clients.B.on("session_event", event => {
+          clients.B.on("session_event", (event) => {
             expect(TEST_EMIT_PARAMS).to.eql(event.params);
             expect(eventPayload.topic).to.eql(event.topic);
             resolve();
@@ -207,7 +208,7 @@ describe("Sign Client Events Validation", () => {
 
       await new Promise<void>(async (resolve, reject) => {
         try {
-          clients.B.on("session_delete", event => {
+          clients.B.on("session_delete", (event) => {
             expect(eventPayload.topic).to.eql(event.topic);
             resolve();
           });

@@ -64,8 +64,10 @@ export class WalletClient {
 
   private setAccount(privateKey: string) {
     if (!this.namespaces?.eip155) return;
-    if (!this.namespaces.eip155.events.includes("accountsChanged"))
+    if (!this.namespaces.eip155.events.includes("accountsChanged")) {
       this.namespaces.eip155.events.push("accountsChanged");
+    }
+
     this.signer = this.getWallet(privateKey);
     const { accounts } = this.namespaces.eip155;
     const caipAddress = `eip155:${this.chainId}:${this.signer.address}`;
@@ -77,10 +79,12 @@ export class WalletClient {
     if (this.chainId !== chainId) {
       this.chainId = chainId;
       const chains = getChainsFromAccounts(this.namespaces.eip155.accounts);
-      if (!chains.includes(`eip155:${chainId}`))
+      if (!chains.includes(`eip155:${chainId}`)) {
         this.namespaces.eip155.accounts.push(`eip155:${chainId}:${this.accounts[0]}`);
-      if (!this.namespaces.eip155.events.includes("chainChanged"))
+      }
+      if (!this.namespaces.eip155.events.includes("chainChanged")) {
         this.namespaces.eip155.events.push("chainChanged");
+      }
     }
     if (this.rpcUrl !== rpcUrl) {
       this.rpcUrl = rpcUrl;
@@ -175,11 +179,11 @@ export class WalletClient {
           namespaces[key] = {
             methods: value.methods,
             events: value.events,
-            accounts: value.chains.map(chain => `${chain}:${this.accounts[0]}`),
-            extension: value.extension?.map(ext => ({
+            accounts: value.chains.map((chain) => `${chain}:${this.accounts[0]}`),
+            extension: value.extension?.map((ext) => ({
               methods: ext.methods,
               events: ext.events,
-              accounts: ext.chains.map(chain => `${chain}:${this.accounts[0]}`),
+              accounts: ext.chains.map((chain) => `${chain}:${this.accounts[0]}`),
             })),
           };
         });
@@ -260,7 +264,7 @@ export class WalletClient {
 
           const response = formatJsonRpcResult(id, result);
           await this.client.respond({ topic, response });
-        } catch (e) {
+        } catch (e: any) {
           const message = e.message || e.toString();
           const response = formatJsonRpcError(id, message);
           await this.client.respond({ topic, response });

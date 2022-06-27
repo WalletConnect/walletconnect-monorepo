@@ -1,4 +1,5 @@
 import esbuild from "rollup-plugin-esbuild";
+import nodePolyfills from "rollup-plugin-polyfill-node";
 
 export default function createConfig(name) {
   return {
@@ -9,9 +10,12 @@ export default function createConfig(name) {
       { file: "./dist/index.umd.js", format: "umd", exports: "named", name },
     ],
     plugins: [
+      nodePolyfills({
+        include: ["events"],
+      }),
       esbuild({
         minify: true,
-        tsconfig: "./tsconfig.json"
+        tsconfig: "./tsconfig.json",
       }),
     ],
   };
