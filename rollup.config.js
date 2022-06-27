@@ -1,22 +1,33 @@
 import esbuild from "rollup-plugin-esbuild";
 import nodePolyfills from "rollup-plugin-polyfill-node";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import json from "@rollup/plugin-json";
 
-export default function createConfig(name, dependencies) {
-  return {
-    input: "./src/index.ts",
-    output: [
-      { file: "./dist/index.cjs.js", format: "cjs", exports: "named", name },
-      { file: "./dist/index.es.js", format: "es", exports: "named", name },
-      { file: "./dist/index.umd.js", format: "umd", exports: "named", name },
-    ],
-    plugins: [
-      nodePolyfills({
-        include: ["events"],
-      }),
-      esbuild({
-        minify: true,
-        tsconfig: "./tsconfig.json",
-      }),
-    ],
-  };
+const coreConfig = {
+  input: "./src/index.ts",
+  plugins: [
+    nodePolyfills(),
+    esbuild({
+      minify: true,
+      tsconfig: "./tsconfig.json",
+    }),
+  ],
+};
+
+export default function createConfig(name) {
+  return [
+    {
+      ...coreConfig,
+      plugins: [nodeResolve(), commonjs(), json(), ...coreConfig.plugins],
+      output: { file: "./dist/index.umd.js", format: "umd", exports: "named", name },
+    },
+    {
+      ...coreConfig,
+      output: [
+        { file: "./dist/index.cjs.js", format: "cjs", exports: "named", name },
+        { file: "./dist/index.es.js", format: "es", exports: "named", name },
+      ],
+    },
+  ];
 }
