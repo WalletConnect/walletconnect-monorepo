@@ -193,7 +193,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await testConnectMethod(clients);
       // Adjusted due to tests sometimes being ahead by 1s
-      const newExpiry = calcExpiry(SEVEN_DAYS) - 10;
+      const newExpiry = calcExpiry(SEVEN_DAYS) - 60;
       const { acknowledged } = await clients.A.extend({
         topic,
       });
