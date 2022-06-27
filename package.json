@@ -18,8 +18,12 @@
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
   "workspaces": [
-    "packages/*",
-    "providers/*"
+    "packages/types",
+    "packages/utils",
+    "packages/core",
+    "packages/sign-client",
+    "providers/signer-connection",
+    "providers/ethereum-provider"
   ],
   "scripts": {
     "clean": "npm run clean --workspaces",
