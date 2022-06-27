@@ -2,7 +2,7 @@ import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
-import { fromString } from "uint8arrays/from-string";
+import { fromString } from "uint8arrays";
 import {
   decrypt,
   deriveSymKey,
@@ -42,7 +42,7 @@ export class Crypto implements ICrypto {
     return getLoggerContext(this.logger);
   }
 
-  public hasKeys: ICrypto["hasKeys"] = tag => {
+  public hasKeys: ICrypto["hasKeys"] = (tag) => {
     this.isInitialized();
     return this.keychain.has(tag);
   };
@@ -61,7 +61,7 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public signJWT: ICrypto["signJWT"] = async subject => {
+  public signJWT: ICrypto["signJWT"] = async (subject) => {
     this.isInitialized();
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);
