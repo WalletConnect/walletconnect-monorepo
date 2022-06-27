@@ -173,7 +173,7 @@ describe("Sign Client Events Validation", () => {
         ...TEST_EMIT_PARAMS,
       };
 
-      await new Promise<void>(async (resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         try {
           clients.B.on("session_event", (event) => {
             expect(TEST_EMIT_PARAMS).to.eql(event.params);
@@ -206,7 +206,7 @@ describe("Sign Client Events Validation", () => {
         ...TEST_EMIT_PARAMS,
       };
 
-      await new Promise<void>(async (resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         try {
           clients.B.on("session_delete", (event) => {
             expect(eventPayload.topic).to.eql(event.topic);

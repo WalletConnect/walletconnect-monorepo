@@ -43,6 +43,7 @@
     "@walletconnect/types": "2.0.0-beta.101",
     "@walletconnect/utils": "2.0.0-beta.101",
     "cross-fetch": "^3.1.5",
-    "ws": "8.8.0"
+    "ws": "8.8.0",
+    "lodash.isequal": "4.5.0"
   }
 }
