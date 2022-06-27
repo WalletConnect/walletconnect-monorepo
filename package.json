@@ -17,21 +17,21 @@
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
+  "workspaces": ["packages/*", "providers/*"],
   "scripts": {
-    "clean": "lerna clean --yes",
-    "bootstrap": "lerna bootstrap --hoist",
-    "lint": "lerna run lint",
-    "build": "lerna run build",
-    "test": "lerna run test",
-    "check": "run-s lint build test",
-    "reset": "run-s clean bootstrap check",
+    "clean": "npm run clean --workspaces",
+    "lint": "npm run lint --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "check": "npm run lint; npm run build; npm run test",
+    "reset": "npm run clean; npm run bootstrap; npm run check",
     "commit-version": "node ops/js/commit-version.js",
-    "new-version": "lerna version --no-git-tag-version",
-    "pre-publish": "run-s new-version reset commit-version",
-    "npm-publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
-    "npm-publish:canary": "lerna exec -- npm publish --access public --tag canary",
-    "publish:experimental": "run-s pre-publish npm-publish:experimental",
-    "publish:canary": "run-s pre-publish npm-publish:canary"
+    "new-version": "echo 'todo'",
+    "pre-publish": "npm run new-version; npm run reset; npm run commit-version",
+    "npm-publish:experimental": "npm publish --workspaces --access public --tag experimental",
+    "npm-publish:canary": "npm publish --workspaces --access public --tag canary",
+    "publish:experimental": "npm run pre-publish; npm run npm-publish:experimental",
+    "publish:canary": "npm run pre-publish; npm run npm-publish:canary"
   },
   "repository": {
     "type": "git",
@@ -44,8 +44,6 @@
     "events": "3.3.0"
   },
   "devDependencies": {
-    "lerna": "5.1.6",
-    "npm-run-all": "4.1.5",
     "typescript": "4.7.4",
     "vitest": "0.16.0",
     "@types/node": "18.0.0",

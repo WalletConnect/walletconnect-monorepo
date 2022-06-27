@@ -15,11 +15,11 @@
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/events": "^1.0.0",
-    "@walletconnect/heartbeat": "^1.0.0",
+    "@walletconnect/events": "1.0.0",
+    "@walletconnect/heartbeat": "1.0.0",
     "@walletconnect/jsonrpc-types": "1.0.1",
-    "@walletconnect/keyvaluestorage": "^1.0.0",
-    "pino": "^6.7.0",
-    "pino-pretty": "^4.3.0"
+    "@walletconnect/keyvaluestorage": "1.0.0",
+    "pino": "6.7.0",
+    "pino-pretty": "4.3.0"
   }
 }

@@ -1,6 +1,6 @@
 import esbuild from "rollup-plugin-esbuild";
 
-export default function createConfig(name, dependencies) {
+export default function createConfig(name) {
   return {
     input: "./src/index.ts",
     output: [
@@ -11,10 +11,7 @@ export default function createConfig(name, dependencies) {
     plugins: [
       esbuild({
         minify: true,
-        tsconfig: "./tsconfig.json",
-        optimizeDeps: {
-          include: dependencies,
-        },
+        tsconfig: "./tsconfig.json"
       }),
     ],
   };

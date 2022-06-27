@@ -9,12 +9,6 @@
   "module": "dist/index.es.js",
   "unpkg": "dist/index.umd.js",
   "types": "dist/types/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.es.js",
-      "require": "./dist/index.cjs.js"
-    }
-  },
   "files": [
     "dist"
   ],
@@ -25,30 +19,30 @@
   "scripts": {
     "clean": "rm -rf dist",
     "help": "tsc --help",
-    "build:pre": "run-s clean",
+    "build:pre": "npm run clean",
     "build:types": "tsc",
     "build:source": "rollup --config rollup.config.js",
-    "build": "run-s build:pre build:source build:types",
+    "build": "npm run build:pre; npm run build:source; npm run build:types",
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "vitest run --dir test",
-    "test": "run-s test:pre test:run",
+    "test": "npm run test:pre; npm run test:run",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/core": "^2.0.0-beta.101",
-    "@walletconnect/encoding": "^1.0.1",
-    "@walletconnect/events": "^1.0.0",
-    "@walletconnect/heartbeat": "^1.0.0",
-    "@walletconnect/jsonrpc-provider": "^1.0.3",
+    "@walletconnect/core": "2.0.0-beta.101",
+    "@walletconnect/encoding": "1.0.1",
+    "@walletconnect/events": "1.0.0",
+    "@walletconnect/heartbeat": "1.0.0",
+    "@walletconnect/jsonrpc-provider": "1.0.3",
     "@walletconnect/jsonrpc-utils": "1.0.3",
-    "@walletconnect/jsonrpc-ws-connection": "^1.0.0",
-    "@walletconnect/keyvaluestorage": "^1.0.0",
-    "@walletconnect/logger": "^1.0.0",
+    "@walletconnect/jsonrpc-ws-connection": "1.0.0",
+    "@walletconnect/keyvaluestorage": "1.0.0",
+    "@walletconnect/logger": "1.0.0",
     "@walletconnect/relay-api": "1.0.4",
-    "@walletconnect/safe-json": "^1.0.0",
-    "@walletconnect/time": "^1.0.1",
-    "@walletconnect/types": "^2.0.0-beta.101",
-    "@walletconnect/utils": "^2.0.0-beta.101",
+    "@walletconnect/safe-json": "1.0.0",
+    "@walletconnect/time": "1.0.1",
+    "@walletconnect/types": "2.0.0-beta.101",
+    "@walletconnect/utils": "2.0.0-beta.101",
     "ws": "8.8.0"
   },
   "devDependencies": {
