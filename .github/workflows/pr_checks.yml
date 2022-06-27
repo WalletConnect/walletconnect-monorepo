@@ -25,19 +25,28 @@ jobs:
         run: npm run bootstrap
       - name: build
         run: npm run build
-      # - uses: actions/upload-artifact@v3
-      #   with:
-      #     name: build-artifact
-      #     path: ./
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact
+          path: '**/dist'
 
   lint:
-    needs: build
     runs-on: ubuntu-latest
     steps:
-      # - uses: actions/download-artifact@v3
-      #   with:
-      #     name: build-artifact
-      - run: npm run lint
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: setup-node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: install
+        run: npm ci
+      - name: bootstrap
+        run: npm run bootstrap
+      - name: eslint
+        run: npm run lint
 
   test:
     needs: build
@@ -53,7 +62,19 @@ jobs:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
     steps:
-      # - uses: actions/download-artifact@v3
-      #   with:
-      #     name: build-artifact
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: setup-node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: install
+        run: npm ci
+      - name: bootstrap
+        run: npm run bootstrap
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-artifact
       - run: npm run test --prefix=${{ matrix.test-prefix }}
