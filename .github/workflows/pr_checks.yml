@@ -29,8 +29,8 @@ jobs:
         with:
           name: build-artifact
           path: |
-            './packages/**/dist'
-            './providers/**/dist'
+            packages/**/dist
+            providers/**/dist
 
   lint:
     runs-on: ubuntu-latest
