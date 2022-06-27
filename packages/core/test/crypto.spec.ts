@@ -35,9 +35,7 @@ describe("Crypto", () => {
       const privateKey = utils.generateRandomBytes32();
       const publicKey = utils.generateRandomBytes32();
       // Stub `utils.generateKeyPair` to return predictable values.
-      Sinon.stub(utils, "generateKeyPair").callsFake(() => {
-        return { publicKey, privateKey };
-      });
+      Sinon.stub(utils, "generateKeyPair").returns({ publicKey, privateKey });
       const keychainSpy = Sinon.spy();
       crypto.keychain.set = keychainSpy;
       const returnedPublicKey = await crypto.generateKeyPair();

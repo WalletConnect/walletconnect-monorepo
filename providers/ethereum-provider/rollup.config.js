@@ -1,4 +1,4 @@
-import typescript from "@rollup/plugin-typescript";
+import esbuild from "rollup-plugin-esbuild";
 import { name } from "./package.json";
 
 export default {
@@ -8,5 +8,9 @@ export default {
     { file: "./dist/index.es.js", format: "es", name },
     { file: "./dist/index.umd.js", format: "umd", name },
   ],
-  plugins: [typescript()],
+  plugins: [
+    esbuild({
+      tsconfig: "./tsconfig.json",
+    }),
+  ],
 };
