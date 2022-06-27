@@ -10,6 +10,7 @@ const coreConfig = {
   plugins: [
     nodePolyfills(),
     esbuild({
+      target: "es2020",
       minify: true,
       tsconfig: "./tsconfig.json",
     }),
