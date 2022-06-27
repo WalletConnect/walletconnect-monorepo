@@ -34,6 +34,7 @@ jobs:
             packages/types/dist
             packages/utils/dist
             providers/ethereum-provider/dist
+            providers/signer-connection/dist
 
   lint:
     runs-on: ubuntu-latest
