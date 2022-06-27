@@ -28,7 +28,9 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: build-artifact
-          path: '**/dist'
+          path: |
+            './packages/**/dist'
+            './providers/**/dist'
 
   lint:
     runs-on: ubuntu-latest
