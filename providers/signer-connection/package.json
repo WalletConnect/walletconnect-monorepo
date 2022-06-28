@@ -32,6 +32,9 @@
     "@walletconnect/jsonrpc-utils": "1.0.3",
     "@walletconnect/sign-client": "2.0.0-beta.101",
     "@walletconnect/types": "2.0.0-beta.101",
-    "@walletconnect/utils": "2.0.0-beta.101"
+    "@walletconnect/utils": "2.0.0-beta.101",
+    "pino": "6.7.0",
+    "pino-pretty": "4.3.0",
+    "uint8arrays": "3.0.0"
   }
 }

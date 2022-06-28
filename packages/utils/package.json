@@ -34,14 +34,14 @@
     "@stablelib/sha256": "1.0.1",
     "@stablelib/x25519": "1.0.2",
     "@walletconnect/jsonrpc-utils": "1.0.3",
-    "@walletconnect/logger": "1.0.0",
     "@walletconnect/relay-api": "1.0.4",
     "@walletconnect/safe-json": "1.0.0",
     "@walletconnect/time": "1.0.1",
     "@walletconnect/types": "2.0.0-beta.101",
     "@walletconnect/window-getters": "1.0.0",
     "@walletconnect/window-metadata": "1.0.0",
-    "query-string": "6.13.5"
+    "query-string": "6.13.5",
+    "uint8arrays": "3.0.0"
   },
   "devDependencies": {
     "@types/lodash.isequal": "4.5.6"
