@@ -71,7 +71,7 @@ export class KeyChain implements IKeyChain {
 
   private async getKeyChain() {
     const keychain = await this.core.storage.getItem<Record<string, string>>(this.storageKey);
-    return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
+    return typeof keychain !== "undefined" && keychain != null ? objToMap(keychain) : undefined;
   }
 
   private async persist() {
