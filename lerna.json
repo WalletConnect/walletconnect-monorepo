@@ -1,0 +1,9 @@
+{
+  "npmClient": "npm",
+  "packages": [
+    "packages/*",
+    "providers/*"
+  ],
+  "useWorkspaces": true,
+  "version": "2.0.0-beta.101.2"
+}
