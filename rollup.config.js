@@ -9,7 +9,6 @@ const coreConfig = {
   plugins: [
     nodePolyfills(),
     esbuild({
-      target: "es2020",
       minify: true,
       tsconfig: "./tsconfig.json",
     }),
@@ -20,7 +19,12 @@ export default function createConfig(packageName, packageDependencies) {
   return [
     {
       ...coreConfig,
-      plugins: [nodeResolve({ preferBuiltins: false }), commonjs(), json(), ...coreConfig.plugins],
+      plugins: [
+        nodeResolve({ preferBuiltins: false, browser: true }),
+        commonjs(),
+        json(),
+        ...coreConfig.plugins,
+      ],
       output: { file: "./dist/index.umd.js", format: "umd", exports: "named", name: packageName },
     },
     {
