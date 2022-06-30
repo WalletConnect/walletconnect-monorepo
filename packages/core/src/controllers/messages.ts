@@ -97,7 +97,7 @@ export class MessageTracker extends IMessageTracker {
     const messages = await this.core.storage.getItem<Record<string, MessageRecord>>(
       this.storageKey,
     );
-    return typeof messages !== "undefined" ? objToMap(messages) : undefined;
+    return typeof messages !== "undefined" && messages != null? objToMap(messages) : undefined;
   }
 
   private async persist() {
