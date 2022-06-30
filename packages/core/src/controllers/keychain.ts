@@ -66,11 +66,16 @@ export class KeyChain implements IKeyChain {
   // ---------- Private ----------------------------------------------- //
 
   private async setKeyChain(keychain: Map<string, string>) {
+    if (keychain == null){
+      //don't set null values
+      return;
+    }
     await this.core.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain));
   }
 
   private async getKeyChain() {
     const keychain = await this.core.storage.getItem<Record<string, string>>(this.storageKey);
+    //check against null and undefined
     return typeof keychain !== "undefined" && keychain != null ? objToMap(keychain) : undefined;
   }
 
