@@ -1,4 +1,3 @@
-import crossFetch from "cross-fetch";
 import pino, { Logger } from "pino";
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -26,7 +25,7 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, getInternalError, getHttpUrl } from "@walletconnect/utils";
+import { generateRandomBytes32, formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
   RELAYER_CONTEXT,
@@ -75,10 +74,8 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    const clientId = await this.core.crypto.getClientId();
-    const endpoint = getHttpUrl(this.providerOpts.relayUrl ?? RELAYER_DEFAULT_RELAY_URL);
-    const { nonce } = await (await crossFetch(`${endpoint}/auth-nonce?did=${clientId}`)).json();
-    const auth = await this.core.crypto.signJWT(nonce);
+    const subject = generateRandomBytes32();
+    const auth = await this.core.crypto.signJWT(subject);
     this.provider = this.createProvider(this.providerOpts, auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
