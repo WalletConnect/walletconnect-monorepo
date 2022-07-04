@@ -29,7 +29,7 @@
     "new-version": "lerna version --no-git-tag-version",
     "pre-publish": "run-s new-version reset commit-version",
     "npm-publish:experimental": "lerna exec -- npm publish --access public --tag experimental",
-    "npm-publish:canary": "lerna exec -- npm publish --access public --tag canary",
+    "npm-publish:canary": "lerna exec -- npm publish --access public --tag canary"
   },
   "repository": {
     "type": "git",
