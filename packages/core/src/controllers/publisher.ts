@@ -31,7 +31,8 @@ export class Publisher extends IPublisher {
       const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
-      const params = { topic, message, opts: { ttl, relay, prompt } };
+      const tag = opts?.tag || 0;
+      const params = { topic, message, opts: { ttl, relay, prompt, tag } };
       const hash = hashMessage(message);
       this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
@@ -69,6 +70,7 @@ export class Publisher extends IPublisher {
     ttl: number,
     relay: RelayerTypes.ProtocolOptions,
     prompt?: boolean,
+    tag?: number,
   ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
@@ -78,10 +80,14 @@ export class Publisher extends IPublisher {
         message,
         ttl,
         prompt,
+        tag,
       },
     };
     if (typeof request.params?.prompt === "undefined") {
       delete request.params?.prompt;
+    }
+    if (typeof request.params?.tag === "undefined") {
+      delete request.params?.tag;
     }
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "message", direction: "outgoing", request });

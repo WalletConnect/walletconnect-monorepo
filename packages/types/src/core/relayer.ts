@@ -14,9 +14,10 @@ export declare namespace RelayerTypes {
   }
 
   export interface PublishOptions {
-    relay: ProtocolOptions;
+    relay?: ProtocolOptions;
     ttl?: number;
     prompt?: boolean;
+    tag?: number;
   }
 
   export interface SubscribeOptions {
@@ -35,7 +36,7 @@ export declare namespace RelayerTypes {
     message: string;
   }
 
-  export interface RpcUrlParams  {
+  export interface RpcUrlParams {
     protocol: string;
     version: number;
     auth: string;
