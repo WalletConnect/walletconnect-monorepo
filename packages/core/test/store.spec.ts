@@ -6,6 +6,7 @@ import { expect, TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
 const MOCK_STORE_NAME = "mock-entity";
+const STORE_SYNC_EVENT = MOCK_STORE_NAME + "_sync";
 
 // TODO: Test persistence behavior
 describe("Store", () => {
@@ -28,13 +29,26 @@ describe("Store", () => {
   });
 
   describe("set", () => {
-    it("creates a new entry for a new key", async () => {
+    it.only("creates a new entry for a new key", async () => {
       const key = "newKey";
       const value = {
         topic: "abc123",
         expiry: 1000,
       } as SessionTypes.Struct;
-      await store.set(key, value);
+      await Promise.all([
+        await store.set(key, value),
+        await new Promise<void>(resolve => {
+          // eslint-disable-next-line
+          console.log("STORE_SYNC_EVENT", STORE_SYNC_EVENT);
+          core.on(STORE_SYNC_EVENT, ({ values }: { values: any }) => {
+            // eslint-disable-next-line
+            console.log("values", values);
+
+            expect(store.values).to.equal(values);
+            resolve();
+          });
+        }),
+      ]);
       expect(store.length).to.equal(1);
       expect(store.keys.includes(key)).to.be.true;
       expect(store.values.includes(value)).to.be.true;
