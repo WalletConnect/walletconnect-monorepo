@@ -16,7 +16,7 @@ import {
   isTypeOneEnvelope,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
 import { KeyChain } from "./keychain";
 
 export class Crypto implements ICrypto {
@@ -61,11 +61,13 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public signJWT: ICrypto["signJWT"] = async subject => {
+  public signJWT: ICrypto["signJWT"] = async aud => {
     this.isInitialized();
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);
-    const jwt = await relayAuth.signJWT(subject, keyPair);
+    const sub = generateRandomBytes32();
+    const ttl = CRYPTO_JWT_TTL;
+    const jwt = await relayAuth.signJWT(sub, aud, ttl, keyPair);
     return jwt;
   };
 

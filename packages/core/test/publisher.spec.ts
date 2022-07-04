@@ -19,7 +19,7 @@ describe("Publisher", () => {
   beforeEach(async () => {
     const core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
+    relayer = new Relayer({ core, logger });
     await relayer.init();
     publisher = new Publisher(relayer, logger);
   });
