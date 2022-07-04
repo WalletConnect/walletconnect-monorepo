@@ -137,6 +137,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
   private async persist() {
     await this.setDataStore(this.values);
+    this.core.events.emit(`${this.context}_sync`, { values: this.values });
   }
 
   private async restore() {

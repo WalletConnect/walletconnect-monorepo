@@ -1,7 +1,7 @@
 import EventEmmiter from "events";
 import { Logger } from "pino";
 import { IEngine } from "./engine";
-import { IPairing } from "./pairing";
+import { IPairing, PairingTypes } from "./pairing";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { IJsonRpcHistory } from "../core/history";
@@ -21,7 +21,10 @@ export declare namespace SignClientTypes {
     | "pairing_expire"
     | "session_request"
     | "session_event"
-    | "proposal_expire";
+    | "proposal_expire"
+    | "pairing_sync"
+    | "session_sync"
+    | "proposal_sync";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -48,6 +51,9 @@ export declare namespace SignClientTypes {
       chainId: string;
     }>;
     proposal_expire: { id: number };
+    pairing_sync: { pairings: PairingTypes.Struct[] };
+    session_sync: { sessions: SessionTypes.Struct[] };
+    proposal_sync: { proposals: ProposalTypes.Struct[] };
   }
 
   type Metadata = {

@@ -72,6 +72,7 @@ export class Engine extends IEngine {
   public init: IEngine["init"] = async () => {
     if (!this.initialized) {
       await this.cleanup();
+      this.registerStoreEvents();
       this.registerRelayerEvents();
       this.registerExpirerEvents();
       this.initialized = true;
@@ -446,6 +447,18 @@ export class Engine extends IEngine {
   }
 
   // ---------- Relay Events Router ----------------------------------- //
+
+  private registerStoreEvents() {
+    this.client.core.events.on("pairing_sync", ({ values }) =>
+      this.client.events.emit("pairing_sync", { pairings: values }),
+    );
+    this.client.core.events.on("session_sync", ({ values }) =>
+      this.client.events.emit("session_sync", { sessions: values }),
+    );
+    this.client.core.events.on("proposal_sync", ({ values }) =>
+      this.client.events.emit("proposal_sync", { proposals: values }),
+    );
+  }
 
   private registerRelayerEvents() {
     this.client.core.relayer.on(
