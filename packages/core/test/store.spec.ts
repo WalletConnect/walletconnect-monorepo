@@ -36,7 +36,6 @@ describe("Store", () => {
         expiry: 1000,
       } as SessionTypes.Struct;
       await Promise.all([
-        await store.set(key, value),
         await new Promise<void>(resolve => {
           // eslint-disable-next-line
           console.log("STORE_SYNC_EVENT", STORE_SYNC_EVENT);
@@ -48,6 +47,7 @@ describe("Store", () => {
             resolve();
           });
         }),
+        await store.set(key, value),
       ]);
       expect(store.length).to.equal(1);
       expect(store.keys.includes(key)).to.be.true;
