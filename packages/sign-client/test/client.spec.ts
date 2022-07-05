@@ -150,7 +150,6 @@ describe("Sign Client Integration", () => {
         // delete
         deleteClients(beforeClients);
         // restart
-        console.log("Bang", TEST_SIGN_CLIENT_DATABASE);
         const afterClients = await initTwoClients({
           storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
         });
