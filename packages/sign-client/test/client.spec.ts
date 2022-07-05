@@ -5,11 +5,12 @@ import {
   expect,
   initTwoClients,
   testConnectMethod,
-  TEST_SIGN_CLIENT_DATABASE,
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
 } from "./shared";
 import { SEVEN_DAYS } from "@walletconnect/time";
+
+const TEST_SIGN_CLIENT_DATABASE = "./test.db"
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -149,6 +150,7 @@ describe("Sign Client Integration", () => {
         // delete
         deleteClients(beforeClients);
         // restart
+        console.log("Bang", TEST_SIGN_CLIENT_DATABASE);
         const afterClients = await initTwoClients({
           storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
         });
