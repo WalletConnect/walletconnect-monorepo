@@ -39,7 +39,7 @@
     "@walletconnect/keyvaluestorage": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
     "@walletconnect/relay-api": "^1.0.5",
-    "@walletconnect/relay-auth": "^1.0.2",
+    "@walletconnect/relay-auth": "^1.0.3",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/time": "^1.0.1",
     "@walletconnect/types": "^2.0.0-beta.101.4",
