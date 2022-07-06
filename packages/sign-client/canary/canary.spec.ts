@@ -9,11 +9,17 @@ import CloudWatch from 'aws-sdk/clients/cloudwatch';
 const environment = process.env.ENVIRONMENT || 'dev';
 
 describe("Canary", function() {
-  let cloudwatch: CloudWatch;
-  beforeEach(function() {
-    cloudwatch = new CloudWatch({region: 'eu-central-1'});
+  describe("HappyPath", function() {
+    // TODO: implement a test that depicts
+    // the happy case better
+    it("connects", async function() {
+      const clients = await initTwoClients();
+      await testConnectMethod(clients);
+      deleteClients(clients);
+    });
   });
   afterEach(function (done) {
+    const cloudwatch = new CloudWatch({region: 'eu-central-1'});
     const ts = new Date();
     const metric_prefix = `${this.currentTest!.parent!.title}.${this.currentTest!.title}`;
     const params: CloudWatch.PutMetricDataInput = {
@@ -42,15 +48,6 @@ describe("Canary", function() {
     cloudwatch.putMetricData(params, function(err: Error) {
       if (err) {console.log(err, err.stack); done();}
       else {done();}
-    });
-  });
-  describe("HappyPath", function() {
-    // TODO: implement a test that depicts
-    // the happy case better
-    it("connects", async function() {
-      const clients = await initTwoClients();
-      await testConnectMethod(clients);
-      deleteClients(clients);
     });
   });
 });
