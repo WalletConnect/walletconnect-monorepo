@@ -27,6 +27,8 @@
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 10000 --exit --r ts-node/register ./test/**/*.spec.ts",
     "test": "run-s test:pre test:run",
+    "test:canary": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 10000 --exit --r ts-node/register ./canary/**/*.spec.ts",
+    "canary": "run-s test:pre test:canary",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
@@ -63,6 +65,7 @@
     "@types/sinon": "^4.3.1",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
+    "aws-sdk": "^2.1169.0",
     "better-sqlite3": "7.5.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
