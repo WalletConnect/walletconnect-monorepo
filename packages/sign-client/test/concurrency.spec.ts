@@ -19,8 +19,6 @@ describe("Sign Client Concurrency", () => {
 
     // init clients and pair
     while (pairings.length < connections) {
-      console.log(pairings.length);
-
       const clients: Clients = await initTwoClients({ relayUrl });
 
       expect(clients.A instanceof SignClient).to.eql(true);
