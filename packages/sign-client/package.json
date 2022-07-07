@@ -27,7 +27,7 @@
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 10000 --exit --r ts-node/register ./test/**/*.spec.ts",
     "test": "run-s test:pre test:run",
-    "test:canary": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 10000 --exit --r ts-node/register ./canary/**/*.spec.ts",
+    "test:canary": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 10000 --exit --r ts-node/register ./test/canary/**/*.spec.ts",
     "canary": "run-s test:pre test:canary",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
