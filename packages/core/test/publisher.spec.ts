@@ -19,14 +19,14 @@ describe("Publisher", () => {
   beforeEach(async () => {
     const core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
+    relayer = new Relayer({ core, logger });
     await relayer.init();
     publisher = new Publisher(relayer, logger);
   });
 
   describe("init", () => {
     it("registers event listeners", () => {
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" } };
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" }, tag: 0 };
       const itemA = { topic: generateRandomBytes32(), message: "itemA", opts };
       const itemB = { topic: generateRandomBytes32(), message: "itemB", opts };
       const requestSpy = Sinon.spy();

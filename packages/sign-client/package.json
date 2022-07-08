@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/sign-client",
   "description": "Sign Client for WalletConnect Protocol",
-  "version": "2.0.0-beta.101.2",
+  "version": "2.0.0-beta.102",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -26,14 +26,16 @@
     "build": "run-s build:pre build:cjs build:esm build:umd",
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 10000 --exit --r ts-node/register ./test/*.spec.ts",
+    "test:concurrency": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 100000 --exit --r ts-node/register ./test/concurrency.spec.ts",
     "test": "run-s test:pre test:run",
     "test:canary": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha --timeout 10000 --exit --r ts-node/register ./test/canary/**/*.spec.ts",
     "canary": "run-s test:pre test:canary",
+    "loadtest": "run-s test:pre test:concurrency",
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
   },
   "dependencies": {
-    "@walletconnect/core": "^2.0.0-beta.101.2",
+    "@walletconnect/core": "^2.0.0-beta.102",
     "@walletconnect/events": "^1.0.0",
     "@walletconnect/heartbeat": "^1.0.0",
     "@walletconnect/jsonrpc-provider": "^1.0.3",
@@ -41,11 +43,11 @@
     "@walletconnect/jsonrpc-ws-connection": "^1.0.0",
     "@walletconnect/keyvaluestorage": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
-    "@walletconnect/relay-api": "1.0.4",
+    "@walletconnect/relay-api": "^1.0.5",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/time": "^1.0.1",
-    "@walletconnect/types": "^2.0.0-beta.101.2",
-    "@walletconnect/utils": "^2.0.0-beta.101.2",
+    "@walletconnect/types": "^2.0.0-beta.102",
+    "@walletconnect/utils": "^2.0.0-beta.102",
     "ws": "^8.3.0"
   },
   "devDependencies": {

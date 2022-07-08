@@ -14,9 +14,10 @@ export declare namespace RelayerTypes {
   }
 
   export interface PublishOptions {
-    relay: ProtocolOptions;
+    relay?: ProtocolOptions;
     ttl?: number;
     prompt?: boolean;
+    tag?: number;
   }
 
   export interface SubscribeOptions {
@@ -35,19 +36,20 @@ export declare namespace RelayerTypes {
     message: string;
   }
 
-  export interface RpcUrlParams extends Omit<RelayerOptions, "core" | "logger"> {
+  export interface RpcUrlParams {
+    protocol: string;
+    version: number;
     auth: string;
     relayUrl: string;
+    projectId?: string;
   }
 }
 
 export interface RelayerOptions {
   core: ICore;
-  protocol: string;
-  version: number;
+  logger?: string | Logger;
   relayUrl?: string;
   projectId?: string;
-  logger?: string | Logger;
 }
 
 export interface RelayerClientMetadata {

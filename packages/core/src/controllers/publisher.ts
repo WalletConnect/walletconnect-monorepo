@@ -3,7 +3,12 @@ import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { IPublisher, IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
-import { getRelayProtocolApi, getRelayProtocolName, hashMessage } from "@walletconnect/utils";
+import {
+  getRelayProtocolApi,
+  getRelayProtocolName,
+  hashMessage,
+  isUndefined,
+} from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
@@ -31,7 +36,8 @@ export class Publisher extends IPublisher {
       const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
-      const params = { topic, message, opts: { ttl, relay, prompt } };
+      const tag = opts?.tag || 0;
+      const params = { topic, message, opts: { ttl, relay, prompt, tag } };
       const hash = hashMessage(message);
       this.queue.set(hash, params);
       await this.rpcPublish(topic, message, ttl, relay, prompt);
@@ -69,6 +75,7 @@ export class Publisher extends IPublisher {
     ttl: number,
     relay: RelayerTypes.ProtocolOptions,
     prompt?: boolean,
+    tag?: number,
   ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
@@ -78,11 +85,11 @@ export class Publisher extends IPublisher {
         message,
         ttl,
         prompt,
+        tag,
       },
     };
-    if (typeof request.params?.prompt === "undefined") {
-      delete request.params?.prompt;
-    }
+    if (isUndefined(request.params?.prompt)) delete request.params?.prompt;
+    if (isUndefined(request.params?.tag)) delete request.params?.tag;
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "message", direction: "outgoing", request });
     return this.relayer.provider.request(request);

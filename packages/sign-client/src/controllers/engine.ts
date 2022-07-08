@@ -1,6 +1,5 @@
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
-import { EXPIRER_EVENTS, SESSION_EXPIRY, PROPOSAL_EXPIRY, ENGINE_CONTEXT } from "../constants";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -52,6 +51,14 @@ import {
   isConformingNamespaces,
   isValidController,
 } from "@walletconnect/utils";
+
+import {
+  EXPIRER_EVENTS,
+  SESSION_EXPIRY,
+  PROPOSAL_EXPIRY,
+  ENGINE_CONTEXT,
+  ENGINE_TAG,
+} from "../constants";
 
 export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
@@ -388,7 +395,8 @@ export class Engine extends IEngine {
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload);
-    await this.client.core.relayer.publish(topic, message);
+    const opts = { tag: ENGINE_TAG };
+    await this.client.core.relayer.publish(topic, message, opts);
     this.client.history.set(topic, payload);
 
     return payload.id;
@@ -397,14 +405,16 @@ export class Engine extends IEngine {
   private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.core.crypto.encode(topic, payload);
-    await this.client.core.relayer.publish(topic, message);
+    const opts = { tag: ENGINE_TAG };
+    await this.client.core.relayer.publish(topic, message, opts);
     await this.client.history.resolve(payload);
   };
 
   private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
     const payload = formatJsonRpcError(id, error);
     const message = await this.client.core.crypto.encode(topic, payload);
-    await this.client.core.relayer.publish(topic, message);
+    const opts = { tag: ENGINE_TAG };
+    await this.client.core.relayer.publish(topic, message, opts);
     await this.client.history.resolve(payload);
   };
 

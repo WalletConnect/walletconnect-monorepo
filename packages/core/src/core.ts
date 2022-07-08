@@ -58,8 +58,6 @@ export class Core extends ICore {
     this.relayer = new Relayer({
       core: this,
       logger: this.logger,
-      protocol: this.protocol,
-      version: this.version,
       relayUrl: opts?.relayUrl,
       projectId: this.projectId,
     });
