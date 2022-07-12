@@ -1,6 +1,6 @@
 import { getSdkError } from "@walletconnect/utils";
 import "mocha";
-import SignClient from "../src";
+import SignClient from "../../src";
 import {
   expect,
   initTwoClients,
@@ -9,7 +9,7 @@ import {
   deleteClients,
   Clients,
   TEST_EMIT_PARAMS,
-} from "./shared";
+} from "./../shared";
 
 describe("Sign Client Concurrency", () => {
   it("should successfully handle concurrent clients", async () => {
