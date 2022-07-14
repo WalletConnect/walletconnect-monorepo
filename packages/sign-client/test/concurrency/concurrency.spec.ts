@@ -14,9 +14,9 @@ import {
 
 describe("Sign Client Concurrency", () => {
   it("should successfully handle concurrent clients", async () => {
-    const clientPairs = process.env.CLIENTS || 300;
-    const messagesToBeExchanged = process.env.MESSAGES_PER_CLIENT || 1000; // minimum messages to be exchanged between clients
-    const relayUrl = process.env.RELAY_URL || TEST_SIGN_CLIENT_OPTIONS.relayUrl;
+    const clientPairs = process.env.CLIENTS ? parseInt(process.env.CLIENTS) : 300;
+    const messagesToBeExchanged = process.env.MESSAGES_PER_CLIENT ? parseInt(process.env.MESSAGES_PER_CLIENT) : 1000; // minimum messages to be exchanged between clients
+    const relayUrl = process.env.RELAY_URL || process.env.TEST_RELAY_URL || TEST_SIGN_CLIENT_OPTIONS.relayUrl;
     const pairings: any[] = [];
 
     const processMessages = async (data: any) => {
