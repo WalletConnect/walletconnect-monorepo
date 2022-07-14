@@ -98,6 +98,7 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 
 export function getJavascriptOS() {
   const info = detect();
+  if (info === null) return "unknown";
   const os = info.os.replace(" ", "").toLowerCase();
   if (info.type === "browser") {
     return [os, info.name, info.version].join("-");
