@@ -1,5 +1,6 @@
 import pino from "pino";
 import { EventEmitter } from "events";
+
 import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import { HeartBeat } from "@walletconnect/heartbeat";
 import {
@@ -16,6 +17,7 @@ import {
   CORE_PROTOCOL,
   CORE_STORAGE_OPTIONS,
   CORE_VERSION,
+  CORE_SDK_VERSION,
 } from "./constants";
 
 export class Core extends ICore {
@@ -60,6 +62,7 @@ export class Core extends ICore {
       logger: this.logger,
       relayUrl: opts?.relayUrl,
       projectId: this.projectId,
+      sdkVersion: CORE_SDK_VERSION,
     });
   }
 

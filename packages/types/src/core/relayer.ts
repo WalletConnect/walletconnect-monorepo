@@ -50,6 +50,7 @@ export interface RelayerOptions {
   logger?: string | Logger;
   relayUrl?: string;
   projectId?: string;
+  sdkVersion?: string;
 }
 
 export interface RelayerClientMetadata {
