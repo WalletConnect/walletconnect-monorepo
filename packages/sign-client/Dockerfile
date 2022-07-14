@@ -9,12 +9,11 @@ FROM base as build
 
 WORKDIR /
 
-COPY ./packages/sign-client/ ./
-RUN rm -rf ./node_modules
-COPY ./tsconfig.json ./tsconfig.json.base
-RUN npm install
-RUN rm ./tsconfig.json
-RUN echo '{"extends": "./tsconfig.json.base","include": ["./src/**/*"],"compilerOptions": {"outDir": "./dist"}}' >> ./tsconfig.json
+COPY ../ ./
+RUN npm ci
+RUN npm run bootstrap
 RUN npm run build
+
+WORKDIR /packages/sign-client/
 
 CMD ["node", "-v"]
