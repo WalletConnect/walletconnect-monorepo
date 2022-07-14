@@ -28,6 +28,7 @@ import {
 import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
+  RELAYER_SDK_VERSION,
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
   RELAYER_EVENTS,
@@ -136,6 +137,7 @@ export class Relayer extends IRelayer {
     return new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
+          sdkVersion: RELAYER_SDK_VERSION,
           protocol: this.protocol,
           version: this.version,
           relayUrl: this.relayUrl,

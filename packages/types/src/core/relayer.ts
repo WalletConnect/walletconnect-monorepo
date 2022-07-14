@@ -41,6 +41,7 @@ export declare namespace RelayerTypes {
     version: number;
     auth: string;
     relayUrl: string;
+    sdkVersion: string;
     projectId?: string;
   }
 }
@@ -50,7 +51,6 @@ export interface RelayerOptions {
   logger?: string | Logger;
   relayUrl?: string;
   projectId?: string;
-  sdkVersion?: string;
 }
 
 export interface RelayerClientMetadata {

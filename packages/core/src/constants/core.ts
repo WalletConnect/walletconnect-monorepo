@@ -12,7 +12,3 @@ export const CORE_DEFAULT = {
 export const CORE_STORAGE_OPTIONS = {
   database: ":memory:",
 };
-
-// FIXME: Always manually change this after each release (hardcoded from package.json)
-// ... this will be temporarily hardcoded until we refactor our build chain!
-export const CORE_SDK_VERSION = "2.0.0-beta.102";
