@@ -32,7 +32,7 @@ describe("Sign Client Concurrency", () => {
       console.log(log);
     };
 
-    const heatBeat = setInterval(() => {
+    const heartBeat = setInterval(() => {
       log(`initialized pairs - ${pairings.length}`);
       log(
         `total messages exchanged - ${Object.values(messagesReceived).reduce(
@@ -167,6 +167,6 @@ describe("Sign Client Concurrency", () => {
     for (const data of pairings) {
       deleteClients(data.clients);
     }
-    clearInterval(heatBeat);
+    clearInterval(heartBeat);
   });
 });
