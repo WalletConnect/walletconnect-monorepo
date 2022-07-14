@@ -110,7 +110,7 @@ describe("Sign Client Concurrency", () => {
     for await (const i of Array.from(Array(clientPairs).keys())) {
       await new Promise<void>(async resolve => {
         const timeout = setTimeout(() => {
-          log(`struck ${i}`);
+          log(`stuck ${i}`);
           resolve();
         }, 5000);
 
