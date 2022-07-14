@@ -57,7 +57,7 @@ import {
   SESSION_EXPIRY,
   PROPOSAL_EXPIRY,
   ENGINE_CONTEXT,
-  ENGINE_TAG,
+  ENGINE_RPC_OPTS,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -395,7 +395,7 @@ export class Engine extends IEngine {
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload);
-    const opts = { tag: ENGINE_TAG };
+    const opts = ENGINE_RPC_OPTS[method].req;
     await this.client.core.relayer.publish(topic, message, opts);
     this.client.history.set(topic, payload);
 
@@ -405,7 +405,8 @@ export class Engine extends IEngine {
   private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.core.crypto.encode(topic, payload);
-    const opts = { tag: ENGINE_TAG };
+    const record = await this.client.history.get(topic, id);
+    const opts = ENGINE_RPC_OPTS[record.request.method].res;
     await this.client.core.relayer.publish(topic, message, opts);
     await this.client.history.resolve(payload);
   };
@@ -413,7 +414,8 @@ export class Engine extends IEngine {
   private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
     const payload = formatJsonRpcError(id, error);
     const message = await this.client.core.crypto.encode(topic, payload);
-    const opts = { tag: ENGINE_TAG };
+    const record = await this.client.history.get(topic, id);
+    const opts = ENGINE_RPC_OPTS[record.request.method].res;
     await this.client.core.relayer.publish(topic, message, opts);
     await this.client.history.resolve(payload);
   };
