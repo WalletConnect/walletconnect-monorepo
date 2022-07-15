@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "chai";
 
-import { calcExpiry, formatRelayRpcUrl } from "../src";
+import { calcExpiry, formatRelayRpcUrl, formatUA } from "../src";
 import { hasOverlap } from "../dist/cjs";
 
 const RELAY_URL = "wss://relay.walletconnect.com";
@@ -12,16 +12,20 @@ const PROTOCOL = "wc";
 
 const VERSION = 2;
 
+const SDK_VERSION = "2.0.0-beta.102";
+
 const ENV = "node";
 
 const AUTH = "auth.jwt.example";
 
 const EXPECTED_RPC_URL_1 =
-  RELAY_URL + `?auth=${AUTH}&env=${ENV}&protocol=${PROTOCOL}&version=${VERSION}`;
+  RELAY_URL + `?auth=${AUTH}&ua=${encodeURIComponent(formatUA(PROTOCOL, VERSION, SDK_VERSION))}`;
 
 const EXPECTED_RPC_URL_2 =
   RELAY_URL +
-  `?auth=${AUTH}&env=${ENV}&projectId=${PROJECT_ID}&protocol=${PROTOCOL}&version=${VERSION}`;
+  `?auth=${AUTH}&projectId=${PROJECT_ID}&ua=${encodeURIComponent(
+    formatUA(PROTOCOL, VERSION, SDK_VERSION),
+  )}`;
 
 const SEVEN_DAYS = 604800;
 
@@ -32,12 +36,19 @@ const EXPECTED_EXPIRY = 1628771622;
 describe("Misc", () => {
   it("formatRpcRelayUrl", () => {
     expect(
-      formatRelayRpcUrl({ protocol: PROTOCOL, version: VERSION, relayUrl: RELAY_URL, auth: AUTH }),
+      formatRelayRpcUrl({
+        protocol: PROTOCOL,
+        version: VERSION,
+        sdkVersion: SDK_VERSION,
+        relayUrl: RELAY_URL,
+        auth: AUTH,
+      }),
     ).to.eql(EXPECTED_RPC_URL_1);
     expect(
       formatRelayRpcUrl({
         protocol: PROTOCOL,
         version: VERSION,
+        sdkVersion: SDK_VERSION,
         relayUrl: RELAY_URL,
         projectId: PROJECT_ID,
         auth: AUTH,

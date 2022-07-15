@@ -1,5 +1,6 @@
 import pino from "pino";
 import { EventEmitter } from "events";
+
 import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import { HeartBeat } from "@walletconnect/heartbeat";
 import {

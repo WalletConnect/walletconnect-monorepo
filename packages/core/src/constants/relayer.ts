@@ -29,3 +29,7 @@ export const RELAYER_RECONNECT_TIMEOUT = ONE_SECOND;
 export const RELAYER_STORAGE_OPTIONS = {
   database: ":memory:",
 };
+
+// FIXME: Always manually change this after each release (hardcoded from package.json)
+// ... this will be temporarily hardcoded until we refactor our build chain!
+export const RELAYER_SDK_VERSION = "2.0.0-beta.102";

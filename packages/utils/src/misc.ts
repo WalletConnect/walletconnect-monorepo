@@ -1,3 +1,4 @@
+import { detect } from "detect-browser";
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
 import {
   SignClientTypes,
@@ -30,6 +31,8 @@ export const SLASH = "/";
 export const DEFAULT_DEPTH = 2;
 
 export const ONE_THOUSAND = 1000;
+
+export const SDK_TYPE = "js";
 
 // -- env -----------------------------------------------//
 
@@ -86,23 +89,46 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 
   const metadata: RelayerClientMetadata = { protocol, version, env };
   if (env === "browser") {
-    metadata.host = getLocation()?.host || "";
+    metadata.host = getLocation()?.host || "unknown";
   }
   return metadata;
 }
 
 // -- rpcUrl ----------------------------------------------//
 
+export function getJavascriptOS() {
+  const info = detect();
+  if (info === null) return "unknown";
+  const os = info.os ? info.os.replace(" ", "").toLowerCase() : "unknown";
+  if (info.type === "browser") {
+    return [os, info.name, info.version].join("-");
+  }
+  return [os, info.version].join("-");
+}
+
+export function getJavascriptID() {
+  const env = getEnvironment();
+  return env === ENV_MAP.browser ? [env, getLocation()?.host || "unknown"].join(":") : env;
+}
+
+export function formatUA(protocol: string, version: number, sdkVersion: string) {
+  const os = getJavascriptOS();
+  const id = getJavascriptID();
+  return [[protocol, version].join("-"), [SDK_TYPE, sdkVersion].join("-"), os, id].join("/");
+}
+console;
+
 export function formatRelayRpcUrl({
   protocol,
   version,
   relayUrl,
+  sdkVersion,
   auth,
   projectId,
 }: RelayerTypes.RpcUrlParams) {
   const splitUrl = relayUrl.split("?");
-  const metadata = { ...getRelayClientMetadata(protocol, version), auth };
-  const params = projectId ? { ...metadata, projectId } : metadata;
+  const ua = formatUA(protocol, version, sdkVersion);
+  const params = { auth, ua, projectId };
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }

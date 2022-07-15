@@ -41,6 +41,7 @@ export declare namespace RelayerTypes {
     version: number;
     auth: string;
     relayUrl: string;
+    sdkVersion: string;
     projectId?: string;
   }
 }
