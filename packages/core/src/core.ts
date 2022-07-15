@@ -1,5 +1,6 @@
 import pino from "pino";
 import { EventEmitter } from "events";
+
 import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import { HeartBeat } from "@walletconnect/heartbeat";
 import {
@@ -58,8 +59,6 @@ export class Core extends ICore {
     this.relayer = new Relayer({
       core: this,
       logger: this.logger,
-      protocol: this.protocol,
-      version: this.version,
       relayUrl: opts?.relayUrl,
       projectId: this.projectId,
     });

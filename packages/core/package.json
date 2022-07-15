@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/core",
   "description": "Core for WalletConnect Protocol",
-  "version": "2.0.0-beta.101.1",
+  "version": "2.0.0-beta.102-6a30ee7.0",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -38,13 +38,12 @@
     "@walletconnect/jsonrpc-ws-connection": "^1.0.0",
     "@walletconnect/keyvaluestorage": "^1.0.0",
     "@walletconnect/logger": "^1.0.0",
-    "@walletconnect/relay-api": "1.0.4",
-    "@walletconnect/relay-auth": "1.0.0",
+    "@walletconnect/relay-api": "^1.0.5",
+    "@walletconnect/relay-auth": "^1.0.3",
     "@walletconnect/safe-json": "^1.0.0",
     "@walletconnect/time": "^1.0.1",
-    "@walletconnect/types": "^2.0.0-beta.101.1",
-    "@walletconnect/utils": "^2.0.0-beta.101.1",
-    "cross-fetch": "^3.1.5",
+    "@walletconnect/types": "^2.0.0-beta.102-6a30ee7.0",
+    "@walletconnect/utils": "^2.0.0-beta.102-6a30ee7.0",
     "ws": "^8.3.0"
   },
   "devDependencies": {

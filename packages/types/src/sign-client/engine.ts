@@ -116,6 +116,13 @@ export declare namespace EngineTypes {
   }
 
   type AcknowledgedPromise = Promise<{ acknowledged: () => Promise<void> }>;
+
+  interface RpcOpts {
+    req: RelayerTypes.PublishOptions;
+    res: RelayerTypes.PublishOptions;
+  }
+
+  type RpcOptsMap = Record<JsonRpcTypes.WcMethod, RpcOpts>;
 }
 
 export abstract class IEngineEvents extends EventEmitter {
