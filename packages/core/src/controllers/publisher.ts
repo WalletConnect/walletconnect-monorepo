@@ -40,7 +40,7 @@ export class Publisher extends IPublisher {
       const params = { topic, message, opts: { ttl, relay, prompt, tag } };
       const hash = hashMessage(message);
       this.queue.set(hash, params);
-      await this.rpcPublish(topic, message, ttl, relay, prompt);
+      await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
       this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
@@ -104,10 +104,10 @@ export class Publisher extends IPublisher {
       const {
         topic,
         message,
-        opts: { ttl, relay },
+        opts: { ttl, relay, prompt, tag },
       } = params;
       const hash = hashMessage(message);
-      await this.rpcPublish(topic, message, ttl, relay);
+      await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
       this.onPublish(hash, params);
     });
   }

@@ -67,12 +67,13 @@ describe("Publisher", () => {
           message,
           prompt: false,
           ttl: PUBLISHER_DEFAULT_TTL,
+          tag: 0,
         },
       });
     });
     it("allows overriding of defaults via `opts` param", async () => {
       const message = "test message";
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" } };
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" }, tag: 1 };
       await publisher.publish(topic, message, opts);
       expect(requestSpy.callCount).to.equal(1);
       expect(requestSpy.getCall(0).args[0]).to.deep.equal({
@@ -82,6 +83,7 @@ describe("Publisher", () => {
           message,
           prompt: opts.prompt,
           ttl: opts.ttl,
+          tag: opts.tag,
         },
       });
     });
