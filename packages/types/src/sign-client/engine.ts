@@ -67,7 +67,7 @@ export declare namespace EngineTypes {
 
   interface RejectParams {
     id: number;
-    reason: ErrorResponse;
+    reason?: ErrorResponse;
   }
 
   interface UpdateParams {

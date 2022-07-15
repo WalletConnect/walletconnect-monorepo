@@ -294,6 +294,7 @@ describe("Sign Client Validation", () => {
       ).to.eventually.be.rejectedWith("Missing or invalid. reject() reason: []");
     });
 
+    // FIXME: this test should fail since this PR now allows reason to be undefined
     it("throws when no reason is provided", async () => {
       await expect(
         client.reject({ ...TEST_REJECT_PARAMS, id: proposalId, reason: undefined }),

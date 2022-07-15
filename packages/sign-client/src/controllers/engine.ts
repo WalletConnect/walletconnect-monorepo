@@ -957,8 +957,9 @@ export class Engine extends IEngine {
       const { message } = getInternalError("MISSING_OR_INVALID", `reject() params: ${params}`);
       throw new Error(message);
     }
-    const { id, reason } = params;
+    const { id } = params;
     await this.isValidProposalId(id);
+    const reason = params.reason || getSdkError("USER_REJECTED");
     if (!isValidErrorReason(reason)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
