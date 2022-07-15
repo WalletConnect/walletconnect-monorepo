@@ -129,7 +129,6 @@ export function formatRelayRpcUrl({
   const splitUrl = relayUrl.split("?");
   const ua = formatUA(protocol, version, sdkVersion);
   const params = { auth, ua, projectId };
-  if (typeof params.projectId === "undefined") delete params.projectId;
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }
