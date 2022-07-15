@@ -29,7 +29,8 @@
     "new-version": "lerna version --no-git-tag-version",
     "pre-publish": "run-s new-version reset commit-version",
     "npm-publish:rc": "lerna exec -- npm publish --access public --tag rc",
-    "npm-publish:beta": "lerna exec -- npm publish --access public --tag beta",
+    "npm-publish:latest": "lerna exec -- npm publish --access public --tag latest",
+    "npm-publish:next": "lerna exec -- npm publish --access public --tag next",
     "npm-publish:canary": "lerna exec -- npm publish --access public --tag canary"
   },
   "repository": {
