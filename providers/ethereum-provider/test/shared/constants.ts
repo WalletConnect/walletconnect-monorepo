@@ -26,7 +26,7 @@ export const ACCOUNTS = {
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
-  : "ws://0.0.0.0:5555";
+  : "ws://0.0.0.0:5000";
 
 export const TEST_APP_METADATA = {
   name: "Test App",

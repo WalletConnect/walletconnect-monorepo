@@ -5,7 +5,7 @@ export const PACKAGE_NAME = "sign-client";
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
-  : "ws://0.0.0.0:5555";
+  : "ws://0.0.0.0:5000";
 
 export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   ? process.env.TEST_PROJECT_ID
