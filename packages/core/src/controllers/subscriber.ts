@@ -39,6 +39,7 @@ export class Subscriber extends ISubscriber {
   private cached: SubscriberTypes.Active[] = [];
   private initialized = false;
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
+  private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -133,7 +134,7 @@ export class Subscriber extends ISubscriber {
           watch.stop(this.pendingSubscriptionWatchLabel);
           reject(false);
         }
-      }, 20);
+      }, this.pendingSubInterval);
     });
   };
 
