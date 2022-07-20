@@ -25,7 +25,6 @@ import {
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
-  PENDING_SUB_WATCH_LABEL,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -39,7 +38,7 @@ export class Subscriber extends ISubscriber {
 
   private cached: SubscriberTypes.Active[] = [];
   private initialized = false;
-  private pendingSubscriptionWatchLabel = PENDING_SUB_WATCH_LABEL;
+  private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
