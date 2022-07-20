@@ -126,10 +126,7 @@ export class Subscriber extends ISubscriber {
           watch.stop(this.pendingSubscriptionWatchLabel);
           resolve(true);
         }
-        if (
-          watch.elapsed(this.pendingSubscriptionWatchLabel) / 1000 >=
-          PENDING_SUB_RESOLUTION_TIMEOUT
-        ) {
+        if (watch.elapsed(this.pendingSubscriptionWatchLabel) >= PENDING_SUB_RESOLUTION_TIMEOUT) {
           clearInterval(interval);
           watch.stop(this.pendingSubscriptionWatchLabel);
           reject(false);
