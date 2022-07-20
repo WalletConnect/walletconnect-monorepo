@@ -1,4 +1,4 @@
-import { THIRTY_DAYS } from "@walletconnect/time";
+import { THIRTY_DAYS, FIVE_SECONDS } from "@walletconnect/time";
 
 export const SUBSCRIBER_EVENTS = {
   created: "subscription_created",
@@ -13,3 +13,7 @@ export const SUBSCRIBER_DEFAULT_TTL = THIRTY_DAYS;
 export const SUBSCRIBER_CONTEXT = "subscription";
 
 export const SUBSCRIBER_STORAGE_VERSION = "0.3";
+
+export const PENDING_SUB_RESOLUTION_TIMEOUT = FIVE_SECONDS;
+
+export const PENDING_SUB_WATCH_LABEL = "pending_sub_watch_label";

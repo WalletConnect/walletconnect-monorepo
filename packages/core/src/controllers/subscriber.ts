@@ -4,6 +4,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
+import { Watch } from "@walletconnect/time";
 import {
   IRelayer,
   ISubscriber,
@@ -17,13 +18,14 @@ import {
   getRelayProtocolApi,
   getRelayProtocolName,
 } from "@walletconnect/utils";
-
 import {
   CORE_STORAGE_PREFIX,
   RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
+  PENDING_SUB_RESOLUTION_TIMEOUT,
+  PENDING_SUB_WATCH_LABEL,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -37,7 +39,7 @@ export class Subscriber extends ISubscriber {
 
   private cached: SubscriberTypes.Active[] = [];
   private initialized = false;
-
+  private pendingSubscriptionWatchLabel = PENDING_SUB_WATCH_LABEL;
   private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -107,6 +109,33 @@ export class Subscriber extends ISubscriber {
     } else {
       await this.unsubscribeByTopic(topic, opts);
     }
+  };
+
+  public isSubscribed: ISubscriber["isSubscribed"] = async (topic: string) => {
+    // topic subscription is already resolved
+    if (this.topics.includes(topic)) return true;
+
+    // wait for the subscription to resolve
+    return await new Promise((resolve, reject) => {
+      const watch = new Watch();
+      watch.start(this.pendingSubscriptionWatchLabel);
+
+      const interval = setInterval(() => {
+        if (!this.pending.has(topic) && this.topics.includes(topic)) {
+          clearInterval(interval);
+          watch.stop(this.pendingSubscriptionWatchLabel);
+          resolve(true);
+        }
+        if (
+          watch.elapsed(this.pendingSubscriptionWatchLabel) / 1000 >=
+          PENDING_SUB_RESOLUTION_TIMEOUT
+        ) {
+          clearInterval(interval);
+          watch.stop(this.pendingSubscriptionWatchLabel);
+          reject(false);
+        }
+      }, 20);
+    });
   };
 
   public on: ISubscriber["on"] = (event, listener) => {
