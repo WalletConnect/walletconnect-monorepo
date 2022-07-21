@@ -76,6 +76,9 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
       this.logger.debug(`Setting value`);
       this.logger.trace({ type: "method", method: "set", key, value });
       this.map.set(key, value);
+      // eslint-disable-next-line
+      console.log("before persist");
+
       await this.persist();
     }
   };
@@ -136,7 +139,15 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   }
 
   private async persist() {
+    // eslint-disable-next-line
+    console.log("start persist");
     await this.setDataStore(this.values);
+    const eventName = `${this.context}_sync`;
+    // eslint-disable-next-line
+    console.log("eventName", eventName);
+    this.core.events.emit(eventName, { values: this.values });
+    // eslint-disable-next-line
+    console.log("stop persist");
   }
 
   private async restore() {

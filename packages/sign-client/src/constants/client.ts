@@ -9,7 +9,6 @@ export const SIGN_CLIENT_STORAGE_PREFIX = `${SIGN_CLIENT_PROTOCOL}@${SIGN_CLIENT
 export const SIGN_CLIENT_DEFAULT = {
   name: SIGN_CLIENT_CONTEXT,
   logger: "error",
-  controller: false,
   relayUrl: "wss://relay.walletconnect.com",
 };
 
@@ -26,6 +25,9 @@ export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.E
   session_request: "session_request",
   session_event: "session_event",
   proposal_expire: "proposal_expire",
+  pairing_sync: "pairing_sync",
+  session_sync: "session_sync",
+  proposal_sync: "proposal_sync",
 };
 
 export const SIGN_CLIENT_STORAGE_OPTIONS = {
