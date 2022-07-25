@@ -4,6 +4,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
+import { Watch } from "@walletconnect/time";
 import {
   IRelayer,
   ISubscriber,
@@ -17,13 +18,13 @@ import {
   getRelayProtocolApi,
   getRelayProtocolName,
 } from "@walletconnect/utils";
-
 import {
   CORE_STORAGE_PREFIX,
   RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
+  PENDING_SUB_RESOLUTION_TIMEOUT,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -37,7 +38,8 @@ export class Subscriber extends ISubscriber {
 
   private cached: SubscriberTypes.Active[] = [];
   private initialized = false;
-
+  private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
+  private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -109,6 +111,30 @@ export class Subscriber extends ISubscriber {
     }
   };
 
+  public isSubscribed: ISubscriber["isSubscribed"] = async (topic: string) => {
+    // topic subscription is already resolved
+    if (this.topics.includes(topic)) return true;
+
+    // wait for the subscription to resolve
+    return await new Promise((resolve, reject) => {
+      const watch = new Watch();
+      watch.start(this.pendingSubscriptionWatchLabel);
+
+      const interval = setInterval(() => {
+        if (!this.pending.has(topic) && this.topics.includes(topic)) {
+          clearInterval(interval);
+          watch.stop(this.pendingSubscriptionWatchLabel);
+          resolve(true);
+        }
+        if (watch.elapsed(this.pendingSubscriptionWatchLabel) >= PENDING_SUB_RESOLUTION_TIMEOUT) {
+          clearInterval(interval);
+          watch.stop(this.pendingSubscriptionWatchLabel);
+          reject(false);
+        }
+      }, this.pendingSubInterval);
+    });
+  };
+
   public on: ISubscriber["on"] = (event, listener) => {
     this.events.on(event, listener);
   };
@@ -152,7 +178,7 @@ export class Subscriber extends ISubscriber {
 
   private async unsubscribeByTopic(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
     const ids = this.topicMap.get(topic);
-    await Promise.all(ids.map(async id => await this.unsubscribeById(topic, id, opts)));
+    await Promise.all(ids.map(async (id) => await this.unsubscribeById(topic, id, opts)));
   }
 
   private async unsubscribeById(topic: string, id: string, opts?: RelayerTypes.UnsubscribeOptions) {
@@ -274,7 +300,9 @@ export class Subscriber extends ISubscriber {
 
   private async reset() {
     if (!this.cached.length) return;
-    await Promise.all(this.cached.map(async subscription => await this.resubscribe(subscription)));
+    await Promise.all(
+      this.cached.map(async (subscription) => await this.resubscribe(subscription)),
+    );
   }
 
   private async restore() {
@@ -316,7 +344,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private checkPending() {
-    this.pending.forEach(async params => {
+    this.pending.forEach(async (params) => {
       const id = await this.rpcSubscribe(params.topic, params.relay);
       this.onSubscribe(id, params);
     });

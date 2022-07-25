@@ -1,15 +1,46 @@
-import { describe, it, afterEach } from "vitest";
-import { initTwoClients, testConnectMethod, deleteClients, uploadToCloudWatch } from "../shared";
+import { getSdkError } from "@walletconnect/utils";
+import {
+  initTwoClients,
+  testConnectMethod,
+  deleteClients,
+  uploadToCloudWatch,
+  TEST_EMIT_PARAMS,
+} from "../shared";
+import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
 
-describe("Canary", function () {
-  describe("HappyPath", function () {
-    // TODO: implement a test that depicts
-    // the happy case better
-    it("connects", async function () {
+describe("Canary", () => {
+  describe("HappyPath", () => {
+    it("connects", async () => {
       const clients = await initTwoClients();
-      await testConnectMethod(clients);
+      const { sessionA } = await testConnectMethod(clients);
+
+      await Promise.all([
+        new Promise<void>(async (resolve, reject) => {
+          const eventPayload: any = {
+            topic: sessionA.topic,
+            ...TEST_EMIT_PARAMS,
+          };
+
+          try {
+            clients.B.on("session_delete", (event: any) => {
+              expect(eventPayload.topic).to.eql(event.topic);
+              resolve();
+            });
+          } catch (e) {
+            reject();
+          }
+        }),
+        new Promise<void>((resolve) => {
+          clients.A.disconnect({
+            topic: sessionA.topic,
+            reason: getSdkError("USER_DISCONNECTED"),
+          });
+          resolve();
+        }),
+      ]);
+
       deleteClients(clients);
     });
   });

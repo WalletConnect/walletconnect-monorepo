@@ -153,9 +153,9 @@ export class Relayer extends IRelayer {
     await this.messages.set(topic, message);
   }
 
-  private shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+  private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
-    if (!this.subscriber.topics.includes(topic)) return true;
+    if (!(await this.subscriber.isSubscribed(topic))) return true;
     const exists = this.messages.has(topic, message);
     return exists;
   }
@@ -177,7 +177,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
-    if (this.shouldIgnoreMessageEvent(messageEvent)) return;
+    if (await this.shouldIgnoreMessageEvent(messageEvent)) return;
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
     await this.recordMessageEvent(messageEvent);
   }
