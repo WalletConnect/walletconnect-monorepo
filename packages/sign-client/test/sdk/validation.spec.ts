@@ -14,8 +14,8 @@ import {
   TEST_REQUIRED_NAMESPACES,
   TEST_NAMESPACES_INVALID_METHODS,
   TEST_NAMESPACES_INVALID_CHAIN,
-} from "./shared";
-import SignClient from "../src";
+} from "../shared";
+import SignClient from "../../src";
 
 let client: SignClient;
 let proposalId: number;
