@@ -52,7 +52,8 @@ jobs:
             cache-dependency-path: "**/package-lock.json"
         - name: install
           run: npm ci
-        - run: npm run ${{ matrix.style-command }}
+        - name: check
+          run: npm run ${{ matrix.style-command }}
 
   test:
     needs: [build, code_style]
