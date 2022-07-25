@@ -1,6 +1,5 @@
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
-import { EXPIRER_EVENTS, SESSION_EXPIRY, PROPOSAL_EXPIRY, ENGINE_CONTEXT } from "../constants";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -53,6 +52,14 @@ import {
   isValidController,
 } from "@walletconnect/utils";
 
+import {
+  EXPIRER_EVENTS,
+  SESSION_EXPIRY,
+  PROPOSAL_EXPIRY,
+  ENGINE_CONTEXT,
+  ENGINE_RPC_OPTS,
+} from "../constants";
+
 export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
@@ -78,7 +85,7 @@ export class Engine extends IEngine {
     await this.isValidConnect(params);
     const { pairingTopic, requiredNamespaces, relays } = params;
     let topic = pairingTopic;
-    let uri: string | undefined;
+    let uri: string | undefined = undefined;
     let active = false;
 
     if (topic) {
@@ -112,9 +119,8 @@ export class Engine extends IEngine {
           const completeSession = { ...session, requiredNamespaces };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
-          if (topic) {
+          if (topic)
             await this.client.pairing.update(topic, { peerMetadata: session.peer.metadata });
-          }
           resolve(completeSession);
         }
       },
@@ -187,9 +193,8 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     await this.setExpiry(sessionTopic, SESSION_EXPIRY);
-    if (pairingTopic) {
+    if (pairingTopic)
       await this.client.pairing.update(pairingTopic, { peerMetadata: session.peer.metadata });
-    }
 
     if (pairingTopic && id) {
       await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
@@ -390,7 +395,8 @@ export class Engine extends IEngine {
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload);
-    await this.client.core.relayer.publish(topic, message);
+    const opts = ENGINE_RPC_OPTS[method].req;
+    await this.client.core.relayer.publish(topic, message, opts);
     this.client.history.set(topic, payload);
 
     return payload.id;
@@ -399,14 +405,18 @@ export class Engine extends IEngine {
   private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.core.crypto.encode(topic, payload);
-    await this.client.core.relayer.publish(topic, message);
+    const record = await this.client.history.get(topic, id);
+    const opts = ENGINE_RPC_OPTS[record.request.method].res;
+    await this.client.core.relayer.publish(topic, message, opts);
     await this.client.history.resolve(payload);
   };
 
   private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
     const payload = formatJsonRpcError(id, error);
     const message = await this.client.core.crypto.encode(topic, payload);
-    await this.client.core.relayer.publish(topic, message);
+    const record = await this.client.history.get(topic, id);
+    const opts = ENGINE_RPC_OPTS[record.request.method].res;
+    await this.client.core.relayer.publish(topic, message, opts);
     await this.client.history.resolve(payload);
   };
 
@@ -482,7 +492,8 @@ export class Engine extends IEngine {
       case "wc_sessionEvent":
         return this.onSessionEventRequest(topic, payload);
       default:
-        return this.client.logger.info(`Unsupported request method ${reqMethod}`);
+        this.client.logger.info(`Unsupported request method ${reqMethod}`);
+        return;
     }
   };
 
@@ -508,6 +519,7 @@ export class Engine extends IEngine {
         return this.onSessionRequestResponse(topic, payload);
       default:
         this.client.logger.info(`Unsupported response method ${resMethod}`);
+        return;
     }
   };
 
@@ -524,7 +536,7 @@ export class Engine extends IEngine {
       const proposal = { id, pairingTopic: topic, expiry, ...params };
       await this.setProposal(id, proposal);
       this.client.events.emit("session_proposal", { id, params: proposal });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -534,7 +546,7 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { id } = payload;
+    const { id: id } = payload;
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
       this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", result });
@@ -600,7 +612,7 @@ export class Engine extends IEngine {
       };
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
       this.events.emit(engineEvent("session_connect"), { session });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -630,7 +642,7 @@ export class Engine extends IEngine {
       await this.client.session.update(topic, { namespaces: params.namespaces });
       await this.sendResult<"wc_sessionUpdate">(id, topic, true);
       this.client.events.emit("session_update", { id, topic, params });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -655,7 +667,7 @@ export class Engine extends IEngine {
       await this.setExpiry(topic, SESSION_EXPIRY);
       await this.sendResult<"wc_sessionExtend">(id, topic, true);
       this.client.events.emit("session_extend", { id, topic });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -676,7 +688,7 @@ export class Engine extends IEngine {
       this.isValidPing({ topic });
       await this.sendResult<"wc_sessionPing">(id, topic, true);
       this.client.events.emit("session_ping", { id, topic });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -697,7 +709,7 @@ export class Engine extends IEngine {
       this.isValidPing({ topic });
       await this.sendResult<"wc_pairingPing">(id, topic, true);
       this.client.events.emit("pairing_ping", { id, topic });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -723,7 +735,7 @@ export class Engine extends IEngine {
       await this.sendResult<"wc_sessionDelete">(id, topic, true);
       await this.deleteSession(topic);
       this.client.events.emit("session_delete", { id, topic });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -740,7 +752,7 @@ export class Engine extends IEngine {
       await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
       this.client.events.emit("pairing_delete", { id, topic });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -751,7 +763,7 @@ export class Engine extends IEngine {
     try {
       this.isValidRequest({ topic, ...params });
       this.client.events.emit("session_request", { id, topic, params });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -777,7 +789,7 @@ export class Engine extends IEngine {
     try {
       this.isValidEmit({ topic, ...params });
       this.client.events.emit("session_event", { id, topic, params });
-    } catch (err: any) {
+    } catch (err) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -916,11 +928,10 @@ export class Engine extends IEngine {
   };
 
   private isValidApprove: EnginePrivate["isValidApprove"] = async (params) => {
-    if (!isValidParams(params)) {
+    if (!isValidParams(params))
       throw new Error(
         getInternalError("MISSING_OR_INVALID", `approve() params: ${params}`).message,
       );
-    }
     const { id, namespaces, relayProtocol } = params;
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);

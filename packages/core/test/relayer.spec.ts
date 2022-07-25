@@ -25,7 +25,7 @@ describe("Relayer", () => {
   beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({ core, logger, protocol: "wc", version: 2 });
+    relayer = new Relayer({ core, logger });
   });
 
   describe("init", () => {
