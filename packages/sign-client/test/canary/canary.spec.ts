@@ -13,8 +13,6 @@ const environment = process.env.ENVIRONMENT || "dev";
 
 describe("Canary", () => {
   describe("HappyPath", () => {
-    // TODO: implement a test that depicts
-    // the happy case better
     it("connects", async () => {
       const clients = await initTwoClients();
       const { sessionA } = await testConnectMethod(clients);
