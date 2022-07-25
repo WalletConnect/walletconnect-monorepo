@@ -51,7 +51,7 @@ jobs:
         run: npm run lint
 
   test:
-    needs: build
+    needs: [build, lint]
     runs-on: ubuntu-latest
     strategy:
       matrix:
