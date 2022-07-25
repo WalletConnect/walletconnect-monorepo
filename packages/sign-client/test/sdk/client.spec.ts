@@ -1,12 +1,12 @@
 import { getSdkError, calcExpiry } from "@walletconnect/utils";
 import { expect, describe, it } from "vitest";
-import SignClient from "../src";
+import SignClient from "../../src";
 import {
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
-} from "./shared";
+} from "../shared";
 import { SEVEN_DAYS } from "@walletconnect/time";
 
 const TEST_SIGN_CLIENT_DATABASE = "./test.db";
