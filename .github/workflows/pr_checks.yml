@@ -41,19 +41,19 @@ jobs:
         style-command:
           - lint
           - prettier
-      steps:
-        - name: checkout
-          uses: actions/checkout@v3
-        - name: setup-node
-          uses: actions/setup-node@v3
-          with:
-            node-version: 16.x
-            cache: "npm"
-            cache-dependency-path: "**/package-lock.json"
-        - name: install
-          run: npm ci
-        - name: check
-          run: npm run ${{ matrix.style-command }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: setup-node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: install
+        run: npm ci
+      - name: check
+        run: npm run ${{ matrix.style-command }}
 
   test:
     needs: [build, code_style]
