@@ -1,4 +1,3 @@
-import crossFetch from "cross-fetch";
 import pino, { Logger } from "pino";
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -26,9 +25,10 @@ import {
   RelayerOptions,
   RelayerTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, getInternalError, getHttpUrl } from "@walletconnect/utils";
+import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
+  RELAYER_SDK_VERSION,
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
   RELAYER_EVENTS,
@@ -42,8 +42,8 @@ import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
 
 export class Relayer extends IRelayer {
-  public readonly protocol = "irn";
-  public readonly version = 1;
+  public protocol = "wc";
+  public version = 2;
 
   public core: ICore;
   public logger: Logger;
@@ -55,7 +55,9 @@ export class Relayer extends IRelayer {
   public name = RELAYER_CONTEXT;
 
   private initialized = false;
-  private providerOpts: RelayerOptions;
+
+  private relayUrl: string;
+  private projectId: string | undefined;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -68,18 +70,17 @@ export class Relayer extends IRelayer {
     this.subscriber = new Subscriber(this, this.logger);
     this.publisher = new Publisher(this, this.logger);
 
+    this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
+    this.projectId = opts.projectId;
+
     // re-assigned during init()
-    this.providerOpts = { ...opts };
     this.provider = {} as IJsonRpcProvider;
   }
 
   public async init() {
     this.logger.trace(`Initialized`);
-    const clientId = await this.core.crypto.getClientId();
-    const endpoint = getHttpUrl(this.providerOpts.relayUrl ?? RELAYER_DEFAULT_RELAY_URL);
-    const { nonce } = await (await crossFetch(`${endpoint}/auth-nonce?did=${clientId}`)).json();
-    const auth = await this.core.crypto.signJWT(nonce);
-    this.provider = this.createProvider(this.providerOpts, auth);
+    const auth = await this.core.crypto.signJWT(this.relayUrl);
+    this.provider = this.createProvider(auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
@@ -132,14 +133,15 @@ export class Relayer extends IRelayer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private createProvider(opts: RelayerOptions, auth: string) {
+  private createProvider(auth: string) {
     return new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
-          protocol: opts.protocol,
-          version: opts.version,
-          relayUrl: opts.relayUrl || RELAYER_DEFAULT_RELAY_URL,
-          projectId: opts.projectId,
+          sdkVersion: RELAYER_SDK_VERSION,
+          protocol: this.protocol,
+          version: this.version,
+          relayUrl: this.relayUrl,
+          projectId: this.projectId,
           auth,
         }),
       ),

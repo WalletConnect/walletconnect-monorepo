@@ -2,7 +2,7 @@ import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
-import { fromString } from "uint8arrays";
+import { fromString } from "uint8arrays/from-string";
 import {
   decrypt,
   deriveSymKey,
@@ -16,7 +16,7 @@ import {
   isTypeOneEnvelope,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
-import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED } from "../constants";
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
 import { KeyChain } from "./keychain";
 
 export class Crypto implements ICrypto {
@@ -61,11 +61,13 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public signJWT: ICrypto["signJWT"] = async (subject) => {
+  public signJWT: ICrypto["signJWT"] = async (aud) => {
     this.isInitialized();
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);
-    const jwt = await relayAuth.signJWT(subject, keyPair);
+    const sub = generateRandomBytes32();
+    const ttl = CRYPTO_JWT_TTL;
+    const jwt = await relayAuth.signJWT(sub, aud, ttl, keyPair);
     return jwt;
   };
 
@@ -102,7 +104,9 @@ export class Crypto implements ICrypto {
     const params = validateEncoding(opts);
     const message = safeJsonStringify(payload);
     if (isTypeOneEnvelope(params)) {
-      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
+      const selfPublicKey = params.senderPublicKey;
+      const peerPublicKey = params.receiverPublicKey;
+      topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
     }
     const symKey = this.getSymKey(topic);
     const { type, senderPublicKey } = params;
@@ -114,7 +118,9 @@ export class Crypto implements ICrypto {
     this.isInitialized();
     const params = validateDecoding(encoded, opts);
     if (isTypeOneEnvelope(params)) {
-      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
+      const selfPublicKey = params.receiverPublicKey;
+      const peerPublicKey = params.senderPublicKey;
+      topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
     }
     const symKey = this.getSymKey(topic);
     const message = decrypt({ symKey, encoded });

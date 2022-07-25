@@ -40,7 +40,6 @@
     "@walletconnect/time": "1.0.1",
     "@walletconnect/types": "2.0.0-rc.0",
     "@walletconnect/utils": "2.0.0-rc.0",
-    "cross-fetch": "3.1.5",
     "lodash.isequal": "4.5.0",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0",
