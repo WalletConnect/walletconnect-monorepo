@@ -102,5 +102,5 @@ export abstract class ICrypto {
     opts?: CryptoTypes.DecodeOptions,
   ): Promise<JsonRpcPayload>;
 
-  public abstract signJWT(subject: string): Promise<string>;
+  public abstract signJWT(aud: string): Promise<string>;
 }

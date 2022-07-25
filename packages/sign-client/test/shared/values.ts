@@ -1,6 +1,5 @@
 import path from "path";
 import { SignClientTypes, RelayerTypes } from "@walletconnect/types";
-import { ROOT_DIR } from "../../../../ops/js/shared";
 
 export const PACKAGE_NAME = "sign-client";
 
@@ -20,14 +19,6 @@ export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
     database: ":memory:",
   },
 };
-
-export const TEST_SIGN_CLIENT_DATABASE = path.join(
-  ROOT_DIR,
-  "packages",
-  PACKAGE_NAME,
-  "test",
-  "test.db",
-);
 
 export const TEST_SIGN_CLIENT_NAME_A = "client_a";
 export const TEST_APP_METADATA_A: SignClientTypes.Metadata = {
