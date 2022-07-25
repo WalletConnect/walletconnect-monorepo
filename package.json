@@ -28,6 +28,7 @@
   "scripts": {
     "clean": "npm run clean --workspaces",
     "lint": "npm run lint --workspaces",
+    "prettier": "npm run prettier --workspaces",
     "build": "npm run clean --workspaces; npm run build --workspaces",
     "test": "npm run test --workspaces",
     "check": "npm run lint; npm run build; npm run test",

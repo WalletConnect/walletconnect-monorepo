@@ -34,24 +34,28 @@ jobs:
             providers/ethereum-provider/dist
             providers/signer-connection/dist
 
-  lint:
+  code_style:
     runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: setup-node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-          cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
-      - name: install
-        run: npm ci
-      - name: eslint
-        run: npm run lint
+    strategy:
+      matrix:
+        style-command:
+          - lint
+          - prettier
+      steps:
+        - name: checkout
+          uses: actions/checkout@v3
+        - name: setup-node
+          uses: actions/setup-node@v3
+          with:
+            node-version: 16.x
+            cache: "npm"
+            cache-dependency-path: "**/package-lock.json"
+        - name: install
+          run: npm ci
+        - run: npm run ${{ matrix.style-command }}
 
   test:
-    needs: [build, lint]
+    needs: [build, code_style]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -59,7 +63,6 @@ jobs:
           - packages/sign-client
           - packages/core
           - packages/utils
-          # - providers/ethereum-provider
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}

@@ -29,7 +29,8 @@
     "test:canary": "vitest run --dir test/canary",
     "canary": "npm run test:pre; npm run test:canary",
     "loadtest": "npm run test:pre; npm run test:concurrency",
-    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
     "@walletconnect/core": "2.0.0-rc.0",

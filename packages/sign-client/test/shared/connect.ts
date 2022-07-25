@@ -55,7 +55,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   await Promise.all([
     new Promise<void>((resolve, reject) => {
-      B.once("session_proposal", async proposal => {
+      B.once("session_proposal", async (proposal) => {
         try {
           expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
 

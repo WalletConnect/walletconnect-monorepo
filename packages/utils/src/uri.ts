@@ -6,7 +6,7 @@ import { EngineTypes, RelayerTypes } from "@walletconnect/types";
 export function parseRelayParams(params: any, delimiter = "-"): RelayerTypes.ProtocolOptions {
   const relay: any = {};
   const prefix = "relay" + delimiter;
-  Object.keys(params).forEach(key => {
+  Object.keys(params).forEach((key) => {
     if (key.startsWith(prefix)) {
       const name = key.replace(prefix, "");
       const value = params[key];
@@ -37,7 +37,7 @@ export function parseUri(str: string): EngineTypes.UriParameters {
 export function formatRelayParams(relay: RelayerTypes.ProtocolOptions, delimiter = "-") {
   const prefix = "relay";
   const params: any = {};
-  Object.keys(relay).forEach(key => {
+  Object.keys(relay).forEach((key) => {
     const k = prefix + delimiter + key;
     if (relay[key]) {
       params[k] = relay[key];

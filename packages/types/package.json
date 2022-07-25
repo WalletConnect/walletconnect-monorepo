@@ -25,7 +25,8 @@
     "test:pre": "echo 'not required'",
     "test:run": "echo 'not required'",
     "test": "echo 'not required'",
-    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check 'src/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
     "@walletconnect/events": "1.0.0",

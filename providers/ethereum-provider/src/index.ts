@@ -107,8 +107,8 @@ class EthereumProvider implements IEthereumProvider {
     callback: (error: Error | null, response: any) => void,
   ): void {
     this.request(args)
-      .then(response => callback(null, response))
-      .catch(error => callback(error, undefined));
+      .then((response) => callback(null, response))
+      .catch((error) => callback(error, undefined));
   }
 
   get connected(): boolean {
@@ -227,8 +227,8 @@ class EthereumProvider implements IEthereumProvider {
   }
 
   private setChainIds(chains: string[]) {
-    const compatible = chains.filter(x => this.isCompatibleChainId(x));
-    const chainIds = compatible.map(c => this.parseChainId(c)).filter(c => c !== this.chainId);
+    const compatible = chains.filter((x) => this.isCompatibleChainId(x));
+    const chainIds = compatible.map((c) => this.parseChainId(c)).filter((c) => c !== this.chainId);
     if (chainIds.length) {
       this.chainId = chainIds[0];
       this.events.emit("chainChanged", this.chainId);
@@ -251,8 +251,8 @@ class EthereumProvider implements IEthereumProvider {
 
   private setAccounts(accounts: string[]) {
     this.accounts = accounts
-      .filter(x => this.parseChainId(this.parseAccountId(x).chainId) === this.chainId)
-      .map(x => this.parseAccountId(x).address);
+      .filter((x) => this.parseChainId(this.parseAccountId(x).chainId) === this.chainId)
+      .map((x) => this.parseAccountId(x).address);
     this.events.emit("accountsChanged", this.accounts);
   }
 }

@@ -25,7 +25,8 @@
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "vitest run --dir test",
     "test": "npm run test:pre; npm run test:run",
-    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'"
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
     "@walletconnect/jsonrpc-types": "1.0.1",
