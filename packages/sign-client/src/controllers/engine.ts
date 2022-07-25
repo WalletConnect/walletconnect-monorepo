@@ -85,7 +85,7 @@ export class Engine extends IEngine {
     await this.isValidConnect(params);
     const { pairingTopic, requiredNamespaces, relays } = params;
     let topic = pairingTopic;
-    let uri: string | undefined = undefined;
+    let uri: string | undefined;
     let active = false;
 
     if (topic) {
@@ -492,8 +492,7 @@ export class Engine extends IEngine {
       case "wc_sessionEvent":
         return this.onSessionEventRequest(topic, payload);
       default:
-        this.client.logger.info(`Unsupported request method ${reqMethod}`);
-        return;
+        return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
   };
 
@@ -518,8 +517,7 @@ export class Engine extends IEngine {
       case "wc_sessionRequest":
         return this.onSessionRequestResponse(topic, payload);
       default:
-        this.client.logger.info(`Unsupported response method ${resMethod}`);
-        return;
+        return this.client.logger.info(`Unsupported response method ${resMethod}`);
     }
   };
 
@@ -536,7 +534,7 @@ export class Engine extends IEngine {
       const proposal = { id, pairingTopic: topic, expiry, ...params };
       await this.setProposal(id, proposal);
       this.client.events.emit("session_proposal", { id, params: proposal });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -546,7 +544,7 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { id: id } = payload;
+    const { id } = payload;
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
       this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", result });
@@ -612,7 +610,7 @@ export class Engine extends IEngine {
       };
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
       this.events.emit(engineEvent("session_connect"), { session });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -642,7 +640,7 @@ export class Engine extends IEngine {
       await this.client.session.update(topic, { namespaces: params.namespaces });
       await this.sendResult<"wc_sessionUpdate">(id, topic, true);
       this.client.events.emit("session_update", { id, topic, params });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -667,7 +665,7 @@ export class Engine extends IEngine {
       await this.setExpiry(topic, SESSION_EXPIRY);
       await this.sendResult<"wc_sessionExtend">(id, topic, true);
       this.client.events.emit("session_extend", { id, topic });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -688,7 +686,7 @@ export class Engine extends IEngine {
       this.isValidPing({ topic });
       await this.sendResult<"wc_sessionPing">(id, topic, true);
       this.client.events.emit("session_ping", { id, topic });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -709,7 +707,7 @@ export class Engine extends IEngine {
       this.isValidPing({ topic });
       await this.sendResult<"wc_pairingPing">(id, topic, true);
       this.client.events.emit("pairing_ping", { id, topic });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -735,7 +733,7 @@ export class Engine extends IEngine {
       await this.sendResult<"wc_sessionDelete">(id, topic, true);
       await this.deleteSession(topic);
       this.client.events.emit("session_delete", { id, topic });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -752,7 +750,7 @@ export class Engine extends IEngine {
       await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
       this.client.events.emit("pairing_delete", { id, topic });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -763,7 +761,7 @@ export class Engine extends IEngine {
     try {
       this.isValidRequest({ topic, ...params });
       this.client.events.emit("session_request", { id, topic, params });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
@@ -789,7 +787,7 @@ export class Engine extends IEngine {
     try {
       this.isValidEmit({ topic, ...params });
       this.client.events.emit("session_event", { id, topic, params });
-    } catch (err) {
+    } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }

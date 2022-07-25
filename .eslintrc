@@ -30,7 +30,8 @@
     "promise/param-names": "off",
     "no-console": ["error", { "allow": ["warn"] }],
     "no-useless-constructor": "off",
-    "no-use-before-define": "off"
+    "no-use-before-define": "off",
+    "curly": "off"
   },
   "ignorePatterns": ["dist", "**/node_modules/*"],
   "env": {

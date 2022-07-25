@@ -223,7 +223,7 @@ export function isExpired(expiry: number) {
 // -- promises --------------------------------------------- //
 export function createDelayedPromise<T>() {
   const timeout = toMiliseconds(FIVE_MINUTES);
-  let cacheResolve: undefined | ((value?: T) => void);
+  let cacheResolve: undefined | ((value: T | PromiseLike<T>) => void);
   let cacheReject: undefined | ((value?: ErrorResponse) => void);
   let cacheTimeout: undefined | NodeJS.Timeout;
 
@@ -236,7 +236,7 @@ export function createDelayedPromise<T>() {
   const resolve = (value?: T) => {
     if (cacheTimeout && cacheResolve) {
       clearTimeout(cacheTimeout);
-      cacheResolve(value);
+      cacheResolve(value as T);
     }
   };
   const reject = (value?: ErrorResponse) => {
