@@ -59,7 +59,7 @@ jobs:
           - packages/sign-client
           - packages/core
           - packages/utils
-          - providers/ethereum-provider
+          # - providers/ethereum-provider
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}

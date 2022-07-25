@@ -31,7 +31,8 @@
     "no-console": ["error", { "allow": ["warn"] }],
     "no-useless-constructor": "off",
     "no-use-before-define": "off",
-    "curly": "off"
+    "curly": "off",
+    "prefer-promise-reject-errors": "off"
   },
   "ignorePatterns": ["dist", "**/node_modules/*"],
   "env": {
