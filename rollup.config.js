@@ -19,8 +19,20 @@ export default function createConfig(packageName, packageDependencies) {
   return [
     {
       input,
-      plugins: [nodeResolve({ preferBuiltins: false, browser: true }), commonjs(), ...plugins],
-      output: { file: "./dist/index.umd.js", format: "umd", exports: "named", name: packageName },
+      plugins: [
+        nodeResolve({
+          preferBuiltins: false,
+          browser: true,
+        }),
+        commonjs(),
+        ...plugins,
+      ],
+      output: {
+        file: "./dist/index.umd.js",
+        format: "umd",
+        exports: "named",
+        name: packageName,
+      },
     },
     {
       input,
