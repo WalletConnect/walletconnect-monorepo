@@ -17,7 +17,7 @@ describe("Canary", () => {
       const { sessionA } = await testConnectMethod(clients);
 
       await Promise.all([
-        new Promise<void>(async (resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
           const eventPayload: any = {
             topic: sessionA.topic,
             ...TEST_EMIT_PARAMS,
