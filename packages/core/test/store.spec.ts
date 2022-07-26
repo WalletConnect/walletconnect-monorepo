@@ -1,8 +1,8 @@
-import "mocha";
+import { expect, describe, it, beforeEach } from "vitest";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import pino from "pino";
 import { Core, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
 const MOCK_STORE_NAME = "mock-entity";

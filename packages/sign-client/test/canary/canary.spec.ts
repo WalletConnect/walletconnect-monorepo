@@ -1,13 +1,12 @@
-import "mocha";
 import { getSdkError } from "@walletconnect/utils";
 import {
-  expect,
   initTwoClients,
   testConnectMethod,
   deleteClients,
   uploadToCloudWatch,
   TEST_EMIT_PARAMS,
 } from "../shared";
+import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
 
@@ -20,12 +19,12 @@ describe("Canary", () => {
   describe("HappyPath", () => {
     it("connects", async () => {
       const clients = await initTwoClients();
-      log('Clients initialized');
+      log("Clients initialized");
       const { sessionA } = await testConnectMethod(clients);
-      log('Clients connected');
+      log("Clients connected");
 
       await Promise.all([
-        new Promise<void>(async (resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
           const eventPayload: any = {
             topic: sessionA.topic,
             ...TEST_EMIT_PARAMS,
@@ -40,7 +39,7 @@ describe("Canary", () => {
             reject();
           }
         }),
-        new Promise<void>(resolve => {
+        new Promise<void>((resolve) => {
           clients.A.disconnect({
             topic: sessionA.topic,
             reason: getSdkError("USER_DISCONNECTED"),
@@ -48,13 +47,13 @@ describe("Canary", () => {
           resolve();
         }),
       ]);
-      log('Clients disconnected');
+      log("Clients disconnected");
 
       deleteClients(clients);
-      log('Clients deleted');
+      log("Clients deleted");
     });
   });
-  afterEach(function(done) {
+  afterEach(function (done) {
     const metric_prefix = `${this.currentTest!.parent!.title}.${this.currentTest!.title}`;
     uploadToCloudWatch(
       environment,

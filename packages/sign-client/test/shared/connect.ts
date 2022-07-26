@@ -1,4 +1,3 @@
-import "mocha";
 import { parseUri } from "@walletconnect/utils";
 import {
   EngineTypes,
@@ -7,9 +6,9 @@ import {
   ProposalTypes,
   SessionTypes,
 } from "@walletconnect/types";
-import { expect } from "./chai";
 import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./values";
 import { Clients } from "./init";
+import { expect } from "vitest";
 
 export interface TestConnectParams {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;
@@ -56,7 +55,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   await Promise.all([
     new Promise<void>((resolve, reject) => {
-      B.once("session_proposal", async proposal => {
+      B.once("session_proposal", async (proposal) => {
         try {
           expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
 

@@ -54,7 +54,7 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
 
   if (!hasOverlap(paramsKeys, sessionKeys)) return false;
 
-  sessionKeys.forEach(key => {
+  sessionKeys.forEach((key) => {
     const { accounts, methods, events, extension } = session.namespaces[key];
     const chains = getAccountsChains(accounts);
     const requiredNamespace = requiredNamespaces[key];
@@ -68,11 +68,11 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
     }
 
     if (compatible && extension) {
-      extension.forEach(extensionNamespace => {
+      extension.forEach((extensionNamespace) => {
         const { accounts, methods, events } = extensionNamespace;
         const chains = getAccountsChains(accounts);
         const overlap = requiredNamespace.extension?.find(
-          ext =>
+          (ext) =>
             hasOverlap(ext.chains, chains) &&
             hasOverlap(ext.methods, methods) &&
             hasOverlap(ext.events, events),
@@ -438,7 +438,7 @@ export function isConformingNamespaces(
       `${context} namespaces keys don't satisfy requiredNamespaces`,
     );
   } else {
-    requiredNamespaceKeys.forEach(key => {
+    requiredNamespaceKeys.forEach((key) => {
       if (error) return;
 
       const requiredNamespaceChains = requiredNamespaces[key].chains;
@@ -467,7 +467,7 @@ export function isConformingNamespaces(
       } else if (requiredNamespaces[key].extension && namespaces[key].extension) {
         requiredNamespaces[key].extension?.forEach(({ methods, events, chains }) => {
           if (error) return;
-          const isOverlap = namespaces[key].extension?.find(namespace => {
+          const isOverlap = namespaces[key].extension?.find((namespace) => {
             const accChains = getAccountsChains(namespace.accounts);
             return (
               hasOverlap(chains, accChains) &&

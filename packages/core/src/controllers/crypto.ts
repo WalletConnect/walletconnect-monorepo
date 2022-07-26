@@ -42,7 +42,7 @@ export class Crypto implements ICrypto {
     return getLoggerContext(this.logger);
   }
 
-  public hasKeys: ICrypto["hasKeys"] = tag => {
+  public hasKeys: ICrypto["hasKeys"] = (tag) => {
     this.isInitialized();
     return this.keychain.has(tag);
   };
@@ -61,7 +61,7 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public signJWT: ICrypto["signJWT"] = async aud => {
+  public signJWT: ICrypto["signJWT"] = async (aud) => {
     this.isInitialized();
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);

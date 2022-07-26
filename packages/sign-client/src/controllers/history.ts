@@ -30,7 +30,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       await this.restore();
-      this.cached.forEach(record => this.records.set(record.id, record));
+      this.cached.forEach((record) => this.records.set(record.id, record));
       this.cached = [];
       this.registerEventListeners();
       this.initialized = true;
@@ -59,7 +59,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   get pending(): RequestEvent[] {
     const requests: RequestEvent[] = [];
-    this.values.forEach(record => {
+    this.values.forEach((record) => {
       if (typeof record.response !== "undefined") return;
       const requestEvent: RequestEvent = {
         topic: record.topic,
@@ -86,7 +86,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.events.emit(HISTORY_EVENTS.created, record);
   };
 
-  public resolve: IJsonRpcHistory["resolve"] = async response => {
+  public resolve: IJsonRpcHistory["resolve"] = async (response) => {
     this.isInitialized();
     this.logger.debug(`Updating JSON-RPC response history record`);
     this.logger.trace({ type: "method", method: "update", response });

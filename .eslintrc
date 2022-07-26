@@ -10,6 +10,9 @@
     "@typescript-eslint/no-use-before-define": ["off"],
     "@typescript-eslint/no-unused-vars": ["off"],
     "@typescript-eslint/no-namespace": ["off"],
+    "@typescript-eslint/ban-ts-comment": "off",
+    "camelcase": "off",
+    "no-unused-expressions": "off",
     "comma-dangle": ["error", "always-multiline"],
     "require-await": "warn",
     "no-async-promise-executor": ["off"],
@@ -25,11 +28,19 @@
     "space-before-function-paren": ["off"],
     "indent": ["off"],
     "promise/param-names": "off",
-    "no-console": ["error", { "allow": ["warn"] }]
+    "no-console": ["error", { "allow": ["warn"] }],
+    "no-useless-constructor": "off",
+    "no-use-before-define": "off",
+    "curly": "off",
+    "prefer-promise-reject-errors": "off"
   },
+  "ignorePatterns": ["dist", "**/node_modules/*"],
   "env": {
     "browser": true,
     "es6": true
+  },
+  "globals": {
+    "NodeJS": true
   },
   "extends": [
     "standard",
@@ -37,10 +48,10 @@
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended"
   ],
-  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
     "sourceType": "module"
   },
+  "parser": "@typescript-eslint/parser",
   "plugins": ["prettier", "@typescript-eslint"]
 }

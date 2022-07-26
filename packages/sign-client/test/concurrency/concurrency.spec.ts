@@ -1,8 +1,6 @@
 import { getSdkError } from "@walletconnect/utils";
-import "mocha";
 import SignClient from "../../src";
 import {
-  expect,
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
@@ -11,6 +9,7 @@ import {
   TEST_EMIT_PARAMS,
   throttle,
 } from "./../shared";
+import { describe, it, expect } from "vitest";
 
 describe("Sign Client Concurrency", () => {
   it("should successfully handle concurrent clients", async () => {
@@ -108,7 +107,7 @@ describe("Sign Client Concurrency", () => {
 
     // init clients and pair
     for await (const i of Array.from(Array(clientPairs).keys())) {
-      await new Promise<void>(async resolve => {
+      await new Promise<void>(async (resolve) => {
         const timeout = setTimeout(() => {
           log(`Client ${i} hung up`);
           resolve();
@@ -128,7 +127,7 @@ describe("Sign Client Concurrency", () => {
     // process all messages between clients in parallel
     await Promise.all(
       pairings.map(({ clients, sessionA }, i) => {
-        return new Promise<void>(async resolve => {
+        return new Promise<void>(async (resolve) => {
           await processMessages({ clients, sessionA }, i);
           resolve();
         });
@@ -154,7 +153,7 @@ describe("Sign Client Concurrency", () => {
             reject();
           }
         }),
-        new Promise<void>(resolve => {
+        new Promise<void>((resolve) => {
           clients.A.disconnect({
             topic: sessionA.topic,
             reason: getSdkError("USER_DISCONNECTED"),

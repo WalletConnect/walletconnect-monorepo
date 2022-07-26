@@ -27,7 +27,7 @@ export declare namespace JsonRpcTypes {
       code: number;
       message: string;
     };
-    wc_pairingPing: {};
+    wc_pairingPing: Record<string, unknown>;
     wc_sessionPropose: {
       relays: RelayerTypes.ProtocolOptions[];
       requiredNamespaces: ProposalTypes.RequiredNamespaces;
@@ -48,12 +48,12 @@ export declare namespace JsonRpcTypes {
     wc_sessionUpdate: {
       namespaces: SessionTypes.Namespaces;
     };
-    wc_sessionExtend: {};
+    wc_sessionExtend: Record<string, unknown>;
     wc_sessionDelete: {
       code: number;
       message: string;
     };
-    wc_sessionPing: {};
+    wc_sessionPing: Record<string, unknown>;
     wc_sessionRequest: {
       request: {
         method: string;

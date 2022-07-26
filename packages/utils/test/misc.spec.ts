@@ -1,8 +1,5 @@
-import "mocha";
-import { expect } from "chai";
-
-import { calcExpiry, formatRelayRpcUrl, formatUA } from "../src";
-import { hasOverlap } from "../dist/cjs";
+import { expect, describe, it } from "vitest";
+import { calcExpiry, formatRelayRpcUrl, hasOverlap, formatUA } from "../src";
 
 const RELAY_URL = "wss://relay.walletconnect.com";
 
@@ -12,7 +9,7 @@ const PROTOCOL = "wc";
 
 const VERSION = 2;
 
-const SDK_VERSION = "2.0.0-beta.102";
+const SDK_VERSION = "2.0.0-rc.0";
 
 const ENV = "node";
 

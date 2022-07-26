@@ -6,7 +6,7 @@ export function deleteClients(clients: { A: SignClient; B: SignClient }) {
 }
 
 export async function throttle(timeout: number) {
-  return await new Promise<void>(resolve =>
+  return await new Promise<void>((resolve) =>
     setTimeout(() => {
       resolve();
     }, timeout),
