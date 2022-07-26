@@ -7,7 +7,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 1. Install [nodejs and npm](https://nodejs.org/en/)
 2. Install python3 and ensure `python` cli is linked (required to build some npm modules)
 3. Install workspace dependencies i.e. run `npm install` from root folder
-4. Install redis. We recomend running it as a [brew service](https://gist.github.com/tomysmile/1b8a321e7c58499ef9f9441b2faa0aa8)
+4. Install redis. We recommend running it as a [brew service](https://gist.github.com/tomysmile/1b8a321e7c58499ef9f9441b2faa0aa8)
 5. Pull and start ts-relay server ([separate repo](https://github.com/WalletConnect/ts-relay)) `PORT=5555 npm run start`
 6. Ensure everything runs correctly by executing `npm run check`
 
