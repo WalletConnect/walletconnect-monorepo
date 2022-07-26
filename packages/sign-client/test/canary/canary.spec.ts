@@ -10,11 +10,18 @@ import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
 
+const log = (log: string) => {
+  // eslint-disable-next-line no-console
+  console.log(log);
+};
+
 describe("Canary", () => {
   describe("HappyPath", () => {
     it("connects", async () => {
       const clients = await initTwoClients();
+      log('Clients initialized');
       const { sessionA } = await testConnectMethod(clients);
+      log('Clients connected');
 
       await Promise.all([
         new Promise<void>((resolve, reject) => {
@@ -40,8 +47,10 @@ describe("Canary", () => {
           resolve();
         }),
       ]);
+      log('Clients disconnected');
 
       deleteClients(clients);
+      log('Clients deleted');
     });
   });
   afterEach(function (done) {
