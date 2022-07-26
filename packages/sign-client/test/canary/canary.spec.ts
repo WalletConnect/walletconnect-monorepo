@@ -19,9 +19,9 @@ describe("Canary", () => {
   describe("HappyPath", () => {
     it("connects", async () => {
       const clients = await initTwoClients();
-      log('Clients initialized');
+      log("Clients initialized");
       const { sessionA } = await testConnectMethod(clients);
-      log('Clients connected');
+      log("Clients connected");
 
       await Promise.all([
         new Promise<void>((resolve, reject) => {
@@ -47,10 +47,10 @@ describe("Canary", () => {
           resolve();
         }),
       ]);
-      log('Clients disconnected');
+      log("Clients disconnected");
 
       deleteClients(clients);
-      log('Clients deleted');
+      log("Clients deleted");
     });
   });
   afterEach(function (done) {
