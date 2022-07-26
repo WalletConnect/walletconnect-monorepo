@@ -5,6 +5,11 @@ import commonjs from "@rollup/plugin-commonjs";
 
 const input = "./src/index.ts";
 const plugins = [
+  nodeResolve({
+    preferBuiltins: false,
+    browser: true,
+  }),
+  commonjs(),
   nodePolyfills(),
   esbuild({
     minify: true,
@@ -19,14 +24,7 @@ export default function createConfig(packageName, packageDependencies) {
   return [
     {
       input,
-      plugins: [
-        nodeResolve({
-          preferBuiltins: false,
-          browser: true,
-        }),
-        commonjs(),
-        ...plugins,
-      ],
+      plugins,
       output: {
         file: "./dist/index.umd.js",
         format: "umd",
