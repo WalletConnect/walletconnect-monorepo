@@ -54,12 +54,15 @@ describe("Canary", () => {
     });
   });
   afterEach(function (done) {
-    const metric_prefix = `${this.currentTest!.parent!.title}.${this.currentTest!.title}`;
+    const { suite, name, result } = done.meta;
+
+    const metric_prefix = `${suite.name}.${name}`;
+
     uploadToCloudWatch(
       environment,
       metric_prefix,
-      this.currentTest!.state === "passed",
-      this.currentTest!.duration!,
+      result?.state === "pass",
+      result?.duration ?? 0,
       done,
     );
   });
