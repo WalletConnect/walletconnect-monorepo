@@ -5,7 +5,6 @@ export const uploadToCloudWatch = async (
   metricsPrefix: string,
   isTestPassed: boolean,
   testDurationMs: number,
-  callback: Function,
 ) => {
   const cloudwatch = new CloudWatch({ region: "eu-central-1" });
   const ts = new Date();
@@ -33,13 +32,16 @@ export const uploadToCloudWatch = async (
     ],
     Namespace: `${env}_Canary_SignClient`,
   };
-  cloudwatch.putMetricData(params, function (err: Error) {
-    if (err) {
-      console.error(err, err.stack);
-      // Swallow error as
-      // Test shouldn't fail despite CW failing
-      // we will report on missing metrics
-    }
-    callback();
+
+  await new Promise<void>((resolve) => {
+    cloudwatch.putMetricData(params, function (err: Error) {
+      if (err) {
+        console.error(err, err.stack);
+        // Swallow error as
+        // Test shouldn't fail despite CW failing
+        // we will report on missing metrics
+      }
+      resolve();
+    });
   });
 };

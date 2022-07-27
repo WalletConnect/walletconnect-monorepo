@@ -53,16 +53,15 @@ describe("Canary", () => {
       log("Clients deleted");
     });
   });
-  afterEach(function (done) {
+  afterEach(async (done) => {
     const { suite, name, result } = done.meta;
     const metric_prefix = `${suite.name}.${name}`;
     const nowTimestamp = Date.now();
-    uploadToCloudWatch(
+    await uploadToCloudWatch(
       environment,
       metric_prefix,
       result?.state === "pass",
       nowTimestamp - (result?.startTime || nowTimestamp),
-      done,
     );
   });
 });
