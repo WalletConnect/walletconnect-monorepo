@@ -9,7 +9,7 @@ const PROTOCOL = "wc";
 
 const VERSION = 2;
 
-const SDK_VERSION = "2.0.0-rc.0";
+const SDK_VERSION = "2.0.0-rc.1";
 
 const ENV = "node";
 
