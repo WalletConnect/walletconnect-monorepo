@@ -33,7 +33,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
       await this.restore();
 
-      this.cached.forEach(value => {
+      this.cached.forEach((value) => {
         if (isProposalStruct(value)) {
           // TODO(pedro) revert type casting as any
           this.map.set(value.id as any, value);
@@ -80,7 +80,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     }
   };
 
-  public get: IStore<Key, Data>["get"] = key => {
+  public get: IStore<Key, Data>["get"] = (key) => {
     this.isInitialized();
     this.logger.debug(`Getting value`);
     this.logger.trace({ type: "method", method: "get", key });
@@ -88,11 +88,11 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     return value;
   };
 
-  public getAll: IStore<Key, Data>["getAll"] = filter => {
+  public getAll: IStore<Key, Data>["getAll"] = (filter) => {
     if (!filter) return this.values;
 
-    return this.values.filter(value =>
-      Object.keys(filter).every(key => isEqual(value[key], filter[key])),
+    return this.values.filter((value) =>
+      Object.keys(filter).every((key) => isEqual(value[key], filter[key])),
     );
   };
 

@@ -1,4 +1,3 @@
-// import { ONE_DAY, FIVE_MINUTES, THIRTY_SECONDS } from "@walletconnect/time";
 import { EngineTypes } from "@walletconnect/types";
 
 export const ENGINE_CONTEXT = "engine";

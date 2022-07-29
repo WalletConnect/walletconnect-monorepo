@@ -62,7 +62,7 @@ export class MessageTracker extends IMessageTracker {
     return hash;
   };
 
-  public get: IMessageTracker["get"] = topic => {
+  public get: IMessageTracker["get"] = (topic) => {
     this.isInitialized();
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
@@ -78,7 +78,7 @@ export class MessageTracker extends IMessageTracker {
     return typeof messages[hash] !== "undefined";
   };
 
-  public del: IMessageTracker["del"] = async topic => {
+  public del: IMessageTracker["del"] = async (topic) => {
     this.isInitialized();
     this.messages.delete(topic);
     await this.persist();

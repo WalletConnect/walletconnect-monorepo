@@ -1,4 +1,4 @@
-import "mocha";
+import { expect, describe, it } from "vitest";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import pino from "pino";
 
@@ -10,7 +10,7 @@ import {
   KEYCHAIN_CONTEXT,
   KEYCHAIN_STORAGE_VERSION,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Keychain", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));

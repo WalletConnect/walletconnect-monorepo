@@ -178,7 +178,7 @@ export class Subscriber extends ISubscriber {
 
   private async unsubscribeByTopic(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
     const ids = this.topicMap.get(topic);
-    await Promise.all(ids.map(async id => await this.unsubscribeById(topic, id, opts)));
+    await Promise.all(ids.map(async (id) => await this.unsubscribeById(topic, id, opts)));
   }
 
   private async unsubscribeById(topic: string, id: string, opts?: RelayerTypes.UnsubscribeOptions) {
@@ -300,7 +300,9 @@ export class Subscriber extends ISubscriber {
 
   private async reset() {
     if (!this.cached.length) return;
-    await Promise.all(this.cached.map(async subscription => await this.resubscribe(subscription)));
+    await Promise.all(
+      this.cached.map(async (subscription) => await this.resubscribe(subscription)),
+    );
   }
 
   private async restore() {
@@ -342,7 +344,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private checkPending() {
-    this.pending.forEach(async params => {
+    this.pending.forEach(async (params) => {
       const id = await this.rpcSubscribe(params.topic, params.relay);
       this.onSubscribe(id, params);
     });

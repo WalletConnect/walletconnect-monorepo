@@ -33,7 +33,7 @@ export function formatAccountId(params: AccountIdParams): string {
 
 export function getUniqueValues(array: string[], parser: (str: string) => string): string[] {
   const unique: string[] = [];
-  array.forEach(str => {
+  array.forEach((str) => {
     const value = parser(str);
     if (!unique.includes(value)) unique.push(value);
   });
@@ -70,7 +70,7 @@ export function getAccountsFromNamespaces(
   keys: string[] = [],
 ): string[] {
   const accounts: string[] = [];
-  Object.keys(namespaces).forEach(key => {
+  Object.keys(namespaces).forEach((key) => {
     if (keys.length && !keys.includes(key)) return;
     const ns = namespaces[key];
     accounts.push(...ns.accounts);
@@ -83,7 +83,7 @@ export function getChainsFromNamespaces(
   keys: string[] = [],
 ): string[] {
   const chains: string[] = [];
-  Object.keys(namespaces).forEach(key => {
+  Object.keys(namespaces).forEach((key) => {
     if (keys.length && !keys.includes(key)) return;
     const ns = namespaces[key];
     chains.push(...getChainsFromAccounts(ns.accounts));
@@ -96,7 +96,7 @@ export function getChainsFromRequiredNamespaces(
   keys: string[] = [],
 ): string[] {
   const chains: string[] = [];
-  Object.keys(requiredNamespaces).forEach(key => {
+  Object.keys(requiredNamespaces).forEach((key) => {
     if (keys.length && !keys.includes(key)) return;
     const ns = requiredNamespaces[key];
     chains.push(...ns.chains);

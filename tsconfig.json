@@ -12,9 +12,9 @@
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
-    "lib": ["es2019", "dom", "esnext.asynciterable"],
-    "module": "esnext",
-    "moduleResolution": "node",
+    "lib": ["ESNext", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -32,6 +32,7 @@
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
     "suppressImplicitAnyIndexErrors": true,
-    "target": "es2017"
-  }
+    "target": "ESNext"
+  },
+  "include": ["**/package.json", "packages", "providers"]
 }

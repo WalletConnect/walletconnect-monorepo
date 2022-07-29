@@ -25,7 +25,6 @@ export class Expirer extends IExpirer {
 
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
-    this.core;
     this.logger = generateChildLogger(logger, this.name);
   }
 
@@ -33,7 +32,7 @@ export class Expirer extends IExpirer {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       await this.restore();
-      this.cached.forEach(expiration => this.expirations.set(expiration.target, expiration));
+      this.cached.forEach((expiration) => this.expirations.set(expiration.target, expiration));
       this.cached = [];
       this.registerEventListeners();
       this.initialized = true;
@@ -60,7 +59,7 @@ export class Expirer extends IExpirer {
     return Array.from(this.expirations.values());
   }
 
-  public has: IExpirer["has"] = key => {
+  public has: IExpirer["has"] = (key) => {
     try {
       const target = this.formatTarget(key);
       const expiration = this.getExpiration(target);
@@ -83,13 +82,13 @@ export class Expirer extends IExpirer {
     } as ExpirerTypes.Created);
   };
 
-  public get: IExpirer["get"] = key => {
+  public get: IExpirer["get"] = (key) => {
     this.isInitialized();
     const target = this.formatTarget(key);
     return this.getExpiration(target);
   };
 
-  public del: IExpirer["del"] = key => {
+  public del: IExpirer["del"] = (key) => {
     this.isInitialized();
     const target = this.formatTarget(key);
     const exists = this.has(target);

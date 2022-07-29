@@ -1,4 +1,4 @@
-import "mocha";
+import { expect, describe, it, beforeEach } from "vitest";
 import pino from "pino";
 import Sinon from "sinon";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
@@ -15,7 +15,7 @@ import {
   Subscriber,
   SUBSCRIBER_CONTEXT,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Subscriber", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
@@ -68,9 +68,7 @@ describe("Subscriber", () => {
 
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
-      await expect(subscriber.subscribe(topic)).to.eventually.be.rejectedWith(
-        "Not initialized. subscription",
-      );
+      await expect(subscriber.subscribe(topic)).rejects.toThrow("Not initialized. subscription");
     });
     it("calls `provider.request` with the expected request shape", async () => {
       await subscriber.subscribe(topic);
@@ -105,9 +103,7 @@ describe("Subscriber", () => {
     });
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
-      await expect(subscriber.unsubscribe(topic)).to.eventually.be.rejectedWith(
-        "Not initialized. subscription",
-      );
+      await expect(subscriber.unsubscribe(topic)).rejects.toThrow("Not initialized. subscription");
     });
     it("unsubscribes by individual id if `opts.id` is provided", async () => {
       const id = "test-id";

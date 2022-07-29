@@ -1,16 +1,15 @@
 import { getSdkError, calcExpiry } from "@walletconnect/utils";
-import "mocha";
-import SignClient from "../src";
+import { expect, describe, it } from "vitest";
+import SignClient from "../../src";
 import {
-  expect,
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
-} from "./shared";
+} from "../shared";
 import { SEVEN_DAYS } from "@walletconnect/time";
 
-const TEST_SIGN_CLIENT_DATABASE = "./test.db"
+const TEST_SIGN_CLIENT_DATABASE = "./test.db";
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -48,7 +47,7 @@ describe("Sign Client Integration", () => {
         await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith(
+        await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
         deleteClients(clients);
@@ -64,7 +63,7 @@ describe("Sign Client Integration", () => {
         await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.session.get(topic)).to.throw(`No matching key. session: ${topic}`);
         const promise = clients.A.ping({ topic });
-        await expect(promise).to.eventually.be.rejectedWith(
+        await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
         deleteClients(clients);
@@ -76,7 +75,7 @@ describe("Sign Client Integration", () => {
     it("throws if the topic is not a known pairing or session topic", async () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
-      await expect(clients.A.ping({ topic: fakeTopic })).to.eventually.be.rejectedWith(
+      await expect(clients.A.ping({ topic: fakeTopic })).rejects.toThrowError(
         `No matching key. session or pairing topic doesn't exist: ${fakeTopic}`,
       );
       deleteClients(clients);

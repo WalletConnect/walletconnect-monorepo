@@ -1,3 +1,5 @@
+import { describe, it } from "vitest";
+
 // import "mocha";
 // import * as chai from "chai";
 // import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -101,3 +103,9 @@
 //     chai.expect(result).to.eql(TEST_JSONRPC_RESULT);
 //   });
 // });
+
+describe("@walletconnect/signer-connection", () => {
+  it("needs tests", () => {
+    // TODO
+  });
+});

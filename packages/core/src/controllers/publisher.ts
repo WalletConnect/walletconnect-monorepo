@@ -100,7 +100,7 @@ export class Publisher extends IPublisher {
   }
 
   private checkQueue() {
-    this.queue.forEach(async params => {
+    this.queue.forEach(async (params) => {
       const {
         topic,
         message,

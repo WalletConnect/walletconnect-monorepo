@@ -21,13 +21,11 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
       - name: build
         run: npm run build
       - uses: actions/upload-artifact@v3
         with:
-          name: build-artifact
+          name: build-artifacts
           path: |
             packages/core/dist
             packages/sign-client/dist
@@ -36,8 +34,13 @@ jobs:
             providers/ethereum-provider/dist
             providers/signer-connection/dist
 
-  lint:
+  code_style:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        style-command:
+          - lint
+          - prettier
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -49,13 +52,11 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
-      - name: eslint
-        run: npm run lint
+      - name: check
+        run: npm run ${{ matrix.style-command }}
 
   test:
-    needs: build
+    needs: [build, code_style]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -63,7 +64,6 @@ jobs:
           - packages/sign-client
           - packages/core
           - packages/utils
-          - providers/ethereum-provider
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
@@ -78,9 +78,7 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
       - uses: actions/download-artifact@v3
         with:
-          name: build-artifact
+          name: build-artifacts
       - run: npm run test --prefix=${{ matrix.test-prefix }}
