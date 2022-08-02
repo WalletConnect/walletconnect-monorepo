@@ -121,9 +121,9 @@ class WalletConnectProvider extends ProviderEngine {
       return;
     }
 
-    if(payload.method === "eth_signTypedData_v4" && this.walletMeta?.name === "MetaMask") {
-      const { result } =  await this.handleOtherRequests(payload);
-      return result
+    if (payload.method === "eth_signTypedData_v4" && this.walletMeta?.name === "MetaMask") {
+      const { result } = await this.handleOtherRequests(payload);
+      return result;
     } else {
       return this.sendAsyncPromise(payload.method, payload.params);
     }
