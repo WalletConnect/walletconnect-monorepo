@@ -145,6 +145,7 @@ export interface IJsonRpcResponseSuccess {
 export interface IJsonRpcErrorMessage {
   code?: number;
   message: string;
+  data?: string;
 }
 
 export interface IJsonRpcResponseError {
@@ -407,7 +408,7 @@ export interface IAppEntry {
     sm: string;
     md: string;
     lg: string;
-  }
+  };
   app: {
     browser: string;
     ios: string;

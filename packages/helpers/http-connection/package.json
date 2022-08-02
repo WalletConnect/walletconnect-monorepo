@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/http-connection",
-  "version": "1.7.8",
+  "version": "1.8.0-rc.0",
   "description": "Http Connection for WalletConnect Providers",
   "scripts": {
     "clean": "rm -rf dist",
@@ -56,13 +56,13 @@
     "chai": "4.2.0",
     "mocha": "8.2.1",
     "npm-run-all": "4.1.5",
-    "ts-node": "9.0.0",
+    "ts-node": "10.8.1",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10"
   },
   "dependencies": {
-    "@walletconnect/types": "^1.7.8",
-    "@walletconnect/utils": "^1.7.8",
+    "@walletconnect/types": "^1.8.0-rc.0",
+    "@walletconnect/utils": "^1.8.0-rc.0",
     "eventemitter3": "4.0.7",
     "xhr2-cookies": "1.1.0"
   },

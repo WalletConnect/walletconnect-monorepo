@@ -1023,7 +1023,7 @@ class Connector implements IConnector {
         if (isJsonRpcResponseSuccess(payload)) {
           resolve(payload.result);
         } else if (payload.error && payload.error.message) {
-          reject(new Error(payload.error.message));
+          reject(payload.error);
         } else {
           reject(new Error(ERROR_INVALID_RESPONSE));
         }
