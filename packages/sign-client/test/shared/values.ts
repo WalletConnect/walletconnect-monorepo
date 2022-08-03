@@ -36,7 +36,7 @@ export const TEST_APP_METADATA_B: SignClientTypes.Metadata = {
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
-export const TEST_RELAY_PROTOCOL = "iridium";
+export const TEST_RELAY_PROTOCOL = "irn";
 export const TEST_RELAY_OPTIONS: RelayerTypes.ProtocolOptions = {
   protocol: TEST_RELAY_PROTOCOL,
 };

@@ -165,7 +165,7 @@ export class Engine extends IEngine {
       peerPublicKey,
     );
     const sessionSettle = {
-      relay: { protocol: relayProtocol ?? "iridium" },
+      relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
       requiredNamespaces,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
@@ -199,7 +199,7 @@ export class Engine extends IEngine {
     if (pairingTopic && id) {
       await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
         relay: {
-          protocol: relayProtocol ?? "iridium",
+          protocol: relayProtocol ?? "irn",
         },
         responderPublicKey: selfPublicKey,
       });
