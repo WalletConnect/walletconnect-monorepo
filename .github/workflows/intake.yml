@@ -28,17 +28,20 @@ jobs:
     if: github.event.action == 'opened'
     runs-on: ubuntu-latest
     steps:
-      - name: Check if organization member
-        id: is_organization_member
-        if: github.event.action == 'opened'
-        uses: JamesSingleton/is-organization-member@1.0.0
+      - name: Check Core Team membership
+        uses: tspascoal/get-user-teams-membership@v1
+        id: is-core-team
         with:
-          organization: WalletConnect
           username: ${{ github.event_name != 'pull_request' && github.event.issue.user.login || github.event.sender.login }}
-          token: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}
+          team: "Core Team"
+          GITHUB_TOKEN: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}
+      - name: Print result
+        env:
+          CREATOR: ${{ github.event_name != 'pull_request' && github.event.issue.user.login || github.event.sender.login }}
+          IS_TEAM_MEMBER: ${{ steps.is-core-team.outputs.isTeamMember }}
+        run: echo "$CREATOR (Core Team Member $IS_TEAM_MEMBER) created this issue/PR"
       - name: Label issues
-        if: |
-          steps.is_organization_member.outputs.result == true
+        if: steps.is-core-team.outputs.isTeamMember == "true"
         uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
         with:
           add-labels: "accepted"
