@@ -35,7 +35,7 @@
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
     "@walletconnect/keyvaluestorage": "1.0.0",
     "@walletconnect/logger": "1.0.1",
-    "@walletconnect/relay-api": "1.0.5",
+    "@walletconnect/relay-api": "1.0.6",
     "@walletconnect/relay-auth": "1.0.3",
     "@walletconnect/safe-json": "1.0.0",
     "@walletconnect/time": "1.0.1",

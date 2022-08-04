@@ -26,7 +26,7 @@ describe("Publisher", () => {
 
   describe("init", () => {
     it("registers event listeners", () => {
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" }, tag: 0 };
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "irn" }, tag: 0 };
       const itemA = { topic: generateRandomBytes32(), message: "itemA", opts };
       const itemB = { topic: generateRandomBytes32(), message: "itemB", opts };
       const requestSpy = Sinon.spy();
@@ -61,7 +61,7 @@ describe("Publisher", () => {
       await publisher.publish(topic, message);
       expect(requestSpy.callCount).to.equal(1);
       expect(requestSpy.getCall(0).args[0]).to.deep.equal({
-        method: "iridium_publish",
+        method: "irn_publish",
         params: {
           topic,
           message,
@@ -73,11 +73,11 @@ describe("Publisher", () => {
     });
     it("allows overriding of defaults via `opts` param", async () => {
       const message = "test message";
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" }, tag: 1 };
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "irn" }, tag: 1 };
       await publisher.publish(topic, message, opts);
       expect(requestSpy.callCount).to.equal(1);
       expect(requestSpy.getCall(0).args[0]).to.deep.equal({
-        method: "iridium_publish",
+        method: "irn_publish",
         params: {
           topic,
           message,
