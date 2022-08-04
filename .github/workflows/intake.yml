@@ -36,6 +36,18 @@ jobs:
           organization: WalletConnect
           username: ${{ github.event_name != 'pull_request' && github.event.issue.user.login || github.event.sender.login }}
           token: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}
+      - uses: tspascoal/get-user-teams-membership@v1
+        id: checkUserMember
+        with:
+          username: ${{ github.event_name != 'pull_request' && github.event.issue.user.login || github.event.sender.login }}
+          team: core-team
+          GITHUB_TOKEN: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}
+      - name: Print result
+        env:
+          CREATOR: ${{ github.event_name != 'pull_request' && github.event.issue.user.login || github.event.sender.login }}
+          IS_ORG_MEMBER: ${{ steps.is_organization_member.outputs.result }}
+          IS_TEAM_MEMBER: ${{ steps.checkUserMember.outputs.isTeamMember }}
+        run: echo "$CREATOR (org member $IS_ORG_MEMBER team member $IS_TEAM_MEMBER) created this issue/PR"
       - name: Label issues
         if: |
           steps.is_organization_member.outputs.result == true
