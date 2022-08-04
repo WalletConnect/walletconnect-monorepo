@@ -37,6 +37,8 @@ jobs:
           username: ${{ github.event_name != 'pull_request' && github.event.issue.user.login || github.event.sender.login }}
           token: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}
       - name: Label issues
+        if: |
+          steps.is_organization_member.outputs.result == true
         uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
         with:
           add-labels: "accepted"
