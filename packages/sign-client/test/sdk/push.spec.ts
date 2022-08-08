@@ -6,7 +6,7 @@ import {
   deleteClients,
   TEST_EMIT_PARAMS,
   TEST_RELAY_URL,
-  TEST_WEBHOOK_ENDPOINT
+  TEST_WEBHOOK_ENDPOINT,
 } from "../shared";
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 
@@ -19,17 +19,21 @@ describe("Push", () => {
   });
   it("receives a prompt webhook", async () => {
     // Register Webhook for topic
-    await axios.post(`${TEST_RELAY_URL.replace('ws', 'http')}/subscribe`, { webhook: TEST_WEBHOOK_ENDPOINT, topic: sessionA.topic }, {
-      headers: {'content-type': 'application/json'}
-    });
+    await axios.post(
+      `${TEST_RELAY_URL.replace("ws", "http")}/subscribe`,
+      { webhook: TEST_WEBHOOK_ENDPOINT, topic: sessionA.topic },
+      {
+        headers: { "content-type": "application/json" },
+      },
+    );
 
     // Send a message which triggers the webhook to be invoked
     const eventPayload: any = {
       topic: sessionA.topic,
       ...TEST_EMIT_PARAMS,
-    }
+    };
     await clients.A.emit(eventPayload);
-    
+
     // Validate webhook was called
     const res = await axios.get(`${TEST_WEBHOOK_ENDPOINT}/${sessionA.topic}`);
     expect(res.status).to.eql(200);
