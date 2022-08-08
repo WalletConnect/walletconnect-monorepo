@@ -1,5 +1,4 @@
 import esbuild from "rollup-plugin-esbuild";
-import nodePolyfills from "rollup-plugin-polyfill-node";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 
@@ -10,7 +9,6 @@ const plugins = [
     browser: true,
   }),
   commonjs(),
-  nodePolyfills(),
   esbuild({
     minify: true,
     tsconfig: "./tsconfig.json",
