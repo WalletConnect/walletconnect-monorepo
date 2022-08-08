@@ -7,6 +7,9 @@ export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
   : "ws://0.0.0.0:5555";
 
+// See https://github.com/WalletConnect/push-webhook-test-server
+export const TEST_WEBHOOK_ENDPOINT = "https://webhook-push-test.walletconnect.com/";
+
 export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   ? process.env.TEST_PROJECT_ID
   : undefined;
