@@ -1,13 +1,11 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
+import { ICore, IStore } from "@walletconnect/types";
 import { getInternalError, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
 import isEqual from "lodash.isequal";
 
-type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Struct;
-
-export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
+export class Store<Key, Data extends Object> extends IStore<Key, Data> {
   public map = new Map<Key, Data>();
   public version = STORE_STORAGE_VERSION;
 
