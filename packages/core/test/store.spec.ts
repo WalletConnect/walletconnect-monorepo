@@ -27,6 +27,43 @@ describe("Store", () => {
     );
   });
 
+  describe("init", () => {
+    type MockValue = { id: string; value: string };
+    const ids = ["1", "2", "3", "foo"];
+
+    beforeEach(() => {
+      const storageKey = CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME;
+      const cachedValues = ids.map((id) => ({ id, value: "foo" }));
+      core.storage.setItem(storageKey, cachedValues);
+    });
+
+    it("retreives from cache using getKey", async () => {
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.id,
+      );
+      await store.init();
+      for (let id of ids) {
+        expect(store.keys).includes(id);
+      }
+    });
+
+    it("safely overwrites values when retreiving from cache using getKey", async () => {
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.value,
+      );
+      await store.init();
+      expect(store.keys).to.eql(["foo"]);
+    });
+  });
+
   describe("set", () => {
     it("creates a new entry for a new key", async () => {
       const key = "newKey";

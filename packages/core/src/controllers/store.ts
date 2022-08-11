@@ -12,17 +12,31 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   private cached: Data[] = [];
   private initialized = false;
 
+  /**
+   * Regenerates the value key to retrieve it from cache
+   */
+  private getKey: ((data: Data) => Key) | undefined;
+
   private storagePrefix = CORE_STORAGE_PREFIX;
 
+  /**
+   * @param {ICore} core Core
+   * @param {Logger} logger Logger
+   * @param {string} name Store's name
+   * @param {Store<Key, Data>["getKey"]} getKey Regenerates the value key to retrieve it from cache
+   * @param {string} storagePrefix Prefixes value keys
+   */
   constructor(
     public core: ICore,
     public logger: Logger,
     public name: string,
-    storagePrefix = CORE_STORAGE_PREFIX,
+    storagePrefix: string = CORE_STORAGE_PREFIX,
+    getKey: Store<Key, Data>["getKey"] = undefined,
   ) {
     super(core, logger, name, storagePrefix);
     this.logger = generateChildLogger(logger, this.name);
     this.storagePrefix = storagePrefix;
+    this.getKey = getKey;
   }
 
   public init: IStore<Key, Data>["init"] = async () => {
@@ -38,6 +52,8 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
         } else if (isSessionStruct(value)) {
           // TODO(pedro) revert type casting as any
           this.map.set(value.topic as any, value);
+        } else if (this.getKey) {
+          this.map.set(this.getKey(value), value);
         }
       });
 
