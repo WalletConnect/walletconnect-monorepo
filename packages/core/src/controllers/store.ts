@@ -5,7 +5,7 @@ import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
 import isEqual from "lodash.isequal";
 
-export class Store<Key, Data extends Object> extends IStore<Key, Data> {
+export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Data> {
   public map = new Map<Key, Data>();
   public version = STORE_STORAGE_VERSION;
 
