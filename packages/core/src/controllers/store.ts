@@ -53,7 +53,10 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
           // TODO(pedro) revert type casting as any
           this.map.set(value.topic as any, value);
         } else if (this.getKey) {
-          this.map.set(this.getKey(value), value);
+          // Null checking to prevent undefined or null values to throw an error
+          if (value) {
+            this.map.set(this.getKey(value), value);
+          }
         }
       });
 
