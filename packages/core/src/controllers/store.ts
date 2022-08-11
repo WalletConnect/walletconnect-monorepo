@@ -1,6 +1,11 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
 import { ICore, IStore } from "@walletconnect/types";
-import { getInternalError, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
+import {
+  getInternalError,
+  isProposalStruct,
+  isSessionStruct,
+  isUndefined,
+} from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
 import isEqual from "lodash.isequal";
@@ -52,11 +57,8 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
         } else if (isSessionStruct(value)) {
           // TODO(pedro) revert type casting as any
           this.map.set(value.topic as any, value);
-        } else if (this.getKey) {
-          // Null checking to prevent undefined or null values to throw an error
-          if (value) {
-            this.map.set(this.getKey(value), value);
-          }
+        } else if (this.getKey && value !== null && !isUndefined(value)) {
+          this.map.set(this.getKey(value), value);
         }
       });
 
