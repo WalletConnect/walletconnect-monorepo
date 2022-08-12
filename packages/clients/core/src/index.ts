@@ -118,7 +118,7 @@ class Connector implements IConnector {
   // -- constructor ----------------------------------------------------- //
 
   constructor(opts: IConnectorOpts) {
-    this._clientMeta = getClientMeta() || opts.connectorOpts.clientMeta || null;
+    this._clientMeta = opts.connectorOpts.clientMeta || getClientMeta() || null;
     this._cryptoLib = opts.cryptoLib;
     this._sessionStorage = opts.sessionStorage || new SessionStorage(opts.connectorOpts.storageId);
     this._qrcodeModal = opts.connectorOpts.qrcodeModal;
