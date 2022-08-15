@@ -5,11 +5,13 @@ import {
   getLoggerContext,
 } from "@walletconnect/logger";
 import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
-import { getAppMetadata } from "@walletconnect/utils";
+import { getAppMetadata, shim } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino from "pino";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
 import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
+
+shim();
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
