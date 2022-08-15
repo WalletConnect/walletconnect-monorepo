@@ -1,0 +1,37 @@
+{
+  "name": "@walletconnect/react-native-compat",
+  "description": "Shims for WalletConnect Protocol in React Native Projects",
+  "version": "2.0.0-8b4dd35c",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
+  "license": "Apache-2.0",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "unpkg": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "dapp",
+    "react",
+    "react-native"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:pre": "npm run clean",
+    "build:types": "tsc",
+    "build:source": "rollup --config rollup.config.js",
+    "build": "npm run build:pre; npm run build:source; npm run build:types",
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "1.17.9",
+    "fast-text-encoding": "1.0.4",
+    "react-native-get-random-values": "1.8.0",
+    "events": "3.3.0"
+  }
+}

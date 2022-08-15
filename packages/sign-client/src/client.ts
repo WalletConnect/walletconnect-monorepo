@@ -10,8 +10,6 @@ import { EventEmitter } from "events";
 import pino from "pino";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
 import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
-import "fast-text-encoding";
-import "@ethersproject/shims";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
