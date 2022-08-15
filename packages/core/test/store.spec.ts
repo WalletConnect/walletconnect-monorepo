@@ -27,6 +27,56 @@ describe("Store", () => {
     );
   });
 
+  describe("init", () => {
+    type MockValue = { id: string; value: string };
+    const ids = ["1", "2", "3", "foo"];
+    const STORAGE_KEY = CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME;
+
+    beforeEach(() => {
+      const cachedValues = ids.map((id) => ({ id, value: "foo" }));
+      core.storage.setItem(STORAGE_KEY, cachedValues);
+    });
+
+    it("retreives from cache using getKey", async () => {
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.id,
+      );
+      await store.init();
+      for (let id of ids) {
+        expect(store.keys).includes(id);
+      }
+    });
+
+    it("safely overwrites values when retreiving from cache using getKey", async () => {
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.value,
+      );
+      await store.init();
+      expect(store.keys).to.eql(["foo"]);
+    });
+
+    it("handles null and undefined cases", async () => {
+      core.storage.setItem(STORAGE_KEY, [undefined, null, { id: 1, value: "foo" }]);
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.value,
+      );
+      await store.init();
+      expect(store.keys).to.eql(["foo"]);
+    });
+  });
+
   describe("set", () => {
     it("creates a new entry for a new key", async () => {
       const key = "newKey";
