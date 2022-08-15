@@ -171,6 +171,11 @@ class SocketTransport implements ITransportLib {
         // empty
       };
       this._socket.close();
+    } else if (this._nextSocket) {
+      this._nextSocket.onclose = () => {
+        // empty
+      };
+      this._nextSocket.close();
     }
   }
 
