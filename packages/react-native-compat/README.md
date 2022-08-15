@@ -1,3 +1,3 @@
-# @walletconnect/utils
+# @walletconnect/react-native-compat
 
-Utilities for WalletConnect Protocol
+Shims for WalletConnect Protocol in React Native Projects

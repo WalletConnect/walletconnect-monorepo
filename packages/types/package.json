@@ -22,9 +22,6 @@
     "build:types": "tsc",
     "build:source": "rollup --config rollup.config.js",
     "build": "npm run build:pre; npm run build:source; npm run build:types",
-    "test:pre": "echo 'not required'",
-    "test:run": "echo 'not required'",
-    "test": "echo 'not required'",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
     "prettier": "prettier --check 'src/**/*.{js,ts,jsx,tsx}'"
   },

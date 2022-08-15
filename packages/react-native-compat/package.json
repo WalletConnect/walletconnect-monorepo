@@ -5,10 +5,7 @@
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.es.js",
-  "unpkg": "dist/index.umd.js",
-  "types": "dist/types/index.d.ts",
+  "main": "index.js",
   "files": [
     "dist"
   ],
@@ -20,12 +17,7 @@
     "react-native"
   ],
   "scripts": {
-    "clean": "rm -rf dist",
-    "build:pre": "npm run clean",
-    "build:types": "tsc",
-    "build:source": "rollup --config rollup.config.js",
-    "build": "npm run build:pre; npm run build:source; npm run build:types",
-    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.{js,ts,jsx,tsx}'",
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
