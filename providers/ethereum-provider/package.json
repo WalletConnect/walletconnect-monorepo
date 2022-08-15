@@ -47,7 +47,7 @@
     "ethers": "5.6.9",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0",
-    "uint8arrays": "3.0.0",
-    "web3": "1.7.4"
+    "uint8arrays": "3.1.0",
+    "web3": "1.7.5"
   }
 }

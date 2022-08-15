@@ -44,7 +44,7 @@
     "lodash.isequal": "4.5.0",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0",
-    "uint8arrays": "3.0.0"
+    "uint8arrays": "3.1.0"
   },
   "devDependencies": {
     "@types/lodash.isequal": "4.5.6"

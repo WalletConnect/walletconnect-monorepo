@@ -6,7 +6,7 @@ import nodePolyfills from "rollup-plugin-node-polyfills";
 
 const input = "./src/index.ts";
 const plugins = [
-  nodeResolve({ preferBuiltins: false }),
+  nodeResolve({ preferBuiltins: false, browser: true }),
   json({ compact: true }),
   commonjs(),
   nodePolyfills(),

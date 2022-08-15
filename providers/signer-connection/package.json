@@ -36,6 +36,6 @@
     "@walletconnect/utils": "^2.0.0-8297b194",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0",
-    "uint8arrays": "3.0.0"
+    "uint8arrays": "3.1.0"
   }
 }
