@@ -5,5 +5,5 @@
     "providers/*"
   ],
   "useWorkspaces": true,
-  "version": "2.0.0-8297b194"
+  "version": "2.0.0-b06cdf210e4bc53df9543c82fdeaec80dc6b00c1"
 }
