@@ -44,7 +44,8 @@
     "@walletconnect/utils": "^2.0.0-45e9b7f5",
     "events": "3.3.0",
     "pino": "6.7.0",
-    "pino-pretty": "4.3.0"
+    "pino-pretty": "4.3.0",
+    "fast-text-encoding": "1.0.4"
   },
   "devDependencies": {
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
