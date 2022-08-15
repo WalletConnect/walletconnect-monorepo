@@ -33,7 +33,7 @@
     "test": "npm run test --workspaces",
     "check": "npm run lint; npm run build; npm run test",
     "reset": "npm run clean; npm run check",
-    "new-version": "lerna version --no-git-tag-version",
+    "new-version": "lerna version --no-git-tag-version --exact",
     "pre-publish": "npm run new-version; npm run reset",
     "npm-publish:rc": "lerna exec -- npm publish --access public --tag rc",
     "npm-publish:latest": "lerna exec -- npm publish --access public --tag latest",
