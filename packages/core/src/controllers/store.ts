@@ -1,30 +1,47 @@
 import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { getInternalError, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
+import { ICore, IStore } from "@walletconnect/types";
+import {
+  getInternalError,
+  isProposalStruct,
+  isSessionStruct,
+  isUndefined,
+} from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
 import isEqual from "lodash.isequal";
 
-type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Struct;
-
-export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
+export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Data> {
   public map = new Map<Key, Data>();
   public version = STORE_STORAGE_VERSION;
 
   private cached: Data[] = [];
   private initialized = false;
 
+  /**
+   * Regenerates the value key to retrieve it from cache
+   */
+  private getKey: ((data: Data) => Key) | undefined;
+
   private storagePrefix = CORE_STORAGE_PREFIX;
 
+  /**
+   * @param {ICore} core Core
+   * @param {Logger} logger Logger
+   * @param {string} name Store's name
+   * @param {Store<Key, Data>["getKey"]} getKey Regenerates the value key to retrieve it from cache
+   * @param {string} storagePrefix Prefixes value keys
+   */
   constructor(
     public core: ICore,
     public logger: Logger,
     public name: string,
-    storagePrefix = CORE_STORAGE_PREFIX,
+    storagePrefix: string = CORE_STORAGE_PREFIX,
+    getKey: Store<Key, Data>["getKey"] = undefined,
   ) {
     super(core, logger, name, storagePrefix);
     this.logger = generateChildLogger(logger, this.name);
     this.storagePrefix = storagePrefix;
+    this.getKey = getKey;
   }
 
   public init: IStore<Key, Data>["init"] = async () => {
@@ -40,6 +57,8 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
         } else if (isSessionStruct(value)) {
           // TODO(pedro) revert type casting as any
           this.map.set(value.topic as any, value);
+        } else if (this.getKey && value !== null && !isUndefined(value)) {
+          this.map.set(this.getKey(value), value);
         }
       });
 
