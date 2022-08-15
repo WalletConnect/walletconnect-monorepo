@@ -15,7 +15,7 @@ describe("Push", () => {
   let sessionA;
   beforeEach(async () => {
     clients = await initTwoClients();
-    sessionA = await (await testConnectMethod(clients)).sessionA;
+    sessionA = (await testConnectMethod(clients)).sessionA;
   });
   it("receives a prompt webhook", async () => {
     // Register Webhook for topic
