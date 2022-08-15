@@ -5,5 +5,5 @@
     "providers/*"
   ],
   "useWorkspaces": true,
-  "version": "2.0.0-635ab6d6"
+  "version": "2.0.0-rc.2"
 }
