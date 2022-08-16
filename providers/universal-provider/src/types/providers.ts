@@ -32,7 +32,5 @@ export interface IUniversalProvider extends IEthereumProvider {
     callback: (error: Error | null, response: any) => void,
     chain?: string,
   ) => void;
-
-  // (args: RequestArguments, callback: (error: Error | null, response: any) => void, chain: string | undefined) => void
-  // (request: { method: string; params?: any[] | undefined; }, callback: (error: any, response: any) => void) => void'
+  pair: (pairingTopic: string | undefined) => Promise<SessionTypes.Struct>;
 }
