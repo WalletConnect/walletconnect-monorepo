@@ -118,7 +118,7 @@ export class UniversalProvider implements IUniversalProvider {
     return true;
   }
 
-  public async pair(pairingTopic: string | undefined) {
+  public async pair(pairingTopic: string | undefined): Promise<SessionTypes.Struct> {
     const { uri, approval } = await this.client.connect({
       pairingTopic: pairingTopic,
       requiredNamespaces: this.namespaces,
