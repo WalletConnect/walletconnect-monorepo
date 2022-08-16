@@ -51,6 +51,11 @@ await provider.connect({
 ## Events
 
 ```typescript
+// Subscribe for pairing URI
+provider.on("display_uri", (uri) => {
+  console.log(uri);
+});
+
 // Subscribe to session ping
 provider.on("session_ping", ({ id, topic }) => {
   console.log(id, topic);
