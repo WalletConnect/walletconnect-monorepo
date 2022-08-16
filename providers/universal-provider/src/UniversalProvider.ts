@@ -58,7 +58,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public sendAsync(
-    args: any,
+    args: RequestArguments,
     callback: (error: Error | null, response: any) => void,
     chain?: string | undefined,
   ): void {

@@ -28,7 +28,7 @@ export interface IUniversalProvider extends IEthereumProvider {
 
   request: <T = unknown>(args: RequestArguments, chain?: string) => Promise<T>;
   sendAsync: (
-    args: any,
+    args: RequestArguments,
     callback: (error: Error | null, response: any) => void,
     chain?: string,
   ) => void;
