@@ -24,28 +24,28 @@ const provider = await UniversalProvider.init({
 
 //  create sub providers for each namespace/chain
 await provider.connect({
-    namespaces: {
-      eip155: {
-        methods: [
-          "eth_sendTransaction",
-          "eth_signTransaction",
-          "eth_sign",
-          "personal_sign",
-          "eth_signTypedData",
-        ],
-        chains: ["eip155:80001"],
-        events: ["chainChanged", "accountsChanged"],
-        rpcMap: {
-          80001: "https://rpc-mumbai.matic.today",
-        },
+  namespaces: {
+    eip155: {
+      methods: [
+        "eth_sendTransaction",
+        "eth_signTransaction",
+        "eth_sign",
+        "personal_sign",
+        "eth_signTypedData",
+      ],
+      chains: ["eip155:80001"],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        80001: "https://rpc-mumbai.matic.today",
       },
-      pairingTopic: "<123...topic>" // optional topic to connect to
-      skipPairing: false, // optional to skip pairing ( later it can be resumed by invoking .pair())
     },
-  });
+    pairingTopic: "<123...topic>", // optional topic to connect to
+    skipPairing: false, // optional to skip pairing ( later it can be resumed by invoking .pair())
+  },
+});
 
-  //  Create Web3 Provider
-  const web3Provider = new ethers.providers.Web3Provider(provider);
+//  Create Web3 Provider
+const web3Provider = new ethers.providers.Web3Provider(provider);
 ```
 
 ## Events
@@ -89,7 +89,7 @@ interface RequestArguments {
 
 /**
  * @param payload
- * @param chain - optional specify which chain should handle this request
+ * @param chain - optionally specify which chain should handle this request
  * in the format `<namespace>:<chainId>` e.g. `eip155:1`
  */
 const result = await provider.request(payload: RequestArguments, chain: string | undefined);
