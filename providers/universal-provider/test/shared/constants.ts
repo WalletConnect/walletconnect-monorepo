@@ -43,14 +43,9 @@ export const TEST_WALLET_METADATA = {
 };
 
 export const TEST_PROVIDER_OPTS = {
-  chainId: CHAIN_ID,
-  rpcMap: {
-    [CHAIN_ID]: RPC_URL,
-  },
-  client: {
-    relayUrl: TEST_RELAY_URL,
-    metadata: TEST_APP_METADATA,
-  },
+  logger: "error",
+  relayUrl: TEST_RELAY_URL,
+  metadata: TEST_APP_METADATA,
 };
 
 export const TEST_WALLET_CLIENT_OPTS = {
@@ -59,6 +54,25 @@ export const TEST_WALLET_CLIENT_OPTS = {
   privateKey: ACCOUNTS.a.privateKey,
   relayUrl: TEST_RELAY_URL,
   metadata: TEST_WALLET_METADATA,
+};
+
+export const TEST_NAMESPACES_CONFIG = {
+  namespaces: {
+    eip155: {
+      methods: [
+        "eth_sendTransaction",
+        "eth_signTransaction",
+        "eth_sign",
+        "personal_sign",
+        "eth_signTypedData",
+      ],
+      chains: [`eip155:${CHAIN_ID}`],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
+      },
+    },
+  },
 };
 
 export const TEST_ETH_TRANSFER = {

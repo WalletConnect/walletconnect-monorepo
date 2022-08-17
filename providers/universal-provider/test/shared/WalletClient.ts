@@ -4,7 +4,7 @@ import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { SignClientTypes, SessionTypes } from "@walletconnect/types";
 import { getSdkError, getChainsFromAccounts } from "@walletconnect/utils";
 import { ethers, utils } from "ethers";
-import EthereumProvider from "../../src";
+import UniversalProvider from "../../src";
 
 export interface WalletClientOpts {
   privateKey: string;
@@ -15,7 +15,7 @@ export interface WalletClientOpts {
 export type WalletClientAsyncOpts = WalletClientOpts & SignClientTypes.Options;
 
 export class WalletClient {
-  public provider: EthereumProvider;
+  public provider: UniversalProvider;
   public signer: ethers.Wallet;
   public chainId: number;
   public rpcUrl: string;
@@ -24,7 +24,7 @@ export class WalletClient {
   public namespaces?: SessionTypes.Namespaces;
 
   static async init(
-    provider: EthereumProvider,
+    provider: UniversalProvider,
     opts: Partial<WalletClientAsyncOpts>,
   ): Promise<WalletClient> {
     const walletClient = new WalletClient(provider, opts);
@@ -36,7 +36,7 @@ export class WalletClient {
     return [this.signer.address];
   }
 
-  constructor(provider: EthereumProvider, opts: Partial<WalletClientOpts>) {
+  constructor(provider: UniversalProvider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
     this.chainId = opts?.chainId || 123;
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
@@ -163,7 +163,8 @@ export class WalletClient {
     }
 
     // auto-pair
-    this.provider.signer.connection.on(SIGNER_EVENTS.uri, async ({ uri }: { uri: string }) => {
+    this.provider.on("display_uri", async (uri: string) => {
+      // uri = uri.replace("irn", "iridium");
       if (typeof this.client === "undefined") throw new Error("Sign Client not inititialized");
       await this.client.pair({ uri });
     });
