@@ -164,7 +164,6 @@ export class WalletClient {
 
     // auto-pair
     this.provider.on("display_uri", async (uri: string) => {
-      // uri = uri.replace("irn", "iridium");
       if (typeof this.client === "undefined") throw new Error("Sign Client not inititialized");
       await this.client.pair({ uri });
     });
