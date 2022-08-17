@@ -1,7 +1,7 @@
 import SignClient from "@walletconnect/sign-client";
 import { SignClientTypes, ProposalTypes } from "@walletconnect/types";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
-import { ISubProvider } from "./providers";
+import { IProvider } from "./providers";
 
 export interface UniversalProviderOpts {
   projectId?: string;
@@ -24,7 +24,7 @@ export interface NamespacesMap {
 }
 
 export interface RpcProviderMap {
-  [chainId: string]: ISubProvider;
+  [chainId: string]: IProvider;
 }
 
 export interface Namespace extends ProposalTypes.BaseRequiredNamespace {
