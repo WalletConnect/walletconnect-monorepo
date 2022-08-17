@@ -9,9 +9,9 @@ import {
   RequestArguments,
   SessionNamespace,
   NamespaceConfig,
-} from ".";
+} from "./misc";
 
-export interface ISubProvider {
+export interface IProvider {
   readonly namespace: SessionNamespace;
   readonly httpProviders: RpcProvidersMap;
   readonly client: SignClient;
