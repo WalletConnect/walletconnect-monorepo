@@ -5,11 +5,11 @@ import { SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import pino, { Logger } from "pino";
-import Eip155Provider from "./subProviders/eip155";
+import Eip155Provider from "./providers/eip155";
 import { getChainFromNamespaces } from "./utils";
 import {
   IUniversalProvider,
-  ISubProvider,
+  IProvider,
   RpcProviderMap,
   ConnectParams,
   RequestArguments,
@@ -225,7 +225,7 @@ export class UniversalProvider implements IUniversalProvider {
     });
   }
 
-  private getProvider(namespace: string): ISubProvider {
+  private getProvider(namespace: string): IProvider {
     if (!this.rpcProviders[namespace]) {
       throw new Error(`Provider not found: ${namespace}`);
     }

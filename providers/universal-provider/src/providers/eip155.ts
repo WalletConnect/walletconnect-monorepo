@@ -4,7 +4,7 @@ import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import { EngineTypes, SessionTypes } from "@walletconnect/types";
 
 import {
-  ISubProvider,
+  IProvider,
   RpcProvidersMap,
   SubProviderOpts,
   RequestParams,
@@ -13,7 +13,7 @@ import {
 
 import { getRpcUrl } from "../utils";
 
-class Eip155Provider implements ISubProvider {
+class Eip155Provider implements IProvider {
   public name = "eip155";
   public client: Client;
   // the active chainId on the dapp
