@@ -111,9 +111,8 @@ describe("UniversalProvider", function () {
         const tokenTransferGas = await transferTx.estimateGas({ from: walletAddress });
         expect(tokenTransferGas.toString()).to.eql("52437");
         await transferTx.send({ from: walletAddress });
-        // FIXME: balance A is still 2 after transferring 1
-        // const tokenBalanceA = await erc20.methods.balanceOf(walletAddress).call();
-        // expect(tokenBalanceA).to.eql(utils.parseEther("1").toString());
+        const tokenBalanceA = await erc20.methods.balanceOf(walletAddress).call();
+        expect(tokenBalanceA).to.eql(utils.parseEther("1").toString());
         const tokenBalanceB = await erc20.methods.balanceOf(receiverAddress).call();
         expect(tokenBalanceB).to.eql(utils.parseEther("1").toString());
       });
