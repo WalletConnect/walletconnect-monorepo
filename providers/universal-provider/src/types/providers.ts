@@ -18,6 +18,7 @@ export interface IProvider {
 
   request: <T = unknown>(args: RequestParams) => Promise<T>;
   updateNamespace: (args: SessionTypes.Namespace) => void;
+  setDefaultChain: (chainId: string, rpcUrl?: string | undefined) => void;
 }
 
 export interface IUniversalProvider extends IEthereumProvider {

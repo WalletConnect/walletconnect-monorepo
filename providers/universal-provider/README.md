@@ -94,3 +94,19 @@ interface RequestArguments {
  */
 const result = await provider.request(payload: RequestArguments, chain: string | undefined);
 ```
+
+## Multi-chain
+
+```typescript
+const web3 = new Web3(provider);
+
+// default chainId is the FIRST chain during setup
+const chainId = await web3.eth.getChainId();
+
+// set the default chain to 56
+provider.setDefaultChain(`eip155:56`, rpcUrl?: string | undefined);
+
+// get the updated default chainId
+const updatedDefaultChainId = await web3.eth.getChainId();
+
+```

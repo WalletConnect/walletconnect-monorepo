@@ -133,6 +133,12 @@ export class UniversalProvider implements IUniversalProvider {
     this.onSessionUpdate();
     return this.session;
   }
+
+  public async setDefaultChain(chain: string, rpcUrl?: string | undefined) {
+    let [namespace, chainId] = this.validateChain(chain);
+    this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {

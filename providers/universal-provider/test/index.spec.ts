@@ -18,6 +18,7 @@ import {
   TEST_WALLET_CLIENT_OPTS,
   TEST_ETH_TRANSFER,
   TEST_SIGN_TRANSACTION,
+  CHAIN_ID_B,
 } from "./shared/constants";
 
 describe("UniversalProvider", function () {
@@ -64,6 +65,22 @@ describe("UniversalProvider", function () {
     // expect(provider.connected).to.be.false;
   });
   describe("eip155", () => {
+    describe("multi chain", () => {
+      let web3: Web3;
+      beforeAll(() => {
+        web3 = new Web3(provider);
+      });
+      it.only("should change default chainId", async () => {
+        const chainId = await web3.eth.getChainId();
+        expect(chainId).to.eql(CHAIN_ID);
+
+        provider.setDefaultChain(`eip155:${CHAIN_ID_B}`);
+
+        const chainIdB = await web3.eth.getChainId();
+        expect(chainIdB).to.not.eql(CHAIN_ID);
+        expect(chainIdB).to.eql(CHAIN_ID_B);
+      });
+    });
     describe("Web3", () => {
       let web3: Web3;
       beforeAll(() => {
@@ -73,7 +90,7 @@ describe("UniversalProvider", function () {
         const accounts = await web3.eth.getAccounts();
         expect(accounts[0]).to.include(walletAddress);
       });
-      it.skip("matches chainId", async () => {
+      it("matches chainId", async () => {
         const chainId = await web3.eth.getChainId();
         expect(chainId).to.eql(CHAIN_ID);
       });

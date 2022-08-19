@@ -1,10 +1,12 @@
 import { utils } from "ethers";
 
 export const CHAIN_ID = 123;
+export const CHAIN_ID_B = 1234;
 
 export const PORT = 8545;
 
 export const RPC_URL = `http://localhost:${PORT}`;
+export const RPC_URL_B = `http://localhost:${PORT}`;
 
 export const ACCOUNTS = {
   a: {
@@ -66,10 +68,11 @@ export const TEST_NAMESPACES_CONFIG = {
         "personal_sign",
         "eth_signTypedData",
       ],
-      chains: [`eip155:${CHAIN_ID}`],
+      chains: [`eip155:${CHAIN_ID}`, `eip155:${CHAIN_ID_B}`],
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
         [CHAIN_ID]: RPC_URL,
+        [CHAIN_ID_B]: RPC_URL_B,
       },
     },
   },

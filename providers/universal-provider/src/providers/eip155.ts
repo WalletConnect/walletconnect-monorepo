@@ -49,19 +49,47 @@ class Eip155Provider implements IProvider {
     this.namespace = Object.assign(this.namespace, namespace);
   }
 
+  public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
+    console.log("setting default chain", chainId, rpcUrl);
+
+    // http provider exists so just set the chainId
+    if (this.httpProviders[chainId]) {
+      this.chainId = parseInt(chainId);
+      return;
+    }
+
+    let rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+
+    if (!rpc) {
+      throw new Error(`No RPC url provided for chainId: ${chainId}`);
+    }
+
+    this.chainId = parseInt(chainId);
+    this.setHttpProvider(chainId, rpc);
+  }
   // ---------- Private ----------------------------------------------- //
 
-  private setHttpProvider(chainId: string): JsonRpcProvider | undefined {
-    const rpcUrl = getRpcUrl(chainId, this.namespace);
-    if (typeof rpcUrl === "undefined") return undefined;
-    const http = new JsonRpcProvider(new HttpConnection(rpcUrl));
+  private createHttpProvider(
+    chainId: string,
+    rpcUrl?: string | undefined,
+  ): JsonRpcProvider | undefined {
+    const rpc = rpcUrl || getRpcUrl(chainId, this.namespace);
+    if (typeof rpc === "undefined") return undefined;
+    const http = new JsonRpcProvider(new HttpConnection(rpc));
     return http;
+  }
+
+  private setHttpProvider(chainId: string, rpcUrl?: string): void {
+    const http = this.createHttpProvider(chainId, rpcUrl);
+    if (http) {
+      this.httpProviders[chainId] = http;
+    }
   }
 
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.setHttpProvider(chain);
+      http[chain] = this.createHttpProvider(chain);
     });
     return http;
   }
