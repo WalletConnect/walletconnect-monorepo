@@ -227,18 +227,6 @@ describe("UniversalProvider", function () {
             balanceBefore.toString(),
         ).to.be.true;
       });
-      it.skip("sign transaction", async () => {
-        const balanceBefore = await web3Provider.getBalance(walletAddress);
-        // FIXME: ethers does not support signTransaction but also does not resolve sendAsyncPromise
-        const signedTx = await web3Provider.getSigner().signTransaction(TEST_SIGN_TRANSACTION);
-        const broadcastTx = await provider.request({
-          method: "eth_sendRawTransaction",
-          params: [signedTx],
-        });
-        expect(!!broadcastTx).to.be.true;
-        const balanceAfter = await web3Provider.getBalance(walletAddress);
-        expect(balanceAfter.lt(balanceBefore)).to.be.true;
-      });
       it("sign message", async () => {
         const msg = "Hello world";
         const signature = await web3Provider
