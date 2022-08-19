@@ -60,9 +60,7 @@ describe("UniversalProvider", function () {
         resolve();
       }),
     ]);
-    // expect provider to be disconnected
     expect(walletClient.client?.session.values.length).to.eql(0);
-    // expect(provider.connected).to.be.false;
   });
   describe("eip155", () => {
     describe("multi chain", () => {
@@ -70,7 +68,7 @@ describe("UniversalProvider", function () {
       beforeAll(() => {
         web3 = new Web3(provider);
       });
-      it.only("should change default chainId", async () => {
+      it("should change default chainId", async () => {
         const chainId = await web3.eth.getChainId();
         expect(chainId).to.eql(CHAIN_ID);
 
