@@ -100,6 +100,12 @@ class SocketTransport implements ITransportLib {
 
   public close() {
     this._socketClose();
+    if (this._nextSocket) {
+      this._nextSocket.onclose = () => {
+        // empty
+      };
+      this._nextSocket.close();
+    }
   }
 
   public send(message: string, topic?: string, silent?: boolean): void {
@@ -171,11 +177,6 @@ class SocketTransport implements ITransportLib {
         // empty
       };
       this._socket.close();
-    } else if (this._nextSocket) {
-      this._nextSocket.onclose = () => {
-        // empty
-      };
-      this._nextSocket.close();
     }
   }
 
