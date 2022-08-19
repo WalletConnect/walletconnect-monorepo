@@ -77,6 +77,8 @@ describe("UniversalProvider", function () {
         const chainIdB = await web3.eth.getChainId();
         expect(chainIdB).to.not.eql(CHAIN_ID);
         expect(chainIdB).to.eql(CHAIN_ID_B);
+
+        provider.setDefaultChain(`eip155:${CHAIN_ID}`);
       });
     });
     describe("Web3", () => {
