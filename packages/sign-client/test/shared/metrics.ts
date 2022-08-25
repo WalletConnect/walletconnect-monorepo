@@ -2,6 +2,7 @@ import CloudWatch from "aws-sdk/clients/cloudwatch";
 
 export const uploadToCloudWatch = async (
   env: string,
+  target: string,
   metricsPrefix: string,
   isTestPassed: boolean,
   testDurationMs: number,
@@ -13,6 +14,10 @@ export const uploadToCloudWatch = async (
     MetricData: [
       {
         MetricName: `${metricsPrefix}.success`,
+        Dimensions: [{
+          Name: "Target",
+          Value: target
+        }],
         Unit: "Count",
         Value: isTestPassed ? 1 : 0,
         Timestamp: ts,
