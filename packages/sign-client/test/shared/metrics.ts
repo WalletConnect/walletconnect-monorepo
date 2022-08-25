@@ -26,12 +26,24 @@ export const uploadToCloudWatch = async (
       },
       {
         MetricName: `${metricsPrefix}.failure`,
+        Dimensions: [
+          {
+            Name: "Target",
+            Value: target,
+          },
+        ],
         Unit: "Count",
         Value: isTestPassed ? 0 : 1,
         Timestamp: ts,
       },
       {
         MetricName: `${metricsPrefix}.latency`,
+        Dimensions: [
+          {
+            Name: "Target",
+            Value: target,
+          },
+        ],
         Unit: "Milliseconds",
         Value: testDurationMs,
         Timestamp: ts,
