@@ -81,6 +81,7 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
+    console.log(params);
     this.isInitialized();
     await this.isValidConnect(params);
     const { pairingTopic, requiredNamespaces, relays } = params;

@@ -55,17 +55,22 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   await Promise.all([
     new Promise<void>((resolve, reject) => {
+      console.log('client b waiting for session proposal');
       B.once("session_proposal", async (proposal) => {
+        console.log('client b received session proposal');
         try {
           expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
 
+          console.log('client b approving session proposal');
           const { acknowledged } = await B.approve({
             id: proposal.id,
             ...approveParams,
           });
+          console.log('client b approved session proposal');
           if (!sessionB) {
             sessionB = await acknowledged();
           }
+          console.log('client b acked session proposal');
           resolve();
         } catch (e) {
           reject(e);
@@ -74,9 +79,13 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     }),
     new Promise<void>(async (resolve, reject) => {
       // immediatelly resolve if pairingTopic is provided
-      if (connectParams.pairingTopic) return resolve();
+      if (connectParams.pairingTopic) {
+        console.log('pairing topic provided: done');
+        return resolve();
+      }
       try {
         if (uri) {
+          console.log('pairing b');
           pairingB = await B.pair({ uri });
           if (!pairingA) throw new Error("pairingA is missing");
           expect(pairingB.topic).to.eql(pairingA.topic);
@@ -93,6 +102,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     new Promise<void>(async (resolve, reject) => {
       try {
         if (!sessionA) {
+          console.log('no session a - awaiting approval');
           sessionA = await approval();
         }
         resolve();
