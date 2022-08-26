@@ -2,14 +2,17 @@ import SignClient from "@walletconnect/sign-client";
 import { SignClientTypes, ProposalTypes } from "@walletconnect/types";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { IProvider } from "./providers";
+import EventEmitter from "events";
 
 export interface UniversalProviderOpts {
   projectId?: string;
-  metadata?: SignClientTypes.Metadata;
+  metadata?: Metadata;
   logger?: string;
   client?: SignClient;
   relayUrl?: string;
 }
+
+export interface Metadata extends SignClientTypes.Metadata {}
 
 export interface RpcProvidersMap {
   [provider: string]: JsonRpcProvider;
@@ -49,6 +52,7 @@ export interface ConnectParams {
 export interface SubProviderOpts {
   client: SignClient;
   namespace: Namespace;
+  events: EventEmitter;
 }
 
 export interface RequestParams {

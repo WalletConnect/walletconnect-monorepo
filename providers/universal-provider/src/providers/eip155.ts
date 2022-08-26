@@ -12,6 +12,7 @@ import {
 } from "../types";
 
 import { getRpcUrl } from "../utils";
+import EventEmitter from "events";
 
 class Eip155Provider implements IProvider {
   public name = "eip155";
@@ -20,10 +21,12 @@ class Eip155Provider implements IProvider {
   public chainId: number;
   public namespace: SessionNamespace;
   public httpProviders: RpcProvidersMap;
+  public events: EventEmitter;
 
   constructor(opts: SubProviderOpts) {
     this.namespace = opts.namespace;
     this.client = opts.client;
+    this.events = opts.events;
     this.httpProviders = this.createHttpProviders();
     this.chainId = this.getDefaultChainId();
   }
@@ -33,6 +36,10 @@ class Eip155Provider implements IProvider {
       case "eth_requestAccounts":
         return this.getAccounts() as any;
       case "eth_accounts":
+        return this.getAccounts() as any;
+      case "wallet_switchEthereumChain":
+        const newChainId = args.request.params ? args.request.params[0]?.chainId : "0x0";
+        this.setDefaultChain(parseInt(newChainId, 16).toString());
         return this.getAccounts() as any;
       case "eth_chainId":
         return this.getDefaultChainId() as any;
@@ -52,20 +59,17 @@ class Eip155Provider implements IProvider {
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
     console.log("setting default chain", chainId, rpcUrl);
 
-    // http provider exists so just set the chainId
-    if (this.httpProviders[chainId]) {
-      this.chainId = parseInt(chainId);
-      return;
-    }
-
-    let rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
-
-    if (!rpc) {
-      throw new Error(`No RPC url provided for chainId: ${chainId}`);
-    }
-
     this.chainId = parseInt(chainId);
-    this.setHttpProvider(chainId, rpc);
+    // http provider exists so just set the chainId
+    if (!this.httpProviders[chainId]) { 
+      let rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+      if (!rpc) {
+        throw new Error(`No RPC url provided for chainId: ${chainId}`);
+      }
+      this.setHttpProvider(chainId, rpc);
+    }
+    
+    this.events.emit("chainChanged", this.chainId);
   }
   // ---------- Private ----------------------------------------------- //
 

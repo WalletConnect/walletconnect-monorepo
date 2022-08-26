@@ -22,11 +22,12 @@ import { RELAY_URL, LOGGER, STORAGE } from "./constants";
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
   public namespaces!: NamespaceConfig;
-  public events: any = new EventEmitter();
+  public events: EventEmitter = new EventEmitter();
   public rpcProviders: RpcProviderMap = {};
   public session!: SessionTypes.Struct;
   public providerOpts: UniversalProviderOpts;
   public logger: Logger;
+  public uri: string | undefined;
 
   static async init(opts: UniversalProviderOpts) {
     const provider = new UniversalProvider(opts);
@@ -124,8 +125,8 @@ export class UniversalProvider implements IUniversalProvider {
       requiredNamespaces: this.namespaces,
     });
 
-    // possibly trigger the qr modal from here?
     if (uri) {
+      this.uri = uri;
       this.events.emit("display_uri", uri);
     }
 
@@ -187,6 +188,7 @@ export class UniversalProvider implements IUniversalProvider {
             // @ts-ignore
             client: this.client,
             namespace: this.namespaces[namespace],
+            events: this.events,
           });
           break;
         case "solana":
