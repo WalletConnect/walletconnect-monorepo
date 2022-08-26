@@ -32,6 +32,8 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   const { uri, approval } = await A.connect(connectParams);
 
+  console.log('client a connected');
+
   let pairingA: PairingTypes.Struct | undefined;
   let pairingB: PairingTypes.Struct | undefined;
 
@@ -50,13 +52,17 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   if (!pairingA) throw new Error("expect pairing A to be defined");
 
+  console.log('client A defined');
+
   let sessionA: SessionTypes.Struct | undefined;
   let sessionB: SessionTypes.Struct | undefined;
 
   await Promise.all([
     new Promise<void>((resolve, reject) => {
+      console.log('client B waiting for session proposal');
       B.once("session_proposal", async (proposal) => {
         try {
+          console.log('client B received session proposal');
           expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
 
           const { acknowledged } = await B.approve({
@@ -64,7 +70,9 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
             ...approveParams,
           });
           if (!sessionB) {
+            console.log('client B waiting session B acknowledgement');
             sessionB = await acknowledged();
+            console.log('client B acknowledged session B');
           }
           resolve();
         } catch (e) {
@@ -77,10 +85,13 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
       if (connectParams.pairingTopic) return resolve();
       try {
         if (uri) {
+          console.log('try to pair b');
           pairingB = await B.pair({ uri });
           if (!pairingA) throw new Error("pairingA is missing");
           expect(pairingB.topic).to.eql(pairingA.topic);
           expect(pairingB.relay).to.eql(pairingA.relay);
+
+
 
           resolve();
         } else {

@@ -141,12 +141,15 @@ export class Engine extends IEngine {
   public pair: IEngine["pair"] = async (params) => {
     this.isInitialized();
     this.isValidPair(params);
+    console.log('pairing client');
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.client.pairing.set(topic, pairing);
     await this.client.core.crypto.setSymKey(symKey, topic);
+    console.log('subscribing to', topic);
     await this.client.core.relayer.subscribe(topic, { relay });
+    console.log('subscribed to', topic);
     await this.setExpiry(topic, expiry);
 
     return pairing;
@@ -160,6 +163,7 @@ export class Engine extends IEngine {
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
+    console.log('client generating key');
     const sessionTopic = await this.client.core.crypto.generateSharedKey(
       selfPublicKey,
       peerPublicKey,
@@ -172,10 +176,14 @@ export class Engine extends IEngine {
       expiry: SESSION_EXPIRY,
     };
 
+    console.log('client subscribing to session topic', sessionTopic);
     await this.client.core.relayer.subscribe(sessionTopic);
+    console.log('client subscribed to session topic', sessionTopic);
     const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
+    console.log('client sent wc_sessionSettle', sessionTopic);
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
     this.events.once(engineEvent("session_approve", requestId), ({ error }) => {
+      console.log('client received session_approve', sessionTopic);
       if (error) reject(error);
       else resolve(this.client.session.get(sessionTopic));
     });

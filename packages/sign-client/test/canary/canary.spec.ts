@@ -32,8 +32,10 @@ describe("Canary", () => {
           };
 
           try {
+            console.log('try to disconnect session B');
             clients.B.on("session_delete", (event: any) => {
               expect(eventPayload.topic).to.eql(event.topic);
+              console.log('session B deleted');
               resolve();
             });
           } catch (e) {
@@ -41,20 +43,24 @@ describe("Canary", () => {
           }
         }),
         new Promise<void>((resolve) => {
+          console.log('try to disconnect client A');
           clients.A.disconnect({
             topic: sessionA.topic,
             reason: getSdkError("USER_DISCONNECTED"),
           });
+          console.log('client A disconnected');
           resolve();
         }),
       ]);
       log("Clients disconnected");
 
+      console.log('deleting clients');
       deleteClients(clients);
       log("Clients deleted");
-    }, 20000);
+    }, 60000);
   });
   afterEach(async (done) => {
+    if (environment === 'dev') return;
     const { suite, name, result } = done.meta;
     const metric_prefix = `${suite.name}.${name}`;
     const nowTimestamp = Date.now();
