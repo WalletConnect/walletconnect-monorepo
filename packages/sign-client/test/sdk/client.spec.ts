@@ -33,7 +33,7 @@ describe("Sign Client Integration", () => {
         pairingTopic,
       });
       deleteClients(clients);
-    });
+    }, 20_000);
   });
 
   describe("disconnect", () => {
