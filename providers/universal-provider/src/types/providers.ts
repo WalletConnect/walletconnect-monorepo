@@ -25,7 +25,8 @@ export interface IUniversalProvider extends IEthereumProvider {
   client?: SignClient;
   namespaces?: NamespaceConfig;
   rpcProviders: RpcProviderMap;
-  session: any;
+  session: SessionTypes.Struct;
+  uri: string | undefined;
 
   request: <T = unknown>(args: RequestArguments, chain?: string) => Promise<T>;
   sendAsync: (
