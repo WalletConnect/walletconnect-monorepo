@@ -20,7 +20,7 @@ describe("Sign Client Concurrency", () => {
       : 1000; // minimum messages to be exchanged between clients
     const relayUrl =
       process.env.RELAY_URL || process.env.TEST_RELAY_URL || TEST_SIGN_CLIENT_OPTIONS.relayUrl;
-    const heartbeatInterval = process.env.HEARTBEAT_INTERVAL
+    const heartbeatIntervalMs = process.env.HEARTBEAT_INTERVAL
       ? parseInt(process.env.HEARTBEAT_INTERVAL)
       : 3000;
 
@@ -40,7 +40,7 @@ describe("Sign Client Concurrency", () => {
           0,
         )}`,
       );
-    }, heartbeatInterval);
+    }, heartbeatIntervalMs);
 
     const processMessages = async (data: any, clientIndex: number) => {
       const { clients, sessionA } = data;
