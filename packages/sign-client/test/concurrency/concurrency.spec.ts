@@ -21,7 +21,7 @@ describe("Sign Client Concurrency", () => {
       process.env.RELAY_URL || process.env.TEST_RELAY_URL || TEST_SIGN_CLIENT_OPTIONS.relayUrl;
     const heartbeatInterval = process.env.HEARTBEAT_INTERVAL
       ? parseInt(process.env.HEARTBEAT_INTERVAL)
-      : 100;
+      : 3000;
 
     const pairings: any[] = [];
     const messagesReceived: any = {};
