@@ -40,7 +40,7 @@ class Eip155Provider implements IProvider {
       case "wallet_switchEthereumChain":
         const newChainId = args.request.params ? args.request.params[0]?.chainId : "0x0";
         this.setDefaultChain(parseInt(newChainId, 16).toString());
-        return this.getAccounts() as any;
+        return null as any;
       case "eth_chainId":
         return this.getDefaultChainId() as any;
       default:
@@ -61,14 +61,14 @@ class Eip155Provider implements IProvider {
 
     this.chainId = parseInt(chainId);
     // http provider exists so just set the chainId
-    if (!this.httpProviders[chainId]) { 
+    if (!this.httpProviders[chainId]) {
       let rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
       this.setHttpProvider(chainId, rpc);
     }
-    
+
     this.events.emit("chainChanged", this.chainId);
   }
   // ---------- Private ----------------------------------------------- //
