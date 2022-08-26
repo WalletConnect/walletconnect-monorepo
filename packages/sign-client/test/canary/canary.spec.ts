@@ -20,9 +20,9 @@ describe("Canary", () => {
   describe("HappyPath", () => {
     it("connects", async () => {
       const clients = await initTwoClients();
-      log("Clients initialized");
+      log(`Clients initialized (relay '${TEST_RELAY_URL}')`);
       const { sessionA } = await testConnectMethod(clients);
-      log("Clients connected");
+      log(`Clients connected (relay '${TEST_RELAY_URL}')`);
 
       await Promise.all([
         new Promise<void>((resolve, reject) => {
