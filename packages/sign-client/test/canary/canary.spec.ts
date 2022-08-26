@@ -6,6 +6,7 @@ import {
   uploadToCloudWatch,
   TEST_EMIT_PARAMS,
 } from "../shared";
+import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
@@ -59,6 +60,7 @@ describe("Canary", () => {
     const nowTimestamp = Date.now();
     await uploadToCloudWatch(
       environment,
+      TEST_RELAY_URL,
       metric_prefix,
       result?.state === "pass",
       nowTimestamp - (result?.startTime || nowTimestamp),
