@@ -149,3 +149,12 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   return { pairingA, sessionA };
 }
+
+export function batchArray(array: any[], size: number) {
+  let result: any[] = []
+  for (let i = 0; i < array.length; i += size) {
+    let batch: any = array.slice(i, i + size)
+    result.push(batch)
+  }
+  return result
+}

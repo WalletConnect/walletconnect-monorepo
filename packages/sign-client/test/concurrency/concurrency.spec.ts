@@ -8,6 +8,7 @@ import {
   Clients,
   TEST_EMIT_PARAMS,
   throttle,
+  batchArray,
 } from "./../shared";
 import { describe, it, expect } from "vitest";
 
@@ -106,22 +107,25 @@ describe("Sign Client Concurrency", () => {
     };
 
     // init clients and pair
-    for await (const i of Array.from(Array(clientPairs).keys())) {
-      await new Promise<void>(async (resolve) => {
-        const timeout = setTimeout(() => {
-          log(`Client ${i} hung up`);
-          resolve();
-        }, 5000);
+    // we connect 10 clients at a time
+    for await (const batch of batchArray(Array.from(Array(clientPairs).keys()), 10)) {
+      await Promise.all(batch.map((i) => {
+        return new Promise<void>(async (resolve) => {
+          const timeout = setTimeout(() => {
+            log(`Client ${i} hung up`);
+            resolve();
+          }, 10_000);
 
-        const clients: Clients = await initTwoClients({ relayUrl });
-        await throttle(10);
-        expect(clients.A instanceof SignClient).to.eql(true);
-        expect(clients.B instanceof SignClient).to.eql(true);
-        const { sessionA } = await testConnectMethod(clients);
-        pairings.push({ clients, sessionA });
-        clearTimeout(timeout);
-        resolve();
-      });
+          const clients: Clients = await initTwoClients({ relayUrl });
+          await throttle(10);
+          expect(clients.A instanceof SignClient).to.eql(true);
+          expect(clients.B instanceof SignClient).to.eql(true);
+          const { sessionA } = await testConnectMethod(clients);
+          pairings.push({ clients, sessionA });
+          clearTimeout(timeout);
+          resolve();
+        });
+      }));
     }
 
     // process all messages between clients in parallel
