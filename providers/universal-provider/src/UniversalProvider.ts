@@ -178,7 +178,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   private createProviders(): void {
     if (!this.client) {
-      throw new Error("Client not initialized");
+      throw new Error("Sign Client not initialized");
     }
 
     Object.keys(this.namespaces).forEach((namespace) => {
