@@ -185,7 +185,6 @@ export class UniversalProvider implements IUniversalProvider {
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
-            // @ts-ignore
             client: this.client,
             namespace: this.namespaces[namespace],
             events: this.events,
