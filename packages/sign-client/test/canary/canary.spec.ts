@@ -6,6 +6,7 @@ import {
   uploadToCloudWatch,
   TEST_EMIT_PARAMS,
 } from "../shared";
+import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
@@ -19,9 +20,9 @@ describe("Canary", () => {
   describe("HappyPath", () => {
     it("connects", async () => {
       const clients = await initTwoClients();
-      log("Clients initialized");
+      log(`Clients initialized (relay '${TEST_RELAY_URL}')`);
       const { sessionA } = await testConnectMethod(clients);
-      log("Clients connected");
+      log(`Clients connected (relay '${TEST_RELAY_URL}')`);
 
       await Promise.all([
         new Promise<void>((resolve, reject) => {
@@ -51,7 +52,7 @@ describe("Canary", () => {
 
       deleteClients(clients);
       log("Clients deleted");
-    }, 20000);
+    }, 60000);
   });
   afterEach(async (done) => {
     const { suite, name, result } = done.meta;
@@ -59,6 +60,7 @@ describe("Canary", () => {
     const nowTimestamp = Date.now();
     await uploadToCloudWatch(
       environment,
+      TEST_RELAY_URL,
       metric_prefix,
       result?.state === "pass",
       nowTimestamp - (result?.startTime || nowTimestamp),
