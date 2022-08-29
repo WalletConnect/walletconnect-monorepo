@@ -21,8 +21,10 @@ describe("Canary", () => {
     it("connects", async () => {
       const clients = await initTwoClients();
       log(`Clients initialized (relay '${TEST_RELAY_URL}')`);
-      const { sessionA } = await testConnectMethod(clients);
-      log(`Clients connected (relay '${TEST_RELAY_URL}')`);
+      const { pairingA, sessionA } = await testConnectMethod(clients);
+      log(
+        `Clients connected (relay '${TEST_RELAY_URL}', pairing topic '${pairingA.topic}', session topic '${sessionA.topic}')`,
+      );
 
       await Promise.all([
         new Promise<void>((resolve, reject) => {
