@@ -4,17 +4,21 @@ import {
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
+  uploadLoadTestConnectionDataToCloudWatch,
   deleteClients,
   Clients,
   TEST_EMIT_PARAMS,
   throttle,
   batchArray,
 } from "./../shared";
+import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect } from "vitest";
+
+const environment = process.env.ENVIRONMENT || "dev";
 
 describe("Sign Client Concurrency", () => {
   it("should successfully handle concurrent clients", async () => {
-    const clientPairs = process.env.CLIENTS ? parseInt(process.env.CLIENTS) : 300;
+    const clientPairs = process.env.CLIENTS ? parseInt(process.env.CLIENTS) : 300000;
     const messagesToBeExchanged = process.env.MESSAGES_PER_CLIENT
       ? parseInt(process.env.MESSAGES_PER_CLIENT)
       : 1000; // minimum messages to be exchanged between clients
@@ -108,15 +112,16 @@ describe("Sign Client Concurrency", () => {
 
     // init clients and pair
     // we connect 10 clients at a time
-    for await (const batch of batchArray(Array.from(Array(clientPairs).keys()), 10)) {
-      await Promise.all(
+    for await (const batch of batchArray(Array.from(Array(clientPairs).keys()), 100)) {
+      const successfullyConnectedLatencies: number[] = await Promise.all(
         batch.map((i) => {
-          return new Promise<void>(async (resolve) => {
+          return new Promise<number>(async (resolve) => {
             const timeout = setTimeout(() => {
               log(`Client ${i} hung up`);
-              resolve();
-            }, 60_000);
+              resolve(-1);
+            }, 90_000);
 
+            const now = new Date().getTime();
             const clients: Clients = await initTwoClients({ relayUrl });
             await throttle(10);
             expect(clients.A instanceof SignClient).to.eql(true);
@@ -124,9 +129,24 @@ describe("Sign Client Concurrency", () => {
             const { sessionA } = await testConnectMethod(clients);
             pairings.push({ clients, sessionA });
             clearTimeout(timeout);
-            resolve();
+            const latency = new Date().getTime() - now;
+            resolve(latency);
           });
-        }),
+        })
+        .filter((i: number) => i !== -1),
+      );
+      const averageConnectLatency = successfullyConnectedLatencies.reduce((a, b) => a + b, 0) / successfullyConnectedLatencies.length;
+      const failures =  batch.length - successfullyConnectedLatencies.length;
+      log(`${successfullyConnectedLatencies.length} out of ${batch.length} connected (${averageConnectLatency}ms avg connection latency)`);
+
+      const metric_prefix = `Pairing`;
+      await uploadLoadTestConnectionDataToCloudWatch(
+        environment,
+        TEST_RELAY_URL,
+        metric_prefix,
+        successfullyConnectedLatencies.length,
+        failures,
+        averageConnectLatency
       );
     }
 

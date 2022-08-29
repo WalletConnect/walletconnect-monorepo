@@ -3,7 +3,7 @@ import {
   initTwoClients,
   testConnectMethod,
   deleteClients,
-  uploadToCloudWatch,
+  uploadCanaryResultsToCloudWatch,
   TEST_EMIT_PARAMS,
 } from "../shared";
 import { TEST_RELAY_URL } from "./../shared/values";
@@ -60,7 +60,7 @@ describe("Canary", () => {
     const { suite, name, result } = done.meta;
     const metric_prefix = `${suite.name}.${name}`;
     const nowTimestamp = Date.now();
-    await uploadToCloudWatch(
+    await uploadCanaryResultsToCloudWatch(
       environment,
       TEST_RELAY_URL,
       metric_prefix,
