@@ -37,10 +37,11 @@ class Eip155Provider implements IProvider {
         return this.getAccounts() as any;
       case "eth_accounts":
         return this.getAccounts() as any;
-      case "wallet_switchEthereumChain":
+      case "wallet_switchEthereumChain": {
         const newChainId = args.request.params ? args.request.params[0]?.chainId : "0x0";
         this.setDefaultChain(parseInt(newChainId, 16).toString());
         return null as any;
+      }
       case "eth_chainId":
         return this.getDefaultChainId() as any;
       default:
