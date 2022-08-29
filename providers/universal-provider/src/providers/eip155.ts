@@ -106,7 +106,7 @@ class Eip155Provider implements IProvider {
     return (
       accounts
         // get the accounts from the active chain
-        .filter((account) => account.split(":")[1] == this.chainId.toString())
+        .filter((account) => account.split(":")[1] === this.chainId.toString())
         // remove namespace & chainId from the string
         .map((account) => account.split(":")[2]) || []
     );
