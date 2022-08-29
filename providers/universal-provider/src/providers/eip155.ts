@@ -57,8 +57,6 @@ class Eip155Provider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    console.log("setting default chain", chainId, rpcUrl);
-
     this.chainId = parseInt(chainId);
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
