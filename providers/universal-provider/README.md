@@ -36,7 +36,7 @@ await provider.connect({
       chains: ["eip155:80001"],
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
-        80001: "https://rpc-mumbai.matic.today",
+        80001: "https://rpc.walletconnect.com?chainId=eip155:80001&projectId=<your walletconnect project id>",
       },
     },
     pairingTopic: "<123...topic>", // optional topic to connect to
