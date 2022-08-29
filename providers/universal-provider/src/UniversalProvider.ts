@@ -121,7 +121,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   public async pair(pairingTopic: string | undefined): Promise<SessionTypes.Struct> {
     const { uri, approval } = await this.client.connect({
-      pairingTopic: pairingTopic,
+      pairingTopic,
       requiredNamespaces: this.namespaces,
     });
 
@@ -136,7 +136,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public async setDefaultChain(chain: string, rpcUrl?: string | undefined) {
-    let [namespace, chainId] = this.validateChain(chain);
+    const [namespace, chainId] = this.validateChain(chain);
     this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
   }
 
@@ -252,7 +252,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private validateChain(chain?: string): [string, string] {
-    let [namespace, chainId] = chain?.split(":") || ["", ""];
+    const [namespace, chainId] = chain?.split(":") || ["", ""];
 
     // validate namespace
     if (namespace) {

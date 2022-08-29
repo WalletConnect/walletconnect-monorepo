@@ -62,7 +62,7 @@ class Eip155Provider implements IProvider {
     this.chainId = parseInt(chainId);
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
-      let rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
