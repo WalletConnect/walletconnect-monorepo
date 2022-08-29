@@ -145,7 +145,7 @@ describe("Sign Client Concurrency", () => {
           })
           .filter(
             (i: { handshakeLatencyMs: number; pairingLatencyMs: number }) =>
-              i.handshakeLatencyMs !== -1,
+              i.handshakeLatencyMs !== -1 && i.pairingLatencyMs !== -1,
           ),
       );
       const averagePairingLatency =
