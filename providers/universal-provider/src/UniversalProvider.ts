@@ -197,9 +197,6 @@ export class UniversalProvider implements IUniversalProvider {
         case "cosmos":
           //TODO:
           break;
-        case "polygon":
-          //TODO:
-          break;
         case "polkadot":
           //TODO:
           break;
