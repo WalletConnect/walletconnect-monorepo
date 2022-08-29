@@ -72,6 +72,7 @@ export const uploadLoadTestConnectionDataToCloudWatch = async (
   successfullyConnected: number,
   failedToConnect: number,
   averagePairingTimeMs: number,
+  averageHandshakeTimeMs: number,
 ) => {
   const cloudwatch = new CloudWatch({ region: "eu-central-1" });
   const ts = new Date();
@@ -112,6 +113,18 @@ export const uploadLoadTestConnectionDataToCloudWatch = async (
         ],
         Unit: "Milliseconds",
         Value: averagePairingTimeMs,
+        Timestamp: ts,
+      },
+      {
+        MetricName: `${metricsPrefix}.handshake.latency`,
+        Dimensions: [
+          {
+            Name: "Target",
+            Value: target,
+          },
+        ],
+        Unit: "Milliseconds",
+        Value: averageHandshakeTimeMs,
         Timestamp: ts,
       },
     ],
