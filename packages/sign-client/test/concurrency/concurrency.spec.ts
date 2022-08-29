@@ -198,5 +198,5 @@ describe("Sign Client Concurrency", () => {
       deleteClients(data.clients);
     }
     clearInterval(heartBeat);
-  }, 600000);
+  }, 1_200_000);
 });
