@@ -206,7 +206,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   private registerEventListeners(): void {
     if (typeof this.client === "undefined") {
-      throw new Error("WalletConnect is not initialized");
+      throw new Error("Sign Client is not initialized");
     }
 
     this.client.on("session_ping", (args) => {
