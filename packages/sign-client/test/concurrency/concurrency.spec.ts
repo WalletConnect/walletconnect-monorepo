@@ -115,7 +115,7 @@ describe("Sign Client Concurrency", () => {
             const timeout = setTimeout(() => {
               log(`Client ${i} hung up`);
               resolve();
-            }, 10_000);
+            }, 60_000);
 
             const clients: Clients = await initTwoClients({ relayUrl });
             await throttle(10);
