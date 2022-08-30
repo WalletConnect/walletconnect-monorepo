@@ -7,8 +7,20 @@ export interface Clients {
   B: SignClient;
 }
 
-export async function initTwoClients(clientOpts: SignClientTypes.Options = {}) {
-  const A = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS_A, ...clientOpts });
-  const B = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS_B, ...clientOpts });
+export async function initTwoClients(
+  clientOpts: SignClientTypes.Options = {},
+  overrideOptionsA: SignClientTypes.Options = {},
+  overrideOptionsB: SignClientTypes.Options = {},
+) {
+  const A = await SignClient.init({
+    ...TEST_SIGN_CLIENT_OPTIONS_A,
+    ...clientOpts,
+    ...overrideOptionsA,
+  });
+  const B = await SignClient.init({
+    ...TEST_SIGN_CLIENT_OPTIONS_B,
+    ...clientOpts,
+    ...overrideOptionsB,
+  });
   return { A, B };
 }

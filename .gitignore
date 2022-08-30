@@ -30,6 +30,10 @@ zip
 tsconfig.tsbuildinfo
 test.db
 test.db-journal
+client_a.db
+client_a.db-journal
+client_b.db
+client_b.db-journal
 setup
 result*
 ops/grafana/grafana.ini

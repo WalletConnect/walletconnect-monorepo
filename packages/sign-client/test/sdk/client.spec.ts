@@ -9,7 +9,8 @@ import {
 } from "../shared";
 import { SEVEN_DAYS } from "@walletconnect/time";
 
-const TEST_SIGN_CLIENT_DATABASE = "./test.db";
+const TEST_SIGN_CLIENT_A_DATABASE = "./test/client_a.db";
+const TEST_SIGN_CLIENT_B_DATABASE = "./test/client_b.db";
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -98,9 +99,15 @@ describe("Sign Client Integration", () => {
         deleteClients(clients);
       });
       it("clients can ping each other after restart", async () => {
-        const beforeClients = await initTwoClients({
-          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
-        });
+        const beforeClients = await initTwoClients(
+          {},
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+          },
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+          },
+        );
         const {
           pairingA: { topic },
         } = await testConnectMethod(beforeClients);
@@ -110,9 +117,15 @@ describe("Sign Client Integration", () => {
         // delete
         deleteClients(beforeClients);
         // restart
-        const afterClients = await initTwoClients({
-          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
-        });
+        const afterClients = await initTwoClients(
+          {},
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+          },
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+          },
+        );
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
@@ -137,9 +150,15 @@ describe("Sign Client Integration", () => {
         deleteClients(clients);
       });
       it("clients can ping each other after restart", async () => {
-        const beforeClients = await initTwoClients({
-          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
-        });
+        const beforeClients = await initTwoClients(
+          {},
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+          },
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+          },
+        );
         const {
           sessionA: { topic },
         } = await testConnectMethod(beforeClients);
@@ -149,9 +168,15 @@ describe("Sign Client Integration", () => {
         // delete
         deleteClients(beforeClients);
         // restart
-        const afterClients = await initTwoClients({
-          storageOptions: { database: TEST_SIGN_CLIENT_DATABASE },
-        });
+        const afterClients = await initTwoClients(
+          {},
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+          },
+          {
+            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+          },
+        );
         // ping
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
