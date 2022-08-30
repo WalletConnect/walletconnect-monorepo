@@ -130,7 +130,7 @@ describe("Sign Client Concurrency", () => {
               }, 120_000);
 
               const now = new Date().getTime();
-              const clients: Clients = await initTwoClients({ relayUrl });
+              const clients: Clients = await initTwoClients({}, {}, { relayUrl });
               const handshakeLatencyMs = new Date().getTime() - now;
               await throttle(10);
               expect(clients.A instanceof SignClient).to.eql(true);
