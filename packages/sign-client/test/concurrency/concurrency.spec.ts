@@ -4,17 +4,21 @@ import {
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
+  uploadLoadTestConnectionDataToCloudWatch,
   deleteClients,
   Clients,
   TEST_EMIT_PARAMS,
   throttle,
   batchArray,
 } from "./../shared";
+import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect } from "vitest";
+
+const environment = process.env.ENVIRONMENT || "dev";
 
 describe("Sign Client Concurrency", () => {
   it("should successfully handle concurrent clients", async () => {
-    const clientPairs = process.env.CLIENTS ? parseInt(process.env.CLIENTS) : 300;
+    const clientPairs = process.env.CLIENTS ? parseInt(process.env.CLIENTS) : 300000;
     const messagesToBeExchanged = process.env.MESSAGES_PER_CLIENT
       ? parseInt(process.env.MESSAGES_PER_CLIENT)
       : 1000; // minimum messages to be exchanged between clients
@@ -108,25 +112,64 @@ describe("Sign Client Concurrency", () => {
 
     // init clients and pair
     // we connect 10 clients at a time
-    for await (const batch of batchArray(Array.from(Array(clientPairs).keys()), 10)) {
-      await Promise.all(
-        batch.map((i) => {
-          return new Promise<void>(async (resolve) => {
-            const timeout = setTimeout(() => {
-              log(`Client ${i} hung up`);
-              resolve();
-            }, 10_000);
+    for await (const batch of batchArray(Array.from(Array(clientPairs).keys()), 100)) {
+      const successfullyConnectedLatencies: {
+        handshakeLatencyMs: number;
+        pairingLatencyMs: number;
+      }[] = await Promise.all(
+        batch
+          .map((i) => {
+            return new Promise<{ handshakeLatencyMs: number; pairingLatencyMs: number }>(
+              async (resolve) => {
+                const timeout = setTimeout(() => {
+                  log(`Client ${i} hung up`);
+                  resolve({ handshakeLatencyMs: 0, pairingLatencyMs: 0 });
+                }, 90_000);
 
-            const clients: Clients = await initTwoClients({ relayUrl });
-            await throttle(10);
-            expect(clients.A instanceof SignClient).to.eql(true);
-            expect(clients.B instanceof SignClient).to.eql(true);
-            const { sessionA } = await testConnectMethod(clients);
-            pairings.push({ clients, sessionA });
-            clearTimeout(timeout);
-            resolve();
-          });
-        }),
+                const now = new Date().getTime();
+                const clients: Clients = await initTwoClients({ relayUrl });
+                const handshakeLatencyMs = new Date().getTime() - now;
+                await throttle(10);
+                expect(clients.A instanceof SignClient).to.eql(true);
+                expect(clients.B instanceof SignClient).to.eql(true);
+                const { sessionA } = await testConnectMethod(clients);
+                pairings.push({ clients, sessionA });
+                clearTimeout(timeout);
+                const pairingLatencyMs = new Date().getTime() - now;
+                resolve({
+                  handshakeLatencyMs,
+                  pairingLatencyMs,
+                });
+              },
+            );
+          })
+          .filter(
+            (i: { handshakeLatencyMs: number; pairingLatencyMs: number }) =>
+              i.handshakeLatencyMs !== -1,
+          ),
+      );
+      const averagePairingLatency =
+        successfullyConnectedLatencies
+          .map((latency) => latency.pairingLatencyMs)
+          .reduce((a, b) => a + b, 0) / successfullyConnectedLatencies.length;
+      const averageHandhsakeLatency =
+        successfullyConnectedLatencies
+          .map((latency) => latency.handshakeLatencyMs)
+          .reduce((a, b) => a + b, 0) / successfullyConnectedLatencies.length;
+      const failures = batch.length - successfullyConnectedLatencies.length;
+      log(
+        `${successfullyConnectedLatencies.length} out of ${batch.length} connected (${averagePairingLatency}ms avg pairing latency, ${averageHandhsakeLatency}ms avg handshake latency)`,
+      );
+
+      const metric_prefix = `Pairing`;
+      await uploadLoadTestConnectionDataToCloudWatch(
+        environment,
+        TEST_RELAY_URL,
+        metric_prefix,
+        successfullyConnectedLatencies.length,
+        failures,
+        averagePairingLatency,
+        averageHandhsakeLatency,
       );
     }
 
@@ -173,5 +216,5 @@ describe("Sign Client Concurrency", () => {
       deleteClients(data.clients);
     }
     clearInterval(heartBeat);
-  }, 600000);
+  }, 1_200_000);
 });
