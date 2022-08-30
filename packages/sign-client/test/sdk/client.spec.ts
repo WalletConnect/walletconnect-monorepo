@@ -100,7 +100,6 @@ describe("Sign Client Integration", () => {
       });
       it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients(
-          {},
           {
             storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
           },
@@ -118,7 +117,6 @@ describe("Sign Client Integration", () => {
         deleteClients(beforeClients);
         // restart
         const afterClients = await initTwoClients(
-          {},
           {
             storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
           },
@@ -151,7 +149,6 @@ describe("Sign Client Integration", () => {
       });
       it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients(
-          {},
           {
             storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
           },
@@ -169,7 +166,6 @@ describe("Sign Client Integration", () => {
         deleteClients(beforeClients);
         // restart
         const afterClients = await initTwoClients(
-          {},
           {
             storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
           },

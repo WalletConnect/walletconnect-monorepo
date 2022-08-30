@@ -8,19 +8,19 @@ export interface Clients {
 }
 
 export async function initTwoClients(
-  clientOpts: SignClientTypes.Options = {},
-  overrideOptionsA: SignClientTypes.Options = {},
-  overrideOptionsB: SignClientTypes.Options = {},
+  clientOptsA: SignClientTypes.Options = {},
+  clientOptsB: SignClientTypes.Options = {},
+  sharedClientOpts: SignClientTypes.Options = {},
 ) {
   const A = await SignClient.init({
     ...TEST_SIGN_CLIENT_OPTIONS_A,
-    ...clientOpts,
-    ...overrideOptionsA,
+    ...sharedClientOpts,
+    ...clientOptsA,
   });
   const B = await SignClient.init({
     ...TEST_SIGN_CLIENT_OPTIONS_B,
-    ...clientOpts,
-    ...overrideOptionsB,
+    ...sharedClientOpts,
+    ...clientOptsB,
   });
   return { A, B };
 }
