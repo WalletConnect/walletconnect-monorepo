@@ -113,52 +113,56 @@ describe("Sign Client Concurrency", () => {
     // init clients and pair
     // we connect 10 clients at a time
     for await (const batch of batchArray(Array.from(Array(clientPairs).keys()), 100)) {
-      const successfullyConnectedLatencies: {
+      const connections: {
         handshakeLatencyMs: number;
         pairingLatencyMs: number;
       }[] = await Promise.all(
         batch
           .map((i) => {
-            return new Promise<{ handshakeLatencyMs: number; pairingLatencyMs: number }>(
-              async (resolve) => {
-                const timeout = setTimeout(() => {
-                  log(`Client ${i} hung up`);
-                  resolve({ handshakeLatencyMs: -1, pairingLatencyMs: -1 });
-                }, 120_000);
+            return new Promise<{
+              handshakeLatencyMs: number;
+              pairingLatencyMs: number;
+              connected: boolean;
+            }>(async (resolve) => {
+              const timeout = setTimeout(() => {
+                log(`Client ${i} hung up`);
+                resolve({ handshakeLatencyMs: -1, pairingLatencyMs: -1, connected: false });
+              }, 120_000);
 
-                const now = new Date().getTime();
-                const clients: Clients = await initTwoClients({}, {}, { relayUrl });
-                const handshakeLatencyMs = new Date().getTime() - now;
-                await throttle(10);
-                expect(clients.A instanceof SignClient).to.eql(true);
-                expect(clients.B instanceof SignClient).to.eql(true);
-                const { sessionA } = await testConnectMethod(clients);
-                pairings.push({ clients, sessionA });
-                clearTimeout(timeout);
-                const pairingLatencyMs = new Date().getTime() - now;
-                resolve({
-                  handshakeLatencyMs,
-                  pairingLatencyMs,
-                });
-              },
-            );
+              const now = new Date().getTime();
+              const clients: Clients = await initTwoClients({}, {}, { relayUrl });
+              const handshakeLatencyMs = new Date().getTime() - now;
+              await throttle(10);
+              expect(clients.A instanceof SignClient).to.eql(true);
+              expect(clients.B instanceof SignClient).to.eql(true);
+              const { sessionA } = await testConnectMethod(clients);
+              pairings.push({ clients, sessionA });
+              clearTimeout(timeout);
+              const pairingLatencyMs = new Date().getTime() - now;
+              resolve({
+                handshakeLatencyMs,
+                pairingLatencyMs,
+                connected: true,
+              });
+            });
           })
           .filter(
-            (i: { handshakeLatencyMs: number; pairingLatencyMs: number }) =>
-              i.handshakeLatencyMs !== -1 && i.pairingLatencyMs !== -1,
+            (connectionResult: {
+              handshakeLatencyMs: number;
+              pairingLatencyMs: number;
+              connected: boolean;
+            }) => connectionResult.connected,
           ),
       );
       const averagePairingLatency =
-        successfullyConnectedLatencies
-          .map((latency) => latency.pairingLatencyMs)
-          .reduce((a, b) => a + b, 0) / successfullyConnectedLatencies.length;
+        connections.map((connection) => connection.pairingLatencyMs).reduce((a, b) => a + b, 0) /
+        connections.length;
       const averageHandhsakeLatency =
-        successfullyConnectedLatencies
-          .map((latency) => latency.handshakeLatencyMs)
-          .reduce((a, b) => a + b, 0) / successfullyConnectedLatencies.length;
-      const failures = batch.length - successfullyConnectedLatencies.length;
+        connections.map((connection) => connection.handshakeLatencyMs).reduce((a, b) => a + b, 0) /
+        connections.length;
+      const failures = batch.length - connections.length;
       log(
-        `${successfullyConnectedLatencies.length} out of ${batch.length} connected (${averagePairingLatency}ms avg pairing latency, ${averageHandhsakeLatency}ms avg handshake latency)`,
+        `${connections.length} out of ${batch.length} connected (${averagePairingLatency}ms avg pairing latency, ${averageHandhsakeLatency}ms avg handshake latency)`,
       );
 
       const metric_prefix = `Pairing`;
@@ -166,7 +170,7 @@ describe("Sign Client Concurrency", () => {
         environment,
         TEST_RELAY_URL,
         metric_prefix,
-        successfullyConnectedLatencies.length,
+        connections.length,
         failures,
         averagePairingLatency,
         averageHandhsakeLatency,
