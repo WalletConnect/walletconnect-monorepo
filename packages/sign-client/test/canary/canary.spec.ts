@@ -60,12 +60,15 @@ describe("Canary", () => {
     const { suite, name, result } = done.meta;
     const metric_prefix = `${suite.name}.${name}`;
     const nowTimestamp = Date.now();
+    const latencyMs = nowTimestamp - (result?.startTime || nowTimestamp);
+    const successful = result?.state === "pass";
+    log(`Canary finished in state ${result?.state} took ${latencyMs}ms`);
     await uploadCanaryResultsToCloudWatch(
       environment,
       TEST_RELAY_URL,
       metric_prefix,
-      result?.state === "pass",
-      nowTimestamp - (result?.startTime || nowTimestamp),
+      successful,
+      latencyMs,
     );
   });
 });
