@@ -123,8 +123,8 @@ describe("Sign Client Concurrency", () => {
               async (resolve) => {
                 const timeout = setTimeout(() => {
                   log(`Client ${i} hung up`);
-                  resolve({ handshakeLatencyMs: 0, pairingLatencyMs: 0 });
-                }, 90_000);
+                  resolve({ handshakeLatencyMs: -1, pairingLatencyMs: -1 });
+                }, 120_000);
 
                 const now = new Date().getTime();
                 const clients: Clients = await initTwoClients({ relayUrl });
@@ -145,7 +145,7 @@ describe("Sign Client Concurrency", () => {
           })
           .filter(
             (i: { handshakeLatencyMs: number; pairingLatencyMs: number }) =>
-              i.handshakeLatencyMs !== -1,
+              i.handshakeLatencyMs !== -1 && i.pairingLatencyMs !== -1,
           ),
       );
       const averagePairingLatency =
