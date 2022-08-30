@@ -1,0 +1,51 @@
+{
+  "name": "@walletconnect/universal-provider",
+  "description": "Universal Provider for WalletConnect Protocol",
+  "version": "2.0.0-rc.2",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/walletconnect/walletconnect-monorepo",
+    "directory": "packages/universal-provider"
+  },
+  "license": "Apache-2.0",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "unpkg": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:pre": "npm run clean",
+    "build:types": "tsc",
+    "build:source": "rollup --config rollup.config.js",
+    "build": "npm run build:pre; npm run build:source; npm run build:types",
+    "test": "vitest run --dir test",
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
+  },
+  "dependencies": {
+    "@walletconnect/jsonrpc-http-connection": "1.0.3",
+    "@walletconnect/jsonrpc-provider": "1.0.5",
+    "@walletconnect/jsonrpc-types": "1.0.1",
+    "@walletconnect/jsonrpc-utils": "1.0.3",
+    "@walletconnect/sign-client": "2.0.0-rc.2",
+    "@walletconnect/types": "2.0.0-rc.2",
+    "@walletconnect/utils": "2.0.0-rc.2",
+    "eip1193-provider": "1.0.1",
+    "pino": "6.7.0"
+  },
+  "devDependencies": {
+    "ethereum-test-network": "0.1.6",
+    "ethers": "5.7.0",
+    "web3": "1.7.5",
+    "uint8arrays": "3.0.0"
+  }
+}
