@@ -34,7 +34,7 @@ describe("Sign Client Integration", () => {
         pairingTopic,
       });
       deleteClients(clients);
-    }, 120_000);
+    });
   });
 
   describe("disconnect", () => {
@@ -207,7 +207,7 @@ describe("Sign Client Integration", () => {
     });
   });
 
-  describe("extend", () => {
+  describe.skip("extend", () => {
     it("updates session expiry state", async () => {
       const clients = await initTwoClients();
       const {

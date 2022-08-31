@@ -30,6 +30,27 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     namespaces: params?.namespaces || TEST_NAMESPACES,
   };
 
+  // We need to kick off the promise that binds the listener for `session_proposal` before `A.connect()`
+  // is called, to avoid race conditions.
+  const resolveSessionProposal = new Promise<void>((resolve, reject) => {
+    B.once("session_proposal", async (proposal) => {
+      try {
+        expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
+
+        const { acknowledged } = await B.approve({
+          id: proposal.id,
+          ...approveParams,
+        });
+        if (!sessionB) {
+          sessionB = await acknowledged();
+        }
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+
   const { uri, approval } = await A.connect(connectParams);
 
   let pairingA: PairingTypes.Struct | undefined;
@@ -54,24 +75,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   let sessionB: SessionTypes.Struct | undefined;
 
   await Promise.all([
-    new Promise<void>((resolve, reject) => {
-      B.once("session_proposal", async (proposal) => {
-        try {
-          expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
-
-          const { acknowledged } = await B.approve({
-            id: proposal.id,
-            ...approveParams,
-          });
-          if (!sessionB) {
-            sessionB = await acknowledged();
-          }
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
-      });
-    }),
+    resolveSessionProposal,
     new Promise<void>(async (resolve, reject) => {
       // immediatelly resolve if pairingTopic is provided
       if (connectParams.pairingTopic) return resolve();
@@ -151,9 +155,9 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 }
 
 export function batchArray(array: any[], size: number) {
-  let result: any[] = [];
+  const result: any[] = [];
   for (let i = 0; i < array.length; i += size) {
-    let batch: any = array.slice(i, i + size);
+    const batch: any = array.slice(i, i + size);
     result.push(batch);
   }
   return result;
