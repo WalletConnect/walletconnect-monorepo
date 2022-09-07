@@ -20,7 +20,9 @@ describe("Canary", () => {
   describe("HappyPath", () => {
     it("connects", async () => {
       const clients = await initTwoClients();
-      log(`Clients initialized (relay '${TEST_RELAY_URL}')`);
+      log(
+        `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+      );
       const { pairingA, sessionA } = await testConnectMethod(clients);
       log(
         `Clients connected (relay '${TEST_RELAY_URL}', pairing topic '${pairingA.topic}', session topic '${sessionA.topic}')`,
@@ -54,7 +56,7 @@ describe("Canary", () => {
 
       deleteClients(clients);
       log("Clients deleted");
-    }, 120_000);
+    }, 240_000);
   });
   afterEach(async (done) => {
     const { suite, name, result } = done.meta;
