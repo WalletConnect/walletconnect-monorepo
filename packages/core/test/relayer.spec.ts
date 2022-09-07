@@ -25,7 +25,12 @@ describe("Relayer", () => {
   beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({ core, logger });
+    relayer = new Relayer({
+      core,
+      logger,
+      relayUrl: TEST_CORE_OPTIONS.relayUrl,
+      projectId: TEST_CORE_OPTIONS.projectId,
+    });
   });
 
   describe("init", () => {
