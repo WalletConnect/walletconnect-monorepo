@@ -353,8 +353,9 @@ export class Engine extends IEngine {
 
   private deleteSession: EnginePrivate["deleteSession"] = async (topic) => {
     const { self } = this.client.session.get(topic);
+    // Await the unsubscribe first to avoid deleting the symKey too early below.
+    await this.client.core.relayer.unsubscribe(topic);
     await Promise.all([
-      this.client.core.relayer.unsubscribe(topic),
       this.client.session.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
@@ -363,8 +364,9 @@ export class Engine extends IEngine {
   };
 
   private deletePairing: EnginePrivate["deleteSession"] = async (topic) => {
+    // Await the unsubscribe first to avoid deleting the symKey too early below.
+    await this.client.core.relayer.unsubscribe(topic);
     await Promise.all([
-      this.client.core.relayer.unsubscribe(topic),
       this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
@@ -396,8 +398,8 @@ export class Engine extends IEngine {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
-    await this.client.core.relayer.publish(topic, message, opts);
     this.client.history.set(topic, payload);
+    await this.client.core.relayer.publish(topic, message, opts);
 
     return payload.id;
   };
