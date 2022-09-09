@@ -25,7 +25,9 @@ describe("Canary", () => {
       );
       const { pairingA, sessionA } = await testConnectMethod(clients);
       log(
-        `Clients connected (relay '${TEST_RELAY_URL}', pairing topic '${pairingA.topic}', session topic '${sessionA.topic}')`,
+        `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
+          pairingA.topic
+        }', session topic '${sessionA.topic}')`,
       );
 
       await Promise.all([
