@@ -10,6 +10,7 @@ import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
+const region = process.env.REGION || "unknown";
 
 const log = (log: string) => {
   // eslint-disable-next-line no-console
@@ -69,6 +70,7 @@ describe("Canary", () => {
     log(`Canary finished in state ${result?.state} took ${latencyMs}ms`);
     await uploadCanaryResultsToCloudWatch(
       environment,
+      region,
       TEST_RELAY_URL,
       metric_prefix,
       successful,

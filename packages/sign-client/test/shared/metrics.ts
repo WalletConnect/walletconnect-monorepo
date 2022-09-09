@@ -2,6 +2,7 @@ import CloudWatch from "aws-sdk/clients/cloudwatch";
 
 export const uploadCanaryResultsToCloudWatch = async (
   env: string,
+  region: string,
   target: string,
   metricsPrefix: string,
   isTestPassed: boolean,
@@ -19,6 +20,10 @@ export const uploadCanaryResultsToCloudWatch = async (
             Name: "Target",
             Value: target,
           },
+          {
+            Name: "Region",
+            Value: region,
+          },
         ],
         Unit: "Count",
         Value: isTestPassed ? 1 : 0,
@@ -31,6 +36,10 @@ export const uploadCanaryResultsToCloudWatch = async (
             Name: "Target",
             Value: target,
           },
+          {
+            Name: "Region",
+            Value: region,
+          },
         ],
         Unit: "Count",
         Value: isTestPassed ? 0 : 1,
@@ -42,6 +51,10 @@ export const uploadCanaryResultsToCloudWatch = async (
           {
             Name: "Target",
             Value: target,
+          },
+          {
+            Name: "Region",
+            Value: region,
           },
         ],
         Unit: "Milliseconds",
