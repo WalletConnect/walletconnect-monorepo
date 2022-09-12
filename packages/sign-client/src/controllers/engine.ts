@@ -169,7 +169,7 @@ export class Engine extends IEngine {
       namespaces,
       requiredNamespaces,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
-      expiry: SESSION_EXPIRY,
+      expiry: calcExpiry(SESSION_EXPIRY),
     };
 
     await this.client.core.relayer.subscribe(sessionTopic);
@@ -192,7 +192,7 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
     };
     await this.client.session.set(sessionTopic, session);
-    await this.setExpiry(sessionTopic, SESSION_EXPIRY);
+    await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     if (pairingTopic)
       await this.client.pairing.update(pairingTopic, { peerMetadata: session.peer.metadata });
 
@@ -246,7 +246,7 @@ export class Engine extends IEngine {
       if (error) reject(error);
       else resolve();
     });
-    await this.setExpiry(topic, SESSION_EXPIRY);
+    await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
 
     return { acknowledged };
   };
@@ -347,8 +347,9 @@ export class Engine extends IEngine {
   }
 
   private activatePairing: EnginePrivate["activatePairing"] = async (topic) => {
-    await this.client.pairing.update(topic, { active: true, expiry: PROPOSAL_EXPIRY });
-    await this.setExpiry(topic, PROPOSAL_EXPIRY);
+    const expiry = calcExpiry(PROPOSAL_EXPIRY);
+    await this.client.pairing.update(topic, { active: true, expiry });
+    await this.setExpiry(topic, expiry);
   };
 
   private deleteSession: EnginePrivate["deleteSession"] = async (topic) => {
@@ -664,7 +665,7 @@ export class Engine extends IEngine {
     const { id } = payload;
     try {
       this.isValidExtend({ topic });
-      await this.setExpiry(topic, SESSION_EXPIRY);
+      await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
       await this.sendResult<"wc_sessionExtend">(id, topic, true);
       this.client.events.emit("session_extend", { id, topic });
     } catch (err: any) {
