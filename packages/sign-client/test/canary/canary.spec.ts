@@ -62,6 +62,7 @@ describe("Canary", () => {
     }, 240_000);
   });
   afterEach(async (done) => {
+    if (environment === "dev") return;
     const { suite, name, result } = done.meta;
     const metric_prefix = `${suite.name}.${name}`;
     const nowTimestamp = Date.now();
