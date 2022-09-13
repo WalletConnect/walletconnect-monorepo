@@ -59,7 +59,10 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   let pairingB: PairingTypes.Struct | undefined;
 
   if (!connectParams.pairingTopic) {
+    // This is a new pairing. Let's apply a timeout to mimick
+    // QR code scanning
     if (!uri) throw new Error("uri is missing");
+    if (params?.qrCodeScanLatencyMs) await throttle(params?.qrCodeScanLatencyMs);
 
     const uriParams = parseUri(uri);
 
@@ -67,9 +70,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     expect(pairingA.topic).to.eql(uriParams.topic);
     expect(pairingA.relay).to.eql(uriParams.relay);
   } else {
-    // This is a new pairing. Let's apply a timeout to mimick
-    // QR code scanning
-    if (params?.qrCodeScanLatencyMs) await throttle(params?.qrCodeScanLatencyMs);
     pairingA = A.pairing.get(connectParams.pairingTopic);
     pairingB = B.pairing.get(connectParams.pairingTopic);
   }
