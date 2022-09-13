@@ -11,22 +11,35 @@ import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
 const region = process.env.REGION || "unknown";
+const test_regions = region === 'unknown' ? ['global'] : ['global', region]
 
 const log = (log: string) => {
   // eslint-disable-next-line no-console
   console.log(log);
 };
 
+// Seemingly no good way to retrieve
+// the test parameters in the `afterEach`
+// hook and therefore doing inelegant
+// string replacement.
+const TEST_PREFIX = 'Connects to ';
+
 describe("Canary", () => {
-  describe("HappyPath", () => {
-    it("connects", async () => {
-      const clients = await initTwoClients();
+  // Run the test against the global endpoint and
+  // the endpoint of the region that the Canary is running in
+  // we run one instance of the canary per region
+  describe.each(test_regions)("HappyPath", (realm) => {
+    it(`${TEST_PREFIX}${realm}`, async () => {
+      const endpoint = realm === 'global' ? TEST_RELAY_URL : `wss://${realm}.${TEST_RELAY_URL.replace('wss://', '')}`;
+      const clients = await initTwoClients({
+        relayUrl: endpoint,
+      });
       log(
-        `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+        `Clients initialized (relay '${endpoint}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
       );
       const { pairingA, sessionA } = await testConnectMethod(clients);
       log(
-        `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
+        `Clients connected (relay '${endpoint}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
           pairingA.topic
         }', session topic '${sessionA.topic}')`,
       );
@@ -65,6 +78,8 @@ describe("Canary", () => {
     if (environment === 'dev') return;
     const { suite, name, result } = done.meta;
     const metric_prefix = `${suite.name}.${name}`;
+    const realm = name.replace(TEST_PREFIX, "");
+    const target = realm === 'global' ? TEST_RELAY_URL : `${realm}.${TEST_RELAY_URL}`;
     const nowTimestamp = Date.now();
     const latencyMs = nowTimestamp - (result?.startTime || nowTimestamp);
     const successful = result?.state === "pass";
@@ -72,7 +87,7 @@ describe("Canary", () => {
     await uploadCanaryResultsToCloudWatch(
       environment,
       region,
-      TEST_RELAY_URL,
+      target,
       metric_prefix,
       successful,
       latencyMs,
