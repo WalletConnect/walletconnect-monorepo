@@ -25,13 +25,14 @@ describe("Canary", () => {
       log(
         `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
       );
-      const { pairingA, sessionA } = await testConnectMethod(clients);
+      const qrCodeScanLatencyMs = 1000;
+      const { pairingA, sessionA } = await testConnectMethod(clients, { qrCodeScanLatencyMs });
       log(
         `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
           pairingA.topic
         }', session topic '${sessionA.topic}')`,
       );
-      const promise = new Promise<void>((resolve, reject) => {
+      const clientDisconnect = new Promise<void>((resolve, reject) => {
         try {
           clients.B.on("session_delete", (event: any) => {
             expect(sessionA.topic).to.eql(event.topic);
@@ -49,19 +50,21 @@ describe("Canary", () => {
       const latencyMs = Date.now() - start;
       const metric_prefix = "HappyPath.connects";
       const successful = true;
-      await uploadCanaryResultsToCloudWatch(
-        environment,
-        region,
-        TEST_RELAY_URL,
-        metric_prefix,
-        successful,
-        latencyMs,
-      );
+      const pairingLatency = latencyMs - qrCodeScanLatencyMs;
+      console.log(`Clients paired after ${pairingLatency}ms`);
+      if (environment !== "dev") {
+        await uploadCanaryResultsToCloudWatch(
+          environment,
+          region,
+          TEST_RELAY_URL,
+          metric_prefix,
+          successful,
+          pairingLatency,
+        );
+      }
 
-      await promise;
-
+      await clientDisconnect;
       log("Clients disconnected");
-
       deleteClients(clients);
       log("Clients deleted");
     }, 600_000);
