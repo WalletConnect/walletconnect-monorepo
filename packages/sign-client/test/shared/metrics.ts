@@ -62,7 +62,8 @@ export const uploadCanaryResultsToCloudWatch = async (
     },
   ];
 
-  const latencies = Object.keys(otherLatencies).map((metricName) => {
+  const latencies = otherLatencies.map((metric) => {
+    const metricName = Object.keys(metric)[0];
     return {
       MetricName: `${metricsPrefix}.${metricName}`,
       Dimensions: [
@@ -76,7 +77,7 @@ export const uploadCanaryResultsToCloudWatch = async (
         },
       ],
       Unit: "Milliseconds",
-      Value: otherLatencies[metricName],
+      Value: metric[metricName],
       Timestamp: ts,
     };
   });

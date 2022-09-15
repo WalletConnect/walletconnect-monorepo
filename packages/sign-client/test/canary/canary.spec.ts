@@ -54,7 +54,7 @@ describe("Canary", () => {
       const successful = true;
       const pairingLatency = latencyMs - qrCodeScanLatencyMs;
       console.log(`Clients paired after ${pairingLatency}ms`);
-      if (environment !== "dev") {
+      if (environment !== "hello") {
         await uploadCanaryResultsToCloudWatch(
           environment,
           region,
