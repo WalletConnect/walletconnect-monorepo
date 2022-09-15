@@ -113,7 +113,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     }),
   ]);
 
-  const settlePairingLatencyMs = Date.now() - start;
+  const settlePairingLatencyMs = Date.now() - start - (params?.qrCodeScanLatencyMs || 0);
 
   if (!sessionA) throw new Error("expect session A to be defined");
   if (!sessionB) throw new Error("expect session B to be defined");
