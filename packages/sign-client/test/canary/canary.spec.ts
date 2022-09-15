@@ -44,16 +44,29 @@ describe("Canary", () => {
           reject();
         }
       });
-      await clients.A.disconnect({
-        topic: sessionA.topic,
-        reason: getSdkError("USER_DISCONNECTED"),
-      });
 
-      const latencyMs = Date.now() - start;
       const metric_prefix = "HappyPath.connects";
       const successful = true;
-      const pairingLatency = latencyMs - qrCodeScanLatencyMs;
-      console.log(`Clients paired after ${pairingLatency}ms`);
+      const pairingLatencyMs = Date.now() - start - qrCodeScanLatencyMs;
+
+      // Send a ping
+      const pingStart = Date.now();
+      await new Promise<void>(async (resolve, reject) => {
+        try {
+          clients.B.once("session_ping", (event) => {
+            expect(sessionA.topic).to.eql(event.topic);
+            resolve();
+          });
+
+          await clients.A.ping({ topic: sessionA.topic });
+        } catch (e) {
+          reject(e);
+        }
+      });
+      const pingLatencyMs = Date.now() - pingStart;
+      const latencyMs = Date.now() - start - qrCodeScanLatencyMs;
+
+      console.log(`Clients paired after ${pairingLatencyMs}ms`);
       if (environment !== "dev") {
         await uploadCanaryResultsToCloudWatch(
           environment,
@@ -61,14 +74,21 @@ describe("Canary", () => {
           TEST_RELAY_URL,
           metric_prefix,
           successful,
-          pairingLatency,
+          latencyMs,
           [
             { handshakeLatency: handshakeLatencyMs },
             { proposePairingLatency: clientAConnectLatencyMs },
             { settlePairingLatency: settlePairingLatencyMs - clientAConnectLatencyMs },
+            { pairingLatency: pairingLatencyMs },
+            { pingLatency: pingLatencyMs },
           ],
         );
       }
+      
+      await clients.A.disconnect({
+        topic: sessionA.topic,
+        reason: getSdkError("USER_DISCONNECTED"),
+      });
 
       await clientDisconnect;
       log("Clients disconnected");
