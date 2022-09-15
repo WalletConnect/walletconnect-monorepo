@@ -34,16 +34,6 @@ describe("Canary", () => {
           pairingA.topic
         }', session topic '${sessionA.topic}')`,
       );
-      const clientDisconnect = new Promise<void>((resolve, reject) => {
-        try {
-          clients.B.on("session_delete", (event: any) => {
-            expect(sessionA.topic).to.eql(event.topic);
-            resolve();
-          });
-        } catch (e) {
-          reject();
-        }
-      });
 
       const metric_prefix = "HappyPath.connects";
       const successful = true;
@@ -84,12 +74,22 @@ describe("Canary", () => {
           ],
         );
       }
-      
+
+      const clientDisconnect = new Promise<void>((resolve, reject) => {
+        try {
+          clients.B.on("session_delete", (event: any) => {
+            expect(sessionA.topic).to.eql(event.topic);
+            resolve();
+          });
+        } catch (e) {
+          reject();
+        }
+      });
+
       await clients.A.disconnect({
         topic: sessionA.topic,
         reason: getSdkError("USER_DISCONNECTED"),
       });
-
       await clientDisconnect;
       log("Clients disconnected");
       deleteClients(clients);
