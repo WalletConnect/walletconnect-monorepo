@@ -4,7 +4,7 @@ import {
   testConnectMethod,
   deleteClients,
   uploadCanaryResultsToCloudWatch,
-  TEST_EMIT_PARAMS,
+  throttle,
 } from "../shared";
 import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
@@ -26,9 +26,9 @@ describe("Canary", () => {
       log(
         `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
       );
-      const qrCodeScanLatencyMs = 1000;
+      const humanInputLatencyMs = 600;
       const { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs } =
-        await testConnectMethod(clients, { qrCodeScanLatencyMs });
+        await testConnectMethod(clients, { qrCodeScanLatencyMs: humanInputLatencyMs });
       log(
         `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
           pairingA.topic
@@ -37,9 +37,10 @@ describe("Canary", () => {
 
       const metric_prefix = "HappyPath.connects";
       const successful = true;
-      const pairingLatencyMs = Date.now() - start - qrCodeScanLatencyMs;
+      const pairingLatencyMs = Date.now() - start - humanInputLatencyMs;
 
       // Send a ping
+      await throttle(humanInputLatencyMs); // Introduce some realistic timeout and allow backend to replicate
       const pingStart = Date.now();
       await new Promise<void>(async (resolve, reject) => {
         try {
@@ -54,7 +55,7 @@ describe("Canary", () => {
         }
       });
       const pingLatencyMs = Date.now() - pingStart;
-      const latencyMs = Date.now() - start - qrCodeScanLatencyMs;
+      const latencyMs = Date.now() - start - 2 * humanInputLatencyMs;
 
       console.log(`Clients paired after ${pairingLatencyMs}ms`);
       if (environment !== "dev") {
