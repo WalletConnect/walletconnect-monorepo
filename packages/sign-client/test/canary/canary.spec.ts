@@ -22,11 +22,13 @@ describe("Canary", () => {
     it("connects", async () => {
       const start = Date.now();
       const clients = await initTwoClients();
+      const handshakeLatencyMs = Date.now() - start;
       log(
         `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
       );
       const qrCodeScanLatencyMs = 1000;
-      const { pairingA, sessionA } = await testConnectMethod(clients, { qrCodeScanLatencyMs });
+      const { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs } =
+        await testConnectMethod(clients, { qrCodeScanLatencyMs });
       log(
         `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
           pairingA.topic
@@ -52,7 +54,7 @@ describe("Canary", () => {
       const successful = true;
       const pairingLatency = latencyMs - qrCodeScanLatencyMs;
       console.log(`Clients paired after ${pairingLatency}ms`);
-      if (environment !== "dev") {
+      if (environment !== "hello") {
         await uploadCanaryResultsToCloudWatch(
           environment,
           region,
@@ -60,6 +62,11 @@ describe("Canary", () => {
           metric_prefix,
           successful,
           pairingLatency,
+          [
+            { handshakeLatency: handshakeLatencyMs },
+            { proposePairingLatency: clientAConnectLatencyMs },
+            { settlePairingLatency: settlePairingLatencyMs - clientAConnectLatencyMs },
+          ],
         );
       }
 

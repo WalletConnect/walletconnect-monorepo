@@ -20,6 +20,7 @@ export interface TestConnectParams {
 }
 
 export async function testConnectMethod(clients: Clients, params?: TestConnectParams) {
+  const start = Date.now();
   const { A, B } = clients;
 
   const connectParams: EngineTypes.ConnectParams = {
@@ -54,6 +55,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   });
 
   const { uri, approval } = await A.connect(connectParams);
+  const clientAConnectLatencyMs = Date.now() - start;
 
   let pairingA: PairingTypes.Struct | undefined;
   let pairingB: PairingTypes.Struct | undefined;
@@ -111,6 +113,8 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     }),
   ]);
 
+  const settlePairingLatencyMs = Date.now() - start;
+
   if (!sessionA) throw new Error("expect session A to be defined");
   if (!sessionB) throw new Error("expect session B to be defined");
 
@@ -156,7 +160,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   expect(pairingA.peerMetadata).to.eql(sessionA.peer.metadata);
   expect(pairingB.peerMetadata).to.eql(sessionB.peer.metadata);
 
-  return { pairingA, sessionA };
+  return { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs };
 }
 
 export function batchArray(array: any[], size: number) {
