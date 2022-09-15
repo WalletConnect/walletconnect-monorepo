@@ -4,7 +4,7 @@ import {
   testConnectMethod,
   deleteClients,
   uploadCanaryResultsToCloudWatch,
-  TEST_EMIT_PARAMS,
+  throttle,
 } from "../shared";
 import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
@@ -26,14 +26,56 @@ describe("Canary", () => {
       log(
         `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
       );
-      const qrCodeScanLatencyMs = 1000;
+      const humanInputLatencyMs = 600;
       const { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs } =
-        await testConnectMethod(clients, { qrCodeScanLatencyMs });
+        await testConnectMethod(clients, { qrCodeScanLatencyMs: humanInputLatencyMs });
       log(
         `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
           pairingA.topic
         }', session topic '${sessionA.topic}')`,
       );
+
+      const metric_prefix = "HappyPath.connects";
+      const successful = true;
+      const pairingLatencyMs = Date.now() - start - humanInputLatencyMs;
+
+      // Send a ping
+      await throttle(humanInputLatencyMs); // Introduce some realistic timeout and allow backend to replicate
+      const pingStart = Date.now();
+      await new Promise<void>(async (resolve, reject) => {
+        try {
+          clients.B.once("session_ping", (event) => {
+            expect(sessionA.topic).to.eql(event.topic);
+            resolve();
+          });
+
+          await clients.A.ping({ topic: sessionA.topic });
+        } catch (e) {
+          reject(e);
+        }
+      });
+      const pingLatencyMs = Date.now() - pingStart;
+      const latencyMs = Date.now() - start - 2 * humanInputLatencyMs;
+
+      console.log(`Clients paired after ${pairingLatencyMs}ms`);
+      if (environment !== "dev") {
+        await uploadCanaryResultsToCloudWatch(
+          environment,
+          region,
+          TEST_RELAY_URL,
+          metric_prefix,
+          successful,
+          latencyMs,
+          [
+            { handshakeLatency: handshakeLatencyMs },
+            { proposePairingLatency: clientAConnectLatencyMs },
+            { settlePairingLatency: settlePairingLatencyMs - clientAConnectLatencyMs },
+            { pairingLatency: pairingLatencyMs },
+            { pingLatency: pingLatencyMs },
+          ],
+        );
+      }
+
       const clientDisconnect = new Promise<void>((resolve, reject) => {
         try {
           clients.B.on("session_delete", (event: any) => {
@@ -44,32 +86,11 @@ describe("Canary", () => {
           reject();
         }
       });
+
       await clients.A.disconnect({
         topic: sessionA.topic,
         reason: getSdkError("USER_DISCONNECTED"),
       });
-
-      const latencyMs = Date.now() - start;
-      const metric_prefix = "HappyPath.connects";
-      const successful = true;
-      const pairingLatency = latencyMs - qrCodeScanLatencyMs;
-      console.log(`Clients paired after ${pairingLatency}ms`);
-      if (environment !== "dev") {
-        await uploadCanaryResultsToCloudWatch(
-          environment,
-          region,
-          TEST_RELAY_URL,
-          metric_prefix,
-          successful,
-          pairingLatency,
-          [
-            { handshakeLatency: handshakeLatencyMs },
-            { proposePairingLatency: clientAConnectLatencyMs },
-            { settlePairingLatency: settlePairingLatencyMs - clientAConnectLatencyMs },
-          ],
-        );
-      }
-
       await clientDisconnect;
       log("Clients disconnected");
       deleteClients(clients);
