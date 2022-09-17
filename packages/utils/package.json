@@ -25,6 +25,7 @@
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "vitest run --dir test",
     "test": "npm run test:pre; npm run test:run",
+    "test:ignoreUnhandled": "npm run test:pre; npm run test:run -- --dangerouslyIgnoreUnhandledErrors",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
