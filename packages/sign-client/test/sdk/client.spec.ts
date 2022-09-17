@@ -128,7 +128,7 @@ describe("Sign Client Integration", () => {
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
         deleteClients(afterClients);
-      });
+      }, 20_000);
     });
     describe("session", () => {
       it("A pings B with existing session", async () => {
@@ -177,7 +177,7 @@ describe("Sign Client Integration", () => {
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
         deleteClients(afterClients);
-      });
+      }, 20_000);
     });
   });
 
@@ -204,7 +204,7 @@ describe("Sign Client Integration", () => {
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
       deleteClients(clients);
-    });
+    }, 20_000);
   });
 
   describe("extend", () => {
@@ -232,6 +232,6 @@ describe("Sign Client Integration", () => {
       const updatedExpiry = clients.A.session.get(topic).expiry;
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
       deleteClients(clients);
-    });
+    }, 20_000);
   });
 });
