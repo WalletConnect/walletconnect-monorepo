@@ -33,6 +33,7 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:ignoreUnhandled": "npm run test:ignoreUnhandled --workspaces --if-present",
+    "test:sequential": "npm run test:sequential --workspaces --if-present",
     "check": "npm run lint; npm run build; npm run test",
     "reset": "npm run clean; npm run check",
     "new-version": "lerna version --no-git-tag-version --exact",

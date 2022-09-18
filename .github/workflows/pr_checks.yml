@@ -81,4 +81,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: build-artifacts
-      - run: npm run test --prefix=${{ matrix.test-prefix }}
+      # TODO: re-enable parallelism once `socket hang up` issue is resolved in Sign CI pipeline.
+      # - run: npm run test --prefix=${{ matrix.test-prefix }}
+      - run: npm run test:sequential --prefix=${{ matrix.test-prefix }}
