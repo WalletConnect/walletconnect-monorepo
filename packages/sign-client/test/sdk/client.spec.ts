@@ -131,21 +131,35 @@ describe("Sign Client Integration", () => {
       }, 20_000);
     });
     describe("session", () => {
-      it("A pings B with existing session", async () => {
-        const clients = await initTwoClients();
-        const {
-          sessionA: { topic },
-        } = await testConnectMethod(clients);
-        await clients.A.ping({ topic });
-        deleteClients(clients);
-      });
-      it("B pings A with existing session", async () => {
-        const clients = await initTwoClients();
-        const {
-          sessionA: { topic },
-        } = await testConnectMethod(clients);
-        await clients.B.ping({ topic });
-        deleteClients(clients);
+      describe("existing session", () => {
+        let clients;
+        beforeEach(async () => {
+          clients = await initTwoClients();
+        });
+        afterEach(async (done) => {
+          const { result } = done.meta;
+          if (result?.state.toString() !== "pass") {
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+            );
+          }
+        });
+        it("A pings B with existing session", async () => {
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(clients);
+          await clients.A.ping({ topic });
+          deleteClients(clients);
+        });
+        it("B pings A with existing session", async () => {
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(clients);
+          await clients.B.ping({ topic });
+          deleteClients(clients);
+        });
       });
       it("clients can ping each other after restart", async () => {
         const beforeClients = await initTwoClients(
