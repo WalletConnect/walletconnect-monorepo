@@ -1,4 +1,4 @@
-import { getSdkError, calcExpiry } from "@walletconnect/utils";
+import { getSdkError, generateRandomBytes32 } from "@walletconnect/utils";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import SignClient from "../../src";
 import {
@@ -7,10 +7,9 @@ import {
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
 } from "../shared";
-import { SEVEN_DAYS } from "@walletconnect/time";
 
-const TEST_SIGN_CLIENT_A_DATABASE = "./test/client_a.db";
-const TEST_SIGN_CLIENT_B_DATABASE = "./test/client_b.db";
+const generateClientDbName = (prefix: string) =>
+  `./test/tmp/${prefix}_${generateRandomBytes32()}.db`;
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -131,13 +130,15 @@ describe("Sign Client Integration", () => {
       describe("after restart", () => {
         let beforeClients;
         let afterClients;
+        const db_a = generateClientDbName("client_a");
+        const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
           beforeClients = await initTwoClients(
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+              storageOptions: { database: db_a },
             },
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+              storageOptions: { database: db_b },
             },
           );
         });
@@ -173,10 +174,10 @@ describe("Sign Client Integration", () => {
           // restart
           afterClients = await initTwoClients(
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+              storageOptions: { database: db_a },
             },
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+              storageOptions: { database: db_b },
             },
           );
           // ping
@@ -220,13 +221,15 @@ describe("Sign Client Integration", () => {
       describe("after restart", () => {
         let beforeClients;
         let afterClients;
+        const db_a = generateClientDbName("client_a");
+        const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
           beforeClients = await initTwoClients(
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+              storageOptions: { database: db_a },
             },
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+              storageOptions: { database: db_b },
             },
           );
         });
@@ -262,10 +265,10 @@ describe("Sign Client Integration", () => {
           // restart
           afterClients = await initTwoClients(
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+              storageOptions: { database: db_a },
             },
             {
-              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+              storageOptions: { database: db_b },
             },
           );
           // ping
