@@ -251,14 +251,6 @@ describe("Sign Client Integration", () => {
           }
         });
         it("clients can ping each other", async () => {
-          beforeClients = await initTwoClients(
-            {
-              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-            },
-            {
-              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-            },
-          );
           const {
             sessionA: { topic },
           } = await testConnectMethod(beforeClients);
