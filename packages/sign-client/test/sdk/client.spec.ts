@@ -114,7 +114,6 @@ describe("Sign Client Integration", () => {
       });
       describe("after restart", () => {
         let beforeClients;
-        let afterClients;
         beforeEach(async () => {
           beforeClients = await initTwoClients(
             {
@@ -133,12 +132,6 @@ describe("Sign Client Integration", () => {
                 done.meta.name
               } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
             );
-            if (!afterClients) return;
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
-            );
           }
         });
         it("clients can ping each other", async () => {
@@ -151,7 +144,7 @@ describe("Sign Client Integration", () => {
           // delete
           deleteClients(beforeClients);
           // restart
-          afterClients = await initTwoClients(
+          const afterClients = await initTwoClients(
             {
               storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
             },
@@ -199,7 +192,6 @@ describe("Sign Client Integration", () => {
       });
       describe("after restart", () => {
         let beforeClients;
-        let afterClients;
         beforeEach(async () => {
           beforeClients = await initTwoClients(
             {
@@ -217,12 +209,6 @@ describe("Sign Client Integration", () => {
               `Test ${
                 done.meta.name
               } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
-            );
-            if (!afterClients) return;
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
             );
           }
         });
@@ -244,7 +230,7 @@ describe("Sign Client Integration", () => {
           // delete
           deleteClients(beforeClients);
           // restart
-          afterClients = await initTwoClients(
+          const afterClients = await initTwoClients(
             {
               storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
             },
