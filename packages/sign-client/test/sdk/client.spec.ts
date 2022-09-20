@@ -142,7 +142,7 @@ describe("Sign Client Integration", () => {
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
         deleteClients(afterClients);
-      }, 20_000);
+      }, 30_000);
     });
     describe("session", () => {
       describe("with existing session", () => {
@@ -205,13 +205,26 @@ describe("Sign Client Integration", () => {
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
         deleteClients(afterClients);
-      }, 20_000);
+      }, 30_000);
     });
   });
 
   describe("update", () => {
+    let clients;
+    beforeEach(async () => {
+      clients = await initTwoClients();
+    });
+    afterEach(async (done) => {
+      const { result } = done.meta;
+      if (result?.state.toString() !== "pass") {
+        console.log(
+          `Test ${
+            done.meta.name
+          } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+        );
+      }
+    });
     it("updates session namespaces state with provided namespaces", async () => {
-      const clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
