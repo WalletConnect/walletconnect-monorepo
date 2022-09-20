@@ -142,7 +142,7 @@ describe("Sign Client Integration", () => {
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
         deleteClients(afterClients);
-      }, 20_000);
+      });
     });
     describe("session", () => {
       describe("with existing session", () => {
@@ -205,7 +205,7 @@ describe("Sign Client Integration", () => {
         await afterClients.A.ping({ topic });
         await afterClients.B.ping({ topic });
         deleteClients(afterClients);
-      }, 20_000);
+      });
     });
   });
 
