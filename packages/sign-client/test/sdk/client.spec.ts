@@ -38,9 +38,26 @@ describe("Sign Client Integration", () => {
   });
 
   describe("disconnect", () => {
+    let clients;
+    beforeEach(async () => {
+      clients = await initTwoClients();
+    });
+    afterEach(async (done) => {
+      const { result } = done.meta;
+      if (result?.state.toString() !== "pass") {
+        if (!clients || !clients.A || !clients.B) {
+          console.log("Clients failed to initialize");
+          return;
+        }
+        console.log(
+          `Test ${
+            done.meta.name
+          } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+        );
+      }
+    });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
-        const clients = await initTwoClients();
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
@@ -56,7 +73,6 @@ describe("Sign Client Integration", () => {
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
-        const clients = await initTwoClients();
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
@@ -112,36 +128,62 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      it("clients can ping each other after restart", async () => {
-        const beforeClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        const {
-          pairingA: { topic },
-        } = await testConnectMethod(beforeClients);
-        // ping
-        await beforeClients.A.ping({ topic });
-        await beforeClients.B.ping({ topic });
-        // delete
-        deleteClients(beforeClients);
-        // restart
-        const afterClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        // ping
-        await afterClients.A.ping({ topic });
-        await afterClients.B.ping({ topic });
-        deleteClients(afterClients);
+      describe("after restart", () => {
+        let beforeClients;
+        let afterClients;
+        beforeEach(async () => {
+          beforeClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+        });
+        afterEach(async (done) => {
+          const { result } = done.meta;
+          if (result?.state.toString() !== "pass") {
+            if (!beforeClients || !beforeClients.A || !beforeClients.B) {
+              console.log("Clients failed to initialize");
+              return;
+            }
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+            );
+            if (!afterClients || !afterClients.A || !afterClients.B) return;
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
+            );
+          }
+        });
+        it("clients can ping each other", async () => {
+          const {
+            pairingA: { topic },
+          } = await testConnectMethod(beforeClients);
+          // ping
+          await beforeClients.A.ping({ topic });
+          await beforeClients.B.ping({ topic });
+          // delete
+          deleteClients(beforeClients);
+          // restart
+          afterClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+          // ping
+          await afterClients.A.ping({ topic });
+          await afterClients.B.ping({ topic });
+          deleteClients(afterClients);
+        });
       });
     });
     describe("session", () => {
@@ -175,36 +217,70 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      it("clients can ping each other after restart", async () => {
-        const beforeClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        const {
-          sessionA: { topic },
-        } = await testConnectMethod(beforeClients);
-        // ping
-        await beforeClients.A.ping({ topic });
-        await beforeClients.B.ping({ topic });
-        // delete
-        deleteClients(beforeClients);
-        // restart
-        const afterClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        // ping
-        await afterClients.A.ping({ topic });
-        await afterClients.B.ping({ topic });
-        deleteClients(afterClients);
+      describe("after restart", () => {
+        let beforeClients;
+        let afterClients;
+        beforeEach(async () => {
+          beforeClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+        });
+        afterEach(async (done) => {
+          const { result } = done.meta;
+          if (result?.state.toString() !== "pass") {
+            if (!beforeClients || !beforeClients.A || !beforeClients.B) {
+              console.log("Clients failed to initialize");
+              return;
+            }
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+            );
+            if (!afterClients || !afterClients.A || !afterClients.B) return;
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
+            );
+          }
+        });
+        it("clients can ping each other", async () => {
+          beforeClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(beforeClients);
+          // ping
+          await beforeClients.A.ping({ topic });
+          await beforeClients.B.ping({ topic });
+          // delete
+          deleteClients(beforeClients);
+          // restart
+          afterClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+          // ping
+          await afterClients.A.ping({ topic });
+          await afterClients.B.ping({ topic });
+          deleteClients(afterClients);
+        });
       });
     });
   });
