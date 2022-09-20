@@ -138,7 +138,6 @@ describe("Sign Client Integration", () => {
         });
         afterEach(async (done) => {
           const { result } = done.meta;
-          console.log("dang", result?.state.toString());
           if (result?.state.toString() !== "pass") {
             console.log(
               `Test ${
