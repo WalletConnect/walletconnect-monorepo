@@ -38,9 +38,26 @@ describe("Sign Client Integration", () => {
   });
 
   describe("disconnect", () => {
+    let clients;
+    beforeEach(async () => {
+      clients = await initTwoClients();
+    });
+    afterEach(async (done) => {
+      const { result } = done.meta;
+      if (result?.state.toString() !== "pass") {
+        if (!clients || !clients.A || !clients.B) {
+          console.log("Clients failed to initialize");
+          return;
+        }
+        console.log(
+          `Test ${
+            done.meta.name
+          } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+        );
+      }
+    });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
-        const clients = await initTwoClients();
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
@@ -56,7 +73,6 @@ describe("Sign Client Integration", () => {
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
-        const clients = await initTwoClients();
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
@@ -129,7 +145,7 @@ describe("Sign Client Integration", () => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
             if (!beforeClients || !beforeClients.A || !beforeClients.B) {
-              console.log('Clients failed to initialize');
+              console.log("Clients failed to initialize");
               return;
             }
             console.log(
@@ -218,7 +234,7 @@ describe("Sign Client Integration", () => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
             if (!beforeClients || !beforeClients.A || !beforeClients.B) {
-              console.log('Clients failed to initialize');
+              console.log("Clients failed to initialize");
               return;
             }
             console.log(
