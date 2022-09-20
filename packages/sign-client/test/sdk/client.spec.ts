@@ -128,7 +128,7 @@ describe("Sign Client Integration", () => {
         afterEach(async (done) => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
-            if (!beforeClients) {
+            if (!beforeClients || !beforeClients.A || !beforeClients.B) {
               console.log('Clients failed to initialize');
               return;
             }
@@ -137,7 +137,7 @@ describe("Sign Client Integration", () => {
                 done.meta.name
               } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
             );
-            if (!afterClients) return;
+            if (!afterClients || !afterClients.A || !afterClients.B) return;
             console.log(
               `Test ${
                 done.meta.name
@@ -217,7 +217,7 @@ describe("Sign Client Integration", () => {
         afterEach(async (done) => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
-            if (!beforeClients) {
+            if (!beforeClients || !beforeClients.A || !beforeClients.B) {
               console.log('Clients failed to initialize');
               return;
             }
@@ -226,7 +226,7 @@ describe("Sign Client Integration", () => {
                 done.meta.name
               } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
             );
-            if (!afterClients) return;
+            if (!afterClients || !afterClients.A || !afterClients.B) return;
             console.log(
               `Test ${
                 done.meta.name
