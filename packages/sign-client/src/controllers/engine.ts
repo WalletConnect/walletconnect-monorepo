@@ -352,7 +352,7 @@ export class Engine extends IEngine {
     await this.setExpiry(topic, expiry);
   };
 
-  private deleteSession: EnginePrivate["deleteSession"] = async (topic) => {
+  private deleteSession: EnginePrivate["deleteSession"] = async (topic, expirerHasDeleted) => {
     const { self } = this.client.session.get(topic);
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
@@ -360,24 +360,24 @@ export class Engine extends IEngine {
       this.client.session.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(topic),
+      expirerHasDeleted ? Promise.resolve() : this.client.expirer.del(topic),
     ]);
   };
 
-  private deletePairing: EnginePrivate["deleteSession"] = async (topic) => {
+  private deletePairing: EnginePrivate["deleteSession"] = async (topic, expirerHasDeleted) => {
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
     await Promise.all([
       this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(topic),
+      expirerHasDeleted ? Promise.resolve() : this.client.expirer.del(topic),
     ]);
   };
 
-  private deleteProposal: EnginePrivate["deleteProposal"] = async (id) => {
+  private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
     await Promise.all([
       this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
-      this.client.expirer.del(id),
+      expirerHasDeleted ? Promise.resolve() : this.client.expirer.del(id),
     ]);
   };
 
@@ -437,9 +437,9 @@ export class Engine extends IEngine {
       if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
     });
     await Promise.all([
-      ...sessionTopics.map(this.deleteSession),
-      ...pairingTopics.map(this.deletePairing),
-      ...proposalIds.map(this.deleteProposal),
+      ...sessionTopics.map((topic) => this.deleteSession(topic)),
+      ...pairingTopics.map((topic) => this.deletePairing(topic)),
+      ...proposalIds.map((id) => this.deleteProposal(id)),
     ]);
   };
 
@@ -803,14 +803,14 @@ export class Engine extends IEngine {
       const { topic, id } = parseExpirerTarget(event.target);
       if (topic) {
         if (this.client.session.keys.includes(topic)) {
-          await this.deleteSession(topic);
+          await this.deleteSession(topic, true);
           this.client.events.emit("session_expire", { topic });
         } else if (this.client.pairing.keys.includes(topic)) {
-          await this.deletePairing(topic);
+          await this.deletePairing(topic, true);
           this.client.events.emit("pairing_expire", { topic });
         }
       } else if (id) {
-        await this.deleteProposal(id);
+        await this.deleteProposal(id, true);
       }
     });
   }

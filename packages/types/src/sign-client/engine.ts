@@ -164,11 +164,11 @@ export interface EnginePrivate {
 
   activatePairing(topic: string): Promise<void>;
 
-  deleteSession(topic: string): Promise<void>;
+  deleteSession(topic: string, expirerHasDeleted?: boolean): Promise<void>;
 
-  deletePairing(topic: string): Promise<void>;
+  deletePairing(topic: string, expirerHasDeleted?: boolean): Promise<void>;
 
-  deleteProposal(id: number): Promise<void>;
+  deleteProposal(id: number, expirerHasDeleted?: boolean): Promise<void>;
 
   setExpiry(topic: string, expiry: number): Promise<void>;
 
