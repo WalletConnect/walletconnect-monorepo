@@ -114,6 +114,7 @@ describe("Sign Client Integration", () => {
       });
       describe("after restart", () => {
         let beforeClients;
+        let afterClients;
         beforeEach(async () => {
           beforeClients = await initTwoClients(
             {
@@ -127,10 +128,20 @@ describe("Sign Client Integration", () => {
         afterEach(async (done) => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
+            if (!beforeClients) {
+              console.log('Clients failed to initialize');
+              return;
+            }
             console.log(
               `Test ${
                 done.meta.name
               } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+            );
+            if (!afterClients) return;
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
             );
           }
         });
@@ -144,7 +155,7 @@ describe("Sign Client Integration", () => {
           // delete
           deleteClients(beforeClients);
           // restart
-          const afterClients = await initTwoClients(
+          afterClients = await initTwoClients(
             {
               storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
             },
@@ -192,6 +203,7 @@ describe("Sign Client Integration", () => {
       });
       describe("after restart", () => {
         let beforeClients;
+        let afterClients;
         beforeEach(async () => {
           beforeClients = await initTwoClients(
             {
@@ -205,10 +217,20 @@ describe("Sign Client Integration", () => {
         afterEach(async (done) => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
+            if (!beforeClients) {
+              console.log('Clients failed to initialize');
+              return;
+            }
             console.log(
               `Test ${
                 done.meta.name
               } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+            );
+            if (!afterClients) return;
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
             );
           }
         });
@@ -230,7 +252,7 @@ describe("Sign Client Integration", () => {
           // delete
           deleteClients(beforeClients);
           // restart
-          const afterClients = await initTwoClients(
+          afterClients = await initTwoClients(
             {
               storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
             },
