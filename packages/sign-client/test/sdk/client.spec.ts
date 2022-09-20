@@ -112,36 +112,58 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      it("clients can ping each other after restart", async () => {
-        const beforeClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        const {
-          pairingA: { topic },
-        } = await testConnectMethod(beforeClients);
-        // ping
-        await beforeClients.A.ping({ topic });
-        await beforeClients.B.ping({ topic });
-        // delete
-        deleteClients(beforeClients);
-        // restart
-        const afterClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        // ping
-        await afterClients.A.ping({ topic });
-        await afterClients.B.ping({ topic });
-        deleteClients(afterClients);
+      describe("after restart", () => {
+        let beforeClients;
+        let afterClients;
+        beforeEach(async () => {
+          beforeClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+        });
+        afterEach(async (done) => {
+          const { result } = done.meta;
+          if (result?.state.toString() !== "pass") {
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+            );
+            if (!afterClients) return;
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
+            );
+          }
+        });
+        it("clients can ping each other", async () => {
+          const {
+            pairingA: { topic },
+          } = await testConnectMethod(beforeClients);
+          // ping
+          await beforeClients.A.ping({ topic });
+          await beforeClients.B.ping({ topic });
+          // delete
+          deleteClients(beforeClients);
+          // restart
+          afterClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+          // ping
+          await afterClients.A.ping({ topic });
+          await afterClients.B.ping({ topic });
+          deleteClients(afterClients);
+        });
       });
     });
     describe("session", () => {
@@ -175,36 +197,66 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      it("clients can ping each other after restart", async () => {
-        const beforeClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        const {
-          sessionA: { topic },
-        } = await testConnectMethod(beforeClients);
-        // ping
-        await beforeClients.A.ping({ topic });
-        await beforeClients.B.ping({ topic });
-        // delete
-        deleteClients(beforeClients);
-        // restart
-        const afterClients = await initTwoClients(
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
-          },
-          {
-            storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
-          },
-        );
-        // ping
-        await afterClients.A.ping({ topic });
-        await afterClients.B.ping({ topic });
-        deleteClients(afterClients);
+      describe("after restart", () => {
+        let beforeClients;
+        let afterClients;
+        beforeEach(async () => {
+          beforeClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+        });
+        afterEach(async (done) => {
+          const { result } = done.meta;
+          if (result?.state.toString() !== "pass") {
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+            );
+            if (!afterClients) return;
+            console.log(
+              `Test ${
+                done.meta.name
+              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
+            );
+          }
+        });
+        it("clients can ping each other", async () => {
+          beforeClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(beforeClients);
+          // ping
+          await beforeClients.A.ping({ topic });
+          await beforeClients.B.ping({ topic });
+          // delete
+          deleteClients(beforeClients);
+          // restart
+          afterClients = await initTwoClients(
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_A_DATABASE },
+            },
+            {
+              storageOptions: { database: TEST_SIGN_CLIENT_B_DATABASE },
+            },
+          );
+          // ping
+          await afterClients.A.ping({ topic });
+          await afterClients.B.ping({ topic });
+          deleteClients(afterClients);
+        });
       });
     });
   });
