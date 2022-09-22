@@ -127,7 +127,8 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      describe("after restart", () => {
+      // TODO: re-enable this when we update the storage dependencies.
+      describe.skip("after restart", () => {
         let beforeClients;
         let afterClients;
         const db_a = generateClientDbName("client_a");
@@ -218,7 +219,8 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      describe("after restart", () => {
+      // TODO: re-enable this when we update the storage dependencies.
+      describe.skip("after restart", () => {
         let beforeClients;
         let afterClients;
         const db_a = generateClientDbName("client_a");
