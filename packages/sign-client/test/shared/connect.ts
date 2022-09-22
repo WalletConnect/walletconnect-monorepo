@@ -54,7 +54,20 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     });
   });
 
-  const { uri, approval } = await A.connect(connectParams);
+  const connect: Promise<{
+    uri?: string | undefined;
+    approval: () => Promise<SessionTypes.Struct>;
+  }> = new Promise(async function (resolve, reject) {
+    const connectTimeoutMs = 20_000;
+    const timeout = setTimeout(() => {
+      return reject(new Error(`Connect timed out after ${connectTimeoutMs}ms`));
+    }, connectTimeoutMs);
+    const result = await A.connect(connectParams);
+    clearTimeout(timeout);
+    return resolve(result);
+  });
+
+  const { uri, approval } = await connect;
   const clientAConnectLatencyMs = Date.now() - start;
 
   let pairingA: PairingTypes.Struct | undefined;
@@ -81,6 +94,17 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   let sessionA: SessionTypes.Struct | undefined;
   let sessionB: SessionTypes.Struct | undefined;
 
+  const pair: (uri: string) => Promise<PairingTypes.Struct> = (uri: string) =>
+    new Promise(async function (resolve, reject) {
+      const pairTimeoutMs = 15_000;
+      const timeout = setTimeout(() => {
+        return reject(new Error(`Pair timed out after ${pairTimeoutMs}ms`));
+      }, pairTimeoutMs);
+      const result = await B.pair({ uri });
+      clearTimeout(timeout);
+      return resolve(result);
+    });
+
   await Promise.all([
     resolveSessionProposal,
     new Promise<void>(async (resolve, reject) => {
@@ -88,7 +112,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
       if (connectParams.pairingTopic) return resolve();
       try {
         if (uri) {
-          pairingB = await B.pair({ uri });
+          pairingB = await pair(uri);
           if (!pairingA) throw new Error("pairingA is missing");
           expect(pairingB.topic).to.eql(pairingA.topic);
           expect(pairingB.relay).to.eql(pairingA.relay);
