@@ -6,6 +6,10 @@ export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
   : "ws://0.0.0.0:5555";
 
+export const TEST_RELAY_URL_US = "wss://us-east-1.relay.walletconnect.com/";
+export const TEST_RELAY_URL_EU = "wss://eu-central-1.relay.walletconnect.com/";
+export const TEST_RELAY_URL_AP = "wss://ap-southeast-1.relay.walletconnect.com/";
+
 // See https://github.com/WalletConnect/push-webhook-test-server
 export const TEST_WEBHOOK_ENDPOINT = "https://webhook-push-test.walletconnect.com/";
 
@@ -16,6 +20,33 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
 export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
   logger: "fatal",
   relayUrl: TEST_RELAY_URL,
+  projectId: TEST_PROJECT_ID,
+  storageOptions: {
+    database: ":memory:",
+  },
+};
+
+export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
+  logger: "fatal",
+  relayUrl: TEST_RELAY_URL_US,
+  projectId: TEST_PROJECT_ID,
+  storageOptions: {
+    database: ":memory:",
+  },
+};
+
+export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
+  logger: "fatal",
+  relayUrl: TEST_RELAY_URL_EU,
+  projectId: TEST_PROJECT_ID,
+  storageOptions: {
+    database: ":memory:",
+  },
+};
+
+export const TEST_SIGN_CLIENT_OPTIONS_AP: SignClientTypes.Options = {
+  logger: "fatal",
+  relayUrl: TEST_RELAY_URL_AP,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
     database: ":memory:",
@@ -145,4 +176,9 @@ export const TEST_RESPOND_PARAMS = {
 export const TEST_EMIT_PARAMS = {
   event: { name: TEST_EVENTS[0], data: "" },
   chainId: TEST_CHAINS[0],
+};
+
+type RelayerType = {
+  value: string;
+  label: string;
 };
