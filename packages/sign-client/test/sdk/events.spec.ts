@@ -26,10 +26,18 @@ describe("Sign Client Events Validation", () => {
     afterEach(async (done) => {
       const { result } = done.meta;
       if (result?.state.toString() !== "pass") {
+        if (!clients) {
+          console.log("Clients not defined");
+          return;
+        }
+        const clientAId =
+          (clients.A && (await clients.A.core.crypto.getClientId())) ||
+          "not initialized or removed";
+        const clientBId =
+          (clients.B && (await clients.B.core.crypto.getClientId())) ||
+          "not initialized or removed";
         console.log(
-          `Test ${
-            done.meta.name
-          } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+          `Test ${done.meta.name} failed with client ids: A:'${clientAId}';B:'${clientBId}'`,
         );
       }
     });
@@ -221,7 +229,10 @@ describe("Sign Client Events Validation", () => {
               resolve();
             });
 
-            clients.A.disconnect({ topic: sessionA.topic, reason: getSdkError("USER_DISCONNECTED") });
+            clients.A.disconnect({
+              topic: sessionA.topic,
+              reason: getSdkError("USER_DISCONNECTED"),
+            });
           } catch (e) {
             reject(e);
           }
