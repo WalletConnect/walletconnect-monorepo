@@ -7,6 +7,7 @@ import {
   TEST_EMIT_PARAMS,
   TEST_RELAY_URL,
   TEST_WEBHOOK_ENDPOINT,
+  throttle,
 } from "../shared";
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 
@@ -33,6 +34,10 @@ describe("Push", () => {
       ...TEST_EMIT_PARAMS,
     };
     await clients.A.emit(eventPayload);
+
+    // Relay processes webhooks in background
+    // Extend some time to relay to process it
+    await throttle(500);
 
     // Validate webhook was called
     const res = await axios.get(`${TEST_WEBHOOK_ENDPOINT}/${sessionA.topic}`);
