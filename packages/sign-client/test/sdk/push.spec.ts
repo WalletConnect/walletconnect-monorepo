@@ -44,6 +44,11 @@ describe("Push", () => {
     expect(res.status).to.eql(200);
   });
   afterEach(async () => {
+    if (!sessionA) {
+      console.log("No session to disconnect");
+      return;
+    }
+
     // disconnect clients
     await Promise.all([
       new Promise<void>((resolve, reject) => {
