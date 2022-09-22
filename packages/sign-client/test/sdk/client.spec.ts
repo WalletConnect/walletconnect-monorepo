@@ -147,15 +147,19 @@ describe("Sign Client Integration", () => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
             if (!beforeClients || !beforeClients.A || !beforeClients.B) {
-              console.log("Clients failed to initialize");
+              console.log("Clients failed to initialize or removed");
+            } else {
+              console.log(
+                `Test ${
+                  done.meta.name
+                } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+              );
+            }
+
+            if (!afterClients || !afterClients.A || !afterClients.B) {
+              console.log("afterClients failed to initialize or removed");
               return;
             }
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
-            );
-            if (!afterClients || !afterClients.A || !afterClients.B) return;
             console.log(
               `Test ${
                 done.meta.name
@@ -239,15 +243,19 @@ describe("Sign Client Integration", () => {
           const { result } = done.meta;
           if (result?.state.toString() !== "pass") {
             if (!beforeClients || !beforeClients.A || !beforeClients.B) {
-              console.log("Clients failed to initialize");
+              console.log("Clients failed to initialize or removed");
+            } else {
+              console.log(
+                `Test ${
+                  done.meta.name
+                } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
+              );
+            }
+
+            if (!afterClients || !afterClients.A || !afterClients.B) {
+              console.log("afterClients failed to initialize or removed");
               return;
             }
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
-            );
-            if (!afterClients || !afterClients.A || !afterClients.B) return;
             console.log(
               `Test ${
                 done.meta.name
