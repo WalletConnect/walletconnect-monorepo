@@ -193,15 +193,11 @@ describe("Sign Client Integration", () => {
               resolve(true);
             }),
           ]);
+
           beforeClients.A.core.relayer.provider.disconnect();
           beforeClients.B.core.relayer.provider.disconnect();
-          // await new Promise((resolve) => {
+
           deleteClients(beforeClients);
-          // delete
-          //   setTimeout(() => {
-          //     resolve(true);
-          //   }, 5000);
-          // });
 
           await new Promise((resolve) => {
             setTimeout(() => {
@@ -238,7 +234,7 @@ describe("Sign Client Integration", () => {
     });
     describe("session", () => {
       describe("with existing session", () => {
-        let clients;
+        let clients: Clients;
         beforeEach(async () => {
           clients = await initTwoClients();
         });
@@ -349,6 +345,7 @@ describe("Sign Client Integration", () => {
               storageOptions: { database: db_b },
             },
           );
+
           await new Promise((resolve) => {
             setTimeout(() => {
               resolve(true);
