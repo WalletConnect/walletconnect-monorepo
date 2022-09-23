@@ -127,7 +127,6 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      // TODO: re-enable this when we update the storage dependencies.
       describe("after restart", () => {
         let beforeClients;
         let afterClients;
@@ -223,7 +222,6 @@ describe("Sign Client Integration", () => {
           deleteClients(clients);
         });
       });
-      // TODO: re-enable this when we update the storage dependencies.
       describe("after restart", () => {
         let beforeClients;
         let afterClients;
