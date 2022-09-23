@@ -6,6 +6,7 @@ import {
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
+  Clients,
 } from "../shared";
 
 const generateClientDbName = (prefix: string) =>
@@ -128,17 +129,19 @@ describe("Sign Client Integration", () => {
         });
       });
       describe("after restart", () => {
-        let beforeClients;
-        let afterClients;
+        let beforeClients: Clients;
+        let afterClients: Clients;
         const db_a = generateClientDbName("client_a");
         const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
           beforeClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
+              name: "before_client_a",
             },
             {
               storageOptions: { database: db_b },
+              name: "before_client_b",
             },
           );
         });
@@ -170,20 +173,62 @@ describe("Sign Client Integration", () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(beforeClients);
-          // ping
-          await beforeClients.A.ping({ topic });
-          await beforeClients.B.ping({ topic });
-          // delete
+
+          await Promise.all([
+            new Promise((resolve) => {
+              // ping
+              beforeClients.B.on("pairing_ping", (event: any) => {
+                resolve(event);
+              });
+            }),
+            new Promise((resolve) => {
+              beforeClients.A.on("pairing_ping", (event: any) => {
+                resolve(event);
+              });
+            }),
+            new Promise(async (resolve) => {
+              // ping
+              await beforeClients.A.ping({ topic });
+              await beforeClients.B.ping({ topic });
+              resolve(true);
+            }),
+          ]);
+          beforeClients.A.core.relayer.provider.disconnect();
+          beforeClients.B.core.relayer.provider.disconnect();
+          // await new Promise((resolve) => {
           deleteClients(beforeClients);
+          // delete
+          //   setTimeout(() => {
+          //     resolve(true);
+          //   }, 5000);
+          // });
+
+          await new Promise((resolve) => {
+            setTimeout(() => {
+              resolve(true);
+            }, 500);
+          });
+
           // restart
           afterClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
+              name: "client_a",
             },
             {
               storageOptions: { database: db_b },
+              name: "client_b",
             },
+            { logger: "error" },
           );
+
+          await testConnectMethod(afterClients);
+
+          await new Promise((resolve) => {
+            setTimeout(() => {
+              resolve(true);
+            }, 500);
+          });
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
@@ -223,8 +268,8 @@ describe("Sign Client Integration", () => {
         });
       });
       describe("after restart", () => {
-        let beforeClients;
-        let afterClients;
+        let beforeClients: Clients;
+        let afterClients: Clients;
         const db_a = generateClientDbName("client_a");
         const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
@@ -265,11 +310,36 @@ describe("Sign Client Integration", () => {
           const {
             sessionA: { topic },
           } = await testConnectMethod(beforeClients);
-          // ping
-          await beforeClients.A.ping({ topic });
-          await beforeClients.B.ping({ topic });
+
+          await Promise.all([
+            new Promise((resolve) => {
+              // ping
+              beforeClients.B.on("session_ping", (event: any) => {
+                resolve(event);
+              });
+            }),
+            new Promise((resolve) => {
+              beforeClients.A.on("session_ping", (event: any) => {
+                resolve(event);
+              });
+            }),
+            new Promise(async (resolve) => {
+              // ping
+              await beforeClients.A.ping({ topic });
+              await beforeClients.B.ping({ topic });
+              resolve(true);
+            }),
+          ]);
+
+          beforeClients.A.core.relayer.provider.disconnect();
+          beforeClients.B.core.relayer.provider.disconnect();
           // delete
           deleteClients(beforeClients);
+          await new Promise((resolve) => {
+            setTimeout(() => {
+              resolve(true);
+            }, 500);
+          });
           // restart
           afterClients = await initTwoClients(
             {
@@ -279,6 +349,11 @@ describe("Sign Client Integration", () => {
               storageOptions: { database: db_b },
             },
           );
+          await new Promise((resolve) => {
+            setTimeout(() => {
+              resolve(true);
+            }, 500);
+          });
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
