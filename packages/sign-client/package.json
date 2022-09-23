@@ -51,6 +51,6 @@
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
     "@walletconnect/relay-api": "1.0.6",
     "aws-sdk": "2.1194.0",
-    "better-sqlite3": "7.6.2"
+    "lokijs": "^1.5.12"
   }
 }
