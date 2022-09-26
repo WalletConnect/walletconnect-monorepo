@@ -28,6 +28,8 @@ describe("Subscriber", () => {
     console.log("before test- ", context.meta.name);
     if (core) {
       await disconnectSocket(core.relayer, context.meta.name);
+    } else {
+      console.log("no need to disconnect- ", context.meta.name);
     }
 
     core = new Core(TEST_CORE_OPTIONS);
