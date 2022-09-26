@@ -8,14 +8,13 @@ import { Publisher } from "../src/controllers/publisher";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
 import { Core, CORE_DEFAULT, PUBLISHER_DEFAULT_TTL, Relayer } from "../src";
-import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
 
 describe("Publisher", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
 
   let core: ICore;
-  let relayer: IRelayer;
-  let publisher;
+  let publisher: Publisher;
 
   beforeEach(async () => {
     if (core) {
@@ -24,13 +23,11 @@ describe("Publisher", () => {
 
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-
-    relayer = core.relayer;
-    publisher = core.relayer.publisher;
+    publisher = core.relayer.publisher as Publisher;
   });
 
   describe("init", () => {
-    it("registers event listeners", () => {
+    it("registers event listeners", async () => {
       const opts = { ttl: 1, prompt: true, relay: { protocol: "irn" }, tag: 0 };
       const itemA = { topic: generateRandomBytes32(), message: "itemA", opts };
       const itemB = { topic: generateRandomBytes32(), message: "itemB", opts };
@@ -42,12 +39,12 @@ describe("Publisher", () => {
       expect(publisher.queue.size).to.equal(2);
       // Emit heartbeat pulse event
       publisher.relayer.core.heartbeat.events.emit(HEARTBEAT_EVENTS.pulse);
+
       // Using a timeout here, cannot `await` the private `rpcSubscribe` method.
-      setTimeout(() => {
-        // -> Queue should clear if pulse event is being listened for.
-        expect(publisher.queue.size).to.equal(0);
-        expect(requestSpy.callCount).to.equal(2);
-      }, 500);
+      await throttle(2_000);
+      // -> Queue should clear if pulse event is being listened for.
+      expect(publisher.queue.size).to.equal(0);
+      expect(requestSpy.callCount).to.equal(2);
     });
   });
 
