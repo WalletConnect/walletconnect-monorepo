@@ -24,12 +24,9 @@ describe("Subscriber", () => {
   let subscriber: ISubscriber;
   let core: ICore;
 
-  beforeEach(async (context) => {
-    console.log("before test- ", context.meta.name);
+  beforeEach(async () => {
     if (core) {
-      await disconnectSocket(core, context.meta.name);
-    } else {
-      console.log("no need to disconnect- ", context.meta.name);
+      await disconnectSocket(core);
     }
 
     core = new Core(TEST_CORE_OPTIONS);
