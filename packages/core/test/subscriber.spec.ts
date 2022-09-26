@@ -24,9 +24,9 @@ describe("Subscriber", () => {
   let subscriber: ISubscriber;
   let core: ICore;
 
-  beforeEach(async () => {
+  beforeEach(async (context) => {
     if (core) {
-      await disconnectSocket(core.relayer);
+      await disconnectSocket(core.relayer, context.meta.name);
     }
 
     core = new Core(TEST_CORE_OPTIONS);
