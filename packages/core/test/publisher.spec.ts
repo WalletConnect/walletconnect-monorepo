@@ -1,32 +1,32 @@
-import { expect, describe, it, beforeEach } from "vitest";
+import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import pino from "pino";
 import Sinon from "sinon";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import { IRelayer } from "@walletconnect/types";
+import { ICore, IPublisher, IRelayer } from "@walletconnect/types";
 import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
 import { Publisher } from "../src/controllers/publisher";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
 import { Core, CORE_DEFAULT, PUBLISHER_DEFAULT_TTL, Relayer } from "../src";
-import { TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 
 describe("Publisher", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
 
+  let core: ICore;
   let relayer: IRelayer;
-  let publisher: Publisher;
+  let publisher;
 
   beforeEach(async () => {
-    const core = new Core(TEST_CORE_OPTIONS);
+    if (core) {
+      await disconnectSocket(core.relayer);
+    }
+
+    core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({
-      core,
-      logger,
-      relayUrl: TEST_CORE_OPTIONS.relayUrl,
-      projectId: TEST_CORE_OPTIONS.projectId,
-    });
-    await relayer.init();
-    publisher = new Publisher(relayer, logger);
+
+    relayer = core.relayer;
+    publisher = core.relayer.publisher;
   });
 
   describe("init", () => {

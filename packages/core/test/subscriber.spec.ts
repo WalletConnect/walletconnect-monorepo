@@ -1,8 +1,8 @@
-import { expect, describe, it, beforeEach } from "vitest";
+import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import pino from "pino";
 import Sinon from "sinon";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import { IRelayer, ISubscriber } from "@walletconnect/types";
+import { ICore, IRelayer, ISubscriber } from "@walletconnect/types";
 import { generateRandomBytes32, getRelayProtocolName } from "@walletconnect/utils";
 
 import {
@@ -15,25 +15,25 @@ import {
   Subscriber,
   SUBSCRIBER_CONTEXT,
 } from "../src";
-import { TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 
 describe("Subscriber", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
 
   let relayer: IRelayer;
   let subscriber: ISubscriber;
+  let core: ICore;
 
   beforeEach(async () => {
-    const core = new Core(TEST_CORE_OPTIONS);
+    if (core) {
+      await disconnectSocket(core.relayer);
+    }
+
+    core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({
-      core,
-      logger,
-      relayUrl: TEST_CORE_OPTIONS.relayUrl,
-      projectId: TEST_CORE_OPTIONS.projectId,
-    });
-    await relayer.init();
-    subscriber = new Subscriber(relayer, logger);
+
+    relayer = core.relayer;
+    subscriber = relayer.subscriber; //new Subscriber(relayer, logger);
     subscriber.relayer.provider.request = () => Promise.resolve({} as any);
     await subscriber.init();
   });

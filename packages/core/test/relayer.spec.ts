@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach } from "vitest";
+import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import pino from "pino";
@@ -11,7 +11,7 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
 } from "../src";
-import { TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IRelayer } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
@@ -23,20 +23,26 @@ describe("Relayer", () => {
   let relayer: IRelayer;
 
   beforeEach(async () => {
+    if (core) {
+      await disconnectSocket(core.relayer);
+    }
+
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({
-      core,
-      logger,
-      relayUrl: TEST_CORE_OPTIONS.relayUrl,
-      projectId: TEST_CORE_OPTIONS.projectId,
-    });
+
+    relayer = core.relayer;
   });
 
   describe("init", () => {
     let initSpy: Sinon.SinonSpy;
     beforeEach(() => {
       initSpy = Sinon.spy();
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
     });
 
     it("initializes a MessageTracker", async () => {
