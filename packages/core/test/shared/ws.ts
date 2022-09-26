@@ -3,8 +3,8 @@ import { throttle } from ".";
 
 export async function disconnectSocket(relayer: IRelayer) {
   if (relayer.connected) {
-    await relayer.provider.connection.close();
+    await relayer.provider.disconnect();
+    // await abit for socket to disconnect
+    await throttle(2_000);
   }
-
-  await throttle(100);
 }
