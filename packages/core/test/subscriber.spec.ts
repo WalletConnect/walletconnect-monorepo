@@ -27,7 +27,7 @@ describe("Subscriber", () => {
   beforeEach(async (context) => {
     console.log("before test- ", context.meta.name);
     if (core) {
-      await disconnectSocket(core.relayer, context.meta.name);
+      await disconnectSocket(core, context.meta.name);
     } else {
       console.log("no need to disconnect- ", context.meta.name);
     }

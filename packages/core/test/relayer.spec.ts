@@ -24,7 +24,7 @@ describe("Relayer", () => {
 
   beforeEach(async () => {
     if (core) {
-      await disconnectSocket(core.relayer);
+      await disconnectSocket(core);
     }
 
     core = new Core(TEST_CORE_OPTIONS);
