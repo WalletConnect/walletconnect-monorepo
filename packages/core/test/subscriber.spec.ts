@@ -28,14 +28,17 @@ describe("Subscriber", () => {
     if (core) {
       await disconnectSocket(core);
     }
+    try {
+      core = new Core(TEST_CORE_OPTIONS);
+      await core.start();
 
-    core = new Core(TEST_CORE_OPTIONS);
-    await core.start();
-
-    relayer = core.relayer;
-    subscriber = relayer.subscriber; //new Subscriber(relayer, logger);
-    subscriber.relayer.provider.request = () => Promise.resolve({} as any);
-    await subscriber.init();
+      relayer = core.relayer;
+      subscriber = relayer.subscriber; //new Subscriber(relayer, logger);
+      subscriber.relayer.provider.request = () => Promise.resolve({} as any);
+      await subscriber.init();
+    } catch (e) {
+      console.error(e);
+    }
   });
 
   it("provides the expected `storageKey` format", () => {
