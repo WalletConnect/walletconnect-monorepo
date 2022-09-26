@@ -55,7 +55,7 @@ describe("Subscriber", () => {
       expect(subscriber.subscriptions.size).to.equal(1);
       expect(subscriber.topics.length).to.equal(1);
       // relayer.provider emits a `disconnect` event -> should clear both subscriptions and topics.
-      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
+      await disconnectSocket(relayer);
       expect(subscriber.subscriptions.size).to.equal(0);
       expect(subscriber.topics.length).to.equal(0);
     });
