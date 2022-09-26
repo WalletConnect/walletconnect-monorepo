@@ -7,3 +7,4 @@ export * from "./relayer";
 export * from "./store";
 export * from "./subscriber";
 export * from "./pairing";
+export * from "./history";

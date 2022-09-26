@@ -1,7 +1,10 @@
+import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
+import EventEmitter from "events";
 
 import { ICore } from "./core";
 import { IStore } from "./store";
+import { IJsonRpcHistory } from "./history";
 
 import { RelayerTypes } from "../core/relayer";
 
@@ -16,12 +19,39 @@ export declare namespace PairingTypes {
   }
 }
 
+export declare namespace PairingJsonRpcTypes {
+  // -- core ------------------------------------------------------- //
+  export type DefaultResponse = true | ErrorResponse;
+
+  export type WcMethod = "wc_pairingDelete" | "wc_pairingPing";
+
+  // -- requests --------------------------------------------------- //
+
+  export interface RequestParams {
+    wc_pairingDelete: {
+      code: number;
+      message: string;
+    };
+    wc_pairingPing: Record<string, unknown>;
+  }
+
+  // -- responses -------------------------------------------------- //
+  export interface Results {
+    wc_pairingDelete: true;
+    wc_pairingPing: true;
+  }
+
+  export type Error = ErrorResponse;
+}
+
 export type IPairingStore = IStore<string, PairingTypes.Struct>;
 
 export abstract class IPairing {
   public abstract name: string;
   public abstract readonly context: string;
+  public abstract events: EventEmitter;
   public abstract pairings: IPairingStore;
+  public abstract history: IJsonRpcHistory;
 
   constructor(public logger: Logger, public core: ICore) {}
 
@@ -30,7 +60,7 @@ export abstract class IPairing {
   public abstract pair(params: { uri: string }): Promise<PairingTypes.Struct>;
 
   // for proposer to create inactive pairing
-  public abstract create(): Promise<{ uri: string }>;
+  public abstract create(): Promise<{ topic: string; uri: string }>;
 
   // for either to activate a previously created pairing
   public abstract activate(params: { topic: string }): Promise<void>;
@@ -49,11 +79,29 @@ export abstract class IPairing {
   }): Promise<void>;
 
   // query pairings
-  public abstract getPairings(): Promise<PairingTypes.Struct[]>;
+  public abstract getPairings(): PairingTypes.Struct[];
 
   // for either to ping a peer
   public abstract ping(params: { topic: string }): Promise<void>;
 
   // for either peer to disconnect a pairing
   public abstract disconnect(params: { topic: string }): Promise<void>;
+}
+
+export interface IPairingPrivate {
+  sendRequest<M extends PairingJsonRpcTypes.WcMethod>(
+    topic: string,
+    method: M,
+    params: PairingJsonRpcTypes.RequestParams[M],
+  ): Promise<number>;
+
+  sendResult<M extends PairingJsonRpcTypes.WcMethod>(
+    id: number,
+    topic: string,
+    result: PairingJsonRpcTypes.Results[M],
+  ): Promise<void>;
+
+  sendError(id: number, topic: string, error: PairingJsonRpcTypes.Error): Promise<void>;
+
+  deletePairing(topic: string, expirerHasDeleted?: boolean): Promise<void>;
 }
