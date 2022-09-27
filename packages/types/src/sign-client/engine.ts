@@ -9,7 +9,7 @@ import { ISignClient } from "./client";
 import { RelayerTypes } from "../core/relayer";
 import { SessionTypes } from "./session";
 import { ProposalTypes } from "./proposal";
-import { PairingTypes } from "./pairing";
+import { PairingTypes } from "../core/pairing";
 import { JsonRpcTypes } from "./jsonrpc";
 import { EventEmitter } from "events";
 
