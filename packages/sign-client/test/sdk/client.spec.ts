@@ -179,7 +179,7 @@ describe("Sign Client Integration", () => {
             );
           }
         });
-        it.only("clients can ping each other", async () => {
+        it("clients can ping each other", async () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(beforeClients);
