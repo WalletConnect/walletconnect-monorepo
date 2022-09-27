@@ -382,15 +382,17 @@ describe("Sign Client Integration", () => {
   });
 
   describe("extend", () => {
-    beforeEach(() => {
+    let clients;
+    beforeEach(async () => {
+      clients = await initTwoClients();
       vi.useFakeTimers();
     });
-    afterEach(() => {
+    afterEach(async () => {
       vi.useRealTimers();
+      await deleteClients(clients);
     });
-
     it("updates session expiry state", async () => {
-      const clients = await initTwoClients();
+      clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
@@ -405,8 +407,6 @@ describe("Sign Client Integration", () => {
       await acknowledged();
       const updatedExpiry = clients.A.session.get(topic).expiry;
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
-
-      await deleteClients(clients);
     }, 20_000);
   });
 });
