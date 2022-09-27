@@ -305,7 +305,7 @@ describe("Sign Client Integration", () => {
               } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
             );
           }
-        });
+        }, 50_000);
         it("clients can ping each other", async () => {
           const {
             sessionA: { topic },
@@ -351,7 +351,7 @@ describe("Sign Client Integration", () => {
           await afterClients.B.ping({ topic });
           await deleteClients(afterClients);
         });
-      });
+      }, 50_000);
     });
   });
 
@@ -378,7 +378,7 @@ describe("Sign Client Integration", () => {
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
       await deleteClients(clients);
-    }, 20_000);
+    }, 50_000);
   });
 
   describe("extend", () => {
@@ -407,6 +407,6 @@ describe("Sign Client Integration", () => {
       await acknowledged();
       const updatedExpiry = clients.A.session.get(topic).expiry;
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
-    }, 20_000);
+    }, 50_000);
   });
 });
