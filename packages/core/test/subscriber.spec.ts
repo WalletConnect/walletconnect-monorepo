@@ -16,6 +16,15 @@ import {
   SUBSCRIBER_CONTEXT,
 } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
+const exec = require("child_process").exec;
+
+exec("cat /proc/sys/net/ipv4/tcp_mem", function (error, stdout, stderr) {
+  console.log("stdout: " + stdout);
+  console.log("stderr: " + stderr);
+  if (error !== null) {
+    console.log("exec error: " + error);
+  }
+});
 
 describe("Subscriber", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
