@@ -208,20 +208,17 @@ describe("Sign Client Integration", () => {
           if (afterClients) {
             await deleteClients(afterClients);
           }
+
           // restart
           afterClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
-              name: "client_a",
             },
             {
               storageOptions: { database: db_b },
-              name: "client_b",
             },
             { logger: "error" },
           );
-
-          await testConnectMethod(afterClients);
 
           // ping
           await afterClients.A.ping({ topic });
