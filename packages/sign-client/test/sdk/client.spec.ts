@@ -23,7 +23,7 @@ describe("Sign Client Integration", () => {
     it("connect (with new pairing)", async () => {
       const clients = await initTwoClients();
       await testConnectMethod(clients);
-      deleteClients(clients);
+      await deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {
       const clients = await initTwoClients();
@@ -34,13 +34,16 @@ describe("Sign Client Integration", () => {
       await testConnectMethod(clients, {
         pairingTopic,
       });
-      deleteClients(clients);
+      await deleteClients(clients);
     });
   });
 
   describe("disconnect", () => {
-    let clients;
+    let clients: Clients;
     beforeEach(async () => {
+      if (clients?.A && clients?.B) {
+        await deleteClients(clients);
+      }
       clients = await initTwoClients();
     });
     afterEach(async (done) => {
@@ -69,7 +72,7 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
-        deleteClients(clients);
+        await deleteClients(clients);
       });
     });
     describe("session", () => {
@@ -84,7 +87,7 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
-        deleteClients(clients);
+        await deleteClients(clients);
       });
     });
   });
@@ -96,12 +99,15 @@ describe("Sign Client Integration", () => {
       await expect(clients.A.ping({ topic: fakeTopic })).rejects.toThrowError(
         `No matching key. session or pairing topic doesn't exist: ${fakeTopic}`,
       );
-      deleteClients(clients);
+      await deleteClients(clients);
     });
     describe("pairing", () => {
       describe("with existing pairing", () => {
         let clients;
         beforeEach(async () => {
+          if (clients?.A && clients?.B) {
+            await deleteClients(clients);
+          }
           clients = await initTwoClients();
         });
         afterEach(async (done) => {
@@ -119,14 +125,14 @@ describe("Sign Client Integration", () => {
             pairingA: { topic },
           } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
-          deleteClients(clients);
+          await deleteClients(clients);
         });
         it("B pings A", async () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
-          deleteClients(clients);
+          await deleteClients(clients);
         });
       });
       describe("after restart", () => {
@@ -135,6 +141,9 @@ describe("Sign Client Integration", () => {
         const db_a = generateClientDbName("client_a");
         const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
+          if (beforeClients?.A && beforeClients?.B) {
+            await deleteClients(beforeClients);
+          }
           beforeClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
@@ -195,17 +204,10 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
-          await disconnectSocket(beforeClients.A.core);
-          await disconnectSocket(beforeClients.B.core);
-
-          deleteClients(beforeClients);
-
-          await new Promise((resolve) => {
-            setTimeout(() => {
-              resolve(true);
-            }, 500);
-          });
-
+          await deleteClients(beforeClients);
+          if (afterClients) {
+            await deleteClients(afterClients);
+          }
           // restart
           afterClients = await initTwoClients(
             {
@@ -221,11 +223,6 @@ describe("Sign Client Integration", () => {
 
           await testConnectMethod(afterClients);
 
-          await new Promise((resolve) => {
-            setTimeout(() => {
-              resolve(true);
-            }, 500);
-          });
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
@@ -237,6 +234,9 @@ describe("Sign Client Integration", () => {
       describe("with existing session", () => {
         let clients: Clients;
         beforeEach(async () => {
+          if (clients?.A && clients?.B) {
+            await deleteClients(clients);
+          }
           clients = await initTwoClients();
         });
         afterEach(async (done) => {
@@ -270,6 +270,9 @@ describe("Sign Client Integration", () => {
         const db_a = generateClientDbName("client_a");
         const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
+          if (beforeClients?.A && beforeClients?.B) {
+            await deleteClients(beforeClients);
+          }
           beforeClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
@@ -328,16 +331,11 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
-          await disconnectSocket(beforeClients.A.core);
-          await disconnectSocket(beforeClients.B.core);
-
           // delete
-          deleteClients(beforeClients);
-          await new Promise((resolve) => {
-            setTimeout(() => {
-              resolve(true);
-            }, 500);
-          });
+          await deleteClients(beforeClients);
+          if (afterClients) {
+            await deleteClients(afterClients);
+          }
           // restart
           afterClients = await initTwoClients(
             {
@@ -348,15 +346,10 @@ describe("Sign Client Integration", () => {
             },
           );
 
-          await new Promise((resolve) => {
-            setTimeout(() => {
-              resolve(true);
-            }, 500);
-          });
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
-          deleteClients(afterClients);
+          await deleteClients(afterClients);
         });
       });
     });
@@ -384,7 +377,7 @@ describe("Sign Client Integration", () => {
       await acknowledged();
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
-      deleteClients(clients);
+      await deleteClients(clients);
     }, 20_000);
   });
 
@@ -412,7 +405,8 @@ describe("Sign Client Integration", () => {
       await acknowledged();
       const updatedExpiry = clients.A.session.get(topic).expiry;
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
-      deleteClients(clients);
+
+      await deleteClients(clients);
     }, 20_000);
   });
 });
