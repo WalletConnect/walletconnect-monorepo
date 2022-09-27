@@ -179,7 +179,7 @@ describe("Sign Client Integration", () => {
             );
           }
         });
-        it("clients can ping each other", async () => {
+        it.only("clients can ping each other", async () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(beforeClients);
@@ -208,20 +208,17 @@ describe("Sign Client Integration", () => {
           if (afterClients) {
             await deleteClients(afterClients);
           }
+
           // restart
           afterClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
-              name: "client_a",
             },
             {
               storageOptions: { database: db_b },
-              name: "client_b",
             },
             { logger: "error" },
           );
-
-          await testConnectMethod(afterClients);
 
           // ping
           await afterClients.A.ping({ topic });
