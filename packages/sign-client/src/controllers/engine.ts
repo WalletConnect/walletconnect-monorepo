@@ -705,7 +705,7 @@ export class Engine extends IEngine {
       } else if (isJsonRpcError(payload)) {
         this.events.emit(engineEvent("session_ping", id), { error: payload.error });
       }
-    }, 200);
+    }, 500);
   };
 
   private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
@@ -730,7 +730,7 @@ export class Engine extends IEngine {
       } else if (isJsonRpcError(payload)) {
         this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
       }
-    }, 200);
+    }, 500);
   };
 
   private onSessionDeleteRequest: EnginePrivate["onSessionDeleteRequest"] = async (
