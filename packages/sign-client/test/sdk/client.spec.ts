@@ -7,6 +7,7 @@ import {
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
   Clients,
+  disconnectSocket,
 } from "../shared";
 
 const generateClientDbName = (prefix: string) =>
@@ -194,8 +195,8 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
-          beforeClients.A.core.relayer.provider.disconnect();
-          beforeClients.B.core.relayer.provider.disconnect();
+          await disconnectSocket(beforeClients.A.core);
+          await disconnectSocket(beforeClients.B.core);
 
           deleteClients(beforeClients);
 
@@ -327,8 +328,9 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
-          beforeClients.A.core.relayer.provider.disconnect();
-          beforeClients.B.core.relayer.provider.disconnect();
+          await disconnectSocket(beforeClients.A.core);
+          await disconnectSocket(beforeClients.B.core);
+
           // delete
           deleteClients(beforeClients);
           await new Promise((resolve) => {
