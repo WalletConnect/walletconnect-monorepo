@@ -23,19 +23,18 @@ describe("Relayer", () => {
   let relayer: IRelayer;
 
   beforeEach(async () => {
-    if (core) {
-      await disconnectSocket(core);
-    }
-
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-
     relayer = core.relayer;
+  });
+
+  afterEach(async () => {
+    await disconnectSocket(core.relayer);
   });
 
   describe("init", () => {
     let initSpy: Sinon.SinonSpy;
-    beforeEach(() => {
+    beforeEach(async () => {
       initSpy = Sinon.spy();
       relayer = new Relayer({
         core,
@@ -43,6 +42,10 @@ describe("Relayer", () => {
         relayUrl: TEST_CORE_OPTIONS.relayUrl,
         projectId: TEST_CORE_OPTIONS.projectId,
       });
+    });
+
+    afterEach(async () => {
+      await disconnectSocket(relayer);
     });
 
     it("initializes a MessageTracker", async () => {
@@ -76,9 +79,20 @@ describe("Relayer", () => {
   });
 
   describe("publish", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
     });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
+
     const topic = "abc123";
     const message = "publish me";
     it("calls `publisher.publish` with provided args", async () => {
@@ -97,9 +111,20 @@ describe("Relayer", () => {
   });
 
   describe("subscribe", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
     });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
+
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
       const spy = Sinon.spy(() => "mock-id");
       // @ts-expect-error
@@ -112,8 +137,18 @@ describe("Relayer", () => {
   });
 
   describe("unsubscribe", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
+    });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
     });
     it("calls `subscriber.unsubscribe` with the passed topic", async () => {
       const spy = Sinon.spy();
@@ -124,9 +159,20 @@ describe("Relayer", () => {
   });
 
   describe("onProviderPayload", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
     });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
+
     const validPayload: JsonRpcRequest = {
       id: 123,
       jsonrpc: "2.0",
