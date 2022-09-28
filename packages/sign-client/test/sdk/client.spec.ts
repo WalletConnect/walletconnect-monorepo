@@ -17,6 +17,7 @@ describe("Sign Client Integration", () => {
   it("init", async () => {
     const client = await SignClient.init(TEST_SIGN_CLIENT_OPTIONS);
     expect(client).to.be.exist;
+    await disconnectSocket(client.core);
   });
 
   describe("connect", () => {
