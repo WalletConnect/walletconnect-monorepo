@@ -25,26 +25,8 @@ describe("Sign Client Events Validation", () => {
     beforeEach(async () => {
       clients = await initTwoClients();
     });
-    afterEach(async (done) => {
-      const { result } = done.meta;
-      if (result?.state.toString() !== "pass") {
-        if (!clients) {
-          console.log("Clients not defined");
-          return;
-        }
-        const clientAId =
-          (clients.A && (await clients.A.core.crypto.getClientId())) ||
-          "not initialized or removed";
-        const clientBId =
-          (clients.B && (await clients.B.core.crypto.getClientId())) ||
-          "not initialized or removed";
-        console.log(
-          `Test ${done.meta.name} failed with client ids: A:'${clientAId}';B:'${clientBId}'`,
-        );
-      }
-      if (clients?.A && clients?.B) {
-        await deleteClients(clients);
-      }
+    afterEach(async () => {
+      await deleteClients(clients);
     });
     describe("session_proposal", () => {
       it("emits and handles a valid session_proposal", async () => {

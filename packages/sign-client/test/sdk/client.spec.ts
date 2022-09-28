@@ -44,23 +44,8 @@ describe("Sign Client Integration", () => {
     beforeEach(async () => {
       clients = await initTwoClients();
     });
-
-    afterEach(async (done) => {
-      const { result } = done.meta;
-      if (result?.state.toString() !== "pass") {
-        if (!clients || !clients.A || !clients.B) {
-          console.log("Clients failed to initialize");
-          return;
-        }
-        console.log(
-          `Test ${
-            done.meta.name
-          } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
-        );
-      }
-      if (clients?.A && clients?.B) {
-        await deleteClients(clients);
-      }
+    afterEach(async () => {
+      await deleteClients(clients);
     });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
@@ -105,34 +90,22 @@ describe("Sign Client Integration", () => {
       describe("with existing pairing", () => {
         let clients;
         beforeEach(async () => {
-          if (clients?.A && clients?.B) {
-            await deleteClients(clients);
-          }
           clients = await initTwoClients();
         });
-        afterEach(async (done) => {
-          const { result } = done.meta;
-          if (result?.state.toString() !== "pass") {
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
-            );
-          }
+        afterEach(async () => {
+          await deleteClients(clients);
         });
         it("A pings B", async () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
-          await deleteClients(clients);
         });
         it("B pings A", async () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
-          await deleteClients(clients);
         });
       });
       describe("after restart", () => {
@@ -141,9 +114,6 @@ describe("Sign Client Integration", () => {
         const db_a = generateClientDbName("client_a");
         const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
-          if (beforeClients?.A && beforeClients?.B) {
-            await deleteClients(beforeClients);
-          }
           beforeClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
@@ -155,29 +125,8 @@ describe("Sign Client Integration", () => {
             },
           );
         });
-        afterEach(async (done) => {
-          const { result } = done.meta;
-          if (result?.state.toString() !== "pass") {
-            if (!beforeClients || !beforeClients.A || !beforeClients.B) {
-              console.log("Clients failed to initialize or removed");
-            } else {
-              console.log(
-                `Test ${
-                  done.meta.name
-                } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
-              );
-            }
-
-            if (!afterClients || !afterClients.A || !afterClients.B) {
-              console.log("afterClients failed to initialize or removed");
-              return;
-            }
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
-            );
-          }
+        afterEach(async () => {
+          await deleteClients(afterClients);
         });
         it("clients can ping each other", async () => {
           const {
@@ -205,9 +154,6 @@ describe("Sign Client Integration", () => {
           ]);
 
           await deleteClients(beforeClients);
-          if (afterClients) {
-            await deleteClients(afterClients);
-          }
 
           // restart
           afterClients = await initTwoClients(
@@ -223,7 +169,6 @@ describe("Sign Client Integration", () => {
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
-          deleteClients(afterClients);
         });
       });
     });
@@ -231,20 +176,10 @@ describe("Sign Client Integration", () => {
       describe("with existing session", () => {
         let clients: Clients;
         beforeEach(async () => {
-          if (clients?.A && clients?.B) {
-            await deleteClients(clients);
-          }
           clients = await initTwoClients();
         });
-        afterEach(async (done) => {
-          const { result } = done.meta;
-          if (result?.state.toString() !== "pass") {
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
-            );
-          }
+        afterEach(async () => {
+          await deleteClients(clients);
         });
         it("A pings B", async () => {
           const {
@@ -267,9 +202,6 @@ describe("Sign Client Integration", () => {
         const db_a = generateClientDbName("client_a");
         const db_b = generateClientDbName("client_b");
         beforeEach(async () => {
-          if (beforeClients?.A && beforeClients?.B) {
-            await deleteClients(beforeClients);
-          }
           beforeClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
@@ -279,29 +211,8 @@ describe("Sign Client Integration", () => {
             },
           );
         });
-        afterEach(async (done) => {
-          const { result } = done.meta;
-          if (result?.state.toString() !== "pass") {
-            if (!beforeClients || !beforeClients.A || !beforeClients.B) {
-              console.log("Clients failed to initialize or removed");
-            } else {
-              console.log(
-                `Test ${
-                  done.meta.name
-                } failed with before client ids: A:'${await beforeClients.A.core.crypto.getClientId()}';B:'${await beforeClients.B.core.crypto.getClientId()}'`,
-              );
-            }
-
-            if (!afterClients || !afterClients.A || !afterClients.B) {
-              console.log("afterClients failed to initialize or removed");
-              return;
-            }
-            console.log(
-              `Test ${
-                done.meta.name
-              } failed with after client ids: A:'${await afterClients.A.core.crypto.getClientId()}';B:'${await afterClients.B.core.crypto.getClientId()}'`,
-            );
-          }
+        afterEach(async () => {
+          await deleteClients(afterClients);
         }, 50_000);
         it("clients can ping each other", async () => {
           const {
@@ -330,9 +241,7 @@ describe("Sign Client Integration", () => {
 
           // delete
           await deleteClients(beforeClients);
-          if (afterClients) {
-            await deleteClients(afterClients);
-          }
+
           // restart
           afterClients = await initTwoClients(
             {
@@ -346,9 +255,8 @@ describe("Sign Client Integration", () => {
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
-          await deleteClients(afterClients);
         });
-      }, 50_000);
+      });
     });
   });
 
@@ -389,7 +297,6 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("updates session expiry state", async () => {
-      clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
