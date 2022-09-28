@@ -42,6 +42,8 @@ describe("Sign Client Events Validation", () => {
           `Test ${done.meta.name} failed with client ids: A:'${clientAId}';B:'${clientBId}'`,
         );
       }
+
+      await deleteClients(clients);
     });
     describe("session_proposal", () => {
       it("emits and handles a valid session_proposal", async () => {
@@ -120,8 +122,6 @@ describe("Sign Client Events Validation", () => {
             }
           }),
         ]);
-
-        deleteClients(clients);
       });
     });
     describe("session_update", () => {
@@ -154,8 +154,6 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
-
-        deleteClients(clients);
       });
     });
     describe("session_ping", () => {
@@ -174,8 +172,6 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
-
-        deleteClients(clients);
       });
     });
     describe("session_event", () => {
@@ -206,7 +202,6 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
-        deleteClients(clients);
       });
     });
     describe("session_delete", () => {
@@ -239,7 +234,6 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
-        deleteClients(clients);
       });
     });
   });
