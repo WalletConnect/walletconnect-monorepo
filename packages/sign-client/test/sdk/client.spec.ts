@@ -42,10 +42,11 @@ describe("Sign Client Integration", () => {
   describe("disconnect", () => {
     let clients: Clients;
     beforeEach(async () => {
-      if (clients?.A && clients?.B) {
-        await deleteClients(clients);
-      }
       clients = await initTwoClients();
+    });
+
+    afterEach(async () => {
+      await deleteClients(clients);
     });
     afterEach(async (done) => {
       const { result } = done.meta;
@@ -73,7 +74,6 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
-        await deleteClients(clients);
       });
     });
     describe("session", () => {
@@ -88,7 +88,6 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
-        await deleteClients(clients);
       });
     });
   });
