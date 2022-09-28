@@ -45,9 +45,6 @@ describe("Sign Client Integration", () => {
       clients = await initTwoClients();
     });
 
-    afterEach(async () => {
-      await deleteClients(clients);
-    });
     afterEach(async (done) => {
       const { result } = done.meta;
       if (result?.state.toString() !== "pass") {
@@ -60,6 +57,9 @@ describe("Sign Client Integration", () => {
             done.meta.name
           } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
         );
+      }
+      if (clients?.A && clients?.B) {
+        await deleteClients(clients);
       }
     });
     describe("pairing", () => {

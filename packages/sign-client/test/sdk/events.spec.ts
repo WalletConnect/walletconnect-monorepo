@@ -42,7 +42,7 @@ describe("Sign Client Events Validation", () => {
           `Test ${done.meta.name} failed with client ids: A:'${clientAId}';B:'${clientBId}'`,
         );
       }
-      if (clients) {
+      if (clients?.A && clients?.B) {
         await deleteClients(clients);
       }
     });
