@@ -697,11 +697,15 @@ export class Engine extends IEngine {
 
   private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
     const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("session_ping", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("session_ping", id), { error: payload.error });
-    }
+    // put at the end of the stack to avoid a race condition
+    // where session_ping listener is not yet initialized
+    setTimeout(() => {
+      if (isJsonRpcResult(payload)) {
+        this.events.emit(engineEvent("session_ping", id), {});
+      } else if (isJsonRpcError(payload)) {
+        this.events.emit(engineEvent("session_ping", id), { error: payload.error });
+      }
+    }, 500);
   };
 
   private onPairingPingRequest: EnginePrivate["onPairingPingRequest"] = async (topic, payload) => {
@@ -718,11 +722,15 @@ export class Engine extends IEngine {
 
   private onPairingPingResponse: EnginePrivate["onPairingPingResponse"] = (_topic, payload) => {
     const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("pairing_ping", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
-    }
+    // put at the end of the stack to avoid a race condition
+    // where pairing_ping listener is not yet initialized
+    setTimeout(() => {
+      if (isJsonRpcResult(payload)) {
+        this.events.emit(engineEvent("pairing_ping", id), {});
+      } else if (isJsonRpcError(payload)) {
+        this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
+      }
+    }, 500);
   };
 
   private onSessionDeleteRequest: EnginePrivate["onSessionDeleteRequest"] = async (
