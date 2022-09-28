@@ -42,8 +42,9 @@ describe("Sign Client Events Validation", () => {
           `Test ${done.meta.name} failed with client ids: A:'${clientAId}';B:'${clientBId}'`,
         );
       }
-
-      await deleteClients(clients);
+      if (clients.A && clients.B) {
+        await deleteClients(clients);
+      }
     });
     describe("session_proposal", () => {
       it("emits and handles a valid session_proposal", async () => {
