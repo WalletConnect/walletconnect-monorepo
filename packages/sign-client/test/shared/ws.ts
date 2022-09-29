@@ -1,9 +1,10 @@
+import { IJsonRpcConnection } from "@walletconnect/jsonrpc-utils";
 import { ICore } from "@walletconnect/types";
 import EventEmitter from "events";
 
 export async function disconnectSocket(core: ICore) {
   if (core.relayer.connected) {
-    core.relayer.provider.connect = () => new Promise<void>((resolve) => resolve);
+    core.relayer.provider.events = new EventEmitter();
     core.relayer.provider.connection.on("open", async () => {
       await disconnect(core.relayer.provider.connection);
     });
@@ -11,6 +12,6 @@ export async function disconnectSocket(core: ICore) {
   }
 }
 
-async function disconnect(socket: any) {
-  await socket.close();
+function disconnect(socket: IJsonRpcConnection) {
+  return socket.close();
 }
