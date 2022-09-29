@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import { expect, describe, it, beforeEach, afterAll, afterEach } from "vitest";
 import pino from "pino";
 import Sinon from "sinon";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
@@ -16,15 +16,6 @@ import {
   SUBSCRIBER_CONTEXT,
 } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
-const exec = require("child_process").exec;
-
-exec("cat /proc/sys/net/ipv4/tcp_mem", function (error, stdout, stderr) {
-  console.log("stdout: " + stdout);
-  console.log("stderr: " + stderr);
-  if (error !== null) {
-    console.log("exec error: " + error);
-  }
-});
 
 describe("Subscriber", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
@@ -34,10 +25,6 @@ describe("Subscriber", () => {
   let core: ICore;
 
   beforeEach(async () => {
-    if (core) {
-      await disconnectSocket(core);
-    }
-
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
 
@@ -45,6 +32,10 @@ describe("Subscriber", () => {
     subscriber = relayer.subscriber; //new Subscriber(relayer, logger);
     subscriber.relayer.provider.request = () => Promise.resolve({} as any);
     await subscriber.init();
+  });
+
+  afterEach(async () => {
+    await disconnectSocket(core.relayer);
   });
 
   it("provides the expected `storageKey` format", () => {
