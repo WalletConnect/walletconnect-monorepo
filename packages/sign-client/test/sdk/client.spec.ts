@@ -186,14 +186,12 @@ describe("Sign Client Integration", () => {
             sessionA: { topic },
           } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
-          deleteClients(clients);
         });
         it("B pings A", async () => {
           const {
             sessionA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
-          deleteClients(clients);
         });
       });
       describe("after restart", () => {
