@@ -9,7 +9,7 @@ import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino from "pino";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
-import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
+import { Engine, Expirer, JsonRpcHistory, PairingStore, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
@@ -47,7 +47,7 @@ export class SignClient extends ISignClient {
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
-    this.pairing = new Pairing(this.core, this.logger);
+    this.pairing = new PairingStore(this.core, this.logger);
     this.session = new Session(this.core, this.logger);
     this.proposal = new Proposal(this.core, this.logger);
     this.history = new JsonRpcHistory(this.core, this.logger);
