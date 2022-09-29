@@ -55,7 +55,7 @@ describe("Sign Client Integration", () => {
       // }
     });
     describe("pairing", () => {
-      it.only("deletes the pairing on disconnect", async () => {
+      it("deletes the pairing on disconnect", async () => {
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
@@ -69,7 +69,7 @@ describe("Sign Client Integration", () => {
       });
     });
     describe("session", () => {
-      it.only("deletes the session on disconnect", async () => {
+      it("deletes the session on disconnect", async () => {
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
