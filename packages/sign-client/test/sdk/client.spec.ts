@@ -42,17 +42,14 @@ describe("Sign Client Integration", () => {
   describe("disconnect", () => {
     let clients: Clients;
     beforeEach(async () => {
-      console.log("init clients");
       clients = await initTwoClients();
-      console.log("init clients done");
     });
     afterEach(async () => {
-      console.log("delete clients");
-      // if (!!clients.A && !!clients.B) {
-      await deleteClients(clients);
-
-      console.log("delete clients done");
-      // }
+      if (clients) {
+        await deleteClients(clients);
+      } else {
+        console.warn("clients not initialized");
+      }
     });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
