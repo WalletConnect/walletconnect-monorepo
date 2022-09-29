@@ -9,6 +9,7 @@ import {
   TEST_NAMESPACES,
   TEST_REQUIRED_NAMESPACES,
   TEST_EMIT_PARAMS,
+  disconnectSocket,
 } from "../shared";
 import { EngineTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
 
@@ -16,33 +17,13 @@ describe("Sign Client Events Validation", () => {
   it("init", async () => {
     const client = await SignClient.init(TEST_SIGN_CLIENT_OPTIONS);
     expect(client).to.be.exist;
+    await disconnectSocket(client.core);
   });
 
   describe("session", () => {
-    let clients;
-    beforeEach(async () => {
-      clients = await initTwoClients();
-    });
-    afterEach(async (done) => {
-      const { result } = done.meta;
-      if (result?.state.toString() !== "pass") {
-        if (!clients) {
-          console.log("Clients not defined");
-          return;
-        }
-        const clientAId =
-          (clients.A && (await clients.A.core.crypto.getClientId())) ||
-          "not initialized or removed";
-        const clientBId =
-          (clients.B && (await clients.B.core.crypto.getClientId())) ||
-          "not initialized or removed";
-        console.log(
-          `Test ${done.meta.name} failed with client ids: A:'${clientAId}';B:'${clientBId}'`,
-        );
-      }
-    });
     describe("session_proposal", () => {
       it("emits and handles a valid session_proposal", async () => {
+        const clients = await initTwoClients();
         const { A, B } = clients;
 
         const connectParams: EngineTypes.ConnectParams = {
@@ -118,12 +99,12 @@ describe("Sign Client Events Validation", () => {
             }
           }),
         ]);
-
-        deleteClients(clients);
+        await deleteClients({ A, B });
       });
     });
     describe("session_update", () => {
       it("emits and handles a valid session_update", async () => {
+        const clients = await initTwoClients();
         const { sessionA } = await testConnectMethod(clients);
 
         await new Promise<void>(async (resolve, reject) => {
@@ -152,12 +133,12 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
-
-        deleteClients(clients);
+        await deleteClients(clients);
       });
     });
     describe("session_ping", () => {
       it("emits and handles a valid session_ping", async () => {
+        const clients = await initTwoClients();
         const { sessionA } = await testConnectMethod(clients);
 
         await new Promise<void>(async (resolve, reject) => {
@@ -172,12 +153,12 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
-
-        deleteClients(clients);
+        await deleteClients(clients);
       });
     });
     describe("session_event", () => {
       it("emits and handles a valid session_event", async () => {
+        const clients = await initTwoClients();
         const connectParams: EngineTypes.ConnectParams = {
           requiredNamespaces: TEST_REQUIRED_NAMESPACES,
           relays: undefined,
@@ -191,7 +172,7 @@ describe("Sign Client Events Validation", () => {
           ...TEST_EMIT_PARAMS,
         };
 
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>(async (resolve, reject) => {
           try {
             clients.B.on("session_event", (event) => {
               expect(TEST_EMIT_PARAMS).to.eql(event.params);
@@ -199,16 +180,17 @@ describe("Sign Client Events Validation", () => {
               resolve();
             });
 
-            clients.A.emit(eventPayload);
+            await clients.A.emit(eventPayload);
           } catch (e) {
             reject(e);
           }
         });
-        deleteClients(clients);
+        await deleteClients(clients);
       });
     });
     describe("session_delete", () => {
       it("emits and handles a valid session_delete", async () => {
+        const clients = await initTwoClients();
         const connectParams: EngineTypes.ConnectParams = {
           requiredNamespaces: TEST_REQUIRED_NAMESPACES,
           relays: undefined,
@@ -222,14 +204,14 @@ describe("Sign Client Events Validation", () => {
           ...TEST_EMIT_PARAMS,
         };
 
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>(async (resolve, reject) => {
           try {
             clients.B.on("session_delete", (event) => {
               expect(eventPayload.topic).to.eql(event.topic);
               resolve();
             });
 
-            clients.A.disconnect({
+            await clients.A.disconnect({
               topic: sessionA.topic,
               reason: getSdkError("USER_DISCONNECTED"),
             });
@@ -237,7 +219,7 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
-        deleteClients(clients);
+        await deleteClients(clients);
       });
     });
   });

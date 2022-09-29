@@ -7,8 +7,6 @@ export async function deleteClients(clients: { A: SignClient; B: SignClient }) {
 
   delete clients.A;
   delete clients.B;
-
-  await throttle(500);
 }
 
 export async function throttle(timeout: number) {

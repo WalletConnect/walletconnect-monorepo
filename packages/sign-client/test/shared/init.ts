@@ -17,6 +17,7 @@ export async function initTwoClients(
     ...sharedClientOpts,
     ...clientOptsA,
   });
+
   const B = await SignClient.init({
     ...TEST_SIGN_CLIENT_OPTIONS_B,
     ...sharedClientOpts,

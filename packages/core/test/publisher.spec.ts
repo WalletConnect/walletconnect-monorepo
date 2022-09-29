@@ -1,29 +1,25 @@
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
-import pino from "pino";
 import Sinon from "sinon";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import { ICore, IPublisher, IRelayer } from "@walletconnect/types";
+import { ICore } from "@walletconnect/types";
 import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
 import { Publisher } from "../src/controllers/publisher";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
-import { Core, CORE_DEFAULT, PUBLISHER_DEFAULT_TTL, Relayer } from "../src";
+import { Core, PUBLISHER_DEFAULT_TTL } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
 
 describe("Publisher", () => {
-  const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
-
   let core: ICore;
   let publisher: Publisher;
 
   beforeEach(async () => {
-    if (core) {
-      await disconnectSocket(core);
-    }
-
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
     publisher = core.relayer.publisher as Publisher;
+  });
+
+  afterEach(async () => {
+    await disconnectSocket(core.relayer);
   });
 
   describe("init", () => {
