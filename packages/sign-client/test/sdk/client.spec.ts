@@ -42,14 +42,20 @@ describe("Sign Client Integration", () => {
   describe("disconnect", () => {
     let clients: Clients;
     beforeEach(async () => {
+      console.log("init clients");
       clients = await initTwoClients();
+      console.log("init clients done");
     });
     afterEach(async () => {
-      console.log(!!clients.A, !!clients.B);
+      console.log("delete clients");
+      // if (!!clients.A && !!clients.B) {
       await deleteClients(clients);
+
+      console.log("delete clients done");
+      // }
     });
     describe("pairing", () => {
-      it("deletes the pairing on disconnect", async () => {
+      it.only("deletes the pairing on disconnect", async () => {
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
@@ -63,7 +69,7 @@ describe("Sign Client Integration", () => {
       });
     });
     describe("session", () => {
-      it("deletes the session on disconnect", async () => {
+      it.only("deletes the session on disconnect", async () => {
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
