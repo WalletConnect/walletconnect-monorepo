@@ -19,6 +19,8 @@ import {
   createDelayedPromise,
   isValidParams,
   isValidUrl,
+  isValidString,
+  isExpired,
 } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
@@ -123,8 +125,7 @@ export class Pairing implements IPairing {
 
   public ping: IPairing["ping"] = async (params) => {
     this.isInitialized();
-    // TODO: adapt validation logic from SignClient.Engine
-    // await this.isValidPing(params);
+    await this.isValidPing(params);
     const { topic } = params;
     if (this.pairings.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_pairingPing", {});
@@ -254,8 +255,7 @@ export class Pairing implements IPairing {
   private onPairingPingRequest = async (topic: string, payload: any) => {
     const { id } = payload;
     try {
-      // TODO: adapt validation logic from SignClient.Engine.
-      // this.isValidPing({ topic });
+      this.isValidPing({ topic });
       await this.sendResult<"wc_pairingPing">(id, topic, true);
       this.events.emit("pairing_ping", { id, topic });
     } catch (err: any) {
@@ -300,4 +300,35 @@ export class Pairing implements IPairing {
       throw new Error(message);
     }
   };
+
+  private isValidPing = async (params: { topic: string }) => {
+    if (!isValidParams(params)) {
+      const { message } = getInternalError("MISSING_OR_INVALID", `ping() params: ${params}`);
+      throw new Error(message);
+    }
+    const { topic } = params;
+    await this.isValidPairingTopic(topic);
+  };
+
+  private async isValidPairingTopic(topic: any) {
+    if (!isValidString(topic, false)) {
+      const { message } = getInternalError(
+        "MISSING_OR_INVALID",
+        `pairing topic should be a string: ${topic}`,
+      );
+      throw new Error(message);
+    }
+    if (!this.pairings.keys.includes(topic)) {
+      const { message } = getInternalError(
+        "NO_MATCHING_KEY",
+        `pairing topic doesn't exist: ${topic}`,
+      );
+      throw new Error(message);
+    }
+    if (isExpired(this.pairings.get(topic).expiry)) {
+      await this.deletePairing(topic);
+      const { message } = getInternalError("EXPIRED", `pairing topic: ${topic}`);
+      throw new Error(message);
+    }
+  }
 }

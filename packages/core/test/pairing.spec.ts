@@ -1,4 +1,4 @@
-import { expect, describe, it } from "vitest";
+import { expect, describe, it, beforeEach } from "vitest";
 import { IPairing } from "@walletconnect/types";
 import { Core, CORE_PROTOCOL, CORE_VERSION } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";
@@ -127,9 +127,14 @@ describe("Pairing", () => {
   });
 
   describe("validations", () => {
+    let pairing: IPairing;
+
+    beforeEach(async () => {
+      pairing = await createPairingClient();
+    });
+
     describe("pair", () => {
       it("throws when no params are passed", async () => {
-        const pairing = await createPairingClient();
         // @ts-expect-error - ignore TS error to test runtime validation
         await expect(pairing.pair()).rejects.toThrowError(
           "Missing or invalid. pair() params: undefined",
@@ -137,14 +142,12 @@ describe("Pairing", () => {
       });
 
       it("throws when empty uri is provided", async () => {
-        const pairing = await createPairingClient();
         await expect(pairing.pair({ uri: "" })).rejects.toThrowError(
           "Missing or invalid. pair() uri: ",
         );
       });
 
       it("throws when invalid uri is provided", async () => {
-        const pairing = await createPairingClient();
         // @ts-expect-error - ignore TS error to test runtime validation
         await expect(pairing.pair({ uri: 123 })).rejects.toThrowError(
           "Missing or invalid. pair() uri: 123",
@@ -152,10 +155,44 @@ describe("Pairing", () => {
       });
 
       it("throws when no uri is provided", async () => {
-        const pairing = await createPairingClient();
         // @ts-expect-error - ignore TS error to test runtime validation
         await expect(pairing.pair({ uri: undefined })).rejects.toThrowError(
           "Missing or invalid. pair() uri: undefined",
+        );
+      });
+    });
+
+    describe("ping", () => {
+      it("throws when no params are passed", async () => {
+        // @ts-expect-error - ignore TS error to test runtime validation
+        await expect(pairing.ping()).rejects.toThrowError(
+          "Missing or invalid. ping() params: undefined",
+        );
+      });
+
+      it("throws when invalid topic is provided", async () => {
+        // @ts-expect-error - ignore TS error to test runtime validation
+        await expect(pairing.ping({ topic: 123 })).rejects.toThrowError(
+          "Missing or invalid. pairing topic should be a string: 123",
+        );
+      });
+
+      it("throws when empty topic is provided", async () => {
+        await expect(pairing.ping({ topic: "" })).rejects.toThrowError(
+          "Missing or invalid. pairing topic should be a string: ",
+        );
+      });
+
+      it("throws when no topic is provided", async () => {
+        // @ts-expect-error - ignore TS error to test runtime validation
+        await expect(pairing.ping({ topic: undefined })).rejects.toThrowError(
+          "Missing or invalid. pairing topic should be a string: undefined",
+        );
+      });
+
+      it("throws when non existent topic is provided", async () => {
+        await expect(pairing.ping({ topic: "none" })).rejects.toThrowError(
+          "No matching key. pairing topic doesn't exist: none",
         );
       });
     });
