@@ -152,8 +152,7 @@ export class Pairing implements IPairing {
 
   public disconnect: IPairing["disconnect"] = async (params) => {
     this.isInitialized();
-    // TODO: move validation logic from SignClient.Engine to this class.
-    // await this.isValidDisconnect(params);
+    await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.pairings.keys.includes(topic)) {
       await this.sendRequest(topic, "wc_pairingDelete", getSdkError("USER_DISCONNECTED"));
@@ -276,8 +275,7 @@ export class Pairing implements IPairing {
   private onPairingDeleteRequest = async (topic: string, payload: any) => {
     const { id } = payload;
     try {
-      // TODO: adapt validation logic from SignClient.Engine.
-      // this.isValidDisconnect({ topic, reason: payload.params });
+      this.isValidDisconnect({ topic });
       // RPC request needs to happen before deletion as it utilises pairing encryption
       await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
@@ -310,7 +308,16 @@ export class Pairing implements IPairing {
     await this.isValidPairingTopic(topic);
   };
 
-  private async isValidPairingTopic(topic: any) {
+  private isValidDisconnect = async (params: { topic: string }) => {
+    if (!isValidParams(params)) {
+      const { message } = getInternalError("MISSING_OR_INVALID", `disconnect() params: ${params}`);
+      throw new Error(message);
+    }
+    const { topic } = params;
+    await this.isValidPairingTopic(topic);
+  };
+
+  private isValidPairingTopic = async (topic: any) => {
     if (!isValidString(topic, false)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
@@ -330,5 +337,5 @@ export class Pairing implements IPairing {
       const { message } = getInternalError("EXPIRED", `pairing topic: ${topic}`);
       throw new Error(message);
     }
-  }
+  };
 }
