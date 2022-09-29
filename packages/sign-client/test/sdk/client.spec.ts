@@ -45,6 +45,7 @@ describe("Sign Client Integration", () => {
       clients = await initTwoClients();
     });
     afterEach(async () => {
+      console.log(!!clients.A, !!clients.B);
       await deleteClients(clients);
     });
     describe("pairing", () => {
