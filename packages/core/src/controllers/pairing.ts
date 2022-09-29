@@ -78,6 +78,7 @@ export class Pairing implements IPairing {
   }
 
   public create: IPairing["create"] = async () => {
+    this.isInitialized();
     const symKey = generateRandomBytes32();
     const topic = await this.core.crypto.setSymKey(symKey);
     const expiry = calcExpiry(FIVE_MINUTES);
@@ -116,6 +117,7 @@ export class Pairing implements IPairing {
   };
 
   public activate: IPairing["activate"] = async ({ topic }) => {
+    this.isInitialized();
     const expiry = calcExpiry(THIRTY_DAYS);
     await this.pairings.update(topic, { active: true, expiry });
 
@@ -138,15 +140,20 @@ export class Pairing implements IPairing {
     }
   };
 
+  // TODO: needs validation checks
   public updateExpiry: IPairing["updateExpiry"] = async ({ topic, expiry }) => {
+    this.isInitialized();
     await this.pairings.update(topic, { expiry });
   };
 
+  // TODO: needs validation checks
   public updateMetadata: IPairing["updateMetadata"] = async ({ topic, metadata }) => {
+    this.isInitialized();
     await this.pairings.update(topic, { peerMetadata: metadata });
   };
 
   public getPairings: IPairing["getPairings"] = () => {
+    this.isInitialized();
     return this.pairings.values;
   };
 
