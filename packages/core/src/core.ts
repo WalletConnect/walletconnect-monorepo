@@ -10,7 +10,7 @@ import {
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import { Crypto, Relayer } from "./controllers";
+import { Crypto, Relayer, Pairing } from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
@@ -32,6 +32,7 @@ export class Core extends ICore {
   public relayer: ICore["relayer"];
   public crypto: ICore["crypto"];
   public storage: ICore["storage"];
+  public pairing: ICore["pairing"];
 
   private initialized = false;
 
@@ -62,6 +63,7 @@ export class Core extends ICore {
       relayUrl: opts?.relayUrl,
       projectId: this.projectId,
     });
+    this.pairing = new Pairing(this, this.logger);
   }
 
   get context() {
@@ -101,6 +103,7 @@ export class Core extends ICore {
       await this.crypto.init();
       await this.relayer.init();
       await this.heartbeat.init();
+      await this.pairing.init();
       this.initialized = true;
       this.logger.info(`Core Initilization Success`);
     } catch (error) {
