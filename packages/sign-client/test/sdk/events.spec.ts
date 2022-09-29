@@ -21,15 +21,9 @@ describe("Sign Client Events Validation", () => {
   });
 
   describe("session", () => {
-    let clients;
-    beforeEach(async () => {
-      clients = await initTwoClients();
-    });
-    afterEach(async () => {
-      await deleteClients(clients);
-    });
     describe("session_proposal", () => {
       it("emits and handles a valid session_proposal", async () => {
+        const clients = await initTwoClients();
         const { A, B } = clients;
 
         const connectParams: EngineTypes.ConnectParams = {
@@ -105,10 +99,12 @@ describe("Sign Client Events Validation", () => {
             }
           }),
         ]);
+        await deleteClients(clients);
       });
     });
     describe("session_update", () => {
       it("emits and handles a valid session_update", async () => {
+        const clients = await initTwoClients();
         const { sessionA } = await testConnectMethod(clients);
 
         await new Promise<void>(async (resolve, reject) => {
@@ -137,10 +133,12 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
+        await deleteClients(clients);
       });
     });
     describe("session_ping", () => {
       it("emits and handles a valid session_ping", async () => {
+        const clients = await initTwoClients();
         const { sessionA } = await testConnectMethod(clients);
 
         await new Promise<void>(async (resolve, reject) => {
@@ -155,10 +153,12 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
+        await deleteClients(clients);
       });
     });
     describe("session_event", () => {
       it("emits and handles a valid session_event", async () => {
+        const clients = await initTwoClients();
         const connectParams: EngineTypes.ConnectParams = {
           requiredNamespaces: TEST_REQUIRED_NAMESPACES,
           relays: undefined,
@@ -185,10 +185,12 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
+        await deleteClients(clients);
       });
     });
     describe("session_delete", () => {
       it("emits and handles a valid session_delete", async () => {
+        const clients = await initTwoClients();
         const connectParams: EngineTypes.ConnectParams = {
           requiredNamespaces: TEST_REQUIRED_NAMESPACES,
           relays: undefined,
@@ -217,6 +219,7 @@ describe("Sign Client Events Validation", () => {
             reject(e);
           }
         });
+        await deleteClients(clients);
       });
     });
   });
