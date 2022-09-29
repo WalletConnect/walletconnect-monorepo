@@ -125,4 +125,39 @@ describe("Pairing", () => {
       expect(pairing.pairings.keys).to.deep.equal(pairingPeer.pairings.keys);
     });
   });
+
+  describe("validations", () => {
+    describe("pair", () => {
+      it("throws when no params are passed", async () => {
+        const pairing = await createPairingClient();
+        // @ts-expect-error - ignore TS error to test runtime validation
+        await expect(pairing.pair()).rejects.toThrowError(
+          "Missing or invalid. pair() params: undefined",
+        );
+      });
+
+      it("throws when empty uri is provided", async () => {
+        const pairing = await createPairingClient();
+        await expect(pairing.pair({ uri: "" })).rejects.toThrowError(
+          "Missing or invalid. pair() uri: ",
+        );
+      });
+
+      it("throws when invalid uri is provided", async () => {
+        const pairing = await createPairingClient();
+        // @ts-expect-error - ignore TS error to test runtime validation
+        await expect(pairing.pair({ uri: 123 })).rejects.toThrowError(
+          "Missing or invalid. pair() uri: 123",
+        );
+      });
+
+      it("throws when no uri is provided", async () => {
+        const pairing = await createPairingClient();
+        // @ts-expect-error - ignore TS error to test runtime validation
+        await expect(pairing.pair({ uri: undefined })).rejects.toThrowError(
+          "Missing or invalid. pair() uri: undefined",
+        );
+      });
+    });
+  });
 });

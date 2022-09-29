@@ -17,6 +17,8 @@ import {
   getSdkError,
   engineEvent,
   createDelayedPromise,
+  isValidParams,
+  isValidUrl,
 } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
@@ -97,8 +99,7 @@ export class Pairing implements IPairing {
 
   public pair: IPairing["pair"] = async (params) => {
     this.isInitialized();
-    // TODO: move validation logic from SignClient.Engine to this class.
-    // this.isValidPair(params);
+    this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
@@ -284,6 +285,19 @@ export class Pairing implements IPairing {
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
+    }
+  };
+
+  // ---------- Validation Helpers ----------------------------------- //
+
+  private isValidPair = (params: { uri: string }) => {
+    if (!isValidParams(params)) {
+      const { message } = getInternalError("MISSING_OR_INVALID", `pair() params: ${params}`);
+      throw new Error(message);
+    }
+    if (!isValidUrl(params.uri)) {
+      const { message } = getInternalError("MISSING_OR_INVALID", `pair() uri: ${params.uri}`);
+      throw new Error(message);
     }
   };
 }

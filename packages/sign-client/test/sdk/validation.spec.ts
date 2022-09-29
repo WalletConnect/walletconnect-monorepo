@@ -122,32 +122,6 @@ describe("Sign Client Validation", () => {
     });
   });
 
-  describe("pair", () => {
-    it("throws when no params are passed", async () => {
-      await expect(client.pair()).rejects.toThrowError(
-        "Missing or invalid. pair() params: undefined",
-      );
-    });
-
-    it("throws when empty uri is provided", async () => {
-      await expect(client.pair({ uri: "" })).rejects.toThrowError(
-        "Missing or invalid. pair() uri: ",
-      );
-    });
-
-    it("throws when invalid uri is provided", async () => {
-      await expect(client.pair({ uri: 123 })).rejects.toThrowError(
-        "Missing or invalid. pair() uri: 123",
-      );
-    });
-
-    it("throws when no uri is provided", async () => {
-      await expect(client.pair({ uri: undefined })).rejects.toThrowError(
-        "Missing or invalid. pair() uri: undefined",
-      );
-    });
-  });
-
   describe("approve", () => {
     it("throws when no params are passed", async () => {
       await expect(client.approve()).rejects.toThrowError(
