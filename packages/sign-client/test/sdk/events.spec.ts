@@ -99,7 +99,7 @@ describe("Sign Client Events Validation", () => {
             }
           }),
         ]);
-        await deleteClients(clients);
+        await deleteClients({ A, B });
       });
     });
     describe("session_update", () => {
@@ -172,7 +172,7 @@ describe("Sign Client Events Validation", () => {
           ...TEST_EMIT_PARAMS,
         };
 
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>(async (resolve, reject) => {
           try {
             clients.B.on("session_event", (event) => {
               expect(TEST_EMIT_PARAMS).to.eql(event.params);
@@ -180,7 +180,7 @@ describe("Sign Client Events Validation", () => {
               resolve();
             });
 
-            clients.A.emit(eventPayload);
+            await clients.A.emit(eventPayload);
           } catch (e) {
             reject(e);
           }
@@ -204,14 +204,14 @@ describe("Sign Client Events Validation", () => {
           ...TEST_EMIT_PARAMS,
         };
 
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>(async (resolve, reject) => {
           try {
             clients.B.on("session_delete", (event) => {
               expect(eventPayload.topic).to.eql(event.topic);
               resolve();
             });
 
-            clients.A.disconnect({
+            await clients.A.disconnect({
               topic: sessionA.topic,
               reason: getSdkError("USER_DISCONNECTED"),
             });
