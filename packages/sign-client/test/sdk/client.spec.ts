@@ -70,6 +70,7 @@ describe("Sign Client Integration", () => {
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
+        console.log("disconnect", !!clients);
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
@@ -80,6 +81,7 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
+        console.log("disconnect done", !!clients);
       });
     });
   });
