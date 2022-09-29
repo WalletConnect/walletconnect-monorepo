@@ -1,12 +1,11 @@
 import { getSdkError, generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
+import { expect, describe, it, vi } from "vitest";
 import SignClient from "../../src";
 import {
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
-  Clients,
   disconnectSocket,
 } from "../shared";
 
@@ -49,6 +48,8 @@ describe("Sign Client Integration", () => {
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
+        await disconnectSocket(clients.A.core);
+        await disconnectSocket(clients.B.core);
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
@@ -64,11 +65,9 @@ describe("Sign Client Integration", () => {
         } = await testConnectMethod(clients);
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
+        await disconnectSocket(clients.A.core);
+        await disconnectSocket(clients.B.core);
         expect(() => clients.A.session.get(topic)).to.throw(`No matching key. session: ${topic}`);
-        const promise = clients.A.ping({ topic });
-        await expect(promise).rejects.toThrowError(
-          `No matching key. session or pairing topic doesn't exist: ${topic}`,
-        );
         await deleteClients(clients);
       });
     });
