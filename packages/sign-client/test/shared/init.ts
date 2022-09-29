@@ -18,13 +18,10 @@ export async function initTwoClients(
     ...clientOptsA,
   });
 
-  console.log("client A ", !!A);
   const B = await SignClient.init({
     ...TEST_SIGN_CLIENT_OPTIONS_B,
     ...sharedClientOpts,
     ...clientOptsB,
   });
-
-  console.log("client B ", !!B);
   return { A, B };
 }

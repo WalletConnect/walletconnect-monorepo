@@ -40,19 +40,9 @@ describe("Sign Client Integration", () => {
   });
 
   describe("disconnect", () => {
-    let clients: Clients;
-    beforeEach(async () => {
-      clients = await initTwoClients();
-    });
-    afterEach(async () => {
-      if (clients) {
-        await deleteClients(clients);
-      } else {
-        console.warn("clients not initialized");
-      }
-    });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
+        const clients = await initTwoClients();
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
@@ -63,11 +53,12 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
+        await deleteClients(clients);
       });
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
-        console.log("disconnect", !!clients);
+        const clients = await initTwoClients();
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
@@ -78,7 +69,7 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
-        console.log("disconnect done", !!clients);
+        await deleteClients(clients);
       });
     });
   });
@@ -94,33 +85,29 @@ describe("Sign Client Integration", () => {
     });
     describe("pairing", () => {
       describe("with existing pairing", () => {
-        let clients;
-        beforeEach(async () => {
-          clients = await initTwoClients();
-        });
-        afterEach(async () => {
-          await deleteClients(clients);
-        });
         it("A pings B", async () => {
+          const clients = await initTwoClients();
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
+          await deleteClients(clients);
         });
         it("B pings A", async () => {
+          const clients = await initTwoClients();
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
+          await deleteClients(clients);
         });
       });
       describe("after restart", () => {
-        let beforeClients: Clients;
-        let afterClients: Clients;
-        const db_a = generateClientDbName("client_a");
-        const db_b = generateClientDbName("client_b");
-        beforeEach(async () => {
-          beforeClients = await initTwoClients(
+        it("clients can ping each other", async () => {
+          const db_a = generateClientDbName("client_a");
+          const db_b = generateClientDbName("client_b");
+
+          const beforeClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
               name: "before_client_a",
@@ -130,11 +117,6 @@ describe("Sign Client Integration", () => {
               name: "before_client_b",
             },
           );
-        });
-        afterEach(async () => {
-          await deleteClients(afterClients);
-        });
-        it("clients can ping each other", async () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(beforeClients);
@@ -162,7 +144,7 @@ describe("Sign Client Integration", () => {
           await deleteClients(beforeClients);
 
           // restart
-          afterClients = await initTwoClients(
+          const afterClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
             },
@@ -175,38 +157,35 @@ describe("Sign Client Integration", () => {
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
+
+          await deleteClients(afterClients);
         });
       });
     });
     describe("session", () => {
       describe("with existing session", () => {
-        let clients: Clients;
-        beforeEach(async () => {
-          clients = await initTwoClients();
-        });
-        afterEach(async () => {
-          await deleteClients(clients);
-        });
         it("A pings B", async () => {
+          const clients = await initTwoClients();
           const {
             sessionA: { topic },
           } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
+          await deleteClients(clients);
         });
         it("B pings A", async () => {
+          const clients = await initTwoClients();
           const {
             sessionA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
+          await deleteClients(clients);
         });
       });
       describe("after restart", () => {
-        let beforeClients: Clients;
-        let afterClients: Clients;
-        const db_a = generateClientDbName("client_a");
-        const db_b = generateClientDbName("client_b");
-        beforeEach(async () => {
-          beforeClients = await initTwoClients(
+        it("clients can ping each other", async () => {
+          const db_a = generateClientDbName("client_a");
+          const db_b = generateClientDbName("client_b");
+          const beforeClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
             },
@@ -214,11 +193,6 @@ describe("Sign Client Integration", () => {
               storageOptions: { database: db_b },
             },
           );
-        });
-        afterEach(async () => {
-          await deleteClients(afterClients);
-        }, 50_000);
-        it("clients can ping each other", async () => {
           const {
             sessionA: { topic },
           } = await testConnectMethod(beforeClients);
@@ -247,7 +221,7 @@ describe("Sign Client Integration", () => {
           await deleteClients(beforeClients);
 
           // restart
-          afterClients = await initTwoClients(
+          const afterClients = await initTwoClients(
             {
               storageOptions: { database: db_a },
             },
@@ -259,6 +233,8 @@ describe("Sign Client Integration", () => {
           // ping
           await afterClients.A.ping({ topic });
           await afterClients.B.ping({ topic });
+          // delete
+          await deleteClients(afterClients);
         });
       });
     });
@@ -291,16 +267,9 @@ describe("Sign Client Integration", () => {
   });
 
   describe("extend", () => {
-    let clients;
-    beforeEach(async () => {
-      clients = await initTwoClients();
-      vi.useFakeTimers();
-    });
-    afterEach(async () => {
-      vi.useRealTimers();
-      await deleteClients(clients);
-    });
     it("updates session expiry state", async () => {
+      const clients = await initTwoClients();
+      vi.useFakeTimers();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
@@ -315,6 +284,8 @@ describe("Sign Client Integration", () => {
       await acknowledged();
       const updatedExpiry = clients.A.session.get(topic).expiry;
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
+      vi.useRealTimers();
+      await deleteClients(clients);
     }, 50_000);
   });
 });
