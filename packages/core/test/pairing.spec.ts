@@ -1,8 +1,6 @@
-import { expect, describe, it, beforeEach } from "vitest";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { expect, describe, it } from "vitest";
 import { IPairing } from "@walletconnect/types";
-import pino from "pino";
-import { Core, CORE_DEFAULT, CORE_PROTOCOL, CORE_VERSION, Pairing } from "../src";
+import { Core, CORE_PROTOCOL, CORE_VERSION } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";
 
 const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
