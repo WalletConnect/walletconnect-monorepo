@@ -11,7 +11,7 @@ import {
 } from "../shared";
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 
-describe("Push", () => {
+describe.skip("Push", () => {
   let clients;
   let sessionA;
   beforeEach(async () => {
