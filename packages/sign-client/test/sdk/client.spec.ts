@@ -7,7 +7,6 @@ import {
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
   disconnectSocket,
-  throttle,
 } from "../shared";
 
 const generateClientDbName = (prefix: string) =>
@@ -24,9 +23,8 @@ describe("Sign Client Integration", () => {
     it("connect (with new pairing)", async () => {
       const clients = await initTwoClients();
       await testConnectMethod(clients);
-
-      await throttle(50_000);
-    }, 52_000);
+      await deleteClients(clients);
+    });
     it("connect (with old pairing)", async () => {
       const clients = await initTwoClients();
       await testConnectMethod(clients);
