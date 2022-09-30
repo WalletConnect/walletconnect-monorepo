@@ -1,5 +1,6 @@
 import { SignClientTypes } from "@walletconnect/types";
 import SignClient from "../../src";
+import { logClientIds } from "./helpers";
 import { TEST_SIGN_CLIENT_OPTIONS_A, TEST_SIGN_CLIENT_OPTIONS_B } from "./values";
 
 export interface Clients {
@@ -23,5 +24,7 @@ export async function initTwoClients(
     ...sharedClientOpts,
     ...clientOptsB,
   });
+
+  await logClientIds({ A, B });
   return { A, B };
 }

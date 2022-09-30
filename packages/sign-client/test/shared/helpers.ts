@@ -16,3 +16,9 @@ export async function throttle(timeout: number) {
     }, timeout),
   );
 }
+
+export async function logClientIds(clients: { A: SignClient; B: SignClient }) {
+  console.log(
+    `client ids: A:'${await clients.A.core.crypto.getClientId()}' B:'${await clients.B.core.crypto.getClientId()}'`,
+  );
+}
