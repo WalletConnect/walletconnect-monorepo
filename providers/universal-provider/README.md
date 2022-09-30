@@ -113,7 +113,7 @@ const updatedDefaultChainId = await web3.eth.getChainId();
 
 ## Creating a provider file
 
-- Create a file under `providers/universal-provider/src/providers/<CHAIN>.ts`
+- Create a file under `providers/universal-provider/src/providers/<NAMESPACE>.ts`
 - Implement the `IProvider` interface
 - In the `IProvider.request` method, there should be a check for whether or not
   to run the request against the wallet or the blockchain.
