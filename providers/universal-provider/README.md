@@ -110,3 +110,18 @@ provider.setDefaultChain(`eip155:56`, rpcUrl?: string | undefined);
 const updatedDefaultChainId = await web3.eth.getChainId();
 
 ```
+
+## Creating a provider file
+
+- Create a file under `providers/universal-provider/src/providers/<CHAIN>.ts`
+- Implement the `IProvider` interface
+- In the `IProvider.request` method, there should be a check for whether or not
+  to run the request against the wallet or the blockchain.
+  `this.namespace.methods` should only contain the methods supported by the
+  wallet.
+- The rest of the methods of the class are very similar, mainly centering around
+  httpProvider and for the most part will be 90% similar to other providers
+  given similar structure of chainId. For example `eip155:1` or
+  `solana:mainnetBeta`. 
+- Export provider under `providers/universal-provider/src/providers/index.ts` 
+
