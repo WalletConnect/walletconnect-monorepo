@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 import SignClient from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
@@ -6,6 +5,7 @@ import { getSdkError } from "@walletconnect/utils";
 import { getDefaultLoggerOptions } from "@walletconnect/logger";
 import pino, { Logger } from "pino";
 import Eip155Provider from "./providers/eip155";
+import SolanaProvider from "./providers/solana";
 import { getChainFromNamespaces } from "./utils";
 import {
   IUniversalProvider,
@@ -18,6 +18,7 @@ import {
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE } from "./constants";
+import EventEmitter from "events";
 
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
@@ -191,7 +192,11 @@ export class UniversalProvider implements IUniversalProvider {
           });
           break;
         case "solana":
-          //TODO:
+          this.rpcProviders[namespace] = new SolanaProvider({
+            client: this.client,
+            namespace: this.namespaces[namespace],
+            events: this.events,
+          });
           break;
         case "cosmos":
           //TODO:
