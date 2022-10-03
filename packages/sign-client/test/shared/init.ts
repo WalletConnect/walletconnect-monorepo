@@ -18,6 +18,7 @@ export async function initTwoClients(
     ...sharedClientOpts,
     ...clientOptsA,
   });
+  console.log("clientId A", await A.core.crypto.getClientId());
 
   const B = await SignClient.init({
     ...TEST_SIGN_CLIENT_OPTIONS_B,
@@ -25,6 +26,6 @@ export async function initTwoClients(
     ...clientOptsB,
   });
 
-  await logClientIds({ A, B });
+  console.log("clientId B", await B.core.crypto.getClientId());
   return { A, B };
 }
