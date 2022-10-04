@@ -1,4 +1,4 @@
-import { THIRTY_DAYS } from "@walletconnect/time";
+import { THIRTY_DAYS, ONE_DAY, THIRTY_SECONDS } from "@walletconnect/time";
 import { RelayerTypes, PairingJsonRpcTypes } from "@walletconnect/types";
 
 export const PAIRING_CONTEXT = "pairing";
@@ -16,24 +16,24 @@ export const PAIRING_RPC_OPTS: Record<
 > = {
   wc_pairingDelete: {
     req: {
-      // ttl: ONE_DAY,
+      ttl: ONE_DAY,
       prompt: false,
       tag: 1000,
     },
     res: {
-      // ttl: ONE_DAY,
+      ttl: ONE_DAY,
       prompt: false,
       tag: 1001,
     },
   },
   wc_pairingPing: {
     req: {
-      // ttl: THIRTY_SECONDS,
+      ttl: THIRTY_SECONDS,
       prompt: false,
       tag: 1002,
     },
     res: {
-      // ttl: THIRTY_SECONDS,
+      ttl: THIRTY_SECONDS,
       prompt: false,
       tag: 1003,
     },
