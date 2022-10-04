@@ -80,6 +80,8 @@ export class Relayer extends IRelayer {
   public async init() {
     this.logger.trace(`Initialized`);
     const auth = await this.core.crypto.signJWT(this.relayUrl);
+    // eslint-disable-next-line no-console
+    console.log(`auth: ${auth}}`);
     this.provider = this.createProvider(auth);
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
