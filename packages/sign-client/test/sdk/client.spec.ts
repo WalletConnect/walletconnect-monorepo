@@ -1,5 +1,5 @@
 import { getSdkError, generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import SignClient from "../../src";
 import {
   initTwoClients,
@@ -58,8 +58,22 @@ describe("Sign Client Integration", () => {
       });
     });
     describe("session", () => {
+      let clients;
+      beforeEach(async () => {
+        clients = await initTwoClients();
+      });
+      afterEach(async (done) => {
+        const { result } = done.meta;
+        if (result?.state.toString() !== "pass") {
+          console.log(
+            `Test ${
+              done.meta.name
+            } failed with client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+          );
+        }
+      });
       it("deletes the session on disconnect", async () => {
-        const clients = await initTwoClients();
+        await initTwoClients();
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
