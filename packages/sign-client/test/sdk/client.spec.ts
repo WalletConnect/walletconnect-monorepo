@@ -1,5 +1,5 @@
 import { getSdkError, generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeEach } from "vitest";
 import SignClient from "../../src";
 import {
   initTwoClients,
@@ -40,6 +40,9 @@ describe("Sign Client Integration", () => {
   });
 
   describe("disconnect", () => {
+    beforeEach(async () => {
+      await throttle(1_000);
+    });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
         const clients = await initTwoClients();
@@ -283,9 +286,7 @@ describe("Sign Client Integration", () => {
 
   describe("extend", () => {
     it("updates session expiry state", async () => {
-      const clients = await initTwoClients({
-        logger: "trace",
-      });
+      const clients = await initTwoClients();
       vi.useFakeTimers();
       const {
         sessionA: { topic },
