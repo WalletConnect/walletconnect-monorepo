@@ -43,7 +43,6 @@ import {
   RELAYER_EVENTS,
 } from "../constants";
 import { Store } from "../controllers/store";
-import { JsonRpcHistory } from "../controllers/history";
 
 export class Pairing implements IPairing {
   public name = PAIRING_CONTEXT;
@@ -51,7 +50,6 @@ export class Pairing implements IPairing {
 
   public events = new EventEmitter();
   public pairings: IStore<string, PairingTypes.Struct>;
-  public history: IPairing["history"];
 
   private initialized = false;
   private storagePrefix = CORE_STORAGE_PREFIX;
@@ -60,14 +58,12 @@ export class Pairing implements IPairing {
     this.core = core;
     this.logger = generateChildLogger(logger, this.name);
     this.pairings = new Store(this.core, this.logger, this.name, this.storagePrefix);
-    this.history = new JsonRpcHistory(this.core, this.logger);
   }
 
   public init: IPairing["init"] = async () => {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       await this.pairings.init();
-      await this.history.init();
       this.registerRelayerEvents();
       this.initialized = true;
     }
@@ -173,7 +169,7 @@ export class Pairing implements IPairing {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.core.crypto.encode(topic, payload);
     const opts = PAIRING_RPC_OPTS[method].req;
-    this.history.set(topic, payload);
+    this.core.history.set(topic, payload);
     await this.core.relayer.publish(topic, message, opts);
 
     return payload.id;
@@ -182,19 +178,19 @@ export class Pairing implements IPairing {
   private sendResult: IPairingPrivate["sendResult"] = async (id, topic, result) => {
     const payload = formatJsonRpcResult(id, result);
     const message = await this.core.crypto.encode(topic, payload);
-    const record = await this.history.get(topic, id);
+    const record = await this.core.history.get(topic, id);
     const opts = PAIRING_RPC_OPTS[record.request.method].res;
     await this.core.relayer.publish(topic, message, opts);
-    await this.history.resolve(payload);
+    await this.core.history.resolve(payload);
   };
 
   private sendError: IPairingPrivate["sendError"] = async (id, topic, error) => {
     const payload = formatJsonRpcError(id, error);
     const message = await this.core.crypto.encode(topic, payload);
-    const record = await this.history.get(topic, id);
+    const record = await this.core.history.get(topic, id);
     const opts = PAIRING_RPC_OPTS[record.request.method].res;
     await this.core.relayer.publish(topic, message, opts);
-    await this.history.resolve(payload);
+    await this.core.history.resolve(payload);
   };
 
   private deletePairing: IPairingPrivate["deletePairing"] = async (topic, _expirerHasDeleted) => {
@@ -222,10 +218,10 @@ export class Pairing implements IPairing {
       const { topic, message } = event;
       const payload = await this.core.crypto.decode(topic, message);
       if (isJsonRpcRequest(payload)) {
-        this.history.set(topic, payload);
+        this.core.history.set(topic, payload);
         this.onRelayEventRequest({ topic, payload });
       } else if (isJsonRpcResponse(payload)) {
-        await this.history.resolve(payload);
+        await this.core.history.resolve(payload);
         this.onRelayEventResponse({ topic, payload });
       }
     });
@@ -247,7 +243,7 @@ export class Pairing implements IPairing {
 
   private onRelayEventResponse = async (event: any) => {
     const { topic, payload } = event;
-    const record = await this.history.get(topic, payload.id);
+    const record = await this.core.history.get(topic, payload.id);
     const resMethod = record.request.method as PairingJsonRpcTypes.WcMethod;
 
     switch (resMethod) {
@@ -272,11 +268,15 @@ export class Pairing implements IPairing {
 
   private onPairingPingResponse = (_topic: string, payload: any) => {
     const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("pairing_ping", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
-    }
+    // put at the end of the stack to avoid a race condition
+    // where pairing_ping listener is not yet initialized
+    setTimeout(() => {
+      if (isJsonRpcResult(payload)) {
+        this.events.emit(engineEvent("pairing_ping", id), {});
+      } else if (isJsonRpcError(payload)) {
+        this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
+      }
+    }, 500);
   };
 
   private onPairingDeleteRequest = async (topic: string, payload: any) => {

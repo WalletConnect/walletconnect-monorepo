@@ -4,7 +4,6 @@ import EventEmitter from "events";
 
 import { ICore } from "./core";
 import { IStore } from "./store";
-import { IJsonRpcHistory } from "./history";
 
 import { RelayerTypes } from "../core/relayer";
 
@@ -51,7 +50,6 @@ export abstract class IPairing {
   public abstract readonly context: string;
   public abstract events: EventEmitter;
   public abstract pairings: IPairingStore;
-  public abstract history: IJsonRpcHistory;
 
   constructor(public logger: Logger, public core: ICore) {}
 

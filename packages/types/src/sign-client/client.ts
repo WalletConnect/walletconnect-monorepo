@@ -1,10 +1,8 @@
 import EventEmmiter from "events";
 import { Logger } from "pino";
 import { IEngine } from "./engine";
-import { IPairingStore } from "../core/pairing";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
-import { IJsonRpcHistory } from "../core/history";
 import { CoreTypes, ICore } from "../core/core";
 import { IExpirer } from "./expirer";
 
@@ -106,10 +104,8 @@ export abstract class ISignClient {
   public abstract logger: Logger;
   public abstract events: ISignClientEvents;
   public abstract engine: IEngine;
-  public abstract pairing: IPairingStore;
   public abstract session: ISession;
   public abstract proposal: IProposal;
-  public abstract history: IJsonRpcHistory;
   public abstract expirer: IExpirer;
 
   constructor(public opts?: SignClientTypes.Options) {}

@@ -6,6 +6,7 @@ import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvalu
 import { ICrypto } from "./crypto";
 import { IRelayer } from "./relayer";
 import { IKeyChain } from "./keychain";
+import { IJsonRpcHistory } from "./history";
 import { IPairing } from "./pairing";
 
 export declare namespace CoreTypes {
@@ -34,6 +35,7 @@ export abstract class ICore extends IEvents {
   public abstract crypto: ICrypto;
   public abstract relayer: IRelayer;
   public abstract storage: IKeyValueStorage;
+  public abstract history: IJsonRpcHistory;
   public abstract pairing: IPairing;
 
   constructor(public opts?: CoreTypes.Options) {
