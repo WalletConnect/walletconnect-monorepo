@@ -14,50 +14,6 @@ import {
   throttle,
 } from "../shared";
 
-const log = (log: string) => {
-  // eslint-disable-next-line no-console
-  console.log(log);
-};
-
-/**
- * Get all unique permutations of provided regions in pairs
- * @param array the regions to permutate
- * @returns 
- */
-const getRegionPermutations = (array: string[]) => {
-  const regions: string[][] = [];
-
-  const isDev = TEST_RELAY_URL.includes("dev.");
-  const isStaging = TEST_RELAY_URL.includes("staging.");
-
-  for (let i = 0; i < array.length; i++) {
-    for (let j = i + 1; j < array.length; j++) {
-          if (i == j)
-              continue;
-          const list: string[] = [];
-
-          let from = array[i];
-          let to = array[j];
-
-          if (isDev) {
-            from = from.replace("wss://", "wss://dev.");
-            to = to.replace("wss://", "wss://dev.");
-          } else if (isStaging) {
-              from = from.replace("wss://", "wss://staging.");
-              to = to.replace("wss://", "wss://staging.");
-          }
-
-          list.push(from);
-          list.push(to);
-          regions.push(list)
-      }
-  }
-
-  return regions;
-}
-
-const regions = getRegionPermutations([TEST_RELAY_URL_EU, TEST_RELAY_URL_US, TEST_RELAY_URL_AP]);
-
 describe("X Region", () => {
   it("init", async () => {
     const client = await SignClient.init(TEST_SIGN_CLIENT_OPTIONS);
@@ -102,7 +58,7 @@ describe("X Region", () => {
     });
   });
   describe("pairing+ping", () => {
-    it.each(regions)("pairs %s with %s", async (clientAUrl: string, clientBUrl: string) => {
+    it.each(regionEndpointPermutations)("pairs client in '%s' with client in '%s'", async (clientAUrl: string, clientBUrl: string) => {
       const A = await SignClient.init({
         logger: "fatal",
         relayUrl: clientAUrl,
@@ -145,3 +101,47 @@ describe("X Region", () => {
     });
   });
 });
+
+const log = (log: string) => {
+  // eslint-disable-next-line no-console
+  console.log(log);
+};
+
+/**
+ * Get all unique permutations of provided regions in pairs
+ * @param array the regions to permutate
+ * @returns 
+ */
+const getRegionEndpointPermutations = (array: string[]) => {
+  const regions: string[][] = [];
+
+  const isDev = TEST_RELAY_URL.includes("dev.");
+  const isStaging = TEST_RELAY_URL.includes("staging.");
+
+  for (let i = 0; i < array.length; i++) {
+    for (let j = i + 1; j < array.length; j++) {
+          if (i == j)
+              continue;
+          const list: string[] = [];
+
+          let from = array[i];
+          let to = array[j];
+
+          if (isDev) {
+            from = from.replace("wss://", "wss://dev.");
+            to = to.replace("wss://", "wss://dev.");
+          } else if (isStaging) {
+              from = from.replace("wss://", "wss://staging.");
+              to = to.replace("wss://", "wss://staging.");
+          }
+
+          list.push(from);
+          list.push(to);
+          regions.push(list)
+      }
+  }
+
+  return regions;
+}
+
+const regionEndpointPermutations = getRegionEndpointPermutations([TEST_RELAY_URL_EU, TEST_RELAY_URL_US, TEST_RELAY_URL_AP]);
