@@ -19,7 +19,12 @@ const log = (log: string) => {
   console.log(log);
 };
 
-const getRegions = (array: string[]) => {
+/**
+ * Get all unique permutations of provided regions in pairs
+ * @param array the regions to permutate
+ * @returns 
+ */
+const getRegionPermutations = (array: string[]) => {
   const regions: string[][] = [];
 
   const isDev = TEST_RELAY_URL.includes("dev.");
@@ -51,7 +56,7 @@ const getRegions = (array: string[]) => {
   return regions;
 }
 
-const regions = getRegions([TEST_RELAY_URL_EU, TEST_RELAY_URL_US, TEST_RELAY_URL_AP]);
+const regions = getRegionPermutations([TEST_RELAY_URL_EU, TEST_RELAY_URL_US, TEST_RELAY_URL_AP]);
 
 describe("X Region", () => {
   it("init", async () => {
@@ -97,7 +102,7 @@ describe("X Region", () => {
     });
   });
   describe("pairing+ping", () => {
-    it.only.each(regions)("pairs %s with %s", async (clientAUrl: string, clientBUrl: string) => {
+    it.each(regions)("pairs %s with %s", async (clientAUrl: string, clientBUrl: string) => {
       const A = await SignClient.init({
         logger: "fatal",
         relayUrl: clientAUrl,
@@ -128,12 +133,10 @@ describe("X Region", () => {
       await new Promise<void>(async (resolve, reject) => {
         try {
           B.once("session_ping", (event) => {
-            console.log('ping received');
             expect(sessionA.topic).to.eql(event.topic);
             resolve();
           });
 
-          console.log('about to ping');
           await A.ping({ topic: sessionA.topic });
         } catch (e) {
           reject(e);
