@@ -45,7 +45,7 @@ describe("Sign Client Integration", () => {
     });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
-        const clients = await initTwoClients();
+        const clients = await initTwoClients({}, {}, { logger: "debug" });
         console.log("clients initialized");
         const {
           pairingA: { topic },
@@ -71,7 +71,7 @@ describe("Sign Client Integration", () => {
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
-        const clients = await initTwoClients();
+        const clients = await initTwoClients({}, {}, { logger: "debug" });
         console.log("clients initialized");
         const {
           sessionA: { topic },
