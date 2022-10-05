@@ -15,11 +15,11 @@ class SolanaProvider implements IProvider {
   public chainId: string;
 
   constructor(opts: SubProviderOpts) {
-    this.httpProviders = this.createHttpProviders();
     this.namespace = opts.namespace;
     this.events = opts.events;
     this.client = opts.client;
     this.chainId = this.getDefaultChainId();
+    this.httpProviders = this.createHttpProviders();
   }
 
   public updateNamespace(namespace: SessionTypes.Namespace) {
