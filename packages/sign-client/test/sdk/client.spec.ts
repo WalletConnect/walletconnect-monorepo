@@ -20,30 +20,27 @@ describe("Sign Client Integration", () => {
     await disconnectSocket(client.core);
   });
 
-  describe("connect", () => {
-    it("connect (with new pairing)", async () => {
-      const clients = await initTwoClients();
-      await testConnectMethod(clients);
-      await deleteClients(clients);
-    });
-    it("connect (with old pairing)", async () => {
-      const clients = await initTwoClients();
-      const {
-        pairingA: { topic: pairingTopic },
-      } = await testConnectMethod(clients);
-      const { A, B } = clients;
-      expect(A.pairing.keys).to.eql(B.pairing.keys);
-      await testConnectMethod(clients, {
-        pairingTopic,
-      });
-      await deleteClients(clients);
-    });
-  });
+  // describe("connect", () => {
+  //   it("connect (with new pairing)", async () => {
+  //     const clients = await initTwoClients();
+  //     await testConnectMethod(clients);
+  //     await deleteClients(clients);
+  //   });
+  //   it("connect (with old pairing)", async () => {
+  //     const clients = await initTwoClients();
+  //     const {
+  //       pairingA: { topic: pairingTopic },
+  //     } = await testConnectMethod(clients);
+  //     const { A, B } = clients;
+  //     expect(A.pairing.keys).to.eql(B.pairing.keys);
+  //     await testConnectMethod(clients, {
+  //       pairingTopic,
+  //     });
+  //     await deleteClients(clients);
+  //   });
+  // });
 
   describe("disconnect", () => {
-    beforeEach(async () => {
-      await throttle(1_000);
-    });
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
         const clients = await initTwoClients({}, {}, { logger: "debug" });
