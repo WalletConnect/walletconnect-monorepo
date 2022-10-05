@@ -28,10 +28,11 @@ describe("Sign Client Integration", () => {
     });
     it("connect (with old pairing)", async () => {
       const clients = await initTwoClients();
-      await testConnectMethod(clients);
+      const {
+        pairingA: { topic: pairingTopic },
+      } = await testConnectMethod(clients);
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
-      const { topic: pairingTopic } = A.pairing.get(A.pairing.keys[0]);
       await testConnectMethod(clients, {
         pairingTopic,
       });
