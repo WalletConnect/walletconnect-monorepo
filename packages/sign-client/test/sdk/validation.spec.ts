@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { expect, describe, it, beforeAll } from "vitest";
+import { expect, describe, it, beforeAll, afterAl, beforeEach, afterEach } from "vitest";
 import {
   initTwoClients,
   testConnectMethod,
@@ -14,6 +14,7 @@ import {
   TEST_REQUIRED_NAMESPACES,
   TEST_NAMESPACES_INVALID_METHODS,
   TEST_NAMESPACES_INVALID_CHAIN,
+  deleteClients,
 } from "../shared";
 import SignClient from "../../src";
 
@@ -23,13 +24,18 @@ let pairingTopic: string;
 let topic: string;
 
 describe("Sign Client Validation", () => {
-  beforeAll(async () => {
-    const clients = await initTwoClients();
+  let clients;
+  beforeEach(async () => {
+    clients = await initTwoClients();
     await testConnectMethod(clients);
     client = clients.A;
     pairingTopic = client.pairing.keys[0];
     proposalId = client.proposal.keys[0];
     topic = client.session.keys[0];
+  });
+
+  afterEach(async () => {
+    deleteClients(clients);
   });
 
   describe("connect", () => {
