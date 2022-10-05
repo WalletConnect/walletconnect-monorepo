@@ -1,5 +1,5 @@
 import { getSdkError, generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, vi, beforeEach } from "vitest";
+import { expect, describe, it, vi } from "vitest";
 import SignClient from "../../src";
 import {
   initTwoClients,
@@ -7,18 +7,17 @@ import {
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
   disconnectSocket,
-  throttle,
 } from "../shared";
 
 const generateClientDbName = (prefix: string) =>
   `./test/tmp/${prefix}_${generateRandomBytes32()}.db`;
 
 describe("Sign Client Integration", () => {
-  // it("init", async () => {
-  //   const client = await SignClient.init(TEST_SIGN_CLIENT_OPTIONS);
-  //   expect(client).to.be.exist;
-  //   await disconnectSocket(client.core);
-  // });
+  it("init", async () => {
+    const client = await SignClient.init(TEST_SIGN_CLIENT_OPTIONS);
+    expect(client).to.be.exist;
+    await disconnectSocket(client.core);
+  });
 
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
@@ -43,49 +42,34 @@ describe("Sign Client Integration", () => {
   describe("disconnect", () => {
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
-        const clients = await initTwoClients({}, {}, { logger: "debug" });
-        console.log("clients initialized");
+        const clients = await initTwoClients();
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
-        console.log("connection tested, pairing topic", topic);
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        console.log("await disconnect");
         expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
-        console.log("expect no matching key. pairing");
         await disconnectSocket(clients.A.core);
-        console.log("disconnect socket A");
         await disconnectSocket(clients.B.core);
-        console.log("disconnect socket B");
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
-        console.log("expect - ping - not matching key");
         await deleteClients(clients);
-        console.log("clients deleted");
       });
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
-        const clients = await initTwoClients({}, {}, { logger: "debug" });
-        console.log("clients initialized");
+        const clients = await initTwoClients();
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
-        console.log("connection tested, session topic", topic);
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        console.log("await disconnect");
         await disconnectSocket(clients.A.core);
-        console.log("disconnect socket A");
         await disconnectSocket(clients.B.core);
-        console.log("disconnect socket B");
         expect(() => clients.A.session.get(topic)).to.throw(`No matching key. session: ${topic}`);
-        console.log("expect - session get - not matching key");
         await deleteClients(clients);
-        console.log("clients deleted");
       });
     });
   });

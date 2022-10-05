@@ -15,6 +15,7 @@ import {
   TEST_NAMESPACES_INVALID_METHODS,
   TEST_NAMESPACES_INVALID_CHAIN,
   deleteClients,
+  Clients,
 } from "../shared";
 import SignClient from "../../src";
 
@@ -24,7 +25,7 @@ let pairingTopic: string;
 let topic: string;
 
 describe("Sign Client Validation", () => {
-  let clients;
+  let clients: Clients;
   beforeEach(async () => {
     clients = await initTwoClients();
     await testConnectMethod(clients);
@@ -35,7 +36,7 @@ describe("Sign Client Validation", () => {
   });
 
   afterEach(async () => {
-    deleteClients(clients);
+    await deleteClients(clients);
   });
 
   describe("connect", () => {
