@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { expect, describe, it, beforeAll, afterAll } from "vitest";
+import { expect, describe, it, beforeAll, afterAl, beforeEach, afterEach } from "vitest";
 import {
   initTwoClients,
   testConnectMethod,
@@ -26,7 +26,7 @@ let topic: string;
 
 describe("Sign Client Validation", () => {
   let clients: Clients;
-  beforeAll(async () => {
+  beforeEach(async () => {
     clients = await initTwoClients();
     await testConnectMethod(clients);
     client = clients.A;
@@ -35,7 +35,7 @@ describe("Sign Client Validation", () => {
     topic = client.session.keys[0];
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await deleteClients(clients);
   });
 
