@@ -2,19 +2,18 @@ import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { Logger } from "pino";
 import EventEmitter from "events";
 
-import { ICore } from "./core";
+import { ICore, CoreTypes } from "./core";
 import { IStore } from "./store";
 
 import { RelayerTypes } from "../core/relayer";
 
 export declare namespace PairingTypes {
-  export interface Struct {
+  interface Struct {
     topic: string;
     expiry: number;
     relay: RelayerTypes.ProtocolOptions;
     active: boolean;
-    // TODO: Establish `Metadata` type outside of SignClient types. Then tighten type here.
-    peerMetadata?: Record<string, any>;
+    peerMetadata?: CoreTypes.Metadata;
   }
 }
 
@@ -73,7 +72,7 @@ export abstract class IPairing {
   // for either to update the metadata of an existing pairing.
   public abstract updateMetadata(params: {
     topic: string;
-    metadata: Record<string, any>;
+    metadata: CoreTypes.Metadata;
   }): Promise<void>;
 
   // query pairings

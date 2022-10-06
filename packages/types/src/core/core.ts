@@ -19,6 +19,13 @@ export declare namespace CoreTypes {
     storage?: IKeyValueStorage;
     storageOptions?: KeyValueStorageOptions;
   }
+
+  interface Metadata {
+    name: string;
+    description: string;
+    url: string;
+    icons: string[];
+  }
 }
 
 export abstract class ICore extends IEvents {

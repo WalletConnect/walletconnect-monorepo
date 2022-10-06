@@ -48,12 +48,7 @@ export declare namespace SignClientTypes {
     proposal_expire: { id: number };
   }
 
-  type Metadata = {
-    name: string;
-    description: string;
-    url: string;
-    icons: string[];
-  };
+  type Metadata = CoreTypes.Metadata;
 
   interface Options extends CoreTypes.Options {
     core?: ICore;
