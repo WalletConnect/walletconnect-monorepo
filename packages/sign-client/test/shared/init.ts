@@ -23,5 +23,6 @@ export async function initTwoClients(
     ...sharedClientOpts,
     ...clientOptsB,
   });
+
   return { A, B };
 }

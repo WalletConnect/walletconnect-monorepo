@@ -346,8 +346,7 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     this.client.core.history.set(topic, payload);
-    await this.client.core.relayer.publish(topic, message, opts);
-
+    this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
   };
 
