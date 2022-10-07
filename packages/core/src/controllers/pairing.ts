@@ -227,7 +227,7 @@ export class Pairing implements IPairing {
     });
   }
 
-  private onRelayEventRequest = (event: any) => {
+  private onRelayEventRequest: IPairingPrivate["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as PairingJsonRpcTypes.WcMethod;
 
@@ -241,7 +241,7 @@ export class Pairing implements IPairing {
     }
   };
 
-  private onRelayEventResponse = async (event: any) => {
+  private onRelayEventResponse: IPairingPrivate["onRelayEventResponse"] = async (event) => {
     const { topic, payload } = event;
     const record = await this.core.history.get(topic, payload.id);
     const resMethod = record.request.method as PairingJsonRpcTypes.WcMethod;
@@ -254,7 +254,10 @@ export class Pairing implements IPairing {
     }
   };
 
-  private onPairingPingRequest = async (topic: string, payload: any) => {
+  private onPairingPingRequest: IPairingPrivate["onPairingPingRequest"] = async (
+    topic,
+    payload,
+  ) => {
     const { id } = payload;
     try {
       this.isValidPing({ topic });
@@ -266,7 +269,7 @@ export class Pairing implements IPairing {
     }
   };
 
-  private onPairingPingResponse = (_topic: string, payload: any) => {
+  private onPairingPingResponse: IPairingPrivate["onPairingPingResponse"] = (_topic, payload) => {
     const { id } = payload;
     // put at the end of the stack to avoid a race condition
     // where pairing_ping listener is not yet initialized
@@ -279,7 +282,10 @@ export class Pairing implements IPairing {
     }, 500);
   };
 
-  private onPairingDeleteRequest = async (topic: string, payload: any) => {
+  private onPairingDeleteRequest: IPairingPrivate["onPairingDeleteRequest"] = async (
+    topic,
+    payload,
+  ) => {
     const { id } = payload;
     try {
       this.isValidDisconnect({ topic });
