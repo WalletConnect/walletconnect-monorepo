@@ -400,6 +400,9 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     this.client.history.set(topic, payload);
+
+    // await is intentionally omitted here because of a possible race condition
+    // where a response is received before the publish call is resolved
     this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
   };
