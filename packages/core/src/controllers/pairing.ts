@@ -7,6 +7,7 @@ import {
   IStore,
   RelayerTypes,
   PairingJsonRpcTypes,
+  ExpirerTypes,
 } from "@walletconnect/types";
 import {
   getInternalError,
@@ -21,6 +22,7 @@ import {
   isValidUrl,
   isValidString,
   isExpired,
+  parseExpirerTarget,
 } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
@@ -41,6 +43,7 @@ import {
   RELAYER_DEFAULT_PROTOCOL,
   PAIRING_RPC_OPTS,
   RELAYER_EVENTS,
+  EXPIRER_EVENTS,
 } from "../constants";
 import { Store } from "../controllers/store";
 
@@ -65,6 +68,7 @@ export class Pairing implements IPairing {
       await this.pairings.init();
       await this.cleanup();
       this.registerRelayerEvents();
+      this.registerExpirerEvents();
       this.initialized = true;
       this.logger.trace(`Initialized`);
     }
@@ -90,9 +94,7 @@ export class Pairing implements IPairing {
     });
     await this.pairings.set(topic, pairing);
     await this.core.relayer.subscribe(topic);
-
-    // FIXME: We need to move expirer to core for this to work.
-    // this.core.expirer.set(topic, expiry);
+    this.core.expirer.set(topic, expiry);
 
     return { topic, uri };
   };
@@ -106,9 +108,7 @@ export class Pairing implements IPairing {
     await this.pairings.set(topic, pairing);
     await this.core.crypto.setSymKey(symKey, topic);
     await this.core.relayer.subscribe(topic, { relay });
-
-    // FIXME: We need to move expirer to core for this to work.
-    // this.core.expirer.set(topic, expiry);
+    this.core.expirer.set(topic, expiry);
 
     return pairing;
   };
@@ -117,9 +117,7 @@ export class Pairing implements IPairing {
     this.isInitialized();
     const expiry = calcExpiry(THIRTY_DAYS);
     await this.pairings.update(topic, { active: true, expiry });
-
-    // FIXME: We need to move expirer to core for this to work.
-    // this.core.expirer.set(topic, expiry);
+    this.core.expirer.set(topic, expiry);
   };
 
   public ping: IPairing["ping"] = async (params) => {
@@ -194,14 +192,13 @@ export class Pairing implements IPairing {
     await this.core.history.resolve(payload);
   };
 
-  private deletePairing: IPairingPrivate["deletePairing"] = async (topic, _expirerHasDeleted) => {
+  private deletePairing: IPairingPrivate["deletePairing"] = async (topic, expirerHasDeleted) => {
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.core.relayer.unsubscribe(topic);
     await Promise.all([
       this.pairings.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.core.crypto.deleteSymKey(topic),
-      // FIXME: We need to move expirer to core for this to work.
-      // expirerHasDeleted ? Promise.resolve() : this.core.expirer.del(topic),
+      expirerHasDeleted ? Promise.resolve() : this.core.expirer.del(topic),
     ]);
   };
 
@@ -304,6 +301,20 @@ export class Pairing implements IPairing {
       this.logger.error(err);
     }
   };
+
+  // ---------- Expirer Events ---------------------------------------- //
+
+  private registerExpirerEvents() {
+    this.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
+      const { topic } = parseExpirerTarget(event.target);
+      if (topic) {
+        if (this.pairings.keys.includes(topic)) {
+          await this.deletePairing(topic, true);
+          this.events.emit("pairing_expire", { topic });
+        }
+      }
+    });
+  }
 
   // ---------- Validation Helpers ----------------------------------- //
 

@@ -10,7 +10,7 @@ import {
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import { Crypto, Relayer, Pairing, JsonRpcHistory } from "./controllers";
+import { Crypto, Relayer, Pairing, JsonRpcHistory, Expirer } from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
@@ -33,6 +33,7 @@ export class Core extends ICore {
   public crypto: ICore["crypto"];
   public storage: ICore["storage"];
   public history: ICore["history"];
+  public expirer: ICore["expirer"];
   public pairing: ICore["pairing"];
 
   private initialized = false;
@@ -56,6 +57,7 @@ export class Core extends ICore {
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
     this.history = new JsonRpcHistory(this, this.logger);
+    this.expirer = new Expirer(this, this.logger);
     this.storage = opts?.storage
       ? opts.storage
       : new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...opts?.storageOptions });
@@ -104,6 +106,7 @@ export class Core extends ICore {
     try {
       await this.crypto.init();
       await this.history.init();
+      await this.expirer.init();
       await this.relayer.init();
       await this.heartbeat.init();
       await this.pairing.init();

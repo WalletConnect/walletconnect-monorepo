@@ -4,7 +4,6 @@ import { IEngine } from "./engine";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { CoreTypes, ICore } from "../core/core";
-import { IExpirer } from "./expirer";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -101,7 +100,6 @@ export abstract class ISignClient {
   public abstract engine: IEngine;
   public abstract session: ISession;
   public abstract proposal: IProposal;
-  public abstract expirer: IExpirer;
 
   constructor(public opts?: SignClientTypes.Options) {}
 

@@ -1,5 +1,5 @@
 import EventEmmiter from "events";
-import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
+import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -48,7 +48,7 @@ import {
   isValidController,
 } from "@walletconnect/utils";
 
-import { EXPIRER_EVENTS, SESSION_EXPIRY, ENGINE_CONTEXT, ENGINE_RPC_OPTS } from "../constants";
+import { SESSION_EXPIRY, ENGINE_CONTEXT, ENGINE_RPC_OPTS } from "../constants";
 
 export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
@@ -316,29 +316,27 @@ export class Engine extends IEngine {
       this.client.session.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteKeyPair(self.publicKey),
       this.client.core.crypto.deleteSymKey(topic),
-      expirerHasDeleted ? Promise.resolve() : this.client.expirer.del(topic),
+      expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(topic),
     ]);
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
     await Promise.all([
       this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
-      expirerHasDeleted ? Promise.resolve() : this.client.expirer.del(id),
+      expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
   };
 
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
-    if (this.client.core.pairing.pairings.keys.includes(topic)) {
-      await this.client.core.pairing.pairings.update(topic, { expiry });
-    } else if (this.client.session.keys.includes(topic)) {
+    if (this.client.session.keys.includes(topic)) {
       await this.client.session.update(topic, { expiry });
     }
-    this.client.expirer.set(topic, expiry);
+    this.client.core.expirer.set(topic, expiry);
   };
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
-    this.client.expirer.set(id, proposal.expiry);
+    this.client.core.expirer.set(id, proposal.expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -711,17 +709,13 @@ export class Engine extends IEngine {
   // ---------- Expirer Events ---------------------------------------- //
 
   private registerExpirerEvents() {
-    this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
+    this.client.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
       const { topic, id } = parseExpirerTarget(event.target);
       if (topic) {
         if (this.client.session.keys.includes(topic)) {
           await this.deleteSession(topic, true);
           this.client.events.emit("session_expire", { topic });
-          // TODO: below logic needs to move into pairingClient once we have core/expirer.
-        } /*else if (this.client.pairing.keys.includes(topic)) {
-          await this.deletePairing(topic, true);
-          this.client.events.emit("pairing_expire", { topic });
-        }*/
+        }
       } else if (id) {
         await this.deleteProposal(id, true);
       }
