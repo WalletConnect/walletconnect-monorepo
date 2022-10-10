@@ -12,7 +12,7 @@ export interface UniversalProviderOpts {
   relayUrl?: string;
 }
 
-export type Metadata = SignClientTypes.Metadata
+export type Metadata = SignClientTypes.Metadata;
 
 export interface RpcProvidersMap {
   [provider: string]: JsonRpcProvider;

@@ -24,7 +24,8 @@
     "packages/sign-client",
     "packages/react-native-compat",
     "providers/signer-connection",
-    "providers/ethereum-provider"
+    "providers/ethereum-provider",
+    "providers/universal-provider"
   ],
   "scripts": {
     "clean": "npm run clean --workspaces --if-present",
