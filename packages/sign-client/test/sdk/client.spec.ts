@@ -267,7 +267,7 @@ describe("Sign Client Integration", () => {
   });
 
   describe("extend", () => {
-    it.only("updates session expiry state", async () => {
+    it("updates session expiry state", async () => {
       const clients = await initTwoClients({}, {}, { logger: "debug" });
       vi.useFakeTimers();
       const {
