@@ -62,10 +62,11 @@ export class Pairing implements IPairing {
 
   public init: IPairing["init"] = async () => {
     if (!this.initialized) {
-      this.logger.trace(`Initialized`);
+      await this.cleanup();
       await this.pairings.init();
       this.registerRelayerEvents();
       this.initialized = true;
+      this.logger.trace(`Initialized`);
     }
   };
 
@@ -210,6 +211,11 @@ export class Pairing implements IPairing {
       throw new Error(message);
     }
   }
+
+  private cleanup = async () => {
+    const expiredPairings = this.pairings.getAll().filter((pairing) => isExpired(pairing.expiry));
+    await Promise.all(expiredPairings.map((pairing) => this.deletePairing(pairing.topic)));
+  };
 
   // ---------- Relay Events Router ----------------------------------- //
 
