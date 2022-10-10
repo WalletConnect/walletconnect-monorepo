@@ -48,6 +48,7 @@ export const TEST_PROVIDER_OPTS = {
   logger: "error",
   relayUrl: TEST_RELAY_URL,
   metadata: TEST_APP_METADATA,
+  projectId: process.env.TEST_PROJECT_ID,
 };
 
 export const TEST_WALLET_CLIENT_OPTS = {
@@ -56,6 +57,7 @@ export const TEST_WALLET_CLIENT_OPTS = {
   privateKey: ACCOUNTS.a.privateKey,
   relayUrl: TEST_RELAY_URL,
   metadata: TEST_WALLET_METADATA,
+  projectId: process.env.TEST_PROJECT_ID,
 };
 
 export const TEST_NAMESPACES_CONFIG = {
