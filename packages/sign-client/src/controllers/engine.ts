@@ -246,6 +246,9 @@ export class Engine extends IEngine {
       if (error) reject(error);
       else resolve();
     });
+    this.client.logger.debug(
+      `session_extend listener initialized: ${engineEvent("session_extend", id)}`,
+    );
     await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
 
     return { acknowledged };
@@ -680,6 +683,9 @@ export class Engine extends IEngine {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_extend", id), {});
+      this.client.logger.debug(
+        `session_extend event emitted: ${engineEvent("session_extend", id)}`,
+      );
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_extend", id), { error: payload.error });
     }
