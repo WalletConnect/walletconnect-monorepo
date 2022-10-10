@@ -373,21 +373,15 @@ export class Engine extends IEngine {
 
   private cleanup: EnginePrivate["cleanup"] = async () => {
     const sessionTopics: string[] = [];
-    // const pairingTopics: string[] = [];
     const proposalIds: number[] = [];
     this.client.session.getAll().forEach((session) => {
       if (isExpired(session.expiry)) sessionTopics.push(session.topic);
     });
-    // TODO: translate this into pairingClient.cleanup
-    // this.client.pairing.getAll().forEach((pairing) => {
-    //   if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
-    // });
     this.client.proposal.getAll().forEach((proposal) => {
       if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
     });
     await Promise.all([
       ...sessionTopics.map((topic) => this.deleteSession(topic)),
-      // ...pairingTopics.map((topic) => this.deletePairing(topic)),
       ...proposalIds.map((id) => this.deleteProposal(id)),
     ]);
   };
