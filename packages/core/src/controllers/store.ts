@@ -108,6 +108,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   };
 
   public getAll: IStore<Key, Data>["getAll"] = (filter) => {
+    this.isInitialized();
     if (!filter) return this.values;
 
     return this.values.filter((value) =>
