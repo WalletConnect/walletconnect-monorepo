@@ -1,7 +1,7 @@
 import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 
-import { ICore } from "../core/core";
+import { ICore } from "./core";
 
 export declare namespace ExpirerTypes {
   interface Expiration {
