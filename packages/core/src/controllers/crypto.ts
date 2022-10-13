@@ -14,6 +14,8 @@ import {
   validateEncoding,
   validateDecoding,
   isTypeOneEnvelope,
+  deserialize,
+  decodeTypeByte,
 } from "@walletconnect/utils";
 import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
@@ -128,6 +130,10 @@ export class Crypto implements ICrypto {
     return payload;
   };
 
+  public getPayloadType(encoded: string): number {
+    const deserialized = deserialize(encoded);
+    return decodeTypeByte(deserialized.type);
+  }
   // ---------- Private ----------------------------------------------- //
 
   private async setPrivateKey(publicKey: string, privateKey: string): Promise<string> {

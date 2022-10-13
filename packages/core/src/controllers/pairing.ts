@@ -23,6 +23,7 @@ import {
   isValidString,
   isExpired,
   parseExpirerTarget,
+  TYPE_1,
 } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
@@ -56,6 +57,7 @@ export class Pairing implements IPairing {
 
   private initialized = false;
   private storagePrefix = CORE_STORAGE_PREFIX;
+  private messageTypesToIgnore = [TYPE_1];
 
   constructor(public core: ICore, public logger: Logger) {
     this.core = core;
@@ -219,6 +221,12 @@ export class Pairing implements IPairing {
   private registerRelayerEvents() {
     this.core.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
       const { topic, message } = event;
+
+      // messages of certain types should be ignored as they are handled by their respective SDKs
+      if (this.messageTypesToIgnore.includes(this.core.crypto.getPayloadType(message))) {
+        return;
+      }
+
       const payload = await this.core.crypto.decode(topic, message);
       if (isJsonRpcRequest(payload)) {
         this.core.history.set(topic, payload);
