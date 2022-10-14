@@ -223,7 +223,7 @@ export class Pairing implements IPairing {
       const { topic, message } = event;
 
       // messages of certain types should be ignored as they are handled by their respective SDKs
-      if (this.messageTypesToIgnore.includes(this.core.crypto.getPayloadType(message))) {
+      if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) {
         return;
       }
 
