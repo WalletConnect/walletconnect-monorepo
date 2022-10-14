@@ -57,10 +57,6 @@ export class SignClient extends ISignClient {
     return this.core.pairing.pairings;
   }
 
-  get pairingEvents() {
-    return this.core.pairing.events;
-  }
-
   // ---------- Events ----------------------------------------------- //
 
   public on: ISignClientEvents["on"] = (name, listener) => {

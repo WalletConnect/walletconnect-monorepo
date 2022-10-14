@@ -125,13 +125,13 @@ describe("Sign Client Integration", () => {
             new Promise((resolve) => {
               // ping
               // TODO: Can we find a non-breaking way to do this with the pairing API underneath?
-              beforeClients.B.pairingEvents.on("pairing_ping", (event: any) => {
+              beforeClients.B.core.pairing.events.on("pairing_ping", (event: any) => {
                 resolve(event);
               });
             }),
             new Promise((resolve) => {
               // TODO: Can we find a non-breaking way to do this with the pairing API underneath?
-              beforeClients.A.pairingEvents.on("pairing_ping", (event: any) => {
+              beforeClients.A.core.pairing.events.on("pairing_ping", (event: any) => {
                 resolve(event);
               });
             }),
