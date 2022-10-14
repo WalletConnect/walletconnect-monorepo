@@ -57,7 +57,7 @@ export class Pairing implements IPairing {
 
   private initialized = false;
   private storagePrefix = CORE_STORAGE_PREFIX;
-  private messageTypesToIgnore = [TYPE_1];
+  private ignoredPayloadTypes = [TYPE_1];
 
   constructor(public core: ICore, public logger: Logger) {
     this.core = core;
