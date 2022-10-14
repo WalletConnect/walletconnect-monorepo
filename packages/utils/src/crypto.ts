@@ -143,7 +143,6 @@ export function validateEncoding(opts?: CryptoTypes.EncodeOptions): CryptoTypes.
       throw new Error("missing receiver public key");
     }
   }
-
   return {
     type,
     senderPublicKey: opts?.senderPublicKey,
