@@ -134,8 +134,18 @@ export function validateDecoding(
 }
 
 export function validateEncoding(opts?: CryptoTypes.EncodeOptions): CryptoTypes.EncodingValidation {
+  const type = opts?.type || TYPE_0;
+  if (type === TYPE_1) {
+    if (typeof opts?.senderPublicKey === "undefined") {
+      throw new Error("missing sender public key");
+    }
+    if (typeof opts?.receiverPublicKey === "undefined") {
+      throw new Error("missing receiver public key");
+    }
+  }
+
   return {
-    type: opts?.type || TYPE_0,
+    type,
     senderPublicKey: opts?.senderPublicKey,
     receiverPublicKey: opts?.receiverPublicKey,
   };
