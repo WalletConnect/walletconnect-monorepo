@@ -16,9 +16,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   public events = new EventEmitter();
   public name = HISTORY_CONTEXT;
   public version = HISTORY_STORAGE_VERSION;
+
   private cached: JsonRpcRecord[] = [];
   private initialized = false;
-
   private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public core: ICore, public logger: Logger) {
@@ -105,11 +105,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.debug(`Getting record`);
     this.logger.trace({ type: "method", method: "get", topic, id });
     const record = await this.getRecord(id);
-    if (record.topic !== topic) {
-      const { message } = getInternalError("MISMATCHED_TOPIC", `${this.name}, ${id}`);
-      this.logger.error(message);
-      throw new Error(message);
-    }
     return record;
   };
 
