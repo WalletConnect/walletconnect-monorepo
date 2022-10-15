@@ -46,14 +46,17 @@ import {
   isUndefined,
   isConformingNamespaces,
   isValidController,
+  TYPE_1,
 } from "@walletconnect/utils";
 
 import { SESSION_EXPIRY, ENGINE_CONTEXT, ENGINE_RPC_OPTS } from "../constants";
 
 export class Engine extends IEngine {
+  public name = ENGINE_CONTEXT;
+
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
-  public name = ENGINE_CONTEXT;
+  private ignoredPayloadTypes = [TYPE_1];
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -398,6 +401,12 @@ export class Engine extends IEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
+
+        // messages of certain types should be ignored as they are handled by their respective SDKs
+        if (this.ignoredPayloadTypes.includes(this.client.core.crypto.getPayloadType(message))) {
+          return;
+        }
+
         const payload = await this.client.core.crypto.decode(topic, message);
         if (isJsonRpcRequest(payload)) {
           this.client.core.history.set(topic, payload);
