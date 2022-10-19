@@ -270,7 +270,7 @@ export class Pairing implements IPairing {
       case "wc_pairingPing":
         return this.onPairingPingResponse(topic, payload);
       default:
-        return this.logger.info(`Unsupported response method ${resMethod}`);
+        return this.onUnknownRpcMethodResponse(topic, payload, resMethod);
     }
   };
 
@@ -328,7 +328,26 @@ export class Pairing implements IPairing {
     try {
       // Ignore if the implementing client has registered this method as known.
       if (this.registeredMethods.includes(method)) return;
-      await this.sendError(id, topic, getSdkError("WC_METHOD_UNSUPPORTED", method));
+      const error = getSdkError("WC_METHOD_UNSUPPORTED", method);
+      await this.sendError(id, topic, error);
+      this.logger.error(error);
+    } catch (err: any) {
+      await this.sendError(id, topic, err);
+      this.logger.error(err);
+    }
+  };
+
+  private onUnknownRpcMethodResponse: IPairingPrivate["onUnknownRpcMethodResponse"] = async (
+    topic,
+    payload,
+    method,
+  ) => {
+    const { id } = payload;
+
+    try {
+      // Ignore if the implementing client has registered this method as known.
+      if (this.registeredMethods.includes(method)) return;
+      this.logger.error(getSdkError("WC_METHOD_UNSUPPORTED", method));
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
