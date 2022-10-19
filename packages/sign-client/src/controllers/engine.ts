@@ -67,6 +67,7 @@ export class Engine extends IEngine {
       await this.cleanup();
       this.registerRelayerEvents();
       this.registerExpirerEvents();
+      this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
     }
   };

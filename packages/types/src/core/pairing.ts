@@ -74,9 +74,8 @@ export abstract class IPairing {
   // for either to activate a previously created pairing
   public abstract activate(params: { topic: string }): Promise<void>;
 
-  // TODO: add missing return type here once defined in spec.
   // for both to subscribe on methods requests
-  // public abstract register(params: { methods: string });
+  public abstract register(params: { methods: string[] }): void;
 
   // for either to update the expiry of an existing pairing.
   public abstract updateExpiry(params: { topic: string; expiry: number }): Promise<void>;
@@ -130,6 +129,8 @@ export interface IPairingPrivate {
     topic: string,
     payload: JsonRpcRequest<PairingJsonRpcTypes.RequestParams["wc_pairingDelete"]>,
   ): Promise<void>;
+
+  onUnknownRpcMethodRequest(topic: string, payload: JsonRpcRequest): Promise<void>;
 
   deletePairing(topic: string, expirerHasDeleted?: boolean): Promise<void>;
 }

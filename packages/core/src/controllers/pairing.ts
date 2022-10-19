@@ -58,6 +58,7 @@ export class Pairing implements IPairing {
   private initialized = false;
   private storagePrefix = CORE_STORAGE_PREFIX;
   private ignoredPayloadTypes = [TYPE_1];
+  private registeredMethods: string[] = [];
 
   constructor(public core: ICore, public logger: Logger) {
     this.core = core;
@@ -79,6 +80,11 @@ export class Pairing implements IPairing {
   get context() {
     return getLoggerContext(this.logger);
   }
+
+  public register: IPairing["register"] = ({ methods }) => {
+    this.isInitialized();
+    this.registeredMethods = methods;
+  };
 
   public create: IPairing["create"] = async () => {
     this.isInitialized();
@@ -189,7 +195,10 @@ export class Pairing implements IPairing {
     const payload = formatJsonRpcError(id, error);
     const message = await this.core.crypto.encode(topic, payload);
     const record = await this.core.history.get(topic, id);
-    const opts = PAIRING_RPC_OPTS[record.request.method].res;
+    const opts = PAIRING_RPC_OPTS[record.request.method]
+      ? PAIRING_RPC_OPTS[record.request.method].res
+      : PAIRING_RPC_OPTS.unregistered_method.res;
+
     await this.core.relayer.publish(topic, message, opts);
     await this.core.history.resolve(payload);
   };
@@ -248,7 +257,7 @@ export class Pairing implements IPairing {
       case "wc_pairingDelete":
         return this.onPairingDeleteRequest(topic, payload);
       default:
-        return this.logger.info(`Unsupported request method ${reqMethod}`);
+        return this.onUnknownRpcMethodRequest(topic, payload);
     }
   };
 
@@ -304,6 +313,22 @@ export class Pairing implements IPairing {
       await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
       this.events.emit("pairing_delete", { id, topic });
+    } catch (err: any) {
+      await this.sendError(id, topic, err);
+      this.logger.error(err);
+    }
+  };
+
+  private onUnknownRpcMethodRequest: IPairingPrivate["onUnknownRpcMethodRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id, method } = payload;
+
+    try {
+      // Ignore if the implementing client has registered this method as known.
+      if (this.registeredMethods.includes(method)) return;
+      await this.sendError(id, topic, getSdkError("WC_METHOD_UNSUPPORTED", method));
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
