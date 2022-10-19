@@ -4,30 +4,6 @@ import { EngineTypes } from "@walletconnect/types";
 export const ENGINE_CONTEXT = "engine";
 
 export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
-  wc_pairingDelete: {
-    req: {
-      ttl: ONE_DAY,
-      prompt: false,
-      tag: 1000,
-    },
-    res: {
-      ttl: ONE_DAY,
-      prompt: false,
-      tag: 1001,
-    },
-  },
-  wc_pairingPing: {
-    req: {
-      ttl: THIRTY_SECONDS,
-      prompt: false,
-      tag: 1002,
-    },
-    res: {
-      ttl: THIRTY_SECONDS,
-      prompt: false,
-      tag: 1003,
-    },
-  },
   wc_sessionPropose: {
     req: {
       ttl: FIVE_MINUTES,

@@ -435,14 +435,8 @@ export class Engine extends IEngine {
         return this.onSessionExtendRequest(topic, payload);
       case "wc_sessionPing":
         return this.onSessionPingRequest(topic, payload);
-      case "wc_pairingPing":
-        // ignore `wc_pairingPing`
-        return;
       case "wc_sessionDelete":
         return this.onSessionDeleteRequest(topic, payload);
-      case "wc_pairingDelete":
-        // ignore `wc_pairingDelete`
-        return;
       case "wc_sessionRequest":
         return this.onSessionRequest(topic, payload);
       case "wc_sessionEvent":
@@ -468,9 +462,6 @@ export class Engine extends IEngine {
         return this.onSessionExtendResponse(topic, payload);
       case "wc_sessionPing":
         return this.onSessionPingResponse(topic, payload);
-      case "wc_pairingPing":
-        // ignore `wc_pairingPing`
-        return;
       case "wc_sessionRequest":
         return this.onSessionRequestResponse(topic, payload);
       default:

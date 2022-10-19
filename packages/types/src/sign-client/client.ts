@@ -11,11 +11,8 @@ export declare namespace SignClientTypes {
     | "session_update"
     | "session_extend"
     | "session_ping"
-    | "pairing_ping"
     | "session_delete"
-    | "pairing_delete"
     | "session_expire"
-    | "pairing_expire"
     | "session_request"
     | "session_event"
     | "proposal_expire";
