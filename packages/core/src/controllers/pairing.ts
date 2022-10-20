@@ -147,13 +147,11 @@ export class Pairing implements IPairing {
     }
   };
 
-  // TODO: needs validation checks
   public updateExpiry: IPairing["updateExpiry"] = async ({ topic, expiry }) => {
     this.isInitialized();
     await this.pairings.update(topic, { expiry });
   };
 
-  // TODO: needs validation checks
   public updateMetadata: IPairing["updateMetadata"] = async ({ topic, metadata }) => {
     this.isInitialized();
     await this.pairings.update(topic, { peerMetadata: metadata });
