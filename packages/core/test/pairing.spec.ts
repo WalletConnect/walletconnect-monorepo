@@ -60,6 +60,16 @@ describe("Pairing", () => {
       expect(coreA.pairing.pairings.keys.length).toBe(1);
       expect(coreB.pairing.pairings.keys.length).toBe(1);
       expect(coreA.pairing.pairings.keys).to.deep.equal(coreB.pairing.pairings.keys);
+      expect(coreA.pairing.getPairings()[0].active).toBe(false);
+      expect(coreB.pairing.getPairings()[0].active).toBe(false);
+    });
+
+    it("can auto-activate the pairing on pair step", async () => {
+      const { uri } = await coreA.pairing.create();
+      await coreB.pairing.pair({ uri, activatePairing: true });
+
+      expect(coreA.pairing.getPairings()[0].active).toBe(false);
+      expect(coreB.pairing.getPairings()[0].active).toBe(true);
     });
   });
 

@@ -66,7 +66,10 @@ export abstract class IPairing {
 
   public abstract init(): Promise<void>;
 
-  public abstract pair(params: { uri: string }): Promise<PairingTypes.Struct>;
+  public abstract pair(params: {
+    uri: string;
+    activatePairing?: boolean;
+  }): Promise<PairingTypes.Struct>;
 
   // for proposer to create inactive pairing
   public abstract create(): Promise<{ topic: string; uri: string }>;

@@ -118,6 +118,10 @@ export class Pairing implements IPairing {
     await this.core.relayer.subscribe(topic, { relay });
     this.core.expirer.set(topic, expiry);
 
+    if (params.activatePairing) {
+      await this.activate({ topic });
+    }
+
     return pairing;
   };
 
