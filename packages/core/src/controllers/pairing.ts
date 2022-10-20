@@ -272,7 +272,7 @@ export class Pairing implements IPairing {
       case "wc_pairingPing":
         return this.onPairingPingResponse(topic, payload);
       default:
-        return this.onUnknownRpcMethodResponse(topic, payload, resMethod);
+        return this.onUnknownRpcMethodResponse(resMethod);
     }
   };
 
@@ -339,21 +339,10 @@ export class Pairing implements IPairing {
     }
   };
 
-  private onUnknownRpcMethodResponse: IPairingPrivate["onUnknownRpcMethodResponse"] = async (
-    topic,
-    payload,
-    method,
-  ) => {
-    const { id } = payload;
-
-    try {
-      // Ignore if the implementing client has registered this method as known.
-      if (this.registeredMethods.includes(method)) return;
-      this.logger.error(getSdkError("WC_METHOD_UNSUPPORTED", method));
-    } catch (err: any) {
-      await this.sendError(id, topic, err);
-      this.logger.error(err);
-    }
+  private onUnknownRpcMethodResponse: IPairingPrivate["onUnknownRpcMethodResponse"] = (method) => {
+    // Ignore if the implementing client has registered this method as known.
+    if (this.registeredMethods.includes(method)) return;
+    this.logger.error(getSdkError("WC_METHOD_UNSUPPORTED", method));
   };
 
   // ---------- Expirer Events ---------------------------------------- //

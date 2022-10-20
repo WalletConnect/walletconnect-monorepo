@@ -135,11 +135,7 @@ export interface IPairingPrivate {
 
   onUnknownRpcMethodRequest(topic: string, payload: JsonRpcRequest): Promise<void>;
 
-  onUnknownRpcMethodResponse(
-    topic: string,
-    payload: JsonRpcResponse,
-    method: string,
-  ): Promise<void>;
+  onUnknownRpcMethodResponse(method: string): void;
 
   deletePairing(topic: string, expirerHasDeleted?: boolean): Promise<void>;
 }
