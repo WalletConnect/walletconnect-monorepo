@@ -5,7 +5,7 @@ import { getInternalError } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
-  SIGN_CLIENT_STORAGE_PREFIX,
+  CORE_STORAGE_PREFIX,
   HISTORY_CONTEXT,
   HISTORY_EVENTS,
   HISTORY_STORAGE_VERSION,
@@ -16,10 +16,10 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   public events = new EventEmitter();
   public name = HISTORY_CONTEXT;
   public version = HISTORY_STORAGE_VERSION;
+
   private cached: JsonRpcRecord[] = [];
   private initialized = false;
-
-  private storagePrefix = SIGN_CLIENT_STORAGE_PREFIX;
+  private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
@@ -105,11 +105,6 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.debug(`Getting record`);
     this.logger.trace({ type: "method", method: "get", topic, id });
     const record = await this.getRecord(id);
-    if (record.topic !== topic) {
-      const { message } = getInternalError("MISMATCHED_TOPIC", `${this.name}, ${id}`);
-      this.logger.error(message);
-      throw new Error(message);
-    }
     return record;
   };
 

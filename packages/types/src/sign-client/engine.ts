@@ -9,7 +9,7 @@ import { ISignClient } from "./client";
 import { RelayerTypes } from "../core/relayer";
 import { SessionTypes } from "./session";
 import { ProposalTypes } from "./proposal";
-import { PairingTypes } from "./pairing";
+import { PairingTypes } from "../core/pairing";
 import { JsonRpcTypes } from "./jsonrpc";
 import { EventEmitter } from "events";
 
@@ -162,11 +162,7 @@ export interface EnginePrivate {
 
   onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
 
-  activatePairing(topic: string): Promise<void>;
-
   deleteSession(topic: string, expirerHasDeleted?: boolean): Promise<void>;
-
-  deletePairing(topic: string, expirerHasDeleted?: boolean): Promise<void>;
 
   deleteProposal(id: number, expirerHasDeleted?: boolean): Promise<void>;
 
@@ -226,24 +222,9 @@ export interface EnginePrivate {
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPing"]> | JsonRpcError,
   ): void;
 
-  onPairingPingRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingPing"]>,
-  ): Promise<void>;
-
-  onPairingPingResponse(
-    topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
-  ): void;
-
   onSessionDeleteRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionDelete"]>,
-  ): Promise<void>;
-
-  onPairingDeleteRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
   ): Promise<void>;
 
   onSessionRequest(
@@ -263,8 +244,6 @@ export interface EnginePrivate {
 
   // -- Validators ---------------------------------------------------- //
   isValidConnect(params: EngineTypes.ConnectParams): Promise<void>;
-
-  isValidPair(params: EngineTypes.PairParams): void;
 
   isValidSessionSettleRequest(params: JsonRpcTypes.RequestParams["wc_sessionSettle"]): void;
 

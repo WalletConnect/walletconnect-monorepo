@@ -9,7 +9,7 @@ import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import pino from "pino";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
-import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
+import { Engine, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
@@ -21,11 +21,8 @@ export class SignClient extends ISignClient {
   public logger: ISignClient["logger"];
   public events: ISignClient["events"] = new EventEmitter();
   public engine: ISignClient["engine"];
-  public pairing: ISignClient["pairing"];
   public session: ISignClient["session"];
   public proposal: ISignClient["proposal"];
-  public history: ISignClient["history"];
-  public expirer: ISignClient["expirer"];
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
@@ -47,16 +44,17 @@ export class SignClient extends ISignClient {
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
-    this.pairing = new Pairing(this.core, this.logger);
     this.session = new Session(this.core, this.logger);
     this.proposal = new Proposal(this.core, this.logger);
-    this.history = new JsonRpcHistory(this.core, this.logger);
-    this.expirer = new Expirer(this.core, this.logger);
     this.engine = new Engine(this);
   }
 
   get context() {
     return getLoggerContext(this.logger);
+  }
+
+  get pairing() {
+    return this.core.pairing.pairings;
   }
 
   // ---------- Events ----------------------------------------------- //
@@ -193,11 +191,8 @@ export class SignClient extends ISignClient {
     this.logger.trace(`Initialized`);
     try {
       await this.core.start();
-      await this.pairing.init();
       await this.session.init();
       await this.proposal.init();
-      await this.history.init();
-      await this.expirer.init();
       await this.engine.init();
       this.logger.info(`SignClient Initilization Success`);
     } catch (error: any) {

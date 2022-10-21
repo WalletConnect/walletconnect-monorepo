@@ -9,8 +9,6 @@ export declare namespace JsonRpcTypes {
   export type DefaultResponse = true | ErrorResponse;
 
   export type WcMethod =
-    | "wc_pairingDelete"
-    | "wc_pairingPing"
     | "wc_sessionPropose"
     | "wc_sessionSettle"
     | "wc_sessionUpdate"

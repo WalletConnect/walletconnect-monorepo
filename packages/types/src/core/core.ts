@@ -6,6 +6,9 @@ import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvalu
 import { ICrypto } from "./crypto";
 import { IRelayer } from "./relayer";
 import { IKeyChain } from "./keychain";
+import { IJsonRpcHistory } from "./history";
+import { IExpirer } from "./expirer";
+import { IPairing } from "./pairing";
 
 export declare namespace CoreTypes {
   interface Options {
@@ -16,6 +19,13 @@ export declare namespace CoreTypes {
     keychain?: IKeyChain;
     storage?: IKeyValueStorage;
     storageOptions?: KeyValueStorageOptions;
+  }
+
+  interface Metadata {
+    name: string;
+    description: string;
+    url: string;
+    icons: string[];
   }
 }
 
@@ -33,6 +43,9 @@ export abstract class ICore extends IEvents {
   public abstract crypto: ICrypto;
   public abstract relayer: IRelayer;
   public abstract storage: IKeyValueStorage;
+  public abstract history: IJsonRpcHistory;
+  public abstract expirer: IExpirer;
+  public abstract pairing: IPairing;
 
   constructor(public opts?: CoreTypes.Options) {
     super();

@@ -10,7 +10,7 @@ import {
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import { Crypto, Relayer } from "./controllers";
+import { Crypto, Relayer, Pairing, JsonRpcHistory, Expirer } from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
@@ -32,6 +32,9 @@ export class Core extends ICore {
   public relayer: ICore["relayer"];
   public crypto: ICore["crypto"];
   public storage: ICore["storage"];
+  public history: ICore["history"];
+  public expirer: ICore["expirer"];
+  public pairing: ICore["pairing"];
 
   private initialized = false;
 
@@ -53,6 +56,8 @@ export class Core extends ICore {
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
+    this.history = new JsonRpcHistory(this, this.logger);
+    this.expirer = new Expirer(this, this.logger);
     this.storage = opts?.storage
       ? opts.storage
       : new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...opts?.storageOptions });
@@ -62,6 +67,7 @@ export class Core extends ICore {
       relayUrl: opts?.relayUrl,
       projectId: this.projectId,
     });
+    this.pairing = new Pairing(this, this.logger);
   }
 
   get context() {
@@ -99,8 +105,11 @@ export class Core extends ICore {
     this.logger.trace(`Initialized`);
     try {
       await this.crypto.init();
+      await this.history.init();
+      await this.expirer.init();
       await this.relayer.init();
       await this.heartbeat.init();
+      await this.pairing.init();
       this.initialized = true;
       this.logger.info(`Core Initilization Success`);
     } catch (error) {

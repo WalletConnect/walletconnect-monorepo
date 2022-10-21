@@ -124,12 +124,12 @@ describe("Sign Client Integration", () => {
           await Promise.all([
             new Promise((resolve) => {
               // ping
-              beforeClients.B.on("pairing_ping", (event: any) => {
+              beforeClients.B.core.pairing.events.on("pairing_ping", (event: any) => {
                 resolve(event);
               });
             }),
             new Promise((resolve) => {
-              beforeClients.A.on("pairing_ping", (event: any) => {
+              beforeClients.A.core.pairing.events.on("pairing_ping", (event: any) => {
                 resolve(event);
               });
             }),

@@ -6,7 +6,7 @@ import { getInternalError, formatIdTarget, formatTopicTarget } from "@walletconn
 import { EventEmitter } from "events";
 import { Logger } from "pino";
 import {
-  SIGN_CLIENT_STORAGE_PREFIX,
+  CORE_STORAGE_PREFIX,
   EXPIRER_CONTEXT,
   EXPIRER_EVENTS,
   EXPIRER_STORAGE_VERSION,
@@ -21,7 +21,7 @@ export class Expirer extends IExpirer {
   private cached: ExpirerTypes.Expiration[] = [];
   private initialized = false;
 
-  private storagePrefix = SIGN_CLIENT_STORAGE_PREFIX;
+  private storagePrefix = CORE_STORAGE_PREFIX;
 
   constructor(public core: ICore, public logger: Logger) {
     super(core, logger);
