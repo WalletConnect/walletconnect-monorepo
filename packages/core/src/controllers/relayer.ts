@@ -53,12 +53,12 @@ export class Relayer extends IRelayer {
   public subscriber: ISubscriber;
   public publisher: IPublisher;
   public name = RELAYER_CONTEXT;
+  public transportExplicitlyClosed = false;
 
   private initialized = false;
 
   private relayUrl: string;
   private projectId: string | undefined;
-  public transportExplicitlyClosed = false;
 
   constructor(opts: RelayerOptions) {
     super(opts);
