@@ -58,6 +58,7 @@ export class Relayer extends IRelayer {
 
   private relayUrl: string;
   private projectId: string | undefined;
+  public transportExplicitlyClosed = false;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -79,8 +80,7 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    const auth = await this.core.crypto.signJWT(this.relayUrl);
-    this.provider = this.createProvider(auth);
+    this.provider = await this.createProvider();
     await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
@@ -131,9 +131,20 @@ export class Relayer extends IRelayer {
     this.events.removeListener(event, listener);
   }
 
+  public async transportClose() {
+    this.transportExplicitlyClosed = true;
+    await this.provider.connection.close();
+  }
+
+  public async transportOpen(relayUrl: string = RELAYER_DEFAULT_RELAY_URL) {
+    this.relayUrl = relayUrl;
+    this.provider = await this.createProvider();
+    this.transportExplicitlyClosed = false;
+  }
   // ---------- Private ----------------------------------------------- //
 
-  private createProvider(auth: string) {
+  private async createProvider() {
+    const auth = await this.core.crypto.signJWT(this.relayUrl);
     return new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
@@ -192,9 +203,13 @@ export class Relayer extends IRelayer {
       this.onProviderPayload(payload),
     );
     this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
+      this.transportExplicitlyClosed = false;
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+      if (this.transportExplicitlyClosed) {
+        return;
+      }
       this.events.emit(RELAYER_EVENTS.disconnect);
       // Attempt reconnection after one second.
       setTimeout(() => {
