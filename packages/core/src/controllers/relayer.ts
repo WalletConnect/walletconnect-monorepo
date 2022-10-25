@@ -136,8 +136,8 @@ export class Relayer extends IRelayer {
     await this.provider.connection.close();
   }
 
-  public async transportOpen(relayUrl: string = RELAYER_DEFAULT_RELAY_URL) {
-    this.relayUrl = relayUrl;
+  public async transportOpen(relayUrl?: string) {
+    this.relayUrl = relayUrl || this.relayUrl;
     this.provider = await this.createProvider();
     this.transportExplicitlyClosed = false;
   }
