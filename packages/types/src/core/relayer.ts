@@ -75,6 +75,8 @@ export abstract class IRelayer extends IEvents {
 
   public abstract name: string;
 
+  public abstract transportExplicitlyClosed: boolean;
+
   public abstract readonly context: string;
 
   public abstract readonly connected: boolean;
@@ -99,4 +101,6 @@ export abstract class IRelayer extends IEvents {
   public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
 
   public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
+  public abstract transportClose(): Promise<void>;
+  public abstract transportOpen(relayUrl?: string): Promise<void>;
 }
