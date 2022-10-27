@@ -32,4 +32,4 @@ export const RELAYER_STORAGE_OPTIONS = {
 
 // FIXME: Always manually change this after each release (hardcoded from package.json)
 // ... this will be temporarily hardcoded until we refactor our build chain!
-export const RELAYER_SDK_VERSION = "2.0.0";
+export const RELAYER_SDK_VERSION = "2.1.0";
