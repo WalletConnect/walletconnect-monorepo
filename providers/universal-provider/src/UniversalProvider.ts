@@ -50,7 +50,7 @@ export class UniversalProvider implements IUniversalProvider {
   ): Promise<T> {
     const [namespace, chainId] = this.validateChain(chain);
 
-    return this.getProvider(namespace).request({
+    return await this.getProvider(namespace).request({
       request: {
         ...args,
       },
@@ -97,7 +97,7 @@ export class UniversalProvider implements IUniversalProvider {
     this.setNamespaces(opts.namespaces);
     this.createProviders();
 
-    return opts.skipPairing === true ? undefined : this.pair(opts.pairingTopic);
+    return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
   }
 
   public on(event: any, listener: any): void {
@@ -136,7 +136,7 @@ export class UniversalProvider implements IUniversalProvider {
     return this.session;
   }
 
-  public async setDefaultChain(chain: string, rpcUrl?: string | undefined) {
+  public setDefaultChain(chain: string, rpcUrl?: string | undefined) {
     const [namespace, chainId] = this.validateChain(chain);
     this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
   }

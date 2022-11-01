@@ -48,7 +48,7 @@ class Eip155Provider implements IProvider {
         break;
     }
     if (this.namespace.methods.includes(args.request.method)) {
-      return this.client.request(args as EngineTypes.RequestParams);
+      return await this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);
   }
