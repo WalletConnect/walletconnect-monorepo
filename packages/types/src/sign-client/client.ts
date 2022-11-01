@@ -28,11 +28,8 @@ export declare namespace SignClientTypes {
     session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
     session_extend: Omit<BaseEventArgs, "params">;
     session_ping: Omit<BaseEventArgs, "params">;
-    pairing_ping: Omit<BaseEventArgs, "params">;
     session_delete: Omit<BaseEventArgs, "params">;
-    pairing_delete: Omit<BaseEventArgs, "params">;
     session_expire: { topic: string };
-    pairing_expire: { topic: string };
     session_request: BaseEventArgs<{
       request: { method: string; params: any };
       chainId: string;
