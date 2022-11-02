@@ -77,7 +77,7 @@ describe("Canary", () => {
         );
       }
 
-      if (environment === 'prod') {
+      if (environment === "prod") {
         await publishToStatusPage(latencyMs);
       }
 
