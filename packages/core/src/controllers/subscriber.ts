@@ -335,6 +335,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
+    if (this.relayer.transportExplicitlyClosed) return;
     await this.reset();
     this.onEnable();
   }

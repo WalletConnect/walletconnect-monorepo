@@ -133,12 +133,13 @@ export class Relayer extends IRelayer {
 
   public async transportClose() {
     this.transportExplicitlyClosed = true;
-    await this.provider.connection.close();
+    await this.provider.disconnect();
   }
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
-    this.provider = await this.createProvider();
+    await this.provider.connect();
+    await this.subscriber.init();
     this.transportExplicitlyClosed = false;
   }
   // ---------- Private ----------------------------------------------- //
