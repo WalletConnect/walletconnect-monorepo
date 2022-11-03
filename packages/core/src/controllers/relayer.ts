@@ -206,18 +206,23 @@ export class Relayer extends IRelayer {
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-      if (this.transportExplicitlyClosed) {
-        return;
-      }
       this.events.emit(RELAYER_EVENTS.disconnect);
-      // Attempt reconnection after one second.
-      setTimeout(() => {
-        this.provider.connect();
-      }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
+
+      this.attemptToReconnect();
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
       this.events.emit(RELAYER_EVENTS.error, err),
     );
+  }
+
+  private attemptToReconnect() {
+    if (this.transportExplicitlyClosed) {
+      return;
+    }
+    // Attempt reconnection after one second.
+    setTimeout(() => {
+      this.provider.connect();
+    }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
   private isInitialized() {
