@@ -7,6 +7,7 @@ import {
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
   disconnectSocket,
+  throttle,
 } from "../shared";
 
 const generateClientDbName = (prefix: string) =>
@@ -286,5 +287,69 @@ describe("Sign Client Integration", () => {
       vi.useRealTimers();
       await deleteClients(clients);
     }, 50_000);
+  });
+  describe("transport", () => {
+    it("should disconnect & reestablish socket transport", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+
+      await clients.A.core.relayer.transportClose();
+      await clients.A.core.relayer.transportOpen();
+
+      await clients.B.core.relayer.transportClose();
+      await clients.B.core.relayer.transportOpen();
+
+      await Promise.all([
+        new Promise((resolve) => {
+          clients.B.on("session_ping", (event: any) => {
+            resolve(event);
+          });
+        }),
+        new Promise((resolve) => {
+          clients.A.on("session_ping", (event: any) => {
+            resolve(event);
+          });
+        }),
+        new Promise(async (resolve) => {
+          await clients.A.ping({ topic });
+          await clients.B.ping({ topic });
+          resolve(true);
+        }),
+      ]);
+      await deleteClients(clients);
+    });
+    it("should disconnect & reestablish socket transport with delay", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+
+      await clients.A.core.relayer.transportClose();
+      await throttle(2000);
+      await clients.A.core.relayer.transportOpen();
+      await clients.B.core.relayer.transportClose();
+      await throttle(2000);
+      await clients.B.core.relayer.transportOpen();
+      await Promise.all([
+        new Promise((resolve) => {
+          clients.B.on("session_ping", (event: any) => {
+            resolve(event);
+          });
+        }),
+        new Promise((resolve) => {
+          clients.A.on("session_ping", (event: any) => {
+            resolve(event);
+          });
+        }),
+        new Promise(async (resolve) => {
+          await clients.A.ping({ topic });
+          await clients.B.ping({ topic });
+          resolve(true);
+        }),
+      ]);
+      await deleteClients(clients);
+    });
   });
 });

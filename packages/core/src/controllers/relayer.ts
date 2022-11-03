@@ -133,13 +133,13 @@ export class Relayer extends IRelayer {
 
   public async transportClose() {
     this.transportExplicitlyClosed = true;
-    await this.provider.connection.close();
+    await this.provider.disconnect();
   }
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
-    this.provider = await this.createProvider();
     this.transportExplicitlyClosed = false;
+    await this.provider.connect();
   }
   // ---------- Private ----------------------------------------------- //
 
@@ -203,22 +203,26 @@ export class Relayer extends IRelayer {
       this.onProviderPayload(payload),
     );
     this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
-      this.transportExplicitlyClosed = false;
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-      if (this.transportExplicitlyClosed) {
-        return;
-      }
       this.events.emit(RELAYER_EVENTS.disconnect);
-      // Attempt reconnection after one second.
-      setTimeout(() => {
-        this.provider.connect();
-      }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
+
+      this.attemptToReconnect();
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
       this.events.emit(RELAYER_EVENTS.error, err),
     );
+  }
+
+  private attemptToReconnect() {
+    if (this.transportExplicitlyClosed) {
+      return;
+    }
+    // Attempt reconnection after one second.
+    setTimeout(() => {
+      this.provider.connect();
+    }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
   private isInitialized() {
