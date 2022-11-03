@@ -24,7 +24,7 @@ import {
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
-  RELAYER_EVENTS,
+  RELAYER_PROVIDER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -361,10 +361,10 @@ export class Subscriber extends ISubscriber {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
-    this.relayer.on(RELAYER_EVENTS.connect, async () => {
+    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
       await this.onConnect();
     });
-    this.relayer.on(RELAYER_EVENTS.disconnect, () => {
+    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
