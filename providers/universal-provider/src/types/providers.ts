@@ -9,7 +9,6 @@ import {
   RequestArguments,
   SessionNamespace,
   NamespaceConfig,
-  ConnectParams,
 } from "./misc";
 
 export interface IProvider {
@@ -36,6 +35,4 @@ export interface IUniversalProvider extends IEthereumProvider {
     chain?: string,
   ) => void;
   pair: (pairingTopic: string | undefined) => Promise<SessionTypes.Struct>;
-  connect: (opts: ConnectParams) => Promise<SessionTypes.Struct | undefined>;
-  disconnect: () => void;
 }
