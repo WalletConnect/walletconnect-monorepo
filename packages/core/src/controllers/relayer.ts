@@ -134,13 +134,13 @@ export class Relayer extends IRelayer {
   public async transportClose() {
     this.transportExplicitlyClosed = true;
     await this.provider.disconnect();
+    this.events.emit(RELAYER_EVENTS.disconnect);
   }
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
-    await this.provider.connect();
-    await this.subscriber.init();
     this.transportExplicitlyClosed = false;
+    await this.provider.connect();
   }
   // ---------- Private ----------------------------------------------- //
 
@@ -204,7 +204,6 @@ export class Relayer extends IRelayer {
       this.onProviderPayload(payload),
     );
     this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
-      this.transportExplicitlyClosed = false;
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {

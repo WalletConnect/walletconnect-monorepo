@@ -20,11 +20,11 @@ import {
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
-  RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
+  RELAYER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -51,8 +51,7 @@ export class Subscriber extends ISubscriber {
   public init: ISubscriber["init"] = async () => {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
-      await this.restore();
-      await this.reset();
+      await this.restart();
       this.registerEventListeners();
       this.onEnable();
     }
@@ -293,6 +292,11 @@ export class Subscriber extends ISubscriber {
     } as SubscriberEvents.Deleted);
   }
 
+  private restart = async () => {
+    await this.restore();
+    await this.reset();
+  };
+
   private async persist() {
     await this.setRelayerSubscriptions(this.values);
     this.events.emit(SUBSCRIBER_EVENTS.sync);
@@ -335,8 +339,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
-    if (this.relayer.transportExplicitlyClosed) return;
-    await this.reset();
+    await this.restart();
     this.onEnable();
   }
 
@@ -358,10 +361,10 @@ export class Subscriber extends ISubscriber {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+    this.relayer.on(RELAYER_EVENTS.connect, async () => {
       await this.onConnect();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+    this.relayer.on(RELAYER_EVENTS.disconnect, () => {
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
