@@ -5,6 +5,7 @@ import {
   deleteClients,
   uploadCanaryResultsToCloudWatch,
   throttle,
+  publishToStatusPage,
 } from "../shared";
 import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
@@ -74,6 +75,10 @@ describe("Canary", () => {
             { pingLatency: pingLatencyMs },
           ],
         );
+      }
+
+      if (environment === "prod") {
+        await publishToStatusPage(latencyMs);
       }
 
       const clientDisconnect = new Promise<void>((resolve, reject) => {
