@@ -13,7 +13,6 @@ export const publishToStatusPage = (latencyMs: number) => {
   const timestampEpichSeconds = new Date().getTime() / 1000;
   const data = { data: {} };
   data.data[latencyMetricId] = [{ timestamp: timestampEpichSeconds, value: latencyMs / 1000 }];
-  console.log(JSON.stringify(data));
 
   return new Promise((resolve, reject) => {
     const request = https.request(url, options, function (res) {
