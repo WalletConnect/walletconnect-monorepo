@@ -1,32 +1,42 @@
-import http from "http";
+import https from "https";
 
-// The following 4 are the actual values that pertain to your account and this specific metric.
 const apiKey = process.env.STATUSPAGE_API_KEY;
 const pageId = "0z72kp3p7j8h";
 const latencyMetricId = "dzjbt55mfxks";
 const apiBase = "https://api.statuspage.io/v1";
 
-const url = apiBase + "/pages/" + pageId + "/metrics/";
-const authHeader = { Authorization: "OAuth " + apiKey };
-const options = { method: "POST", headers: authHeader };
+const url = apiBase + "/pages/" + pageId + "/metrics/data";
+const headers = { Authorization: "OAuth " + apiKey, "Content-Type": "application/json" };
+const options = { method: "POST", headers: headers };
 
 export const publishToStatusPage = (latencyMs: number) => {
   const timestampEpichSeconds = new Date().getTime() / 1000;
   const data = { data: {} };
-  data.data[latencyMetricId] = [timestampEpichSeconds, latencyMs];
+  data.data[latencyMetricId] = [{timestamp: timestampEpichSeconds, value: latencyMs / 1000}];
+  console.log(JSON.stringify(data));
 
   return new Promise((resolve, reject) => {
-    const request = http.request(url, options, function (res) {
+    const request = https.request(url, options, function (res) {
+      console.log(url);
       if (res.statusMessage === "Unauthorized") {
         return reject(new Error("Unauthorized"));
       }
+      res.setEncoding('utf8');
+      const responseParts: string[] = [];
       res.on("end", function () {
+        const response = responseParts.join("");
+        if (res.statusCode! >= 300) {
+            return reject(new Error(`Call failed with status code ${res.statusCode} and response ${response}`));
+        }
         return resolve(true);
+      });
+      res.on("data", function (data: string) {
+        responseParts.push(data);
       });
       res.on("error", (error) => {
         return reject(error);
       });
     });
-    request.end(JSON.stringify({ data: data }));
+    request.end(JSON.stringify(data));
   });
 };
