@@ -33,6 +33,7 @@ jobs:
             packages/utils/dist
             providers/ethereum-provider/dist
             providers/signer-connection/dist
+            providers/universal-provider/dist
 
   code_style:
     runs-on: ubuntu-latest
