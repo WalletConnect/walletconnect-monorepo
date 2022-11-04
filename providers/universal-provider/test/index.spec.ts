@@ -297,6 +297,44 @@ describe("UniversalProvider", function () {
         // delete
         await deleteProviders({ A: afterDapp, B: afterWallet });
       });
+
+      it("should reload provider data after restart", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+          storageOptions: { database: "/tmp/dappDB" },
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+          storageOptions: { database: "/tmp/walletDB" },
+        });
+
+        const {
+          sessionA: { topic },
+        } = await testConnectMethod({ dapp, wallet });
+
+        expect(!!topic).to.be.true;
+
+        let ethers = new providers.Web3Provider(dapp);
+        const accounts = await ethers.listAccounts();
+        expect(!!accounts).to.be.true;
+
+        // delete
+        await deleteProviders({ A: dapp, B: wallet });
+
+        // restart
+        const afterDapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+          storageOptions: { database: "/tmp/dappDB" },
+        });
+
+        // load the provider in ethers without new pairing
+        ethers = new providers.Web3Provider(afterDapp);
+        const afterAccounts = await ethers.listAccounts();
+        expect(accounts).to.toMatchObject(afterAccounts);
+      });
     });
   });
 });
