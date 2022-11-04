@@ -1,3 +1,4 @@
+import { RelayerTypes } from "@walletconnect/types";
 import { utils } from "ethers";
 
 export const CHAIN_ID = 123;
@@ -91,4 +92,45 @@ export const TEST_SIGN_TRANSACTION = {
   to: "0xF0109fC8DF283027b6285cc889F5aA624EaC1F55",
   value: "1000000000",
   gas: 2000000,
+};
+
+export const TEST_EVENTS = ["chainChanged", "accountsChanged"];
+
+export const TEST_ETHEREUM_ADDRESS = "0x3c582121909DE92Dc89A36898633C1aE4790382b";
+
+export const TEST_ETHEREUM_CHAIN = "eip155:1";
+
+export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+
+export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN];
+
+export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT];
+
+export const TEST_RELAY_PROTOCOL = "irn";
+
+export const TEST_RELAY_OPTIONS: RelayerTypes.ProtocolOptions = {
+  protocol: TEST_RELAY_PROTOCOL,
+};
+
+export const TEST_METHODS = [
+  "eth_sendTransaction",
+  "eth_signTransaction",
+  "personal_sign",
+  "eth_signTypedData",
+];
+
+export const TEST_REQUIRED_NAMESPACES = {
+  eip155: {
+    methods: TEST_METHODS,
+    chains: TEST_CHAINS,
+    events: TEST_EVENTS,
+  },
+};
+
+export const TEST_NAMESPACES = {
+  eip155: {
+    methods: TEST_METHODS,
+    accounts: TEST_ACCOUNTS,
+    events: TEST_EVENTS,
+  },
 };

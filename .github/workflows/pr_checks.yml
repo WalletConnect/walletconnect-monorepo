@@ -33,6 +33,7 @@ jobs:
             packages/utils/dist
             providers/ethereum-provider/dist
             providers/signer-connection/dist
+            providers/universal-provider/dist
 
   code_style:
     runs-on: ubuntu-latest
@@ -64,6 +65,7 @@ jobs:
           - packages/sign-client
           - packages/core
           - packages/utils
+          - providers/universal-provider
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
