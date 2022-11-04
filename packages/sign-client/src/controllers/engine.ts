@@ -164,6 +164,7 @@ export class Engine extends IEngine {
 
     await this.client.core.relayer.subscribe(sessionTopic);
     const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
+    const settle_end = performance.now();
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
     this.events.once(engineEvent("session_approve", requestId), ({ error }) => {
       if (error) reject(error);
@@ -196,6 +197,11 @@ export class Engine extends IEngine {
         },
         responderPublicKey: selfPublicKey,
       });
+      const propose_end = performance.now();
+      console.log("settle_end:", settle_end);
+      console.log("propose_end:", propose_end);
+      console.log("total latency (propose_end - settle_end): ", propose_end - settle_end);
+
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
       await this.client.core.pairing.activate({ topic: pairingTopic });
     }
