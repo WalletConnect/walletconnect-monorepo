@@ -7,7 +7,7 @@ import {
   _abi,
   _bytecode,
 } from "ethereum-test-network/lib/utils/ERC20Token__factory";
-import { WalletClient } from "./shared";
+import { deleteProviders, testConnectMethod, WalletClient } from "./shared";
 import UniversalProvider from "../src";
 import {
   CHAIN_ID,
@@ -235,6 +235,67 @@ describe("UniversalProvider", function () {
           .signMessage(msg);
         const verify = utils.verifyMessage(msg, signature);
         expect(verify).eq(walletAddress);
+      });
+    });
+  });
+  describe("persistence", () => {
+    describe("after restart", () => {
+      it("clients can ping each other", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+          storageOptions: { database: "/tmp/dappDB" },
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+          storageOptions: { database: "/tmp/walletDB" },
+        });
+
+        const {
+          sessionA: { topic },
+        } = await testConnectMethod({ dapp, wallet });
+
+        await Promise.all([
+          new Promise((resolve) => {
+            // ping
+            dapp.on("session_ping", (event: any) => {
+              resolve(event);
+            });
+          }),
+          new Promise((resolve) => {
+            wallet.on("session_ping", (event: any) => {
+              resolve(event);
+            });
+          }),
+          new Promise(async (resolve) => {
+            // ping
+            await dapp.client.ping({ topic });
+            await wallet.client.ping({ topic });
+            resolve(true);
+          }),
+        ]);
+
+        // delete
+        await deleteProviders({ A: dapp, B: wallet });
+
+        // restart
+        const afterDapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+          storageOptions: { database: "/tmp/dappDB" },
+        });
+        const afterWallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+          storageOptions: { database: "/tmp/walletDB" },
+        });
+
+        // ping
+        await afterDapp.client.ping({ topic });
+        await afterWallet.client.ping({ topic });
+        // delete
+        await deleteProviders({ A: afterDapp, B: afterWallet });
       });
     });
   });
