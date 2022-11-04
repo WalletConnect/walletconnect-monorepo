@@ -110,6 +110,6 @@ describe("Lifecycle", () => {
     const { result } = done.meta;
     const nowTimestamp = Date.now();
     const latencyMs = nowTimestamp - (result?.startTime || nowTimestamp);
-    log(`Canary finished in state ${result?.state} took ${latencyMs}ms`);
+    log(`Lifecycle test finished in state ${result?.state} took ${latencyMs}ms`);
   });
 });
