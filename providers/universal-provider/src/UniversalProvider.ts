@@ -154,6 +154,7 @@ export class UniversalProvider implements IUniversalProvider {
     if (this.client.session.length) {
       const lastKeyIndex = this.client.session.keys.length - 1;
       this.session = this.client.session.get(this.client.session.keys[lastKeyIndex]);
+      this.onSessionUpdate();
     }
   }
 
@@ -172,6 +173,8 @@ export class UniversalProvider implements IUniversalProvider {
         relayUrl: this.providerOpts.relayUrl || RELAY_URL,
         projectId: this.providerOpts.projectId,
         metadata: this.providerOpts.metadata, // fetch metadata automatically if not provided?
+        storageOptions: this.providerOpts.storageOptions,
+        name: this.providerOpts.name,
       }));
 
     this.logger.trace(`SignClient Initialized`);

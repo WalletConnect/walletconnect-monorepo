@@ -1,6 +1,7 @@
 import SignClient from "@walletconnect/sign-client";
 import { SignClientTypes, ProposalTypes } from "@walletconnect/types";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
+import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import { IProvider } from "./providers";
 import EventEmitter from "events";
 
@@ -10,6 +11,8 @@ export interface UniversalProviderOpts {
   logger?: string;
   client?: SignClient;
   relayUrl?: string;
+  storageOptions?: KeyValueStorageOptions;
+  name?: string;
 }
 
 export type Metadata = SignClientTypes.Metadata;
