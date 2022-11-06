@@ -53,7 +53,7 @@ describe("Lifecycle", () => {
         }
       });
 
-      log(`Going to wait for 70s until pinging again`);
+      log(`Going to wait for ${timeout / 1000}s until pinging again`);
 
       // Send a ping
       await throttle(humanInputLatencyMs); // Introduce some realistic timeout and allow backend to replicate
