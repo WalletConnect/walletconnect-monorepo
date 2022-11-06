@@ -29,6 +29,7 @@
     "test": "npm run test:pre; npm run test:run",
     "test:ignoreUnhandled": "npm run test:pre; npm run test:run -- --dangerouslyIgnoreUnhandledErrors",
     "test:canary": "vitest run --dir test/canary",
+    "test:lifecycle": "vitest run --dir test/lifecycle",
     "canary": "npm run test:pre; npm run test:canary",
     "loadtest": "npm run test:pre; npm run test:concurrency",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
