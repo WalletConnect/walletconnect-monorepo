@@ -1,4 +1,3 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
@@ -9,6 +8,7 @@ import { IKeyChain } from "./keychain";
 import { IJsonRpcHistory } from "./history";
 import { IExpirer } from "./expirer";
 import { IPairing } from "./pairing";
+import { Logger } from "@walletconnect/logger";
 
 export declare namespace CoreTypes {
   interface Options {

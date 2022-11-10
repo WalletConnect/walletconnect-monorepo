@@ -35,7 +35,7 @@
     "@walletconnect/jsonrpc-utils": "1.0.3",
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
     "@walletconnect/keyvaluestorage": "1.0.1-rc.2",
-    "@walletconnect/logger": "1.0.1",
+    "@walletconnect/logger": "2.0.0",
     "@walletconnect/relay-api": "1.0.6",
     "@walletconnect/relay-auth": "1.0.3",
     "@walletconnect/safe-json": "1.0.0",
@@ -43,8 +43,6 @@
     "@walletconnect/types": "2.1.1",
     "@walletconnect/utils": "2.1.1",
     "lodash.isequal": "4.5.0",
-    "pino": "6.7.0",
-    "pino-pretty": "4.3.0",
     "uint8arrays": "3.1.0"
   },
   "devDependencies": {

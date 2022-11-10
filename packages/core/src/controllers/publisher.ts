@@ -1,6 +1,6 @@
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { RequestArguments } from "@walletconnect/jsonrpc-types";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { IPublisher, IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
 import {
@@ -10,7 +10,6 @@ import {
   isUndefined,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { Logger } from "pino";
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
 
 export class Publisher extends IPublisher {

@@ -1,7 +1,6 @@
 import { expect, describe, it, beforeEach } from "vitest";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import * as utils from "@walletconnect/utils";
-import pino from "pino";
 import Sinon from "sinon";
 import { Core, CORE_DEFAULT, Crypto } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";

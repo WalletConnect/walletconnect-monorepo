@@ -1,4 +1,4 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IStore } from "@walletconnect/types";
 import {
   getInternalError,
@@ -6,7 +6,6 @@ import {
   isSessionStruct,
   isUndefined,
 } from "@walletconnect/utils";
-import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
 import isEqual from "lodash.isequal";
 

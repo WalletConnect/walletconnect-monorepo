@@ -1,6 +1,5 @@
 import { expect, describe, it } from "vitest";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import pino from "pino";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 
 import {
   Core,

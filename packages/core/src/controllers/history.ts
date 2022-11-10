@@ -1,9 +1,8 @@
 import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
 import { getInternalError } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { Logger } from "pino";
 import {
   CORE_STORAGE_PREFIX,
   HISTORY_CONTEXT,

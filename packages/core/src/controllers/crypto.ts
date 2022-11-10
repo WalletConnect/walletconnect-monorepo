@@ -1,4 +1,4 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
@@ -17,7 +17,6 @@ import {
   deserialize,
   decodeTypeByte,
 } from "@walletconnect/utils";
-import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
 import { KeyChain } from "./keychain";
 
