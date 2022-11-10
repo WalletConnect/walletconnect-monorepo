@@ -1,4 +1,3 @@
-import pino from "pino";
 import { EventEmitter } from "events";
 
 import KeyValueStorage from "@walletconnect/keyvaluestorage";
@@ -7,6 +6,7 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
+  pino,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 

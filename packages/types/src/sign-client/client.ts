@@ -1,9 +1,9 @@
 import EventEmmiter from "events";
-import { Logger } from "pino";
 import { IEngine } from "./engine";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { CoreTypes, ICore } from "../core/core";
+import { Logger } from "@walletconnect/logger";
 
 export declare namespace SignClientTypes {
   type Event =

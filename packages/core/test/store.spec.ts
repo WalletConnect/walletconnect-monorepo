@@ -1,6 +1,5 @@
 import { expect, describe, it, beforeEach } from "vitest";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import pino from "pino";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { Core, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IStore, SessionTypes } from "@walletconnect/types";

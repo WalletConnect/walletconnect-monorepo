@@ -1,7 +1,6 @@
 import { expect, describe, it, beforeEach, afterAll, afterEach } from "vitest";
-import pino from "pino";
 import Sinon from "sinon";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { ICore, IRelayer, ISubscriber } from "@walletconnect/types";
 import { generateRandomBytes32, getRelayProtocolName } from "@walletconnect/utils";
 

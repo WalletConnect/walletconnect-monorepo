@@ -1,5 +1,4 @@
-import { Logger } from "pino";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IKeyChain } from "@walletconnect/types";
 import { getInternalError, mapToObj, objToMap } from "@walletconnect/utils";
 

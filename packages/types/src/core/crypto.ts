@@ -1,5 +1,5 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
-import { Logger } from "pino";
+import { Logger } from "@walletconnect/logger";
 import { ICore } from "./core";
 import { IKeyChain } from "./keychain";
 

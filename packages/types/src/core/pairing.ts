@@ -5,13 +5,13 @@ import {
   JsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-types";
-import { Logger } from "pino";
 import EventEmitter from "events";
 
 import { ICore, CoreTypes } from "./core";
 import { IStore } from "./store";
 
 import { RelayerTypes } from "../core/relayer";
+import { Logger } from "@walletconnect/logger";
 
 export declare namespace PairingTypes {
   interface Struct {

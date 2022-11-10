@@ -1,4 +1,4 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import {
   ICore,
   PairingTypes,
@@ -36,7 +36,6 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
 import EventEmitter from "events";
-import { Logger } from "pino";
 import {
   PAIRING_CONTEXT,
   PAIRING_STORAGE_VERSION,

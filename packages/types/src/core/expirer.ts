@@ -1,5 +1,5 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
+import { Logger } from "@walletconnect/logger";
 
 import { ICore } from "./core";
 

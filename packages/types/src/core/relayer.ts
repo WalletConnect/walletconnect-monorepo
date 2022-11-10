@@ -1,6 +1,6 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
+import { Logger } from "@walletconnect/logger";
 
 import { ICore } from "./core";
 import { IMessageTracker } from "./messages";

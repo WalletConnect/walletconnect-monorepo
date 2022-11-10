@@ -41,12 +41,10 @@
     "@walletconnect/heartbeat": "1.0.0",
     "@walletconnect/jsonrpc-provider": "1.0.5",
     "@walletconnect/jsonrpc-utils": "1.0.3",
-    "@walletconnect/logger": "1.0.1",
+    "@walletconnect/logger": "2.0.0",
     "@walletconnect/time": "1.0.1",
     "@walletconnect/types": "2.1.1",
-    "@walletconnect/utils": "2.1.1",
-    "pino": "6.7.0",
-    "pino-pretty": "4.3.0"
+    "@walletconnect/utils": "2.1.1"
   },
   "devDependencies": {
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",

@@ -1,5 +1,4 @@
-import { Logger } from "pino";
-
+import { Logger } from "@walletconnect/logger";
 import { ICore } from "./core";
 
 export type MessageRecord = Record<string, string>;
