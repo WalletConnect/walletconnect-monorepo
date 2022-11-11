@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/sign-client",
   "description": "Sign Client for WalletConnect Protocol",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -36,15 +36,15 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/core": "2.1.1",
+    "@walletconnect/core": "2.1.2",
     "@walletconnect/events": "1.0.0",
     "@walletconnect/heartbeat": "1.0.0",
     "@walletconnect/jsonrpc-provider": "1.0.5",
     "@walletconnect/jsonrpc-utils": "1.0.3",
     "@walletconnect/logger": "2.0.0",
     "@walletconnect/time": "1.0.1",
-    "@walletconnect/types": "2.1.1",
-    "@walletconnect/utils": "2.1.1"
+    "@walletconnect/types": "2.1.2",
+    "@walletconnect/utils": "2.1.2"
   },
   "devDependencies": {
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
