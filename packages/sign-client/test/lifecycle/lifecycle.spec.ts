@@ -102,7 +102,7 @@ describe("Lifecycle", () => {
       });
       await clientDisconnect;
       log("Clients disconnected");
-      deleteClients(clients);
+      await deleteClients(clients);
       log("Clients deleted");
     }, 70000_000);
   });
