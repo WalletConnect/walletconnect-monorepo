@@ -289,37 +289,37 @@ describe("Sign Client Integration", () => {
     }, 50_000);
   });
   describe("transport", () => {
-    it("should disconnect & reestablish socket transport", async () => {
-      const clients = await initTwoClients();
-      const {
-        sessionA: { topic },
-      } = await testConnectMethod(clients);
+    // it("should disconnect & reestablish socket transport", async () => {
+    //   const clients = await initTwoClients();
+    //   const {
+    //     sessionA: { topic },
+    //   } = await testConnectMethod(clients);
 
-      await clients.A.core.relayer.transportClose();
-      await clients.A.core.relayer.transportOpen();
+    //   await clients.A.core.relayer.transportClose();
+    //   await clients.A.core.relayer.transportOpen();
 
-      await clients.B.core.relayer.transportClose();
-      await clients.B.core.relayer.transportOpen();
+    //   await clients.B.core.relayer.transportClose();
+    //   await clients.B.core.relayer.transportOpen();
 
-      await Promise.all([
-        new Promise((resolve) => {
-          clients.B.on("session_ping", (event: any) => {
-            resolve(event);
-          });
-        }),
-        new Promise((resolve) => {
-          clients.A.on("session_ping", (event: any) => {
-            resolve(event);
-          });
-        }),
-        new Promise(async (resolve) => {
-          await clients.A.ping({ topic });
-          await clients.B.ping({ topic });
-          resolve(true);
-        }),
-      ]);
-      await deleteClients(clients);
-    });
+    //   await Promise.all([
+    //     new Promise((resolve) => {
+    //       clients.B.on("session_ping", (event: any) => {
+    //         resolve(event);
+    //       });
+    //     }),
+    //     new Promise((resolve) => {
+    //       clients.A.on("session_ping", (event: any) => {
+    //         resolve(event);
+    //       });
+    //     }),
+    //     new Promise(async (resolve) => {
+    //       await clients.A.ping({ topic });
+    //       await clients.B.ping({ topic });
+    //       resolve(true);
+    //     }),
+    //   ]);
+    //   await deleteClients(clients);
+    // });
     // it("should disconnect & reestablish socket transport with delay", async () => {
     //   const clients = await initTwoClients();
     //   const {
