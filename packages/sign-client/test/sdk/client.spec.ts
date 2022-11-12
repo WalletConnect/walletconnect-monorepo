@@ -288,7 +288,7 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     }, 50_000);
   });
-  describe("transport", () => {
+  // describe("transport", () => {
     // it("should disconnect & reestablish socket transport", async () => {
     //   const clients = await initTwoClients();
     //   const {
@@ -351,5 +351,5 @@ describe("Sign Client Integration", () => {
     //   ]);
     //   await deleteClients(clients);
     // });
-  });
+  // });
 });
