@@ -1,9 +1,9 @@
+import pino from "pino";
 import { Core } from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  pino,
 } from "@walletconnect/logger";
 import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";

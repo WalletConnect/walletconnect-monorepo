@@ -1,8 +1,9 @@
+import pino from "pino";
 import SignClient from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
-import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
+import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import { getChainFromNamespaces } from "./utils";

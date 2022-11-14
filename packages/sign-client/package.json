@@ -44,7 +44,8 @@
     "@walletconnect/logger": "2.0.0",
     "@walletconnect/time": "1.0.1",
     "@walletconnect/types": "2.1.2",
-    "@walletconnect/utils": "2.1.2"
+    "@walletconnect/utils": "2.1.2",
+    "pino": "7.11.0"
   },
   "devDependencies": {
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
