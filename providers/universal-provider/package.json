@@ -40,7 +40,8 @@
     "@walletconnect/sign-client": "2.1.2",
     "@walletconnect/types": "2.1.2",
     "@walletconnect/utils": "2.1.2",
-    "eip1193-provider": "1.0.1"
+    "eip1193-provider": "1.0.1",
+    "pino": "7.11.0"
   },
   "devDependencies": {
     "ethereum-test-network": "0.1.6",

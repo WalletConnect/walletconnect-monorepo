@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import pino from "pino";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
   formatJsonRpcResult,
@@ -13,7 +14,6 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
   Logger,
-  pino,
 } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { toMiliseconds } from "@walletconnect/time";
