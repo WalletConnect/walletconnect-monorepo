@@ -6,6 +6,7 @@ export const SUBSCRIBER_EVENTS = {
   expired: "subscription_expired",
   disabled: "subscription_disabled",
   sync: "subscription_sync",
+  resubscribed: "subscription_resubscribed",
 };
 
 export const SUBSCRIBER_DEFAULT_TTL = THIRTY_DAYS;

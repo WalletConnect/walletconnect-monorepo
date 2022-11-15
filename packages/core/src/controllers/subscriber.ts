@@ -302,10 +302,12 @@ export class Subscriber extends ISubscriber {
   }
 
   private async reset() {
-    if (!this.cached.length) return;
-    await Promise.all(
-      this.cached.map(async (subscription) => await this.resubscribe(subscription)),
-    );
+    if (this.cached.length) {
+      await Promise.all(
+        this.cached.map(async (subscription) => await this.resubscribe(subscription)),
+      );
+    }
+    this.events.emit(SUBSCRIBER_EVENTS.resubscribed);
   }
 
   private async restore() {
