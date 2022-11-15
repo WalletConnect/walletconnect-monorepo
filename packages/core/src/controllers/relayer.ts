@@ -142,9 +142,9 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
     await this.provider.connect();
-    // wait the subscriber to finish resubscribing to its topics
+    // wait for the subscriber to finish resubscribing to its topics
     await new Promise<void>((resolve) => {
-      this.subscriber.on(SUBSCRIBER_EVENTS.resubscribed, () => {
+      this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
         resolve();
       });
     });
