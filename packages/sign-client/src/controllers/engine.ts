@@ -370,7 +370,7 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const record = await this.client.core.history.get(topic, id);
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    // await is intentionally omitted to speed up performace
+    // await is intentionally omitted to speed up performance
     this.client.core.relayer.publish(topic, message, opts);
     await this.client.core.history.resolve(payload);
   };
