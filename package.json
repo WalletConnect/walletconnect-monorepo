@@ -34,6 +34,7 @@
     "npm-publish:next": "lerna exec -- npm publish --access public --tag next",
     "health-check": "node ./scripts/health-check/index.js",
     "move-dist": "node ./scripts/move-dist.js",
+    "build-move": "npm run build && npm run move-dist && npm run start",
     "commit-version": "node ./scripts/commit-version.js",
     "check:skip-test": "run-s clean lint build move-dist",
     "check": "run-s clean lint build test move-dist",
@@ -42,7 +43,8 @@
     "example": "run-s check:skip-test start",
     "pre-publish": "run-s new-version reset commit-version",
     "publish:latest": "run-s pre-publish npm-publish:latest",
-    "publish:next": "run-s pre-publish npm-publish:next"
+    "publish:next": "run-s pre-publish npm-publish:next",
+    "qrbuild" : "npm run move-dist && npm run start"
   },
   "repository": {
     "type": "git",

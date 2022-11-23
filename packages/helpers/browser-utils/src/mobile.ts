@@ -17,7 +17,7 @@ export function saveMobileLinkInfo(data: IMobileLinkInfo) {
   const focusUri = data.href.split("?")[0];
   setLocal(mobileLinkChoiceKey, { ...data, href: focusUri });
 }
-
+// https://link.dcnet//dappBrowwer/dsfkjkj//?url=192,sdf /connect?data={}
 export function getMobileRegistryEntry(
   registry: IMobileRegistry,
   name: string,

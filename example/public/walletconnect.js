@@ -12,17 +12,34 @@ let connector = null;
 
 function onInit() {
   // Create a connector
+
+  // const qrcodeModalOptions =   {
+  //   mobileLinks: ["D'CENT Wallet"], 
+  //   desktopLinks: ["D'CENT Wallet"],
+
+  // };
+  const clientMeta={
+    description: "Connect with WalletConnect",
+    url: "https://walletconnect.org",
+    icons: ["https://walletconnect.org/walletconnect-logo.png"],
+    name: "WalletConnect",
+  };
   connector = new WalletConnect({
     bridge: DEFAULT_BRIDGE, // Required
     qrcodeModal: WalletConnectQRCodeModal,
+    // qrcodeModalOptions,
+    clientMeta,
+    
   });
-
+  
   // Check if connection is already established
   if (!connector.connected) {
     // create new session
     connector.createSession();
+    console.log("connectore session",connector);
   } else {
     const { accounts, chainId } = connector;
+    console.log("connector",connector);
     onConnect({ accounts, chainId });
   }
 
@@ -38,6 +55,7 @@ function onSubscribe() {
     if (error) {
       throw error;
     }
+    console.log(payload);
 
     // Get provided accounts and chainId
     const { accounts, chainId } = payload.params[0];
@@ -49,6 +67,8 @@ function onSubscribe() {
     if (error) {
       throw error;
     }
+    console.log("session update payload",payload);
+    console.log("seession update connector",connector);
 
     // Get updated accounts and chainId
     const { accounts, chainId } = payload.params[0];
