@@ -88,23 +88,28 @@ function Modal(props: ModalProps) {
             console.log(singleLinkHref);
             setDisplayQRCode(true);
           }
-          const encode = encodeURIComponent(props.uri);
-          const attachEncodeURI = "http://192.168.0.235:8080/connect?data=" + encode;
-          const doubleEncode= encodeURIComponent(attachEncodeURI);
-          const trippleEncode = encodeURIComponent(doubleEncode);
+          // const encode = encodeURIComponent(props.uri);
+          // const attachEncodeURI = "http://192.168.0.235:8080/connect?data=" + encode;
+          // const doubleEncode= encodeURIComponent(attachEncodeURI);
+          // const trippleEncode = encodeURIComponent(doubleEncode);
+
+          const baseURI = "http://192.168.0.235:8080/connect?data=" + props.uri + "&type=mobile";
+          const encodeURI = encodeURIComponent(baseURI);
+          const doubleEncodeURI = encodeURIComponent(encodeURI);
           // IOS
           // 
-          console.log("encode", encode);
-          console.log("dobuleEncode",doubleEncode);
+          // console.log("encode", encode);
+          // console.log("dobuleEncode",doubleEncode);
+          console.log("baseURI ===> ",baseURI);
+          console.log("doubleEncodeURI ===>",doubleEncodeURI);
           // const singleLink =`https://link.dcentwallet.com/DAppBrowser/?url=http://192.168.0.235:8080/connect?data=${doubleEncode}`;
-          const singleLink =`https://link.dcentwallet.com/DAppBrowser/?url=${trippleEncode}`;
+          const singleLink =`https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`;
           
           setSingleLinkHref(singleLink);
           console.log("singleLink",singleLink);
           if(mobile) {
+            setDynamicLink(singleLink);
             
-            const Data = `https://link.dcentwallet.com/DAppBrowser/?url=http://192.168.0.235:8080/connect?data=${encode}`;
-            setDynamicLink(Data);          
           }
           // domain
           setHasSingleLink(hasSingleLink);

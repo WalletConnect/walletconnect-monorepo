@@ -12,12 +12,12 @@ import { TextMap } from "../types";
 async function formatQRCodeImage(data: string) {
   console.log("qr data",data);
   let result = "";
-  const encode = encodeURIComponent(data);
-  const attachEncodeURI = "http://192.168.0.235:8080/connect?data=" + encode;
-  const doubleEncode = encodeURIComponent(attachEncodeURI);
-  const trippleEncode = encodeURIComponent(doubleEncode);
+  // const encode = encodeURIComponent(data);
+  const baseURI = "http://192.168.0.235:8080/connect?data=" + data + "&type=desktop";
+  const encodeURI = encodeURIComponent(baseURI);
+  const doubleEncodeURI = encodeURIComponent(encodeURI);
   // const Data = `https://link.dcentwallet.com/DAppBrowser/?url=http://192.168.0.235:8080/connect?data=${doubleEncode}`;
-  const Data = `https://link.dcentwallet.com/DAppBrowser/?url=${trippleEncode}`;
+  const Data = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`;
   console.log("full data", Data);
   const dataString = await QRCode.toString(Data, { margin: 0, type: "svg" });
   if (typeof dataString === "string") {
