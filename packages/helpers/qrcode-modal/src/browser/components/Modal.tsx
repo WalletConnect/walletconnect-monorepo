@@ -35,6 +35,7 @@ interface ModalProps {
 function Modal(props: ModalProps) {
   const android = isAndroid();
   const mobile = isMobile();
+  
 
   const whitelist = mobile
     ? props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
@@ -57,6 +58,7 @@ function Modal(props: ModalProps) {
   const [hasSingleLink, setHasSingleLink] = React.useState(false);
   const [links, setLinks] = React.useState<IMobileRegistryEntry[]>([]);
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [dynamicLink, setDynamicLink] = React.useState("");
 
   const getLinksIfNeeded = () => {
     if (fetched || loading || (whitelist && !whitelist.length) || links.length > 0) {
@@ -65,14 +67,14 @@ function Modal(props: ModalProps) {
 
     React.useEffect(() => {
       const initLinks = async () => {
-        if (android) return;
+        // if (android) return;
         setLoading(true);
         try {
           const url =
             props.qrcodeModalOptions && props.qrcodeModalOptions.registryUrl
               ? props.qrcodeModalOptions.registryUrl
               : getWalletRegistryUrl();
-          const registryResponse = await fetch(url)
+          const registryResponse = await fetch(url);
           const registry = (await registryResponse.json()).listings as IAppRegistry;
           const platform = mobile ? "mobile" : "desktop";
           const _links = getMobileLinkRegistry(formatMobileRegistry(registry, platform), whitelist);
@@ -83,8 +85,28 @@ function Modal(props: ModalProps) {
           const hasSingleLink = _links.length === 1;
           if (hasSingleLink) {
             setSingleLinkHref(formatIOSMobile(props.uri, _links[0]));
+            console.log(singleLinkHref);
             setDisplayQRCode(true);
           }
+          const encode = encodeURIComponent(props.uri);
+          const attachEncodeURI = "http://192.168.0.235:8080/connect?data=" + encode;
+          const doubleEncode= encodeURIComponent(attachEncodeURI);
+          const trippleEncode = encodeURIComponent(doubleEncode);
+          // IOS
+          // 
+          console.log("encode", encode);
+          console.log("dobuleEncode",doubleEncode);
+          // const singleLink =`https://link.dcentwallet.com/DAppBrowser/?url=http://192.168.0.235:8080/connect?data=${doubleEncode}`;
+          const singleLink =`https://link.dcentwallet.com/DAppBrowser/?url=${trippleEncode}`;
+          
+          setSingleLinkHref(singleLink);
+          console.log("singleLink",singleLink);
+          if(mobile) {
+            
+            const Data = `https://link.dcentwallet.com/DAppBrowser/?url=http://192.168.0.235:8080/connect?data=${encode}`;
+            setDynamicLink(Data);          
+          }
+          // domain
           setHasSingleLink(hasSingleLink);
         } catch (e) {
           setLoading(false);
@@ -140,11 +162,18 @@ function Modal(props: ModalProps) {
           </div>
         ) : null}
 
-        <div>
+        {/* <div>
           {displayQRCode || (!android && !loading && !links.length) ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
-            <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} />
+            <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} dynamicLink={dynamicLink}/>
+          )}
+        </div> */}
+        <div>
+          {!mobile ? (
+            <QRCodeDisplay {...displayProps} />
+          ) : (
+            <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} dynamicLink={dynamicLink}/>
           )}
         </div>
       </div>
@@ -153,3 +182,7 @@ function Modal(props: ModalProps) {
 }
 
 export default Modal;
+
+// https://link.dcentwallet.com/DAppBrowser/?url=http://192.168.0.235:8080/connect?data=wc%3Af1017bdb-0b89-4872-82aa-3b94d988829f%401%3Fbridge%3Dhttps%253A%252F%252F2.bridge.walletconnect.org%26key%3D74803ff5d5ecdbd148ba473d3bfc09e62a2a0a1a4f030cdc4f03ef9951c89fd2
+// https://link.dcentwallet.com/DAppBrowser/?url=http%3A%2F%2F192.168.0.235%3A8080%2Fconnect%3Fdata%3Dwc%253Ae0a3fa2d-8397-468c-a2e1-e3d91603f9b5%25401%253Fbridge%253Dhttps%25253A%25252F%25252Ft.bridge.walletconnect.org%2526key%253D1a760481443d70cf8be020a16ea22a04a1c24d7625a10a761287ce1f90e0461a
+// 

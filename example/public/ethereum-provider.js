@@ -10,11 +10,12 @@ let provider = null;
 async function onInit() {
   // Create a provider
   provider = new WalletConnectProvider();
+  console.log(provider);
 
   onSubscribe();
 
   const accounts = await provider.enable();
-
+  console.log(accounts);
   onConnect({ accounts, chainId: provider.chainId });
 }
 
@@ -24,6 +25,7 @@ function onSubscribe() {
   }
 
   provider.on("accountsChanged", accounts => {
+    console.log("subscribe account",accounts);
     updateView({ accounts });
   });
 

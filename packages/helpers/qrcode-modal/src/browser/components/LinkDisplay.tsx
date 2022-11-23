@@ -19,6 +19,7 @@ interface LinkDisplayProps {
   qrcodeModalOptions?: IQRCodeModalOptions;
   links: IMobileRegistryEntry[];
   errorMessage: string;
+  dynamicLink: string;
 }
 
 const GRID_MIN_COUNT = 5;
@@ -118,11 +119,11 @@ function LinkDisplay(props: LinkDisplayProps) {
           <ConnectButton
             name={props.text.connect}
             color={DEFAULT_BUTTON_COLOR}
-            href={props.uri}
+            href={props.dynamicLink}
             onClick={React.useCallback(() => {
               saveMobileLinkInfo({
                 name: "Unknown",
-                href: props.uri,
+                href: props.dynamicLink,
               });
             }, [])}
           />
