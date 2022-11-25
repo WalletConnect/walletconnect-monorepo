@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "events": "3.3.0",
-    "fast-text-encoding": "1.0.4"
+    "fast-text-encoding": "^1.0.6"
   },
   "peerDependencies": {
     "@react-native-async-storage/async-storage": "*",

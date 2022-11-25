@@ -26,10 +26,10 @@
     "prettier": "prettier --check 'src/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/events": "1.0.0",
-    "@walletconnect/heartbeat": "1.0.0",
-    "@walletconnect/jsonrpc-types": "1.0.1",
-    "@walletconnect/keyvaluestorage": "1.0.1-rc.2",
-    "@walletconnect/logger": "2.0.0"
+    "@walletconnect/events": "^1.0.1",
+    "@walletconnect/heartbeat": "^1.0.1",
+    "@walletconnect/jsonrpc-types": "^1.0.2",
+    "@walletconnect/keyvaluestorage": "^1.0.2",
+    "@walletconnect/logger": "^2.0.1"
   }
 }
