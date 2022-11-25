@@ -30,8 +30,8 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/jsonrpc-types": "1.0.1",
-    "@walletconnect/jsonrpc-utils": "1.0.3",
+    "@walletconnect/jsonrpc-types": "^1.0.2",
+    "@walletconnect/jsonrpc-utils": "^1.0.4",
     "@walletconnect/sign-client": "2.1.3",
     "@walletconnect/types": "2.1.3",
     "@walletconnect/utils": "2.1.3",
