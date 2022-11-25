@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/react-native-compat",
   "description": "Shims for WalletConnect Protocol in React Native Projects",
-  "version": "2.1.3-c6047312",
+  "version": "2.1.3-a040238d",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
