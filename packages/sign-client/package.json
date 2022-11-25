@@ -45,6 +45,7 @@
     "@walletconnect/time": "^1.0.2",
     "@walletconnect/types": "2.1.3-c6047312",
     "@walletconnect/utils": "2.1.3-c6047312",
+    "events": "^3.3.0",
     "pino": "7.11.0"
   },
   "devDependencies": {

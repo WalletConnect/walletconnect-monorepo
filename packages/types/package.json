@@ -30,6 +30,7 @@
     "@walletconnect/heartbeat": "^1.0.1",
     "@walletconnect/jsonrpc-types": "^1.0.2",
     "@walletconnect/keyvaluestorage": "^1.0.2",
-    "@walletconnect/logger": "^2.0.1"
+    "@walletconnect/logger": "^2.0.1",
+    "events": "^3.3.0"
   }
 }

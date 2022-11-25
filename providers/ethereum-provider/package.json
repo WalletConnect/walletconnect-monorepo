@@ -46,6 +46,7 @@
     "eip1193-provider": "1.0.1",
     "ethereum-test-network": "0.1.6",
     "ethers": "5.6.9",
+    "events": "^3.3.0",
     "uint8arrays": "3.1.0",
     "web3": "1.7.5"
   }
