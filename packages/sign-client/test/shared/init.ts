@@ -10,7 +10,7 @@ export interface Clients {
 export async function initTwoClients(
   clientOptsA: SignClientTypes.Options = {},
   clientOptsB: SignClientTypes.Options = {},
-  sharedClientOpts: SignClientTypes.Options = {},
+  sharedClientOpts: SignClientTypes.Options = { logger: "trace" },
 ) {
   const A = await SignClient.init({
     ...TEST_SIGN_CLIENT_OPTIONS_A,
