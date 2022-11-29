@@ -62,7 +62,9 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     const timeout = setTimeout(() => {
       return reject(new Error(`Connect timed out after ${connectTimeoutMs}ms`));
     }, connectTimeoutMs);
+    console.log("A proposing connect...");
     const result = await A.connect(connectParams);
+    console.log("A connected...");
     clearTimeout(timeout);
     return resolve(result);
   });

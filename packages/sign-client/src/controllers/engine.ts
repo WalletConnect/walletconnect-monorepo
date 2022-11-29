@@ -107,6 +107,7 @@ export class Engine extends IEngine {
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
+        console.log("session_connect", this.client.name);
         if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
