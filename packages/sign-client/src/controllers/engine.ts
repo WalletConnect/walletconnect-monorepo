@@ -131,7 +131,10 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
 
+    console.log("sending wc_sessionPropose", this.client.name);
     const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
+    console.log("wc_sessionPropose", this.client.name, id);
+
     const expiry = calcExpiry(FIVE_MINUTES);
     await this.setProposal(id, { id, expiry, ...proposal });
 
@@ -480,6 +483,7 @@ export class Engine extends IEngine {
   ) => {
     const { params, id } = payload;
     try {
+      console.log("wc_sessionPropose", this.client.name, id);
       this.isValidConnect({ ...payload.params });
       const expiry = calcExpiry(FIVE_MINUTES);
       const proposal = { id, pairingTopic: topic, expiry, ...params };
