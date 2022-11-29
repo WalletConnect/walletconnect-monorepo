@@ -77,6 +77,7 @@ export class Engine extends IEngine {
   public connect: IEngine["connect"] = async (params) => {
     this.isInitialized();
     await this.isValidConnect(params);
+    console.log("is valid connect", this.client.name);
     const { pairingTopic, requiredNamespaces, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined;
@@ -94,6 +95,8 @@ export class Engine extends IEngine {
     }
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
+
+    console.log("publicKey", this.client.name, publicKey);
     const proposal = {
       requiredNamespaces,
       relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
@@ -126,6 +129,7 @@ export class Engine extends IEngine {
       },
     );
 
+    console.log("after Delayed Promise", this.client.name);
     if (!topic) {
       const { message } = getInternalError("NO_MATCHING_KEY", `connect() pairing topic: ${topic}`);
       throw new Error(message);
