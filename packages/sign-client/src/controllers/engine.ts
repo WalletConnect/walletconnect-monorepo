@@ -77,7 +77,6 @@ export class Engine extends IEngine {
   public connect: IEngine["connect"] = async (params) => {
     this.isInitialized();
     await this.isValidConnect(params);
-    console.log("is valid connect", this.client.name);
     const { pairingTopic, requiredNamespaces, relays } = params;
     let topic = pairingTopic;
     let uri: string | undefined;
@@ -96,7 +95,6 @@ export class Engine extends IEngine {
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
 
-    console.log("publicKey", this.client.name, publicKey);
     const proposal = {
       requiredNamespaces,
       relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
@@ -110,7 +108,6 @@ export class Engine extends IEngine {
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
-        console.log("session_connect", this.client.name);
         if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
@@ -129,15 +126,12 @@ export class Engine extends IEngine {
       },
     );
 
-    console.log("after Delayed Promise", this.client.name);
     if (!topic) {
       const { message } = getInternalError("NO_MATCHING_KEY", `connect() pairing topic: ${topic}`);
       throw new Error(message);
     }
 
-    console.log("sending wc_sessionPropose", this.client.name);
     const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
-    console.log("wc_sessionPropose", this.client.name, id);
 
     const expiry = calcExpiry(FIVE_MINUTES);
     await this.setProposal(id, { id, expiry, ...proposal });
@@ -487,7 +481,6 @@ export class Engine extends IEngine {
   ) => {
     const { params, id } = payload;
     try {
-      console.log("wc_sessionPropose", this.client.name, id);
       this.isValidConnect({ ...payload.params });
       const expiry = calcExpiry(FIVE_MINUTES);
       const proposal = { id, pairingTopic: topic, expiry, ...params };

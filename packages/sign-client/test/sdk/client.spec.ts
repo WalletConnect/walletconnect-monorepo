@@ -10,11 +10,6 @@ import {
   throttle,
 } from "../shared";
 
-let seconds = 0;
-setInterval(() => {
-  console.log("seconds passed: ", seconds++);
-}, 1000);
-
 const generateClientDbName = (prefix: string) =>
   `./test/tmp/${prefix}_${generateRandomBytes32()}.db`;
 
