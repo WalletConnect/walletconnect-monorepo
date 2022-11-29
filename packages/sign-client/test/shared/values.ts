@@ -6,9 +6,9 @@ export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
   : "ws://0.0.0.0:5555";
 
-export const TEST_RELAY_URL_US = "wss://us-east-1.relay.walletconnect.com/";
-export const TEST_RELAY_URL_EU = "wss://eu-central-1.relay.walletconnect.com/";
-export const TEST_RELAY_URL_AP = "wss://ap-southeast-1.relay.walletconnect.com/";
+export const TEST_RELAY_URL_US = "wss://us-east-1.relay.walletconnect.com";
+export const TEST_RELAY_URL_EU = "wss://eu-central-1.relay.walletconnect.com";
+export const TEST_RELAY_URL_AP = "wss://ap-southeast-1.relay.walletconnect.com";
 
 // See https://github.com/WalletConnect/push-webhook-test-server
 export const TEST_WEBHOOK_ENDPOINT = "https://webhook-push-test.walletconnect.com/";
