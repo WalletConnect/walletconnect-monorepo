@@ -35,9 +35,9 @@ describe("Sign Client Validation", async () => {
   topic = client.session.keys[0];
   // // });
 
-  // afterAll(async () => {
-  //   await deleteClients(clients);
-  // });
+  afterAll(async () => {
+    await deleteClients(clients);
+  });
 
   describe("connect", () => {
     it("throws when no params are passed", async () => {
