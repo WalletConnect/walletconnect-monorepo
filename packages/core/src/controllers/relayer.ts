@@ -37,6 +37,7 @@ import {
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_DEFAULT_RELAY_URL,
+  SUBSCRIBER_EVENTS,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -141,6 +142,12 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
     await this.provider.connect();
+    // wait for the subscriber to finish resubscribing to its topics
+    await new Promise<void>((resolve) => {
+      this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+        resolve();
+      });
+    });
   }
   // ---------- Private ----------------------------------------------- //
 
