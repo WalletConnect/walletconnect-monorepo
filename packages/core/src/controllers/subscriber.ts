@@ -206,7 +206,18 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    return await this.relayer.provider.request(request);
+
+    const clientId = await this.relayer.core.crypto.getClientId();
+    const timeout = setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.log(
+        `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL}}`,
+      );
+    }, 15_000);
+
+    const res = await this.relayer.provider.request(request);
+    clearTimeout(timeout);
+    return res;
   }
 
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
@@ -302,10 +313,12 @@ export class Subscriber extends ISubscriber {
   }
 
   private async reset() {
-    if (!this.cached.length) return;
-    await Promise.all(
-      this.cached.map(async (subscription) => await this.resubscribe(subscription)),
-    );
+    if (this.cached.length) {
+      await Promise.all(
+        this.cached.map(async (subscription) => await this.resubscribe(subscription)),
+      );
+    }
+    this.events.emit(SUBSCRIBER_EVENTS.resubscribed);
   }
 
   private async restore() {

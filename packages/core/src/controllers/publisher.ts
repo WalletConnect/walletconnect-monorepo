@@ -39,7 +39,17 @@ export class Publisher extends IPublisher {
       const params = { topic, message, opts: { ttl, relay, prompt, tag } };
       const hash = hashMessage(message);
       this.queue.set(hash, params);
+      const clientId = await this.relayer.core.crypto.getClientId();
+      const timeout = setTimeout(() => {
+        // eslint-disable-next-line no-console
+        console.log(
+          `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL}}`,
+        );
+      }, 15_000);
+
       await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
+      clearTimeout(timeout);
+
       this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
