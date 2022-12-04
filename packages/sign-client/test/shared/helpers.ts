@@ -2,6 +2,7 @@ import SignClient from "../../src";
 import { disconnectSocket } from "./ws";
 
 export async function deleteClients(clients: { A: SignClient; B: SignClient }) {
+  await throttle(1_000);
   await disconnectSocket(clients.A.core);
   await disconnectSocket(clients.B.core);
 
