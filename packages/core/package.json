@@ -33,7 +33,7 @@
     "@walletconnect/heartbeat": "^1.0.1",
     "@walletconnect/jsonrpc-provider": "^1.0.6",
     "@walletconnect/jsonrpc-utils": "^1.0.4",
-    "@walletconnect/jsonrpc-ws-connection": "^1.0.5",
+    "@walletconnect/jsonrpc-ws-connection": "1.0.4-rc-3",
     "@walletconnect/keyvaluestorage": "^1.0.2",
     "@walletconnect/logger": "^2.0.1",
     "@walletconnect/relay-api": "^1.0.7",
