@@ -223,7 +223,11 @@ export class Relayer extends IRelayer {
     );
     this.on(RELAYER_EVENTS.stalled, async () => {
       // eslint-disable-next-line no-console
-      console.log("socket stalled, attempting to reconnect");
+      console.log(
+        "socket stalled, attempting to reconnect",
+        await this.core.crypto.getClientId(),
+        this.core.name,
+      );
       await this.transportClose();
       await this.transportOpen();
     });
