@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
@@ -43,11 +44,13 @@ export class Publisher extends IPublisher {
       const timeout = setTimeout(() => {
         // eslint-disable-next-line no-console
         console.log(
-          `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL}}`,
+          `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
         );
-      }, 15_000);
-
+      }, 5_000);
+      // const payload = await this.relayer.core.crypto.decode(topic, message);
+      // console.log("publishing payload", payload, this.relayer.core.name);
       await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
+      // console.log("published...", payload.id, this.relayer.core.name);
       clearTimeout(timeout);
 
       this.onPublish(hash, params);

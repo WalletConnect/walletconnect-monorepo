@@ -86,7 +86,10 @@ describe("Sign Client Integration", () => {
 
   describe("ping", () => {
     it("throws if the topic is not a known pairing or session topic", async () => {
-      const clients = await initTwoClients();
+      const clients = await initTwoClients(
+        { name: "ping -> throws if topic is not a known - A" },
+        { name: "ping -> throws if topic is not a known - B" },
+      );
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).rejects.toThrowError(
         `No matching key. session or pairing topic doesn't exist: ${fakeTopic}`,
@@ -96,7 +99,10 @@ describe("Sign Client Integration", () => {
     describe("pairing", () => {
       describe("with existing pairing", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients();
+          const clients = await initTwoClients(
+            { name: "pairing A pings B - A" },
+            { name: "pairing A pings B - B" },
+          );
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
@@ -104,7 +110,10 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients();
+          const clients = await initTwoClients(
+            { name: "pairing B pings A - A" },
+            { name: "pairing B pings A - B" },
+          );
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
@@ -119,13 +128,14 @@ describe("Sign Client Integration", () => {
 
           let clients = await initTwoClients(
             {
+              name: "pairing -> after restart A before",
               storageOptions: { database: db_a },
-              name: "before_client_a",
             },
             {
+              name: "pairing -> after restart B before",
               storageOptions: { database: db_b },
-              name: "before_client_b",
             },
+            { logger: "error" },
           );
           const {
             pairingA: { topic },
@@ -156,9 +166,11 @@ describe("Sign Client Integration", () => {
           // restart
           clients = await initTwoClients(
             {
+              name: "pairing -> after restart A after",
               storageOptions: { database: db_a },
             },
             {
+              name: "pairing -> after restart B after",
               storageOptions: { database: db_b },
             },
             { logger: "error" },
@@ -175,7 +187,10 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients();
+          const clients = await initTwoClients(
+            { name: "session A pings B - A" },
+            { name: "session A pings B - B" },
+          );
           const {
             sessionA: { topic },
           } = await testConnectMethod(clients);
@@ -183,7 +198,10 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients();
+          const clients = await initTwoClients(
+            { name: "session B pings A - A" },
+            { name: "session B pings A - B" },
+          );
           const {
             sessionA: { topic },
           } = await testConnectMethod(clients);
@@ -197,9 +215,11 @@ describe("Sign Client Integration", () => {
           const db_b = generateClientDbName("client_b");
           let clients = await initTwoClients(
             {
+              name: "session -> after restart A before",
               storageOptions: { database: db_a },
             },
             {
+              name: "session -> after restart B before",
               storageOptions: { database: db_b },
             },
           );
@@ -233,9 +253,11 @@ describe("Sign Client Integration", () => {
           // restart
           clients = await initTwoClients(
             {
+              name: "session -> after restart A after",
               storageOptions: { database: db_a },
             },
             {
+              name: "session -> after restart B after",
               storageOptions: { database: db_b },
             },
           );
@@ -252,7 +274,10 @@ describe("Sign Client Integration", () => {
 
   describe("update", () => {
     it("updates session namespaces state with provided namespaces", async () => {
-      const clients = await initTwoClients();
+      const clients = await initTwoClients(
+        { name: "updates session namespaces state with provided namespaces A" },
+        { name: "updates session namespaces state with provided namespaces B" },
+      );
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);

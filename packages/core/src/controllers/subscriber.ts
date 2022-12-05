@@ -53,6 +53,8 @@ export class Subscriber extends ISubscriber {
       await this.restart();
       this.registerEventListeners();
       this.onEnable();
+      // eslint-disable-next-line no-console
+      // console.log("Initialized subscriber", this.relayer.core.name);
     }
   };
 
@@ -211,9 +213,9 @@ export class Subscriber extends ISubscriber {
     const timeout = setTimeout(() => {
       // eslint-disable-next-line no-console
       console.log(
-        `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL}}`,
+        `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
-    }, 15_000);
+    }, 5_000);
 
     const res = await this.relayer.provider.request(request);
     clearTimeout(timeout);
@@ -377,6 +379,8 @@ export class Subscriber extends ISubscriber {
       await this.onConnect();
     });
     this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+      // eslint-disable-next-line no-console
+      // console.log("subscriber - disconnect", this.relayer.core.name);
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
