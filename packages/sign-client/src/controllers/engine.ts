@@ -352,7 +352,7 @@ export class Engine extends IEngine {
 
     // await is intentionally omitted here because of a possible race condition
     // where a response is received before the publish call is resolved
-    await this.client.core.relayer.publish(topic, message, opts);
+    this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
   };
 
