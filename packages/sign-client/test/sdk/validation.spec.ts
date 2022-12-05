@@ -30,6 +30,8 @@ describe("Sign Client Validation", () => {
   beforeAll(async () => {
     console.log("validation tests start");
     clients = await initTwoClients();
+    console.log("validation tests - client A", await clients.A.core.crypto.getClientId());
+    console.log("validation tests - client B", await clients.B.core.crypto.getClientId());
     console.log("validation tests - clients initialized");
     await testConnectMethod(clients);
     console.log("validation tests - clients paired");

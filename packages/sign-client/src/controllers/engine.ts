@@ -135,7 +135,6 @@ export class Engine extends IEngine {
 
     const expiry = calcExpiry(FIVE_MINUTES);
     await this.setProposal(id, { id, expiry, ...proposal });
-
     return { uri, approval };
   };
 
@@ -353,7 +352,7 @@ export class Engine extends IEngine {
 
     // await is intentionally omitted here because of a possible race condition
     // where a response is received before the publish call is resolved
-    this.client.core.relayer.publish(topic, message, opts);
+    await this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
   };
 
