@@ -311,7 +311,7 @@ export class Pairing implements IPairing {
     try {
       this.isValidDisconnect({ topic });
       // RPC request needs to happen before deletion as it utilises pairing encryption
-      // await this.sendResult<"wc_pairingDelete">(id, topic, true);
+      await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
       this.events.emit("pairing_delete", { id, topic });
     } catch (err: any) {

@@ -5,12 +5,14 @@ export async function deleteClients(clients: {
   A: SignClient | undefined;
   B: SignClient | undefined;
 }) {
-  await throttle(2_000);
+  await throttle(1_000);
   if (clients.A) await disconnectSocket(clients.A.core);
   if (clients.B) await disconnectSocket(clients.B.core);
 
   delete clients.A;
   delete clients.B;
+
+  await throttle(1_000);
 }
 
 export async function throttle(timeout: number) {
