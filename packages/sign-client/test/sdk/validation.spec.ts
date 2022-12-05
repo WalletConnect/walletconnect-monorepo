@@ -26,7 +26,7 @@ let proposalId: number;
 let pairingTopic: string;
 let topic: string;
 
-describe("Sign Client Validation", () => {
+describe.skip("Sign Client Validation", () => {
   beforeAll(async () => {
     console.log("validation tests start");
     clients = await initTwoClients();
