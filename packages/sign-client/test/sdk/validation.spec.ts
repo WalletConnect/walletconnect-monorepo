@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // @ts-nocheck
 import { expect, describe, it, beforeAll, afterAll } from "vitest";
 import {
@@ -16,6 +17,7 @@ import {
   TEST_NAMESPACES_INVALID_CHAIN,
   deleteClients,
   Clients,
+  throttle,
 } from "../shared";
 import SignClient from "../../src";
 
@@ -26,15 +28,22 @@ let topic: string;
 
 describe("Sign Client Validation", () => {
   beforeAll(async () => {
+    console.log("validation tests start");
     clients = await initTwoClients();
+    console.log("validation tests - clients initialized");
     await testConnectMethod(clients);
+    console.log("validation tests - clients paired");
     pairingTopic = clients.A.pairing.keys[0];
     proposalId = clients.A.proposal.keys[0];
     topic = clients.A.session.keys[0];
   });
 
   afterAll(async () => {
+    await throttle(10_000);
+    console.log("validation tests - attempting clients delete");
     await deleteClients(clients);
+    console.log("validation tests - clients deleted", clients);
+    await throttle(10_000);
   });
   describe("connect", () => {
     it("throws when no params are passed", async () => {
