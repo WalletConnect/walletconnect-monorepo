@@ -24,6 +24,6 @@ export async function initTwoClients(
     ...sharedClientOpts,
     ...clientOptsB,
   });
-  await throttle(1_000);
+  await throttle(500);
   return { A, B };
 }

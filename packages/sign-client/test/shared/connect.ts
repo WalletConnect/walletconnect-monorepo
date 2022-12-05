@@ -104,7 +104,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
       clearTimeout(timeout);
       return resolve(result);
     });
-  await throttle(500);
   await Promise.all([
     resolveSessionProposal,
     new Promise<void>(async (resolve, reject) => {
@@ -183,7 +182,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // metadata
   expect(pairingA.peerMetadata).to.eql(sessionA.peer.metadata);
   expect(pairingB.peerMetadata).to.eql(sessionB.peer.metadata);
-  await throttle(1_000);
+  await throttle(500);
   return { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs };
 }
 
