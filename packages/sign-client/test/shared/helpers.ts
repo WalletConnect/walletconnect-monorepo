@@ -5,14 +5,12 @@ export async function deleteClients(clients: {
   A: SignClient | undefined;
   B: SignClient | undefined;
 }) {
-  await throttle(500);
   if (clients.A) await disconnectSocket(clients.A.core);
   if (clients.B) await disconnectSocket(clients.B.core);
   // eslint-disable-next-line no-console
   console.log("closing sockets for ", clients.A?.core.name);
   delete clients.A;
   delete clients.B;
-  await throttle(500);
 }
 
 export async function throttle(timeout: number) {
