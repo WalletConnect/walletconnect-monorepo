@@ -25,6 +25,7 @@ import {
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
   RELAYER_PROVIDER_EVENTS,
+  RELAYER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -216,6 +217,7 @@ export class Subscriber extends ISubscriber {
       console.log(
         `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
+      this.relayer.events.emit(RELAYER_EVENTS.stalled);
     }, 5_000);
     console.log("subscribing..", clientId, this.relayer.core.name, topic);
     const res = await this.relayer.provider.request(request);

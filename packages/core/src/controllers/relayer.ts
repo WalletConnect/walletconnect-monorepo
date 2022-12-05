@@ -221,6 +221,12 @@ export class Relayer extends IRelayer {
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
       this.events.emit(RELAYER_EVENTS.error, err),
     );
+    this.on(RELAYER_EVENTS.stalled, async () => {
+      // eslint-disable-next-line no-console
+      console.log("socket stalled, attempting to reconnect");
+      await this.transportClose();
+      await this.transportOpen();
+    });
   }
 
   private attemptToReconnect() {
