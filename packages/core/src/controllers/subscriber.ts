@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
@@ -216,8 +217,9 @@ export class Subscriber extends ISubscriber {
         `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
     }, 5_000);
-
+    console.log("subscribing..", clientId, this.relayer.core.name, topic);
     const res = await this.relayer.provider.request(request);
+    console.log("subscribed", clientId, this.relayer.core.name, topic, res);
     clearTimeout(timeout);
     return res;
   }
