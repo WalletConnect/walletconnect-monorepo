@@ -8,7 +8,8 @@ export async function deleteClients(clients: {
   await throttle(1_000);
   if (clients.A) await disconnectSocket(clients.A.core);
   if (clients.B) await disconnectSocket(clients.B.core);
-
+  // eslint-disable-next-line no-console
+  console.log("closing sockets for ", clients.A?.core.name);
   delete clients.A;
   delete clients.B;
 

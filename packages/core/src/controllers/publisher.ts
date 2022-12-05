@@ -41,10 +41,11 @@ export class Publisher extends IPublisher {
       const hash = hashMessage(message);
       this.queue.set(hash, params);
       const clientId = await this.relayer.core.crypto.getClientId();
+      const payload = await this.relayer.core.crypto.decode(topic, message);
       const timeout = setTimeout(() => {
         // eslint-disable-next-line no-console
         console.log(
-          `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+          `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name} - ${payload.id}`,
         );
       }, 5_000);
       // const payload = await this.relayer.core.crypto.decode(topic, message);
