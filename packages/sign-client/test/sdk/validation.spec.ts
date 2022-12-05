@@ -132,7 +132,6 @@ describe("Sign Client Validation", () => {
     beforeAll(async () => {
       clients = await initTwoClients();
       await testConnectMethod(clients);
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -250,7 +249,6 @@ describe("Sign Client Validation", () => {
     beforeAll(async () => {
       clients = await initTwoClients();
       await testConnectMethod(clients);
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -372,7 +370,6 @@ describe("Sign Client Validation", () => {
     beforeAll(async () => {
       clients = await initTwoClients();
       await testConnectMethod(clients);
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -457,7 +454,6 @@ describe("Sign Client Validation", () => {
     let clients: Clients;
     beforeAll(async () => {
       clients = await initTwoClients();
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -503,7 +499,6 @@ describe("Sign Client Validation", () => {
     beforeAll(async () => {
       clients = await initTwoClients();
       await testConnectMethod(clients);
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -609,7 +604,6 @@ describe("Sign Client Validation", () => {
     beforeAll(async () => {
       clients = await initTwoClients();
       await testConnectMethod(clients);
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -712,7 +706,6 @@ describe("Sign Client Validation", () => {
     let clients: Clients;
     beforeAll(async () => {
       clients = await initTwoClients();
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -758,7 +751,6 @@ describe("Sign Client Validation", () => {
     beforeAll(async () => {
       clients = await initTwoClients();
       await testConnectMethod(clients);
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
@@ -856,7 +848,6 @@ describe("Sign Client Validation", () => {
     let clients: Clients;
     beforeAll(async () => {
       clients = await initTwoClients();
-      client = clients.A;
       pairingTopic = clients.A.pairing.keys[0];
       proposalId = clients.A.proposal.keys[0];
       topic = clients.A.session.keys[0];
