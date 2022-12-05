@@ -6,7 +6,6 @@ import {
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
-  disconnectSocket,
   throttle,
 } from "../shared";
 
@@ -17,7 +16,7 @@ describe("Sign Client Integration", () => {
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
-    await disconnectSocket(client.core);
+    await deleteClients({ A: client, B: undefined });
   });
 
   describe("connect", () => {
