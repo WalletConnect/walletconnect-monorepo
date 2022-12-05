@@ -19,25 +19,25 @@ import {
 } from "../shared";
 import SignClient from "../../src";
 
-let client: SignClient;
+let clients: Clients;
 let proposalId: number;
 let pairingTopic: string;
 let topic: string;
 
 describe("Sign Client Validation", () => {
+  let clients: Clients;
+  beforeAll(async () => {
+    clients = await initTwoClients();
+    await testConnectMethod(clients);
+    pairingTopic = clients.A.pairing.keys[0];
+    proposalId = clients.A.proposal.keys[0];
+    topic = clients.A.session.keys[0];
+  });
+
+  afterAll(async () => {
+    await deleteClients(clients);
+  });
   describe("connect", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.connect()).rejects.toThrowError(
         "Missing or invalid. connect() params: undefined",
@@ -128,19 +128,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("approve", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      await testConnectMethod(clients);
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.approve()).rejects.toThrowError(
         "Missing or invalid. approve() params: undefined",
@@ -245,19 +232,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("reject", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      await testConnectMethod(clients);
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.reject()).rejects.toThrowError(
         "Missing or invalid. reject() params: undefined",
@@ -366,19 +340,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("update", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      await testConnectMethod(clients);
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.update()).rejects.toThrowError(
         "Missing or invalid. update() params: undefined",
@@ -451,18 +412,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("extend", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.extend()).rejects.toThrowError(
         "Missing or invalid. extend() params: undefined",
@@ -495,19 +444,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("request", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      await testConnectMethod(clients);
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.request()).rejects.toThrowError(
         "Missing or invalid. request() params: undefined",
@@ -600,19 +536,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("respond", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      await testConnectMethod(clients);
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.respond()).rejects.toThrowError(
         "Missing or invalid. respond() params: undefined",
@@ -703,18 +626,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("ping", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
-
     it("throws when no params are passed", async () => {
       await expect(clients.A.ping()).rejects.toThrowError(
         "Missing or invalid. ping() params: undefined",
@@ -747,18 +658,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("emit", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      await testConnectMethod(clients);
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
     it("throws when no params are passed", async () => {
       await expect(clients.A.emit()).rejects.toThrowError(
         "Missing or invalid. emit() params: undefined",
@@ -845,17 +744,6 @@ describe("Sign Client Validation", () => {
   });
 
   describe("disconnect", () => {
-    let clients: Clients;
-    beforeAll(async () => {
-      clients = await initTwoClients();
-      pairingTopic = clients.A.pairing.keys[0];
-      proposalId = clients.A.proposal.keys[0];
-      topic = clients.A.session.keys[0];
-    });
-
-    afterAll(async () => {
-      await deleteClients(clients);
-    });
     it("throws when no params are passed", async () => {
       await expect(clients.A.disconnect()).rejects.toThrowError(
         "Missing or invalid. disconnect() params: undefined",
