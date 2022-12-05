@@ -382,7 +382,7 @@ export class Subscriber extends ISubscriber {
     });
     this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       // eslint-disable-next-line no-console
-      // console.log("subscriber - disconnect", this.relayer.core.name);
+      console.log("subscriber - disconnect", this.relayer.core.name);
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
