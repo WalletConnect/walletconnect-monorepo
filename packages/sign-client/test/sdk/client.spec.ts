@@ -302,7 +302,7 @@ describe("Sign Client Integration", () => {
   });
 
   describe("extend", () => {
-    it("updates session expiry state", async () => {
+    it.skip("updates session expiry state", async () => {
       const clients = await initTwoClients(
         { name: "session extend A" },
         { name: "session extend B" },
