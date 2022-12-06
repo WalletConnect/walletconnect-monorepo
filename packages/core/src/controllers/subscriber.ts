@@ -241,8 +241,9 @@ export class Subscriber extends ISubscriber {
           `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
         );
         await this.relayer.transportClose();
+        // some delay to allow the transport to close
+        await new Promise((resolve) => setTimeout(resolve, 300 * i));
         await this.relayer.transportOpen();
-        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
