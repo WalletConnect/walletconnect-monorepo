@@ -211,44 +211,15 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
 
     const clientId = await this.relayer.core.crypto.getClientId();
-    // const timeout = setTimeout(() => {
-    //   // eslint-disable-next-line no-console
-    //   console.log(
-    //     `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-    //   );
-    // }, 5_000);
+    const timeout = setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.log(
+        `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+      );
+    }, 5_000);
     console.log("subscribing..", clientId, this.relayer.core.name, topic);
-    let result: any;
-    // await this.relayer.provider.request(request);
-    // clearTimeout(timeout);
-
-    while (result === undefined) {
-      try {
-        result = await Promise.race([
-          new Promise(async (resolve) => {
-            resolve(await this.relayer.provider.request(request));
-          }),
-          new Promise((_res, reject) => {
-            const timeout = setTimeout(async () => {
-              // eslint-disable-next-line no-console
-              console.log(
-                `subscribe request timeout 5s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-              );
-              clearTimeout(timeout);
-              await this.relayer.transportClose();
-              await this.relayer.transportOpen();
-              console.log(
-                `transport restarted ${clientId} - ${topic} -  ${this.relayer.connected}`,
-              );
-              reject(new Error("subscribe request timeout"));
-            }, 5_000);
-          }),
-        ]);
-      } catch (err) {
-        console.log("Error on subscribe request", err);
-      }
-    }
-
+    const result = await this.relayer.provider.request(request);
+    clearTimeout(timeout);
     console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     return result;
   }
