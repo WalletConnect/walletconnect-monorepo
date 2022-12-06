@@ -182,6 +182,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // metadata
   expect(pairingA.peerMetadata).to.eql(sessionA.peer.metadata);
   expect(pairingB.peerMetadata).to.eql(sessionB.peer.metadata);
+  await throttle(200); // allow for relay to update
   return { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs };
 }
 
