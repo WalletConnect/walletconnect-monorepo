@@ -21,7 +21,7 @@ describe("Push", () => {
     );
     sessionA = (await testConnectMethod(clients)).sessionA;
   });
-  it.skip("receives a prompt webhook", async () => {
+  it("receives a prompt webhook", async () => {
     await throttle(200); // Allow to propagate routing table
     console.log(
       "emitting",
