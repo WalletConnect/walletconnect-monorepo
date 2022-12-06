@@ -11,7 +11,7 @@ import {
   isUndefined,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
+import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_PROVIDER_EVENTS } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
@@ -42,7 +42,7 @@ export class Publisher extends IPublisher {
       const hash = hashMessage(message);
       this.queue.set(hash, params);
       const clientId = await this.relayer.core.crypto.getClientId();
-      const payload = await this.relayer.core.crypto.decode(topic, message);
+      // const payload = await this.relayer.core.crypto.decode(topic, message);
       // const timeout = setTimeout(() => {
       //   // eslint-disable-next-line no-console
       //   console.log(
@@ -78,20 +78,19 @@ export class Publisher extends IPublisher {
           // );
           // console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
           await publish;
-          console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
+          console.log("published...", clientId, topic, this.relayer.core.name);
           break;
         } catch (err) {
           // eslint-disable-next-line no-console
           console.log(
             `subscribe request timeout 5s - ${this.publishRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
           );
-          await this.relayer.transportClose();
-          await Promise.all([
-            new Promise((resolve) => {
-              this.relayer.once(RELAYER_EVENTS.connect, () => resolve);
-            }),
-            this.relayer.transportOpen(),
-          ]);
+
+          this.relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
+          // await this.relayer.transportClose();
+          // // some delay to allow the transport to close
+          // await new Promise((resolve) => setTimeout(resolve, 300 * i));
+          // await this.relayer.transportOpen();
         }
       }
       if (this.publishRetries > 0) this.publishRetries--;

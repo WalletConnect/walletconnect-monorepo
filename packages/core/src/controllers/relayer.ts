@@ -143,16 +143,25 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
 
-    await Promise.all([
-      // wait for the subscriber to finish resubscribing to its topics
-      new Promise<void>((resolve) => {
-        this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
-          // console.log("subscriber resubscribed", this.core.name);
-          resolve();
-        });
-      }),
-      this.restartProvider(),
-    ]);
+    this.transportExplicitlyClosed = false;
+    await this.provider.connect();
+    // wait for the subscriber to finish resubscribing to its topics
+    await new Promise<void>((resolve) => {
+      this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+        resolve();
+      });
+    });
+
+    // await Promise.all([
+    //   // wait for the subscriber to finish resubscribing to its topics
+    //   new Promise<void>((resolve) => {
+    //     this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+    //       // console.log("subscriber resubscribed", this.core.name);
+    //       resolve();
+    //     });
+    //   }),
+    //   this.restartProvider(),
+    // ]);
 
     // eslint-disable-next-line no-console
     // console.log("connection restarted --- @!", this.core.name);
@@ -175,14 +184,14 @@ export class Relayer extends IRelayer {
     );
   }
 
-  private async restartProvider() {
-    this.provider.events.removeAllListeners();
-    this.provider.connection.events.removeAllListeners();
-    this.provider = await this.createProvider();
-    this.registerEventListeners();
-    await this.provider.connect();
-    // console.log("restarting provider --- @!", this.core.name);
-  }
+  // private async restartProvider() {
+  //   this.provider.events.removeAllListeners();
+  //   this.provider.connection.events.removeAllListeners();
+  //   this.provider = await this.createProvider();
+  //   this.registerEventListeners();
+  //   await this.provider.connect();
+  //   // console.log("restarting provider --- @!", this.core.name);
+  // }
 
   private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
