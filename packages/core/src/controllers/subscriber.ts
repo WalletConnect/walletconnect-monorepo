@@ -41,7 +41,7 @@ export class Subscriber extends ISubscriber {
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
-
+  private pendingRequests = {};
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -211,13 +211,17 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
 
     const clientId = await this.relayer.core.crypto.getClientId();
-    const timeout = setTimeout(() => {
+    // eslint-disable-next-line require-await
+    const timeout = setTimeout(async () => {
       // eslint-disable-next-line no-console
       console.log(
         `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
+      await this.relayer.transportClose();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await this.relayer.transportOpen();
     }, 5_000);
-    console.log("subscribing..", clientId, this.relayer.core.name, topic);
+    console.log("subscribing..", clientId, this.relayer.core.name, topic, Date.now());
     const result = await this.relayer.provider.request(request);
     clearTimeout(timeout);
     console.log("subscribed", clientId, this.relayer.core.name, topic, result);
@@ -378,6 +382,7 @@ export class Subscriber extends ISubscriber {
       this.checkPending();
     });
     this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+      console.log("subscriber - connect", this.relayer.core.name);
       await this.onConnect();
     });
     this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
