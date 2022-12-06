@@ -16,18 +16,10 @@ describe("Push", () => {
   let sessionA;
   beforeEach(async () => {
     clients = await initTwoClients();
-    console.log(
-      `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
-    );
     sessionA = (await testConnectMethod(clients)).sessionA;
   });
   it("receives a prompt webhook", async () => {
     await throttle(200); // Allow to propagate routing table
-    console.log(
-      "emitting",
-      await clients.A.core.crypto.getClientId(),
-      await clients.B.core.crypto.getClientId(),
-    );
     // Send a message which triggers the webhook to be invoked
     const eventPayload: any = {
       topic: sessionA.topic,
@@ -50,7 +42,6 @@ describe("Push", () => {
   });
   afterEach(async () => {
     if (!sessionA) {
-      console.log("No session to disconnect");
       return;
     }
 
