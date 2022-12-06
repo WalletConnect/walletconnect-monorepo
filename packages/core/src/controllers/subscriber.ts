@@ -41,7 +41,6 @@ export class Subscriber extends ISubscriber {
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
-  private pendingRequests = {};
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
