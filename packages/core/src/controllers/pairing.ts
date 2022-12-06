@@ -212,6 +212,8 @@ export class Pairing implements IPairing {
       this.core.crypto.deleteSymKey(topic),
       expirerHasDeleted ? Promise.resolve() : this.core.expirer.del(topic),
     ]);
+    // eslint-disable-next-line no-console
+    // console.log("deletePairing", topic, this.core.name);
   };
 
   private isInitialized() {
@@ -238,6 +240,8 @@ export class Pairing implements IPairing {
       }
 
       const payload = await this.core.crypto.decode(topic, message);
+      // eslint-disable-next-line no-console
+      // console.log("received payload", payload, this.core.name);
       if (isJsonRpcRequest(payload)) {
         this.core.history.set(topic, payload);
         this.onRelayEventRequest({ topic, payload });
@@ -315,6 +319,8 @@ export class Pairing implements IPairing {
       await this.deletePairing(topic);
       this.events.emit("pairing_delete", { id, topic });
     } catch (err: any) {
+      // eslint-disable-next-line no-console
+      // console.log("logging error onPairingDelete", err, this.core.name);
       await this.sendError(id, topic, err);
       this.logger.error(err);
     }

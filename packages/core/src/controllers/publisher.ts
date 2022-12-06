@@ -49,9 +49,9 @@ export class Publisher extends IPublisher {
         );
       }, 5_000);
       // const payload = await this.relayer.core.crypto.decode(topic, message);
-      console.log("publishing payload", payload, clientId, this.relayer.core.name);
+      console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
       await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
-      console.log("published...", payload.id, clientId, this.relayer.core.name);
+      console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
       clearTimeout(timeout);
 
       this.onPublish(hash, params);
