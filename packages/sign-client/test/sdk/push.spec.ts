@@ -5,29 +5,29 @@ import {
   testConnectMethod,
   deleteClients,
   TEST_EMIT_PARAMS,
-  TEST_RELAY_URL,
   TEST_WEBHOOK_ENDPOINT,
   throttle,
 } from "../shared";
+import { TEST_RELAY_URL } from "./../shared/values";
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 
-describe.skip("Push", () => {
+describe("Push", () => {
   let clients;
   let sessionA;
   beforeEach(async () => {
     clients = await initTwoClients();
+    console.log(
+      `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+    );
     sessionA = (await testConnectMethod(clients)).sessionA;
   });
   it("receives a prompt webhook", async () => {
-    // Register Webhook for topic
-    await axios.post(
-      `${TEST_RELAY_URL.replace("ws", "http")}/subscribe`,
-      { webhook: TEST_WEBHOOK_ENDPOINT, topic: sessionA.topic },
-      {
-        headers: { "content-type": "application/json" },
-      },
+    await throttle(200); // Allow to propagate routing table
+    console.log(
+      "emitting",
+      await clients.A.core.crypto.getClientId(),
+      await clients.B.core.crypto.getClientId(),
     );
-
     // Send a message which triggers the webhook to be invoked
     const eventPayload: any = {
       topic: sessionA.topic,
@@ -37,10 +37,15 @@ describe.skip("Push", () => {
 
     // Relay processes webhooks in background
     // Extend some time to relay to process it
-    await throttle(500);
+    await throttle(1000);
+
+    const url = `${TEST_WEBHOOK_ENDPOINT}/${await clients.B.core.crypto.getClientId()}`.replace(
+      "did:key:",
+      "",
+    );
 
     // Validate webhook was called
-    const res = await axios.get(`${TEST_WEBHOOK_ENDPOINT}/${sessionA.topic}`);
+    const res = await axios.get(url);
     expect(res.status).to.eql(200);
   });
   afterEach(async () => {
