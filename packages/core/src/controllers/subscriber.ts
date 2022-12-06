@@ -224,7 +224,15 @@ export class Subscriber extends ISubscriber {
     let result: any;
     for (let i = 0; i < 10; i++) {
       try {
-        console.log("subscribing..", i, clientId, this.relayer.core.name, topic, Date.now());
+        console.log(
+          "subscribing..",
+          i,
+          this.subscribeRetries,
+          clientId,
+          this.relayer.core.name,
+          topic,
+          Date.now(),
+        );
         result = await subscribe;
         break;
       } catch (err) {
@@ -251,7 +259,7 @@ export class Subscriber extends ISubscriber {
     // console.log("subscribing..", clientId, this.relayer.core.name, topic, Date.now());
     // const result = await this.relayer.provider.request(request);
     // clearTimeout(timeout);
-    // if (this.subscribeRetries > 0) this.subscribeRetries--;
+    if (this.subscribeRetries > 0) this.subscribeRetries--;
     console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     return result;
   }

@@ -17,6 +17,7 @@ export class Publisher extends IPublisher {
   public events = new EventEmitter();
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
+  private publishRetries = 0;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
@@ -42,18 +43,54 @@ export class Publisher extends IPublisher {
       this.queue.set(hash, params);
       const clientId = await this.relayer.core.crypto.getClientId();
       const payload = await this.relayer.core.crypto.decode(topic, message);
-      const timeout = setTimeout(() => {
-        // eslint-disable-next-line no-console
-        console.log(
-          `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name} - ${payload.id}`,
-        );
-      }, 5_000);
-      // const payload = await this.relayer.core.crypto.decode(topic, message);
-      console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
-      await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
-      console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
-      clearTimeout(timeout);
+      // const timeout = setTimeout(() => {
+      //   // eslint-disable-next-line no-console
+      //   console.log(
+      //     `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name} - ${payload.id}`,
+      //   );
+      // }, 5_000);
+      // // const payload = await this.relayer.core.crypto.decode(topic, message);
+      // console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
+      // await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
+      // console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
+      // clearTimeout(timeout);
 
+      const publish = new Promise(async (resolve, reject) => {
+        const timeout = setTimeout(() => {
+          this.publishRetries++;
+          reject();
+        }, 5_000);
+        const res = await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
+        clearTimeout(timeout);
+        resolve(res);
+      });
+
+      for (let i = 0; i < 10; i++) {
+        try {
+          console.log(
+            "subscribing..",
+            i,
+            this.publishRetries,
+            clientId,
+            this.relayer.core.name,
+            topic,
+            Date.now(),
+          );
+          console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
+          await publish;
+          break;
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.log(
+            `subscribe request timeout 5s - ${this.publishRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+          );
+          await this.relayer.transportClose();
+          await this.relayer.transportOpen();
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+      if (this.publishRetries > 0) this.publishRetries--;
+      console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
       this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
