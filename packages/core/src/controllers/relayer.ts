@@ -176,6 +176,8 @@ export class Relayer extends IRelayer {
   }
 
   private async restartProvider() {
+    this.provider.events.removeAllListeners();
+    this.provider.connection.events.removeAllListeners();
     this.provider = await this.createProvider();
     this.registerEventListeners();
     await this.provider.connect();
