@@ -21,8 +21,8 @@ describe("Push", () => {
     );
     sessionA = (await testConnectMethod(clients)).sessionA;
   });
-  it.only("receives a prompt webhook", async () => {
-    await throttle(5000);
+  it("receives a prompt webhook", async () => {
+    await throttle(200); // Allow to propagate routing table
     console.log('emitting', await clients.A.core.crypto.getClientId(), await clients.B.core.crypto.getClientId());
     // Send a message which triggers the webhook to be invoked
     const eventPayload: any = {
@@ -33,12 +33,12 @@ describe("Push", () => {
 
     // Relay processes webhooks in background
     // Extend some time to relay to process it
-    await throttle(5000);
+    await throttle(1000);
 
-    console.log('emitted');
+    const url = `${TEST_WEBHOOK_ENDPOINT}/${await clients.B.core.crypto.getClientId()}`.replace('did:key:', '');
 
     // Validate webhook was called
-    const res = await axios.get(`${TEST_WEBHOOK_ENDPOINT}/${sessionA.topic}`);
+    const res = await axios.get(url);
     expect(res.status).to.eql(200);
   });
   afterEach(async () => {
