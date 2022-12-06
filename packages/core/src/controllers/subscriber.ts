@@ -24,7 +24,7 @@ import {
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
-  RELAYER_PROVIDER_EVENTS,
+  RELAYER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -210,7 +210,24 @@ export class Subscriber extends ISubscriber {
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
 
+    // const subscribe = new Promise(async (resolve, reject) => {
+    //   const timeout = setTimeout(async () => {
+    //     this.subscribeRetries++;
+    //     // eslint-disable-next-line no-console
+    //     console.log(
+    //       `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+    //     );
+    //     await this.relayer.transportClose();
+    //     await new Promise((resolve) => setTimeout(resolve, 500));
+    //     await this.relayer.transportOpen();
+    //   }, 5_000);
+    //   const res = await this.relayer.provider.request(request);
+    //   clearTimeout(timeout);
+    //   resolve(res);
+    // });
+
     const clientId = await this.relayer.core.crypto.getClientId();
+
     // eslint-disable-next-line require-await
     const timeout = setTimeout(async () => {
       this.subscribeRetries++;
@@ -219,7 +236,6 @@ export class Subscriber extends ISubscriber {
         `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
       await this.relayer.transportClose();
-      await new Promise((resolve) => setTimeout(resolve, 500));
       await this.relayer.transportOpen();
     }, 5_000);
     console.log("subscribing..", clientId, this.relayer.core.name, topic, Date.now());
@@ -383,11 +399,11 @@ export class Subscriber extends ISubscriber {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+    this.relayer.on(RELAYER_EVENTS.connect, async () => {
       console.log("subscriber - connect", this.relayer.core.name);
       await this.onConnect();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+    this.relayer.on(RELAYER_EVENTS.disconnect, () => {
       // eslint-disable-next-line no-console
       console.log("subscriber - disconnect", this.relayer.core.name);
       this.onDisconnect();
