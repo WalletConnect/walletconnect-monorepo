@@ -41,6 +41,7 @@ export class Subscriber extends ISubscriber {
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
+  private subscribeRetries = 0;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -212,9 +213,10 @@ export class Subscriber extends ISubscriber {
     const clientId = await this.relayer.core.crypto.getClientId();
     // eslint-disable-next-line require-await
     const timeout = setTimeout(async () => {
+      this.subscribeRetries++;
       // eslint-disable-next-line no-console
       console.log(
-        `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+        `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
       await this.relayer.transportClose();
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -223,6 +225,7 @@ export class Subscriber extends ISubscriber {
     console.log("subscribing..", clientId, this.relayer.core.name, topic, Date.now());
     const result = await this.relayer.provider.request(request);
     clearTimeout(timeout);
+    if (this.subscribeRetries > 0) this.subscribeRetries--;
     console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     return result;
   }
