@@ -11,7 +11,7 @@ import {
   isUndefined,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
+import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
@@ -67,17 +67,18 @@ export class Publisher extends IPublisher {
 
       for (let i = 0; i < 10; i++) {
         try {
-          console.log(
-            "subscribing..",
-            i,
-            this.publishRetries,
-            clientId,
-            this.relayer.core.name,
-            topic,
-            Date.now(),
-          );
-          console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
+          // console.log(
+          //   "subscribing..",
+          //   i,
+          //   this.publishRetries,
+          //   clientId,
+          //   this.relayer.core.name,
+          //   topic,
+          //   Date.now(),
+          // );
+          // console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
           await publish;
+          console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
           break;
         } catch (err) {
           // eslint-disable-next-line no-console
@@ -85,12 +86,15 @@ export class Publisher extends IPublisher {
             `subscribe request timeout 5s - ${this.publishRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
           );
           await this.relayer.transportClose();
-          await this.relayer.transportOpen();
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await Promise.all([
+            new Promise((resolve) => {
+              this.relayer.once(RELAYER_EVENTS.connect, () => resolve);
+            }),
+            this.relayer.transportOpen(),
+          ]);
         }
       }
       if (this.publishRetries > 0) this.publishRetries--;
-      console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
       this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });

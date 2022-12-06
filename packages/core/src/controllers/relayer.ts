@@ -147,7 +147,7 @@ export class Relayer extends IRelayer {
       // wait for the subscriber to finish resubscribing to its topics
       new Promise<void>((resolve) => {
         this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
-          console.log("subscriber resubscribed", this.core.name);
+          // console.log("subscriber resubscribed", this.core.name);
           resolve();
         });
       }),
@@ -155,7 +155,7 @@ export class Relayer extends IRelayer {
     ]);
 
     // eslint-disable-next-line no-console
-    console.log("connection restarted --- @!", this.core.name);
+    // console.log("connection restarted --- @!", this.core.name);
   }
   // ---------- Private ----------------------------------------------- //
 
@@ -181,7 +181,7 @@ export class Relayer extends IRelayer {
     this.provider = await this.createProvider();
     this.registerEventListeners();
     await this.provider.connect();
-    console.log("restarting provider --- @!", this.core.name);
+    // console.log("restarting provider --- @!", this.core.name);
   }
 
   private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {

@@ -234,16 +234,22 @@ export class Subscriber extends ISubscriber {
           Date.now(),
         );
         result = await subscribe;
+        console.log("subscribed", clientId, this.relayer.core.name, topic, result);
+
         break;
       } catch (err) {
         // eslint-disable-next-line no-console
         console.log(
           `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
         );
+
         await this.relayer.transportClose();
-        // some delay to allow the transport to close
-        await new Promise((resolve) => setTimeout(resolve, 300 * i));
-        await this.relayer.transportOpen();
+        await Promise.all([
+          new Promise((resolve) => {
+            this.relayer.once(RELAYER_EVENTS.connect, () => resolve);
+          }),
+          this.relayer.transportOpen(),
+        ]);
       }
     }
 
@@ -261,7 +267,7 @@ export class Subscriber extends ISubscriber {
     // const result = await this.relayer.provider.request(request);
     // clearTimeout(timeout);
     if (this.subscribeRetries > 0) this.subscribeRetries--;
-    console.log("subscribed", clientId, this.relayer.core.name, topic, result);
+    // console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     return result;
   }
 
@@ -419,12 +425,12 @@ export class Subscriber extends ISubscriber {
       this.checkPending();
     });
     this.relayer.on(RELAYER_EVENTS.connect, async () => {
-      console.log("subscriber - connect", this.relayer.core.name);
+      // console.log("subscriber - connect", this.relayer.core.name);
       await this.onConnect();
     });
     this.relayer.on(RELAYER_EVENTS.disconnect, () => {
       // eslint-disable-next-line no-console
-      console.log("subscriber - disconnect", this.relayer.core.name);
+      // console.log("subscriber - disconnect", this.relayer.core.name);
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
