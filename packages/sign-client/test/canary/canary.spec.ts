@@ -7,8 +7,13 @@ import {
   throttle,
   publishToStatusPage,
 } from "../shared";
-import { TEST_RELAY_URL } from "./../shared/values";
+import {
+  TEST_RELAY_URL,
+  TEST_SIGN_CLIENT_OPTIONS_A,
+  TEST_SIGN_CLIENT_OPTIONS_B,
+} from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
+import { SignClient } from "../../src";
 
 const environment = process.env.ENVIRONMENT || "dev";
 const region = process.env.REGION || "unknown";
@@ -22,7 +27,14 @@ describe("Canary", () => {
   describe("HappyPath", () => {
     it("connects", async () => {
       const start = Date.now();
-      const clients = await initTwoClients();
+      const A = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_A,
+      });
+
+      const B = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_B,
+      });
+      const clients = { A, B };
       const handshakeLatencyMs = Date.now() - start;
       log(
         `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
@@ -98,7 +110,9 @@ describe("Canary", () => {
       });
       await clientDisconnect;
       log("Clients disconnected");
-      deleteClients(clients);
+      for (const client of [clients.A, clients.B]) {
+        if (client.core.relayer.connected) await client.core.relayer.transportClose();
+      }
       log("Clients deleted");
     }, 600_000);
   });
