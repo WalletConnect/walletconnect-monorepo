@@ -209,39 +209,49 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-
-    // const subscribe = new Promise(async (resolve, reject) => {
-    //   const timeout = setTimeout(async () => {
-    //     this.subscribeRetries++;
-    //     // eslint-disable-next-line no-console
-    //     console.log(
-    //       `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-    //     );
-    //     await this.relayer.transportClose();
-    //     await new Promise((resolve) => setTimeout(resolve, 500));
-    //     await this.relayer.transportOpen();
-    //   }, 5_000);
-    //   const res = await this.relayer.provider.request(request);
-    //   clearTimeout(timeout);
-    //   resolve(res);
-    // });
-
     const clientId = await this.relayer.core.crypto.getClientId();
 
-    // eslint-disable-next-line require-await
-    const timeout = setTimeout(async () => {
-      this.subscribeRetries++;
-      // eslint-disable-next-line no-console
-      console.log(
-        `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-      );
-      await this.relayer.transportClose();
-      await this.relayer.transportOpen();
-    }, 5_000);
-    console.log("subscribing..", clientId, this.relayer.core.name, topic, Date.now());
-    const result = await this.relayer.provider.request(request);
-    clearTimeout(timeout);
-    if (this.subscribeRetries > 0) this.subscribeRetries--;
+    const subscribe = new Promise(async (resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.subscribeRetries++;
+        reject();
+      }, 5_000);
+      const res = await this.relayer.provider.request(request);
+      clearTimeout(timeout);
+      resolve(res);
+    });
+
+    let result: any;
+    for (let i = 0; i < 10; i++) {
+      try {
+        console.log("subscribing..", i, clientId, this.relayer.core.name, topic, Date.now());
+        result = await subscribe;
+        break;
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(
+          `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+        );
+        await this.relayer.transportClose();
+        await this.relayer.transportOpen();
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    // // eslint-disable-next-line require-await
+    // const timeout = setTimeout(async () => {
+    //   this.subscribeRetries++;
+    //   // eslint-disable-next-line no-console
+    //   console.log(
+    //     `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+    //   );
+    //   await this.relayer.transportClose();
+    //   await this.relayer.transportOpen();
+    // }, 5_000);
+    // console.log("subscribing..", clientId, this.relayer.core.name, topic, Date.now());
+    // const result = await this.relayer.provider.request(request);
+    // clearTimeout(timeout);
+    // if (this.subscribeRetries > 0) this.subscribeRetries--;
     console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     return result;
   }

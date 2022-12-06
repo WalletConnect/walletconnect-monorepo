@@ -58,7 +58,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     uri?: string | undefined;
     approval: () => Promise<SessionTypes.Struct>;
   }> = new Promise(async function (resolve, reject) {
-    const connectTimeoutMs = 50_000;
+    const connectTimeoutMs = 70_000;
     const timeout = setTimeout(() => {
       return reject(new Error(`Connect timed out after ${connectTimeoutMs}ms - ${A.core.name}`));
     }, connectTimeoutMs);
