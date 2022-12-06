@@ -25,7 +25,6 @@ import {
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
   RELAYER_PROVIDER_EVENTS,
-  RELAYER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -212,18 +211,46 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
 
     const clientId = await this.relayer.core.crypto.getClientId();
-    const timeout = setTimeout(() => {
-      // eslint-disable-next-line no-console
-      console.log(
-        `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-      );
-      this.relayer.events.emit(RELAYER_EVENTS.stalled);
-    }, 5_000);
+    // const timeout = setTimeout(() => {
+    //   // eslint-disable-next-line no-console
+    //   console.log(
+    //     `subscribe request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+    //   );
+    // }, 5_000);
     console.log("subscribing..", clientId, this.relayer.core.name, topic);
-    const res = await this.relayer.provider.request(request);
-    console.log("subscribed", clientId, this.relayer.core.name, topic, res);
-    clearTimeout(timeout);
-    return res;
+    let result: any;
+    // await this.relayer.provider.request(request);
+    // clearTimeout(timeout);
+
+    while (result === undefined) {
+      try {
+        result = await Promise.race([
+          new Promise(async (resolve) => {
+            resolve(await this.relayer.provider.request(request));
+          }),
+          new Promise((_res, reject) => {
+            const timeout = setTimeout(async () => {
+              // eslint-disable-next-line no-console
+              console.log(
+                `subscribe request timeout 5s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+              );
+              clearTimeout(timeout);
+              await this.relayer.transportClose();
+              await this.relayer.transportOpen();
+              console.log(
+                `transport restarted ${clientId} - ${topic} -  ${this.relayer.connected}`,
+              );
+              reject(new Error("subscribe request timeout"));
+            }, 5_000);
+          }),
+        ]);
+      } catch (err) {
+        console.log("Error on subscribe request", err);
+      }
+    }
+
+    console.log("subscribed", clientId, this.relayer.core.name, topic, result);
+    return result;
   }
 
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {

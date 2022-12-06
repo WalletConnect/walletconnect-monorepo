@@ -11,7 +11,7 @@ import {
   isUndefined,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
+import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
@@ -47,7 +47,6 @@ export class Publisher extends IPublisher {
         console.log(
           `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name} - ${payload.id}`,
         );
-        this.relayer.events.emit(RELAYER_EVENTS.stalled);
       }, 5_000);
       // const payload = await this.relayer.core.crypto.decode(topic, message);
       console.log("publishing payload", payload, clientId, this.relayer.core.name);
