@@ -25,7 +25,6 @@ import {
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
   RELAYER_EVENTS,
-  RELAYER_PROVIDER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -243,15 +242,9 @@ export class Subscriber extends ISubscriber {
         console.log(
           `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
         );
-        this.relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
 
-        // await this.relayer.transportClose();
-        // await Promise.all([
-        //   new Promise((resolve) => {
-        //     this.relayer.once(RELAYER_EVENTS.connect, () => resolve);
-        //   }),
-        //   this.relayer.transportOpen(),
-        // ]);
+        await this.relayer.transportClose();
+        await this.relayer.transportOpen();
       }
     }
 

@@ -11,7 +11,7 @@ import {
   isUndefined,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_PROVIDER_EVENTS } from "../constants";
+import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
@@ -86,11 +86,18 @@ export class Publisher extends IPublisher {
             `subscribe request timeout 5s - ${this.publishRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
           );
 
-          this.relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
-          // await this.relayer.transportClose();
-          // // some delay to allow the transport to close
-          // await new Promise((resolve) => setTimeout(resolve, 300 * i));
-          // await this.relayer.transportOpen();
+          await this.relayer.transportClose();
+          await this.relayer.transportOpen();
+
+          /*
+           *  create an array to store pending requests
+           *  check for duplicate requests
+           *  emit an event when a request is pushed to the array
+           *  listen for the event in relayer and begin to process the requests
+           *  when a request is processed, remove it from the array
+           *  handle socket stalling by restarting the connection
+           *
+           */
         }
       }
       if (this.publishRetries > 0) this.publishRetries--;
