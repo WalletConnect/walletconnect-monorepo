@@ -3,7 +3,7 @@ import {
   IMobileRegistryEntry,
   IQRCodeModalOptions,
   IAppRegistry,
-  IMobileLinkInfo,
+  IAcount,
 } from "@walletconnect/types";
 import {
   isMobile,
@@ -35,15 +35,15 @@ interface ModalProps {
 function Modal(props: ModalProps) {
   const android = isAndroid();
   const mobile = isMobile();
-  
+
 
   const whitelist = mobile
     ? props.qrcodeModalOptions && props.qrcodeModalOptions.mobileLinks
       ? props.qrcodeModalOptions.mobileLinks
       : undefined
     : props.qrcodeModalOptions && props.qrcodeModalOptions.desktopLinks
-    ? props.qrcodeModalOptions.desktopLinks
-    : undefined;
+      ? props.qrcodeModalOptions.desktopLinks
+      : undefined;
   const [loading, setLoading] = React.useState(false);
   const [fetched, setFetched] = React.useState(false);
   const [displayQRCode, setDisplayQRCode] = React.useState(!mobile);
@@ -88,30 +88,23 @@ function Modal(props: ModalProps) {
             console.log(singleLinkHref);
             setDisplayQRCode(true);
           }
-          // const encode = encodeURIComponent(props.uri);
-          // const attachEncodeURI = "http://192.168.0.235:8080/connect?data=" + encode;
-          // const doubleEncode= encodeURIComponent(attachEncodeURI);
-          // const trippleEncode = encodeURIComponent(doubleEncode);
-
-          const baseURI = "http://192.168.0.235:8080/connect?data=" + props.uri + "&type=mobile";
+          const modalAccounts = props.qrcodeModalOptions && props.qrcodeModalOptions.accounts as IAcount[];
+          const accounts = JSON.stringify(modalAccounts);
+          const encodedAccounts = btoa(accounts);
+          const baseURI = "http://192.168.0.235:8080/connect?data=" + props.uri + "&type=mobile" + `&accounts=${encodedAccounts}` ;
           const encodeURI = encodeURIComponent(baseURI);
-          const doubleEncodeURI = encodeURIComponent(encodeURI);
-          // IOS
-          // 
-          // console.log("encode", encode);
-          // console.log("dobuleEncode",doubleEncode);
-          console.log("baseURI ===> ",baseURI);
-          console.log("doubleEncodeURI ===>",doubleEncodeURI);
-          // const singleLink =`https://link.dcentwallet.com/DAppBrowser/?url=http://192.168.0.235:8080/connect?data=${doubleEncode}`;
-          const singleLink =`https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`;
-          
+          const doubleEncodeURI = encodeURIComponent(encodeURI) ;
+
+          console.log("baseURI ===> ", baseURI);
+          console.log("doubleEncodeURI ===>", doubleEncodeURI);
+          const singleLink = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`;
+
           setSingleLinkHref(singleLink);
-          console.log("singleLink",singleLink);
-          if(mobile) {
+          console.log("singleLink", singleLink);
+          if (mobile) {
             setDynamicLink(singleLink);
-            
+
           }
-          // domain
           setHasSingleLink(hasSingleLink);
         } catch (e) {
           setLoading(false);
@@ -131,7 +124,7 @@ function Modal(props: ModalProps) {
     <div id={WALLETCONNECT_MODAL_ID} className="walletconnect-qrcode__base animated fadeIn">
       <div className="walletconnect-modal__base">
         <Header onClose={props.onClose} />
-        {hasSingleLink && displayQRCode ? (
+        {/* {hasSingleLink && displayQRCode ? (
           <div className="walletconnect-modal__single_wallet">
             <a
               onClick={() => saveMobileLinkInfo({ name: links[0].name, href: singleLinkHref })}
@@ -144,9 +137,8 @@ function Modal(props: ModalProps) {
           </div>
         ) : android || loading || (!loading && links.length) ? (
           <div
-            className={`walletconnect-modal__mobile__toggle${
-              rightSelected ? " right__selected" : ""
-            }`}
+            className={`walletconnect-modal__mobile__toggle${rightSelected ? " right__selected" : ""
+              }`}
           >
             <div className="walletconnect-modal__mobile__toggle_selector" />
             {mobile ? (
@@ -165,7 +157,7 @@ function Modal(props: ModalProps) {
               </>
             )}
           </div>
-        ) : null}
+        ) : null} */}
 
         {/* <div>
           {displayQRCode || (!android && !loading && !links.length) ? (
@@ -178,7 +170,7 @@ function Modal(props: ModalProps) {
           {!mobile ? (
             <QRCodeDisplay {...displayProps} />
           ) : (
-            <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} dynamicLink={dynamicLink}/>
+            <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} dynamicLink={dynamicLink} />
           )}
         </div>
       </div>

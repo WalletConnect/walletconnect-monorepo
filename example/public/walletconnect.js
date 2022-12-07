@@ -24,6 +24,8 @@ function onInit() {
     icons: ["https://walletconnect.org/walletconnect-logo.png"],
     name: "WalletConnect",
   };
+  
+
   connector = new WalletConnect({
     bridge: DEFAULT_BRIDGE, // Required
     qrcodeModal: WalletConnectQRCodeModal,
@@ -36,10 +38,10 @@ function onInit() {
   if (!connector.connected) {
     // create new session
     connector.createSession();
-    console.log("connectore session",connector);
+    // console.log("connectore session",connector);
   } else {
     const { accounts, chainId } = connector;
-    console.log("connector",connector);
+    // console.log("connector",connector);
     onConnect({ accounts, chainId });
   }
 
@@ -55,7 +57,7 @@ function onSubscribe() {
     if (error) {
       throw error;
     }
-    console.log(payload);
+    // console.log(payload);
 
     // Get provided accounts and chainId
     const { accounts, chainId } = payload.params[0];
@@ -67,8 +69,8 @@ function onSubscribe() {
     if (error) {
       throw error;
     }
-    console.log("session update payload",payload);
-    console.log("seession update connector",connector);
+    // console.log("session update payload",payload);
+    // console.log("seession update connector",connector);
 
     // Get updated accounts and chainId
     const { accounts, chainId } = payload.params[0];
