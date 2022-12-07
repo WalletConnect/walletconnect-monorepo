@@ -15,6 +15,7 @@ const en: TextMap = {
   something_went_wrong: "Something went wrong",
   no_supported_wallets: "There are no supported wallets yet",
   no_wallets_found: "No wallets found",
+  connect_dcent : "Connect to D'CENT",
 };
 
 export default en;

@@ -13,4 +13,5 @@ export interface TextMap {
   something_went_wrong: string;
   no_supported_wallets: string;
   no_wallets_found: string;
+  connect_dcent?: string;
 }

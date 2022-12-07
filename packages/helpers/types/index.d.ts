@@ -375,11 +375,17 @@ export interface IQRCodeModal {
   open(uri: string, cb: any, opts?: any): void;
   close(): void;
 }
-
+export interface IAcount {
+  contractAddress?: string;
+  networkType?: string;
+  name? : string;
+  symbol? : string;
+}
 export interface IQRCodeModalOptions {
   registryUrl?: string;
   mobileLinks?: string[];
   desktopLinks?: string[];
+  accounts?: IAcount [] ;
 }
 
 export interface IMobileRegistryEntry {

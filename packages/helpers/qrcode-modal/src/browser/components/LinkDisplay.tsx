@@ -60,22 +60,38 @@ function LinkDisplay(props: LinkDisplayProps) {
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
-        {android ? props.text.connect_mobile_wallet : props.text.choose_preferred_wallet}
+        {/* {android ? props.text.connect_mobile_wallet : props.text.choose_preferred_wallet} */}
+        {props.text.connect_dcent}
       </p>
-      {!android && (
+      {/* {!android && (
         <input
           className={`walletconnect-search__input`}
           placeholder="Search"
           value={input}
           onChange={handleInput}
         />
-      )}
-      <div
+      )} */}
+      {/* <div
         className={`walletconnect-connect__buttons__wrapper${
           android ? "__android" : grid && links.length ? "__wrap" : ""
         }`}
+      > */}
+      <div
+        className={`walletconnect-connect__buttons__wrapper__android`}
       >
-        {!android ? (
+        <ConnectButton
+          name={props.text.connect}
+          color={DEFAULT_BUTTON_COLOR}
+          href={props.dynamicLink}
+          onClick={React.useCallback(() => {
+            saveMobileLinkInfo({
+              name: "Unknown",
+              href: props.dynamicLink,
+            });
+          }, [])}
+        />
+
+        {/* {!android ? (
           pageLinks.length ? (
             pageLinks.map((entry: IMobileRegistryEntry) => {
               const { color, name, shortName, logo } = entry;
@@ -127,9 +143,10 @@ function LinkDisplay(props: LinkDisplayProps) {
               });
             }, [])}
           />
-        )}
+        )} */}
       </div>
-      {hasPaging && (
+
+      {/* {hasPaging && (
         <div className="walletconnect-modal__footer">
           {Array(pages)
             .fill(0)
@@ -146,7 +163,7 @@ function LinkDisplay(props: LinkDisplayProps) {
               );
             })}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

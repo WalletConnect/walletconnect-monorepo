@@ -15,6 +15,7 @@ const ko: TextMap = {
   something_went_wrong: "문제가 발생했습니다.",
   no_supported_wallets: "아직 지원되는 지갑이 없습니다",
   no_wallets_found: "지갑을 찾을 수 없습니다",
+  connect_dcent:"D'CENT 와 연결",
 };
 
 export default ko;
