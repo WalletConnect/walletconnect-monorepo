@@ -336,11 +336,11 @@ describe("Sign Client Integration", () => {
       } = await testConnectMethod(clients);
 
       await clients.A.core.relayer.transportClose();
-      await clients.A.core.relayer.transportOpen();
-
       await clients.B.core.relayer.transportClose();
+      await clients.A.core.relayer.transportOpen();
       await clients.B.core.relayer.transportOpen();
 
+      await throttle(2000);
       await Promise.all([
         new Promise((resolve) => {
           clients.B.on("session_ping", (event: any) => {
@@ -370,11 +370,11 @@ describe("Sign Client Integration", () => {
       } = await testConnectMethod(clients);
 
       await clients.A.core.relayer.transportClose();
-      await throttle(2000);
-      await clients.A.core.relayer.transportOpen();
       await clients.B.core.relayer.transportClose();
       await throttle(2000);
+      await clients.A.core.relayer.transportOpen();
       await clients.B.core.relayer.transportOpen();
+      await throttle(2000);
       await Promise.all([
         new Promise((resolve) => {
           clients.B.on("session_ping", (event: any) => {

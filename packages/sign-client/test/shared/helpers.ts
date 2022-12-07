@@ -5,9 +5,15 @@ export async function deleteClients(clients: {
   A: SignClient | undefined;
   B: SignClient | undefined;
 }) {
-  await throttle(1_000);
-  if (clients.A) await disconnectSocket(clients.A.core);
-  if (clients.B) await disconnectSocket(clients.B.core);
+  await throttle(500);
+  for (const client of [clients.A, clients.B]) {
+    if (!client) continue;
+    client.core.events.removeAllListeners();
+    client.core.heartbeat.events.removeAllListeners();
+    client.core.relayer.events.removeAllListeners();
+    client.core.relayer.provider.events.removeAllListeners();
+    await disconnectSocket(client.core);
+  }
   // eslint-disable-next-line no-console
   console.log("closing sockets for ", clients.A?.core.name);
   delete clients.A;
