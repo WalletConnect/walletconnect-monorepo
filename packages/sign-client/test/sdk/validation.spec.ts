@@ -26,7 +26,7 @@ let proposalId: number;
 let pairingTopic: string;
 let topic: string;
 
-describe.skip("Sign Client Validation", () => {
+describe("Sign Client Validation", () => {
   beforeAll(async () => {
     console.log("validation tests start");
     clients = await initTwoClients();
@@ -41,11 +41,9 @@ describe.skip("Sign Client Validation", () => {
   });
 
   afterAll(async () => {
-    await throttle(10_000);
     console.log("validation tests - attempting clients delete");
     await deleteClients(clients);
     console.log("validation tests - clients deleted", clients);
-    await throttle(10_000);
   });
   describe("connect", () => {
     it("throws when no params are passed", async () => {
