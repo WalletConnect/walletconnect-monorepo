@@ -84,7 +84,7 @@ export class Relayer extends IRelayer {
   public async init() {
     this.logger.trace(`Initialized`);
     this.provider = await this.createProvider();
-    await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
+    await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
   }
@@ -143,28 +143,21 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
 
-    this.transportExplicitlyClosed = false;
-    await this.provider.connect();
-    // wait for the subscriber to finish resubscribing to its topics
-    await new Promise<void>((resolve) => {
-      this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
-        resolve();
-      });
-    });
+    try {
+      await this.provider.connect();
+      if (this.initialized) {
+        // wait for the subscriber to finish resubscribing to its topics
+        await new Promise<void>((resolve) => {
+          this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+            resolve();
+          });
+        });
+      }
 
-    // await Promise.all([
-    //   // wait for the subscriber to finish resubscribing to its topics
-    //   new Promise<void>((resolve) => {
-    //     this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
-    //       // console.log("subscriber resubscribed", this.core.name);
-    //       resolve();
-    //     });
-    //   }),
-    //   this.restartProvider(),
-    // ]);
-
-    // eslint-disable-next-line no-console
-    // console.log("connection restarted --- @!", this.core.name);
+      console.log("connection restarted --- @!", this.core.name);
+    } catch (e: unknown | Error) {
+      console.log("transport Open catched error", e, this.core.name);
+    }
   }
   // ---------- Private ----------------------------------------------- //
 
