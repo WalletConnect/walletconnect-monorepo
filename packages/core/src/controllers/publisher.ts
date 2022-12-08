@@ -75,6 +75,7 @@ export class Publisher extends IPublisher {
           `publish request timeout 5s - ${this.publishRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
         );
         this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+        return;
       }
       if (this.publishRetries > 0) this.publishRetries--;
       this.onPublish(hash, params);
