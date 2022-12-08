@@ -58,7 +58,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     uri?: string | undefined;
     approval: () => Promise<SessionTypes.Struct>;
   }> = new Promise(async function (resolve, reject) {
-    const connectTimeoutMs = 70_000;
+    const connectTimeoutMs = 800_000;
     const timeout = setTimeout(() => {
       return reject(new Error(`Connect timed out after ${connectTimeoutMs}ms - ${A.core.name}`));
     }, connectTimeoutMs);
@@ -96,7 +96,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   const pair: (uri: string) => Promise<PairingTypes.Struct> = (uri: string) =>
     new Promise(async function (resolve, reject) {
-      const pairTimeoutMs = 15_000;
+      const pairTimeoutMs = 800_000;
       const timeout = setTimeout(() => {
         return reject(new Error(`Pair timed out after ${pairTimeoutMs}ms`));
       }, pairTimeoutMs);
