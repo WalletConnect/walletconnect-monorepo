@@ -238,8 +238,7 @@ export class Subscriber extends ISubscriber {
       console.log(
         `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
-      await this.relayer.transportClose();
-      await this.relayer.transportOpen();
+      this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
     if (this.subscribeRetries > 0) this.subscribeRetries--;
     // console.log("subscribed", clientId, this.relayer.core.name, topic, result);

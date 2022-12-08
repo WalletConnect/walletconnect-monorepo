@@ -240,6 +240,12 @@ export class Relayer extends IRelayer {
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
       this.events.emit(RELAYER_EVENTS.error, err),
     );
+
+    this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
+      console.log("on relayer connection stalled --- @!", this.core.name);
+      await this.transportClose();
+      await this.transportOpen();
+    });
   }
 
   private attemptToReconnect() {
