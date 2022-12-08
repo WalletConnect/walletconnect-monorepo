@@ -262,6 +262,7 @@ export class Subscriber extends ISubscriber {
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
     this.setSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
+    console.log("onSubscribe", id, params.topic, Date.now(), this.relayer.core.name);
   }
 
   private onResubscribe(id: string, params: SubscriberTypes.Params) {
@@ -388,7 +389,9 @@ export class Subscriber extends ISubscriber {
     if (this.relayer.transportExplicitlyClosed) {
       return;
     }
+    console.log("checkPending", this.pending.size);
     this.pending.forEach(async (params) => {
+      console.log("checkPending - resubscribe", params.topic);
       const id = await this.rpcSubscribe(params.topic, params.relay);
       this.onSubscribe(id, params);
     });
