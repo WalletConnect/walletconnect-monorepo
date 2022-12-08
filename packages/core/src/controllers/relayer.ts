@@ -137,18 +137,26 @@ export class Relayer extends IRelayer {
   public async transportClose() {
     this.transportExplicitlyClosed = true;
     if (this.connected) await this.provider.disconnect();
+    console.log("transport closed --- @!", this.core.name);
   }
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
-
+    console.log("attempting to connect", this.core.name);
     try {
       await this.provider.connect();
+      console.log("provider.connect() done --- @!", this.core.name);
       if (this.initialized) {
         // wait for the subscriber to finish resubscribing to its topics
         await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            console.log("resubscribe timeout", this.core.name);
+            resolve();
+          }, 10_000);
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+            console.log("resubscribed --- @!", this.core.name);
+            clearTimeout(timeout);
             resolve();
           });
         });
