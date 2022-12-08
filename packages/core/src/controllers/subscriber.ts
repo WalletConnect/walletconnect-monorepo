@@ -222,45 +222,25 @@ export class Subscriber extends ISubscriber {
     });
 
     let result: any;
-    for (let i = 0; i < 10; i++) {
-      try {
-        console.log(
-          "subscribing..",
-          i,
-          this.subscribeRetries,
-          clientId,
-          this.relayer.core.name,
-          topic,
-          Date.now(),
-        );
-        result = await subscribe;
-        console.log("subscribed", clientId, this.relayer.core.name, topic, result);
-
-        break;
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(
-          `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-        );
-
-        await this.relayer.transportClose();
-        await this.relayer.transportOpen();
-      }
+    try {
+      console.log(
+        "subscribing..",
+        this.subscribeRetries,
+        clientId,
+        this.relayer.core.name,
+        topic,
+        Date.now(),
+      );
+      result = await subscribe;
+      console.log("subscribed", clientId, this.relayer.core.name, topic, result);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
+      );
+      await this.relayer.transportClose();
+      await this.relayer.transportOpen();
     }
-
-    // // eslint-disable-next-line require-await
-    // const timeout = setTimeout(async () => {
-    //   this.subscribeRetries++;
-    //   // eslint-disable-next-line no-console
-    //   console.log(
-    //     `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-    //   );
-    //   await this.relayer.transportClose();
-    //   await this.relayer.transportOpen();
-    // }, 5_000);
-    // console.log("subscribing..", clientId, this.relayer.core.name, topic, Date.now());
-    // const result = await this.relayer.provider.request(request);
-    // clearTimeout(timeout);
     if (this.subscribeRetries > 0) this.subscribeRetries--;
     // console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     return result;
