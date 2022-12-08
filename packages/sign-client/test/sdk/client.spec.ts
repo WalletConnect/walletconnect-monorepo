@@ -16,7 +16,7 @@ describe("Sign Client Integration", () => {
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
-    await deleteClients({ A: client, B: undefined });
+    // await deleteClients({ A: client, B: undefined });
   });
 
   describe("connect", () => {
@@ -335,10 +335,13 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await testConnectMethod(clients);
 
+      console.log("closing transports");
       await clients.A.core.relayer.transportClose();
       await clients.B.core.relayer.transportClose();
+      console.log("closing transports");
       await clients.A.core.relayer.transportOpen();
       await clients.B.core.relayer.transportOpen();
+      console.log("opened transports");
 
       await throttle(2000);
       await Promise.all([
@@ -368,13 +371,16 @@ describe("Sign Client Integration", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-
+      console.log("closing transport A");
       await clients.A.core.relayer.transportClose();
+      await throttle(2000);
+      console.log("opening transport A");
+      await clients.A.core.relayer.transportOpen();
+      console.log("closing transport B");
       await clients.B.core.relayer.transportClose();
       await throttle(2000);
-      await clients.A.core.relayer.transportOpen();
+      console.log("opening transport B");
       await clients.B.core.relayer.transportOpen();
-      await throttle(2000);
       await Promise.all([
         new Promise((resolve) => {
           clients.B.on("session_ping", (event: any) => {
