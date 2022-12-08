@@ -30,6 +30,5 @@ export const RELAYER_STORAGE_OPTIONS = {
   database: ":memory:",
 };
 
-// FIXME: Always manually change this after each release (hardcoded from package.json)
-// ... this will be temporarily hardcoded until we refactor our build chain!
+// Updated automatically via `new-version` npm script.
 export const RELAYER_SDK_VERSION = "2.1.3";
