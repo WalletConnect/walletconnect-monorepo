@@ -42,6 +42,7 @@ export class Subscriber extends ISubscriber {
   private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
   private subscribeRetries = 0;
+  private subscribeInProgress = false;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -200,6 +201,11 @@ export class Subscriber extends ISubscriber {
   }
 
   private async rpcSubscribe(topic: string, relay: RelayerTypes.ProtocolOptions) {
+    if (this.subscribeInProgress) {
+      console.log("Subscribe in progress, waiting for it to finish", this.relayer.core.name);
+      return;
+    }
+
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
       method: api.subscribe,
@@ -210,7 +216,6 @@ export class Subscriber extends ISubscriber {
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     const clientId = await this.relayer.core.crypto.getClientId();
-
     const subscribe = new Promise(async (resolve, reject) => {
       const timeout = setTimeout(() => {
         this.subscribeRetries++;
@@ -231,6 +236,7 @@ export class Subscriber extends ISubscriber {
         topic,
         Date.now(),
       );
+      this.subscribeInProgress = true;
       result = await subscribe;
       console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     } catch (err) {
@@ -239,6 +245,8 @@ export class Subscriber extends ISubscriber {
         `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
       );
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+    } finally {
+      this.subscribeInProgress = false;
     }
     if (this.subscribeRetries > 0) this.subscribeRetries--;
     // console.log("subscribed", clientId, this.relayer.core.name, topic, result);
@@ -260,10 +268,18 @@ export class Subscriber extends ISubscriber {
   }
 
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
+    console.log("onSubscribe", id, this.pending.size, params.topic, this.relayer.core.name);
     if (!id) return;
     this.setSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
-    console.log("onSubscribe", id, params.topic, Date.now(), this.relayer.core.name);
+    console.log(
+      "onSubscribe after",
+      id,
+      this.pending.size,
+      params.topic,
+      Date.now(),
+      this.relayer.core.name,
+    );
   }
 
   private onResubscribe(id: string, params: SubscriberTypes.Params) {
@@ -390,7 +406,7 @@ export class Subscriber extends ISubscriber {
     if (this.relayer.transportExplicitlyClosed) {
       return;
     }
-    console.log("checkPending", this.pending.size);
+    console.log("checkPending", this.pending.size, this.s);
     this.pending.forEach(async (params) => {
       console.log("checkPending - resubscribe", params.topic);
       const id = await this.rpcSubscribe(params.topic, params.relay);
