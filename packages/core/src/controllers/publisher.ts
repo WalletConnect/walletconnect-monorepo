@@ -127,14 +127,15 @@ export class Publisher extends IPublisher {
   private checkQueue() {
     console.log("checking publish queue", this.queue.size, this.relayer.core.name);
     this.queue.forEach(async (params) => {
-      const {
+      const { topic, message, opts } = params;
+      console.log("publish queueu process", topic, this.relayer.core.name);
+      await this.publish(topic, message, opts);
+      console.log(
+        "publish queueu process FINISHED",
         topic,
-        message,
-        opts: { ttl, relay, prompt, tag },
-      } = params;
-      const hash = hashMessage(message);
-      await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
-      this.onPublish(hash, params);
+        this.queue.size,
+        this.relayer.core.name,
+      );
     });
   }
 
