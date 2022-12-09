@@ -168,7 +168,10 @@ export class Relayer extends IRelayer {
       await Promise.race([
         this.provider.connect(),
         new Promise<void>((_res, reject) =>
-          this.once(RELAYER_EVENTS.transport_closed, () => reject),
+          this.once(RELAYER_EVENTS.transport_closed, () => {
+            console.log("relayer events -> transport close... rejecting", this.core.name);
+            reject();
+          }),
         ),
       ]);
       console.log("provider.connect() done --- @!", this.core.name);
