@@ -1,5 +1,5 @@
 import { getSdkError, generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeAll, afterEach } from "vitest";
 import SignClient from "../../src";
 import {
   initTwoClients,
@@ -13,10 +13,11 @@ const generateClientDbName = (prefix: string) =>
   `./test/tmp/${prefix}_${generateRandomBytes32()}.db`;
 
 describe("Sign Client Integration", () => {
+  afterEach(async () => await new Promise((resolve) => setTimeout(resolve, 200)));
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
-    // await deleteClients({ A: client, B: undefined });
+    await deleteClients({ A: client, B: undefined });
   });
 
   describe("connect", () => {
