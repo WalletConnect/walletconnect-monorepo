@@ -26,6 +26,7 @@ import {
   ISubscriber,
   RelayerOptions,
   RelayerTypes,
+  SubscriberTypes,
 } from "@walletconnect/types";
 import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
@@ -108,7 +109,19 @@ export class Relayer extends IRelayer {
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
     this.isInitialized();
-    const id = await this.subscriber.subscribe(topic, opts);
+    let id = "";
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
+          if (subscription.topic === topic) {
+            console.log("subscription created", subscription);
+            id = subscription.id;
+            resolve();
+          }
+        });
+      }),
+      this.subscriber.subscribe(topic, opts),
+    ]);
     return id;
   }
 
@@ -173,17 +186,8 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    if (this.connecting) {
-      console.log("transport restart in progress", this.core.name);
-      return;
-    }
     await this.transportClose();
-    await Promise.race([
-      this.transportOpen(relayUrl),
-      new Promise((_res, reject) =>
-        setTimeout(() => reject("restartTransport timeout reached"), 10_000),
-      ),
-    ]).catch((e) => {
+    await this.transportOpen(relayUrl).catch((e) => {
       console.log("restartTransport error", e);
     });
   }
