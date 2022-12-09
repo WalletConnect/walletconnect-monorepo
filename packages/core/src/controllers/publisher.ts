@@ -56,7 +56,7 @@ export class Publisher extends IPublisher {
       try {
         console.log("publishing payload", clientId, topic, this.relayer.core.name);
         await publish;
-        console.log("published...", clientId, topic, this.relayer.core.name);
+        console.log("✉️ published...", clientId, topic, this.relayer.core.name);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.log(

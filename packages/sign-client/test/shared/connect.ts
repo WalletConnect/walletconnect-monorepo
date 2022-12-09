@@ -136,6 +136,9 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     }),
   ]);
 
+  // eslint-disable-next-line no-console
+  console.log("✅ clients paired", clients.A.core.name);
+
   const settlePairingLatencyMs = Date.now() - start - (params?.qrCodeScanLatencyMs || 0);
 
   if (!sessionA) throw new Error("expect session A to be defined");
