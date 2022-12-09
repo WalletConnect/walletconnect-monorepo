@@ -21,17 +21,24 @@ describe("Sign Client Integration", () => {
 
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
-      const clients = await initTwoClients({}, {}, { name: "connect (with new pairing)" });
+      const clients = await initTwoClients(
+        { name: "connect (with new pairing) A" },
+        { name: "connect (with new pairing) B" },
+      );
       await testConnectMethod(clients);
       await deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {
-      const clients = await initTwoClients({}, {}, { name: "connect (with old pairing)" });
+      const clients = await initTwoClients(
+        { name: "connect (with old pairing) A" },
+        { name: "connect (with old pairing) B" },
+      );
       const {
         pairingA: { topic: pairingTopic },
       } = await testConnectMethod(clients);
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
+      await throttle(200);
       await testConnectMethod(clients, {
         pairingTopic,
       });
