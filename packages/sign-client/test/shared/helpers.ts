@@ -12,6 +12,7 @@ export async function deleteClients(clients: {
     client.core.heartbeat.events.removeAllListeners();
     client.core.relayer.events.removeAllListeners();
     client.core.relayer.provider.events.removeAllListeners();
+    client.events.removeAllListeners();
     await disconnectSocket(client.core);
   }
   // eslint-disable-next-line no-console

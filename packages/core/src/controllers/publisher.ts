@@ -42,18 +42,6 @@ export class Publisher extends IPublisher {
       const hash = hashMessage(message);
       this.queue.set(hash, params);
       const clientId = await this.relayer.core.crypto.getClientId();
-      // const payload = await this.relayer.core.crypto.decode(topic, message);
-      // const timeout = setTimeout(() => {
-      //   // eslint-disable-next-line no-console
-      //   console.log(
-      //     `publishing request timeout 15s ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name} - ${payload.id}`,
-      //   );
-      // }, 5_000);
-      // // const payload = await this.relayer.core.crypto.decode(topic, message);
-      // console.log("publishing payload", payload.id, clientId, topic, this.relayer.core.name);
-      // await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
-      // console.log("published...", payload.id, clientId, topic, this.relayer.core.name);
-      // clearTimeout(timeout);
 
       const publish = new Promise(async (resolve, reject) => {
         const timeout = setTimeout(() => {
@@ -75,7 +63,6 @@ export class Publisher extends IPublisher {
           `publish request timeout 5s - ${this.publishRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
         );
         this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
-        return;
       }
       if (this.publishRetries > 0) this.publishRetries--;
       this.onPublish(hash, params);
@@ -133,10 +120,12 @@ export class Publisher extends IPublisher {
   }
 
   private onPublish(hash: string, _params: PublisherTypes.Params) {
+    if (!hash) return;
     this.queue.delete(hash);
   }
 
   private checkQueue() {
+    console.log("checking publish queue", this.queue.size, this.relayer.core.name);
     this.queue.forEach(async (params) => {
       const {
         topic,
