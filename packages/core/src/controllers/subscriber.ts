@@ -406,7 +406,7 @@ export class Subscriber extends ISubscriber {
     if (this.relayer.transportExplicitlyClosed) {
       return;
     }
-    console.log("checkPending", this.pending.size, this.s);
+    console.log("checkPending", this.pending.size, this.relayer.core.name);
     this.pending.forEach(async (params) => {
       console.log("checkPending - resubscribe", params.topic);
       const id = await this.rpcSubscribe(params.topic, params.relay);
