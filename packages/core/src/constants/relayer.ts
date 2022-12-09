@@ -14,6 +14,7 @@ export const RELAYER_EVENTS = {
   disconnect: "relayer_disconnect",
   error: "relayer_error",
   connection_stalled: "relayer_connection_stalled",
+  transport_closed: "relayer_transport_closed",
 };
 
 export const RELAYER_SUBSCRIBER_SUFFIX = "_subscription";

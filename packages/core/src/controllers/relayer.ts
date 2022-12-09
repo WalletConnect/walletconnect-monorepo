@@ -151,6 +151,7 @@ export class Relayer extends IRelayer {
   public async transportClose() {
     this.transportExplicitlyClosed = true;
     if (this.connected) await this.provider.disconnect();
+    this.events.emit(RELAYER_EVENTS.transport_closed);
     console.log("transport closed --- @!", this.core.name);
   }
 
@@ -164,7 +165,12 @@ export class Relayer extends IRelayer {
     }
     console.log("attempting to connect", this.core.name);
     try {
-      await this.provider.connect();
+      await Promise.race([
+        this.provider.connect(),
+        new Promise<void>((_res, reject) =>
+          this.once(RELAYER_EVENTS.transport_closed, () => reject),
+        ),
+      ]);
       console.log("provider.connect() done --- @!", this.core.name);
       if (this.initialized) {
         // wait for the subscriber to finish resubscribing to its topics
@@ -211,15 +217,6 @@ export class Relayer extends IRelayer {
       ),
     );
   }
-
-  // private async restartProvider() {
-  //   this.provider.events.removeAllListeners();
-  //   this.provider.connection.events.removeAllListeners();
-  //   this.provider = await this.createProvider();
-  //   this.registerEventListeners();
-  //   await this.provider.connect();
-  //   // console.log("restarting provider --- @!", this.core.name);
-  // }
 
   private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
