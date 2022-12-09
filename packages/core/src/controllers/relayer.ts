@@ -145,7 +145,15 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = false;
     console.log("attempting to connect", this.core.name);
     try {
-      await this.provider.connect();
+      await new Promise<void>(async (resolve, reject) => {
+        const timeout = setTimeout(() => {
+          console.log("provider.connect() timeout", this.core.name);
+          reject();
+        }, 10_000);
+        await this.provider.connect();
+        clearTimeout(timeout);
+        resolve();
+      });
       console.log("provider.connect() done --- @!", this.core.name);
       if (this.initialized) {
         // wait for the subscriber to finish resubscribing to its topics
