@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
@@ -274,6 +275,7 @@ export class Engine extends IEngine {
     this.isInitialized();
     await this.isValidPing(params);
     const { topic } = params;
+    console.log("sending ping request", params.topic, this.name);
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_sessionPing", {});
       const { done, resolve, reject } = createDelayedPromise<void>();
@@ -427,6 +429,7 @@ export class Engine extends IEngine {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
+    console.log("onRelayEventRequest", topic, reqMethod, this.name);
     switch (reqMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeRequest(topic, payload);

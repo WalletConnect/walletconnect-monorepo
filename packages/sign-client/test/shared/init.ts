@@ -17,14 +17,14 @@ export async function initTwoClients(
     ...TEST_SIGN_CLIENT_OPTIONS_A,
     ...sharedClientOpts,
     ...clientOptsA,
-    logger: "trace",
+    logger: "debug",
   });
 
   const B = await SignClient.init({
     ...TEST_SIGN_CLIENT_OPTIONS_B,
     ...sharedClientOpts,
     ...clientOptsB,
-    logger: "trace",
+    logger: "debug",
   });
   await throttle(500);
   return { A, B };
