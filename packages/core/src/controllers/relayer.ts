@@ -157,11 +157,16 @@ export class Relayer extends IRelayer {
   }
 
   public async transportOpen(relayUrl?: string) {
+    if (this.transportRestartAttempts > 1) {
+      console.log("transport restart attempts > 1, not attempting to connect", this.core.name);
+      return;
+    }
+
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
-    this.transportRestartAttempts++;
     console.log("attempting to connect", this.core.name);
     try {
+      this.transportRestartAttempts++;
       await new Promise((resolve) => {
         console.log(
           `waiting ${this.transportRestartAttempts * 1000}ms before attempting to connect again...`,
