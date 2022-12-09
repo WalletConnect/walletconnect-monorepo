@@ -62,7 +62,6 @@ export class Relayer extends IRelayer {
 
   private relayUrl: string;
   private projectId: string | undefined;
-
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -174,8 +173,11 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
+    if (this.connecting) {
+      console.log("transport restart in progress", this.core.name);
+      return;
+    }
     await this.transportClose();
-
     await Promise.race([
       this.transportOpen(relayUrl),
       new Promise((_res, reject) =>
