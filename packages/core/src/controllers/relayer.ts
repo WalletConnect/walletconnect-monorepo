@@ -168,8 +168,8 @@ export class Relayer extends IRelayer {
     try {
       this.transportRestartAttempts++;
       await new Promise((resolve) => {
-        console.log(`waiting 5000ms before attempting to connect again...`);
-        setTimeout(resolve, 5000);
+        console.log(`waiting 0ms before attempting to connect again...`);
+        setTimeout(resolve, 0);
       });
       await Promise.race([
         this.provider.connect(),
