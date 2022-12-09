@@ -63,6 +63,7 @@ export class Relayer extends IRelayer {
 
   private relayUrl: string;
   private projectId: string | undefined;
+  private transportRestartAttempts = 0;
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -158,13 +159,15 @@ export class Relayer extends IRelayer {
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
-
-    if (this.connected) {
-      console.log("transport already open --- @!", this.core.name);
-      return;
-    }
+    this.transportRestartAttempts++;
     console.log("attempting to connect", this.core.name);
     try {
+      await new Promise((resolve) => {
+        console.log(
+          `waiting ${this.transportRestartAttempts * 1000}ms before attempting to connect again...`,
+        );
+        setTimeout(resolve, this.transportRestartAttempts * 1000);
+      });
       await Promise.race([
         this.provider.connect(),
         new Promise<void>((_res, reject) =>
@@ -189,7 +192,7 @@ export class Relayer extends IRelayer {
           });
         });
       }
-
+      this.transportRestartAttempts = 0;
       console.log("connection restarted --- @!", this.core.name);
     } catch (e: unknown | Error) {
       console.log("transport Open catched error", e, this.core.name);
