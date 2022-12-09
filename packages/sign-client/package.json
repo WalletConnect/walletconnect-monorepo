@@ -27,7 +27,7 @@
     "test:concurrency": "vitest run --dir test/concurrency",
     "test:xregion": "vitest run --dir test/xregion",
     "test": "npm run test:pre; npm run test:run",
-    "test:ignoreUnhandled": "npm run test:pre; npm run test:run -- --dangerouslyIgnoreUnhandledErrors --no-threads",
+    "test:ignoreUnhandled": "npm run test:pre; npm run test:run -- --dangerouslyIgnoreUnhandledErrors",
     "test:canary": "vitest run --dir test/canary",
     "test:lifecycle": "vitest run --dir test/lifecycle",
     "canary": "npm run test:pre; npm run test:canary",
