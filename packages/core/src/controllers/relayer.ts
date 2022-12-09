@@ -172,6 +172,20 @@ export class Relayer extends IRelayer {
       console.log("transport Open catched error", e, this.core.name);
     }
   }
+
+  public async restartTransport(relayUrl?: string) {
+    await this.transportClose();
+
+    await Promise.race([
+      this.transportOpen(relayUrl),
+      new Promise((_res, reject) =>
+        setTimeout(() => reject("restartTransport timeout reached"), 10_000),
+      ),
+    ]).catch((e) => {
+      console.log("restartTransport error", e);
+    });
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private async createProvider() {
@@ -256,8 +270,7 @@ export class Relayer extends IRelayer {
 
     this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
       console.log("on relayer connection stalled --- @!", this.core.name);
-      await this.transportClose();
-      await this.transportOpen();
+      await this.restartTransport();
     });
   }
 

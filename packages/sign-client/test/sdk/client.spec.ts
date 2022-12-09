@@ -343,11 +343,8 @@ describe("Sign Client Integration", () => {
       } = await testConnectMethod(clients);
 
       console.log("closing transports");
-      await clients.A.core.relayer.transportClose();
-      await clients.B.core.relayer.transportClose();
-      console.log("closing transports");
-      await clients.A.core.relayer.transportOpen();
-      await clients.B.core.relayer.transportOpen();
+      await clients.A.core.relayer.restartTransport();
+      await clients.B.core.relayer.restartTransport();
       console.log("opened transports");
 
       await throttle(2000);
