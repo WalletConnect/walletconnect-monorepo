@@ -143,17 +143,14 @@ export class Relayer extends IRelayer {
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
+
+    if (this.connected) {
+      console.log("transport already open --- @!", this.core.name);
+      return;
+    }
     console.log("attempting to connect", this.core.name);
     try {
-      await new Promise<void>(async (resolve, reject) => {
-        const timeout = setTimeout(() => {
-          console.log("provider.connect() timeout", this.core.name);
-          reject();
-        }, 10_000);
-        await this.provider.connect();
-        clearTimeout(timeout);
-        resolve();
-      });
+      await this.provider.connect();
       console.log("provider.connect() done --- @!", this.core.name);
       if (this.initialized) {
         // wait for the subscriber to finish resubscribing to its topics
