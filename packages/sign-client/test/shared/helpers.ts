@@ -9,9 +9,11 @@ export async function deleteClients(clients: {
   for (const client of [clients.A, clients.B]) {
     if (!client) continue;
     client.core.events.removeAllListeners();
-    client.core.heartbeat.events.removeAllListeners();
     client.core.relayer.events.removeAllListeners();
+    client.core.heartbeat.events.removeAllListeners();
     client.core.relayer.provider.events.removeAllListeners();
+    client.core.relayer.subscriber.events.removeAllListeners();
+    client.core.relayer.provider.connection.events.removeAllListeners();
     client.events.removeAllListeners();
     await disconnectSocket(client.core);
   }
