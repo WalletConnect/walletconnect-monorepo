@@ -63,8 +63,6 @@ export class Relayer extends IRelayer {
 
   private relayUrl: string;
   private projectId: string | undefined;
-  private transportRestartAttempts = 0;
-  private transportRestartInProgress = false;
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -154,24 +152,14 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = true;
     if (this.connected) await this.provider.disconnect();
     this.events.emit(RELAYER_EVENTS.transport_closed);
-    this.transportRestartInProgress = false;
     console.log("transport closed --- @!", this.core.name);
   }
 
   public async transportOpen(relayUrl?: string) {
-    if (this.transportRestartInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
-    this.transportRestartInProgress = true;
     console.log("attempting to connect", this.core.name);
     try {
-      this.transportRestartAttempts++;
-      const restartMs =
-        this.transportRestartAttempts > 1 ? this.transportRestartAttempts * 1000 : 0;
-      await new Promise((resolve) => {
-        console.log(`waiting ${restartMs}ms before attempting to connect again...`);
-        setTimeout(resolve, restartMs);
-      });
       await Promise.race([
         this.provider.connect(),
         new Promise<void>((_res, reject) =>
@@ -196,8 +184,6 @@ export class Relayer extends IRelayer {
           });
         });
       }
-      this.transportRestartAttempts = 0;
-      this.transportRestartInProgress = false;
       console.log("connection restarted --- @!", this.core.name);
     } catch (e: unknown | Error) {
       console.log("transport Open catched error", e, this.core.name);
@@ -294,9 +280,10 @@ export class Relayer extends IRelayer {
     if (this.transportExplicitlyClosed) {
       return;
     }
+    console.log("attempting to reconnect", this.core.name);
     // Attempt reconnection after one second.
-    setTimeout(() => {
-      this.provider.connect();
+    setTimeout(async () => {
+      await this.transportOpen();
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
