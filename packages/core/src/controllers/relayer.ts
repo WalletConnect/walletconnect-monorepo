@@ -151,6 +151,7 @@ export class Relayer extends IRelayer {
   public async transportClose() {
     this.transportExplicitlyClosed = true;
     if (this.connected) await this.provider.disconnect();
+    await new Promise<void>((resolve) => setTimeout(resolve, 2000));
     this.events.emit(RELAYER_EVENTS.transport_closed);
     console.log("transport closed --- @!", this.core.name);
   }
