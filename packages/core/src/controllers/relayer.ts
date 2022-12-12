@@ -154,6 +154,7 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = true;
     if (this.connected) await this.provider.disconnect();
     this.events.emit(RELAYER_EVENTS.transport_closed);
+    this.transportRestartInProgress = false;
     console.log("transport closed --- @!", this.core.name);
   }
 
@@ -196,6 +197,7 @@ export class Relayer extends IRelayer {
         });
       }
       this.transportRestartAttempts = 0;
+      this.transportRestartInProgress = false;
       console.log("connection restarted --- @!", this.core.name);
     } catch (e: unknown | Error) {
       console.log("transport Open catched error", e, this.core.name);
