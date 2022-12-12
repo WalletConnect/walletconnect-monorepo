@@ -157,7 +157,7 @@ export class Relayer extends IRelayer {
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
-    console.log("attempting to connect", this.core.name);
+    console.log("attempting to connect", this.core.name, this.connected);
     try {
       await Promise.race([
         this.provider.connect(),
