@@ -157,7 +157,6 @@ export class Relayer extends IRelayer {
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
-    this.transportExplicitlyClosed = false;
     console.log("attempting to connect", this.core.name);
     try {
       await Promise.race([
@@ -169,6 +168,8 @@ export class Relayer extends IRelayer {
           }),
         ),
       ]);
+
+      this.transportExplicitlyClosed = false;
       console.log("provider.connect() done --- @!", this.core.name);
       if (this.initialized) {
         // wait for the subscriber to finish resubscribing to its topics
