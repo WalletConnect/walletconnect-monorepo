@@ -241,7 +241,7 @@ export class Pairing implements IPairing {
 
       const payload = await this.core.crypto.decode(topic, message);
       // eslint-disable-next-line no-console
-      // console.log("received payload", payload, this.core.name);
+      console.log("received payload", payload, this.core.name);
       if (isJsonRpcRequest(payload)) {
         this.core.history.set(topic, payload);
         this.onRelayEventRequest({ topic, payload });
