@@ -170,6 +170,7 @@ describe("Sign Client Integration", () => {
 
           await deleteClients(clients);
 
+          await throttle(1_000);
           // restart
           clients = await initTwoClients(
             {
@@ -257,6 +258,7 @@ describe("Sign Client Integration", () => {
           // delete
           await deleteClients(clients);
 
+          await throttle(1_000);
           // restart
           clients = await initTwoClients(
             {
@@ -344,6 +346,7 @@ describe("Sign Client Integration", () => {
 
       console.log("closing transports");
       await clients.A.core.relayer.restartTransport();
+      await throttle(500);
       await clients.B.core.relayer.restartTransport();
       console.log("opened transports");
 
