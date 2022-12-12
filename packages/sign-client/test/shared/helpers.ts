@@ -21,6 +21,7 @@ export async function deleteClients(clients: {
   console.log("closing sockets for ", clients.A?.core.name);
   delete clients.A;
   delete clients.B;
+  await throttle(500);
 }
 
 export async function throttle(timeout: number) {
