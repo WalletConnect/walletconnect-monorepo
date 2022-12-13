@@ -9,7 +9,7 @@ describe("Sign Client Persistance", () => {
   describe("ping", () => {
     describe("pairing", () => {
       describe("after restart", () => {
-        it("clients can ping each other", async () => {
+        it.only("clients can ping each other", async () => {
           const db_a = generateClientDbName("client_a");
           const db_b = generateClientDbName("client_b");
 
@@ -50,7 +50,7 @@ describe("Sign Client Persistance", () => {
 
           await deleteClients(clients);
 
-          await throttle(1_000);
+          await throttle(2_000);
           // restart
           clients = await initTwoClients(
             {
@@ -114,7 +114,7 @@ describe("Sign Client Persistance", () => {
           // delete
           await deleteClients(clients);
 
-          await throttle(1_000);
+          await throttle(2_000);
           // restart
           clients = await initTwoClients(
             {
