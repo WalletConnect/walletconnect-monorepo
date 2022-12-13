@@ -1,5 +1,5 @@
 import { getSdkError } from "@walletconnect/utils";
-import { expect, describe, it, vi, beforeAll, afterAll } from "vitest";
+import { expect, describe, it, vi, afterAll } from "vitest";
 import { initTwoClients, testConnectMethod, deleteClients, throttle, Clients } from "../../shared";
 
 describe("Sign Client Integration", () => {
@@ -7,14 +7,12 @@ describe("Sign Client Integration", () => {
   let pairingA: any;
   let sessionA: any;
 
-  beforeAll(async () => {
-    clients = await initTwoClients();
-  });
-
   afterAll(async () => {
     await deleteClients(clients);
   });
-  it("init", () => {
+
+  it("init", async () => {
+    clients = await initTwoClients();
     expect(clients.A).to.be.exist;
     expect(clients.B).to.be.exist;
   });
@@ -27,45 +25,11 @@ describe("Sign Client Integration", () => {
     it("connect (with old pairing)", async () => {
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
-      await throttle(200);
       await testConnectMethod(clients, {
         pairingTopic: pairingA.topic,
       });
     });
   });
-  describe("ping", () => {
-    it("throws if the topic is not a known pairing or session topic", async () => {
-      const fakeTopic = "nonsense";
-      await expect(clients.A.ping({ topic: fakeTopic })).rejects.toThrowError(
-        `No matching key. session or pairing topic doesn't exist: ${fakeTopic}`,
-      );
-    });
-    describe("pairing", () => {
-      describe("with existing pairing", () => {
-        it("A pings B", async () => {
-          const topic = pairingA.topic;
-          await clients.A.ping({ topic });
-        });
-        it("B pings A", async () => {
-          const topic = pairingA.topic;
-          await clients.B.ping({ topic });
-        });
-      });
-    });
-    describe("session", () => {
-      describe("with existing session", () => {
-        it("A pings B", async () => {
-          const topic = sessionA.topic;
-          await clients.A.ping({ topic });
-        });
-        it("B pings A", async () => {
-          const topic = sessionA.topic;
-          await clients.B.ping({ topic });
-        });
-      });
-    });
-  });
-
   describe("update", () => {
     it("updates session namespaces state with provided namespaces", async () => {
       const topic = sessionA.topic;
