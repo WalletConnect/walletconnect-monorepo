@@ -175,7 +175,7 @@ export class Relayer extends IRelayer {
       }
     } catch (e: unknown | Error) {
       const error = e as Error;
-      if (!/socket hang up/.test(error.message)) {
+      if (!/socket hang up/i.test(error.message)) {
         throw new Error(error.message);
       }
       // eslint-disable-next-line no-console
