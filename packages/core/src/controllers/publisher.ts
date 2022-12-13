@@ -8,6 +8,7 @@ import {
   getRelayProtocolName,
   hashMessage,
   isUndefined,
+  createExpiringPromise,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
@@ -40,16 +41,11 @@ export class Publisher extends IPublisher {
       const params = { topic, message, opts: { ttl, relay, prompt, tag } };
       const hash = hashMessage(message);
       this.queue.set(hash, params);
-      const publish = new Promise(async (resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject();
-        }, this.publishTimeout);
-        const res = await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
-        clearTimeout(timeout);
-        resolve(res);
-      });
-
       try {
+        const publish = await createExpiringPromise(
+          this.rpcPublish(topic, message, ttl, relay, prompt, tag),
+          this.publishTimeout,
+        );
         await publish;
       } catch (err) {
         this.logger.debug(`Publishing Payload stalled`);

@@ -159,6 +159,8 @@ export class Relayer extends IRelayer {
       await Promise.race([
         this.provider.connect(),
         new Promise<void>((_res, reject) =>
+          // rejects pending promise if transport is closed before connection is established
+          // useful when .connect() gets stuck resolving
           this.once(RELAYER_EVENTS.transport_closed, () => {
             reject();
           }),

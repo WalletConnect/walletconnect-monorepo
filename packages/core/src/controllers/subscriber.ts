@@ -16,6 +16,7 @@ import {
   getInternalError,
   getRelayProtocolApi,
   getRelayProtocolName,
+  createExpiringPromise,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -206,17 +207,12 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    const subscribe = new Promise(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject();
-      }, this.subscribeTimeout);
-      const res = await this.relayer.provider.request(request);
-      clearTimeout(timeout);
-      resolve(res);
-    });
-
     let result: any;
     try {
+      const subscribe = await createExpiringPromise(
+        this.relayer.provider.request(request),
+        this.subscribeTimeout,
+      );
       result = await subscribe;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Payload stalled`);
