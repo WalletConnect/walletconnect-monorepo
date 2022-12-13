@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import {
   ICore,
@@ -100,7 +101,9 @@ export class Pairing implements IPairing {
       relay,
     });
     await this.pairings.set(topic, pairing);
-    await this.core.relayer.subscribe(topic);
+    console.log("subscribe new pairing", topic, this.core.name);
+    const id = await this.core.relayer.subscribe(topic);
+    console.log("subscribed pairing", topic, id, this.core.name);
     this.core.expirer.set(topic, expiry);
 
     return { topic, uri };

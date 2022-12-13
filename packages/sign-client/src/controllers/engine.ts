@@ -89,7 +89,9 @@ export class Engine extends IEngine {
     }
 
     if (!topic || !active) {
+      console.log("create() new pairing", this.name);
       const { topic: newTopic, uri: newUri } = await this.client.core.pairing.create();
+      console.log("created new pairing", newTopic, this.name);
       topic = newTopic;
       uri = newUri;
     }
@@ -121,7 +123,6 @@ export class Engine extends IEngine {
               metadata: session.peer.metadata,
             });
           }
-
           resolve(completeSession);
         }
       },
@@ -351,7 +352,7 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     this.client.core.history.set(topic, payload);
-
+    console.log("sending request", topic, method, params, this.name);
     // await is intentionally omitted here because of a possible race condition
     // where a response is received before the publish call is resolved
     this.client.core.relayer.publish(topic, message, opts);

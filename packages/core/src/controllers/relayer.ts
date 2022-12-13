@@ -103,6 +103,7 @@ export class Relayer extends IRelayer {
 
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
     this.isInitialized();
+    console.log("relayer publish..", topic, message, opts, this.core.name);
     await this.publisher.publish(topic, message, opts);
     await this.recordMessageEvent({ topic, message });
   }
@@ -116,12 +117,14 @@ export class Relayer extends IRelayer {
         this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
           if (subscription.topic === topic) {
             console.log("subscription created", subscription, this.core.name);
-            id = subscription.id;
             resolve();
           }
         });
       }),
-      this.subscriber.subscribe(topic, opts),
+      new Promise<void>(async (resolve) => {
+        id = await this.subscriber.subscribe(topic, opts);
+        resolve();
+      }),
     ]);
     console.log("relayer subscribe.. released ✅", topic, this.core.name);
     return id;
