@@ -1,5 +1,5 @@
 import { getSdkError, parseUri } from "@walletconnect/utils";
-import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import { expect, describe, it } from "vitest";
 import SignClient from "../../src";
 import {
   initTwoClients,

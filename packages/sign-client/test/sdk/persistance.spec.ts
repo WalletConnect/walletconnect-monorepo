@@ -24,6 +24,7 @@ describe("Sign Client Persistance", () => {
             },
             { logger: "error" },
           );
+
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
@@ -49,8 +50,6 @@ describe("Sign Client Persistance", () => {
           ]);
 
           await deleteClients(clients);
-
-          await throttle(2_000);
           // restart
           clients = await initTwoClients(
             {
