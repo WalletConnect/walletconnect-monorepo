@@ -191,6 +191,7 @@ export class Relayer extends IRelayer {
       console.log("connection restarted --- @!", this.core.name);
     } catch (e: unknown | Error) {
       console.log("transport Open catched error", e, this.core.name);
+      await this.transportOpen();
     }
   }
 
