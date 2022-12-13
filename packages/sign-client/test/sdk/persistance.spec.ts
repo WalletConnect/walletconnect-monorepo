@@ -15,14 +15,11 @@ describe("Sign Client Persistance", () => {
 
           let clients = await initTwoClients(
             {
-              name: "pairing -> after restart A before",
               storageOptions: { database: db_a },
             },
             {
-              name: "pairing -> after restart B before",
               storageOptions: { database: db_b },
             },
-            { logger: "error" },
           );
 
           const {
@@ -53,14 +50,11 @@ describe("Sign Client Persistance", () => {
           // restart
           clients = await initTwoClients(
             {
-              name: "pairing -> after restart A after",
               storageOptions: { database: db_a },
             },
             {
-              name: "pairing -> after restart B after",
               storageOptions: { database: db_b },
             },
-            { logger: "error" },
           );
 
           // ping
@@ -78,11 +72,9 @@ describe("Sign Client Persistance", () => {
           const db_b = generateClientDbName("client_b");
           let clients = await initTwoClients(
             {
-              name: "session -> after restart A before",
               storageOptions: { database: db_a },
             },
             {
-              name: "session -> after restart B before",
               storageOptions: { database: db_b },
             },
           );
@@ -117,11 +109,9 @@ describe("Sign Client Persistance", () => {
           // restart
           clients = await initTwoClients(
             {
-              name: "session -> after restart A after",
               storageOptions: { database: db_a },
             },
             {
-              name: "session -> after restart B after",
               storageOptions: { database: db_b },
             },
           );

@@ -18,18 +18,12 @@ describe("Sign Client Integration", () => {
 
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
-      const clients = await initTwoClients(
-        { name: "connect (with new pairing) A" },
-        { name: "connect (with new pairing) B" },
-      );
+      const clients = await initTwoClients();
       await testConnectMethod(clients);
       await deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {
-      const clients = await initTwoClients(
-        { name: "connect (with old pairing) A" },
-        { name: "connect (with old pairing) B" },
-      );
+      const clients = await initTwoClients();
       const {
         pairingA: { topic: pairingTopic },
       } = await testConnectMethod(clients);
@@ -46,12 +40,7 @@ describe("Sign Client Integration", () => {
   describe("disconnect", () => {
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
-        const clients = await initTwoClients(
-          { name: "deletes the pairing on disconnect A" },
-          { name: "deletes the pairing on disconnect B" },
-          {},
-        );
-
+        const clients = await initTwoClients();
         const {
           pairingA: { topic },
         } = await testConnectMethod(clients);
@@ -67,11 +56,7 @@ describe("Sign Client Integration", () => {
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
-        const clients = await initTwoClients(
-          { name: "deletes the pairing on disconnect A" },
-          { name: "deletes the pairing on disconnect B" },
-          {},
-        );
+        const clients = await initTwoClients();
         const {
           sessionA: { topic },
         } = await testConnectMethod(clients);
@@ -89,10 +74,7 @@ describe("Sign Client Integration", () => {
 
   describe("ping", () => {
     it("throws if the topic is not a known pairing or session topic", async () => {
-      const clients = await initTwoClients(
-        { name: "ping -> throws if topic is not a known - A" },
-        { name: "ping -> throws if topic is not a known - B" },
-      );
+      const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).rejects.toThrowError(
         `No matching key. session or pairing topic doesn't exist: ${fakeTopic}`,
@@ -102,10 +84,7 @@ describe("Sign Client Integration", () => {
     describe("pairing", () => {
       describe("with existing pairing", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients(
-            { name: "pairing A pings B - A" },
-            { name: "pairing A pings B - B" },
-          );
+          const clients = await initTwoClients();
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
@@ -113,10 +92,7 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients(
-            { name: "pairing B pings A - A" },
-            { name: "pairing B pings A - B" },
-          );
+          const clients = await initTwoClients();
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
@@ -128,10 +104,7 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients(
-            { name: "session A pings B - A" },
-            { name: "session A pings B - B" },
-          );
+          const clients = await initTwoClients();
           const {
             sessionA: { topic },
           } = await testConnectMethod(clients);
@@ -139,10 +112,7 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients(
-            { name: "session B pings A - A" },
-            { name: "session B pings A - B" },
-          );
+          const clients = await initTwoClients();
           const {
             sessionA: { topic },
           } = await testConnectMethod(clients);
@@ -154,10 +124,7 @@ describe("Sign Client Integration", () => {
   });
   describe("update", () => {
     it("updates session namespaces state with provided namespaces", async () => {
-      const clients = await initTwoClients(
-        { name: "updates session namespaces state with provided namespaces A" },
-        { name: "updates session namespaces state with provided namespaces B" },
-      );
+      const clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
@@ -178,15 +145,12 @@ describe("Sign Client Integration", () => {
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
       await deleteClients(clients);
-    }, 50_000);
+    });
   });
 
   describe("extend", () => {
     it.skip("updates session expiry state", async () => {
-      const clients = await initTwoClients(
-        { name: "session extend A" },
-        { name: "session extend B" },
-      );
+      const clients = await initTwoClients();
       vi.useFakeTimers();
       const {
         sessionA: { topic },

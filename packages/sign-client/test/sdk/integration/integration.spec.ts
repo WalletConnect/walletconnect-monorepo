@@ -54,10 +54,7 @@ describe("Sign Client Integration", () => {
 
   describe("extend", () => {
     it.skip("updates session expiry state", async () => {
-      const clients = await initTwoClients(
-        { name: "session extend A" },
-        { name: "session extend B" },
-      );
+      const clients = await initTwoClients();
       vi.useFakeTimers();
       const {
         sessionA: { topic },

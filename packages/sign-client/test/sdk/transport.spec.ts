@@ -4,10 +4,7 @@ import { initTwoClients, testConnectMethod, deleteClients, throttle } from "../s
 describe("Sign Client Transport Tests", () => {
   describe("transport", () => {
     it("should disconnect & reestablish socket transport", async () => {
-      const clients = await initTwoClients(
-        { name: "disconnect & reestablish socket transport A" },
-        { name: "disconnect & reestablish socket transpor B" },
-      );
+      const clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
@@ -34,10 +31,7 @@ describe("Sign Client Transport Tests", () => {
       await deleteClients(clients);
     });
     it("should disconnect & reestablish socket transport with delay", async () => {
-      const clients = await initTwoClients(
-        { name: "disconnect & reestablish socket transport with delay A" },
-        { name: "disconnect & reestablish socket transport with delay B" },
-      );
+      const clients = await initTwoClients();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
