@@ -1,5 +1,6 @@
 import { getSdkError } from "@walletconnect/utils";
-import { expect, describe, it, vi, afterAll } from "vitest";
+import { expect, describe, it, vi, afterAll, beforeAll } from "vitest";
+import { createExpiringPromise } from "../../../../utils/src";
 import { initTwoClients, testConnectMethod, deleteClients, Clients } from "../../shared";
 
 describe("Sign Client Integration", () => {
@@ -7,21 +8,34 @@ describe("Sign Client Integration", () => {
   let pairingA: any;
   let sessionA: any;
 
+  beforeAll(async () => {
+    clients = await initTwoClients();
+    let retries = 0;
+    while (!pairingA) {
+      if (retries > 5) {
+        throw new Error("Could not create pairing");
+      }
+      try {
+        const settled: any = await createExpiringPromise(testConnectMethod(clients), 20_000);
+        pairingA = settled.pairingA;
+        sessionA = settled.sessionA;
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.log("retrying", e);
+      }
+      retries++;
+    }
+  });
+
   afterAll(async () => {
     await deleteClients(clients);
   });
 
-  it("init", async () => {
-    clients = await initTwoClients();
+  it("init", () => {
     expect(clients.A).to.be.exist;
     expect(clients.B).to.be.exist;
   });
   describe("connect", () => {
-    it("connect (with new pairing)", async () => {
-      const settled = await testConnectMethod(clients);
-      pairingA = settled.pairingA;
-      sessionA = settled.sessionA;
-    });
     it("connect (with old pairing)", async () => {
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
