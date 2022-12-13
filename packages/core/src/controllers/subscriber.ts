@@ -260,7 +260,6 @@ export class Subscriber extends ISubscriber {
 
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
     console.log("onSubscribe", id, this.pending.size, params.topic, this.relayer.core.name);
-    if (!id) return;
     this.setSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
     console.log(
