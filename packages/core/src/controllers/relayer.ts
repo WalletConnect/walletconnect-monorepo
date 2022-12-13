@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import pino from "pino";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -103,7 +102,6 @@ export class Relayer extends IRelayer {
 
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
     this.isInitialized();
-    console.log("relayer publish..", topic, message, opts, this.core.name);
     await this.publisher.publish(topic, message, opts);
     await this.recordMessageEvent({ topic, message });
   }
@@ -111,12 +109,10 @@ export class Relayer extends IRelayer {
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
     this.isInitialized();
     let id = "";
-    console.log("relayer subscribe.. creating promise ⌛", topic, this.core.name);
     await Promise.all([
       new Promise<void>((resolve) => {
         this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
           if (subscription.topic === topic) {
-            console.log("subscription created", subscription, this.core.name);
             resolve();
           }
         });
@@ -126,7 +122,6 @@ export class Relayer extends IRelayer {
         resolve();
       }),
     ]);
-    console.log("relayer subscribe.. released ✅", topic, this.core.name);
     return id;
   }
 
@@ -155,52 +150,44 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = true;
     if (this.connected) await this.provider.disconnect();
     this.events.emit(RELAYER_EVENTS.transport_closed);
-    console.log("transport closed --- @!", this.core.name);
   }
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
-    console.log("attempting to connect", this.core.name, this.connected);
+    this.transportExplicitlyClosed = false;
     try {
       await Promise.race([
         this.provider.connect(),
         new Promise<void>((_res, reject) =>
           this.once(RELAYER_EVENTS.transport_closed, () => {
-            console.log("relayer events -> transport close... rejecting", this.core.name);
             reject();
           }),
         ),
       ]);
 
-      this.transportExplicitlyClosed = false;
-      console.log("provider.connect() done --- @!", this.core.name);
       if (this.initialized) {
         // wait for the subscriber to finish resubscribing to its topics
         await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => {
-            console.log("resubscribe timeout", this.core.name);
-            resolve();
-          }, 10_000);
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
-            console.log("resubscribed --- @!", this.core.name);
-            clearTimeout(timeout);
             resolve();
           });
         });
       }
-      console.log("connection restarted --- @!", this.core.name);
     } catch (e: unknown | Error) {
-      console.log("transport Open catched error", e, this.core.name);
+      const error = e as Error;
+      if (!/socket hang up/.test(error.message)) {
+        throw new Error(error.message);
+      }
+      // eslint-disable-next-line no-console
+      console.error(error);
       this.events.emit(RELAYER_EVENTS.transport_closed);
     }
   }
 
   public async restartTransport(relayUrl?: string) {
     await this.transportClose();
-    await new Promise<void>((resolve) => setTimeout(resolve, 2000));
-    await this.transportOpen(relayUrl).catch((e) => {
-      console.log("restartTransport error", e);
-    });
+    await new Promise<void>((resolve) => setTimeout(resolve, RELAYER_RECONNECT_TIMEOUT));
+    await this.transportOpen(relayUrl);
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -277,7 +264,6 @@ export class Relayer extends IRelayer {
     );
 
     this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
-      console.log("on relayer connection stalled --- @!", this.core.name);
       await this.restartTransport();
     });
   }
@@ -286,7 +272,7 @@ export class Relayer extends IRelayer {
     if (this.transportExplicitlyClosed) {
       return;
     }
-    console.log("attempting to reconnect", this.core.name);
+
     // Attempt reconnection after one second.
     setTimeout(async () => {
       await this.transportOpen();

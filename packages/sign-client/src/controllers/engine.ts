@@ -89,9 +89,7 @@ export class Engine extends IEngine {
     }
 
     if (!topic || !active) {
-      console.log("create() new pairing", this.name);
       const { topic: newTopic, uri: newUri } = await this.client.core.pairing.create();
-      console.log("created new pairing", newTopic, this.name);
       topic = newTopic;
       uri = newUri;
     }
@@ -276,7 +274,6 @@ export class Engine extends IEngine {
     this.isInitialized();
     await this.isValidPing(params);
     const { topic } = params;
-    console.log("sending ping request", params.topic, this.name);
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_sessionPing", {});
       const { done, resolve, reject } = createDelayedPromise<void>();
@@ -352,9 +349,6 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     this.client.core.history.set(topic, payload);
-    console.log("sending request", topic, method, params, this.name);
-    // await is intentionally omitted here because of a possible race condition
-    // where a response is received before the publish call is resolved
     this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
   };
@@ -430,7 +424,6 @@ export class Engine extends IEngine {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
-    console.log("onRelayEventRequest", topic, reqMethod, this.name);
     switch (reqMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeRequest(topic, payload);

@@ -17,7 +17,7 @@ export class Publisher extends IPublisher {
   public events = new EventEmitter();
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
-  private publishRetries = 0;
+  private publishTimeout = 10_000;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
@@ -41,31 +41,22 @@ export class Publisher extends IPublisher {
       const params = { topic, message, opts: { ttl, relay, prompt, tag } };
       const hash = hashMessage(message);
       this.queue.set(hash, params);
-      const clientId = await this.relayer.core.crypto.getClientId();
-
       const publish = new Promise(async (resolve, reject) => {
         const timeout = setTimeout(() => {
-          this.publishRetries++;
           reject();
-        }, 5_000);
+        }, this.publishTimeout);
         const res = await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
         clearTimeout(timeout);
         resolve(res);
       });
 
       try {
-        console.log("publishing payload", clientId, topic, this.relayer.core.name);
         await publish;
-        console.log("✉️ published...", clientId, topic, this.relayer.core.name);
       } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(
-          `publish request timeout 5s - ${this.publishRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-        );
+        this.logger.debug(`Publishing Payload stalled`);
         this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
         return;
       }
-      if (this.publishRetries > 0) this.publishRetries--;
       this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
@@ -125,17 +116,9 @@ export class Publisher extends IPublisher {
   }
 
   private checkQueue() {
-    console.log("checking publish queue", this.queue.size, this.relayer.core.name);
     this.queue.forEach(async (params) => {
       const { topic, message, opts } = params;
-      console.log("publish queueu process", topic, this.relayer.core.name);
       await this.publish(topic, message, opts);
-      console.log(
-        "publish queueu process FINISHED",
-        topic,
-        this.queue.size,
-        this.relayer.core.name,
-      );
     });
   }
 

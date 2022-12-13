@@ -58,7 +58,6 @@ describe("Sign Client Integration", () => {
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
-        // console.log("trying to ping", topic);
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,

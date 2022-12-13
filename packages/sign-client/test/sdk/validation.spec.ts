@@ -28,22 +28,15 @@ let topic: string;
 
 describe("Sign Client Validation", () => {
   beforeAll(async () => {
-    console.log("validation tests start");
     clients = await initTwoClients();
-    console.log("validation tests - client A", await clients.A.core.crypto.getClientId());
-    console.log("validation tests - client B", await clients.B.core.crypto.getClientId());
-    console.log("validation tests - clients initialized");
     await testConnectMethod(clients);
-    console.log("validation tests - clients paired");
     pairingTopic = clients.A.pairing.keys[0];
     proposalId = clients.A.proposal.keys[0];
     topic = clients.A.session.keys[0];
   });
 
   afterAll(async () => {
-    console.log("validation tests - attempting clients delete");
     await deleteClients(clients);
-    console.log("validation tests - clients deleted", clients);
   });
   describe("connect", () => {
     it("throws when no params are passed", async () => {

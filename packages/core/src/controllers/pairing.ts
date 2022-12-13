@@ -101,9 +101,7 @@ export class Pairing implements IPairing {
       relay,
     });
     await this.pairings.set(topic, pairing);
-    console.log("subscribe new pairing", topic, this.core.name);
-    const id = await this.core.relayer.subscribe(topic);
-    console.log("subscribed pairing", topic, id, this.core.name);
+    await this.core.relayer.subscribe(topic);
     this.core.expirer.set(topic, expiry);
 
     return { topic, uri };
@@ -215,8 +213,6 @@ export class Pairing implements IPairing {
       this.core.crypto.deleteSymKey(topic),
       expirerHasDeleted ? Promise.resolve() : this.core.expirer.del(topic),
     ]);
-    // eslint-disable-next-line no-console
-    // console.log("deletePairing", topic, this.core.name);
   };
 
   private isInitialized() {
@@ -243,8 +239,6 @@ export class Pairing implements IPairing {
       }
 
       const payload = await this.core.crypto.decode(topic, message);
-      // eslint-disable-next-line no-console
-      console.log("received payload", payload, this.core.name);
       if (isJsonRpcRequest(payload)) {
         this.core.history.set(topic, payload);
         this.onRelayEventRequest({ topic, payload });
@@ -322,8 +316,6 @@ export class Pairing implements IPairing {
       await this.deletePairing(topic);
       this.events.emit("pairing_delete", { id, topic });
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-      // console.log("logging error onPairingDelete", err, this.core.name);
       await this.sendError(id, topic, err);
       this.logger.error(err);
     }

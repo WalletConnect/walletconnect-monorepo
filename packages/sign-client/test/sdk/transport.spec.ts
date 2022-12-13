@@ -12,12 +12,8 @@ describe("Sign Client Transport Tests", () => {
         sessionA: { topic },
       } = await testConnectMethod(clients);
 
-      console.log("closing transports");
       await clients.A.core.relayer.restartTransport();
       await clients.B.core.relayer.restartTransport();
-      console.log("opened transports");
-
-      await throttle(2000);
       await Promise.all([
         new Promise((resolve) => {
           clients.B.on("session_ping", (event: any) => {
@@ -45,16 +41,9 @@ describe("Sign Client Transport Tests", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-      console.log("closing transport A");
-      await clients.A.core.relayer.transportClose();
+      await clients.A.core.relayer.restartTransport();
       await throttle(2000);
-      console.log("opening transport A");
-      await clients.A.core.relayer.transportOpen();
-      console.log("closing transport B");
-      await clients.B.core.relayer.transportClose();
-      await throttle(2000);
-      console.log("opening transport B");
-      await clients.B.core.relayer.transportOpen();
+      await clients.B.core.relayer.restartTransport();
       await Promise.all([
         new Promise((resolve) => {
           clients.B.on("session_ping", (event: any) => {

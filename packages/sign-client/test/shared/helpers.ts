@@ -17,8 +17,6 @@ export async function deleteClients(clients: {
     client.events.removeAllListeners();
     await disconnectSocket(client.core);
   }
-  // eslint-disable-next-line no-console
-  console.log("closing sockets for ", clients.A?.core.name);
   delete clients.A;
   delete clients.B;
 }

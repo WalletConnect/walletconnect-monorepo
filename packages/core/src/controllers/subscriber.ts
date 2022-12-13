@@ -41,7 +41,7 @@ export class Subscriber extends ISubscriber {
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
-  private subscribeRetries = 0;
+  private subscribeTimeout = 10_000;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -54,8 +54,6 @@ export class Subscriber extends ISubscriber {
       await this.restart();
       this.registerEventListeners();
       this.onEnable();
-      // eslint-disable-next-line no-console
-      // console.log("Initialized subscriber", this.relayer.core.name);
     }
   };
 
@@ -209,12 +207,10 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    const clientId = await this.relayer.core.crypto.getClientId();
     const subscribe = new Promise(async (resolve, reject) => {
       const timeout = setTimeout(() => {
-        this.subscribeRetries++;
         reject();
-      }, 5_000);
+      }, this.subscribeTimeout);
       const res = await this.relayer.provider.request(request);
       clearTimeout(timeout);
       resolve(res);
@@ -222,25 +218,11 @@ export class Subscriber extends ISubscriber {
 
     let result: any;
     try {
-      console.log(
-        "subscribing..",
-        this.subscribeRetries,
-        clientId,
-        this.relayer.core.name,
-        topic,
-        Date.now(),
-      );
       result = await subscribe;
-      console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log(
-        `subscribe request timeout 5s - ${this.subscribeRetries} - ${clientId} - ${topic} - ${this.relayer.connected} - ${process.env.TEST_RELAY_URL} - ${this.relayer.core.name}`,
-      );
+      this.logger.debug(`Outgoing Relay Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
-    if (this.subscribeRetries > 0) this.subscribeRetries--;
-    // console.log("subscribed", clientId, this.relayer.core.name, topic, result);
     return result;
   }
 
@@ -259,17 +241,8 @@ export class Subscriber extends ISubscriber {
   }
 
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
-    console.log("onSubscribe", id, this.pending.size, params.topic, this.relayer.core.name);
     this.setSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
-    console.log(
-      "onSubscribe after",
-      id,
-      this.pending.size,
-      params.topic,
-      Date.now(),
-      this.relayer.core.name,
-    );
   }
 
   private onResubscribe(id: string, params: SubscriberTypes.Params) {
@@ -396,9 +369,7 @@ export class Subscriber extends ISubscriber {
     if (this.relayer.transportExplicitlyClosed) {
       return;
     }
-    console.log("checkPending", this.pending.size, this.relayer.core.name);
     this.pending.forEach(async (params) => {
-      console.log("checkPending - resubscribe", params.topic);
       const id = await this.rpcSubscribe(params.topic, params.relay);
       this.onSubscribe(id, params);
     });
@@ -409,12 +380,9 @@ export class Subscriber extends ISubscriber {
       this.checkPending();
     });
     this.relayer.on(RELAYER_EVENTS.connect, async () => {
-      // console.log("subscriber - connect", this.relayer.core.name);
       await this.onConnect();
     });
     this.relayer.on(RELAYER_EVENTS.disconnect, () => {
-      // eslint-disable-next-line no-console
-      // console.log("subscriber - disconnect", this.relayer.core.name);
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {

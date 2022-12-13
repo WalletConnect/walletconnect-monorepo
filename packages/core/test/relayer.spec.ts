@@ -9,6 +9,7 @@ import {
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
+  SUBSCRIBER_EVENTS,
 } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IRelayer } from "@walletconnect/types";
@@ -128,7 +129,17 @@ describe("Relayer", () => {
       const spy = Sinon.spy(() => "mock-id");
       // @ts-expect-error
       relayer.subscriber.subscribe = spy;
-      const id = await relayer.subscribe("abc123");
+      let id;
+      await Promise.all([
+        new Promise<void>(async (resolve) => {
+          id = await relayer.subscribe("abc123");
+          resolve();
+        }),
+        new Promise<void>((resolve) => {
+          relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic: "abc123" });
+          resolve();
+        }),
+      ]);
       // @ts-expect-error
       expect(spy.calledOnceWith("abc123")).to.be.true;
       expect(id).to.eq("mock-id");
