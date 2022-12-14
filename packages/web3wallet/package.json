@@ -1,0 +1,41 @@
+{
+  "name": "@walletconnect/web3wallet",
+  "description": "Web3Wallet for WalletConnect Protocol",
+  "version": "2.1.4",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
+  "license": "Apache-2.0",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "unpkg": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:pre": "npm run clean",
+    "build:types": "tsc",
+    "build:source": "rollup --config rollup.config.js",
+    "build": "npm run build:pre; npm run build:source; npm run build:types",
+    "test": "vitest run --dir test",
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
+  },
+  "dependencies": {
+    "@walletconnect/auth-client": "^1.2.0-rc-1",
+    "@walletconnect/core": "^2.1.4",
+    "@walletconnect/jsonrpc-utils": "^1.0.4",
+    "@walletconnect/sign-client": "^2.1.4",
+    "@walletconnect/types": "^2.1.4",
+    "@walletconnect/utils": "^2.1.4",
+    "@walletconnect/logger": "^2.0.1"
+  },
+  "devDependencies": {
+    "lokijs": "^1.5.12"
+  }
+}
