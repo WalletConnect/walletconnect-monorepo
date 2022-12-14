@@ -75,6 +75,10 @@ export class SignClient extends ISignClient {
     return this.events.removeListener(name, listener);
   };
 
+  public removeAllListeners: ISignClientEvents["removeAllListeners"] = (name) => {
+    return this.events.removeAllListeners(name);
+  };
+
   // ---------- Engine ----------------------------------------------- //
 
   public connect: ISignClient["connect"] = async (params) => {
