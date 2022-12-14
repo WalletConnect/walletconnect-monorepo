@@ -2,7 +2,8 @@ import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi, afterAll, beforeAll } from "vitest";
 import { createExpiringPromise } from "../../../../utils/src";
 import { initTwoClients, testConnectMethod, deleteClients, Clients } from "../../shared";
-
+const TESTS_CONNECT_RETRIES = 5;
+const TESTS_CONNECT_TIMEOUT = 20_000;
 describe("Sign Client Integration", () => {
   let clients: Clients;
   let pairingA: any;
@@ -12,11 +13,14 @@ describe("Sign Client Integration", () => {
     clients = await initTwoClients();
     let retries = 0;
     while (!pairingA) {
-      if (retries > 5) {
-        throw new Error("Could not create pairing");
+      if (retries > TESTS_CONNECT_RETRIES) {
+        throw new Error("Could not pair clients");
       }
       try {
-        const settled: any = await createExpiringPromise(testConnectMethod(clients), 20_000);
+        const settled: any = await createExpiringPromise(
+          testConnectMethod(clients),
+          TESTS_CONNECT_TIMEOUT,
+        );
         pairingA = settled.pairingA;
         sessionA = settled.sessionA;
       } catch (e) {
