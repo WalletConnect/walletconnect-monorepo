@@ -23,7 +23,7 @@ export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
   public readonly version = CORE_VERSION;
 
-  public name: ICore["name"] = CORE_CONTEXT;
+  public readonly name: ICore["name"] = CORE_CONTEXT;
   public readonly relayUrl: ICore["relayUrl"];
   public readonly projectId: ICore["projectId"];
   public events: ICore["events"] = new EventEmitter();
@@ -68,7 +68,6 @@ export class Core extends ICore {
       projectId: this.projectId,
     });
     this.pairing = new Pairing(this, this.logger);
-    this.name = opts?.name || "";
   }
 
   get context() {
