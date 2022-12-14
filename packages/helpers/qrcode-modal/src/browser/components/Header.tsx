@@ -13,7 +13,7 @@ function Header(props: HeaderProps) {
   return (
     <div className="walletconnect-modal__header">
       {/* <img src={WALLETCONNECT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" /> */}
-      <img src={WALLET_CONNECT_DCENT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" style={{ height: "30px" }} />
+      <img src={WALLET_CONNECT_DCENT_LOGO_SVG_URL} className="walletconnect-modal__headerLogo" style={{ height: "26px" }} />
       {/* <p>{WALLETCONNECT_HEADER_TEXT}</p> */}
       <div className="walletconnect-modal__close__wrapper" onClick={props.onClose}>
         <div id={WALLETCONNECT_CLOSE_BUTTON_ID} className="walletconnect-modal__close__icon">

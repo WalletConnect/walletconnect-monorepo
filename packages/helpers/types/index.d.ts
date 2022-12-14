@@ -375,7 +375,7 @@ export interface IQRCodeModal {
   open(uri: string, cb: any, opts?: any): void;
   close(): void;
 }
-export interface IAcount {
+export interface IAccount {
   contractAddress?: string;
   networkType?: string;
   name? : string;
@@ -385,7 +385,8 @@ export interface IQRCodeModalOptions {
   registryUrl?: string;
   mobileLinks?: string[];
   desktopLinks?: string[];
-  accounts?: IAcount [] ;
+  accounts?: IAccount [] ;
+  serviceName: string;
 }
 
 export interface IMobileRegistryEntry {
