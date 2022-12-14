@@ -9,7 +9,7 @@ describe("Sign Client Persistance", () => {
   describe("ping", () => {
     describe("pairing", () => {
       describe("after restart", () => {
-        it.only("clients can ping each other", async () => {
+        it("clients can ping each other", async () => {
           const db_a = generateClientDbName("client_a");
           const db_b = generateClientDbName("client_b");
 
