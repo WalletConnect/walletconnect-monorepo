@@ -3,7 +3,7 @@ import {
   IMobileRegistryEntry,
   IQRCodeModalOptions,
   IAppRegistry,
-  IAcount,
+  IAccount,
 } from "@walletconnect/types";
 import {
   isMobile,
@@ -88,10 +88,10 @@ function Modal(props: ModalProps) {
             console.log(singleLinkHref);
             setDisplayQRCode(true);
           }
-          const modalAccounts = props.qrcodeModalOptions && props.qrcodeModalOptions.accounts as IAcount[];
-          const accounts = JSON.stringify(modalAccounts);
-          const encodedAccounts = btoa(accounts);
-          const baseURI = "http://192.168.0.235:8080/connect?data=" + props.uri + "&type=mobile" + `&accounts=${encodedAccounts}` ;
+          const modalOptions = props.qrcodeModalOptions && props.qrcodeModalOptions as IQRCodeModalOptions;
+          const stringifyOptions = JSON.stringify(modalOptions);
+          const encodedOptions = btoa(stringifyOptions);
+          const baseURI = "http://192.168.0.235:8080/connect?data=" + props.uri + "&type=mobile" + `&info=${encodedOptions}` ;
           const encodeURI = encodeURIComponent(baseURI);
           const doubleEncodeURI = encodeURIComponent(encodeURI) ;
 

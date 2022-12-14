@@ -13,10 +13,10 @@ import { IQRCodeModalOptions } from "@walletconnect/types";
 async function formatQRCodeImage(data: string, qrcodeModalOptions: IQRCodeModalOptions | undefined) {
   console.log("qr data", data);
   let result = "";
-  const modalAccounts = qrcodeModalOptions && qrcodeModalOptions.accounts;
-  const accounts = JSON.stringify(modalAccounts);
-  const encodedAccounts = btoa(accounts);
-  const baseURI = "http://192.168.0.235:8080/connect?data=" + data + "&type=desktop" +`&accounts=${encodedAccounts}`;
+  const modalOptions = qrcodeModalOptions && qrcodeModalOptions;
+  const stringifyOptions = JSON.stringify(modalOptions);
+  const encodedOptions = btoa(stringifyOptions);
+  const baseURI = "http://192.168.0.235:8080/connect?data=" + data + "&type=desktop" +`&info=${encodedOptions}`;
   const encodeURI = encodeURIComponent(baseURI);
   const doubleEncodeURI = encodeURIComponent(encodeURI) ;
   const Data = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`;
