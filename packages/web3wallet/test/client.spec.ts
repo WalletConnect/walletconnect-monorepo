@@ -1,5 +1,5 @@
 import { Core } from "@walletconnect/core";
-import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SignClient } from "@walletconnect/sign-client";
 import { ICore, ISignClient, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
@@ -7,12 +7,7 @@ import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
 import { expect, describe, it, beforeEach, vi, beforeAll } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
-import {
-  TEST_NAMESPACES,
-  TEST_REQUIRED_NAMESPACES,
-  TEST_SIGN_REQUEST_PARAMS,
-  TEST_UPDATED_NAMESPACES,
-} from "./shared";
+import { TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES, TEST_UPDATED_NAMESPACES } from "./shared";
 
 const TEST_CORE_OPTIONS = {
   projectId: process.env.TEST_PROJECT_ID,
@@ -249,6 +244,160 @@ describe("Sign Client Integration", () => {
         });
       }),
       wallet.disconnectSession({ topic: session.topic, reason }),
+    ]);
+  });
+
+  it("should emit session event", async () => {
+    // first pair and approve session
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("session_proposal", async (sessionProposal) => {
+          const { id, params } = sessionProposal;
+          session = await wallet.approveSession({
+            id,
+            namespaces: {
+              eip155: {
+                ...TEST_NAMESPACES.eip155,
+                accounts: [`eip155:1:${cryptoWallet.address}`],
+              },
+            },
+          });
+          expect(params.requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
+          resolve(session);
+        });
+      }),
+      approveSession(),
+      core.pairing.pair({ uri: uriString }),
+    ]);
+    const sessionEvent = {
+      topic: session.topic,
+      event: {
+        name: "chainChanged",
+      },
+      chainId: TEST_REQUIRED_NAMESPACES.eip155.chains[0],
+    };
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        dapp.events.on("session_event", (eventPayload) => {
+          const { topic, params } = eventPayload;
+          expect(topic).to.be.eq(sessionEvent.topic);
+          expect(params.event).to.toMatchObject(sessionEvent.event);
+          resolve();
+        });
+      }),
+      wallet.emitSessionEvent(sessionEvent),
+    ]);
+  });
+
+  it("should get active sessions", async () => {
+    // first pair and approve session
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("session_proposal", async (sessionProposal) => {
+          const { id, params } = sessionProposal;
+          session = await wallet.approveSession({
+            id,
+            namespaces: {
+              eip155: {
+                ...TEST_NAMESPACES.eip155,
+                accounts: [`eip155:1:${cryptoWallet.address}`],
+              },
+            },
+          });
+          expect(params.requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
+          resolve(session);
+        });
+      }),
+      approveSession(),
+      core.pairing.pair({ uri: uriString }),
+    ]);
+
+    const sessions = wallet.getActiveSessions();
+    expect(sessions).to.be.exist;
+    expect(Object.values(sessions).length).to.be.eq(1);
+    expect(Object.keys(sessions)[0]).to.be.eq(session.topic);
+  });
+
+  it("should get pending session proposals", async () => {
+    // first pair and approve session
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_proposal", () => {
+          const proposals = wallet.getPendingSessionProposals();
+          expect(proposals).to.be.exist;
+          expect(Object.values(proposals).length).to.be.eq(1);
+          expect(proposals[0].requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
+          resolve();
+        });
+      }),
+      core.pairing.pair({ uri: uriString }),
+    ]);
+  });
+
+  it("should get pending session requests", async () => {
+    // first pair and approve session
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("session_proposal", async (sessionProposal) => {
+          const { id, params } = sessionProposal;
+          session = await wallet.approveSession({
+            id,
+            namespaces: {
+              eip155: {
+                ...TEST_NAMESPACES.eip155,
+                accounts: [`eip155:1:${cryptoWallet.address}`],
+              },
+            },
+          });
+          expect(params.requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
+          resolve(session);
+        });
+      }),
+      approveSession(),
+      core.pairing.pair({ uri: uriString }),
+    ]);
+
+    const requestParams = {
+      method: "eth_signTransaction",
+      params: [
+        {
+          from: cryptoWallet.address,
+          to: cryptoWallet.address,
+          data: "0x",
+          nonce: "0x01",
+          gasPrice: "0x020a7ac094",
+          gasLimit: "0x5208",
+          value: "0x00",
+        },
+      ],
+    };
+
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("session_request", async () => {
+          const pendingRequests = wallet.getPendingSessionRequests();
+          const request = pendingRequests[0];
+          const signTransaction = request.params.request.params[0];
+          const signature = await cryptoWallet.signTransaction(signTransaction);
+          const response = await wallet.respondSessionRequest({
+            topic: session.topic,
+            response: formatJsonRpcResult(request.id, signature),
+          });
+          resolve(response);
+          resolve(pendingRequests);
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const result = await dapp.request({
+          topic: session.topic,
+          request: requestParams,
+          chainId: "eip155:1",
+        });
+        expect(result).to.be.exist;
+        expect(result).to.be.a("string");
+        resolve();
+        resolve();
+      }),
     ]);
   });
 });

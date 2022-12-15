@@ -1,7 +1,7 @@
 import { AuthEngineTypes, IAuthClient } from "@walletconnect/auth-client";
 import { ErrorResponse, JsonRpcResponse } from "@walletconnect/jsonrpc-utils";
 import { ISignClient, ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { IWeb3Wallet } from "./client";
+import { IWeb3Wallet, Web3WalletTypes } from "./client";
 
 export abstract class IWeb3WalletEngine {
   public abstract signClient: ISignClient;
@@ -49,16 +49,19 @@ export abstract class IWeb3WalletEngine {
   }): Promise<void>;
 
   // disconnect a session (SIGN)
-  public abstract disconnectSession(params: { topic: string; reason: any }): Promise<void>; // create type Reason
+  public abstract disconnectSession(params: {
+    topic: string;
+    reason: ErrorResponse;
+  }): Promise<void>;
 
   // query all active sessions (SIGN)
-  public abstract getActiveSessions(): Promise<Record<string, SessionTypes.Struct>>;
+  public abstract getActiveSessions(): Record<string, SessionTypes.Struct>;
 
   // query all pending session requests (SIGN)
-  public abstract getPendingSessionProposals(): Promise<Record<number, ProposalTypes.Struct>>;
+  public abstract getPendingSessionProposals(): Record<number, ProposalTypes.Struct>;
 
   // query all pending session requests (SIGN)
-  public abstract getPendingSessionRequests(): Promise<Record<number, SessionTypes.Struct>>;
+  public abstract getPendingSessionRequests(): Record<number, Web3WalletTypes.SessionRequest>;
 
   // ---------- Auth ------------------------------------------------- //
 

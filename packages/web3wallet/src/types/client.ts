@@ -3,6 +3,7 @@ import { ICore, ProposalTypes } from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
+import { PendingRequest } from "../controllers";
 
 export declare namespace Web3WalletTypes {
   type Event = "session_proposal" | "session_request" | "auth_request";
@@ -13,12 +14,14 @@ export declare namespace Web3WalletTypes {
     params: T;
   }
 
+  type SessionRequest = BaseEventArgs<{
+    request: { method: string; params: any };
+    chainId: string;
+  }>;
+
   interface EventArguments {
     session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
-    session_request: BaseEventArgs<{
-      request: { method: string; params: any };
-      chainId: string;
-    }>;
+    session_request: SessionRequest;
     auth_request: AuthClientTypes.AuthRequestEventArgs;
   }
 
@@ -64,6 +67,7 @@ export abstract class IWeb3Wallet {
   public abstract events: EventEmitter;
   public abstract logger: Logger;
   public abstract core: ICore;
+  public abstract pendingRequest: PendingRequest;
 
   constructor(public opts: Web3WalletTypes.Options) {}
 
@@ -78,6 +82,7 @@ export abstract class IWeb3Wallet {
   public abstract emitSessionEvent: IWeb3WalletEngine["emitSessionEvent"];
   public abstract getActiveSessions: IWeb3WalletEngine["getActiveSessions"];
   public abstract getPendingSessionProposals: IWeb3WalletEngine["getPendingSessionProposals"];
+  public abstract getPendingSessionRequests: IWeb3WalletEngine["getPendingSessionRequests"];
   // auth //
   public abstract respondAuthRequest: IWeb3WalletEngine["respondAuthRequest"];
   public abstract getPendingAuthRequests: IWeb3WalletEngine["getPendingAuthRequests"];

@@ -1,5 +1,5 @@
 import EventEmitter from "events";
-import { Engine } from "./controllers";
+import { Engine, PendingRequest } from "./controllers";
 import { IWeb3Wallet, Web3WalletTypes } from "./types";
 
 export class Web3Wallet extends IWeb3Wallet {
@@ -8,6 +8,7 @@ export class Web3Wallet extends IWeb3Wallet {
   public logger: IWeb3Wallet["logger"];
   public events: IWeb3Wallet["events"] = new EventEmitter();
   public engine: IWeb3Wallet["engine"];
+  public pendingRequest: IWeb3Wallet["pendingRequest"];
 
   static async init(opts: Web3WalletTypes.Options) {
     const client = new Web3Wallet(opts);
@@ -21,6 +22,7 @@ export class Web3Wallet extends IWeb3Wallet {
     this.core = opts.core;
     this.logger = this.core.logger;
     this.engine = new Engine(this);
+    this.pendingRequest = new PendingRequest(this.core, this.logger);
   }
 
   // ---------- Events ----------------------------------------------- //
@@ -106,18 +108,27 @@ export class Web3Wallet extends IWeb3Wallet {
     }
   };
 
-  public getActiveSessions: IWeb3Wallet["getActiveSessions"] = async () => {
+  public getActiveSessions: IWeb3Wallet["getActiveSessions"] = () => {
     try {
-      return await this.engine.getActiveSessions();
+      return this.engine.getActiveSessions();
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public getPendingSessionProposals: IWeb3Wallet["getPendingSessionProposals"] = async () => {
+  public getPendingSessionProposals: IWeb3Wallet["getPendingSessionProposals"] = () => {
     try {
-      return await this.engine.getPendingSessionProposals();
+      return this.engine.getPendingSessionProposals();
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public getPendingSessionRequests: IWeb3Wallet["getPendingSessionRequests"] = () => {
+    try {
+      return this.engine.getPendingSessionRequests();
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
@@ -156,6 +167,7 @@ export class Web3Wallet extends IWeb3Wallet {
     this.logger.trace(`Initialized`);
     try {
       await this.engine.init();
+      await this.pendingRequest.init();
       this.logger.info(`Web3Wallet Initilization Success`);
     } catch (error: any) {
       this.logger.info(`Web3Wallet Initilization Failure`);

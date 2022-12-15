@@ -1,7 +1,7 @@
 import { AuthClient, IAuthClient } from "@walletconnect/auth-client";
 import { SignClient } from "../../../sign-client";
-import { ISignClient, SessionTypes } from "@walletconnect/types";
-import { IWeb3WalletEngine } from "../types";
+import { ISignClient, ProposalTypes, SessionTypes } from "@walletconnect/types";
+import { IWeb3WalletEngine, Web3WalletTypes } from "../types";
 
 export class Engine extends IWeb3WalletEngine {
   public signClient: ISignClient;
@@ -55,7 +55,9 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   public respondSessionRequest: IWeb3WalletEngine["respondSessionRequest"] = async (params) => {
-    return await this.signClient.respond(params);
+    const result = await this.signClient.respond(params);
+    this.client.pendingRequest.delete(params.response.id, { message: "fulfilled", code: 0 });
+    return result;
   };
 
   public disconnectSession: IWeb3WalletEngine["disconnectSession"] = async (params) => {
@@ -63,19 +65,23 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   public emitSessionEvent: IWeb3WalletEngine["emitSessionEvent"] = async (params) => {
-    return await new Promise<void>((resolve) => () => resolve);
+    return await this.signClient.emit(params);
   };
 
-  public getActiveSessions: IWeb3WalletEngine["getActiveSessions"] = async () => {
-    return await new Promise<any>((resolve) => () => resolve);
+  public getActiveSessions: IWeb3WalletEngine["getActiveSessions"] = () => {
+    const sessions = this.signClient.session.getAll();
+    return sessions.reduce((sessions, session) => {
+      sessions[session.topic] = session;
+      return sessions;
+    }, {});
   };
 
-  public getPendingSessionProposals: IWeb3WalletEngine["getPendingSessionProposals"] = async () => {
-    return await new Promise<any>((resolve) => () => resolve);
+  public getPendingSessionProposals: IWeb3WalletEngine["getPendingSessionProposals"] = () => {
+    return this.signClient.proposal.getAll();
   };
 
-  public getPendingSessionRequests: IWeb3WalletEngine["getPendingSessionRequests"] = async () => {
-    return await new Promise<any>((resolve) => () => resolve);
+  public getPendingSessionRequests: IWeb3WalletEngine["getPendingSessionRequests"] = () => {
+    return this.client.pendingRequest.getAll();
   };
 
   // Auth //
@@ -91,14 +97,15 @@ export class Engine extends IWeb3WalletEngine {
     return await new Promise<any>((resolve) => () => resolve);
   };
 
+  private onSessionRequest = (event: Web3WalletTypes.SessionRequest) => {
+    this.client.pendingRequest.set(event.id, event);
+    this.client.events.emit("session_request", event);
+  };
+
   private initializeEventListeners = () => {
     this.signClient.events.on("session_proposal", (params) => {
       this.client.events.emit("session_proposal", params);
     });
-
-    this.signClient.events.on("session_request", (params) => {
-      console.log("@engine session_request", params);
-      this.client.events.emit("session_request", params);
-    });
+    this.signClient.events.on("session_request", this.onSessionRequest);
   };
 }
