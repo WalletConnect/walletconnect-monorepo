@@ -69,14 +69,11 @@ export abstract class IWeb3WalletEngine {
   public abstract respondAuthRequest(
     params: AuthEngineTypes.RespondParams,
     iss: string,
-  ): Promise<boolean>;
+  ): Promise<void>;
 
   // query all pending auth requests (AUTH)
   public abstract getPendingAuthRequests(): Promise<Record<number, AuthEngineTypes.PendingRequest>>;
 
   // format payload to message string
-  public abstract formatMessage(
-    payload: AuthEngineTypes.CacaoRequestPayload,
-    iss: string,
-  ): Promise<string>;
+  public abstract formatMessage(payload: AuthEngineTypes.CacaoRequestPayload, iss: string): string;
 }

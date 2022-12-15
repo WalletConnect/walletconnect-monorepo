@@ -1,6 +1,6 @@
 import { AuthClient, IAuthClient } from "@walletconnect/auth-client";
-import { SignClient } from "../../../sign-client";
-import { ISignClient, ProposalTypes, SessionTypes } from "@walletconnect/types";
+import { SignClient } from "@walletconnect/sign-client";
+import { ISignClient } from "@walletconnect/types";
 import { IWeb3WalletEngine, Web3WalletTypes } from "../types";
 
 export class Engine extends IWeb3WalletEngine {
@@ -85,16 +85,16 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   // Auth //
-  public respondAuthRequest: IWeb3WalletEngine["respondAuthRequest"] = async (params) => {
-    return await new Promise<any>((resolve) => () => resolve);
+  public respondAuthRequest: IWeb3WalletEngine["respondAuthRequest"] = async (params, iss) => {
+    return await this.authClient.respond(params, iss);
   };
 
   public getPendingAuthRequests: IWeb3WalletEngine["getPendingAuthRequests"] = async () => {
     return await new Promise<any>((resolve) => () => resolve);
   };
 
-  public formatMessage: IWeb3WalletEngine["formatMessage"] = async (params) => {
-    return await new Promise<any>((resolve) => () => resolve);
+  public formatMessage: IWeb3WalletEngine["formatMessage"] = (params, iss) => {
+    return this.authClient.formatMessage(params, iss);
   };
 
   private onSessionRequest = (event: Web3WalletTypes.SessionRequest) => {
@@ -102,10 +102,17 @@ export class Engine extends IWeb3WalletEngine {
     this.client.events.emit("session_request", event);
   };
 
+  private onSessionProposal = (event: Web3WalletTypes.SessionProposal) => {
+    this.client.events.emit("session_proposal", event);
+  };
+
+  private onAuthRequest = (event: Web3WalletTypes.AuthRequest) => {
+    this.client.events.emit("auth_request", event);
+  };
+
   private initializeEventListeners = () => {
-    this.signClient.events.on("session_proposal", (params) => {
-      this.client.events.emit("session_proposal", params);
-    });
+    this.signClient.events.on("session_proposal", this.onSessionProposal);
     this.signClient.events.on("session_request", this.onSessionRequest);
+    this.authClient.on("auth_request", this.onAuthRequest);
   };
 }

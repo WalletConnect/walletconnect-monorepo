@@ -19,10 +19,14 @@ export declare namespace Web3WalletTypes {
     chainId: string;
   }>;
 
+  type SessionProposal = Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
+
+  type AuthRequest = BaseEventArgs<AuthClientTypes.AuthRequestEventArgs>;
+
   interface EventArguments {
     session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
     session_request: SessionRequest;
-    auth_request: AuthClientTypes.AuthRequestEventArgs;
+    auth_request: AuthRequest;
   }
 
   interface Options {

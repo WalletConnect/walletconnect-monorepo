@@ -153,9 +153,9 @@ export class Web3Wallet extends IWeb3Wallet {
     }
   };
 
-  public formatMessage: IWeb3Wallet["formatMessage"] = async (params, iss) => {
+  public formatMessage: IWeb3Wallet["formatMessage"] = (params, iss) => {
     try {
-      return await this.engine.formatMessage(params, iss);
+      return this.engine.formatMessage(params, iss);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;

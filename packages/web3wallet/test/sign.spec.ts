@@ -7,15 +7,14 @@ import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
 import { expect, describe, it, beforeEach, vi, beforeAll } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
-import { TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES, TEST_UPDATED_NAMESPACES } from "./shared";
+import {
+  TEST_CORE_OPTIONS,
+  TEST_NAMESPACES,
+  TEST_REQUIRED_NAMESPACES,
+  TEST_UPDATED_NAMESPACES,
+} from "./shared";
 
-const TEST_CORE_OPTIONS = {
-  projectId: process.env.TEST_PROJECT_ID,
-  logger: "debug",
-  relayUrl: process.env.TEST_RELAY_URL,
-};
-
-describe("Sign Client Integration", () => {
+describe("Sign Integration", () => {
   let core: ICore;
   let wallet: IWeb3Wallet;
   let dapp: ISignClient;

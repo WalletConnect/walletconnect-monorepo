@@ -42,3 +42,9 @@ export const TEST_REQUIRED_NAMESPACES = {
     events: [TEST_EVENTS[0]],
   },
 };
+
+export const TEST_CORE_OPTIONS = {
+  projectId: process.env.TEST_PROJECT_ID || "",
+  logger: "debug",
+  relayUrl: process.env.TEST_RELAY_URL || "",
+};
