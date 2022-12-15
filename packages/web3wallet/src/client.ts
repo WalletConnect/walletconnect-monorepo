@@ -1,13 +1,13 @@
 import EventEmitter from "events";
 import { Engine } from "./controllers";
-import { IWeb3WalletClient, Web3WalletTypes } from "./types";
+import { IWeb3Wallet, Web3WalletTypes } from "./types";
 
-export class Web3Wallet extends IWeb3WalletClient {
-  public readonly name: IWeb3WalletClient["name"] = "Web3Wallet";
-  public core: IWeb3WalletClient["core"];
-  public logger: IWeb3WalletClient["logger"];
-  public events: IWeb3WalletClient["events"] = new EventEmitter();
-  public engine: IWeb3WalletClient["engine"];
+export class Web3Wallet extends IWeb3Wallet {
+  public readonly name: IWeb3Wallet["name"] = "Web3Wallet";
+  public core: IWeb3Wallet["core"];
+  public logger: IWeb3Wallet["logger"];
+  public events: IWeb3Wallet["events"] = new EventEmitter();
+  public engine: IWeb3Wallet["engine"];
 
   static async init(opts: Web3WalletTypes.Options) {
     const client = new Web3Wallet(opts);
@@ -25,25 +25,25 @@ export class Web3Wallet extends IWeb3WalletClient {
 
   // ---------- Events ----------------------------------------------- //
 
-  public on: IWeb3WalletClient["on"] = (name, listener) => {
+  public on: IWeb3Wallet["on"] = (name, listener) => {
     return this.events.on(name, listener);
   };
 
-  public once: IWeb3WalletClient["once"] = (name, listener) => {
+  public once: IWeb3Wallet["once"] = (name, listener) => {
     return this.events.once(name, listener);
   };
 
-  public off: IWeb3WalletClient["off"] = (name, listener) => {
+  public off: IWeb3Wallet["off"] = (name, listener) => {
     return this.events.off(name, listener);
   };
 
-  public removeListener: IWeb3WalletClient["removeListener"] = (name, listener) => {
+  public removeListener: IWeb3Wallet["removeListener"] = (name, listener) => {
     return this.events.removeListener(name, listener);
   };
 
   // ---------- Engine ----------------------------------------------- //
 
-  public approveSession: IWeb3WalletClient["approveSession"] = async (params) => {
+  public approveSession: IWeb3Wallet["approveSession"] = async (params) => {
     try {
       return await this.engine.approveSession(params);
     } catch (error: any) {
@@ -52,7 +52,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public rejectSession: IWeb3WalletClient["rejectSession"] = async (params) => {
+  public rejectSession: IWeb3Wallet["rejectSession"] = async (params) => {
     try {
       return await this.engine.rejectSession(params);
     } catch (error: any) {
@@ -61,7 +61,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public updateSession: IWeb3WalletClient["updateSession"] = async (params) => {
+  public updateSession: IWeb3Wallet["updateSession"] = async (params) => {
     try {
       return await this.engine.updateSession(params);
     } catch (error: any) {
@@ -70,7 +70,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public extendSession: IWeb3WalletClient["extendSession"] = async (params) => {
+  public extendSession: IWeb3Wallet["extendSession"] = async (params) => {
     try {
       return await this.engine.extendSession(params);
     } catch (error: any) {
@@ -79,7 +79,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public respondSessionRequest: IWeb3WalletClient["respondSessionRequest"] = async (params) => {
+  public respondSessionRequest: IWeb3Wallet["respondSessionRequest"] = async (params) => {
     try {
       return await this.engine.respondSessionRequest(params);
     } catch (error: any) {
@@ -88,7 +88,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public disconnectSession: IWeb3WalletClient["disconnectSession"] = async (params) => {
+  public disconnectSession: IWeb3Wallet["disconnectSession"] = async (params) => {
     try {
       return await this.engine.disconnectSession(params);
     } catch (error: any) {
@@ -97,7 +97,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public emitSessionEvent: IWeb3WalletClient["emitSessionEvent"] = async (params) => {
+  public emitSessionEvent: IWeb3Wallet["emitSessionEvent"] = async (params) => {
     try {
       return await this.engine.emitSessionEvent(params);
     } catch (error: any) {
@@ -106,7 +106,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public getActiveSessions: IWeb3WalletClient["getActiveSessions"] = async () => {
+  public getActiveSessions: IWeb3Wallet["getActiveSessions"] = async () => {
     try {
       return await this.engine.getActiveSessions();
     } catch (error: any) {
@@ -115,7 +115,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public getPendingSessionProposals: IWeb3WalletClient["getPendingSessionProposals"] = async () => {
+  public getPendingSessionProposals: IWeb3Wallet["getPendingSessionProposals"] = async () => {
     try {
       return await this.engine.getPendingSessionProposals();
     } catch (error: any) {
@@ -124,7 +124,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public respondAuthRequest: IWeb3WalletClient["respondAuthRequest"] = async (params, iss) => {
+  public respondAuthRequest: IWeb3Wallet["respondAuthRequest"] = async (params, iss) => {
     try {
       return await this.engine.respondAuthRequest(params, iss);
     } catch (error: any) {
@@ -133,7 +133,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public getPendingAuthRequests: IWeb3WalletClient["getPendingAuthRequests"] = async () => {
+  public getPendingAuthRequests: IWeb3Wallet["getPendingAuthRequests"] = async () => {
     try {
       return await this.engine.getPendingAuthRequests();
     } catch (error: any) {
@@ -142,7 +142,7 @@ export class Web3Wallet extends IWeb3WalletClient {
     }
   };
 
-  public formatMessage: IWeb3WalletClient["formatMessage"] = async (params, iss) => {
+  public formatMessage: IWeb3Wallet["formatMessage"] = async (params, iss) => {
     try {
       return await this.engine.formatMessage(params, iss);
     } catch (error: any) {

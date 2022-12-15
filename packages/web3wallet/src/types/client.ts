@@ -58,7 +58,7 @@ export abstract class IWeb3WalletEvents extends EventEmmiter {
   ) => this;
 }
 
-export abstract class IWeb3WalletClient {
+export abstract class IWeb3Wallet {
   public abstract readonly name: string;
   public abstract engine: IWeb3WalletEngine;
   public abstract events: EventEmitter;

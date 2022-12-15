@@ -36,6 +36,7 @@
     "@walletconnect/logger": "^2.0.1"
   },
   "devDependencies": {
-    "lokijs": "^1.5.12"
+    "lokijs": "^1.5.12",
+    "@ethersproject/wallet": "^5.7.0"
   }
 }

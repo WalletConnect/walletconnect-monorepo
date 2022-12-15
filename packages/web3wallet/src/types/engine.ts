@@ -1,10 +1,13 @@
-import { AuthEngineTypes } from "@walletconnect/auth-client";
-import { JsonRpcResponse } from "@walletconnect/jsonrpc-utils";
-import { ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { IWeb3WalletClient } from "./client";
+import { AuthEngineTypes, IAuthClient } from "@walletconnect/auth-client";
+import { ErrorResponse, JsonRpcResponse } from "@walletconnect/jsonrpc-utils";
+import { ISignClient, ProposalTypes, SessionTypes } from "@walletconnect/types";
+import { IWeb3Wallet } from "./client";
 
 export abstract class IWeb3WalletEngine {
-  constructor(public client: IWeb3WalletClient) {}
+  public abstract signClient: ISignClient;
+  public abstract authClient: IAuthClient;
+
+  constructor(public client: IWeb3Wallet) {}
   // ---------- Public Methods ------------------------------------------------- //
   public abstract init(): Promise<void>;
 
@@ -12,20 +15,21 @@ export abstract class IWeb3WalletEngine {
   // approve a session proposal (SIGN)
   public abstract approveSession(params: {
     id: number;
-    namespaces: Map<string, SessionTypes.Namespace>;
+    namespaces: Record<string, SessionTypes.Namespace>;
     relayProtocol?: string;
   }): Promise<SessionTypes.Struct>;
 
   // reject a session proposal (SIGN)
   public abstract rejectSession(params: {
-    proposerPublicKey: string;
-    reason: any; //Reason;
+    // proposerPublicKey: string;
+    id: number;
+    reason: ErrorResponse;
   }): Promise<void>;
 
   // update session namespaces (SIGN)
   public abstract updateSession(params: {
     topic: string;
-    namespaces: Map<string, SessionTypes.Namespace>;
+    namespaces: SessionTypes.Namespaces;
   }): Promise<void>;
 
   // update session expiry (SIGN)

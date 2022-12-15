@@ -1,11 +1,11 @@
 import { AuthClient, IAuthClient } from "@walletconnect/auth-client";
-import { SignClient } from "@walletconnect/sign-client";
+import { SignClient } from "../../../sign-client";
 import { ISignClient, SessionTypes } from "@walletconnect/types";
 import { IWeb3WalletEngine } from "../types";
 
 export class Engine extends IWeb3WalletEngine {
-  private signClient: ISignClient;
-  private authClient: IAuthClient;
+  public signClient: ISignClient;
+  public authClient: IAuthClient;
 
   constructor(client: IWeb3WalletEngine["client"]) {
     super(client);
@@ -26,33 +26,40 @@ export class Engine extends IWeb3WalletEngine {
       projectId: "",
       metadata: {} as any,
     });
+
+    this.initializeEventListeners();
     // eslint-disable-next-line no-console
     console.log("Engine.start");
   };
 
   // Sign //
-  public approveSession: IWeb3WalletEngine["approveSession"] = async (params) => {
-    return await new Promise<SessionTypes.Struct>((resolve) => () => resolve);
+  public approveSession: IWeb3WalletEngine["approveSession"] = async (sessionProposal) => {
+    const { topic, acknowledged } = await this.signClient.approve({
+      id: sessionProposal.id,
+      namespaces: sessionProposal.namespaces,
+    });
+    await acknowledged();
+    return this.signClient.session.get(topic);
   };
 
   public rejectSession: IWeb3WalletEngine["rejectSession"] = async (params) => {
-    return await new Promise<void>((resolve) => () => resolve);
+    return await this.signClient.reject(params);
   };
 
   public updateSession: IWeb3WalletEngine["updateSession"] = async (params) => {
-    return await new Promise<void>((resolve) => () => resolve);
+    return await (await this.signClient.update(params)).acknowledged();
   };
 
   public extendSession: IWeb3WalletEngine["extendSession"] = async (params) => {
-    return await new Promise<void>((resolve) => () => resolve);
+    return await (await this.signClient.extend(params)).acknowledged();
   };
 
   public respondSessionRequest: IWeb3WalletEngine["respondSessionRequest"] = async (params) => {
-    return await new Promise<void>((resolve) => () => resolve);
+    return await this.signClient.respond(params);
   };
 
   public disconnectSession: IWeb3WalletEngine["disconnectSession"] = async (params) => {
-    return await new Promise<void>((resolve) => () => resolve);
+    return await this.signClient.disconnect(params);
   };
 
   public emitSessionEvent: IWeb3WalletEngine["emitSessionEvent"] = async (params) => {
@@ -82,5 +89,16 @@ export class Engine extends IWeb3WalletEngine {
 
   public formatMessage: IWeb3WalletEngine["formatMessage"] = async (params) => {
     return await new Promise<any>((resolve) => () => resolve);
+  };
+
+  private initializeEventListeners = () => {
+    this.signClient.events.on("session_proposal", (params) => {
+      this.client.events.emit("session_proposal", params);
+    });
+
+    this.signClient.events.on("session_request", (params) => {
+      console.log("@engine session_request", params);
+      this.client.events.emit("session_request", params);
+    });
   };
 }
