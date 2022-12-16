@@ -9,6 +9,7 @@ import { expect, describe, it, beforeEach, vi, beforeAll } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
 import {
   TEST_CORE_OPTIONS,
+  TEST_ETHEREUM_CHAIN,
   TEST_NAMESPACES,
   TEST_REQUIRED_NAMESPACES,
   TEST_UPDATED_NAMESPACES,
@@ -159,7 +160,7 @@ describe("Sign Integration", () => {
             namespaces: {
               eip155: {
                 ...TEST_NAMESPACES.eip155,
-                accounts: [`eip155:1:${cryptoWallet.address}`],
+                accounts: [`${TEST_ETHEREUM_CHAIN}:${cryptoWallet.address}`],
               },
             },
           });
@@ -201,7 +202,7 @@ describe("Sign Integration", () => {
               },
             ],
           },
-          chainId: "eip155:1",
+          chainId: TEST_ETHEREUM_CHAIN,
         });
         expect(result).to.be.exist;
         expect(result).to.be.a("string");
@@ -221,7 +222,7 @@ describe("Sign Integration", () => {
             namespaces: {
               eip155: {
                 ...TEST_NAMESPACES.eip155,
-                accounts: [`eip155:1:${cryptoWallet.address}`],
+                accounts: [`${TEST_ETHEREUM_CHAIN}:${cryptoWallet.address}`],
               },
             },
           });
@@ -257,7 +258,7 @@ describe("Sign Integration", () => {
             namespaces: {
               eip155: {
                 ...TEST_NAMESPACES.eip155,
-                accounts: [`eip155:1:${cryptoWallet.address}`],
+                accounts: [`${TEST_ETHEREUM_CHAIN}:${cryptoWallet.address}`],
               },
             },
           });
@@ -299,7 +300,7 @@ describe("Sign Integration", () => {
             namespaces: {
               eip155: {
                 ...TEST_NAMESPACES.eip155,
-                accounts: [`eip155:1:${cryptoWallet.address}`],
+                accounts: [`${TEST_ETHEREUM_CHAIN}:${cryptoWallet.address}`],
               },
             },
           });
@@ -344,7 +345,7 @@ describe("Sign Integration", () => {
             namespaces: {
               eip155: {
                 ...TEST_NAMESPACES.eip155,
-                accounts: [`eip155:1:${cryptoWallet.address}`],
+                accounts: [`${TEST_ETHEREUM_CHAIN}:${cryptoWallet.address}`],
               },
             },
           });
@@ -390,7 +391,7 @@ describe("Sign Integration", () => {
         const result = await dapp.request({
           topic: session.topic,
           request: requestParams,
-          chainId: "eip155:1",
+          chainId: TEST_ETHEREUM_CHAIN,
         });
         expect(result).to.be.exist;
         expect(result).to.be.a("string");
