@@ -24,8 +24,7 @@ describe("Sign Client Integration", () => {
         pairingA = settled.pairingA;
         sessionA = settled.sessionA;
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.log("retrying", e);
+        clients.A.logger.error("retrying", e);
       }
       retries++;
     }
