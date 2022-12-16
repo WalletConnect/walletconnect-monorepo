@@ -31,7 +31,10 @@ export declare namespace Web3WalletTypes {
 
   interface Options {
     core: ICore;
+    metadata?: Metadata;
   }
+
+  type Metadata = AuthClientTypes.Metadata;
 }
 
 export abstract class IWeb3WalletEvents extends EventEmmiter {
@@ -72,6 +75,7 @@ export abstract class IWeb3Wallet {
   public abstract logger: Logger;
   public abstract core: ICore;
   public abstract pendingRequest: PendingRequest;
+  public abstract metadata: Web3WalletTypes.Metadata;
 
   constructor(public opts: Web3WalletTypes.Options) {}
 

@@ -4,13 +4,12 @@ import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
 import { expect, describe, it, beforeEach, beforeAll } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
-import { TEST_CORE_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 import {
   AuthClient,
   AuthEngineTypes,
   generateNonce,
   IAuthClient,
-  AuthClientTypes,
 } from "@walletconnect/auth-client";
 
 const defaultRequestParams: AuthEngineTypes.RequestParams = {
@@ -59,6 +58,88 @@ describe("Auth Integration", () => {
           expect(params.cacaoPayload.nonce).to.toMatchObject(defaultRequestParams.nonce);
 
           const message = wallet.formatMessage(params.cacaoPayload, iss);
+          const signature = await cryptoWallet.signMessage(message);
+
+          resolve(
+            await wallet.respondAuthRequest(
+              {
+                id,
+                signature: {
+                  s: signature,
+                  t: "eip191",
+                },
+              },
+              iss,
+            ),
+          );
+        });
+      }),
+      new Promise<void>((resolve) => {
+        dapp.on("auth_response", (authResponse: any) => {
+          expect(authResponse).to.be.exist;
+          expect(authResponse).to.have.property("id");
+          expect(authResponse).to.have.property("topic");
+          expect(authResponse.params.result.p.iss).to.eq(iss);
+          resolve();
+        });
+      }),
+      wallet.core.pairing.pair({ uri: request.uri, activatePairing: true }),
+    ]);
+  });
+
+  it("should reject auth request", async () => {
+    const request = await dapp.request(defaultRequestParams);
+    uriString = request.uri;
+    const errorResponse = {
+      code: 14001,
+      message: "Can not login",
+    };
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("auth_request", async (authRequest) => {
+          const { id, params } = authRequest;
+          expect(params.cacaoPayload.aud).to.toMatchObject(defaultRequestParams.aud);
+          expect(params.cacaoPayload.domain).to.toMatchObject(defaultRequestParams.domain);
+          expect(params.cacaoPayload.nonce).to.toMatchObject(defaultRequestParams.nonce);
+          resolve(
+            await wallet.respondAuthRequest(
+              {
+                id,
+                error: errorResponse,
+              },
+              iss,
+            ),
+          );
+        });
+      }),
+      new Promise<void>((resolve) => {
+        dapp.on("auth_response", (authResponse: any) => {
+          expect(authResponse).to.be.exist;
+          expect(authResponse).to.have.property("id");
+          expect(authResponse).to.have.property("topic");
+          expect(authResponse.params.error).to.toMatchObject(errorResponse);
+          resolve();
+        });
+      }),
+      wallet.core.pairing.pair({ uri: request.uri, activatePairing: true }),
+    ]);
+  });
+
+  it("should get pending auth request", async () => {
+    const request = await dapp.request(defaultRequestParams);
+    uriString = request.uri;
+
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("auth_request", async (authRequest) => {
+          const pendingRequest = wallet.getPendingAuthRequests();
+          const { id, cacaoPayload } = pendingRequest[0];
+
+          expect(cacaoPayload.aud).to.toMatchObject(defaultRequestParams.aud);
+          expect(cacaoPayload.domain).to.toMatchObject(defaultRequestParams.domain);
+          expect(cacaoPayload.nonce).to.toMatchObject(defaultRequestParams.nonce);
+
+          const message = wallet.formatMessage(cacaoPayload, iss);
           const signature = await cryptoWallet.signMessage(message);
 
           resolve(

@@ -9,6 +9,7 @@ export class Web3Wallet extends IWeb3Wallet {
   public events: IWeb3Wallet["events"] = new EventEmitter();
   public engine: IWeb3Wallet["engine"];
   public pendingRequest: IWeb3Wallet["pendingRequest"];
+  public metadata: IWeb3Wallet["metadata"];
 
   static async init(opts: Web3WalletTypes.Options) {
     const client = new Web3Wallet(opts);
@@ -19,6 +20,7 @@ export class Web3Wallet extends IWeb3Wallet {
 
   constructor(opts: Web3WalletTypes.Options) {
     super(opts);
+    this.metadata = opts.metadata as any; // TODO: automatic fetch of metadata when?
     this.core = opts.core;
     this.logger = this.core.logger;
     this.engine = new Engine(this);
@@ -144,9 +146,9 @@ export class Web3Wallet extends IWeb3Wallet {
     }
   };
 
-  public getPendingAuthRequests: IWeb3Wallet["getPendingAuthRequests"] = async () => {
+  public getPendingAuthRequests: IWeb3Wallet["getPendingAuthRequests"] = () => {
     try {
-      return await this.engine.getPendingAuthRequests();
+      return this.engine.getPendingAuthRequests();
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
@@ -161,6 +163,7 @@ export class Web3Wallet extends IWeb3Wallet {
       throw error;
     }
   };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {

@@ -1,4 +1,4 @@
-import { AuthClient, IAuthClient } from "@walletconnect/auth-client";
+import { AuthClient, AuthEngineTypes, IAuthClient } from "@walletconnect/auth-client";
 import { SignClient } from "@walletconnect/sign-client";
 import { ISignClient } from "@walletconnect/types";
 import { IWeb3WalletEngine, Web3WalletTypes } from "../types";
@@ -15,21 +15,18 @@ export class Engine extends IWeb3WalletEngine {
   }
 
   public init = async () => {
-    // await this.client.core.start();
     this.signClient = await SignClient.init({
       core: this.client.core,
       projectId: "",
-      metadata: {} as any,
+      metadata: this.client.metadata,
     });
     this.authClient = await AuthClient.init({
       core: this.client.core,
       projectId: "",
-      metadata: {} as any,
+      metadata: this.client.metadata,
     });
 
     this.initializeEventListeners();
-    // eslint-disable-next-line no-console
-    console.log("Engine.start");
   };
 
   // Sign //
@@ -89,13 +86,17 @@ export class Engine extends IWeb3WalletEngine {
     return await this.authClient.respond(params, iss);
   };
 
-  public getPendingAuthRequests: IWeb3WalletEngine["getPendingAuthRequests"] = async () => {
-    return await new Promise<any>((resolve) => () => resolve);
+  public getPendingAuthRequests: IWeb3WalletEngine["getPendingAuthRequests"] = () => {
+    return this.authClient.requests
+      .getAll()
+      .filter((request) => "requester" in request) as AuthEngineTypes.PendingRequest[];
   };
 
   public formatMessage: IWeb3WalletEngine["formatMessage"] = (params, iss) => {
     return this.authClient.formatMessage(params, iss);
   };
+
+  // ---------- Private ----------------------------------------------- //
 
   private onSessionRequest = (event: Web3WalletTypes.SessionRequest) => {
     this.client.pendingRequest.set(event.id, event);
