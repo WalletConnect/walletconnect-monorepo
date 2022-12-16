@@ -5,7 +5,7 @@ import { initTwoClients, testConnectMethod, deleteClients, throttle } from "../s
 const generateClientDbName = (prefix: string) =>
   `./test/tmp/${prefix}_${generateRandomBytes32()}.db`;
 
-describe("Sign Client Persistance", () => {
+describe("Sign Client Persistence", () => {
   describe("ping", () => {
     describe("pairing", () => {
       describe("after restart", () => {
