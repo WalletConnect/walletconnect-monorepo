@@ -20,7 +20,7 @@ describe("Sign Integration", () => {
   let wallet: IWeb3Wallet;
   let dapp: ISignClient;
   let uriString: string;
-  let approveSession: () => Promise<any>;
+  let sessionApproval: () => Promise<any>;
   let session: SessionTypes.Struct;
   let cryptoWallet: CryptoWallet;
 
@@ -29,14 +29,14 @@ describe("Sign Integration", () => {
   });
 
   beforeEach(async () => {
-    core = new Core({ ...TEST_CORE_OPTIONS, name: "wallet" });
+    core = new Core(TEST_CORE_OPTIONS);
     dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
     const { uri, approval } = await dapp.connect({
       requiredNamespaces: TEST_REQUIRED_NAMESPACES,
     });
     uriString = uri || "";
-    approveSession = approval;
-    wallet = await Web3Wallet.init({ core });
+    sessionApproval = approval;
+    wallet = await Web3Wallet.init({ core, name: "wallet" });
     expect(wallet).to.be.exist;
     expect(dapp).to.be.exist;
     expect(core).to.be.exist;
@@ -56,7 +56,7 @@ describe("Sign Integration", () => {
         });
       }),
       new Promise(async (resolve) => {
-        resolve(await approveSession());
+        resolve(await sessionApproval());
       }),
       new Promise(async (resolve) => {
         resolve(await core.pairing.pair({ uri: uriString }));
@@ -80,7 +80,7 @@ describe("Sign Integration", () => {
       new Promise<void>(async (resolve) => {
         // catch the rejection and compare
         try {
-          await approveSession();
+          await sessionApproval();
         } catch (err) {
           expect(err).to.toMatchObject(rejectionError);
         }
@@ -103,7 +103,7 @@ describe("Sign Integration", () => {
           resolve(session);
         });
       }),
-      approveSession(),
+      sessionApproval(),
       core.pairing.pair({ uri: uriString }),
     ]);
 
@@ -134,7 +134,7 @@ describe("Sign Integration", () => {
           resolve(session);
         });
       }),
-      approveSession(),
+      sessionApproval(),
       core.pairing.pair({ uri: uriString }),
     ]);
 
@@ -168,7 +168,7 @@ describe("Sign Integration", () => {
           resolve(session);
         });
       }),
-      approveSession(),
+      sessionApproval(),
       core.pairing.pair({ uri: uriString }),
     ]);
 
@@ -230,7 +230,7 @@ describe("Sign Integration", () => {
           resolve(session);
         });
       }),
-      approveSession(),
+      sessionApproval(),
       core.pairing.pair({ uri: uriString }),
     ]);
 
@@ -266,7 +266,7 @@ describe("Sign Integration", () => {
           resolve(session);
         });
       }),
-      approveSession(),
+      sessionApproval(),
       core.pairing.pair({ uri: uriString }),
     ]);
     const sessionEvent = {
@@ -308,7 +308,7 @@ describe("Sign Integration", () => {
           resolve(session);
         });
       }),
-      approveSession(),
+      sessionApproval(),
       core.pairing.pair({ uri: uriString }),
     ]);
 
@@ -353,7 +353,7 @@ describe("Sign Integration", () => {
           resolve(session);
         });
       }),
-      approveSession(),
+      sessionApproval(),
       core.pairing.pair({ uri: uriString }),
     ]);
 

@@ -32,6 +32,7 @@ export declare namespace Web3WalletTypes {
   interface Options {
     core: ICore;
     metadata?: Metadata;
+    name?: string;
   }
 
   type Metadata = AuthClientTypes.Metadata;

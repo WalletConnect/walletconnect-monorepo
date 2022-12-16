@@ -33,13 +33,13 @@ describe("Auth Integration", () => {
   });
 
   beforeEach(async () => {
-    core = new Core({ ...TEST_CORE_OPTIONS, name: "wallet" });
+    core = new Core(TEST_CORE_OPTIONS);
     dapp = await AuthClient.init({
       projectId: TEST_CORE_OPTIONS.projectId,
       metadata: {} as any,
       name: "dapp",
     });
-    wallet = await Web3Wallet.init({ core });
+    wallet = await Web3Wallet.init({ core, name: "wallet" });
     expect(wallet).to.be.exist;
     expect(dapp).to.be.exist;
     expect(core).to.be.exist;

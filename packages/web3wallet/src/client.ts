@@ -1,9 +1,10 @@
 import EventEmitter from "events";
+import { CLIENT_CONTEXT } from "./constants";
 import { Engine, PendingRequest } from "./controllers";
 import { IWeb3Wallet, Web3WalletTypes } from "./types";
 
 export class Web3Wallet extends IWeb3Wallet {
-  public readonly name: IWeb3Wallet["name"] = "Web3Wallet";
+  public name: IWeb3Wallet["name"];
   public core: IWeb3Wallet["core"];
   public logger: IWeb3Wallet["logger"];
   public events: IWeb3Wallet["events"] = new EventEmitter();
@@ -21,6 +22,7 @@ export class Web3Wallet extends IWeb3Wallet {
   constructor(opts: Web3WalletTypes.Options) {
     super(opts);
     this.metadata = opts.metadata as any; // TODO: automatic fetch of metadata when?
+    this.name = opts.name || CLIENT_CONTEXT;
     this.core = opts.core;
     this.logger = this.core.logger;
     this.engine = new Engine(this);
