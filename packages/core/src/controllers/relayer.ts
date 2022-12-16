@@ -156,25 +156,26 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
     try {
-      await Promise.race([
-        this.provider.connect(),
-        new Promise<void>((_res, reject) =>
-          // rejects pending promise if transport is closed before connection is established
-          // useful when .connect() gets stuck resolving
-          this.once(RELAYER_EVENTS.transport_closed, () => {
-            reject();
-          }),
-        ),
-      ]);
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          if (!this.initialized) resolve();
 
-      if (this.initialized) {
-        // wait for the subscriber to finish resubscribing to its topics
-        await new Promise<void>((resolve) => {
+          // wait for the subscriber to finish resubscribing to its topics
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
             resolve();
           });
-        });
-      }
+        }),
+        await Promise.race([
+          this.provider.connect(),
+          new Promise<void>((_res, reject) =>
+            // rejects pending promise if transport is closed before connection is established
+            // useful when .connect() gets stuck resolving
+            this.once(RELAYER_EVENTS.transport_closed, () => {
+              reject();
+            }),
+          ),
+        ]),
+      ]);
     } catch (e: unknown | Error) {
       const error = e as Error;
       if (!/socket hang up/i.test(error.message)) {
