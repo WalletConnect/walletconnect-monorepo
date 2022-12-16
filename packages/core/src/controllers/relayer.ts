@@ -180,8 +180,7 @@ export class Relayer extends IRelayer {
       if (!/socket hang up/i.test(error.message)) {
         throw new Error(error.message);
       }
-      // eslint-disable-next-line no-console
-      console.error(error);
+      this.logger.error(error);
       this.events.emit(RELAYER_EVENTS.transport_closed);
     }
   }
