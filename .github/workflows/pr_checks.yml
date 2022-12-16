@@ -65,6 +65,7 @@ jobs:
         test-prefix:
           - packages/sign-client
           - packages/core
+          - packages/web3wallet
           - packages/utils
           - providers/universal-provider
     env:
