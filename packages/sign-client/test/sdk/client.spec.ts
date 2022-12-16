@@ -149,13 +149,13 @@ describe("Sign Client Integration", () => {
   });
 
   describe("extend", () => {
-    it.skip("updates session expiry state", async () => {
+    it("updates session expiry state", async () => {
       const clients = await initTwoClients();
-      vi.useFakeTimers();
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
       const prevExpiry = clients.A.session.get(topic).expiry;
+      vi.useFakeTimers();
       // Fast-forward system time by 60 seconds after expiry was first set.
       vi.setSystemTime(Date.now() + 60_000);
       const { acknowledged } = await clients.A.extend({
@@ -166,6 +166,6 @@ describe("Sign Client Integration", () => {
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
       vi.useRealTimers();
       await deleteClients(clients);
-    }, 50_000);
+    });
   });
 });
