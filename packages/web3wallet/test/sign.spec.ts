@@ -5,9 +5,10 @@ import { ICore, ISignClient, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
-import { expect, describe, it, beforeEach, vi, beforeAll } from "vitest";
+import { expect, describe, it, beforeEach, vi, beforeAll, afterAll } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
 import {
+  disconnect,
   TEST_CORE_OPTIONS,
   TEST_ETHEREUM_CHAIN,
   TEST_NAMESPACES,
@@ -26,6 +27,10 @@ describe("Sign Integration", () => {
 
   beforeAll(() => {
     cryptoWallet = CryptoWallet.createRandom();
+  });
+
+  afterAll(async () => {
+    await disconnect(core);
   });
 
   beforeEach(async () => {

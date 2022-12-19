@@ -2,9 +2,9 @@ import { Core } from "@walletconnect/core";
 import { ICore } from "@walletconnect/types";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
-import { expect, describe, it, beforeEach, beforeAll } from "vitest";
+import { expect, describe, it, beforeEach, beforeAll, afterAll } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
-import { TEST_CORE_OPTIONS } from "./shared";
+import { disconnect, TEST_CORE_OPTIONS } from "./shared";
 import {
   AuthClient,
   AuthEngineTypes,
@@ -30,6 +30,10 @@ describe("Auth Integration", () => {
   beforeAll(() => {
     cryptoWallet = CryptoWallet.createRandom();
     iss = `did:pkh:eip155:1:${cryptoWallet.address}`;
+  });
+
+  afterAll(async () => {
+    await disconnect(core);
   });
 
   beforeEach(async () => {
