@@ -79,9 +79,7 @@ export abstract class ISignClientEvents extends EventEmmiter {
     listener: (args: SignClientTypes.EventArguments[E]) => any,
   ) => this;
 
-  public abstract removeAllListeners: <E extends SignClientTypes.Event>(
-    event: E
-  ) => this;
+  public abstract removeAllListeners: <E extends SignClientTypes.Event>(event: E) => this;
 }
 
 export abstract class ISignClient {
