@@ -39,9 +39,9 @@
     "reset": "npm run clean; npm run check",
     "new-version": "lerna version --no-private --no-git-tag-version --exact && ./scripts/update_relayer_sdk_version.sh",
     "pre-publish": "npm run new-version; npm run reset",
-    "npm-publish:rc": "lerna exec -- npm publish --access public --tag rc --no-private",
-    "npm-publish:latest": "lerna exec -- npm publish --access public --tag latest --no-private",
-    "npm-publish:next": "lerna exec -- npm publish --access public --tag next --no-private",
+    "npm-publish:rc": "lerna exec --no-private -- npm publish --access public --tag rc",
+    "npm-publish:latest": "lerna exec --no-private -- npm publish --access public --tag latest",
+    "npm-publish:next": "lerna exec --no-private -- npm publish --access public --tag next",
     "npm-publish:canary": "lerna exec --no-private -- npm publish --access public --tag canary"
   },
   "repository": {
