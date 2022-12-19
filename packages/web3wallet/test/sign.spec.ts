@@ -36,7 +36,7 @@ describe("Sign Integration", () => {
     });
     uriString = uri || "";
     sessionApproval = approval;
-    wallet = await Web3Wallet.init({ core, name: "wallet" });
+    wallet = await Web3Wallet.init({ core, name: "wallet", metadata: {} as any });
     expect(wallet).to.be.exist;
     expect(dapp).to.be.exist;
     expect(core).to.be.exist;

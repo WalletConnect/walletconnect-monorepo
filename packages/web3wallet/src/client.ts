@@ -21,7 +21,7 @@ export class Web3Wallet extends IWeb3Wallet {
 
   constructor(opts: Web3WalletTypes.Options) {
     super(opts);
-    this.metadata = opts.metadata as any; // TODO: automatic fetch of metadata when?
+    this.metadata = opts.metadata;
     this.name = opts.name || CLIENT_CONTEXT;
     this.core = opts.core;
     this.logger = this.core.logger;

@@ -31,7 +31,7 @@ export declare namespace Web3WalletTypes {
 
   interface Options {
     core: ICore;
-    metadata?: Metadata;
+    metadata: Metadata;
     name?: string;
   }
 
