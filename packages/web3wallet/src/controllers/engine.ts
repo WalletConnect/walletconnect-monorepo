@@ -52,7 +52,6 @@ export class Engine extends IWeb3WalletEngine {
 
   public respondSessionRequest: IWeb3WalletEngine["respondSessionRequest"] = async (params) => {
     const result = await this.signClient.respond(params);
-    this.client.pendingRequest.delete(params.response.id, { message: "fulfilled", code: 0 });
     return result;
   };
 
@@ -77,7 +76,7 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   public getPendingSessionRequests: IWeb3WalletEngine["getPendingSessionRequests"] = () => {
-    return this.client.pendingRequest.getAll();
+    return this.signClient.pendingRequest.getAll();
   };
 
   // Auth //
@@ -98,7 +97,6 @@ export class Engine extends IWeb3WalletEngine {
   // ---------- Private ----------------------------------------------- //
 
   private onSessionRequest = (event: Web3WalletTypes.SessionRequest) => {
-    this.client.pendingRequest.set(event.id, event);
     this.client.events.emit("session_request", event);
   };
 
