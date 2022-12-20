@@ -7,8 +7,7 @@ import {
   TEST_EMIT_PARAMS,
   TEST_WEBHOOK_ENDPOINT,
   throttle,
-} from "../shared";
-import { TEST_RELAY_URL } from "./../shared/values";
+} from "../../shared";
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 
 describe("Push", () => {

@@ -8,14 +8,16 @@ import {
   getRelayProtocolName,
   hashMessage,
   isUndefined,
+  createExpiringPromise,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL } from "../constants";
+import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
+  private publishTimeout = 10_000;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
@@ -39,7 +41,17 @@ export class Publisher extends IPublisher {
       const params = { topic, message, opts: { ttl, relay, prompt, tag } };
       const hash = hashMessage(message);
       this.queue.set(hash, params);
-      await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
+      try {
+        const publish = await createExpiringPromise(
+          this.rpcPublish(topic, message, ttl, relay, prompt, tag),
+          this.publishTimeout,
+        );
+        await publish;
+      } catch (err) {
+        this.logger.debug(`Publishing Payload stalled`);
+        this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+        return;
+      }
       this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
@@ -100,14 +112,8 @@ export class Publisher extends IPublisher {
 
   private checkQueue() {
     this.queue.forEach(async (params) => {
-      const {
-        topic,
-        message,
-        opts: { ttl, relay, prompt, tag },
-      } = params;
-      const hash = hashMessage(message);
-      await this.rpcPublish(topic, message, ttl, relay, prompt, tag);
-      this.onPublish(hash, params);
+      const { topic, message, opts } = params;
+      await this.publish(topic, message, opts);
     });
   }
 

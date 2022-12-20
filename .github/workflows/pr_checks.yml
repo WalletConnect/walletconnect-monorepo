@@ -31,6 +31,7 @@ jobs:
             packages/sign-client/dist
             packages/types/dist
             packages/utils/dist
+            packages/web3wallet/dist
             providers/ethereum-provider/dist
             providers/signer-connection/dist
             providers/universal-provider/dist
@@ -64,6 +65,7 @@ jobs:
         test-prefix:
           - packages/sign-client
           - packages/core
+          - packages/web3wallet
           - packages/utils
           - providers/universal-provider
     env:

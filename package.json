@@ -23,6 +23,7 @@
     "packages/core",
     "packages/sign-client",
     "packages/react-native-compat",
+    "packages/web3wallet",
     "providers/signer-connection",
     "providers/ethereum-provider",
     "providers/universal-provider"
@@ -36,12 +37,12 @@
     "test:ignoreUnhandled": "npm run test:ignoreUnhandled --workspaces --if-present",
     "check": "npm run lint; npm run build; npm run test",
     "reset": "npm run clean; npm run check",
-    "new-version": "lerna version --no-git-tag-version --exact && ./scripts/update_relayer_sdk_version.sh",
+    "new-version": "lerna version --no-private --no-git-tag-version --exact && ./scripts/update_relayer_sdk_version.sh",
     "pre-publish": "npm run new-version; npm run reset",
-    "npm-publish:rc": "lerna exec -- npm publish --access public --tag rc",
-    "npm-publish:latest": "lerna exec -- npm publish --access public --tag latest",
-    "npm-publish:next": "lerna exec -- npm publish --access public --tag next",
-    "npm-publish:canary": "lerna exec -- npm publish --access public --tag canary"
+    "npm-publish:rc": "lerna exec --no-private -- npm publish --access public --tag rc",
+    "npm-publish:latest": "lerna exec --no-private -- npm publish --access public --tag latest",
+    "npm-publish:next": "lerna exec --no-private -- npm publish --access public --tag next",
+    "npm-publish:canary": "lerna exec --no-private -- npm publish --access public --tag canary"
   },
   "repository": {
     "type": "git",

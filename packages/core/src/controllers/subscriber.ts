@@ -16,6 +16,7 @@ import {
   getInternalError,
   getRelayProtocolApi,
   getRelayProtocolName,
+  createExpiringPromise,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -23,7 +24,7 @@ import {
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
-  RELAYER_PROVIDER_EVENTS,
+  RELAYER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -40,7 +41,7 @@ export class Subscriber extends ISubscriber {
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private pendingSubInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
-
+  private subscribeTimeout = 10_000;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -206,7 +207,18 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    return await this.relayer.provider.request(request);
+    let result: any;
+    try {
+      const subscribe = await createExpiringPromise(
+        this.relayer.provider.request(request),
+        this.subscribeTimeout,
+      );
+      result = await subscribe;
+    } catch (err) {
+      this.logger.debug(`Outgoing Relay Payload stalled`);
+      this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+    }
+    return result;
   }
 
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
@@ -362,10 +374,10 @@ export class Subscriber extends ISubscriber {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+    this.relayer.on(RELAYER_EVENTS.connect, async () => {
       await this.onConnect();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+    this.relayer.on(RELAYER_EVENTS.disconnect, () => {
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
