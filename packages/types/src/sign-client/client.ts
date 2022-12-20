@@ -4,6 +4,7 @@ import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { CoreTypes, ICore } from "../core/core";
 import { Logger } from "@walletconnect/logger";
+import { IPendingRequest } from "./pendingRequest";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -94,6 +95,7 @@ export abstract class ISignClient {
   public abstract engine: IEngine;
   public abstract session: ISession;
   public abstract proposal: IProposal;
+  public abstract pendingRequest: IPendingRequest;
 
   constructor(public opts?: SignClientTypes.Options) {}
 

@@ -1,3 +1,4 @@
+import { formatJsonRpcError, JsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
 import SignClient from "../../src";
@@ -7,6 +8,8 @@ import {
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
   throttle,
+  TEST_ETHEREUM_ACCOUNT,
+  TEST_ETHEREUM_CHAIN,
 } from "../shared";
 
 describe("Sign Client Integration", () => {
@@ -117,6 +120,60 @@ describe("Sign Client Integration", () => {
             sessionA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
+          await deleteClients(clients);
+        });
+        it("can get pending session request", async () => {
+          const clients = await initTwoClients({}, {}, { logger: "error" });
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(clients);
+
+          const requestParams = {
+            method: "eth_signTransaction",
+            params: [
+              {
+                from: TEST_ETHEREUM_ACCOUNT,
+                to: TEST_ETHEREUM_ACCOUNT,
+                data: "0x",
+                nonce: "0x01",
+                gasPrice: "0x020a7ac094",
+                gasLimit: "0x5208",
+                value: "0x00",
+              },
+            ],
+          };
+
+          let rejection: JsonRpcError;
+
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.on("session_request", async (args) => {
+                const pendingRequests = clients.B.pendingRequest.getAll();
+                const { id, topic, params } = pendingRequests[0];
+                expect(params).toEqual(args.params);
+                expect(topic).toEqual(args.topic);
+                expect(id).toEqual(args.id);
+                rejection = formatJsonRpcError(id, getSdkError("USER_REJECTED_METHODS").message);
+                await clients.B.respond({
+                  topic,
+                  response: rejection,
+                });
+                resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              try {
+                await clients.A.request({
+                  topic,
+                  request: requestParams,
+                  chainId: TEST_ETHEREUM_CHAIN,
+                });
+              } catch (err) {
+                expect(err.message).toMatch(rejection.error.message);
+                resolve();
+              }
+            }),
+          ]);
           await deleteClients(clients);
         });
       });

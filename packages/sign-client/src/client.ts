@@ -9,7 +9,7 @@ import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@w
 import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
-import { Engine, Proposal, Session } from "./controllers";
+import { Engine, PendingRequest, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
@@ -23,6 +23,7 @@ export class SignClient extends ISignClient {
   public engine: ISignClient["engine"];
   public session: ISignClient["session"];
   public proposal: ISignClient["proposal"];
+  public pendingRequest: ISignClient["pendingRequest"];
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
@@ -46,6 +47,7 @@ export class SignClient extends ISignClient {
     this.logger = generateChildLogger(logger, this.name);
     this.session = new Session(this.core, this.logger);
     this.proposal = new Proposal(this.core, this.logger);
+    this.pendingRequest = new PendingRequest(this.core, this.logger);
     this.engine = new Engine(this);
   }
 
@@ -193,6 +195,7 @@ export class SignClient extends ISignClient {
       await this.core.start();
       await this.session.init();
       await this.proposal.init();
+      await this.pendingRequest.init();
       await this.engine.init();
       this.logger.info(`SignClient Initilization Success`);
     } catch (error: any) {

@@ -268,6 +268,7 @@ export class Engine extends IEngine {
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }
+    this.client.pendingRequest.delete(params.response.id, { message: "fulfilled", code: 0 });
   };
 
   public ping: IEngine["ping"] = async (params) => {
@@ -674,6 +675,7 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidRequest({ topic, ...params });
+      await this.client.pendingRequest.set(payload.id, { id, topic, params });
       this.client.events.emit("session_request", { id, topic, params });
     } catch (err: any) {
       await this.sendError(id, topic, err);
