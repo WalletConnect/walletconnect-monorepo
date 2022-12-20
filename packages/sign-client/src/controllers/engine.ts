@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
@@ -120,7 +121,6 @@ export class Engine extends IEngine {
               metadata: session.peer.metadata,
             });
           }
-
           resolve(completeSession);
         }
       },
@@ -135,7 +135,6 @@ export class Engine extends IEngine {
 
     const expiry = calcExpiry(FIVE_MINUTES);
     await this.setProposal(id, { id, expiry, ...proposal });
-
     return { uri, approval };
   };
 
@@ -350,9 +349,6 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     this.client.core.history.set(topic, payload);
-
-    // await is intentionally omitted here because of a possible race condition
-    // where a response is received before the publish call is resolved
     this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
   };

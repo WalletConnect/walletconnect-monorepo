@@ -103,4 +103,5 @@ export abstract class IRelayer extends IEvents {
   public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
   public abstract transportClose(): Promise<void>;
   public abstract transportOpen(relayUrl?: string): Promise<void>;
+  public abstract restartTransport(relayUrl?: string): Promise<void>;
 }

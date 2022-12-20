@@ -1,6 +1,6 @@
 import { getSdkError, parseUri } from "@walletconnect/utils";
-import { expect, describe, it, beforeEach, afterEach } from "vitest";
-import SignClient from "../../src";
+import { expect, describe, it } from "vitest";
+import SignClient from "../../../src";
 import {
   initTwoClients,
   testConnectMethod,
@@ -9,15 +9,14 @@ import {
   TEST_NAMESPACES,
   TEST_REQUIRED_NAMESPACES,
   TEST_EMIT_PARAMS,
-  disconnectSocket,
-} from "../shared";
+} from "../../shared";
 import { EngineTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
 
 describe("Sign Client Events Validation", () => {
   it("init", async () => {
     const client = await SignClient.init(TEST_SIGN_CLIENT_OPTIONS);
     expect(client).to.be.exist;
-    await disconnectSocket(client.core);
+    await deleteClients({ A: client, B: undefined });
   });
 
   describe("session", () => {

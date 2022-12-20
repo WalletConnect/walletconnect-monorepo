@@ -58,9 +58,9 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     uri?: string | undefined;
     approval: () => Promise<SessionTypes.Struct>;
   }> = new Promise(async function (resolve, reject) {
-    const connectTimeoutMs = 20_000;
+    const connectTimeoutMs = 800_000;
     const timeout = setTimeout(() => {
-      return reject(new Error(`Connect timed out after ${connectTimeoutMs}ms`));
+      return reject(new Error(`Connect timed out after ${connectTimeoutMs}ms - ${A.core.name}`));
     }, connectTimeoutMs);
     const result = await A.connect(connectParams);
     clearTimeout(timeout);
@@ -96,7 +96,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   const pair: (uri: string) => Promise<PairingTypes.Struct> = (uri: string) =>
     new Promise(async function (resolve, reject) {
-      const pairTimeoutMs = 15_000;
+      const pairTimeoutMs = 800_000;
       const timeout = setTimeout(() => {
         return reject(new Error(`Pair timed out after ${pairTimeoutMs}ms`));
       }, pairTimeoutMs);
@@ -104,7 +104,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
       clearTimeout(timeout);
       return resolve(result);
     });
-
   await Promise.all([
     resolveSessionProposal,
     new Promise<void>(async (resolve, reject) => {
@@ -136,7 +135,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
       }
     }),
   ]);
-
   const settlePairingLatencyMs = Date.now() - start - (params?.qrCodeScanLatencyMs || 0);
 
   if (!sessionA) throw new Error("expect session A to be defined");
@@ -183,7 +181,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // metadata
   expect(pairingA.peerMetadata).to.eql(sessionA.peer.metadata);
   expect(pairingB.peerMetadata).to.eql(sessionB.peer.metadata);
-
+  await throttle(200); // allow for relay to update
   return { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs };
 }
 

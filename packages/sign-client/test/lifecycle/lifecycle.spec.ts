@@ -12,7 +12,7 @@ import { describe, it, expect, afterEach } from "vitest";
 
 const environment = process.env.ENVIRONMENT || "dev";
 
-const timeout = environment === "prod" ? 610_000 : 70_000;
+const timeout = environment === "prod" ? 610_000 : 30_000;
 
 const log = (log: string) => {
   // eslint-disable-next-line no-console

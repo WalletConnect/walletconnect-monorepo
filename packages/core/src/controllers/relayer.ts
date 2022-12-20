@@ -25,6 +25,7 @@ import {
   ISubscriber,
   RelayerOptions,
   RelayerTypes,
+  SubscriberTypes,
 } from "@walletconnect/types";
 import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
@@ -61,7 +62,6 @@ export class Relayer extends IRelayer {
 
   private relayUrl: string;
   private projectId: string | undefined;
-
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -83,7 +83,7 @@ export class Relayer extends IRelayer {
   public async init() {
     this.logger.trace(`Initialized`);
     this.provider = await this.createProvider();
-    await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
+    await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
   }
@@ -108,7 +108,20 @@ export class Relayer extends IRelayer {
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
     this.isInitialized();
-    const id = await this.subscriber.subscribe(topic, opts);
+    let id = "";
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
+          if (subscription.topic === topic) {
+            resolve();
+          }
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        id = await this.subscriber.subscribe(topic, opts);
+        resolve();
+      }),
+    ]);
     return id;
   }
 
@@ -135,20 +148,50 @@ export class Relayer extends IRelayer {
 
   public async transportClose() {
     this.transportExplicitlyClosed = true;
-    await this.provider.disconnect();
+    if (this.connected) await this.provider.disconnect();
+    this.events.emit(RELAYER_EVENTS.transport_closed);
   }
 
   public async transportOpen(relayUrl?: string) {
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
-    await this.provider.connect();
-    // wait for the subscriber to finish resubscribing to its topics
-    await new Promise<void>((resolve) => {
-      this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
-        resolve();
-      });
-    });
+    try {
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          if (!this.initialized) resolve();
+
+          // wait for the subscriber to finish resubscribing to its topics
+          this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+            resolve();
+          });
+        }),
+        await Promise.race([
+          this.provider.connect(),
+          new Promise<void>((_res, reject) =>
+            // rejects pending promise if transport is closed before connection is established
+            // useful when .connect() gets stuck resolving
+            this.once(RELAYER_EVENTS.transport_closed, () => {
+              reject();
+            }),
+          ),
+        ]),
+      ]);
+    } catch (e: unknown | Error) {
+      const error = e as Error;
+      if (!/socket hang up/i.test(error.message)) {
+        throw new Error(error.message);
+      }
+      this.logger.error(error);
+      this.events.emit(RELAYER_EVENTS.transport_closed);
+    }
   }
+
+  public async restartTransport(relayUrl?: string) {
+    await this.transportClose();
+    await new Promise<void>((resolve) => setTimeout(resolve, RELAYER_RECONNECT_TIMEOUT));
+    await this.transportOpen(relayUrl);
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private async createProvider() {
@@ -221,15 +264,20 @@ export class Relayer extends IRelayer {
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
       this.events.emit(RELAYER_EVENTS.error, err),
     );
+
+    this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
+      await this.restartTransport();
+    });
   }
 
   private attemptToReconnect() {
     if (this.transportExplicitlyClosed) {
       return;
     }
+
     // Attempt reconnection after one second.
-    setTimeout(() => {
-      this.provider.connect();
+    setTimeout(async () => {
+      await this.transportOpen();
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
