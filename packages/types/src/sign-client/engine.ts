@@ -171,6 +171,14 @@ export interface EnginePrivate {
 
   setProposal(id: number, proposal: ProposalTypes.Struct): Promise<void>;
 
+  setPendingSessionRequest(pendingRequest: PendingRequestTypes.Struct): Promise<void>;
+
+  deletePendingSessionRequest(
+    id: number,
+    reason: ErrorResponse,
+    expirerHasDeleted?: boolean,
+  ): Promise<void>;
+
   cleanup(): Promise<void>;
 
   onSessionProposeRequest(

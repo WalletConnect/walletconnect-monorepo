@@ -20,6 +20,7 @@ import {
   SessionTypes,
   JsonRpcTypes,
   ExpirerTypes,
+  PendingRequestTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -268,7 +269,7 @@ export class Engine extends IEngine {
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }
-    this.client.pendingRequest.delete(params.response.id, { message: "fulfilled", code: 0 });
+    this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
   };
 
   public ping: IEngine["ping"] = async (params) => {
@@ -338,6 +339,17 @@ export class Engine extends IEngine {
     ]);
   };
 
+  private deletePendingSessionRequest: EnginePrivate["deletePendingSessionRequest"] = async (
+    id,
+    reason,
+    expirerHasDeleted = false,
+  ) => {
+    await Promise.all([
+      this.client.pendingRequest.delete(id, reason),
+      expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
+    ]);
+  };
+
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
     if (this.client.session.keys.includes(topic)) {
       await this.client.session.update(topic, { expiry });
@@ -348,6 +360,19 @@ export class Engine extends IEngine {
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
     this.client.core.expirer.set(id, proposal.expiry);
+  };
+
+  private setPendingSessionRequest: EnginePrivate["setPendingSessionRequest"] = async (
+    pendingRequest: PendingRequestTypes.Struct,
+  ) => {
+    const expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl;
+    const { id, topic, params } = pendingRequest;
+    await this.client.pendingRequest.set(id, {
+      id,
+      topic,
+      params,
+    });
+    if (expiry) this.client.core.expirer.set(id, expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -680,7 +705,7 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidRequest({ topic, ...params });
-      await this.client.pendingRequest.set(payload.id, { id, topic, params });
+      await this.setPendingSessionRequest({ id, topic, params });
       this.client.events.emit("session_request", { id, topic, params });
     } catch (err: any) {
       await this.sendError(id, topic, err);
@@ -719,6 +744,11 @@ export class Engine extends IEngine {
   private registerExpirerEvents() {
     this.client.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
       const { topic, id } = parseExpirerTarget(event.target);
+
+      if (id && this.getPendingSessionRequests()[id]) {
+        return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
+      }
+
       if (topic) {
         if (this.client.session.keys.includes(topic)) {
           await this.deleteSession(topic, true);
