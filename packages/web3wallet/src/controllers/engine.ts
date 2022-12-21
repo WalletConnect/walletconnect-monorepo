@@ -76,7 +76,7 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   public getPendingSessionRequests: IWeb3WalletEngine["getPendingSessionRequests"] = () => {
-    return this.signClient.pendingRequest.getAll();
+    return this.signClient.getPendingSessionRequests();
   };
 
   // Auth //

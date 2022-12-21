@@ -10,6 +10,7 @@ import {
   throttle,
   TEST_ETHEREUM_ACCOUNT,
   TEST_ETHEREUM_CHAIN,
+  TEST_REQUEST_PARAMS,
 } from "../shared";
 
 describe("Sign Client Integration", () => {
@@ -128,21 +129,6 @@ describe("Sign Client Integration", () => {
             sessionA: { topic },
           } = await testConnectMethod(clients);
 
-          const requestParams = {
-            method: "eth_signTransaction",
-            params: [
-              {
-                from: TEST_ETHEREUM_ACCOUNT,
-                to: TEST_ETHEREUM_ACCOUNT,
-                data: "0x",
-                nonce: "0x01",
-                gasPrice: "0x020a7ac094",
-                gasLimit: "0x5208",
-                value: "0x00",
-              },
-            ],
-          };
-
           let rejection: JsonRpcError;
 
           await Promise.all([
@@ -165,8 +151,7 @@ describe("Sign Client Integration", () => {
               try {
                 await clients.A.request({
                   topic,
-                  request: requestParams,
-                  chainId: TEST_ETHEREUM_CHAIN,
+                  ...TEST_REQUEST_PARAMS,
                 });
               } catch (err) {
                 expect(err.message).toMatch(rejection.error.message);

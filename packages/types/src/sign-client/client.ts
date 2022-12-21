@@ -113,4 +113,5 @@ export abstract class ISignClient {
   public abstract emit: IEngine["emit"];
   public abstract disconnect: IEngine["disconnect"];
   public abstract find: IEngine["find"];
+  public abstract getPendingSessionRequests: IEngine["getPendingSessionRequests"];
 }

@@ -312,6 +312,11 @@ export class Engine extends IEngine {
     return this.client.session.getAll().filter((session) => isSessionCompatible(session, params));
   };
 
+  public getPendingSessionRequests: IEngine["getPendingSessionRequests"] = () => {
+    this.isInitialized();
+    return this.client.pendingRequest.getAll();
+  };
+
   // ---------- Private Helpers --------------------------------------- //
 
   private deleteSession: EnginePrivate["deleteSession"] = async (topic, expirerHasDeleted) => {

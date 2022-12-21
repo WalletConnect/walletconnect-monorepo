@@ -12,6 +12,7 @@ import { ProposalTypes } from "./proposal";
 import { PairingTypes } from "../core/pairing";
 import { JsonRpcTypes } from "./jsonrpc";
 import { EventEmitter } from "events";
+import { PendingRequestTypes } from "./pendingRequest";
 
 export declare namespace EngineTypes {
   type Event =
@@ -300,4 +301,6 @@ export abstract class IEngine {
   public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
 
   public abstract find: (params: EngineTypes.FindParams) => SessionTypes.Struct[];
+
+  public abstract getPendingSessionRequests: () => PendingRequestTypes.Struct[];
 }

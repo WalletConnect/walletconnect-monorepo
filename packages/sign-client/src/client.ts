@@ -191,6 +191,15 @@ export class SignClient extends ISignClient {
     }
   };
 
+  public getPendingSessionRequests: ISignClient["getPendingSessionRequests"] = () => {
+    try {
+      return this.engine.getPendingSessionRequests();
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {

@@ -1,6 +1,15 @@
-import { generateRandomBytes32 } from "@walletconnect/utils";
-import { describe, it } from "vitest";
-import { initTwoClients, testConnectMethod, deleteClients, throttle } from "../shared";
+import { formatJsonRpcError, JsonRpcError } from "@walletconnect/jsonrpc-utils";
+import { generateRandomBytes32, getSdkError } from "@walletconnect/utils";
+import { describe, expect, it } from "vitest";
+import { SignClient } from "../../src";
+import {
+  initTwoClients,
+  testConnectMethod,
+  deleteClients,
+  throttle,
+  TEST_REQUEST_PARAMS,
+  TEST_SIGN_CLIENT_OPTIONS_B,
+} from "../shared";
 
 const generateClientDbName = (prefix: string) =>
   `./test/tmp/${prefix}_${generateRandomBytes32()}.db`;
@@ -119,6 +128,68 @@ describe("Sign Client Persistence", () => {
           // ping
           await clients.A.ping({ topic });
           await clients.B.ping({ topic });
+          // delete
+          await deleteClients(clients);
+        });
+
+        it("should respond to pending request after restart", async () => {
+          const db_a = generateClientDbName("client_a");
+          const db_b = generateClientDbName("client_b");
+          const clients = await initTwoClients(
+            {
+              storageOptions: { database: db_a },
+            },
+            {
+              storageOptions: { database: db_b },
+            },
+          );
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(clients);
+
+          let rejection: JsonRpcError;
+
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.on("session_request", async (args) => {
+                // delete client B so it can be reinstated
+                await deleteClients({ A: undefined, B: clients.B });
+
+                await throttle(1_000);
+
+                // restart
+                clients.B = await SignClient.init({
+                  ...TEST_SIGN_CLIENT_OPTIONS_B,
+                  storageOptions: { database: db_b },
+                });
+                const pendingRequests = clients.B.getPendingSessionRequests();
+                const { id, topic, params } = pendingRequests[0];
+                expect(params).toEqual(args.params);
+                expect(topic).toEqual(args.topic);
+                expect(id).toEqual(args.id);
+                rejection = formatJsonRpcError(id, getSdkError("USER_REJECTED_METHODS").message);
+
+                await clients.B.respond({
+                  topic,
+                  response: rejection,
+                });
+
+                resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              try {
+                await clients.A.request({
+                  topic,
+                  ...TEST_REQUEST_PARAMS,
+                });
+              } catch (err) {
+                expect(err.message).toMatch(rejection.error.message);
+                resolve();
+              }
+            }),
+          ]);
+
           // delete
           await deleteClients(clients);
         });
