@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 import { CLIENT_CONTEXT } from "./constants";
-import { Engine, PendingRequest } from "./controllers";
+import { Engine } from "./controllers";
 import { IWeb3Wallet, Web3WalletTypes } from "./types";
 
 export class Web3Wallet extends IWeb3Wallet {
@@ -9,7 +9,6 @@ export class Web3Wallet extends IWeb3Wallet {
   public logger: IWeb3Wallet["logger"];
   public events: IWeb3Wallet["events"] = new EventEmitter();
   public engine: IWeb3Wallet["engine"];
-  public pendingRequest: IWeb3Wallet["pendingRequest"];
   public metadata: IWeb3Wallet["metadata"];
 
   static async init(opts: Web3WalletTypes.Options) {
@@ -26,7 +25,6 @@ export class Web3Wallet extends IWeb3Wallet {
     this.core = opts.core;
     this.logger = this.core.logger;
     this.engine = new Engine(this);
-    this.pendingRequest = new PendingRequest(this.core, this.logger);
   }
 
   // ---------- Events ----------------------------------------------- //
@@ -172,7 +170,6 @@ export class Web3Wallet extends IWeb3Wallet {
     this.logger.trace(`Initialized`);
     try {
       await this.engine.init();
-      await this.pendingRequest.init();
       this.logger.info(`Web3Wallet Initilization Success`);
     } catch (error: any) {
       this.logger.info(`Web3Wallet Initilization Failure`);

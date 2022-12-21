@@ -12,6 +12,7 @@ import { ProposalTypes } from "./proposal";
 import { PairingTypes } from "../core/pairing";
 import { JsonRpcTypes } from "./jsonrpc";
 import { EventEmitter } from "events";
+import { PendingRequestTypes } from "./pendingRequest";
 
 export declare namespace EngineTypes {
   type Event =
@@ -170,6 +171,14 @@ export interface EnginePrivate {
 
   setProposal(id: number, proposal: ProposalTypes.Struct): Promise<void>;
 
+  setPendingSessionRequest(pendingRequest: PendingRequestTypes.Struct): Promise<void>;
+
+  deletePendingSessionRequest(
+    id: number,
+    reason: ErrorResponse,
+    expirerHasDeleted?: boolean,
+  ): Promise<void>;
+
   cleanup(): Promise<void>;
 
   onSessionProposeRequest(
@@ -300,4 +309,6 @@ export abstract class IEngine {
   public abstract disconnect(params: EngineTypes.DisconnectParams): Promise<void>;
 
   public abstract find: (params: EngineTypes.FindParams) => SessionTypes.Struct[];
+
+  public abstract getPendingSessionRequests: () => PendingRequestTypes.Struct[];
 }

@@ -3,7 +3,6 @@ import { ICore, ProposalTypes } from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
-import { PendingRequest } from "../controllers";
 
 export declare namespace Web3WalletTypes {
   type Event = "session_proposal" | "session_request" | "auth_request";
@@ -75,7 +74,6 @@ export abstract class IWeb3Wallet {
   public abstract events: EventEmitter;
   public abstract logger: Logger;
   public abstract core: ICore;
-  public abstract pendingRequest: PendingRequest;
   public abstract metadata: Web3WalletTypes.Metadata;
 
   constructor(public opts: Web3WalletTypes.Options) {}

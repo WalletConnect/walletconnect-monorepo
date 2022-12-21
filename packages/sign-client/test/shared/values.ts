@@ -182,3 +182,18 @@ type RelayerType = {
   value: string;
   label: string;
 };
+
+export const TEST_SIGN_REQUEST_PARAMS = {
+  method: "eth_signTransaction",
+  params: [
+    {
+      from: TEST_ETHEREUM_ACCOUNT,
+      to: TEST_ETHEREUM_ACCOUNT,
+      data: "0x",
+      nonce: "0x01",
+      gasPrice: "0x020a7ac094",
+      gasLimit: "0x5208",
+      value: "0x00",
+    },
+  ],
+};

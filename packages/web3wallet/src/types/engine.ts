@@ -1,7 +1,12 @@
 import { AuthEngineTypes, IAuthClient } from "@walletconnect/auth-client";
 import { ErrorResponse, JsonRpcResponse } from "@walletconnect/jsonrpc-utils";
-import { ISignClient, ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { IWeb3Wallet, Web3WalletTypes } from "./client";
+import {
+  ISignClient,
+  PendingRequestTypes,
+  ProposalTypes,
+  SessionTypes,
+} from "@walletconnect/types";
+import { IWeb3Wallet } from "./client";
 
 export abstract class IWeb3WalletEngine {
   public abstract signClient: ISignClient;
@@ -61,7 +66,7 @@ export abstract class IWeb3WalletEngine {
   public abstract getPendingSessionProposals(): Record<number, ProposalTypes.Struct>;
 
   // query all pending session requests (SIGN)
-  public abstract getPendingSessionRequests(): Record<number, Web3WalletTypes.SessionRequest>;
+  public abstract getPendingSessionRequests(): PendingRequestTypes.Struct[];
 
   // ---------- Auth ------------------------------------------------- //
 
