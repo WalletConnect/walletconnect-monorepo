@@ -33,4 +33,4 @@ export const RELAYER_STORAGE_OPTIONS = {
 };
 
 // Updated automatically via `new-version` npm script.
-export const RELAYER_SDK_VERSION = "2.1.3";
+export const RELAYER_SDK_VERSION = "2.1.5";
