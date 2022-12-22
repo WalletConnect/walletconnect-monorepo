@@ -70,6 +70,11 @@ class Eip155Provider implements IProvider {
 
     this.events.emit("chainChanged", this.chainId);
   }
+
+  public requestAccounts(): string[] {
+    return this.getAccounts();
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private createHttpProvider(

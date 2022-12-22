@@ -12,8 +12,8 @@ import {
 } from "../types";
 import { getRpcUrl } from "../utils";
 
-class SolanaProvider implements IProvider {
-  public name = "solana";
+class CosmosProvider implements IProvider {
+  public name = "cosmos";
   public client: Client;
   public httpProviders: RpcProvidersMap;
   public events: EventEmitter;
@@ -116,4 +116,4 @@ class SolanaProvider implements IProvider {
   }
 }
 
-export default SolanaProvider;
+export default CosmosProvider;

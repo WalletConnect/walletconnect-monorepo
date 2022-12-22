@@ -6,6 +6,7 @@ import { getSdkError } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
+import CosmosProvider from "./providers/cosmos";
 import { getChainFromNamespaces } from "./utils";
 import {
   IUniversalProvider,
@@ -73,8 +74,10 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
-
-    const accounts = await this.request({ method: "eth_requestAccounts", params: [] });
+    if (!this.session) {
+      throw new Error("Please call connect() before enable()");
+    }
+    const accounts = await this.requestAccounts();
     return accounts as ProviderAccounts;
   }
 
@@ -93,8 +96,8 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
-
-    this.setNamespaces(opts.namespaces);
+    const { namespaces } = opts;
+    this.setNamespaces(namespaces);
     this.createProviders();
 
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
@@ -202,7 +205,11 @@ export class UniversalProvider implements IUniversalProvider {
           });
           break;
         case "cosmos":
-          //TODO:
+          this.rpcProviders[namespace] = new CosmosProvider({
+            client: this.client,
+            namespace: this.namespaces[namespace],
+            events: this.events,
+          });
           break;
         case "polkadot":
           //TODO:
@@ -269,6 +276,11 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     return !namespace || !chainId ? getChainFromNamespaces(this.namespaces) : [namespace, chainId];
+  }
+
+  private async requestAccounts(): Promise<string[]> {
+    const [namespace] = this.validateChain();
+    return await this.getProvider(namespace).requestAccounts();
   }
 }
 export default UniversalProvider;
