@@ -91,13 +91,14 @@ function Modal(props: ModalProps) {
           const modalOptions = props.qrcodeModalOptions && props.qrcodeModalOptions as IQRCodeModalOptions;
           const stringifyOptions = JSON.stringify(modalOptions);
           const encodedOptions = btoa(stringifyOptions);
-          const baseURI = "http://192.168.0.235:8080/connect?data=" + props.uri + "&type=mobile" + `&info=${encodedOptions}` ;
+          // const dcentUrl = "https://walletconnect.dcentwallet.com/connect"
+          const baseURI = "http://192.168.0.235:8080/connect?data=" + props.uri + "&type=mobile" + `&info=${encodedOptions}`;
           const encodeURI = encodeURIComponent(baseURI);
           const doubleEncodeURI = encodeURIComponent(encodeURI) ;
 
           console.log("baseURI ===> ", baseURI);
           console.log("doubleEncodeURI ===>", doubleEncodeURI);
-          const singleLink = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`;
+          const singleLink = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI} + "&network=ethereum-mainnet"`;
 
           setSingleLinkHref(singleLink);
           console.log("singleLink", singleLink);
