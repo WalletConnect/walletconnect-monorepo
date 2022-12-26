@@ -19,7 +19,7 @@ async function formatQRCodeImage(data: string, qrcodeModalOptions: IQRCodeModalO
   const baseURI = "http://192.168.0.235:8080/connect?data=" + data + "&type=desktop" +`&info=${encodedOptions}`;
   const encodeURI = encodeURIComponent(baseURI);
   const doubleEncodeURI = encodeURIComponent(encodeURI) ;
-  const Data = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`;
+  const Data = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`+ "&network=ethereum-mainnet";
   console.log("full data", Data);
   const dataString = await QRCode.toString(Data, { margin: 0, type: "svg" });
   if (typeof dataString === "string") {
