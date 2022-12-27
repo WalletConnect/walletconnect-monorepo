@@ -11,16 +11,15 @@ import { TextMap } from "../types";
 import { IQRCodeModalOptions } from "@walletconnect/types";
 
 async function formatQRCodeImage(data: string, qrcodeModalOptions: IQRCodeModalOptions | undefined) {
-  console.log("qr data", data);
   let result = "";
   const modalOptions = qrcodeModalOptions && qrcodeModalOptions;
   const stringifyOptions = JSON.stringify(modalOptions);
   const encodedOptions = btoa(stringifyOptions);
-  const baseURI = "http://192.168.0.235:8080/connect?data=" + data + "&type=desktop" +`&info=${encodedOptions}`;
+  const DCENT_URL = "https://walletconnect.dcentwallet.com";
+  const baseURI = DCENT_URL + "/connect?data=" + data + "&type=desktop" + `&info=${encodedOptions}`;
   const encodeURI = encodeURIComponent(baseURI);
-  const doubleEncodeURI = encodeURIComponent(encodeURI) ;
-  const Data = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}`+ "&network=ethereum-mainnet";
-  console.log("full data", Data);
+  const doubleEncodeURI = encodeURIComponent(encodeURI);
+  const Data = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}` + "&network=ethereum-mainnet";
   const dataString = await QRCode.toString(Data, { margin: 0, type: "svg" });
   if (typeof dataString === "string") {
     result = dataString.replace("<svg", `<svg class="walletconnect-qrcode__image"`);
