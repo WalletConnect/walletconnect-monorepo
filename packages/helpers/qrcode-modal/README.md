@@ -1,24 +1,9 @@
-# WalletConnect QR Code Modal
+# D'CENT WalletConnect QR Code Modal
 
-QR Code Modal for WalletConnect
+QR Code Modal for D'CENT WalletConnect
 
-For more details, read the [documentation](https://docs.walletconnect.org)
+For more details, read the [walletconnect documentation](https://docs.walletconnect.org) and [D'CENT developer guide](https://dev-docs.dcentwallet.com/)
 
 ```js
-import WalletConnectQRCodeModal from "walletconnect-qrcode-modal";
+import QRCodeModal from "@dcentwallet/qrcode-modal";
 
-/**
- *  Get URI from WalletConnect object
- */
-const uri = connector.uri;
-
-/**
- *  Open QR Code Modal
- */
-WalletConnectQRCodeModal.open(uri);
-
-/**
- *  Close QR Code Modal
- */
-WalletConnectQRCodeModal.close();
-```
