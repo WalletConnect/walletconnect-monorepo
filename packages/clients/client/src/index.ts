@@ -1,5 +1,5 @@
 import Connector from "@walletconnect/core";
-import { IWalletConnectOptions, IPushServerOptions } from "@walletconnect/types";
+import { IWalletConnectOptions, IPushServerOptions } from "@dcentwallet/types";
 import * as cryptoLib from "@walletconnect/iso-crypto";
 
 class WalletConnect extends Connector {
