@@ -4,6 +4,7 @@ const ko: TextMap = {
   choose_preferred_wallet: "원하는 지갑을 선택하세요",
   connect_mobile_wallet: "모바일 지갑과 연결",
   scan_qrcode_with_wallet: "WalletConnect 지원 지갑에서 QR코드를 스캔하세요",
+  scan_qrcode_with_dcentwallet : "모바일에서 QR코드를 스캔하면 디센트 모바일 앱 서비스로 연결됩니다",
   connect: "연결",
   qrcode: "QR 코드",
   mobile: "모바일",
