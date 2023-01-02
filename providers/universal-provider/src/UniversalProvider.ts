@@ -149,9 +149,8 @@ export class UniversalProvider implements IUniversalProvider {
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
-    this.namespaces = (await this.client.core.storage.getItem(
-      `${STORAGE}/namespaces`,
-    )) as NamespaceConfig;
+    this.namespaces =
+      ((await this.client.core.storage.getItem(`${STORAGE}/namespaces`)) as NamespaceConfig) || {};
     if (this.namespaces) {
       this.createProviders();
     }
