@@ -137,8 +137,13 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public setDefaultChain(chain: string, rpcUrl?: string | undefined) {
-    const [namespace, chainId] = this.validateChain(chain);
-    this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+    try {
+      const [namespace, chainId] = this.validateChain(chain);
+      this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+    } catch (error) {
+      // ignore the error if the fx is used prematurely before namespaces are set
+      if (!/Please call connect/.test((error as Error).message)) throw error;
+    }
   }
 
   // ---------- Private ----------------------------------------------- //
