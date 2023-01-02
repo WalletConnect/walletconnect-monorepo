@@ -264,7 +264,9 @@ export class UniversalProvider implements IUniversalProvider {
     // validate namespace
     if (namespace) {
       if (!Object.keys(this.namespaces).includes(namespace)) {
-        throw new Error(`Invalid namespace: ${namespace}`);
+        throw new Error(
+          `Namespace '${namespace}' is not configured. Please call connect() first with namespace config.`,
+        );
       }
     }
 
