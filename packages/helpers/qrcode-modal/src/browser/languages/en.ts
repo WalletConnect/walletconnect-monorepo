@@ -4,6 +4,7 @@ const en: TextMap = {
   choose_preferred_wallet: "Choose your preferred wallet",
   connect_mobile_wallet: "Connect to Mobile Wallet",
   scan_qrcode_with_wallet: "Scan QR code with a WalletConnect-compatible wallet",
+  scan_qrcode_with_dcentwallet : "Scan the QR code to connect to the D'CENT mobile app service",
   connect: "Connect",
   qrcode: "QR Code",
   mobile: "Mobile",

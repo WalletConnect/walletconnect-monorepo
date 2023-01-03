@@ -56,7 +56,7 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
   return (
     <div>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
-        {props.text.scan_qrcode_with_wallet}
+        {props.text.scan_qrcode_with_dcentwallet}
       </p>
       <div dangerouslySetInnerHTML={{ __html: svg }}></div>
       <div className="walletconnect-modal__footer">

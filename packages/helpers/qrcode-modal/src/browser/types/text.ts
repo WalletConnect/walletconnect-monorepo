@@ -14,4 +14,5 @@ export interface TextMap {
   no_supported_wallets: string;
   no_wallets_found: string;
   connect_dcent?: string;
+  scan_qrcode_with_dcentwallet? : string;
 }
