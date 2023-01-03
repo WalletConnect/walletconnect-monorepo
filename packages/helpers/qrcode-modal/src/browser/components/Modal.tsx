@@ -3,8 +3,7 @@ import {
   IMobileRegistryEntry,
   IQRCodeModalOptions,
   IAppRegistry,
-  IAccount,
-} from "@walletconnect/types";
+} from "@dcentwallet/walletconnect-types";
 import {
   isMobile,
   isAndroid,
@@ -20,10 +19,12 @@ import Header from "./Header";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import LinkDisplay from "./LinkDisplay";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import QRCodeDisplay from "./QRCodeDisplay";
+// import QRCodeDisplay from "./QRCodeDisplay";
 
 import { WALLETCONNECT_MODAL_ID } from "../constants";
 import { TextMap } from "../types";
+import DcentQRCodeDisplay from "./DcentQRCodeDisplay";
+import DcentLinkDisplay from "./DcentLinkDisplay";
 
 interface ModalProps {
   text: TextMap;
@@ -33,7 +34,7 @@ interface ModalProps {
 }
 
 function Modal(props: ModalProps) {
-  const android = isAndroid();
+  // const android = isAndroid();
   const mobile = isMobile();
 
 
@@ -113,11 +114,11 @@ function Modal(props: ModalProps) {
   };
 
   getLinksIfNeeded();
-
-  const rightSelected = mobile ? displayQRCode : !displayQRCode;
+  
+  // const rightSelected = mobile ? displayQRCode : !displayQRCode;
   return (
     <div id={WALLETCONNECT_MODAL_ID} className="walletconnect-qrcode__base animated fadeIn">
-      <div className="walletconnect-modal__base">
+      <div className={`walletconnect-modal__base ${!mobile ? "modal__base--desktop" : ""}`}>
         <Header onClose={props.onClose} />
         {/* {hasSingleLink && displayQRCode ? (
           <div className="walletconnect-modal__single_wallet">
@@ -161,13 +162,14 @@ function Modal(props: ModalProps) {
             <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} dynamicLink={dynamicLink}/>
           )}
         </div> */}
-        <div>
+        
           {!mobile ? (
-            <QRCodeDisplay {...displayProps} />
+            // <QRCodeDisplay {...displayProps} />
+            <DcentQRCodeDisplay {...displayProps}/>
           ) : (
-            <LinkDisplay {...displayProps} links={links} errorMessage={errorMessage} dynamicLink={dynamicLink} />
+            <DcentLinkDisplay {...displayProps} links={links} errorMessage={errorMessage} dynamicLink={dynamicLink} />
           )}
-        </div>
+        
       </div>
     </div>
   );

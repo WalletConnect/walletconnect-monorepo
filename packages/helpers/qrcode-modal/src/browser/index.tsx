@@ -14,7 +14,7 @@ import {
   WALLETCONNECT_MODAL_ID,
   WALLETCONNECT_STYLE_ID,
 } from "./constants";
-import { IQRCodeModalOptions } from "@walletconnect/types";
+import { IQRCodeModalOptions } from "@dcentwallet/walletconnect-types";
 import { TextMap } from "./types";
 
 function injectStyleSheet() {

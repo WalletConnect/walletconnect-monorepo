@@ -4,8 +4,8 @@ const ko: TextMap = {
   choose_preferred_wallet: "원하는 지갑을 선택하세요",
   connect_mobile_wallet: "모바일 지갑과 연결",
   scan_qrcode_with_wallet: "WalletConnect 지원 지갑에서 QR코드를 스캔하세요",
-  scan_qrcode_with_dcentwallet : "모바일에서 QR코드를 스캔하면 디센트 모바일 앱 서비스로 연결됩니다",
-  connect: "연결",
+  scan_qrcode_with_dcentwallet : "모바일에서 QR코드를 스캔하면,디센트 모바일 앱 서비스로 연결됩니다",
+  connect: "연결하기",
   qrcode: "QR 코드",
   mobile: "모바일",
   desktop: "데스크탑",
@@ -16,7 +16,7 @@ const ko: TextMap = {
   something_went_wrong: "문제가 발생했습니다.",
   no_supported_wallets: "아직 지원되는 지갑이 없습니다",
   no_wallets_found: "지갑을 찾을 수 없습니다",
-  connect_dcent:"D'CENT 와 연결",
+  connect_dcent:"서비스와 디센트 지갑을 연결합니다",
 };
 
 export default ko;
