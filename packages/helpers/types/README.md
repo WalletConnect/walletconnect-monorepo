@@ -1,6 +1,6 @@
 # WalletConnect Types
 
-Typescript Types for WalletConnect
+Typescript Types for D'CENT WalletConnect
 
 ## Types
 
@@ -29,3 +29,4 @@ Typescript Types for WalletConnect
 - IPushServerOptions
 - INativeWalletOptions
 - IPushSubscription
+- IAccount

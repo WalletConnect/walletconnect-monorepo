@@ -8,7 +8,7 @@ import Notification from "./Notification";
 
 import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 import { TextMap } from "../types";
-import { IQRCodeModalOptions } from "@walletconnect/types";
+import { IQRCodeModalOptions } from "@dcentwallet/walletconnect-types";
 
 async function formatQRCodeImage(data: string, qrcodeModalOptions: IQRCodeModalOptions | undefined) {
   let result = "";

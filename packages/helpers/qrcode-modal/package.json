@@ -22,7 +22,10 @@
     "web3",
     "crypto",
     "cryptocurrency",
-    "dapp"
+    "dapp",
+    "dcent",
+    "dcentwallet",
+    "dcentwalletconnect"
   ],
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/DcentWallet/walletconnect-monorepo/",
@@ -70,7 +73,7 @@
   "dependencies": {
     "@walletconnect/browser-utils": "^1.8.0",
     "@walletconnect/mobile-registry": "^1.4.0",
-    "@walletconnect/types": "^1.8.0",
+    "@dcentwallet/walletconnect-types": "^1.8.1-beta",
     "copy-to-clipboard": "^3.3.1",
     "preact": "10.4.1",
     "qrcode": "1.4.4"
