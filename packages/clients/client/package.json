@@ -62,7 +62,7 @@
   "dependencies": {
     "@walletconnect/core": "^1.8.0",
     "@walletconnect/iso-crypto": "^1.8.0",
-    "@dcentwallet/types": "^version",
+    "@dcentwallet/walletconnect-types": "^1.8.1-beta",
     "@walletconnect/utils": "^1.8.0"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
