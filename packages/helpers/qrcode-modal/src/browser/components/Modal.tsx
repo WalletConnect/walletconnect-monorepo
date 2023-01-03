@@ -93,7 +93,7 @@ function Modal(props: ModalProps) {
           const baseURI = DCENT_URL + "/connect?data=" + props.uri + "&type=mobile" + `&info=${encodedOptions}`;
           const encodeURI = encodeURIComponent(baseURI);
           const doubleEncodeURI = encodeURIComponent(encodeURI);
-          const singleLink = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI} + "&network=ethereum-mainnet"`;
+          const singleLink = `https://link.dcentwallet.com/DAppBrowser/?url=${doubleEncodeURI}` + "&network=ethereum-mainnet";
           setSingleLinkHref(singleLink);
           if (mobile) {
             setDynamicLink(singleLink);
