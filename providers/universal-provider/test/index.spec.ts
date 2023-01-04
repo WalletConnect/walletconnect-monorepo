@@ -337,4 +337,11 @@ describe("UniversalProvider", function () {
       });
     });
   });
+
+  describe("validation", () => {
+    it("should not throw exception when setDefaultChain is called prematurely", async () => {
+      const provider = await UniversalProvider.init(TEST_PROVIDER_OPTS);
+      provider.setDefaultChain("eip155:1");
+    });
+  });
 });

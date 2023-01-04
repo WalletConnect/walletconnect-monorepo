@@ -137,16 +137,20 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public setDefaultChain(chain: string, rpcUrl?: string | undefined) {
-    const [namespace, chainId] = this.validateChain(chain);
-    this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+    try {
+      const [namespace, chainId] = this.validateChain(chain);
+      this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+    } catch (error) {
+      // ignore the error if the fx is used prematurely before namespaces are set
+      if (!/Please call connect/.test((error as Error).message)) throw error;
+    }
   }
 
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
-    this.namespaces = (await this.client.core.storage.getItem(
-      `${STORAGE}/namespaces`,
-    )) as NamespaceConfig;
+    this.namespaces =
+      ((await this.client.core.storage.getItem(`${STORAGE}/namespaces`)) as NamespaceConfig) || {};
     if (this.namespaces) {
       this.createProviders();
     }
@@ -264,7 +268,9 @@ export class UniversalProvider implements IUniversalProvider {
     // validate namespace
     if (namespace) {
       if (!Object.keys(this.namespaces).includes(namespace)) {
-        throw new Error(`Invalid namespace: ${namespace}`);
+        throw new Error(
+          `Namespace '${namespace}' is not configured. Please call connect() first with namespace config.`,
+        );
       }
     }
 
