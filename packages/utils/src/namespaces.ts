@@ -1,4 +1,5 @@
-import { SessionTypes } from "@walletconnect/types";
+import { ProposalTypes, SessionTypes } from "@walletconnect/types";
+import { isValidNamespaces } from "./validators";
 
 export function getAccountsChains(accounts: SessionTypes.Namespace["accounts"]) {
   const chains: string[] = [];
@@ -60,4 +61,22 @@ export function getNamespacesEventsForChainId(
   });
 
   return events;
+}
+
+export function getRequiredNamespacesFromNamespaces(
+  namespaces: SessionTypes.Namespaces,
+  caller: string,
+): ProposalTypes.RequiredNamespaces {
+  const validNamespacesError = isValidNamespaces(namespaces, caller);
+  if (validNamespacesError) throw new Error(validNamespacesError.message);
+
+  const required = {};
+  for (const [namespace, values] of Object.entries(namespaces)) {
+    required[namespace] = {
+      methods: values.methods,
+      events: values.events,
+      chains: values.accounts.map((account) => `${account.split(":")[0]}:${account.split(":")[1]}`),
+    };
+  }
+  return required;
 }
