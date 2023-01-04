@@ -51,7 +51,6 @@ import {
   TYPE_1,
   getRequiredNamespacesFromNamespaces,
   isValidObject,
-  isValidArray,
 } from "@walletconnect/utils";
 import { SESSION_EXPIRY, ENGINE_CONTEXT, ENGINE_RPC_OPTS } from "../constants";
 
