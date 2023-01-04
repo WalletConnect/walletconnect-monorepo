@@ -868,7 +868,7 @@ export class Engine extends IEngine {
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
 
     // validate required namespaces only if they are defined
-    if (isValidObject(requiredNamespaces) === 0) {
+    if (!isUndefined(requiredNamespaces) && isValidObject(requiredNamespaces) === 0) {
       return;
     }
 
