@@ -63,17 +63,13 @@ describe("Sign Client Validation", () => {
       ).rejects.toThrowError("No matching key. pairing topic doesn't exist: none");
     });
 
-    it("throws when empty requiredNamespaces are provided", async () => {
-      await expect(
-        clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces: {} }),
-      ).rejects.toThrowError(
-        "Missing or invalid. connect(), requiredNamespaces should be an object with data",
-      );
-    });
-
     it("throws when invalid requiredNamespaces are provided", async () => {
       await expect(
-        clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces: [] }),
+        clients.A.connect({
+          ...TEST_CONNECT_PARAMS,
+          pairingTopic,
+          requiredNamespaces: [],
+        }),
       ).rejects.toThrowError(
         "Missing or invalid. connect(), requiredNamespaces should be an object with data",
       );

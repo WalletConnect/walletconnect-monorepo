@@ -27,7 +27,7 @@ export declare namespace EngineTypes {
   interface EventArguments {
     session_connect: {
       error?: ErrorResponse;
-      session?: Omit<SessionTypes.Struct, "requiredNamespaces">;
+      session?: SessionTypes.Struct;
     };
     session_approve: { error?: ErrorResponse };
     session_update: { error?: ErrorResponse };

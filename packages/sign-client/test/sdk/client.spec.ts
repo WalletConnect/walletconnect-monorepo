@@ -8,9 +8,9 @@ import {
   TEST_SIGN_CLIENT_OPTIONS,
   deleteClients,
   throttle,
-  TEST_ETHEREUM_ACCOUNT,
-  TEST_ETHEREUM_CHAIN,
   TEST_REQUEST_PARAMS,
+  TEST_NAMESPACES,
+  TEST_REQUIRED_NAMESPACES,
 } from "../shared";
 
 describe("Sign Client Integration", () => {
@@ -207,6 +207,23 @@ describe("Sign Client Integration", () => {
       const updatedExpiry = clients.A.session.get(topic).expiry;
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
       vi.useRealTimers();
+      await deleteClients(clients);
+    });
+  });
+  describe("namespaces", () => {
+    it("should pair with empty namespaces", async () => {
+      const clients = await initTwoClients();
+      const requiredNamespaces = {};
+      const { sessionA } = await testConnectMethod(clients, {
+        requiredNamespaces,
+        namespaces: TEST_NAMESPACES,
+      });
+      expect(requiredNamespaces).toMatchObject({});
+      // requiredNamespaces are built internally from the namespaces during approve()
+      expect(sessionA.requiredNamespaces).toMatchObject(TEST_REQUIRED_NAMESPACES);
+      expect(sessionA.requiredNamespaces).toMatchObject(
+        clients.B.session.get(sessionA.topic).requiredNamespaces,
+      );
       await deleteClients(clients);
     });
   });
