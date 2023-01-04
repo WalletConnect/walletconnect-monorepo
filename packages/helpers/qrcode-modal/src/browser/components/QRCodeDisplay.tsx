@@ -8,7 +8,7 @@ import Notification from "./Notification";
 
 import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 import { TextMap } from "../types";
-import { IQRCodeModalOptions } from "@walletconnect/types";
+import { IQRCodeModalOptions } from "@dcentwallet/walletconnect-types";
 
 async function formatQRCodeImage(data: string, qrcodeModalOptions: IQRCodeModalOptions | undefined) {
   let result = "";
@@ -59,10 +59,10 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
         {props.text.scan_qrcode_with_dcentwallet}
       </p>
       <div dangerouslySetInnerHTML={{ __html: svg }}></div>
-      <div className="walletconnect-modal__footer">
+      {/* <div className="walletconnect-modal__footer">
         <a onClick={copyToClipboard}>{props.text.copy_to_clipboard}</a>
       </div>
-      <Notification message={notification} />
+      <Notification message={notification} /> */}
     </div>
   );
 }

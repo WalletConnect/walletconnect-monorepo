@@ -1,5 +1,4 @@
-import { IQRCodeModalOptions } from "@walletconnect/types";
-
+import { IQRCodeModalOptions } from "@dcentwallet/walletconnect-types";
 import * as nodeLib from "./node";
 import * as browserLib from "./browser";
 
