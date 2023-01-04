@@ -51,6 +51,7 @@ import {
   TYPE_1,
   getRequiredNamespacesFromNamespaces,
   isValidObject,
+  isValidArray,
 } from "@walletconnect/utils";
 import { SESSION_EXPIRY, ENGINE_CONTEXT, ENGINE_RPC_OPTS } from "../constants";
 
@@ -147,6 +148,7 @@ export class Engine extends IEngine {
 
   public approve: IEngine["approve"] = async (params) => {
     this.isInitialized();
+    await this.isValidApprove(params);
     const { id, relayProtocol, namespaces } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces } = proposal;
@@ -157,7 +159,6 @@ export class Engine extends IEngine {
       // update the proposal with the new required namespaces
       this.client.proposal.set(id, { ...proposal, requiredNamespaces });
     }
-    await this.isValidApprove(params);
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -868,7 +869,13 @@ export class Engine extends IEngine {
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
 
     // validate required namespaces only if they are defined
-    if (!Object.keys(requiredNamespaces).length) return;
+    if (
+      typeof requiredNamespaces === "object" &&
+      !Array.isArray(requiredNamespaces) &&
+      !Object.keys(requiredNamespaces).length
+    ) {
+      return;
+    }
 
     const validRequiredNamespacesError = isValidRequiredNamespaces(requiredNamespaces, "connect()");
     if (validRequiredNamespacesError) throw new Error(validRequiredNamespacesError.message);
