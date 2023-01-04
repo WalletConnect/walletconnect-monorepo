@@ -1,18 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { IMobileRegistryEntry, IQRCodeModalOptions } from "@dcentwallet/walletconnect-types";
-import { isAndroid, formatIOSMobile, saveMobileLinkInfo } from "@walletconnect/browser-utils";
+import { isAndroid, saveMobileLinkInfo, isMobile } from "@walletconnect/browser-utils";
 
-import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import ConnectButton from "./ConnectButton";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import WalletButton from "./WalletButton";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import WalletIcon from "./WalletIcon";
+import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 import { TextMap } from "../types";
 import ConnectDcentButton from "./ConnectDcentButton";
-
 interface LinkDisplayProps {
   mobile: boolean;
   text: TextMap;
@@ -28,9 +20,11 @@ const LINKS_PER_PAGE = 12;
 
 const DcentLinkDisplay = (props: LinkDisplayProps) => {
   const android = isAndroid();
-  const [input, setInput] = React.useState("");
-  const [filter, setFilter] = React.useState("");
-  const [page, setPage] = React.useState(1);
+  const mobile = isMobile();
+  const [input, setInput] = useState("");
+  const [filter, setFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [textArray, setTextArray] = useState<string[]>(["", ""]);
   const links = filter
     ? props.links.filter(link => link.name.toLowerCase().includes(filter.toLowerCase()))
     : props.links;
@@ -57,23 +51,29 @@ const DcentLinkDisplay = (props: LinkDisplayProps) => {
       setPage(1);
     }
   }
+  useEffect(() => {
+    if (typeof props.text.connect_dcent === "undefined") return;
+    const splitText: string[] = props.text.connect_dcent.split("  ") as string[];
+    setTextArray(splitText);
+
+  }, [props.text.connect_dcent]);
 
   return (
-    <div style={{ maxWidth: "450px" }}>
+    <div style={{ width: "100%" }}>
       <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text mobile-text">
-        {props.text.connect_dcent}
+        {textArray.map(text => <span className={`walletconnect-qrcode__explain ${mobile ? "mobile-explain" : ""}`}>{text}</span>)}
       </p>
       <div className="dcent-walletconnect__button-wrapper">
-      <ConnectDcentButton
-        name={props.text.connect}
-        dynamicLink={props.dynamicLink}
-        onClick={useCallback(() => {
-          saveMobileLinkInfo({
-            name: "Unknown",
-            href: props.dynamicLink,
-          });
-        }, [])}
-      />
+        <ConnectDcentButton
+          name={props.text.connect}
+          dynamicLink={props.dynamicLink}
+          onClick={useCallback(() => {
+            saveMobileLinkInfo({
+              name: "Unknown",
+              href: props.dynamicLink,
+            });
+          }, [])}
+        />
       </div>
     </div>
   );

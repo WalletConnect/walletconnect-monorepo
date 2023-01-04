@@ -1,10 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import copy from "copy-to-clipboard";
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import Notification from "./Notification";
 
 import { WALLETCONNECT_CTA_TEXT_ID } from "../constants";
 import { TextMap } from "../types";
@@ -33,7 +29,6 @@ interface QRCodeDisplayProps {
 }
 
 const DcentQRCodeDisplay = (props: QRCodeDisplayProps) => {
-    //   const [notification, setNotification] = React.useState("");
     const [svg, setSvg] = useState("");
     const [textArray, setTextArray] = useState<string[]>(["", ""]);
 
@@ -41,26 +36,21 @@ const DcentQRCodeDisplay = (props: QRCodeDisplayProps) => {
         (async () => {
             setSvg(await formatQRCodeImage(props.uri, props.qrcodeModalOptions));
         })();
-        // const splitText = props.text.scan_qrcode_with_dcentwallet?.split(",") as string[];
-        // setTextArray(() => [...splitText as string[]]);
     }, []);
+
+    useEffect(() => {
+        if (typeof props.text.scan_qrcode_with_dcentwallet === "undefined") return;
+        const splitText: string[] = props.text.scan_qrcode_with_dcentwallet.split("  ") as string[];
+        setTextArray(splitText);
+    }, [props.text.scan_qrcode_with_dcentwallet]);
 
 
     return (
         <div className="walletconnect-qrcode" >
             <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
-                {props.text.scan_qrcode_with_dcentwallet}
+                {textArray.map(text => <span className="walletconnect-qrcode__explain">{text}</span>)}
             </p>
             <div dangerouslySetInnerHTML={{ __html: svg }}></div>
-            {/* <p id={WALLETCONNECT_CTA_TEXT_ID} className="walletconnect-qrcode__text">
-                {textArray.map(text => <span>{text}</span>)}
-            </p>
-            <div dangerouslySetInnerHTML={{ __html: svg }}></div> */}
-
-            {/* <div className="walletconnect-modal__footer">
-        <a onClick={copyToClipboard}>{props.text.copy_to_clipboard}</a>
-      </div>
-      <Notification message={notification} /> */}
         </div>
     );
 };

@@ -63,19 +63,6 @@ function LinkDisplay(props: LinkDisplayProps) {
         {/* {android ? props.text.connect_mobile_wallet : props.text.choose_preferred_wallet} */}
         {props.text.connect_dcent}
       </p>
-      {/* {!android && (
-        <input
-          className={`walletconnect-search__input`}
-          placeholder="Search"
-          value={input}
-          onChange={handleInput}
-        />
-      )} */}
-      {/* <div
-        className={`walletconnect-connect__buttons__wrapper${
-          android ? "__android" : grid && links.length ? "__wrap" : ""
-        }`}
-      > */}
       <div
         className={`walletconnect-connect__buttons__wrapper__android`}
       >

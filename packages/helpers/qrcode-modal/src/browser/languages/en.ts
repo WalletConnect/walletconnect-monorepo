@@ -4,7 +4,7 @@ const en: TextMap = {
   choose_preferred_wallet: "Choose your preferred wallet",
   connect_mobile_wallet: "Connect to Mobile Wallet",
   scan_qrcode_with_wallet: "Scan QR code with a WalletConnect-compatible wallet",
-  scan_qrcode_with_dcentwallet : "Scan the QR code to connect to the D'CENT mobile app service",
+  scan_qrcode_with_dcentwallet : "Scan the QR code to connect to  the D'CENT mobile app service",
   connect: "Connect",
   qrcode: "QR Code",
   mobile: "Mobile",
@@ -16,7 +16,7 @@ const en: TextMap = {
   something_went_wrong: "Something went wrong",
   no_supported_wallets: "There are no supported wallets yet",
   no_wallets_found: "No wallets found",
-  connect_dcent : "Connect service and D'Cent wallet",
+  connect_dcent : "Connect D'CENT and this service  through WalletConnect.",
 };
 
 export default en;
