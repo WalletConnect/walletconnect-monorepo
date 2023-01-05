@@ -2,7 +2,7 @@ import pino from "pino";
 import SignClient from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
-import { getSdkError } from "@walletconnect/utils";
+import { getSdkError, isValidArray } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
@@ -96,6 +96,7 @@ export class UniversalProvider implements IUniversalProvider {
 
     this.setNamespaces(opts.namespaces);
     this.createProviders();
+    this.cleanupPendingPairings();
 
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
   }
@@ -144,6 +145,19 @@ export class UniversalProvider implements IUniversalProvider {
       // ignore the error if the fx is used prematurely before namespaces are set
       if (!/Please call connect/.test((error as Error).message)) throw error;
     }
+  }
+
+  public cleanupPendingPairings(): void {
+    this.logger.info("Cleaning up inactive pairings...");
+    const inactivePairings = this.client.pairing.getAll({ active: false });
+
+    if (!isValidArray(inactivePairings)) return;
+
+    inactivePairings.forEach((pairing) => {
+      this.client.pairing.delete(pairing.topic, getSdkError("USER_DISCONNECTED"));
+    });
+
+    this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
 
   // ---------- Private ----------------------------------------------- //

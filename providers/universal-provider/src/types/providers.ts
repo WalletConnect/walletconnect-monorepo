@@ -38,4 +38,5 @@ export interface IUniversalProvider extends IEthereumProvider {
   pair: (pairingTopic: string | undefined) => Promise<SessionTypes.Struct>;
   connect: (opts: ConnectParams) => Promise<SessionTypes.Struct | undefined>;
   disconnect: () => void;
+  cleanupPendingPairings: () => void;
 }
