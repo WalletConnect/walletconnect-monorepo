@@ -2,7 +2,7 @@ import pino from "pino";
 import SignClient from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
-import { getSdkError, isValidArray } from "@walletconnect/utils";
+import { getSdkError } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
@@ -96,7 +96,6 @@ export class UniversalProvider implements IUniversalProvider {
 
     this.setNamespaces(opts.namespaces);
     this.createProviders();
-    this.cleanupInactivePairings();
 
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
   }
@@ -191,7 +190,6 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     Object.keys(this.namespaces).forEach((namespace) => {
-      if (this.rpcProviders[namespace]) return;
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
@@ -241,19 +239,6 @@ export class UniversalProvider implements IUniversalProvider {
     this.client.on("session_delete", () => {
       this.events.emit("session_delete");
     });
-  }
-
-  private cleanupInactivePairings(): void {
-    this.logger.info("Cleaning up inactive pairings...");
-    const invactivePairings = this.client.pairing.getAll({ active: false });
-
-    if (!isValidArray(invactivePairings)) return;
-
-    invactivePairings.forEach((pairing) => {
-      this.client.pairing.delete(pairing.topic, getSdkError("USER_DISCONNECTED"));
-    });
-
-    this.logger.info(`Inactive pairings cleared: ${invactivePairings.length}`);
   }
 
   private getProvider(namespace: string): IProvider {
