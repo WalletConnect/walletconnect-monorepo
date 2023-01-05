@@ -151,13 +151,13 @@ export class UniversalProvider implements IUniversalProvider {
     this.logger.info("Cleaning up inactive pairings...");
     const inactivePairings = this.client.pairing.getAll({ active: false });
 
-    if (!isValidArray(invactivePairings)) return;
+    if (!isValidArray(inactivePairings)) return;
 
-    invactivePairings.forEach((pairing) => {
+    inactivePairings.forEach((pairing) => {
       this.client.pairing.delete(pairing.topic, getSdkError("USER_DISCONNECTED"));
     });
 
-    this.logger.info(`Inactive pairings cleared: ${invactivePairings.length}`);
+    this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
 
   // ---------- Private ----------------------------------------------- //
