@@ -168,7 +168,6 @@ export class UniversalProvider implements IUniversalProvider {
     await this.createClient();
     this.checkStorage();
     this.registerEventListeners();
-    this.cleanupInactivePairings();
   }
 
   private async createClient() {
