@@ -3,7 +3,7 @@ import {
   IMobileRegistryEntry,
   IQRCodeModalOptions,
   IAppRegistry
-} from "@dcentwallet/walletconnect-types";
+} from "@walletconnect/types";
 import {
   isMobile,
   isAndroid,

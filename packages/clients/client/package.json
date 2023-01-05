@@ -1,6 +1,6 @@
 {
-  "name": "@dcentwallet/client",
-  "version": "please insert version",
+  "name": "@dcentwallet/walletconnect-client",
+  "version": "v1.8.2-beta",
   "description": "Client for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -8,7 +8,7 @@
     "build:cjs": "npx tsc -p tsconfig.cjs.json",
     "build:esm": "npx tsc -p tsconfig.esm.json",
     "build:umd": "webpack",
-    "build": "run-s build:pre build:cjs build:esm build:umd",
+    "build": "run-s build:cjs build:esm build:umd",
     "test": "env TS_NODE_PROJECT=\"tsconfig.cjs.json\" mocha -r ts-node/register ./test/**/*.spec.ts --exit"
   },
   "keywords": [
@@ -21,10 +21,13 @@
     "web3",
     "crypto",
     "cryptocurrency",
-    "dapp"
+    "dapp",
+    "dcent",
+    "dcentwallet",
+    "dcentwalletconnect"
   ],
   "author": "WalletConnect, Inc. <walletconnect.com>",
-  "homepage": "https://github.com/WalletConnect/walletconnect-monorepo/",
+  "homepage": "https://github.com/DcentWallet/walletconnect-monorepo/",
   "license": "Apache-2.0",
   "main": "dist/cjs/index.js",
   "browser": "dist/esm/index.js",
@@ -35,10 +38,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/walletconnect/walletconnect-monorepo.git"
+    "url": "git+https://github.com/DcentWallet/walletconnect-monorepo.git"
   },
   "bugs": {
-    "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
+    "url": "https://github.com/DcentWallet/walletconnect-monorepo/issues"
   },
   "devDependencies": {
     "@babel/cli": "7.8.3",
@@ -64,6 +67,5 @@
     "@walletconnect/iso-crypto": "^1.8.0",
     "@dcentwallet/walletconnect-types": "^1.8.1-beta",
     "@walletconnect/utils": "^1.8.0"
-  },
-  "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
+  }
 }
