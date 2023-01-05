@@ -149,7 +149,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   public cleanupPendingPairings(): void {
     this.logger.info("Cleaning up inactive pairings...");
-    const invactivePairings = this.client.pairing.getAll({ active: false });
+    const inactivePairings = this.client.pairing.getAll({ active: false });
 
     if (!isValidArray(invactivePairings)) return;
 
