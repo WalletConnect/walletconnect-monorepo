@@ -7,7 +7,7 @@ import {
   _abi,
   _bytecode,
 } from "ethereum-test-network/lib/utils/ERC20Token__factory";
-import { deleteProviders, testConnectMethod, WalletClient } from "./shared";
+import { deleteProviders, disconnectSocket, testConnectMethod, WalletClient } from "./shared";
 import UniversalProvider from "../src";
 import {
   CHAIN_ID,
@@ -19,6 +19,7 @@ import {
   TEST_ETH_TRANSFER,
   TEST_SIGN_TRANSACTION,
   CHAIN_ID_B,
+  TEST_REQUIRED_NAMESPACES,
 } from "./shared/constants";
 
 describe("UniversalProvider", function () {
@@ -334,6 +335,30 @@ describe("UniversalProvider", function () {
         ethers = new providers.Web3Provider(afterDapp);
         const afterAccounts = await ethers.listAccounts();
         expect(accounts).to.toMatchObject(afterAccounts);
+      });
+    });
+    describe("pairings", () => {
+      it("should clean up inactive pairings", async () => {
+        const PAIRINGS_TO_CREATE = 5;
+        for (let i = 0; i < PAIRINGS_TO_CREATE; i++) {
+          const dapp = await UniversalProvider.init({
+            ...TEST_PROVIDER_OPTS,
+            name: "dapp",
+            storageOptions: { database: "/tmp/dappDB" },
+          });
+
+          const { uri } = await dapp.client.connect({
+            requiredNamespaces: TEST_REQUIRED_NAMESPACES,
+          });
+          expect(!!uri).to.be.true;
+          expect(uri).to.be.a("string");
+
+          // only 1 pairing pending pairing should be active at a time
+          expect(dapp.client.pairing.getAll({ active: false }).length).to.eql(1);
+
+          // disconnect
+          await disconnectSocket(dapp.client.core);
+        }
       });
     });
   });
