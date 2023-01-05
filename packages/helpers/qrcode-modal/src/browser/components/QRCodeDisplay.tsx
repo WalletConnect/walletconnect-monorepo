@@ -59,10 +59,10 @@ function QRCodeDisplay(props: QRCodeDisplayProps) {
         {props.text.scan_qrcode_with_dcentwallet}
       </p>
       <div dangerouslySetInnerHTML={{ __html: svg }}></div>
-      <div className="walletconnect-modal__footer">
+      {/* <div className="walletconnect-modal__footer">
         <a onClick={copyToClipboard}>{props.text.copy_to_clipboard}</a>
       </div>
-      <Notification message={notification} />
+      <Notification message={notification} /> */}
     </div>
   );
 }

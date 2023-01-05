@@ -1,5 +1,5 @@
 import * as React from "react";
-import { IMobileRegistryEntry, IQRCodeModalOptions } from "@walletconnect/types";
+import { IMobileRegistryEntry, IQRCodeModalOptions } from "@dcentwallet/walletconnect-types";
 import { isAndroid, formatIOSMobile, saveMobileLinkInfo } from "@walletconnect/browser-utils";
 
 import { DEFAULT_BUTTON_COLOR, WALLETCONNECT_CTA_TEXT_ID } from "../constants";
@@ -63,19 +63,6 @@ function LinkDisplay(props: LinkDisplayProps) {
         {/* {android ? props.text.connect_mobile_wallet : props.text.choose_preferred_wallet} */}
         {props.text.connect_dcent}
       </p>
-      {/* {!android && (
-        <input
-          className={`walletconnect-search__input`}
-          placeholder="Search"
-          value={input}
-          onChange={handleInput}
-        />
-      )} */}
-      {/* <div
-        className={`walletconnect-connect__buttons__wrapper${
-          android ? "__android" : grid && links.length ? "__wrap" : ""
-        }`}
-      > */}
       <div
         className={`walletconnect-connect__buttons__wrapper__android`}
       >

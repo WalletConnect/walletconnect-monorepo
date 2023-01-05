@@ -6,7 +6,7 @@ updateTitle();
 const WalletConnect = window.WalletConnect.default;
 const WalletConnectQRCodeModal = window.WalletConnectQRCodeModal.default;
 
-const DEFAULT_BRIDGE = "https://bridge.walletconnect.org";
+// const DEFAULT_BRIDGE = "https://bridge.walletconnect.org";
 
 let connector = null;
 
@@ -27,7 +27,7 @@ function onInit() {
   
 
   connector = new WalletConnect({
-    bridge: DEFAULT_BRIDGE, // Required
+    // bridge: DEFAULT_BRIDGE, // Required
     qrcodeModal: WalletConnectQRCodeModal,
     // qrcodeModalOptions,
     clientMeta,
