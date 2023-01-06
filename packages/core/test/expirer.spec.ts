@@ -23,7 +23,6 @@ describe("Expirer", () => {
         resolve();
       });
     });
-    // core.expirer.set("test")
     await disconnectSocket(core.relayer);
   });
 });
