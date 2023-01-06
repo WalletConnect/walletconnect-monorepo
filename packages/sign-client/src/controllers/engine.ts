@@ -381,7 +381,7 @@ export class Engine extends IEngine {
       topic,
       params,
     });
-    if (expiry) this.client.core.expirer.set(id, expiry);
+    if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -754,8 +754,7 @@ export class Engine extends IEngine {
   private registerExpirerEvents() {
     this.client.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
       const { topic, id } = parseExpirerTarget(event.target);
-
-      if (id && this.getPendingSessionRequests()[id]) {
+      if (id && this.client.pendingRequest.keys.includes(id)) {
         return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
       }
 
