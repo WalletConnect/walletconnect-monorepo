@@ -252,6 +252,8 @@ export class Pairing implements IPairing {
     const { topic, payload } = event;
     const reqMethod = payload.method as PairingJsonRpcTypes.WcMethod;
 
+    if (!this.pairings.keys.includes(topic)) return;
+
     switch (reqMethod) {
       case "wc_pairingPing":
         return this.onPairingPingRequest(topic, payload);
@@ -266,6 +268,8 @@ export class Pairing implements IPairing {
     const { topic, payload } = event;
     const record = await this.core.history.get(topic, payload.id);
     const resMethod = record.request.method as PairingJsonRpcTypes.WcMethod;
+
+    if (!this.pairings.keys.includes(topic)) return;
 
     switch (resMethod) {
       case "wc_pairingPing":
