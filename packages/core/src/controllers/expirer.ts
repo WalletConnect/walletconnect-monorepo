@@ -89,9 +89,9 @@ export class Expirer extends IExpirer {
 
   public del: IExpirer["del"] = (key) => {
     this.isInitialized();
-    const target = this.formatTarget(key);
-    const exists = this.has(target);
+    const exists = this.has(key);
     if (exists) {
+      const target = this.formatTarget(key);
       const expiration = this.getExpiration(target);
       this.expirations.delete(target);
       this.events.emit(EXPIRER_EVENTS.deleted, {
