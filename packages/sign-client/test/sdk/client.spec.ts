@@ -241,7 +241,7 @@ describe("Sign Client Integration", () => {
 
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.A.core.relayer.on(
+          clients.A.core.relayer.once(
             RELAYER_EVENTS.publish,
             (payload: RelayerTypes.PublishPayload) => {
               // ttl of the request should match the expiry
