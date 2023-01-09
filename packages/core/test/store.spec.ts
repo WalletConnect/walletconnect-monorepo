@@ -36,7 +36,7 @@ describe("Store", () => {
       core.storage.setItem(STORAGE_KEY, cachedValues);
     });
 
-    it("retreives from cache using getKey", async () => {
+    it("retrieves from cache using getKey", async () => {
       const store = new Store<string, MockValue>(
         core,
         logger,
@@ -50,7 +50,7 @@ describe("Store", () => {
       }
     });
 
-    it("safely overwrites values when retreiving from cache using getKey", async () => {
+    it("safely overwrites values when retrieving from cache using getKey", async () => {
       const store = new Store<string, MockValue>(
         core,
         logger,

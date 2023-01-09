@@ -74,7 +74,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   let pairingB: PairingTypes.Struct | undefined;
 
   if (!connectParams.pairingTopic) {
-    // This is a new pairing. Let's apply a timeout to mimick
+    // This is a new pairing. Let's apply a timeout to mimic
     // QR code scanning
     if (!uri) throw new Error("uri is missing");
     if (params?.qrCodeScanLatencyMs) await throttle(params?.qrCodeScanLatencyMs);
@@ -107,7 +107,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   await Promise.all([
     resolveSessionProposal,
     new Promise<void>(async (resolve, reject) => {
-      // immediatelly resolve if pairingTopic is provided
+      // immediately resolve if pairingTopic is provided
       if (connectParams.pairingTopic) return resolve();
       try {
         if (uri) {

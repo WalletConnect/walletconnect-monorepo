@@ -111,9 +111,9 @@ export class Core extends ICore {
       await this.heartbeat.init();
       await this.pairing.init();
       this.initialized = true;
-      this.logger.info(`Core Initilization Success`);
+      this.logger.info(`Core Initialization Success`);
     } catch (error) {
-      this.logger.warn(`Core Initilization Failure at epoch ${Date.now()}`, error);
+      this.logger.warn(`Core Initialization Failure at epoch ${Date.now()}`, error);
       this.logger.error((error as any).message);
       throw error;
     }
