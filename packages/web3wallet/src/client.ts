@@ -170,9 +170,9 @@ export class Web3Wallet extends IWeb3Wallet {
     this.logger.trace(`Initialized`);
     try {
       await this.engine.init();
-      this.logger.info(`Web3Wallet Initilization Success`);
+      this.logger.info(`Web3Wallet Initialization Success`);
     } catch (error: any) {
-      this.logger.info(`Web3Wallet Initilization Failure`);
+      this.logger.info(`Web3Wallet Initialization Failure`);
       this.logger.error(error.message);
       throw error;
     }
