@@ -51,8 +51,14 @@ import {
   TYPE_1,
   getRequiredNamespacesFromNamespaces,
   isValidObject,
+  isValidRequestExpiry,
 } from "@walletconnect/utils";
-import { SESSION_EXPIRY, ENGINE_CONTEXT, ENGINE_RPC_OPTS } from "../constants";
+import {
+  SESSION_EXPIRY,
+  ENGINE_CONTEXT,
+  ENGINE_RPC_OPTS,
+  SESSION_REQUEST_EXPIRY_BOUNDARIES,
+} from "../constants";
 
 export class Engine extends IEngine {
   public name = ENGINE_CONTEXT;
@@ -258,8 +264,8 @@ export class Engine extends IEngine {
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
     this.isInitialized();
     await this.isValidRequest(params);
-    const { chainId, request, topic } = params;
-    const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId });
+    const { chainId, request, topic, expiry } = params;
+    const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId }, expiry);
     const { done, resolve, reject } = createDelayedPromise<T>();
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
       if (error) reject(error);
@@ -384,10 +390,11 @@ export class Engine extends IEngine {
     if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
   };
 
-  private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
+  private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params, expiry) => {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
+    if (expiry) opts.ttl = expiry;
     this.client.core.history.set(topic, payload);
     this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
@@ -980,7 +987,7 @@ export class Engine extends IEngine {
       const { message } = getInternalError("MISSING_OR_INVALID", `request() params: ${params}`);
       throw new Error(message);
     }
-    const { topic, request, chainId } = params;
+    const { topic, request, chainId, expiry } = params;
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
     if (!isValidNamespacesChainId(namespaces, chainId)) {
@@ -998,6 +1005,13 @@ export class Engine extends IEngine {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
         `request() method: ${request.method}`,
+      );
+      throw new Error(message);
+    }
+    if (expiry && !isValidRequestExpiry(expiry, SESSION_REQUEST_EXPIRY_BOUNDARIES)) {
+      const { message } = getInternalError(
+        "MISSING_OR_INVALID",
+        `request() expiry: ${expiry}. Expiry must be a number between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
       );
       throw new Error(message);
     }

@@ -102,3 +102,8 @@ export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
     },
   },
 };
+
+export const SESSION_REQUEST_EXPIRY_BOUNDARIES = {
+  min: 300,
+  max: 604800,
+};

@@ -87,6 +87,7 @@ export declare namespace EngineTypes {
       params: any;
     };
     chainId: string;
+    expiry?: number;
   }
 
   interface RespondParams {
@@ -149,6 +150,7 @@ export interface EnginePrivate {
     topic: string,
     method: M,
     params: JsonRpcTypes.RequestParams[M],
+    expiry?: number,
   ): Promise<number>;
 
   sendResult<M extends JsonRpcTypes.WcMethod>(
