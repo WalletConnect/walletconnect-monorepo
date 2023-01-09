@@ -47,6 +47,7 @@ export class Publisher extends IPublisher {
           this.publishTimeout,
         );
         await publish;
+        this.relayer.events.emit(RELAYER_EVENTS.publish, params);
       } catch (err) {
         this.logger.debug(`Publishing Payload stalled`);
         this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);

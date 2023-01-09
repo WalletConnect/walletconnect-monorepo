@@ -1,4 +1,6 @@
+import { RELAYER_EVENTS } from "@walletconnect/core";
 import { formatJsonRpcError, JsonRpcError } from "@walletconnect/jsonrpc-utils";
+import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
 import SignClient from "../../src";
@@ -224,6 +226,35 @@ describe("Sign Client Integration", () => {
       expect(sessionA.requiredNamespaces).toMatchObject(
         clients.B.session.get(sessionA.topic).requiredNamespaces,
       );
+      await deleteClients(clients);
+    });
+  });
+
+  describe("session requests", () => {
+    it("should set custom request expiry", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+
+      const expiry = 10000;
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          clients.A.core.relayer.on(
+            RELAYER_EVENTS.publish,
+            (payload: RelayerTypes.PublishPayload) => {
+              // ttl of the request should match the expiry
+              expect(payload?.opts?.ttl).toEqual(expiry);
+              resolve();
+            },
+          );
+        }),
+        new Promise<void>((resolve) => {
+          clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
+          resolve();
+        }),
+      ]);
       await deleteClients(clients);
     });
   });
