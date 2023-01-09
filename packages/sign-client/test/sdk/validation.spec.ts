@@ -57,7 +57,7 @@ describe("Sign Client Validation", () => {
       ).rejects.toThrowError("Missing or invalid. pairing topic should be a string: ");
     });
 
-    it("throws when non existant pairingTopic is provided", async () => {
+    it("throws when non existent pairingTopic is provided", async () => {
       await expect(
         clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic: "none" }),
       ).rejects.toThrowError("No matching key. pairing topic doesn't exist: none");
@@ -157,7 +157,7 @@ describe("Sign Client Validation", () => {
       ).rejects.toThrowError("Missing or invalid. proposal id should be a number: undefined");
     });
 
-    it("throws when non existant id is provided", async () => {
+    it("throws when non existent id is provided", async () => {
       await expect(clients.A.approve({ ...TEST_APPROVE_PARAMS, id: 123 })).rejects.toThrowError(
         "No matching key. proposal id doesn't exist: 123",
       );
@@ -371,7 +371,7 @@ describe("Sign Client Validation", () => {
       ).rejects.toThrowError("Missing or invalid. session topic should be a string: undefined");
     });
 
-    it("throws when non existant topic is provided", async () => {
+    it("throws when non existent topic is provided", async () => {
       await expect(clients.A.update({ ...TEST_UPDATE_PARAMS, topic: "none" })).rejects.toThrowError(
         "No matching key. session topic doesn't exist: none",
       );
@@ -443,7 +443,7 @@ describe("Sign Client Validation", () => {
       );
     });
 
-    it("throws when non existant topic is provided", async () => {
+    it("throws when non existent topic is provided", async () => {
       await expect(clients.A.extend({ topic: "none" })).rejects.toThrowError(
         "No matching key. session topic doesn't exist: none",
       );
@@ -475,7 +475,7 @@ describe("Sign Client Validation", () => {
       ).rejects.toThrowError("Missing or invalid. session topic should be a string: undefined");
     });
 
-    it("throws when non existant topic is provided", async () => {
+    it("throws when non existent topic is provided", async () => {
       await expect(
         clients.A.request({ ...TEST_REQUEST_PARAMS, topic: "none" }),
       ).rejects.toThrowError("No matching key. session topic doesn't exist: none");
@@ -662,7 +662,7 @@ describe("Sign Client Validation", () => {
       );
     });
 
-    it("throws when non existant topic is provided", async () => {
+    it("throws when non existent topic is provided", async () => {
       await expect(clients.A.ping({ topic: "none" })).rejects.toThrowError(
         "No matching key. session or pairing topic doesn't exist: none",
       );
@@ -694,7 +694,7 @@ describe("Sign Client Validation", () => {
       );
     });
 
-    it("throws when non existant topic is provided", async () => {
+    it("throws when non existent topic is provided", async () => {
       await expect(clients.A.emit({ ...TEST_EMIT_PARAMS, topic: "none" })).rejects.toThrowError(
         "No matching key. session topic doesn't exist: none",
       );
@@ -780,7 +780,7 @@ describe("Sign Client Validation", () => {
       );
     });
 
-    it("throws when non existant topic is provided", async () => {
+    it("throws when non existent topic is provided", async () => {
       await expect(clients.A.disconnect({ topic: "none" })).rejects.toThrowError(
         "No matching key. session or pairing topic doesn't exist: none",
       );
