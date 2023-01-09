@@ -266,7 +266,7 @@ export class Engine extends IEngine {
     await this.isValidRequest(params);
     const { chainId, request, topic, expiry } = params;
     const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId }, expiry);
-    const { done, resolve, reject } = createDelayedPromise<T>();
+    const { done, resolve, reject } = createDelayedPromise<T>(expiry);
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
       if (error) reject(error);
       else resolve(result);
