@@ -490,6 +490,6 @@ export function isConformingNamespaces(
   return error;
 }
 
-export function isValidRequestExpiry(expiry: number, boudaries: { min: number; max: number }) {
-  return isValidNumber(expiry, false) && expiry <= boudaries.max && expiry >= boudaries.min;
+export function isValidRequestExpiry(expiry: number, boundaries: { min: number; max: number }) {
+  return isValidNumber(expiry, false) && expiry <= boundaries.max && expiry >= boundaries.min;
 }
