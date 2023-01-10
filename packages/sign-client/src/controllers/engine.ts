@@ -1011,7 +1011,7 @@ export class Engine extends IEngine {
     if (expiry && !isValidRequestExpiry(expiry, SESSION_REQUEST_EXPIRY_BOUNDARIES)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
-        `request() expiry: ${expiry}. Expiry must be a number between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
+        `request() expiry: ${expiry}. Expiry must be a number (in seconds) between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
       );
       throw new Error(message);
     }
