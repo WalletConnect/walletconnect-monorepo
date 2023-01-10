@@ -96,8 +96,7 @@ export class UniversalProvider implements IUniversalProvider {
 
     this.setNamespaces(opts.namespaces);
     this.createProviders();
-    this.cleanupPendingPairings();
-
+    await this.cleanupPendingPairings();
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
   }
 
@@ -147,17 +146,18 @@ export class UniversalProvider implements IUniversalProvider {
     }
   }
 
-  public cleanupPendingPairings(): void {
+  public async cleanupPendingPairings(): Promise<void> {
     this.logger.info("Cleaning up inactive pairings...");
     const inactivePairings = this.client.pairing.getAll({ active: false });
 
     if (!isValidArray(inactivePairings)) return;
-
-    inactivePairings.forEach(async (pairing) => {
-      await this.client.pairing.delete(pairing.topic, getSdkError("USER_DISCONNECTED"));
-      await this.client.core.relayer.unsubscribe(pairing.topic);
-      this.client.core.expirer.del(pairing.topic);
-    });
+    await Promise.all([
+      inactivePairings.map((pairing) =>
+        this.client.pairing.delete(pairing.topic, getSdkError("USER_DISCONNECTED")),
+      ),
+      inactivePairings.map((pairing) => this.client.core.relayer.unsubscribe(pairing.topic)),
+      inactivePairings.map((pairing) => this.client.core.expirer.del(pairing.topic)),
+    ]);
 
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
