@@ -352,7 +352,7 @@ describe("UniversalProvider", function () {
           expect(uri).to.be.a("string");
           expect(provider.client.pairing.getAll({ active: false }).length).to.eql(i + 1);
         }
-        provider.cleanupPendingPairings();
+        await provider.cleanupPendingPairings();
         expect(provider.client.pairing.getAll({ active: false }).length).to.eql(0);
       });
     });
