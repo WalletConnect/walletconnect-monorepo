@@ -31,6 +31,11 @@ export declare namespace RelayerTypes {
 
   export type RequestOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions;
 
+  export interface PublishPayload {
+    topic: string;
+    message: string;
+    opts?: RelayerTypes.PublishOptions;
+  }
   export interface MessageEvent {
     topic: string;
     message: string;
