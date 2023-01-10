@@ -540,6 +540,14 @@ describe("Sign Client Validation", () => {
         clients.A.request({ ...TEST_REQUEST_PARAMS, topic, request: { method: "unknown" } }),
       ).rejects.toThrowError("Missing or invalid. request() method: unknown");
     });
+
+    it("throws when invalid expiry is provider", async () => {
+      await expect(
+        clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry: 10 }),
+      ).rejects.toThrowError(
+        "Missing or invalid. request() expiry: 10. Expiry must be a number (in seconds) between 300 and 604800",
+      );
+    });
   });
 
   describe("respond", () => {
