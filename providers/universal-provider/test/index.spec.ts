@@ -335,38 +335,34 @@ describe("UniversalProvider", function () {
         ethers = new providers.Web3Provider(afterDapp);
         const afterAccounts = await ethers.listAccounts();
         expect(accounts).to.toMatchObject(afterAccounts);
+
+        // delete
+        await disconnectSocket(afterDapp.client.core);
       });
     });
     describe("pairings", () => {
       it("should clean up inactive pairings", async () => {
         const PAIRINGS_TO_CREATE = 5;
-        const dapp = await UniversalProvider.init({
-          ...TEST_PROVIDER_OPTS,
-          name: "dapp",
-        });
-
         for (let i = 0; i < PAIRINGS_TO_CREATE; i++) {
-          const { uri } = await dapp.client.connect({
+          const { uri } = await provider.client.connect({
             requiredNamespaces: TEST_REQUIRED_NAMESPACES,
           });
 
           expect(!!uri).to.be.true;
           expect(uri).to.be.a("string");
-          expect(dapp.client.pairing.getAll({ active: false }).length).to.eql(i + 1);
+          expect(provider.client.pairing.getAll({ active: false }).length).to.eql(i + 1);
         }
-        dapp.cleanupPendingPairings();
-        expect(dapp.client.pairing.getAll({ active: false }).length).to.eql(0);
-
-        // disconnect
-        await disconnectSocket(dapp.client.core);
+        await provider.cleanupPendingPairings();
+        expect(provider.client.pairing.getAll({ active: false }).length).to.eql(0);
       });
     });
   });
-
   describe("validation", () => {
     it("should not throw exception when setDefaultChain is called prematurely", async () => {
       const provider = await UniversalProvider.init(TEST_PROVIDER_OPTS);
       provider.setDefaultChain("eip155:1");
+      // disconnect
+      await disconnectSocket(provider.client.core);
     });
   });
 });
