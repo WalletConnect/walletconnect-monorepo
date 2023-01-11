@@ -2,7 +2,7 @@ import pino from "pino";
 import SignClient from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
-import { getSdkError } from "@walletconnect/utils";
+import { getSdkError, isValidArray } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
@@ -99,6 +99,7 @@ export class UniversalProvider implements IUniversalProvider {
     const { namespaces } = opts;
     this.setNamespaces(namespaces);
     this.createProviders();
+    this.cleanupPendingPairings();
 
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
   }
@@ -140,16 +141,33 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public setDefaultChain(chain: string, rpcUrl?: string | undefined) {
-    const [namespace, chainId] = this.validateChain(chain);
-    this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+    try {
+      const [namespace, chainId] = this.validateChain(chain);
+      this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+    } catch (error) {
+      // ignore the error if the fx is used prematurely before namespaces are set
+      if (!/Please call connect/.test((error as Error).message)) throw error;
+    }
+  }
+
+  public cleanupPendingPairings(): void {
+    this.logger.info("Cleaning up inactive pairings...");
+    const inactivePairings = this.client.pairing.getAll({ active: false });
+
+    if (!isValidArray(inactivePairings)) return;
+
+    inactivePairings.forEach((pairing) => {
+      this.client.pairing.delete(pairing.topic, getSdkError("USER_DISCONNECTED"));
+    });
+
+    this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
 
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
-    this.namespaces = (await this.client.core.storage.getItem(
-      `${STORAGE}/namespaces`,
-    )) as NamespaceConfig;
+    this.namespaces =
+      ((await this.client.core.storage.getItem(`${STORAGE}/namespaces`)) as NamespaceConfig) || {};
     if (this.namespaces) {
       this.createProviders();
     }
@@ -271,7 +289,9 @@ export class UniversalProvider implements IUniversalProvider {
     // validate namespace
     if (namespace) {
       if (!Object.keys(this.namespaces).includes(namespace)) {
-        throw new Error(`Invalid namespace: ${namespace}`);
+        throw new Error(
+          `Namespace '${namespace}' is not configured. Please call connect() first with namespace config.`,
+        );
       }
     }
 

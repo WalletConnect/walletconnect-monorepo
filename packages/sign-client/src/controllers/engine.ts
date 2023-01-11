@@ -49,8 +49,9 @@ import {
   isConformingNamespaces,
   isValidController,
   TYPE_1,
+  getRequiredNamespacesFromNamespaces,
+  isValidObject,
 } from "@walletconnect/utils";
-
 import { SESSION_EXPIRY, ENGINE_CONTEXT, ENGINE_RPC_OPTS } from "../constants";
 
 export class Engine extends IEngine {
@@ -113,7 +114,7 @@ export class Engine extends IEngine {
         if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
-          const completeSession = { ...session, requiredNamespaces };
+          const completeSession = { ...session, requiredNamespaces: session.requiredNamespaces };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
           if (topic) {
@@ -148,7 +149,15 @@ export class Engine extends IEngine {
     this.isInitialized();
     await this.isValidApprove(params);
     const { id, relayProtocol, namespaces } = params;
-    const { pairingTopic, proposer, requiredNamespaces } = this.client.proposal.get(id);
+    const proposal = this.client.proposal.get(id);
+    let { pairingTopic, proposer, requiredNamespaces } = proposal;
+
+    if (!isValidObject(requiredNamespaces)) {
+      const required = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
+      requiredNamespaces = required;
+      // update the proposal with the new required namespaces
+      this.client.proposal.set(id, { ...proposal, requiredNamespaces });
+    }
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -372,7 +381,7 @@ export class Engine extends IEngine {
       topic,
       params,
     });
-    if (expiry) this.client.core.expirer.set(id, expiry);
+    if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params) => {
@@ -570,13 +579,14 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const { relay, controller, expiry, namespaces } = payload.params;
+      const { relay, controller, expiry, namespaces, requiredNamespaces } = payload.params;
       const session = {
         topic,
         relay,
         expiry,
         namespaces,
         acknowledged: true,
+        requiredNamespaces,
         controller: controller.publicKey,
         self: {
           publicKey: "",
@@ -744,8 +754,7 @@ export class Engine extends IEngine {
   private registerExpirerEvents() {
     this.client.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
       const { topic, id } = parseExpirerTarget(event.target);
-
-      if (id && this.getPendingSessionRequests()[id]) {
+      if (id && this.client.pendingRequest.keys.includes(id)) {
         return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
       }
 
@@ -856,6 +865,12 @@ export class Engine extends IEngine {
     }
     const { pairingTopic, requiredNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
+
+    // validate required namespaces only if they are defined
+    if (!isUndefined(requiredNamespaces) && isValidObject(requiredNamespaces) === 0) {
+      return;
+    }
+
     const validRequiredNamespacesError = isValidRequiredNamespaces(requiredNamespaces, "connect()");
     if (validRequiredNamespacesError) throw new Error(validRequiredNamespacesError.message);
     if (!isValidRelays(relays, true)) {
