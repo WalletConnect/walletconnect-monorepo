@@ -25,6 +25,10 @@ export const ACCOUNTS = {
     address: "0x874C1377Aa5a256de7554776e59cf01A5319502C",
     privateKey: "0x6c99734035225d3d34bd3b07a46594f8eb66269454c3f7a4a19ca505f2a46b15",
   },
+  cosmos: {
+    address: "cosmos19tzxudnklnmmr3l5vuhhttue7rkcpt78x0jqxr",
+    privateKey: "e7343d082baa8e390dc7ebd65c891e4b42c044b5bb0cfa43d8cc0769c32c87aa",
+  },
 };
 
 export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
@@ -61,17 +65,29 @@ export const TEST_WALLET_CLIENT_OPTS = {
   projectId: process.env.TEST_PROJECT_ID,
 };
 
+export const EIP155_TEST_METHODS = [
+  "eth_sendTransaction",
+  "eth_signTransaction",
+  "personal_sign",
+  "eth_signTypedData",
+];
+
+export const COSMOS_TEST_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
+
 export const TEST_NAMESPACES_CONFIG = {
   namespaces: {
     eip155: {
-      methods: [
-        "eth_sendTransaction",
-        "eth_signTransaction",
-        "eth_sign",
-        "personal_sign",
-        "eth_signTypedData",
-      ],
+      methods: EIP155_TEST_METHODS,
       chains: [`eip155:${CHAIN_ID}`, `eip155:${CHAIN_ID_B}`],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
+        [CHAIN_ID_B]: RPC_URL_B,
+      },
+    },
+    cosmos: {
+      methods: COSMOS_TEST_METHODS,
+      chains: [`cosmos:${CHAIN_ID}`, `cosmos:${CHAIN_ID_B}`],
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
         [CHAIN_ID]: RPC_URL,
@@ -112,16 +128,9 @@ export const TEST_RELAY_OPTIONS: RelayerTypes.ProtocolOptions = {
   protocol: TEST_RELAY_PROTOCOL,
 };
 
-export const TEST_METHODS = [
-  "eth_sendTransaction",
-  "eth_signTransaction",
-  "personal_sign",
-  "eth_signTypedData",
-];
-
 export const TEST_REQUIRED_NAMESPACES = {
   eip155: {
-    methods: TEST_METHODS,
+    methods: EIP155_TEST_METHODS,
     chains: TEST_CHAINS,
     events: TEST_EVENTS,
   },
@@ -129,7 +138,7 @@ export const TEST_REQUIRED_NAMESPACES = {
 
 export const TEST_NAMESPACES = {
   eip155: {
-    methods: TEST_METHODS,
+    methods: EIP155_TEST_METHODS,
     accounts: TEST_ACCOUNTS,
     events: TEST_EVENTS,
   },
