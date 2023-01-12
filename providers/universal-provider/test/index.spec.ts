@@ -2,6 +2,7 @@ import { expect, describe, it, beforeAll, afterAll } from "vitest";
 import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
+import { formatDirectSignDoc, stringifySignDocValues, verifyDirectSignature } from "cosmos-wallet";
 import {
   ERC20Token__factory,
   _abi,
@@ -237,6 +238,53 @@ describe("UniversalProvider", function () {
         const verify = utils.verifyMessage(msg, signature);
         expect(verify).eq(walletAddress);
       });
+    });
+  });
+  describe("cosmos", () => {
+    it("should sign cosmos_signDirect request", async () => {
+      // test direct sign doc inputs
+      const inputs = {
+        fee: [{ amount: "2000", denom: "ucosm" }],
+        pubkey: "AgSEjOuOr991QlHCORRmdE5ahVKeyBrmtgoYepCpQGOW",
+        gasLimit: 200000,
+        accountNumber: 1,
+        sequence: 1,
+        bodyBytes:
+          "0a90010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e6412700a2d636f736d6f7331706b707472653766646b6c366766727a6c65736a6a766878686c63337234676d6d6b38727336122d636f736d6f7331717970717870713971637273737a673270767871367273307a716733797963356c7a763778751a100a0575636f736d120731323334353637",
+        authInfoBytes:
+          "0a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21034f04181eeba35391b858633a765c4a0c189697b40d216354d50890d350c7029012040a020801180112130a0d0a0575636f736d12043230303010c09a0c",
+      };
+
+      // format sign doc
+      const signDoc = formatDirectSignDoc(
+        inputs.fee,
+        inputs.pubkey,
+        inputs.gasLimit,
+        inputs.accountNumber,
+        inputs.sequence,
+        inputs.bodyBytes,
+        "cosmoshub-4",
+      );
+
+      // cosmos_signDirect params
+      const params = {
+        signerAddress: await walletClient.cosmosWallet.getAddress(),
+        signDoc: stringifySignDocValues(signDoc),
+      };
+
+      const result = await provider.request<{ signature: string }>(
+        {
+          method: "cosmos_signDirect",
+          params,
+        },
+        `cosmos:${CHAIN_ID}`,
+      );
+      const valid = await verifyDirectSignature(
+        await walletClient.cosmosWallet.getAddress(),
+        result.signature,
+        signDoc,
+      );
+      expect(valid).to.be.true;
     });
   });
   describe("persistence", () => {

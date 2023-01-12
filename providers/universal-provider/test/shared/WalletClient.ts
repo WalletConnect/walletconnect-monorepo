@@ -5,6 +5,9 @@ import { SignClientTypes, SessionTypes } from "@walletconnect/types";
 import { getSdkError, getChainsFromAccounts } from "@walletconnect/utils";
 import { ethers, utils } from "ethers";
 import UniversalProvider from "../../src";
+import { parseSignDocValues } from "cosmos-wallet";
+import CosmosLib from "./CosmosWallet";
+import { ACCOUNTS } from "./constants";
 
 export interface WalletClientOpts {
   privateKey: string;
@@ -22,6 +25,7 @@ export class WalletClient {
   public client?: SignClient;
   public topic?: string;
   public namespaces?: SessionTypes.Namespaces;
+  public cosmosWallet: CosmosLib;
 
   static async init(
     provider: UniversalProvider,
@@ -41,6 +45,7 @@ export class WalletClient {
     this.chainId = opts?.chainId || 123;
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
     this.signer = this.getWallet(opts.privateKey);
+    this.cosmosWallet = {} as CosmosLib;
   }
 
   public async changeAccount(privateKey: string) {
@@ -114,6 +119,10 @@ export class WalletClient {
     return wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
   }
 
+  private getCosmosWallet(privateKey?: string) {
+    return CosmosLib.init(ACCOUNTS.cosmos.privateKey);
+  }
+
   private parseTxParams = (payload: any) => {
     let txParams: ethers.providers.TransactionRequest = {
       from: payload.params[0].from,
@@ -154,6 +163,7 @@ export class WalletClient {
 
   private async initialize(opts?: SignClientTypes.Options) {
     this.client = await SignClient.init(opts);
+    this.cosmosWallet = await CosmosLib.init(ACCOUNTS.cosmos.privateKey);
     this.registerEventListeners();
   }
 
@@ -252,6 +262,14 @@ export class WalletClient {
               //  eslint-disable-next-line no-case-declarations
               const personalMsg = request.params[0];
               result = await this.signer.signMessage(utils.arrayify(personalMsg));
+              break;
+            case "cosmos_signDirect":
+              //  eslint-disable-next-line no-case-declarations
+              const signedDirect = await this.cosmosWallet.signDirect(
+                request.params.signerAddress,
+                parseSignDocValues(request.params.signDoc),
+              );
+              result = signedDirect.signature;
               break;
             default:
               throw new Error(`Method not supported: ${request.method}`);
