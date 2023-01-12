@@ -5,9 +5,7 @@ import {
   RelayerTypes,
   ProposalTypes,
   SessionTypes,
-  ISignClient,
 } from "@walletconnect/types";
-import { throttle } from "./../shared";
 import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./constants";
 import { expect } from "vitest";
 import UniversalProvider from "../../src/UniversalProvider";
