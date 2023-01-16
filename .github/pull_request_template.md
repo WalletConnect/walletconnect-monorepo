@@ -18,8 +18,9 @@ Please:
 
 <!-- If valid for smoke test on feature add screenshots -->
 
-## Due Dilligence
+## Due Diligence
 
-* [ ] Breaking change
-* [ ] Requires a documentation update
-* [ ] Requires a e2e/integration test update
+- [ ] Breaking change
+- [ ] Requires a documentation update
+  - [ ] Related docs issue/PR (if docs are not included in this PR):
+- [ ] Requires a e2e/integration test update
