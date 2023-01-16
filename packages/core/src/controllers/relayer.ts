@@ -171,7 +171,7 @@ export class Relayer extends IRelayer {
             // rejects pending promise if transport is closed before connection is established
             // useful when .connect() gets stuck resolving
             this.once(RELAYER_EVENTS.transport_closed, () => {
-              reject();
+              reject(new Error("closeTransport called before connection was established"));
             }),
           ),
         ]),
