@@ -12,9 +12,7 @@ export declare namespace SessionTypes {
     events: string[];
   }
 
-  interface Namespace extends BaseNamespace {
-    extension?: BaseNamespace[];
-  }
+  type Namespace = BaseNamespace;
 
   type Namespaces = Record<string, Namespace>;
 
