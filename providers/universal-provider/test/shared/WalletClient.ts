@@ -190,11 +190,6 @@ export class WalletClient {
             methods: value.methods,
             events: value.events,
             accounts: value.chains.map((chain) => `${chain}:${this.accounts[0]}`),
-            extension: value.extension?.map((ext) => ({
-              methods: ext.methods,
-              events: ext.events,
-              accounts: ext.chains.map((chain) => `${chain}:${this.accounts[0]}`),
-            })),
           };
         });
         const { acknowledged } = await this.client.approve({

@@ -9,9 +9,7 @@ export declare namespace ProposalTypes {
     events: string[];
   }
 
-  interface RequiredNamespace extends BaseRequiredNamespace {
-    extension?: BaseRequiredNamespace[];
-  }
+  type RequiredNamespace = BaseRequiredNamespace;
 
   type RequiredNamespaces = Record<string, RequiredNamespace>;
 

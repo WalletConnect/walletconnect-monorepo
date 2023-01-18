@@ -86,50 +86,6 @@ describe("Sign Client Validation", () => {
         "Missing or invalid. connect(), requiredNamespaces should be an object with data",
       );
     });
-
-    it("throws when empty extension is provided", async () => {
-      const requiredNamespaces = {
-        eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: [] },
-      };
-      await expect(
-        clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
-      ).rejects.toThrowError(
-        "Missing or invalid. connect() extension should be an array of namespaces, or omitted",
-      );
-    });
-
-    it("throws when empty extension body is provided", async () => {
-      const requiredNamespaces = {
-        eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: [{}] },
-      };
-      await expect(
-        clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
-      ).rejects.toThrowError(
-        `Unsupported chains. connect() extension, chains undefined should be an array of strings conforming to "namespace:chainId" format`,
-      );
-    });
-
-    it("throws when invalid extension is provided", async () => {
-      const requiredNamespaces = {
-        eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: {} },
-      };
-      await expect(
-        clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
-      ).rejects.toThrowError(
-        "Missing or invalid. connect() extension should be an array of namespaces, or omitted",
-      );
-    });
-
-    it("throws when invalid extension values are provided", async () => {
-      const requiredNamespaces = {
-        eip155: { ...TEST_REQUIRED_NAMESPACES.eip155, extension: [{ invalid: [""] }] },
-      };
-      await expect(
-        clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic, requiredNamespaces }),
-      ).rejects.toThrowError(
-        `Unsupported chains. connect() extension, chains undefined should be an array of strings conforming to "namespace:chainId" format`,
-      );
-    });
   });
 
   describe("approve", () => {
@@ -184,44 +140,6 @@ describe("Sign Client Validation", () => {
         clients.A.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces: undefined }),
       ).rejects.toThrowError(
         "Missing or invalid. approve(), namespaces should be an object with data",
-      );
-    });
-
-    it("throws when empty extension is provided", async () => {
-      const namespaces = { eip155: { ...TEST_NAMESPACES.eip155, extension: [] } };
-      await expect(
-        clients.A.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
-      ).rejects.toThrowError(
-        "Missing or invalid. approve() extension should be an array of namespaces, or omitted",
-      );
-    });
-
-    it("throws when empty extension body is provided", async () => {
-      const namespaces = { eip155: { ...TEST_NAMESPACES.eip155, extension: [{}] } };
-      await expect(
-        clients.A.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
-      ).rejects.toThrowError(
-        `Unsupported accounts. approve() extension, accounts should be an array of strings conforming to "namespace:chainId:address" format`,
-      );
-    });
-
-    it("throws when invalid extension is provided", async () => {
-      const namespaces = { eip155: { ...TEST_NAMESPACES.eip155, extension: {} } };
-      await expect(
-        clients.A.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
-      ).rejects.toThrowError(
-        "Missing or invalid. approve() extension should be an array of namespaces, or omitted",
-      );
-    });
-
-    it("throws when invalid extension values are provided", async () => {
-      const namespaces = {
-        eip155: { ...TEST_NAMESPACES.eip155, extension: [{ invalid: [""] }] },
-      };
-      await expect(
-        clients.A.approve({ ...TEST_APPROVE_PARAMS, id: proposalId, namespaces }),
-      ).rejects.toThrowError(
-        `Unsupported accounts. approve() extension, accounts should be an array of strings conforming to "namespace:chainId:address" format`,
       );
     });
 
