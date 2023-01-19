@@ -61,8 +61,8 @@ export class UniversalProvider implements IUniversalProvider {
 
 	const [namespace, reqChain] = this.getNamespaceFromChain(chain);
 
-	const provider = this.getProvider(namespace);
-	const chainId = reqChain || provider.getDefaultChainId();
+    const provider = this.getProvider(namespace);
+    const chainId = reqChain || provider.getDefaultChainId();
 
     return await provider.request({
       request: {
