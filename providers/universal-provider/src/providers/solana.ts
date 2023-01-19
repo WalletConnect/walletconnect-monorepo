@@ -59,9 +59,9 @@ class SolanaProvider implements IProvider {
     return http;
   }
 
-  private getDefaultChainId(): string {
+  public getDefaultChainId(): string {
     if (this.chainId) return this.chainId;
-    const chainId = this.namespace.chains[0];
+    const chainId = this.namespace.chains?.[0];
 
     if (!chainId) throw new Error(`ChainId not found`);
 
@@ -86,13 +86,15 @@ class SolanaProvider implements IProvider {
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
     this.chainId = chainId;
+
+	const nsChain = `${this.name}:${chainId}`;
     // http provider exists so just set the chainId
-    if (!this.httpProviders[chainId]) {
-      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+    if (!this.httpProviders[nsChain]) {
+      const rpc = rpcUrl || getRpcUrl(nsChain, this.namespace);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
-      this.setHttpProvider(chainId, rpc);
+      this.setHttpProvider(nsChain, rpc);
     }
 
     this.events.emit("chainChanged", this.chainId);

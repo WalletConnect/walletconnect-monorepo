@@ -48,13 +48,6 @@ class Eip155Provider implements IProvider {
         break;
     }
     if (this.namespace.methods.includes(args.request.method)) {
-
-	  const chainId = args.request?.params?.[0]?.chainId ?
-		  parseInt(args.request?.params?.[0]?.chainId, 16).toString() :
-		  this.getDefaultChainId();
-
-	  args.chainId = "eip155:" + chainId;
-
       return await this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);
@@ -66,13 +59,15 @@ class Eip155Provider implements IProvider {
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
     this.chainId = parseInt(chainId);
+
+	const nsChain = `${this.name}:${chainId}`;
     // http provider exists so just set the chainId
-    if (!this.httpProviders[chainId]) {
-      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+    if (!this.httpProviders[nsChain]) {
+      const rpc = rpcUrl || getRpcUrl(nsChain, this.namespace);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
-      this.setHttpProvider(chainId, rpc);
+      this.setHttpProvider(nsChain, rpc);
     }
 
     this.events.emit("chainChanged", this.chainId);
@@ -124,9 +119,9 @@ class Eip155Provider implements IProvider {
     );
   }
 
-  private getDefaultChainId(): number {
+  public getDefaultChainId(): number {
     if (this.chainId) return this.chainId;
-    const chainId = this.namespace.chains[0];
+    const chainId = this.namespace.chains?.[0];
 
     if (!chainId) throw new Error(`ChainId not found`);
 

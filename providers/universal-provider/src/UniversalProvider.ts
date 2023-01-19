@@ -7,7 +7,6 @@ import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
-import { getChainFromNamespaces } from "./utils";
 import {
   IUniversalProvider,
   IProvider,
@@ -49,13 +48,23 @@ export class UniversalProvider implements IUniversalProvider {
     args: RequestArguments,
     chain?: string | undefined,
   ): Promise<T> {
-    const [namespace, chainId] = this.validateChain(chain);
+
+    if (!chain && args.params?.[0]?.chainId) {
+      chain = args.params?.[0]?.chainId;
+	    if (chain?.indexOf("0x") === 0)
+	      chain = "eip155:" + parseInt(chain, 16).toString()
+	}
 
     if (!this.session) {
       throw new Error("Please call connect() before request()");
     }
 
-    return await this.getProvider(namespace).request({
+	const [namespace, reqChain] = this.getNamespaceFromChain(chain);
+
+	const provider = this.getProvider(namespace);
+	const chainId = reqChain || provider.getDefaultChainId();
+
+    return await provider.request({
       request: {
         ...args,
       },
@@ -143,7 +152,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   public setDefaultChain(chain: string, rpcUrl?: string | undefined) {
     try {
-      const [namespace, chainId] = this.validateChain(chain);
+      const [namespace, chainId] = this.getNamespaceFromChain(chain);
       this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
     } catch (error) {
       // ignore the error if the fx is used prematurely before namespaces are set
@@ -296,7 +305,7 @@ export class UniversalProvider implements IUniversalProvider {
     this.namespaces = namespaces;
   }
 
-  private validateChain(chain?: string): [string, string] {
+  private getNamespaceFromChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
 
     // validate namespace
@@ -308,11 +317,11 @@ export class UniversalProvider implements IUniversalProvider {
       }
     }
 
-    return !namespace || !chainId ? getChainFromNamespaces(this.namespaces) : [namespace, chainId];
+    return [Object.keys(this.namespaces)[0], chainId];
   }
 
   private async requestAccounts(): Promise<string[]> {
-    const [namespace] = this.validateChain();
+    const [namespace] = this.getNamespaceFromChain();
     return await this.getProvider(namespace).requestAccounts();
   }
 
