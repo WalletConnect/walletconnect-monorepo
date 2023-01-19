@@ -48,6 +48,13 @@ class Eip155Provider implements IProvider {
         break;
     }
     if (this.namespace.methods.includes(args.request.method)) {
+
+	  const chainId = args.request?.params?.[0]?.chainId ?
+		  parseInt(args.request?.params?.[0]?.chainId, 16).toString() :
+		  this.getDefaultChainId();
+
+	  args.chainId = "eip155:" + chainId;
+
       return await this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);
