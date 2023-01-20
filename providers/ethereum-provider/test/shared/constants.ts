@@ -58,6 +58,7 @@ export const TEST_WALLET_CLIENT_OPTS = {
   rpcUrl: RPC_URL,
   privateKey: ACCOUNTS.a.privateKey,
   relayUrl: TEST_RELAY_URL,
+  projectId: process.env.TEST_PROJECT_ID,
   metadata: TEST_WALLET_METADATA,
 };
 
