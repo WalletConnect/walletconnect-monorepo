@@ -42,12 +42,16 @@
     "@walletconnect/sign-client": "2.2.1",
     "@walletconnect/signer-connection": "2.2.1",
     "@walletconnect/types": "2.2.1",
+    "@walletconnect/universal-provider": "2.2.1",
     "@walletconnect/utils": "2.2.1",
+    "@web3modal/standalone": "^2.0.0-rc.3",
     "eip1193-provider": "1.0.1",
+    "events": "^3.3.0"
+  },
+  "devDependencies": {
+    "uint8arrays": "3.1.0",
     "ethereum-test-network": "0.1.6",
     "ethers": "5.6.9",
-    "events": "^3.3.0",
-    "uint8arrays": "3.1.0",
     "web3": "1.7.5"
   }
 }
