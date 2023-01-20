@@ -7,7 +7,7 @@ const plugins = [
   nodeResolve({ preferBuiltins: false, browser: true }),
   commonjs(),
   esbuild({
-    minify: false,
+    minify: true,
     tsconfig: "./tsconfig.json",
     loaders: {
       ".json": "json",
