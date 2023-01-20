@@ -7,7 +7,7 @@ const plugins = [
   nodeResolve({ preferBuiltins: false, browser: true }),
   commonjs(),
   esbuild({
-    minify: true,
+    minify: false,
     tsconfig: "./tsconfig.json",
     loaders: {
       ".json": "json",
@@ -15,7 +15,13 @@ const plugins = [
   }),
 ];
 
-export default function createConfig(packageName, packageDependencies) {
+export default function createConfig(
+  packageName,
+  packageDependencies,
+  umd = {},
+  cjs = {},
+  es = {},
+) {
   return [
     {
       input,
@@ -26,6 +32,7 @@ export default function createConfig(packageName, packageDependencies) {
         exports: "named",
         name: packageName,
         sourcemap: true,
+        ...umd,
       },
     },
     {
@@ -39,6 +46,7 @@ export default function createConfig(packageName, packageDependencies) {
           exports: "named",
           name: packageName,
           sourcemap: true,
+          ...cjs,
         },
         {
           file: "./dist/index.es.js",
@@ -46,6 +54,7 @@ export default function createConfig(packageName, packageDependencies) {
           exports: "named",
           name: packageName,
           sourcemap: true,
+          ...es,
         },
       ],
     },
