@@ -66,5 +66,5 @@ export interface RequestParams {
 
 export interface RequestArguments {
   method: string;
-  params?: unknown[] | Record<string, unknown> | undefined;
+  params?: unknown[] | Record<string, unknown> | object | undefined;
 }
