@@ -12,7 +12,6 @@ export interface CacaoPayload {
   resources?: string[];
 }
 
-
 export interface CacaoHeader {
   t: "eip4361";
 }
@@ -31,7 +30,7 @@ export interface Cacao {
 
 export const getDidAddressSegments = (iss: string) => {
   return iss?.split(":");
-}
+};
 
 export const getDidChainId = (iss: string) => {
   const segments = iss && getDidAddressSegments(iss);
@@ -39,7 +38,7 @@ export const getDidChainId = (iss: string) => {
     return segments[3];
   }
   return undefined;
-}
+};
 
 export const getNamespacedDidChainId = (iss: string) => {
   const segments = iss && getDidAddressSegments(iss);
@@ -47,7 +46,7 @@ export const getNamespacedDidChainId = (iss: string) => {
     return segments[2] + ":" + segments[3];
   }
   return undefined;
-}
+};
 
 export const getDidAddress = (iss: string) => {
   const segments = iss && getDidAddressSegments(iss);
@@ -55,7 +54,7 @@ export const getDidAddress = (iss: string) => {
     return segments.pop();
   }
   return undefined;
-}
+};
 
 export const formatMessage = (cacao: CacaoPayload, iss: string) => {
   const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
@@ -84,9 +83,8 @@ export const formatMessage = (cacao: CacaoPayload, iss: string) => {
     issuedAt,
     resources,
   ]
-  .filter((val) => val !== undefined && val !== null) // remove unnecessary empty lines
-  .join("\n");
+    .filter((val) => val !== undefined && val !== null) // remove unnecessary empty lines
+    .join("\n");
 
   return message;
 };
-
