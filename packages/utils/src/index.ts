@@ -1,4 +1,5 @@
 export * from "./caip";
+export * from "./cacao";
 export * from "./crypto";
 export * from "./misc";
 export * from "./relay";
