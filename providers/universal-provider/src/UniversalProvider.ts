@@ -235,7 +235,7 @@ export class UniversalProvider implements IUniversalProvider {
         case "polkadot":
           //TODO:
           break;
-        case "cardano":
+        case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
             client: this.client,
             namespace: this.namespaces[namespace],

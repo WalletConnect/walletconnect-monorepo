@@ -13,7 +13,7 @@ import {
 import { getRpcUrl } from "../utils";
 
 class CardanoProvider implements IProvider {
-  public name = "cardano";
+  public name = "cip34";
   public client: Client;
   public httpProviders: RpcProvidersMap;
   public events: EventEmitter;
