@@ -12,6 +12,8 @@ import {
 import { Metadata, UniversalProvider } from "@walletconnect/universal-provider";
 import { Web3Modal } from "@web3modal/standalone";
 
+export const RPC_URL = "https://rpc.walletconnect.com/v1/";
+
 export const signerMethods = [
   "eth_requestAccounts",
   "eth_accounts",
@@ -309,9 +311,7 @@ export class EthereumProvider implements IEthereumProvider {
     const providedRpc = this.rpc.rpcMap?.[chainId];
     return (
       providedRpc ||
-      `https://rpc.walletconnect.com/v1/?chainId=eip155:${chainId}&projectId=${
-        projectId || this.rpc.projectId
-      }`
+      `${RPC_URL}?chainId=eip155:${chainId}&projectId=${projectId || this.rpc.projectId}`
     );
   }
 }
