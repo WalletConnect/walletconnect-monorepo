@@ -70,7 +70,9 @@ export interface RequestArguments {
 }
 
 export interface CleanupOpts {
-  pairings?: {
-    active?: boolean;
-  };
+  pairings?: CleanupPairingsOpts;
+}
+
+export interface CleanupPairingsOpts {
+  active?: boolean;
 }

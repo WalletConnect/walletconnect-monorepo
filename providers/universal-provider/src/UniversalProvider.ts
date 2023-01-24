@@ -17,6 +17,7 @@ import {
   UniversalProviderOpts,
   NamespaceConfig,
   CleanupOpts,
+  CleanupPairingsOpts,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE } from "./constants";
@@ -101,7 +102,7 @@ export class UniversalProvider implements IUniversalProvider {
     const { namespaces } = opts;
     this.setNamespaces(namespaces);
     this.createProviders();
-    await this.cleanupPendingPairings();
+    await this.cleanup();
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
   }
 
@@ -139,7 +140,7 @@ export class UniversalProvider implements IUniversalProvider {
     this.session = await approval();
     this.onSessionUpdate();
     this.onConnect();
-    await this.cleanupPendingPairings({ pairings: { active: true } });
+    await this.cleanup({ pairings: { active: true } });
     return this.session;
   }
 
@@ -153,9 +154,9 @@ export class UniversalProvider implements IUniversalProvider {
     }
   }
 
-  public async cleanupPendingPairings(opts: CleanupOpts = {}): Promise<void> {
+  public async cleanupPendingPairings(opts: CleanupPairingsOpts = {}): Promise<void> {
     this.logger.info("Cleaning up inactive pairings...");
-    const inactivePairings = this.client.pairing.getAll({ active: opts.pairings?.active || false });
+    const inactivePairings = this.client.pairing.getAll({ active: opts.active || false });
 
     if (!isValidArray(inactivePairings)) return;
     await Promise.all([
@@ -167,6 +168,20 @@ export class UniversalProvider implements IUniversalProvider {
     ]);
 
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
+  }
+
+  public cleanupProposals(): void {
+    this.logger.info("Cleaning up proposals...");
+    const proposals = this.client.proposal.getAll();
+
+    if (!isValidArray(proposals)) return;
+    proposals.forEach((proposal) => {
+      const id = proposal.id;
+      this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
+      this.client.core.expirer.del(id);
+    });
+
+    this.logger.info(`Proposals cleared: ${proposals.length}`);
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -328,6 +343,11 @@ export class UniversalProvider implements IUniversalProvider {
 
   private onConnect() {
     this.events.emit("connect", { session: this.session });
+  }
+
+  private async cleanup(opts: CleanupOpts = {}): Promise<void> {
+    await this.cleanupPendingPairings(opts.pairings);
+    this.cleanupProposals();
   }
 }
 export default UniversalProvider;
