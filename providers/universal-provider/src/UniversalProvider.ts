@@ -27,7 +27,7 @@ export class UniversalProvider implements IUniversalProvider {
   public namespaces!: NamespaceConfig;
   public events: EventEmitter = new EventEmitter();
   public rpcProviders: RpcProviderMap = {};
-  public session!: SessionTypes.Struct;
+  public session?: SessionTypes.Struct;
   public providerOpts: UniversalProviderOpts;
   public logger: Logger;
   public uri: string | undefined;
@@ -52,12 +52,16 @@ export class UniversalProvider implements IUniversalProvider {
   ): Promise<T> {
     const [namespace, chainId] = this.validateChain(chain);
 
+    if (!this.session) {
+      throw new Error("Please call connect() before request()");
+    }
+
     return await this.getProvider(namespace).request({
       request: {
         ...args,
       },
       chainId: `${namespace}:${chainId}`,
-      topic: this.session?.topic,
+      topic: this.session.topic,
     });
   }
 
@@ -75,22 +79,19 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
-    if (!this.session) {
-      throw new Error("Please call connect() before enable()");
-    }
     const accounts = await this.requestAccounts();
     return accounts as ProviderAccounts;
   }
 
   public async disconnect(): Promise<void> {
-    if (!this.client) {
-      throw new Error("Sign Client not initialized");
+    if (!this.session) {
+      throw new Error("Please call connect() before enable()");
     }
-
     await this.client.disconnect({
-      topic: this.session.topic,
+      topic: this.session?.topic,
       reason: getSdkError("USER_DISCONNECTED"),
     });
+    this.session = undefined;
   }
 
   public async connect(opts: ConnectParams): Promise<SessionTypes.Struct | undefined> {
@@ -285,9 +286,10 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private onSessionUpdate(): void {
-    Object.keys(this.rpcProviders).forEach((namespace: string) =>
-      this.getProvider(namespace).updateNamespace(this.session.namespaces[namespace]),
-    );
+    Object.keys(this.rpcProviders).forEach((namespace: string) => {
+      if (!this.session) return;
+      this.getProvider(namespace).updateNamespace(this.session?.namespaces[namespace]);
+    });
   }
 
   private setNamespaces(namespaces: NamespaceConfig): void {
