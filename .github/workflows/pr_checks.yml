@@ -68,6 +68,7 @@ jobs:
           - packages/web3wallet
           - packages/utils
           - providers/universal-provider
+          - providers/ethereum-provider
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
