@@ -63,6 +63,9 @@ describe("UniversalProvider", function () {
       }),
     ]);
     expect(walletClient.client?.session.values.length).to.eql(0);
+
+    await provider.client.core.relayer.transportClose();
+    await walletClient.client?.core.relayer.transportClose();
   });
   describe("eip155", () => {
     describe("multi chain", () => {

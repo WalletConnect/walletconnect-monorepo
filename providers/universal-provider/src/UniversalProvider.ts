@@ -248,6 +248,16 @@ export class UniversalProvider implements IUniversalProvider {
     });
 
     this.client.on("session_event", (args) => {
+      const { params } = args;
+      const { event } = params;
+      if (event.name === "accountsChanged") {
+        this.events.emit("accountsChanged", event.data);
+      } else if (event.name === "chainChanged") {
+        this.onChainChanged(event.data, params.chainId);
+      } else {
+        this.events.emit(event.name, event.data);
+      }
+
       this.events.emit("session_event", args);
     });
 
@@ -303,6 +313,12 @@ export class UniversalProvider implements IUniversalProvider {
   private async requestAccounts(): Promise<string[]> {
     const [namespace] = this.validateChain();
     return await this.getProvider(namespace).requestAccounts();
+  }
+
+  private onChainChanged(newChain: string, caip2Chain: string): void {
+    const [namespace, chainId] = this.validateChain(caip2Chain);
+    this.getProvider(namespace).setDefaultChain(chainId);
+    this.events.emit("chainChanged", newChain);
   }
 }
 export default UniversalProvider;

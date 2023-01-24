@@ -148,8 +148,10 @@ export class Relayer extends IRelayer {
 
   public async transportClose() {
     this.transportExplicitlyClosed = true;
-    if (this.connected) await this.provider.disconnect();
-    this.events.emit(RELAYER_EVENTS.transport_closed);
+    if (this.connected) {
+      await this.provider.disconnect();
+      this.events.emit(RELAYER_EVENTS.transport_closed);
+    }
   }
 
   public async transportOpen(relayUrl?: string) {
