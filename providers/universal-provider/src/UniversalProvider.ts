@@ -16,6 +16,7 @@ import {
   RequestArguments,
   UniversalProviderOpts,
   NamespaceConfig,
+  CleanupOpts,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE } from "./constants";
@@ -136,6 +137,8 @@ export class UniversalProvider implements IUniversalProvider {
 
     this.session = await approval();
     this.onSessionUpdate();
+    this.onConnect();
+    await this.cleanupPendingPairings({ pairings: { active: true } });
     return this.session;
   }
 
@@ -149,9 +152,9 @@ export class UniversalProvider implements IUniversalProvider {
     }
   }
 
-  public async cleanupPendingPairings(): Promise<void> {
+  public async cleanupPendingPairings(opts: CleanupOpts = {}): Promise<void> {
     this.logger.info("Cleaning up inactive pairings...");
-    const inactivePairings = this.client.pairing.getAll({ active: false });
+    const inactivePairings = this.client.pairing.getAll({ active: opts.pairings?.active || false });
 
     if (!isValidArray(inactivePairings)) return;
     await Promise.all([
@@ -319,6 +322,10 @@ export class UniversalProvider implements IUniversalProvider {
     const [namespace, chainId] = this.validateChain(caip2Chain);
     this.getProvider(namespace).setDefaultChain(chainId);
     this.events.emit("chainChanged", newChain);
+  }
+
+  private onConnect() {
+    this.events.emit("connect", { session: this.session });
   }
 }
 export default UniversalProvider;
