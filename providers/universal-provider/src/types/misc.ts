@@ -68,11 +68,3 @@ export interface RequestArguments {
   method: string;
   params?: unknown[] | Record<string, unknown> | object | undefined;
 }
-
-export interface CleanupOpts {
-  pairings?: CleanupPairingsOpts;
-}
-
-export interface CleanupPairingsOpts {
-  active?: boolean;
-}
