@@ -165,20 +165,6 @@ export class UniversalProvider implements IUniversalProvider {
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
 
-  public cleanupProposals(): void {
-    this.logger.info("Cleaning up proposals...");
-    const proposals = this.client.proposal.getAll();
-
-    if (!isValidArray(proposals)) return;
-    proposals.forEach((proposal) => {
-      const id = proposal.id;
-      this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
-      this.client.core.expirer.del(id);
-    });
-
-    this.logger.info(`Proposals cleared: ${proposals.length}`);
-  }
-
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
