@@ -393,6 +393,7 @@ describe("UniversalProvider", function () {
     });
     describe("pairings", () => {
       it("should clean up inactive pairings", async () => {
+        const SUBS_ON_START = provider.client.core.relayer.subscriber.subscriptions.size;
         const PAIRINGS_TO_CREATE = 5;
         for (let i = 0; i < PAIRINGS_TO_CREATE; i++) {
           const { uri } = await provider.client.connect({
@@ -403,8 +404,12 @@ describe("UniversalProvider", function () {
           expect(uri).to.be.a("string");
           expect(provider.client.pairing.getAll({ active: false }).length).to.eql(i + 1);
         }
+        const EXPECTED_SUBS = PAIRINGS_TO_CREATE + SUBS_ON_START;
+        expect(provider.client.core.relayer.subscriber.subscriptions.size).to.eql(EXPECTED_SUBS);
         await provider.cleanupPendingPairings();
-        expect(provider.client.pairing.getAll({ active: false }).length).to.eql(0);
+        expect(provider.client.core.relayer.subscriber.subscriptions.size).to.eql(
+          EXPECTED_SUBS - PAIRINGS_TO_CREATE,
+        );
       });
     });
   });
