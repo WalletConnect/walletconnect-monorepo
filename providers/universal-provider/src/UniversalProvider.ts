@@ -7,6 +7,7 @@ import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
+import CardanoProvider from "./providers/cardano";
 import { getChainFromNamespaces } from "./utils";
 import {
   IUniversalProvider,
@@ -238,6 +239,13 @@ export class UniversalProvider implements IUniversalProvider {
           break;
         case "polkadot":
           //TODO:
+          break;
+        case "cip34":
+          this.rpcProviders[namespace] = new CardanoProvider({
+            client: this.client,
+            namespace: this.namespaces[namespace],
+            events: this.events,
+          });
           break;
       }
     });
