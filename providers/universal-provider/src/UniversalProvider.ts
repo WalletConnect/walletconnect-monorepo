@@ -16,6 +16,7 @@ import {
   RequestArguments,
   UniversalProviderOpts,
   NamespaceConfig,
+  PairingsCleanupOpts,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE } from "./constants";
@@ -91,7 +92,7 @@ export class UniversalProvider implements IUniversalProvider {
       reason: getSdkError("USER_DISCONNECTED"),
     });
     this.session = undefined;
-    await this.cleanupPendingPairings();
+    await this.cleanupPendingPairings({ deletePairings: true });
   }
 
   public async connect(opts: ConnectParams): Promise<SessionTypes.Struct | undefined> {
@@ -152,16 +153,19 @@ export class UniversalProvider implements IUniversalProvider {
     }
   }
 
-  public async cleanupPendingPairings(): Promise<void> {
+  public async cleanupPendingPairings(opts: PairingsCleanupOpts = {}): Promise<void> {
     this.logger.info("Cleaning up inactive pairings...");
     const inactivePairings = this.client.pairing.getAll();
 
     if (!isValidArray(inactivePairings)) return;
-    await Promise.all(
-      inactivePairings.map((pairing) => {
-        return this.client.core.relayer.subscriber.unsubscribe(pairing.topic);
-      }),
-    );
+
+    for (const pairing of inactivePairings) {
+      if (opts.deletePairings) {
+        this.client.core.expirer.set(pairing.topic, 0);
+      } else {
+        await this.client.core.relayer.subscriber.unsubscribe(pairing.topic);
+      }
+    }
 
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
@@ -271,7 +275,7 @@ export class UniversalProvider implements IUniversalProvider {
     });
 
     this.client.on("session_delete", async (payload) => {
-      await this.cleanupPendingPairings();
+      await this.cleanupPendingPairings({ deletePairings: true });
       this.events.emit("session_delete", payload);
     });
   }
