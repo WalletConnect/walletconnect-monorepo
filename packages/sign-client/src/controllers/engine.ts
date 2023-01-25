@@ -772,6 +772,7 @@ export class Engine extends IEngine {
         }
       } else if (id) {
         await this.deleteProposal(id, true);
+        this.client.events.emit("proposal_expire", { id });
       }
     });
   }
