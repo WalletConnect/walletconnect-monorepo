@@ -91,6 +91,7 @@ export class UniversalProvider implements IUniversalProvider {
       reason: getSdkError("USER_DISCONNECTED"),
     });
     this.session = undefined;
+    await this.cleanupPendingPairings();
   }
 
   public async connect(opts: ConnectParams): Promise<SessionTypes.Struct | undefined> {
@@ -153,7 +154,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   public async cleanupPendingPairings(): Promise<void> {
     this.logger.info("Cleaning up inactive pairings...");
-    const inactivePairings = this.client.pairing.getAll({ active: false });
+    const inactivePairings = this.client.pairing.getAll();
 
     if (!isValidArray(inactivePairings)) return;
     await Promise.all(
@@ -269,8 +270,9 @@ export class UniversalProvider implements IUniversalProvider {
       this.events.emit("session_update", { topic, params });
     });
 
-    this.client.on("session_delete", () => {
-      this.events.emit("session_delete");
+    this.client.on("session_delete", async (payload) => {
+      await this.cleanupPendingPairings();
+      this.events.emit("session_delete", payload);
     });
   }
 
