@@ -16,8 +16,6 @@ import {
   RequestArguments,
   UniversalProviderOpts,
   NamespaceConfig,
-  CleanupOpts,
-  CleanupPairingsOpts,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE } from "./constants";
@@ -102,7 +100,7 @@ export class UniversalProvider implements IUniversalProvider {
     const { namespaces } = opts;
     this.setNamespaces(namespaces);
     this.createProviders();
-    await this.cleanup();
+    await this.cleanupPendingPairings();
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
   }
 
@@ -140,7 +138,6 @@ export class UniversalProvider implements IUniversalProvider {
     this.session = await approval();
     this.onSessionUpdate();
     this.onConnect();
-    await this.cleanup({ pairings: { active: true } });
     return this.session;
   }
 
@@ -154,18 +151,16 @@ export class UniversalProvider implements IUniversalProvider {
     }
   }
 
-  public async cleanupPendingPairings(opts: CleanupPairingsOpts = {}): Promise<void> {
+  public async cleanupPendingPairings(): Promise<void> {
     this.logger.info("Cleaning up inactive pairings...");
-    const inactivePairings = this.client.pairing.getAll({ active: opts.active || false });
+    const inactivePairings = this.client.pairing.getAll({ active: false });
 
     if (!isValidArray(inactivePairings)) return;
-    await Promise.all([
-      inactivePairings.map((pairing) =>
-        this.client.pairing.delete(pairing.topic, getSdkError("USER_DISCONNECTED")),
-      ),
-      inactivePairings.map((pairing) => this.client.core.relayer.unsubscribe(pairing.topic)),
-      inactivePairings.map((pairing) => this.client.core.expirer.del(pairing.topic)),
-    ]);
+    await Promise.all(
+      inactivePairings.map((pairing) => {
+        return this.client.core.relayer.subscriber.unsubscribe(pairing.topic);
+      }),
+    );
 
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
@@ -343,11 +338,6 @@ export class UniversalProvider implements IUniversalProvider {
 
   private onConnect() {
     this.events.emit("connect", { session: this.session });
-  }
-
-  private async cleanup(opts: CleanupOpts = {}): Promise<void> {
-    await this.cleanupPendingPairings(opts.pairings);
-    this.cleanupProposals();
   }
 }
 export default UniversalProvider;
