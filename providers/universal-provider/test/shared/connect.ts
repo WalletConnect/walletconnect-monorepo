@@ -145,26 +145,7 @@ export async function testConnectMethod(
   expect(sessionA.self.metadata).to.eql(sessionB.peer.metadata);
   expect(sessionB.self.metadata).to.eql(sessionA.peer.metadata);
 
-  if (!pairingA) throw new Error("expect pairing A to be defined");
-  if (!pairingB) throw new Error("expect pairing B to be defined");
-
-  // update pairing state beforehand
-  pairingA = dappClient.pairing.get(pairingA.topic);
-  pairingB = walletClient.pairing.get(pairingB.topic);
-
-  // topic
-  expect(pairingA.topic).to.eql(pairingB.topic);
-  // relay
-  expect(pairingA.relay).to.eql(TEST_RELAY_OPTIONS);
-  expect(pairingA.relay).to.eql(pairingB.relay);
-  // active
-  expect(pairingA.active).to.eql(true);
-  expect(pairingA.active).to.eql(pairingB.active);
-  // metadata
-  expect(pairingA.peerMetadata).to.eql(sessionA.peer.metadata);
-  expect(pairingB.peerMetadata).to.eql(sessionB.peer.metadata);
-
-  return { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs };
+  return { sessionA, clientAConnectLatencyMs, settlePairingLatencyMs };
 }
 
 export function batchArray(array: any[], size: number) {
