@@ -317,7 +317,7 @@ export class UniversalProvider implements IUniversalProvider {
       }
     }
 
-    return [Object.keys(this.namespaces)[0], chainId];
+    return [namespace ?? Object.keys(this.namespaces)[0], chainId];
   }
 
   private async requestAccounts(): Promise<string[]> {
@@ -326,7 +326,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private onChainChanged(newChain: string, caip2Chain: string): void {
-    const [namespace, chainId] = this.validateChain(caip2Chain);
+    const [namespace, chainId] = this.getNamespaceFromChain(caip2Chain);
     this.getProvider(namespace).setDefaultChain(chainId);
     this.events.emit("chainChanged", newChain);
   }
