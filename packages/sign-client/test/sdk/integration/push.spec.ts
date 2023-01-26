@@ -70,6 +70,6 @@ describe("Push", () => {
       }),
     ]);
 
-    deleteClients(clients);
+    await deleteClients(clients);
   });
 });
