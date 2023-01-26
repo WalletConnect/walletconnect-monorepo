@@ -407,9 +407,7 @@ describe("UniversalProvider", function () {
         const EXPECTED_SUBS = PAIRINGS_TO_CREATE + SUBS_ON_START;
         expect(provider.client.core.relayer.subscriber.subscriptions.size).to.eql(EXPECTED_SUBS);
         await provider.cleanupPendingPairings();
-        expect(provider.client.core.relayer.subscriber.subscriptions.size).to.eql(
-          EXPECTED_SUBS - PAIRINGS_TO_CREATE,
-        );
+        expect(provider.client.core.relayer.subscriber.subscriptions.size).to.eql(1);
       });
     });
   });
