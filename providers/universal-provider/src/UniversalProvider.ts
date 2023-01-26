@@ -80,6 +80,9 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
+    if (!this.session) {
+      await this.connect({ namespaces: this.namespaces });
+    }
     const accounts = await this.requestAccounts();
     return accounts as ProviderAccounts;
   }
@@ -92,8 +95,7 @@ export class UniversalProvider implements IUniversalProvider {
       topic: this.session?.topic,
       reason: getSdkError("USER_DISCONNECTED"),
     });
-    this.session = undefined;
-    await this.cleanupPendingPairings({ deletePairings: true });
+    await this.cleanup();
   }
 
   public async connect(opts: ConnectParams): Promise<SessionTypes.Struct | undefined> {
@@ -283,7 +285,7 @@ export class UniversalProvider implements IUniversalProvider {
     });
 
     this.client.on("session_delete", async (payload) => {
-      await this.cleanupPendingPairings({ deletePairings: true });
+      await this.cleanup();
       this.events.emit("session_delete", payload);
     });
   }
@@ -297,8 +299,9 @@ export class UniversalProvider implements IUniversalProvider {
 
   private onSessionUpdate(): void {
     Object.keys(this.rpcProviders).forEach((namespace: string) => {
-      if (!this.session) return;
-      this.getProvider(namespace).updateNamespace(this.session?.namespaces[namespace]);
+      this.getProvider(namespace).updateNamespace(
+        this.session?.namespaces[namespace] as SessionTypes.BaseNamespace,
+      );
     });
   }
 
@@ -338,6 +341,12 @@ export class UniversalProvider implements IUniversalProvider {
 
   private onConnect() {
     this.events.emit("connect", { session: this.session });
+  }
+
+  private async cleanup() {
+    this.session = undefined;
+    this.rpcProviders = {};
+    await this.cleanupPendingPairings({ deletePairings: true });
   }
 }
 export default UniversalProvider;
