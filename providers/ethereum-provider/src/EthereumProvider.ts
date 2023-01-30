@@ -1,9 +1,5 @@
 import { EventEmitter } from "events";
-import {
-  getChainsFromNamespaces,
-  getAccountsFromNamespaces,
-  isValidArray,
-} from "@walletconnect/utils";
+import { getAccountsFromNamespaces, isValidArray } from "@walletconnect/utils";
 import {
   IEthereumProvider as IProvider,
   ProviderAccounts,
@@ -11,6 +7,7 @@ import {
 } from "eip1193-provider";
 import { Metadata, UniversalProvider } from "@walletconnect/universal-provider";
 import { Web3Modal } from "@web3modal/standalone";
+import { SignClientTypes } from "@walletconnect/types";
 
 export const RPC_URL = "https://rpc.walletconnect.com/v1/";
 
@@ -83,9 +80,9 @@ export class EthereumProvider implements IEthereumProvider {
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
+  public modal?: Web3Modal;
 
   private rpc: EthereumRpcConfig;
-  private modal?: Web3Modal;
 
   constructor() {
     // assigned during initialize
@@ -146,8 +143,7 @@ export class EthereumProvider implements IEthereumProvider {
         pairingTopic: opts?.pairingTopic,
       });
       if (!session) return;
-      const chains = getChainsFromNamespaces(session.namespaces, [this.namespace]);
-      this.setChainIds(chains);
+      this.setChainIds(this.rpc.chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
       this.setAccounts(accounts);
       this.events.emit("connect", { chainId: this.chainId, accounts: this.accounts });
@@ -159,7 +155,10 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public async disconnect(): Promise<void> {
-    await this.signer.disconnect();
+    if (this.session) {
+      await this.signer.disconnect();
+    }
+    this.reset();
   }
 
   public on(event: any, listener: any): void {
@@ -188,7 +187,7 @@ export class EthereumProvider implements IEthereumProvider {
   // ---------- Private ----------------------------------------------- //
 
   private registerEventListeners() {
-    this.signer.on("session_event", (payload: any) => {
+    this.signer.on("session_event", (payload: SignClientTypes.EventArguments["session_event"]) => {
       const { params } = payload;
       if (!this.rpc.chains.includes(params.chainId)) return;
       const { event } = params;
@@ -196,16 +195,32 @@ export class EthereumProvider implements IEthereumProvider {
         this.accounts = event.data;
         this.events.emit("accountsChanged", this.accounts);
       } else if (event.name === "chainChanged") {
-        this.setChainId(event.data);
+        this.setChainId(this.formatChainId(event.data));
       } else {
         this.events.emit(event.name, event.data);
       }
       this.events.emit("session_event", payload);
     });
 
-    this.signer.on("disconnect", () => {
-      this.events.emit("disconnect");
+    this.signer.on("chainChanged", (chainId: number) => {
+      this.chainId = chainId;
+      this.events.emit("chainChanged", chainId);
     });
+
+    this.signer.on(
+      "session_update",
+      (payload: SignClientTypes.EventArguments["session_update"]) => {
+        this.events.emit("session_update", payload);
+      },
+    );
+
+    this.signer.on(
+      "session_delete",
+      (payload: SignClientTypes.EventArguments["session_delete"]) => {
+        this.reset();
+        this.events.emit("session_delete", payload);
+      },
+    );
 
     this.signer.on("display_uri", (uri: string) => {
       if (this.rpc.showQrModal) {
@@ -234,7 +249,7 @@ export class EthereumProvider implements IEthereumProvider {
 
   private setChainIds(chains: string[]) {
     const compatible = chains.filter((x) => this.isCompatibleChainId(x));
-    const chainIds = compatible.map((c) => this.parseChainId(c)).filter((c) => c !== this.chainId);
+    const chainIds = compatible.map((c) => this.parseChainId(c));
     if (chainIds.length) {
       this.chainId = chainIds[0];
       this.events.emit("chainChanged", this.chainId);
@@ -246,7 +261,6 @@ export class EthereumProvider implements IEthereumProvider {
       const chainId = this.parseChainId(chain);
       this.chainId = chainId;
       this.setHttpProvider(chainId);
-      this.events.emit("chainChanged", this.chainId);
     }
   }
 
@@ -288,6 +302,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.chainId = getEthereumChainId(this.rpc.chains);
     this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId });
     this.registerEventListeners();
+    this.loadPersistedSession();
     if (this.rpc.showQrModal)
       this.modal = new Web3Modal({
         projectId: this.rpc.projectId,
@@ -313,6 +328,17 @@ export class EthereumProvider implements IEthereumProvider {
       providedRpc ||
       `${RPC_URL}?chainId=eip155:${chainId}&projectId=${projectId || this.rpc.projectId}`
     );
+  }
+
+  private loadPersistedSession() {
+    if (!this.session) return;
+    this.setChainIds(this.session.namespaces[this.namespace].accounts);
+    this.setAccounts(this.session.namespaces[this.namespace].accounts);
+  }
+
+  private reset() {
+    this.chainId = 1;
+    this.accounts = [];
   }
 }
 
