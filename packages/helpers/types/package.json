@@ -1,6 +1,6 @@
 {
   "name": "@dcentwallet/walletconnect-types",
-  "version": "1.8.1-beta",
+  "version": "1.8.2",
   "description": "Typescript Types for DcentWalletConnect",
   "scripts": {},
   "keywords": [

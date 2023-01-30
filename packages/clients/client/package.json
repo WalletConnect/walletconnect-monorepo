@@ -1,6 +1,6 @@
 {
   "name": "@dcentwallet/walletconnect-client",
-  "version": "v1.8.2-beta",
+  "version": "v1.8.3",
   "description": "Client for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -65,7 +65,7 @@
   "dependencies": {
     "@walletconnect/core": "^1.8.0",
     "@walletconnect/iso-crypto": "^1.8.0",
-    "@dcentwallet/walletconnect-types": "^1.8.1-beta",
+    "@dcentwallet/walletconnect-types": "^1.8.2",
     "@walletconnect/utils": "^1.8.0"
   }
 }
