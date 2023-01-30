@@ -252,6 +252,42 @@ describe("Sign Integration", () => {
     ]);
   });
 
+  it("should receive session_disconnect", async () => {
+    // first pair and approve session
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("session_proposal", async (sessionProposal) => {
+          const { id, params } = sessionProposal;
+          session = await wallet.approveSession({
+            id,
+            namespaces: {
+              eip155: {
+                ...TEST_NAMESPACES.eip155,
+                accounts: [`${TEST_ETHEREUM_CHAIN}:${cryptoWallet.address}`],
+              },
+            },
+          });
+          expect(params.requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
+          resolve(session);
+        });
+      }),
+      sessionApproval(),
+      core.pairing.pair({ uri: uriString }),
+    ]);
+
+    const reason = getSdkError("USER_DISCONNECTED");
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_delete", (sessionDelete) => {
+          const { topic } = sessionDelete;
+          expect(topic).to.be.eq(session.topic);
+          resolve();
+        });
+      }),
+      dapp.disconnect({ topic: session.topic, reason }),
+    ]);
+  });
+
   it("should emit session event", async () => {
     // first pair and approve session
     await Promise.all([
