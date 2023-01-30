@@ -7,6 +7,7 @@ import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
+import CardanoProvider from "./providers/cardano";
 import {
   IUniversalProvider,
   IProvider,
@@ -15,6 +16,7 @@ import {
   RequestArguments,
   UniversalProviderOpts,
   NamespaceConfig,
+  PairingsCleanupOpts,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE } from "./constants";
@@ -87,6 +89,9 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
+    if (!this.session) {
+      await this.connect({ namespaces: this.namespaces });
+    }
     const accounts = await this.requestAccounts();
     return accounts as ProviderAccounts;
   }
@@ -99,7 +104,7 @@ export class UniversalProvider implements IUniversalProvider {
       topic: this.session?.topic,
       reason: getSdkError("USER_DISCONNECTED"),
     });
-    this.session = undefined;
+    await this.cleanup();
   }
 
   public async connect(opts: ConnectParams): Promise<SessionTypes.Struct | undefined> {
@@ -160,16 +165,19 @@ export class UniversalProvider implements IUniversalProvider {
     }
   }
 
-  public async cleanupPendingPairings(): Promise<void> {
+  public async cleanupPendingPairings(opts: PairingsCleanupOpts = {}): Promise<void> {
     this.logger.info("Cleaning up inactive pairings...");
-    const inactivePairings = this.client.pairing.getAll({ active: false });
+    const inactivePairings = this.client.pairing.getAll();
 
     if (!isValidArray(inactivePairings)) return;
-    await Promise.all(
-      inactivePairings.map((pairing) => {
-        return this.client.core.relayer.subscriber.unsubscribe(pairing.topic);
-      }),
-    );
+
+    for (const pairing of inactivePairings) {
+      if (opts.deletePairings) {
+        this.client.core.expirer.set(pairing.topic, 0);
+      } else {
+        await this.client.core.relayer.subscriber.unsubscribe(pairing.topic);
+      }
+    }
 
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
@@ -243,6 +251,13 @@ export class UniversalProvider implements IUniversalProvider {
         case "polkadot":
           //TODO:
           break;
+        case "cip34":
+          this.rpcProviders[namespace] = new CardanoProvider({
+            client: this.client,
+            namespace: this.namespaces[namespace],
+            events: this.events,
+          });
+          break;
       }
     });
   }
@@ -278,8 +293,9 @@ export class UniversalProvider implements IUniversalProvider {
       this.events.emit("session_update", { topic, params });
     });
 
-    this.client.on("session_delete", () => {
-      this.events.emit("session_delete");
+    this.client.on("session_delete", async (payload) => {
+      await this.cleanup();
+      this.events.emit("session_delete", payload);
     });
   }
 
@@ -292,8 +308,9 @@ export class UniversalProvider implements IUniversalProvider {
 
   private onSessionUpdate(): void {
     Object.keys(this.rpcProviders).forEach((namespace: string) => {
-      if (!this.session) return;
-      this.getProvider(namespace).updateNamespace(this.session?.namespaces[namespace]);
+      this.getProvider(namespace).updateNamespace(
+        this.session?.namespaces[namespace] as SessionTypes.BaseNamespace,
+      );
     });
   }
 
@@ -333,6 +350,12 @@ export class UniversalProvider implements IUniversalProvider {
 
   private onConnect() {
     this.events.emit("connect", { session: this.session });
+  }
+
+  private async cleanup() {
+    this.session = undefined;
+    this.rpcProviders = {};
+    await this.cleanupPendingPairings({ deletePairings: true });
   }
 }
 export default UniversalProvider;

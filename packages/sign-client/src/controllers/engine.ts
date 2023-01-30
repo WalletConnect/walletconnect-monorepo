@@ -709,8 +709,10 @@ export class Engine extends IEngine {
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
       // RPC request needs to happen before deletion as it utalises session encryption
+      this.client.core.relayer.once(RELAYER_EVENTS.publish, async () => {
+        await this.deleteSession(topic);
+      });
       await this.sendResult<"wc_sessionDelete">(id, topic, true);
-      await this.deleteSession(topic);
       this.client.events.emit("session_delete", { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
@@ -772,6 +774,7 @@ export class Engine extends IEngine {
         }
       } else if (id) {
         await this.deleteProposal(id, true);
+        this.client.events.emit("proposal_expire", { id });
       }
     });
   }

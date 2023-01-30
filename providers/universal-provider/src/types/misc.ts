@@ -68,3 +68,6 @@ export interface RequestArguments {
   method: string;
   params?: unknown[] | Record<string, unknown> | object | undefined;
 }
+export interface PairingsCleanupOpts {
+  deletePairings?: boolean;
+}
