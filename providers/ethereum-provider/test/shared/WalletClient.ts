@@ -50,7 +50,6 @@ export class WalletClient {
 
   public async changeChain(chainId: number, rpcUrl: string) {
     await this.setChainId(chainId, rpcUrl);
-    await this.updateChainId();
   }
 
   public async disconnect() {
@@ -82,7 +81,7 @@ export class WalletClient {
       topic: this.topic || "",
       event: {
         name: "chainChanged",
-        data: chain,
+        data: chainId,
       },
       chainId: chain,
     };

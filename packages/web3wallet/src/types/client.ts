@@ -5,7 +5,7 @@ import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
 
 export declare namespace Web3WalletTypes {
-  type Event = "session_proposal" | "session_request" | "auth_request";
+  type Event = "session_proposal" | "session_request" | "session_delete" | "auth_request";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -22,9 +22,12 @@ export declare namespace Web3WalletTypes {
 
   type AuthRequest = BaseEventArgs<AuthClientTypes.AuthRequestEventArgs>;
 
+  type SessionDelete = Omit<BaseEventArgs, "params">;
+
   interface EventArguments {
     session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
     session_request: SessionRequest;
+    session_delete: Omit<BaseEventArgs, "params">;
     auth_request: AuthRequest;
   }
 

@@ -106,6 +106,7 @@ await web3wallet.emitSessionEvent({
 ```javascript
 web3wallet.on("session_proposal", handler);
 web3wallet.on("session_request", handler);
+web3wallet.on("session_delete", handler);
 ```
 
 10. SIWE with a dapp

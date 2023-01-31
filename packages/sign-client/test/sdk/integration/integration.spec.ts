@@ -87,6 +87,7 @@ describe("Sign Client Integration", () => {
       const updatedExpiry = clients.A.session.get(topic).expiry;
       expect(updatedExpiry).to.be.greaterThan(prevExpiry);
       vi.useRealTimers();
+      await deleteClients(clients);
     });
   });
   describe("disconnect", () => {

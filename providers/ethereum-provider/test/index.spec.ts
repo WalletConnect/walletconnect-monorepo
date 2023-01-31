@@ -116,7 +116,7 @@ describe("EthereumProvider", function () {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("accountsChanged", (accounts: string) => {
+        provider.on("accountsChanged", (accounts: string[]) => {
           try {
             expect(accounts[0]).to.eql(ACCOUNTS.c.address);
             resolve();
