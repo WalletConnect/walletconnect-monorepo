@@ -10,7 +10,6 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getRpcUrl } from "../utils";
 
 class CardanoProvider implements IProvider {
   public name = "cip34";
@@ -54,7 +53,8 @@ class CardanoProvider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(chain);
+      const rpcURL = this.getCardanoRPCUrl(chain);
+      http[chain] = this.createHttpProvider(chain, rpcURL);
     });
     return http;
   }
@@ -84,11 +84,17 @@ class CardanoProvider implements IProvider {
     return http;
   }
 
+  private getCardanoRPCUrl(chainId: string): string | undefined {
+    const rpcMap = this.namespace.rpcMap;
+    if (!rpcMap) return undefined;
+    return rpcMap[chainId];
+  }
+
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
     this.chainId = chainId;
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
-      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+      const rpc = rpcUrl || this.getCardanoRPCUrl(chainId);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
@@ -109,7 +115,7 @@ class CardanoProvider implements IProvider {
     chainId: string,
     rpcUrl?: string | undefined,
   ): JsonRpcProvider | undefined {
-    const rpc = rpcUrl || getRpcUrl(chainId, this.namespace);
+    const rpc = rpcUrl || this.getCardanoRPCUrl(chainId);
     if (typeof rpc === "undefined") return undefined;
     const http = new JsonRpcProvider(new HttpConnection(rpc));
     return http;
