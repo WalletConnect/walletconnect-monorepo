@@ -345,7 +345,6 @@ export class UniversalProvider implements IUniversalProvider {
 
   private async cleanup() {
     this.session = undefined;
-    this.rpcProviders = {};
     await this.cleanupPendingPairings({ deletePairings: true });
   }
 }
