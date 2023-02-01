@@ -1,7 +1,7 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, calcExpiry } from "@walletconnect/utils";
-import { delay, FIVE_SECONDS } from "@walletconnect/time";
+import { FIVE_SECONDS } from "@walletconnect/time";
 
 import { VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
 
