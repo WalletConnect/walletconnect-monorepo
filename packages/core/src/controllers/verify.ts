@@ -43,7 +43,7 @@ export class Verify extends IVerify {
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
 
-    this.logger.info(`resoving attestation: ${params.attestationId}`);
+    this.logger.info(`resolving attestation: ${params.attestationId}`);
     // set artificial timeout to prevent hanging
     const timeout = this.startAbortTimer(FIVE_SECONDS);
     const result = await fetch(`${this.verifyUrl}/attestation/${params.attestationId}`, {
