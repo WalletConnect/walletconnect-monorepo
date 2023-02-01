@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
@@ -21,6 +20,8 @@ import {
   JsonRpcTypes,
   ExpirerTypes,
   PendingRequestTypes,
+  Verify,
+  CoreTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -52,12 +53,15 @@ import {
   getRequiredNamespacesFromNamespaces,
   isValidObject,
   isValidRequestExpiry,
+  hashMessage,
+  isBrowser,
 } from "@walletconnect/utils";
 import {
   SESSION_EXPIRY,
   ENGINE_CONTEXT,
   ENGINE_RPC_OPTS,
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
+  METHODS_TO_VERIFY,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -392,6 +396,10 @@ export class Engine extends IEngine {
 
   private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params, expiry) => {
     const payload = formatJsonRpcRequest(method, params);
+    if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
+      const hash = hashMessage(JSON.stringify(payload));
+      await this.client.core.verify.register({ attestationId: hash });
+    }
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
@@ -456,6 +464,7 @@ export class Engine extends IEngine {
         }
 
         const payload = await this.client.core.crypto.decode(topic, message);
+
         if (isJsonRpcRequest(payload)) {
           this.client.core.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
@@ -528,7 +537,9 @@ export class Engine extends IEngine {
       const expiry = calcExpiry(FIVE_MINUTES);
       const proposal = { id, pairingTopic: topic, expiry, ...params };
       await this.setProposal(id, proposal);
-      this.client.events.emit("session_proposal", { id, params: proposal });
+      const hash = hashMessage(JSON.stringify(payload));
+      const context = await this.getVerifyContext(hash, proposal.proposer.metadata);
+      this.client.events.emit("session_proposal", { id, params: proposal, context });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -725,7 +736,10 @@ export class Engine extends IEngine {
     try {
       this.isValidRequest({ topic, ...params });
       await this.setPendingSessionRequest({ id, topic, params });
-      this.client.events.emit("session_request", { id, topic, params });
+      const hash = hashMessage(JSON.stringify(payload));
+      const session = this.client.session.get(topic);
+      const context = await this.getVerifyContext(hash, session.peer.metadata);
+      this.client.events.emit("session_request", { id, topic, params, context });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -1080,5 +1094,27 @@ export class Engine extends IEngine {
     }
     const { topic } = params;
     await this.isValidSessionOrPairingTopic(topic);
+  };
+
+  private getVerifyContext = async (hash: string, metadata: CoreTypes.Metadata) => {
+    const context: Verify.Context = {
+      verified: {
+        verifyUrl: metadata.verifyUrl || "",
+        validation: "UNKNOWN",
+        origin: metadata.url || "",
+      },
+    };
+
+    if (!isBrowser()) return context;
+
+    const origin = await this.client.core.verify.resolve({
+      attestationId: hash,
+      verifyUrl: metadata.verifyUrl,
+    });
+
+    context.verified.origin = origin;
+    context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+    this.client.logger.info(`Verify context: ${JSON.stringify(context)}`);
+    return context;
   };
 }

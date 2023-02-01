@@ -5,6 +5,7 @@ import { ISession, SessionTypes } from "./session";
 import { CoreTypes, ICore } from "../core/core";
 import { Logger } from "@walletconnect/logger";
 import { IPendingRequest } from "./pendingRequest";
+import { Verify } from "../core/verify";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -23,15 +24,18 @@ export declare namespace SignClientTypes {
     topic: string;
     params: T;
   }
-
   interface EventArguments {
-    session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
+    session_proposal: {
+      context: Verify.Context;
+    } & Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
     session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
     session_extend: Omit<BaseEventArgs, "params">;
     session_ping: Omit<BaseEventArgs, "params">;
     session_delete: Omit<BaseEventArgs, "params">;
     session_expire: { topic: string };
-    session_request: BaseEventArgs<{
+    session_request: {
+      context: Verify.Context;
+    } & BaseEventArgs<{
       request: { method: string; params: any };
       chainId: string;
     }>;
