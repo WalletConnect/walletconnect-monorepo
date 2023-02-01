@@ -1105,8 +1105,6 @@ export class Engine extends IEngine {
       },
     };
 
-    if (!isBrowser()) return context;
-
     const origin = await this.client.core.verify.resolve({
       attestationId: hash,
       verifyUrl: metadata.verifyUrl,
