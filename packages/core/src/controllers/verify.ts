@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
-import { isBrowser, isNode } from "@walletconnect/utils";
+import { isBrowser, isNode, calcExpiry } from "@walletconnect/utils";
 import { delay, FIVE_SECONDS } from "@walletconnect/time";
 
 import { VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
@@ -45,7 +45,7 @@ export class Verify extends IVerify {
 
     this.logger.info(`resoving attestation: ${params.attestationId}`);
     // set artificial timeout to prevent hanging
-    const timeout = setTimeout(() => this.abortController.abort(), FIVE_SECONDS);
+    const timeout = this.startAbortTimer(FIVE_SECONDS);
     const result = await fetch(`${this.verifyUrl}/attestation/${params.attestationId}`, {
       signal: this.abortController.signal,
     });
@@ -61,6 +61,7 @@ export class Verify extends IVerify {
     try {
       // if an invalid verifyUrl is provided, the iframe will never load
       // so we need to timeout and reject
+      const timeout = this.startAbortTimer(FIVE_SECONDS);
       await Promise.race([
         new Promise<void>((resolve, reject) => {
           const iframe = document.createElement("iframe");
@@ -69,6 +70,7 @@ export class Verify extends IVerify {
           iframe.style.display = "none";
           iframe.addEventListener("load", () => {
             this.initialized = true;
+            clearTimeout(timeout);
             resolve();
           });
           iframe.addEventListener("error", (error) => {
@@ -77,9 +79,10 @@ export class Verify extends IVerify {
           document.body.append(iframe);
           this.iframe = iframe;
         }),
-        new Promise(async (_reject) => {
-          await delay(FIVE_SECONDS);
-          _reject("iframe load timeout");
+        new Promise((_reject) => {
+          this.abortController.signal.addEventListener("abort", () => {
+            _reject("iframe load timeout");
+          });
         }),
       ]);
     } catch (error) {
@@ -87,4 +90,8 @@ export class Verify extends IVerify {
       this.logger.error(error);
     }
   };
+
+  private startAbortTimer(timer: number) {
+    return setTimeout(() => this.abortController.abort(), calcExpiry(timer));
+  }
 }
