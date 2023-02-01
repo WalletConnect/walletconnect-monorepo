@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
-import { isBrowser } from "@walletconnect/utils";
+import { isBrowser, isNode } from "@walletconnect/utils";
 import { delay, FIVE_SECONDS } from "@walletconnect/time";
 
 import { VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
@@ -11,12 +11,14 @@ export class Verify extends IVerify {
   private iframe?: HTMLIFrameElement;
   private initialized = false;
   private abortController: AbortController;
+  private isDevEnv;
 
   constructor(public projectId: string, public logger: Logger) {
     super(projectId, logger);
     this.logger = generateChildLogger(logger, this.name);
     this.verifyUrl = VERIFY_SERVER;
     this.abortController = new AbortController();
+    this.isDevEnv = isNode() && process.env.IS_VITEST;
   }
 
   public init: IVerify["init"] = async (params) => {
@@ -39,6 +41,8 @@ export class Verify extends IVerify {
   };
 
   public resolve: IVerify["resolve"] = async (params) => {
+    if (this.isDevEnv) return "";
+
     this.logger.info(`resoving attestation: ${params.attestationId}`);
     // set artificial timeout to prevent hanging
     const timeout = setTimeout(() => this.abortController.abort(), FIVE_SECONDS);
