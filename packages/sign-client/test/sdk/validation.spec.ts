@@ -316,7 +316,7 @@ describe("Sign Client Validation", () => {
           namespaces: TEST_NAMESPACES_INVALID_METHODS,
         }),
       ).rejects.toThrowError(
-        "Non conforming namespaces. update() namespaces methods don't satisfy requiredNamespaces methods for eip155",
+        "Non conforming namespaces. update() namespaces methods don't satisfy namespace methods for eip155",
       );
     });
 
