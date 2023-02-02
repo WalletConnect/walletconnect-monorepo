@@ -15,6 +15,7 @@ import {
   TEST_REQUIRED_NAMESPACES,
   TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE,
   TEST_AVALANCHE_CHAIN,
+  TEST_REQUIRED_NAMESPACES_V2,
 } from "../shared";
 
 describe("Sign Client Integration", () => {
@@ -283,7 +284,7 @@ describe("Sign Client Integration", () => {
       const clients = await initTwoClients();
       const {
         sessionA: { topic },
-      } = await testConnectMethod(clients);
+      } = await testConnectMethod(clients, { requiredNamespaces: TEST_REQUIRED_NAMESPACES_V2 });
       const testRequestProps = {
         ...TEST_REQUEST_PARAMS,
         chainId: TEST_AVALANCHE_CHAIN,

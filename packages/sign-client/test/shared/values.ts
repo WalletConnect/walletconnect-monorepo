@@ -119,6 +119,14 @@ export const TEST_REQUIRED_NAMESPACES = {
     chains: TEST_CHAINS,
     events: TEST_EVENTS,
   },
+};
+
+export const TEST_REQUIRED_NAMESPACES_V2 = {
+  eip155: {
+    methods: TEST_METHODS,
+    chains: TEST_CHAINS,
+    events: TEST_EVENTS,
+  },
   [TEST_AVALANCHE_CHAIN]: {
     methods: TEST_METHODS,
     events: TEST_EVENTS,

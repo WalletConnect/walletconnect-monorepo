@@ -18,6 +18,7 @@ import { expect } from "vitest";
 
 export interface TestConnectParams {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;
+  optionalNamespaces?: ProposalTypes.OptionalNamespaces;
   namespaces?: SessionTypes.Namespaces;
   relays?: RelayerTypes.ProtocolOptions[];
   pairingTopic?: string;
@@ -30,7 +31,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   const connectParams: EngineTypes.ConnectParams = {
     requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
-    optionalNamespaces: TEST_OPTIONAL_NAMESPACES,
+    optionalNamespaces: params?.requiredNamespaces || TEST_OPTIONAL_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
