@@ -91,7 +91,7 @@ export const TEST_ARBITRUM_CHAIN = "eip155:42161";
 export const TEST_AVALANCHE_CHAIN = "eip155:43114";
 export const TEST_POLKADOT_CHAIN = "polkadot:91b171bb158e2d3848fa23a9f1c25182";
 
-export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN, TEST_ARBITRUM_CHAIN, TEST_AVALANCHE_CHAIN];
+export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN, TEST_ARBITRUM_CHAIN];
 export const TEST_METHODS = [
   "eth_sendTransaction",
   "eth_signTransaction",
@@ -108,7 +108,7 @@ export const TEST_ARBITRUM_ACCOUNT = `${TEST_ARBITRUM_CHAIN}:${TEST_ETHEREUM_ADD
 export const TEST_AVALANCHE_ACCOUNT = `${TEST_AVALANCHE_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
 export const TEST_POLKADOT_ACCOUNT = `${TEST_POLKADOT_CHAIN}:${TEST_POLKADOT_ADDRESS}`;
 
-export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT, TEST_ARBITRUM_ACCOUNT, TEST_AVALANCHE_ACCOUNT];
+export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT, TEST_ARBITRUM_ACCOUNT];
 
 export const TEST_POLKADOT_CHAINS = ["polkadot:91b171bb158e2d3848fa23a9f1c25182"];
 export const TEST_POLKADOT_ACCOUNTS = [TEST_POLKADOT_ACCOUNT];
@@ -117,6 +117,10 @@ export const TEST_REQUIRED_NAMESPACES = {
   eip155: {
     methods: TEST_METHODS,
     chains: TEST_CHAINS,
+    events: TEST_EVENTS,
+  },
+  [TEST_AVALANCHE_CHAIN]: {
+    methods: TEST_METHODS,
     events: TEST_EVENTS,
   },
 };
@@ -133,6 +137,11 @@ export const TEST_NAMESPACES = {
   eip155: {
     methods: TEST_METHODS,
     accounts: TEST_ACCOUNTS,
+    events: TEST_EVENTS,
+  },
+  [TEST_AVALANCHE_CHAIN]: {
+    methods: TEST_METHODS,
+    accounts: [TEST_AVALANCHE_ACCOUNT],
     events: TEST_EVENTS,
   },
   polkadot: {
