@@ -24,6 +24,7 @@ export declare namespace SessionTypes {
     controller: string;
     namespaces: Namespaces;
     requiredNamespaces: ProposalTypes.RequiredNamespaces;
+    optionalNamespaces: ProposalTypes.OptionalNamespaces;
     self: {
       publicKey: string;
       metadata: SignClientTypes.Metadata;

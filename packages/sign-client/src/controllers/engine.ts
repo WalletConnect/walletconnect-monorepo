@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import EventEmmiter from "events";
 import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
@@ -21,6 +20,7 @@ import {
   JsonRpcTypes,
   ExpirerTypes,
   PendingRequestTypes,
+  ProposalTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -85,8 +85,13 @@ export class Engine extends IEngine {
 
   public connect: IEngine["connect"] = async (params) => {
     this.isInitialized();
-    await this.isValidConnect(params);
-    const { pairingTopic, requiredNamespaces, relays } = params;
+    const connectParams = {
+      ...params,
+      requiredNamespaces: params.requiredNamespaces || {},
+      optionalNamespaces: params.optionalNamespaces || {},
+    };
+    await this.isValidConnect(connectParams);
+    const { pairingTopic, requiredNamespaces, optionalNamespaces, relays } = connectParams;
     let topic = pairingTopic;
     let uri: string | undefined;
     let active = false;
@@ -106,6 +111,7 @@ export class Engine extends IEngine {
 
     const proposal = {
       requiredNamespaces,
+      optionalNamespaces,
       relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
       proposer: {
         publicKey,
@@ -120,7 +126,11 @@ export class Engine extends IEngine {
         if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
-          const completeSession = { ...session, requiredNamespaces: session.requiredNamespaces };
+          const completeSession = {
+            ...session,
+            requiredNamespaces: session.requiredNamespaces,
+            optionalNamespaces: session.optionalNamespaces,
+          };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
           if (topic) {
@@ -156,13 +166,12 @@ export class Engine extends IEngine {
     await this.isValidApprove(params);
     const { id, relayProtocol, namespaces } = params;
     const proposal = this.client.proposal.get(id);
-    let { pairingTopic, proposer, requiredNamespaces } = proposal;
-
+    let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
     if (!isValidObject(requiredNamespaces)) {
       const required = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
       requiredNamespaces = required;
-      // update the proposal with the new required namespaces
-      this.client.proposal.set(id, { ...proposal, requiredNamespaces });
+      // update the proposal with the new required & optional namespaces
+      this.client.proposal.set(id, { ...proposal, requiredNamespaces, optionalNamespaces });
     }
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
@@ -175,10 +184,10 @@ export class Engine extends IEngine {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
       requiredNamespaces,
+      optionalNamespaces,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
     };
-
     await this.client.core.relayer.subscribe(sessionTopic);
     const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
     const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
@@ -586,7 +595,8 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const { relay, controller, expiry, namespaces, requiredNamespaces } = payload.params;
+      const { relay, controller, expiry, namespaces, requiredNamespaces, optionalNamespaces } =
+        payload.params;
       const session = {
         topic,
         relay,
@@ -594,6 +604,7 @@ export class Engine extends IEngine {
         namespaces,
         acknowledged: true,
         requiredNamespaces,
+        optionalNamespaces,
         controller: controller.publicKey,
         self: {
           publicKey: "",
@@ -873,20 +884,31 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
-    const { pairingTopic, requiredNamespaces, relays } = params;
+    const { pairingTopic, requiredNamespaces, optionalNamespaces, relays } = params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
 
-    // validate required namespaces only if they are defined
-    if (!isUndefined(requiredNamespaces) && isValidObject(requiredNamespaces) === 0) {
-      return;
-    }
-
-    const validRequiredNamespacesError = isValidRequiredNamespaces(requiredNamespaces, "connect()");
-    if (validRequiredNamespacesError) throw new Error(validRequiredNamespacesError.message);
     if (!isValidRelays(relays, true)) {
       const { message } = getInternalError("MISSING_OR_INVALID", `connect() relays: ${relays}`);
       throw new Error(message);
     }
+
+    // validate required namespaces only if they are defined
+    if (!isUndefined(requiredNamespaces) && isValidObject(requiredNamespaces) !== 0) {
+      this.validateNamespaces(requiredNamespaces, "requiredNamespaces");
+    }
+
+    // validate optional namespaces only if they are defined
+    if (!isUndefined(optionalNamespaces) && isValidObject(optionalNamespaces) !== 0) {
+      this.validateNamespaces(optionalNamespaces, "optionalNamespaces");
+    }
+  };
+
+  private validateNamespaces = (
+    namespaces: ProposalTypes.RequiredNamespaces | ProposalTypes.OptionalNamespaces,
+    type: string,
+  ) => {
+    const validRequiredNamespacesError = isValidRequiredNamespaces(namespaces, "connect()", type);
+    if (validRequiredNamespacesError) throw new Error(validRequiredNamespacesError.message);
   };
 
   private isValidApprove: EnginePrivate["isValidApprove"] = async (params) => {
@@ -902,7 +924,7 @@ export class Engine extends IEngine {
     const conformingNamespacesError = isConformingNamespaces(
       proposal.requiredNamespaces,
       namespaces,
-      "update()",
+      "approve()",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     if (!isValidString(relayProtocol, true)) {
@@ -911,6 +933,17 @@ export class Engine extends IEngine {
         `approve() relayProtocol: ${relayProtocol}`,
       );
       throw new Error(message);
+    }
+
+    // if the length of the namespaces is greater than the length of the required namespaces
+    // then the user is trying to approve part or all of the optional namespaces so we need to validate
+    if (Object.keys(namespaces).length > Object.keys(proposal.optionalNamespaces).length) {
+      const conformingNamespacesError = isConformingNamespaces(
+        proposal.optionalNamespaces,
+        namespaces,
+        "approve()",
+      );
+      if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     }
   };
 

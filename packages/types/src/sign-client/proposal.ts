@@ -12,6 +12,7 @@ export declare namespace ProposalTypes {
   type RequiredNamespace = BaseRequiredNamespace;
 
   type RequiredNamespaces = Record<string, RequiredNamespace>;
+  type OptionalNamespaces = Record<string, RequiredNamespace>;
 
   export interface Struct {
     id: number;
@@ -22,6 +23,7 @@ export declare namespace ProposalTypes {
       metadata: SignClientTypes.Metadata;
     };
     requiredNamespaces: RequiredNamespaces;
+    optionalNamespaces: OptionalNamespaces;
     pairingTopic?: string;
   }
 }

@@ -235,7 +235,7 @@ export function isValidNamespaceActions(input: any, method: string) {
   return error;
 }
 
-export function isValidRequiredNamespaces(input: any, method: string) {
+export function isValidRequiredNamespaces(input: any, method: string, type: string) {
   let error: ErrorObject = null;
   if (input && isValidObject(input)) {
     const validActionsError = isValidNamespaceActions(input, method);
@@ -249,7 +249,7 @@ export function isValidRequiredNamespaces(input: any, method: string) {
   } else {
     error = getInternalError(
       "MISSING_OR_INVALID",
-      `${method}, requiredNamespaces should be an object with data`,
+      `${method}, ${type} should be an object with data`,
     );
   }
 
@@ -386,17 +386,17 @@ export function isConformingNamespaces(
       if (!hasOverlap(requiredNamespaceChains, namespaceChains)) {
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
-          `${context} namespaces accounts don't satisfy requiredNamespaces chains for ${key}`,
+          `${context} namespaces accounts don't satisfy namespace chains for ${key}`,
         );
       } else if (!hasOverlap(requiredNamespaces[key].methods, namespaces[key].methods)) {
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
-          `${context} namespaces methods don't satisfy requiredNamespaces methods for ${key}`,
+          `${context} namespaces methods don't satisfy namespace methods for ${key}`,
         );
       } else if (!hasOverlap(requiredNamespaces[key].events, namespaces[key].events)) {
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
-          `${context} namespaces events don't satisfy requiredNamespaces events for ${key}`,
+          `${context} namespaces events don't satisfy namespace events for ${key}`,
         );
       }
     });

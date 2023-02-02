@@ -29,6 +29,7 @@ export declare namespace JsonRpcTypes {
     wc_sessionPropose: {
       relays: RelayerTypes.ProtocolOptions[];
       requiredNamespaces: ProposalTypes.RequiredNamespaces;
+      optionalNamespaces: ProposalTypes.OptionalNamespaces;
       proposer: {
         publicKey: string;
         metadata: SignClientTypes.Metadata;
@@ -38,6 +39,7 @@ export declare namespace JsonRpcTypes {
       relay: RelayerTypes.ProtocolOptions;
       namespaces: SessionTypes.Namespaces;
       requiredNamespaces: ProposalTypes.RequiredNamespaces;
+      optionalNamespaces: ProposalTypes.OptionalNamespaces;
       expiry: number;
       controller: {
         publicKey: string;

@@ -51,7 +51,8 @@ export declare namespace EngineTypes {
   }
 
   interface ConnectParams {
-    requiredNamespaces: ProposalTypes.RequiredNamespaces;
+    requiredNamespaces?: ProposalTypes.RequiredNamespaces;
+    optionalNamespaces?: ProposalTypes.OptionalNamespaces;
     pairingTopic?: string;
     relays?: RelayerTypes.ProtocolOptions[];
   }
