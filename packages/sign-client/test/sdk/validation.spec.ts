@@ -39,12 +39,6 @@ describe("Sign Client Validation", () => {
     await deleteClients(clients);
   });
   describe("connect", () => {
-    it("throws when no params are passed", async () => {
-      await expect(clients.A.connect()).rejects.toThrowError(
-        "Missing or invalid. connect() params: undefined",
-      );
-    });
-
     it("throws when invalid pairingTopic is provided", async () => {
       await expect(
         clients.A.connect({ ...TEST_CONNECT_PARAMS, pairingTopic: 123 }),
@@ -63,27 +57,29 @@ describe("Sign Client Validation", () => {
       ).rejects.toThrowError("No matching key. pairing topic doesn't exist: none");
     });
 
-    it("throws when invalid requiredNamespaces are provided", async () => {
+    it("throws when invalid requiredNamespaces & optionalNamespaces are provided", async () => {
       await expect(
         clients.A.connect({
           ...TEST_CONNECT_PARAMS,
           pairingTopic,
           requiredNamespaces: [],
+          optionalNamespaces: [],
         }),
       ).rejects.toThrowError(
         "Missing or invalid. connect(), requiredNamespaces should be an object with data",
       );
     });
 
-    it("throws when no requiredNamespaces are provided", async () => {
+    it("throws when invalid optionalNamespaces are provided", async () => {
       await expect(
         clients.A.connect({
           ...TEST_CONNECT_PARAMS,
           pairingTopic,
-          requiredNamespaces: undefined,
+          requiredNamespaces: {},
+          optionalNamespaces: [],
         }),
       ).rejects.toThrowError(
-        "Missing or invalid. connect(), requiredNamespaces should be an object with data",
+        "Missing or invalid. connect(), optionalNamespaces should be an object with data",
       );
     });
   });

@@ -7,7 +7,12 @@ import {
   SessionTypes,
 } from "@walletconnect/types";
 import { throttle } from "./../shared";
-import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./values";
+import {
+  TEST_RELAY_OPTIONS,
+  TEST_NAMESPACES,
+  TEST_REQUIRED_NAMESPACES,
+  TEST_OPTIONAL_NAMESPACES,
+} from "./values";
 import { Clients } from "./init";
 import { expect } from "vitest";
 
@@ -25,6 +30,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   const connectParams: EngineTypes.ConnectParams = {
     requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
+    optionalNamespaces: TEST_OPTIONAL_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
@@ -39,7 +45,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     B.once("session_proposal", async (proposal) => {
       try {
         expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
-
+        expect(proposal.params.optionalNamespaces).to.eql(connectParams.optionalNamespaces);
         const { acknowledged } = await B.approve({
           id: proposal.id,
           ...approveParams,
