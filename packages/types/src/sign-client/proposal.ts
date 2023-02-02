@@ -4,7 +4,7 @@ import { IStore } from "../core/store";
 
 export declare namespace ProposalTypes {
   interface BaseRequiredNamespace {
-    chains: string[];
+    chains?: string[];
     methods: string[];
     events: string[];
   }

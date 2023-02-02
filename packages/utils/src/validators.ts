@@ -8,6 +8,7 @@ import {
 } from "./namespaces";
 import { getSdkError, getInternalError } from "./errors";
 import { hasOverlap } from "./misc";
+import { getChainsFromNamespace } from "./caip";
 
 export type ErrorObject = { message: string; code: number } | null;
 
@@ -58,9 +59,8 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
     const { accounts, methods, events } = session.namespaces[key];
     const chains = getAccountsChains(accounts);
     const requiredNamespace = requiredNamespaces[key];
-
     if (
-      !hasOverlap(requiredNamespace.chains, chains) ||
+      !hasOverlap(getChainsFromNamespace(key, requiredNamespace), chains) ||
       !hasOverlap(requiredNamespace.methods, methods) ||
       !hasOverlap(requiredNamespace.events, events)
     ) {
@@ -161,7 +161,11 @@ export function isValidNamespaceChains(namespaces: any, method: string) {
   let error: ErrorObject = null;
   Object.entries(namespaces).forEach(([key, namespace]: [string, any]) => {
     if (error) return;
-    const validChainsError = isValidChains(key, namespace?.chains, `${method} requiredNamespace`);
+    const validChainsError = isValidChains(
+      key,
+      getChainsFromNamespace(key, namespace),
+      `${method} requiredNamespace`,
+    );
     if (validChainsError) {
       error = validChainsError;
     }
@@ -380,10 +384,9 @@ export function isConformingNamespaces(
     requiredNamespaceKeys.forEach((key) => {
       if (error) return;
 
-      const requiredNamespaceChains = requiredNamespaces[key].chains;
       const namespaceChains = getAccountsChains(namespaces[key].accounts);
 
-      if (!hasOverlap(requiredNamespaceChains, namespaceChains)) {
+      if (!hasOverlap(getChainsFromNamespace(key, requiredNamespaces[key]), namespaceChains)) {
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
           `${context} namespaces accounts don't satisfy namespace chains for ${key}`,
