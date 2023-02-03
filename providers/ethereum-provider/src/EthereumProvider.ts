@@ -283,7 +283,7 @@ export class EthereumProvider implements IEthereumProvider {
       methods: opts?.methods || signerMethods,
       events: opts?.events || signerEvents,
       rpcMap: opts?.rpcMap || this.buildRpcMap(opts.chains, opts.projectId),
-      showQrModal: opts?.showQrModal || true,
+      showQrModal: opts?.showQrModal ?? true,
       projectId: opts.projectId,
       metadata: opts.metadata,
     };
