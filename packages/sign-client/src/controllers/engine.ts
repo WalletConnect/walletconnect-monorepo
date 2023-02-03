@@ -91,7 +91,8 @@ export class Engine extends IEngine {
       optionalNamespaces: params.optionalNamespaces || {},
     };
     await this.isValidConnect(connectParams);
-    const { pairingTopic, requiredNamespaces, optionalNamespaces, relays } = connectParams;
+    const { pairingTopic, requiredNamespaces, optionalNamespaces, sessionProperties, relays } =
+      connectParams;
     let topic = pairingTopic;
     let uri: string | undefined;
     let active = false;
@@ -117,8 +118,8 @@ export class Engine extends IEngine {
         publicKey,
         metadata: this.client.metadata,
       },
+      ...(sessionProperties && { sessionProperties }),
     };
-
     const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
@@ -164,7 +165,7 @@ export class Engine extends IEngine {
   public approve: IEngine["approve"] = async (params) => {
     this.isInitialized();
     await this.isValidApprove(params);
-    const { id, relayProtocol, namespaces } = params;
+    const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
     if (!isValidObject(requiredNamespaces)) {
@@ -187,6 +188,7 @@ export class Engine extends IEngine {
       optionalNamespaces,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
+      ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
     const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
@@ -595,8 +597,15 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const { relay, controller, expiry, namespaces, requiredNamespaces, optionalNamespaces } =
-        payload.params;
+      const {
+        relay,
+        controller,
+        expiry,
+        namespaces,
+        requiredNamespaces,
+        optionalNamespaces,
+        sessionProperties,
+      } = payload.params;
       const session = {
         topic,
         relay,
@@ -614,6 +623,7 @@ export class Engine extends IEngine {
           publicKey: controller.publicKey,
           metadata: controller.metadata,
         },
+        ...(sessionProperties && { sessionProperties }),
       };
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
       this.events.emit(engineEvent("session_connect"), { session });
@@ -884,7 +894,8 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
-    const { pairingTopic, requiredNamespaces, optionalNamespaces, relays } = params;
+    const { pairingTopic, requiredNamespaces, optionalNamespaces, sessionProperties, relays } =
+      params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
 
     if (!isValidRelays(relays, true)) {
@@ -901,6 +912,11 @@ export class Engine extends IEngine {
     if (!isUndefined(optionalNamespaces) && isValidObject(optionalNamespaces) !== 0) {
       this.validateNamespaces(optionalNamespaces, "optionalNamespaces");
     }
+
+    // validate session properties only if they are defined
+    if (!isUndefined(sessionProperties)) {
+      this.validateSessionProps(sessionProperties, "sessionProperties");
+    }
   };
 
   private validateNamespaces = (
@@ -916,7 +932,7 @@ export class Engine extends IEngine {
       throw new Error(
         getInternalError("MISSING_OR_INVALID", `approve() params: ${params}`).message,
       );
-    const { id, namespaces, relayProtocol } = params;
+    const { id, namespaces, relayProtocol, sessionProperties } = params;
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);
     const validNamespacesError = isValidNamespaces(namespaces, "approve()");
@@ -944,6 +960,10 @@ export class Engine extends IEngine {
         "approve()",
       );
       if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
+    }
+
+    if (!isUndefined(sessionProperties)) {
+      this.validateSessionProps(sessionProperties, "sessionProperties");
     }
   };
 
@@ -1113,5 +1133,17 @@ export class Engine extends IEngine {
     }
     const { topic } = params;
     await this.isValidSessionOrPairingTopic(topic);
+  };
+
+  private validateSessionProps = (properties: ProposalTypes.SessionProperties, type: string) => {
+    Object.values(properties).forEach((property) => {
+      if (!isValidString(property, false)) {
+        const { message } = getInternalError(
+          "MISSING_OR_INVALID",
+          `${type} must be in Record<string, string> fromat. Received: ${JSON.stringify(property)}`,
+        );
+        throw new Error(message);
+      }
+    });
   };
 }

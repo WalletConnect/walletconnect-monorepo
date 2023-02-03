@@ -13,6 +13,7 @@ export declare namespace ProposalTypes {
 
   type RequiredNamespaces = Record<string, RequiredNamespace>;
   type OptionalNamespaces = Record<string, RequiredNamespace>;
+  type SessionProperties = Record<string, string>;
 
   export interface Struct {
     id: number;
@@ -24,6 +25,7 @@ export declare namespace ProposalTypes {
     };
     requiredNamespaces: RequiredNamespaces;
     optionalNamespaces: OptionalNamespaces;
+    sessionProperties?: SessionProperties;
     pairingTopic?: string;
   }
 }
