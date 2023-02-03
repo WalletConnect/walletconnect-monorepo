@@ -159,6 +159,15 @@ export const TEST_NAMESPACES = {
   },
 };
 
+export const TEST_SESSION_PROPERTIES = {
+  expiry: "2022-12-24T17:07:31+00:00",
+  "caip154-mandatory": "true",
+};
+
+export const TEST_SESSION_PROPERTIES_APPROVE = {
+  expiry: "2022-12-24T17:07:31+00:00",
+};
+
 export const TEST_NAMESPACES_INVALID_METHODS = {
   eip155: { ...TEST_NAMESPACES.eip155, methods: ["eth_invalid"] },
 };
