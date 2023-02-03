@@ -59,7 +59,7 @@ export class Relayer extends IRelayer {
   public transportExplicitlyClosed = false;
 
   private initialized = false;
-
+  private reconnecting = false;
   private relayUrl: string;
   private projectId: string | undefined;
   constructor(opts: RelayerOptions) {
@@ -155,8 +155,10 @@ export class Relayer extends IRelayer {
   }
 
   public async transportOpen(relayUrl?: string) {
+    if (this.reconnecting) return;
     this.relayUrl = relayUrl || this.relayUrl;
     this.transportExplicitlyClosed = false;
+    this.reconnecting = true;
     try {
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -181,14 +183,20 @@ export class Relayer extends IRelayer {
     } catch (e: unknown | Error) {
       const error = e as Error;
       if (!/socket hang up/i.test(error.message)) {
-        throw new Error(error.message);
+        throw e;
       }
-      this.logger.error(error);
+      this.logger.error(e);
       this.events.emit(RELAYER_EVENTS.transport_closed);
+    } finally {
+      this.reconnecting = false;
     }
   }
 
   public async restartTransport(relayUrl?: string) {
+    if (this.transportExplicitlyClosed) {
+      return;
+    }
+
     await this.transportClose();
     await new Promise<void>((resolve) => setTimeout(resolve, RELAYER_RECONNECT_TIMEOUT));
     await this.transportOpen(relayUrl);
