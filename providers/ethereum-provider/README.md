@@ -38,7 +38,8 @@ await provider.enable();
 ```
 
 ```typescript
-// If you wish to disable the built-in modal via `showQrModal`, you can subscribe to
+// If you wish to disable the built-in modal via `showQrModal`,
+// you can subscribe to the `display_uri` event and handle the URI yourself.
 provider.on("display_uri", (uri: string) => {
   // ... custom logic
 });
