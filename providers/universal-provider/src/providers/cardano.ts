@@ -10,7 +10,8 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getRpcUrl } from "../utils";
+import { getRpcUrl, deeplinkRedirect } from "../utils";
+import { RELAYER_EVENTS } from "@walletconnect/core";
 
 class CardanoProvider implements IProvider {
   public name = "cip34";
@@ -70,6 +71,7 @@ class CardanoProvider implements IProvider {
 
   public request<T = unknown>(args: RequestParams): Promise<T> {
     if (this.namespace.methods.includes(args.request.method)) {
+      this.client.core.relayer.once(RELAYER_EVENTS.publish, deeplinkRedirect);
       return this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);

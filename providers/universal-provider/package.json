@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/universal-provider",
   "description": "Universal Provider for WalletConnect Protocol",
-  "version": "2.3.3",
+  "version": "2.3.4-7690b8b7",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
