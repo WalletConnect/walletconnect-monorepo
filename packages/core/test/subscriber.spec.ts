@@ -88,7 +88,7 @@ describe("Subscriber", () => {
     });
     it("returns the subscription id", async () => {
       const id = await subscriber.subscribe(topic);
-      expect(id).to.equal("test-id");
+      expect(id).to.equal(topic);
     });
   });
 
