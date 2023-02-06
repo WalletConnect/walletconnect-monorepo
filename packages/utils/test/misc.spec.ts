@@ -1,5 +1,5 @@
-import { expect, describe, it } from "vitest";
-import { calcExpiry, formatRelayRpcUrl, hasOverlap, formatUA } from "../src";
+import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
+import { calcExpiry, isExpired, formatRelayRpcUrl, hasOverlap, formatUA } from "../src";
 
 const RELAY_URL = "wss://relay.walletconnect.com";
 
@@ -10,8 +10,6 @@ const PROTOCOL = "wc";
 const VERSION = 2;
 
 const SDK_VERSION = "2.0.0-rc.1";
-
-const ENV = "node";
 
 const AUTH = "auth.jwt.example";
 
@@ -24,11 +22,7 @@ const EXPECTED_RPC_URL_2 =
     formatUA(PROTOCOL, VERSION, SDK_VERSION),
   )}`;
 
-const SEVEN_DAYS = 604800;
-
-const TEST_MILISECONDS = 1628166822000;
-
-const EXPECTED_EXPIRY = 1628771622;
+const SEVEN_DAYS_IN_SECONDS = 604800;
 
 describe("Misc", () => {
   it("formatRpcRelayUrl", () => {
@@ -58,7 +52,40 @@ describe("Misc", () => {
     expect(hasOverlap(["dog", "cat"], ["dog"])).to.be.false;
     expect(hasOverlap(["dog"], [])).to.be.false;
   });
-  it("calcExpiry", () => {
-    expect(calcExpiry(SEVEN_DAYS, TEST_MILISECONDS)).to.eql(EXPECTED_EXPIRY);
+
+  describe("expiry utils", () => {
+    beforeEach(() => {
+      // Use mocked time for each test run.
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      // Restore non-mocked date after each.
+      vi.useRealTimers();
+    });
+    describe("calcExpiry", () => {
+      const timestampInMs = 1628166822000;
+      const expectedExpiry = 1628771622;
+      it("returns the expected expiry based on `Date.now()`", () => {
+        // Set system time to reference timestamp.
+        vi.setSystemTime(new Date(timestampInMs));
+        expect(calcExpiry(SEVEN_DAYS_IN_SECONDS)).to.eql(expectedExpiry);
+      });
+      it("returns the expected expiry based on the provided reference timestamp", () => {
+        expect(calcExpiry(SEVEN_DAYS_IN_SECONDS, timestampInMs)).to.eql(expectedExpiry);
+      });
+    });
+    describe("isExpired", () => {
+      const expiry = 1675702595; // Feb 06 2023 16:56:35 GMT+0000
+      it("is `false` if the provided expiry is less than the current timestamp", () => {
+        // Set system time to 2 minutes PRE-expiry.
+        vi.setSystemTime(new Date(expiry * 1000 - 120_000));
+        expect(isExpired(expiry)).to.be.false;
+      });
+      it("is `true` if the provided expiry is equal or greater than the current timestamp", () => {
+        // Set system time to exactly expiry.
+        vi.setSystemTime(new Date(expiry * 1000));
+        expect(isExpired(expiry)).to.be.true;
+      });
+    });
   });
 });
