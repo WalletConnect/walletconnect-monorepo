@@ -383,7 +383,6 @@ export class Subscriber extends ISubscriber {
       await this.onConnect();
     });
     this.relayer.on(RELAYER_EVENTS.disconnect, () => {
-      console.log("disconnect", this.relayer.core.name, this.relayer.connected);
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
