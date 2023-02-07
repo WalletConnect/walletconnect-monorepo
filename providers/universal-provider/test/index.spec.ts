@@ -23,6 +23,9 @@ import {
   TEST_REQUIRED_NAMESPACES,
 } from "./shared/constants";
 
+const getDbName = (_prefix) => {
+  return `./test/tmp/${_prefix}.db`;
+};
 describe("UniversalProvider", function () {
   let testNetwork: TestNetwork;
   let provider: UniversalProvider;
@@ -290,18 +293,18 @@ describe("UniversalProvider", function () {
       expect(valid).to.be.true;
     });
   });
-  describe("persistence", () => {
+  describe.only("persistence", () => {
     describe("after restart", () => {
       it("clients can ping each other", async () => {
         const dapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
         const wallet = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "wallet",
-          storageOptions: { database: "/tmp/walletDB" },
+          storageOptions: { database: getDbName("walletDB") },
         });
 
         const {
@@ -335,12 +338,12 @@ describe("UniversalProvider", function () {
         const afterDapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
         const afterWallet = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "wallet",
-          storageOptions: { database: "/tmp/walletDB" },
+          storageOptions: { database: getDbName("walletDB") },
         });
 
         // ping
@@ -354,12 +357,12 @@ describe("UniversalProvider", function () {
         const dapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
         const wallet = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "wallet",
-          storageOptions: { database: "/tmp/walletDB" },
+          storageOptions: { database: getDbName("walletDB") },
         });
 
         const {
@@ -379,7 +382,7 @@ describe("UniversalProvider", function () {
         const afterDapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
 
         // load the provider in ethers without new pairing
