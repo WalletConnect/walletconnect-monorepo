@@ -283,7 +283,7 @@ export class EthereumProvider implements IEthereumProvider {
       methods: opts?.methods || signerMethods,
       events: opts?.events || signerEvents,
       rpcMap: opts?.rpcMap || this.buildRpcMap(opts.chains, opts.projectId),
-      showQrModal: opts?.showQrModal || true,
+      showQrModal: opts?.showQrModal ?? true,
       projectId: opts.projectId,
       metadata: opts.metadata,
     };
@@ -305,6 +305,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.loadPersistedSession();
     if (this.rpc.showQrModal)
       this.modal = new Web3Modal({
+        walletConnectVersion: 2,
         projectId: this.rpc.projectId,
         standaloneChains: this.rpc.chains,
       });

@@ -330,6 +330,7 @@ export class Subscriber extends ISubscriber {
       if (this.subscriptions.size) {
         const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
         this.logger.error(message);
+        this.logger.error(`${this.name}: ${JSON.stringify(this.values)}`);
         throw new Error(message);
       }
       this.cached = persisted;
