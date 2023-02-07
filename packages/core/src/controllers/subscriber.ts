@@ -361,6 +361,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
+    if (this.restartInProgress) return;
     await this.restart();
     this.onEnable();
   }
