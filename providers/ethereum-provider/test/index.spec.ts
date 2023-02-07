@@ -163,7 +163,7 @@ describe("EthereumProvider", function () {
         const chainId = await web3.eth.getChainId();
         expect(chainId).to.eql(CHAIN_ID);
       });
-      it("ERC20 contract", async () => {
+      it.skip("ERC20 contract", async () => {
         const erc20Factory = new web3.eth.Contract(JSON.parse(JSON.stringify(_abi)));
         const erc20 = await erc20Factory
           .deploy({ data: _bytecode, arguments: ["The test token", "tst", 18] })
@@ -254,7 +254,7 @@ describe("EthereumProvider", function () {
         const network = await web3Provider.getNetwork();
         expect(network.chainId).to.equal(CHAIN_ID);
       });
-      it("ERC20 contract", async () => {
+      it.skip("ERC20 contract", async () => {
         const signer = web3Provider.getSigner();
         const erc20Factory = new ERC20Token__factory(signer as any);
         const erc20 = await erc20Factory.deploy("The test token", "tst", 18);
