@@ -27,7 +27,7 @@ describe("Subscriber", () => {
     await core.start();
 
     relayer = core.relayer;
-    subscriber = relayer.subscriber; //new Subscriber(relayer, logger);
+    subscriber = relayer.subscriber;
     subscriber.relayer.provider.request = () => Promise.resolve({} as any);
     await subscriber.init();
   });
@@ -90,6 +90,15 @@ describe("Subscriber", () => {
       const id = await subscriber.subscribe(topic);
       const expectedId = hashMessage(topic + (await core.crypto.getClientId()));
       expect(id).to.equal(expectedId);
+    });
+    it("should subscribe a topic immediately after connect", async () => {
+      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
+      expect(subscriber.subscriptions.size).to.equal(0);
+      expect(subscriber.topics.length).to.equal(0);
+      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
+      await relayer.subscriber.subscribe(generateRandomBytes32());
+      expect(subscriber.subscriptions.size).to.equal(1);
+      expect(subscriber.topics.length).to.equal(1);
     });
   });
 
