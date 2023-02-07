@@ -171,6 +171,22 @@ export class Engine extends IEngine {
       selfPublicKey,
       peerPublicKey,
     );
+
+    if (pairingTopic && id) {
+      await this.client.core.pairing.updateMetadata({
+        topic: pairingTopic,
+        metadata: proposer.metadata,
+      });
+      await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
+        relay: {
+          protocol: relayProtocol ?? "irn",
+        },
+        responderPublicKey: selfPublicKey,
+      });
+      await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
+      await this.client.core.pairing.activate({ topic: pairingTopic });
+    }
+
     const sessionSettle = {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
@@ -200,23 +216,6 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
-    if (pairingTopic) {
-      await this.client.core.pairing.updateMetadata({
-        topic: pairingTopic,
-        metadata: session.peer.metadata,
-      });
-    }
-    if (pairingTopic && id) {
-      await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
-        relay: {
-          protocol: relayProtocol ?? "irn",
-        },
-        responderPublicKey: selfPublicKey,
-      });
-      await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
-      await this.client.core.pairing.activate({ topic: pairingTopic });
-    }
-
     return { topic: sessionTopic, acknowledged };
   };
 
