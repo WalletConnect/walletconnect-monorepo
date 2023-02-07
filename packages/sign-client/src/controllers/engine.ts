@@ -1143,7 +1143,7 @@ export class Engine extends IEngine {
       if (!isValidString(property, false)) {
         const { message } = getInternalError(
           "MISSING_OR_INVALID",
-          `${type} must be in Record<string, string> fromat. Received: ${JSON.stringify(property)}`,
+          `${type} must be in Record<string, string> format. Received: ${JSON.stringify(property)}`,
         );
         throw new Error(message);
       }
