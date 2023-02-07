@@ -415,8 +415,9 @@ export class Subscriber extends ISubscriber {
     if (!this.restartInProgress) return;
 
     await new Promise<void>((resolve) => {
-      setInterval(() => {
+      const interval = setInterval(() => {
         if (!this.restartInProgress) {
+          clearInterval(interval);
           resolve();
         }
       }, this.pollingInterval);
