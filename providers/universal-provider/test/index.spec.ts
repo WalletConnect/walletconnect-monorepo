@@ -293,7 +293,7 @@ describe("UniversalProvider", function () {
       expect(valid).to.be.true;
     });
   });
-  describe.only("persistence", () => {
+  describe("persistence", () => {
     describe("after restart", () => {
       it("clients can ping each other", async () => {
         const dapp = await UniversalProvider.init({
