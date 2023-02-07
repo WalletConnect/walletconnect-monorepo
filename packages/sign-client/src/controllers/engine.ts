@@ -941,6 +941,7 @@ export class Engine extends IEngine {
       proposal.requiredNamespaces,
       namespaces,
       "approve()",
+      "requiredNamespaces",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     if (!isValidString(relayProtocol, true)) {
@@ -953,11 +954,12 @@ export class Engine extends IEngine {
 
     // if the length of the namespaces is greater than the length of the required namespaces
     // then the user is trying to approve part or all of the optional namespaces so we need to validate
-    if (Object.keys(namespaces).length > Object.keys(proposal.optionalNamespaces).length) {
+    if (Object.keys(namespaces).length > Object.keys(proposal.requiredNamespaces).length) {
       const conformingNamespacesError = isConformingNamespaces(
         proposal.optionalNamespaces,
         namespaces,
         "approve()",
+        "optionalNamespaces",
       );
       if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     }

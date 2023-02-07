@@ -370,6 +370,7 @@ export function isConformingNamespaces(
   requiredNamespaces: ProposalTypes.RequiredNamespaces,
   namespaces: SessionTypes.Namespaces,
   context: string,
+  type: string,
 ) {
   let error: ErrorObject = null;
   const requiredNamespaceKeys = Object.keys(requiredNamespaces);
@@ -378,7 +379,7 @@ export function isConformingNamespaces(
   if (!hasOverlap(requiredNamespaceKeys, namespaceKeys)) {
     error = getInternalError(
       "NON_CONFORMING_NAMESPACES",
-      `${context} namespaces keys don't satisfy requiredNamespaces`,
+      `${context} namespaces keys don't satisfy ${type}`,
     );
   } else {
     requiredNamespaceKeys.forEach((key) => {
