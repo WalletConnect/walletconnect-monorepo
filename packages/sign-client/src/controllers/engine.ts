@@ -1025,6 +1025,7 @@ export class Engine extends IEngine {
       session.requiredNamespaces,
       namespaces,
       "update()",
+      "requiredNamespaces",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     // TODO(ilja) - check if wallet
