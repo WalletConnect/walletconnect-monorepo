@@ -17,6 +17,7 @@ import {
   getRelayProtocolApi,
   getRelayProtocolName,
   createExpiringPromise,
+  hashMessage,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -43,10 +44,12 @@ export class Subscriber extends ISubscriber {
   private storagePrefix = CORE_STORAGE_PREFIX;
   private subscribeTimeout = 10_000;
   private restartInProgress = false;
+  private clientId: string;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
     this.logger = generateChildLogger(logger, this.name);
+    this.clientId = ""; // assigned in init
   }
 
   public init: ISubscriber["init"] = async () => {
@@ -55,6 +58,7 @@ export class Subscriber extends ISubscriber {
       await this.restart();
       this.registerEventListeners();
       this.onEnable();
+      this.clientId = await this.relayer.core.crypto.getClientId();
     }
   };
 
@@ -220,7 +224,7 @@ export class Subscriber extends ISubscriber {
       this.logger.debug(`Outgoing Relay Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
-    return topic;
+    return hashMessage(topic + this.clientId);
   }
 
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {

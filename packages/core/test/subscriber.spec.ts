@@ -2,7 +2,7 @@ import { expect, describe, it, beforeEach, afterAll, afterEach } from "vitest";
 import Sinon from "sinon";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { ICore, IRelayer, ISubscriber } from "@walletconnect/types";
-import { generateRandomBytes32, getRelayProtocolName } from "@walletconnect/utils";
+import { generateRandomBytes32, getRelayProtocolName, hashMessage } from "@walletconnect/utils";
 
 import {
   Core,
@@ -88,7 +88,8 @@ describe("Subscriber", () => {
     });
     it("returns the subscription id", async () => {
       const id = await subscriber.subscribe(topic);
-      expect(id).to.equal(topic);
+      const expectedId = hashMessage(topic + (await core.crypto.getClientId()));
+      expect(id).to.equal(expectedId);
     });
   });
 
