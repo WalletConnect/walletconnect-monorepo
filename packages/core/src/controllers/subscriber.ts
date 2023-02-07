@@ -412,7 +412,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async restartToComplete() {
-    if (this.restartInProgress) return;
+    if (!this.restartInProgress) return;
 
     await new Promise<void>((resolve) => {
       setInterval(() => {
