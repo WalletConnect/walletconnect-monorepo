@@ -305,6 +305,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.loadPersistedSession();
     if (this.rpc.showQrModal)
       this.modal = new Web3Modal({
+        walletConnectVersion: 2,
         projectId: this.rpc.projectId,
         standaloneChains: this.rpc.chains,
       });
