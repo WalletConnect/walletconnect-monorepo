@@ -34,7 +34,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   const connectParams: EngineTypes.ConnectParams = {
     requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
-    optionalNamespaces: params?.requiredNamespaces || TEST_OPTIONAL_NAMESPACES,
+    optionalNamespaces: params?.optionalNamespaces || TEST_OPTIONAL_NAMESPACES,
     sessionProperties: params?.sessionProperties || TEST_SESSION_PROPERTIES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
