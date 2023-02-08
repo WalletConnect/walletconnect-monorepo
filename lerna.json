@@ -1,6 +1,4 @@
 {
   "version": "2.0.0",
-  "packages": [
-    "legacy/*"
-  ]
+  "packages": ["packages/*"]
 }
