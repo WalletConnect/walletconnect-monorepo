@@ -168,11 +168,9 @@ export class Engine extends IEngine {
     const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
+
     if (!isValidObject(requiredNamespaces)) {
-      const required = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
-      requiredNamespaces = required;
-      // update the proposal with the new required & optional namespaces
-      this.client.proposal.set(id, { ...proposal, requiredNamespaces, optionalNamespaces });
+      requiredNamespaces = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
     }
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
