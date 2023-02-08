@@ -23,6 +23,9 @@ import {
   TEST_REQUIRED_NAMESPACES,
 } from "./shared/constants";
 
+const getDbName = (_prefix) => {
+  return `./test/tmp/${_prefix}.db`;
+};
 describe("UniversalProvider", function () {
   let testNetwork: TestNetwork;
   let provider: UniversalProvider;
@@ -99,7 +102,7 @@ describe("UniversalProvider", function () {
         const chainId = await web3.eth.getChainId();
         expect(chainId).to.eql(CHAIN_ID);
       });
-      it.skip("ERC20 contract", async () => {
+      it("ERC20 contract", async () => {
         const erc20Factory = new web3.eth.Contract(JSON.parse(JSON.stringify(_abi)));
         const erc20 = await erc20Factory
           .deploy({ data: _bytecode, arguments: ["The test token", "tst", 18] })
@@ -190,7 +193,7 @@ describe("UniversalProvider", function () {
         const network = await web3Provider.getNetwork();
         expect(network.chainId).to.equal(CHAIN_ID);
       });
-      it.skip("ERC20 contract", async () => {
+      it("ERC20 contract", async () => {
         const signer = web3Provider.getSigner();
         const erc20Factory = new ERC20Token__factory(signer as any);
         const erc20 = await erc20Factory.deploy("The test token", "tst", 18);
@@ -296,12 +299,12 @@ describe("UniversalProvider", function () {
         const dapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
         const wallet = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "wallet",
-          storageOptions: { database: "/tmp/walletDB" },
+          storageOptions: { database: getDbName("walletDB") },
         });
 
         const {
@@ -335,12 +338,12 @@ describe("UniversalProvider", function () {
         const afterDapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
         const afterWallet = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "wallet",
-          storageOptions: { database: "/tmp/walletDB" },
+          storageOptions: { database: getDbName("walletDB") },
         });
 
         // ping
@@ -354,12 +357,12 @@ describe("UniversalProvider", function () {
         const dapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
         const wallet = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "wallet",
-          storageOptions: { database: "/tmp/walletDB" },
+          storageOptions: { database: getDbName("walletDB") },
         });
 
         const {
@@ -379,7 +382,7 @@ describe("UniversalProvider", function () {
         const afterDapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
-          storageOptions: { database: "/tmp/dappDB" },
+          storageOptions: { database: getDbName("dappDB") },
         });
 
         // load the provider in ethers without new pairing

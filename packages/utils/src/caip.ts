@@ -99,7 +99,15 @@ export function getChainsFromRequiredNamespaces(
   Object.keys(requiredNamespaces).forEach((key) => {
     if (keys.length && !keys.includes(key)) return;
     const ns = requiredNamespaces[key];
-    chains.push(...ns.chains);
+    chains.push(...getChainsFromNamespace(key, ns));
   });
   return chains;
+}
+
+export function getChainsFromNamespace(
+  namespace: string,
+  namespaceProps: ProposalTypes.BaseRequiredNamespace,
+) {
+  // check if chainId is provided in the key as `eip155:1` or in the namespace as chains[]
+  return namespace.includes(":") ? [namespace] : namespaceProps.chains || [];
 }

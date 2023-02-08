@@ -8,6 +8,7 @@ import {
 } from "./namespaces";
 import { getSdkError, getInternalError } from "./errors";
 import { hasOverlap } from "./misc";
+import { getChainsFromNamespace } from "./caip";
 
 export type ErrorObject = { message: string; code: number } | null;
 
@@ -58,9 +59,8 @@ export function isSessionCompatible(session: SessionTypes.Struct, params: Engine
     const { accounts, methods, events } = session.namespaces[key];
     const chains = getAccountsChains(accounts);
     const requiredNamespace = requiredNamespaces[key];
-
     if (
-      !hasOverlap(requiredNamespace.chains, chains) ||
+      !hasOverlap(getChainsFromNamespace(key, requiredNamespace), chains) ||
       !hasOverlap(requiredNamespace.methods, methods) ||
       !hasOverlap(requiredNamespace.events, events)
     ) {
@@ -161,7 +161,11 @@ export function isValidNamespaceChains(namespaces: any, method: string) {
   let error: ErrorObject = null;
   Object.entries(namespaces).forEach(([key, namespace]: [string, any]) => {
     if (error) return;
-    const validChainsError = isValidChains(key, namespace?.chains, `${method} requiredNamespace`);
+    const validChainsError = isValidChains(
+      key,
+      getChainsFromNamespace(key, namespace),
+      `${method} requiredNamespace`,
+    );
     if (validChainsError) {
       error = validChainsError;
     }
@@ -235,7 +239,7 @@ export function isValidNamespaceActions(input: any, method: string) {
   return error;
 }
 
-export function isValidRequiredNamespaces(input: any, method: string) {
+export function isValidRequiredNamespaces(input: any, method: string, type: string) {
   let error: ErrorObject = null;
   if (input && isValidObject(input)) {
     const validActionsError = isValidNamespaceActions(input, method);
@@ -249,7 +253,7 @@ export function isValidRequiredNamespaces(input: any, method: string) {
   } else {
     error = getInternalError(
       "MISSING_OR_INVALID",
-      `${method}, requiredNamespaces should be an object with data`,
+      `${method}, ${type} should be an object with data`,
     );
   }
 
@@ -366,6 +370,7 @@ export function isConformingNamespaces(
   requiredNamespaces: ProposalTypes.RequiredNamespaces,
   namespaces: SessionTypes.Namespaces,
   context: string,
+  type: string,
 ) {
   let error: ErrorObject = null;
   const requiredNamespaceKeys = Object.keys(requiredNamespaces);
@@ -374,29 +379,28 @@ export function isConformingNamespaces(
   if (!hasOverlap(requiredNamespaceKeys, namespaceKeys)) {
     error = getInternalError(
       "NON_CONFORMING_NAMESPACES",
-      `${context} namespaces keys don't satisfy requiredNamespaces`,
+      `${context} namespaces keys don't satisfy ${type}`,
     );
   } else {
     requiredNamespaceKeys.forEach((key) => {
       if (error) return;
 
-      const requiredNamespaceChains = requiredNamespaces[key].chains;
       const namespaceChains = getAccountsChains(namespaces[key].accounts);
 
-      if (!hasOverlap(requiredNamespaceChains, namespaceChains)) {
+      if (!hasOverlap(getChainsFromNamespace(key, requiredNamespaces[key]), namespaceChains)) {
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
-          `${context} namespaces accounts don't satisfy requiredNamespaces chains for ${key}`,
+          `${context} namespaces accounts don't satisfy namespace chains for ${key}`,
         );
       } else if (!hasOverlap(requiredNamespaces[key].methods, namespaces[key].methods)) {
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
-          `${context} namespaces methods don't satisfy requiredNamespaces methods for ${key}`,
+          `${context} namespaces methods don't satisfy namespace methods for ${key}`,
         );
       } else if (!hasOverlap(requiredNamespaces[key].events, namespaces[key].events)) {
         error = getInternalError(
           "NON_CONFORMING_NAMESPACES",
-          `${context} namespaces events don't satisfy requiredNamespaces events for ${key}`,
+          `${context} namespaces events don't satisfy namespace events for ${key}`,
         );
       }
     });
