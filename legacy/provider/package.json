@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/legacy-provider",
   "description": "Legacy Ethereum Provider (v1.0) for WalletConnect Protocol",
-  "version": "2.0.0-rc.10",
+  "version": "2.0.0-rc.11",
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "run-s clean",
@@ -77,10 +77,10 @@
   "dependencies": {
     "@walletconnect/jsonrpc-http-connection": "^1.0.4",
     "@walletconnect/jsonrpc-provider": "^1.0.6",
-    "@walletconnect/legacy-client": "^2.0.0-rc.10",
-    "@walletconnect/legacy-modal": "^2.0.0-rc.10",
-    "@walletconnect/legacy-types": "^2.0.0-rc.10",
-    "@walletconnect/legacy-utils": "^2.0.0-rc.10"
+    "@walletconnect/legacy-client": "^2.0.0-rc.11",
+    "@walletconnect/legacy-modal": "^2.0.0-rc.11",
+    "@walletconnect/legacy-types": "^2.0.0-rc.11",
+    "@walletconnect/legacy-utils": "^2.0.0-rc.11"
   },
   "gitHead": "165f7993c2acc907c653c02847fb02721052c6e7"
 }
