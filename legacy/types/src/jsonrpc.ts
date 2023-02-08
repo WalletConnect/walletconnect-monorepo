@@ -38,6 +38,7 @@ export interface IJsonRpcResponseSuccess {
 export interface IJsonRpcErrorMessage {
   code?: number;
   message: string;
+  data?: string;
 }
 
 export interface IJsonRpcResponseError {
