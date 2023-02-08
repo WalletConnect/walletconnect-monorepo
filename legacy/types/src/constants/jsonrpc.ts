@@ -21,10 +21,10 @@ export const SIGNING_METHODS = [
   ...WALLET_METHODS,
 ];
 
+export const STATE_METHODS = ["eth_accounts", "eth_chainId", "net_version"];
+
 // backwards-compatibility alias
 export const signingMethods = SIGNING_METHODS;
-
-export const STATE_METHODS = ["eth_accounts", "eth_chainId", "net_version"];
 
 // backwards-compatibility alias
 export const stateMethods = STATE_METHODS;
