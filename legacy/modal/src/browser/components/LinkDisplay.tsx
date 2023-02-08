@@ -97,7 +97,7 @@ function LinkDisplay(props: LinkDisplayProps) {
                 <WalletIcon
                   color={color}
                   href={href}
-                  name={shortName}
+                  name={shortName || name}
                   logo={logo}
                   onClick={handleClickIOS}
                 />
