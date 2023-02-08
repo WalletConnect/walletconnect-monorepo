@@ -143,6 +143,7 @@ export const TEST_OPTIONAL_NAMESPACES = {
 
 export const TEST_NAMESPACES = {
   eip155: {
+    chains: TEST_CHAINS,
     methods: TEST_METHODS,
     accounts: TEST_ACCOUNTS,
     events: TEST_EVENTS,
@@ -153,6 +154,7 @@ export const TEST_NAMESPACES = {
     events: TEST_EVENTS,
   },
   polkadot: {
+    chains: TEST_POLKADOT_CHAINS,
     methods: TEST_POLKADOT_METHODS,
     accounts: TEST_POLKADOT_ACCOUNTS,
     events: TEST_EVENTS,

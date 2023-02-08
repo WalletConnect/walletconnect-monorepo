@@ -7,6 +7,7 @@ export declare namespace SessionTypes {
   type Expiry = number;
 
   interface BaseNamespace {
+    chains?: string[];
     accounts: string[];
     methods: string[];
     events: string[];
