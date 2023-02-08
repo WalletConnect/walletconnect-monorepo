@@ -1,6 +1,6 @@
 {
   "name": "@walletconnect/legacy-modal",
-  "version": "2.0.0-rc.11",
+  "version": "2.0.0",
   "description": "Legacy QR Code Modal (v1.0) for WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",
@@ -79,8 +79,8 @@
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
-    "@walletconnect/legacy-types": "^2.0.0-rc.11",
-    "@walletconnect/legacy-utils": "^2.0.0-rc.11",
+    "@walletconnect/legacy-types": "^2.0.0",
+    "@walletconnect/legacy-utils": "^2.0.0",
     "copy-to-clipboard": "^3.3.3",
     "preact": "^10.12.0",
     "qrcode": "^1.5.1"
