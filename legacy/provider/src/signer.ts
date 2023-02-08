@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import EventEmitter from "events";
 import WalletConnect from "@walletconnect/legacy-client";
 import QRCodeModal from "@walletconnect/legacy-modal";
 import { IJsonRpcConnection, JsonRpcError, JsonRpcResponse } from "@walletconnect/jsonrpc-types";

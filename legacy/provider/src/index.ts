@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3";
+import EventEmitter from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
 import {
@@ -8,9 +8,9 @@ import {
   SIGNING_METHODS,
 } from "@walletconnect/legacy-types";
 import { getRpcUrl } from "@walletconnect/legacy-utils";
-import { IEthereumProvider, ProviderAccounts, RequestArguments } from "eip1193-provider";
 
 import { SignerConnection } from "./signer";
+import { IEthereumProvider, ProviderAccounts, RequestArguments } from "./types";
 
 class WalletConnectProvider implements IEthereumProvider {
   public events: any = new EventEmitter();

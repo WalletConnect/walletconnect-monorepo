@@ -81,8 +81,8 @@
   "dependencies": {
     "@walletconnect/legacy-types": "^2.0.0-beta.26",
     "@walletconnect/legacy-utils": "^2.0.0-beta.26",
-    "copy-to-clipboard": "^3.3.1",
-    "preact": "10.4.1",
-    "qrcode": "1.4.4"
+    "copy-to-clipboard": "^3.3.3",
+    "preact": "^10.12.0",
+    "qrcode": "^1.5.1"
   }
 }
