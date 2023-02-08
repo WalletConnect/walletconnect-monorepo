@@ -952,8 +952,18 @@ export class Engine extends IEngine {
     // if the length of the namespaces is greater than the length of the required namespaces
     // then the user is trying to approve part or all of the optional namespaces so we need to validate
     if (Object.keys(namespaces).length > Object.keys(proposal.requiredNamespaces).length) {
+      // filter out the optional namespaces that are not being used
+      const namespacesToValidate = Object.keys(proposal.optionalNamespaces).filter(
+        (namespace) => namespaces[namespace],
+      );
+      const usedOptionalNamespaces = {};
+      for (const key in proposal.optionalNamespaces) {
+        if (namespacesToValidate.includes(key)) {
+          usedOptionalNamespaces[key] = proposal.optionalNamespaces[key];
+        }
+      }
       const conformingNamespacesError = isConformingNamespaces(
-        proposal.optionalNamespaces,
+        usedOptionalNamespaces,
         namespaces,
         "approve()",
         "optionalNamespaces",
