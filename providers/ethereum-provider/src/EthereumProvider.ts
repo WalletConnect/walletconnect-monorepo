@@ -1,13 +1,14 @@
 import { EventEmitter } from "events";
 import { getAccountsFromNamespaces, isValidArray } from "@walletconnect/utils";
+import { Metadata, UniversalProvider } from "@walletconnect/universal-provider";
+import { Web3Modal } from "@web3modal/standalone";
+import { SignClientTypes } from "@walletconnect/types";
+
 import {
   IEthereumProvider as IProvider,
   ProviderAccounts,
   RequestArguments,
-} from "eip1193-provider";
-import { Metadata, UniversalProvider } from "@walletconnect/universal-provider";
-import { Web3Modal } from "@web3modal/standalone";
-import { SignClientTypes } from "@walletconnect/types";
+} from "./types";
 
 export const RPC_URL = "https://rpc.walletconnect.com/v1/";
 
