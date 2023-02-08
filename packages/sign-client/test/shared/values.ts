@@ -1,4 +1,3 @@
-import path from "path";
 import { SignClientTypes, RelayerTypes } from "@walletconnect/types";
 
 export const PACKAGE_NAME = "sign-client";
@@ -7,13 +6,47 @@ export const TEST_RELAY_URL = process.env.TEST_RELAY_URL
   ? process.env.TEST_RELAY_URL
   : "ws://0.0.0.0:5555";
 
+export const TEST_RELAY_URL_US = "wss://us-east-1.relay.walletconnect.com";
+export const TEST_RELAY_URL_EU = "wss://eu-central-1.relay.walletconnect.com";
+export const TEST_RELAY_URL_AP = "wss://ap-southeast-1.relay.walletconnect.com";
+
+// See https://github.com/WalletConnect/push-webhook-test-server
+export const TEST_WEBHOOK_ENDPOINT = "https://webhook-push-test.walletconnect.com/";
+
 export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   ? process.env.TEST_PROJECT_ID
   : undefined;
 
 export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "debug",
   relayUrl: TEST_RELAY_URL,
+  projectId: TEST_PROJECT_ID,
+  storageOptions: {
+    database: ":memory:",
+  },
+};
+
+export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
+  logger: "fatal",
+  relayUrl: TEST_RELAY_URL_US,
+  projectId: TEST_PROJECT_ID,
+  storageOptions: {
+    database: ":memory:",
+  },
+};
+
+export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
+  logger: "fatal",
+  relayUrl: TEST_RELAY_URL_EU,
+  projectId: TEST_PROJECT_ID,
+  storageOptions: {
+    database: ":memory:",
+  },
+};
+
+export const TEST_SIGN_CLIENT_OPTIONS_AP: SignClientTypes.Options = {
+  logger: "fatal",
+  relayUrl: TEST_RELAY_URL_AP,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
     database: ":memory:",
@@ -36,7 +69,7 @@ export const TEST_APP_METADATA_B: SignClientTypes.Metadata = {
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
 };
 
-export const TEST_RELAY_PROTOCOL = "iridium";
+export const TEST_RELAY_PROTOCOL = "irn";
 export const TEST_RELAY_OPTIONS: RelayerTypes.ProtocolOptions = {
   protocol: TEST_RELAY_PROTOCOL,
 };
@@ -143,4 +176,24 @@ export const TEST_RESPOND_PARAMS = {
 export const TEST_EMIT_PARAMS = {
   event: { name: TEST_EVENTS[0], data: "" },
   chainId: TEST_CHAINS[0],
+};
+
+type RelayerType = {
+  value: string;
+  label: string;
+};
+
+export const TEST_SIGN_REQUEST_PARAMS = {
+  method: "eth_signTransaction",
+  params: [
+    {
+      from: TEST_ETHEREUM_ACCOUNT,
+      to: TEST_ETHEREUM_ACCOUNT,
+      data: "0x",
+      nonce: "0x01",
+      gasPrice: "0x020a7ac094",
+      gasLimit: "0x5208",
+      value: "0x00",
+    },
+  ],
 };

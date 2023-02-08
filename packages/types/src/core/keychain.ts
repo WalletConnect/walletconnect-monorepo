@@ -1,4 +1,4 @@
-import { Logger } from "pino";
+import { Logger } from "@walletconnect/logger";
 import { ICore } from "./core";
 
 export abstract class IKeyChain {

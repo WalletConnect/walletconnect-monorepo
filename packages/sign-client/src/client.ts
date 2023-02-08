@@ -1,3 +1,4 @@
+import pino from "pino";
 import { Core } from "@walletconnect/core";
 import {
   generateChildLogger,
@@ -7,9 +8,8 @@ import {
 import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import pino from "pino";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
-import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
+import { Engine, PendingRequest, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
@@ -21,11 +21,9 @@ export class SignClient extends ISignClient {
   public logger: ISignClient["logger"];
   public events: ISignClient["events"] = new EventEmitter();
   public engine: ISignClient["engine"];
-  public pairing: ISignClient["pairing"];
   public session: ISignClient["session"];
   public proposal: ISignClient["proposal"];
-  public history: ISignClient["history"];
-  public expirer: ISignClient["expirer"];
+  public pendingRequest: ISignClient["pendingRequest"];
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
@@ -47,16 +45,18 @@ export class SignClient extends ISignClient {
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
-    this.pairing = new Pairing(this.core, this.logger);
     this.session = new Session(this.core, this.logger);
     this.proposal = new Proposal(this.core, this.logger);
-    this.history = new JsonRpcHistory(this.core, this.logger);
-    this.expirer = new Expirer(this.core, this.logger);
+    this.pendingRequest = new PendingRequest(this.core, this.logger);
     this.engine = new Engine(this);
   }
 
   get context() {
     return getLoggerContext(this.logger);
+  }
+
+  get pairing() {
+    return this.core.pairing.pairings;
   }
 
   // ---------- Events ----------------------------------------------- //
@@ -77,57 +77,61 @@ export class SignClient extends ISignClient {
     return this.events.removeListener(name, listener);
   };
 
+  public removeAllListeners: ISignClientEvents["removeAllListeners"] = (name) => {
+    return this.events.removeAllListeners(name);
+  };
+
   // ---------- Engine ----------------------------------------------- //
 
-  public connect: ISignClient["connect"] = async params => {
+  public connect: ISignClient["connect"] = async (params) => {
     try {
       return await this.engine.connect(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public pair: ISignClient["pair"] = async params => {
+  public pair: ISignClient["pair"] = async (params) => {
     try {
       return await this.engine.pair(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public approve: ISignClient["approve"] = async params => {
+  public approve: ISignClient["approve"] = async (params) => {
     try {
       return await this.engine.approve(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public reject: ISignClient["reject"] = async params => {
+  public reject: ISignClient["reject"] = async (params) => {
     try {
       return await this.engine.reject(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public update: ISignClient["update"] = async params => {
+  public update: ISignClient["update"] = async (params) => {
     try {
       return await this.engine.update(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public extend: ISignClient["extend"] = async params => {
+  public extend: ISignClient["extend"] = async (params) => {
     try {
       return await this.engine.extend(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
@@ -136,52 +140,61 @@ export class SignClient extends ISignClient {
   public request: ISignClient["request"] = async <T>(params: EngineTypes.RequestParams) => {
     try {
       return await this.engine.request<T>(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public respond: ISignClient["respond"] = async params => {
+  public respond: ISignClient["respond"] = async (params) => {
     try {
       return await this.engine.respond(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public ping: ISignClient["ping"] = async params => {
+  public ping: ISignClient["ping"] = async (params) => {
     try {
       return await this.engine.ping(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public emit: ISignClient["emit"] = async params => {
+  public emit: ISignClient["emit"] = async (params) => {
     try {
       return await this.engine.emit(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public disconnect: ISignClient["disconnect"] = async params => {
+  public disconnect: ISignClient["disconnect"] = async (params) => {
     try {
       return await this.engine.disconnect(params);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public find: ISignClient["find"] = params => {
+  public find: ISignClient["find"] = (params) => {
     try {
       return this.engine.find(params);
-    } catch (error) {
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public getPendingSessionRequests: ISignClient["getPendingSessionRequests"] = () => {
+    try {
+      return this.engine.getPendingSessionRequests();
+    } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
@@ -193,15 +206,13 @@ export class SignClient extends ISignClient {
     this.logger.trace(`Initialized`);
     try {
       await this.core.start();
-      await this.pairing.init();
       await this.session.init();
       await this.proposal.init();
-      await this.history.init();
-      await this.expirer.init();
+      await this.pendingRequest.init();
       await this.engine.init();
-      this.logger.info(`SignClient Initilization Success`);
-    } catch (error) {
-      this.logger.info(`SignClient Initilization Failure`);
+      this.logger.info(`SignClient Initialization Success`);
+    } catch (error: any) {
+      this.logger.info(`SignClient Initialization Failure`);
       this.logger.error(error.message);
       throw error;
     }

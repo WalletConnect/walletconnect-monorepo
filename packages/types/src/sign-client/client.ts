@@ -1,12 +1,10 @@
 import EventEmmiter from "events";
-import { Logger } from "pino";
 import { IEngine } from "./engine";
-import { IPairing } from "./pairing";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
-import { IJsonRpcHistory } from "../core/history";
 import { CoreTypes, ICore } from "../core/core";
-import { IExpirer } from "./expirer";
+import { Logger } from "@walletconnect/logger";
+import { IPendingRequest } from "./pendingRequest";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -14,11 +12,8 @@ export declare namespace SignClientTypes {
     | "session_update"
     | "session_extend"
     | "session_ping"
-    | "pairing_ping"
     | "session_delete"
-    | "pairing_delete"
     | "session_expire"
-    | "pairing_expire"
     | "session_request"
     | "session_event"
     | "proposal_expire";
@@ -34,11 +29,8 @@ export declare namespace SignClientTypes {
     session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
     session_extend: Omit<BaseEventArgs, "params">;
     session_ping: Omit<BaseEventArgs, "params">;
-    pairing_ping: Omit<BaseEventArgs, "params">;
     session_delete: Omit<BaseEventArgs, "params">;
-    pairing_delete: Omit<BaseEventArgs, "params">;
     session_expire: { topic: string };
-    pairing_expire: { topic: string };
     session_request: BaseEventArgs<{
       request: { method: string; params: any };
       chainId: string;
@@ -50,12 +42,7 @@ export declare namespace SignClientTypes {
     proposal_expire: { id: number };
   }
 
-  type Metadata = {
-    name: string;
-    description: string;
-    url: string;
-    icons: string[];
-  };
+  type Metadata = CoreTypes.Metadata;
 
   interface Options extends CoreTypes.Options {
     core?: ICore;
@@ -92,6 +79,8 @@ export abstract class ISignClientEvents extends EventEmmiter {
     event: E,
     listener: (args: SignClientTypes.EventArguments[E]) => any,
   ) => this;
+
+  public abstract removeAllListeners: <E extends SignClientTypes.Event>(event: E) => this;
 }
 
 export abstract class ISignClient {
@@ -106,11 +95,9 @@ export abstract class ISignClient {
   public abstract logger: Logger;
   public abstract events: ISignClientEvents;
   public abstract engine: IEngine;
-  public abstract pairing: IPairing;
   public abstract session: ISession;
   public abstract proposal: IProposal;
-  public abstract history: IJsonRpcHistory;
-  public abstract expirer: IExpirer;
+  public abstract pendingRequest: IPendingRequest;
 
   constructor(public opts?: SignClientTypes.Options) {}
 
@@ -126,4 +113,5 @@ export abstract class ISignClient {
   public abstract emit: IEngine["emit"];
   public abstract disconnect: IEngine["disconnect"];
   public abstract find: IEngine["find"];
+  public abstract getPendingSessionRequests: IEngine["getPendingSessionRequests"];
 }

@@ -1,36 +1,39 @@
-import "mocha";
-import pino from "pino";
+import { expect, describe, it, beforeEach, afterAll, afterEach } from "vitest";
 import Sinon from "sinon";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import { IRelayer, ISubscriber } from "@walletconnect/types";
-import { generateRandomBytes32, getRelayProtocolName } from "@walletconnect/utils";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
+import { ICore, IRelayer, ISubscriber } from "@walletconnect/types";
+import { generateRandomBytes32, getRelayProtocolName, hashMessage } from "@walletconnect/utils";
 
 import {
   Core,
   CORE_DEFAULT,
   CORE_STORAGE_PREFIX,
   MESSAGES_STORAGE_VERSION,
-  Relayer,
   RELAYER_PROVIDER_EVENTS,
   Subscriber,
   SUBSCRIBER_CONTEXT,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 
 describe("Subscriber", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
 
   let relayer: IRelayer;
   let subscriber: ISubscriber;
+  let core: ICore;
 
   beforeEach(async () => {
-    const core = new Core(TEST_CORE_OPTIONS);
+    core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({ core, logger });
-    await relayer.init();
-    subscriber = new Subscriber(relayer, logger);
+
+    relayer = core.relayer;
+    subscriber = relayer.subscriber;
     subscriber.relayer.provider.request = () => Promise.resolve({} as any);
     await subscriber.init();
+  });
+
+  afterEach(async () => {
+    await disconnectSocket(core.relayer);
   });
 
   it("provides the expected `storageKey` format", () => {
@@ -68,16 +71,14 @@ describe("Subscriber", () => {
 
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
-      await expect(subscriber.subscribe(topic)).to.eventually.be.rejectedWith(
-        "Not initialized. subscription",
-      );
+      await expect(subscriber.subscribe(topic)).rejects.toThrow("Not initialized. subscription");
     });
     it("calls `provider.request` with the expected request shape", async () => {
       await subscriber.subscribe(topic);
       expect(
         requestSpy.calledOnceWith(
           Sinon.match({
-            method: "iridium_subscribe",
+            method: "irn_subscribe",
             params: {
               topic,
             },
@@ -87,7 +88,17 @@ describe("Subscriber", () => {
     });
     it("returns the subscription id", async () => {
       const id = await subscriber.subscribe(topic);
-      expect(id).to.equal("test-id");
+      const expectedId = hashMessage(topic + (await core.crypto.getClientId()));
+      expect(id).to.equal(expectedId);
+    });
+    it("should subscribe a topic immediately after connect", async () => {
+      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
+      expect(subscriber.subscriptions.size).to.equal(0);
+      expect(subscriber.topics.length).to.equal(0);
+      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
+      await relayer.subscriber.subscribe(generateRandomBytes32());
+      expect(subscriber.subscriptions.size).to.equal(1);
+      expect(subscriber.topics.length).to.equal(1);
     });
   });
 
@@ -105,9 +116,7 @@ describe("Subscriber", () => {
     });
     it("throws if Subscriber was not initialized", async () => {
       const subscriber = new Subscriber(relayer, logger);
-      await expect(subscriber.unsubscribe(topic)).to.eventually.be.rejectedWith(
-        "Not initialized. subscription",
-      );
+      await expect(subscriber.unsubscribe(topic)).rejects.toThrow("Not initialized. subscription");
     });
     it("unsubscribes by individual id if `opts.id` is provided", async () => {
       const id = "test-id";
@@ -116,7 +125,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.calledOnceWith(
           Sinon.match({
-            method: "iridium_unsubscribe",
+            method: "irn_unsubscribe",
             params: {
               topic,
             },
@@ -132,7 +141,7 @@ describe("Subscriber", () => {
       expect(
         requestSpy.getCall(1).calledWith(
           Sinon.match({
-            method: "iridium_unsubscribe",
+            method: "irn_unsubscribe",
             params: {
               topic,
             },

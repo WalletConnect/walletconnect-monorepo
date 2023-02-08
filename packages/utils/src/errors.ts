@@ -93,6 +93,11 @@ const SDK_ERRORS = {
     message: "Session settlement failed.",
     code: 7000,
   },
+  /* ----- PAIRING (10xxx) ----- */
+  WC_METHOD_UNSUPPORTED: {
+    message: "Unsupported wc_ method.",
+    code: 10001,
+  },
 };
 
 const INTERNAL_ERRORS = {

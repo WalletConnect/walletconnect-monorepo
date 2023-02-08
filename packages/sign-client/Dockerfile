@@ -1,4 +1,4 @@
-FROM node:16.14-alpine as base
+FROM node:16.16-alpine as base
 
 WORKDIR /
 
@@ -11,7 +11,6 @@ WORKDIR /
 
 COPY ../ ./
 RUN npm ci
-RUN npm run bootstrap
 RUN npm run build
 
 WORKDIR /packages/sign-client/

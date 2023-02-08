@@ -1,11 +1,10 @@
-import "mocha";
+import { expect, describe, it } from "vitest";
 import sinon from "sinon";
-
 import Core from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Core", () => {
-  it("does not duplicate initilization if `Core.start()` is called repeatedly", async () => {
+  it("does not duplicate initialization if `Core.start()` is called repeatedly", async () => {
     const core = new Core(TEST_CORE_OPTIONS);
     const cryptoInitSpy = sinon.spy();
     const relayerInitSpy = sinon.spy();

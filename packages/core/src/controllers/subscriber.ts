@@ -1,9 +1,9 @@
-import { Logger } from "pino";
 import { EventEmitter } from "events";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
+import { Watch } from "@walletconnect/time";
 import {
   IRelayer,
   ISubscriber,
@@ -16,14 +16,16 @@ import {
   getInternalError,
   getRelayProtocolApi,
   getRelayProtocolName,
+  createExpiringPromise,
+  hashMessage,
 } from "@walletconnect/utils";
-
 import {
   CORE_STORAGE_PREFIX,
-  RELAYER_PROVIDER_EVENTS,
   SUBSCRIBER_CONTEXT,
   SUBSCRIBER_EVENTS,
   SUBSCRIBER_STORAGE_VERSION,
+  PENDING_SUB_RESOLUTION_TIMEOUT,
+  RELAYER_EVENTS,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -37,22 +39,26 @@ export class Subscriber extends ISubscriber {
 
   private cached: SubscriberTypes.Active[] = [];
   private initialized = false;
-
+  private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
+  private pollingInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
-
+  private subscribeTimeout = 10_000;
+  private restartInProgress = false;
+  private clientId: string;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
     this.logger = generateChildLogger(logger, this.name);
+    this.clientId = ""; // assigned in init
   }
 
   public init: ISubscriber["init"] = async () => {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
-      await this.restore();
-      await this.reset();
+      await this.restart();
       this.registerEventListeners();
       this.onEnable();
+      this.clientId = await this.relayer.core.crypto.getClientId();
     }
   };
 
@@ -81,6 +87,7 @@ export class Subscriber extends ISubscriber {
   }
 
   public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
+    await this.restartToComplete();
     this.isInitialized();
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
@@ -101,12 +108,37 @@ export class Subscriber extends ISubscriber {
   };
 
   public unsubscribe: ISubscriber["unsubscribe"] = async (topic, opts) => {
+    await this.restartToComplete();
     this.isInitialized();
     if (typeof opts?.id !== "undefined") {
       await this.unsubscribeById(topic, opts.id, opts);
     } else {
       await this.unsubscribeByTopic(topic, opts);
     }
+  };
+
+  public isSubscribed: ISubscriber["isSubscribed"] = async (topic: string) => {
+    // topic subscription is already resolved
+    if (this.topics.includes(topic)) return true;
+
+    // wait for the subscription to resolve
+    return await new Promise((resolve, reject) => {
+      const watch = new Watch();
+      watch.start(this.pendingSubscriptionWatchLabel);
+
+      const interval = setInterval(() => {
+        if (!this.pending.has(topic) && this.topics.includes(topic)) {
+          clearInterval(interval);
+          watch.stop(this.pendingSubscriptionWatchLabel);
+          resolve(true);
+        }
+        if (watch.elapsed(this.pendingSubscriptionWatchLabel) >= PENDING_SUB_RESOLUTION_TIMEOUT) {
+          clearInterval(interval);
+          watch.stop(this.pendingSubscriptionWatchLabel);
+          reject(false);
+        }
+      }, this.pollingInterval);
+    });
   };
 
   public on: ISubscriber["on"] = (event, listener) => {
@@ -152,7 +184,7 @@ export class Subscriber extends ISubscriber {
 
   private async unsubscribeByTopic(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
     const ids = this.topicMap.get(topic);
-    await Promise.all(ids.map(async id => await this.unsubscribeById(topic, id, opts)));
+    await Promise.all(ids.map(async (id) => await this.unsubscribeById(topic, id, opts)));
   }
 
   private async unsubscribeById(topic: string, id: string, opts?: RelayerTypes.UnsubscribeOptions) {
@@ -182,7 +214,17 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    return await this.relayer.provider.request(request);
+    try {
+      const subscribe = await createExpiringPromise(
+        this.relayer.provider.request(request),
+        this.subscribeTimeout,
+      );
+      await subscribe;
+    } catch (err) {
+      this.logger.debug(`Outgoing Relay Payload stalled`);
+      this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+    }
+    return hashMessage(topic + this.clientId);
   }
 
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
@@ -267,14 +309,25 @@ export class Subscriber extends ISubscriber {
     } as SubscriberEvents.Deleted);
   }
 
+  private restart = async () => {
+    this.restartInProgress = true;
+    await this.restore();
+    await this.reset();
+    this.restartInProgress = false;
+  };
+
   private async persist() {
     await this.setRelayerSubscriptions(this.values);
     this.events.emit(SUBSCRIBER_EVENTS.sync);
   }
 
   private async reset() {
-    if (!this.cached.length) return;
-    await Promise.all(this.cached.map(async subscription => await this.resubscribe(subscription)));
+    if (this.cached.length) {
+      await Promise.all(
+        this.cached.map(async (subscription) => await this.resubscribe(subscription)),
+      );
+    }
+    this.events.emit(SUBSCRIBER_EVENTS.resubscribed);
   }
 
   private async restore() {
@@ -285,6 +338,7 @@ export class Subscriber extends ISubscriber {
       if (this.subscriptions.size) {
         const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
         this.logger.error(message);
+        this.logger.error(`${this.name}: ${JSON.stringify(this.values)}`);
         throw new Error(message);
       }
       this.cached = persisted;
@@ -307,7 +361,8 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
-    await this.reset();
+    if (this.restartInProgress) return;
+    await this.restart();
     this.onEnable();
   }
 
@@ -316,7 +371,10 @@ export class Subscriber extends ISubscriber {
   }
 
   private checkPending() {
-    this.pending.forEach(async params => {
+    if (this.relayer.transportExplicitlyClosed) {
+      return;
+    }
+    this.pending.forEach(async (params) => {
       const id = await this.rpcSubscribe(params.topic, params.relay);
       this.onSubscribe(id, params);
     });
@@ -326,10 +384,10 @@ export class Subscriber extends ISubscriber {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkPending();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.connect, async () => {
+    this.relayer.on(RELAYER_EVENTS.connect, async () => {
       await this.onConnect();
     });
-    this.relayer.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+    this.relayer.on(RELAYER_EVENTS.disconnect, () => {
       this.onDisconnect();
     });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
@@ -351,5 +409,18 @@ export class Subscriber extends ISubscriber {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+  }
+
+  private async restartToComplete() {
+    if (!this.restartInProgress) return;
+
+    await new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        if (!this.restartInProgress) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, this.pollingInterval);
+    });
   }
 }

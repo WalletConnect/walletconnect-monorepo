@@ -1,5 +1,4 @@
-import { Logger } from "pino";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IKeyChain } from "@walletconnect/types";
 import { getInternalError, mapToObj, objToMap } from "@walletconnect/utils";
 
@@ -36,7 +35,7 @@ export class KeyChain implements IKeyChain {
     return this.storagePrefix + this.version + "//" + this.name;
   }
 
-  public has: IKeyChain["has"] = tag => {
+  public has: IKeyChain["has"] = (tag) => {
     this.isInitialized();
     return this.keychain.has(tag);
   };
@@ -47,7 +46,7 @@ export class KeyChain implements IKeyChain {
     await this.persist();
   };
 
-  public get: IKeyChain["get"] = tag => {
+  public get: IKeyChain["get"] = (tag) => {
     this.isInitialized();
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
@@ -57,7 +56,7 @@ export class KeyChain implements IKeyChain {
     return key;
   };
 
-  public del: IKeyChain["del"] = async tag => {
+  public del: IKeyChain["del"] = async (tag) => {
     this.isInitialized();
     this.keychain.delete(tag);
     await this.persist();

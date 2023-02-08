@@ -1,5 +1,5 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
-import { Logger } from "pino";
+import { Logger } from "@walletconnect/logger";
 import { ICore } from "./core";
 import { IKeyChain } from "./keychain";
 
@@ -103,4 +103,5 @@ export abstract class ICrypto {
   ): Promise<JsonRpcPayload>;
 
   public abstract signJWT(aud: string): Promise<string>;
+  public abstract getPayloadType(encoded: string): number;
 }

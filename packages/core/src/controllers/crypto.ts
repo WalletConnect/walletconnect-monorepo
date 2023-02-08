@@ -1,4 +1,4 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
@@ -14,8 +14,9 @@ import {
   validateEncoding,
   validateDecoding,
   isTypeOneEnvelope,
+  deserialize,
+  decodeTypeByte,
 } from "@walletconnect/utils";
-import { Logger } from "pino";
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
 import { KeyChain } from "./keychain";
 
@@ -42,7 +43,7 @@ export class Crypto implements ICrypto {
     return getLoggerContext(this.logger);
   }
 
-  public hasKeys: ICrypto["hasKeys"] = tag => {
+  public hasKeys: ICrypto["hasKeys"] = (tag) => {
     this.isInitialized();
     return this.keychain.has(tag);
   };
@@ -61,7 +62,7 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public signJWT: ICrypto["signJWT"] = async aud => {
+  public signJWT: ICrypto["signJWT"] = async (aud) => {
     this.isInitialized();
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);
@@ -128,6 +129,10 @@ export class Crypto implements ICrypto {
     return payload;
   };
 
+  public getPayloadType(encoded: string): number {
+    const deserialized = deserialize(encoded);
+    return decodeTypeByte(deserialized.type);
+  }
   // ---------- Private ----------------------------------------------- //
 
   private async setPrivateKey(publicKey: string, privateKey: string): Promise<string> {

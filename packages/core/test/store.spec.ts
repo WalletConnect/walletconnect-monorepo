@@ -1,8 +1,7 @@
-import "mocha";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import pino from "pino";
+import { expect, describe, it, beforeEach } from "vitest";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { Core, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
 const MOCK_STORE_NAME = "mock-entity";
@@ -25,6 +24,56 @@ describe("Store", () => {
     expect(store.storageKey).to.equal(
       CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME,
     );
+  });
+
+  describe("init", () => {
+    type MockValue = { id: string; value: string };
+    const ids = ["1", "2", "3", "foo"];
+    const STORAGE_KEY = CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME;
+
+    beforeEach(() => {
+      const cachedValues = ids.map((id) => ({ id, value: "foo" }));
+      core.storage.setItem(STORAGE_KEY, cachedValues);
+    });
+
+    it("retrieves from cache using getKey", async () => {
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.id,
+      );
+      await store.init();
+      for (let id of ids) {
+        expect(store.keys).includes(id);
+      }
+    });
+
+    it("safely overwrites values when retrieving from cache using getKey", async () => {
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.value,
+      );
+      await store.init();
+      expect(store.keys).to.eql(["foo"]);
+    });
+
+    it("handles null and undefined cases", async () => {
+      core.storage.setItem(STORAGE_KEY, [undefined, null, { id: 1, value: "foo" }]);
+      const store = new Store<string, MockValue>(
+        core,
+        logger,
+        MOCK_STORE_NAME,
+        undefined,
+        (val) => val.value,
+      );
+      await store.init();
+      expect(store.keys).to.eql(["foo"]);
+    });
   });
 
   describe("set", () => {

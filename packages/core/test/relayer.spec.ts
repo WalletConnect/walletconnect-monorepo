@@ -1,7 +1,6 @@
-import "mocha";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
-import pino from "pino";
 
 import {
   Core,
@@ -10,8 +9,9 @@ import {
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
+  SUBSCRIBER_EVENTS,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IRelayer } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
@@ -25,13 +25,27 @@ describe("Relayer", () => {
   beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({ core, logger });
+    relayer = core.relayer;
+  });
+
+  afterEach(async () => {
+    await disconnectSocket(core.relayer);
   });
 
   describe("init", () => {
     let initSpy: Sinon.SinonSpy;
-    beforeEach(() => {
+    beforeEach(async () => {
       initSpy = Sinon.spy();
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
+    });
+
+    afterEach(async () => {
+      await disconnectSocket(relayer);
     });
 
     it("initializes a MessageTracker", async () => {
@@ -65,9 +79,20 @@ describe("Relayer", () => {
   });
 
   describe("publish", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
     });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
+
     const topic = "abc123";
     const message = "publish me";
     it("calls `publisher.publish` with provided args", async () => {
@@ -86,21 +111,54 @@ describe("Relayer", () => {
   });
 
   describe("subscribe", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
     });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
+
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
       const spy = Sinon.spy(() => "mock-id");
+      // @ts-expect-error
       relayer.subscriber.subscribe = spy;
-      const id = await relayer.subscribe("abc123");
+      let id;
+      await Promise.all([
+        new Promise<void>(async (resolve) => {
+          id = await relayer.subscribe("abc123");
+          resolve();
+        }),
+        new Promise<void>((resolve) => {
+          relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic: "abc123" });
+          resolve();
+        }),
+      ]);
+      // @ts-expect-error
       expect(spy.calledOnceWith("abc123")).to.be.true;
       expect(id).to.eq("mock-id");
     });
   });
 
   describe("unsubscribe", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
+    });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
     });
     it("calls `subscriber.unsubscribe` with the passed topic", async () => {
       const spy = Sinon.spy();
@@ -111,9 +169,20 @@ describe("Relayer", () => {
   });
 
   describe("onProviderPayload", () => {
+    let relayer;
     beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
       await relayer.init();
     });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
+
     const validPayload: JsonRpcRequest = {
       id: 123,
       jsonrpc: "2.0",

@@ -1,5 +1,5 @@
-import pino, { Logger } from "pino";
 import { EventEmitter } from "events";
+import pino from "pino";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
   formatJsonRpcResult,
@@ -13,6 +13,7 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
+  Logger,
 } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { toMiliseconds } from "@walletconnect/time";
@@ -24,6 +25,7 @@ import {
   ISubscriber,
   RelayerOptions,
   RelayerTypes,
+  SubscriberTypes,
 } from "@walletconnect/types";
 import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
@@ -36,6 +38,7 @@ import {
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_DEFAULT_RELAY_URL,
+  SUBSCRIBER_EVENTS,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -53,12 +56,12 @@ export class Relayer extends IRelayer {
   public subscriber: ISubscriber;
   public publisher: IPublisher;
   public name = RELAYER_CONTEXT;
+  public transportExplicitlyClosed = false;
 
   private initialized = false;
-
+  private reconnecting = false;
   private relayUrl: string;
   private projectId: string | undefined;
-
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -79,9 +82,8 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    const auth = await this.core.crypto.signJWT(this.relayUrl);
-    this.provider = this.createProvider(auth);
-    await Promise.all([this.messages.init(), this.provider.connect(), this.subscriber.init()]);
+    this.provider = await this.createProvider();
+    await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
   }
@@ -106,7 +108,20 @@ export class Relayer extends IRelayer {
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
     this.isInitialized();
-    const id = await this.subscriber.subscribe(topic, opts);
+    let id = "";
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
+          if (subscription.topic === topic) {
+            resolve();
+          }
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        id = await this.subscriber.subscribe(topic, opts);
+        resolve();
+      }),
+    ]);
     return id;
   }
 
@@ -131,9 +146,66 @@ export class Relayer extends IRelayer {
     this.events.removeListener(event, listener);
   }
 
+  public async transportClose() {
+    this.transportExplicitlyClosed = true;
+    if (this.connected) {
+      await this.provider.disconnect();
+      this.events.emit(RELAYER_EVENTS.transport_closed);
+    }
+  }
+
+  public async transportOpen(relayUrl?: string) {
+    if (this.reconnecting) return;
+    this.relayUrl = relayUrl || this.relayUrl;
+    this.transportExplicitlyClosed = false;
+    this.reconnecting = true;
+    try {
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          if (!this.initialized) resolve();
+
+          // wait for the subscriber to finish resubscribing to its topics
+          this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+            resolve();
+          });
+        }),
+        await Promise.race([
+          this.provider.connect(),
+          new Promise<void>((_res, reject) =>
+            // rejects pending promise if transport is closed before connection is established
+            // useful when .connect() gets stuck resolving
+            this.once(RELAYER_EVENTS.transport_closed, () => {
+              reject(new Error("closeTransport called before connection was established"));
+            }),
+          ),
+        ]),
+      ]);
+    } catch (e: unknown | Error) {
+      const error = e as Error;
+      if (!/socket hang up/i.test(error.message)) {
+        throw e;
+      }
+      this.logger.error(e);
+      this.events.emit(RELAYER_EVENTS.transport_closed);
+    } finally {
+      this.reconnecting = false;
+    }
+  }
+
+  public async restartTransport(relayUrl?: string) {
+    if (this.transportExplicitlyClosed) {
+      return;
+    }
+
+    await this.transportClose();
+    await new Promise<void>((resolve) => setTimeout(resolve, RELAYER_RECONNECT_TIMEOUT));
+    await this.transportOpen(relayUrl);
+  }
+
   // ---------- Private ----------------------------------------------- //
 
-  private createProvider(auth: string) {
+  private async createProvider() {
+    const auth = await this.core.crypto.signJWT(this.relayUrl);
     return new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
@@ -153,9 +225,9 @@ export class Relayer extends IRelayer {
     await this.messages.set(topic, message);
   }
 
-  private shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+  private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
-    if (!this.subscriber.topics.includes(topic)) return true;
+    if (!(await this.subscriber.isSubscribed(topic))) return true;
     const exists = this.messages.has(topic, message);
     return exists;
   }
@@ -177,7 +249,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
-    if (this.shouldIgnoreMessageEvent(messageEvent)) return;
+    if (await this.shouldIgnoreMessageEvent(messageEvent)) return;
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
     await this.recordMessageEvent(messageEvent);
   }
@@ -196,14 +268,27 @@ export class Relayer extends IRelayer {
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       this.events.emit(RELAYER_EVENTS.disconnect);
-      // Attempt reconnection after one second.
-      setTimeout(() => {
-        this.provider.connect();
-      }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
+
+      this.attemptToReconnect();
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
       this.events.emit(RELAYER_EVENTS.error, err),
     );
+
+    this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
+      await this.restartTransport();
+    });
+  }
+
+  private attemptToReconnect() {
+    if (this.transportExplicitlyClosed) {
+      return;
+    }
+
+    // Attempt reconnection after one second.
+    setTimeout(async () => {
+      await this.transportOpen();
+    }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
   private isInitialized() {

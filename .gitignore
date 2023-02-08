@@ -30,6 +30,8 @@ zip
 tsconfig.tsbuildinfo
 test.db
 test.db-journal
+**/tmp
 setup
 result*
 ops/grafana/grafana.ini
+.rollup.cache

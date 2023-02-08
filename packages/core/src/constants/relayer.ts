@@ -1,6 +1,6 @@
 import { ONE_SECOND } from "@walletconnect/time";
 
-export const RELAYER_DEFAULT_PROTOCOL = "iridium";
+export const RELAYER_DEFAULT_PROTOCOL = "irn";
 
 export const RELAYER_DEFAULT_LOGGER = "error";
 
@@ -13,6 +13,9 @@ export const RELAYER_EVENTS = {
   connect: "relayer_connect",
   disconnect: "relayer_disconnect",
   error: "relayer_error",
+  connection_stalled: "relayer_connection_stalled",
+  transport_closed: "relayer_transport_closed",
+  publish: "relayer_publish",
 };
 
 export const RELAYER_SUBSCRIBER_SUFFIX = "_subscription";
@@ -30,6 +33,5 @@ export const RELAYER_STORAGE_OPTIONS = {
   database: ":memory:",
 };
 
-// FIXME: Always manually change this after each release (hardcoded from package.json)
-// ... this will be temporarily hardcoded until we refactor our build chain!
-export const RELAYER_SDK_VERSION = "2.0.0-beta.102";
+// Updated automatically via `new-version` npm script.
+export const RELAYER_SDK_VERSION = "2.3.3";

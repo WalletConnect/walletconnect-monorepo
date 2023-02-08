@@ -1,9 +1,6 @@
 import { SignClientTypes } from "@walletconnect/types";
-import "mocha";
-// import { expect } from "chai";
-
 import SignClient from "../../src";
-
+import { throttle } from "./helpers";
 import { TEST_SIGN_CLIENT_OPTIONS_A, TEST_SIGN_CLIENT_OPTIONS_B } from "./values";
 
 export interface Clients {
@@ -11,8 +8,22 @@ export interface Clients {
   B: SignClient;
 }
 
-export async function initTwoClients(clientOpts: SignClientTypes.Options = {}) {
-  const A = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS_A, ...clientOpts });
-  const B = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS_B, ...clientOpts });
+export async function initTwoClients(
+  clientOptsA: SignClientTypes.Options = {},
+  clientOptsB: SignClientTypes.Options = {},
+  sharedClientOpts: SignClientTypes.Options = {},
+) {
+  const A = await SignClient.init({
+    ...TEST_SIGN_CLIENT_OPTIONS_A,
+    ...sharedClientOpts,
+    ...clientOptsA,
+  });
+
+  const B = await SignClient.init({
+    ...TEST_SIGN_CLIENT_OPTIONS_B,
+    ...sharedClientOpts,
+    ...clientOptsB,
+  });
+  await throttle(500);
   return { A, B };
 }

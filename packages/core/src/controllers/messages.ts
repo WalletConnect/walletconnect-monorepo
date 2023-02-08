@@ -1,7 +1,6 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IMessageTracker, MessageRecord } from "@walletconnect/types";
 import { hashMessage, mapToObj, objToMap, getInternalError } from "@walletconnect/utils";
-import { Logger } from "pino";
 import { CORE_STORAGE_PREFIX, MESSAGES_CONTEXT, MESSAGES_STORAGE_VERSION } from "../constants";
 
 export class MessageTracker extends IMessageTracker {
@@ -62,7 +61,7 @@ export class MessageTracker extends IMessageTracker {
     return hash;
   };
 
-  public get: IMessageTracker["get"] = topic => {
+  public get: IMessageTracker["get"] = (topic) => {
     this.isInitialized();
     let messages = this.messages.get(topic);
     if (typeof messages === "undefined") {
@@ -78,7 +77,7 @@ export class MessageTracker extends IMessageTracker {
     return typeof messages[hash] !== "undefined";
   };
 
-  public del: IMessageTracker["del"] = async topic => {
+  public del: IMessageTracker["del"] = async (topic) => {
     this.isInitialized();
     this.messages.delete(topic);
     await this.persist();

@@ -1,7 +1,6 @@
-import "mocha";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { expect, describe, it, beforeEach } from "vitest";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
-import pino from "pino";
 
 import {
   Core,
@@ -11,7 +10,7 @@ import {
   MESSAGES_STORAGE_VERSION,
   MessageTracker,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Messages", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
@@ -35,7 +34,7 @@ describe("Messages", () => {
   describe("set", () => {
     it("throws if not initialized", async () => {
       const invalidMessageTracker = new MessageTracker(logger, new Core(TEST_CORE_OPTIONS));
-      await expect(invalidMessageTracker.set(topic, "some message")).to.eventually.be.rejectedWith(
+      await expect(invalidMessageTracker.set(topic, "some message")).rejects.toThrow(
         "Not initialized. messages",
       );
     });
@@ -84,9 +83,7 @@ describe("Messages", () => {
   describe("del", () => {
     it("throws if not initialized", async () => {
       const invalidMessageTracker = new MessageTracker(logger, new Core(TEST_CORE_OPTIONS));
-      await expect(invalidMessageTracker.del(topic)).to.eventually.be.rejectedWith(
-        "Not initialized. messages",
-      );
+      await expect(invalidMessageTracker.del(topic)).rejects.toThrow("Not initialized. messages");
     });
     it("removes the matching topic-message pair for the provided topic", async () => {
       await messageTracker.set(topic, "message");

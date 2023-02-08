@@ -1,32 +1,30 @@
-import "mocha";
-import pino from "pino";
+import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import Sinon from "sinon";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import { IRelayer } from "@walletconnect/types";
+import { ICore } from "@walletconnect/types";
 import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
 import { Publisher } from "../src/controllers/publisher";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
-import { Core, CORE_DEFAULT, PUBLISHER_DEFAULT_TTL, Relayer } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { Core, PUBLISHER_DEFAULT_TTL } from "../src";
+import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
 
 describe("Publisher", () => {
-  const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
-
-  let relayer: IRelayer;
+  let core: ICore;
   let publisher: Publisher;
 
   beforeEach(async () => {
-    const core = new Core(TEST_CORE_OPTIONS);
+    core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-    relayer = new Relayer({ core, logger });
-    await relayer.init();
-    publisher = new Publisher(relayer, logger);
+    publisher = core.relayer.publisher as Publisher;
+  });
+
+  afterEach(async () => {
+    await disconnectSocket(core.relayer);
   });
 
   describe("init", () => {
-    it("registers event listeners", () => {
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" }, tag: 0 };
+    it("registers event listeners", async () => {
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "irn" }, tag: 0 };
       const itemA = { topic: generateRandomBytes32(), message: "itemA", opts };
       const itemB = { topic: generateRandomBytes32(), message: "itemB", opts };
       const requestSpy = Sinon.spy();
@@ -37,12 +35,12 @@ describe("Publisher", () => {
       expect(publisher.queue.size).to.equal(2);
       // Emit heartbeat pulse event
       publisher.relayer.core.heartbeat.events.emit(HEARTBEAT_EVENTS.pulse);
+
       // Using a timeout here, cannot `await` the private `rpcSubscribe` method.
-      setTimeout(() => {
-        // -> Queue should clear if pulse event is being listened for.
-        expect(publisher.queue.size).to.equal(0);
-        expect(requestSpy.callCount).to.equal(2);
-      }, 500);
+      await throttle(2_000);
+      // -> Queue should clear if pulse event is being listened for.
+      expect(publisher.queue.size).to.equal(0);
+      expect(requestSpy.callCount).to.equal(2);
     });
   });
 
@@ -61,7 +59,7 @@ describe("Publisher", () => {
       await publisher.publish(topic, message);
       expect(requestSpy.callCount).to.equal(1);
       expect(requestSpy.getCall(0).args[0]).to.deep.equal({
-        method: "iridium_publish",
+        method: "irn_publish",
         params: {
           topic,
           message,
@@ -73,11 +71,11 @@ describe("Publisher", () => {
     });
     it("allows overriding of defaults via `opts` param", async () => {
       const message = "test message";
-      const opts = { ttl: 1, prompt: true, relay: { protocol: "iridium" }, tag: 1 };
+      const opts = { ttl: 1, prompt: true, relay: { protocol: "irn" }, tag: 1 };
       await publisher.publish(topic, message, opts);
       expect(requestSpy.callCount).to.equal(1);
       expect(requestSpy.getCall(0).args[0]).to.deep.equal({
-        method: "iridium_publish",
+        method: "irn_publish",
         params: {
           topic,
           message,

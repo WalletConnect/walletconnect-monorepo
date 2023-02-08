@@ -1,4 +1,3 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 import {
   ErrorResponse,
@@ -6,6 +5,7 @@ import {
   JsonRpcResponse,
   RequestArguments,
 } from "@walletconnect/jsonrpc-types";
+import { Logger } from "@walletconnect/logger";
 
 import { ICore } from "./core";
 

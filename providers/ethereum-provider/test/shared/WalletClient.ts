@@ -49,8 +49,7 @@ export class WalletClient {
   }
 
   public async changeChain(chainId: number, rpcUrl: string) {
-    this.setChainId(chainId, rpcUrl);
-    await this.updateChainId();
+    await this.setChainId(chainId, rpcUrl);
   }
 
   public async disconnect() {
@@ -64,28 +63,29 @@ export class WalletClient {
 
   private setAccount(privateKey: string) {
     if (!this.namespaces?.eip155) return;
-    if (!this.namespaces.eip155.events.includes("accountsChanged"))
-      this.namespaces.eip155.events.push("accountsChanged");
+
     this.signer = this.getWallet(privateKey);
     const { accounts } = this.namespaces.eip155;
     const caipAddress = `eip155:${this.chainId}:${this.signer.address}`;
     if (!accounts.includes(caipAddress)) this.namespaces.eip155.accounts.push(caipAddress);
   }
 
-  private setChainId(chainId: number, rpcUrl: string) {
+  private async setChainId(chainId: number, rpcUrl: string) {
     if (!this.namespaces?.eip155) return;
-    if (this.chainId !== chainId) {
-      this.chainId = chainId;
-      const chains = getChainsFromAccounts(this.namespaces.eip155.accounts);
-      if (!chains.includes(`eip155:${chainId}`))
-        this.namespaces.eip155.accounts.push(`eip155:${chainId}:${this.accounts[0]}`);
-      if (!this.namespaces.eip155.events.includes("chainChanged"))
-        this.namespaces.eip155.events.push("chainChanged");
-    }
-    if (this.rpcUrl !== rpcUrl) {
-      this.rpcUrl = rpcUrl;
-      this.signer = this.signer.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
-    }
+    if (this.chainId === chainId) return;
+    this.chainId = chainId;
+
+    this.chainId = chainId;
+    const chain = `eip155:${chainId}`;
+    const payload = {
+      topic: this.topic || "",
+      event: {
+        name: "chainChanged",
+        data: chainId,
+      },
+      chainId: chain,
+    };
+    await this.client?.emit(payload);
   }
 
   private async emitAccountsChangedEvent() {
@@ -159,7 +159,7 @@ export class WalletClient {
     }
 
     // auto-pair
-    this.provider.signer.connection.on(SIGNER_EVENTS.uri, async ({ uri }: { uri: string }) => {
+    this.provider.on("display_uri", async (uri: string) => {
       if (typeof this.client === "undefined") throw new Error("Sign Client not inititialized");
       await this.client.pair({ uri });
     });
@@ -175,12 +175,7 @@ export class WalletClient {
           namespaces[key] = {
             methods: value.methods,
             events: value.events,
-            accounts: value.chains.map(chain => `${chain}:${this.accounts[0]}`),
-            extension: value.extension?.map(ext => ({
-              methods: ext.methods,
-              events: ext.events,
-              accounts: ext.chains.map(chain => `${chain}:${this.accounts[0]}`),
-            })),
+            accounts: value.chains.map((chain) => `${chain}:${this.accounts[0]}`),
           };
         });
         const { acknowledged } = await this.client.approve({
@@ -260,7 +255,7 @@ export class WalletClient {
 
           const response = formatJsonRpcResult(id, result);
           await this.client.respond({ topic, response });
-        } catch (e) {
+        } catch (e: any) {
           const message = e.message || e.toString();
           const response = formatJsonRpcError(id, message);
           await this.client.respond({ topic, response });

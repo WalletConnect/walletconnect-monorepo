@@ -1,6 +1,6 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
+import { Logger } from "@walletconnect/logger";
 
 import { IRelayer, RelayerTypes } from "./relayer";
 
@@ -66,4 +66,6 @@ export abstract class ISubscriber extends IEvents {
   public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
 
   public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
+
+  public abstract isSubscribed(topic: string): Promise<boolean>;
 }
