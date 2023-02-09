@@ -62,8 +62,8 @@ describe("Crypto", () => {
     const hashedMessage = hashMessage(TEST_MESSAGE);
     expect(hashedMessage).to.eql(TEST_HASHED_MESSAGE);
   });
-  it("encrypt (type 0)", () => {
-    const encoded = encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
+  it("encrypt (type 0)", async () => {
+    const encoded = await encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
     expect(encoded).to.eql(TEST_ENCODED_TYPE_0);
     const deserialized = deserialize(encoded);
     const iv = toString(deserialized.iv, BASE16);
@@ -71,12 +71,12 @@ describe("Crypto", () => {
     const sealed = toString(deserialized.sealed, BASE16);
     expect(sealed).to.eql(TEST_SEALED);
   });
-  it("decrypt (type 0)", () => {
-    const decrypted = decrypt({ symKey: TEST_SYM_KEY, encoded: TEST_ENCODED_TYPE_0 });
+  it("decrypt (type 0)", async () => {
+    const decrypted = await decrypt({ symKey: TEST_SYM_KEY, encoded: TEST_ENCODED_TYPE_0 });
     expect(decrypted).to.eql(TEST_MESSAGE);
   });
-  it("encrypt (type 1)", () => {
-    const encoded = encrypt({
+  it("encrypt (type 1)", async () => {
+    const encoded = await encrypt({
       type: 1,
       symKey: TEST_SYM_KEY,
       senderPublicKey: TEST_SELF.publicKey,
@@ -90,7 +90,7 @@ describe("Crypto", () => {
     const sealed = toString(deserialized.sealed, BASE16);
     expect(sealed).to.eql(TEST_SEALED);
   });
-  it("decrypt (type 1)", () => {
+  it("decrypt (type 1)", async () => {
     const encoded = TEST_ENCODED_TYPE_1;
     const params = validateDecoding(encoded, {
       receiverPublicKey: TEST_PEER.publicKey,
@@ -102,7 +102,7 @@ describe("Crypto", () => {
     expect(params.receiverPublicKey).to.eql(TEST_PEER.publicKey);
     const symKey = deriveSymKey(TEST_PEER.privateKey, params.senderPublicKey);
     expect(symKey).to.eql(TEST_SYM_KEY);
-    const decrypted = decrypt({ symKey, encoded });
+    const decrypted = await decrypt({ symKey, encoded });
     expect(decrypted).to.eql(TEST_MESSAGE);
   });
   it("calls generateRandomBytes32", () => {

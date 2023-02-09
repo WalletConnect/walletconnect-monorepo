@@ -111,7 +111,7 @@ export class Crypto implements ICrypto {
     }
     const symKey = this.getSymKey(topic);
     const { type, senderPublicKey } = params;
-    const result = encrypt({ type, symKey, message, senderPublicKey });
+    const result = await encrypt({ type, symKey, message, senderPublicKey });
     return result;
   };
 
@@ -124,7 +124,7 @@ export class Crypto implements ICrypto {
       topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
     }
     const symKey = this.getSymKey(topic);
-    const message = decrypt({ symKey, encoded });
+    const message = await decrypt({ symKey, encoded });
     const payload = safeJsonParse(message);
     return payload;
   };

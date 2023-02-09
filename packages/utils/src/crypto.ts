@@ -96,7 +96,7 @@ export function decodeTypeByte(byte: Uint8Array): number {
   return Number(toString(byte, BASE10));
 }
 
-export function encrypt(params: CryptoTypes.EncryptParams): string {
+export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string> {
   const type = encodeTypeByte(typeof params.type !== "undefined" ? params.type : TYPE_0);
   if (decodeTypeByte(type) === TYPE_1 && typeof params.senderPublicKey === "undefined") {
     throw new Error("Missing sender public key for type 1 envelope");
@@ -113,7 +113,7 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
   return serialize({ type, sealed, iv, senderPublicKey });
 }
 
-export function decrypt(params: CryptoTypes.DecryptParams): string {
+export async function decrypt(params: CryptoTypes.DecryptParams): Promise<string> {
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const { sealed, iv } = deserialize(params.encoded);
   const message = box.open(iv, sealed);
