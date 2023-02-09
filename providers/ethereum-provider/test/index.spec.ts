@@ -18,7 +18,8 @@ import {
   TEST_WALLET_CLIENT_OPTS,
   TEST_ETH_TRANSFER,
   TEST_SIGN_TRANSACTION,
-  TEST_ETHEREUM_METHODS,
+  TEST_ETHEREUM_METHODS_REQUIRED,
+  TEST_ETHEREUM_METHODS_OPTIONAL,
 } from "./shared/constants";
 
 describe("EthereumProvider", function () {
@@ -37,7 +38,8 @@ describe("EthereumProvider", function () {
     provider = await EthereumProvider.init({
       projectId: process.env.TEST_PROJECT_ID || "",
       chains: [1],
-      methods: TEST_ETHEREUM_METHODS,
+      methods: TEST_ETHEREUM_METHODS_REQUIRED,
+      optionalMethods: TEST_ETHEREUM_METHODS_OPTIONAL,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({

@@ -28,7 +28,12 @@ export interface EthereumRpcConfig {
   chains: string[];
   optionalChains?: string[];
   methods: string[];
+  optionalMethods?: string[];
+  /**
+   * @description Events that the wallet MUST support or the connection will be rejected
+   */
   events: string[];
+  optionalEvents?: string[];
   rpcMap: EthereumRpcMap;
   projectId: string;
   metadata?: Metadata;
@@ -60,24 +65,27 @@ export function getEthereumChainId(chains: string[]): number {
 export type NamespacesParams = {
   chains: EthereumRpcConfig["chains"];
   optionalChains?: EthereumRpcConfig["optionalChains"];
-  methods: EthereumRpcConfig["methods"];
-  events: EthereumRpcConfig["events"];
+  methods?: EthereumRpcConfig["methods"];
+  optionalMethods?: EthereumRpcConfig["methods"];
+  events?: EthereumRpcConfig["events"];
   rpcMap: EthereumRpcConfig["rpcMap"];
+  optionalEvents?: EthereumRpcConfig["events"];
 };
 
 export function buildNamespaces(params: NamespacesParams): {
   required: Namespace;
   optional?: Namespace;
 } {
-  const { chains, optionalChains, methods, events, rpcMap } = params;
+  const { chains, optionalChains, methods, optionalMethods, events, optionalEvents, rpcMap } =
+    params;
 
   if (!isValidArray(chains)) {
     throw new Error("Invalid chains");
   }
 
   const requiredChains = chains;
-  const requriedMethods = methods.length > signerMethods.length ? signerMethods : methods;
-  const requiredEvents = events.length > signerEvents.length ? signerEvents : events;
+  const requriedMethods = methods || signerMethods;
+  const requiredEvents = events || signerEvents;
   const requiredRpcMap = {
     [getEthereumChainId(requiredChains)]: rpcMap[getEthereumChainId(requiredChains)],
   };
@@ -89,34 +97,46 @@ export function buildNamespaces(params: NamespacesParams): {
     rpcMap: requiredRpcMap,
   };
 
-  const optionalMethods = methods.filter((method) => !requriedMethods.includes(method));
-  const optionalEvents = events.filter((method) => !requiredEvents.includes(method));
-
-  const additionalPermissionRequired = optionalMethods.length || optionalEvents.length;
-
-  if (!optionalChains && !additionalPermissionRequired) {
+  if (!optionalChains && !optionalEvents && !optionalMethods) {
     return { required };
   }
 
-  if (!optionalChains || !isValidArray(optionalChains)) {
-    throw new Error("Invalid optionalChains");
-  }
-
   const optional: Namespace = {
-    chains: additionalPermissionRequired ? requiredChains.concat(optionalChains) : optionalChains,
-    methods,
-    events,
+    chains: [...new Set(requiredChains.concat(optionalChains || []))],
+    methods: [...new Set(requriedMethods.concat(optionalMethods || []))],
+    events: [...new Set(requiredEvents.concat(optionalEvents || []))],
     rpcMap,
   };
+
+  console.log("optional", { required }, { optional });
 
   return { required, optional };
 }
 export interface EthereumProviderOptions {
   projectId: string;
+  /**
+   * @note Chains that your app intents to use and the peer MUST support. If the peer does not support these chains, the connection will be rejected.
+   * @default [1]
+   * @example [1, 3, 4, 5, 42]
+   */
   chains: number[];
+  /**
+   * @note Optional chains that your app MAY attempt to use and the peer MAY support. If the peer does not support these chains, the connection will still be established.
+   * @default [1]
+   * @example [1, 3, 4, 5, 42]
+   */
   optionalChains?: number[];
+  /**
+   * @note Methods that your app intents to use and the peer MUST support. If the peer does not support these methods, the connection will be rejected.
+   * @default ["eth_sendTransaction", "personal_sign"]
+   */
   methods?: string[];
+  /**
+   * @note Methods that your app MAY attempt to use and the peer MAY support. If the peer does not support these methods, the connection will still be established.
+   */
+  optionalMethods?: string[];
   events?: string[];
+  optionalEvents?: string[];
   rpcMap?: EthereumRpcMap;
   metadata?: Metadata;
   showQrModal?: boolean;
@@ -346,6 +366,8 @@ export class EthereumProvider implements IEthereumProvider {
         : undefined,
       methods: opts?.methods || signerMethods,
       events: opts?.events || signerEvents,
+      optionalMethods: opts?.optionalMethods || [],
+      optionalEvents: opts?.optionalEvents || [],
       rpcMap: opts?.rpcMap || this.buildRpcMap(opts.chains, opts.projectId),
       showQrModal: opts?.showQrModal ?? true,
       projectId: opts.projectId,
