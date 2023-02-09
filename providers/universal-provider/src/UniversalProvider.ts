@@ -26,6 +26,8 @@ import EventEmitter from "events";
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
   public namespaces!: NamespaceConfig;
+  public optionalNamespaces?: NamespaceConfig;
+  public sessionProperties?: Record<string, string>;
   public events: EventEmitter = new EventEmitter();
   public rpcProviders: RpcProviderMap = {};
   public session?: SessionTypes.Struct;
@@ -102,8 +104,7 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
-    const { namespaces } = opts;
-    this.setNamespaces(namespaces);
+    this.setNamespaces(opts);
     this.createProviders();
     await this.cleanupPendingPairings();
     return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
@@ -133,6 +134,8 @@ export class UniversalProvider implements IUniversalProvider {
     const { uri, approval } = await this.client.connect({
       pairingTopic,
       requiredNamespaces: this.namespaces,
+      optionalNamespaces: this.optionalNamespaces,
+      sessionProperties: this.sessionProperties,
     });
 
     if (uri) {
@@ -305,17 +308,19 @@ export class UniversalProvider implements IUniversalProvider {
     });
   }
 
-  private setNamespaces(namespaces: NamespaceConfig): void {
+  private setNamespaces(params: ConnectParams): void {
+    const { namespaces, optionalNamespaces, sessionProperties } = params;
     if (!namespaces || !Object.keys(namespaces).length) {
       throw new Error("Namespaces must be not empty");
     }
     this.client.core.storage.setItem(`${STORAGE}/namespaces`, namespaces);
     this.namespaces = namespaces;
+    this.optionalNamespaces = optionalNamespaces;
+    this.sessionProperties = sessionProperties;
   }
 
   private validateChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
-
     // validate namespace
     if (namespace) {
       if (!Object.keys(this.namespaces).includes(namespace)) {
@@ -324,7 +329,6 @@ export class UniversalProvider implements IUniversalProvider {
         );
       }
     }
-
     return !namespace || !chainId ? getChainFromNamespaces(this.namespaces) : [namespace, chainId];
   }
 
