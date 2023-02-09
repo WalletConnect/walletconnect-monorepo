@@ -83,7 +83,11 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Sign Client not initialized");
     }
     if (!this.session) {
-      await this.connect({ namespaces: this.namespaces });
+      await this.connect({
+        namespaces: this.namespaces,
+        optionalNamespaces: this.optionalNamespaces,
+        sessionProperties: this.sessionProperties,
+      });
     }
     const accounts = await this.requestAccounts();
     return accounts as ProviderAccounts;
