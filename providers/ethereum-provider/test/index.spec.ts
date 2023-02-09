@@ -18,6 +18,7 @@ import {
   TEST_WALLET_CLIENT_OPTS,
   TEST_ETH_TRANSFER,
   TEST_SIGN_TRANSACTION,
+  TEST_ETHEREUM_METHODS,
 } from "./shared/constants";
 
 describe("EthereumProvider", function () {
@@ -35,11 +36,12 @@ describe("EthereumProvider", function () {
     });
     provider = await EthereumProvider.init({
       projectId: process.env.TEST_PROJECT_ID || "",
-      chains: [1, 42],
+      chains: [1],
+      methods: TEST_ETHEREUM_METHODS,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
-      chains: [1, CHAIN_ID],
+      optionalChains: [42, CHAIN_ID],
       rpcMap: {
         [CHAIN_ID]: RPC_URL,
       },
