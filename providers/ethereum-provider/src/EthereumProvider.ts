@@ -92,7 +92,7 @@ export function buildNamespaces(params: NamespacesParams): {
   const optionalMethods = methods.filter((method) => !requriedMethods.includes(method));
   const optionalEvents = events.filter((method) => !requiredEvents.includes(method));
 
-  const additionalPermissionRequired = optionalMethods.length !== 0 || optionalEvents.length !== 0;
+  const additionalPermissionRequired = optionalMethods.length || optionalEvents.length;
 
   if (!optionalChains && !additionalPermissionRequired) {
     return { required };
