@@ -1,8 +1,7 @@
 import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
-import { HKDF } from "@stablelib/hkdf";
-import { randomBytes } from "@stablelib/random";
-import { hash, SHA256 } from "@stablelib/sha256";
-import * as x25519 from "@stablelib/x25519";
+import { randomBytes, scalarMult } from "tweetnacl";
+import SHA from "sha.js";
+import createHmac from "create-hmac"
 import { CryptoTypes } from "@walletconnect/types";
 import { concat, fromString, toString } from "uint8arrays";
 
@@ -19,8 +18,38 @@ const TYPE_LENGTH = 1;
 const IV_LENGTH = 12;
 const KEY_LENGTH = 32;
 
+// Taken from @stablelib/x25519
+const _9 = new Uint8Array(KEY_LENGTH);
+_9[0] = 9;
+function _generateKeyPair() {
+  const secretKey = randomBytes(KEY_LENGTH);
+  const publicKey = scalarMult(secretKey, _9);
+  return { secretKey, publicKey }
+}
+function _sharedKey(a: Uint8Array, b: Uint8Array) {
+  return scalarMult(a, b);
+}
+
+// Implementation of RFC 5869 HKDF constrained to a single use, no salt or
+// info, and keys of 32 bits
+function _hkdf32(key: Uint8Array) {
+  if (key.length !== 32) {
+    throw new Error("key must be of length 32")
+  }
+  const zeroes = Buffer.alloc(32)
+  const prk = createHmac("sha256", zeroes).update(key).digest();
+
+  // Since the derived key will be of length 32, we only need to do one HMAC.
+  // There's no need for writing a loop that repeadly calls HMAC.
+  const one = Buffer.from([1])
+
+  const derived = createHmac("sha256", prk).update(one).digest();
+
+  return new Uint8Array(derived);
+}
+
 export function generateKeyPair(): CryptoTypes.KeyPair {
-  const keyPair = x25519.generateKeyPair();
+  const keyPair = _generateKeyPair();
   return {
     privateKey: toString(keyPair.secretKey, BASE16),
     publicKey: toString(keyPair.publicKey, BASE16),
@@ -33,22 +62,29 @@ export function generateRandomBytes32(): string {
 }
 
 export function deriveSymKey(privateKeyA: string, publicKeyB: string): string {
-  const sharedKey = x25519.sharedKey(
+  const sharedKey = _sharedKey(
     fromString(privateKeyA, BASE16),
     fromString(publicKeyB, BASE16),
   );
-  const hkdf = new HKDF(SHA256, sharedKey);
-  const symKey = hkdf.expand(KEY_LENGTH);
+  const symKey = _hkdf32(sharedKey);
   return toString(symKey, BASE16);
 }
 
 export function hashKey(key: string): string {
-  const result = hash(fromString(key, BASE16));
+  const result = new Uint8Array(
+    SHA("sha256")
+    .update(fromString(key, BASE16))
+    .digest()
+  )
   return toString(result, BASE16);
 }
 
 export function hashMessage(message: string): string {
-  const result = hash(fromString(message, UTF8));
+  const result = new Uint8Array(
+    SHA("sha256")
+    .update(fromString(message, UTF8))
+    .digest()
+  )
   return toString(result, BASE16);
 }
 

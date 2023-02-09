@@ -31,10 +31,6 @@
   },
   "dependencies": {
     "@stablelib/chacha20poly1305": "1.0.1",
-    "@stablelib/hkdf": "1.0.1",
-    "@stablelib/random": "^1.0.2",
-    "@stablelib/sha256": "1.0.1",
-    "@stablelib/x25519": "^1.0.3",
     "@walletconnect/jsonrpc-utils": "^1.0.4",
     "@walletconnect/relay-api": "^1.0.7",
     "@walletconnect/safe-json": "^1.0.1",
@@ -42,11 +38,17 @@
     "@walletconnect/types": "2.3.3",
     "@walletconnect/window-getters": "^1.0.1",
     "@walletconnect/window-metadata": "^1.0.1",
+    "create-hmac": "^1.1.7",
     "detect-browser": "5.3.0",
     "query-string": "7.1.1",
+    "sha.js": "^2.4.11",
+    "tweetnacl": "^1.0.3",
     "uint8arrays": "3.1.0"
   },
   "devDependencies": {
-    "@types/lodash.isequal": "4.5.6"
+    "@types/create-hmac": "^1.1.0",
+    "@types/lodash.isequal": "4.5.6",
+    "@types/sha.js": "^2.4.0",
+    "vite": "^4.1.1"
   }
 }
