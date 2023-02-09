@@ -5,22 +5,13 @@ import {
   ProviderAccounts,
   RequestArguments,
 } from "eip1193-provider";
-import { Metadata, UniversalProvider } from "@walletconnect/universal-provider";
+import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
 import { Web3Modal } from "@web3modal/standalone";
 import { SignClientTypes } from "@walletconnect/types";
 
 export const RPC_URL = "https://rpc.walletconnect.com/v1/";
 
-export const signerMethods = [
-  "eth_requestAccounts",
-  "eth_accounts",
-  "eth_chainId",
-  "eth_sendTransaction",
-  "eth_signTransaction",
-  "eth_sign",
-  "eth_signTypedData",
-  "personal_sign",
-];
+export const signerMethods = ["eth_sendTransaction", "personal_sign"];
 
 export const signerEvents = ["chainChanged", "accountsChanged"];
 
@@ -35,6 +26,7 @@ export interface SessionEvent {
 
 export interface EthereumRpcConfig {
   chains: string[];
+  optionalChains?: string[];
   methods: string[];
   events: string[];
   rpcMap: EthereumRpcMap;
@@ -42,9 +34,9 @@ export interface EthereumRpcConfig {
   metadata?: Metadata;
   showQrModal: boolean;
 }
-
 export interface ConnectOps {
   chains?: number[];
+  optionalChains?: number[];
   rpcMap?: EthereumRpcMap;
   pairingTopic?: string;
 }
@@ -64,9 +56,61 @@ export function getRpcUrl(chainId: string, rpc: EthereumRpcConfig): string | und
 export function getEthereumChainId(chains: string[]): number {
   return Number(chains[0].split(":")[1]);
 }
+
+export type NamespacesParams = {
+  chains: EthereumRpcConfig["chains"];
+  optionalChains?: EthereumRpcConfig["optionalChains"];
+  methods: EthereumRpcConfig["methods"];
+  events: EthereumRpcConfig["events"];
+  rpcMap: EthereumRpcConfig["rpcMap"];
+};
+
+export function buildNamespaces(params: NamespacesParams): {
+  required: Namespace;
+  optional?: Namespace;
+} {
+  const { chains, optionalChains = [], methods, events, rpcMap } = params;
+
+  if (!isValidArray(chains)) {
+    throw new Error("Invalid chains");
+  }
+
+  const requiredChains = chains;
+  const requriedMethods = methods.length > signerMethods.length ? signerMethods : methods;
+  const requiredEvents = events.length > signerEvents.length ? signerEvents : events;
+  const requiredRpcMap = {
+    [getEthereumChainId(requiredChains)]: rpcMap[getEthereumChainId(requiredChains)],
+  };
+
+  const required: Namespace = {
+    chains: requiredChains,
+    methods: requriedMethods,
+    events: requiredEvents,
+    rpcMap: requiredRpcMap,
+  };
+
+  const optionalMethods = methods.filter((method) => !requriedMethods.includes(method));
+  const optionalEvents = events.filter((method) => !requiredEvents.includes(method));
+
+  const additionalPermissionRequired = optionalMethods.length !== 0 || optionalEvents.length !== 0;
+
+  if (!optionalChains && !additionalPermissionRequired) {
+    return { required };
+  }
+
+  const optional: Namespace = {
+    chains: additionalPermissionRequired ? requiredChains.concat(optionalChains) : optionalChains,
+    methods,
+    events,
+    rpcMap,
+  };
+
+  return { required, optional };
+}
 export interface EthereumProviderOptions {
   projectId: string;
   chains: number[];
+  optionalChains?: number[];
   methods?: string[];
   events?: string[];
   rpcMap?: EthereumRpcMap;
@@ -129,17 +173,17 @@ export class EthereumProvider implements IEthereumProvider {
     }
 
     this.loadConnectOpts(opts);
-
+    const { required, optional } = buildNamespaces(this.rpc);
     try {
       const session = await this.signer.connect({
         namespaces: {
-          [this.namespace]: {
-            chains: this.rpc.chains,
-            methods: this.rpc.methods,
-            events: this.rpc.events,
-            rpcMap: this.rpc.rpcMap,
-          },
+          [this.namespace]: required,
         },
+        ...(optional && {
+          optionalNamespaces: {
+            [this.namespace]: optional,
+          },
+        }),
         pairingTopic: opts?.pairingTopic,
       });
       if (!session) return;
@@ -189,7 +233,6 @@ export class EthereumProvider implements IEthereumProvider {
   private registerEventListeners() {
     this.signer.on("session_event", (payload: SignClientTypes.EventArguments["session_event"]) => {
       const { params } = payload;
-      if (!this.rpc.chains.includes(params.chainId)) return;
       const { event } = params;
       if (event.name === "accountsChanged") {
         this.accounts = event.data;
@@ -280,6 +323,9 @@ export class EthereumProvider implements IEthereumProvider {
   private getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
     return {
       chains: opts.chains.map((chain) => this.formatChainId(chain)) || [`${this.namespace}:1`],
+      optionalChains: opts.optionalChains
+        ? opts.optionalChains.map((chain) => this.formatChainId(chain))
+        : undefined,
       methods: opts?.methods || signerMethods,
       events: opts?.events || signerEvents,
       rpcMap: opts?.rpcMap || this.buildRpcMap(opts.chains, opts.projectId),
@@ -313,14 +359,25 @@ export class EthereumProvider implements IEthereumProvider {
 
   private loadConnectOpts(opts?: ConnectOps) {
     if (!opts) return;
-    const { chains, rpcMap } = opts;
-    if (!isValidArray(chains) || !chains) return;
-    this.rpc.chains = this.rpc.chains.concat(chains.map((chain) => this.formatChainId(chain)));
-    // filter duplicate chains
-    this.rpc.chains = [...new Set(this.rpc.chains)];
-    chains.forEach((chain) => {
-      this.rpc.rpcMap[chain] = rpcMap?.[chain] || this.getRpcUrl(chain);
-    });
+    const { chains, optionalChains, rpcMap } = opts;
+    if (chains && isValidArray(chains)) {
+      this.rpc.chains = this.rpc.chains.concat(chains.map((chain) => this.formatChainId(chain)));
+      // filter duplicate chains
+      this.rpc.chains = [...new Set(this.rpc.chains)];
+      chains.forEach((chain) => {
+        this.rpc.rpcMap[chain] = rpcMap?.[chain] || this.getRpcUrl(chain);
+      });
+    }
+    if (optionalChains && isValidArray(optionalChains)) {
+      this.rpc.optionalChains = this.rpc.optionalChains || [];
+      this.rpc.optionalChains = this.rpc.optionalChains.concat(
+        optionalChains?.map((chain) => this.formatChainId(chain)) || [],
+      );
+      this.rpc.optionalChains = [...new Set(this.rpc.optionalChains)];
+      optionalChains.forEach((chain) => {
+        this.rpc.rpcMap[chain] = rpcMap?.[chain] || this.getRpcUrl(chain);
+      });
+    }
   }
 
   private getRpcUrl(chainId: number, projectId?: string): string {
