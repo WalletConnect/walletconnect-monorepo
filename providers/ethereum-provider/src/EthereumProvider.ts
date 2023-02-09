@@ -108,8 +108,6 @@ export function buildNamespaces(params: NamespacesParams): {
     rpcMap,
   };
 
-  console.log("optional", { required }, { optional });
-
   return { required, optional };
 }
 export interface EthereumProviderOptions {
