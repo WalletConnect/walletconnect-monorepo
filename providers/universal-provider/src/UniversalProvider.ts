@@ -109,9 +109,12 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Sign Client not initialized");
     }
     this.setNamespaces(opts);
-    this.createProviders();
     await this.cleanupPendingPairings();
-    return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
+    this.createProviders();
+
+    if (opts.skipPairing) return;
+
+    return await this.pair(opts.pairingTopic);
   }
 
   public on(event: any, listener: any): void {
@@ -146,7 +149,6 @@ export class UniversalProvider implements IUniversalProvider {
       this.uri = uri;
       this.events.emit("display_uri", uri);
     }
-
     this.session = await approval();
     this.onSessionUpdate();
     this.onConnect();
@@ -224,25 +226,30 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     Object.keys(this.namespaces).forEach((namespace) => {
+      const namespaces = Object.assign(
+        {},
+        this.namespaces[namespace],
+        this.optionalNamespaces?.[namespace],
+      );
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
         case "solana":
           this.rpcProviders[namespace] = new SolanaProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
         case "cosmos":
           this.rpcProviders[namespace] = new CosmosProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
@@ -252,7 +259,7 @@ export class UniversalProvider implements IUniversalProvider {
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
