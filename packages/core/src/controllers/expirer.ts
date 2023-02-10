@@ -187,6 +187,8 @@ export class Expirer extends IExpirer {
   }
 
   private checkExpirations(): void {
+    // avoid auto expiring if the relayer is not connected
+    if (!this.core.relayer.connected) return;
     this.expirations.forEach((expiration, target) => this.checkExpiry(target, expiration));
   }
 
