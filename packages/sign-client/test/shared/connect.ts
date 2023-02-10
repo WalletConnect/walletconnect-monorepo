@@ -7,13 +7,22 @@ import {
   SessionTypes,
 } from "@walletconnect/types";
 import { throttle } from "./../shared";
-import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./values";
+import {
+  TEST_RELAY_OPTIONS,
+  TEST_NAMESPACES,
+  TEST_REQUIRED_NAMESPACES,
+  TEST_OPTIONAL_NAMESPACES,
+  TEST_SESSION_PROPERTIES,
+  TEST_SESSION_PROPERTIES_APPROVE,
+} from "./values";
 import { Clients } from "./init";
 import { expect } from "vitest";
 
 export interface TestConnectParams {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;
+  optionalNamespaces?: ProposalTypes.OptionalNamespaces;
   namespaces?: SessionTypes.Namespaces;
+  sessionProperties?: ProposalTypes.SessionProperties;
   relays?: RelayerTypes.ProtocolOptions[];
   pairingTopic?: string;
   qrCodeScanLatencyMs?: number;
@@ -25,12 +34,15 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
 
   const connectParams: EngineTypes.ConnectParams = {
     requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
+    optionalNamespaces: params?.optionalNamespaces || TEST_OPTIONAL_NAMESPACES,
+    sessionProperties: params?.sessionProperties || TEST_SESSION_PROPERTIES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
 
   const approveParams: Omit<EngineTypes.ApproveParams, "id"> = {
     namespaces: params?.namespaces || TEST_NAMESPACES,
+    sessionProperties: TEST_SESSION_PROPERTIES_APPROVE,
   };
 
   // We need to kick off the promise that binds the listener for `session_proposal` before `A.connect()`
@@ -39,7 +51,8 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     B.once("session_proposal", async (proposal) => {
       try {
         expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
-
+        expect(proposal.params.optionalNamespaces).to.eql(connectParams.optionalNamespaces);
+        expect(proposal.params.sessionProperties).to.eql(TEST_SESSION_PROPERTIES);
         const { acknowledged } = await B.approve({
           id: proposal.id,
           ...approveParams,
@@ -148,6 +161,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // namespaces
   expect(sessionA.namespaces).to.eql(approveParams.namespaces);
   expect(sessionA.namespaces).to.eql(sessionB.namespaces);
+  expect(sessionA.sessionProperties).to.eql(TEST_SESSION_PROPERTIES_APPROVE);
   // expiry
   expect(Math.abs(sessionA.expiry - sessionB.expiry)).to.be.lessThan(5);
   // acknowledged
