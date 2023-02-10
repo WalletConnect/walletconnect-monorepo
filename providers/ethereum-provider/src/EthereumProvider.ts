@@ -97,12 +97,34 @@ export function buildNamespaces(params: NamespacesParams): {
     rpcMap: requiredRpcMap,
   };
 
-  if (!optionalChains && !optionalEvents && !optionalMethods) {
+  // make a list of events and methods that require additional permissions
+  // so we know if we should to include the required chains in the optional namespace
+  const eventsRequiringPermissions = events?.filter((event) => !signerEvents.includes(event));
+  const methodsRequiringPermissions = methods?.filter((event) => !signerMethods.includes(event));
+
+  if (
+    !optionalChains &&
+    !optionalEvents &&
+    !optionalMethods &&
+    !eventsRequiringPermissions?.length &&
+    !methodsRequiringPermissions?.length
+  ) {
     return { required };
   }
 
+  /*
+   * decides whether or not to include the required chains in the optional namespace
+   * use case: if there is a single chain as required but additonal methods/events as optional
+   */
+  const shouldIncludeRequiredChains =
+    (eventsRequiringPermissions?.length && methodsRequiringPermissions?.length) || !optionalChains;
+
   const optional: Namespace = {
-    chains: [...new Set(requiredChains.concat(optionalChains || []))],
+    chains: [
+      ...new Set(
+        shouldIncludeRequiredChains ? requiredChains.concat(optionalChains || []) : optionalChains,
+      ),
+    ],
     methods: [...new Set(requriedMethods.concat(optionalMethods || []))],
     events: [...new Set(requiredEvents.concat(optionalEvents || []))],
     rpcMap,
@@ -366,7 +388,9 @@ export class EthereumProvider implements IEthereumProvider {
       events: opts?.events || signerEvents,
       optionalMethods: opts?.optionalMethods || [],
       optionalEvents: opts?.optionalEvents || [],
-      rpcMap: opts?.rpcMap || this.buildRpcMap(opts.chains, opts.projectId),
+      rpcMap:
+        opts?.rpcMap ||
+        this.buildRpcMap(opts.chains.concat(opts.optionalChains || []), opts.projectId),
       showQrModal: opts?.showQrModal ?? true,
       projectId: opts.projectId,
       metadata: opts.metadata,
