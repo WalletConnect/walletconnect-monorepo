@@ -1,9 +1,10 @@
-import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
 import { randomBytes, scalarMult } from "tweetnacl";
 import SHA from "sha.js";
 import createHmac from "create-hmac"
 import { CryptoTypes } from "@walletconnect/types";
 import { concat, fromString, toString } from "uint8arrays";
+/// <reference path="sodium-crypto.d.ts"/>
+import { encryptAEAD, decryptAEAD } from "@exodus/sodium-crypto";
 
 export const BASE10 = "base10";
 export const BASE16 = "base16";
@@ -108,15 +109,23 @@ export async function encrypt(params: CryptoTypes.EncryptParams): Promise<string
 
   const iv =
     typeof params.iv !== "undefined" ? fromString(params.iv, BASE16) : randomBytes(IV_LENGTH);
-  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
-  const sealed = box.seal(iv, fromString(params.message, UTF8));
+  const sealed = new Uint8Array(await encryptAEAD(
+    fromString(params.message, UTF8),
+    fromString(params.symKey, BASE16),
+    iv,
+    null
+   ));
   return serialize({ type, sealed, iv, senderPublicKey });
 }
 
 export async function decrypt(params: CryptoTypes.DecryptParams): Promise<string> {
-  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const { sealed, iv } = deserialize(params.encoded);
-  const message = box.open(iv, sealed);
+  const message = new Uint8Array(await decryptAEAD(
+    sealed,
+    fromString(params.symKey, BASE16),
+    iv,
+    null
+  ));
   if (message === null) throw new Error("Failed to decrypt");
   return toString(message, UTF8);
 }

@@ -30,7 +30,7 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@stablelib/chacha20poly1305": "1.0.1",
+    "@exodus/sodium-crypto": "^3.2.0",
     "@walletconnect/jsonrpc-utils": "^1.0.4",
     "@walletconnect/relay-api": "^1.0.7",
     "@walletconnect/safe-json": "^1.0.1",
