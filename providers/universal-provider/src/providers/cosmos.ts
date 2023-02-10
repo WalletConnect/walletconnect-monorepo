@@ -10,8 +10,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getRpcUrl, deeplinkRedirect, handleDeepLinks } from "../utils";
-import { RELAYER_EVENTS } from "@walletconnect/core";
+import { getRpcUrl, handleDeepLinks } from "../utils";
 
 class CosmosProvider implements IProvider {
   public name = "cosmos";

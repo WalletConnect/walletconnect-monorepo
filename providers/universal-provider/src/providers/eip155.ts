@@ -1,7 +1,7 @@
 import Client from "@walletconnect/sign-client";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
-import { EngineTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { EngineTypes, SessionTypes } from "@walletconnect/types";
 
 import {
   IProvider,
@@ -11,7 +11,7 @@ import {
   SessionNamespace,
 } from "../types";
 
-import { getRpcUrl, deeplinkRedirect, handleDeepLinks } from "../utils";
+import { getRpcUrl, handleDeepLinks } from "../utils";
 import EventEmitter from "events";
 
 class Eip155Provider implements IProvider {
