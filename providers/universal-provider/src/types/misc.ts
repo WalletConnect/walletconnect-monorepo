@@ -48,6 +48,8 @@ export interface SessionNamespace extends Namespace {
 
 export interface ConnectParams {
   namespaces: NamespaceConfig;
+  optionalNamespaces?: NamespaceConfig;
+  sessionProperties?: ProposalTypes.Struct["sessionProperties"];
   pairingTopic?: string;
   skipPairing?: boolean;
 }

@@ -26,6 +26,8 @@ import EventEmitter from "events";
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
   public namespaces!: NamespaceConfig;
+  public optionalNamespaces?: NamespaceConfig;
+  public sessionProperties?: Record<string, string>;
   public events: EventEmitter = new EventEmitter();
   public rpcProviders: RpcProviderMap = {};
   public session?: SessionTypes.Struct;
@@ -81,7 +83,11 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Sign Client not initialized");
     }
     if (!this.session) {
-      await this.connect({ namespaces: this.namespaces });
+      await this.connect({
+        namespaces: this.namespaces,
+        optionalNamespaces: this.optionalNamespaces,
+        sessionProperties: this.sessionProperties,
+      });
     }
     const accounts = await this.requestAccounts();
     return accounts as ProviderAccounts;
@@ -102,11 +108,13 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
-    const { namespaces } = opts;
-    this.setNamespaces(namespaces);
-    this.createProviders();
+    this.setNamespaces(opts);
     await this.cleanupPendingPairings();
-    return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
+    this.createProviders();
+
+    if (opts.skipPairing) return;
+
+    return await this.pair(opts.pairingTopic);
   }
 
   public on(event: any, listener: any): void {
@@ -133,13 +141,14 @@ export class UniversalProvider implements IUniversalProvider {
     const { uri, approval } = await this.client.connect({
       pairingTopic,
       requiredNamespaces: this.namespaces,
+      optionalNamespaces: this.optionalNamespaces,
+      sessionProperties: this.sessionProperties,
     });
 
     if (uri) {
       this.uri = uri;
       this.events.emit("display_uri", uri);
     }
-
     this.session = await approval();
     this.onSessionUpdate();
     this.onConnect();
@@ -217,25 +226,30 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     Object.keys(this.namespaces).forEach((namespace) => {
+      const namespaces = Object.assign(
+        {},
+        this.namespaces[namespace],
+        this.optionalNamespaces?.[namespace],
+      );
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
         case "solana":
           this.rpcProviders[namespace] = new SolanaProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
         case "cosmos":
           this.rpcProviders[namespace] = new CosmosProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
@@ -245,7 +259,7 @@ export class UniversalProvider implements IUniversalProvider {
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: namespaces,
             events: this.events,
           });
           break;
@@ -305,17 +319,19 @@ export class UniversalProvider implements IUniversalProvider {
     });
   }
 
-  private setNamespaces(namespaces: NamespaceConfig): void {
+  private setNamespaces(params: ConnectParams): void {
+    const { namespaces, optionalNamespaces, sessionProperties } = params;
     if (!namespaces || !Object.keys(namespaces).length) {
       throw new Error("Namespaces must be not empty");
     }
     this.client.core.storage.setItem(`${STORAGE}/namespaces`, namespaces);
     this.namespaces = namespaces;
+    this.optionalNamespaces = optionalNamespaces;
+    this.sessionProperties = sessionProperties;
   }
 
   private validateChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
-
     // validate namespace
     if (namespace) {
       if (!Object.keys(this.namespaces).includes(namespace)) {
@@ -324,7 +340,6 @@ export class UniversalProvider implements IUniversalProvider {
         );
       }
     }
-
     return !namespace || !chainId ? getChainFromNamespaces(this.namespaces) : [namespace, chainId];
   }
 

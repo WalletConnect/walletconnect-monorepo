@@ -5,22 +5,14 @@ import {
   ProviderAccounts,
   RequestArguments,
 } from "eip1193-provider";
-import { Metadata, UniversalProvider } from "@walletconnect/universal-provider";
+import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
 import { Web3Modal } from "@web3modal/standalone";
-import { SignClientTypes } from "@walletconnect/types";
+import { SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { STORAGE_KEY } from "./constants";
 
 export const RPC_URL = "https://rpc.walletconnect.com/v1/";
 
-export const signerMethods = [
-  "eth_requestAccounts",
-  "eth_accounts",
-  "eth_chainId",
-  "eth_sendTransaction",
-  "eth_signTransaction",
-  "eth_sign",
-  "eth_signTypedData",
-  "personal_sign",
-];
+export const signerMethods = ["eth_sendTransaction", "personal_sign"];
 
 export const signerEvents = ["chainChanged", "accountsChanged"];
 
@@ -35,16 +27,22 @@ export interface SessionEvent {
 
 export interface EthereumRpcConfig {
   chains: string[];
+  optionalChains?: string[];
   methods: string[];
+  optionalMethods?: string[];
+  /**
+   * @description Events that the wallet MUST support or the connection will be rejected
+   */
   events: string[];
+  optionalEvents?: string[];
   rpcMap: EthereumRpcMap;
   projectId: string;
   metadata?: Metadata;
   showQrModal: boolean;
 }
-
 export interface ConnectOps {
   chains?: number[];
+  optionalChains?: number[];
   rpcMap?: EthereumRpcMap;
   pairingTopic?: string;
 }
@@ -64,11 +62,102 @@ export function getRpcUrl(chainId: string, rpc: EthereumRpcConfig): string | und
 export function getEthereumChainId(chains: string[]): number {
   return Number(chains[0].split(":")[1]);
 }
+
+export type NamespacesParams = {
+  chains: EthereumRpcConfig["chains"];
+  optionalChains?: EthereumRpcConfig["optionalChains"];
+  methods?: EthereumRpcConfig["methods"];
+  optionalMethods?: EthereumRpcConfig["methods"];
+  events?: EthereumRpcConfig["events"];
+  rpcMap: EthereumRpcConfig["rpcMap"];
+  optionalEvents?: EthereumRpcConfig["events"];
+};
+
+export function buildNamespaces(params: NamespacesParams): {
+  required: Namespace;
+  optional?: Namespace;
+} {
+  const { chains, optionalChains, methods, optionalMethods, events, optionalEvents, rpcMap } =
+    params;
+
+  if (!isValidArray(chains)) {
+    throw new Error("Invalid chains");
+  }
+
+  const requiredChains = chains;
+  const requriedMethods = methods || signerMethods;
+  const requiredEvents = events || signerEvents;
+  const requiredRpcMap = {
+    [getEthereumChainId(requiredChains)]: rpcMap[getEthereumChainId(requiredChains)],
+  };
+
+  const required: Namespace = {
+    chains: requiredChains,
+    methods: requriedMethods,
+    events: requiredEvents,
+    rpcMap: requiredRpcMap,
+  };
+
+  // make a list of events and methods that require additional permissions
+  // so we know if we should to include the required chains in the optional namespace
+  const eventsRequiringPermissions = events?.filter((event) => !signerEvents.includes(event));
+  const methodsRequiringPermissions = methods?.filter((event) => !signerMethods.includes(event));
+
+  if (
+    !optionalChains &&
+    !optionalEvents &&
+    !optionalMethods &&
+    !eventsRequiringPermissions?.length &&
+    !methodsRequiringPermissions?.length
+  ) {
+    return { required };
+  }
+
+  /*
+   * decides whether or not to include the required chains in the optional namespace
+   * use case: if there is a single chain as required but additonal methods/events as optional
+   */
+  const shouldIncludeRequiredChains =
+    (eventsRequiringPermissions?.length && methodsRequiringPermissions?.length) || !optionalChains;
+
+  const optional: Namespace = {
+    chains: [
+      ...new Set(
+        shouldIncludeRequiredChains ? requiredChains.concat(optionalChains || []) : optionalChains,
+      ),
+    ],
+    methods: [...new Set(requriedMethods.concat(optionalMethods || []))],
+    events: [...new Set(requiredEvents.concat(optionalEvents || []))],
+    rpcMap,
+  };
+
+  return { required, optional };
+}
 export interface EthereumProviderOptions {
   projectId: string;
+  /**
+   * @note Chains that your app intents to use and the peer MUST support. If the peer does not support these chains, the connection will be rejected.
+   * @default [1]
+   * @example [1, 3, 4, 5, 42]
+   */
   chains: number[];
+  /**
+   * @note Optional chains that your app MAY attempt to use and the peer MAY support. If the peer does not support these chains, the connection will still be established.
+   * @default [1]
+   * @example [1, 3, 4, 5, 42]
+   */
+  optionalChains?: number[];
+  /**
+   * @note Methods that your app intents to use and the peer MUST support. If the peer does not support these methods, the connection will be rejected.
+   * @default ["eth_sendTransaction", "personal_sign"]
+   */
   methods?: string[];
+  /**
+   * @note Methods that your app MAY attempt to use and the peer MAY support. If the peer does not support these methods, the connection will still be established.
+   */
+  optionalMethods?: string[];
   events?: string[];
+  optionalEvents?: string[];
   rpcMap?: EthereumRpcMap;
   metadata?: Metadata;
   showQrModal?: boolean;
@@ -83,6 +172,7 @@ export class EthereumProvider implements IEthereumProvider {
   public modal?: Web3Modal;
 
   private rpc: EthereumRpcConfig;
+  private readonly STORAGE_KEY = STORAGE_KEY;
 
   constructor() {
     // assigned during initialize
@@ -129,26 +219,39 @@ export class EthereumProvider implements IEthereumProvider {
     }
 
     this.loadConnectOpts(opts);
-
+    const { required, optional } = buildNamespaces(this.rpc);
     try {
-      const session = await this.signer.connect({
-        namespaces: {
-          [this.namespace]: {
-            chains: this.rpc.chains,
-            methods: this.rpc.methods,
-            events: this.rpc.events,
-            rpcMap: this.rpc.rpcMap,
-          },
+      const session = await new Promise<SessionTypes.Struct | undefined>(
+        async (resolve, reject) => {
+          if (this.rpc.showQrModal) {
+            this.modal?.subscribeModal((state) => {
+              // the modal was closed so reject the promise
+              if (!state.open && !this.signer.session)
+                reject(new Error("User rejected the request."));
+            });
+          }
+          const session = await this.signer.connect({
+            namespaces: {
+              [this.namespace]: required,
+            },
+            ...(optional && {
+              optionalNamespaces: {
+                [this.namespace]: optional,
+              },
+            }),
+            pairingTopic: opts?.pairingTopic,
+          });
+          resolve(session);
         },
-        pairingTopic: opts?.pairingTopic,
-      });
+      );
       if (!session) return;
       this.setChainIds(this.rpc.chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
       this.setAccounts(accounts);
       this.events.emit("connect", { chainId: this.chainId, accounts: this.accounts });
     } catch (error) {
-      throw new Error((error as Error).message);
+      this.signer.logger.error(error);
+      throw error;
     } finally {
       if (this.modal) this.modal.closeModal();
     }
@@ -189,7 +292,6 @@ export class EthereumProvider implements IEthereumProvider {
   private registerEventListeners() {
     this.signer.on("session_event", (payload: SignClientTypes.EventArguments["session_event"]) => {
       const { params } = payload;
-      if (!this.rpc.chains.includes(params.chainId)) return;
       const { event } = params;
       if (event.name === "accountsChanged") {
         this.accounts = event.data;
@@ -205,6 +307,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on("chainChanged", (chainId: number) => {
       this.chainId = chainId;
       this.events.emit("chainChanged", chainId);
+      this.persist();
     });
 
     this.signer.on(
@@ -253,6 +356,7 @@ export class EthereumProvider implements IEthereumProvider {
     if (chainIds.length) {
       this.chainId = chainIds[0];
       this.events.emit("chainChanged", this.chainId);
+      this.persist();
     }
   }
 
@@ -279,10 +383,17 @@ export class EthereumProvider implements IEthereumProvider {
 
   private getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
     return {
-      chains: opts.chains.map((chain) => this.formatChainId(chain)) || [`${this.namespace}:1`],
+      chains: opts.chains?.map((chain) => this.formatChainId(chain)) || [`${this.namespace}:1`],
+      optionalChains: opts.optionalChains
+        ? opts.optionalChains.map((chain) => this.formatChainId(chain))
+        : undefined,
       methods: opts?.methods || signerMethods,
       events: opts?.events || signerEvents,
-      rpcMap: opts?.rpcMap || this.buildRpcMap(opts.chains, opts.projectId),
+      optionalMethods: opts?.optionalMethods || [],
+      optionalEvents: opts?.optionalEvents || [],
+      rpcMap:
+        opts?.rpcMap ||
+        this.buildRpcMap(opts.chains.concat(opts.optionalChains || []), opts.projectId),
       showQrModal: opts?.showQrModal ?? true,
       projectId: opts.projectId,
       metadata: opts.metadata,
@@ -302,7 +413,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.chainId = getEthereumChainId(this.rpc.chains);
     this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId });
     this.registerEventListeners();
-    this.loadPersistedSession();
+    await this.loadPersistedSession();
     if (this.rpc.showQrModal)
       this.modal = new Web3Modal({
         walletConnectVersion: 2,
@@ -313,14 +424,20 @@ export class EthereumProvider implements IEthereumProvider {
 
   private loadConnectOpts(opts?: ConnectOps) {
     if (!opts) return;
-    const { chains, rpcMap } = opts;
-    if (!isValidArray(chains) || !chains) return;
-    this.rpc.chains = this.rpc.chains.concat(chains.map((chain) => this.formatChainId(chain)));
-    // filter duplicate chains
-    this.rpc.chains = [...new Set(this.rpc.chains)];
-    chains.forEach((chain) => {
-      this.rpc.rpcMap[chain] = rpcMap?.[chain] || this.getRpcUrl(chain);
-    });
+    const { chains, optionalChains, rpcMap } = opts;
+    if (chains && isValidArray(chains)) {
+      this.rpc.chains = chains.map((chain) => this.formatChainId(chain));
+      chains.forEach((chain) => {
+        this.rpc.rpcMap[chain] = rpcMap?.[chain] || this.getRpcUrl(chain);
+      });
+    }
+    if (optionalChains && isValidArray(optionalChains)) {
+      this.rpc.optionalChains = [];
+      this.rpc.optionalChains = optionalChains?.map((chain) => this.formatChainId(chain));
+      optionalChains.forEach((chain) => {
+        this.rpc.rpcMap[chain] = rpcMap?.[chain] || this.getRpcUrl(chain);
+      });
+    }
   }
 
   private getRpcUrl(chainId: number, projectId?: string): string {
@@ -331,15 +448,23 @@ export class EthereumProvider implements IEthereumProvider {
     );
   }
 
-  private loadPersistedSession() {
+  private async loadPersistedSession() {
     if (!this.session) return;
-    this.setChainIds(this.session.namespaces[this.namespace].accounts);
+    const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
+    this.setChainIds(
+      chainId ? [this.formatChainId(chainId)] : this.session.namespaces[this.namespace].accounts,
+    );
     this.setAccounts(this.session.namespaces[this.namespace].accounts);
   }
 
   private reset() {
     this.chainId = 1;
     this.accounts = [];
+  }
+
+  private persist() {
+    if (!this.session) return;
+    this.signer.client.core.storage.setItem(`${this.STORAGE_KEY}/chainId`, this.chainId);
   }
 }
 

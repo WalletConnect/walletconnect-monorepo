@@ -166,18 +166,21 @@ describe("UniversalProvider", function () {
           TEST_SIGN_TRANSACTION,
           walletClient.signer.privateKey,
         );
-        const callback = async (_error: any, result: any) => {
-          expect(!!result).to.be.true;
-          const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
-          expect(balanceAfter.lt(balanceBefore)).to.be.true;
-        };
-        provider.sendAsync(
-          {
-            method: "eth_sendRawTransaction",
-            params: [rawTransaction],
-          },
-          callback,
-        );
+        await new Promise<void>((resolve) => {
+          const callback = async (_error: any, result: any) => {
+            expect(!!result).to.be.true;
+            const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
+            expect(balanceAfter.lt(balanceBefore)).to.be.true;
+            resolve();
+          };
+          provider.sendAsync(
+            {
+              method: "eth_sendRawTransaction",
+              params: [rawTransaction],
+            },
+            callback,
+          );
+        });
       });
     });
     describe("Ethers", () => {
