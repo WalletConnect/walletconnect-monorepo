@@ -6,7 +6,7 @@ import {
   RequestArguments,
 } from "eip1193-provider";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import { Web3Modal } from "@web3modal/standalone";
+import type { Web3Modal } from "@web3modal/standalone";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { STORAGE_KEY } from "./constants";
 
@@ -414,12 +414,14 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId });
     this.registerEventListeners();
     await this.loadPersistedSession();
-    if (this.rpc.showQrModal)
+    if (this.rpc.showQrModal) {
+      const { Web3Modal } = await import("@web3modal/standalone");
       this.modal = new Web3Modal({
         walletConnectVersion: 2,
         projectId: this.rpc.projectId,
         standaloneChains: this.rpc.chains,
       });
+    }
   }
 
   private loadConnectOpts(opts?: ConnectOps) {

@@ -175,7 +175,7 @@ export class WalletClient {
           namespaces[key] = {
             methods: value.methods,
             events: value.events,
-            accounts: value.chains.map((chain) => `${chain}:${this.accounts[0]}`),
+            accounts: value.chains?.map((chain) => `${chain}:${this.accounts[0]}`),
           };
         });
 
@@ -186,7 +186,7 @@ export class WalletClient {
             accounts: [
               ...new Set(
                 namespaces[key].accounts.concat(
-                  value.chains.map((chain) => `${chain}:${this.accounts[0]}`),
+                  value.chains?.map((chain) => `${chain}:${this.accounts[0]}`),
                 ),
               ),
             ],
