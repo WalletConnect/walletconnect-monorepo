@@ -230,19 +230,18 @@ export class EthereumProvider implements IEthereumProvider {
                 reject(new Error("User rejected the request."));
             });
           }
-          resolve(
-            await this.signer.connect({
-              namespaces: {
-                [this.namespace]: required,
+          const session = await this.signer.connect({
+            namespaces: {
+              [this.namespace]: required,
+            },
+            ...(optional && {
+              optionalNamespaces: {
+                [this.namespace]: optional,
               },
-              ...(optional && {
-                optionalNamespaces: {
-                  [this.namespace]: optional,
-                },
-              }),
-              pairingTopic: opts?.pairingTopic,
             }),
-          );
+            pairingTopic: opts?.pairingTopic,
+          });
+          resolve(session);
         },
       );
       if (!session) return;
