@@ -40,6 +40,7 @@ describe("EthereumProvider", function () {
       chains: [1],
       methods: TEST_ETHEREUM_METHODS_REQUIRED,
       optionalMethods: TEST_ETHEREUM_METHODS_OPTIONAL,
+      showQrModal: true,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
