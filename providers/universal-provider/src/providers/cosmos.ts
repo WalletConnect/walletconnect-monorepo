@@ -10,8 +10,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getRpcUrl, deeplinkRedirect } from "../utils";
-import { RELAYER_EVENTS } from "@walletconnect/core";
+import { getRpcUrl, handleDeepLinks } from "../utils";
 
 class CosmosProvider implements IProvider {
   public name = "cosmos";
@@ -71,7 +70,7 @@ class CosmosProvider implements IProvider {
 
   public request<T = unknown>(args: RequestParams): Promise<T> {
     if (this.namespace.methods.includes(args.request.method)) {
-      this.client.core.relayer.once(RELAYER_EVENTS.publish, deeplinkRedirect);
+      handleDeepLinks(this.client, args);
       return this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);
