@@ -16,7 +16,6 @@ export async function deleteClients(clients: {
     client.core.relayer.provider.connection.events.removeAllListeners();
     client.events.removeAllListeners();
     await disconnectSocket(client.core);
-    await throttle(100);
   }
   delete clients.A;
   delete clients.B;

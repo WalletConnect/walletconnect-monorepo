@@ -11,8 +11,9 @@ import {
   SessionNamespace,
 } from "../types";
 
-import { getRpcUrl } from "../utils";
+import { getRpcUrl, deeplinkRedirect } from "../utils";
 import EventEmitter from "events";
+import { RELAYER_EVENTS } from "@walletconnect/core";
 
 class Eip155Provider implements IProvider {
   public name = "eip155";
@@ -48,6 +49,7 @@ class Eip155Provider implements IProvider {
         break;
     }
     if (this.namespace.methods.includes(args.request.method)) {
+      this.client.core.relayer.once(RELAYER_EVENTS.publish, deeplinkRedirect);
       return await this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);

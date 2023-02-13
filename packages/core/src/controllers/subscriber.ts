@@ -17,6 +17,7 @@ import {
   getRelayProtocolApi,
   getRelayProtocolName,
   createExpiringPromise,
+  hashMessage,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -39,13 +40,16 @@ export class Subscriber extends ISubscriber {
   private cached: SubscriberTypes.Active[] = [];
   private initialized = false;
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
-  private pendingSubInterval = 20;
+  private pollingInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
   private subscribeTimeout = 10_000;
+  private restartInProgress = false;
+  private clientId: string;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
     this.logger = generateChildLogger(logger, this.name);
+    this.clientId = ""; // assigned in init
   }
 
   public init: ISubscriber["init"] = async () => {
@@ -54,6 +58,7 @@ export class Subscriber extends ISubscriber {
       await this.restart();
       this.registerEventListeners();
       this.onEnable();
+      this.clientId = await this.relayer.core.crypto.getClientId();
     }
   };
 
@@ -82,6 +87,7 @@ export class Subscriber extends ISubscriber {
   }
 
   public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
+    await this.restartToComplete();
     this.isInitialized();
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
@@ -102,6 +108,7 @@ export class Subscriber extends ISubscriber {
   };
 
   public unsubscribe: ISubscriber["unsubscribe"] = async (topic, opts) => {
+    await this.restartToComplete();
     this.isInitialized();
     if (typeof opts?.id !== "undefined") {
       await this.unsubscribeById(topic, opts.id, opts);
@@ -130,7 +137,7 @@ export class Subscriber extends ISubscriber {
           watch.stop(this.pendingSubscriptionWatchLabel);
           reject(false);
         }
-      }, this.pendingSubInterval);
+      }, this.pollingInterval);
     });
   };
 
@@ -207,18 +214,17 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    let result: any;
     try {
       const subscribe = await createExpiringPromise(
         this.relayer.provider.request(request),
         this.subscribeTimeout,
       );
-      result = await subscribe;
+      await subscribe;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
-    return result;
+    return hashMessage(topic + this.clientId);
   }
 
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
@@ -304,8 +310,10 @@ export class Subscriber extends ISubscriber {
   }
 
   private restart = async () => {
+    this.restartInProgress = true;
     await this.restore();
     await this.reset();
+    this.restartInProgress = false;
   };
 
   private async persist() {
@@ -330,6 +338,7 @@ export class Subscriber extends ISubscriber {
       if (this.subscriptions.size) {
         const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
         this.logger.error(message);
+        this.logger.error(`${this.name}: ${JSON.stringify(this.values)}`);
         throw new Error(message);
       }
       this.cached = persisted;
@@ -352,6 +361,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
+    if (this.restartInProgress) return;
     await this.restart();
     this.onEnable();
   }
@@ -399,5 +409,18 @@ export class Subscriber extends ISubscriber {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+  }
+
+  private async restartToComplete() {
+    if (!this.restartInProgress) return;
+
+    await new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        if (!this.restartInProgress) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, this.pollingInterval);
+    });
   }
 }

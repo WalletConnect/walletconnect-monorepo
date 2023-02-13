@@ -210,16 +210,6 @@ export function capitalize(str: string) {
     .join(EMPTY_SPACE);
 }
 
-// -- time ------------------------------------------------- //
-
-export function calcExpiry(ttl: number, now?: number): number {
-  return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
-}
-
-export function isExpired(expiry: number) {
-  return fromMiliseconds(Date.now()) >= toMiliseconds(expiry);
-}
-
 // -- promises --------------------------------------------- //
 export function createDelayedPromise<T>(expiry?: number | undefined) {
   const timeout = toMiliseconds(expiry || FIVE_MINUTES);
@@ -298,6 +288,14 @@ export function parseExpirerTarget(target: string) {
   }
 
   return parsed;
+}
+
+export function calcExpiry(ttl: number, now?: number): number {
+  return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
+}
+
+export function isExpired(expiry: number) {
+  return Date.now() >= toMiliseconds(expiry);
 }
 
 // -- events ---------------------------------------------- //

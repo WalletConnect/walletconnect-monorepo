@@ -7,6 +7,7 @@ export declare namespace SessionTypes {
   type Expiry = number;
 
   interface BaseNamespace {
+    chains?: string[];
     accounts: string[];
     methods: string[];
     events: string[];
@@ -24,6 +25,8 @@ export declare namespace SessionTypes {
     controller: string;
     namespaces: Namespaces;
     requiredNamespaces: ProposalTypes.RequiredNamespaces;
+    optionalNamespaces: ProposalTypes.OptionalNamespaces;
+    sessionProperties?: ProposalTypes.SessionProperties;
     self: {
       publicKey: string;
       metadata: SignClientTypes.Metadata;
