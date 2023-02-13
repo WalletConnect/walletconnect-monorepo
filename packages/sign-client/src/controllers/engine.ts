@@ -279,6 +279,7 @@ export class Engine extends IEngine {
       if (error) reject(error);
       else resolve(result);
     });
+    this.client.events.emit("session_request_sent", { topic, request, chainId });
     return await done();
   };
 
