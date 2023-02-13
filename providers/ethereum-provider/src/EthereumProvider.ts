@@ -8,6 +8,7 @@ import {
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
 import { Web3Modal } from "@web3modal/standalone";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { STORAGE_KEY } from "./constants";
 
 export const RPC_URL = "https://rpc.walletconnect.com/v1/";
 
@@ -171,6 +172,7 @@ export class EthereumProvider implements IEthereumProvider {
   public modal?: Web3Modal;
 
   private rpc: EthereumRpcConfig;
+  private readonly STORAGE_KEY = STORAGE_KEY;
 
   constructor() {
     // assigned during initialize
@@ -306,6 +308,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on("chainChanged", (chainId: number) => {
       this.chainId = chainId;
       this.events.emit("chainChanged", chainId);
+      this.persist();
     });
 
     this.signer.on(
@@ -354,6 +357,7 @@ export class EthereumProvider implements IEthereumProvider {
     if (chainIds.length) {
       this.chainId = chainIds[0];
       this.events.emit("chainChanged", this.chainId);
+      this.persist();
     }
   }
 
@@ -410,7 +414,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.chainId = getEthereumChainId(this.rpc.chains);
     this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId });
     this.registerEventListeners();
-    this.loadPersistedSession();
+    await this.loadPersistedSession();
     if (this.rpc.showQrModal)
       this.modal = new Web3Modal({
         walletConnectVersion: 2,
@@ -445,15 +449,23 @@ export class EthereumProvider implements IEthereumProvider {
     );
   }
 
-  private loadPersistedSession() {
+  private async loadPersistedSession() {
     if (!this.session) return;
-    this.setChainIds(this.session.namespaces[this.namespace].accounts);
+    const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
+    this.setChainIds(
+      chainId ? [this.formatChainId(chainId)] : this.session.namespaces[this.namespace].accounts,
+    );
     this.setAccounts(this.session.namespaces[this.namespace].accounts);
   }
 
   private reset() {
     this.chainId = 1;
     this.accounts = [];
+  }
+
+  private persist() {
+    if (!this.session) return;
+    this.signer.client.core.storage.setItem(`${this.STORAGE_KEY}/chainId`, this.chainId);
   }
 }
 
