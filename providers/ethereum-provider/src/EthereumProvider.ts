@@ -8,13 +8,30 @@ import {
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
 import type { Web3Modal } from "@web3modal/standalone";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
-import { STORAGE_KEY } from "./constants";
+import { STORAGE_KEY, REQUIRED_METHODS, REQUIRED_EVENTS, RPC_URL } from "./constants";
 
-export const RPC_URL = "https://rpc.walletconnect.com/v1/";
+export type RpcMethod =
+  | "personal_sign"
+  | "eth_sendTransaction"
+  | "eth_accounts"
+  | "eth_requestAccounts"
+  | "eth_call"
+  | "eth_getBalance"
+  | "eth_sendRawTransaction"
+  | "eth_sign"
+  | "eth_signTransaction"
+  | "eth_signTypedData"
+  | "eth_signTypedData_v3"
+  | "eth_signTypedData_v4"
+  | "wallet_switchEthereumChain"
+  | "wallet_addEthereumChain"
+  | "wallet_getPermissions"
+  | "wallet_requestPermissions"
+  | "wallet_registerOnboarding"
+  | "wallet_watchAsset"
+  | "wallet_scanQRCode";
 
-export const signerMethods = ["eth_sendTransaction", "personal_sign"];
-
-export const signerEvents = ["chainChanged", "accountsChanged"];
+export type RpcEvent = "accountsChanged" | "chainChanged" | "message" | "disconnect" | "connect";
 
 export interface EthereumRpcMap {
   [chainId: string]: string;
@@ -85,8 +102,8 @@ export function buildNamespaces(params: NamespacesParams): {
   }
 
   const requiredChains = chains;
-  const requriedMethods = methods || signerMethods;
-  const requiredEvents = events || signerEvents;
+  const requriedMethods = methods || REQUIRED_METHODS;
+  const requiredEvents = events || REQUIRED_EVENTS;
   const requiredRpcMap = {
     [getEthereumChainId(requiredChains)]: rpcMap[getEthereumChainId(requiredChains)],
   };
@@ -100,8 +117,8 @@ export function buildNamespaces(params: NamespacesParams): {
 
   // make a list of events and methods that require additional permissions
   // so we know if we should to include the required chains in the optional namespace
-  const eventsRequiringPermissions = events?.filter((event) => !signerEvents.includes(event));
-  const methodsRequiringPermissions = methods?.filter((event) => !signerMethods.includes(event));
+  const eventsRequiringPermissions = events?.filter((event) => !REQUIRED_EVENTS.includes(event));
+  const methodsRequiringPermissions = methods?.filter((event) => !REQUIRED_METHODS.includes(event));
 
   if (
     !optionalChains &&
@@ -387,8 +404,8 @@ export class EthereumProvider implements IEthereumProvider {
       optionalChains: opts.optionalChains
         ? opts.optionalChains.map((chain) => this.formatChainId(chain))
         : undefined,
-      methods: opts?.methods || signerMethods,
-      events: opts?.events || signerEvents,
+      methods: opts?.methods || REQUIRED_METHODS,
+      events: opts?.events || REQUIRED_EVENTS,
       optionalMethods: opts?.optionalMethods || [],
       optionalEvents: opts?.optionalEvents || [],
       rpcMap:
