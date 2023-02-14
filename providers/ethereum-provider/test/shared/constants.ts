@@ -74,3 +74,12 @@ export const TEST_SIGN_TRANSACTION = {
   value: "1000000000",
   gas: 2000000,
 };
+
+export const TEST_ETHEREUM_METHODS_REQUIRED = ["eth_sendTransaction", "personal_sign"];
+
+export const TEST_ETHEREUM_METHODS_OPTIONAL = [
+  "eth_sendTransaction",
+  "eth_signTransaction",
+  "personal_sign",
+  "eth_signTypedData",
+];

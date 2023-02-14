@@ -170,13 +170,15 @@ export class Relayer extends IRelayer {
           });
         }),
         await Promise.race([
-          this.provider.connect(),
-          new Promise<void>((_res, reject) =>
+          new Promise<void>(async (resolve) => {
+            await this.provider.connect();
+            this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen);
+            resolve();
+          }),
+          new Promise<void>((_res) =>
             // rejects pending promise if transport is closed before connection is established
             // useful when .connect() gets stuck resolving
-            this.once(RELAYER_EVENTS.transport_closed, () => {
-              reject(new Error("closeTransport called before connection was established"));
-            }),
+            this.once(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen),
           ),
         ]),
       ]);
@@ -203,6 +205,10 @@ export class Relayer extends IRelayer {
   }
 
   // ---------- Private ----------------------------------------------- //
+
+  private rejectTransportOpen() {
+    throw new Error("closeTransport called before connection was established");
+  }
 
   private async createProvider() {
     const auth = await this.core.crypto.signJWT(this.relayUrl);
