@@ -87,7 +87,7 @@ describe("Auth Integration", () => {
           resolve();
         });
       }),
-      wallet.core.pairing.pair({ uri: request.uri, activatePairing: true }),
+      wallet.pair({ uri: request.uri, activatePairing: true }),
     ]);
   });
 
@@ -125,7 +125,7 @@ describe("Auth Integration", () => {
           resolve();
         });
       }),
-      wallet.core.pairing.pair({ uri: request.uri, activatePairing: true }),
+      wallet.pair({ uri: request.uri, activatePairing: true }),
     ]);
   });
 
@@ -169,7 +169,7 @@ describe("Auth Integration", () => {
           resolve();
         });
       }),
-      wallet.core.pairing.pair({ uri: request.uri, activatePairing: true }),
+      wallet.pair({ uri: request.uri, activatePairing: true }),
     ]);
   });
 });
