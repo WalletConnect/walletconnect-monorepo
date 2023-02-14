@@ -82,6 +82,9 @@ export abstract class IWeb3Wallet {
   constructor(public opts: Web3WalletTypes.Options) {}
 
   // ---------- Public Methods ----------------------------------------------- //
+
+  public abstract pair: IWeb3WalletEngine["pair"];
+
   // sign //
   public abstract approveSession: IWeb3WalletEngine["approveSession"];
   public abstract rejectSession: IWeb3WalletEngine["rejectSession"];

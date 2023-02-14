@@ -47,6 +47,15 @@ export class Web3Wallet extends IWeb3Wallet {
 
   // ---------- Engine ----------------------------------------------- //
 
+  public pair: IWeb3Wallet["pair"] = async (params) => {
+    try {
+      return await this.engine.pair(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   public approveSession: IWeb3Wallet["approveSession"] = async (params) => {
     try {
       return await this.engine.approveSession(params);
