@@ -6,7 +6,12 @@ import {
   ProposalTypes,
   SessionTypes,
 } from "@walletconnect/types";
-import { TEST_RELAY_OPTIONS, TEST_NAMESPACES, TEST_REQUIRED_NAMESPACES } from "./constants";
+import {
+  TEST_RELAY_OPTIONS,
+  TEST_NAMESPACES,
+  TEST_REQUIRED_NAMESPACES,
+  TEST_OPTIONAL_NAMESPACES,
+} from "./constants";
 import { expect } from "vitest";
 import UniversalProvider from "../../src/UniversalProvider";
 
@@ -29,6 +34,7 @@ export async function testConnectMethod(
 
   const connectParams: EngineTypes.ConnectParams = {
     requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
+    optionalNamespaces: TEST_OPTIONAL_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
@@ -43,7 +49,6 @@ export async function testConnectMethod(
     walletClient.once("session_proposal", async (proposal) => {
       try {
         expect(proposal.params.requiredNamespaces).to.eql(connectParams.requiredNamespaces);
-
         const { acknowledged } = await walletClient.approve({
           id: proposal.id,
           ...approveParams,
@@ -106,7 +111,12 @@ export async function testConnectMethod(
     }),
     new Promise<void>(async (resolve, reject) => {
       try {
-        const session = await dapp.connect({ namespaces: TEST_REQUIRED_NAMESPACES });
+        const namespaces = connectParams.requiredNamespaces;
+        const optionalNamespaces = connectParams.optionalNamespaces;
+        const session = await dapp.connect({
+          namespaces: namespaces || ({} as any),
+          optionalNamespaces: optionalNamespaces || ({} as any),
+        });
         if (!session) throw new Error();
         const lastKeyIndex = dapp.client.session.keys.length - 1;
         sessionA = dapp.client.session.get(dapp.client.session.keys[lastKeyIndex]);

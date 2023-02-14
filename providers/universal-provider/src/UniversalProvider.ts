@@ -185,8 +185,8 @@ export class UniversalProvider implements IUniversalProvider {
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
-    this.namespaces =
-      ((await this.client.core.storage.getItem(`${STORAGE}/namespaces`)) as NamespaceConfig) || {};
+    this.namespaces = (await this.getFromStore("namespaces")) || {};
+    this.optionalNamespaces = (await this.getFromStore("optionalNamespaces")) || {};
     if (this.namespaces) {
       this.createProviders();
     }
@@ -201,7 +201,7 @@ export class UniversalProvider implements IUniversalProvider {
   private async initialize() {
     this.logger.trace(`Initialized`);
     await this.createClient();
-    this.checkStorage();
+    await this.checkStorage();
     this.registerEventListeners();
   }
 
@@ -324,10 +324,11 @@ export class UniversalProvider implements IUniversalProvider {
     if (!namespaces || !Object.keys(namespaces).length) {
       throw new Error("Namespaces must be not empty");
     }
-    this.client.core.storage.setItem(`${STORAGE}/namespaces`, namespaces);
     this.namespaces = namespaces;
     this.optionalNamespaces = optionalNamespaces;
     this.sessionProperties = sessionProperties;
+    this.persist("namespaces", namespaces);
+    this.persist("optionalNamespaces", optionalNamespaces);
   }
 
   private validateChain(chain?: string): [string, string] {
@@ -361,6 +362,14 @@ export class UniversalProvider implements IUniversalProvider {
   private async cleanup() {
     this.session = undefined;
     await this.cleanupPendingPairings({ deletePairings: true });
+  }
+
+  private persist(key: string, data: unknown) {
+    this.client.core.storage.setItem(`${STORAGE}/${key}`, data);
+  }
+
+  private async getFromStore(key: string) {
+    return await this.client.core.storage.getItem(`${STORAGE}/${key}`);
   }
 }
 export default UniversalProvider;
