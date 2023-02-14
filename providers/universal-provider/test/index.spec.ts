@@ -372,6 +372,7 @@ describe("UniversalProvider", function () {
           sessionA: { topic },
         } = await testConnectMethod({ dapp, wallet });
 
+        const rpcProviders = dapp.rpcProviders.eip155.httpProviders;
         expect(!!topic).to.be.true;
 
         let ethers = new providers.Web3Provider(dapp);
@@ -384,7 +385,7 @@ describe("UniversalProvider", function () {
         // restart
         const afterDapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
-          name: "dapp",
+          name: "afterDapp",
           storageOptions: { database: getDbName("dappDB") },
         });
 
@@ -392,7 +393,8 @@ describe("UniversalProvider", function () {
         ethers = new providers.Web3Provider(afterDapp);
         const afterAccounts = await ethers.listAccounts();
         expect(accounts).to.toMatchObject(afterAccounts);
-
+        const afterRpcProviders = afterDapp.rpcProviders.eip155.httpProviders;
+        expect(rpcProviders).to.toMatchObject(afterRpcProviders);
         // delete
         await disconnectSocket(afterDapp.client.core);
       });
