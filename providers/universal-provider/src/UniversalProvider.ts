@@ -201,7 +201,7 @@ export class UniversalProvider implements IUniversalProvider {
   private async initialize() {
     this.logger.trace(`Initialized`);
     await this.createClient();
-    this.checkStorage();
+    await this.checkStorage();
     this.registerEventListeners();
   }
 
