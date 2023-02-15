@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { getAccountsFromNamespaces, isValidArray } from "@walletconnect/utils";
+import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
 import {
   IEthereumProvider as IProvider,
   ProviderAccounts,
@@ -340,6 +340,10 @@ export class EthereumProvider implements IEthereumProvider {
       (payload: SignClientTypes.EventArguments["session_delete"]) => {
         this.reset();
         this.events.emit("session_delete", payload);
+        this.events.emit("disconnect", {
+          ...getSdkError("USER_DISCONNECTED"),
+          data: payload.topic,
+        });
       },
     );
 

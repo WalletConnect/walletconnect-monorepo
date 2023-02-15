@@ -297,6 +297,10 @@ export class UniversalProvider implements IUniversalProvider {
     this.client.on("session_delete", async (payload) => {
       await this.cleanup();
       this.events.emit("session_delete", payload);
+      this.events.emit("disconnect", {
+        ...getSdkError("USER_DISCONNECTED"),
+        data: payload.topic,
+      });
     });
 
     this.on(PROVIVER_EVENTS.DEFAULT_CHAIN_CHANGED, (caip2ChainId: string) => {
