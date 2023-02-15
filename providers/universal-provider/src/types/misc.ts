@@ -36,6 +36,7 @@ export interface RpcProviderMap {
 export interface Namespace extends ProposalTypes.BaseRequiredNamespace {
   chains: string[];
   rpcMap?: EthereumRpcMap;
+  defaultChain?: string;
 }
 
 export interface NamespaceConfig {
