@@ -3,7 +3,7 @@ import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import Client from "@walletconnect/sign-client";
 import { EngineTypes, SessionTypes } from "@walletconnect/types";
 import EventEmitter from "events";
-import { PROVIVER_EVENTS } from "../constants";
+import { PROVIDER_EVENTS } from "../constants";
 import {
   IProvider,
   RequestParams,
@@ -66,7 +66,7 @@ class CardanoProvider implements IProvider {
       this.setHttpProvider(chainId, rpc);
     }
 
-    this.events.emit(PROVIVER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
   }
 
   // ------------- PRIVATE -------------- /

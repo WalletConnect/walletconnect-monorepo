@@ -20,7 +20,7 @@ import {
   PairingsCleanupOpts,
 } from "./types";
 
-import { RELAY_URL, LOGGER, STORAGE, PROVIVER_EVENTS } from "./constants";
+import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
 import EventEmitter from "events";
 
 export class UniversalProvider implements IUniversalProvider {
@@ -303,7 +303,7 @@ export class UniversalProvider implements IUniversalProvider {
       });
     });
 
-    this.on(PROVIVER_EVENTS.DEFAULT_CHAIN_CHANGED, (caip2ChainId: string) => {
+    this.on(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, (caip2ChainId: string) => {
       this.onChainChanged(caip2ChainId, true);
     });
   }

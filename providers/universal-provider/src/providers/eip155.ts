@@ -13,7 +13,7 @@ import {
 
 import { getChainId, getRpcUrl, handleDeepLinks, validateChainApproval } from "../utils";
 import EventEmitter from "events";
-import { PROVIVER_EVENTS } from "../constants";
+import { PROVIDER_EVENTS } from "../constants";
 
 class Eip155Provider implements IProvider {
   public name = "eip155";
@@ -69,7 +69,7 @@ class Eip155Provider implements IProvider {
       this.setHttpProvider(parsedChain, rpc);
     }
     this.chainId = parsedChain;
-    this.events.emit(PROVIVER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
   }
 
   public requestAccounts(): string[] {
