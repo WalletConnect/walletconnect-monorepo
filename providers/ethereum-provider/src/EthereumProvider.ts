@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { getAccountsFromNamespaces, isValidArray } from "@walletconnect/utils";
+import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
 import {
   IEthereumProvider as IProvider,
   ProviderAccounts,
@@ -321,9 +321,10 @@ export class EthereumProvider implements IEthereumProvider {
       this.events.emit("session_event", payload);
     });
 
-    this.signer.on("chainChanged", (chainId: number) => {
-      this.chainId = chainId;
-      this.events.emit("chainChanged", chainId);
+    this.signer.on("chainChanged", (chainId: string) => {
+      const chain = parseInt(chainId);
+      this.chainId = chain;
+      this.events.emit("chainChanged", chain);
       this.persist();
     });
 
@@ -339,6 +340,10 @@ export class EthereumProvider implements IEthereumProvider {
       (payload: SignClientTypes.EventArguments["session_delete"]) => {
         this.reset();
         this.events.emit("session_delete", payload);
+        this.events.emit("disconnect", {
+          ...getSdkError("USER_DISCONNECTED"),
+          data: payload.topic,
+        });
       },
     );
 
@@ -351,8 +356,10 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   private setHttpProvider(chainId: number): void {
-    const formattedChain = this.formatChainId(chainId);
-    this.signer.setDefaultChain(formattedChain, this.getRpcUrl(chainId));
+    this.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: chainId.toString(16) }],
+    });
   }
 
   private isCompatibleChainId(chainId: string): boolean {
