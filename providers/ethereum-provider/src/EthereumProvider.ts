@@ -321,9 +321,10 @@ export class EthereumProvider implements IEthereumProvider {
       this.events.emit("session_event", payload);
     });
 
-    this.signer.on("chainChanged", (chainId: number) => {
-      this.chainId = chainId;
-      this.events.emit("chainChanged", chainId);
+    this.signer.on("chainChanged", (chainId: string) => {
+      const chain = parseInt(chainId);
+      this.chainId = chain;
+      this.events.emit("chainChanged", chain);
       this.persist();
     });
 
@@ -351,8 +352,10 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   private setHttpProvider(chainId: number): void {
-    const formattedChain = this.formatChainId(chainId);
-    this.signer.setDefaultChain(formattedChain, this.getRpcUrl(chainId));
+    this.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: chainId.toString(16) }],
+    });
   }
 
   private isCompatibleChainId(chainId: string): boolean {
