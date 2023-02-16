@@ -2,9 +2,10 @@ import { EventEmitter } from "events";
 import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
 import {
   IEthereumProvider as IProvider,
+  IEthereumProviderEvents,
   ProviderAccounts,
   RequestArguments,
-} from "eip1193-provider";
+} from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
 import type { Web3Modal } from "@web3modal/standalone";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
@@ -96,7 +97,6 @@ export function buildNamespaces(params: NamespacesParams): {
 } {
   const { chains, optionalChains, methods, optionalMethods, events, optionalEvents, rpcMap } =
     params;
-
   if (!isValidArray(chains)) {
     throw new Error("Invalid chains");
   }
@@ -281,21 +281,21 @@ export class EthereumProvider implements IEthereumProvider {
     this.reset();
   }
 
-  public on(event: any, listener: any): void {
-    this.events.on(event, listener);
-  }
+  public on: IEthereumProviderEvents["on"] = (event, listener) => {
+    return this.events.on(event, listener);
+  };
 
-  public once(event: string, listener: any): void {
-    this.events.once(event, listener);
-  }
+  public once: IEthereumProviderEvents["once"] = (event, listener) => {
+    return this.events.once(event, listener);
+  };
 
-  public removeListener(event: string, listener: any): void {
-    this.events.removeListener(event, listener);
-  }
+  public removeListener: IEthereumProviderEvents["removeListener"] = (event, listener) => {
+    return this.events.removeListener(event, listener);
+  };
 
-  public off(event: string, listener: any): void {
-    this.events.off(event, listener);
-  }
+  public off: IEthereumProviderEvents["off"] = (event, listener) => {
+    return this.events.off(event, listener);
+  };
 
   get isWalletConnect() {
     return true;
