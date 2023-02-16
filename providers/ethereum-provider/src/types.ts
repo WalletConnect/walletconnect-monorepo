@@ -48,7 +48,7 @@ export declare namespace IProviderEvents {
     chainChanged: ProviderChainId;
     accountsChanged: ProviderAccounts;
     session_delete: { topic: string };
-    session_event: SignClientTypes.EventArguments["session_update"];
+    session_event: SignClientTypes.EventArguments["session_event"];
     session_update: SignClientTypes.EventArguments["session_delete"];
     display_uri: string;
   }
