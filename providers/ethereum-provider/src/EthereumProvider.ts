@@ -285,17 +285,17 @@ export class EthereumProvider implements IEthereumProvider {
     return this.events.on(event, listener);
   };
 
-  public once(event: string, listener: any): EventEmitter {
+  public once: IEthereumProviderEvents["once"] = (event, listener) => {
     return this.events.once(event, listener);
-  }
+  };
 
-  public removeListener(event: string, listener: any): EventEmitter {
+  public removeListener: IEthereumProviderEvents["removeListener"] = (event, listener) => {
     return this.events.removeListener(event, listener);
-  }
+  };
 
-  public off(event: string, listener: any): EventEmitter {
+  public off: IEthereumProviderEvents["off"] = (event, listener) => {
     return this.events.off(event, listener);
-  }
+  };
 
   get isWalletConnect() {
     return true;
