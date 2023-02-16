@@ -1,3 +1,6 @@
+import { SignClientTypes } from "@walletconnect/types";
+import EventEmitter from "events";
+
 export interface ProviderRpcError extends Error {
   message: string;
   code: number;
@@ -26,31 +29,65 @@ export interface EIP1102Request extends RequestArguments {
   method: "eth_requestAccounts";
 }
 
-export interface SimpleEventEmitter {
-  // add listener
-  on(event: string, listener: any): void;
-  // add one-time listener
-  once(event: string, listener: any): void;
-  // remove listener
-  removeListener(event: string, listener: any): void;
-  // removeListener alias
-  off(event: string, listener: any): void;
+export declare namespace IProviderEvents {
+  type Event =
+    | "connect"
+    | "disconnect"
+    | "message"
+    | "chainChanged"
+    | "accountsChanged"
+    | "session_delete"
+    | "session_event"
+    | "session_update"
+    | "display_uri";
+
+  interface EventArguments {
+    connect: ProviderInfo;
+    disconnect: ProviderRpcError;
+    message: ProviderMessage;
+    chainChanged: ProviderChainId;
+    accountsChanged: ProviderAccounts;
+    session_delete: { topic: string };
+    session_event: SignClientTypes.EventArguments["session_update"];
+    session_update: SignClientTypes.EventArguments["session_delete"];
+    display_uri: string;
+  }
+}
+export interface IEthereumProviderEvents extends EventEmitter {
+  on: <E extends IProviderEvents.Event>(
+    event: E,
+    listener: (args: IProviderEvents.EventArguments[E]) => any,
+  ) => any;
+
+  once: <E extends IProviderEvents.Event>(
+    event: E,
+    listener: (args: IProviderEvents.EventArguments[E]) => any,
+  ) => any;
+
+  off: <E extends IProviderEvents.Event>(
+    event: E,
+    listener: (args: IProviderEvents.EventArguments[E]) => any,
+  ) => any;
+
+  removeListener: <E extends IProviderEvents.Event>(
+    event: E,
+    listener: (args: IProviderEvents.EventArguments[E]) => any,
+  ) => any;
 }
 
-export interface EIP1193Provider extends SimpleEventEmitter {
+// type EIP1193Provider = Pick<EventEmitter, "on" | "off" | "once" | "removeListener"> &
+
+export interface EIP1193Provider {
   // connection event
-  on(event: "connect", listener: (info: ProviderInfo) => void): void;
+  on(event: "connect", listener: (info: ProviderInfo) => void): this;
   // disconnection event
-  on(event: "disconnect", listener: (error: ProviderRpcError) => void): void;
+  on(event: "disconnect", listener: (error: ProviderRpcError) => void): this;
   // arbitrary messages
-  on(event: "message", listener: (message: ProviderMessage) => void): void;
+  on(event: "message", listener: (message: ProviderMessage) => void): this;
   // chain changed event
-  on(event: "chainChanged", listener: (chainId: ProviderChainId) => void): void;
+  on(event: "chainChanged", listener: (chainId: ProviderChainId) => void): this;
   // accounts changed event
-  on(
-    event: "accountsChanged",
-    listener: (accounts: ProviderAccounts) => void
-  ): void;
+  on(event: "accountsChanged", listener: (accounts: ProviderAccounts) => void): this;
   // make an Ethereum RPC method call.
   request(args: RequestArguments): Promise<unknown>;
 }
