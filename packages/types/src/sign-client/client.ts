@@ -15,6 +15,7 @@ export declare namespace SignClientTypes {
     | "session_delete"
     | "session_expire"
     | "session_request"
+    | "session_request_sent"
     | "session_event"
     | "proposal_expire";
 
@@ -35,6 +36,11 @@ export declare namespace SignClientTypes {
       request: { method: string; params: any };
       chainId: string;
     }>;
+    session_request_sent: {
+      request: { method: string; params: any };
+      topic: string;
+      chainId: string;
+    };
     session_event: BaseEventArgs<{
       event: { name: string; data: any };
       chainId: string;

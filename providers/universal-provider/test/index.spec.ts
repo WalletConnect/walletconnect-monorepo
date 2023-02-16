@@ -23,7 +23,7 @@ import {
   TEST_REQUIRED_NAMESPACES,
 } from "./shared/constants";
 
-const getDbName = (_prefix) => {
+const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
 };
 describe("UniversalProvider", function () {
@@ -166,18 +166,21 @@ describe("UniversalProvider", function () {
           TEST_SIGN_TRANSACTION,
           walletClient.signer.privateKey,
         );
-        const callback = async (_error: any, result: any) => {
-          expect(!!result).to.be.true;
-          const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
-          expect(balanceAfter.lt(balanceBefore)).to.be.true;
-        };
-        provider.sendAsync(
-          {
-            method: "eth_sendRawTransaction",
-            params: [rawTransaction],
-          },
-          callback,
-        );
+        await new Promise<void>((resolve) => {
+          const callback = async (_error: any, result: any) => {
+            expect(!!result).to.be.true;
+            const balanceAfter = BigNumber.from(await web3.eth.getBalance(walletAddress));
+            expect(balanceAfter.lt(balanceBefore)).to.be.true;
+            resolve();
+          };
+          provider.sendAsync(
+            {
+              method: "eth_sendRawTransaction",
+              params: [rawTransaction],
+            },
+            callback,
+          );
+        });
       });
     });
     describe("Ethers", () => {
@@ -331,6 +334,8 @@ describe("UniversalProvider", function () {
           }),
         ]);
 
+        const chainId = await dapp.request({ method: "eth_chainId" });
+
         // delete
         await deleteProviders({ A: dapp, B: wallet });
 
@@ -349,6 +354,9 @@ describe("UniversalProvider", function () {
         // ping
         await afterDapp.client.ping({ topic });
         await afterWallet.client.ping({ topic });
+
+        const chainIdAfter = await afterDapp.request({ method: "eth_chainId" });
+        expect(chainId).to.eq(chainIdAfter);
         // delete
         await deleteProviders({ A: afterDapp, B: afterWallet });
       });
@@ -369,6 +377,7 @@ describe("UniversalProvider", function () {
           sessionA: { topic },
         } = await testConnectMethod({ dapp, wallet });
 
+        const rpcProviders = dapp.rpcProviders.eip155.httpProviders;
         expect(!!topic).to.be.true;
 
         let ethers = new providers.Web3Provider(dapp);
@@ -381,7 +390,7 @@ describe("UniversalProvider", function () {
         // restart
         const afterDapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
-          name: "dapp",
+          name: "afterDapp",
           storageOptions: { database: getDbName("dappDB") },
         });
 
@@ -389,7 +398,8 @@ describe("UniversalProvider", function () {
         ethers = new providers.Web3Provider(afterDapp);
         const afterAccounts = await ethers.listAccounts();
         expect(accounts).to.toMatchObject(afterAccounts);
-
+        const afterRpcProviders = afterDapp.rpcProviders.eip155.httpProviders;
+        expect(rpcProviders).to.toMatchObject(afterRpcProviders);
         // delete
         await disconnectSocket(afterDapp.client.core);
       });

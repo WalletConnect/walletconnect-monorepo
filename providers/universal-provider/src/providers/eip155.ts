@@ -11,9 +11,9 @@ import {
   SessionNamespace,
 } from "../types";
 
-import { getRpcUrl, deeplinkRedirect } from "../utils";
+import { getChainId, getRpcUrl, handleDeepLinks, validateChainApproval } from "../utils";
 import EventEmitter from "events";
-import { RELAYER_EVENTS } from "@walletconnect/core";
+import { PROVIDER_EVENTS } from "../constants";
 
 class Eip155Provider implements IProvider {
   public name = "eip155";
@@ -29,7 +29,7 @@ class Eip155Provider implements IProvider {
     this.client = opts.client;
     this.events = opts.events;
     this.httpProviders = this.createHttpProviders();
-    this.chainId = this.getDefaultChainId();
+    this.chainId = parseInt(this.getDefaultChain());
   }
 
   public async request<T = unknown>(args: RequestParams): Promise<T> {
@@ -39,17 +39,16 @@ class Eip155Provider implements IProvider {
       case "eth_accounts":
         return this.getAccounts() as any;
       case "wallet_switchEthereumChain": {
-        const newChainId = args.request.params ? args.request.params[0]?.chainId : "0x0";
-        this.setDefaultChain(parseInt(newChainId, 16).toString());
+        this.handleSwitchChain(args.request.params ? args.request.params[0]?.chainId : "0x0");
         return null as any;
       }
       case "eth_chainId":
-        return this.getDefaultChainId() as any;
+        return parseInt(this.getDefaultChain()) as any;
       default:
         break;
     }
     if (this.namespace.methods.includes(args.request.method)) {
-      this.client.core.relayer.once(RELAYER_EVENTS.publish, deeplinkRedirect);
+      handleDeepLinks(this.client, args);
       return await this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);
@@ -60,36 +59,46 @@ class Eip155Provider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    this.chainId = parseInt(chainId);
+    const parsedChain = parseInt(chainId);
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
       const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
-      this.setHttpProvider(chainId, rpc);
+      this.setHttpProvider(parsedChain, rpc);
     }
-
-    this.events.emit("chainChanged", this.chainId);
+    this.chainId = parsedChain;
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
   }
 
   public requestAccounts(): string[] {
     return this.getAccounts();
   }
 
+  public getDefaultChain(): string {
+    if (this.chainId) return this.chainId.toString();
+    if (this.namespace.defaultChain) return this.namespace.defaultChain;
+
+    const chainId = this.namespace.chains[0];
+    if (!chainId) throw new Error(`ChainId not found`);
+
+    return chainId.split(":")[1];
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private createHttpProvider(
-    chainId: string,
+    chainId: number,
     rpcUrl?: string | undefined,
   ): JsonRpcProvider | undefined {
-    const rpc = rpcUrl || getRpcUrl(chainId, this.namespace);
+    const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
     if (typeof rpc === "undefined") return undefined;
     const http = new JsonRpcProvider(new HttpConnection(rpc));
     return http;
   }
 
-  private setHttpProvider(chainId: string, rpcUrl?: string): void {
+  private setHttpProvider(chainId: number, rpcUrl?: string): void {
     const http = this.createHttpProvider(chainId, rpcUrl);
     if (http) {
       this.httpProviders[chainId] = http;
@@ -99,7 +108,7 @@ class Eip155Provider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(chain);
+      http[chain] = this.createHttpProvider(getChainId(chain));
     });
     return http;
   }
@@ -119,15 +128,6 @@ class Eip155Provider implements IProvider {
     );
   }
 
-  private getDefaultChainId(): number {
-    if (this.chainId) return this.chainId;
-    const chainId = this.namespace.chains[0];
-
-    if (!chainId) throw new Error(`ChainId not found`);
-
-    return parseInt(chainId.split(":")[1]);
-  }
-
   private getHttpProvider(): JsonRpcProvider {
     const chain = `${this.name}:${this.chainId}`;
     const http = this.httpProviders[chain];
@@ -135,6 +135,13 @@ class Eip155Provider implements IProvider {
       throw new Error(`JSON-RPC provider for ${chain} not found`);
     }
     return http;
+  }
+
+  private handleSwitchChain(newChainId: string) {
+    const chainId = parseInt(newChainId, 16);
+    const caipChainId = `${this.name}:${chainId}`;
+    validateChainApproval(caipChainId, this.namespace.chains);
+    this.setDefaultChain(`${chainId}`);
   }
 }
 

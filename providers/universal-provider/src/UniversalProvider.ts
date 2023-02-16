@@ -8,7 +8,7 @@ import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
 import CardanoProvider from "./providers/cardano";
-import { getChainFromNamespaces } from "./utils";
+import { getChainsFromApprovedSession } from "./utils";
 import {
   IUniversalProvider,
   IProvider,
@@ -20,12 +20,14 @@ import {
   PairingsCleanupOpts,
 } from "./types";
 
-import { RELAY_URL, LOGGER, STORAGE } from "./constants";
+import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
 import EventEmitter from "events";
 
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
   public namespaces!: NamespaceConfig;
+  public optionalNamespaces?: NamespaceConfig;
+  public sessionProperties?: Record<string, string>;
   public events: EventEmitter = new EventEmitter();
   public rpcProviders: RpcProviderMap = {};
   public session?: SessionTypes.Struct;
@@ -81,7 +83,11 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Sign Client not initialized");
     }
     if (!this.session) {
-      await this.connect({ namespaces: this.namespaces });
+      await this.connect({
+        namespaces: this.namespaces,
+        optionalNamespaces: this.optionalNamespaces,
+        sessionProperties: this.sessionProperties,
+      });
     }
     const accounts = await this.requestAccounts();
     return accounts as ProviderAccounts;
@@ -102,11 +108,11 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
-    const { namespaces } = opts;
-    this.setNamespaces(namespaces);
-    this.createProviders();
+    this.setNamespaces(opts);
     await this.cleanupPendingPairings();
-    return opts.skipPairing === true ? undefined : await this.pair(opts.pairingTopic);
+    if (opts.skipPairing) return;
+
+    return await this.pair(opts.pairingTopic);
   }
 
   public on(event: any, listener: any): void {
@@ -133,15 +139,16 @@ export class UniversalProvider implements IUniversalProvider {
     const { uri, approval } = await this.client.connect({
       pairingTopic,
       requiredNamespaces: this.namespaces,
+      optionalNamespaces: this.optionalNamespaces,
+      sessionProperties: this.sessionProperties,
     });
 
     if (uri) {
       this.uri = uri;
       this.events.emit("display_uri", uri);
     }
-
     this.session = await approval();
-    this.onSessionUpdate();
+    this.createProviders();
     this.onConnect();
     return this.session;
   }
@@ -176,23 +183,19 @@ export class UniversalProvider implements IUniversalProvider {
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
-    this.namespaces =
-      ((await this.client.core.storage.getItem(`${STORAGE}/namespaces`)) as NamespaceConfig) || {};
-    if (this.namespaces) {
-      this.createProviders();
-    }
-
+    this.namespaces = (await this.getFromStore("namespaces")) || {};
+    this.optionalNamespaces = (await this.getFromStore("optionalNamespaces")) || {};
     if (this.client.session.length) {
       const lastKeyIndex = this.client.session.keys.length - 1;
       this.session = this.client.session.get(this.client.session.keys[lastKeyIndex]);
-      this.onSessionUpdate();
+      this.createProviders();
     }
   }
 
   private async initialize() {
     this.logger.trace(`Initialized`);
     await this.createClient();
-    this.checkStorage();
+    await this.checkStorage();
     this.registerEventListeners();
   }
 
@@ -217,25 +220,32 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     Object.keys(this.namespaces).forEach((namespace) => {
+      const accounts = this.session?.namespaces[namespace].accounts || [];
+      const approvedChains = getChainsFromApprovedSession(accounts);
+      const combinedNamespace = {
+        ...Object.assign(this.namespaces[namespace], this.optionalNamespaces?.[namespace] ?? {}),
+        accounts,
+        chains: approvedChains,
+      };
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
         case "solana":
           this.rpcProviders[namespace] = new SolanaProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
         case "cosmos":
           this.rpcProviders[namespace] = new CosmosProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
@@ -245,7 +255,7 @@ export class UniversalProvider implements IUniversalProvider {
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
             client: this.client,
-            namespace: this.namespaces[namespace],
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
@@ -268,7 +278,7 @@ export class UniversalProvider implements IUniversalProvider {
       if (event.name === "accountsChanged") {
         this.events.emit("accountsChanged", event.data);
       } else if (event.name === "chainChanged") {
-        this.onChainChanged(event.data, params.chainId);
+        this.onChainChanged(params.chainId);
       } else {
         this.events.emit(event.name, event.data);
       }
@@ -287,6 +297,14 @@ export class UniversalProvider implements IUniversalProvider {
     this.client.on("session_delete", async (payload) => {
       await this.cleanup();
       this.events.emit("session_delete", payload);
+      this.events.emit("disconnect", {
+        ...getSdkError("USER_DISCONNECTED"),
+        data: payload.topic,
+      });
+    });
+
+    this.on(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, (caip2ChainId: string) => {
+      this.onChainChanged(caip2ChainId, true);
     });
   }
 
@@ -305,17 +323,20 @@ export class UniversalProvider implements IUniversalProvider {
     });
   }
 
-  private setNamespaces(namespaces: NamespaceConfig): void {
+  private setNamespaces(params: ConnectParams): void {
+    const { namespaces, optionalNamespaces, sessionProperties } = params;
     if (!namespaces || !Object.keys(namespaces).length) {
       throw new Error("Namespaces must be not empty");
     }
-    this.client.core.storage.setItem(`${STORAGE}/namespaces`, namespaces);
     this.namespaces = namespaces;
+    this.optionalNamespaces = optionalNamespaces;
+    this.sessionProperties = sessionProperties;
+    this.persist("namespaces", namespaces);
+    this.persist("optionalNamespaces", optionalNamespaces);
   }
 
   private validateChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
-
     // validate namespace
     if (namespace) {
       if (!Object.keys(this.namespaces).includes(namespace)) {
@@ -324,8 +345,12 @@ export class UniversalProvider implements IUniversalProvider {
         );
       }
     }
-
-    return !namespace || !chainId ? getChainFromNamespaces(this.namespaces) : [namespace, chainId];
+    if (namespace && chainId) {
+      return [namespace, chainId];
+    }
+    const defaultNamespace = Object.keys(this.namespaces)[0];
+    const defaultChain = this.rpcProviders[defaultNamespace].getDefaultChain();
+    return [defaultNamespace, defaultChain];
   }
 
   private async requestAccounts(): Promise<string[]> {
@@ -333,10 +358,16 @@ export class UniversalProvider implements IUniversalProvider {
     return await this.getProvider(namespace).requestAccounts();
   }
 
-  private onChainChanged(newChain: string, caip2Chain: string): void {
+  private onChainChanged(caip2Chain: string, internal = false): void {
     const [namespace, chainId] = this.validateChain(caip2Chain);
-    this.getProvider(namespace).setDefaultChain(chainId);
-    this.events.emit("chainChanged", newChain);
+
+    if (!internal) {
+      this.getProvider(namespace).setDefaultChain(chainId);
+    }
+
+    this.namespaces[namespace].defaultChain = chainId;
+    this.persist("namespaces", this.namespaces);
+    this.events.emit("chainChanged", chainId);
   }
 
   private onConnect() {
@@ -346,6 +377,14 @@ export class UniversalProvider implements IUniversalProvider {
   private async cleanup() {
     this.session = undefined;
     await this.cleanupPendingPairings({ deletePairings: true });
+  }
+
+  private persist(key: string, data: unknown) {
+    this.client.core.storage.setItem(`${STORAGE}/${key}`, data);
+  }
+
+  private async getFromStore(key: string) {
+    return await this.client.core.storage.getItem(`${STORAGE}/${key}`);
   }
 }
 export default UniversalProvider;
