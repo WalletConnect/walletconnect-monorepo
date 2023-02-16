@@ -44,7 +44,6 @@
     "@walletconnect/universal-provider": "2.4.3",
     "@walletconnect/utils": "2.4.3",
     "@web3modal/standalone": "2.1.1",
-    "eip1193-provider": "1.0.1",
     "events": "^3.3.0"
   },
   "devDependencies": {
