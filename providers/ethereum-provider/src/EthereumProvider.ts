@@ -204,9 +204,6 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
-    this.on("connect", (error) => {
-      throw error;
-    });
     return await this.signer.request(args, this.formatChainId(this.chainId));
   }
 
