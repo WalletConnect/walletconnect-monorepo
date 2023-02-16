@@ -75,8 +75,6 @@ export interface IEthereumProviderEvents extends EventEmitter {
   ) => any;
 }
 
-// type EIP1193Provider = Pick<EventEmitter, "on" | "off" | "once" | "removeListener"> &
-
 export interface EIP1193Provider {
   // connection event
   on(event: "connect", listener: (info: ProviderInfo) => void): this;
