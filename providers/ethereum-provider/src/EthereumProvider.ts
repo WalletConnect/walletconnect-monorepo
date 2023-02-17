@@ -81,6 +81,10 @@ export function getEthereumChainId(chains: string[]): number {
   return Number(chains[0].split(":")[1]);
 }
 
+export function toHexChainId(chainId: number): string {
+  return `0x${chainId.toString(16)}`;
+}
+
 export type NamespacesParams = {
   chains: EthereumRpcConfig["chains"];
   optionalChains?: EthereumRpcConfig["optionalChains"];
@@ -181,7 +185,7 @@ export interface EthereumProviderOptions {
 }
 
 export class EthereumProvider implements IEthereumProvider {
-  public events: any = new EventEmitter();
+  public events: IEthereumProviderEvents = new EventEmitter();
   public namespace = "eip155";
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
@@ -265,7 +269,7 @@ export class EthereumProvider implements IEthereumProvider {
       this.setChainIds(this.rpc.chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
       this.setAccounts(accounts);
-      this.events.emit("connect", { chainId: this.chainId, accounts: this.accounts });
+      this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
     } catch (error) {
       this.signer.logger.error(error);
       throw error;
@@ -316,7 +320,7 @@ export class EthereumProvider implements IEthereumProvider {
       } else if (event.name === "chainChanged") {
         this.setChainId(this.formatChainId(event.data));
       } else {
-        this.events.emit(event.name, event.data);
+        this.events.emit(event.name as any, event.data);
       }
       this.events.emit("session_event", payload);
     });
@@ -324,7 +328,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on("chainChanged", (chainId: string) => {
       const chain = parseInt(chainId);
       this.chainId = chain;
-      this.events.emit("chainChanged", chain);
+      this.events.emit("chainChanged", toHexChainId(this.chainId));
       this.persist();
     });
 
@@ -379,7 +383,7 @@ export class EthereumProvider implements IEthereumProvider {
     const chainIds = compatible.map((c) => this.parseChainId(c));
     if (chainIds.length) {
       this.chainId = chainIds[0];
-      this.events.emit("chainChanged", this.chainId);
+      this.events.emit("chainChanged", toHexChainId(this.chainId));
       this.persist();
     }
   }

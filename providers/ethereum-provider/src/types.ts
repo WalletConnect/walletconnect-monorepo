@@ -1,7 +1,7 @@
 import { SignClientTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 
-export interface ProviderRpcError extends Error {
+export interface ProviderRpcError {
   message: string;
   code: number;
   data?: unknown;
@@ -21,7 +21,7 @@ export interface RequestArguments {
   params?: unknown[] | object;
 }
 
-export type ProviderChainId = string;
+export type ProviderChainId = ProviderInfo["chainId"];
 
 export type ProviderAccounts = string[];
 
@@ -72,6 +72,11 @@ export interface IEthereumProviderEvents extends EventEmitter {
   removeListener: <E extends IProviderEvents.Event>(
     event: E,
     listener: (args: IProviderEvents.EventArguments[E]) => any,
+  ) => any;
+
+  emit: <E extends IProviderEvents.Event>(
+    event: E,
+    payload: IProviderEvents.EventArguments[E],
   ) => any;
 }
 
