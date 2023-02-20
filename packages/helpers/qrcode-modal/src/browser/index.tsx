@@ -51,12 +51,12 @@ function triggerCloseAnimation(): void {
   }
 }
 
-function getWrappedCallback(cb: any): any {
+function getWrappedCallback(): any {
   return () => {
     triggerCloseAnimation();
-    if (cb) {
-      cb();
-    }
+    // if (cb) {
+    //   cb();
+    // }
   };
 }
 
@@ -65,14 +65,27 @@ function getText(): TextMap {
   return Languages[lang] || Languages["en"];
 }
 
-export function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
+export function open(uri: string, qrcodeModalOptions?: IQRCodeModalOptions, chainNamespaces?: string[] | undefined) {
   injectStyleSheet();
   const wrapper = renderWrapper();
+  const chains: string[] = [];
+  if (chainNamespaces === undefined || chainNamespaces.length === 0) {
+    throw new Error("select evm single or multi network");
+  }
+  chainNamespaces.forEach(chain => {
+    const chainName = chain.split(":")[0];
+    if (chainName !== "eip155") chains.push(chainName);
+  });
+  if (chains.length > 0) {
+    throw new Error("select evm single or multi network");
+  }
+
+
   ReactDOM.render(
     <Modal
       text={getText()}
       uri={uri}
-      onClose={getWrappedCallback(cb)}
+      onClose={getWrappedCallback()}
       qrcodeModalOptions={qrcodeModalOptions}
     />,
     wrapper,

@@ -7,13 +7,14 @@ const isNode = () =>
   typeof process.versions !== "undefined" &&
   typeof process.versions.node !== "undefined";
 
-function open(uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions) {
+//uri: string, cb: any, qrcodeModalOptions?: IQRCodeModalOptions
+function open(uri: string, qrcodeModalOptions?: IQRCodeModalOptions, chainNamespaces?: string[] | undefined) {
   // eslint-disable-next-line no-console
   console.log(uri);
   if (isNode()) {
     nodeLib.open(uri);
   } else {
-    browserLib.open(uri, cb, qrcodeModalOptions);
+    browserLib.open(uri, qrcodeModalOptions, chainNamespaces);
   }
 }
 

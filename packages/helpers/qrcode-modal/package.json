@@ -1,6 +1,6 @@
 {
   "name": "@dcentwallet/qrcode-modal",
-  "version": "1.8.2",
+  "version": "insert version",
   "description": "QR Code Modal for D'CENT WalletConnect",
   "scripts": {
     "clean": "rm -rf dist",

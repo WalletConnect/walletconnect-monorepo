@@ -238,7 +238,7 @@ export interface IWalletConnectSession {
 }
 
 export interface IWalletConnectOptions {
-  bridge?: string;
+  bridge?: string ;
   uri?: string;
   storageId?: string;
   signingMethods?: string[];

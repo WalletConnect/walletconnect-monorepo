@@ -2,7 +2,7 @@ import * as React from "react";
 import {
   IMobileRegistryEntry,
   IQRCodeModalOptions,
-  IAppRegistry
+  IAppRegistry,
 } from "@dcentwallet/walletconnect-types";
 import {
   isMobile,
