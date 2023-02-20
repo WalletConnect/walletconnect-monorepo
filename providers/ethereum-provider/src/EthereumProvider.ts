@@ -248,23 +248,30 @@ export class EthereumProvider implements IEthereumProvider {
             this.modal?.subscribeModal((state) => {
               // the modal was closed so reject the promise
               if (!state.open && !this.signer.session)
-                reject(new Error("User rejected the request."));
+                reject(new Error("Connection request reset. Please try again."));
             });
           }
-          const session = await this.signer.connect({
-            namespaces: {
-              [this.namespace]: required,
-            },
-            ...(optional && {
-              optionalNamespaces: {
-                [this.namespace]: optional,
+          await this.signer
+            .connect({
+              namespaces: {
+                [this.namespace]: required,
               },
-            }),
-            pairingTopic: opts?.pairingTopic,
-          });
-          resolve(session);
+              ...(optional && {
+                optionalNamespaces: {
+                  [this.namespace]: optional,
+                },
+              }),
+              pairingTopic: opts?.pairingTopic,
+            })
+            .then((session) => {
+              resolve(session);
+            })
+            .catch((error: Error) => {
+              reject(new Error(error.message));
+            });
         },
       );
+
       if (!session) return;
       this.setChainIds(this.rpc.chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
