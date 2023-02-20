@@ -40,8 +40,8 @@
     "@walletconnect/core": "2.4.4",
     "@walletconnect/events": "^1.0.1",
     "@walletconnect/heartbeat": "1.2.0",
-    "@walletconnect/jsonrpc-provider": "^1.0.6",
-    "@walletconnect/jsonrpc-utils": "^1.0.4",
+    "@walletconnect/jsonrpc-provider": "^1.0.7",
+    "@walletconnect/jsonrpc-utils": "^1.0.5",
     "@walletconnect/logger": "^2.0.1",
     "@walletconnect/time": "^1.0.2",
     "@walletconnect/types": "2.4.4",
@@ -50,7 +50,7 @@
     "pino": "7.11.0"
   },
   "devDependencies": {
-    "@walletconnect/jsonrpc-ws-connection": "^1.0.7",
+    "@walletconnect/jsonrpc-ws-connection": "^1.0.8",
     "@walletconnect/relay-api": "^1.0.7",
     "aws-sdk": "2.1194.0",
     "lokijs": "^1.5.12"
