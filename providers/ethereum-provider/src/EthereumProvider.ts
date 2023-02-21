@@ -248,23 +248,30 @@ export class EthereumProvider implements IEthereumProvider {
             this.modal?.subscribeModal((state) => {
               // the modal was closed so reject the promise
               if (!state.open && !this.signer.session)
-                reject(new Error("User rejected the request."));
+                reject(new Error("Connection request reset. Please try again."));
             });
           }
-          const session = await this.signer.connect({
-            namespaces: {
-              [this.namespace]: required,
-            },
-            ...(optional && {
-              optionalNamespaces: {
-                [this.namespace]: optional,
+          await this.signer
+            .connect({
+              namespaces: {
+                [this.namespace]: required,
               },
-            }),
-            pairingTopic: opts?.pairingTopic,
-          });
-          resolve(session);
+              ...(optional && {
+                optionalNamespaces: {
+                  [this.namespace]: optional,
+                },
+              }),
+              pairingTopic: opts?.pairingTopic,
+            })
+            .then((session) => {
+              resolve(session);
+            })
+            .catch((error: Error) => {
+              reject(new Error(error.message));
+            });
         },
       );
+
       if (!session) return;
       this.setChainIds(this.rpc.chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
@@ -315,7 +322,7 @@ export class EthereumProvider implements IEthereumProvider {
       const { params } = payload;
       const { event } = params;
       if (event.name === "accountsChanged") {
-        this.accounts = event.data;
+        this.accounts = this.parseAccounts(event.data);
         this.events.emit("accountsChanged", this.accounts);
       } else if (event.name === "chainChanged") {
         this.setChainId(this.formatChainId(event.data));
@@ -496,6 +503,17 @@ export class EthereumProvider implements IEthereumProvider {
     if (!this.session) return;
     this.signer.client.core.storage.setItem(`${this.STORAGE_KEY}/chainId`, this.chainId);
   }
+
+  private parseAccounts(payload: string | string[]): string[] {
+    if (typeof payload === "string" || payload instanceof String) {
+      return [this.parseAccount(payload)];
+    }
+    return payload.map((account: string) => this.parseAccount(account));
+  }
+
+  private parseAccount = (payload: any): string => {
+    return this.isCompatibleChainId(payload) ? this.parseAccountId(payload).address : payload;
+  };
 }
 
 export default EthereumProvider;
