@@ -142,7 +142,6 @@ class Eip155Provider implements IProvider {
   }
 
   private handleSwitchChain(newChainId: string) {
-    console.log("handleSwitchChain", newChainId);
     const chainId = parseInt(newChainId, 16);
     const caipChainId = `${this.name}:${chainId}`;
     validateChainApproval(caipChainId, this.namespace.chains);
