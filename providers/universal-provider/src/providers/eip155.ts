@@ -59,17 +59,19 @@ class Eip155Provider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    const parsedChain = parseInt(chainId);
+    const parsedChain = getChainId(chainId);
     // http provider exists so just set the chainId
-    if (!this.httpProviders[chainId]) {
-      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+    if (!this.httpProviders[parsedChain]) {
+      const rpc =
+        rpcUrl ||
+        getRpcUrl(`${this.name}:${parsedChain}`, this.namespace, this.client.core.projectId);
       if (!rpc) {
-        throw new Error(`No RPC url provided for chainId: ${chainId}`);
+        throw new Error(`No RPC url provided for chainId: ${parsedChain}`);
       }
       this.setHttpProvider(parsedChain, rpc);
     }
     this.chainId = parsedChain;
-    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${parsedChain}`);
   }
 
   public requestAccounts(): string[] {
@@ -92,7 +94,8 @@ class Eip155Provider implements IProvider {
     chainId: number,
     rpcUrl?: string | undefined,
   ): JsonRpcProvider | undefined {
-    const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+    const rpc =
+      rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace, this.client.core.projectId);
     if (typeof rpc === "undefined") return undefined;
     const http = new JsonRpcProvider(new HttpConnection(rpc));
     return http;
@@ -108,7 +111,8 @@ class Eip155Provider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(getChainId(chain));
+      const parsedChain = getChainId(chain);
+      http[parsedChain] = this.createHttpProvider(parsedChain);
     });
     return http;
   }
@@ -129,7 +133,7 @@ class Eip155Provider implements IProvider {
   }
 
   private getHttpProvider(): JsonRpcProvider {
-    const chain = `${this.name}:${this.chainId}`;
+    const chain = this.chainId;
     const http = this.httpProviders[chain];
     if (typeof http === "undefined") {
       throw new Error(`JSON-RPC provider for ${chain} not found`);
@@ -138,6 +142,7 @@ class Eip155Provider implements IProvider {
   }
 
   private handleSwitchChain(newChainId: string) {
+    console.log("handleSwitchChain", newChainId);
     const chainId = parseInt(newChainId, 16);
     const caipChainId = `${this.name}:${chainId}`;
     validateChainApproval(caipChainId, this.namespace.chains);
