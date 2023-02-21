@@ -322,7 +322,7 @@ export class EthereumProvider implements IEthereumProvider {
       const { params } = payload;
       const { event } = params;
       if (event.name === "accountsChanged") {
-        this.accounts = event.data;
+        this.accounts = this.parseAccounts(event.data);
         this.events.emit("accountsChanged", this.accounts);
       } else if (event.name === "chainChanged") {
         this.setChainId(this.formatChainId(event.data));
@@ -503,6 +503,17 @@ export class EthereumProvider implements IEthereumProvider {
     if (!this.session) return;
     this.signer.client.core.storage.setItem(`${this.STORAGE_KEY}/chainId`, this.chainId);
   }
+
+  private parseAccounts(payload: string | string[]): string[] {
+    if (typeof payload === "string" || payload instanceof String) {
+      return [this.parseAccount(payload)];
+    }
+    return payload.map((account: string) => this.parseAccount(account));
+  }
+
+  private parseAccount = (payload: any): string => {
+    return this.isCompatibleChainId(payload) ? this.parseAccountId(payload).address : payload;
+  };
 }
 
 export default EthereumProvider;
