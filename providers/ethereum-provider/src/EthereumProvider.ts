@@ -446,7 +446,7 @@ export class EthereumProvider implements IEthereumProvider {
   private async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
     this.chainId = getEthereumChainId(this.rpc.chains);
-    this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId });
+    this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId, metadata: opts.metadata });
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
