@@ -227,6 +227,30 @@ export class Subscriber extends ISubscriber {
     return hashMessage(topic + this.clientId);
   }
 
+  private async rpcBatchSubscribe(subscriptions: SubscriberTypes.Params[]) {
+    if (!subscriptions.length) return;
+    const relay = subscriptions[0].relay;
+    const api = getRelayProtocolApi(relay.protocol);
+    const request: RequestArguments<RelayJsonRpc.BatchSubscribeParams> = {
+      method: api.batchSubscribe,
+      params: {
+        topics: subscriptions.map((s) => s.topic),
+      },
+    };
+    this.logger.debug(`Outgoing Relay Payload`);
+    this.logger.trace({ type: "payload", direction: "outgoing", request });
+    try {
+      const subscribe = await createExpiringPromise(
+        this.relayer.provider.request(request),
+        this.subscribeTimeout,
+      );
+      return await subscribe;
+    } catch (err) {
+      this.logger.debug(`Outgoing Relay Payload stalled`);
+      this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+    }
+  }
+
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
@@ -246,9 +270,12 @@ export class Subscriber extends ISubscriber {
     this.pending.delete(params.topic);
   }
 
-  private onResubscribe(id: string, params: SubscriberTypes.Params) {
-    this.addSubscription(id, { ...params, id });
-    this.pending.delete(params.topic);
+  private onBatchSubscribe(subscriptions: SubscriberTypes.Active[]) {
+    if (!subscriptions.length) return;
+    subscriptions.forEach((subscription) => {
+      this.setSubscription(subscription.id, { ...subscription });
+      this.pending.delete(subscription.topic);
+    });
   }
 
   private async onUnsubscribe(topic: string, id: string, reason: ErrorResponse) {
@@ -323,9 +350,7 @@ export class Subscriber extends ISubscriber {
 
   private async reset() {
     if (this.cached.length) {
-      await Promise.all(
-        this.cached.map(async (subscription) => await this.resubscribe(subscription)),
-      );
+      await this.batchSubscribe(this.cached);
     }
     this.events.emit(SUBSCRIBER_EVENTS.resubscribed);
   }
@@ -350,14 +375,10 @@ export class Subscriber extends ISubscriber {
     }
   }
 
-  private async resubscribe(subscription: SubscriberTypes.Active) {
-    if (!this.ids.includes(subscription.id)) {
-      const { topic, relay } = subscription;
-      const params = { topic, relay };
-      this.pending.set(params.topic, params);
-      const id = await this.rpcSubscribe(params.topic, params.relay);
-      this.onResubscribe(id, params);
-    }
+  private async batchSubscribe(subscriptions: SubscriberTypes.Params[]) {
+    if (!subscriptions.length) return;
+    const result = (await this.rpcBatchSubscribe(subscriptions)) as string[];
+    this.onBatchSubscribe(result.map((id, i) => ({ ...subscriptions[i], id })));
   }
 
   private async onConnect() {
@@ -370,19 +391,20 @@ export class Subscriber extends ISubscriber {
     this.onDisable();
   }
 
-  private checkPending() {
+  private async checkPending() {
     if (this.relayer.transportExplicitlyClosed) {
       return;
     }
-    this.pending.forEach(async (params) => {
-      const id = await this.rpcSubscribe(params.topic, params.relay);
-      this.onSubscribe(id, params);
+    const pendingSubscriptions: SubscriberTypes.Params[] = [];
+    this.pending.forEach((params) => {
+      pendingSubscriptions.push(params);
     });
+    await this.batchSubscribe(pendingSubscriptions);
   }
 
   private registerEventListeners() {
-    this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
-      this.checkPending();
+    this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
+      await this.checkPending();
     });
     this.relayer.on(RELAYER_EVENTS.connect, async () => {
       await this.onConnect();

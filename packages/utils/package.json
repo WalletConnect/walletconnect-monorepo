@@ -36,7 +36,7 @@
     "@stablelib/sha256": "1.0.1",
     "@stablelib/x25519": "^1.0.3",
     "@walletconnect/jsonrpc-utils": "^1.0.4",
-    "@walletconnect/relay-api": "^1.0.7",
+    "@walletconnect/relay-api": "^1.0.8",
     "@walletconnect/safe-json": "^1.0.1",
     "@walletconnect/time": "^1.0.2",
     "@walletconnect/types": "2.4.5",
