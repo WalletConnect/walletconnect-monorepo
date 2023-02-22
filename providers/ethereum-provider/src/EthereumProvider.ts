@@ -354,6 +354,7 @@ export class EthereumProvider implements IEthereumProvider {
         this.events.emit("disconnect", {
           ...getSdkError("USER_DISCONNECTED"),
           data: payload.topic,
+          name: "USER_DISCONNECTED",
         });
       },
     );
@@ -446,7 +447,10 @@ export class EthereumProvider implements IEthereumProvider {
   private async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
     this.chainId = getEthereumChainId(this.rpc.chains);
-    this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId, metadata: this.rpc.metadata });
+    this.signer = await UniversalProvider.init({
+      projectId: this.rpc.projectId,
+      metadata: this.rpc.metadata,
+    });
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
