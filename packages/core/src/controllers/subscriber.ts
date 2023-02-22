@@ -45,6 +45,7 @@ export class Subscriber extends ISubscriber {
   private subscribeTimeout = 10_000;
   private restartInProgress = false;
   private clientId: string;
+  private batchSubscribeTopicsLimit = 500;
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -349,9 +350,15 @@ export class Subscriber extends ISubscriber {
   }
 
   private async reset() {
-    if (this.cached.length) {
-      await this.batchSubscribe(this.cached);
+    if (!this.cached.length) return;
+
+    const batches = Math.ceil(this.cached.length / this.batchSubscribeTopicsLimit);
+
+    for (let i = 0; i < batches; i++) {
+      const batch = this.cached.splice(0, this.batchSubscribeTopicsLimit);
+      await this.batchSubscribe(batch);
     }
+
     this.events.emit(SUBSCRIBER_EVENTS.resubscribed);
   }
 
