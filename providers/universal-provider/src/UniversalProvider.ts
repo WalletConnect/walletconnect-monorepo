@@ -1,5 +1,5 @@
 import pino from "pino";
-import SignClient from "@walletconnect/sign-client";
+import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray } from "@walletconnect/utils";
@@ -8,7 +8,7 @@ import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
 import CardanoProvider from "./providers/cardano";
-import { getChainFromNamespaces } from "./utils";
+import { getChainsFromApprovedSession } from "./utils";
 import {
   IUniversalProvider,
   IProvider,
@@ -20,7 +20,7 @@ import {
   PairingsCleanupOpts,
 } from "./types";
 
-import { RELAY_URL, LOGGER, STORAGE } from "./constants";
+import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
 import EventEmitter from "events";
 
 export class UniversalProvider implements IUniversalProvider {
@@ -34,6 +34,9 @@ export class UniversalProvider implements IUniversalProvider {
   public providerOpts: UniversalProviderOpts;
   public logger: Logger;
   public uri: string | undefined;
+
+  private shouldAbortPairingAttempt = false;
+  private maxPairingAttempts = 10;
 
   static async init(opts: UniversalProviderOpts) {
     const provider = new UniversalProvider(opts);
@@ -110,8 +113,6 @@ export class UniversalProvider implements IUniversalProvider {
     }
     this.setNamespaces(opts);
     await this.cleanupPendingPairings();
-    this.createProviders();
-
     if (opts.skipPairing) return;
 
     return await this.pair(opts.pairingTopic);
@@ -138,19 +139,40 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public async pair(pairingTopic: string | undefined): Promise<SessionTypes.Struct> {
-    const { uri, approval } = await this.client.connect({
-      pairingTopic,
-      requiredNamespaces: this.namespaces,
-      optionalNamespaces: this.optionalNamespaces,
-      sessionProperties: this.sessionProperties,
-    });
+    this.shouldAbortPairingAttempt = false;
+    let pairingAttempts = 0;
+    do {
+      if (this.shouldAbortPairingAttempt) {
+        throw new Error("Pairing aborted");
+      }
 
-    if (uri) {
-      this.uri = uri;
-      this.events.emit("display_uri", uri);
-    }
-    this.session = await approval();
-    this.onSessionUpdate();
+      if (pairingAttempts >= this.maxPairingAttempts) {
+        throw new Error("Max auto pairing attempts reached");
+      }
+
+      const { uri, approval } = await this.client.connect({
+        pairingTopic,
+        requiredNamespaces: this.namespaces,
+        optionalNamespaces: this.optionalNamespaces,
+        sessionProperties: this.sessionProperties,
+      });
+
+      if (uri) {
+        this.uri = uri;
+        this.events.emit("display_uri", uri);
+      }
+
+      await approval()
+        .then((session) => {
+          this.session = session;
+        })
+        .catch((error) => {
+          if (error.message !== PROPOSAL_EXPIRY_MESSAGE) {
+            throw error;
+          }
+          pairingAttempts++;
+        });
+    } while (!this.session);
     this.onConnect();
     return this.session;
   }
@@ -182,19 +204,19 @@ export class UniversalProvider implements IUniversalProvider {
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
   }
 
+  public abortPairingAttempt() {
+    this.shouldAbortPairingAttempt = true;
+  }
+
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
     this.namespaces = (await this.getFromStore("namespaces")) || {};
     this.optionalNamespaces = (await this.getFromStore("optionalNamespaces")) || {};
-    if (this.namespaces) {
-      this.createProviders();
-    }
-
     if (this.client.session.length) {
       const lastKeyIndex = this.client.session.keys.length - 1;
       this.session = this.client.session.get(this.client.session.keys[lastKeyIndex]);
-      this.onSessionUpdate();
+      this.createProviders();
     }
   }
 
@@ -226,30 +248,32 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     Object.keys(this.namespaces).forEach((namespace) => {
-      const namespaces = Object.assign(
-        {},
-        this.namespaces[namespace],
-        this.optionalNamespaces?.[namespace],
-      );
+      const accounts = this.session?.namespaces[namespace].accounts || [];
+      const approvedChains = getChainsFromApprovedSession(accounts);
+      const combinedNamespace = {
+        ...Object.assign(this.namespaces[namespace], this.optionalNamespaces?.[namespace] ?? {}),
+        accounts,
+        chains: approvedChains,
+      };
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
             client: this.client,
-            namespace: namespaces,
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
         case "solana":
           this.rpcProviders[namespace] = new SolanaProvider({
             client: this.client,
-            namespace: namespaces,
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
         case "cosmos":
           this.rpcProviders[namespace] = new CosmosProvider({
             client: this.client,
-            namespace: namespaces,
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
@@ -259,7 +283,7 @@ export class UniversalProvider implements IUniversalProvider {
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
             client: this.client,
-            namespace: namespaces,
+            namespace: combinedNamespace,
             events: this.events,
           });
           break;
@@ -282,7 +306,7 @@ export class UniversalProvider implements IUniversalProvider {
       if (event.name === "accountsChanged") {
         this.events.emit("accountsChanged", event.data);
       } else if (event.name === "chainChanged") {
-        this.onChainChanged(event.data, params.chainId);
+        this.onChainChanged(params.chainId);
       } else {
         this.events.emit(event.name, event.data);
       }
@@ -301,6 +325,14 @@ export class UniversalProvider implements IUniversalProvider {
     this.client.on("session_delete", async (payload) => {
       await this.cleanup();
       this.events.emit("session_delete", payload);
+      this.events.emit("disconnect", {
+        ...getSdkError("USER_DISCONNECTED"),
+        data: payload.topic,
+      });
+    });
+
+    this.on(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, (caip2ChainId: string) => {
+      this.onChainChanged(caip2ChainId, true);
     });
   }
 
@@ -341,7 +373,12 @@ export class UniversalProvider implements IUniversalProvider {
         );
       }
     }
-    return !namespace || !chainId ? getChainFromNamespaces(this.namespaces) : [namespace, chainId];
+    if (namespace && chainId) {
+      return [namespace, chainId];
+    }
+    const defaultNamespace = Object.keys(this.namespaces)[0];
+    const defaultChain = this.rpcProviders[defaultNamespace].getDefaultChain();
+    return [defaultNamespace, defaultChain];
   }
 
   private async requestAccounts(): Promise<string[]> {
@@ -349,13 +386,20 @@ export class UniversalProvider implements IUniversalProvider {
     return await this.getProvider(namespace).requestAccounts();
   }
 
-  private onChainChanged(newChain: string, caip2Chain: string): void {
+  private onChainChanged(caip2Chain: string, internal = false): void {
     const [namespace, chainId] = this.validateChain(caip2Chain);
-    this.getProvider(namespace).setDefaultChain(chainId);
-    this.events.emit("chainChanged", newChain);
+
+    if (!internal) {
+      this.getProvider(namespace).setDefaultChain(chainId);
+    }
+
+    this.namespaces[namespace].defaultChain = chainId;
+    this.persist("namespaces", this.namespaces);
+    this.events.emit("chainChanged", chainId);
   }
 
   private onConnect() {
+    this.createProviders();
     this.events.emit("connect", { session: this.session });
   }
 

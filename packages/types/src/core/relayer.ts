@@ -39,6 +39,7 @@ export declare namespace RelayerTypes {
   export interface MessageEvent {
     topic: string;
     message: string;
+    publishedAt: number;
   }
 
   export interface RpcUrlParams {

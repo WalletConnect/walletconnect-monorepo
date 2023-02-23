@@ -1,18 +1,31 @@
-import { NamespaceConfig, Namespace } from "../types";
+import { RPC_URL } from "../constants";
+import { Namespace } from "../types";
 
-export function getChainFromNamespaces(namespaces: NamespaceConfig): [string, string] {
-  const chain = namespaces[Object.keys(namespaces)[0]]?.chains[0];
-  return [chain.split(":")[0], chain.split(":")[1]];
-}
-
-export function getRpcUrl(chainId: string, rpc: Namespace): string | undefined {
+export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): string | undefined {
   let rpcUrl: string | undefined;
+  const parsedChainId = getChainId(chainId);
   if (rpc.rpcMap) {
-    rpcUrl = rpc.rpcMap[getChainId([chainId])];
+    rpcUrl = rpc.rpcMap[parsedChainId];
+  }
+
+  if (!rpcUrl) {
+    rpcUrl = `${RPC_URL}?chainId=eip155:${parsedChainId}&projectId=${projectId}`;
   }
   return rpcUrl;
 }
 
-export function getChainId(chains: string[]): number {
-  return Number(chains[0].split(":")[1]);
+export function getChainId(chain: string): number {
+  return chain.includes("eip155") ? Number(chain.split(":")[1]) : Number(chain);
+}
+
+export function validateChainApproval(chain: string, chains: string[]): void {
+  if (!chains.includes(chain)) {
+    throw new Error(
+      `Chain '${chain}' not approved. Please use one of the following: ${chains.toString()}`,
+    );
+  }
+}
+
+export function getChainsFromApprovedSession(accounts: string[]): string[] {
+  return accounts.map((address) => `${address.split(":")[0]}:${address.split(":")[1]}`);
 }

@@ -51,7 +51,7 @@ describe("Auth Integration", () => {
 
   it("should respond to auth request", async () => {
     const request = await dapp.request(defaultRequestParams);
-    uriString = request.uri;
+    uriString = request.uri!;
 
     await Promise.all([
       new Promise((resolve) => {
@@ -87,13 +87,13 @@ describe("Auth Integration", () => {
           resolve();
         });
       }),
-      wallet.pair({ uri: request.uri, activatePairing: true }),
+      wallet.pair({ uri: request.uri!, activatePairing: true }),
     ]);
   });
 
   it("should reject auth request", async () => {
     const request = await dapp.request(defaultRequestParams);
-    uriString = request.uri;
+    uriString = request.uri!;
     const errorResponse = {
       code: 14001,
       message: "Can not login",
@@ -125,13 +125,13 @@ describe("Auth Integration", () => {
           resolve();
         });
       }),
-      wallet.pair({ uri: request.uri, activatePairing: true }),
+      wallet.pair({ uri: request.uri!, activatePairing: true }),
     ]);
   });
 
   it("should get pending auth request", async () => {
     const request = await dapp.request(defaultRequestParams);
-    uriString = request.uri;
+    uriString = request.uri!;
 
     await Promise.all([
       new Promise((resolve) => {
@@ -169,7 +169,7 @@ describe("Auth Integration", () => {
           resolve();
         });
       }),
-      wallet.pair({ uri: request.uri, activatePairing: true }),
+      wallet.pair({ uri: request.uri!, activatePairing: true }),
     ]);
   });
 });

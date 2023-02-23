@@ -74,9 +74,9 @@ describe("EthereumProvider", function () {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", (chainId: number) => {
+        provider.on("chainChanged", (chainId) => {
           try {
-            expect(chainId).to.eql(42);
+            expect(parseInt(chainId, 16)).to.eql(42);
             resolve();
           } catch (e) {
             reject(e);
@@ -96,9 +96,9 @@ describe("EthereumProvider", function () {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", (chainId: number) => {
+        provider.on("chainChanged", (chainId) => {
           try {
-            expect(chainId).to.eql(CHAIN_ID);
+            expect(parseInt(chainId, 16)).to.eql(CHAIN_ID);
             resolve();
           } catch (e) {
             reject(e);
@@ -143,7 +143,7 @@ describe("EthereumProvider", function () {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("accountsChanged", (accounts: string) => {
+        provider.on("accountsChanged", (accounts) => {
           try {
             expect(accounts[0]).to.eql(ACCOUNTS.a.address);
             resolve();

@@ -23,7 +23,7 @@ import {
   TEST_REQUIRED_NAMESPACES,
 } from "./shared/constants";
 
-const getDbName = (_prefix) => {
+const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
 };
 describe("UniversalProvider", function () {
@@ -334,6 +334,8 @@ describe("UniversalProvider", function () {
           }),
         ]);
 
+        const chainId = await dapp.request({ method: "eth_chainId" });
+
         // delete
         await deleteProviders({ A: dapp, B: wallet });
 
@@ -352,6 +354,9 @@ describe("UniversalProvider", function () {
         // ping
         await afterDapp.client.ping({ topic });
         await afterWallet.client.ping({ topic });
+
+        const chainIdAfter = await afterDapp.request({ method: "eth_chainId" });
+        expect(chainId).to.eq(chainIdAfter);
         // delete
         await deleteProviders({ A: afterDapp, B: afterWallet });
       });
