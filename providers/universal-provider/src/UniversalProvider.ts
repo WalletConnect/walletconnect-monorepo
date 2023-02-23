@@ -1,5 +1,5 @@
 import pino from "pino";
-import SignClient from "@walletconnect/sign-client";
+import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray } from "@walletconnect/utils";
@@ -167,7 +167,7 @@ export class UniversalProvider implements IUniversalProvider {
           this.session = session;
         })
         .catch((error) => {
-          if (error.message !== "Proposal expired") {
+          if (error.message !== PROPOSAL_EXPIRY_MESSAGE) {
             throw error;
           }
           pairingAttempts++;
