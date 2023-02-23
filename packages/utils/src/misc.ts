@@ -211,7 +211,10 @@ export function capitalize(str: string) {
 }
 
 // -- promises --------------------------------------------- //
-export function createDelayedPromise<T>(expiry?: number | undefined) {
+export function createDelayedPromise<T>(
+  expiry: number = FIVE_MINUTES,
+  expireErrorMessage?: string,
+) {
   const timeout = toMiliseconds(expiry || FIVE_MINUTES);
   let cacheResolve: undefined | ((value: T | PromiseLike<T>) => void);
   let cacheReject: undefined | ((value?: ErrorResponse) => void);
@@ -219,7 +222,9 @@ export function createDelayedPromise<T>(expiry?: number | undefined) {
 
   const done = () =>
     new Promise<T>((promiseResolve, promiseReject) => {
-      cacheTimeout = setTimeout(promiseReject, timeout);
+      cacheTimeout = setTimeout(() => {
+        promiseReject(new Error(expireErrorMessage));
+      }, timeout);
       cacheResolve = promiseResolve;
       cacheReject = promiseReject;
     });

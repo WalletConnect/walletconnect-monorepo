@@ -247,8 +247,10 @@ export class EthereumProvider implements IEthereumProvider {
           if (this.rpc.showQrModal) {
             this.modal?.subscribeModal((state) => {
               // the modal was closed so reject the promise
-              if (!state.open && !this.signer.session)
+              if (!state.open && !this.signer.session) {
+                this.signer.abortPairingAttempt();
                 reject(new Error("Connection request reset. Please try again."));
+              }
             });
           }
           await this.signer
@@ -361,6 +363,9 @@ export class EthereumProvider implements IEthereumProvider {
 
     this.signer.on("display_uri", (uri: string) => {
       if (this.rpc.showQrModal) {
+        // to refresh the QR we have to close the modal and open it again
+        // until proper API is provided by web3modal
+        this.modal?.closeModal();
         this.modal?.openModal({ uri });
       }
       this.events.emit("display_uri", uri);

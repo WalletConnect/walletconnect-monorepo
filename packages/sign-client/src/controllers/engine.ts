@@ -58,6 +58,7 @@ import {
   ENGINE_CONTEXT,
   ENGINE_RPC_OPTS,
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
+  PROPOSAL_EXPIRY_MESSAGE,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -120,7 +121,11 @@ export class Engine extends IEngine {
       },
       ...(sessionProperties && { sessionProperties }),
     };
-    const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
+    const {
+      reject,
+      resolve,
+      done: approval,
+    } = createDelayedPromise<SessionTypes.Struct>(FIVE_MINUTES, PROPOSAL_EXPIRY_MESSAGE);
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
