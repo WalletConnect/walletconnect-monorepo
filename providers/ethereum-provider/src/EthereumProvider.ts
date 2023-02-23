@@ -364,7 +364,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on("display_uri", (uri: string) => {
       if (this.rpc.showQrModal) {
         // to refresh the QR we have to close the modal and open it again
-        // untill proper API is provided by web3modal
+        // until proper API is provided by web3modal
         this.modal?.closeModal();
         this.modal?.openModal({ uri });
       }
