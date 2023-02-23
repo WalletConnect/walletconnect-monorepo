@@ -35,6 +35,9 @@ export class UniversalProvider implements IUniversalProvider {
   public logger: Logger;
   public uri: string | undefined;
 
+  private shouldAbortPairingAttempt = false;
+  private maxPairingAttempts = 10;
+
   static async init(opts: UniversalProviderOpts) {
     const provider = new UniversalProvider(opts);
     await provider.initialize();
@@ -136,19 +139,40 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public async pair(pairingTopic: string | undefined): Promise<SessionTypes.Struct> {
-    const { uri, approval } = await this.client.connect({
-      pairingTopic,
-      requiredNamespaces: this.namespaces,
-      optionalNamespaces: this.optionalNamespaces,
-      sessionProperties: this.sessionProperties,
-    });
+    this.shouldAbortPairingAttempt = false;
+    let pairingAttempts = 0;
+    do {
+      if (this.shouldAbortPairingAttempt) {
+        throw new Error("Pairing aborted");
+      }
 
-    if (uri) {
-      this.uri = uri;
-      this.events.emit("display_uri", uri);
-    }
-    this.session = await approval();
-    this.createProviders();
+      if (pairingAttempts >= this.maxPairingAttempts) {
+        throw new Error("Max auto pairing attempts reached");
+      }
+
+      const { uri, approval } = await this.client.connect({
+        pairingTopic,
+        requiredNamespaces: this.namespaces,
+        optionalNamespaces: this.optionalNamespaces,
+        sessionProperties: this.sessionProperties,
+      });
+
+      if (uri) {
+        this.uri = uri;
+        this.events.emit("display_uri", uri);
+      }
+
+      await approval()
+        .then((session) => {
+          this.session = session;
+        })
+        .catch((error) => {
+          if (error.message !== "Proposal expired") {
+            throw error;
+          }
+          pairingAttempts++;
+        });
+    } while (!this.session);
     this.onConnect();
     return this.session;
   }
@@ -178,6 +202,10 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
+  }
+
+  public abortPairingAttempt() {
+    this.shouldAbortPairingAttempt = true;
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -371,6 +399,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private onConnect() {
+    this.createProviders();
     this.events.emit("connect", { session: this.session });
   }
 
