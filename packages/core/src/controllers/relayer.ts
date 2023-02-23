@@ -103,7 +103,12 @@ export class Relayer extends IRelayer {
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
     this.isInitialized();
     await this.publisher.publish(topic, message, opts);
-    await this.recordMessageEvent({ topic, message });
+    await this.recordMessageEvent({
+      topic,
+      message,
+      // We don't have `publishedAt` from the relay server on outgoing, so use current time to satisfy type.
+      publishedAt: Date.now(),
+    });
   }
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
@@ -244,8 +249,8 @@ export class Relayer extends IRelayer {
     if (isJsonRpcRequest(payload)) {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
-      const { topic, message } = event.data;
-      const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
+      const { topic, message, publishedAt } = event.data;
+      const messageEvent: RelayerTypes.MessageEvent = { topic, message, publishedAt };
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);
