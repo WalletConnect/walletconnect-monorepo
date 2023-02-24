@@ -247,24 +247,33 @@ export class EthereumProvider implements IEthereumProvider {
           if (this.rpc.showQrModal) {
             this.modal?.subscribeModal((state) => {
               // the modal was closed so reject the promise
-              if (!state.open && !this.signer.session)
-                reject(new Error("User rejected the request."));
+              if (!state.open && !this.signer.session) {
+                this.signer.abortPairingAttempt();
+                reject(new Error("Connection request reset. Please try again."));
+              }
             });
           }
-          const session = await this.signer.connect({
-            namespaces: {
-              [this.namespace]: required,
-            },
-            ...(optional && {
-              optionalNamespaces: {
-                [this.namespace]: optional,
+          await this.signer
+            .connect({
+              namespaces: {
+                [this.namespace]: required,
               },
-            }),
-            pairingTopic: opts?.pairingTopic,
-          });
-          resolve(session);
+              ...(optional && {
+                optionalNamespaces: {
+                  [this.namespace]: optional,
+                },
+              }),
+              pairingTopic: opts?.pairingTopic,
+            })
+            .then((session) => {
+              resolve(session);
+            })
+            .catch((error: Error) => {
+              reject(new Error(error.message));
+            });
         },
       );
+
       if (!session) return;
       this.setChainIds(this.rpc.chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
@@ -315,7 +324,7 @@ export class EthereumProvider implements IEthereumProvider {
       const { params } = payload;
       const { event } = params;
       if (event.name === "accountsChanged") {
-        this.accounts = event.data;
+        this.accounts = this.parseAccounts(event.data);
         this.events.emit("accountsChanged", this.accounts);
       } else if (event.name === "chainChanged") {
         this.setChainId(this.formatChainId(event.data));
@@ -347,12 +356,16 @@ export class EthereumProvider implements IEthereumProvider {
         this.events.emit("disconnect", {
           ...getSdkError("USER_DISCONNECTED"),
           data: payload.topic,
+          name: "USER_DISCONNECTED",
         });
       },
     );
 
     this.signer.on("display_uri", (uri: string) => {
       if (this.rpc.showQrModal) {
+        // to refresh the QR we have to close the modal and open it again
+        // until proper API is provided by web3modal
+        this.modal?.closeModal();
         this.modal?.openModal({ uri });
       }
       this.events.emit("display_uri", uri);
@@ -439,7 +452,10 @@ export class EthereumProvider implements IEthereumProvider {
   private async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
     this.chainId = getEthereumChainId(this.rpc.chains);
-    this.signer = await UniversalProvider.init({ projectId: this.rpc.projectId });
+    this.signer = await UniversalProvider.init({
+      projectId: this.rpc.projectId,
+      metadata: this.rpc.metadata,
+    });
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
@@ -496,6 +512,17 @@ export class EthereumProvider implements IEthereumProvider {
     if (!this.session) return;
     this.signer.client.core.storage.setItem(`${this.STORAGE_KEY}/chainId`, this.chainId);
   }
+
+  private parseAccounts(payload: string | string[]): string[] {
+    if (typeof payload === "string" || payload instanceof String) {
+      return [this.parseAccount(payload)];
+    }
+    return payload.map((account: string) => this.parseAccount(account));
+  }
+
+  private parseAccount = (payload: any): string => {
+    return this.isCompatibleChainId(payload) ? this.parseAccountId(payload).address : payload;
+  };
 }
 
 export default EthereumProvider;

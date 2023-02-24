@@ -1,7 +1,7 @@
 import { SignClientTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 
-export interface ProviderRpcError {
+export interface ProviderRpcError extends Error {
   message: string;
   code: number;
   data?: unknown;

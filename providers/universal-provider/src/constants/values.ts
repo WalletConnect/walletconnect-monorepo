@@ -7,3 +7,5 @@ export const WC_VERSION = 2;
 export const CONTEXT = "universal_provider";
 
 export const STORAGE = `${PROTOCOL}@${WC_VERSION}:${CONTEXT}:`;
+
+export const RPC_URL = "https://rpc.walletconnect.com/v1";

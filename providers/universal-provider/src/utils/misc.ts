@@ -1,15 +1,21 @@
+import { RPC_URL } from "../constants";
 import { Namespace } from "../types";
 
-export function getRpcUrl(chainId: string, rpc: Namespace): string | undefined {
+export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): string | undefined {
   let rpcUrl: string | undefined;
+  const parsedChainId = getChainId(chainId);
   if (rpc.rpcMap) {
-    rpcUrl = rpc.rpcMap[getChainId(chainId)];
+    rpcUrl = rpc.rpcMap[parsedChainId];
+  }
+
+  if (!rpcUrl) {
+    rpcUrl = `${RPC_URL}?chainId=eip155:${parsedChainId}&projectId=${projectId}`;
   }
   return rpcUrl;
 }
 
 export function getChainId(chain: string): number {
-  return Number(chain.split(":")[1]);
+  return chain.includes("eip155") ? Number(chain.split(":")[1]) : Number(chain);
 }
 
 export function validateChainApproval(chain: string, chains: string[]): void {

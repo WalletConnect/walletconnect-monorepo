@@ -59,7 +59,8 @@ class CardanoProvider implements IProvider {
     this.chainId = chainId;
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
-      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+      const rpc =
+        rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace, this.client.core.projectId);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
