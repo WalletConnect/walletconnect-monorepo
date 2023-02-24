@@ -11,7 +11,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getRpcUrl, handleDeepLinks } from "../utils";
+import { handleDeepLinks } from "../utils";
 
 class CardanoProvider implements IProvider {
   public name = "cip34";
