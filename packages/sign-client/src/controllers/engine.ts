@@ -464,8 +464,11 @@ export class Engine extends IEngine {
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
 
+        this.client.logger.debug(`Engine > Relay event received: ${JSON.stringify(event)}`);
+
         // messages of certain types should be ignored as they are handled by their respective SDKs
         if (this.ignoredPayloadTypes.includes(this.client.core.crypto.getPayloadType(message))) {
+          this.client.logger.debug(`Engine > Ignoring relay event: ${JSON.stringify(event)}`);
           return;
         }
 

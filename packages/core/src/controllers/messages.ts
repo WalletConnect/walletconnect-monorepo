@@ -56,6 +56,7 @@ export class MessageTracker extends IMessageTracker {
       return hash;
     }
     messages[hash] = message;
+    this.logger.trace({ type: "method", method: "set", key: topic, value: messages });
     this.messages.set(topic, messages);
     await this.persist();
     return hash;

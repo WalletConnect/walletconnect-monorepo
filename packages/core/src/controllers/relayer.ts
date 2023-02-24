@@ -233,13 +233,32 @@ export class Relayer extends IRelayer {
 
   private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
+    this.logger.debug(
+      `recordMessageEvent > Recording message event for message ${message} for topic: ${topic}...`,
+    );
     await this.messages.set(topic, message);
+    this.logger.debug(
+      `recordMessageEvent > Recording message event for message ${message} for topic: ${topic}...DONE`,
+    );
   }
 
   private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic, message } = messageEvent;
-    if (!(await this.subscriber.isSubscribed(topic))) return true;
+    if (!(await this.subscriber.isSubscribed(topic))) {
+      this.logger.debug(
+        `shouldIgnoreMessageEvent > Ignoring incoming message event for message ${message} for non-subscribed topic: ${topic}`,
+      );
+      return true;
+    }
     const exists = this.messages.has(topic, message);
+    this.logger.debug(
+      `shouldIgnoreMessageEvent > Message ${message} for topic: ${topic} exists: ${exists}`,
+    );
+    if (exists) {
+      this.logger.debug(
+        `shouldIgnoreMessageEvent > Message ${message} for topic: ${topic} already exists, ignoring incoming message event.`,
+      );
+    }
     return exists;
   }
 
@@ -254,15 +273,23 @@ export class Relayer extends IRelayer {
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);
+      this.logger.debug("onProviderPayload > Acknowledging Payload...");
       await this.acknowledgePayload(payload);
+      this.logger.debug("onProviderPayload > Acknowledging Payload... DONE");
+      this.logger.debug(`onProviderPayload > onMessageEvent...`);
       await this.onMessageEvent(messageEvent);
+      this.logger.debug(`onProviderPayload > onMessageEvent... DONE`);
     }
   }
 
   private async onMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     if (await this.shouldIgnoreMessageEvent(messageEvent)) return;
+    this.logger.debug(`onMessageEvent > Emitting Message Event`);
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
+    this.logger.debug(`onMessageEvent > Emitting Message Event... DONE`);
+    this.logger.debug(`onMessageEvent > Recording Message Event`);
     await this.recordMessageEvent(messageEvent);
+    this.logger.debug(`onMessageEvent > Recording Message Event... DONE`);
   }
 
   private async acknowledgePayload(payload: JsonRpcPayload) {
