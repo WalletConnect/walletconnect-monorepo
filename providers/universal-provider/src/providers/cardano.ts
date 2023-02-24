@@ -59,8 +59,7 @@ class CardanoProvider implements IProvider {
     this.chainId = chainId;
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
-      const rpc =
-        rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace, this.client.core.projectId);
+      const rpc = rpcUrl || this.getCardanoRPCUrl(chainId);
       if (!rpc) {
         throw new Error(`No RPC url provided for chainId: ${chainId}`);
       }
@@ -110,21 +109,6 @@ class CardanoProvider implements IProvider {
     if (!rpcMap) return undefined;
     return rpcMap[chainId];
   }
-
-  public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    this.chainId = chainId;
-    // http provider exists so just set the chainId
-    if (!this.httpProviders[chainId]) {
-      const rpc = rpcUrl || this.getCardanoRPCUrl(chainId);
-      if (!rpc) {
-        throw new Error(`No RPC url provided for chainId: ${chainId}`);
-      }
-      this.setHttpProvider(chainId, rpc);
-    }
-
-    this.events.emit("chainChanged", this.chainId);
-  }
-
 
   private setHttpProvider(chainId: string, rpcUrl?: string): void {
     const http = this.createHttpProvider(chainId, rpcUrl);
