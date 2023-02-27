@@ -1,13 +1,16 @@
 import { EngineTypes } from "@walletconnect/types";
 import { expect, describe, it } from "vitest";
-import { formatUri, parseUri } from "../src";
+import { formatUri, generateRandomBytes32, hashKey, parseUri } from "../src";
 import { TEST_PAIRING_TOPIC, TEST_RELAY_OPTIONS, TEST_SYM_KEY } from "./shared";
+
+const symKey = generateRandomBytes32();
+const topic = hashKey(symKey);
 
 const TEST_URI_PARAMS: EngineTypes.UriParameters = {
   protocol: "wc",
   version: 2,
-  topic: TEST_PAIRING_TOPIC,
-  symKey: TEST_SYM_KEY,
+  topic,
+  symKey,
   relay: TEST_RELAY_OPTIONS,
 };
 
