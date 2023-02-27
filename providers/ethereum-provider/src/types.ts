@@ -1,5 +1,5 @@
 import { SignClientTypes } from "@walletconnect/types";
-import EthereumProvider from "./EthereumProvider";
+import { EthereumProvider } from "./EthereumProvider";
 
 export interface ProviderRpcError extends Error {
   message: string;
@@ -61,12 +61,12 @@ export interface IEthereumProviderEvents {
 
   once: <E extends IProviderEvents.Event>(
     event: E,
-    listener: (args: IProviderEvents.EventArguments[E]) => any,
+    listener: (args: IProviderEvents.EventArguments[E]) => void,
   ) => EthereumProvider;
 
   off: <E extends IProviderEvents.Event>(
     event: E,
-    listener: (args: IProviderEvents.EventArguments[E]) => any,
+    listener: (args: IProviderEvents.EventArguments[E]) => void,
   ) => EthereumProvider;
 
   removeListener: <E extends IProviderEvents.Event>(
