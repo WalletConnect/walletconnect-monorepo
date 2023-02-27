@@ -1,5 +1,6 @@
 import * as qs from "query-string";
 import { EngineTypes, RelayerTypes } from "@walletconnect/types";
+import { hashKey } from "./crypto";
 
 // -- uri -------------------------------------------------- //
 
@@ -22,13 +23,27 @@ export function parseUri(str: string): EngineTypes.UriParameters {
   const protocol: string = str.substring(0, pathStart);
   const path: string = str.substring(pathStart + 1, pathEnd);
   const requiredValues = path.split("@");
+  const proposedTopic = requiredValues[0];
+
   const queryString: string = typeof pathEnd !== "undefined" ? str.substring(pathEnd) : "";
   const queryParams = qs.parse(queryString);
+  const symKey = queryParams.symKey as string;
+
+  if (symKey.length !== 64) {
+    throw new Error(`Invalid symKey: ${symKey}`);
+  }
+
+  const expectedTopic = hashKey(symKey as string);
+
+  if (proposedTopic !== expectedTopic) {
+    throw new Error(`Invalid topic: ${proposedTopic}`);
+  }
+
   const result = {
     protocol,
-    topic: requiredValues[0],
+    topic: proposedTopic,
     version: parseInt(requiredValues[1], 10),
-    symKey: queryParams.symKey as string,
+    symKey,
     relay: parseRelayParams(queryParams),
   };
   return result;
