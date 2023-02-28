@@ -185,7 +185,7 @@ export interface EthereumProviderOptions {
 }
 
 export class EthereumProvider implements IEthereumProvider {
-  public events: IEthereumProviderEvents = new EventEmitter();
+  public events = new EventEmitter();
   public namespace = "eip155";
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
@@ -295,19 +295,23 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public on: IEthereumProviderEvents["on"] = (event, listener) => {
-    return this.events.on(event, listener);
+    this.events.on(event, listener);
+    return this;
   };
 
   public once: IEthereumProviderEvents["once"] = (event, listener) => {
-    return this.events.once(event, listener);
+    this.events.once(event, listener);
+    return this;
   };
 
   public removeListener: IEthereumProviderEvents["removeListener"] = (event, listener) => {
-    return this.events.removeListener(event, listener);
+    this.events.removeListener(event, listener);
+    return this;
   };
 
   public off: IEthereumProviderEvents["off"] = (event, listener) => {
-    return this.events.off(event, listener);
+    this.events.off(event, listener);
+    return this;
   };
 
   get isWalletConnect() {
