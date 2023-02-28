@@ -148,15 +148,18 @@ export const TEST_NAMESPACES = {
     accounts: TEST_ACCOUNTS,
     events: TEST_EVENTS,
   },
-  [TEST_AVALANCHE_CHAIN]: {
-    methods: TEST_METHODS,
-    accounts: [TEST_AVALANCHE_ACCOUNT],
-    events: TEST_EVENTS,
-  },
   polkadot: {
     chains: TEST_POLKADOT_CHAINS,
     methods: TEST_POLKADOT_METHODS,
     accounts: TEST_POLKADOT_ACCOUNTS,
+    events: TEST_EVENTS,
+  },
+};
+
+export const TEST_NAMESPACES_V2 = {
+  eip155: {
+    methods: TEST_METHODS,
+    accounts: [TEST_ETHEREUM_ACCOUNT, TEST_AVALANCHE_ACCOUNT, TEST_ARBITRUM_ACCOUNT],
     events: TEST_EVENTS,
   },
 };

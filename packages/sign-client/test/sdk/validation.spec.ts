@@ -327,7 +327,9 @@ describe("Sign Client Validation", () => {
           namespaces: TEST_NAMESPACES_INVALID_CHAIN,
         }),
       ).rejects.toThrowError(
-        "Non conforming namespaces. update() namespaces keys don't satisfy requiredNamespaces",
+        `Non conforming namespaces. update() namespaces keys don't satisfy requiredNamespaces.
+      Required: eip155
+      Received: eip1111`,
       );
     });
   });
