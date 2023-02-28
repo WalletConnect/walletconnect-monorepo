@@ -944,7 +944,6 @@ export class Engine extends IEngine {
       proposal.requiredNamespaces,
       namespaces,
       "approve()",
-      "requiredNamespaces",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     if (!isValidString(relayProtocol, true)) {
@@ -953,28 +952,6 @@ export class Engine extends IEngine {
         `approve() relayProtocol: ${relayProtocol}`,
       );
       throw new Error(message);
-    }
-
-    // if the length of the namespaces is greater than the length of the required namespaces
-    // then the user is trying to approve part or all of the optional namespaces so we need to validate
-    if (Object.keys(namespaces).length > Object.keys(proposal.requiredNamespaces).length) {
-      // filter out the optional namespaces that are not being used
-      const namespacesToValidate = Object.keys(proposal.optionalNamespaces).filter(
-        (namespace) => namespaces[namespace],
-      );
-      const usedOptionalNamespaces = {};
-      for (const key in proposal.optionalNamespaces) {
-        if (namespacesToValidate.includes(key)) {
-          usedOptionalNamespaces[key] = proposal.optionalNamespaces[key];
-        }
-      }
-      const conformingNamespacesError = isConformingNamespaces(
-        usedOptionalNamespaces,
-        namespaces,
-        "approve()",
-        "optionalNamespaces",
-      );
-      if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     }
 
     if (!isUndefined(sessionProperties)) {
@@ -1038,7 +1015,6 @@ export class Engine extends IEngine {
       session.requiredNamespaces,
       namespaces,
       "update()",
-      "requiredNamespaces",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     // TODO(ilja) - check if wallet
