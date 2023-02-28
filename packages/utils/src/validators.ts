@@ -378,8 +378,10 @@ export function isConformingNamespaces(
   const requiredChains = Object.keys(parsedRequired);
   const approvedChains = Object.keys(parsedApproved);
 
-  const missingRequiredNamespaces = Object.keys(requiredNamespaces).filter(
-    (namespace) => !Object.keys(namespaces).includes(namespace),
+  const uniqueRequired = filterDuplicateNamespaces(Object.keys(requiredNamespaces));
+  const uniqueApproved = filterDuplicateNamespaces(Object.keys(namespaces));
+  const missingRequiredNamespaces = uniqueRequired.filter(
+    (namespace) => !uniqueApproved.includes(namespace),
   );
 
   if (missingRequiredNamespaces.length) {
@@ -436,6 +438,16 @@ function parseNamespaces(namespaces: ProposalTypes.RequiredNamespaces) {
     }
   });
   return parsed;
+}
+
+function filterDuplicateNamespaces(namespaces: string[]) {
+  return [
+    ...new Set(
+      namespaces.map((namespace) =>
+        namespace.includes(":") ? namespace.split(":")[0] : namespace,
+      ),
+    ),
+  ];
 }
 
 function parseApprovedNamespaces(namespaces: SessionTypes.Namespaces) {
