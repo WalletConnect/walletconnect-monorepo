@@ -226,6 +226,7 @@ export class Relayer extends IRelayer {
           relayUrl: this.relayUrl,
           projectId: this.projectId,
           auth,
+          useOnCloseEvent: true,
         }),
       ),
     );
