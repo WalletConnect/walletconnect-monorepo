@@ -106,7 +106,7 @@ describe("Validators", () => {
       }),
     ).to.be.false;
   });
-  it("should validate namespaces v1", () => {
+  it("should validate namespaces (configuration 1)", () => {
     const required = {
       eip155: {
         chains: ["eip155:1", "eip155:2", "eip155:3"],
@@ -157,7 +157,7 @@ describe("Validators", () => {
     const err = isConformingNamespaces(required, approved, "validators");
     expect(err).to.be.null;
   });
-  it("should validate namespaces v2", () => {
+  it("should validate namespaces (configuration 2)", () => {
     const required = {
       "eip155:1": {
         events: [],
@@ -192,7 +192,7 @@ describe("Validators", () => {
     const err = isConformingNamespaces(required, approved, "validators");
     expect(err).to.be.null;
   });
-  it("should validate namespaces v3", () => {
+  it("should validate namespaces (configuration 3)", () => {
     const required = {
       eip155: {
         chains: ["eip155:1"],
@@ -215,7 +215,7 @@ describe("Validators", () => {
     expect(err).to.be.null;
   });
 
-  it("should trow on invalid accounts", () => {
+  it("should throw on invalid accounts", () => {
     const required = {
       eip155: {
         chains: ["eip155:1"],
@@ -233,7 +233,7 @@ describe("Validators", () => {
     };
     expect(isConformingNamespaces(required, approveOptional, "validators")).to.throw;
   });
-  it("should trow on invalid namespace", () => {
+  it("should throw on invalid namespace", () => {
     const required = {
       eip155: {
         chains: ["eip155:1"],
@@ -251,7 +251,7 @@ describe("Validators", () => {
     };
     expect(isConformingNamespaces(required, approveOptional, "validators")).to.throw;
   });
-  it("should trow on invalid methods", () => {
+  it("should throw on invalid methods", () => {
     const required = {
       eip155: {
         chains: ["eip155:1"],
