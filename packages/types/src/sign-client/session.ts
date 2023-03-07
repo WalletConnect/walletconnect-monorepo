@@ -1,6 +1,6 @@
-import { SignClientTypes } from "./client";
 import { RelayerTypes } from "../core/relayer";
 import { IStore } from "../core/store";
+import { SignClientTypes } from "./client";
 import { ProposalTypes } from "./proposal";
 
 export declare namespace SessionTypes {
@@ -19,6 +19,7 @@ export declare namespace SessionTypes {
 
   interface Struct {
     topic: string;
+    pairingTopic: string;
     relay: RelayerTypes.ProtocolOptions;
     expiry: Expiry;
     acknowledged: boolean;
