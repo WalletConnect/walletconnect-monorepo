@@ -1,3 +1,6 @@
+import { hashMessage } from "@ethersproject/hash";
+import { recoverAddress } from "@ethersproject/transactions";
+
 export interface CacaoPayload {
   iss: string;
   domain: string;
@@ -88,3 +91,24 @@ export const formatMessage = (cacao: CacaoPayload, iss: string) => {
 
   return message;
 };
+
+function isValidEip191Signature(address: string, message: string, signature: string): boolean {
+  const recoveredAddress = recoverAddress(hashMessage(message), signature);
+  return recoveredAddress.toLowerCase() === address.toLowerCase();
+}
+
+export async function verifySignature(
+  address: string,
+  reconstructedMessage: string,
+  cacaoSignature: CacaoSignature,
+): Promise<boolean> {
+  // Determine if this signature is from an EOA or a contract.
+  switch (cacaoSignature.t) {
+    case "eip191":
+      return isValidEip191Signature(address, reconstructedMessage, cacaoSignature.s);
+    default:
+      throw new Error(
+        `verifySignature failed: Attempted to verify CacaoSignature with unknown type: ${cacaoSignature.t}`,
+      );
+  }
+}
