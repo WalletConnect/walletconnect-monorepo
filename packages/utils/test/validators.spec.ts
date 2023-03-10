@@ -201,7 +201,7 @@ describe("Validators", () => {
       },
     };
 
-    const approveOptional = {
+    const approved = {
       eip155: {
         accounts: [
           "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
@@ -211,7 +211,32 @@ describe("Validators", () => {
         methods: ["eth_accounts", "personal_sign"],
       },
     };
-    const err = isConformingNamespaces(required, approveOptional, "validators");
+    const err = isConformingNamespaces(required, approved, "validators");
+    expect(err).to.be.null;
+  });
+
+  it("should validate namespaces (configuration 4)", () => {
+    const required = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        events: [],
+        methods: ["eth_accounts"],
+      },
+    };
+
+    const approved = {
+      "eip155:1": {
+        accounts: ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
+        events: ["chainChanged"],
+        methods: ["eth_accounts"],
+      },
+      "eip155:2": {
+        accounts: ["eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
+        events: ["chainChanged"],
+        methods: ["eth_accounts"],
+      },
+    };
+    const err = isConformingNamespaces(required, approved, "validators");
     expect(err).to.be.null;
   });
 
@@ -224,14 +249,16 @@ describe("Validators", () => {
       },
     };
 
-    const approveOptional = {
+    const approved = {
       eip155: {
         accounts: ["eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
         events: ["chainChanged"],
         methods: ["eth_accounts", "personal_sign"],
       },
     };
-    expect(isConformingNamespaces(required, approveOptional, "validators")).to.throw;
+    const error = isConformingNamespaces(required, approved, "validators");
+    expect(error).to.not.be.null;
+    expect(error).to.throw;
   });
   it("should throw on invalid namespace", () => {
     const required = {
@@ -242,15 +269,18 @@ describe("Validators", () => {
       },
     };
 
-    const approveOptional = {
+    const approved = {
       solana: {
         accounts: ["solana:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
         events: ["chainChanged"],
         methods: ["eth_accounts", "personal_sign"],
       },
     };
-    expect(isConformingNamespaces(required, approveOptional, "validators")).to.throw;
+    const error = isConformingNamespaces(required, approved, "validators");
+    expect(error).to.not.be.null;
+    expect(error).to.throw;
   });
+
   it("should throw on invalid methods", () => {
     const required = {
       eip155: {
@@ -260,13 +290,41 @@ describe("Validators", () => {
       },
     };
 
-    const approveOptional = {
+    const approved = {
       eip155: {
         accounts: ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
         events: ["chainChanged"],
         methods: ["personal_sign"],
       },
     };
-    expect(isConformingNamespaces(required, approveOptional, "validators")).to.throw;
+    const error = isConformingNamespaces(required, approved, "validators");
+    expect(error).to.not.be.null;
+    expect(error).to.throw;
+  });
+
+  it("should throw on CAIP2 namespace not including that CAIP2 in accouns", () => {
+    const required = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        events: [],
+        methods: ["eth_accounts"],
+      },
+    };
+
+    const approved = {
+      "eip155:1": {
+        accounts: ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
+        events: ["chainChanged"],
+        methods: ["eth_accounts"],
+      },
+      "eip155:2": {
+        accounts: ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
+        events: ["chainChanged"],
+        methods: ["eth_accounts"],
+      },
+    };
+    const error = isConformingNamespaces(required, approved, "validators");
+    expect(error).to.not.be.null;
+    expect(error).to.throw;
   });
 });
