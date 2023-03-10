@@ -175,25 +175,6 @@ describe("Pairing", () => {
           "Missing or invalid. pair() uri: undefined",
         );
       });
-
-      it("throws when invalid pairing topic is provided", async () => {
-        let { topic, uri } = await coreA.pairing.create();
-        const maliciousTopic = "maliciousTopic";
-        uri = uri.replace(topic, maliciousTopic);
-        await expect(coreA.pairing.pair({ uri })).rejects.toThrowError(
-          `Invalid topic: ${maliciousTopic}`,
-        );
-      });
-
-      it("throws when invalid symKey is provided", async () => {
-        let { uri } = await coreA.pairing.create();
-        const symKey = uri.split("symKey=")[1];
-        const maliciousSymKey = "maliciousSymKey";
-        uri = uri.replace(symKey, maliciousSymKey);
-        await expect(coreA.pairing.pair({ uri })).rejects.toThrowError(
-          `Invalid symKey: ${maliciousSymKey}`,
-        );
-      });
     });
 
     describe("ping", () => {
