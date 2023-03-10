@@ -40,7 +40,7 @@
     "@walletconnect/core": "2.4.9",
     "@walletconnect/events": "^1.0.1",
     "@walletconnect/heartbeat": "1.2.0",
-    "@walletconnect/jsonrpc-provider": "^1.0.6",
+    "@walletconnect/jsonrpc-provider": "1.0.8-f37f36d",
     "@walletconnect/jsonrpc-utils": "^1.0.4",
     "@walletconnect/logger": "^2.0.1",
     "@walletconnect/time": "^1.0.2",
