@@ -110,6 +110,15 @@ export class Pairing implements IPairing {
     this.isInitialized();
     this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
+
+    if (this.pairings.keys.includes(topic)) {
+      throw new Error(`Pairing already exists: ${topic}`);
+    }
+
+    if (this.core.crypto.hasKeys(topic)) {
+      throw new Error(`Keychain already exists: ${topic}`);
+    }
+
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.pairings.set(topic, pairing);
