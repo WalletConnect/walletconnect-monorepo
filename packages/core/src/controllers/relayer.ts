@@ -283,9 +283,10 @@ export class Relayer extends IRelayer {
 
       this.attemptToReconnect();
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
-      this.events.emit(RELAYER_EVENTS.error, err),
-    );
+    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) => {
+      this.logger.error(err);
+      this.events.emit(RELAYER_EVENTS.error, err);
+    });
 
     this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
       await this.restartTransport();
