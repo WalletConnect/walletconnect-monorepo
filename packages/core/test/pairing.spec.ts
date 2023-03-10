@@ -71,6 +71,13 @@ describe("Pairing", () => {
       expect(coreA.pairing.getPairings()[0].active).toBe(false);
       expect(coreB.pairing.getPairings()[0].active).toBe(true);
     });
+
+    it("throws when pairing is attempted on topic that already exists", async () => {
+      const { topic, uri } = await coreA.pairing.create();
+      await expect(coreA.pairing.pair({ uri })).rejects.toThrowError(
+        `Pairing already exists: ${topic}`,
+      );
+    });
   });
 
   describe("activate", () => {
