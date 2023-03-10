@@ -402,6 +402,21 @@ export function isConformingNamespaces(
     );
   }
 
+  // validate inline defined chains with approved accounts
+  Object.keys(namespaces).forEach((chain) => {
+    if (!chain.includes(":")) return;
+    if (error) return;
+    const chains = getAccountsChains(namespaces[chain].accounts);
+    if (!chains.includes(chain)) {
+      error = getInternalError(
+        "NON_CONFORMING_NAMESPACES",
+        `${context} namespaces accounts don't satisfy namespace accounts for ${chain}
+        Required: ${chain}
+        Approved: ${chains.toString()}`,
+      );
+    }
+  });
+
   requiredChains.forEach((chain) => {
     if (error) return;
 
