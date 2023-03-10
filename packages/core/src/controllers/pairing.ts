@@ -115,6 +115,10 @@ export class Pairing implements IPairing {
       throw new Error(`Pairing already exists: ${topic}`);
     }
 
+    if (this.core.crypto.hasKeys(topic)) {
+      throw new Error(`Keychain already exists: ${topic}`);
+    }
+
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.pairings.set(topic, pairing);
