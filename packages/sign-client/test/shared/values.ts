@@ -18,7 +18,7 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   : undefined;
 
 export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
-  logger: "debug",
+  logger: "fatal",
   relayUrl: TEST_RELAY_URL,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
