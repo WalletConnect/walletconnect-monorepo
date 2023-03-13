@@ -125,10 +125,11 @@ export function formatRelayRpcUrl({
   sdkVersion,
   auth,
   projectId,
+  useOnCloseEvent,
 }: RelayerTypes.RpcUrlParams) {
   const splitUrl = relayUrl.split("?");
   const ua = formatUA(protocol, version, sdkVersion);
-  const params = { auth, ua, projectId };
+  const params = { auth, ua, projectId, useOnCloseEvent: useOnCloseEvent || undefined };
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }

@@ -180,7 +180,6 @@ export class Subscriber extends ISubscriber {
     this.cached = this.values;
     this.subscriptions.clear();
     this.topicMap.clear();
-    this.initialized = false;
   }
 
   private async unsubscribeByTopic(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
