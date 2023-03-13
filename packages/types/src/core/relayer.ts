@@ -49,6 +49,7 @@ export declare namespace RelayerTypes {
     relayUrl: string;
     sdkVersion: string;
     projectId?: string;
+    useOnCloseEvent?: boolean;
   }
 }
 
