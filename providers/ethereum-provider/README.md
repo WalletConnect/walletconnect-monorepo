@@ -20,7 +20,8 @@ const provider = await EthereumProvider.init({
   events, // OPTIONAL ethereum events
   rpcMap, // OPTIONAL rpc urls for each chain
   metadata, // OPTIONAL metadata of your app
-  showQrModal, // OPTIONAL - `true` by default
+  showQrModal, // OPTIONAL - `true` by default,
+  qrModalOptions, // OPTIONAL - `undefined` by default, see https://docs.walletconnect.com/2.0/web3modal/theming
 });
 ```
 
