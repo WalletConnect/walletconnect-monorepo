@@ -85,7 +85,7 @@ export class Relayer extends IRelayer {
   public async init() {
     this.logger.trace(`Initialized`);
     this.provider = await this.createProvider();
-    await Promise.all([this.messages.init(), this.transportOpen(), await this.subscriber.init()]);
+    await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
   }
