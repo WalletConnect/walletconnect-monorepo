@@ -57,6 +57,7 @@ export interface EthereumRpcConfig {
   projectId: string;
   metadata?: Metadata;
   showQrModal: boolean;
+  qrModalOptions?: Parameters<Web3Modal["setTheme"]>[0];
 }
 export interface ConnectOps {
   chains?: number[];
@@ -182,6 +183,7 @@ export interface EthereumProviderOptions {
   rpcMap?: EthereumRpcMap;
   metadata?: Metadata;
   showQrModal?: boolean;
+  qrModalOptions?: Parameters<Web3Modal["setTheme"]>[0];
 }
 
 export class EthereumProvider implements IEthereumProvider {
@@ -463,12 +465,18 @@ export class EthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
-      const { Web3Modal } = await import("@web3modal/standalone");
-      this.modal = new Web3Modal({
-        walletConnectVersion: 2,
-        projectId: this.rpc.projectId,
-        standaloneChains: this.rpc.chains,
-      });
+      try {
+        const { Web3Modal } = await import("@web3modal/standalone");
+        this.modal = new Web3Modal({
+          walletConnectVersion: 2,
+          projectId: this.rpc.projectId,
+          standaloneChains: this.rpc.chains,
+          themeMode: this.rpc.qrModalOptions?.themeMode,
+          themeVariables: this.rpc.qrModalOptions?.themeVariables,
+        });
+      } catch {
+        throw new Error("To use QR modal, please install @web3modal/standalone package");
+      }
     }
   }
 
