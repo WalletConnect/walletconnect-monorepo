@@ -11,6 +11,7 @@ import {
   createExpiringPromise,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
+
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 
 export class Publisher extends IPublisher {
@@ -104,7 +105,7 @@ export class Publisher extends IPublisher {
     if (isUndefined(request.params?.tag)) delete request.params?.tag;
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "message", direction: "outgoing", request });
-    return this.relayer.provider.request(request);
+    return this.relayer.request(request);
   }
 
   private onPublish(hash: string, _params: PublisherTypes.Params) {

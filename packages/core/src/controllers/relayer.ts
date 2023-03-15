@@ -7,6 +7,7 @@ import {
   isJsonRpcRequest,
   JsonRpcPayload,
   JsonRpcRequest,
+  RequestArguments,
 } from "@walletconnect/jsonrpc-utils";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
@@ -62,6 +63,7 @@ export class Relayer extends IRelayer {
   private reconnecting = false;
   private relayUrl: string;
   private projectId: string | undefined;
+  private connectionStatusPollingInterval = 20;
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -83,7 +85,7 @@ export class Relayer extends IRelayer {
   public async init() {
     this.logger.trace(`Initialized`);
     this.provider = await this.createProvider();
-    await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
+    await Promise.all([this.messages.init(), this.transportOpen(), await this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
   }
@@ -129,6 +131,18 @@ export class Relayer extends IRelayer {
     ]);
     return id;
   }
+
+  public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
+    this.logger.debug(`Publishing Request Payload`);
+    try {
+      await this.toEstablishConnection();
+      return await this.provider.request(request);
+    } catch (e) {
+      this.logger.debug(`Failed to Publish Request`);
+      this.logger.error(e as any);
+      throw e;
+    }
+  };
 
   public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
     this.isInitialized();
@@ -200,13 +214,11 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    if (this.transportExplicitlyClosed) {
-      return;
-    }
+    if (this.transportExplicitlyClosed) return;
 
-    await this.transportClose();
-    await new Promise<void>((resolve) => setTimeout(resolve, RELAYER_RECONNECT_TIMEOUT));
-    await this.transportOpen(relayUrl);
+    this.relayUrl = relayUrl || this.relayUrl;
+    this.provider = await this.createProvider();
+    await this.provider.connect();
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -280,7 +292,6 @@ export class Relayer extends IRelayer {
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
       this.events.emit(RELAYER_EVENTS.disconnect);
-
       this.attemptToReconnect();
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) => {
@@ -309,5 +320,20 @@ export class Relayer extends IRelayer {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+  }
+
+  private async toEstablishConnection() {
+    if (this.connected) return;
+    if (this.connecting) {
+      return await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (this.connected) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, this.connectionStatusPollingInterval);
+      });
+    }
+    await this.restartTransport();
   }
 }
