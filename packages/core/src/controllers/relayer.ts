@@ -218,7 +218,14 @@ export class Relayer extends IRelayer {
 
     this.relayUrl = relayUrl || this.relayUrl;
     this.provider = await this.createProvider();
-    await this.provider.connect();
+    await this.provider.connect().catch(async (e: unknown | Error) => {
+      const error = e as Error;
+      if (!/socket hang up/i.test(error.message)) {
+        this.logger.error(e);
+        throw e;
+      }
+      await this.restartTransport();
+    });
   }
 
   // ---------- Private ----------------------------------------------- //
