@@ -136,7 +136,7 @@ export class Relayer extends IRelayer {
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
     try {
-      const hasConnection = await isOnline();
+      const hasConnection = await isOnline({ timeout: 5000 });
       // eslint-disable-next-line no-console
       console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       await this.toEstablishConnection();
