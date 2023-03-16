@@ -44,6 +44,7 @@ import {
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
+import isOnline from "is-online";
 
 export class Relayer extends IRelayer {
   public protocol = "wc";
@@ -135,6 +136,9 @@ export class Relayer extends IRelayer {
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
     try {
+      const hasConnection = await isOnline();
+      // eslint-disable-next-line no-console
+      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       await this.toEstablishConnection();
       return await this.provider.request(request);
     } catch (e) {
@@ -220,8 +224,8 @@ export class Relayer extends IRelayer {
     this.provider = await this.createProvider();
     await this.provider.connect().catch(async (e: unknown | Error) => {
       const error = e as Error;
+      this.logger.error(e);
       if (!/socket hang up/i.test(error.message)) {
-        this.logger.error(e);
         throw e;
       }
       await this.restartTransport();
