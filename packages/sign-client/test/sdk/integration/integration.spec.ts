@@ -25,6 +25,8 @@ describe("Sign Client Integration", () => {
         sessionA = settled.sessionA;
       } catch (e) {
         clients.A.logger.error("retrying", e);
+        await deleteClients(clients);
+        clients = await initTwoClients();
       }
       retries++;
     }
