@@ -44,8 +44,7 @@ import {
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
-import isOnline from "is-online";
-
+import isReachable from "is-reachable";
 export class Relayer extends IRelayer {
   public protocol = "wc";
   public version = 2;
@@ -136,12 +135,12 @@ export class Relayer extends IRelayer {
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
     try {
-      const hasConnection = await isOnline({ timeout: 5000 });
-      // eslint-disable-next-line no-console
-      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       await this.toEstablishConnection();
       return await this.provider.request(request);
     } catch (e) {
+      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
+      // eslint-disable-next-line no-console
+      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
       throw e;
@@ -206,6 +205,9 @@ export class Relayer extends IRelayer {
         ]),
       ]);
     } catch (e: unknown | Error) {
+      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
+      // eslint-disable-next-line no-console
+      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       const error = e as Error;
       if (!/socket hang up/i.test(error.message)) {
         throw e;
@@ -223,6 +225,9 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     this.provider = await this.createProvider();
     await this.provider.connect().catch(async (e: unknown | Error) => {
+      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
+      // eslint-disable-next-line no-console
+      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       const error = e as Error;
       this.logger.error(e);
       if (!/socket hang up/i.test(error.message)) {
