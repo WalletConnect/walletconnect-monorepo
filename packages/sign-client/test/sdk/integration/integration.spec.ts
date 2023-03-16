@@ -1,9 +1,15 @@
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, afterAll, beforeAll } from "vitest";
 import { createExpiringPromise } from "../../../../utils/src";
-import { initTwoClients, testConnectMethod, deleteClients, Clients } from "../../shared";
-const TESTS_CONNECT_RETRIES = 5;
-const TESTS_CONNECT_TIMEOUT = 20_000;
+import {
+  initTwoClients,
+  testConnectMethod,
+  deleteClients,
+  Clients,
+  TESTS_CONNECT_TIMEOUT,
+  TESTS_CONNECT_RETRIES,
+} from "../../shared";
+
 describe("Sign Client Integration", () => {
   let clients: Clients;
   let pairingA: any;
