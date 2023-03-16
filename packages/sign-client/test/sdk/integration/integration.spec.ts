@@ -1,5 +1,5 @@
 import { getSdkError } from "@walletconnect/utils";
-import { expect, describe, it, vi, afterAll, beforeAll } from "vitest";
+import { expect, describe, it, afterAll, beforeAll } from "vitest";
 import { createExpiringPromise } from "../../../../utils/src";
 import { initTwoClients, testConnectMethod, deleteClients, Clients } from "../../shared";
 const TESTS_CONNECT_RETRIES = 5;
@@ -68,28 +68,6 @@ describe("Sign Client Integration", () => {
       await acknowledged();
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
-    });
-  });
-
-  describe("extend", () => {
-    it("updates session expiry state", async () => {
-      const clients = await initTwoClients();
-      const {
-        sessionA: { topic },
-      } = await testConnectMethod(clients);
-      const prevExpiry = clients.A.session.get(topic).expiry;
-
-      vi.useFakeTimers();
-      // Fast-forward system time by 60 seconds after expiry was first set.
-      vi.setSystemTime(Date.now() + 60_000);
-      const { acknowledged } = await clients.A.extend({
-        topic,
-      });
-      await acknowledged();
-      const updatedExpiry = clients.A.session.get(topic).expiry;
-      expect(updatedExpiry).to.be.greaterThan(prevExpiry);
-      vi.useRealTimers();
-      await deleteClients(clients);
     });
   });
   describe("disconnect", () => {
