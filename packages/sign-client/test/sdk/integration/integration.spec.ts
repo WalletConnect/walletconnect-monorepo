@@ -1,3 +1,4 @@
+import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, afterAll, beforeAll } from "vitest";
 import { createExpiringPromise } from "../../../../utils/src";
@@ -8,34 +9,16 @@ import {
   Clients,
   TESTS_CONNECT_TIMEOUT,
   TESTS_CONNECT_RETRIES,
+  initTwoPairedClients,
 } from "../../shared";
 
 describe("Sign Client Integration", () => {
   let clients: Clients;
-  let pairingA: any;
-  let sessionA: any;
+  let pairingA: PairingTypes.Struct;
+  let sessionA: SessionTypes.Struct;
 
   beforeAll(async () => {
-    clients = await initTwoClients();
-    let retries = 0;
-    while (!pairingA) {
-      if (retries > TESTS_CONNECT_RETRIES) {
-        throw new Error("Could not pair clients");
-      }
-      try {
-        const settled: any = await createExpiringPromise(
-          testConnectMethod(clients),
-          TESTS_CONNECT_TIMEOUT,
-        );
-        pairingA = settled.pairingA;
-        sessionA = settled.sessionA;
-      } catch (e) {
-        clients.A.logger.error("retrying", e);
-        await deleteClients(clients);
-        clients = await initTwoClients();
-      }
-      retries++;
-    }
+    ({ clients, pairingA, sessionA } = await initTwoPairedClients());
   });
 
   afterAll(async () => {
