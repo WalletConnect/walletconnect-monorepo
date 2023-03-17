@@ -29,7 +29,7 @@ import {
   RelayerTypes,
   SubscriberTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
+import { createExpiringPromise, formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
   RELAYER_SDK_VERSION,
@@ -189,7 +189,7 @@ export class Relayer extends IRelayer {
         }),
         await Promise.race([
           new Promise<void>(async (resolve) => {
-            await this.provider.connect();
+            await createExpiringPromise(this.provider.connect(), 5_000, "socket hang up");
             this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen);
             resolve();
           }),
@@ -215,6 +215,7 @@ export class Relayer extends IRelayer {
   public async restartTransport(relayUrl?: string) {
     if (this.transportExplicitlyClosed) return;
     this.relayUrl = relayUrl || this.relayUrl;
+    await this.transportClose();
     await this.createProvider();
     await this.transportOpen();
   }
