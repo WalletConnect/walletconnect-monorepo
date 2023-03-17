@@ -40,7 +40,7 @@ export async function initTwoPairedClients(
   clientOptsB: SignClientTypes.Options = {},
   sharedClientOpts: SignClientTypes.Options = {},
 ) {
-  let clients = await initTwoClients(clientOptsA, clientOptsB, sharedClientOpts);
+  let clients;
   let pairingA;
   let sessionA;
   let retries = 0;
@@ -49,6 +49,11 @@ export async function initTwoPairedClients(
       throw new Error("Could not pair clients");
     }
     try {
+      clients = await createExpiringPromise(
+        initTwoClients(clientOptsA, clientOptsB, sharedClientOpts),
+        TESTS_CONNECT_TIMEOUT,
+      );
+
       const settled: any = await createExpiringPromise(
         testConnectMethod(clients),
         TESTS_CONNECT_TIMEOUT,

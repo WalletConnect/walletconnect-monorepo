@@ -71,8 +71,8 @@ describe("Relayer", () => {
     });
     it("registers event listeners", async () => {
       const emitSpy = Sinon.spy();
-      relayer.events.emit = emitSpy;
       await relayer.init();
+      relayer.events.emit = emitSpy;
       relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
       expect(emitSpy.calledOnceWith(RELAYER_EVENTS.connect)).to.be.true;
     });
