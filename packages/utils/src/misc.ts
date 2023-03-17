@@ -249,7 +249,11 @@ export function createDelayedPromise<T>(
   };
 }
 
-export function createExpiringPromise<T>(promise: Promise<T>, expiry: number, expireErrorMessage?: string) {
+export function createExpiringPromise<T>(
+  promise: Promise<T>,
+  expiry: number,
+  expireErrorMessage?: string,
+) {
   return new Promise(async (resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error(expireErrorMessage)), expiry);
     const res = await promise;
