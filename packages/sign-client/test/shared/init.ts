@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { PairingTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { createExpiringPromise } from "@walletconnect/utils";
 import { testConnectMethod } from ".";
@@ -61,7 +62,7 @@ export async function initTwoPairedClients(
       pairingA = settled.pairingA;
       sessionA = settled.sessionA;
     } catch (e) {
-      clients.A.logger.error("retrying", e);
+      console.log("initTwoPairedClients retrying ...", retries, e);
       await deleteClients(clients);
       clients = await initTwoClients();
     }
