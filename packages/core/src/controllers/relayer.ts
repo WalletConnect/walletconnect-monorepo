@@ -28,7 +28,7 @@ import {
   RelayerTypes,
   SubscriberTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
+import { createExpiringPromise, formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
   RELAYER_SDK_VERSION,
@@ -189,7 +189,7 @@ export class Relayer extends IRelayer {
         }),
         await Promise.race([
           new Promise<void>(async (resolve) => {
-            await this.provider.connect();
+            await createExpiringPromise(this.provider.connect(), 10_000, "socket hang up");
             this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen);
             resolve();
           }),
@@ -202,10 +202,10 @@ export class Relayer extends IRelayer {
       ]);
     } catch (e: unknown | Error) {
       const error = e as Error;
+      this.logger.error(e);
       if (!/socket hang up/i.test(error.message)) {
         throw e;
       }
-      this.logger.error(e);
       this.events.emit(RELAYER_EVENTS.transport_closed);
     } finally {
       this.reconnecting = false;
@@ -214,17 +214,9 @@ export class Relayer extends IRelayer {
 
   public async restartTransport(relayUrl?: string) {
     if (this.transportExplicitlyClosed) return;
-
     this.relayUrl = relayUrl || this.relayUrl;
     this.provider = await this.createProvider();
-    await this.provider.connect().catch(async (e: unknown | Error) => {
-      const error = e as Error;
-      this.logger.error(e);
-      if (!/socket hang up/i.test(error.message)) {
-        throw e;
-      }
-      await this.restartTransport();
-    });
+    await this.transportOpen();
   }
 
   // ---------- Private ----------------------------------------------- //
