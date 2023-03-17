@@ -44,7 +44,6 @@ import {
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
-import isReachable from "is-reachable";
 export class Relayer extends IRelayer {
   public protocol = "wc";
   public version = 2;
@@ -138,9 +137,6 @@ export class Relayer extends IRelayer {
       await this.toEstablishConnection();
       return await this.provider.request(request);
     } catch (e) {
-      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
-      // eslint-disable-next-line no-console
-      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
       throw e;
@@ -182,9 +178,6 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = false;
     this.reconnecting = true;
     try {
-      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
-      // eslint-disable-next-line no-console
-      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       await Promise.all([
         new Promise<void>((resolve) => {
           if (!this.initialized) resolve();
@@ -225,13 +218,6 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     this.provider = await this.createProvider();
     await this.provider.connect().catch(async (e: unknown | Error) => {
-      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
-      // eslint-disable-next-line no-console
-      console.log(
-        "catched err - hasConnection",
-        hasConnection,
-        await this.core.crypto.getClientId(),
-      );
       const error = e as Error;
       this.logger.error(e);
       if (!/socket hang up/i.test(error.message)) {
