@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import pino from "pino";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -28,7 +29,7 @@ import {
   RelayerTypes,
   SubscriberTypes,
 } from "@walletconnect/types";
-import { createExpiringPromise, formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
+import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
   RELAYER_SDK_VERSION,
@@ -83,7 +84,7 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    this.provider = await this.createProvider();
+    await this.createProvider();
     await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
@@ -181,7 +182,6 @@ export class Relayer extends IRelayer {
       await Promise.all([
         new Promise<void>((resolve) => {
           if (!this.initialized) resolve();
-
           // wait for the subscriber to finish resubscribing to its topics
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
             resolve();
@@ -189,7 +189,7 @@ export class Relayer extends IRelayer {
         }),
         await Promise.race([
           new Promise<void>(async (resolve) => {
-            await createExpiringPromise(this.provider.connect(), 10_000, "socket hang up");
+            await this.provider.connect();
             this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen);
             resolve();
           }),
@@ -201,8 +201,8 @@ export class Relayer extends IRelayer {
         ]),
       ]);
     } catch (e: unknown | Error) {
-      const error = e as Error;
       this.logger.error(e);
+      const error = e as Error;
       if (!/socket hang up/i.test(error.message)) {
         throw e;
       }
@@ -215,7 +215,7 @@ export class Relayer extends IRelayer {
   public async restartTransport(relayUrl?: string) {
     if (this.transportExplicitlyClosed) return;
     this.relayUrl = relayUrl || this.relayUrl;
-    this.provider = await this.createProvider();
+    await this.createProvider();
     await this.transportOpen();
   }
 
@@ -227,7 +227,7 @@ export class Relayer extends IRelayer {
 
   private async createProvider() {
     const auth = await this.core.crypto.signJWT(this.relayUrl);
-    return new JsonRpcProvider(
+    this.provider = new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
           sdkVersion: RELAYER_SDK_VERSION,
@@ -240,6 +240,7 @@ export class Relayer extends IRelayer {
         }),
       ),
     );
+    this.registerProviderListeners();
   }
 
   private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
@@ -281,7 +282,7 @@ export class Relayer extends IRelayer {
     await this.provider.connection.send(response);
   }
 
-  private registerEventListeners() {
+  private registerProviderListeners() {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
       this.onProviderPayload(payload),
     );
@@ -289,17 +290,24 @@ export class Relayer extends IRelayer {
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-      this.events.emit(RELAYER_EVENTS.disconnect);
-      this.attemptToReconnect();
+      this.onProviderDisconnect();
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) => {
-      this.logger.error(err);
+      console.log(RELAYER_PROVIDER_EVENTS.error, err);
       this.events.emit(RELAYER_EVENTS.error, err);
     });
+  }
 
+  private registerEventListeners() {
     this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
       await this.restartTransport();
     });
+  }
+
+  private onProviderDisconnect() {
+    console.log("onProviderDisconnect");
+    this.events.emit(RELAYER_EVENTS.disconnect);
+    this.attemptToReconnect();
   }
 
   private attemptToReconnect() {
@@ -309,7 +317,7 @@ export class Relayer extends IRelayer {
 
     // Attempt reconnection after one second.
     setTimeout(async () => {
-      await this.transportOpen();
+      await this.restartTransport();
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
