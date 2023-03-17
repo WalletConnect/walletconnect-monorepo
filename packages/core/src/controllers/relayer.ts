@@ -182,6 +182,9 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = false;
     this.reconnecting = true;
     try {
+      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
+      // eslint-disable-next-line no-console
+      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       await Promise.all([
         new Promise<void>((resolve) => {
           if (!this.initialized) resolve();
@@ -205,9 +208,6 @@ export class Relayer extends IRelayer {
         ]),
       ]);
     } catch (e: unknown | Error) {
-      const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
-      // eslint-disable-next-line no-console
-      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
       const error = e as Error;
       if (!/socket hang up/i.test(error.message)) {
         throw e;
@@ -227,7 +227,11 @@ export class Relayer extends IRelayer {
     await this.provider.connect().catch(async (e: unknown | Error) => {
       const hasConnection = await isReachable("google.com:443", { timeout: 5000 });
       // eslint-disable-next-line no-console
-      console.log("hasConnection", hasConnection, await this.core.crypto.getClientId());
+      console.log(
+        "catched err - hasConnection",
+        hasConnection,
+        await this.core.crypto.getClientId(),
+      );
       const error = e as Error;
       this.logger.error(e);
       if (!/socket hang up/i.test(error.message)) {
