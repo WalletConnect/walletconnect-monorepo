@@ -2,14 +2,32 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
-## Setup development
+## Setup
 
-1. Install [nodejs and npm](https://nodejs.org/en/)
-2. Install python3 and ensure `python` cli is linked (required to build some npm modules)
-3. Install workspace dependencies i.e. run `npm install` from root folder
-4. Install redis. We recommend running it as a [brew service](https://gist.github.com/tomysmile/1b8a321e7c58499ef9f9441b2faa0aa8)
-5. Pull and start ts-relay server ([separate repo](https://github.com/WalletConnect/relay)) `PORT=5555 npm run start`
-6. Ensure everything runs correctly by executing `npm run check`
+1. Ensure [nodejs and npm](https://nodejs.org/en/)
+2. Clone the repository
+3. Install all package dependencies, by running `npm install` from the root folder
+
+## Running checks for all packages
+
+To ensure all packages lint, build and test correctly, we can run the following command from the root folder:
+
+> **For tests to pass in the following command, you will need your own `TEST_PROJECT_ID` value**,
+> which will be generated for you when you set up a new project on [WalletConnect Cloud](https://cloud.walletconnect.com).
+
+```zsh
+TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
+```
+
+## Command Overview
+
+- `clean` - Removes build folders from all packages
+- `lint` - Runs [eslint](https://eslint.org/) checks
+- `prettier` - Runs [prettier](https://prettier.io/) checks
+- `build` - Builds all packages
+- `test` - Tests all packages
+- `check` - Shorthand to run lint, build and test commands
+- `reset` - Shorthand to run clean and check commands
 
 ## Troubleshooting
 
@@ -21,16 +39,6 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 sudo xcode-select --switch /Library/Developer/CommandLineTools
 sudo xcode-select --reset
 ```
-
-## Commands
-
-- `clean` - Removes build folders from all packages
-- `lint` - Runs [eslint](https://eslint.org/) checks
-- `prettier` - Runs [prettier](https://prettier.io/) checks
-- `build` - Builds all packages
-- `test` - Tests all packages
-- `check` - Shorthand to run lint, build and test commands
-- `reset` - Shorthand to run clean anc check commands
 
 ## License
 
