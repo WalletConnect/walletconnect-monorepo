@@ -27,7 +27,7 @@
     "test:concurrency": "vitest run --dir test/concurrency",
     "test:xregion": "vitest run --dir test/xregion -- --dangerouslyIgnoreUnhandledErrors --segfault-retry=3",
     "test": "npm run test:pre; npm run test:run",
-    "test:integration": "vitest run --dir test/sdk/integration --segfault-retry=3",
+    "test:integration": "vitest run --dir test/sdk/integration",
     "test:ignoreUnhandled": "npm run test:pre; npm run test:integration -- --dangerouslyIgnoreUnhandledErrors --segfault-retry=3",
     "test:canary": "vitest run --dir test/canary",
     "test:lifecycle": "vitest run --dir test/lifecycle -- --dangerouslyIgnoreUnhandledErrors --segfault-retry=3",
