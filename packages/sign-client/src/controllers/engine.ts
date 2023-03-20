@@ -134,7 +134,7 @@ export class Engine extends IEngine {
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
-            pairingTopic,
+            pairingTopic: topic,
             requiredNamespaces: session.requiredNamespaces,
             optionalNamespaces: session.optionalNamespaces,
           };

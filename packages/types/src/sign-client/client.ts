@@ -22,7 +22,6 @@ export declare namespace SignClientTypes {
   interface BaseEventArgs<T = unknown> {
     id: number;
     topic: string;
-    pairingTopic: string;
     params: T;
   }
 
