@@ -73,6 +73,8 @@ export const EIP155_TEST_METHODS = [
 ];
 
 export const COSMOS_TEST_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
+export const ELROND_TEST_METHODS = ["erd_signTransaction", "erd_signLoginToken"];
+export const MULTIVERSX_TEST_METHODS = ["multiversx_signTransaction", "multiversx_signMessage"];
 
 export const TEST_NAMESPACES_CONFIG = {
   namespaces: {
@@ -88,6 +90,24 @@ export const TEST_NAMESPACES_CONFIG = {
     cosmos: {
       methods: COSMOS_TEST_METHODS,
       chains: [`cosmos:${CHAIN_ID}`, `cosmos:${CHAIN_ID_B}`],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
+        [CHAIN_ID_B]: RPC_URL_B,
+      },
+    },
+    elrond: {
+      methods: ELROND_TEST_METHODS,
+      chains: [`elrond:${CHAIN_ID}`, `elrond:${CHAIN_ID_B}`],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
+        [CHAIN_ID_B]: RPC_URL_B,
+      },
+    },
+    multiversx: {
+      methods: MULTIVERSX_TEST_METHODS,
+      chains: [`multiversx:${CHAIN_ID}`, `multiversx:${CHAIN_ID_B}`],
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
         [CHAIN_ID]: RPC_URL,
