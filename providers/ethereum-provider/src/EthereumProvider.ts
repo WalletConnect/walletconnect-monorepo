@@ -7,7 +7,7 @@ import {
   RequestArguments,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import type { Web3Modal } from "@web3modal/standalone";
+import type { Web3ModalConfig } from "@web3modal/standalone";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { STORAGE_KEY, REQUIRED_METHODS, REQUIRED_EVENTS, RPC_URL } from "./constants";
 
@@ -57,7 +57,7 @@ export interface EthereumRpcConfig {
   projectId: string;
   metadata?: Metadata;
   showQrModal: boolean;
-  qrModalOptions?: Parameters<Web3Modal["setTheme"]>[0];
+  qrModalOptions?: Pick<Web3ModalConfig, "themeMode" | "themeVariables">;
 }
 export interface ConnectOps {
   chains?: number[];
