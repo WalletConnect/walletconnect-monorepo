@@ -40,6 +40,7 @@ export declare namespace SignClientTypes {
       request: { method: string; params: any };
       topic: string;
       chainId: string;
+      id: number;
     };
     session_event: BaseEventArgs<{
       event: { name: string; data: any };
