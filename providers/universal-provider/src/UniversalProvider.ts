@@ -1,27 +1,28 @@
-import pino from "pino";
+import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
-import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray } from "@walletconnect/utils";
-import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
+import { ProviderAccounts } from "eip1193-provider";
+import pino from "pino";
+import CardanoProvider from "./providers/cardano";
+import CosmosProvider from "./providers/cosmos";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
-import CosmosProvider from "./providers/cosmos";
-import CardanoProvider from "./providers/cardano";
-import { getChainsFromApprovedSession } from "./utils";
+import StarknetProvider from "./providers/starknet";
 import {
-  IUniversalProvider,
-  IProvider,
-  RpcProviderMap,
   ConnectParams,
-  RequestArguments,
-  UniversalProviderOpts,
+  IProvider,
+  IUniversalProvider,
   NamespaceConfig,
   PairingsCleanupOpts,
+  RequestArguments,
+  RpcProviderMap,
+  UniversalProviderOpts,
 } from "./types";
+import { getChainsFromApprovedSession } from "./utils";
 
-import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
 import EventEmitter from "events";
+import { LOGGER, PROVIDER_EVENTS, RELAY_URL, STORAGE } from "./constants";
 
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
@@ -265,6 +266,13 @@ export class UniversalProvider implements IUniversalProvider {
           break;
         case "solana":
           this.rpcProviders[namespace] = new SolanaProvider({
+            client: this.client,
+            namespace: combinedNamespace,
+            events: this.events,
+          });
+          break;
+        case "starknet":
+          this.rpcProviders[namespace] = new StarknetProvider({
             client: this.client,
             namespace: combinedNamespace,
             events: this.events,
