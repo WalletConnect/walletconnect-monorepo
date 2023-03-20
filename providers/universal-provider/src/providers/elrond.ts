@@ -90,7 +90,7 @@ class ElrondProvider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(chain);
+      http[chain] = this.createHttpProvider(chain, this.namespace.rpcMap?.[chain]);
     });
     return http;
   }
