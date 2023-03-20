@@ -9,12 +9,12 @@ export const handleDeepLinks = (client: InstanceType<typeof SignClient>, params:
     // only handle the request if it matches the request and topic
     if (payload.request !== params.request || payload.topic !== params.topic) return;
     client.events.removeListener("session_request_sent", handleSessionRequestSent);
-    deeplinkRedirect(params.id, params.topic);
+    deeplinkRedirect(params.topic, params.id);
   };
   client.on("session_request_sent", handleSessionRequestSent);
 };
 
-export function deeplinkRedirect(id: number, topic: string) {
+export function deeplinkRedirect(topic: string, id?: number) {
   if (typeof window !== "undefined") {
     try {
       const item = window.localStorage.getItem("WALLETCONNECT_DEEPLINK_CHOICE");

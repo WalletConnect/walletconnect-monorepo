@@ -65,7 +65,7 @@ export interface RequestParams {
   topic: string;
   request: RequestArguments;
   chainId: string;
-  id: number;
+  id?: number;
 }
 
 export interface RequestArguments {
