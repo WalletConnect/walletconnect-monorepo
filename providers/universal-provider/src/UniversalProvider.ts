@@ -8,6 +8,8 @@ import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
 import CardanoProvider from "./providers/cardano";
+import ElrondProvider from "./providers/elrond";
+import MultiversXProvider from "./providers/multiversx";
 import { getChainsFromApprovedSession } from "./utils";
 import {
   IUniversalProvider,
@@ -282,6 +284,20 @@ export class UniversalProvider implements IUniversalProvider {
           break;
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
+            client: this.client,
+            namespace: combinedNamespace,
+            events: this.events,
+          });
+          break;
+        case "elrond":
+          this.rpcProviders[namespace] = new ElrondProvider({
+            client: this.client,
+            namespace: combinedNamespace,
+            events: this.events,
+          });
+          break;
+        case "multiversx":
+          this.rpcProviders[namespace] = new MultiversXProvider({
             client: this.client,
             namespace: combinedNamespace,
             events: this.events,
