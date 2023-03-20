@@ -255,7 +255,7 @@ export function createExpiringPromise<T>(promise: Promise<T>, expiry: number) {
     try {
       const res = await promise;
       resolve(res);
-    } catch(error) {
+    } catch (error) {
       reject(error);
     }
     clearTimeout(timeout);
