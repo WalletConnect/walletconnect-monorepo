@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import pino from "pino";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -294,7 +293,7 @@ export class Relayer extends IRelayer {
       this.onProviderDisconnect();
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) => {
-      console.log(RELAYER_PROVIDER_EVENTS.error, err);
+      this.logger.error(err);
       this.events.emit(RELAYER_EVENTS.error, err);
     });
   }
@@ -306,7 +305,6 @@ export class Relayer extends IRelayer {
   }
 
   private onProviderDisconnect() {
-    console.log("onProviderDisconnect");
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.attemptToReconnect();
   }
