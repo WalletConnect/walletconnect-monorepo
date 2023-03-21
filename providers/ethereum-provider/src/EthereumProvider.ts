@@ -445,10 +445,6 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   private getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
-    if (typeof opts?.showQrModal !== "boolean") {
-      throw new Error("showQrModal option is required and must be a boolean");
-    }
-
     return {
       chains: opts.chains?.map((chain) => this.formatChainId(chain)) || [`${this.namespace}:1`],
       optionalChains: opts.optionalChains
@@ -461,7 +457,7 @@ export class EthereumProvider implements IEthereumProvider {
       rpcMap:
         opts?.rpcMap ||
         this.buildRpcMap(opts.chains.concat(opts.optionalChains || []), opts.projectId),
-      showQrModal: opts.showQrModal,
+      showQrModal: Boolean(opts?.showQrModal),
       qrModalOptions: opts?.qrModalOptions ?? undefined,
       projectId: opts.projectId,
       metadata: opts.metadata,
