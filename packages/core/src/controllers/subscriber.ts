@@ -18,6 +18,7 @@ import {
   getRelayProtocolName,
   createExpiringPromise,
   hashMessage,
+  isValidArray,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -384,7 +385,7 @@ export class Subscriber extends ISubscriber {
   private async batchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
     const result = (await this.rpcBatchSubscribe(subscriptions)) as string[];
-    if (!result) return;
+    if (!isValidArray(result)) return;
     this.onBatchSubscribe(result.map((id, i) => ({ ...subscriptions[i], id })));
   }
 
