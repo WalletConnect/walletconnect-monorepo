@@ -256,9 +256,13 @@ export function createExpiringPromise<T>(
 ) {
   return new Promise(async (resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error(expireErrorMessage)), expiry);
-    const res = await promise;
+    try {
+      const result = await promise;
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    }
     clearTimeout(timeout);
-    resolve(res);
   });
 }
 
