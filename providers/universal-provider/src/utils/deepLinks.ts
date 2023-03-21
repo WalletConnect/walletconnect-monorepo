@@ -9,12 +9,12 @@ export const handleDeepLinks = (client: InstanceType<typeof SignClient>, params:
     // only handle the request if it matches the request and topic
     if (payload.request !== params.request || payload.topic !== params.topic) return;
     client.events.removeListener("session_request_sent", handleSessionRequestSent);
-    deeplinkRedirect(params.topic, params.id);
+    deeplinkRedirect(params);
   };
   client.on("session_request_sent", handleSessionRequestSent);
 };
 
-export function deeplinkRedirect(topic: string, id?: number) {
+export function deeplinkRedirect(request: RequestParams) {
   if (typeof window !== "undefined") {
     try {
       const item = window.localStorage.getItem("WALLETCONNECT_DEEPLINK_CHOICE");
@@ -23,7 +23,7 @@ export function deeplinkRedirect(topic: string, id?: number) {
         const deeplink = json?.href;
         if (typeof deeplink === "string") {
           if (deeplink.endsWith("/")) deeplink.slice(0, -1);
-          const link = `${deeplink}/wc?requestId=${id}&sessionTopic=${topic}`;
+          const link = `${deeplink}/wc?requestId=${request.id}&sessionTopic=${request.topic}`;
           window.open(link, "_self", "noreferrer noopener");
         }
       }
