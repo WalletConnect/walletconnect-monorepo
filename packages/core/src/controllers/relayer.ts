@@ -63,6 +63,8 @@ export class Relayer extends IRelayer {
   private relayUrl: string;
   private projectId: string | undefined;
   private connectionStatusPollingInterval = 20;
+  private staleConnectionErrors = ["socket hang up", "socket stalled"];
+
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -188,7 +190,7 @@ export class Relayer extends IRelayer {
         }),
         await Promise.race([
           new Promise<void>(async (resolve) => {
-            await createExpiringPromise(this.provider.connect(), 5_000, "socket hang up");
+            await createExpiringPromise(this.provider.connect(), 5_000, "socket stalled");
             this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen);
             resolve();
           }),
@@ -202,7 +204,7 @@ export class Relayer extends IRelayer {
     } catch (e: unknown | Error) {
       this.logger.error(e);
       const error = e as Error;
-      if (!/socket hang up/i.test(error.message)) {
+      if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
       this.events.emit(RELAYER_EVENTS.transport_closed);
@@ -220,6 +222,10 @@ export class Relayer extends IRelayer {
   }
 
   // ---------- Private ----------------------------------------------- //
+
+  private isConnectionStalled(message: string) {
+    return this.staleConnectionErrors.some((error) => message.includes(error));
+  }
 
   private rejectTransportOpen() {
     throw new Error("closeTransport called before connection was established");
