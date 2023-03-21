@@ -28,7 +28,7 @@ const provider = await EthereumProvider.init({
 ## Display Web3Modal with QR code / Handle connection URI
 
 ```typescript
-// Web3Modal is dissabled by default, enable it during init() to display a QR code modal
+// Web3Modal is disabled by default, enable it during init() to display a QR code modal
 await provider.connect({
   chains, // OPTIONAL chain ids
   rpcMap, // OPTIONAL rpc urls
