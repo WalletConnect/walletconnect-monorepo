@@ -189,10 +189,13 @@ export class Relayer extends IRelayer {
           });
         }),
         await Promise.race([
-          new Promise<void>(async (resolve) => {
-            await createExpiringPromise(this.provider.connect(), 5_000, "socket stalled");
-            this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen);
-            resolve();
+          new Promise<void>(async (resolve, reject) => {
+            await createExpiringPromise(this.provider.connect(), 5_000, "socket stalled")
+              .catch((e) => reject(e))
+              .then(() => resolve())
+              .finally(() =>
+                this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen),
+              );
           }),
           new Promise<void>((_res) =>
             // rejects pending promise if transport is closed before connection is established
