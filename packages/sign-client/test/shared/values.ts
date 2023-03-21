@@ -18,7 +18,7 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   : undefined;
 
 export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -27,7 +27,7 @@ export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_US,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -36,7 +36,7 @@ export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_EU,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -45,7 +45,7 @@ export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_AP: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_AP,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -252,3 +252,6 @@ export const TEST_SIGN_REQUEST_PARAMS = {
     },
   ],
 };
+
+export const TESTS_CONNECT_RETRIES = 5;
+export const TESTS_CONNECT_TIMEOUT = 20_000;

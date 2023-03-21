@@ -1,12 +1,5 @@
 import { getSdkError } from "@walletconnect/utils";
-import {
-  initTwoClients,
-  testConnectMethod,
-  deleteClients,
-  uploadCanaryResultsToCloudWatch,
-  throttle,
-  publishToStatusPage,
-} from "../shared";
+import { deleteClients, throttle, initTwoPairedClients } from "../shared";
 import { TEST_RELAY_URL } from "../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
 
@@ -22,15 +15,11 @@ const log = (log: string) => {
 describe("Lifecycle", () => {
   describe("Reconnect", () => {
     it("reconnects", async () => {
-      const start = Date.now();
-      const clients = await initTwoClients();
-      const handshakeLatencyMs = Date.now() - start;
+      const { clients, pairingA, sessionA } = await initTwoPairedClients();
       log(
         `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
       );
       const humanInputLatencyMs = 600;
-      const { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs } =
-        await testConnectMethod(clients, { qrCodeScanLatencyMs: humanInputLatencyMs });
       log(
         `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
           pairingA.topic

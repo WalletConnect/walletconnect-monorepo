@@ -28,7 +28,7 @@ describe("Publisher", () => {
       const itemA = { topic: generateRandomBytes32(), message: "itemA", opts };
       const itemB = { topic: generateRandomBytes32(), message: "itemB", opts };
       const requestSpy = Sinon.spy();
-      publisher.relayer.provider.request = requestSpy;
+      publisher.relayer.request = requestSpy;
       // Manually set some items in the queue.
       publisher.queue.set(hashMessage(itemA.message), itemA);
       publisher.queue.set(hashMessage(itemB.message), itemB);
@@ -51,7 +51,7 @@ describe("Publisher", () => {
     beforeEach(() => {
       requestSpy = Sinon.spy();
       topic = generateRandomBytes32();
-      publisher.relayer.provider.request = requestSpy;
+      publisher.relayer.request = requestSpy;
     });
 
     it("calls `provider.request` with the expected request shape", async () => {
