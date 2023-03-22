@@ -431,5 +431,170 @@ describe("UniversalProvider", function () {
       // disconnect
       await disconnectSocket(provider.client.core);
     });
+    describe("pairing", () => {
+      const methods = ["personal_sign"];
+      const events = ["chainChanged"];
+      it("should pair with configuration 1", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods,
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              [chains[0]]: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        expect(Object.keys(dapp.rpcProviders.eip155.httpProviders)).to.toMatchObject(
+          chains.map((c) => c.split(":")[1]),
+        );
+      });
+      it("should pair with configuration 2", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1", "eip155:2"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods,
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              "eip155:1": {
+                accounts: [`eip155:1:${walletAddress}`],
+                methods,
+                events,
+              },
+              "eip155:2": {
+                accounts: [`eip155:2:${walletAddress}`],
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        expect(Object.keys(dapp.rpcProviders.eip155.httpProviders)).to.toMatchObject(
+          chains.map((c) => c.split(":")[1]),
+        );
+      });
+      it("should pair with configuration 3", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+
+        const chains = ["eip155:1", "eip155:2"];
+
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods,
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: [`eip155:1:${walletAddress}`],
+                chains: ["eip155:1"],
+                methods,
+                events,
+              },
+              "eip155:2": {
+                accounts: [`eip155:2:${walletAddress}`],
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        expect(Object.keys(dapp.rpcProviders.eip155.httpProviders)).to.toMatchObject(
+          chains.map((c) => c.split(":")[1]),
+        );
+      });
+      it("should pair with configuration 4", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1", "eip155:2"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              "eip155:1": {
+                methods,
+                events,
+              },
+              "eip155:2": {
+                methods,
+                events,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                chains,
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        expect(Object.keys(dapp.rpcProviders.eip155.httpProviders)).to.toMatchObject(
+          chains.map((c) => c.split(":")[1]),
+        );
+      });
+    });
   });
 });
