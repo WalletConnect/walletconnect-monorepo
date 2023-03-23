@@ -83,7 +83,7 @@ class SolanaProvider implements IProvider {
           // get the accounts from the active chain
           .filter((account) => account.split(":")[1] === this.chainId.toString())
           // remove namespace & chainId from the string
-          .map((account) => account.split(":")[2]) || [],
+          .map((account) => account.split(":")[2]),
       ),
     ];
   }
