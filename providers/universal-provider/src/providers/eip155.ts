@@ -122,14 +122,15 @@ class Eip155Provider implements IProvider {
     if (!accounts) {
       return [];
     }
-
-    return (
-      accounts
-        // get the accounts from the active chain
-        .filter((account) => account.split(":")[1] === this.chainId.toString())
-        // remove namespace & chainId from the string
-        .map((account) => account.split(":")[2]) || []
-    );
+    return [
+      ...new Set(
+        accounts
+          // get the accounts from the active chain
+          .filter((account) => account.split(":")[1] === this.chainId.toString())
+          // remove namespace & chainId from the string
+          .map((account) => account.split(":")[2]),
+      ),
+    ];
   }
 
   private getHttpProvider(): JsonRpcProvider {

@@ -10,7 +10,12 @@ import CosmosProvider from "./providers/cosmos";
 import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
-import { getChainsFromApprovedSession } from "./utils";
+import {
+  getAccountsFromSession,
+  getChainsFromApprovedSession,
+  mergeRequiredOptionalNamespaces,
+  parseNamespaceKey,
+} from "./utils";
 import {
   IUniversalProvider,
   IProvider,
@@ -249,11 +254,25 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Sign Client not initialized");
     }
 
-    Object.keys(this.namespaces).forEach((namespace) => {
-      const accounts = this.session?.namespaces[namespace].accounts || [];
+    if (!this.session) {
+      throw new Error("Session not initialized. Please call connect() before enable()");
+    }
+
+    const providersToCreate = [
+      ...new Set(
+        Object.keys(this.session.namespaces).map((namespace) => parseNamespaceKey(namespace)),
+      ),
+    ];
+    providersToCreate.forEach((namespace) => {
+      if (!this.session) return;
+      const accounts = getAccountsFromSession(namespace, this.session);
       const approvedChains = getChainsFromApprovedSession(accounts);
+      const mergedNamespaces = mergeRequiredOptionalNamespaces(
+        this.namespaces,
+        this.optionalNamespaces,
+      );
       const combinedNamespace = {
-        ...Object.assign(this.namespaces[namespace], this.optionalNamespaces?.[namespace] ?? {}),
+        ...mergedNamespaces[namespace],
         accounts,
         chains: approvedChains,
       };
