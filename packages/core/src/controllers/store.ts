@@ -50,7 +50,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
       await this.restore();
 
       this.cached.forEach((value) => {
-        if (!isUndefined(this.getKey)) {
+        if (this.getKey && value !== null && !isUndefined(value)) {
           this.map.set(this.getKey(value), value);
         } else if (isProposalStruct(value)) {
           // TODO(pedro) revert type casting as any
