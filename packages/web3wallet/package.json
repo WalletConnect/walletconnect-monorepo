@@ -28,13 +28,13 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/auth-client": "^2.0.3",
-    "@walletconnect/core": "^2.4.10",
-    "@walletconnect/jsonrpc-utils": "^1.0.4",
+    "@walletconnect/auth-client": "^2.0.4",
+    "@walletconnect/core": "^2.5.1",
+    "@walletconnect/jsonrpc-utils": "^1.0.6",
     "@walletconnect/logger": "^2.0.1",
-    "@walletconnect/sign-client": "^2.4.10",
-    "@walletconnect/types": "^2.4.10",
-    "@walletconnect/utils": "^2.4.10"
+    "@walletconnect/sign-client": "^2.5.1",
+    "@walletconnect/types": "^2.5.1",
+    "@walletconnect/utils": "^2.5.1"
   },
   "devDependencies": {
     "@ethersproject/wallet": "^5.7.0",
