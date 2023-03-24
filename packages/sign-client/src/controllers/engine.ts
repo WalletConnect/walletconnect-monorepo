@@ -134,7 +134,6 @@ export class Engine extends IEngine {
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
-            pairingTopic: topic,
             requiredNamespaces: session.requiredNamespaces,
             optionalNamespaces: session.optionalNamespaces,
           };
@@ -174,7 +173,7 @@ export class Engine extends IEngine {
     const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
-
+    pairingTopic = pairingTopic || "";
     if (!isValidObject(requiredNamespaces)) {
       requiredNamespaces = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
     }
@@ -206,6 +205,7 @@ export class Engine extends IEngine {
       namespaces,
       requiredNamespaces,
       optionalNamespaces,
+      pairingTopic,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
@@ -610,6 +610,7 @@ export class Engine extends IEngine {
         requiredNamespaces,
         optionalNamespaces,
         sessionProperties,
+        pairingTopic,
       } = payload.params;
       const session = {
         topic,
@@ -617,6 +618,7 @@ export class Engine extends IEngine {
         expiry,
         namespaces,
         acknowledged: true,
+        pairingTopic,
         requiredNamespaces,
         optionalNamespaces,
         controller: controller.publicKey,
