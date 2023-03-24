@@ -7,9 +7,25 @@ import {
   RequestArguments,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import type { Web3Modal } from "@web3modal/standalone";
+import type { Web3ModalConfig, Web3Modal } from "@web3modal/standalone";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { STORAGE_KEY, REQUIRED_METHODS, REQUIRED_EVENTS, RPC_URL } from "./constants";
+
+export type QrModalOptions = Pick<
+  Web3ModalConfig,
+  | "themeMode"
+  | "themeVariables"
+  | "chainImages"
+  | "desktopWallets"
+  | "enableExplorer"
+  | "explorerAllowList"
+  | "explorerDenyList"
+  | "mobileWallets"
+  | "privacyPolicyUrl"
+  | "termsOfServiceUrl"
+  | "tokenImages"
+  | "walletImages"
+>;
 
 export type RpcMethod =
   | "personal_sign"
@@ -57,7 +73,7 @@ export interface EthereumRpcConfig {
   projectId: string;
   metadata?: Metadata;
   showQrModal: boolean;
-  qrModalOptions?: Parameters<Web3Modal["setTheme"]>[0];
+  qrModalOptions?: QrModalOptions;
 }
 export interface ConnectOps {
   chains?: number[];
@@ -182,8 +198,8 @@ export interface EthereumProviderOptions {
   optionalEvents?: string[];
   rpcMap?: EthereumRpcMap;
   metadata?: Metadata;
-  showQrModal?: boolean;
-  qrModalOptions?: Parameters<Web3Modal["setTheme"]>[0];
+  showQrModal: boolean;
+  qrModalOptions?: QrModalOptions;
 }
 
 export class EthereumProvider implements IEthereumProvider {
@@ -441,7 +457,8 @@ export class EthereumProvider implements IEthereumProvider {
       rpcMap:
         opts?.rpcMap ||
         this.buildRpcMap(opts.chains.concat(opts.optionalChains || []), opts.projectId),
-      showQrModal: opts?.showQrModal ?? true,
+      showQrModal: Boolean(opts?.showQrModal),
+      qrModalOptions: opts?.qrModalOptions ?? undefined,
       projectId: opts.projectId,
       metadata: opts.metadata,
     };
@@ -471,8 +488,7 @@ export class EthereumProvider implements IEthereumProvider {
           walletConnectVersion: 2,
           projectId: this.rpc.projectId,
           standaloneChains: this.rpc.chains,
-          themeMode: this.rpc.qrModalOptions?.themeMode,
-          themeVariables: this.rpc.qrModalOptions?.themeVariables,
+          ...this.rpc.qrModalOptions,
         });
       } catch {
         throw new Error("To use QR modal, please install @web3modal/standalone package");

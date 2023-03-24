@@ -77,19 +77,21 @@ class SolanaProvider implements IProvider {
       return [];
     }
 
-    return (
-      accounts
-        // get the accounts from the active chain
-        .filter((account) => account.split(":")[1] === this.chainId.toString())
-        // remove namespace & chainId from the string
-        .map((account) => account.split(":")[2]) || []
-    );
+    return [
+      ...new Set(
+        accounts
+          // get the accounts from the active chain
+          .filter((account) => account.split(":")[1] === this.chainId.toString())
+          // remove namespace & chainId from the string
+          .map((account) => account.split(":")[2]),
+      ),
+    ];
   }
 
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(chain);
+      http[chain] = this.createHttpProvider(chain, this.namespace.rpcMap?.[chain]);
     });
     return http;
   }

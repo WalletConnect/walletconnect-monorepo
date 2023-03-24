@@ -13,8 +13,9 @@ import {
 } from "../types";
 import { getRpcUrl, handleDeepLinks } from "../utils";
 
-class CosmosProvider implements IProvider {
-  public name = "cosmos";
+// Old wallet connect provider for Elrond
+class ElrondProvider implements IProvider {
+  public name = "elrond";
   public client: Client;
   public httpProviders: RpcProvidersMap;
   public events: EventEmitter;
@@ -37,17 +38,6 @@ class CosmosProvider implements IProvider {
     return this.getAccounts();
   }
 
-  public getDefaultChain(): string {
-    if (this.chainId) return this.chainId;
-    if (this.namespace.defaultChain) return this.namespace.defaultChain;
-
-    const chainId = this.namespace.chains[0];
-
-    if (!chainId) throw new Error(`ChainId not found`);
-
-    return chainId.split(":")[1];
-  }
-
   public request<T = unknown>(args: RequestParams): Promise<T> {
     if (this.namespace.methods.includes(args.request.method)) {
       handleDeepLinks(this.client, args);
@@ -57,7 +47,6 @@ class CosmosProvider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    this.chainId = chainId;
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
       const rpc =
@@ -67,11 +56,21 @@ class CosmosProvider implements IProvider {
       }
       this.setHttpProvider(chainId, rpc);
     }
-
+    this.chainId = chainId;
     this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
   }
 
-  // ---------------- PRIVATE ---------------- //
+  public getDefaultChain(): string {
+    if (this.chainId) return this.chainId;
+    if (this.namespace.defaultChain) return this.namespace.defaultChain;
+
+    const chainId = this.namespace.chains[0];
+    if (!chainId) throw new Error(`ChainId not found`);
+
+    return chainId.split(":")[1];
+  }
+
+  // --------- PRIVATE --------- //
 
   private getAccounts(): string[] {
     const accounts = this.namespace.accounts;
@@ -125,4 +124,4 @@ class CosmosProvider implements IProvider {
   }
 }
 
-export default CosmosProvider;
+export default ElrondProvider;

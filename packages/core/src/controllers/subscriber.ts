@@ -18,6 +18,7 @@ import {
   getRelayProtocolName,
   createExpiringPromise,
   hashMessage,
+  isValidArray,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -216,12 +217,12 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.provider.request(request),
+        this.relayer.request(request),
         this.subscribeTimeout,
       );
       await subscribe;
     } catch (err) {
-      this.logger.debug(`Outgoing Relay Payload stalled`);
+      this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
     return hashMessage(topic + this.clientId);
@@ -241,7 +242,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.provider.request(request),
+        this.relayer.request(request),
         this.subscribeTimeout,
       );
       return await subscribe;
@@ -262,7 +263,7 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    return this.relayer.provider.request(request);
+    return this.relayer.request(request);
   }
 
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
@@ -384,6 +385,7 @@ export class Subscriber extends ISubscriber {
   private async batchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
     const result = (await this.rpcBatchSubscribe(subscriptions)) as string[];
+    if (!isValidArray(result)) return;
     this.onBatchSubscribe(result.map((id, i) => ({ ...subscriptions[i], id })));
   }
 
