@@ -29,7 +29,13 @@ describe("Sign Client Integration", () => {
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
       const clients = await initTwoClients();
-      await testConnectMethod(clients);
+      const { pairingA, sessionA } = await testConnectMethod(clients);
+      expect(pairingA).to.be.exist;
+      expect(sessionA).to.be.exist;
+      expect(pairingA.topic).to.eq(sessionA.pairingTopic);
+      const sessionB = clients.B.session.get(sessionA.topic);
+      expect(sessionB).to.be.exist;
+      expect(sessionB.pairingTopic).to.eq(sessionA.pairingTopic);
       await deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {

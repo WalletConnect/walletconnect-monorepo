@@ -1,64 +1,64 @@
-import EventEmmiter from "events";
-import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
+import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 import {
+  formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  formatJsonRpcError,
+  isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
   isJsonRpcResult,
-  isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
-  IEngine,
-  EngineTypes,
-  IEngineEvents,
-  RelayerTypes,
   EnginePrivate,
-  SessionTypes,
-  JsonRpcTypes,
+  EngineTypes,
   ExpirerTypes,
+  IEngine,
+  IEngineEvents,
+  JsonRpcTypes,
   PendingRequestTypes,
   ProposalTypes,
+  RelayerTypes,
+  SessionTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
-  parseExpirerTarget,
   createDelayedPromise,
-  getInternalError,
-  getSdkError,
   engineEvent,
-  isValidNamespaces,
-  isValidRelays,
-  isValidRelay,
-  isValidId,
-  isValidParams,
-  isValidString,
-  isValidErrorReason,
-  isValidNamespacesChainId,
-  isValidNamespacesRequest,
-  isValidNamespacesEvent,
-  isValidRequest,
-  isValidEvent,
-  isValidResponse,
-  isValidRequiredNamespaces,
-  isSessionCompatible,
-  isExpired,
-  isUndefined,
-  isConformingNamespaces,
-  isValidController,
-  TYPE_1,
+  getInternalError,
   getRequiredNamespacesFromNamespaces,
+  getSdkError,
+  isConformingNamespaces,
+  isExpired,
+  isSessionCompatible,
+  isUndefined,
+  isValidController,
+  isValidErrorReason,
+  isValidEvent,
+  isValidId,
+  isValidNamespaces,
+  isValidNamespacesChainId,
+  isValidNamespacesEvent,
+  isValidNamespacesRequest,
   isValidObject,
+  isValidParams,
+  isValidRelay,
+  isValidRelays,
+  isValidRequest,
   isValidRequestExpiry,
+  isValidRequiredNamespaces,
+  isValidResponse,
+  isValidString,
+  parseExpirerTarget,
+  TYPE_1,
 } from "@walletconnect/utils";
+import EventEmmiter from "events";
 import {
-  SESSION_EXPIRY,
   ENGINE_CONTEXT,
   ENGINE_RPC_OPTS,
-  SESSION_REQUEST_EXPIRY_BOUNDARIES,
   PROPOSAL_EXPIRY_MESSAGE,
+  SESSION_EXPIRY,
+  SESSION_REQUEST_EXPIRY_BOUNDARIES,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -173,7 +173,7 @@ export class Engine extends IEngine {
     const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
-
+    pairingTopic = pairingTopic || "";
     if (!isValidObject(requiredNamespaces)) {
       requiredNamespaces = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
     }
@@ -205,6 +205,7 @@ export class Engine extends IEngine {
       namespaces,
       requiredNamespaces,
       optionalNamespaces,
+      pairingTopic,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
@@ -220,6 +221,7 @@ export class Engine extends IEngine {
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
+      pairingTopic,
       acknowledged: false,
       self: sessionSettle.controller,
       peer: {
@@ -608,6 +610,7 @@ export class Engine extends IEngine {
         requiredNamespaces,
         optionalNamespaces,
         sessionProperties,
+        pairingTopic,
       } = payload.params;
       const session = {
         topic,
@@ -615,6 +618,7 @@ export class Engine extends IEngine {
         expiry,
         namespaces,
         acknowledged: true,
+        pairingTopic,
         requiredNamespaces,
         optionalNamespaces,
         controller: controller.publicKey,
