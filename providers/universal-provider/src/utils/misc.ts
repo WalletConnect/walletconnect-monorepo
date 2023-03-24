@@ -2,6 +2,7 @@ import { SessionTypes } from "@walletconnect/types";
 import { isValidObject } from "@walletconnect/utils";
 import { RPC_URL } from "../constants";
 import { Namespace, NamespaceConfig } from "../types";
+import { merge } from "lodash";
 
 export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): string | undefined {
   let rpcUrl: string | undefined;
@@ -52,9 +53,7 @@ export function mergeRequiredOptionalNamespaces(
 ) {
   const requiredNamespaces = normalizeNamespaces(required);
   const optionalNamespaces = normalizeNamespaces(optional);
-  return {
-    ...Object.assign(requiredNamespaces, optionalNamespaces),
-  };
+  return merge(requiredNamespaces, optionalNamespaces);
 }
 
 /**
@@ -80,12 +79,15 @@ export function normalizeNamespaces(namespaces: NamespaceConfig): NamespaceConfi
     const chains = isCaipNamespace(key) ? [key] : values.chains;
     const methods = values.methods || [];
     const events = values.events || [];
+    const rpcMap = values.rpcMap || {};
     const normalizedKey = parseNamespaceKey(key);
     normalizedNamespaces[normalizedKey] = {
+      ...normalizedNamespaces[normalizedKey],
+      ...values,
       chains: mergeArrays(chains, normalizedNamespaces[normalizedKey]?.chains),
       methods: mergeArrays(methods, normalizedNamespaces[normalizedKey]?.methods),
       events: mergeArrays(events, normalizedNamespaces[normalizedKey]?.events),
-      rpcMap: { ...normalizedNamespaces[normalizedKey]?.rpcMap, ...values.rpcMap },
+      rpcMap: { ...rpcMap, ...normalizedNamespaces[normalizedKey]?.rpcMap },
     };
   }
   return normalizedNamespaces;

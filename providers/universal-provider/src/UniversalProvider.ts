@@ -400,9 +400,16 @@ export class UniversalProvider implements IUniversalProvider {
 
   private validateChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
+
     // validate namespace
     if (namespace) {
-      if (!Object.keys(this.namespaces).includes(namespace)) {
+      if (
+        // some namespaces might be defined with inline chainId e.g. eip155:1
+        // and we need to parse them
+        !Object.keys(this.namespaces)
+          .map((key) => parseNamespaceKey(key))
+          .includes(namespace)
+      ) {
         throw new Error(
           `Namespace '${namespace}' is not configured. Please call connect() first with namespace config.`,
         );
@@ -411,7 +418,7 @@ export class UniversalProvider implements IUniversalProvider {
     if (namespace && chainId) {
       return [namespace, chainId];
     }
-    const defaultNamespace = Object.keys(this.namespaces)[0];
+    const defaultNamespace = parseNamespaceKey(Object.keys(this.namespaces)[0]);
     const defaultChain = this.rpcProviders[defaultNamespace].getDefaultChain();
     return [defaultNamespace, defaultChain];
   }
@@ -428,7 +435,8 @@ export class UniversalProvider implements IUniversalProvider {
       this.getProvider(namespace).setDefaultChain(chainId);
     }
 
-    this.namespaces[namespace].defaultChain = chainId;
+    (this.namespaces[namespace] ?? this.namespaces[`${namespace}:${chainId}`]).defaultChain =
+      chainId;
     this.persist("namespaces", this.namespaces);
     this.events.emit("chainChanged", chainId);
   }
