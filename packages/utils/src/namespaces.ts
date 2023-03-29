@@ -1,5 +1,6 @@
 import { ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { isValidNamespaces } from "./validators";
+import { mergeArrays } from "./misc";
+import { isConformingNamespaces, isValidNamespaces, isValidObject } from "./validators";
 
 export function getAccountsChains(accounts: SessionTypes.Namespace["accounts"]) {
   const chains: string[] = [];
@@ -62,4 +63,152 @@ export function getRequiredNamespacesFromNamespaces(
     };
   }
   return required;
+}
+
+export function buildApprovedNamespaces(params: {
+  requiredNamespaces: ProposalTypes.RequiredNamespaces;
+  optionalNamespaces?: ProposalTypes.OptionalNamespaces;
+  supportedNamespaces: Record<
+    string,
+    { chains?: string[]; methods: string[]; events: string[]; accounts: string[] }
+  >;
+  sessionProperties?: ProposalTypes.SessionProperties;
+}) {
+  const {
+    requiredNamespaces,
+    optionalNamespaces = {},
+    supportedNamespaces,
+    sessionProperties,
+  } = params;
+
+  const normalizedRequired = normalizeNamespaces(requiredNamespaces);
+  const normalizedOptional = normalizeNamespaces(optionalNamespaces);
+
+  const namespaces = {};
+  // build approved namespaces
+  Object.keys(supportedNamespaces).forEach((namespace) => {
+    const supportedChains = [
+      ...new Set(isCaipNamespace(namespace) ? [namespace] : supportedNamespaces[namespace].chains),
+    ];
+    const supportedMethods = supportedNamespaces[namespace].methods;
+    const supportedEvents = supportedNamespaces[namespace].events;
+    const supportedAccounts = supportedNamespaces[namespace].accounts;
+
+    namespaces[namespace] = {
+      chains: supportedChains,
+      methods: supportedMethods,
+      events: supportedEvents,
+      accounts: supportedAccounts,
+    };
+  });
+
+  // verify all required namespaces are supported
+  const err = isConformingNamespaces(requiredNamespaces, namespaces, "approve()");
+  if (err) throw new Error(err.message);
+
+  const approvedNamespaces = {};
+
+  // assign accounts for the required namespaces
+  Object.keys(normalizedRequired).forEach((requiredNamespace) => {
+    const chains = supportedNamespaces[requiredNamespace].chains?.filter((chain) =>
+      normalizedRequired[requiredNamespace]?.chains?.includes(chain),
+    );
+    const methods = supportedNamespaces[requiredNamespace].methods.filter((method) =>
+      normalizedRequired[requiredNamespace]?.methods?.includes(method),
+    );
+    const events = supportedNamespaces[requiredNamespace].events.filter((event) =>
+      normalizedRequired[requiredNamespace]?.events?.includes(event),
+    );
+
+    approvedNamespaces[requiredNamespace] = {
+      chains,
+      methods,
+      events,
+      accounts: chains
+        ?.map((chain: string) =>
+          supportedNamespaces[requiredNamespace].accounts.filter((account: string) =>
+            account.includes(chain),
+          ),
+        )
+        .flat(),
+    };
+  });
+
+  // add optional namespaces
+  Object.keys(normalizedOptional).forEach((optionalNamespace) => {
+    if (!supportedNamespaces[optionalNamespace]) return;
+
+    const chainsToAdd = normalizedOptional[optionalNamespace]?.chains?.filter((chain) =>
+      supportedNamespaces[optionalNamespace].chains?.includes(chain),
+    );
+    const methodsToAdd = supportedNamespaces[optionalNamespace].methods.filter((method) =>
+      normalizedOptional[optionalNamespace]?.methods?.includes(method),
+    );
+    const eventsToAdd = supportedNamespaces[optionalNamespace].events.filter((event) =>
+      normalizedOptional[optionalNamespace]?.events?.includes(event),
+    );
+
+    const accountsToAdd = chainsToAdd
+      ?.map((chain: string) =>
+        supportedNamespaces[optionalNamespace].accounts.filter((account: string) =>
+          account.includes(chain),
+        ),
+      )
+      .flat();
+
+    approvedNamespaces[optionalNamespace] = {
+      chains: mergeArrays(approvedNamespaces[optionalNamespace]?.chains, chainsToAdd),
+      methods: mergeArrays(approvedNamespaces[optionalNamespace]?.methods, methodsToAdd),
+      events: mergeArrays(approvedNamespaces[optionalNamespace]?.events, eventsToAdd),
+      accounts: mergeArrays(approvedNamespaces[optionalNamespace]?.accounts, accountsToAdd),
+    };
+  });
+
+  return {
+    ...approvedNamespaces,
+    ...(sessionProperties && { sessionProperties }),
+  };
+}
+
+export function isCaipNamespace(namespace: string): boolean {
+  return namespace.includes(":");
+}
+
+export function parseNamespaceKey(namespace: string) {
+  return isCaipNamespace(namespace) ? namespace.split(":")[0] : namespace;
+}
+
+/**
+ * Converts
+ * {
+ *  "eip155:1": {...},
+ *  "eip155:2": {...},
+ * }
+ * into
+ * {
+ *  "eip155": {
+ *      chains: ["eip155:1", "eip155:2"],
+ *      ...
+ *    }
+ * }
+ *
+ */
+export function normalizeNamespaces(
+  namespaces: ProposalTypes.RequiredNamespaces,
+): ProposalTypes.RequiredNamespaces {
+  const normalizedNamespaces = {} as ProposalTypes.RequiredNamespaces;
+  if (!isValidObject(namespaces)) return normalizedNamespaces;
+  for (const [key, values] of Object.entries(namespaces)) {
+    const chains = isCaipNamespace(key) ? [key] : values.chains;
+    const methods = values.methods || [];
+    const events = values.events || [];
+    const normalizedKey = parseNamespaceKey(key);
+    normalizedNamespaces[normalizedKey] = {
+      ...normalizedNamespaces[normalizedKey],
+      chains: mergeArrays(chains, normalizedNamespaces[normalizedKey]?.chains),
+      methods: mergeArrays(methods, normalizedNamespaces[normalizedKey]?.methods),
+      events: mergeArrays(events, normalizedNamespaces[normalizedKey]?.events),
+    };
+  }
+  return normalizedNamespaces;
 }
