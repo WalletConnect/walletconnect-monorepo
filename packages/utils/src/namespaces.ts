@@ -72,14 +72,8 @@ export function buildApprovedNamespaces(params: {
     string,
     { chains?: string[]; methods: string[]; events: string[]; accounts: string[] }
   >;
-  sessionProperties?: ProposalTypes.SessionProperties;
-}) {
-  const {
-    requiredNamespaces,
-    optionalNamespaces = {},
-    supportedNamespaces,
-    sessionProperties,
-  } = params;
+}): SessionTypes.Namespaces {
+  const { requiredNamespaces, optionalNamespaces = {}, supportedNamespaces } = params;
 
   const normalizedRequired = normalizeNamespaces(requiredNamespaces);
   const normalizedOptional = normalizeNamespaces(optionalNamespaces);
@@ -164,10 +158,7 @@ export function buildApprovedNamespaces(params: {
     };
   });
 
-  return {
-    ...approvedNamespaces,
-    ...(sessionProperties && { sessionProperties }),
-  };
+  return approvedNamespaces;
 }
 
 export function isCaipNamespace(namespace: string): boolean {
