@@ -16,7 +16,10 @@ import {
   isTypeOneEnvelope,
   deserialize,
   decodeTypeByte,
+  BASE16,
 } from "@walletconnect/utils";
+import { toString } from "uint8arrays";
+
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
 import { KeyChain } from "./keychain";
 
@@ -129,10 +132,18 @@ export class Crypto implements ICrypto {
     return payload;
   };
 
-  public getPayloadType(encoded: string): number {
+  public getPayloadType: ICrypto["getPayloadType"] = (encoded) => {
     const deserialized = deserialize(encoded);
     return decodeTypeByte(deserialized.type);
-  }
+  };
+
+  public getPayloadSenderPublicKey: ICrypto["getPayloadSenderPublicKey"] = (encoded) => {
+    const deserialized = deserialize(encoded);
+    return deserialized.senderPublicKey
+      ? toString(deserialized.senderPublicKey, BASE16)
+      : undefined;
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async setPrivateKey(publicKey: string, privateKey: string): Promise<string> {
