@@ -70,7 +70,7 @@ export function buildApprovedNamespaces(params: {
   optionalNamespaces?: ProposalTypes.OptionalNamespaces;
   supportedNamespaces: Record<
     string,
-    { chains?: string[]; methods: string[]; events: string[]; accounts: string[] }
+    { chains: string[]; methods: string[]; events: string[]; accounts: string[] }
   >;
 }): SessionTypes.Namespaces {
   const { requiredNamespaces, optionalNamespaces = {}, supportedNamespaces } = params;
@@ -81,9 +81,7 @@ export function buildApprovedNamespaces(params: {
   const namespaces = {};
   // build approved namespaces
   Object.keys(supportedNamespaces).forEach((namespace) => {
-    const supportedChains = [
-      ...new Set(isCaipNamespace(namespace) ? [namespace] : supportedNamespaces[namespace].chains),
-    ];
+    const supportedChains = supportedNamespaces[namespace].chains;
     const supportedMethods = supportedNamespaces[namespace].methods;
     const supportedEvents = supportedNamespaces[namespace].events;
     const supportedAccounts = supportedNamespaces[namespace].accounts;
@@ -104,7 +102,7 @@ export function buildApprovedNamespaces(params: {
 
   // assign accounts for the required namespaces
   Object.keys(normalizedRequired).forEach((requiredNamespace) => {
-    const chains = supportedNamespaces[requiredNamespace].chains?.filter((chain) =>
+    const chains = supportedNamespaces[requiredNamespace].chains.filter((chain) =>
       normalizedRequired[requiredNamespace]?.chains?.includes(chain),
     );
     const methods = supportedNamespaces[requiredNamespace].methods.filter((method) =>
@@ -119,7 +117,7 @@ export function buildApprovedNamespaces(params: {
       methods,
       events,
       accounts: chains
-        ?.map((chain: string) =>
+        .map((chain: string) =>
           supportedNamespaces[requiredNamespace].accounts.filter((account: string) =>
             account.includes(chain),
           ),
@@ -133,7 +131,7 @@ export function buildApprovedNamespaces(params: {
     if (!supportedNamespaces[optionalNamespace]) return;
 
     const chainsToAdd = normalizedOptional[optionalNamespace]?.chains?.filter((chain) =>
-      supportedNamespaces[optionalNamespace].chains?.includes(chain),
+      supportedNamespaces[optionalNamespace].chains.includes(chain),
     );
     const methodsToAdd = supportedNamespaces[optionalNamespace].methods.filter((method) =>
       normalizedOptional[optionalNamespace]?.methods?.includes(method),
