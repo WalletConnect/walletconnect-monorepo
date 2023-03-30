@@ -329,7 +329,7 @@ describe("Validators", () => {
   });
 });
 describe("buildApprovedNamespaces (validators)", () => {
-  it("should build namespaces (config 1 - optional method)", async () => {
+  it("should build namespaces (config 1 - optional method)", () => {
     const required = {
       eip155: {
         chains: ["eip155:1"],
@@ -373,7 +373,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.equal(expected);
   });
-  it("should build namespaces (config 2 - optional chain)", async () => {
+  it("should build namespaces (config 2 - optional chain)", () => {
     const required = {
       eip155: {
         chains: ["eip155:1"],
@@ -420,7 +420,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 3 - inline chain)", async () => {
+  it("should build namespaces (config 3 - inline chain)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -466,7 +466,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 4 - multiple inline chains)", async () => {
+  it("should build namespaces (config 4 - multiple inline chains)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -517,7 +517,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 5 - multiple inline chains)", async () => {
+  it("should build namespaces (config 5 - multiple inline chains)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -573,7 +573,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 6 - unsupported optional chains)", async () => {
+  it("should build namespaces (config 6 - unsupported optional chains)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -627,7 +627,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 7 - partially supported optional chains)", async () => {
+  it("should build namespaces (config 7 - partially supported optional chains)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -682,7 +682,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 8 - partially supported optional methods)", async () => {
+  it("should build namespaces (config 8 - partially supported optional methods)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -737,7 +737,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 9 - partially supported optional events)", async () => {
+  it("should build namespaces (config 9 - partially supported optional events)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -792,7 +792,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 10 - extra supported chains)", async () => {
+  it("should build namespaces (config 10 - extra supported chains)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
@@ -851,7 +851,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
-  it("should build namespaces (config 11 - multiple namespaces - required)", async () => {
+  it("should build namespaces (config 11 - multiple namespaces - required)", () => {
     const required = {
       "eip155:1": {
         events: ["chainChanged"],
