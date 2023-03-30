@@ -78,8 +78,8 @@ export function buildApprovedNamespaces(params: {
   const normalizedRequired = normalizeNamespaces(requiredNamespaces);
   const normalizedOptional = normalizeNamespaces(optionalNamespaces);
 
-  const namespaces = {};
   // build approved namespaces
+  const namespaces = {};
   Object.keys(supportedNamespaces).forEach((namespace) => {
     const supportedChains = supportedNamespaces[namespace].chains;
     const supportedMethods = supportedNamespaces[namespace].methods;
@@ -112,17 +112,19 @@ export function buildApprovedNamespaces(params: {
       normalizedRequired[requiredNamespace]?.events?.includes(event),
     );
 
+    const accounts = chains
+      .map((chain: string) =>
+        supportedNamespaces[requiredNamespace].accounts.filter((account: string) =>
+          account.includes(chain),
+        ),
+      )
+      .flat();
+
     approvedNamespaces[requiredNamespace] = {
       chains,
       methods,
       events,
-      accounts: chains
-        .map((chain: string) =>
-          supportedNamespaces[requiredNamespace].accounts.filter((account: string) =>
-            account.includes(chain),
-          ),
-        )
-        .flat(),
+      accounts,
     };
   });
 

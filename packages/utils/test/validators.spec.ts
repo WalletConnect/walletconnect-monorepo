@@ -1146,7 +1146,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     },
   );
   it.fails(
-    "should throw while building namespaces (config 6 - partiall accounts for required chain)",
+    "should throw while building namespaces (config 6 - partial accounts for required chain)",
     () => {
       const required = {
         "eip155:1": {
