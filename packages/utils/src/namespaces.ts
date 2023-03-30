@@ -65,14 +65,25 @@ export function getRequiredNamespacesFromNamespaces(
   return required;
 }
 
-export function buildApprovedNamespaces(params: {
+export type BuildApprovedNamespacesParams = {
   requiredNamespaces: ProposalTypes.RequiredNamespaces;
   optionalNamespaces?: ProposalTypes.OptionalNamespaces;
   supportedNamespaces: Record<
     string,
     { chains: string[]; methods: string[]; events: string[]; accounts: string[] }
   >;
-}): SessionTypes.Namespaces {
+};
+
+/**
+ * util designed for Wallets that builds namespaces structure by provided supported chains, methods, events & accounts.
+ * It takes required & optional namespaces provided in the session proposal
+ * along with the supported chains/methods/events/accounts by the wallet and returns a structured namespaces object
+ * @param {BuildApprovedNamespacesParams} params
+ * @returns {SessionTypes.Namespaces}
+ */
+export function buildApprovedNamespaces(
+  params: BuildApprovedNamespacesParams,
+): SessionTypes.Namespaces {
   const { requiredNamespaces, optionalNamespaces = {}, supportedNamespaces } = params;
 
   const normalizedRequired = normalizeNamespaces(requiredNamespaces);
