@@ -169,18 +169,21 @@ export function parseNamespaceKey(namespace: string) {
 
 /**
  * Converts
+ * ```
  * {
  *  "eip155:1": {...},
  *  "eip155:2": {...},
  * }
+ * ```
  * into
+ * ```
  * {
  *  "eip155": {
  *      chains: ["eip155:1", "eip155:2"],
  *      ...
  *    }
  * }
- *
+ *```
  */
 export function normalizeNamespaces(
   namespaces: ProposalTypes.RequiredNamespaces,
