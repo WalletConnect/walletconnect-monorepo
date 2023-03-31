@@ -317,3 +317,7 @@ export function isExpired(expiry: number) {
 export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
   return `${event}${id ? `:${id}` : ""}`;
 }
+
+export function mergeArrays<T>(a: T[] = [], b: T[] = []): T[] {
+  return [...new Set([...a, ...b])];
+}
