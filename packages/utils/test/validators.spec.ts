@@ -8,7 +8,7 @@ import {
   TEST_SESSION,
 } from "./shared/values";
 
-import { isConformingNamespaces, isSessionCompatible } from "../src";
+import { buildApprovedNamespaces, isConformingNamespaces, isSessionCompatible } from "../src";
 
 describe("Validators", () => {
   it("isSessionCompatible", () => {
@@ -327,4 +327,915 @@ describe("Validators", () => {
     expect(error).to.not.be.null;
     expect(error).to.throw;
   });
+});
+describe("buildApprovedNamespaces (validators)", () => {
+  it("should build namespaces (config 1 - optional method)", () => {
+    const required = {
+      eip155: {
+        chains: ["eip155:1"],
+        events: ["chainChanged"],
+        methods: ["personal_sign"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:1"],
+        events: [""],
+        methods: ["eth_sendTransaction"],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:3"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.equal(expected);
+  });
+  it("should build namespaces (config 2 - optional chain)", () => {
+    const required = {
+      eip155: {
+        chains: ["eip155:1"],
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:2"],
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:3"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 3 - inline chain)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:2"],
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:3"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 4 - multiple inline chains)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:2": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:3"],
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:3"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:3:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2", "eip155:3"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 5 - multiple inline chains)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:2": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:3"],
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:4": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:3", "eip155:4"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:3:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2", "eip155:4", "eip155:3"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 6 - unsupported optional chains)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:2": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:3"],
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:4": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 7 - partially supported optional chains)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:2": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:3"],
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:4": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:4"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2", "eip155:4"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 8 - partially supported optional methods)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:2": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        events: ["chainChanged"],
+        methods: [
+          "personal_sign",
+          "eth_sendTransaction",
+          "eth_signTransaction",
+          "eth_signTypedData",
+        ],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:4"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        methods: ["personal_sign", "eth_sendTransaction", "eth_signTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 9 - partially supported optional events)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:2": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        events: ["chainChanged", "accountsChanged"],
+        methods: [
+          "personal_sign",
+          "eth_sendTransaction",
+          "eth_signTransaction",
+          "eth_signTypedData",
+        ],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:4"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged", "accountsChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        methods: ["personal_sign", "eth_sendTransaction", "eth_signTransaction"],
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 10 - extra supported chains)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      "eip155:2": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        events: ["chainChanged", "accountsChanged"],
+        methods: [
+          "personal_sign",
+          "eth_sendTransaction",
+          "eth_signTransaction",
+          "eth_signTypedData",
+        ],
+      },
+    };
+
+    const chains = ["eip155:1", "eip155:2", "eip155:4"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged", "accountsChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        methods: ["personal_sign", "eth_sendTransaction", "eth_signTransaction"],
+        events,
+        accounts: [
+          "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+          "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+        ],
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 11 - multiple namespaces - required)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+      cosmos: {
+        chains: ["cosmos:cosmoshub-4"],
+        events: ["cosmos_event"],
+        methods: ["cosmos_method"],
+      },
+    };
+    const optional = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        events: ["chainChanged", "accountsChanged"],
+        methods: [
+          "personal_sign",
+          "eth_sendTransaction",
+          "eth_signTransaction",
+          "eth_signTypedData",
+        ],
+      },
+    };
+
+    const chainsEip = ["eip155:1", "eip155:2", "eip155:4"];
+    const chainsCosmos = ["cosmos:cosmoshub-4"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged", "accountsChanged"];
+    const accountsEip = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+    const accountsCosmos = ["cosmos:cosmoshub-4:cosmos1hsk6jryyqjfhp5dhc55tc9jtckygx0eph6dd02"];
+    const eventsCosmos = ["cosmos_event"];
+    const methodsCosmos = ["cosmos_method"];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      requiredNamespaces: required,
+      optionalNamespaces: optional,
+      supportedNamespaces: {
+        eip155: {
+          chains: chainsEip,
+          methods,
+          events,
+          accounts: accountsEip,
+        },
+        cosmos: {
+          chains: chainsCosmos,
+          methods: methodsCosmos,
+          events: eventsCosmos,
+          accounts: accountsCosmos,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1", "eip155:2"],
+        methods: ["personal_sign", "eth_sendTransaction", "eth_signTransaction"],
+        events,
+        accounts: [
+          "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+          "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+        ],
+      },
+      cosmos: {
+        chains: chainsCosmos,
+        methods: methodsCosmos,
+        events: eventsCosmos,
+        accounts: accountsCosmos,
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it.fails(
+    "should throw while building namespaces (config 1 - no supported required chains)",
+    () => {
+      const required = {
+        "eip155:1": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+        cosmos: {
+          chains: ["cosmos:cosmoshub-4"],
+          events: ["cosmos_event"],
+          methods: ["cosmos_method"],
+        },
+      };
+      const optional = {
+        eip155: {
+          chains: ["eip155:1", "eip155:2"],
+          events: ["chainChanged", "accountsChanged"],
+          methods: [
+            "personal_sign",
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_signTypedData",
+          ],
+        },
+      };
+
+      const chainsEip = ["eip155:5"];
+      const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+      const events = ["chainChanged", "accountsChanged"];
+      const accountsEip = ["eip155:5:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
+
+      buildApprovedNamespaces({
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+        supportedNamespaces: {
+          eip155: {
+            chains: chainsEip,
+            methods,
+            events,
+            accounts: accountsEip,
+          },
+        },
+      });
+    },
+  );
+  it.fails(
+    "should throw while building namespaces (config 2 - partially supported required chains)",
+    () => {
+      const required = {
+        "eip155:1": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+        cosmos: {
+          chains: ["cosmos:cosmoshub-4"],
+          events: ["cosmos_event"],
+          methods: ["cosmos_method"],
+        },
+      };
+      const optional = {
+        eip155: {
+          chains: ["eip155:1", "eip155:2"],
+          events: ["chainChanged", "accountsChanged"],
+          methods: [
+            "personal_sign",
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_signTypedData",
+          ],
+        },
+      };
+
+      const chainsEip = ["eip155:1", "eip155:5"];
+      const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+      const events = ["chainChanged", "accountsChanged"];
+      const accountsEip = [
+        "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+        "eip155:5:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      ];
+
+      buildApprovedNamespaces({
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+        supportedNamespaces: {
+          eip155: {
+            chains: chainsEip,
+            methods,
+            events,
+            accounts: accountsEip,
+          },
+        },
+      });
+    },
+  );
+  it.fails(
+    "should throw while building namespaces (config 3 - no supported required methods)",
+    () => {
+      const required = {
+        "eip155:1": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+      };
+      const optional = {
+        eip155: {
+          chains: ["eip155:1", "eip155:2"],
+          events: ["chainChanged", "accountsChanged"],
+          methods: [
+            "personal_sign",
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_signTypedData",
+          ],
+        },
+      };
+
+      const chainsEip = ["eip155:1"];
+      const methods = ["personal_sign"];
+      const events = ["chainChanged", "accountsChanged"];
+      const accountsEip = ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
+
+      buildApprovedNamespaces({
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+        supportedNamespaces: {
+          eip155: {
+            chains: chainsEip,
+            methods,
+            events,
+            accounts: accountsEip,
+          },
+        },
+      });
+    },
+  );
+  it.fails(
+    "should throw while building namespaces (config 4 - no supported required events)",
+    () => {
+      const required = {
+        "eip155:1": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+      };
+      const optional = {
+        eip155: {
+          chains: ["eip155:1", "eip155:2"],
+          events: ["chainChanged", "accountsChanged"],
+          methods: [
+            "personal_sign",
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_signTypedData",
+          ],
+        },
+      };
+
+      const chainsEip = ["eip155:1"];
+      const methods = ["personal_sign", "eth_sendTransaction"];
+      const events = [] as string[];
+      const accountsEip = ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
+
+      buildApprovedNamespaces({
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+        supportedNamespaces: {
+          eip155: {
+            chains: chainsEip,
+            methods,
+            events,
+            accounts: accountsEip,
+          },
+        },
+      });
+    },
+  );
+  it.fails(
+    "should throw while building namespaces (config 5 - no accounts for required chain)",
+    () => {
+      const required = {
+        "eip155:1": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+      };
+      const optional = {
+        eip155: {
+          chains: ["eip155:1", "eip155:2"],
+          events: ["chainChanged", "accountsChanged"],
+          methods: [
+            "personal_sign",
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_signTypedData",
+          ],
+        },
+      };
+
+      const chainsEip = ["eip155:1"];
+      const methods = ["personal_sign", "eth_sendTransaction"];
+      const events = ["chainChanged"];
+      const accountsEip = ["eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
+
+      buildApprovedNamespaces({
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+        supportedNamespaces: {
+          eip155: {
+            chains: chainsEip,
+            methods,
+            events,
+            accounts: accountsEip,
+          },
+        },
+      });
+    },
+  );
+  it.fails(
+    "should throw while building namespaces (config 6 - partial accounts for required chain)",
+    () => {
+      const required = {
+        "eip155:1": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+        "eip155:2": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+      };
+      const optional = {
+        eip155: {
+          chains: ["eip155:1", "eip155:2"],
+          events: ["chainChanged", "accountsChanged"],
+          methods: [
+            "personal_sign",
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_signTypedData",
+          ],
+        },
+      };
+
+      const chainsEip = ["eip155:1", "eip155:2"];
+      const methods = ["personal_sign", "eth_sendTransaction"];
+      const events = ["chainChanged"];
+      const accountsEip = ["eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
+
+      buildApprovedNamespaces({
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+        supportedNamespaces: {
+          eip155: {
+            chains: chainsEip,
+            methods,
+            events,
+            accounts: accountsEip,
+          },
+        },
+      });
+    },
+  );
+  it.fails(
+    "should throw while building namespaces (config 7 - misconfigured supported accounts - caip10)",
+    () => {
+      const required = {
+        "eip155:1": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+        "eip155:2": {
+          events: ["chainChanged"],
+          methods: ["personal_sign", "eth_sendTransaction"],
+        },
+      };
+      const optional = {
+        eip155: {
+          chains: ["eip155:1", "eip155:2"],
+          events: ["chainChanged", "accountsChanged"],
+          methods: [
+            "personal_sign",
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_signTypedData",
+          ],
+        },
+      };
+
+      const chainsEip = ["eip155:1", "eip155:2"];
+      const methods = ["personal_sign", "eth_sendTransaction"];
+      const events = ["chainChanged"];
+      const accountsEip = [
+        "0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+        "0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      ];
+
+      buildApprovedNamespaces({
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+        supportedNamespaces: {
+          eip155: {
+            chains: chainsEip,
+            methods,
+            events,
+            accounts: accountsEip,
+          },
+        },
+      });
+    },
+  );
 });
