@@ -59,7 +59,12 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
         });
         if (!sessionB) {
           sessionB = await acknowledged();
+          expect(sessionB.acknowledged).to.be.false;
         }
+        // with the optimistic resolve of acknowledged(), we need to wait for the session to be updated
+        await throttle(1_000);
+        sessionB = clients.B.session.get(sessionB.topic);
+        expect(sessionB.acknowledged).to.be.true;
         resolve();
       } catch (e) {
         reject(e);
