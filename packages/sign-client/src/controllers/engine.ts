@@ -211,13 +211,7 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
-    const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
-    const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once(engineEvent("session_approve", requestId), ({ error }) => {
-      if (error) reject(error);
-      else resolve(this.client.session.get(sessionTopic));
-    });
-
+    await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
@@ -232,7 +226,10 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
-    return { topic: sessionTopic, acknowledged };
+    return {
+      topic: sessionTopic,
+      acknowledged: () => new Promise((resolve) => resolve(this.client.session.get(sessionTopic))),
+    };
   };
 
   public reject: IEngine["reject"] = async (params) => {
