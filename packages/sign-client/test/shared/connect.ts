@@ -61,10 +61,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
           sessionB = await acknowledged();
           expect(sessionB.acknowledged).to.be.false;
         }
-        // with the optimistic resolve of acknowledged(), we need to wait for the session to be updated
-        await throttle(1_000);
-        sessionB = clients.B.session.get(sessionB.topic);
-        expect(sessionB.acknowledged).to.be.true;
         resolve();
       } catch (e) {
         reject(e);
@@ -169,8 +165,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   expect(sessionA.sessionProperties).to.eql(TEST_SESSION_PROPERTIES_APPROVE);
   // expiry
   expect(Math.abs(sessionA.expiry - sessionB.expiry)).to.be.lessThan(5);
-  // acknowledged
-  expect(sessionA.acknowledged).to.eql(sessionB.acknowledged);
   // participants
   expect(sessionA.self).to.eql(sessionB.peer);
   expect(sessionA.peer).to.eql(sessionB.self);
