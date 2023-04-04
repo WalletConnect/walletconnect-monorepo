@@ -51,6 +51,17 @@ describe("Sign Client Integration", () => {
       });
       await deleteClients(clients);
     });
+    it("should receive session acknowledge", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic, acknowledged },
+      } = await testConnectMethod(clients);
+      await throttle(5_000);
+      const session = clients.B.session.get(topic);
+      expect(session.acknowledged).to.be.true;
+      expect(acknowledged).to.be.true;
+      await deleteClients(clients);
+    });
   });
 
   describe("disconnect", () => {
