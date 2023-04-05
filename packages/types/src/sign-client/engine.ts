@@ -168,6 +168,8 @@ export interface EnginePrivate {
 
   onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
 
+  onRelayEventUnknownPayload(event: EngineTypes.EventCallback<any>): Promise<void>;
+
   deleteSession(topic: string, expirerHasDeleted?: boolean): Promise<void>;
 
   deleteProposal(id: number, expirerHasDeleted?: boolean): Promise<void>;
