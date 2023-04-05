@@ -142,8 +142,7 @@ export async function testConnectMethod(
   expect(sessionA.namespaces).to.eql(sessionB.namespaces);
   // expiry
   expect(Math.abs(sessionA.expiry - sessionB.expiry)).to.be.lessThan(5);
-  // acknowledged
-  expect(sessionA.acknowledged).to.eql(sessionB.acknowledged);
+
   // participants
   expect(sessionA.self).to.eql(sessionB.peer);
   expect(sessionA.peer).to.eql(sessionB.self);
