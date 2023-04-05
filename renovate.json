@@ -8,6 +8,7 @@
     ":semanticCommits",
     ":semanticCommitScope(deps)"
   ],
+  "updateInternalDeps": true,
   "packageRules": [
     {
       "matchPackagePatterns": ["*"],
@@ -15,7 +16,7 @@
     },
     {
       "matchPackagePatterns": ["@walletconnect/*"],
-      "schedule": ["after 10pm every weekday", "before 5am every weekday"]
+      "schedule": ["at any time"]
     }
   ]
 }
