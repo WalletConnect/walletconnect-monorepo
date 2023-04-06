@@ -329,6 +329,24 @@ describe("Validators", () => {
   });
 });
 describe("buildApprovedNamespaces (validators)", () => {
+  const TEST_PROPOSAL = {
+    id: 1,
+    pairingTopic: "0x123",
+    expiry: 1680622315,
+    requiredNamespaces: {},
+    optionalNamespaces: {},
+    relays: [{ protocol: "irn" }],
+    proposer: {
+      publicKey: "c743d1c3d8aeac99267359ece5c33838411d812e576bc9728f66fca1899dd25f",
+      metadata: {
+        name: "App A (Proposer)",
+        description: "Description of Proposer App run by client A",
+        url: "https://walletconnect.com",
+        icons: [],
+      },
+    },
+    sessionProperties: { expiry: "2022-12-24T17:07:31+00:00", "caip154-mandatory": "true" },
+  };
   it("should build namespaces (config 1 - optional method)", () => {
     const required = {
       eip155: {
@@ -351,8 +369,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     const accounts = ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -398,8 +419,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -444,8 +468,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -495,8 +522,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -551,8 +581,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -605,8 +638,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -660,8 +696,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -715,8 +754,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -770,8 +812,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -826,8 +871,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains,
@@ -890,8 +938,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     const methodsCosmos = ["cosmos_method"];
 
     const approvedNamespaces = buildApprovedNamespaces({
-      requiredNamespaces: required,
-      optionalNamespaces: optional,
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
       supportedNamespaces: {
         eip155: {
           chains: chainsEip,
@@ -960,8 +1011,11 @@ describe("buildApprovedNamespaces (validators)", () => {
       const accountsEip = ["eip155:5:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
 
       buildApprovedNamespaces({
-        requiredNamespaces: required,
-        optionalNamespaces: optional,
+        proposal: {
+          ...TEST_PROPOSAL,
+          requiredNamespaces: required,
+          optionalNamespaces: optional,
+        },
         supportedNamespaces: {
           eip155: {
             chains: chainsEip,
@@ -1009,8 +1063,11 @@ describe("buildApprovedNamespaces (validators)", () => {
       ];
 
       buildApprovedNamespaces({
-        requiredNamespaces: required,
-        optionalNamespaces: optional,
+        proposal: {
+          ...TEST_PROPOSAL,
+          requiredNamespaces: required,
+          optionalNamespaces: optional,
+        },
         supportedNamespaces: {
           eip155: {
             chains: chainsEip,
@@ -1050,8 +1107,11 @@ describe("buildApprovedNamespaces (validators)", () => {
       const accountsEip = ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
 
       buildApprovedNamespaces({
-        requiredNamespaces: required,
-        optionalNamespaces: optional,
+        proposal: {
+          ...TEST_PROPOSAL,
+          requiredNamespaces: required,
+          optionalNamespaces: optional,
+        },
         supportedNamespaces: {
           eip155: {
             chains: chainsEip,
@@ -1091,8 +1151,11 @@ describe("buildApprovedNamespaces (validators)", () => {
       const accountsEip = ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
 
       buildApprovedNamespaces({
-        requiredNamespaces: required,
-        optionalNamespaces: optional,
+        proposal: {
+          ...TEST_PROPOSAL,
+          requiredNamespaces: required,
+          optionalNamespaces: optional,
+        },
         supportedNamespaces: {
           eip155: {
             chains: chainsEip,
@@ -1132,8 +1195,11 @@ describe("buildApprovedNamespaces (validators)", () => {
       const accountsEip = ["eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
 
       buildApprovedNamespaces({
-        requiredNamespaces: required,
-        optionalNamespaces: optional,
+        proposal: {
+          ...TEST_PROPOSAL,
+          requiredNamespaces: required,
+          optionalNamespaces: optional,
+        },
         supportedNamespaces: {
           eip155: {
             chains: chainsEip,
@@ -1177,8 +1243,11 @@ describe("buildApprovedNamespaces (validators)", () => {
       const accountsEip = ["eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
 
       buildApprovedNamespaces({
-        requiredNamespaces: required,
-        optionalNamespaces: optional,
+        proposal: {
+          ...TEST_PROPOSAL,
+          requiredNamespaces: required,
+          optionalNamespaces: optional,
+        },
         supportedNamespaces: {
           eip155: {
             chains: chainsEip,
@@ -1225,8 +1294,11 @@ describe("buildApprovedNamespaces (validators)", () => {
       ];
 
       buildApprovedNamespaces({
-        requiredNamespaces: required,
-        optionalNamespaces: optional,
+        proposal: {
+          ...TEST_PROPOSAL,
+          requiredNamespaces: required,
+          optionalNamespaces: optional,
+        },
         supportedNamespaces: {
           eip155: {
             chains: chainsEip,
