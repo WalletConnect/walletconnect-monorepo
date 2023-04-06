@@ -1,5 +1,10 @@
 import { SessionTypes } from "@walletconnect/types";
-import { isValidObject } from "@walletconnect/utils";
+import {
+  isCaipNamespace,
+  isValidObject,
+  mergeArrays,
+  parseNamespaceKey,
+} from "@walletconnect/utils";
 import { RPC_URL } from "../constants";
 import { Namespace, NamespaceConfig } from "../types";
 import { merge } from "lodash";
@@ -91,16 +96,4 @@ export function normalizeNamespaces(namespaces: NamespaceConfig): NamespaceConfi
     };
   }
   return normalizedNamespaces;
-}
-
-export function isCaipNamespace(namespace: string): boolean {
-  return namespace.includes(":");
-}
-
-export function parseNamespaceKey(namespace: string) {
-  return isCaipNamespace(namespace) ? namespace.split(":")[0] : namespace;
-}
-
-export function mergeArrays<T>(a: T[] = [], b: T[] = []): T[] {
-  return [...new Set([...a, ...b])];
 }
