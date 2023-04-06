@@ -34,7 +34,7 @@ describe("Relayer", () => {
 
   describe("init", () => {
     let initSpy: Sinon.SinonSpy;
-    beforeEach(async () => {
+    beforeEach(() => {
       initSpy = Sinon.spy();
       relayer = new Relayer({
         core,
@@ -71,8 +71,8 @@ describe("Relayer", () => {
     });
     it("registers event listeners", async () => {
       const emitSpy = Sinon.spy();
-      relayer.events.emit = emitSpy;
       await relayer.init();
+      relayer.events.emit = emitSpy;
       relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
       expect(emitSpy.calledOnceWith(RELAYER_EVENTS.connect)).to.be.true;
     });
@@ -127,7 +127,6 @@ describe("Relayer", () => {
 
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
       const spy = Sinon.spy(() => "mock-id");
-      // @ts-expect-error
       relayer.subscriber.subscribe = spy;
       let id;
       await Promise.all([
@@ -187,7 +186,10 @@ describe("Relayer", () => {
       id: 123,
       jsonrpc: "2.0",
       method: "mock" + RELAYER_SUBSCRIBER_SUFFIX,
-      params: { id: "abc123", data: { topic: "ababab", message: "deadbeef" } },
+      params: {
+        id: "abc123",
+        data: { topic: "ababab", message: "deadbeef", publishedAt: 1677151760537 },
+      },
     };
 
     it("does nothing if payload is not a valid JsonRpcRequest", () => {
@@ -213,6 +215,7 @@ describe("Relayer", () => {
         spy.calledOnceWith(validPayload.params.id, {
           topic: validPayload.params.data.topic,
           message: validPayload.params.data.message,
+          publishedAt: validPayload.params.data.publishedAt,
         }),
       ).to.be.true;
     });

@@ -13,6 +13,10 @@ import {
   TEST_REQUEST_PARAMS,
   TEST_NAMESPACES,
   TEST_REQUIRED_NAMESPACES,
+  TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE,
+  TEST_AVALANCHE_CHAIN,
+  TEST_REQUIRED_NAMESPACES_V2,
+  TEST_NAMESPACES_V2,
 } from "../shared";
 
 describe("Sign Client Integration", () => {
@@ -25,7 +29,13 @@ describe("Sign Client Integration", () => {
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
       const clients = await initTwoClients();
-      await testConnectMethod(clients);
+      const { pairingA, sessionA } = await testConnectMethod(clients);
+      expect(pairingA).to.be.exist;
+      expect(sessionA).to.be.exist;
+      expect(pairingA.topic).to.eq(sessionA.pairingTopic);
+      const sessionB = clients.B.session.get(sessionA.topic);
+      expect(sessionB).to.be.exist;
+      expect(sessionB.pairingTopic).to.eq(sessionA.pairingTopic);
       await deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {
@@ -39,6 +49,17 @@ describe("Sign Client Integration", () => {
       await testConnectMethod(clients, {
         pairingTopic,
       });
+      await deleteClients(clients);
+    });
+    it("should receive session acknowledge", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic, acknowledged },
+      } = await testConnectMethod(clients);
+      await throttle(5_000);
+      const session = clients.B.session.get(topic);
+      expect(session.acknowledged).to.be.true;
+      expect(acknowledged).to.be.true;
       await deleteClients(clients);
     });
   });
@@ -252,6 +273,60 @@ describe("Sign Client Integration", () => {
         }),
         new Promise<void>((resolve) => {
           clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
+          resolve();
+        }),
+      ]);
+      await deleteClients(clients);
+    });
+    it("should send request on optional namespace", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          clients.B.once("session_request", (payload) => {
+            const { params } = payload;
+            expect(params).toMatchObject(TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE);
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          clients.A.request({ ...TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE, topic });
+          resolve();
+        }),
+      ]);
+      await deleteClients(clients);
+    });
+    it("should send request on inline indexed namespace", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients, {
+        requiredNamespaces: TEST_REQUIRED_NAMESPACES_V2,
+        namespaces: TEST_NAMESPACES_V2,
+      });
+      const testRequestProps = {
+        ...TEST_REQUEST_PARAMS,
+        chainId: TEST_AVALANCHE_CHAIN,
+      };
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          clients.B.once("session_request", (payload) => {
+            const { params } = payload;
+            const session = clients.B.session.get(payload.topic);
+            expect(params).toMatchObject(testRequestProps);
+            expect(
+              session.namespaces.eip155.accounts.filter((acc) =>
+                acc.includes(TEST_AVALANCHE_CHAIN),
+              ),
+            ).to.exist;
+            expect(session.requiredNamespaces[TEST_AVALANCHE_CHAIN]).to.exist;
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          clients.A.request({ ...testRequestProps, topic });
           resolve();
         }),
       ]);

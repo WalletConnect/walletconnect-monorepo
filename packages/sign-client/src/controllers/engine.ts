@@ -1,65 +1,68 @@
-import EventEmmiter from "events";
-import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
+import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
+
 import {
+  formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  formatJsonRpcError,
+  isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
   isJsonRpcResult,
-  isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
-  IEngine,
-  EngineTypes,
-  IEngineEvents,
-  RelayerTypes,
   EnginePrivate,
-  SessionTypes,
-  JsonRpcTypes,
+  EngineTypes,
   ExpirerTypes,
+  IEngine,
+  IEngineEvents,
+  JsonRpcTypes,
   PendingRequestTypes,
   Verify,
   CoreTypes,
+  ProposalTypes,
+  RelayerTypes,
+  SessionTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
-  parseExpirerTarget,
   createDelayedPromise,
-  getInternalError,
-  getSdkError,
   engineEvent,
-  isValidNamespaces,
-  isValidRelays,
-  isValidRelay,
-  isValidId,
-  isValidParams,
-  isValidString,
-  isValidErrorReason,
-  isValidNamespacesChainId,
-  isValidNamespacesRequest,
-  isValidNamespacesEvent,
-  isValidRequest,
-  isValidEvent,
-  isValidResponse,
-  isValidRequiredNamespaces,
-  isSessionCompatible,
-  isExpired,
-  isUndefined,
-  isConformingNamespaces,
-  isValidController,
-  TYPE_1,
+  getInternalError,
   getRequiredNamespacesFromNamespaces,
+  getSdkError,
+  isConformingNamespaces,
+  isExpired,
+  isSessionCompatible,
+  isUndefined,
+  isValidController,
+  isValidErrorReason,
+  isValidEvent,
+  isValidId,
+  isValidNamespaces,
+  isValidNamespacesChainId,
+  isValidNamespacesEvent,
+  isValidNamespacesRequest,
   isValidObject,
+  isValidParams,
+  isValidRelay,
+  isValidRelays,
+  isValidRequest,
   isValidRequestExpiry,
   hashMessage,
   isBrowser,
+  isValidRequiredNamespaces,
+  isValidResponse,
+  isValidString,
+  parseExpirerTarget,
+  TYPE_1,
 } from "@walletconnect/utils";
+import EventEmmiter from "events";
 import {
-  SESSION_EXPIRY,
   ENGINE_CONTEXT,
   ENGINE_RPC_OPTS,
+  PROPOSAL_EXPIRY_MESSAGE,
+  SESSION_EXPIRY,
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
   METHODS_TO_VERIFY,
 } from "../constants";
@@ -89,8 +92,14 @@ export class Engine extends IEngine {
 
   public connect: IEngine["connect"] = async (params) => {
     this.isInitialized();
-    await this.isValidConnect(params);
-    const { pairingTopic, requiredNamespaces, relays } = params;
+    const connectParams = {
+      ...params,
+      requiredNamespaces: params.requiredNamespaces || {},
+      optionalNamespaces: params.optionalNamespaces || {},
+    };
+    await this.isValidConnect(connectParams);
+    const { pairingTopic, requiredNamespaces, optionalNamespaces, sessionProperties, relays } =
+      connectParams;
     let topic = pairingTopic;
     let uri: string | undefined;
     let active = false;
@@ -110,21 +119,30 @@ export class Engine extends IEngine {
 
     const proposal = {
       requiredNamespaces,
+      optionalNamespaces,
       relays: relays ?? [{ protocol: RELAYER_DEFAULT_PROTOCOL }],
       proposer: {
         publicKey,
         metadata: this.client.metadata,
       },
+      ...(sessionProperties && { sessionProperties }),
     };
-
-    const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
+    const {
+      reject,
+      resolve,
+      done: approval,
+    } = createDelayedPromise<SessionTypes.Struct>(FIVE_MINUTES, PROPOSAL_EXPIRY_MESSAGE);
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
         if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
-          const completeSession = { ...session, requiredNamespaces: session.requiredNamespaces };
+          const completeSession = {
+            ...session,
+            requiredNamespaces: session.requiredNamespaces,
+            optionalNamespaces: session.optionalNamespaces,
+          };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
           if (topic) {
@@ -158,15 +176,12 @@ export class Engine extends IEngine {
   public approve: IEngine["approve"] = async (params) => {
     this.isInitialized();
     await this.isValidApprove(params);
-    const { id, relayProtocol, namespaces } = params;
+    const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
-    let { pairingTopic, proposer, requiredNamespaces } = proposal;
-
+    let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
+    pairingTopic = pairingTopic || "";
     if (!isValidObject(requiredNamespaces)) {
-      const required = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
-      requiredNamespaces = required;
-      // update the proposal with the new required namespaces
-      this.client.proposal.set(id, { ...proposal, requiredNamespaces });
+      requiredNamespaces = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
     }
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
@@ -175,42 +190,12 @@ export class Engine extends IEngine {
       selfPublicKey,
       peerPublicKey,
     );
-    const sessionSettle = {
-      relay: { protocol: relayProtocol ?? "irn" },
-      namespaces,
-      requiredNamespaces,
-      controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
-      expiry: calcExpiry(SESSION_EXPIRY),
-    };
 
-    await this.client.core.relayer.subscribe(sessionTopic);
-    const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
-    const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once(engineEvent("session_approve", requestId), ({ error }) => {
-      if (error) reject(error);
-      else resolve(this.client.session.get(sessionTopic));
-    });
-
-    const session = {
-      ...sessionSettle,
-      topic: sessionTopic,
-      acknowledged: false,
-      self: sessionSettle.controller,
-      peer: {
-        publicKey: proposer.publicKey,
-        metadata: proposer.metadata,
-      },
-      controller: selfPublicKey,
-    };
-    await this.client.session.set(sessionTopic, session);
-    await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
-    if (pairingTopic) {
+    if (pairingTopic && id) {
       await this.client.core.pairing.updateMetadata({
         topic: pairingTopic,
-        metadata: session.peer.metadata,
+        metadata: proposer.metadata,
       });
-    }
-    if (pairingTopic && id) {
       await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
         relay: {
           protocol: relayProtocol ?? "irn",
@@ -221,7 +206,36 @@ export class Engine extends IEngine {
       await this.client.core.pairing.activate({ topic: pairingTopic });
     }
 
-    return { topic: sessionTopic, acknowledged };
+    const sessionSettle = {
+      relay: { protocol: relayProtocol ?? "irn" },
+      namespaces,
+      requiredNamespaces,
+      optionalNamespaces,
+      pairingTopic,
+      controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
+      expiry: calcExpiry(SESSION_EXPIRY),
+      ...(sessionProperties && { sessionProperties }),
+    };
+    await this.client.core.relayer.subscribe(sessionTopic);
+    await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
+    const session = {
+      ...sessionSettle,
+      topic: sessionTopic,
+      pairingTopic,
+      acknowledged: false,
+      self: sessionSettle.controller,
+      peer: {
+        publicKey: proposer.publicKey,
+        metadata: proposer.metadata,
+      },
+      controller: selfPublicKey,
+    };
+    await this.client.session.set(sessionTopic, session);
+    await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
+    return {
+      topic: sessionTopic,
+      acknowledged: () => new Promise((resolve) => resolve(this.client.session.get(sessionTopic))),
+    };
   };
 
   public reject: IEngine["reject"] = async (params) => {
@@ -275,6 +289,7 @@ export class Engine extends IEngine {
       if (error) reject(error);
       else resolve(result);
     });
+    this.client.events.emit("session_request_sent", { topic, request, chainId, id });
     return await done();
   };
 
@@ -597,14 +612,25 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const { relay, controller, expiry, namespaces, requiredNamespaces } = payload.params;
+      const {
+        relay,
+        controller,
+        expiry,
+        namespaces,
+        requiredNamespaces,
+        optionalNamespaces,
+        sessionProperties,
+        pairingTopic,
+      } = payload.params;
       const session = {
         topic,
         relay,
         expiry,
         namespaces,
         acknowledged: true,
+        pairingTopic,
         requiredNamespaces,
+        optionalNamespaces,
         controller: controller.publicKey,
         self: {
           publicKey: "",
@@ -614,6 +640,7 @@ export class Engine extends IEngine {
           publicKey: controller.publicKey,
           metadata: controller.metadata,
         },
+        ...(sessionProperties && { sessionProperties }),
       };
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
       this.events.emit(engineEvent("session_connect"), { session });
@@ -887,20 +914,37 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
-    const { pairingTopic, requiredNamespaces, relays } = params;
+    const { pairingTopic, requiredNamespaces, optionalNamespaces, sessionProperties, relays } =
+      params;
     if (!isUndefined(pairingTopic)) await this.isValidPairingTopic(pairingTopic);
 
-    // validate required namespaces only if they are defined
-    if (!isUndefined(requiredNamespaces) && isValidObject(requiredNamespaces) === 0) {
-      return;
-    }
-
-    const validRequiredNamespacesError = isValidRequiredNamespaces(requiredNamespaces, "connect()");
-    if (validRequiredNamespacesError) throw new Error(validRequiredNamespacesError.message);
     if (!isValidRelays(relays, true)) {
       const { message } = getInternalError("MISSING_OR_INVALID", `connect() relays: ${relays}`);
       throw new Error(message);
     }
+
+    // validate required namespaces only if they are defined
+    if (!isUndefined(requiredNamespaces) && isValidObject(requiredNamespaces) !== 0) {
+      this.validateNamespaces(requiredNamespaces, "requiredNamespaces");
+    }
+
+    // validate optional namespaces only if they are defined
+    if (!isUndefined(optionalNamespaces) && isValidObject(optionalNamespaces) !== 0) {
+      this.validateNamespaces(optionalNamespaces, "optionalNamespaces");
+    }
+
+    // validate session properties only if they are defined
+    if (!isUndefined(sessionProperties)) {
+      this.validateSessionProps(sessionProperties, "sessionProperties");
+    }
+  };
+
+  private validateNamespaces = (
+    namespaces: ProposalTypes.RequiredNamespaces | ProposalTypes.OptionalNamespaces,
+    type: string,
+  ) => {
+    const validRequiredNamespacesError = isValidRequiredNamespaces(namespaces, "connect()", type);
+    if (validRequiredNamespacesError) throw new Error(validRequiredNamespacesError.message);
   };
 
   private isValidApprove: EnginePrivate["isValidApprove"] = async (params) => {
@@ -908,7 +952,7 @@ export class Engine extends IEngine {
       throw new Error(
         getInternalError("MISSING_OR_INVALID", `approve() params: ${params}`).message,
       );
-    const { id, namespaces, relayProtocol } = params;
+    const { id, namespaces, relayProtocol, sessionProperties } = params;
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);
     const validNamespacesError = isValidNamespaces(namespaces, "approve()");
@@ -916,7 +960,7 @@ export class Engine extends IEngine {
     const conformingNamespacesError = isConformingNamespaces(
       proposal.requiredNamespaces,
       namespaces,
-      "update()",
+      "approve()",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     if (!isValidString(relayProtocol, true)) {
@@ -925,6 +969,10 @@ export class Engine extends IEngine {
         `approve() relayProtocol: ${relayProtocol}`,
       );
       throw new Error(message);
+    }
+
+    if (!isUndefined(sessionProperties)) {
+      this.validateSessionProps(sessionProperties, "sessionProperties");
     }
   };
 
@@ -1114,5 +1162,17 @@ export class Engine extends IEngine {
     context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
     this.client.logger.info(`Verify context: ${JSON.stringify(context)}`);
     return context;
+  };
+
+  private validateSessionProps = (properties: ProposalTypes.SessionProperties, type: string) => {
+    Object.values(properties).forEach((property) => {
+      if (!isValidString(property, false)) {
+        const { message } = getInternalError(
+          "MISSING_OR_INVALID",
+          `${type} must be in Record<string, string> format. Received: ${JSON.stringify(property)}`,
+        );
+        throw new Error(message);
+      }
+    });
   };
 }

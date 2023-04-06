@@ -28,6 +28,10 @@ export class Engine extends IWeb3WalletEngine {
     this.initializeEventListeners();
   };
 
+  public pair: IWeb3WalletEngine["pair"] = async (params) => {
+    await this.client.core.pairing.pair(params);
+  };
+
   // Sign //
   public approveSession: IWeb3WalletEngine["approveSession"] = async (sessionProposal) => {
     const { topic, acknowledged } = await this.signClient.approve({

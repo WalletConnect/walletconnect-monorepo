@@ -16,6 +16,8 @@ export abstract class IWeb3WalletEngine {
   // ---------- Public Methods ------------------------------------------------- //
   public abstract init(): Promise<void>;
 
+  public abstract pair(params: { uri: string; activatePairing?: boolean }): Promise<void>;
+
   // ---------- Sign ------------------------------------------------- //
   // approve a session proposal (SIGN)
   public abstract approveSession(params: {

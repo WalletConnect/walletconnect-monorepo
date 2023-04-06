@@ -17,6 +17,7 @@ import {
   CORE_PROTOCOL,
   CORE_STORAGE_OPTIONS,
   CORE_VERSION,
+  RELAYER_DEFAULT_RELAY_URL,
 } from "./constants";
 
 export class Core extends ICore {
@@ -50,6 +51,7 @@ export class Core extends ICore {
     super(opts);
 
     this.projectId = opts?.projectId;
+    this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
@@ -65,7 +67,7 @@ export class Core extends ICore {
     this.relayer = new Relayer({
       core: this,
       logger: this.logger,
-      relayUrl: opts?.relayUrl,
+      relayUrl: this.relayUrl,
       projectId: this.projectId,
     });
     this.pairing = new Pairing(this, this.logger);

@@ -4,7 +4,7 @@ import { IStore } from "../core/store";
 
 export declare namespace ProposalTypes {
   interface BaseRequiredNamespace {
-    chains: string[];
+    chains?: string[];
     methods: string[];
     events: string[];
   }
@@ -12,6 +12,8 @@ export declare namespace ProposalTypes {
   type RequiredNamespace = BaseRequiredNamespace;
 
   type RequiredNamespaces = Record<string, RequiredNamespace>;
+  type OptionalNamespaces = Record<string, RequiredNamespace>;
+  type SessionProperties = Record<string, string>;
 
   export interface Struct {
     id: number;
@@ -22,6 +24,8 @@ export declare namespace ProposalTypes {
       metadata: SignClientTypes.Metadata;
     };
     requiredNamespaces: RequiredNamespaces;
+    optionalNamespaces: OptionalNamespaces;
+    sessionProperties?: SessionProperties;
     pairingTopic?: string;
   }
 }

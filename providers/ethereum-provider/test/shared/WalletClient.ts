@@ -169,13 +169,27 @@ export class WalletClient {
       "session_proposal",
       async (proposal: SignClientTypes.EventArguments["session_proposal"]) => {
         if (typeof this.client === "undefined") throw new Error("Sign Client not inititialized");
-        const { id, requiredNamespaces, relays } = proposal.params;
+        const { id, requiredNamespaces, optionalNamespaces, relays } = proposal.params;
         const namespaces = {};
         Object.entries(requiredNamespaces).forEach(([key, value]) => {
           namespaces[key] = {
             methods: value.methods,
             events: value.events,
-            accounts: value.chains.map((chain) => `${chain}:${this.accounts[0]}`),
+            accounts: value.chains?.map((chain) => `${chain}:${this.accounts[0]}`),
+          };
+        });
+
+        Object.entries(optionalNamespaces).forEach(([key, value]) => {
+          namespaces[key] = {
+            ...namespaces[key],
+            methods: [...new Set(namespaces[key].methods.concat(value.methods))],
+            accounts: [
+              ...new Set(
+                namespaces[key].accounts.concat(
+                  value.chains?.map((chain) => `${chain}:${this.accounts[0]}`),
+                ),
+              ),
+            ],
           };
         });
         const { acknowledged } = await this.client.approve({

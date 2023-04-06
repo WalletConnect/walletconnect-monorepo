@@ -18,7 +18,7 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   : undefined;
 
 export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
-  logger: "debug",
+  logger: "error",
   relayUrl: TEST_RELAY_URL,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -27,7 +27,7 @@ export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_US,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -36,7 +36,7 @@ export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_EU,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -45,7 +45,7 @@ export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_AP: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_AP,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -89,23 +89,29 @@ export const TEST_SIGN_CLIENT_OPTIONS_B = {
 export const TEST_ETHEREUM_CHAIN = "eip155:1";
 export const TEST_ARBITRUM_CHAIN = "eip155:42161";
 export const TEST_AVALANCHE_CHAIN = "eip155:43114";
+export const TEST_POLKADOT_CHAIN = "polkadot:91b171bb158e2d3848fa23a9f1c25182";
 
-export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN, TEST_ARBITRUM_CHAIN, TEST_AVALANCHE_CHAIN];
+export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN, TEST_ARBITRUM_CHAIN];
 export const TEST_METHODS = [
   "eth_sendTransaction",
   "eth_signTransaction",
   "personal_sign",
   "eth_signTypedData",
 ];
+export const TEST_POLKADOT_METHODS = ["polkadot_signTransaction", "polkadot_signMessage"];
 export const TEST_EVENTS = ["chainChanged", "accountsChanged"];
 
 export const TEST_ETHEREUM_ADDRESS = "0x3c582121909DE92Dc89A36898633C1aE4790382b";
-
+export const TEST_POLKADOT_ADDRESS = "8cGfbK9Q4zbsNzhZsZUtpsQgX5LG2UCPEDuXYV33whktGt7";
 export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
 export const TEST_ARBITRUM_ACCOUNT = `${TEST_ARBITRUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
 export const TEST_AVALANCHE_ACCOUNT = `${TEST_AVALANCHE_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+export const TEST_POLKADOT_ACCOUNT = `${TEST_POLKADOT_CHAIN}:${TEST_POLKADOT_ADDRESS}`;
 
-export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT, TEST_ARBITRUM_ACCOUNT, TEST_AVALANCHE_ACCOUNT];
+export const TEST_ACCOUNTS = [TEST_ETHEREUM_ACCOUNT, TEST_ARBITRUM_ACCOUNT];
+
+export const TEST_POLKADOT_CHAINS = ["polkadot:91b171bb158e2d3848fa23a9f1c25182"];
+export const TEST_POLKADOT_ACCOUNTS = [TEST_POLKADOT_ACCOUNT];
 
 export const TEST_REQUIRED_NAMESPACES = {
   eip155: {
@@ -115,12 +121,56 @@ export const TEST_REQUIRED_NAMESPACES = {
   },
 };
 
+export const TEST_REQUIRED_NAMESPACES_V2 = {
+  eip155: {
+    methods: TEST_METHODS,
+    chains: TEST_CHAINS,
+    events: TEST_EVENTS,
+  },
+  [TEST_AVALANCHE_CHAIN]: {
+    methods: TEST_METHODS,
+    events: TEST_EVENTS,
+  },
+};
+
+export const TEST_OPTIONAL_NAMESPACES = {
+  polkadot: {
+    methods: TEST_POLKADOT_METHODS,
+    chains: TEST_POLKADOT_CHAINS,
+    events: TEST_EVENTS,
+  },
+};
+
 export const TEST_NAMESPACES = {
   eip155: {
+    chains: TEST_CHAINS,
     methods: TEST_METHODS,
     accounts: TEST_ACCOUNTS,
     events: TEST_EVENTS,
   },
+  polkadot: {
+    chains: TEST_POLKADOT_CHAINS,
+    methods: TEST_POLKADOT_METHODS,
+    accounts: TEST_POLKADOT_ACCOUNTS,
+    events: TEST_EVENTS,
+  },
+};
+
+export const TEST_NAMESPACES_V2 = {
+  eip155: {
+    methods: TEST_METHODS,
+    accounts: [TEST_ETHEREUM_ACCOUNT, TEST_AVALANCHE_ACCOUNT, TEST_ARBITRUM_ACCOUNT],
+    events: TEST_EVENTS,
+  },
+};
+
+export const TEST_SESSION_PROPERTIES = {
+  expiry: "2022-12-24T17:07:31+00:00",
+  "caip154-mandatory": "true",
+};
+
+export const TEST_SESSION_PROPERTIES_APPROVE = {
+  expiry: "2022-12-24T17:07:31+00:00",
 };
 
 export const TEST_NAMESPACES_INVALID_METHODS = {
@@ -165,6 +215,11 @@ export const TEST_REQUEST_PARAMS = {
   chainId: TEST_CHAINS[0],
 };
 
+export const TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE = {
+  request: { method: TEST_POLKADOT_METHODS[0], params: [] },
+  chainId: TEST_POLKADOT_CHAIN,
+};
+
 export const TEST_RESPOND_PARAMS = {
   response: {
     id: 1,
@@ -197,3 +252,6 @@ export const TEST_SIGN_REQUEST_PARAMS = {
     },
   ],
 };
+
+export const TESTS_CONNECT_RETRIES = 5;
+export const TESTS_CONNECT_TIMEOUT = 20_000;

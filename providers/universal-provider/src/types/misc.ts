@@ -36,6 +36,7 @@ export interface RpcProviderMap {
 export interface Namespace extends ProposalTypes.BaseRequiredNamespace {
   chains: string[];
   rpcMap?: EthereumRpcMap;
+  defaultChain?: string;
 }
 
 export interface NamespaceConfig {
@@ -48,6 +49,8 @@ export interface SessionNamespace extends Namespace {
 
 export interface ConnectParams {
   namespaces: NamespaceConfig;
+  optionalNamespaces?: NamespaceConfig;
+  sessionProperties?: ProposalTypes.Struct["sessionProperties"];
   pairingTopic?: string;
   skipPairing?: boolean;
 }
@@ -62,6 +65,7 @@ export interface RequestParams {
   topic: string;
   request: RequestArguments;
   chainId: string;
+  id?: number;
 }
 
 export interface RequestArguments {
