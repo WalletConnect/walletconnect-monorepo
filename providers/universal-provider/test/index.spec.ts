@@ -26,6 +26,10 @@ import {
 const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
 };
+
+const methods = ["personal_sign"];
+const events = ["chainChanged"];
+
 describe("UniversalProvider", function () {
   let testNetwork: TestNetwork;
   let provider: UniversalProvider;
@@ -335,7 +339,7 @@ describe("UniversalProvider", function () {
         ]);
 
         const chainId = await dapp.request({ method: "eth_chainId" });
-
+        const addresses = (await dapp.request({ method: "eth_accounts" })) as string[];
         // delete
         await deleteProviders({ A: dapp, B: wallet });
 
@@ -357,6 +361,10 @@ describe("UniversalProvider", function () {
 
         const chainIdAfter = await afterDapp.request({ method: "eth_chainId" });
         expect(chainId).to.eq(chainIdAfter);
+        await validateProvider({
+          provider: afterDapp,
+          addresses,
+        });
         // delete
         await deleteProviders({ A: afterDapp, B: afterWallet });
       });
@@ -400,6 +408,9 @@ describe("UniversalProvider", function () {
         expect(accounts).to.toMatchObject(afterAccounts);
         const afterRpcProviders = afterDapp.rpcProviders.eip155.httpProviders;
         expect(rpcProviders).to.toMatchObject(afterRpcProviders);
+        await validateProvider({
+          provider: afterDapp,
+        });
         // delete
         await disconnectSocket(afterDapp.client.core);
       });
@@ -423,6 +434,127 @@ describe("UniversalProvider", function () {
         expect(provider.client.core.relayer.subscriber.subscriptions.size).to.eql(1);
       });
     });
+    describe("caip validation", () => {
+      it("should reload after restart", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          storageOptions: { database: getDbName("dappDB") },
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              [chains[0]]: {
+                methods,
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                chains,
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        await validateProvider({
+          provider: dapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[0],
+        });
+        // delete
+        await deleteProviders({ A: dapp, B: wallet });
+
+        // restart
+        const afterDapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          storageOptions: { database: getDbName("dappDB") },
+          name: "dapp",
+        });
+
+        await validateProvider({
+          provider: afterDapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[0],
+        });
+      });
+      it("should reload after restart with correct chain", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          storageOptions: { database: getDbName("dappDB") },
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1", "eip155:2"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              "eip155:1": {
+                methods,
+                events,
+              },
+              "eip155:2": {
+                methods,
+                events,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                chains,
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        await validateProvider({
+          provider: dapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[0],
+        });
+        // switch chain to eip155:2
+        await dapp.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x2" }] });
+        // delete
+        await deleteProviders({ A: dapp, B: wallet });
+
+        // restart
+        const afterDapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          storageOptions: { database: getDbName("dappDB") },
+          name: "dapp",
+        });
+
+        await validateProvider({
+          provider: afterDapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[1],
+        });
+      });
+    });
   });
   describe("validation", () => {
     it("should not throw exception when setDefaultChain is called prematurely", async () => {
@@ -431,5 +563,211 @@ describe("UniversalProvider", function () {
       // disconnect
       await disconnectSocket(provider.client.core);
     });
+    describe("pairing", () => {
+      it("should pair with configuration 1", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods,
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              [chains[0]]: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        await validateProvider({
+          provider: dapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[0],
+        });
+      });
+      it("should pair with configuration 2", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1", "eip155:2"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods,
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              "eip155:1": {
+                accounts: [`eip155:1:${walletAddress}`],
+                methods,
+                events,
+              },
+              "eip155:2": {
+                accounts: [`eip155:2:${walletAddress}`],
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        await validateProvider({
+          provider: dapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[0],
+        });
+      });
+      it("should pair with configuration 3", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+
+        const chains = ["eip155:1", "eip155:2"];
+
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods,
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: [`eip155:1:${walletAddress}`],
+                chains: ["eip155:1"],
+                methods,
+                events,
+              },
+              "eip155:2": {
+                accounts: [`eip155:2:${walletAddress}`],
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        await validateProvider({
+          provider: dapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[0],
+        });
+      });
+      it("should pair with configuration 4", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1", "eip155:2"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              "eip155:1": {
+                methods,
+                events,
+              },
+              "eip155:2": {
+                methods,
+                events,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                chains,
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        await dapp.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x2" }] });
+        await validateProvider({
+          provider: dapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[1],
+        });
+      });
+    });
   });
 });
+
+type ValidateProviderParams = {
+  provider: UniversalProvider;
+  defaultNamespace?: string;
+  addresses?: string[];
+  chains?: string[];
+  expectedChainId?: string;
+};
+const validateProvider = async (params: ValidateProviderParams) => {
+  const { provider, defaultNamespace = "eip155", addresses, chains, expectedChainId } = params;
+  expect(provider.client.core.relayer.connected).to.be.true;
+  const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+  expect(accounts).to.be.an("array");
+  expect(accounts.length).to.be.greaterThan(0);
+  expect(accounts[0]).to.be.a("string");
+  if (addresses) {
+    expect(accounts).to.toMatchObject(addresses);
+  }
+  const chain = await provider.request({ method: "eth_chainId" });
+  expect(chain).to.not.be.null;
+  if (chains) {
+    expect(chains).toContain(`${defaultNamespace}:${chain}`);
+    expect(Object.keys(provider.rpcProviders[defaultNamespace].httpProviders)).to.toMatchObject(
+      chains.map((c) => c.split(":")[1]),
+    );
+  }
+  if (expectedChainId) {
+    expect(expectedChainId).to.equal(`${defaultNamespace}:${chain}`);
+  }
+};

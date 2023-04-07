@@ -125,10 +125,11 @@ export function formatRelayRpcUrl({
   sdkVersion,
   auth,
   projectId,
+  useOnCloseEvent,
 }: RelayerTypes.RpcUrlParams) {
   const splitUrl = relayUrl.split("?");
   const ua = formatUA(protocol, version, sdkVersion);
-  const params = { auth, ua, projectId };
+  const params = { auth, ua, projectId, useOnCloseEvent: useOnCloseEvent || undefined };
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }
@@ -211,7 +212,10 @@ export function capitalize(str: string) {
 }
 
 // -- promises --------------------------------------------- //
-export function createDelayedPromise<T>(expiry?: number | undefined) {
+export function createDelayedPromise<T>(
+  expiry: number = FIVE_MINUTES,
+  expireErrorMessage?: string,
+) {
   const timeout = toMiliseconds(expiry || FIVE_MINUTES);
   let cacheResolve: undefined | ((value: T | PromiseLike<T>) => void);
   let cacheReject: undefined | ((value?: ErrorResponse) => void);
@@ -219,7 +223,9 @@ export function createDelayedPromise<T>(expiry?: number | undefined) {
 
   const done = () =>
     new Promise<T>((promiseResolve, promiseReject) => {
-      cacheTimeout = setTimeout(promiseReject, timeout);
+      cacheTimeout = setTimeout(() => {
+        promiseReject(new Error(expireErrorMessage));
+      }, timeout);
       cacheResolve = promiseResolve;
       cacheReject = promiseReject;
     });
@@ -243,12 +249,20 @@ export function createDelayedPromise<T>(expiry?: number | undefined) {
   };
 }
 
-export function createExpiringPromise<T>(promise: Promise<T>, expiry: number) {
+export function createExpiringPromise<T>(
+  promise: Promise<T>,
+  expiry: number,
+  expireErrorMessage?: string,
+) {
   return new Promise(async (resolve, reject) => {
-    const timeout = setTimeout(() => reject(), expiry);
-    const res = await promise;
+    const timeout = setTimeout(() => reject(new Error(expireErrorMessage)), expiry);
+    try {
+      const result = await promise;
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    }
     clearTimeout(timeout);
-    resolve(res);
   });
 }
 
@@ -302,4 +316,8 @@ export function isExpired(expiry: number) {
 
 export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
   return `${event}${id ? `:${id}` : ""}`;
+}
+
+export function mergeArrays<T>(a: T[] = [], b: T[] = []): T[] {
+  return [...new Set([...a, ...b])];
 }

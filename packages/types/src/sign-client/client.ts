@@ -1,10 +1,10 @@
+import { Logger } from "@walletconnect/logger";
 import EventEmmiter from "events";
+import { CoreTypes, ICore } from "../core/core";
 import { IEngine } from "./engine";
+import { IPendingRequest } from "./pendingRequest";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
-import { CoreTypes, ICore } from "../core/core";
-import { Logger } from "@walletconnect/logger";
-import { IPendingRequest } from "./pendingRequest";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -40,6 +40,7 @@ export declare namespace SignClientTypes {
       request: { method: string; params: any };
       topic: string;
       chainId: string;
+      id: number;
     };
     session_event: BaseEventArgs<{
       event: { name: string; data: any };

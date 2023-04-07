@@ -7,6 +7,7 @@ import {
   isJsonRpcRequest,
   JsonRpcPayload,
   JsonRpcRequest,
+  RequestArguments,
 } from "@walletconnect/jsonrpc-utils";
 import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import {
@@ -27,7 +28,7 @@ import {
   RelayerTypes,
   SubscriberTypes,
 } from "@walletconnect/types";
-import { formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
+import { createExpiringPromise, formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
 
 import {
   RELAYER_SDK_VERSION,
@@ -43,7 +44,6 @@ import {
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
-
 export class Relayer extends IRelayer {
   public protocol = "wc";
   public version = 2;
@@ -62,6 +62,9 @@ export class Relayer extends IRelayer {
   private reconnecting = false;
   private relayUrl: string;
   private projectId: string | undefined;
+  private connectionStatusPollingInterval = 20;
+  private staleConnectionErrors = ["socket hang up", "socket stalled"];
+
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -82,7 +85,7 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    this.provider = await this.createProvider();
+    await this.createProvider();
     await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
@@ -103,7 +106,12 @@ export class Relayer extends IRelayer {
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
     this.isInitialized();
     await this.publisher.publish(topic, message, opts);
-    await this.recordMessageEvent({ topic, message });
+    await this.recordMessageEvent({
+      topic,
+      message,
+      // We don't have `publishedAt` from the relay server on outgoing, so use current time to satisfy type.
+      publishedAt: Date.now(),
+    });
   }
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
@@ -124,6 +132,18 @@ export class Relayer extends IRelayer {
     ]);
     return id;
   }
+
+  public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
+    this.logger.debug(`Publishing Request Payload`);
+    try {
+      await this.toEstablishConnection();
+      return await this.provider.request(request);
+    } catch (e) {
+      this.logger.debug(`Failed to Publish Request`);
+      this.logger.error(e as any);
+      throw e;
+    }
+  };
 
   public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
     this.isInitialized();
@@ -163,17 +183,19 @@ export class Relayer extends IRelayer {
       await Promise.all([
         new Promise<void>((resolve) => {
           if (!this.initialized) resolve();
-
           // wait for the subscriber to finish resubscribing to its topics
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
             resolve();
           });
         }),
         await Promise.race([
-          new Promise<void>(async (resolve) => {
-            await this.provider.connect();
-            this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen);
-            resolve();
+          new Promise<void>(async (resolve, reject) => {
+            await createExpiringPromise(this.provider.connect(), 5_000, "socket stalled")
+              .catch((e) => reject(e))
+              .then(() => resolve())
+              .finally(() =>
+                this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen),
+              );
           }),
           new Promise<void>((_res) =>
             // rejects pending promise if transport is closed before connection is established
@@ -183,11 +205,11 @@ export class Relayer extends IRelayer {
         ]),
       ]);
     } catch (e: unknown | Error) {
+      this.logger.error(e);
       const error = e as Error;
-      if (!/socket hang up/i.test(error.message)) {
+      if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
-      this.logger.error(e);
       this.events.emit(RELAYER_EVENTS.transport_closed);
     } finally {
       this.reconnecting = false;
@@ -195,16 +217,20 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    if (this.transportExplicitlyClosed) {
-      return;
-    }
-
+    if (this.transportExplicitlyClosed) return;
+    this.relayUrl = relayUrl || this.relayUrl;
     await this.transportClose();
-    await new Promise<void>((resolve) => setTimeout(resolve, RELAYER_RECONNECT_TIMEOUT));
-    await this.transportOpen(relayUrl);
+    // wait a bit to give the socket time to close
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await this.createProvider();
+    await this.transportOpen();
   }
 
   // ---------- Private ----------------------------------------------- //
+
+  private isConnectionStalled(message: string) {
+    return this.staleConnectionErrors.some((error) => message.includes(error));
+  }
 
   private rejectTransportOpen() {
     throw new Error("closeTransport called before connection was established");
@@ -212,7 +238,7 @@ export class Relayer extends IRelayer {
 
   private async createProvider() {
     const auth = await this.core.crypto.signJWT(this.relayUrl);
-    return new JsonRpcProvider(
+    this.provider = new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
           sdkVersion: RELAYER_SDK_VERSION,
@@ -221,9 +247,11 @@ export class Relayer extends IRelayer {
           relayUrl: this.relayUrl,
           projectId: this.projectId,
           auth,
+          useOnCloseEvent: true,
         }),
       ),
     );
+    this.registerProviderListeners();
   }
 
   private async recordMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
@@ -244,8 +272,8 @@ export class Relayer extends IRelayer {
     if (isJsonRpcRequest(payload)) {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
-      const { topic, message } = event.data;
-      const messageEvent = { topic, message } as RelayerTypes.MessageEvent;
+      const { topic, message, publishedAt } = event.data;
+      const messageEvent: RelayerTypes.MessageEvent = { topic, message, publishedAt };
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);
@@ -265,7 +293,7 @@ export class Relayer extends IRelayer {
     await this.provider.connection.send(response);
   }
 
-  private registerEventListeners() {
+  private registerProviderListeners() {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
       this.onProviderPayload(payload),
     );
@@ -273,17 +301,23 @@ export class Relayer extends IRelayer {
       this.events.emit(RELAYER_EVENTS.connect);
     });
     this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-      this.events.emit(RELAYER_EVENTS.disconnect);
-
-      this.attemptToReconnect();
+      this.onProviderDisconnect();
     });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) =>
-      this.events.emit(RELAYER_EVENTS.error, err),
-    );
+    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) => {
+      this.logger.error(err);
+      this.events.emit(RELAYER_EVENTS.error, err);
+    });
+  }
 
+  private registerEventListeners() {
     this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
       await this.restartTransport();
     });
+  }
+
+  private onProviderDisconnect() {
+    this.events.emit(RELAYER_EVENTS.disconnect);
+    this.attemptToReconnect();
   }
 
   private attemptToReconnect() {
@@ -293,7 +327,7 @@ export class Relayer extends IRelayer {
 
     // Attempt reconnection after one second.
     setTimeout(async () => {
-      await this.transportOpen();
+      await this.restartTransport();
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
@@ -302,5 +336,20 @@ export class Relayer extends IRelayer {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+  }
+
+  private async toEstablishConnection() {
+    if (this.connected) return;
+    if (this.connecting) {
+      return await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (this.connected) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, this.connectionStatusPollingInterval);
+      });
+    }
+    await this.restartTransport();
   }
 }

@@ -1,62 +1,63 @@
-import EventEmmiter from "events";
-import { RELAYER_EVENTS, EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
+import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 import {
+  formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  formatJsonRpcError,
+  isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
   isJsonRpcResult,
-  isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
-  IEngine,
-  EngineTypes,
-  IEngineEvents,
-  RelayerTypes,
   EnginePrivate,
-  SessionTypes,
-  JsonRpcTypes,
+  EngineTypes,
   ExpirerTypes,
+  IEngine,
+  IEngineEvents,
+  JsonRpcTypes,
   PendingRequestTypes,
   ProposalTypes,
+  RelayerTypes,
+  SessionTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
-  parseExpirerTarget,
   createDelayedPromise,
-  getInternalError,
-  getSdkError,
   engineEvent,
-  isValidNamespaces,
-  isValidRelays,
-  isValidRelay,
-  isValidId,
-  isValidParams,
-  isValidString,
-  isValidErrorReason,
-  isValidNamespacesChainId,
-  isValidNamespacesRequest,
-  isValidNamespacesEvent,
-  isValidRequest,
-  isValidEvent,
-  isValidResponse,
-  isValidRequiredNamespaces,
-  isSessionCompatible,
-  isExpired,
-  isUndefined,
-  isConformingNamespaces,
-  isValidController,
-  TYPE_1,
+  getInternalError,
   getRequiredNamespacesFromNamespaces,
+  getSdkError,
+  isConformingNamespaces,
+  isExpired,
+  isSessionCompatible,
+  isUndefined,
+  isValidController,
+  isValidErrorReason,
+  isValidEvent,
+  isValidId,
+  isValidNamespaces,
+  isValidNamespacesChainId,
+  isValidNamespacesEvent,
+  isValidNamespacesRequest,
   isValidObject,
+  isValidParams,
+  isValidRelay,
+  isValidRelays,
+  isValidRequest,
   isValidRequestExpiry,
+  isValidRequiredNamespaces,
+  isValidResponse,
+  isValidString,
+  parseExpirerTarget,
+  TYPE_1,
 } from "@walletconnect/utils";
+import EventEmmiter from "events";
 import {
-  SESSION_EXPIRY,
   ENGINE_CONTEXT,
   ENGINE_RPC_OPTS,
+  PROPOSAL_EXPIRY_MESSAGE,
+  SESSION_EXPIRY,
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
 } from "../constants";
 
@@ -120,7 +121,11 @@ export class Engine extends IEngine {
       },
       ...(sessionProperties && { sessionProperties }),
     };
-    const { reject, resolve, done: approval } = createDelayedPromise<SessionTypes.Struct>();
+    const {
+      reject,
+      resolve,
+      done: approval,
+    } = createDelayedPromise<SessionTypes.Struct>(FIVE_MINUTES, PROPOSAL_EXPIRY_MESSAGE);
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
@@ -168,7 +173,7 @@ export class Engine extends IEngine {
     const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
-
+    pairingTopic = pairingTopic || "";
     if (!isValidObject(requiredNamespaces)) {
       requiredNamespaces = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
     }
@@ -200,21 +205,17 @@ export class Engine extends IEngine {
       namespaces,
       requiredNamespaces,
       optionalNamespaces,
+      pairingTopic,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
-    const requestId = await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
-    const { done: acknowledged, resolve, reject } = createDelayedPromise<SessionTypes.Struct>();
-    this.events.once(engineEvent("session_approve", requestId), ({ error }) => {
-      if (error) reject(error);
-      else resolve(this.client.session.get(sessionTopic));
-    });
-
+    await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
+      pairingTopic,
       acknowledged: false,
       self: sessionSettle.controller,
       peer: {
@@ -225,7 +226,10 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
-    return { topic: sessionTopic, acknowledged };
+    return {
+      topic: sessionTopic,
+      acknowledged: () => new Promise((resolve) => resolve(this.client.session.get(sessionTopic))),
+    };
   };
 
   public reject: IEngine["reject"] = async (params) => {
@@ -279,7 +283,7 @@ export class Engine extends IEngine {
       if (error) reject(error);
       else resolve(result);
     });
-    this.client.events.emit("session_request_sent", { topic, request, chainId });
+    this.client.events.emit("session_request_sent", { topic, request, chainId, id });
     return await done();
   };
 
@@ -603,6 +607,7 @@ export class Engine extends IEngine {
         requiredNamespaces,
         optionalNamespaces,
         sessionProperties,
+        pairingTopic,
       } = payload.params;
       const session = {
         topic,
@@ -610,6 +615,7 @@ export class Engine extends IEngine {
         expiry,
         namespaces,
         acknowledged: true,
+        pairingTopic,
         requiredNamespaces,
         optionalNamespaces,
         controller: controller.publicKey,
@@ -939,7 +945,6 @@ export class Engine extends IEngine {
       proposal.requiredNamespaces,
       namespaces,
       "approve()",
-      "requiredNamespaces",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     if (!isValidString(relayProtocol, true)) {
@@ -948,28 +953,6 @@ export class Engine extends IEngine {
         `approve() relayProtocol: ${relayProtocol}`,
       );
       throw new Error(message);
-    }
-
-    // if the length of the namespaces is greater than the length of the required namespaces
-    // then the user is trying to approve part or all of the optional namespaces so we need to validate
-    if (Object.keys(namespaces).length > Object.keys(proposal.requiredNamespaces).length) {
-      // filter out the optional namespaces that are not being used
-      const namespacesToValidate = Object.keys(proposal.optionalNamespaces).filter(
-        (namespace) => namespaces[namespace],
-      );
-      const usedOptionalNamespaces = {};
-      for (const key in proposal.optionalNamespaces) {
-        if (namespacesToValidate.includes(key)) {
-          usedOptionalNamespaces[key] = proposal.optionalNamespaces[key];
-        }
-      }
-      const conformingNamespacesError = isConformingNamespaces(
-        usedOptionalNamespaces,
-        namespaces,
-        "approve()",
-        "optionalNamespaces",
-      );
-      if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     }
 
     if (!isUndefined(sessionProperties)) {
@@ -1033,7 +1016,6 @@ export class Engine extends IEngine {
       session.requiredNamespaces,
       namespaces,
       "update()",
-      "requiredNamespaces",
     );
     if (conformingNamespacesError) throw new Error(conformingNamespacesError.message);
     // TODO(ilja) - check if wallet

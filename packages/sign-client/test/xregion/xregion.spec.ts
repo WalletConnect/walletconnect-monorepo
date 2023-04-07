@@ -1,18 +1,13 @@
 import { expect, describe, it } from "vitest";
-import SignClient from "../../src";
 import {
-  TEST_SIGN_CLIENT_OPTIONS,
   TEST_RELAY_URL,
   TEST_RELAY_URL_US,
-  TEST_SIGN_CLIENT_OPTIONS_USA,
   TEST_RELAY_URL_AP,
   TEST_RELAY_URL_EU,
-  TEST_SIGN_CLIENT_OPTIONS_AP,
-  TEST_SIGN_CLIENT_OPTIONS_EU,
   TEST_PROJECT_ID,
-  testConnectMethod,
   throttle,
   deleteClients,
+  initTwoPairedClients,
 } from "../shared";
 
 describe("X Region", () => {
@@ -20,28 +15,17 @@ describe("X Region", () => {
     it.each(regionEndpointPermutations)(
       "pairs client in '%s' with client in '%s'",
       async (clientAUrl: string, clientBUrl: string) => {
-        const A = await SignClient.init({
-          logger: "fatal",
-          relayUrl: clientAUrl,
-          projectId: TEST_PROJECT_ID,
-          storageOptions: {
-            database: ":memory:",
-          },
-        });
-        const B = await SignClient.init({
-          logger: "fatal",
-          relayUrl: clientBUrl,
-          projectId: TEST_PROJECT_ID,
-          storageOptions: {
-            database: ":memory:",
-          },
-        });
+        const { clients, pairingA, sessionA } = await initTwoPairedClients(
+          { relayUrl: clientAUrl },
+          { relayUrl: clientBUrl },
+          { projectId: TEST_PROJECT_ID },
+        );
+        const { A, B } = clients;
         log(
           `Clients initialized (relay 'A:${A.core.opts?.relayUrl};B:${
             B.core.opts?.relayUrl
           }'), client ids: A:'${await A.core.crypto.getClientId()}';B:'${await B.core.crypto.getClientId()}'`,
         );
-        const { pairingA, sessionA } = await testConnectMethod({ A, B });
         log(
           `Clients connected (relay 'A:${A.core.opts?.relayUrl};B:${
             B.core.opts?.relayUrl

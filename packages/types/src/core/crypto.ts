@@ -104,4 +104,5 @@ export abstract class ICrypto {
 
   public abstract signJWT(aud: string): Promise<string>;
   public abstract getPayloadType(encoded: string): number;
+  public abstract getPayloadSenderPublicKey(encoded: string): string | undefined;
 }

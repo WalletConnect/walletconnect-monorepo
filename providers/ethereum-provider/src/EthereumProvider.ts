@@ -7,9 +7,25 @@ import {
   RequestArguments,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import type { Web3Modal } from "@web3modal/standalone";
+import type { Web3ModalConfig, Web3Modal } from "@web3modal/standalone";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { STORAGE_KEY, REQUIRED_METHODS, REQUIRED_EVENTS, RPC_URL } from "./constants";
+
+export type QrModalOptions = Pick<
+  Web3ModalConfig,
+  | "themeMode"
+  | "themeVariables"
+  | "chainImages"
+  | "desktopWallets"
+  | "enableExplorer"
+  | "explorerAllowList"
+  | "explorerDenyList"
+  | "mobileWallets"
+  | "privacyPolicyUrl"
+  | "termsOfServiceUrl"
+  | "tokenImages"
+  | "walletImages"
+>;
 
 export type RpcMethod =
   | "personal_sign"
@@ -57,6 +73,7 @@ export interface EthereumRpcConfig {
   projectId: string;
   metadata?: Metadata;
   showQrModal: boolean;
+  qrModalOptions?: QrModalOptions;
 }
 export interface ConnectOps {
   chains?: number[];
@@ -154,6 +171,7 @@ export function buildNamespaces(params: NamespacesParams): {
 
   return { required, optional };
 }
+
 export interface EthereumProviderOptions {
   projectId: string;
   /**
@@ -181,19 +199,20 @@ export interface EthereumProviderOptions {
   optionalEvents?: string[];
   rpcMap?: EthereumRpcMap;
   metadata?: Metadata;
-  showQrModal?: boolean;
+  showQrModal: boolean;
+  qrModalOptions?: QrModalOptions;
 }
 
 export class EthereumProvider implements IEthereumProvider {
-  public events: IEthereumProviderEvents = new EventEmitter();
+  public events = new EventEmitter();
   public namespace = "eip155";
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
   public modal?: Web3Modal;
 
-  private rpc: EthereumRpcConfig;
-  private readonly STORAGE_KEY = STORAGE_KEY;
+  protected rpc: EthereumRpcConfig;
+  protected readonly STORAGE_KEY = STORAGE_KEY;
 
   constructor() {
     // assigned during initialize
@@ -247,8 +266,10 @@ export class EthereumProvider implements IEthereumProvider {
           if (this.rpc.showQrModal) {
             this.modal?.subscribeModal((state) => {
               // the modal was closed so reject the promise
-              if (!state.open && !this.signer.session)
+              if (!state.open && !this.signer.session) {
+                this.signer.abortPairingAttempt();
                 reject(new Error("Connection request reset. Please try again."));
+              }
             });
           }
           await this.signer
@@ -293,19 +314,23 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public on: IEthereumProviderEvents["on"] = (event, listener) => {
-    return this.events.on(event, listener);
+    this.events.on(event, listener);
+    return this;
   };
 
   public once: IEthereumProviderEvents["once"] = (event, listener) => {
-    return this.events.once(event, listener);
+    this.events.once(event, listener);
+    return this;
   };
 
   public removeListener: IEthereumProviderEvents["removeListener"] = (event, listener) => {
-    return this.events.removeListener(event, listener);
+    this.events.removeListener(event, listener);
+    return this;
   };
 
   public off: IEthereumProviderEvents["off"] = (event, listener) => {
-    return this.events.off(event, listener);
+    this.events.off(event, listener);
+    return this;
   };
 
   get isWalletConnect() {
@@ -315,9 +340,10 @@ export class EthereumProvider implements IEthereumProvider {
   get session() {
     return this.signer.session;
   }
-  // ---------- Private ----------------------------------------------- //
 
-  private registerEventListeners() {
+  // ---------- Protected --------------------------------------------- //
+
+  protected registerEventListeners() {
     this.signer.on("session_event", (payload: SignClientTypes.EventArguments["session_event"]) => {
       const { params } = payload;
       const { event } = params;
@@ -361,32 +387,35 @@ export class EthereumProvider implements IEthereumProvider {
 
     this.signer.on("display_uri", (uri: string) => {
       if (this.rpc.showQrModal) {
+        // to refresh the QR we have to close the modal and open it again
+        // until proper API is provided by web3modal
+        this.modal?.closeModal();
         this.modal?.openModal({ uri });
       }
       this.events.emit("display_uri", uri);
     });
   }
 
-  private setHttpProvider(chainId: number): void {
+  protected setHttpProvider(chainId: number): void {
     this.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: chainId.toString(16) }],
     });
   }
 
-  private isCompatibleChainId(chainId: string): boolean {
+  protected isCompatibleChainId(chainId: string): boolean {
     return typeof chainId === "string" ? chainId.startsWith(`${this.namespace}:`) : false;
   }
 
-  private formatChainId(chainId: number): string {
+  protected formatChainId(chainId: number): string {
     return `${this.namespace}:${chainId}`;
   }
 
-  private parseChainId(chainId: string): number {
+  protected parseChainId(chainId: string): number {
     return Number(chainId.split(":")[1]);
   }
 
-  private setChainIds(chains: string[]) {
+  protected setChainIds(chains: string[]) {
     const compatible = chains.filter((x) => this.isCompatibleChainId(x));
     const chainIds = compatible.map((c) => this.parseChainId(c));
     if (chainIds.length) {
@@ -396,7 +425,7 @@ export class EthereumProvider implements IEthereumProvider {
     }
   }
 
-  private setChainId(chain: string) {
+  protected setChainId(chain: string) {
     if (this.isCompatibleChainId(chain)) {
       const chainId = this.parseChainId(chain);
       this.chainId = chainId;
@@ -404,20 +433,20 @@ export class EthereumProvider implements IEthereumProvider {
     }
   }
 
-  private parseAccountId(account: string): { chainId: string; address: string } {
+  protected parseAccountId(account: string): { chainId: string; address: string } {
     const [namespace, reference, address] = account.split(":");
     const chainId = `${namespace}:${reference}`;
     return { chainId, address };
   }
 
-  private setAccounts(accounts: string[]) {
+  protected setAccounts(accounts: string[]) {
     this.accounts = accounts
       .filter((x) => this.parseChainId(this.parseAccountId(x).chainId) === this.chainId)
       .map((x) => this.parseAccountId(x).address);
     this.events.emit("accountsChanged", this.accounts);
   }
 
-  private getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
+  protected getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
     return {
       chains: opts.chains?.map((chain) => this.formatChainId(chain)) || [`${this.namespace}:1`],
       optionalChains: opts.optionalChains
@@ -430,13 +459,14 @@ export class EthereumProvider implements IEthereumProvider {
       rpcMap:
         opts?.rpcMap ||
         this.buildRpcMap(opts.chains.concat(opts.optionalChains || []), opts.projectId),
-      showQrModal: opts?.showQrModal ?? true,
+      showQrModal: Boolean(opts?.showQrModal),
+      qrModalOptions: opts?.qrModalOptions ?? undefined,
       projectId: opts.projectId,
       metadata: opts.metadata,
     };
   }
 
-  private buildRpcMap(chains: number[], projectId: string): EthereumRpcMap {
+  protected buildRpcMap(chains: number[], projectId: string): EthereumRpcMap {
     const map: EthereumRpcMap = {};
     chains.forEach((chain) => {
       map[chain] = this.getRpcUrl(chain, projectId);
@@ -444,7 +474,7 @@ export class EthereumProvider implements IEthereumProvider {
     return map;
   }
 
-  private async initialize(opts: EthereumProviderOptions) {
+  protected async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
     this.chainId = getEthereumChainId(this.rpc.chains);
     this.signer = await UniversalProvider.init({
@@ -454,16 +484,21 @@ export class EthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
-      const { Web3Modal } = await import("@web3modal/standalone");
-      this.modal = new Web3Modal({
-        walletConnectVersion: 2,
-        projectId: this.rpc.projectId,
-        standaloneChains: this.rpc.chains,
-      });
+      try {
+        const { Web3Modal } = await import("@web3modal/standalone");
+        this.modal = new Web3Modal({
+          walletConnectVersion: 2,
+          projectId: this.rpc.projectId,
+          standaloneChains: this.rpc.chains,
+          ...this.rpc.qrModalOptions,
+        });
+      } catch {
+        throw new Error("To use QR modal, please install @web3modal/standalone package");
+      }
     }
   }
 
-  private loadConnectOpts(opts?: ConnectOps) {
+  protected loadConnectOpts(opts?: ConnectOps) {
     if (!opts) return;
     const { chains, optionalChains, rpcMap } = opts;
     if (chains && isValidArray(chains)) {
@@ -481,7 +516,7 @@ export class EthereumProvider implements IEthereumProvider {
     }
   }
 
-  private getRpcUrl(chainId: number, projectId?: string): string {
+  protected getRpcUrl(chainId: number, projectId?: string): string {
     const providedRpc = this.rpc.rpcMap?.[chainId];
     return (
       providedRpc ||
@@ -489,7 +524,7 @@ export class EthereumProvider implements IEthereumProvider {
     );
   }
 
-  private async loadPersistedSession() {
+  protected async loadPersistedSession() {
     if (!this.session) return;
     const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
     this.setChainIds(
@@ -498,24 +533,24 @@ export class EthereumProvider implements IEthereumProvider {
     this.setAccounts(this.session.namespaces[this.namespace].accounts);
   }
 
-  private reset() {
+  protected reset() {
     this.chainId = 1;
     this.accounts = [];
   }
 
-  private persist() {
+  protected persist() {
     if (!this.session) return;
     this.signer.client.core.storage.setItem(`${this.STORAGE_KEY}/chainId`, this.chainId);
   }
 
-  private parseAccounts(payload: string | string[]): string[] {
+  protected parseAccounts(payload: string | string[]): string[] {
     if (typeof payload === "string" || payload instanceof String) {
       return [this.parseAccount(payload)];
     }
     return payload.map((account: string) => this.parseAccount(account));
   }
 
-  private parseAccount = (payload: any): string => {
+  protected parseAccount = (payload: any): string => {
     return this.isCompatibleChainId(payload) ? this.parseAccountId(payload).address : payload;
   };
 }

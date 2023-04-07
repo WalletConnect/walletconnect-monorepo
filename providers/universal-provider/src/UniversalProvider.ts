@@ -1,15 +1,21 @@
 import pino from "pino";
-import SignClient from "@walletconnect/sign-client";
+import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
-import { getSdkError, isValidArray } from "@walletconnect/utils";
+import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
 import PolkadotProvider from "./providers/polkadot";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
 import CardanoProvider from "./providers/cardano";
-import { getChainsFromApprovedSession } from "./utils";
+import ElrondProvider from "./providers/elrond";
+import MultiversXProvider from "./providers/multiversx";
+import {
+  getAccountsFromSession,
+  getChainsFromApprovedSession,
+  mergeRequiredOptionalNamespaces,
+} from "./utils";
 import {
   IUniversalProvider,
   IProvider,
@@ -35,6 +41,9 @@ export class UniversalProvider implements IUniversalProvider {
   public providerOpts: UniversalProviderOpts;
   public logger: Logger;
   public uri: string | undefined;
+
+  private shouldAbortPairingAttempt = false;
+  private maxPairingAttempts = 10;
 
   static async init(opts: UniversalProviderOpts) {
     const provider = new UniversalProvider(opts);
@@ -137,19 +146,40 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public async pair(pairingTopic: string | undefined): Promise<SessionTypes.Struct> {
-    const { uri, approval } = await this.client.connect({
-      pairingTopic,
-      requiredNamespaces: this.namespaces,
-      optionalNamespaces: this.optionalNamespaces,
-      sessionProperties: this.sessionProperties,
-    });
+    this.shouldAbortPairingAttempt = false;
+    let pairingAttempts = 0;
+    do {
+      if (this.shouldAbortPairingAttempt) {
+        throw new Error("Pairing aborted");
+      }
 
-    if (uri) {
-      this.uri = uri;
-      this.events.emit("display_uri", uri);
-    }
-    this.session = await approval();
-    this.createProviders();
+      if (pairingAttempts >= this.maxPairingAttempts) {
+        throw new Error("Max auto pairing attempts reached");
+      }
+
+      const { uri, approval } = await this.client.connect({
+        pairingTopic,
+        requiredNamespaces: this.namespaces,
+        optionalNamespaces: this.optionalNamespaces,
+        sessionProperties: this.sessionProperties,
+      });
+
+      if (uri) {
+        this.uri = uri;
+        this.events.emit("display_uri", uri);
+      }
+
+      await approval()
+        .then((session) => {
+          this.session = session;
+        })
+        .catch((error) => {
+          if (error.message !== PROPOSAL_EXPIRY_MESSAGE) {
+            throw error;
+          }
+          pairingAttempts++;
+        });
+    } while (!this.session);
     this.onConnect();
     return this.session;
   }
@@ -179,6 +209,10 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
+  }
+
+  public abortPairingAttempt() {
+    this.shouldAbortPairingAttempt = true;
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -220,11 +254,25 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Sign Client not initialized");
     }
 
-    Object.keys(this.namespaces).forEach((namespace) => {
-      const accounts = this.session?.namespaces[namespace].accounts || [];
+    if (!this.session) {
+      throw new Error("Session not initialized. Please call connect() before enable()");
+    }
+
+    const providersToCreate = [
+      ...new Set(
+        Object.keys(this.session.namespaces).map((namespace) => parseNamespaceKey(namespace)),
+      ),
+    ];
+    providersToCreate.forEach((namespace) => {
+      if (!this.session) return;
+      const accounts = getAccountsFromSession(namespace, this.session);
       const approvedChains = getChainsFromApprovedSession(accounts);
+      const mergedNamespaces = mergeRequiredOptionalNamespaces(
+        this.namespaces,
+        this.optionalNamespaces,
+      );
       const combinedNamespace = {
-        ...Object.assign(this.namespaces[namespace], this.optionalNamespaces?.[namespace] ?? {}),
+        ...mergedNamespaces[namespace],
         accounts,
         chains: approvedChains,
       };
@@ -259,6 +307,20 @@ export class UniversalProvider implements IUniversalProvider {
           break;
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
+            client: this.client,
+            namespace: combinedNamespace,
+            events: this.events,
+          });
+          break;
+        case "elrond":
+          this.rpcProviders[namespace] = new ElrondProvider({
+            client: this.client,
+            namespace: combinedNamespace,
+            events: this.events,
+          });
+          break;
+        case "multiversx":
+          this.rpcProviders[namespace] = new MultiversXProvider({
             client: this.client,
             namespace: combinedNamespace,
             events: this.events,
@@ -342,9 +404,16 @@ export class UniversalProvider implements IUniversalProvider {
 
   private validateChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
+
     // validate namespace
     if (namespace) {
-      if (!Object.keys(this.namespaces).includes(namespace)) {
+      if (
+        // some namespaces might be defined with inline chainId e.g. eip155:1
+        // and we need to parse them
+        !Object.keys(this.namespaces)
+          .map((key) => parseNamespaceKey(key))
+          .includes(namespace)
+      ) {
         throw new Error(
           `Namespace '${namespace}' is not configured. Please call connect() first with namespace config.`,
         );
@@ -353,7 +422,7 @@ export class UniversalProvider implements IUniversalProvider {
     if (namespace && chainId) {
       return [namespace, chainId];
     }
-    const defaultNamespace = Object.keys(this.namespaces)[0];
+    const defaultNamespace = parseNamespaceKey(Object.keys(this.namespaces)[0]);
     const defaultChain = this.rpcProviders[defaultNamespace].getDefaultChain();
     return [defaultNamespace, defaultChain];
   }
@@ -370,12 +439,14 @@ export class UniversalProvider implements IUniversalProvider {
       this.getProvider(namespace).setDefaultChain(chainId);
     }
 
-    this.namespaces[namespace].defaultChain = chainId;
+    (this.namespaces[namespace] ?? this.namespaces[`${namespace}:${chainId}`]).defaultChain =
+      chainId;
     this.persist("namespaces", this.namespaces);
     this.events.emit("chainChanged", chainId);
   }
 
   private onConnect() {
+    this.createProviders();
     this.events.emit("connect", { session: this.session });
   }
 

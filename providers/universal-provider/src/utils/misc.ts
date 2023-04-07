@@ -1,5 +1,13 @@
+import { SessionTypes } from "@walletconnect/types";
+import {
+  isCaipNamespace,
+  isValidObject,
+  mergeArrays,
+  parseNamespaceKey,
+} from "@walletconnect/utils";
 import { RPC_URL } from "../constants";
-import { Namespace } from "../types";
+import { Namespace, NamespaceConfig } from "../types";
+import { merge } from "lodash";
 
 export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): string | undefined {
   let rpcUrl: string | undefined;
@@ -28,4 +36,64 @@ export function validateChainApproval(chain: string, chains: string[]): void {
 
 export function getChainsFromApprovedSession(accounts: string[]): string[] {
   return accounts.map((address) => `${address.split(":")[0]}:${address.split(":")[1]}`);
+}
+
+export function getAccountsFromSession(namespace: string, session: SessionTypes.Struct): string[] {
+  // match namespaces e.g. eip155 with eip155:1
+  const matchedNamespaceKeys = Object.keys(session.namespaces).filter((key) =>
+    key.includes(namespace),
+  );
+  if (!matchedNamespaceKeys.length) return [];
+  const accounts: string[] = [];
+  matchedNamespaceKeys.forEach((key) => {
+    const accountsForNamespace = session.namespaces[key].accounts;
+    accounts.push(...accountsForNamespace);
+  });
+  return accounts;
+}
+
+export function mergeRequiredOptionalNamespaces(
+  required: NamespaceConfig,
+  optional: NamespaceConfig = {},
+) {
+  const requiredNamespaces = normalizeNamespaces(required);
+  const optionalNamespaces = normalizeNamespaces(optional);
+  return merge(requiredNamespaces, optionalNamespaces);
+}
+
+/**
+ * Converts
+ * {
+ *  "eip155:1": {...},
+ *  "eip155:2": {...},
+ * }
+ * into
+ * {
+ *  "eip155": {
+ *      chains: ["eip155:1", "eip155:2"],
+ *      ...
+ *    }
+ * }
+ *
+ */
+export function normalizeNamespaces(namespaces: NamespaceConfig): NamespaceConfig {
+  const normalizedNamespaces: NamespaceConfig = {};
+  if (!isValidObject(namespaces)) return normalizedNamespaces;
+
+  for (const [key, values] of Object.entries(namespaces)) {
+    const chains = isCaipNamespace(key) ? [key] : values.chains;
+    const methods = values.methods || [];
+    const events = values.events || [];
+    const rpcMap = values.rpcMap || {};
+    const normalizedKey = parseNamespaceKey(key);
+    normalizedNamespaces[normalizedKey] = {
+      ...normalizedNamespaces[normalizedKey],
+      ...values,
+      chains: mergeArrays(chains, normalizedNamespaces[normalizedKey]?.chains),
+      methods: mergeArrays(methods, normalizedNamespaces[normalizedKey]?.methods),
+      events: mergeArrays(events, normalizedNamespaces[normalizedKey]?.events),
+      rpcMap: { ...rpcMap, ...normalizedNamespaces[normalizedKey]?.rpcMap },
+    };
+  }
+  return normalizedNamespaces;
 }
