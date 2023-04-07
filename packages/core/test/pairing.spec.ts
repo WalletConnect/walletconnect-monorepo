@@ -2,6 +2,7 @@ import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { ICore } from "@walletconnect/types";
 import { Core, CORE_PROTOCOL, CORE_VERSION } from "../src";
 import { TEST_CORE_OPTIONS, disconnectSocket } from "./shared";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 
 const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
   await new Promise((resolve) => {
@@ -70,6 +71,23 @@ describe("Pairing", () => {
 
       expect(coreA.pairing.getPairings()[0].active).toBe(false);
       expect(coreB.pairing.getPairings()[0].active).toBe(true);
+    });
+
+    it("throws when pairing is attempted on topic that already exists", async () => {
+      const { topic, uri } = await coreA.pairing.create();
+      await expect(coreA.pairing.pair({ uri })).rejects.toThrowError(
+        `Pairing already exists: ${topic}`,
+      );
+    });
+
+    it("throws when keychain already exists", async () => {
+      const maliciousTopic = generateRandomBytes32();
+      let { topic, uri } = await coreA.pairing.create();
+      coreA.crypto.keychain.set(maliciousTopic, maliciousTopic);
+      uri = uri.replace(topic, maliciousTopic);
+      await expect(coreA.pairing.pair({ uri })).rejects.toThrowError(
+        `Keychain already exists: ${maliciousTopic}`,
+      );
     });
   });
 

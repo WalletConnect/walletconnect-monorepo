@@ -18,6 +18,8 @@ import {
   TEST_WALLET_CLIENT_OPTS,
   TEST_ETH_TRANSFER,
   TEST_SIGN_TRANSACTION,
+  TEST_ETHEREUM_METHODS_REQUIRED,
+  TEST_ETHEREUM_METHODS_OPTIONAL,
 } from "./shared/constants";
 
 describe("EthereumProvider", function () {
@@ -35,11 +37,20 @@ describe("EthereumProvider", function () {
     });
     provider = await EthereumProvider.init({
       projectId: process.env.TEST_PROJECT_ID || "",
-      chains: [1, 42],
+      chains: [1],
+      methods: TEST_ETHEREUM_METHODS_REQUIRED,
+      optionalMethods: TEST_ETHEREUM_METHODS_OPTIONAL,
+      showQrModal: true,
+      qrModalOptions: {
+        themeMode: "dark",
+        themeVariables: {
+          "--w3m-z-index": "99",
+        },
+      },
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
-      chains: [1, CHAIN_ID],
+      optionalChains: [42, CHAIN_ID],
       rpcMap: {
         [CHAIN_ID]: RPC_URL,
       },
@@ -69,9 +80,9 @@ describe("EthereumProvider", function () {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", (chainId: number) => {
+        provider.on("chainChanged", (chainId) => {
           try {
-            expect(chainId).to.eql(42);
+            expect(parseInt(chainId, 16)).to.eql(42);
             resolve();
           } catch (e) {
             reject(e);
@@ -91,9 +102,9 @@ describe("EthereumProvider", function () {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("chainChanged", (chainId: number) => {
+        provider.on("chainChanged", (chainId) => {
           try {
-            expect(chainId).to.eql(CHAIN_ID);
+            expect(parseInt(chainId, 16)).to.eql(CHAIN_ID);
             resolve();
           } catch (e) {
             reject(e);
@@ -138,7 +149,7 @@ describe("EthereumProvider", function () {
       }),
 
       new Promise<void>((resolve, reject) => {
-        provider.on("accountsChanged", (accounts: string) => {
+        provider.on("accountsChanged", (accounts) => {
           try {
             expect(accounts[0]).to.eql(ACCOUNTS.a.address);
             resolve();

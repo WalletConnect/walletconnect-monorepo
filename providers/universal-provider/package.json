@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/universal-provider",
   "description": "Universal Provider for WalletConnect Protocol",
-  "version": "2.4.0",
+  "version": "2.6.2",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
@@ -14,6 +14,13 @@
   "module": "dist/index.es.js",
   "unpkg": "dist/index.umd.js",
   "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "module": "./dist/index.es.js",
+      "default": "./dist/index.cjs.js"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -34,22 +41,21 @@
   },
   "dependencies": {
     "@walletconnect/jsonrpc-http-connection": "^1.0.4",
-    "@walletconnect/jsonrpc-provider": "^1.0.6",
+    "@walletconnect/jsonrpc-provider": "^1.0.11",
     "@walletconnect/jsonrpc-types": "^1.0.2",
-    "@walletconnect/jsonrpc-utils": "^1.0.4",
+    "@walletconnect/jsonrpc-utils": "^1.0.7",
     "@walletconnect/logger": "^2.0.1",
-    "@walletconnect/sign-client": "2.4.0",
-    "@walletconnect/types": "2.4.0",
-    "@walletconnect/utils": "2.4.0",
+    "@walletconnect/sign-client": "2.6.2",
+    "@walletconnect/types": "2.6.2",
+    "@walletconnect/utils": "2.6.2",
     "eip1193-provider": "1.0.1",
-    "events": "^3.3.0",
-    "pino": "7.11.0"
+    "events": "^3.3.0"
   },
   "devDependencies": {
     "cosmos-wallet": "^1.2.0",
     "ethereum-test-network": "0.1.6",
     "ethers": "5.7.0",
-    "uint8arrays": "3.0.0",
+    "uint8arrays": "^3.0.0",
     "web3": "1.7.5"
   }
 }

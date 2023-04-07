@@ -1,5 +1,5 @@
 import { IEvents } from "@walletconnect/events";
-import { IJsonRpcProvider } from "@walletconnect/jsonrpc-types";
+import { IJsonRpcProvider, JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { Logger } from "@walletconnect/logger";
 
 import { ICore } from "./core";
@@ -39,6 +39,7 @@ export declare namespace RelayerTypes {
   export interface MessageEvent {
     topic: string;
     message: string;
+    publishedAt: number;
   }
 
   export interface RpcUrlParams {
@@ -48,6 +49,7 @@ export declare namespace RelayerTypes {
     relayUrl: string;
     sdkVersion: string;
     projectId?: string;
+    useOnCloseEvent?: boolean;
   }
 }
 
@@ -102,6 +104,8 @@ export abstract class IRelayer extends IEvents {
     message: string,
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
+
+  public abstract request(request: RequestArguments): Promise<JsonRpcPayload>;
 
   public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
 

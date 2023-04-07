@@ -22,6 +22,12 @@ const EXPECTED_RPC_URL_2 =
     formatUA(PROTOCOL, VERSION, SDK_VERSION),
   )}`;
 
+const EXPECTED_RPC_URL_3 =
+  RELAY_URL +
+  `?auth=${AUTH}&projectId=${PROJECT_ID}&ua=${encodeURIComponent(
+    formatUA(PROTOCOL, VERSION, SDK_VERSION),
+  )}&useOnCloseEvent=true`;
+
 const SEVEN_DAYS_IN_SECONDS = 604800;
 
 describe("Misc", () => {
@@ -45,6 +51,17 @@ describe("Misc", () => {
         auth: AUTH,
       }),
     ).to.eql(EXPECTED_RPC_URL_2);
+    expect(
+      formatRelayRpcUrl({
+        protocol: PROTOCOL,
+        version: VERSION,
+        sdkVersion: SDK_VERSION,
+        relayUrl: RELAY_URL,
+        projectId: PROJECT_ID,
+        auth: AUTH,
+        useOnCloseEvent: true,
+      }),
+    ).to.eql(EXPECTED_RPC_URL_3);
   });
   it("hasOverlap", () => {
     expect(hasOverlap([], [])).to.be.true;

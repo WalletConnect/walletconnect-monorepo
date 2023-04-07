@@ -73,6 +73,8 @@ export const EIP155_TEST_METHODS = [
 ];
 
 export const COSMOS_TEST_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
+export const ELROND_TEST_METHODS = ["erd_signTransaction", "erd_signLoginToken"];
+export const MULTIVERSX_TEST_METHODS = ["multiversx_signTransaction", "multiversx_signMessage"];
 
 export const TEST_NAMESPACES_CONFIG = {
   namespaces: {
@@ -88,6 +90,24 @@ export const TEST_NAMESPACES_CONFIG = {
     cosmos: {
       methods: COSMOS_TEST_METHODS,
       chains: [`cosmos:${CHAIN_ID}`, `cosmos:${CHAIN_ID_B}`],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
+        [CHAIN_ID_B]: RPC_URL_B,
+      },
+    },
+    elrond: {
+      methods: ELROND_TEST_METHODS,
+      chains: [`elrond:${CHAIN_ID}`, `elrond:${CHAIN_ID_B}`],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
+        [CHAIN_ID_B]: RPC_URL_B,
+      },
+    },
+    multiversx: {
+      methods: MULTIVERSX_TEST_METHODS,
+      chains: [`multiversx:${CHAIN_ID}`, `multiversx:${CHAIN_ID_B}`],
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
         [CHAIN_ID]: RPC_URL,
@@ -116,7 +136,15 @@ export const TEST_ETHEREUM_ADDRESS = "0x3c582121909DE92Dc89A36898633C1aE4790382b
 
 export const TEST_ETHEREUM_CHAIN = "eip155:1";
 
+export const TEST_GOERLI_CHAIN = "eip155:5";
+
+export const TEST_OPTIMISM_CHAIN = "eip155:10";
+
 export const TEST_ETHEREUM_ACCOUNT = `${TEST_ETHEREUM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+
+export const TEST_GOERLI_ACCOUNT = `${TEST_GOERLI_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
+
+export const TEST_OPTIMISM_ACCOUNT = `${TEST_OPTIMISM_CHAIN}:${TEST_ETHEREUM_ADDRESS}`;
 
 export const TEST_CHAINS = [TEST_ETHEREUM_CHAIN];
 
@@ -136,10 +164,18 @@ export const TEST_REQUIRED_NAMESPACES = {
   },
 };
 
-export const TEST_NAMESPACES = {
+export const TEST_OPTIONAL_NAMESPACES = {
   eip155: {
     methods: EIP155_TEST_METHODS,
-    accounts: TEST_ACCOUNTS,
+    chains: [TEST_GOERLI_CHAIN, TEST_OPTIMISM_CHAIN],
+    events: TEST_EVENTS,
+  },
+};
+
+export const TEST_NAMESPACES = {
+  [TEST_ETHEREUM_CHAIN]: {
+    methods: EIP155_TEST_METHODS,
+    accounts: [TEST_ETHEREUM_ACCOUNT, TEST_GOERLI_ACCOUNT, TEST_OPTIMISM_ACCOUNT],
     events: TEST_EVENTS,
   },
 };

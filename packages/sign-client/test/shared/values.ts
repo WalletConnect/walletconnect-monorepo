@@ -18,7 +18,7 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   : undefined;
 
 export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
-  logger: "debug",
+  logger: "error",
   relayUrl: TEST_RELAY_URL,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -27,7 +27,7 @@ export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_US,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -36,7 +36,7 @@ export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_EU,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -45,7 +45,7 @@ export const TEST_SIGN_CLIENT_OPTIONS_EU: SignClientTypes.Options = {
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_AP: SignClientTypes.Options = {
-  logger: "fatal",
+  logger: "error",
   relayUrl: TEST_RELAY_URL_AP,
   projectId: TEST_PROJECT_ID,
   storageOptions: {
@@ -148,15 +148,18 @@ export const TEST_NAMESPACES = {
     accounts: TEST_ACCOUNTS,
     events: TEST_EVENTS,
   },
-  [TEST_AVALANCHE_CHAIN]: {
-    methods: TEST_METHODS,
-    accounts: [TEST_AVALANCHE_ACCOUNT],
-    events: TEST_EVENTS,
-  },
   polkadot: {
     chains: TEST_POLKADOT_CHAINS,
     methods: TEST_POLKADOT_METHODS,
     accounts: TEST_POLKADOT_ACCOUNTS,
+    events: TEST_EVENTS,
+  },
+};
+
+export const TEST_NAMESPACES_V2 = {
+  eip155: {
+    methods: TEST_METHODS,
+    accounts: [TEST_ETHEREUM_ACCOUNT, TEST_AVALANCHE_ACCOUNT, TEST_ARBITRUM_ACCOUNT],
     events: TEST_EVENTS,
   },
 };
@@ -249,3 +252,6 @@ export const TEST_SIGN_REQUEST_PARAMS = {
     },
   ],
 };
+
+export const TESTS_CONNECT_RETRIES = 5;
+export const TESTS_CONNECT_TIMEOUT = 20_000;

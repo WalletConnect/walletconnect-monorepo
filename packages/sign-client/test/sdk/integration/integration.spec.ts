@@ -1,33 +1,24 @@
+import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
-import { expect, describe, it, vi, afterAll, beforeAll } from "vitest";
+import { expect, describe, it, afterAll, beforeAll } from "vitest";
 import { createExpiringPromise } from "../../../../utils/src";
-import { initTwoClients, testConnectMethod, deleteClients, Clients } from "../../shared";
-const TESTS_CONNECT_RETRIES = 5;
-const TESTS_CONNECT_TIMEOUT = 20_000;
+import {
+  initTwoClients,
+  testConnectMethod,
+  deleteClients,
+  Clients,
+  TESTS_CONNECT_TIMEOUT,
+  TESTS_CONNECT_RETRIES,
+  initTwoPairedClients,
+} from "../../shared";
+
 describe("Sign Client Integration", () => {
   let clients: Clients;
-  let pairingA: any;
-  let sessionA: any;
+  let pairingA: PairingTypes.Struct;
+  let sessionA: SessionTypes.Struct;
 
   beforeAll(async () => {
-    clients = await initTwoClients();
-    let retries = 0;
-    while (!pairingA) {
-      if (retries > TESTS_CONNECT_RETRIES) {
-        throw new Error("Could not pair clients");
-      }
-      try {
-        const settled: any = await createExpiringPromise(
-          testConnectMethod(clients),
-          TESTS_CONNECT_TIMEOUT,
-        );
-        pairingA = settled.pairingA;
-        sessionA = settled.sessionA;
-      } catch (e) {
-        clients.A.logger.error("retrying", e);
-      }
-      retries++;
-    }
+    ({ clients, pairingA, sessionA } = await initTwoPairedClients());
   });
 
   afterAll(async () => {
@@ -66,28 +57,6 @@ describe("Sign Client Integration", () => {
       await acknowledged();
       const result = clients.A.session.get(topic).namespaces;
       expect(result).to.eql(namespacesAfter);
-    });
-  });
-
-  describe("extend", () => {
-    it("updates session expiry state", async () => {
-      const clients = await initTwoClients();
-      const {
-        sessionA: { topic },
-      } = await testConnectMethod(clients);
-      const prevExpiry = clients.A.session.get(topic).expiry;
-
-      vi.useFakeTimers();
-      // Fast-forward system time by 60 seconds after expiry was first set.
-      vi.setSystemTime(Date.now() + 60_000);
-      const { acknowledged } = await clients.A.extend({
-        topic,
-      });
-      await acknowledged();
-      const updatedExpiry = clients.A.session.get(topic).expiry;
-      expect(updatedExpiry).to.be.greaterThan(prevExpiry);
-      vi.useRealTimers();
-      await deleteClients(clients);
     });
   });
   describe("disconnect", () => {

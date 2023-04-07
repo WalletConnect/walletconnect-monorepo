@@ -63,9 +63,7 @@ describe("Sign Integration", () => {
       new Promise(async (resolve) => {
         resolve(await sessionApproval());
       }),
-      new Promise(async (resolve) => {
-        resolve(await core.pairing.pair({ uri: uriString }));
-      }),
+      wallet.pair({ uri: uriString }),
     ]);
   });
   it("should reject session proposal", async () => {
@@ -91,7 +89,7 @@ describe("Sign Integration", () => {
         }
         resolve();
       }),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
   });
   it("should update session", async () => {
@@ -109,7 +107,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
 
     expect(TEST_NAMESPACES).not.toMatchObject(TEST_UPDATED_NAMESPACES);
@@ -140,7 +138,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
 
     const prevExpiry = session.expiry;
@@ -174,7 +172,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
 
     await Promise.all([
@@ -236,7 +234,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
 
     const reason = getSdkError("USER_DISCONNECTED");
@@ -272,7 +270,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
 
     const reason = getSdkError("USER_DISCONNECTED");
@@ -308,7 +306,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
     const sessionEvent = {
       topic: session.topic,
@@ -350,7 +348,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
 
     const sessions = wallet.getActiveSessions();
@@ -371,7 +369,7 @@ describe("Sign Integration", () => {
           resolve();
         });
       }),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
   });
 
@@ -395,7 +393,7 @@ describe("Sign Integration", () => {
         });
       }),
       sessionApproval(),
-      core.pairing.pair({ uri: uriString }),
+      wallet.pair({ uri: uriString }),
     ]);
 
     const requestParams = {
