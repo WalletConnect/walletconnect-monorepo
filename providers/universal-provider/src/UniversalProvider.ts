@@ -3,6 +3,7 @@ import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
+import PolkadotProvider from "./providers/polkadot";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
@@ -297,7 +298,11 @@ export class UniversalProvider implements IUniversalProvider {
           });
           break;
         case "polkadot":
-          //TODO:
+          this.rpcProviders[namespace] = new PolkadotProvider({
+            client: this.client,
+            namespace: combinedNamespace,
+            events: this.events,
+          });
           break;
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
