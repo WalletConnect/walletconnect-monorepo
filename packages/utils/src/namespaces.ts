@@ -66,8 +66,7 @@ export function getRequiredNamespacesFromNamespaces(
 }
 
 export type BuildApprovedNamespacesParams = {
-  requiredNamespaces: ProposalTypes.RequiredNamespaces;
-  optionalNamespaces?: ProposalTypes.OptionalNamespaces;
+  proposal: ProposalTypes.Struct;
   supportedNamespaces: Record<
     string,
     { chains: string[]; methods: string[]; events: string[]; accounts: string[] }
@@ -84,8 +83,10 @@ export type BuildApprovedNamespacesParams = {
 export function buildApprovedNamespaces(
   params: BuildApprovedNamespacesParams,
 ): SessionTypes.Namespaces {
-  const { requiredNamespaces, optionalNamespaces = {}, supportedNamespaces } = params;
-
+  const {
+    proposal: { requiredNamespaces, optionalNamespaces = {} },
+    supportedNamespaces,
+  } = params;
   const normalizedRequired = normalizeNamespaces(requiredNamespaces);
   const normalizedOptional = normalizeNamespaces(optionalNamespaces);
 
