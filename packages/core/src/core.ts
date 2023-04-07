@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import pino from "pino";
 
-import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import { HeartBeat } from "@walletconnect/heartbeat";
+import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
@@ -10,15 +10,16 @@ import {
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import { Crypto, Relayer, Pairing, JsonRpcHistory, Expirer } from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
+  CORE_GENERIC_STORAGE_OPTIONS,
   CORE_PROTOCOL,
   CORE_STORAGE_OPTIONS,
   CORE_VERSION,
   RELAYER_DEFAULT_RELAY_URL,
 } from "./constants";
+import { Crypto, Expirer, JsonRpcHistory, Pairing, Relayer } from "./controllers";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
@@ -33,6 +34,7 @@ export class Core extends ICore {
   public relayer: ICore["relayer"];
   public crypto: ICore["crypto"];
   public storage: ICore["storage"];
+  public genericStorage: ICore["genericStorage"];
   public history: ICore["history"];
   public expirer: ICore["expirer"];
   public pairing: ICore["pairing"];
@@ -63,6 +65,9 @@ export class Core extends ICore {
     this.storage = opts?.storage
       ? opts.storage
       : new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...opts?.storageOptions });
+
+    this.genericStorage = new KeyValueStorage(CORE_GENERIC_STORAGE_OPTIONS);
+
     this.relayer = new Relayer({
       core: this,
       logger: this.logger,

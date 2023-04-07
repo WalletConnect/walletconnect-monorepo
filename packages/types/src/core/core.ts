@@ -1,14 +1,14 @@
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
+import { Logger } from "@walletconnect/logger";
 
 import { ICrypto } from "./crypto";
-import { IRelayer } from "./relayer";
-import { IKeyChain } from "./keychain";
-import { IJsonRpcHistory } from "./history";
 import { IExpirer } from "./expirer";
+import { IJsonRpcHistory } from "./history";
+import { IKeyChain } from "./keychain";
 import { IPairing } from "./pairing";
-import { Logger } from "@walletconnect/logger";
+import { IRelayer } from "./relayer";
 
 export declare namespace CoreTypes {
   interface Options {
@@ -43,6 +43,7 @@ export abstract class ICore extends IEvents {
   public abstract crypto: ICrypto;
   public abstract relayer: IRelayer;
   public abstract storage: IKeyValueStorage;
+  public abstract genericStorage: IKeyValueStorage;
   public abstract history: IJsonRpcHistory;
   public abstract expirer: IExpirer;
   public abstract pairing: IPairing;

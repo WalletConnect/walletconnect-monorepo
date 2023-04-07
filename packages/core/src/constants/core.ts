@@ -12,3 +12,7 @@ export const CORE_DEFAULT = {
 export const CORE_STORAGE_OPTIONS = {
   database: ":memory:",
 };
+
+export const CORE_GENERIC_STORAGE_OPTIONS = {
+  table: "generic_storage",
+};
