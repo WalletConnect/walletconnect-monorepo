@@ -26,5 +26,6 @@
   "javascript.updateImportsOnFileMove.enabled": "always",
   "typescript.suggest.autoImports": false,
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.updateImportsOnFileMove.enabled": "always"
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "prettier.prettierPath": "/usr/local/lib/node_modules/prettier"
 }

@@ -4,15 +4,15 @@ import Client from "@walletconnect/sign-client";
 import { EngineTypes, SessionTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 import { PROVIDER_EVENTS } from "../constants";
-import { 
+import {
   IProvider,
   RequestParams,
   RpcProvidersMap,
   SessionNamespace,
-  SubProviderOpts } from "../types";
+  SubProviderOpts,
+} from "../types";
 
 import { getRpcUrl, handleDeepLinks } from "../utils";
-
 
 class PolkadotProvider implements IProvider {
   public name = "polkadot";
@@ -124,4 +124,3 @@ class PolkadotProvider implements IProvider {
 }
 
 export default PolkadotProvider;
-
