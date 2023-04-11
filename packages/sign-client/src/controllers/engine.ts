@@ -1157,13 +1157,18 @@ export class Engine extends IEngine {
       },
     };
 
-    const origin = await this.client.core.verify.resolve({
-      attestationId: hash,
-      verifyUrl: metadata.verifyUrl,
-    });
+    try {
+      const origin = await this.client.core.verify.resolve({
+        attestationId: hash,
+        verifyUrl: metadata.verifyUrl,
+      });
 
-    context.verified.origin = origin;
-    context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+      context.verified.origin = origin;
+      context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+    } catch (e) {
+      this.client.logger.error(e);
+    }
+
     this.client.logger.info(`Verify context: ${JSON.stringify(context)}`);
     return context;
   };

@@ -1,9 +1,8 @@
-import pino from "pino";
 import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
 import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
-import { getDefaultLoggerOptions, Logger } from "@walletconnect/logger";
+import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
 import PolkadotProvider from "./providers/polkadot";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";

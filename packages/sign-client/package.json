@@ -45,8 +45,7 @@
     "@walletconnect/time": "^1.0.2",
     "@walletconnect/types": "2.6.2",
     "@walletconnect/utils": "2.6.2",
-    "events": "^3.3.0",
-    "pino": "7.11.0"
+    "events": "^3.3.0"
   },
   "devDependencies": {
     "@walletconnect/jsonrpc-provider": "^1.0.12",
