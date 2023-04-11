@@ -9,3 +9,4 @@ export * from "./subscriber";
 export * from "./pairing";
 export * from "./history";
 export * from "./expirer";
+export * from "./verify";

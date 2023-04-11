@@ -100,10 +100,16 @@ describe("Sign Client Events Validation", () => {
           ...TEST_EMIT_PARAMS,
         };
 
+        const activeSessions = clients.B.session.getAll();
+        expect(activeSessions.length).to.eql(1);
+
         await new Promise<void>(async (resolve, reject) => {
           try {
             clients.B.on("session_delete", (event) => {
               expect(eventPayload.topic).to.eql(event.topic);
+
+              const sessionsLeft = clients.B.session.getAll();
+              expect(sessionsLeft.length).to.eql(0);
               resolve();
             });
             await clients.A.disconnect({
