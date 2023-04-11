@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":disableDevDependencies",
+    ":prConcurrentLimit10",
+    ":prHourlyLimit2",
+    ":semanticCommits",
+    ":semanticCommitScope(deps)"
+  ],
+  "updateInternalDeps": true,
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "schedule": ["every weekend"]
+    },
+    {
+      "matchPackagePatterns": ["@walletconnect/*"],
+      "schedule": ["at any time"]
+    }
+  ]
+}
