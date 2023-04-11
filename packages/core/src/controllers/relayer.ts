@@ -1,5 +1,4 @@
 import { EventEmitter } from "events";
-import pino from "pino";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
   formatJsonRpcResult,
@@ -14,6 +13,7 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
+  pino,
   Logger,
 } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
