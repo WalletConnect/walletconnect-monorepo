@@ -9,7 +9,7 @@ import { IJsonRpcHistory } from "./history";
 import { IExpirer } from "./expirer";
 import { IPairing } from "./pairing";
 import { Logger } from "@walletconnect/logger";
-
+import { IVerify } from "./verify";
 export declare namespace CoreTypes {
   interface Options {
     projectId?: string;
@@ -26,6 +26,7 @@ export declare namespace CoreTypes {
     description: string;
     url: string;
     icons: string[];
+    verifyUrl?: string;
   }
 }
 
@@ -46,6 +47,7 @@ export abstract class ICore extends IEvents {
   public abstract history: IJsonRpcHistory;
   public abstract expirer: IExpirer;
   public abstract pairing: IPairing;
+  public abstract verify: IVerify;
 
   constructor(public opts?: CoreTypes.Options) {
     super();

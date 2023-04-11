@@ -5,6 +5,7 @@ import { IEngine } from "./engine";
 import { IPendingRequest } from "./pendingRequest";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
+import { Verify } from "../core/verify";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -24,15 +25,18 @@ export declare namespace SignClientTypes {
     topic: string;
     params: T;
   }
-
   interface EventArguments {
-    session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
+    session_proposal: {
+      context: Verify.Context;
+    } & Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
     session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
     session_extend: Omit<BaseEventArgs, "params">;
     session_ping: Omit<BaseEventArgs, "params">;
     session_delete: Omit<BaseEventArgs, "params">;
     session_expire: { topic: string };
-    session_request: BaseEventArgs<{
+    session_request: {
+      context: Verify.Context;
+    } & BaseEventArgs<{
       request: { method: string; params: any };
       chainId: string;
     }>;
