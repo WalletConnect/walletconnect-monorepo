@@ -39,7 +39,7 @@
   "dependencies": {
     "@walletconnect/core": "2.6.2",
     "@walletconnect/events": "^1.0.1",
-    "@walletconnect/heartbeat": "^1.2.0",
+    "@walletconnect/heartbeat": "1.2.0",
     "@walletconnect/jsonrpc-utils": "^1.0.7",
     "@walletconnect/logger": "^2.0.1",
     "@walletconnect/time": "^1.0.2",
