@@ -25,7 +25,7 @@ jobs:
           label-operator: OR
   auto-promote:
     name: auto-promote
-    if: github.event.action == 'opened'
+    if: github.event.action == 'opened' && github.event.sender.login != 'renovate[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Check Core Team membership
