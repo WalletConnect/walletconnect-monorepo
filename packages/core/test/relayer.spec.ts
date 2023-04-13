@@ -220,4 +220,36 @@ describe("Relayer", () => {
       ).to.be.true;
     });
   });
+  describe("transport", () => {
+    beforeEach(async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
+      await relayer.init();
+    });
+    it("should restart transport with new endpoint", async () => {
+      const newEndpoint = "us-east-1.relay.walletconnect.com";
+      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(
+        TEST_CORE_OPTIONS.relayUrl.replace("wss://", ""),
+      );
+      await relayer.restartTransport(`wss://${newEndpoint}`);
+      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(newEndpoint);
+    });
+
+    it("should restart transport with new endpoint (multiple)", async () => {
+      const endpointOne = "us-east-1.relay.walletconnect.com";
+      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(
+        TEST_CORE_OPTIONS.relayUrl.replace("wss://", ""),
+      );
+      await relayer.restartTransport(`wss://${endpointOne}`);
+      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(endpointOne);
+
+      const endpointTwo = "eu-central-1.relay.walletconnect.com";
+      await relayer.restartTransport(`wss://${endpointTwo}`);
+      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(endpointTwo);
+    });
+  });
 });
