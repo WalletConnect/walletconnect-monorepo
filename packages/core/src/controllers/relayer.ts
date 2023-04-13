@@ -175,9 +175,9 @@ export class Relayer extends IRelayer {
   }
 
   public async transportOpen(relayUrl?: string) {
+    this.transportExplicitlyClosed = false;
     if (this.reconnecting) return;
     this.relayUrl = relayUrl || this.relayUrl;
-    this.transportExplicitlyClosed = false;
     this.reconnecting = true;
     try {
       await Promise.all([
@@ -219,9 +219,15 @@ export class Relayer extends IRelayer {
   public async restartTransport(relayUrl?: string) {
     if (this.transportExplicitlyClosed) return;
     this.relayUrl = relayUrl || this.relayUrl;
-    await this.transportClose();
-    // wait a bit to give the socket time to close
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        this.provider.once(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+          resolve();
+        });
+      }),
+      this.transportClose(),
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
     await this.createProvider();
     await this.transportOpen();
   }

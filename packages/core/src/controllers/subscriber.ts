@@ -350,15 +350,13 @@ export class Subscriber extends ISubscriber {
   }
 
   private async reset() {
-    if (!this.cached.length) return;
-
-    const batches = Math.ceil(this.cached.length / this.batchSubscribeTopicsLimit);
-
-    for (let i = 0; i < batches; i++) {
-      const batch = this.cached.splice(0, this.batchSubscribeTopicsLimit);
-      await this.batchSubscribe(batch);
+    if (this.cached.length) {
+      const batches = Math.ceil(this.cached.length / this.batchSubscribeTopicsLimit);
+      for (let i = 0; i < batches; i++) {
+        const batch = this.cached.splice(0, this.batchSubscribeTopicsLimit);
+        await this.batchSubscribe(batch);
+      }
     }
-
     this.events.emit(SUBSCRIBER_EVENTS.resubscribed);
   }
 
