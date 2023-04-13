@@ -227,6 +227,7 @@ export class Relayer extends IRelayer {
       }),
       this.transportClose(),
     ]);
+    // wait a bit to give the socket time to close
     await new Promise((resolve) => setTimeout(resolve, 1_000));
     await this.createProvider();
     await this.transportOpen();
