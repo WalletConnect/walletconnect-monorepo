@@ -1,5 +1,5 @@
 import EventEmmiter, { EventEmitter } from "events";
-import { ICore, ProposalTypes } from "@walletconnect/types";
+import { ICore, ProposalTypes, Verify } from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
@@ -16,16 +16,20 @@ export declare namespace Web3WalletTypes {
   type SessionRequest = BaseEventArgs<{
     request: { method: string; params: any };
     chainId: string;
-  }>;
+  }> & {
+    context: Verify.Context;
+  };
 
-  type SessionProposal = Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
+  type SessionProposal = Omit<BaseEventArgs<ProposalTypes.Struct>, "topic"> & {
+    context: Verify.Context;
+  };
 
   type AuthRequest = BaseEventArgs<AuthClientTypes.AuthRequestEventArgs>;
 
   type SessionDelete = Omit<BaseEventArgs, "params">;
 
   interface EventArguments {
-    session_proposal: Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
+    session_proposal: SessionProposal;
     session_request: SessionRequest;
     session_delete: Omit<BaseEventArgs, "params">;
     auth_request: AuthRequest;
