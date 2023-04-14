@@ -1162,9 +1162,10 @@ export class Engine extends IEngine {
         attestationId: hash,
         verifyUrl: metadata.verifyUrl,
       });
-
-      context.verified.origin = origin;
-      context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+      if (origin) {
+        context.verified.origin = origin;
+        context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+      }
     } catch (e) {
       this.client.logger.error(e);
     }
