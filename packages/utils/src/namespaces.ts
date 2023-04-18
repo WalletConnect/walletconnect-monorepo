@@ -127,7 +127,7 @@ export function buildApprovedNamespaces(
     const accounts = chains
       .map((chain: string) =>
         supportedNamespaces[requiredNamespace].accounts.filter((account: string) =>
-          account.includes(chain),
+          account.includes(`${chain}:`),
         ),
       )
       .flat();
