@@ -19,9 +19,12 @@ export const handleDeepLinks = (client: InstanceType<typeof SignClient>, params:
 export async function deeplinkRedirect(request: RequestParams, store: IKeyValueStorage) {
   try {
     const item = await store.getItem("WALLETCONNECT_DEEPLINK_CHOICE");
+
     if (!item) return;
-    const json = JSON.parse(item);
+
+    const json = typeof item === "string" ? JSON.parse(item) : item;
     const deeplink = json?.href;
+
     if (typeof deeplink !== "string") return;
 
     if (deeplink.endsWith("/")) deeplink.slice(0, -1);
@@ -33,7 +36,7 @@ export async function deeplinkRedirect(request: RequestParams, store: IKeyValueS
     if (env === ENV_MAP.browser) {
       window.open(link, "_blank", "noreferrer noopener");
     } else if (env === ENV_MAP.reactNative) {
-      const linking = require("react-native").Linking; //.then((m) => m.Linking.openURL(link));
+      const linking = require("react-native").Linking;
       await linking.openURL(link);
     }
   } catch (err) {
