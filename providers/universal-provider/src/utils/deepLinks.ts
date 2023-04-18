@@ -34,7 +34,7 @@ export async function deeplinkRedirect(request: RequestParams, store: IKeyValueS
     const env = getEnvironment();
 
     if (env === ENV_MAP.browser) {
-      window.open(link, "_blank", "noreferrer noopener");
+      window.open(link, "_self", "noreferrer noopener");
     } else if (env === ENV_MAP.reactNative) {
       const linking = require("react-native").Linking;
       await linking.openURL(link);
