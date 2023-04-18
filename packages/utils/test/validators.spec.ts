@@ -978,6 +978,51 @@ describe("buildApprovedNamespaces (validators)", () => {
     };
     expect(approvedNamespaces).to.deep.eq(expected);
   });
+  it("should build namespaces (config 12 - chains fuzzing)", () => {
+    const required = {
+      "eip155:1": {
+        events: ["chainChanged"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+      },
+    };
+    const optional = {};
+
+    const chains = ["eip155:1", "eip155:11", "eip155:111"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:11:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:111:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+
+    const expected = {
+      eip155: {
+        chains: ["eip155:1"],
+        methods: ["personal_sign", "eth_sendTransaction"],
+        events,
+        accounts: ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"],
+      },
+    };
+    expect(approvedNamespaces).to.deep.eq(expected);
+  });
+
   it.fails(
     "should throw while building namespaces (config 1 - no supported required chains)",
     () => {
