@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
-import { isBrowser, isNode, calcExpiry } from "@walletconnect/utils";
+import { isBrowser, isNode, calcExpiry, isReactNative } from "@walletconnect/utils";
 import { FIVE_SECONDS } from "@walletconnect/time";
 
 import { VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
@@ -23,7 +23,7 @@ export class Verify extends IVerify {
 
   public init: IVerify["init"] = async (params) => {
     // ignore on non browser environments
-    if (!isBrowser() || !document) return;
+    if (isReactNative() || !isBrowser()) return;
 
     this.verifyUrl = params?.verifyUrl || VERIFY_SERVER;
     await this.createIframe();
