@@ -219,14 +219,16 @@ export class Relayer extends IRelayer {
   public async restartTransport(relayUrl?: string) {
     if (this.transportExplicitlyClosed) return;
     this.relayUrl = relayUrl || this.relayUrl;
-    await Promise.all([
-      new Promise<void>((resolve) => {
-        this.provider.once(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-          resolve();
-        });
-      }),
-      this.transportClose(),
-    ]);
+    if (this.connected) {
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          this.provider.once(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+            resolve();
+          });
+        }),
+        this.transportClose(),
+      ]);
+    }
     await this.createProvider();
     await this.transportOpen();
   }
