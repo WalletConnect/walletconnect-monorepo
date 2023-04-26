@@ -233,7 +233,7 @@ describe("Relayer", () => {
     it("should restart transport with new endpoint", async () => {
       const newEndpoint = "us-east-1.relay.walletconnect.com";
       expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(
-        TEST_CORE_OPTIONS.relayUrl.replace("wss://", ""),
+        TEST_CORE_OPTIONS.relayUrl?.replace("wss://", ""),
       );
       await relayer.restartTransport(`wss://${newEndpoint}`);
       expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(newEndpoint);
@@ -242,7 +242,7 @@ describe("Relayer", () => {
     it("should restart transport with new endpoint (multiple)", async () => {
       const endpointOne = "us-east-1.relay.walletconnect.com";
       expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(
-        TEST_CORE_OPTIONS.relayUrl.replace("wss://", ""),
+        TEST_CORE_OPTIONS.relayUrl?.replace("wss://", ""),
       );
       await relayer.restartTransport(`wss://${endpointOne}`);
       expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(endpointOne);
@@ -250,6 +250,13 @@ describe("Relayer", () => {
       const endpointTwo = "eu-central-1.relay.walletconnect.com";
       await relayer.restartTransport(`wss://${endpointTwo}`);
       expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(endpointTwo);
+    });
+
+    it("should restart transport after connection drop", async () => {
+      await relayer.provider.connection.close();
+      expect(relayer.connected).to.be.false;
+      await relayer.restartTransport();
+      expect(relayer.connected).to.be.true;
     });
   });
 });

@@ -27,7 +27,7 @@ export const RELAYER_PROVIDER_EVENTS = {
   error: "error",
 };
 
-export const RELAYER_RECONNECT_TIMEOUT = ONE_SECOND;
+export const RELAYER_RECONNECT_TIMEOUT = ONE_SECOND / 2;
 
 export const RELAYER_STORAGE_OPTIONS = {
   database: ":memory:",
