@@ -50,7 +50,7 @@ export class Verify extends IVerify {
       signal: this.abortController.signal,
     });
     clearTimeout(timeout);
-    return (await result.json())?.origin || "";
+    return result.status === 200 ? (await result.json())?.origin : "";
   };
 
   get context(): string {
