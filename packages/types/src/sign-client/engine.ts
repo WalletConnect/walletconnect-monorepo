@@ -184,6 +184,11 @@ export interface EnginePrivate {
     expirerHasDeleted?: boolean,
   ): Promise<void>;
 
+  cleanupDuplicatePairings(
+    session: SessionTypes.Struct,
+  ): Promise<void>;
+
+
   cleanup(): Promise<void>;
 
   onSessionProposeRequest(
