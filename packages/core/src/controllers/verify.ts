@@ -1,7 +1,7 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
-import { isBrowser, isNode, calcExpiry, isReactNative } from "@walletconnect/utils";
-import { FIVE_SECONDS } from "@walletconnect/time";
+import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
+import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
 import { VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
 
@@ -59,18 +59,19 @@ export class Verify extends IVerify {
 
   private createIframe = async () => {
     try {
-      // if an invalid verifyUrl is provided, the iframe will never load
-      // so we need to timeout and reject
-      const timeout = this.startAbortTimer(FIVE_SECONDS);
       await Promise.race([
         new Promise<void>((resolve, reject) => {
+          const exists = document.getElementById(VERIFY_CONTEXT);
+          if (exists) {
+            return resolve();
+          }
+
           const iframe = document.createElement("iframe");
           iframe.setAttribute("id", VERIFY_CONTEXT);
           iframe.setAttribute("src", `${this.verifyUrl}/${this.projectId}`);
           iframe.style.display = "none";
           iframe.addEventListener("load", () => {
             this.initialized = true;
-            clearTimeout(timeout);
             resolve();
           });
           iframe.addEventListener("error", (error) => {
@@ -80,9 +81,7 @@ export class Verify extends IVerify {
           this.iframe = iframe;
         }),
         new Promise((_reject) => {
-          this.abortController.signal.addEventListener("abort", () => {
-            _reject("iframe load timeout");
-          });
+          setTimeout(() => _reject("iframe load timeout"), toMiliseconds(ONE_SECOND / 2));
         }),
       ]);
     } catch (error) {
@@ -92,6 +91,6 @@ export class Verify extends IVerify {
   };
 
   private startAbortTimer(timer: number) {
-    return setTimeout(() => this.abortController.abort(), calcExpiry(timer));
+    return setTimeout(() => this.abortController.abort(), toMiliseconds(timer));
   }
 }
