@@ -361,7 +361,10 @@ export class Engine extends IEngine {
       const pairing = this.client.core.pairing.pairings.get(session.pairingTopic);
       const allPairings = this.client.core.pairing.pairings.getAll();
       const duplicates = allPairings.filter(
-        (p) => p.peerMetadata?.url === session.self.metadata.url && p.topic !== pairing.topic,
+        (p) =>
+          p.peerMetadata?.url &&
+          p.peerMetadata?.url === session.self.metadata.url &&
+          p.topic !== pairing.topic,
       );
       if (duplicates.length === 0) return;
       this.client.logger.info(`Cleaning up ${duplicates.length} duplicate pairing(s)`);
