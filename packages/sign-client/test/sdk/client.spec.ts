@@ -62,6 +62,28 @@ describe("Sign Client Integration", () => {
       expect(acknowledged).to.be.true;
       await deleteClients(clients);
     });
+    it("should cleanup duplicate pairings", async () => {
+      const clients = await initTwoClients();
+      const { pairingA, sessionA } = await testConnectMethod(clients);
+      expect(pairingA).to.be.exist;
+      expect(sessionA).to.be.exist;
+      expect(pairingA.topic).to.eq(sessionA.pairingTopic);
+      const sessionB = clients.B.session.get(sessionA.topic);
+      expect(sessionB).to.be.exist;
+      expect(sessionB.pairingTopic).to.eq(sessionA.pairingTopic);
+      await clients.A.disconnect({
+        topic: sessionA.topic,
+        reason: getSdkError("USER_DISCONNECTED"),
+      });
+      expect(clients.A.pairing.getAll().length).to.eq(1);
+      const { pairingA: pairingAfter, sessionA: sessionAfter } = await testConnectMethod(clients);
+      expect(pairingA.topic).to.not.eq(pairingAfter.topic);
+      expect(sessionA.topic).to.not.eq(sessionAfter.topic);
+      expect(sessionA.pairingTopic).to.not.eq(sessionAfter.pairingTopic);
+      expect(sessionAfter.pairingTopic).to.eq(pairingAfter.topic);
+      expect(clients.A.pairing.getAll().length).to.eq(1);
+      await deleteClients(clients);
+    });
   });
 
   describe("disconnect", () => {
