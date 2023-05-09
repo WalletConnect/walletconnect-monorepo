@@ -123,7 +123,7 @@ export function buildNamespaces(params: NamespacesParams): {
   }
 
   const requiredChains = chains;
-  const requriedMethods = methods || REQUIRED_METHODS;
+  const requiredMethods = methods || REQUIRED_METHODS;
   const requiredEvents = events || REQUIRED_EVENTS;
   const requiredRpcMap = {
     [getEthereumChainId(requiredChains)]: rpcMap[getEthereumChainId(requiredChains)],
@@ -131,7 +131,7 @@ export function buildNamespaces(params: NamespacesParams): {
 
   const required: Namespace = {
     chains: requiredChains,
-    methods: requriedMethods,
+    methods: requiredMethods,
     events: requiredEvents,
     rpcMap: requiredRpcMap,
   };
@@ -164,7 +164,7 @@ export function buildNamespaces(params: NamespacesParams): {
         shouldIncludeRequiredChains ? requiredChains.concat(optionalChains || []) : optionalChains,
       ),
     ],
-    methods: [...new Set(requriedMethods.concat(optionalMethods || []))],
+    methods: [...new Set(requiredMethods.concat(optionalMethods || []))],
     events: [...new Set(requiredEvents.concat(optionalEvents || []))],
     rpcMap,
   };
