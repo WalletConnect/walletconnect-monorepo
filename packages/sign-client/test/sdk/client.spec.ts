@@ -77,6 +77,7 @@ describe("Sign Client Integration", () => {
       });
       expect(clients.A.pairing.getAll().length).to.eq(1);
       const { pairingA: pairingAfter, sessionA: sessionAfter } = await testConnectMethod(clients);
+      await throttle(1_000);
       expect(pairingA.topic).to.not.eq(pairingAfter.topic);
       expect(sessionA.topic).to.not.eq(sessionAfter.topic);
       expect(sessionA.pairingTopic).to.not.eq(sessionAfter.pairingTopic);
