@@ -354,6 +354,29 @@ export class Engine extends IEngine {
 
   // ---------- Private Helpers --------------------------------------- //
 
+  private cleanupDuplicatePairings: EnginePrivate["cleanupDuplicatePairings"] = async (
+    session: SessionTypes.Struct,
+  ) => {
+    try {
+      const pairing = this.client.core.pairing.pairings.get(session.pairingTopic);
+      const allPairings = this.client.core.pairing.pairings.getAll();
+      const duplicates = allPairings.filter(
+        (p) =>
+          p.peerMetadata?.url &&
+          p.peerMetadata?.url === session.self.metadata.url &&
+          p.topic !== pairing.topic,
+      );
+      if (duplicates.length === 0) return;
+      this.client.logger.info(`Cleaning up ${duplicates.length} duplicate pairing(s)`);
+      await Promise.all(
+        duplicates.map((p) => this.client.core.pairing.disconnect({ topic: p.topic })),
+      );
+      this.client.logger.info(`Duplicate pairings clean up finished`);
+    } catch (error) {
+      this.client.logger.error(error);
+    }
+  };
+
   private deleteSession: EnginePrivate["deleteSession"] = async (topic, expirerHasDeleted) => {
     const { self } = this.client.session.get(topic);
     // Await the unsubscribe first to avoid deleting the symKey too early below.
@@ -644,6 +667,7 @@ export class Engine extends IEngine {
       };
       await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
       this.events.emit(engineEvent("session_connect"), { session });
+      this.cleanupDuplicatePairings(session);
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
