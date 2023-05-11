@@ -31,8 +31,9 @@
   },
   "dependencies": {
     "@walletconnect/heartbeat": "1.2.1",
-    "@walletconnect/jsonrpc-provider": "^1.0.12",
-    "@walletconnect/jsonrpc-utils": "^1.0.7",
+    "@walletconnect/jsonrpc-provider": "1.0.12-canary-1",
+    "@walletconnect/jsonrpc-utils": "1.0.7-canary-1",
+    "@walletconnect/jsonrpc-types": "1.0.2-canary-1",
     "@walletconnect/jsonrpc-ws-connection": "^1.0.11",
     "@walletconnect/keyvaluestorage": "^1.0.2",
     "@walletconnect/logger": "^2.0.1",
