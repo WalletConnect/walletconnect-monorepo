@@ -10,6 +10,7 @@ export const RELAYER_CONTEXT = "relayer";
 
 export const RELAYER_EVENTS = {
   message: "relayer_message",
+  message_ack: "message_ack",
   connect: "relayer_connect",
   disconnect: "relayer_disconnect",
   error: "relayer_error",
