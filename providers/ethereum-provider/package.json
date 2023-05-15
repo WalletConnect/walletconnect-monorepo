@@ -53,7 +53,7 @@
     "events": "^3.3.0"
   },
   "devDependencies": {
-    "@web3modal/standalone": "^2.2.2",
+    "@web3modal/standalone": "^2.4.1",
     "ethereum-test-network": "0.1.6",
     "ethers": "5.6.9",
     "uint8arrays": "^3.1.0",
