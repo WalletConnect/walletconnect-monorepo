@@ -281,7 +281,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await testConnectMethod(clients);
 
-      const expiry = 10000;
+      const expiry = 5000;
 
       await Promise.all([
         new Promise<void>((resolve) => {
