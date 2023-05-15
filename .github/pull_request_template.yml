@@ -1,0 +1,10 @@
+# Pull request templates
+# Each entry below represents a pull request template.
+
+- name: Standard Pull Request
+  about: Template for chores, features, or bug fixes
+  filename: pr_template_standard.md
+
+- name: Release Pull Request
+  about: Template for releases of the monorepo's packages
+  filename: pr_template_release.md
