@@ -37,7 +37,7 @@ export async function deeplinkRedirect(request: RequestParams, store: IKeyValueS
       window.open(link, "_self", "noreferrer noopener");
     } else if (env === ENV_MAP.reactNative) {
       // global.Linking is set by react-native-compat
-      if (typeof (global as any).Linking !== "undefined") {
+      if (typeof (global as any)?.Linking !== "undefined") {
         await (global as any).Linking.openURL(link);
       }
     }
