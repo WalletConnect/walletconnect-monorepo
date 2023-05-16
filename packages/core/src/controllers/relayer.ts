@@ -89,6 +89,13 @@ export class Relayer extends IRelayer {
     await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
+    setTimeout(async () => {
+      if (this.subscriber.topics.length === 0) {
+        this.logger.info(`No topics subscribted to after init, closing transport`);
+        await this.transportClose();
+        this.transportExplicitlyClosed = false;
+      }
+    }, 10_000);
   }
 
   get context() {

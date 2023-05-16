@@ -11,7 +11,7 @@ import {
   RELAYER_SUBSCRIBER_SUFFIX,
   SUBSCRIBER_EVENTS,
 } from "../src";
-import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
 import { ICore, IRelayer } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
@@ -230,6 +230,9 @@ describe("Relayer", () => {
       });
       await relayer.init();
     });
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
     it("should restart transport with new endpoint", async () => {
       const newEndpoint = "us-east-1.relay.walletconnect.com";
       expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(
@@ -256,6 +259,39 @@ describe("Relayer", () => {
       await relayer.provider.connection.close();
       expect(relayer.connected).to.be.false;
       await relayer.restartTransport();
+      expect(relayer.connected).to.be.true;
+    });
+  });
+
+  describe("relay optimization testing", () => {
+    afterEach(async () => {
+      await disconnectSocket(relayer);
+    });
+
+    it("should close transport 10 seconds after init if NOT active", async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
+      await relayer.init();
+      await throttle(11_000); // +1 sec buffer
+      expect(relayer.connected).to.be.false;
+    });
+
+    it("should NOT close transport 10 seconds after init if active", async () => {
+      relayer = new Relayer({
+        core,
+        logger,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_CORE_OPTIONS.projectId,
+      });
+      const topic = "fake_topic";
+      await relayer.subscriber.init();
+      await relayer.subscriber.subscribe(topic);
+      await relayer.init();
+      await throttle(11_000); // +1 sec buffer
       expect(relayer.connected).to.be.true;
     });
   });
