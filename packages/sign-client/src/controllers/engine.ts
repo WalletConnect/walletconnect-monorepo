@@ -234,7 +234,10 @@ export class Engine extends IEngine {
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
-      acknowledged: () => new Promise((resolve) => resolve(this.client.session.get(sessionTopic))),
+      acknowledged: () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(this.client.session.get(sessionTopic)), 5_00),
+        ), // artificial delay to allow for the session to be processed by the peer
     };
   };
 
