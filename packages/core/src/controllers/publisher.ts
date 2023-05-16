@@ -35,6 +35,8 @@ export class Publisher extends IPublisher {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     try {
+      // eslint-disable-next-line no-console
+      console.log("publishing", opts?.ttl, PUBLISHER_DEFAULT_TTL);
       const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
