@@ -28,6 +28,10 @@ If applicable, mention any specific areas that need additional attention during 
 
 Outline the steps needed to test the release thoroughly. Include any specific scenarios or test cases that should be executed to verify the correctness and stability of the package. If necessary, provide links to additional resources, testing environments, or tools that can assist in the testing process.
 
+## Related Issues and Pull Requests
+
+List any related issues or pull requests that are relevant to this release, such as dependent changes to upstream packages or relevant documentation changes. If this release fixes any issues, please include the issue number in the format `#<issue number>`. If this release is dependent on any other pull requests, please include the pull request number in the format `#<pull request number>`.
+
 ## Additional Notes
 
 Include any additional information, concerns, or considerations related to the release that might be important for the reviewers to be aware of.
