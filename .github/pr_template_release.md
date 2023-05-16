@@ -1,22 +1,22 @@
 ## Release Checklist
 
-- [ ] **Canary Version Testing**
+- [ ] **Canary Version QA**
 
   - [ ] I have thoroughly tested the release using a canary version: `v2...`
   - [ ] The canary version has been verified to work as expected.
   - [ ] All major features and changes have been tested and validated.
 
-- [ ] **Web3Modal Team Testing**
+- [ ] **Web3Modal Team QA**
 
   - [ ] The Web3Modal team has tested the release for compatibility and functionality.
-  - [ ] The package integrates seamlessly with Web3Modal (if relevant).
+  - [ ] The release is backwards compatible with Web3Modal.
   - [ ] Any reported issues or bugs have been addressed or documented.
 
-- [ ] **React Native Team Testing**
+- [ ] **React Native Team QA**
 
   - [ ] The React Native team has tested the release for compatibility and functionality (if relevant).
-  - [ ] The package works correctly in React Native environments.
-  - [ ] Any reported issues or bugs have been addressed or documented (if applicable).
+  - [ ] The release works correctly in React Native environments and is backwards compatible with Web3Modal React Native.
+  - [ ] Any reported issues or bugs have been addressed or documented.
 
 ## Description
 
