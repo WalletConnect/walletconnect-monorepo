@@ -1,5 +1,7 @@
 ## Description
 
+> Creating a release PR? Please use the [Release PR Template](./pr_template_release.md) instead.
+
 Please include a brief summary of the change.
 
 ## Type of change
