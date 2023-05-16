@@ -1,6 +1,6 @@
-## Description
+> Creating a release? Please use the [Release PR Template](https://github.com/WalletConnect/walletconnect-monorepo/blob/v2.0/.github/pr_template_release.md) instead.
 
-> Creating a release PR? Please use the [Release PR Template](./pr_template_release.md) instead.
+## Description
 
 Please include a brief summary of the change.
 
