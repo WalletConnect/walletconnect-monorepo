@@ -138,6 +138,7 @@ describe("Sign Client Integration", () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
+          await throttle(1_000);
           await clients.A.ping({ topic });
           await deleteClients(clients);
         });
@@ -146,6 +147,7 @@ describe("Sign Client Integration", () => {
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
+          await throttle(1_000);
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });
