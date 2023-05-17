@@ -1,4 +1,4 @@
-import { THIRTY_DAYS, ONE_DAY, FIVE_MINUTES } from "@walletconnect/time";
+import { THIRTY_DAYS, ONE_DAY, THIRTY_SECONDS } from "@walletconnect/time";
 import { RelayerTypes, PairingJsonRpcTypes } from "@walletconnect/types";
 
 export const PAIRING_CONTEXT = "pairing";
@@ -28,12 +28,12 @@ export const PAIRING_RPC_OPTS: Record<
   },
   wc_pairingPing: {
     req: {
-      ttl: FIVE_MINUTES,
+      ttl: THIRTY_SECONDS,
       prompt: false,
       tag: 1002,
     },
     res: {
-      ttl: FIVE_MINUTES,
+      ttl: THIRTY_SECONDS,
       prompt: false,
       tag: 1003,
     },
