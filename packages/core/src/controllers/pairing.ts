@@ -297,6 +297,8 @@ export class Pairing implements IPairing {
       this.isValidPing({ topic });
       await this.sendResult<"wc_pairingPing">(id, topic, true);
       this.events.emit("pairing_ping", { id, topic });
+      // eslint-disable-next-line no-console
+      console.log("pairing ping request acknowledged", topic);
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
