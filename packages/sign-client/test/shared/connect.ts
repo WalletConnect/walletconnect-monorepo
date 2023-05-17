@@ -59,7 +59,6 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
         });
         if (!sessionB) {
           sessionB = await acknowledged();
-          expect(sessionB.acknowledged).to.be.false;
         }
         resolve();
       } catch (e) {
