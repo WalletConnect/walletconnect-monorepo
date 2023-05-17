@@ -40,6 +40,7 @@ import {
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_DEFAULT_RELAY_URL,
   SUBSCRIBER_EVENTS,
+  RELAYER_TRANSPORT_CUTOFF,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -95,7 +96,7 @@ export class Relayer extends IRelayer {
         await this.transportClose();
         this.transportExplicitlyClosed = false;
       }
-    }, 10_000);
+    }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {

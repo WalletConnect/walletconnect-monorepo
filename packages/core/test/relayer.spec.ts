@@ -9,6 +9,7 @@ import {
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
+  RELAYER_TRANSPORT_CUTOFF,
   SUBSCRIBER_EVENTS,
 } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
@@ -276,7 +277,7 @@ describe("Relayer", () => {
         projectId: TEST_CORE_OPTIONS.projectId,
       });
       await relayer.init();
-      await throttle(11_000); // +1 sec buffer
+      await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
       expect(relayer.connected).to.be.false;
     });
 
@@ -291,7 +292,7 @@ describe("Relayer", () => {
       await relayer.subscriber.init();
       await relayer.subscriber.subscribe(topic);
       await relayer.init();
-      await throttle(11_000); // +1 sec buffer
+      await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
       expect(relayer.connected).to.be.true;
     });
   });
