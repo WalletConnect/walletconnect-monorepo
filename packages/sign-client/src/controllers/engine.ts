@@ -322,7 +322,11 @@ export class Engine extends IEngine {
       });
       await done();
     } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
+      console.log("pairing ping", topic);
       await this.client.core.pairing.ping({ topic });
+      console.log("pairing ping done", topic);
+    } else {
+      console.log("no session or pairing found", topic);
     }
   };
 
