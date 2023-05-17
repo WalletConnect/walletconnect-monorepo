@@ -187,8 +187,7 @@ export class Pairing implements IPairing {
     const message = await this.core.crypto.encode(topic, payload);
     const opts = PAIRING_RPC_OPTS[method].req;
     this.core.history.set(topic, payload);
-    await this.core.relayer.publish(topic, message, opts);
-
+    this.core.relayer.publish(topic, message, opts);
     return payload.id;
   };
 

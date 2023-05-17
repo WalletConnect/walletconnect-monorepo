@@ -134,7 +134,7 @@ describe("Sign Client Integration", () => {
     describe("pairing", () => {
       describe("with existing pairing", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients();
+          const clients = await initTwoClients({ name: "dapp" }, { name: "wallet" });
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
@@ -142,7 +142,7 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients();
+          const clients = await initTwoClients({ name: "dapp" }, { name: "wallet" });
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
