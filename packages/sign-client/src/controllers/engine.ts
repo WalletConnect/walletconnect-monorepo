@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
