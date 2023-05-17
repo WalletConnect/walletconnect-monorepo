@@ -131,7 +131,7 @@ describe("Sign Client Integration", () => {
       );
       await deleteClients(clients);
     });
-    describe.only("pairing", () => {
+    describe("pairing", () => {
       describe("with existing pairing", () => {
         it("A pings B", async () => {
           const clients = await initTwoClients({ name: "dapp" }, { name: "wallet" });

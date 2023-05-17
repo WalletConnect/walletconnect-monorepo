@@ -323,11 +323,7 @@ export class Engine extends IEngine {
       });
       await done();
     } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
-      console.log("pairing ping", topic);
       await this.client.core.pairing.ping({ topic });
-      console.log("pairing ping done", topic);
-    } else {
-      console.log("no session or pairing found", topic);
     }
   };
 
@@ -510,8 +506,6 @@ export class Engine extends IEngine {
         }
 
         const payload = await this.client.core.crypto.decode(topic, message);
-        // eslint-disable-next-line no-console
-        console.log("Relayer message", this.client.name, payload);
 
         if (isJsonRpcRequest(payload)) {
           this.client.core.history.set(topic, payload);

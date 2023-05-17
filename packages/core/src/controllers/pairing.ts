@@ -147,8 +147,6 @@ export class Pairing implements IPairing {
     if (this.pairings.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_pairingPing", {});
       const { done, resolve, reject } = createDelayedPromise<void>();
-      // eslint-disable-next-line no-console
-      console.log("listening for pairing ping response", engineEvent("pairing_ping", id));
       this.events.once(engineEvent("pairing_ping", id), ({ error }) => {
         if (error) reject(error);
         else resolve();
@@ -298,8 +296,6 @@ export class Pairing implements IPairing {
       this.isValidPing({ topic });
       await this.sendResult<"wc_pairingPing">(id, topic, true);
       this.events.emit("pairing_ping", { id, topic });
-      // eslint-disable-next-line no-console
-      console.log("pairing ping request acknowledged", topic);
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
@@ -313,8 +309,6 @@ export class Pairing implements IPairing {
     setTimeout(() => {
       if (isJsonRpcResult(payload)) {
         this.events.emit(engineEvent("pairing_ping", id), {});
-        // eslint-disable-next-line no-console
-        console.log("pairing_ping", id, engineEvent("pairing_ping", id));
       } else if (isJsonRpcError(payload)) {
         this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
       }
