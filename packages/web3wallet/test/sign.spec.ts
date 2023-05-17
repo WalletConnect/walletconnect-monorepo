@@ -51,8 +51,8 @@ describe("Sign Integration", () => {
     await Promise.all([
       new Promise((resolve) => {
         wallet.on("session_proposal", async (sessionProposal) => {
-          const { id, params, context } = sessionProposal;
-          expect(context.verified.validation).to.eq("UNKNOWN");
+          const { id, params, verifyContext } = sessionProposal;
+          expect(verifyContext.verified.validation).to.eq("UNKNOWN");
           session = await wallet.approveSession({
             id,
             namespaces: TEST_NAMESPACES,
@@ -98,8 +98,8 @@ describe("Sign Integration", () => {
     await Promise.all([
       new Promise((resolve) => {
         wallet.on("session_proposal", async (sessionProposal) => {
-          const { id, params, context } = sessionProposal;
-          expect(context.verified.validation).to.eq("UNKNOWN");
+          const { id, params, verifyContext } = sessionProposal;
+          expect(verifyContext.verified.validation).to.eq("UNKNOWN");
           session = await wallet.approveSession({
             id,
             namespaces: TEST_NAMESPACES,
@@ -180,8 +180,8 @@ describe("Sign Integration", () => {
     await Promise.all([
       new Promise((resolve) => {
         wallet.on("session_request", async (sessionRequest) => {
-          const { id, params, context } = sessionRequest;
-          expect(context.verified.validation).to.eq("UNKNOWN");
+          const { id, params, verifyContext } = sessionRequest;
+          expect(verifyContext.verified.validation).to.eq("UNKNOWN");
           const signTransaction = params.request.params[0];
           const signature = await cryptoWallet.signTransaction(signTransaction);
           const response = await wallet.respondSessionRequest({
