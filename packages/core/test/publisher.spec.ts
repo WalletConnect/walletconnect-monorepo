@@ -74,9 +74,6 @@ describe("Publisher", () => {
 
       // -> Queue should clear after the ACKs.
       expect(publisher.queue.size).to.equal(0);
-
-      // emit multiple pulses to ensure queue is cleared
-      await throttle(100);
       // Emit heartbeat pulse event
       publisher.relayer.core.heartbeat.events.emit(HEARTBEAT_EVENTS.pulse);
       await throttle(100);
