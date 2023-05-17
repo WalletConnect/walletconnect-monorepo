@@ -312,6 +312,8 @@ export class Pairing implements IPairing {
     setTimeout(() => {
       if (isJsonRpcResult(payload)) {
         this.events.emit(engineEvent("pairing_ping", id), {});
+        // eslint-disable-next-line no-console
+        console.log("pairing_ping", id, engineEvent("pairing_ping", id));
       } else if (isJsonRpcError(payload)) {
         this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
       }
