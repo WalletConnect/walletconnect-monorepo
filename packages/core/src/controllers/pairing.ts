@@ -147,6 +147,8 @@ export class Pairing implements IPairing {
     if (this.pairings.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_pairingPing", {});
       const { done, resolve, reject } = createDelayedPromise<void>();
+      // eslint-disable-next-line no-console
+      console.log("listening for pairing ping response", engineEvent("pairing_ping", id));
       this.events.once(engineEvent("pairing_ping", id), ({ error }) => {
         if (error) reject(error);
         else resolve();
@@ -187,8 +189,7 @@ export class Pairing implements IPairing {
     const message = await this.core.crypto.encode(topic, payload);
     const opts = PAIRING_RPC_OPTS[method].req;
     this.core.history.set(topic, payload);
-    await this.core.relayer.publish(topic, message, opts);
-
+    this.core.relayer.publish(topic, message, opts);
     return payload.id;
   };
 
