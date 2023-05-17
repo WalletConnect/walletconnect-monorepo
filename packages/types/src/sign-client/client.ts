@@ -27,7 +27,7 @@ export declare namespace SignClientTypes {
   }
   interface EventArguments {
     session_proposal: {
-      context: Verify.Context;
+      verifyContext: Verify.Context;
     } & Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
     session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
     session_extend: Omit<BaseEventArgs, "params">;
@@ -35,7 +35,7 @@ export declare namespace SignClientTypes {
     session_delete: Omit<BaseEventArgs, "params">;
     session_expire: { topic: string };
     session_request: {
-      context: Verify.Context;
+      verifyContext: Verify.Context;
     } & BaseEventArgs<{
       request: { method: string; params: any };
       chainId: string;

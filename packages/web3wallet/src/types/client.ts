@@ -17,11 +17,11 @@ export declare namespace Web3WalletTypes {
     request: { method: string; params: any };
     chainId: string;
   }> & {
-    context: Verify.Context;
+    verifyContext: Verify.Context;
   };
 
   type SessionProposal = Omit<BaseEventArgs<ProposalTypes.Struct>, "topic"> & {
-    context: Verify.Context;
+    verifyContext: Verify.Context;
   };
 
   type AuthRequest = BaseEventArgs<AuthClientTypes.AuthRequestEventArgs>;

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
@@ -234,7 +235,10 @@ export class Engine extends IEngine {
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
-      acknowledged: () => new Promise((resolve) => resolve(this.client.session.get(sessionTopic))),
+      acknowledged: () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(this.client.session.get(sessionTopic)), 5_00),
+        ), // artificial delay to allow for the session to be processed by the peer
     };
   };
 
@@ -576,8 +580,8 @@ export class Engine extends IEngine {
       const proposal = { id, pairingTopic: topic, expiry, ...params };
       await this.setProposal(id, proposal);
       const hash = hashMessage(JSON.stringify(payload));
-      const context = await this.getVerifyContext(hash, proposal.proposer.metadata);
-      this.client.events.emit("session_proposal", { id, params: proposal, context });
+      const verifyContext = await this.getVerifyContext(hash, proposal.proposer.metadata);
+      this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -793,8 +797,8 @@ export class Engine extends IEngine {
       await this.setPendingSessionRequest({ id, topic, params });
       const hash = hashMessage(JSON.stringify(payload));
       const session = this.client.session.get(topic);
-      const context = await this.getVerifyContext(hash, session.peer.metadata);
-      this.client.events.emit("session_request", { id, topic, params, context });
+      const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
+      this.client.events.emit("session_request", { id, topic, params, verifyContext });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);

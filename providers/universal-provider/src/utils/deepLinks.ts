@@ -23,11 +23,11 @@ export async function deeplinkRedirect(request: RequestParams, store: IKeyValueS
     if (!item) return;
 
     const json = typeof item === "string" ? JSON.parse(item) : item;
-    const deeplink = json?.href;
+    let deeplink = json?.href;
 
     if (typeof deeplink !== "string") return;
 
-    if (deeplink.endsWith("/")) deeplink.slice(0, -1);
+    if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
 
     const link = `${deeplink}/wc?requestId=${request.id}&sessionTopic=${request.topic}`;
 
@@ -36,8 +36,10 @@ export async function deeplinkRedirect(request: RequestParams, store: IKeyValueS
     if (env === ENV_MAP.browser) {
       window.open(link, "_self", "noreferrer noopener");
     } else if (env === ENV_MAP.reactNative) {
-      const linking = require("react-native").Linking;
-      await linking.openURL(link);
+      // global.Linking is set by react-native-compat
+      if (typeof (global as any)?.Linking !== "undefined") {
+        await (global as any).Linking.openURL(link);
+      }
     }
   } catch (err) {
     // Silent error, just log in console
