@@ -505,6 +505,8 @@ export class Engine extends IEngine {
         }
 
         const payload = await this.client.core.crypto.decode(topic, message);
+        // eslint-disable-next-line no-console
+        console.log("Relayer message", this.client.name, payload);
 
         if (isJsonRpcRequest(payload)) {
           this.client.core.history.set(topic, payload);
