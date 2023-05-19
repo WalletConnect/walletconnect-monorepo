@@ -53,7 +53,6 @@
   },
   "devDependencies": {
     "cosmos-wallet": "^1.2.0",
-    "esbuild-darwin-arm64": "^0.15.18",
     "ethereum-test-network": "0.1.6",
     "ethers": "5.7.0",
     "uint8arrays": "^3.0.0",
