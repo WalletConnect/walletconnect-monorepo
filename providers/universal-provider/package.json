@@ -40,7 +40,7 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/jsonrpc-http-connection": "^1.0.4",
+    "@walletconnect/jsonrpc-http-connection": "^1.0.7-canary-1",
     "@walletconnect/jsonrpc-provider": "^1.0.11",
     "@walletconnect/jsonrpc-types": "^1.0.2",
     "@walletconnect/jsonrpc-utils": "^1.0.7",
@@ -53,6 +53,7 @@
   },
   "devDependencies": {
     "cosmos-wallet": "^1.2.0",
+    "esbuild-darwin-arm64": "^0.15.18",
     "ethereum-test-network": "0.1.6",
     "ethers": "5.7.0",
     "uint8arrays": "^3.0.0",

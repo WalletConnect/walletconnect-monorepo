@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/ethereum-provider",
   "description": "Ethereum Provider for WalletConnect Protocol",
-  "version": "2.7.5",
+  "version": "2.7.5-canary-f7ab5da",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
@@ -42,7 +42,7 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/jsonrpc-http-connection": "^1.0.4",
+    "@walletconnect/jsonrpc-http-connection": "^1.0.7-canary-1",
     "@walletconnect/jsonrpc-provider": "^1.0.11",
     "@walletconnect/jsonrpc-types": "^1.0.2",
     "@walletconnect/jsonrpc-utils": "^1.0.7",

@@ -11,7 +11,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { handleDeepLinks } from "../utils";
+import { getGlobal, handleDeepLinks } from "../utils";
 
 class CardanoProvider implements IProvider {
   public name = "cip34";
@@ -23,8 +23,8 @@ class CardanoProvider implements IProvider {
 
   constructor(opts: SubProviderOpts) {
     this.namespace = opts.namespace;
-    this.events = opts.events;
-    this.client = opts.client;
+    this.events = getGlobal("events");
+    this.client = getGlobal("client");
     this.chainId = this.getDefaultChain();
     this.httpProviders = this.createHttpProviders();
   }
@@ -125,7 +125,7 @@ class CardanoProvider implements IProvider {
   ): JsonRpcProvider | undefined {
     const rpc = rpcUrl || this.getCardanoRPCUrl(chainId);
     if (typeof rpc === "undefined") return undefined;
-    const http = new JsonRpcProvider(new HttpConnection(rpc));
+    const http = new JsonRpcProvider(new HttpConnection(rpc, getGlobal("disableProviderPing")));
     return http;
   }
 }

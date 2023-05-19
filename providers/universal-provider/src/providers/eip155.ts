@@ -11,7 +11,7 @@ import {
   SessionNamespace,
 } from "../types";
 
-import { getChainId, getRpcUrl, handleDeepLinks, validateChainApproval } from "../utils";
+import { getChainId, getGlobal, getRpcUrl, handleDeepLinks, validateChainApproval } from "../utils";
 import EventEmitter from "events";
 import { PROVIDER_EVENTS } from "../constants";
 
@@ -26,8 +26,8 @@ class Eip155Provider implements IProvider {
 
   constructor(opts: SubProviderOpts) {
     this.namespace = opts.namespace;
-    this.client = opts.client;
-    this.events = opts.events;
+    this.events = getGlobal("events");
+    this.client = getGlobal("client");
     this.httpProviders = this.createHttpProviders();
     this.chainId = parseInt(this.getDefaultChain());
   }
@@ -97,7 +97,7 @@ class Eip155Provider implements IProvider {
     const rpc =
       rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace, this.client.core.projectId);
     if (typeof rpc === "undefined") return undefined;
-    const http = new JsonRpcProvider(new HttpConnection(rpc));
+    const http = new JsonRpcProvider(new HttpConnection(rpc, getGlobal("disableProviderPing")));
     return http;
   }
 
