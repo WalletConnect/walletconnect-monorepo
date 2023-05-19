@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/ethereum-provider",
   "description": "Ethereum Provider for WalletConnect Protocol",
-  "version": "2.7.5-canary-f7ab5da",
+  "version": "2.7.5",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
