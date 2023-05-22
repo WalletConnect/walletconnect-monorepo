@@ -35,7 +35,6 @@
     "@stablelib/random": "^1.0.2",
     "@stablelib/sha256": "1.0.1",
     "@stablelib/x25519": "^1.0.3",
-    "@walletconnect/jsonrpc-utils": "^1.0.7",
     "@walletconnect/relay-api": "^1.0.9",
     "@walletconnect/safe-json": "^1.0.2",
     "@walletconnect/time": "^1.0.2",
