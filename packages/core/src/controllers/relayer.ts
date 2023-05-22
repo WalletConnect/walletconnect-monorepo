@@ -4,6 +4,7 @@ import {
   formatJsonRpcResult,
   IJsonRpcProvider,
   isJsonRpcRequest,
+  isJsonRpcResponse,
   JsonRpcPayload,
   JsonRpcRequest,
   RequestArguments,
@@ -294,6 +295,8 @@ export class Relayer extends IRelayer {
       this.events.emit(event.id, messageEvent);
       await this.acknowledgePayload(payload);
       await this.onMessageEvent(messageEvent);
+    } else if (isJsonRpcResponse(payload)) {
+      this.events.emit(RELAYER_EVENTS.message_ack, payload);
     }
   }
 
