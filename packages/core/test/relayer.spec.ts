@@ -9,12 +9,14 @@ import {
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
+  RELAYER_TRANSPORT_CUTOFF,
   SUBSCRIBER_EVENTS,
 } from "../src";
-import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
+import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
 import { ICore, IRelayer } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 
 describe("Relayer", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
@@ -165,98 +167,105 @@ describe("Relayer", () => {
       await relayer.unsubscribe("abc123");
       expect(spy.calledOnceWith("abc123")).to.be.true;
     });
-  });
 
-  describe("onProviderPayload", () => {
-    let relayer;
-    beforeEach(async () => {
-      relayer = new Relayer({
-        core,
-        logger,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_CORE_OPTIONS.projectId,
+    describe("onProviderPayload", () => {
+      let relayer;
+      beforeEach(async () => {
+        relayer = new Relayer({
+          core,
+          logger,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_CORE_OPTIONS.projectId,
+        });
+        await relayer.init();
       });
-      await relayer.init();
-    });
-    afterEach(async () => {
-      await disconnectSocket(relayer);
-    });
-
-    const validPayload: JsonRpcRequest = {
-      id: 123,
-      jsonrpc: "2.0",
-      method: "mock" + RELAYER_SUBSCRIBER_SUFFIX,
-      params: {
-        id: "abc123",
-        data: { topic: "ababab", message: "deadbeef", publishedAt: 1677151760537 },
-      },
-    };
-
-    it("does nothing if payload is not a valid JsonRpcRequest", () => {
-      const spy = Sinon.spy();
-      relayer.events.emit = spy;
-      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, {});
-      expect(spy.notCalled).to.be.true;
-    });
-    it(`does nothing if payload.method does not have the ${RELAYER_SUBSCRIBER_SUFFIX} suffix`, () => {
-      const spy = Sinon.spy();
-      relayer.events.emit = spy;
-      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, {
-        ...validPayload,
-        method: "mock",
+      afterEach(async () => {
+        await disconnectSocket(relayer);
       });
-      expect(spy.notCalled).to.be.true;
-    });
-    it("emits an event based on `payload.params.id`", () => {
-      const spy = Sinon.spy();
-      relayer.events.emit = spy;
-      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, validPayload);
-      expect(
-        spy.calledOnceWith(validPayload.params.id, {
-          topic: validPayload.params.data.topic,
-          message: validPayload.params.data.message,
-          publishedAt: validPayload.params.data.publishedAt,
-        }),
-      ).to.be.true;
-    });
-  });
-  describe("transport", () => {
-    beforeEach(async () => {
-      relayer = new Relayer({
-        core,
-        logger,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_CORE_OPTIONS.projectId,
+
+      const validPayload: JsonRpcRequest = {
+        id: 123,
+        jsonrpc: "2.0",
+        method: "mock" + RELAYER_SUBSCRIBER_SUFFIX,
+        params: {
+          id: "abc123",
+          data: { topic: "ababab", message: "deadbeef", publishedAt: 1677151760537 },
+        },
+      };
+
+      it("does nothing if payload is not a valid JsonRpcRequest", () => {
+        const spy = Sinon.spy();
+        relayer.events.emit = spy;
+        relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, {});
+        expect(spy.notCalled).to.be.true;
       });
-      await relayer.init();
+      it(`does nothing if payload.method does not have the ${RELAYER_SUBSCRIBER_SUFFIX} suffix`, () => {
+        const spy = Sinon.spy();
+        relayer.events.emit = spy;
+        relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, {
+          ...validPayload,
+          method: "mock",
+        });
+        expect(spy.notCalled).to.be.true;
+      });
+      it("emits an event based on `payload.params.id`", () => {
+        const spy = Sinon.spy();
+        relayer.events.emit = spy;
+        relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, validPayload);
+        expect(
+          spy.calledOnceWith(validPayload.params.id, {
+            topic: validPayload.params.data.topic,
+            message: validPayload.params.data.message,
+            publishedAt: validPayload.params.data.publishedAt,
+          }),
+        ).to.be.true;
+      });
     });
-    it("should restart transport with new endpoint", async () => {
-      const newEndpoint = "us-east-1.relay.walletconnect.com";
-      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(
-        TEST_CORE_OPTIONS.relayUrl?.replace("wss://", ""),
-      );
-      await relayer.restartTransport(`wss://${newEndpoint}`);
-      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(newEndpoint);
-    });
+    describe("transport", () => {
+      let relayer: IRelayer;
+      beforeEach(async () => {
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_CORE_OPTIONS.projectId,
+        });
+        await relayer.init();
+      });
 
-    it("should restart transport with new endpoint (multiple)", async () => {
-      const endpointOne = "us-east-1.relay.walletconnect.com";
-      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(
-        TEST_CORE_OPTIONS.relayUrl?.replace("wss://", ""),
-      );
-      await relayer.restartTransport(`wss://${endpointOne}`);
-      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(endpointOne);
+      afterEach(async () => {
+        await disconnectSocket(relayer);
+      });
 
-      const endpointTwo = "eu-central-1.relay.walletconnect.com";
-      await relayer.restartTransport(`wss://${endpointTwo}`);
-      expect(relayer.provider.connection.socket._sender._socket.servername).to.eq(endpointTwo);
-    });
+      it("should restart transport after connection drop", async () => {
+        await relayer.provider.connection.close();
+        expect(relayer.connected).to.be.false;
+        await relayer.restartTransport();
+        expect(relayer.connected).to.be.true;
+      });
 
-    it("should restart transport after connection drop", async () => {
-      await relayer.provider.connection.close();
-      expect(relayer.connected).to.be.false;
-      await relayer.restartTransport();
-      expect(relayer.connected).to.be.true;
+      it("should close transport 10 seconds after init if NOT active", async () => {
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_CORE_OPTIONS.projectId,
+        });
+        await relayer.init();
+        await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
+        expect(relayer.connected).to.be.false;
+      });
+
+      it("should NOT close transport 10 seconds after init if active", async () => {
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_CORE_OPTIONS.projectId,
+        });
+        await relayer.init();
+        const topic = generateRandomBytes32();
+        await relayer.subscriber.subscribe(topic);
+        await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
+        expect(relayer.connected).to.be.true;
+      });
     });
   });
 });

@@ -1,6 +1,6 @@
 import { EngineTypes } from "@walletconnect/types";
 import { expect, describe, it } from "vitest";
-import { formatUri, parseUri } from "../src";
+import { formatUri, generateRandomBytes32, parseUri } from "../src";
 import { TEST_PAIRING_TOPIC, TEST_RELAY_OPTIONS, TEST_SYM_KEY } from "./shared";
 
 const TEST_URI_PARAMS: EngineTypes.UriParameters = {
@@ -25,5 +25,13 @@ describe("URI", () => {
     expect(uriParams.symKey).to.eql(TEST_URI_PARAMS.symKey);
     expect(uriParams.relay.data).to.eql(TEST_URI_PARAMS.relay.data);
     expect(uriParams.relay.protocol).to.eql(TEST_URI_PARAMS.relay.protocol);
+  });
+  it("parseTopic", () => {
+    const topic = generateRandomBytes32();
+    const androidSchemaTopic = `//${topic}`;
+    TEST_URI_PARAMS.topic = androidSchemaTopic;
+    expect(parseUri(formatUri(TEST_URI_PARAMS)).topic).to.not.eql(androidSchemaTopic);
+    expect(parseUri(formatUri(TEST_URI_PARAMS)).topic).to.eql(topic);
+    expect(parseUri(formatUri(TEST_URI_PARAMS)).topic.startsWith("//")).to.be.false;
   });
 });
