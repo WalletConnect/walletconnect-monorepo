@@ -2,7 +2,7 @@
   "name": "@walletconnect/web3wallet",
   "description": "Web3Wallet for WalletConnect Protocol",
   "private": true,
-  "version": "1.7.2",
+  "version": "1.7.3",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -29,12 +29,12 @@
   },
   "dependencies": {
     "@walletconnect/auth-client": "2.1.0",
-    "@walletconnect/core": "2.7.4",
+    "@walletconnect/core": "2.7.5",
     "@walletconnect/jsonrpc-utils": "1.0.7",
     "@walletconnect/logger": "2.0.1",
-    "@walletconnect/sign-client": "2.7.4",
-    "@walletconnect/types": "2.7.4",
-    "@walletconnect/utils": "2.7.4",
+    "@walletconnect/sign-client": "2.7.5",
+    "@walletconnect/types": "2.7.5",
+    "@walletconnect/utils": "2.7.5",
     "@walletconnect/jsonrpc-provider": "1.0.12"
   },
   "devDependencies": {

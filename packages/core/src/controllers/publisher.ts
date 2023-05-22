@@ -1,18 +1,18 @@
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
-import { RequestArguments } from "@walletconnect/jsonrpc-types";
+import { JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { IPublisher, IRelayer, PublisherTypes, RelayerTypes } from "@walletconnect/types";
 import {
   getRelayProtocolApi,
   getRelayProtocolName,
-  hashMessage,
   isUndefined,
   createExpiringPromise,
 } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
+import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
@@ -39,12 +39,12 @@ export class Publisher extends IPublisher {
       const relay = getRelayProtocolName(opts);
       const prompt = opts?.prompt || false;
       const tag = opts?.tag || 0;
-      const params = { topic, message, opts: { ttl, relay, prompt, tag } };
-      const hash = hashMessage(message);
-      this.queue.set(hash, params);
+      const id = opts?.id || (getBigIntRpcId().toString() as any);
+      const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
+      this.queue.set(id, params);
       try {
         const publish = await createExpiringPromise(
-          this.rpcPublish(topic, message, ttl, relay, prompt, tag),
+          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id),
           this.publishTimeout,
         );
         await publish;
@@ -54,7 +54,6 @@ export class Publisher extends IPublisher {
         this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
         return;
       }
-      this.onPublish(hash, params);
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
     } catch (e) {
@@ -89,6 +88,7 @@ export class Publisher extends IPublisher {
     relay: RelayerTypes.ProtocolOptions,
     prompt?: boolean,
     tag?: number,
+    id?: number,
   ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
@@ -100,6 +100,7 @@ export class Publisher extends IPublisher {
         prompt,
         tag,
       },
+      id,
     };
     if (isUndefined(request.params?.prompt)) delete request.params?.prompt;
     if (isUndefined(request.params?.tag)) delete request.params?.tag;
@@ -108,8 +109,8 @@ export class Publisher extends IPublisher {
     return this.relayer.request(request);
   }
 
-  private onPublish(hash: string, _params: PublisherTypes.Params) {
-    this.queue.delete(hash);
+  private onPublish(id: string) {
+    this.queue.delete(id);
   }
 
   private checkQueue() {
@@ -122,6 +123,9 @@ export class Publisher extends IPublisher {
   private registerEventListeners() {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
       this.checkQueue();
+    });
+    this.relayer.on(RELAYER_EVENTS.message_ack, (event: JsonRpcPayload) => {
+      this.onPublish(event.id.toString());
     });
   }
 }

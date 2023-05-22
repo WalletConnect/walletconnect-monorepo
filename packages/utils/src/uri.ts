@@ -26,12 +26,16 @@ export function parseUri(str: string): EngineTypes.UriParameters {
   const queryParams = qs.parse(queryString);
   const result = {
     protocol,
-    topic: requiredValues[0],
+    topic: parseTopic(requiredValues[0]),
     version: parseInt(requiredValues[1], 10),
     symKey: queryParams.symKey as string,
     relay: parseRelayParams(queryParams),
   };
   return result;
+}
+
+export function parseTopic(topic: string): string {
+  return topic.startsWith("//") ? topic.substring(2) : topic;
 }
 
 export function formatRelayParams(relay: RelayerTypes.ProtocolOptions, delimiter = "-") {

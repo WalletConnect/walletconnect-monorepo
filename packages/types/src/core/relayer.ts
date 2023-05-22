@@ -18,6 +18,7 @@ export declare namespace RelayerTypes {
     ttl?: number;
     prompt?: boolean;
     tag?: number;
+    id?: number;
   }
 
   export interface SubscribeOptions {

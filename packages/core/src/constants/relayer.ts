@@ -10,6 +10,7 @@ export const RELAYER_CONTEXT = "relayer";
 
 export const RELAYER_EVENTS = {
   message: "relayer_message",
+  message_ack: "relayer_message_ack",
   connect: "relayer_connect",
   disconnect: "relayer_disconnect",
   error: "relayer_error",
@@ -34,4 +35,8 @@ export const RELAYER_STORAGE_OPTIONS = {
 };
 
 // Updated automatically via `new-version` npm script.
-export const RELAYER_SDK_VERSION = "2.7.4";
+
+export const RELAYER_SDK_VERSION = "2.7.5";
+
+// delay to wait before closing the transport connection after init if not active
+export const RELAYER_TRANSPORT_CUTOFF = 10_000;
