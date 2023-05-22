@@ -47,6 +47,7 @@ describe("EthereumProvider", function () {
           "--w3m-z-index": "99",
         },
       },
+      disableProviderPing: true,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
