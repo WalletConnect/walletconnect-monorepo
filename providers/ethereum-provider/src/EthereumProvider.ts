@@ -201,6 +201,7 @@ export interface EthereumProviderOptions {
   metadata?: Metadata;
   showQrModal: boolean;
   qrModalOptions?: QrModalOptions;
+  disableProviderPing?: boolean;
 }
 
 export class EthereumProvider implements IEthereumProvider {
@@ -480,6 +481,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer = await UniversalProvider.init({
       projectId: this.rpc.projectId,
       metadata: this.rpc.metadata,
+      disableProviderPing: opts.disableProviderPing,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();

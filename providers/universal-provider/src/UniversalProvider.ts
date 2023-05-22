@@ -3,6 +3,12 @@ import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
+import {
+  getAccountsFromSession,
+  getChainsFromApprovedSession,
+  mergeRequiredOptionalNamespaces,
+  setGlobal,
+} from "./utils";
 import PolkadotProvider from "./providers/polkadot";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
@@ -10,11 +16,7 @@ import CosmosProvider from "./providers/cosmos";
 import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
-import {
-  getAccountsFromSession,
-  getChainsFromApprovedSession,
-  mergeRequiredOptionalNamespaces,
-} from "./utils";
+
 import {
   IUniversalProvider,
   IProvider,
@@ -43,6 +45,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   private shouldAbortPairingAttempt = false;
   private maxPairingAttempts = 10;
+  private disableProviderPing = false;
 
   static async init(opts: UniversalProviderOpts) {
     const provider = new UniversalProvider(opts);
@@ -56,6 +59,7 @@ export class UniversalProvider implements IUniversalProvider {
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : pino(getDefaultLoggerOptions({ level: opts?.logger || LOGGER }));
+    this.disableProviderPing = opts?.disableProviderPing || false;
   }
 
   public async request<T = unknown>(
@@ -262,6 +266,11 @@ export class UniversalProvider implements IUniversalProvider {
         Object.keys(this.session.namespaces).map((namespace) => parseNamespaceKey(namespace)),
       ),
     ];
+
+    setGlobal("client", this.client);
+    setGlobal("events", this.events);
+    setGlobal("disableProviderPing", this.disableProviderPing);
+
     providersToCreate.forEach((namespace) => {
       if (!this.session) return;
       const accounts = getAccountsFromSession(namespace, this.session);
@@ -278,51 +287,37 @@ export class UniversalProvider implements IUniversalProvider {
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
-            client: this.client,
             namespace: combinedNamespace,
-            events: this.events,
           });
           break;
         case "solana":
           this.rpcProviders[namespace] = new SolanaProvider({
-            client: this.client,
             namespace: combinedNamespace,
-            events: this.events,
           });
           break;
         case "cosmos":
           this.rpcProviders[namespace] = new CosmosProvider({
-            client: this.client,
             namespace: combinedNamespace,
-            events: this.events,
           });
           break;
         case "polkadot":
           this.rpcProviders[namespace] = new PolkadotProvider({
-            client: this.client,
             namespace: combinedNamespace,
-            events: this.events,
           });
           break;
         case "cip34":
           this.rpcProviders[namespace] = new CardanoProvider({
-            client: this.client,
             namespace: combinedNamespace,
-            events: this.events,
           });
           break;
         case "elrond":
           this.rpcProviders[namespace] = new ElrondProvider({
-            client: this.client,
             namespace: combinedNamespace,
-            events: this.events,
           });
           break;
         case "multiversx":
           this.rpcProviders[namespace] = new MultiversXProvider({
-            client: this.client,
             namespace: combinedNamespace,
-            events: this.events,
           });
           break;
       }

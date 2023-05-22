@@ -3,7 +3,6 @@ import { SignClientTypes, ProposalTypes } from "@walletconnect/types";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import { IProvider } from "./providers";
-import EventEmitter from "events";
 
 export interface UniversalProviderOpts {
   projectId?: string;
@@ -13,6 +12,7 @@ export interface UniversalProviderOpts {
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
   name?: string;
+  disableProviderPing?: boolean;
 }
 
 export type Metadata = SignClientTypes.Metadata;
@@ -56,9 +56,7 @@ export interface ConnectParams {
 }
 
 export interface SubProviderOpts {
-  client: SignClient;
   namespace: Namespace;
-  events: EventEmitter;
 }
 
 export interface RequestParams {
