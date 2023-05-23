@@ -1,4 +1,4 @@
-FROM node:20.1-alpine as base
+FROM node:20.2-alpine as base
 
 WORKDIR /
 
