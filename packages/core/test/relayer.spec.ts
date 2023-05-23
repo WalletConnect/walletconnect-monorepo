@@ -237,10 +237,13 @@ describe("Relayer", () => {
       });
 
       it("should restart transport after connection drop", async () => {
+        const randomSessionIdentifier = relayer.core.crypto.randomSessionIdentifier;
         await relayer.provider.connection.close();
         expect(relayer.connected).to.be.false;
         await relayer.restartTransport();
         expect(relayer.connected).to.be.true;
+        // the identifier should be the same
+        expect(relayer.core.crypto.randomSessionIdentifier).to.eq(randomSessionIdentifier);
       });
 
       it("should close transport 10 seconds after init if NOT active", async () => {
