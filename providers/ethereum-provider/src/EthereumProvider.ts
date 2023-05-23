@@ -502,9 +502,7 @@ export class EthereumProvider implements IEthereumProvider {
             ...this.rpc.qrModalOptions,
           });
         } catch {
-          throw new Error(
-            "Could not generate Web3Modal Instance, something is likely wrong with your options.",
-          );
+          throw new Error("Could not generate Web3Modal Instance");
         }
       }
     }
