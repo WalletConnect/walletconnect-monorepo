@@ -26,6 +26,7 @@ import { KeyChain } from "./keychain";
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;
   public keychain: ICrypto["keychain"];
+  public readonly randomSessionIdentifier = generateRandomBytes32();
 
   private initialized = false;
 
@@ -69,7 +70,7 @@ export class Crypto implements ICrypto {
     this.isInitialized();
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);
-    const sub = generateRandomBytes32();
+    const sub = this.randomSessionIdentifier;
     const ttl = CRYPTO_JWT_TTL;
     const jwt = await relayAuth.signJWT(sub, aud, ttl, keyPair);
     return jwt;
