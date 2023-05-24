@@ -45,6 +45,8 @@ describe("Sign Integration", () => {
     expect(wallet).to.be.exist;
     expect(dapp).to.be.exist;
     expect(core).to.be.exist;
+    expect(wallet.metadata.redirect).to.not.exist;
+    expect(dapp.metadata.redirect).to.not.exist;
   });
 
   it("should approve session proposal", async () => {
