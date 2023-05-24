@@ -23,6 +23,9 @@ describe("Sign Client Integration", () => {
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
+    expect(client.metadata.redirect).to.exist;
+    expect(client.metadata.redirect?.universal).to.exist;
+    expect(client.metadata.redirect?.native).to.not.exist;
     await deleteClients({ A: client, B: undefined });
   });
 
@@ -36,6 +39,12 @@ describe("Sign Client Integration", () => {
       const sessionB = clients.B.session.get(sessionA.topic);
       expect(sessionB).to.be.exist;
       expect(sessionB.pairingTopic).to.eq(sessionA.pairingTopic);
+      expect(clients.A.metadata.redirect).to.exist;
+      expect(clients.A.metadata.redirect?.native).to.exist;
+      expect(clients.A.metadata.redirect?.universal).to.exist;
+      expect(clients.B.metadata.redirect).to.exist;
+      expect(clients.B.metadata.redirect?.native).to.exist;
+      expect(clients.B.metadata.redirect?.universal).to.exist;
       await deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {
