@@ -24,6 +24,15 @@ export const TEST_SIGN_CLIENT_OPTIONS: SignClientTypes.Options = {
   storageOptions: {
     database: ":memory:",
   },
+  metadata: {
+    redirect: {
+      universal: "App A (Proposer)",
+    },
+    name: "App A (Proposer)",
+    description: "Description of Proposer App run by client A",
+    url: "https://walletconnect.com",
+    icons: ["https://avatars.githubusercontent.com/u/37784886"],
+  },
 };
 
 export const TEST_SIGN_CLIENT_OPTIONS_USA: SignClientTypes.Options = {
@@ -59,6 +68,10 @@ export const TEST_APP_METADATA_A: SignClientTypes.Metadata = {
   description: "Description of Proposer App run by client A",
   url: "https://walletconnect.com",
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
+  redirect: {
+    universal: "App A (Proposer)",
+    native: "App A Native (Proposer)",
+  },
 };
 
 export const TEST_SIGN_CLIENT_NAME_B = "client_b";
@@ -67,6 +80,10 @@ export const TEST_APP_METADATA_B: SignClientTypes.Metadata = {
   description: "Description of Responder App run by client B",
   url: "https://walletconnect.com",
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
+  redirect: {
+    universal: "App B (Responder)",
+    native: "App B Native (Responder)",
+  },
 };
 
 export const TEST_RELAY_PROTOCOL = "irn";
