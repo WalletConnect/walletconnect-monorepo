@@ -60,6 +60,19 @@ describe("Sign Client Integration", () => {
       });
       await deleteClients(clients);
     });
+    it("should remove duplicate pairing", async () => {
+      const clients = await initTwoClients();
+      await testConnectMethod(clients);
+      const { A, B } = clients;
+      expect(A.pairing.keys).to.eql(B.pairing.keys);
+      expect(A.pairing.keys.length).to.eql(1);
+      await throttle(200);
+      await testConnectMethod(clients);
+      await throttle(200);
+      expect(A.pairing.keys).to.eql(B.pairing.keys);
+      expect(A.pairing.keys.length).to.eql(1);
+      await deleteClients(clients);
+    });
     it("should receive session acknowledge", async () => {
       const clients = await initTwoClients();
       const {
