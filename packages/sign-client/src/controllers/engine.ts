@@ -367,7 +367,8 @@ export class Engine extends IEngine {
       const duplicates = allPairings.filter(
         (p) =>
           p.peerMetadata?.url &&
-          p.peerMetadata?.url === session.self.metadata.url &&
+          p.peerMetadata?.url === session.peer.metadata.url &&
+          p.topic &&
           p.topic !== pairing.topic,
       );
       if (duplicates.length === 0) return;
