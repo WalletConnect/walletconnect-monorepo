@@ -27,6 +27,10 @@ export declare namespace CoreTypes {
     url: string;
     icons: string[];
     verifyUrl?: string;
+    redirect?: {
+      native?: string;
+      universal?: string;
+    };
   }
 }
 

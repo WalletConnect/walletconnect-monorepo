@@ -4,6 +4,7 @@ import {
   formatJsonRpcResult,
   IJsonRpcProvider,
   isJsonRpcRequest,
+  isJsonRpcResponse,
   JsonRpcPayload,
   JsonRpcRequest,
   RequestArguments,
@@ -40,6 +41,7 @@ import {
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_DEFAULT_RELAY_URL,
   SUBSCRIBER_EVENTS,
+  RELAYER_TRANSPORT_CUTOFF,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -89,6 +91,13 @@ export class Relayer extends IRelayer {
     await Promise.all([this.messages.init(), this.transportOpen(), this.subscriber.init()]);
     this.registerEventListeners();
     this.initialized = true;
+    setTimeout(async () => {
+      if (this.subscriber.topics.length === 0) {
+        this.logger.info(`No topics subscribted to after init, closing transport`);
+        await this.transportClose();
+        this.transportExplicitlyClosed = false;
+      }
+    }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {
@@ -286,6 +295,8 @@ export class Relayer extends IRelayer {
       this.events.emit(event.id, messageEvent);
       await this.acknowledgePayload(payload);
       await this.onMessageEvent(messageEvent);
+    } else if (isJsonRpcResponse(payload)) {
+      this.events.emit(RELAYER_EVENTS.message_ack, payload);
     }
   }
 

@@ -22,6 +22,7 @@ import {
   CHAIN_ID_B,
   TEST_REQUIRED_NAMESPACES,
 } from "./shared/constants";
+import { getGlobal, setGlobal } from "../src/utils";
 
 const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
@@ -738,6 +739,35 @@ describe("UniversalProvider", function () {
           expectedChainId: chains[1],
         });
       });
+    });
+  });
+
+  describe("utils", () => {
+    it("get global values", () => {
+      const client = getGlobal("client");
+      const events = getGlobal("events");
+      const disableProviderPing = getGlobal("disableProviderPing");
+      expect(client).to.be.an("object");
+      expect(events).to.be.an("object");
+      expect(disableProviderPing).to.eq(TEST_PROVIDER_OPTS.disableProviderPing);
+    });
+    it("set global values", () => {
+      const client = getGlobal("client");
+      const events = getGlobal("events");
+      const disableProviderPing = getGlobal("disableProviderPing");
+      expect(client).to.be.an("object");
+      expect(events).to.be.an("object");
+      expect(disableProviderPing).to.eq(TEST_PROVIDER_OPTS.disableProviderPing);
+      // assign to opposite value
+      const valueToUpdateWith = !TEST_PROVIDER_OPTS.disableProviderPing;
+      // update global value
+      setGlobal("disableProviderPing", valueToUpdateWith);
+      expect(disableProviderPing).to.not.eq(valueToUpdateWith);
+      expect(getGlobal("disableProviderPing")).to.eq(valueToUpdateWith);
+    });
+    it("should handle undefined global value", () => {
+      const nonExistentGlobal = getGlobal("somethingsomething");
+      expect(nonExistentGlobal).to.be.undefined;
     });
   });
 });
