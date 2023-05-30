@@ -228,6 +228,7 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public async request<T = unknown>(args: RequestArguments): Promise<T> {
+    if(args.method === "eth_requestAccounts" && !this.session) await this.connect();
     return await this.signer.request(args, this.formatChainId(this.chainId));
   }
 
@@ -250,7 +251,7 @@ export class EthereumProvider implements IEthereumProvider {
 
   public async enable(): Promise<ProviderAccounts> {
     if (!this.session) await this.connect();
-    const accounts = await this.request({ method: "eth_requestAccounts" });
+    const accounts = await this.request({ method: "eth_accounts" });
     return accounts as ProviderAccounts;
   }
 
