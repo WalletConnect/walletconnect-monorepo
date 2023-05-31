@@ -1,6 +1,7 @@
 name: pull request checks
 
 on:
+  push:
   pull_request:
     branches:
       - v2.0
