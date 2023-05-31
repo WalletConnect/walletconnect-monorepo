@@ -146,7 +146,7 @@ describe("Relayer", () => {
       expect(id).to.eq("mock-id");
     });
 
-    it("should subscribe a topic immediately after connect", async () => {
+    it("should be able to resubscribe on topic that already exists", async () => {
       const topic = generateRandomBytes32();
       const id = await relayer.subscribe(topic);
       const expectedId = hashMessage(topic + (await core.crypto.getClientId()));
