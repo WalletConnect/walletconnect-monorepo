@@ -16,7 +16,6 @@ export const publishToStatusPage = (latencyMs: number) => {
 
   return new Promise((resolve, reject) => {
     const request = https.request(url, options, function (res) {
-      console.log(url);
       if (res.statusMessage === "Unauthorized") {
         return reject(new Error("Unauthorized"));
       }
