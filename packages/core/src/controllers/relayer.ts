@@ -125,7 +125,10 @@ export class Relayer extends IRelayer {
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
     this.isInitialized();
-    let id = "";
+    let id = this.subscriber.topicMap.get(topic)?.[0] || "";
+
+    if (id) return id;
+
     await Promise.all([
       new Promise<void>((resolve) => {
         this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
@@ -139,6 +142,7 @@ export class Relayer extends IRelayer {
         resolve();
       }),
     ]);
+
     return id;
   }
 
