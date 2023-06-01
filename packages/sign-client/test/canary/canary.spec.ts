@@ -24,6 +24,7 @@ const log = (log: string) => {
 };
 
 describe("Canary", () => {
+  const metric_prefix = "HappyPath.connects";
   describe("HappyPath", () => {
     it("connects", async () => {
       const start = Date.now();
@@ -48,7 +49,6 @@ describe("Canary", () => {
         }', session topic '${sessionA.topic}')`,
       );
 
-      const metric_prefix = "HappyPath.connects";
       const successful = true;
       const pairingLatencyMs = Date.now() - start - humanInputLatencyMs;
 
@@ -120,6 +120,18 @@ describe("Canary", () => {
     const { result } = done.meta;
     const nowTimestamp = Date.now();
     const latencyMs = nowTimestamp - (result?.startTime || nowTimestamp);
-    log(`Canary finished in state ${result?.state} took ${latencyMs}ms`);
+    const taskState = result?.state;
+    log(`Canary finished in state ${taskState} took ${latencyMs}ms`);
+    if (environment !== "dev" && taskState?.toString() !== "pass") {
+      await uploadCanaryResultsToCloudWatch(
+        environment,
+        region,
+        TEST_RELAY_URL,
+        metric_prefix,
+        false,
+        latencyMs,
+        [],
+      );
+    }
   });
 });
