@@ -40,6 +40,8 @@ export class Publisher extends IPublisher {
       const prompt = opts?.prompt || false;
       const tag = opts?.tag || 0;
       const id = opts?.id || (getBigIntRpcId().toString() as any);
+      // eslint-disable-next-line no-console
+      console.log("rpc_id", id, id.length);
       const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
       this.queue.set(id, params);
       try {
