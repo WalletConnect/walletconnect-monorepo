@@ -66,7 +66,7 @@ export const TEST_SIGN_CLIENT_NAME_A = "client_a";
 export const TEST_APP_METADATA_A: SignClientTypes.Metadata = {
   name: "App A (Proposer)",
   description: "Description of Proposer App run by client A",
-  url: "https://walletconnect.com",
+  url: "https://app.a.walletconnect.com",
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
   redirect: {
     universal: "App A (Proposer)",
@@ -78,7 +78,7 @@ export const TEST_SIGN_CLIENT_NAME_B = "client_b";
 export const TEST_APP_METADATA_B: SignClientTypes.Metadata = {
   name: "App B (Responder)",
   description: "Description of Responder App run by client B",
-  url: "https://walletconnect.com",
+  url: "https://app.b.walletconnect.com",
   icons: ["https://avatars.githubusercontent.com/u/37784886"],
   redirect: {
     universal: "App B (Responder)",
