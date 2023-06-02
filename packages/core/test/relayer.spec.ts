@@ -16,7 +16,7 @@ import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
 import { ICore, IRelayer } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { generateRandomBytes32 } from "@walletconnect/utils";
+import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
 
 describe("Relayer", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
@@ -144,6 +144,22 @@ describe("Relayer", () => {
       // @ts-expect-error
       expect(spy.calledOnceWith("abc123")).to.be.true;
       expect(id).to.eq("mock-id");
+    });
+
+    it("should be able to resubscribe on topic that already exists", async () => {
+      const topic = generateRandomBytes32();
+      const id = await relayer.subscribe(topic);
+      const expectedId = hashMessage(topic + (await core.crypto.getClientId()));
+      const a = await relayer.subscribe(topic);
+      const b = await relayer.subscribe(topic);
+      const c = await relayer.subscribe(topic);
+      expect(a).to.equal(id);
+      expect(a).to.equal(b);
+      expect(b).to.equal(c);
+      expect(a).to.equal(expectedId);
+      expect(b).to.equal(expectedId);
+      expect(c).to.equal(expectedId);
+      expect(id).to.equal(expectedId);
     });
   });
 
