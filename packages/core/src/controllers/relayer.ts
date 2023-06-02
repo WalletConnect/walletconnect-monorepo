@@ -230,7 +230,7 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    if (this.transportExplicitlyClosed) return;
+    if (this.transportExplicitlyClosed || this.reconnecting) return;
     this.relayUrl = relayUrl || this.relayUrl;
     if (this.connected) {
       await Promise.all([
