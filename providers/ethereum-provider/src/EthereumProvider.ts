@@ -501,8 +501,8 @@ export class EthereumProvider implements IEthereumProvider {
             standaloneChains: this.rpc.chains,
             ...this.rpc.qrModalOptions,
           });
-        } catch(e) {
-      this.signer.logger.error(e);
+        } catch (e) {
+          this.signer.logger.error(e);
           throw new Error("Could not generate Web3Modal Instance");
         }
       }
