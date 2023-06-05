@@ -514,6 +514,8 @@ export class Engine extends IEngine {
         } else if (isJsonRpcResponse(payload)) {
           await this.client.core.history.resolve(payload);
           this.onRelayEventResponse({ topic, payload });
+        } else {
+          this.onRelayEventUnknownPayload({ topic, payload });
         }
       },
     );
@@ -566,6 +568,15 @@ export class Engine extends IEngine {
       default:
         return this.client.logger.info(`Unsupported response method ${resMethod}`);
     }
+  };
+
+  private onRelayEventUnknownPayload: EnginePrivate["onRelayEventUnknownPayload"] = (event) => {
+    const { topic } = event;
+    const { message } = getInternalError(
+      "MISSING_OR_INVALID",
+      `Decoded payload on topic ${topic} is not identifiable as a JSON-RPC request or a response.`,
+    );
+    throw new Error(message);
   };
 
   // ---------- Relay Events Handlers --------------------------------- //
