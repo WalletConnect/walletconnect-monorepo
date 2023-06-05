@@ -486,16 +486,25 @@ export class EthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
+      let Web3modalClass;
       try {
         const { Web3Modal } = await import("@web3modal/standalone");
-        this.modal = new Web3Modal({
-          walletConnectVersion: 2,
-          projectId: this.rpc.projectId,
-          standaloneChains: this.rpc.chains,
-          ...this.rpc.qrModalOptions,
-        });
+        Web3modalClass = Web3Modal;
       } catch {
         throw new Error("To use QR modal, please install @web3modal/standalone package");
+      }
+      if (Web3modalClass) {
+        try {
+          this.modal = new Web3modalClass({
+            walletConnectVersion: 2,
+            projectId: this.rpc.projectId,
+            standaloneChains: this.rpc.chains,
+            ...this.rpc.qrModalOptions,
+          });
+        } catch (e) {
+          this.signer.logger.error(e);
+          throw new Error("Could not generate Web3Modal Instance");
+        }
       }
     }
   }
