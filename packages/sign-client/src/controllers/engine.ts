@@ -89,7 +89,7 @@ export class Engine extends IEngine {
       this.registerExpirerEvents();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       const clientId = await this.client.core.crypto.getClientId();
-      this.client.core.storage.setItem(WALLETCONNECT_CLIENT_ID, clientId);
+      await this.client.core.storage.setItem(WALLETCONNECT_CLIENT_ID, clientId);
       this.initialized = true;
     }
   };
