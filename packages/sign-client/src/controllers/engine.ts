@@ -57,6 +57,7 @@ import {
   isValidString,
   parseExpirerTarget,
   TYPE_1,
+  handleDeeplinkRedirect,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -294,6 +295,7 @@ export class Engine extends IEngine {
       else resolve(result);
     });
     this.client.events.emit("session_request_sent", { topic, request, chainId, id });
+    handleDeeplinkRedirect({ id, topic, store: this.client.core.storage });
     return await done();
   };
 

@@ -14,7 +14,7 @@
   "module": "dist/index.es.js",
   "unpkg": "dist/index.umd.js",
   "types": "dist/types/index.d.ts",
-  "sideEffects": "false",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",

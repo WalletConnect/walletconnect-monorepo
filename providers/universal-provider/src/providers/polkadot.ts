@@ -12,7 +12,7 @@ import {
   SubProviderOpts,
 } from "../types";
 
-import { getGlobal, getRpcUrl, handleDeepLinks } from "../utils";
+import { getGlobal, getRpcUrl } from "../utils";
 
 class PolkadotProvider implements IProvider {
   public name = "polkadot";
@@ -51,7 +51,6 @@ class PolkadotProvider implements IProvider {
 
   public request<T = unknown>(args: RequestParams): Promise<T> {
     if (this.namespace.methods.includes(args.request.method)) {
-      handleDeepLinks(this.client, args);
       return this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);
