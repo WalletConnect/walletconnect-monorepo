@@ -11,7 +11,7 @@ import {
   SessionNamespace,
 } from "../types";
 
-import { getChainId, getGlobal, getRpcUrl, handleDeepLinks, validateChainApproval } from "../utils";
+import { getChainId, getGlobal, getRpcUrl, validateChainApproval } from "../utils";
 import EventEmitter from "events";
 import { PROVIDER_EVENTS } from "../constants";
 
@@ -48,7 +48,6 @@ class Eip155Provider implements IProvider {
         break;
     }
     if (this.namespace.methods.includes(args.request.method)) {
-      handleDeepLinks(this.client, args);
       return await this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);

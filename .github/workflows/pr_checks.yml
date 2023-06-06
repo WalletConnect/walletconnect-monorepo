@@ -16,9 +16,11 @@ jobs:
       - name: setup-node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - name: update package-lock
+        run: npm install --package-lock-only
       - name: install
         run: npm ci
       - name: build
@@ -49,9 +51,11 @@ jobs:
       - name: setup-node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - name: update package-lock
+        run: npm install --package-lock-only
       - name: install
         run: npm ci
       - name: check
@@ -78,9 +82,11 @@ jobs:
       - name: setup-node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - name: update package-lock
+        run: npm install --package-lock-only
       - name: install
         run: npm ci
       - uses: actions/download-artifact@v3

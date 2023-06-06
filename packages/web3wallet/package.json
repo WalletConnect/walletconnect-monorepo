@@ -17,6 +17,7 @@
     "wallet",
     "walletconnect"
   ],
+  "sideEffects": false,
   "scripts": {
     "clean": "rm -rf dist",
     "build:pre": "npm run clean",

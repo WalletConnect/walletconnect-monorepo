@@ -67,6 +67,8 @@
     "eslint-plugin-promise": "6.0.0",
     "eslint-plugin-react": "7.30.1",
     "eslint-plugin-standard": "5.0.0",
+    "eslint-plugin-n": "15.7.0",
+    "esbuild": "0.17.19",
     "lerna": "5.5.2",
     "prettier": "2.7.1",
     "rollup": "2.78.0",

@@ -12,7 +12,6 @@ import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
-
 export const REACT_NATIVE_PRODUCT = "ReactNative";
 
 export const ENV_MAP = {
@@ -320,4 +319,42 @@ export function engineEvent(event: EngineTypes.Event, id?: number | string | und
 
 export function mergeArrays<T>(a: T[] = [], b: T[] = []): T[] {
   return [...new Set([...a, ...b])];
+}
+
+export async function handleDeeplinkRedirect({
+  id,
+  topic,
+  wcDeepLink,
+}: {
+  id: number;
+  topic: string;
+  wcDeepLink: string;
+}) {
+  try {
+    if (!wcDeepLink) return;
+
+    const json = typeof wcDeepLink === "string" ? JSON.parse(wcDeepLink) : wcDeepLink;
+    let deeplink = json?.href;
+
+    if (typeof deeplink !== "string") return;
+
+    if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
+
+    const link = `${deeplink}/wc?requestId=${id}&sessionTopic=${topic}`;
+
+    const env = getEnvironment();
+
+    if (env === ENV_MAP.browser) {
+      window.open(link, "_self", "noreferrer noopener");
+    } else if (env === ENV_MAP.reactNative) {
+      // global.Linking is set by react-native-compat
+      if (typeof (global as any)?.Linking !== "undefined") {
+        await (global as any).Linking.openURL(link);
+      }
+    }
+  } catch (err) {
+    // Silent error, just log in console
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
 }
