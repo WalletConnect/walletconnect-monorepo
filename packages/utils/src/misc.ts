@@ -326,18 +326,16 @@ export function mergeArrays<T>(a: T[] = [], b: T[] = []): T[] {
 export async function handleDeeplinkRedirect({
   id,
   topic,
-  store,
+  wcDeepLink,
 }: {
   id: number;
   topic: string;
-  store: IKeyValueStorage;
+  wcDeepLink: string;
 }) {
   try {
-    const item = await store.getItem("WALLETCONNECT_DEEPLINK_CHOICE");
+    if (!wcDeepLink) return;
 
-    if (!item) return;
-
-    const json = typeof item === "string" ? JSON.parse(item) : item;
+    const json = typeof wcDeepLink === "string" ? JSON.parse(wcDeepLink) : wcDeepLink;
     let deeplink = json?.href;
 
     if (typeof deeplink !== "string") return;
