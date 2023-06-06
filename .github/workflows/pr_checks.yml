@@ -19,6 +19,8 @@ jobs:
           node-version: 18.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - name: update package-lock
+        run: npm install --package-lock-only
       - name: install
         run: npm ci
       - name: build
@@ -52,6 +54,8 @@ jobs:
           node-version: 18.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - name: update package-lock
+        run: npm install --package-lock-only
       - name: install
         run: npm ci
       - name: check
@@ -81,6 +85,8 @@ jobs:
           node-version: 18.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - name: update package-lock
+        run: npm install --package-lock-only
       - name: install
         run: npm ci
       - uses: actions/download-artifact@v3
