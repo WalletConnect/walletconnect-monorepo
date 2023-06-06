@@ -1,4 +1,4 @@
-FROM node:20.2-alpine as base
+FROM node:18-alpine as base
 
 WORKDIR /
 
@@ -10,6 +10,7 @@ FROM base as build
 WORKDIR /
 
 COPY ../ ./
+RUN npm install --package-lock-only
 RUN npm ci
 RUN npm run build
 
