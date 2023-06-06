@@ -6,14 +6,12 @@ import {
   EngineTypes,
   RelayerTypes,
 } from "@walletconnect/types";
-import type { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
-
 export const REACT_NATIVE_PRODUCT = "ReactNative";
 
 export const ENV_MAP = {
