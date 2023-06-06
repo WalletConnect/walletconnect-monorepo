@@ -10,6 +10,7 @@ FROM base as build
 WORKDIR /
 
 COPY ../ ./
+RUN npm install --package-lock-only
 RUN npm ci
 RUN npm run build
 
