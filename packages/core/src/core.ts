@@ -18,6 +18,7 @@ import {
   CORE_STORAGE_OPTIONS,
   CORE_VERSION,
   RELAYER_DEFAULT_RELAY_URL,
+  WALLETCONNECT_CLIENT_ID,
 } from "./constants";
 
 export class Core extends ICore {
@@ -43,6 +44,8 @@ export class Core extends ICore {
   static async init(opts?: CoreTypes.Options) {
     const core = new Core(opts);
     await core.initialize();
+    const clientId = await core.crypto.getClientId();
+    await core.storage.setItem(WALLETCONNECT_CLIENT_ID, clientId);
 
     return core;
   }
