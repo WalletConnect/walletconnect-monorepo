@@ -67,6 +67,8 @@ import {
   SESSION_EXPIRY,
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
   METHODS_TO_VERIFY,
+  WALLETCONNECT_CLIENT_ID,
+  WALLETCONNECT_DEEPLINK_CHOICE,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -86,6 +88,8 @@ export class Engine extends IEngine {
       this.registerRelayerEvents();
       this.registerExpirerEvents();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
+      const clientId = await this.client.core.crypto.getClientId();
+      this.client.core.storage.setItem(WALLETCONNECT_CLIENT_ID, clientId);
       this.initialized = true;
     }
   };
@@ -295,7 +299,7 @@ export class Engine extends IEngine {
       else resolve(result);
     });
     this.client.events.emit("session_request_sent", { topic, request, chainId, id });
-    const wcDeepLink = await this.client.core.storage.getItem("WALLETCONNECT_DEEPLINK_CHOICE");
+    const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
     handleDeeplinkRedirect({ id, topic, wcDeepLink });
     return await done();
   };
