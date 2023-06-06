@@ -29,3 +29,5 @@ export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.E
 export const SIGN_CLIENT_STORAGE_OPTIONS = {
   database: ":memory:",
 };
+
+export const WALLETCONNECT_DEEPLINK_CHOICE = "WALLETCONNECT_DEEPLINK_CHOICE";
