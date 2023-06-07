@@ -417,7 +417,7 @@ export class Engine extends IEngine {
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
     this.client.session.delete(topic, getSdkError("USER_DISCONNECTED"));
-    if (this.client.core.crypto.keychain.has(topic)) {
+    if (this.client.core.crypto.keychain.has(self.publicKey)) {
       await this.client.core.crypto.deleteKeyPair(self.publicKey);
     }
     if (this.client.core.crypto.keychain.has(topic)) {
