@@ -2,9 +2,11 @@
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
+  JsonRpcPayload,
   formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
+  getBigIntRpcId,
   isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
@@ -343,7 +345,31 @@ export class Engine extends IEngine {
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_sessionDelete", getSdkError("USER_DISCONNECTED"));
+      const id = getBigIntRpcId().toString() as any;
+      let resolvePromise: () => void;
+      const onDisconnectAck = (ack: JsonRpcPayload) => {
+        if (ack?.id.toString() === id) {
+          this.client.core.relayer.events.removeListener(
+            RELAYER_EVENTS.message_ack,
+            onDisconnectAck,
+          );
+          resolvePromise();
+        }
+      };
+      // await a relay ACK on the disconnect req before deleting the session, keychain etc.
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          resolvePromise = resolve;
+          this.client.core.relayer.on(RELAYER_EVENTS.message_ack, onDisconnectAck);
+        }),
+        this.sendRequest(
+          topic,
+          "wc_sessionDelete",
+          getSdkError("USER_DISCONNECTED"),
+          undefined,
+          id,
+        ),
+      ]);
       await this.deleteSession(topic);
     } else {
       await this.client.core.pairing.disconnect({ topic });
@@ -443,7 +469,7 @@ export class Engine extends IEngine {
     if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
   };
 
-  private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params, expiry) => {
+  private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params, expiry, id) => {
     const payload = formatJsonRpcRequest(method, params);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
@@ -452,6 +478,7 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
+    if (id) opts.id = id; // set rpc_id for client -> relay req
     this.client.core.history.set(topic, payload);
     this.client.core.relayer.publish(topic, message, opts);
     return payload.id;
