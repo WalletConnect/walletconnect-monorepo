@@ -801,7 +801,6 @@ export class Engine extends IEngine {
       ]);
       this.client.events.emit("session_delete", { id, topic });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
   };
