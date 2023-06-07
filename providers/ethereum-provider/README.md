@@ -5,7 +5,7 @@ Ethereum Provider for WalletConnect Protocol.
 ## Installation
 
 ```
-npm i @walletconnect/ethereum-provider @web3modal/standalone
+npm i @walletconnect/ethereum-provider @walletconnect/modal
 ```
 
 ## Initialization
@@ -16,19 +16,19 @@ import { EthereumProvider } from "@walletconnect/ethereum-provider";
 const provider = await EthereumProvider.init({
   projectId, // REQUIRED your projectId
   chains, // REQUIRED chain ids
-  showQrModal, // REQUIRED set to "true" to use @web3modal/standalone,
+  showQrModal, // REQUIRED set to "true" to use @walletconnect/modal,
   methods, // OPTIONAL ethereum methods
   events, // OPTIONAL ethereum events
   rpcMap, // OPTIONAL rpc urls for each chain
   metadata, // OPTIONAL metadata of your app
-  qrModalOptions, // OPTIONAL - `undefined` by default, see https://docs.walletconnect.com/2.0/web3modal/options
+  qrModalOptions, // OPTIONAL - `undefined` by default
 });
 ```
 
-## Display Web3Modal with QR code / Handle connection URI
+## Display WalletConnectModal with QR code / Handle connection URI
 
 ```typescript
-// Web3Modal is disabled by default, enable it during init() to display a QR code modal
+// WalletConnectModal is disabled by default, enable it during init() to display a QR code modal
 await provider.connect({
   chains, // OPTIONAL chain ids
   rpcMap, // OPTIONAL rpc urls
@@ -39,7 +39,7 @@ await provider.enable();
 ```
 
 ```typescript
-// If you are not using Web3Modal,
+// If you are not using WalletConnectModal,
 // you can subscribe to the `display_uri` event and handle the URI yourself.
 provider.on("display_uri", (uri: string) => {
   // ... custom logic
@@ -77,17 +77,6 @@ provider.on("display_uri", handler);
 provider.on("disconnect", handler);
 ```
 
-## Supported Web3Modal options (qrModalOptions)
+## Supported WalletConnectModal options (qrModalOptions)
 
-- [themeMode](https://docs.walletconnect.com/2.0/web3modal/options#thememode-optional)
-- [themeVariables](https://docs.walletconnect.com/2.0/web3modal/options#themevariables-optional)
-- [chainImages](https://docs.walletconnect.com/2.0/web3modal/options#chainimages-optional)
-- [tokenImages](https://docs.walletconnect.com/2.0/web3modal/options#tokenimages-optional)
-- [walletImages](https://docs.walletconnect.com/2.0/web3modal/options#walletimages-optional)
-- [desktopWallets](https://docs.walletconnect.com/2.0/web3modal/options#desktopwallets-optional)
-- [mobileWallets](https://docs.walletconnect.com/2.0/web3modal/options#mobilewallets-optional)
-- [enableExplorer](https://docs.walletconnect.com/2.0/web3modal/options#enableexplorer-optional)
-- [explorerRecommendedWalletIds](https://docs.walletconnect.com/2.0/web3modal/options#explorerrecommendedwalletids-optional)
-- [explorerExcludedWalletIds](https://docs.walletconnect.com/2.0/web3modal/options#explorerexcludedwalletids-optional)
-- [privacyPolicyUrl](https://docs.walletconnect.com/2.0/web3modal/options#privacypolicyurl-optional)
-- [termsOfServiceUrl](https://docs.walletconnect.com/2.0/web3modal/options#privacypolicyurl-optional)
+Please reference [up to date documentation](https://docs.walletconnect.com/2.0/web/web3modal/html/ethereum-provider/options) for `WalletConnectModal`

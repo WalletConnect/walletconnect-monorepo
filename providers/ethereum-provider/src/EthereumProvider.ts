@@ -7,12 +7,12 @@ import {
   RequestArguments,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import type { Web3ModalConfig, Web3Modal } from "@web3modal/standalone";
+import type { WalletConnectModalConfig, WalletConnectModal } from "@walletconnect/modal";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { STORAGE_KEY, REQUIRED_METHODS, REQUIRED_EVENTS, RPC_URL } from "./constants";
 
 export type QrModalOptions = Pick<
-  Web3ModalConfig,
+  WalletConnectModalConfig,
   | "themeMode"
   | "themeVariables"
   | "chainImages"
@@ -210,7 +210,7 @@ export class EthereumProvider implements IEthereumProvider {
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
-  public modal?: Web3Modal;
+  public modal?: WalletConnectModal;
 
   protected rpc: EthereumRpcConfig;
   protected readonly STORAGE_KEY = STORAGE_KEY;
@@ -389,7 +389,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on("display_uri", (uri: string) => {
       if (this.rpc.showQrModal) {
         // to refresh the QR we have to close the modal and open it again
-        // until proper API is provided by web3modal
+        // until proper API is provided by walletconnect modal
         this.modal?.closeModal();
         this.modal?.openModal({ uri });
       }
@@ -486,16 +486,16 @@ export class EthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
-      let Web3modalClass;
+      let WalletConnectModalClass;
       try {
-        const { Web3Modal } = await import("@web3modal/standalone");
-        Web3modalClass = Web3Modal;
+        const { WalletConnectModal } = await import("@walletconnect/modal");
+        WalletConnectModalClass = WalletConnectModal;
       } catch {
-        throw new Error("To use QR modal, please install @web3modal/standalone package");
+        throw new Error("To use QR modal, please install @walletconnect/modal package");
       }
-      if (Web3modalClass) {
+      if (WalletConnectModalClass) {
         try {
-          this.modal = new Web3modalClass({
+          this.modal = new WalletConnectModalClass({
             walletConnectVersion: 2,
             projectId: this.rpc.projectId,
             standaloneChains: this.rpc.chains,
@@ -503,7 +503,7 @@ export class EthereumProvider implements IEthereumProvider {
           });
         } catch (e) {
           this.signer.logger.error(e);
-          throw new Error("Could not generate Web3Modal Instance");
+          throw new Error("Could not generate WalletConnectModal Instance");
         }
       }
     }

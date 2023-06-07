@@ -54,17 +54,17 @@
     "events": "^3.3.0"
   },
   "devDependencies": {
-    "@web3modal/standalone": "^2.4.1",
+    "@walletconnect/modal": "^2.4.3",
     "ethereum-test-network": "0.1.6",
     "ethers": "5.6.9",
     "uint8arrays": "^3.1.0",
     "web3": "1.7.5"
   },
   "peerDependencies": {
-    "@web3modal/standalone": ">=2"
+    "@walletconnect/modal": ">=2"
   },
   "peerDependenciesMeta": {
-    "@web3modal/standalone": {
+    "@walletconnect/modal": {
       "optional": true
     }
   }
