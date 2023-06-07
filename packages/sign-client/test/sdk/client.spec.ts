@@ -130,8 +130,13 @@ describe("Sign Client Integration", () => {
       it("deletes the session on disconnect", async () => {
         const clients = await initTwoClients();
         const {
-          sessionA: { topic },
+          sessionA: { topic, self },
         } = await testConnectMethod(clients);
+        const { self: selfB } = clients.B.session.get(topic);
+        expect(clients.A.core.crypto.keychain.has(topic)).to.be.true;
+        expect(clients.A.core.crypto.keychain.has(self.publicKey)).to.be.true;
+        expect(clients.B.core.crypto.keychain.has(topic)).to.be.true;
+        expect(clients.B.core.crypto.keychain.has(selfB.publicKey)).to.be.true;
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         const promise = clients.A.ping({ topic });
@@ -139,6 +144,11 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
+        await throttle(1_000);
+        expect(clients.A.core.crypto.keychain.has(topic)).to.be.false;
+        expect(clients.A.core.crypto.keychain.has(self.publicKey)).to.be.false;
+        expect(clients.B.core.crypto.keychain.has(topic)).to.be.false;
+        expect(clients.B.core.crypto.keychain.has(selfB.publicKey)).to.be.false;
         await deleteClients(clients);
       });
     });
