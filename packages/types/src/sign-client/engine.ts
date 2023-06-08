@@ -154,6 +154,7 @@ export interface EnginePrivate {
     method: M,
     params: JsonRpcTypes.RequestParams[M],
     expiry?: number,
+    id?: number,
   ): Promise<number>;
 
   sendResult<M extends JsonRpcTypes.WcMethod>(
