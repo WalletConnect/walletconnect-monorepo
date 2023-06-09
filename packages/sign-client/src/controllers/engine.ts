@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
@@ -78,6 +77,7 @@ export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
   private ignoredPayloadTypes = [TYPE_1];
+  private requestQueue: PendingRequestTypes.Struct[] = [];
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -90,6 +90,11 @@ export class Engine extends IEngine {
       this.registerExpirerEvents();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
+
+      setTimeout(() => {
+        this.requestQueue = this.getPendingSessionRequests();
+        this.processRequestQueue();
+      }, 0);
     }
   };
 
@@ -314,6 +319,8 @@ export class Engine extends IEngine {
       await this.sendError(id, topic, response.error);
     }
     this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
+    // intentionally delay the emitting of the next pending request a bit
+    setTimeout(() => this.processRequestQueue(), 1000);
   };
 
   public ping: IEngine["ping"] = async (params) => {
@@ -442,6 +449,7 @@ export class Engine extends IEngine {
       this.client.pendingRequest.delete(id, reason),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
+    this.requestQueue = this.requestQueue.filter((r) => r.id !== id);
   };
 
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
@@ -839,10 +847,8 @@ export class Engine extends IEngine {
     try {
       this.isValidRequest({ topic, ...params });
       await this.setPendingSessionRequest({ id, topic, params });
-      const hash = hashMessage(JSON.stringify(payload));
-      const session = this.client.session.get(topic);
-      const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
-      this.client.events.emit("session_request", { id, topic, params, verifyContext });
+      this.addRequestToQueue({ id, topic, params });
+      await this.processRequestQueue();
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -872,6 +878,29 @@ export class Engine extends IEngine {
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
+    }
+  };
+
+  private addRequestToQueue = (request: PendingRequestTypes.Struct) => {
+    this.requestQueue.push(request);
+  };
+
+  private processRequestQueue = async () => {
+    const request = this.requestQueue?.[0];
+
+    if (!request) {
+      this.client.logger.info("session request queue is empty.");
+      return;
+    }
+
+    try {
+      const { id, topic, params } = request;
+      const hash = hashMessage(JSON.stringify({ id, params }));
+      const session = this.client.session.get(topic);
+      const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
+      this.client.events.emit("session_request", { id, topic, params, verifyContext });
+    } catch (error) {
+      this.client.logger.error(error);
     }
   };
 
