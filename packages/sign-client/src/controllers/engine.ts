@@ -100,7 +100,7 @@ export class Engine extends IEngine {
     const connectParams = {
       ...params,
       requiredNamespaces: params.requiredNamespaces || {},
-      optionalNamespaces: params.optionalNamespaces || {},
+      optionalNamespaces: params.optionalNamespaces, //|| {},
     };
     await this.isValidConnect(connectParams);
     const { pairingTopic, requiredNamespaces, optionalNamespaces, sessionProperties, relays } =
@@ -166,10 +166,10 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
 
-    const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
+    const id = await this.sendRequest(topic, "wc_sessionPropose", proposal as any);
 
     const expiry = calcExpiry(FIVE_MINUTES);
-    await this.setProposal(id, { id, expiry, ...proposal });
+    await this.setProposal(id, { id, expiry, ...proposal } as any);
     return { uri, approval };
   };
 
