@@ -102,11 +102,11 @@ export function getJavascriptOS() {
 
   if (info && info.os) {
     if (info.type === "browser") {
-      return ["browser", info.os, info.name, info.version].join("-");
+      return [info.os, info.name, info.version].join("-");
     }
-    return ["browser", info.os, info.version].join("-");
+    return [info.os, info.version].join("-");
   } else if (md.mobile()) {
-    return ["mobile", md.os(), md.version("Version")].join("-");
+    return [md.os(), md.version("Version")].join("-");
   }
   return "unknown";
 }
