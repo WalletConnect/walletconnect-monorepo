@@ -2,8 +2,6 @@ export const REQUIRED_METHODS = ["eth_sendTransaction", "personal_sign"];
 export const OPTIONAL_METHODS = [
   "eth_accounts",
   "eth_requestAccounts",
-  "eth_call",
-  "eth_getBalance",
   "eth_sendRawTransaction",
   "eth_sign",
   "eth_signTransaction",
