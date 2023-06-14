@@ -1,4 +1,5 @@
 import { detect } from "detect-browser";
+import MobileDetect from "mobile-detect";
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
 import {
   SignClientTypes,
@@ -97,12 +98,17 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 
 export function getJavascriptOS() {
   const info = detect();
-  if (info === null) return "unknown";
-  const os = info.os ? info.os.replace(" ", "").toLowerCase() : "unknown";
-  if (info.type === "browser") {
-    return [os, info.name, info.version].join("-");
+  const md = new MobileDetect(getNavigator()?.userAgent || "");
+
+  if (info && info.os) {
+    if (info.type === "browser") {
+      return ["browser", info.os, info.name, info.version].join("-");
+    }
+    return ["browser", info.os, info.version].join("-");
+  } else if (md.mobile()) {
+    return ["mobile", md.os(), md.version("Version")].join("-");
   }
-  return [os, info.version].join("-");
+  return "unknown";
 }
 
 export function getJavascriptID() {
