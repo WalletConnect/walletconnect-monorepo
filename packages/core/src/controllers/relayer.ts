@@ -253,7 +253,7 @@ export class Relayer extends IRelayer {
   }
 
   private rejectTransportOpen() {
-    throw new Error("closeTransport called before connection was established");
+    throw new Error("Attempt to connect to relay via `transportOpen` has stalled.");
   }
 
   private async createProvider() {
