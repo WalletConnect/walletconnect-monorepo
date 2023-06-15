@@ -42,4 +42,5 @@ export interface IUniversalProvider extends IEthereumProvider {
   disconnect: () => Promise<void>;
   cleanupPendingPairings: () => Promise<void>;
   abortPairingAttempt(): void;
+  setDefaultChain: (chainId: string, rpcUrl?: string | undefined) => void;
 }
