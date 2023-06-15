@@ -1,5 +1,4 @@
 import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
-import { ProviderAccounts } from "eip1193-provider";
 import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
@@ -26,6 +25,7 @@ import {
   UniversalProviderOpts,
   NamespaceConfig,
   PairingsCleanupOpts,
+  ProviderAccounts
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
