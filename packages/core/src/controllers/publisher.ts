@@ -13,12 +13,15 @@ import { EventEmitter } from "events";
 
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
+import { TEN_SECONDS, toMiliseconds } from "@walletconnect/time";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
-  private publishTimeout = 10_000;
+
+  private publishTimeout = toMiliseconds(TEN_SECONDS);
+  private needsTransportRestart = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
@@ -51,7 +54,7 @@ export class Publisher extends IPublisher {
         this.relayer.events.emit(RELAYER_EVENTS.publish, params);
       } catch (err) {
         this.logger.debug(`Publishing Payload stalled`);
-        this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+        this.needsTransportRestart = true;
         return;
       }
       this.logger.debug(`Successfully Published Payload`);
@@ -122,6 +125,13 @@ export class Publisher extends IPublisher {
 
   private registerEventListeners() {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+      // restart the transport if needed
+      // queue will be processed on the next pulse
+      if (this.needsTransportRestart) {
+        this.needsTransportRestart = false;
+        this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+        return;
+      }
       this.checkQueue();
     });
     this.relayer.on(RELAYER_EVENTS.message_ack, (event: JsonRpcPayload) => {
