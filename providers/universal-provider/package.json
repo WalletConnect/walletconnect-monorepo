@@ -48,7 +48,6 @@
     "@walletconnect/sign-client": "2.8.1",
     "@walletconnect/types": "2.8.1",
     "@walletconnect/utils": "2.8.1",
-    "eip1193-provider": "1.0.1",
     "events": "^3.3.0"
   },
   "devDependencies": {
