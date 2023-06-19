@@ -1,6 +1,5 @@
 import SignClient from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
-import { IEthereumProvider } from "eip1193-provider";
 
 import {
   RpcProvidersMap,
@@ -10,6 +9,7 @@ import {
   SessionNamespace,
   NamespaceConfig,
   ConnectParams,
+  IEthereumProvider,
 } from "./misc";
 
 export interface IProvider {
