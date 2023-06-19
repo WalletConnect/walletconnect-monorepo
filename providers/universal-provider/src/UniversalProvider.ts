@@ -25,7 +25,7 @@ import {
   UniversalProviderOpts,
   NamespaceConfig,
   PairingsCleanupOpts,
-  ProviderAccounts
+  ProviderAccounts,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
