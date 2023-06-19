@@ -391,6 +391,9 @@ export class Engine extends IEngine {
   private cleanupDuplicatePairings: EnginePrivate["cleanupDuplicatePairings"] = async (
     session: SessionTypes.Struct,
   ) => {
+    // older SDK versions are missing the `pairingTopic` prop thus we need to check for it
+    if (!session.pairingTopic) return;
+
     try {
       const pairing = this.client.core.pairing.pairings.get(session.pairingTopic);
       const allPairings = this.client.core.pairing.pairings.getAll();
