@@ -13,7 +13,7 @@ import { EventEmitter } from "events";
 
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
-import { TEN_SECONDS, toMiliseconds } from "@walletconnect/time";
+import { FIVE_SECONDS, TEN_SECONDS, toMiliseconds } from "@walletconnect/time";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
@@ -21,6 +21,7 @@ export class Publisher extends IPublisher {
   public queue = new Map<string, PublisherTypes.Params>();
 
   private publishTimeout = toMiliseconds(TEN_SECONDS);
+  private queueTimeout = toMiliseconds(FIVE_SECONDS);
   private needsTransportRestart = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -44,13 +45,15 @@ export class Publisher extends IPublisher {
       const tag = opts?.tag || 0;
       const id = opts?.id || (getBigIntRpcId().toString() as any);
       const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
-      this.queue.set(id, params);
+      // delay adding to queue to avoid cases where heartbeat might pulse right after publish resulting in duplicate publish
+      const queueTimeout = setTimeout(() => this.queue.set(id, params), this.queueTimeout);
       try {
         const publish = await createExpiringPromise(
           this.rpcPublish(topic, message, ttl, relay, prompt, tag, id),
           this.publishTimeout,
         );
         await publish;
+        clearTimeout(queueTimeout);
         this.relayer.events.emit(RELAYER_EVENTS.publish, params);
       } catch (err) {
         this.logger.debug(`Publishing Payload stalled`);
