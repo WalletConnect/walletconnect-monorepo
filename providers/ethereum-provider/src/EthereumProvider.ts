@@ -397,7 +397,7 @@ export class EthereumProvider implements IEthereumProvider {
     });
   }
 
-  protected setHttpProvider(chainId: number): void {
+  protected switchEthereumChain(chainId: number): void {
     this.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: chainId.toString(16) }],
@@ -430,7 +430,7 @@ export class EthereumProvider implements IEthereumProvider {
     if (this.isCompatibleChainId(chain)) {
       const chainId = this.parseChainId(chain);
       this.chainId = chainId;
-      this.setHttpProvider(chainId);
+      this.switchEthereumChain(chainId);
     }
   }
 
