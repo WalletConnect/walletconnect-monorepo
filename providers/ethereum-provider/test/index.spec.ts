@@ -2,6 +2,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
+
+import { SignClient } from "@walletconnect/sign-client";
+import { ISignClient } from "@walletconnect/types";
+
 import {
   ERC20Token__factory,
   _abi,
@@ -14,7 +18,6 @@ import {
   PORT,
   RPC_URL,
   ACCOUNTS,
-  TEST_PROVIDER_OPTS,
   TEST_WALLET_CLIENT_OPTS,
   TEST_ETH_TRANSFER,
   TEST_SIGN_TRANSACTION,
@@ -317,6 +320,113 @@ describe("EthereumProvider", function () {
         const verify = utils.verifyMessage(msg, signature);
         expect(verify).eq(walletAddress);
       });
+    });
+  });
+  describe("persistence", () => {
+    const db = "./test/tmp/test.db";
+    const initOptions = {
+      projectId: process.env.TEST_PROJECT_ID || "",
+      chains: [CHAIN_ID],
+      showQrModal: false,
+      storageOptions: {
+        database: db,
+      },
+    };
+    it("should restore session with `eip155: { chains: [...] }` structure", async () => {
+      const provider = await EthereumProvider.init(initOptions);
+      const walletClient = await SignClient.init({
+        projectId: initOptions.projectId,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                eip155: {
+                  accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                  methods: proposal.params.requiredNamespaces.eip155.methods,
+                  events: proposal.params.requiredNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      expect(accounts.length).to.eql(1);
+
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
+
+      // reload the provider with the persisted session
+      const persistedProvider = await EthereumProvider.init(initOptions);
+      const persistedAccounts = (await persistedProvider.request({
+        method: "eth_accounts",
+      })) as string[];
+
+      expect(persistedAccounts[0]).to.include(walletAddress);
+      expect(persistedAccounts.length).to.eql(1);
+      expect(persistedAccounts).to.eql(accounts);
+
+      await persistedProvider.signer.client.core.relayer.transportClose();
+    });
+    it("should restore session with `['eip155:1']: {...}` structure", async () => {
+      const provider = await EthereumProvider.init(initOptions);
+      const walletClient = await SignClient.init({
+        projectId: initOptions.projectId,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                [`eip155:${CHAIN_ID}`]: {
+                  accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                  methods: proposal.params.requiredNamespaces.eip155.methods,
+                  events: proposal.params.requiredNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      expect(accounts.length).to.eql(1);
+
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
+
+      // reload the provider with the persisted session
+      const persistedProvider = await EthereumProvider.init(initOptions);
+      const persistedAccounts = (await persistedProvider.request({
+        method: "eth_accounts",
+      })) as string[];
+
+      expect(persistedAccounts[0]).to.include(walletAddress);
+      expect(persistedAccounts.length).to.eql(1);
+      expect(persistedAccounts).to.eql(accounts);
+
+      await persistedProvider.signer.client.core.relayer.transportClose();
     });
   });
 });
