@@ -543,10 +543,14 @@ export class EthereumProvider implements IEthereumProvider {
   protected async loadPersistedSession() {
     if (!this.session) return;
     const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
-    this.setChainIds(
-      chainId ? [this.formatChainId(chainId)] : this.session.namespaces[this.namespace].accounts,
-    );
-    this.setAccounts(this.session.namespaces[this.namespace].accounts);
+
+    // cater to both inline & nested namespace formats
+    const namespace = this.session.namespaces[this.namespace]
+      ? this.session.namespaces[this.namespace]
+      : this.session.namespaces[`${this.namespace}:${chainId}`];
+
+    this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
+    this.setAccounts(namespace?.accounts);
   }
 
   protected reset() {
