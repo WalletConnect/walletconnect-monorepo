@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
+import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import {
   IEthereumProvider as IProvider,
   IEthereumProviderEvents,
@@ -202,6 +203,8 @@ export interface EthereumProviderOptions {
   showQrModal: boolean;
   qrModalOptions?: QrModalOptions;
   disableProviderPing?: boolean;
+  relayUrl?: string;
+  storageOptions?: KeyValueStorageOptions;
 }
 
 export class EthereumProvider implements IEthereumProvider {
@@ -482,6 +485,8 @@ export class EthereumProvider implements IEthereumProvider {
       projectId: this.rpc.projectId,
       metadata: this.rpc.metadata,
       disableProviderPing: opts.disableProviderPing,
+      relayUrl: opts.relayUrl,
+      storageOptions: opts.storageOptions,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();
