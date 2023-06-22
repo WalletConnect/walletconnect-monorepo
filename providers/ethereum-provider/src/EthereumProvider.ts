@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
+import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import {
   IEthereumProvider as IProvider,
   IEthereumProviderEvents,
@@ -202,6 +203,8 @@ export interface EthereumProviderOptions {
   showQrModal: boolean;
   qrModalOptions?: QrModalOptions;
   disableProviderPing?: boolean;
+  relayUrl?: string;
+  storageOptions?: KeyValueStorageOptions;
 }
 
 export class EthereumProvider implements IEthereumProvider {
@@ -397,7 +400,7 @@ export class EthereumProvider implements IEthereumProvider {
     });
   }
 
-  protected setHttpProvider(chainId: number): void {
+  protected switchEthereumChain(chainId: number): void {
     this.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: chainId.toString(16) }],
@@ -430,7 +433,7 @@ export class EthereumProvider implements IEthereumProvider {
     if (this.isCompatibleChainId(chain)) {
       const chainId = this.parseChainId(chain);
       this.chainId = chainId;
-      this.setHttpProvider(chainId);
+      this.switchEthereumChain(chainId);
     }
   }
 
@@ -482,6 +485,8 @@ export class EthereumProvider implements IEthereumProvider {
       projectId: this.rpc.projectId,
       metadata: this.rpc.metadata,
       disableProviderPing: opts.disableProviderPing,
+      relayUrl: opts.relayUrl,
+      storageOptions: opts.storageOptions,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();
@@ -538,10 +543,14 @@ export class EthereumProvider implements IEthereumProvider {
   protected async loadPersistedSession() {
     if (!this.session) return;
     const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
-    this.setChainIds(
-      chainId ? [this.formatChainId(chainId)] : this.session.namespaces[this.namespace].accounts,
-    );
-    this.setAccounts(this.session.namespaces[this.namespace].accounts);
+
+    // cater to both inline & nested namespace formats
+    const namespace = this.session.namespaces[`${this.namespace}:${chainId}`]
+      ? this.session.namespaces[`${this.namespace}:${chainId}`]
+      : this.session.namespaces[this.namespace];
+
+    this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
+    this.setAccounts(namespace?.accounts);
   }
 
   protected reset() {
