@@ -253,7 +253,7 @@ export class Relayer extends IRelayer {
   }
 
   private rejectTransportOpen() {
-    throw new Error("Attempt to connect to relay via `transportOpen` has stalled.");
+    throw new Error("Attempt to connect to relay via `transportOpen` has stalled. Retrying...");
   }
 
   private async createProvider() {
