@@ -1,6 +1,5 @@
 import SignClient from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
-import { IEthereumProvider } from "eip1193-provider";
 
 import {
   RpcProvidersMap,
@@ -10,6 +9,7 @@ import {
   SessionNamespace,
   NamespaceConfig,
   ConnectParams,
+  IEthereumProvider,
 } from "./misc";
 
 export interface IProvider {
@@ -42,4 +42,5 @@ export interface IUniversalProvider extends IEthereumProvider {
   disconnect: () => Promise<void>;
   cleanupPendingPairings: () => Promise<void>;
   abortPairingAttempt(): void;
+  setDefaultChain: (chainId: string, rpcUrl?: string | undefined) => void;
 }
