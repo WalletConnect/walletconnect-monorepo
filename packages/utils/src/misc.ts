@@ -96,6 +96,12 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 // -- rpcUrl ----------------------------------------------//
 
 export function getJavascriptOS() {
+  // global.Platform is set by react-native-compat
+  if (typeof (global as any)?.Platform !== "undefined") {
+    const { OS, Version } = (global as any).Platform;
+    return [OS, Version].join("-");
+  }
+
   const info = detect();
   if (info === null) return "unknown";
   const os = info.os ? info.os.replace(" ", "").toLowerCase() : "unknown";
