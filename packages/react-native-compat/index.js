@@ -17,3 +17,12 @@ if (typeof global?.Linking === "undefined") {
     console.error("react-native-compat: react-native.Linking is not available");
   }
 }
+
+if (typeof global?.Platform === "undefined") {
+  try {
+    global.Platform = require("react-native").Platform;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("react-native-compat: react-native.Platform is not available");
+  }
+}
