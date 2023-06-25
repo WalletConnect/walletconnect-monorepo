@@ -12,6 +12,7 @@ import PolkadotProvider from "./providers/polkadot";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
+import AlgorandProvider from "./providers/algorand";
 import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
@@ -287,6 +288,11 @@ export class UniversalProvider implements IUniversalProvider {
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
+            namespace: combinedNamespace,
+          });
+          break;
+        case "algorand":
+          this.rpcProviders[namespace] = new AlgorandProvider({
             namespace: combinedNamespace,
           });
           break;

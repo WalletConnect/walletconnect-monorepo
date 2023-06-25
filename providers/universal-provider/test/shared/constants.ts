@@ -73,6 +73,7 @@ export const EIP155_TEST_METHODS = [
   "eth_signTypedData",
 ];
 
+export const ALGORAND_TEST_METHODS = ["algo_signTxn"];
 export const COSMOS_TEST_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
 export const ELROND_TEST_METHODS = ["erd_signTransaction", "erd_signLoginToken"];
 export const MULTIVERSX_TEST_METHODS = ["multiversx_signTransaction", "multiversx_signMessage"];
@@ -82,6 +83,15 @@ export const TEST_NAMESPACES_CONFIG = {
     eip155: {
       methods: EIP155_TEST_METHODS,
       chains: [`eip155:${CHAIN_ID}`, `eip155:${CHAIN_ID_B}`],
+      events: ["chainChanged", "accountsChanged"],
+      rpcMap: {
+        [CHAIN_ID]: RPC_URL,
+        [CHAIN_ID_B]: RPC_URL_B,
+      },
+    },
+    algorand: {
+      methods: ALGORAND_TEST_METHODS,
+      chains: [`algorand:${CHAIN_ID}`, `algorand:${CHAIN_ID_B}`],
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
         [CHAIN_ID]: RPC_URL,
