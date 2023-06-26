@@ -33,7 +33,7 @@
     "@walletconnect/core": "2.8.3",
     "@walletconnect/jsonrpc-utils": "1.0.8",
     "@walletconnect/logger": "2.0.1",
-    "@walletconnect/sign-client": "2.8.3",
+    "@walletconnect/sign-client": "2.8.2",
     "@walletconnect/types": "2.8.3",
     "@walletconnect/utils": "2.8.3",
     "@walletconnect/jsonrpc-provider": "1.0.13"
