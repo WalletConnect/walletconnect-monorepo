@@ -15,6 +15,7 @@ import CosmosProvider from "./providers/cosmos";
 import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
+import NearProvider from "./providers/near";
 
 import {
   IUniversalProvider,
@@ -48,6 +49,8 @@ export class UniversalProvider implements IUniversalProvider {
   private disableProviderPing = false;
 
   static async init(opts: UniversalProviderOpts) {
+    console.log('%cPROVIDER LINKED', 'color:gold;font-size:12px;');
+    
     const provider = new UniversalProvider(opts);
     await provider.initialize();
     return provider;
@@ -73,6 +76,7 @@ export class UniversalProvider implements IUniversalProvider {
     }
 
     return await this.getProvider(namespace).request({
+      
       request: {
         ...args,
       },
@@ -317,6 +321,11 @@ export class UniversalProvider implements IUniversalProvider {
           break;
         case "multiversx":
           this.rpcProviders[namespace] = new MultiversXProvider({
+            namespace: combinedNamespace,
+          });
+          break;
+        case "near":
+          this.rpcProviders[namespace] = new NearProvider({
             namespace: combinedNamespace,
           });
           break;
