@@ -429,4 +429,88 @@ describe("EthereumProvider", function () {
       await persistedProvider.signer.client.core.relayer.transportClose();
     });
   });
+  describe("required & optional chains", () => {
+    it("should connect without any required chains", async () => {
+      const initOptions = {
+        projectId: process.env.TEST_PROJECT_ID || "",
+        optionalChains: [CHAIN_ID],
+        showQrModal: false,
+      };
+      const provider = await EthereumProvider.init(initOptions);
+      const walletClient = await SignClient.init({
+        projectId: initOptions.projectId,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                eip155: {
+                  accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                  methods: proposal.params.optionalNamespaces.eip155.methods,
+                  events: proposal.params.optionalNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      expect(accounts.length).to.eql(1);
+
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
+    });
+    it("should connect without optional chains", async () => {
+      const initOptions = {
+        projectId: process.env.TEST_PROJECT_ID || "",
+        chains: [CHAIN_ID],
+        showQrModal: false,
+      };
+      const provider = await EthereumProvider.init(initOptions);
+      const walletClient = await SignClient.init({
+        projectId: initOptions.projectId,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                eip155: {
+                  accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                  methods: proposal.params.requiredNamespaces.eip155.methods,
+                  events: proposal.params.requiredNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      expect(accounts.length).to.eql(1);
+
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
+    });
+  });
 });
