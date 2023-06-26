@@ -53,7 +53,7 @@ export function getAccountsFromSession(namespace: string, session: SessionTypes.
 }
 
 export function mergeRequiredOptionalNamespaces(
-  required: NamespaceConfig,
+  required: NamespaceConfig = {},
   optional: NamespaceConfig = {},
 ) {
   const requiredNamespaces = normalizeNamespaces(required);
