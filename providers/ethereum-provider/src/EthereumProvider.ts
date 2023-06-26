@@ -16,7 +16,6 @@ export type QrModalOptions = Pick<
   WalletConnectModalConfig,
   | "themeMode"
   | "themeVariables"
-  | "chainImages"
   | "desktopWallets"
   | "enableExplorer"
   | "explorerRecommendedWalletIds"
@@ -24,7 +23,6 @@ export type QrModalOptions = Pick<
   | "mobileWallets"
   | "privacyPolicyUrl"
   | "termsOfServiceUrl"
-  | "tokenImages"
   | "walletImages"
 >;
 
