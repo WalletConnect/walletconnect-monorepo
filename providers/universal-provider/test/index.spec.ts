@@ -54,6 +54,9 @@ describe("UniversalProvider", function () {
     expect(walletAddress).to.eql(ACCOUNTS.a.address);
     const providerAccounts = await provider.enable();
     expect(providerAccounts).to.eql([walletAddress]);
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 1000);
+    });
   });
   afterAll(async () => {
     // close test network
@@ -721,6 +724,41 @@ describe("UniversalProvider", function () {
                 events,
               },
             },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                chains,
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        await dapp.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x2" }] });
+        await validateProvider({
+          provider: dapp,
+          chains,
+          addresses: [walletAddress],
+          expectedChainId: chains[1],
+        });
+      });
+      it("should connect with empty required namespaces", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1", "eip155:2"];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: undefined,
             namespaces: {
               eip155: {
                 accounts: chains.map((chain) => `${chain}:${walletAddress}`),
