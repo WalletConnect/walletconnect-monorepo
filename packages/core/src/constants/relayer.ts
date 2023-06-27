@@ -36,7 +36,7 @@ export const RELAYER_STORAGE_OPTIONS = {
 
 // Updated automatically via `new-version` npm script.
 
-export const RELAYER_SDK_VERSION = "2.8.3";
+export const RELAYER_SDK_VERSION = "2.8.4";
 
 // delay to wait before closing the transport connection after init if not active
 export const RELAYER_TRANSPORT_CUTOFF = 10_000;
