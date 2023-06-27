@@ -137,34 +137,35 @@ export function isValidNamespaceMethodsOrEvents(input: any): input is string {
 
 export function isValidChains(key: string, chains: any, context: string) {
   let error: ErrorObject = null;
-  if (isValidArray(chains)) {
+
+  if (isValidArray(chains) && chains.length) {
     chains.forEach((chain: any) => {
       if (error) return;
-      if (!isValidChainId(chain) || !chain.includes(key)) {
+      if (!isValidChainId(chain)) {
         error = getSdkError(
           "UNSUPPORTED_CHAINS",
           `${context}, chain ${chain} should be a string and conform to "namespace:chainId" format`,
         );
       }
     });
-  } else {
+  } else if (!isValidChainId(key)) {
     error = getSdkError(
       "UNSUPPORTED_CHAINS",
-      `${context}, chains ${chains} should be an array of strings conforming to "namespace:chainId" format`,
+      `${context}, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of caip2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
     );
   }
 
   return error;
 }
 
-export function isValidNamespaceChains(namespaces: any, method: string) {
+export function isValidNamespaceChains(namespaces: any, method: string, type: string) {
   let error: ErrorObject = null;
   Object.entries(namespaces).forEach(([key, namespace]: [string, any]) => {
     if (error) return;
     const validChainsError = isValidChains(
       key,
       getChainsFromNamespace(key, namespace),
-      `${method} requiredNamespace`,
+      `${method} ${type}`,
     );
     if (validChainsError) {
       error = validChainsError;
@@ -246,7 +247,7 @@ export function isValidRequiredNamespaces(input: any, method: string, type: stri
     if (validActionsError) {
       error = validActionsError;
     }
-    const validChainsError = isValidNamespaceChains(input, method);
+    const validChainsError = isValidNamespaceChains(input, method, type);
     if (validChainsError) {
       error = validChainsError;
     }
