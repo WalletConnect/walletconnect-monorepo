@@ -11,7 +11,7 @@ import {
   SessionNamespace,
 } from "../types";
 
-import { getChainId, getGlobal, getRpcUrl, validateChainApproval } from "../utils";
+import { getChainId, getGlobal, getRpcUrl } from "../utils";
 import EventEmitter from "events";
 import { PROVIDER_EVENTS } from "../constants";
 
@@ -39,8 +39,7 @@ class Eip155Provider implements IProvider {
       case "eth_accounts":
         return this.getAccounts() as any;
       case "wallet_switchEthereumChain": {
-        this.handleSwitchChain(args.request.params ? args.request.params[0]?.chainId : "0x0");
-        return null as any;
+        return await this.handleSwitchChain(args);
       }
       case "eth_chainId":
         return parseInt(this.getDefaultChain()) as any;
@@ -141,11 +140,38 @@ class Eip155Provider implements IProvider {
     return http;
   }
 
-  private handleSwitchChain(newChainId: string) {
-    const chainId = parseInt(newChainId, 16);
-    const caipChainId = `${this.name}:${chainId}`;
-    validateChainApproval(caipChainId, this.namespace.chains);
-    this.setDefaultChain(`${chainId}`);
+  private async handleSwitchChain(args: RequestParams): Promise<any> {
+    let hexChainId = args.request.params ? args.request.params[0]?.chainId : "0x0";
+    hexChainId = hexChainId.startsWith("0x") ? hexChainId : `0x${hexChainId}`;
+    const parsedChainId = parseInt(hexChainId, 16);
+    // if chainId is already approved, switch locally
+    if (this.isChainApproved(parsedChainId)) {
+      this.setDefaultChain(`${parsedChainId}`);
+    } else if (this.namespace.methods.includes("wallet_switchEthereumChain")) {
+      // try to switch chain within the wallet
+      await this.client.request({
+        topic: args.topic,
+        request: {
+          method: args.request.method,
+          params: [
+            {
+              chainId: hexChainId,
+            },
+          ],
+        },
+        chainId: args.chainId,
+      } as EngineTypes.RequestParams);
+      this.setDefaultChain(`${parsedChainId}`);
+    } else {
+      throw new Error(
+        `Failed to switch to chain 'eip155:${parsedChainId}'. The chain is not approved or the wallet does not support 'wallet_switchEthereumChain' method.`,
+      );
+    }
+    return null;
+  }
+
+  private isChainApproved(chainId: number): boolean {
+    return this.namespace.chains.includes(`${this.name}:${chainId}`);
   }
 }
 
