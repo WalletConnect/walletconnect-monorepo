@@ -4,7 +4,7 @@ import { calcExpiry } from "@walletconnect/utils";
 import { Core, HISTORY_EVENTS } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 import { ICore, JsonRpcRecord } from "@walletconnect/types";
-import { THIRTY_DAYS } from "@walletconnect/time";
+import { THIRTY_DAYS, toMiliseconds, fromMiliseconds } from "@walletconnect/time";
 
 describe("history", () => {
   let core: ICore;
@@ -36,10 +36,10 @@ describe("history", () => {
     expect(record).to.not.be.undefined;
     expect(record?.expiry).to.not.be.undefined;
     expect(record?.expiry).to.be.greaterThan(0);
-    expect(record?.expiry).to.be.approximately(Date.now() + calcExpiry(THIRTY_DAYS), 10); // delta ~10ms execution variance
+    expect(record?.expiry).to.be.approximately(calcExpiry(THIRTY_DAYS), 10); // delta ~10ms execution variance
 
     vi.useFakeTimers();
-    vi.advanceTimersByTime(calcExpiry(THIRTY_DAYS));
+    vi.advanceTimersByTime(toMiliseconds(calcExpiry(THIRTY_DAYS)));
     // move time forward to force expiry and wait for heartbeat to delete the record
     await new Promise<void>((resolve) => {
       core.history.on(HISTORY_EVENTS.deleted, (record: JsonRpcRecord) => {

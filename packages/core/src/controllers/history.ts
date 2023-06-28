@@ -3,7 +3,7 @@ import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/lo
 import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
 import { calcExpiry, getInternalError } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { THIRTY_DAYS } from "@walletconnect/time";
+import { THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import {
   CORE_STORAGE_PREFIX,
@@ -82,7 +82,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       topic,
       request: { method: request.method, params: request.params || null },
       chainId,
-      expiry: Date.now() + calcExpiry(THIRTY_DAYS),
+      expiry: calcExpiry(THIRTY_DAYS),
     };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.created, record);
@@ -220,7 +220,8 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   private cleanup() {
     try {
       this.records.forEach((record: JsonRpcRecord) => {
-        if (!record.expiry || record.expiry <= Date.now()) {
+        const msToExpiry = toMiliseconds(record.expiry || 0) - Date.now();
+        if (msToExpiry <= 0) {
           this.logger.info(`Deleting expired history log: ${record.id}`);
           this.delete(record.topic, record.id);
         }
