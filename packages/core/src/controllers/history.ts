@@ -1,8 +1,10 @@
 import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
-import { getInternalError } from "@walletconnect/utils";
+import { calcExpiry, getInternalError } from "@walletconnect/utils";
 import { EventEmitter } from "events";
+import { THIRTY_DAYS } from "@walletconnect/time";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import {
   CORE_STORAGE_PREFIX,
   HISTORY_CONTEXT,
@@ -80,6 +82,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       topic,
       request: { method: request.method, params: request.params || null },
       chainId,
+      expiry: Date.now() + calcExpiry(THIRTY_DAYS),
     };
     this.records.set(record.id, record);
     this.events.emit(HISTORY_EVENTS.created, record);
@@ -208,6 +211,23 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       this.logger.debug({ type: "event", event: eventName, record });
       this.persist();
     });
+
+    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+      this.cleanup();
+    });
+  }
+
+  private cleanup() {
+    try {
+      this.records.forEach((record: JsonRpcRecord) => {
+        if (!record.expiry || record.expiry < Date.now()) {
+          this.logger.info(`Deleting expired history log: ${record.id}`);
+          this.delete(record.topic, record.id);
+        }
+      });
+    } catch (e) {
+      this.logger.warn(e);
+    }
   }
 
   private isInitialized() {
