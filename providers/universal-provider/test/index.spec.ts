@@ -133,7 +133,7 @@ describe("UniversalProvider", function () {
       });
     });
     describe("events", () => {
-      it("should emit caip15 parsed accountsChanged", async () => {
+      it("should emit CAIP-10 parsed accountsChanged", async () => {
         const caip10AccountToEmit = `eip155:${CHAIN_ID}:${walletAddress}`;
         const expectedParsedAccount = walletAddress;
         expect(caip10AccountToEmit).to.not.eql(expectedParsedAccount);
