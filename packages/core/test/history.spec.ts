@@ -36,7 +36,10 @@ describe("history", () => {
     expect(record).to.not.be.undefined;
     expect(record?.expiry).to.not.be.undefined;
     expect(record?.expiry).to.be.greaterThan(0);
-    expect(record?.expiry).to.be.approximately(calcExpiry(THIRTY_DAYS), 10); // delta ~10ms execution variance
+    expect(toMiliseconds(record?.expiry || 0)).to.be.approximately(
+      toMiliseconds(calcExpiry(THIRTY_DAYS)),
+      10,
+    ); // delta ~10ms execution variance
 
     vi.useFakeTimers();
     vi.advanceTimersByTime(toMiliseconds(calcExpiry(THIRTY_DAYS)));
