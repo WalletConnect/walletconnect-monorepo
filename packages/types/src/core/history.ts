@@ -15,6 +15,7 @@ export interface JsonRpcRecord {
   request: RequestArguments;
   chainId?: string;
   response?: { result: any } | { error: ErrorResponse };
+  expiry?: number;
 }
 
 export interface RequestEvent {
