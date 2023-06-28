@@ -151,7 +151,7 @@ export function isValidChains(key: string, chains: any, context: string) {
   } else if (!isValidChainId(key)) {
     error = getSdkError(
       "UNSUPPORTED_CHAINS",
-      `${context}, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of caip2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
+      `${context}, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of CAIP-2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
     );
   }
 

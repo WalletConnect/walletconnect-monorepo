@@ -92,7 +92,7 @@ describe("Sign Client Validation", () => {
           },
         }),
       ).rejects.toThrowError(
-        `Unsupported chains. connect() requiredNamespaces, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of caip2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
+        `Unsupported chains. connect() requiredNamespaces, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of CAIP-2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
       );
     });
     it("throws when no chains are specified within optionalNamespaces", async () => {
@@ -105,7 +105,7 @@ describe("Sign Client Validation", () => {
           },
         }),
       ).rejects.toThrowError(
-        `Unsupported chains. connect() optionalNamespaces, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of caip2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
+        `Unsupported chains. connect() optionalNamespaces, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of CAIP-2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
       );
     });
     it("should create pairing with inline defined chain", async () => {
