@@ -132,6 +132,30 @@ describe("UniversalProvider", function () {
         });
       });
     });
+    describe("events", () => {
+      it("should emit caip15 parsed accountsChanged", async () => {
+        const caip10AccountToEmit = `eip155:${CHAIN_ID}:${walletAddress}`;
+        const expectedParsedAccount = walletAddress;
+        expect(caip10AccountToEmit).to.not.eql(expectedParsedAccount);
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            provider.on("accountsChanged", (accounts: string[]) => {
+              expect(accounts).to.be.an("array");
+              expect(accounts).to.include(expectedParsedAccount);
+              resolve();
+            });
+          }),
+          walletClient.client?.emit({
+            topic: provider.session?.topic || "",
+            event: {
+              name: "accountsChanged",
+              data: [caip10AccountToEmit],
+            },
+            chainId: `eip155:${CHAIN_ID}`,
+          }),
+        ]);
+      });
+    });
     describe("Web3", () => {
       let web3: Web3;
       beforeAll(() => {
