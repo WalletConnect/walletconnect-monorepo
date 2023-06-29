@@ -39,7 +39,7 @@
   "dependencies": {
     "@walletconnect/jsonrpc-types": "^1.0.3",
     "@walletconnect/jsonrpc-utils": "^1.0.8",
-    "@walletconnect/sign-client": "2.8.6",
+    "@walletconnect/sign-client": "2.8.5",
     "@walletconnect/types": "2.8.6",
     "@walletconnect/utils": "2.8.6",
     "events": "^3.3.0",
