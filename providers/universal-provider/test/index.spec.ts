@@ -116,10 +116,13 @@ describe("UniversalProvider", function () {
               resolve();
             });
           }),
-          provider.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: `0x${chainToSwith.split(":")[1]}` }],
-          }),
+          provider.request(
+            {
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: `0x${chainToSwith.split(":")[1]}` }],
+            },
+            `eip155:${chainToSwith}`,
+          ),
         ]);
 
         const activeChainAfterSwitch = await web3.eth.getChainId();
