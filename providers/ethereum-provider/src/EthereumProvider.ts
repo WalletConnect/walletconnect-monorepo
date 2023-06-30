@@ -148,7 +148,7 @@ export function buildNamespaces(params: NamespacesParams): {
     !eventsRequiringPermissions?.length &&
     !methodsRequiringPermissions?.length
   ) {
-    return { required: chains ? required : undefined };
+    return { required: chains.length ? required : undefined };
   }
 
   /*
