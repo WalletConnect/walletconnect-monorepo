@@ -377,10 +377,27 @@ describe("UniversalProvider", function () {
           name: "wallet",
           storageOptions: { database: getDbName("walletDB") },
         });
-
+        const chains = [`eip155:${CHAIN_ID}`, `eip155:${CHAIN_ID_B}`];
         const {
           sessionA: { topic },
-        } = await testConnectMethod({ dapp, wallet });
+        } = await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {},
+            optionalNamespaces: {},
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                chains,
+                methods,
+                events,
+              },
+            },
+          },
+        );
 
         await Promise.all([
           new Promise((resolve) => {
