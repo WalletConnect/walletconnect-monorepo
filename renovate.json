@@ -9,6 +9,7 @@
     ":semanticCommitScope(deps)"
   ],
   "updateInternalDeps": true,
+  "rollbackPrs": false,
   "packageRules": [
     {
       "matchPackagePatterns": ["*"],

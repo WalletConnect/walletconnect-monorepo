@@ -6,6 +6,7 @@ import {
   getAccountsFromSession,
   getChainsFromApprovedSession,
   mergeRequiredOptionalNamespaces,
+  parseCaip10Account,
   setGlobal,
 } from "./utils";
 import PolkadotProvider from "./providers/polkadot";
@@ -341,7 +342,9 @@ export class UniversalProvider implements IUniversalProvider {
       const { params } = args;
       const { event } = params;
       if (event.name === "accountsChanged") {
-        this.events.emit("accountsChanged", event.data);
+        const accounts = event.data;
+        if (accounts && isValidArray(accounts))
+          this.events.emit("accountsChanged", accounts.map(parseCaip10Account));
       } else if (event.name === "chainChanged") {
         this.onChainChanged(params.chainId);
       } else {

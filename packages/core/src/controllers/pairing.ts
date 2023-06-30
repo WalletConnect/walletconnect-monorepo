@@ -251,7 +251,8 @@ export class Pairing implements IPairing {
         this.onRelayEventRequest({ topic, payload });
       } else if (isJsonRpcResponse(payload)) {
         await this.core.history.resolve(payload);
-        this.onRelayEventResponse({ topic, payload });
+        await this.onRelayEventResponse({ topic, payload });
+        this.core.history.delete(topic, payload.id);
       }
     });
   }

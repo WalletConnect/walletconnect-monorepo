@@ -97,3 +97,7 @@ export function normalizeNamespaces(namespaces: NamespaceConfig): NamespaceConfi
   }
   return normalizedNamespaces;
 }
+
+export function parseCaip10Account(caip10Account: string): string {
+  return caip10Account.includes(":") ? caip10Account.split(":")[2] : caip10Account;
+}

@@ -54,9 +54,7 @@ describe("UniversalProvider", function () {
     expect(walletAddress).to.eql(ACCOUNTS.a.address);
     const providerAccounts = await provider.enable();
     expect(providerAccounts).to.eql([walletAddress]);
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 1000);
-    });
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
   afterAll(async () => {
     // close test network
@@ -95,6 +93,68 @@ describe("UniversalProvider", function () {
         expect(chainIdB).to.eql(CHAIN_ID_B);
 
         provider.setDefaultChain(`eip155:${CHAIN_ID}`);
+      });
+      it("should send `wallet_switchEthereumChain` request when chain is not approved", async () => {
+        const currentApprovedChains = provider.session?.namespaces.eip155.chains;
+        const chainToSwith = "eip155:1";
+        const chainToSwitchParsed = parseInt(chainToSwith.split(":")[1]);
+        // confirm that chain is not approved
+        expect(currentApprovedChains).to.not.include(chainToSwith);
+
+        const activeChain = await web3.eth.getChainId();
+        expect(activeChain).to.not.eql(chainToSwitchParsed);
+        expect(activeChain).to.eql(CHAIN_ID);
+
+        // when we send the wallet_switchEthereumChain request
+        // the wallet should receive & update the session with the new chain
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            provider.on("session_update", (args: any) => {
+              expect(args.params.namespaces.eip155.chains).to.include(chainToSwith);
+              resolve();
+            });
+          }),
+          provider.request(
+            {
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: `0x${chainToSwith.split(":")[1]}` }],
+            },
+            chainToSwith,
+          ),
+        ]);
+
+        const activeChainAfterSwitch = await web3.eth.getChainId();
+        expect(activeChainAfterSwitch).to.eql(chainToSwitchParsed);
+
+        // revert back to the original chain
+        await provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: `0x${CHAIN_ID.toString(16)}` }],
+        });
+      });
+    });
+    describe("events", () => {
+      it("should emit CAIP-10 parsed accountsChanged", async () => {
+        const caip10AccountToEmit = `eip155:${CHAIN_ID}:${walletAddress}`;
+        const expectedParsedAccount = walletAddress;
+        expect(caip10AccountToEmit).to.not.eql(expectedParsedAccount);
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            provider.on("accountsChanged", (accounts: string[]) => {
+              expect(accounts).to.be.an("array");
+              expect(accounts).to.include(expectedParsedAccount);
+              resolve();
+            });
+          }),
+          walletClient.client?.emit({
+            topic: provider.session?.topic || "",
+            event: {
+              name: "accountsChanged",
+              data: [caip10AccountToEmit],
+            },
+            chainId: `eip155:${CHAIN_ID}`,
+          }),
+        ]);
       });
     });
     describe("Web3", () => {

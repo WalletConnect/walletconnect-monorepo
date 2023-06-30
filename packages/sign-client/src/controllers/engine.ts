@@ -549,7 +549,8 @@ export class Engine extends IEngine {
           this.onRelayEventRequest({ topic, payload });
         } else if (isJsonRpcResponse(payload)) {
           await this.client.core.history.resolve(payload);
-          this.onRelayEventResponse({ topic, payload });
+          await this.onRelayEventResponse({ topic, payload });
+          this.client.core.history.delete(topic, payload.id);
         } else {
           this.onRelayEventUnknownPayload({ topic, payload });
         }
@@ -587,7 +588,6 @@ export class Engine extends IEngine {
     const { topic, payload } = event;
     const record = await this.client.core.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
-
     switch (resMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeResponse(topic, payload);
