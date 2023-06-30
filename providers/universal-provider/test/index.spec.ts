@@ -818,7 +818,8 @@ describe("UniversalProvider", function () {
             wallet,
           },
           {
-            requiredNamespaces: undefined,
+            requiredNamespaces: {},
+            optionalNamespaces: {},
             namespaces: {
               eip155: {
                 accounts: chains.map((chain) => `${chain}:${walletAddress}`),

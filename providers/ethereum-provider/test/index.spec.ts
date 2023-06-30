@@ -4,7 +4,6 @@ import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
 
 import { SignClient } from "@walletconnect/sign-client";
-import { ISignClient } from "@walletconnect/types";
 
 import {
   ERC20Token__factory,
@@ -433,7 +432,7 @@ describe("EthereumProvider", function () {
     it("should connect without any required chains", async () => {
       const initOptions = {
         projectId: process.env.TEST_PROJECT_ID || "",
-        optionalChains: [CHAIN_ID],
+        optionalChains: [CHAIN_ID, 137],
         showQrModal: false,
       };
       const provider = await EthereumProvider.init(initOptions);
@@ -447,7 +446,11 @@ describe("EthereumProvider", function () {
               id: proposal.id,
               namespaces: {
                 eip155: {
-                  accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                  chains: proposal.params.optionalNamespaces.eip155.chains,
+                  accounts:
+                    proposal.params.optionalNamespaces.eip155.chains?.map(
+                      (chain) => `${chain}:${walletAddress}`,
+                    ) || [],
                   methods: proposal.params.optionalNamespaces.eip155.methods,
                   events: proposal.params.optionalNamespaces.eip155.events,
                 },
@@ -467,6 +470,14 @@ describe("EthereumProvider", function () {
       const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
       expect(accounts[0]).to.include(walletAddress);
       expect(accounts.length).to.eql(1);
+
+      const httpProviders = provider.signer.rpcProviders.eip155.httpProviders;
+      expect(httpProviders).to.exist;
+      expect(httpProviders).to.be.an("object");
+      expect(Object.keys(httpProviders).length).to.eql(initOptions.optionalChains.length);
+      expect(Object.keys(httpProviders).map((chain) => parseInt(chain))).to.eql(
+        initOptions.optionalChains,
+      );
 
       await provider.signer.client.core.relayer.transportClose();
       await walletClient.core.relayer.transportClose();
