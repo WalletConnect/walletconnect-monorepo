@@ -7,6 +7,7 @@ import {
   getChainsFromApprovedSession,
   mergeRequiredOptionalNamespaces,
   parseCaip10Account,
+  populateNamespacesChains,
   setGlobal,
 } from "./utils";
 import PolkadotProvider from "./providers/polkadot";
@@ -177,7 +178,11 @@ export class UniversalProvider implements IUniversalProvider {
         .then((session) => {
           this.session = session;
           // assign namespaces from session if not already defined
-          if (!this.namespaces) this.namespaces = session.namespaces as NamespaceConfig;
+          if (!this.namespaces) {
+            this.setNamespaces({ namespaces: session.namespaces as NamespaceConfig });
+            this.namespaces = populateNamespacesChains(session.namespaces) as NamespaceConfig;
+            this.persist("namespaces", this.namespaces);
+          }
         })
         .catch((error) => {
           if (error.message !== PROPOSAL_EXPIRY_MESSAGE) {
@@ -407,7 +412,7 @@ export class UniversalProvider implements IUniversalProvider {
 
   private validateChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
-    if (!this.namespaces) return [namespace, chainId];
+    if (!this.namespaces || !Object.keys(this.namespaces).length) return [namespace, chainId];
     // validate namespace
     if (namespace) {
       if (
@@ -457,6 +462,12 @@ export class UniversalProvider implements IUniversalProvider {
 
   private async cleanup() {
     this.session = undefined;
+    this.namespaces = undefined;
+    this.optionalNamespaces = undefined;
+    this.sessionProperties = undefined;
+    this.persist("namespaces", undefined);
+    this.persist("optionalNamespaces", undefined);
+    this.persist("sessionProperties", undefined);
     await this.cleanupPendingPairings({ deletePairings: true });
   }
 

@@ -101,3 +101,29 @@ export function normalizeNamespaces(namespaces: NamespaceConfig): NamespaceConfi
 export function parseCaip10Account(caip10Account: string): string {
   return caip10Account.includes(":") ? caip10Account.split(":")[2] : caip10Account;
 }
+
+/**
+ * Populates the chains array for each namespace with the chains extracted from the accounts if are otherwise missing
+ */
+export function populateNamespacesChains(
+  namespaces: SessionTypes.Namespaces,
+): Record<string, SessionTypes.Namespace> {
+  const parsedNamespaces: Record<string, SessionTypes.Namespace> = {};
+  for (const [key, values] of Object.entries(namespaces)) {
+    const methods = values.methods || [];
+    const events = values.events || [];
+    const accounts = values.accounts || [];
+    const chains = isCaipNamespace(key)
+      ? [key]
+      : values.chains
+      ? values.chains
+      : getChainsFromApprovedSession(values.accounts);
+    parsedNamespaces[key] = {
+      chains,
+      methods,
+      events,
+      accounts,
+    };
+  }
+  return parsedNamespaces;
+}
