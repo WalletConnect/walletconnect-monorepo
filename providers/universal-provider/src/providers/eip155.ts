@@ -159,7 +159,7 @@ class Eip155Provider implements IProvider {
             },
           ],
         },
-        chainId: args.chainId,
+        chainId: this.namespace.chains?.[0], // set request chainId to the first chain in the namespace to bypass the chainId validation
       } as EngineTypes.RequestParams);
       this.setDefaultChain(`${parsedChainId}`);
     } else {
