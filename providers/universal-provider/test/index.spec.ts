@@ -121,7 +121,7 @@ describe("UniversalProvider", function () {
               method: "wallet_switchEthereumChain",
               params: [{ chainId: `0x${chainToSwith.split(":")[1]}` }],
             },
-            `eip155:${chainToSwith}`,
+            chainToSwith,
           ),
         ]);
 
