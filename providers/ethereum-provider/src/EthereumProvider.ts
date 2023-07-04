@@ -178,6 +178,12 @@ export function buildNamespaces(params: NamespacesParams): {
     optional: optionalChains.length ? optional : undefined,
   };
 }
+
+// helper type to force setting at least one value in an array
+type ArrayOneOrMore<T> = {
+  0: T;
+} & Array<T>;
+
 /**
  * @param {number[]} chains - The Chains your app intents to use and the peer MUST support. If the peer does not support these chains, the connection will be rejected.
  * @param {number[]} optionalChains - The Chains your app MAY attempt to use and the peer MAY support. If the peer does not support these chains, the connection will still be established.
@@ -185,12 +191,12 @@ export function buildNamespaces(params: NamespacesParams): {
  */
 export type ChainsProps =
   | {
-      chains: number[];
+      chains: ArrayOneOrMore<number>;
       optionalChains?: number[];
     }
   | {
       chains?: number[];
-      optionalChains: number[];
+      optionalChains: ArrayOneOrMore<number>;
     };
 
 export type EthereumProviderOptions = {
@@ -460,9 +466,11 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   protected getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
-    const requiredChains = opts.chains || [];
-    const optionalChains = opts.optionalChains || [];
+    const requiredChains = opts?.chains ?? [];
+    const optionalChains = opts?.optionalChains ?? [];
     const allChains = requiredChains.concat(optionalChains);
+    if (!allChains.length)
+      throw new Error("No chains specified in either `chains` or `optionalChains`");
     const requiredMethods = requiredChains.length ? opts?.methods || REQUIRED_METHODS : [];
     const requiredEvents = requiredChains.length ? opts?.events || REQUIRED_EVENTS : [];
     const optionalMethods = opts?.optionalMethods || [];

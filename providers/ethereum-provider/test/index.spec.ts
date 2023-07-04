@@ -23,6 +23,7 @@ import {
   TEST_ETHEREUM_METHODS_REQUIRED,
   TEST_ETHEREUM_METHODS_OPTIONAL,
 } from "./shared/constants";
+import { EthereumProviderOptions } from "../src/EthereumProvider";
 
 describe("EthereumProvider", function () {
   let testNetwork: TestNetwork;
@@ -323,7 +324,7 @@ describe("EthereumProvider", function () {
   });
   describe("persistence", () => {
     const db = "./test/tmp/test.db";
-    const initOptions = {
+    const initOptions: EthereumProviderOptions = {
       projectId: process.env.TEST_PROJECT_ID || "",
       chains: [CHAIN_ID],
       showQrModal: false,
@@ -430,7 +431,7 @@ describe("EthereumProvider", function () {
   });
   describe("required & optional chains", () => {
     it("should connect without any required chains", async () => {
-      const initOptions = {
+      const initOptions: EthereumProviderOptions = {
         projectId: process.env.TEST_PROJECT_ID || "",
         optionalChains: [CHAIN_ID, 137],
         showQrModal: false,
@@ -483,7 +484,7 @@ describe("EthereumProvider", function () {
       await walletClient.core.relayer.transportClose();
     });
     it("should connect without optional chains", async () => {
-      const initOptions = {
+      const initOptions: EthereumProviderOptions = {
         projectId: process.env.TEST_PROJECT_ID || "",
         chains: [CHAIN_ID],
         showQrModal: false,
@@ -522,6 +523,17 @@ describe("EthereumProvider", function () {
 
       await provider.signer.client.core.relayer.transportClose();
       await walletClient.core.relayer.transportClose();
+    });
+    it("should reject init with empty `chains` and `optionalChains`", async () => {
+      await expect(
+        // @ts-ignore
+        EthereumProvider.init({
+          projectId: process.env.TEST_PROJECT_ID || "",
+          chains: [],
+          optionalChains: [],
+          showQrModal: false,
+        }),
+      ).rejects.toThrowError("No chains specified in either `chains` or `optionalChains`");
     });
   });
 });
