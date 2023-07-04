@@ -113,6 +113,7 @@ export function populateNamespacesChains(
     const methods = values.methods || [];
     const events = values.events || [];
     const accounts = values.accounts || [];
+    // If the key includes a CAIP separator `:` we know it's a namespace + chainId (e.g. `eip155:1`)
     const chains = isCaipNamespace(key)
       ? [key]
       : values.chains
