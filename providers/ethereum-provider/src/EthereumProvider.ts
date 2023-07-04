@@ -16,6 +16,7 @@ import {
   REQUIRED_EVENTS,
   RPC_URL,
   OPTIONAL_METHODS,
+  OPTIONAL_EVENTS,
 } from "./constants";
 
 export type QrModalOptions = Pick<
@@ -171,7 +172,7 @@ export function buildNamespaces(params: NamespacesParams): {
         required.methods.concat(optionalMethods?.length ? optionalMethods : OPTIONAL_METHODS),
       ),
     ],
-    events: [...new Set(required.events.concat(optionalEvents || []))],
+    events: [...new Set(required.events.concat(optionalEvents || OPTIONAL_EVENTS))],
     rpcMap,
   };
 
