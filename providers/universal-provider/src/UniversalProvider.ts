@@ -179,7 +179,6 @@ export class UniversalProvider implements IUniversalProvider {
           this.session = session;
           // assign namespaces from session if not already defined
           if (!this.namespaces) {
-            this.setNamespaces({ namespaces: session.namespaces as NamespaceConfig });
             this.namespaces = populateNamespacesChains(session.namespaces) as NamespaceConfig;
             this.persist("namespaces", this.namespaces);
           }
