@@ -132,7 +132,9 @@ export function buildNamespaces(params: NamespacesParams): {
     methods: methods || REQUIRED_METHODS,
     events: events || REQUIRED_EVENTS,
     rpcMap: {
-      ...(chains.length && { [getEthereumChainId(chains)]: rpcMap[getEthereumChainId(chains)] }),
+      ...(chains.length
+        ? { [getEthereumChainId(chains)]: rpcMap[getEthereumChainId(chains)] }
+        : {}),
     },
   };
 
