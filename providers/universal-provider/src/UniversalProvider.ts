@@ -7,6 +7,7 @@ import {
   getChainsFromApprovedSession,
   mergeRequiredOptionalNamespaces,
   parseCaip10Account,
+  populateNamespacesChains,
   setGlobal,
 } from "./utils";
 import PolkadotProvider from "./providers/polkadot";
@@ -34,7 +35,7 @@ import EventEmitter from "events";
 
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
-  public namespaces!: NamespaceConfig;
+  public namespaces?: NamespaceConfig;
   public optionalNamespaces?: NamespaceConfig;
   public sessionProperties?: Record<string, string>;
   public events: EventEmitter = new EventEmitter();
@@ -176,6 +177,11 @@ export class UniversalProvider implements IUniversalProvider {
       await approval()
         .then((session) => {
           this.session = session;
+          // assign namespaces from session if not already defined
+          if (!this.namespaces) {
+            this.namespaces = populateNamespacesChains(session.namespaces) as NamespaceConfig;
+            this.persist("namespaces", this.namespaces);
+          }
         })
         .catch((error) => {
           if (error.message !== PROPOSAL_EXPIRY_MESSAGE) {
@@ -190,6 +196,8 @@ export class UniversalProvider implements IUniversalProvider {
 
   public setDefaultChain(chain: string, rpcUrl?: string | undefined) {
     try {
+      // ignore without active session
+      if (!this.session) return;
       const [namespace, chainId] = this.validateChain(chain);
       this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
     } catch (error) {
@@ -222,7 +230,7 @@ export class UniversalProvider implements IUniversalProvider {
   // ---------- Private ----------------------------------------------- //
 
   private async checkStorage() {
-    this.namespaces = (await this.getFromStore("namespaces")) || {};
+    this.namespaces = await this.getFromStore("namespaces");
     this.optionalNamespaces = (await this.getFromStore("optionalNamespaces")) || {};
     if (this.client.session.length) {
       const lastKeyIndex = this.client.session.keys.length - 1;
@@ -389,11 +397,13 @@ export class UniversalProvider implements IUniversalProvider {
 
   private setNamespaces(params: ConnectParams): void {
     const { namespaces, optionalNamespaces, sessionProperties } = params;
-    if (!namespaces || !Object.keys(namespaces).length) {
-      throw new Error("Namespaces must be not empty");
+
+    if (namespaces && Object.keys(namespaces).length) {
+      this.namespaces = namespaces;
     }
-    this.namespaces = namespaces;
-    this.optionalNamespaces = optionalNamespaces;
+    if (optionalNamespaces && Object.keys(optionalNamespaces).length) {
+      this.optionalNamespaces = optionalNamespaces;
+    }
     this.sessionProperties = sessionProperties;
     this.persist("namespaces", namespaces);
     this.persist("optionalNamespaces", optionalNamespaces);
@@ -401,13 +411,13 @@ export class UniversalProvider implements IUniversalProvider {
 
   private validateChain(chain?: string): [string, string] {
     const [namespace, chainId] = chain?.split(":") || ["", ""];
-
+    if (!this.namespaces || !Object.keys(this.namespaces).length) return [namespace, chainId];
     // validate namespace
     if (namespace) {
       if (
         // some namespaces might be defined with inline chainId e.g. eip155:1
         // and we need to parse them
-        !Object.keys(this.namespaces)
+        !Object.keys(this.namespaces || {})
           .map((key) => parseNamespaceKey(key))
           .includes(namespace)
       ) {
@@ -430,6 +440,8 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private onChainChanged(caip2Chain: string, internal = false): void {
+    if (!this.namespaces) return;
+
     const [namespace, chainId] = this.validateChain(caip2Chain);
 
     if (!internal) {
@@ -449,6 +461,12 @@ export class UniversalProvider implements IUniversalProvider {
 
   private async cleanup() {
     this.session = undefined;
+    this.namespaces = undefined;
+    this.optionalNamespaces = undefined;
+    this.sessionProperties = undefined;
+    this.persist("namespaces", undefined);
+    this.persist("optionalNamespaces", undefined);
+    this.persist("sessionProperties", undefined);
     await this.cleanupPendingPairings({ deletePairings: true });
   }
 

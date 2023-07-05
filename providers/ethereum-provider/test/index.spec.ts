@@ -4,7 +4,6 @@ import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
 
 import { SignClient } from "@walletconnect/sign-client";
-import { ISignClient } from "@walletconnect/types";
 
 import {
   ERC20Token__factory,
@@ -24,6 +23,7 @@ import {
   TEST_ETHEREUM_METHODS_REQUIRED,
   TEST_ETHEREUM_METHODS_OPTIONAL,
 } from "./shared/constants";
+import { EthereumProviderOptions } from "../src/EthereumProvider";
 
 describe("EthereumProvider", function () {
   let testNetwork: TestNetwork;
@@ -324,7 +324,7 @@ describe("EthereumProvider", function () {
   });
   describe("persistence", () => {
     const db = "./test/tmp/test.db";
-    const initOptions = {
+    const initOptions: EthereumProviderOptions = {
       projectId: process.env.TEST_PROJECT_ID || "",
       chains: [CHAIN_ID],
       showQrModal: false,
@@ -427,6 +427,113 @@ describe("EthereumProvider", function () {
       expect(persistedAccounts).to.eql(accounts);
 
       await persistedProvider.signer.client.core.relayer.transportClose();
+    });
+  });
+  describe("required & optional chains", () => {
+    it("should connect without any required chains", async () => {
+      const initOptions: EthereumProviderOptions = {
+        projectId: process.env.TEST_PROJECT_ID || "",
+        optionalChains: [CHAIN_ID, 137],
+        showQrModal: false,
+      };
+      const provider = await EthereumProvider.init(initOptions);
+      const walletClient = await SignClient.init({
+        projectId: initOptions.projectId,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                eip155: {
+                  chains: proposal.params.optionalNamespaces.eip155.chains,
+                  accounts:
+                    proposal.params.optionalNamespaces.eip155.chains?.map(
+                      (chain) => `${chain}:${walletAddress}`,
+                    ) || [],
+                  methods: proposal.params.optionalNamespaces.eip155.methods,
+                  events: proposal.params.optionalNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      expect(accounts.length).to.eql(1);
+
+      const httpProviders = provider.signer.rpcProviders.eip155.httpProviders;
+      expect(httpProviders).to.exist;
+      expect(httpProviders).to.be.an("object");
+      expect(Object.keys(httpProviders).length).to.eql(initOptions.optionalChains.length);
+      expect(Object.keys(httpProviders).map((chain) => parseInt(chain))).to.eql(
+        initOptions.optionalChains,
+      );
+
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
+    });
+    it("should connect without optional chains", async () => {
+      const initOptions: EthereumProviderOptions = {
+        projectId: process.env.TEST_PROJECT_ID || "",
+        chains: [CHAIN_ID],
+        showQrModal: false,
+      };
+      const provider = await EthereumProvider.init(initOptions);
+      const walletClient = await SignClient.init({
+        projectId: initOptions.projectId,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                eip155: {
+                  accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                  methods: proposal.params.requiredNamespaces.eip155.methods,
+                  events: proposal.params.requiredNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      expect(accounts.length).to.eql(1);
+
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
+    });
+    it("should reject init with empty `chains` and `optionalChains`", async () => {
+      await expect(
+        // @ts-ignore
+        EthereumProvider.init({
+          projectId: process.env.TEST_PROJECT_ID || "",
+          chains: [],
+          optionalChains: [],
+          showQrModal: false,
+        }),
+      ).rejects.toThrowError("No chains specified in either `chains` or `optionalChains`");
     });
   });
 });
