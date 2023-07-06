@@ -42,7 +42,7 @@
     "@walletconnect/relay-auth": "^1.0.4",
     "@walletconnect/safe-json": "^1.0.2",
     "@walletconnect/time": "^1.0.2",
-    "@walletconnect/types": "2.9.0",
+    "@walletconnect/types": "2.8.6",
     "@walletconnect/utils": "2.9.0",
     "events": "^3.3.0",
     "lodash.isequal": "4.5.0",

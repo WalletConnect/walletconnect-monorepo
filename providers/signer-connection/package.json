@@ -40,7 +40,7 @@
     "@walletconnect/jsonrpc-types": "^1.0.3",
     "@walletconnect/jsonrpc-utils": "^1.0.8",
     "@walletconnect/sign-client": "2.9.0",
-    "@walletconnect/types": "2.9.0",
+    "@walletconnect/types": "2.8.6",
     "@walletconnect/utils": "2.9.0",
     "events": "^3.3.0",
     "uint8arrays": "^3.1.0"
