@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach } from "vitest";
+import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { Core, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";
@@ -162,15 +162,26 @@ describe("Store", () => {
       expect(filtered[0].active).to.equal(true);
     });
   });
-  describe("persistence", () => {
+  describe.only("persistence", () => {
     type MockValue = { id: string; value: string };
-    it("repopulate values with getKey correctly after restart", async () => {
+    let core: ICore;
+    let store: IStore<any, any>;
+
+    const n_restarts = 3; // number of restarts to use for persistence tests
+    const values = [
+      { id: "1", value: "foo" },
+      { id: "2", value: "bar" },
+      { id: "3", value: "baz" },
+    ];
+
+    // meta is used to provide a uniq id for the db, to avoid conflicts
+    const init = async (meta) => {
       const coreOptions = {
         ...TEST_CORE_OPTIONS,
-        storageOptions: { database: "tmp/store-persistence.db" },
+        storageOptions: { database: `tmp/${meta.id}.db` }, //db: "tmp/store-persistence.db"
       };
-      const core = new Core(coreOptions);
-      const store = new Store<string, MockValue>(
+      core = new Core(coreOptions);
+      store = new Store<string, MockValue>(
         core,
         logger,
         MOCK_STORE_NAME,
@@ -178,26 +189,22 @@ describe("Store", () => {
         (val) => val.value,
       );
       await store.init();
-      const values = [
-        { id: "1", value: "foo" },
-        { id: "2", value: "bar" },
-        { id: "3", value: "baz" },
-      ];
+    };
+
+    beforeEach(async ({ meta }) => {
+      await init(meta);
       values.forEach((val) => store.set(val.id, val));
-
-      expect(store.getAll()).to.toMatchObject(values);
-
-      const coreAfter = new Core(coreOptions);
-
-      const storeAfter = new Store<string, MockValue>(
-        coreAfter,
-        logger,
-        MOCK_STORE_NAME,
-        undefined,
-        (val) => val.value,
-      );
-      await storeAfter.init();
-      expect(storeAfter.getAll()).to.toMatchObject(values);
     });
+
+    it("repopulate values with getKey correctly after restarts", async ({ meta }) => {
+      expect(store.getAll()).to.toMatchObject(values);
+      for (let i = 0; i < n_restarts; i++) {
+        await init(meta);
+        expect(store.getAll()).to.toMatchObject(values);
+      }
+    });
+
+    // it("should keep keys are in correct state after pair dis/connect", async () => {});
+    // it("should keep keys in correct state after multiple session connect/disconnects", () => {});
   });
 });
