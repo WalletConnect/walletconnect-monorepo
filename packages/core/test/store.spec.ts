@@ -6,6 +6,17 @@ import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
 const MOCK_STORE_NAME = "mock-entity";
 
+const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
+  await new Promise((resolve) => {
+    const intervalId = setInterval(() => {
+      if (checkForEvent()) {
+        clearInterval(intervalId);
+        resolve({});
+      }
+    }, 100);
+  });
+};
+
 // TODO: Test persistence behavior
 describe("Store", () => {
   const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
@@ -168,7 +179,10 @@ describe("Store", () => {
     let store: IStore<any, any>;
 
     const n_restarts = 3; // number of restarts to use for persistence tests
-    const values = [
+    const n_pairings = 3; // number of pairings to test
+    const n_sessions = 3; // number of sessions to test
+
+    const test_values = [
       { id: "1", value: "foo" },
       { id: "2", value: "bar" },
       { id: "3", value: "baz" },
@@ -181,6 +195,14 @@ describe("Store", () => {
         storageOptions: { database: `tmp/${meta.id}.db` }, //db: "tmp/store-persistence.db"
       };
       core = new Core(coreOptions);
+      await core.start();
+    };
+
+    beforeEach(async ({ meta }) => {
+      await init(meta);
+    });
+
+    it("repopulate values with getKey correctly after restarts", async ({ meta }) => {
       store = new Store<string, MockValue>(
         core,
         logger,
@@ -189,22 +211,62 @@ describe("Store", () => {
         (val) => val.value,
       );
       await store.init();
-    };
 
-    beforeEach(async ({ meta }) => {
-      await init(meta);
-      values.forEach((val) => store.set(val.id, val));
-    });
+      // load mock data
+      test_values.forEach((val) => store.set(val.id, val));
+      expect(store.getAll()).to.toMatchObject(test_values);
 
-    it("repopulate values with getKey correctly after restarts", async ({ meta }) => {
-      expect(store.getAll()).to.toMatchObject(values);
+      // restart core
       for (let i = 0; i < n_restarts; i++) {
         await init(meta);
-        expect(store.getAll()).to.toMatchObject(values);
+        expect(store.getAll()).to.toMatchObject(test_values);
       }
     });
 
-    // it("should keep keys are in correct state after pair dis/connect", async () => {});
+    /**
+     * Use a temp core to pair with, restarts, and checks that the pairing keys are in the correct state
+     */
+    it("should keep keys are in correct state after pair dis/connect", async ({ meta }) => {
+      await init(meta);
+      const temp_core = new Core(TEST_CORE_OPTIONS); // init new core to pair with
+      await temp_core.start();
+
+      // track topics across restarts
+      const topics: string[] = [];
+
+      // create pairings
+      for (let i = 0; i < n_pairings; i++) {
+        const { topic, uri } = await temp_core.pairing.create();
+        topics.push(topic);
+        await core.pairing.pair({ uri });
+      }
+
+      // restart
+      await init(meta);
+      expect(core.pairing.pairings.keys).to.deep.equals(topics);
+      expect(core.pairing.pairings.keys).to.deep.equals(temp_core.pairing.pairings.keys);
+
+      // wait for disconnect event
+      let hasDeleted = false;
+      core.pairing.events.on("pairing_delete", () => {
+        hasDeleted = true;
+      });
+
+      // disconnect pairings
+      for (let i = 0; i < n_pairings; i++) {
+        hasDeleted = false;
+        const topic = topics.pop();
+        if (!topic) throw new Error("topic not found");
+        await temp_core.pairing.disconnect({ topic });
+        await waitForEvent(() => hasDeleted);
+      }
+
+      // restart
+      await init(meta);
+      expect(core.pairing.pairings.keys).to.deep.equals(topics);
+      expect(core.pairing.pairings.keys).to.deep.equals(temp_core.pairing.pairings.keys);
+    });
+
     // it("should keep keys in correct state after multiple session connect/disconnects", () => {});
   });
 });
