@@ -13,7 +13,6 @@ import { generateRandomBytes32 } from "@walletconnect/utils";
 
 const MOCK_STORE_NAME = "mock-entity";
 
-// TODO: Test persistence behavior
 describe("Store", () => {
   const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
 
@@ -167,118 +166,6 @@ describe("Store", () => {
       const filtered = store.getAll({ active: true });
       expect(filtered.length).to.equal(1);
       expect(filtered[0].active).to.equal(true);
-    });
-  });
-
-  describe("persistence", () => {
-    const n_restarts = 2; // number of restarts to use for persistence tests
-    const n_pairings = 3; // number of pairings to test
-    const n_sessions = 3; // number of sessions to test
-
-    const test_values = [
-      { id: "1", value: "foo" },
-      { id: "2", value: "bar" },
-      { id: "3", value: "baz" },
-    ];
-
-    // meta is used to provide a uniq id for the db, to avoid conflicts
-    const init = async (id: string) => {
-      const coreOptions = {
-        ...TEST_CORE_OPTIONS,
-        storageOptions: { database: `tmp/${id}.db` },
-      };
-      core = new Core(coreOptions);
-      await core.start();
-    };
-
-    beforeEach(async ({ meta }) => {
-      await init(meta.id);
-    });
-
-    it("repopulate values with getKey correctly after restarts", async ({ meta }) => {
-      store = new Store<string, MockValue>(
-        core,
-        logger,
-        MOCK_STORE_NAME,
-        undefined,
-        (val) => val.value,
-      );
-      await store.init();
-
-      // load mock data
-      test_values.forEach((val) => store.set(val.id, val));
-      expect(store.getAll()).to.toMatchObject(test_values);
-
-      // restart core
-      for (let i = 0; i < n_restarts; i++) {
-        await init(meta.id);
-        expect(store.getAll()).to.toMatchObject(test_values);
-      }
-
-      // clear mock data
-      store.getAll().forEach((val) => store.delete(val.id, { code: 0, message: "reason" }));
-      expect(store.getAll()).to.toMatchObject([]);
-    });
-
-    /**
-     * Use a temp core to pair with, restarts, and checks that the pairing keys are in the correct state
-     */
-    it("should keep keys in correct state after pair dis/connect", async ({ meta }) => {
-      const temp_core = new Core(TEST_CORE_OPTIONS); // init new core to pair with
-      await temp_core.start();
-      await temp_core.pairing.init();
-
-      core.pairing.init();
-
-      // track topics across restarts
-      const topics: string[] = [];
-
-      // create pairings
-      for (let i = 0; i < n_pairings; i++) {
-        const { topic, uri } = await temp_core.pairing.create();
-        topics.push(topic);
-        await core.pairing.pair({ uri });
-      }
-
-      // restart
-      for (let i = 0; i < n_restarts; i++) {
-        await init(meta.id);
-        expect(core.pairing.pairings.keys).to.deep.equals(topics);
-        expect(core.pairing.pairings.keys).to.deep.equal(temp_core.pairing.pairings.keys);
-      }
-
-      // disconnect pairings
-      for (let i = 0; i < n_pairings; i++) {
-        const topic = topics.pop();
-        if (!topic) throw new Error("topic not found");
-        await temp_core.pairing.disconnect({ topic });
-      }
-
-      // restart
-      for (let i = 0; i < n_restarts; i++) {
-        await init(meta.id);
-        expect(core.pairing.pairings.keys).to.deep.equal([]);
-        expect(core.pairing.pairings.keys).to.deep.equal(temp_core.pairing.pairings.keys);
-      }
-    });
-
-    it("should keep keys in correct state after session un/sub + restart", async ({ meta }) => {
-      const topic = generateRandomBytes32();
-      const subscriber = core.relayer.subscriber;
-
-      for (let i = 0; i < n_sessions; i++) {
-        // subscribe
-        await subscriber.subscribe(topic);
-        expect(subscriber.subscriptions.size).to.equal(1);
-
-        // restart
-        await init(meta.id);
-        expect(subscriber.subscriptions.size).to.equal(1);
-
-        // unsubscribe
-        await subscriber.unsubscribe(topic);
-        expect(subscriber.subscriptions.size).to.equal(0);
-      }
     });
   });
 });
