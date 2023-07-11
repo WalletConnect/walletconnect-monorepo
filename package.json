@@ -69,7 +69,7 @@
     "eslint-plugin-standard": "5.0.0",
     "eslint-plugin-n": "15.7.0",
     "esbuild": "0.17.19",
-    "lerna": "5.5.2",
+    "lerna": "7.1.1",
     "prettier": "2.7.1",
     "rollup": "2.78.0",
     "rollup-plugin-esbuild": "4.9.3",
