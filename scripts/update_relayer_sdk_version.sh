@@ -1,11 +1,13 @@
 #!/bin/bash
+# Context: https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
+set -Eeuo pipefail
 
 file_location="packages/core/src/constants/relayer.ts"
 regex="RELAYER_SDK_VERSION = \".*\""
 
-# Get the next version from user input.
-echo "Enter new Relayer SDK version (should match the packages): "
-read next_version
+# Get the next version from lerna.json.
+lerna_file="lerna.json"
+next_version=$(grep -E '"version": "(.*)"' $lerna_file | sed -E 's/"version": "(.*)"/\1/' | sed 's/^[[:space:]]*//')
 
 # Define the replace value
 new_value="RELAYER_SDK_VERSION = \"$next_version\""
@@ -19,6 +21,5 @@ if [ "$(uname)" = "Darwin" ]; then
 else
   sed -i "s/${regex}/${new_value}/g" $file_location
 fi
-
 
 echo "[SCRIPT] ...Done!"
