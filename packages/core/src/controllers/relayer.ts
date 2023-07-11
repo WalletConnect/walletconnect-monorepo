@@ -159,7 +159,7 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Publishing Request Payload`);
     try {
       await this.toEstablishConnection();
-      return await this.provider.request(request);
+      return await this.provider.request(request, undefined, 10_000);
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);

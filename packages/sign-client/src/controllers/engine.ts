@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
@@ -165,7 +166,12 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
 
-    const id = await this.sendRequest({ topic, method: "wc_sessionPropose", params: proposal });
+    const id = await this.sendRequest({
+      topic,
+      method: "wc_sessionPropose",
+      params: proposal,
+      waitForAck: true,
+    });
 
     const expiry = calcExpiry(FIVE_MINUTES);
     await this.setProposal(id, { id, expiry, ...proposal });
@@ -229,6 +235,7 @@ export class Engine extends IEngine {
       topic: sessionTopic,
       method: "wc_sessionSettle",
       params: sessionSettle,
+      waitForAck: true,
     });
     const session = {
       ...sessionSettle,
@@ -307,6 +314,7 @@ export class Engine extends IEngine {
       method: "wc_sessionRequest",
       params: { request, chainId },
       expiry,
+      waitForAck: true,
     });
     const { done, resolve, reject } = createDelayedPromise<T>(expiry);
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
@@ -361,30 +369,13 @@ export class Engine extends IEngine {
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      const id = getBigIntRpcId().toString() as any;
-      let resolvePromise: () => void;
-      const onDisconnectAck = (ack: JsonRpcPayload) => {
-        if (ack?.id.toString() === id) {
-          this.client.core.relayer.events.removeListener(
-            RELAYER_EVENTS.message_ack,
-            onDisconnectAck,
-          );
-          resolvePromise();
-        }
-      };
-      // await a relay ACK on the disconnect req before deleting the session, keychain etc.
-      await Promise.all([
-        new Promise<void>((resolve) => {
-          resolvePromise = resolve;
-          this.client.core.relayer.on(RELAYER_EVENTS.message_ack, onDisconnectAck);
-        }),
-        this.sendRequest({
-          topic,
-          method: "wc_sessionDelete",
-          params: getSdkError("USER_DISCONNECTED"),
-          id,
-        }),
-      ]);
+      // await an ack to ensure the relay has received the disconnect request
+      await this.sendRequest({
+        topic,
+        method: "wc_sessionDelete",
+        params: getSdkError("USER_DISCONNECTED"),
+        waitForAck: true,
+      });
       await this.deleteSession(topic);
     } else {
       await this.client.core.pairing.disconnect({ topic });
@@ -488,7 +479,7 @@ export class Engine extends IEngine {
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
-    const { topic, method, params, expiry, id } = args;
+    const { topic, method, params, expiry, id, waitForAck } = args;
     const payload = formatJsonRpcRequest(method, params);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
@@ -497,9 +488,36 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
-    if (id) opts.id = id; // set rpc_id for client -> relay req
+    opts.id = id || (getBigIntRpcId().toString() as any); // set rpc_id for client -> relay req
     this.client.core.history.set(topic, payload);
-    this.client.core.relayer.publish(topic, message, opts);
+    if (!waitForAck) {
+      this.client.core.relayer.publish(topic, message, opts);
+    } else {
+      let resolvePromise: () => void;
+      let rejectPromise: (e: Error) => void;
+      const publishTimeout = setTimeout(
+        () => rejectPromise(new Error("Publishing attempt failed, please try again.")),
+        10_000,
+      );
+      const onPublishAck = (ack: JsonRpcPayload) => {
+        if (ack?.id.toString() === opts.id?.toString()) {
+          this.client.core.relayer.events.removeListener(RELAYER_EVENTS.message_ack, onPublishAck);
+          clearTimeout(publishTimeout);
+          resolvePromise();
+        }
+      };
+
+      // await a relay ACK on the publish before resolving
+      await Promise.all([
+        new Promise<void>((resolve, reject) => {
+          resolvePromise = resolve;
+          rejectPromise = reject;
+          this.client.core.relayer.on(RELAYER_EVENTS.message_ack, onPublishAck);
+        }),
+        this.client.core.relayer.publish(topic, message, opts),
+      ]);
+      console.log("sendRequest: ack received & promise resolved");
+    }
     return payload.id;
   };
 
