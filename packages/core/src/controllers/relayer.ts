@@ -29,7 +29,12 @@ import {
   RelayerTypes,
   SubscriberTypes,
 } from "@walletconnect/types";
-import { createExpiringPromise, formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
+import {
+  createExpiringPromise,
+  formatRelayRpcUrl,
+  getInternalError,
+  isBrowser,
+} from "@walletconnect/utils";
 
 import {
   RELAYER_SDK_VERSION,
@@ -159,7 +164,7 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Publishing Request Payload`);
     try {
       await this.toEstablishConnection();
-      return await this.provider.request(request, undefined, 10_000);
+      return await this.provider.request(request);
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
@@ -342,15 +347,25 @@ export class Relayer extends IRelayer {
       this.logger.error(err);
       this.events.emit(RELAYER_EVENTS.error, err);
     });
+    if (isBrowser()) {
+      window?.addEventListener("online", () => {
+        this.restartTransport();
+      });
+      window?.addEventListener("offline", () => {
+        this.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
+      });
+    }
   }
 
   private registerEventListeners() {
     this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
-      await this.restartTransport();
+      this.logger.info("RELAYER_EVENTS.connection_stalled emmited. Attempting to reconnect...");
+      await this.restartTransport().catch((error) => this.logger.error(error));
     });
   }
 
   private onProviderDisconnect() {
+    this.logger.info("Relayer provider disconnected");
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.attemptToReconnect();
   }
@@ -360,9 +375,10 @@ export class Relayer extends IRelayer {
       return;
     }
 
+    this.logger.info("attemptToReconnect called. Connecting...");
     // Attempt reconnection after one second.
     setTimeout(async () => {
-      await this.restartTransport();
+      await this.restartTransport().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 

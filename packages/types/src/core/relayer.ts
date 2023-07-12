@@ -12,13 +12,15 @@ export declare namespace RelayerTypes {
     protocol: string;
     data?: string;
   }
-
   export interface PublishOptions {
     relay?: ProtocolOptions;
     ttl?: number;
     prompt?: boolean;
     tag?: number;
     id?: number;
+    internal?: {
+      throwOnPublishTimeout?: boolean;
+    };
   }
 
   export interface SubscribeOptions {

@@ -2,11 +2,9 @@
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
-  JsonRpcPayload,
   formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  getBigIntRpcId,
   isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
@@ -488,35 +486,18 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
-    opts.id = id || (getBigIntRpcId().toString() as any); // set rpc_id for client -> relay req
+    if (id) opts.id = id;
     this.client.core.history.set(topic, payload);
-    if (!waitForAck) {
-      this.client.core.relayer.publish(topic, message, opts);
-    } else {
-      let resolvePromise: () => void;
-      let rejectPromise: (e: Error) => void;
-      const publishTimeout = setTimeout(
-        () => rejectPromise(new Error("Publishing attempt failed, please try again.")),
-        10_000,
-      );
-      const onPublishAck = (ack: JsonRpcPayload) => {
-        if (ack?.id.toString() === opts.id?.toString()) {
-          this.client.core.relayer.events.removeListener(RELAYER_EVENTS.message_ack, onPublishAck);
-          clearTimeout(publishTimeout);
-          resolvePromise();
-        }
+    if (waitForAck) {
+      opts.internal = {
+        ...opts.internal,
+        throwOnPublishTimeout: true,
       };
-
-      // await a relay ACK on the publish before resolving
-      await Promise.all([
-        new Promise<void>((resolve, reject) => {
-          resolvePromise = resolve;
-          rejectPromise = reject;
-          this.client.core.relayer.on(RELAYER_EVENTS.message_ack, onPublishAck);
-        }),
-        this.client.core.relayer.publish(topic, message, opts),
-      ]);
-      console.log("sendRequest: ack received & promise resolved");
+      await this.client.core.relayer.publish(topic, message, opts);
+    } else {
+      this.client.core.relayer
+        .publish(topic, message, opts)
+        .catch((error) => this.client.logger.error(error));
     }
     return payload.id;
   };
