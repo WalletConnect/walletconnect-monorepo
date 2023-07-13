@@ -154,7 +154,8 @@ export interface EnginePrivate {
     method: M;
     params: JsonRpcTypes.RequestParams[M];
     expiry?: number;
-    id?: number;
+    relayRpcId?: number;
+    clientRpcId?: number;
     waitForAck?: boolean;
   }): Promise<number>;
 

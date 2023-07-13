@@ -1,10 +1,10 @@
-/* eslint-disable no-console */
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
   formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
+  payloadId,
   isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
@@ -306,18 +306,21 @@ export class Engine extends IEngine {
     this.isInitialized();
     await this.isValidRequest(params);
     const { chainId, request, topic, expiry } = params;
-    const id = await this.sendRequest({
+    const id = payloadId();
+    await this.sendRequest({
+      clientRpcId: id,
       topic,
       method: "wc_sessionRequest",
       params: { request, chainId },
       expiry,
+      waitForAck: true,
     });
+    this.client.events.emit("session_request_sent", { topic, request, chainId, id });
     const { done, resolve, reject } = createDelayedPromise<T>(expiry);
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
       if (error) reject(error);
       else resolve(result);
     });
-    this.client.events.emit("session_request_sent", { topic, request, chainId, id });
     const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
     handleDeeplinkRedirect({ id, topic, wcDeepLink });
     return await done();
@@ -474,8 +477,8 @@ export class Engine extends IEngine {
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
-    const { topic, method, params, expiry, id, waitForAck } = args;
-    const payload = formatJsonRpcRequest(method, params);
+    const { topic, method, params, expiry, relayRpcId, clientRpcId, waitForAck } = args;
+    const payload = formatJsonRpcRequest(method, params, clientRpcId);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
       await this.client.core.verify.register({ attestationId: hash });
@@ -483,7 +486,7 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
-    if (id) opts.id = id;
+    if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);
     if (waitForAck) {
       opts.internal = {
