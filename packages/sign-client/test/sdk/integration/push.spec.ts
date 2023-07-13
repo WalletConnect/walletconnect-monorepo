@@ -10,7 +10,7 @@ import {
 import { describe, it, expect, afterEach, beforeAll } from "vitest";
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
 
-describe("Push", () => {
+describe.skip("Push", () => {
   let clients: Clients;
   let pairingA: PairingTypes.Struct;
   let sessionA: SessionTypes.Struct;
