@@ -168,7 +168,6 @@ export class Engine extends IEngine {
       topic,
       method: "wc_sessionPropose",
       params: proposal,
-      waitForAck: true,
     });
 
     const expiry = calcExpiry(FIVE_MINUTES);
