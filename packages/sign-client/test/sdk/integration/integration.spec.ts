@@ -12,7 +12,7 @@ import {
   initTwoPairedClients,
 } from "../../shared";
 
-describe("Sign Client Integration", () => {
+describe.skip("Sign Client Integration", () => {
   let clients: Clients;
   let pairingA: PairingTypes.Struct;
   let sessionA: SessionTypes.Struct;

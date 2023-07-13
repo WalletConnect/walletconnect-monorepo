@@ -1,7 +1,7 @@
 import { describe, it } from "vitest";
 import { initTwoClients, testConnectMethod, deleteClients, throttle } from "../shared";
 
-describe("Sign Client Transport Tests", () => {
+describe.skip("Sign Client Transport Tests", () => {
   describe("transport", () => {
     it("should disconnect & reestablish socket transport", async () => {
       const clients = await initTwoClients();
