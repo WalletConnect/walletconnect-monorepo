@@ -12,7 +12,7 @@ const log = (log: string) => {
   console.log(log);
 };
 
-describe.skip("Lifecycle", () => {
+describe("Lifecycle", () => {
   describe("Reconnect", () => {
     it("reconnects", async () => {
       const { clients, pairingA, sessionA } = await initTwoPairedClients();

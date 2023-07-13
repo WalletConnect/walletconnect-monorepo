@@ -12,7 +12,7 @@ import {
 } from "../../shared";
 import { EngineTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
 
-describe.skip("Sign Client Events Validation", () => {
+describe("Sign Client Events Validation", () => {
   let clients: Clients;
   let pairingA: PairingTypes.Struct;
   let sessionA: SessionTypes.Struct;

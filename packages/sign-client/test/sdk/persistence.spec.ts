@@ -14,7 +14,7 @@ import {
 const generateClientDbName = (prefix: string) =>
   `./test/tmp/${prefix}_${generateRandomBytes32()}.db`;
 
-describe.skip("Sign Client Persistence", () => {
+describe("Sign Client Persistence", () => {
   describe("ping", () => {
     describe("pairing", () => {
       describe("after restart", () => {

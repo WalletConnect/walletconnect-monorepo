@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
@@ -233,7 +232,7 @@ export class Engine extends IEngine {
       topic: sessionTopic,
       method: "wc_sessionSettle",
       params: sessionSettle,
-      waitForAck: true,
+      waitDeliveryAck: true,
     });
     const session = {
       ...sessionSettle,
@@ -309,12 +308,7 @@ export class Engine extends IEngine {
     const { chainId, request, topic, expiry } = params;
     const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(expiry);
-    console.log("subscribing to: ", engineEvent("session_request", id));
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
-      console.log("on session_request received", engineEvent("session_request", id), {
-        error,
-        result,
-      });
       if (error) reject(error);
       else resolve(result);
     });
@@ -326,7 +320,7 @@ export class Engine extends IEngine {
           method: "wc_sessionRequest",
           params: { request, chainId },
           expiry,
-          waitForAck: true,
+          waitDeliveryAck: true,
         });
         this.client.events.emit("session_request_sent", { topic, request, chainId, id });
         resolve();
@@ -491,7 +485,7 @@ export class Engine extends IEngine {
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
-    const { topic, method, params, expiry, relayRpcId, clientRpcId, waitForAck } = args;
+    const { topic, method, params, expiry, relayRpcId, clientRpcId, waitDeliveryAck } = args;
     const payload = formatJsonRpcRequest(method, params, clientRpcId);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
@@ -502,7 +496,7 @@ export class Engine extends IEngine {
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);
-    if (waitForAck) {
+    if (waitDeliveryAck) {
       opts.internal = {
         ...opts.internal,
         throwOnPublishTimeout: true,
@@ -517,13 +511,22 @@ export class Engine extends IEngine {
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
-    const { id, topic, result } = args;
+    const { id, topic, result, waitDeliveryAck } = args;
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.core.crypto.encode(topic, payload);
     const record = await this.client.core.history.get(topic, id);
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    // await is intentionally omitted to speed up performance
-    this.client.core.relayer.publish(topic, message, opts);
+    if (waitDeliveryAck) {
+      opts.internal = {
+        ...opts.internal,
+        throwOnPublishTimeout: true,
+      };
+      await this.client.core.relayer.publish(topic, message, opts);
+    } else {
+      this.client.core.relayer
+        .publish(topic, message, opts)
+        .catch((error) => this.client.logger.error(error));
+    }
     await this.client.core.history.resolve(payload);
   };
 
@@ -887,7 +890,6 @@ export class Engine extends IEngine {
     payload,
   ) => {
     const { id } = payload;
-    console.log("onSessionRequestResponse", id, engineEvent("session_request", id));
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
