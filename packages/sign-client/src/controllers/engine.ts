@@ -307,6 +307,11 @@ export class Engine extends IEngine {
     await this.isValidRequest(params);
     const { chainId, request, topic, expiry } = params;
     const id = payloadId();
+    const { done, resolve, reject } = createDelayedPromise<T>(expiry);
+    this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
     await this.sendRequest({
       clientRpcId: id,
       topic,
@@ -316,11 +321,6 @@ export class Engine extends IEngine {
       waitForAck: true,
     });
     this.client.events.emit("session_request_sent", { topic, request, chainId, id });
-    const { done, resolve, reject } = createDelayedPromise<T>(expiry);
-    this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
-      if (error) reject(error);
-      else resolve(result);
-    });
     const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
     handleDeeplinkRedirect({ id, topic, wcDeepLink });
     return await done();
