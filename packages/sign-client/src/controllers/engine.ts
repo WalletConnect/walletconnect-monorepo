@@ -321,7 +321,7 @@ export class Engine extends IEngine {
           params: { request, chainId },
           expiry,
           waitDeliveryAck: true,
-        });
+        }).catch((error) => reject(error));
         this.client.events.emit("session_request_sent", { topic, request, chainId, id });
         resolve();
       }),
@@ -340,7 +340,7 @@ export class Engine extends IEngine {
     const { topic, response } = params;
     const { id } = response;
     if (isJsonRpcResult(response)) {
-      await this.sendResult({ id, topic, result: response.result });
+      await this.sendResult({ id, topic, result: response.result, waitDeliveryAck: true });
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }

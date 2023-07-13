@@ -119,7 +119,11 @@ export class Relayer extends IRelayer {
   }
 
   get connected() {
-    return this.provider.connection.connected;
+    return this.provider.connection.connected && this.isOnline;
+  }
+
+  get isOnline() {
+    return isBrowser() ? navigator?.onLine : true;
   }
 
   get connecting() {
@@ -248,6 +252,7 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
+    if (!this.isOnline) throw new Error("No internet connection detected.");
     if (this.transportExplicitlyClosed || this.reconnecting) return;
     this.relayUrl = relayUrl || this.relayUrl;
     if (this.connected) {
