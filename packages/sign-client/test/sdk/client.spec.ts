@@ -207,7 +207,7 @@ describe("Sign Client Integration", () => {
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });
-        it("can get pending session request", async () => {
+        it.only("can get pending session request", async () => {
           const clients = await initTwoClients({}, {}, { logger: "error" });
           const {
             sessionA: { topic },
@@ -233,11 +233,14 @@ describe("Sign Client Integration", () => {
             }),
             new Promise<void>(async (resolve) => {
               try {
+                console.log("client A sending request");
                 await clients.A.request({
                   topic,
                   ...TEST_REQUEST_PARAMS,
                 });
+                console.log("should not get here");
               } catch (err) {
+                console.log("client A got error", err.message);
                 expect(err.message).toMatch(rejection.error.message);
                 resolve();
               }

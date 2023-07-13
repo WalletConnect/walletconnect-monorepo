@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
 
 import {
@@ -308,7 +309,9 @@ export class Engine extends IEngine {
     const { chainId, request, topic, expiry } = params;
     const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(expiry);
+    console.log("subscribing to: ", engineEvent("session_request", id));
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
+      console.log("on session_request received", engineEvent("session_request", id));
       if (error) reject(error);
       else resolve(result);
     });
@@ -323,6 +326,7 @@ export class Engine extends IEngine {
     this.client.events.emit("session_request_sent", { topic, request, chainId, id });
     const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
     handleDeeplinkRedirect({ id, topic, wcDeepLink });
+    console.log("request sent, waiting for response");
     return await done();
   };
 
@@ -873,6 +877,7 @@ export class Engine extends IEngine {
     payload,
   ) => {
     const { id } = payload;
+    console.log("onSessionRequestResponse", id, engineEvent("session_request", id));
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
