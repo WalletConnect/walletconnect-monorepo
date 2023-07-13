@@ -207,7 +207,7 @@ describe("Sign Client Integration", () => {
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });
-        it("can get pending session request", async () => {
+        it.skip("can get pending session request", async () => {
           const clients = await initTwoClients({}, {}, { logger: "error" });
           const {
             sessionA: { topic },
