@@ -232,7 +232,6 @@ export class Engine extends IEngine {
       topic: sessionTopic,
       method: "wc_sessionSettle",
       params: sessionSettle,
-      waitForAck: true,
     });
     const session = {
       ...sessionSettle,
@@ -311,7 +310,6 @@ export class Engine extends IEngine {
       method: "wc_sessionRequest",
       params: { request, chainId },
       expiry,
-      waitForAck: true,
     });
     const { done, resolve, reject } = createDelayedPromise<T>(expiry);
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
@@ -371,7 +369,6 @@ export class Engine extends IEngine {
         topic,
         method: "wc_sessionDelete",
         params: getSdkError("USER_DISCONNECTED"),
-        waitForAck: true,
       });
       await this.deleteSession(topic);
     } else {
