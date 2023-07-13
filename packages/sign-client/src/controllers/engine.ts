@@ -318,19 +318,26 @@ export class Engine extends IEngine {
       if (error) reject(error);
       else resolve(result);
     });
-    await this.sendRequest({
-      clientRpcId: id,
-      topic,
-      method: "wc_sessionRequest",
-      params: { request, chainId },
-      expiry,
-      waitForAck: true,
-    });
-    this.client.events.emit("session_request_sent", { topic, request, chainId, id });
-    const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
-    handleDeeplinkRedirect({ id, topic, wcDeepLink });
-    console.log("request sent, waiting for response");
-    return await done();
+    return await Promise.all([
+      new Promise<void>(async (resolve) => {
+        await this.sendRequest({
+          clientRpcId: id,
+          topic,
+          method: "wc_sessionRequest",
+          params: { request, chainId },
+          expiry,
+          waitForAck: true,
+        });
+        this.client.events.emit("session_request_sent", { topic, request, chainId, id });
+        resolve();
+      }),
+      new Promise<void>(async (resolve) => {
+        const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
+        handleDeeplinkRedirect({ id, topic, wcDeepLink });
+        resolve();
+      }),
+      done(),
+    ]).then((result) => result[2]); // order is important here, we want to return the result of the `done` promise
   };
 
   public respond: IEngine["respond"] = async (params) => {

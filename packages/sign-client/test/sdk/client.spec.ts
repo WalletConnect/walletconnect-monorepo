@@ -1,5 +1,9 @@
 import { RELAYER_EVENTS } from "@walletconnect/core";
-import { formatJsonRpcError, JsonRpcError } from "@walletconnect/jsonrpc-utils";
+import {
+  formatJsonRpcError,
+  formatJsonRpcResult,
+  JsonRpcError,
+} from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
@@ -207,7 +211,7 @@ describe("Sign Client Integration", () => {
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });
-        it.only("can get pending session request", async () => {
+        it("can get pending session request", async () => {
           const clients = await initTwoClients({}, {}, { logger: "error" });
           const {
             sessionA: { topic },
@@ -349,14 +353,18 @@ describe("Sign Client Integration", () => {
       } = await testConnectMethod(clients);
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.B.once("session_request", (payload) => {
+          clients.B.once("session_request", async (payload) => {
             const { params } = payload;
             expect(params).toMatchObject(TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE);
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE, topic });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE, topic });
           resolve();
         }),
       ]);
