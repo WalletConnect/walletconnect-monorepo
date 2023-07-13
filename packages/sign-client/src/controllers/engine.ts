@@ -311,7 +311,10 @@ export class Engine extends IEngine {
     const { done, resolve, reject } = createDelayedPromise<T>(expiry);
     console.log("subscribing to: ", engineEvent("session_request", id));
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
-      console.log("on session_request received", engineEvent("session_request", id));
+      console.log("on session_request received", engineEvent("session_request", id), {
+        error,
+        result,
+      });
       if (error) reject(error);
       else resolve(result);
     });
