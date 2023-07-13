@@ -232,6 +232,7 @@ export class Engine extends IEngine {
       topic: sessionTopic,
       method: "wc_sessionSettle",
       params: sessionSettle,
+      waitForAck: true,
     });
     const session = {
       ...sessionSettle,
