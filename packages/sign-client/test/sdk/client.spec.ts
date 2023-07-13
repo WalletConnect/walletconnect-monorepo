@@ -2,7 +2,7 @@ import { RELAYER_EVENTS } from "@walletconnect/core";
 import { formatJsonRpcError, JsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import SignClient from "../../src";
 import {
   initTwoClients,
@@ -20,6 +20,12 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
+  beforeEach(() => {
+    console.log(expect.getState().currentTestName, "started");
+  });
+  afterEach(() => {
+    console.log(expect.getState().currentTestName, "ended");
+  });
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
