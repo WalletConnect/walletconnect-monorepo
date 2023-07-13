@@ -30,7 +30,7 @@ describe("Sign Client Integration", () => {
   });
 
   describe("connect", () => {
-    it.only("connect (with new pairing)", async () => {
+    it("connect (with new pairing)", async () => {
       const clients = await initTwoClients();
       const { pairingA, sessionA } = await testConnectMethod(clients);
       expect(pairingA).to.be.exist;
