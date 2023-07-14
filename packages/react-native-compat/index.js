@@ -26,3 +26,18 @@ if (typeof global?.Platform === "undefined") {
     console.error("react-native-compat: react-native.Platform is not available");
   }
 }
+
+if (typeof global?.isOnline === "undefined") {
+  try {
+    require("react-native").NetInfo.addEventListener((state) => {
+      // eslint-disable-next-line no-console
+      console.log("Connection type", state.type);
+      // eslint-disable-next-line no-console
+      console.log("Is connected?", state.isConnected);
+      global.isOnline = state.isConnected;
+    });
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("react-native-compat: react-native.NetInfo is not available");
+  }
+}

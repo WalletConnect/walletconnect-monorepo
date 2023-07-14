@@ -21,6 +21,7 @@
     "prettier": "prettier --check './**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
+    "@react-native-community/netinfo": "^9.4.1",
     "events": "3.3.0",
     "fast-text-encoding": "^1.0.6"
   },

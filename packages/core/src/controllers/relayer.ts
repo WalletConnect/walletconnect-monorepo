@@ -33,7 +33,7 @@ import {
   createExpiringPromise,
   formatRelayRpcUrl,
   getInternalError,
-  isBrowser,
+  isOnline,
 } from "@walletconnect/utils";
 
 import {
@@ -119,11 +119,7 @@ export class Relayer extends IRelayer {
   }
 
   get connected() {
-    return this.provider.connection.connected && this.isOnline;
-  }
-
-  get isOnline() {
-    return isBrowser() ? navigator?.onLine : true;
+    return this.provider.connection.connected && isOnline();
   }
 
   get connecting() {
@@ -252,8 +248,11 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    if (!this.isOnline) throw new Error("No internet connection detected.");
     if (this.transportExplicitlyClosed || this.reconnecting) return;
+    if (!isOnline())
+      throw new Error(
+        "No internet connection detected. Please restart your network and try again.",
+      );
     this.relayUrl = relayUrl || this.relayUrl;
     if (this.connected) {
       await Promise.all([
@@ -352,14 +351,6 @@ export class Relayer extends IRelayer {
       this.logger.error(err);
       this.events.emit(RELAYER_EVENTS.error, err);
     });
-    if (isBrowser()) {
-      window?.addEventListener("online", () => {
-        this.restartTransport();
-      });
-      window?.addEventListener("offline", () => {
-        this.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
-      });
-    }
   }
 
   private registerEventListeners() {
