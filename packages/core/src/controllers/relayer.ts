@@ -298,13 +298,22 @@ export class Relayer extends IRelayer {
     const { topic, message } = messageEvent;
 
     // Ignore if incoming `message` is clearly invalid.
-    if (!message || message.length === 0) return true;
+    if (!message || message.length === 0) {
+      this.logger.debug(`Ignoring invalid/empty message: ${message}`);
+      return true;
+    }
 
     // Ignore if `topic` is not subscribed to.
-    if (!(await this.subscriber.isSubscribed(topic))) return true;
+    if (!(await this.subscriber.isSubscribed(topic))) {
+      this.logger.debug(`Ignoring message for non-subscribed topic ${topic}`);
+      return true;
+    }
 
     // Ignore if `message` is a duplicate.
     const exists = this.messages.has(topic, message);
+    if (exists) {
+      this.logger.debug(`Ignoring duplicate message: ${message}`);
+    }
     return exists;
   }
 
