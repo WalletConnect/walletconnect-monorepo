@@ -44,9 +44,9 @@ export class Publisher extends IPublisher {
       const tag = opts?.tag || 0;
       const id = opts?.id || (getBigIntRpcId().toString() as any);
       const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
+      // delay adding to queue to avoid cases where heartbeat might pulse right after publish resulting in duplicate publish
+      const queueTimeout = setTimeout(() => this.queue.set(id, params), this.publishTimeout);
       try {
-        // delay adding to queue to avoid cases where heartbeat might pulse right after publish resulting in duplicate publish
-        const queueTimeout = setTimeout(() => this.queue.set(id, params), this.publishTimeout);
         const publish = await createExpiringPromise(
           this.rpcPublish(topic, message, ttl, relay, prompt, tag, id),
           this.publishTimeout,
@@ -54,7 +54,6 @@ export class Publisher extends IPublisher {
         );
         await publish;
         this.removeRequestFromQueue(id);
-        clearTimeout(queueTimeout);
         this.relayer.events.emit(RELAYER_EVENTS.publish, params);
       } catch (err) {
         this.logger.debug(`Publishing Payload stalled`);
@@ -65,6 +64,8 @@ export class Publisher extends IPublisher {
           throw err;
         }
         return;
+      } finally {
+        clearTimeout(queueTimeout);
       }
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
@@ -126,6 +127,7 @@ export class Publisher extends IPublisher {
   }
 
   private checkQueue() {
+    console.log("checkQueue", this.queue.size, this.queue);
     this.queue.forEach(async (params) => {
       const { topic, message, opts } = params;
       await this.publish(topic, message, opts);

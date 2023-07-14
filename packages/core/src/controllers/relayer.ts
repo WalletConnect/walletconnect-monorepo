@@ -119,7 +119,7 @@ export class Relayer extends IRelayer {
   }
 
   get connected() {
-    return this.provider.connection.connected && isOnline();
+    return this.provider.connection.connected;
   }
 
   get connecting() {
@@ -203,6 +203,11 @@ export class Relayer extends IRelayer {
 
   public async transportOpen(relayUrl?: string) {
     this.transportExplicitlyClosed = false;
+    if (!(await isOnline())) {
+      throw new Error(
+        "No internet connection detected. Please restart your network and try again.",
+      );
+    }
     if (this.reconnecting) return;
     this.relayUrl = relayUrl || this.relayUrl;
     this.reconnecting = true;
@@ -249,10 +254,6 @@ export class Relayer extends IRelayer {
 
   public async restartTransport(relayUrl?: string) {
     if (this.transportExplicitlyClosed || this.reconnecting) return;
-    if (!isOnline())
-      throw new Error(
-        "No internet connection detected. Please restart your network and try again.",
-      );
     this.relayUrl = relayUrl || this.relayUrl;
     if (this.connected) {
       await Promise.all([
@@ -386,7 +387,7 @@ export class Relayer extends IRelayer {
   }
 
   private async toEstablishConnection() {
-    if (this.connected) return;
+    if (this.connected && (await isOnline())) return;
     if (this.connecting) {
       return await new Promise<void>((resolve) => {
         const interval = setInterval(() => {

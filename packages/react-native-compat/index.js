@@ -27,17 +27,11 @@ if (typeof global?.Platform === "undefined") {
   }
 }
 
-if (typeof global?.isOnline === "undefined") {
+if (typeof global?.NetInfo === "undefined") {
   try {
-    require("react-native").NetInfo.addEventListener((state) => {
-      // eslint-disable-next-line no-console
-      console.log("Connection type", state.type);
-      // eslint-disable-next-line no-console
-      console.log("Is connected?", state.isConnected);
-      global.isOnline = state.isConnected;
-    });
+    global.NetInfo = require("@react-native-community/netinfo");
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error("react-native-compat: react-native.NetInfo is not available");
+    console.error("react-native-compat: react-native.NetInfo is not available", e);
   }
 }
