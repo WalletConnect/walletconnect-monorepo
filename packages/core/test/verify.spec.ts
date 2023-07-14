@@ -6,8 +6,7 @@ import { Core, VERIFY_SERVER } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 
 describe("verify", () => {
-  // skiping as now verify requires csrf token
-  it.skip("should register attestation", async () => {
+  it("should register attestation", async () => {
     const core = new Core(TEST_CORE_OPTIONS);
     await core.start();
 
