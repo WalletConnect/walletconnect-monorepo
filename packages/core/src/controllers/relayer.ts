@@ -292,9 +292,18 @@ export class Relayer extends IRelayer {
     await this.messages.set(topic, message);
   }
 
-  private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+  private async shouldIgnoreMessageEvent(
+    messageEvent: RelayerTypes.MessageEvent,
+  ): Promise<boolean> {
     const { topic, message } = messageEvent;
+
+    // Ignore if incoming `message` is clearly invalid.
+    if (!message || message.length === 0) return true;
+
+    // Ignore if `topic` is not subscribed to.
     if (!(await this.subscriber.isSubscribed(topic))) return true;
+
+    // Ignore if `message` is a duplicate.
     const exists = this.messages.has(topic, message);
     return exists;
   }
