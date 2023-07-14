@@ -127,7 +127,6 @@ export class Publisher extends IPublisher {
   }
 
   private checkQueue() {
-    console.log("checkQueue", this.queue.size, this.queue);
     this.queue.forEach(async (params) => {
       const { topic, message, opts } = params;
       await this.publish(topic, message, opts);

@@ -37,3 +37,34 @@ export function getNodeOnlineStatus() {
   // wip: may be send quick request to check?
   return true;
 }
+
+export function subscribeToNetworkChange(callBackHendler: (connected: boolean) => void) {
+  const env = getEnvironment();
+  switch (env) {
+    case ENV_MAP.browser:
+      subscribeToBrowserNetworkChange(callBackHendler);
+      break;
+    case ENV_MAP.reactNative:
+      subscribeToReactNativeNetworkChange(callBackHendler);
+      break;
+    case ENV_MAP.node:
+      // wip: need to implement
+      break;
+    default:
+      break;
+  }
+}
+
+export function subscribeToBrowserNetworkChange(callBackHendler: (connected: boolean) => void) {
+  if (isBrowser()) {
+    window.addEventListener("online", () => callBackHendler(true));
+    window.addEventListener("offline", () => callBackHendler(false));
+  }
+}
+
+// global.NetInfo is set in react-native-compat
+export function subscribeToReactNativeNetworkChange(callBackHendler: (connected: boolean) => void) {
+  if (isReactNative() && typeof global !== "undefined" && (global as any)?.NetInfo) {
+    (global as any)?.NetInfo.addEventListener((state: any) => callBackHendler(state?.isConnected));
+  }
+}

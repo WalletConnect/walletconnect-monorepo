@@ -34,6 +34,7 @@ import {
   formatRelayRpcUrl,
   getInternalError,
   isOnline,
+  subscribeToNetworkChange,
 } from "@walletconnect/utils";
 
 import {
@@ -352,6 +353,14 @@ export class Relayer extends IRelayer {
       this.logger.error(err);
       this.events.emit(RELAYER_EVENTS.error, err);
     });
+    const networkChangeHandler = (connected: boolean) => {
+      if (connected) {
+        this.restartTransport().catch((error) => this.logger.error(error));
+      } else {
+        this.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
+      }
+    };
+    subscribeToNetworkChange(networkChangeHandler);
   }
 
   private registerEventListeners() {
