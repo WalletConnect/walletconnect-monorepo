@@ -98,6 +98,12 @@ export function buildApprovedNamespaces(
     const supportedEvents = supportedNamespaces[namespace].events;
     const supportedAccounts = supportedNamespaces[namespace].accounts;
 
+    supportedChains.forEach((chain) => {
+      if (!supportedAccounts.some((account) => account.includes(chain))) {
+        throw new Error(`No accounts provided for chain ${chain} in namespace ${namespace}`);
+      }
+    });
+
     namespaces[namespace] = {
       chains: supportedChains,
       methods: supportedMethods,
@@ -111,6 +117,9 @@ export function buildApprovedNamespaces(
   if (err) throw new Error(err.message);
 
   const approvedNamespaces = {};
+
+  if (!Object.keys(requiredNamespaces).length && !Object.keys(optionalNamespaces).length)
+    return namespaces;
 
   // assign accounts for the required namespaces
   Object.keys(normalizedRequired).forEach((requiredNamespace) => {
