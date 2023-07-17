@@ -118,6 +118,7 @@ export function buildApprovedNamespaces(
 
   const approvedNamespaces = {};
 
+  // if both required & optional namespaces are empty, return all supported namespaces by the wallet
   if (!Object.keys(requiredNamespaces).length && !Object.keys(optionalNamespaces).length)
     return namespaces;
 
