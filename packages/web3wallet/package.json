@@ -29,7 +29,7 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/auth-client": "2.1.0",
+    "@walletconnect/auth-client": "2.1.1",
     "@walletconnect/core": "2.9.0",
     "@walletconnect/jsonrpc-utils": "1.0.8",
     "@walletconnect/logger": "2.0.1",
