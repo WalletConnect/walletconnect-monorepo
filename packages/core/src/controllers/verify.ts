@@ -35,9 +35,10 @@ export class Verify extends IVerify {
     }
 
     if (!this.iframe) return;
-
-    this.iframe.contentWindow?.postMessage(params.attestationId, this.verifyUrl);
-    this.logger.info(`postMessage sent: ${params.attestationId} ${this.verifyUrl}`);
+    try {
+      this.iframe.contentWindow?.postMessage(params.attestationId, this.verifyUrl);
+      this.logger.info(`postMessage sent: ${params.attestationId} ${this.verifyUrl}`);
+    } catch (e) {} // fail silently to avoid logging `Failed to execute 'postMessage' on 'DOMWindow': The target origin provided...` while the iframe is still loading
   };
 
   public resolve: IVerify["resolve"] = async (params) => {

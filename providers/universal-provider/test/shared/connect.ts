@@ -17,6 +17,7 @@ import UniversalProvider from "../../src/UniversalProvider";
 
 export interface TestConnectParams {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;
+  optionalNamespaces?: ProposalTypes.optionalNamespaces;
   namespaces?: SessionTypes.Namespaces;
   relays?: RelayerTypes.ProtocolOptions[];
   pairingTopic?: string;
@@ -29,12 +30,12 @@ export async function testConnectMethod(
 ) {
   const start = Date.now();
   const { dapp, wallet } = providers;
-  const dappClient = dapp.client;
+  const dappClient = dapp;
   const walletClient = wallet.client;
 
   const connectParams: EngineTypes.ConnectParams = {
     requiredNamespaces: params?.requiredNamespaces || TEST_REQUIRED_NAMESPACES,
-    optionalNamespaces: TEST_OPTIONAL_NAMESPACES,
+    optionalNamespaces: params?.optionalNamespaces || TEST_OPTIONAL_NAMESPACES,
     relays: params?.relays || undefined,
     pairingTopic: params?.pairingTopic || undefined,
   };
@@ -89,7 +90,7 @@ export async function testConnectMethod(
         dapp.on("display_uri", async (uri: string) => {
           const uriParams = parseUri(uri);
 
-          pairingA = dappClient.pairing.get(uriParams.topic);
+          pairingA = dappClient.client?.pairing.get(uriParams.topic);
           expect(pairingA.topic).to.eql(uriParams.topic);
           expect(pairingA.relay).to.eql(uriParams.relay);
 
@@ -114,8 +115,8 @@ export async function testConnectMethod(
         const namespaces = connectParams.requiredNamespaces;
         const optionalNamespaces = connectParams.optionalNamespaces;
         const session = await dapp.connect({
-          namespaces: namespaces || ({} as any),
-          optionalNamespaces: optionalNamespaces || ({} as any),
+          namespaces,
+          optionalNamespaces,
         });
         if (!session) throw new Error();
         const lastKeyIndex = dapp.client.session.keys.length - 1;

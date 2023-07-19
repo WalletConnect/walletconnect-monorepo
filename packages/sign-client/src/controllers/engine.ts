@@ -398,6 +398,9 @@ export class Engine extends IEngine {
   private cleanupDuplicatePairings: EnginePrivate["cleanupDuplicatePairings"] = async (
     session: SessionTypes.Struct,
   ) => {
+    // older SDK versions are missing the `pairingTopic` prop thus we need to check for it
+    if (!session.pairingTopic) return;
+
     try {
       const pairing = this.client.core.pairing.pairings.get(session.pairingTopic);
       const allPairings = this.client.core.pairing.pairings.getAll();
@@ -554,7 +557,8 @@ export class Engine extends IEngine {
           this.onRelayEventRequest({ topic, payload });
         } else if (isJsonRpcResponse(payload)) {
           await this.client.core.history.resolve(payload);
-          this.onRelayEventResponse({ topic, payload });
+          await this.onRelayEventResponse({ topic, payload });
+          this.client.core.history.delete(topic, payload.id);
         } else {
           this.onRelayEventUnknownPayload({ topic, payload });
         }
@@ -592,7 +596,6 @@ export class Engine extends IEngine {
     const { topic, payload } = event;
     const record = await this.client.core.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
-
     switch (resMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeResponse(topic, payload);
