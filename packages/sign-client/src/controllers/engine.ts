@@ -327,7 +327,7 @@ export class Engine extends IEngine {
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }
-    this.afterResponse(params);
+    this.cleanupAfterResponse(params);
   };
 
   public ping: IEngine["ping"] = async (params) => {
@@ -895,7 +895,7 @@ export class Engine extends IEngine {
     this.requestQueue.requests.push(request);
   };
 
-  private afterResponse = (params: EngineTypes.RespondParams) => {
+  private cleanupAfterResponse = (params: EngineTypes.RespondParams) => {
     this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
     // intentionally delay the emitting of the next pending request a bit
     setTimeout(() => {
@@ -909,7 +909,7 @@ export class Engine extends IEngine {
       this.client.logger.info("session request queue is already active.");
       return;
     }
-
+    // Select the first/oldest request in the array to ensure last-in-first-out (LIFO)
     const request = this.requestQueue.requests[0];
     if (!request) {
       this.client.logger.info("session request queue is empty.");
