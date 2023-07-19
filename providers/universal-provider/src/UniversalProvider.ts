@@ -255,6 +255,7 @@ export class UniversalProvider implements IUniversalProvider {
         projectId: this.providerOpts.projectId,
         metadata: this.providerOpts.metadata, // fetch metadata automatically if not provided?
         storageOptions: this.providerOpts.storageOptions,
+        storage: this.providerOpts.storage,
         name: this.providerOpts.name,
       }));
 
