@@ -11,7 +11,7 @@ import {
   isJsonRpcResponse,
   isJsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES } from "@walletconnect/time";
+import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
   EnginePrivate,
   EngineTypes,
@@ -69,6 +69,7 @@ import {
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
   METHODS_TO_VERIFY,
   WALLETCONNECT_DEEPLINK_CHOICE,
+  REQUEST_QUEUE_STATES,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -77,7 +78,15 @@ export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
   private ignoredPayloadTypes = [TYPE_1];
-  private requestQueue: PendingRequestTypes.Struct[] = [];
+  private requestQueue: {
+    state: string;
+    requests: PendingRequestTypes.Struct[];
+  } = {
+    state: REQUEST_QUEUE_STATES.idle,
+    requests: [],
+  };
+
+  private requestQueueDelay = ONE_SECOND;
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -92,9 +101,9 @@ export class Engine extends IEngine {
       this.initialized = true;
 
       setTimeout(() => {
-        this.requestQueue = this.getPendingSessionRequests();
+        this.requestQueue.requests = this.getPendingSessionRequests();
         this.processRequestQueue();
-      }, 0);
+      }, toMiliseconds(this.requestQueueDelay));
     }
   };
 
@@ -318,9 +327,7 @@ export class Engine extends IEngine {
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }
-    this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
-    // intentionally delay the emitting of the next pending request a bit
-    setTimeout(() => this.processRequestQueue(), 1000);
+    this.afterResponse(params);
   };
 
   public ping: IEngine["ping"] = async (params) => {
@@ -452,7 +459,7 @@ export class Engine extends IEngine {
       this.client.pendingRequest.delete(id, reason),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
-    this.requestQueue = this.requestQueue.filter((r) => r.id !== id);
+    this.requestQueue.requests = this.requestQueue.requests.filter((r) => r.id !== id);
   };
 
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
@@ -885,12 +892,25 @@ export class Engine extends IEngine {
   };
 
   private addRequestToQueue = (request: PendingRequestTypes.Struct) => {
-    this.requestQueue.push(request);
+    this.requestQueue.requests.push(request);
+  };
+
+  private afterResponse = (params: EngineTypes.RespondParams) => {
+    this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
+    // intentionally delay the emitting of the next pending request a bit
+    setTimeout(() => {
+      this.requestQueue.state = REQUEST_QUEUE_STATES.idle;
+      this.processRequestQueue();
+    }, toMiliseconds(this.requestQueueDelay));
   };
 
   private processRequestQueue = async () => {
-    const request = this.requestQueue?.[0];
+    if (this.requestQueue.state === REQUEST_QUEUE_STATES.active) {
+      this.client.logger.info("session request queue is already active.");
+      return;
+    }
 
+    const request = this.requestQueue.requests[0];
     if (!request) {
       this.client.logger.info("session request queue is empty.");
       return;
@@ -901,6 +921,7 @@ export class Engine extends IEngine {
       const hash = hashMessage(JSON.stringify({ id, params }));
       const session = this.client.session.get(topic);
       const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
+      this.requestQueue.state = REQUEST_QUEUE_STATES.active;
       this.client.events.emit("session_request", { id, topic, params, verifyContext });
     } catch (error) {
       this.client.logger.error(error);
