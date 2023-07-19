@@ -253,7 +253,7 @@ export class UniversalProvider implements IUniversalProvider {
         logger: this.providerOpts.logger || LOGGER,
         relayUrl: this.providerOpts.relayUrl || RELAY_URL,
         projectId: this.providerOpts.projectId,
-        metadata: this.providerOpts.metadata, // fetch metadata automatically if not provided?
+        metadata: this.providerOpts.metadata,
         storageOptions: this.providerOpts.storageOptions,
         storage: this.providerOpts.storage,
         name: this.providerOpts.name,
