@@ -460,6 +460,10 @@ export class Engine extends IEngine {
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
     this.requestQueue.requests = this.requestQueue.requests.filter((r) => r.id !== id);
+    // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
+    if (expirerHasDeleted) {
+      this.requestQueue.state = REQUEST_QUEUE_STATES.idle;
+    }
   };
 
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
