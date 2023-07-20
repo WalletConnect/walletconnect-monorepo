@@ -1,5 +1,9 @@
 import { RELAYER_EVENTS } from "@walletconnect/core";
-import { formatJsonRpcError, JsonRpcError } from "@walletconnect/jsonrpc-utils";
+import {
+  formatJsonRpcError,
+  formatJsonRpcResult,
+  JsonRpcError,
+} from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
@@ -236,6 +240,45 @@ describe("Sign Client Integration", () => {
                 resolve();
               }
             }),
+          ]);
+          await deleteClients(clients);
+        });
+        it("should process requests queue", async () => {
+          const clients = await initTwoClients({}, {}, { logger: "error" });
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(clients);
+          const expectedRequests = 5;
+          let receivedRequests = 0;
+          let lastRequestReceivedAt = performance.now();
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.on("session_request", async (args) => {
+                const { id, topic } = args;
+                await clients.B.respond({
+                  topic,
+                  response: formatJsonRpcResult(id, "ok"),
+                });
+                // the first request should be processed immediately
+                // the rest should be processed with ~1s delay
+                if (receivedRequests > 0) {
+                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 100);
+                }
+                lastRequestReceivedAt = performance.now();
+                receivedRequests++;
+                if (receivedRequests >= expectedRequests) resolve();
+              });
+            }),
+            Array.from(Array(expectedRequests).keys()).map(
+              () =>
+                new Promise<void>((resolve) => {
+                  clients.A.request({
+                    topic,
+                    ...TEST_REQUEST_PARAMS,
+                  });
+                  resolve();
+                }),
+            ),
           ]);
           await deleteClients(clients);
         });
