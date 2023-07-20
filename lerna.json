@@ -1,9 +1,5 @@
 {
   "npmClient": "npm",
-  "packages": [
-    "packages/*",
-    "providers/*"
-  ],
-  "useWorkspaces": true,
+  "packages": ["packages/*", "providers/*"],
   "version": "2.9.0"
 }
