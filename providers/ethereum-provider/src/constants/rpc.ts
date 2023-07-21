@@ -1,4 +1,4 @@
-export const REQUIRED_METHODS = ["eth_sendTransaction", "personal_sign"];
+export const REQUIRED_METHODS = ["eth_sendTransaction", "personal_sign", "eth_signTypedData_v4"];
 export const OPTIONAL_METHODS = [
   "eth_accounts",
   "eth_requestAccounts",
@@ -7,7 +7,6 @@ export const OPTIONAL_METHODS = [
   "eth_signTransaction",
   "eth_signTypedData",
   "eth_signTypedData_v3",
-  "eth_signTypedData_v4",
   "wallet_switchEthereumChain",
   "wallet_addEthereumChain",
   "wallet_getPermissions",
