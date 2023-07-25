@@ -53,7 +53,7 @@ export function getAccountsFromSession(namespace: string, session: SessionTypes.
 }
 
 export function mergeRequiredOptionalNamespaces(
-  required: NamespaceConfig,
+  required: NamespaceConfig = {},
   optional: NamespaceConfig = {},
 ) {
   const requiredNamespaces = normalizeNamespaces(required);
@@ -96,4 +96,35 @@ export function normalizeNamespaces(namespaces: NamespaceConfig): NamespaceConfi
     };
   }
   return normalizedNamespaces;
+}
+
+export function parseCaip10Account(caip10Account: string): string {
+  return caip10Account.includes(":") ? caip10Account.split(":")[2] : caip10Account;
+}
+
+/**
+ * Populates the chains array for each namespace with the chains extracted from the accounts if are otherwise missing
+ */
+export function populateNamespacesChains(
+  namespaces: SessionTypes.Namespaces,
+): Record<string, SessionTypes.Namespace> {
+  const parsedNamespaces: Record<string, SessionTypes.Namespace> = {};
+  for (const [key, values] of Object.entries(namespaces)) {
+    const methods = values.methods || [];
+    const events = values.events || [];
+    const accounts = values.accounts || [];
+    // If the key includes a CAIP separator `:` we know it's a namespace + chainId (e.g. `eip155:1`)
+    const chains = isCaipNamespace(key)
+      ? [key]
+      : values.chains
+      ? values.chains
+      : getChainsFromApprovedSession(values.accounts);
+    parsedNamespaces[key] = {
+      chains,
+      methods,
+      events,
+      accounts,
+    };
+  }
+  return parsedNamespaces;
 }
