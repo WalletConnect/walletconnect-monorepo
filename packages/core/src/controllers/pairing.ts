@@ -240,10 +240,11 @@ export class Pairing implements IPairing {
     this.core.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
       const { topic, message } = event;
 
+      // Do not handle if the topic is not related to known pairing topics.
+      if (!this.pairings.keys.includes(topic)) return;
+
       // messages of certain types should be ignored as they are handled by their respective SDKs
-      if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) {
-        return;
-      }
+      if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) return;
 
       const payload = await this.core.crypto.decode(topic, message);
       if (isJsonRpcRequest(payload)) {
@@ -251,7 +252,8 @@ export class Pairing implements IPairing {
         this.onRelayEventRequest({ topic, payload });
       } else if (isJsonRpcResponse(payload)) {
         await this.core.history.resolve(payload);
-        this.onRelayEventResponse({ topic, payload });
+        await this.onRelayEventResponse({ topic, payload });
+        this.core.history.delete(topic, payload.id);
       }
     });
   }
@@ -259,8 +261,6 @@ export class Pairing implements IPairing {
   private onRelayEventRequest: IPairingPrivate["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as PairingJsonRpcTypes.WcMethod;
-
-    if (!this.pairings.keys.includes(topic)) return;
 
     switch (reqMethod) {
       case "wc_pairingPing":
@@ -276,8 +276,6 @@ export class Pairing implements IPairing {
     const { topic, payload } = event;
     const record = await this.core.history.get(topic, payload.id);
     const resMethod = record.request.method as PairingJsonRpcTypes.WcMethod;
-
-    if (!this.pairings.keys.includes(topic)) return;
 
     switch (resMethod) {
       case "wc_pairingPing":

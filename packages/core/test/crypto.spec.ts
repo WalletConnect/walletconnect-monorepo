@@ -160,5 +160,9 @@ describe("Crypto", () => {
       const decoded = await crypto.decode(topic, encoded);
       expect(decoded).to.eql(payload);
     });
+    it("should not throw on failed decrypt", async () => {
+      const decoded = await crypto.decode("non-existent-topic", "dummymessage");
+      expect(decoded).to.eql(undefined);
+    });
   });
 });

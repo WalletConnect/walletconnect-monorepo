@@ -11,7 +11,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getGlobal, getRpcUrl, handleDeepLinks } from "../utils";
+import { getGlobal, getRpcUrl } from "../utils";
 
 // Old wallet connect provider for Elrond
 class ElrondProvider implements IProvider {
@@ -40,7 +40,6 @@ class ElrondProvider implements IProvider {
 
   public request<T = unknown>(args: RequestParams): Promise<T> {
     if (this.namespace.methods.includes(args.request.method)) {
-      handleDeepLinks(this.client, args);
       return this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);

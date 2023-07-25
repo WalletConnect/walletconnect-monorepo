@@ -12,7 +12,6 @@ import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
-
 export const REACT_NATIVE_PRODUCT = "ReactNative";
 
 export const ENV_MAP = {
@@ -97,6 +96,17 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 // -- rpcUrl ----------------------------------------------//
 
 export function getJavascriptOS() {
+  const env = getEnvironment();
+  // global.Platform is set by react-native-compat
+  if (
+    env === ENV_MAP.reactNative &&
+    typeof global !== "undefined" &&
+    typeof (global as any)?.Platform !== "undefined"
+  ) {
+    const { OS, Version } = (global as any).Platform;
+    return [OS, Version].join("-");
+  }
+
   const info = detect();
   if (info === null) return "unknown";
   const os = info.os ? info.os.replace(" ", "").toLowerCase() : "unknown";
@@ -320,4 +330,46 @@ export function engineEvent(event: EngineTypes.Event, id?: number | string | und
 
 export function mergeArrays<T>(a: T[] = [], b: T[] = []): T[] {
   return [...new Set([...a, ...b])];
+}
+
+export async function handleDeeplinkRedirect({
+  id,
+  topic,
+  wcDeepLink,
+}: {
+  id: number;
+  topic: string;
+  wcDeepLink: string;
+}) {
+  try {
+    if (!wcDeepLink) return;
+
+    const json = typeof wcDeepLink === "string" ? JSON.parse(wcDeepLink) : wcDeepLink;
+    let deeplink = json?.href;
+
+    if (typeof deeplink !== "string") return;
+
+    if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
+
+    const link = `${deeplink}/wc?requestId=${id}&sessionTopic=${topic}`;
+
+    const env = getEnvironment();
+
+    if (env === ENV_MAP.browser) {
+      if (link.startsWith("https://")) {
+        window.open(link, "_blank", "noreferrer noopener");
+      } else {
+        window.open(link, "_self", "noreferrer noopener");
+      }
+    } else if (env === ENV_MAP.reactNative) {
+      // global.Linking is set by react-native-compat
+      if (typeof (global as any)?.Linking !== "undefined") {
+        await (global as any).Linking.openURL(link);
+      }
+    }
+  } catch (err) {
+    // Silent error, just log in console
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
 }

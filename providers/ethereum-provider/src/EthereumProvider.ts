@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
+import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import {
   IEthereumProvider as IProvider,
   IEthereumProviderEvents,
@@ -7,15 +8,21 @@ import {
   RequestArguments,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import type { Web3ModalConfig, Web3Modal } from "@web3modal/standalone";
+import type { WalletConnectModalConfig, WalletConnectModal } from "@walletconnect/modal";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
-import { STORAGE_KEY, REQUIRED_METHODS, REQUIRED_EVENTS, RPC_URL } from "./constants";
+import {
+  STORAGE_KEY,
+  REQUIRED_METHODS,
+  REQUIRED_EVENTS,
+  RPC_URL,
+  OPTIONAL_METHODS,
+  OPTIONAL_EVENTS,
+} from "./constants";
 
 export type QrModalOptions = Pick<
-  Web3ModalConfig,
+  WalletConnectModalConfig,
   | "themeMode"
   | "themeVariables"
-  | "chainImages"
   | "desktopWallets"
   | "enableExplorer"
   | "explorerRecommendedWalletIds"
@@ -23,7 +30,6 @@ export type QrModalOptions = Pick<
   | "mobileWallets"
   | "privacyPolicyUrl"
   | "termsOfServiceUrl"
-  | "tokenImages"
   | "walletImages"
 >;
 
@@ -61,7 +67,7 @@ export interface SessionEvent {
 
 export interface EthereumRpcConfig {
   chains: string[];
-  optionalChains?: string[];
+  optionalChains: string[];
   methods: string[];
   optionalMethods?: string[];
   /**
@@ -104,7 +110,7 @@ export function toHexChainId(chainId: number): string {
 
 export type NamespacesParams = {
   chains: EthereumRpcConfig["chains"];
-  optionalChains?: EthereumRpcConfig["optionalChains"];
+  optionalChains: EthereumRpcConfig["optionalChains"];
   methods?: EthereumRpcConfig["methods"];
   optionalMethods?: EthereumRpcConfig["methods"];
   events?: EthereumRpcConfig["events"];
@@ -113,7 +119,7 @@ export type NamespacesParams = {
 };
 
 export function buildNamespaces(params: NamespacesParams): {
-  required: Namespace;
+  required?: Namespace;
   optional?: Namespace;
 } {
   const { chains, optionalChains, methods, optionalMethods, events, optionalEvents, rpcMap } =
@@ -122,18 +128,15 @@ export function buildNamespaces(params: NamespacesParams): {
     throw new Error("Invalid chains");
   }
 
-  const requiredChains = chains;
-  const requiredMethods = methods || REQUIRED_METHODS;
-  const requiredEvents = events || REQUIRED_EVENTS;
-  const requiredRpcMap = {
-    [getEthereumChainId(requiredChains)]: rpcMap[getEthereumChainId(requiredChains)],
-  };
-
   const required: Namespace = {
-    chains: requiredChains,
-    methods: requiredMethods,
-    events: requiredEvents,
-    rpcMap: requiredRpcMap,
+    chains,
+    methods: methods || REQUIRED_METHODS,
+    events: events || REQUIRED_EVENTS,
+    rpcMap: {
+      ...(chains.length
+        ? { [getEthereumChainId(chains)]: rpcMap[getEthereumChainId(chains)] }
+        : {}),
+    },
   };
 
   // make a list of events and methods that require additional permissions
@@ -148,7 +151,7 @@ export function buildNamespaces(params: NamespacesParams): {
     !eventsRequiringPermissions?.length &&
     !methodsRequiringPermissions?.length
   ) {
-    return { required };
+    return { required: chains.length ? required : undefined };
   }
 
   /*
@@ -161,31 +164,46 @@ export function buildNamespaces(params: NamespacesParams): {
   const optional: Namespace = {
     chains: [
       ...new Set(
-        shouldIncludeRequiredChains ? requiredChains.concat(optionalChains || []) : optionalChains,
+        shouldIncludeRequiredChains ? required.chains.concat(optionalChains || []) : optionalChains,
       ),
     ],
-    methods: [...new Set(requiredMethods.concat(optionalMethods || []))],
-    events: [...new Set(requiredEvents.concat(optionalEvents || []))],
+    methods: [
+      ...new Set(
+        required.methods.concat(optionalMethods?.length ? optionalMethods : OPTIONAL_METHODS),
+      ),
+    ],
+    events: [...new Set(required.events.concat(optionalEvents || OPTIONAL_EVENTS))],
     rpcMap,
   };
 
-  return { required, optional };
+  return {
+    required: chains.length ? required : undefined,
+    optional: optionalChains.length ? optional : undefined,
+  };
 }
 
-export interface EthereumProviderOptions {
+// helper type to force setting at least one value in an array
+type ArrayOneOrMore<T> = {
+  0: T;
+} & Array<T>;
+
+/**
+ * @param {number[]} chains - The Chains your app intents to use and the peer MUST support. If the peer does not support these chains, the connection will be rejected.
+ * @param {number[]} optionalChains - The Chains your app MAY attempt to use and the peer MAY support. If the peer does not support these chains, the connection will still be established.
+ * @description either chains or optionalChains must be provided
+ */
+export type ChainsProps =
+  | {
+      chains: ArrayOneOrMore<number>;
+      optionalChains?: number[];
+    }
+  | {
+      chains?: number[];
+      optionalChains: ArrayOneOrMore<number>;
+    };
+
+export type EthereumProviderOptions = {
   projectId: string;
-  /**
-   * @note Chains that your app intents to use and the peer MUST support. If the peer does not support these chains, the connection will be rejected.
-   * @default [1]
-   * @example [1, 3, 4, 5, 42]
-   */
-  chains: number[];
-  /**
-   * @note Optional chains that your app MAY attempt to use and the peer MAY support. If the peer does not support these chains, the connection will still be established.
-   * @default [1]
-   * @example [1, 3, 4, 5, 42]
-   */
-  optionalChains?: number[];
   /**
    * @note Methods that your app intents to use and the peer MUST support. If the peer does not support these methods, the connection will be rejected.
    * @default ["eth_sendTransaction", "personal_sign"]
@@ -202,7 +220,9 @@ export interface EthereumProviderOptions {
   showQrModal: boolean;
   qrModalOptions?: QrModalOptions;
   disableProviderPing?: boolean;
-}
+  relayUrl?: string;
+  storageOptions?: KeyValueStorageOptions;
+} & ChainsProps;
 
 export class EthereumProvider implements IEthereumProvider {
   public events = new EventEmitter();
@@ -210,7 +230,7 @@ export class EthereumProvider implements IEthereumProvider {
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
-  public modal?: Web3Modal;
+  public modal?: WalletConnectModal;
 
   protected rpc: EthereumRpcConfig;
   protected readonly STORAGE_KEY = STORAGE_KEY;
@@ -276,7 +296,9 @@ export class EthereumProvider implements IEthereumProvider {
           await this.signer
             .connect({
               namespaces: {
-                [this.namespace]: required,
+                ...(required && {
+                  [this.namespace]: required,
+                }),
               },
               ...(optional && {
                 optionalNamespaces: {
@@ -293,7 +315,6 @@ export class EthereumProvider implements IEthereumProvider {
             });
         },
       );
-
       if (!session) return;
       this.setChainIds(this.rpc.chains);
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
@@ -389,7 +410,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on("display_uri", (uri: string) => {
       if (this.rpc.showQrModal) {
         // to refresh the QR we have to close the modal and open it again
-        // until proper API is provided by web3modal
+        // until proper API is provided by walletconnect modal
         this.modal?.closeModal();
         this.modal?.openModal({ uri });
       }
@@ -397,7 +418,7 @@ export class EthereumProvider implements IEthereumProvider {
     });
   }
 
-  protected setHttpProvider(chainId: number): void {
+  protected switchEthereumChain(chainId: number): void {
     this.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: chainId.toString(16) }],
@@ -430,7 +451,7 @@ export class EthereumProvider implements IEthereumProvider {
     if (this.isCompatibleChainId(chain)) {
       const chainId = this.parseChainId(chain);
       this.chainId = chainId;
-      this.setHttpProvider(chainId);
+      this.switchEthereumChain(chainId);
     }
   }
 
@@ -448,20 +469,27 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   protected getRpcConfig(opts: EthereumProviderOptions): EthereumRpcConfig {
+    const requiredChains = opts?.chains ?? [];
+    const optionalChains = opts?.optionalChains ?? [];
+    const allChains = requiredChains.concat(optionalChains);
+    if (!allChains.length)
+      throw new Error("No chains specified in either `chains` or `optionalChains`");
+    const requiredMethods = requiredChains.length ? opts?.methods || REQUIRED_METHODS : [];
+    const requiredEvents = requiredChains.length ? opts?.events || REQUIRED_EVENTS : [];
+    const optionalMethods = opts?.optionalMethods || [];
+    const optionalEvents = opts?.optionalEvents || [];
+    const rpcMap = opts?.rpcMap || this.buildRpcMap(allChains, opts.projectId);
+    const qrModalOptions = opts?.qrModalOptions || undefined;
     return {
-      chains: opts.chains?.map((chain) => this.formatChainId(chain)) || [`${this.namespace}:1`],
-      optionalChains: opts.optionalChains
-        ? opts.optionalChains.map((chain) => this.formatChainId(chain))
-        : undefined,
-      methods: opts?.methods || REQUIRED_METHODS,
-      events: opts?.events || REQUIRED_EVENTS,
-      optionalMethods: opts?.optionalMethods || [],
-      optionalEvents: opts?.optionalEvents || [],
-      rpcMap:
-        opts?.rpcMap ||
-        this.buildRpcMap(opts.chains.concat(opts.optionalChains || []), opts.projectId),
+      chains: requiredChains?.map((chain) => this.formatChainId(chain)),
+      optionalChains: optionalChains.map((chain) => this.formatChainId(chain)),
+      methods: requiredMethods,
+      events: requiredEvents,
+      optionalMethods,
+      optionalEvents,
+      rpcMap,
       showQrModal: Boolean(opts?.showQrModal),
-      qrModalOptions: opts?.qrModalOptions ?? undefined,
+      qrModalOptions,
       projectId: opts.projectId,
       metadata: opts.metadata,
     };
@@ -477,25 +505,38 @@ export class EthereumProvider implements IEthereumProvider {
 
   protected async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
-    this.chainId = getEthereumChainId(this.rpc.chains);
+    this.chainId = this.rpc.chains.length
+      ? getEthereumChainId(this.rpc.chains)
+      : getEthereumChainId(this.rpc.optionalChains);
     this.signer = await UniversalProvider.init({
       projectId: this.rpc.projectId,
       metadata: this.rpc.metadata,
       disableProviderPing: opts.disableProviderPing,
+      relayUrl: opts.relayUrl,
+      storageOptions: opts.storageOptions,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
+      let WalletConnectModalClass;
       try {
-        const { Web3Modal } = await import("@web3modal/standalone");
-        this.modal = new Web3Modal({
-          walletConnectVersion: 2,
-          projectId: this.rpc.projectId,
-          standaloneChains: this.rpc.chains,
-          ...this.rpc.qrModalOptions,
-        });
+        const { WalletConnectModal } = await import("@walletconnect/modal");
+        WalletConnectModalClass = WalletConnectModal;
       } catch {
-        throw new Error("To use QR modal, please install @web3modal/standalone package");
+        throw new Error("To use QR modal, please install @walletconnect/modal package");
+      }
+      if (WalletConnectModalClass) {
+        try {
+          this.modal = new WalletConnectModalClass({
+            walletConnectVersion: 2,
+            projectId: this.rpc.projectId,
+            standaloneChains: this.rpc.chains,
+            ...this.rpc.qrModalOptions,
+          });
+        } catch (e) {
+          this.signer.logger.error(e);
+          throw new Error("Could not generate WalletConnectModal Instance");
+        }
       }
     }
   }
@@ -529,10 +570,14 @@ export class EthereumProvider implements IEthereumProvider {
   protected async loadPersistedSession() {
     if (!this.session) return;
     const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
-    this.setChainIds(
-      chainId ? [this.formatChainId(chainId)] : this.session.namespaces[this.namespace].accounts,
-    );
-    this.setAccounts(this.session.namespaces[this.namespace].accounts);
+
+    // cater to both inline & nested namespace formats
+    const namespace = this.session.namespaces[`${this.namespace}:${chainId}`]
+      ? this.session.namespaces[`${this.namespace}:${chainId}`]
+      : this.session.namespaces[this.namespace];
+
+    this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
+    this.setAccounts(namespace?.accounts);
   }
 
   protected reset() {

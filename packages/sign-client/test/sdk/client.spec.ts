@@ -1,5 +1,9 @@
 import { RELAYER_EVENTS } from "@walletconnect/core";
-import { formatJsonRpcError, JsonRpcError } from "@walletconnect/jsonrpc-utils";
+import {
+  formatJsonRpcError,
+  formatJsonRpcResult,
+  JsonRpcError,
+} from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
@@ -130,8 +134,13 @@ describe("Sign Client Integration", () => {
       it("deletes the session on disconnect", async () => {
         const clients = await initTwoClients();
         const {
-          sessionA: { topic },
+          sessionA: { topic, self },
         } = await testConnectMethod(clients);
+        const { self: selfB } = clients.B.session.get(topic);
+        expect(clients.A.core.crypto.keychain.has(topic)).to.be.true;
+        expect(clients.A.core.crypto.keychain.has(self.publicKey)).to.be.true;
+        expect(clients.B.core.crypto.keychain.has(topic)).to.be.true;
+        expect(clients.B.core.crypto.keychain.has(selfB.publicKey)).to.be.true;
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         const promise = clients.A.ping({ topic });
@@ -139,6 +148,11 @@ describe("Sign Client Integration", () => {
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
+        await throttle(2_000);
+        expect(clients.A.core.crypto.keychain.has(topic)).to.be.false;
+        expect(clients.A.core.crypto.keychain.has(self.publicKey)).to.be.false;
+        expect(clients.B.core.crypto.keychain.has(topic)).to.be.false;
+        expect(clients.B.core.crypto.keychain.has(selfB.publicKey)).to.be.false;
         await deleteClients(clients);
       });
     });
@@ -229,6 +243,45 @@ describe("Sign Client Integration", () => {
           ]);
           await deleteClients(clients);
         });
+        it("should process requests queue", async () => {
+          const clients = await initTwoClients({}, {}, { logger: "error" });
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(clients);
+          const expectedRequests = 5;
+          let receivedRequests = 0;
+          let lastRequestReceivedAt = performance.now();
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.on("session_request", async (args) => {
+                const { id, topic } = args;
+                await clients.B.respond({
+                  topic,
+                  response: formatJsonRpcResult(id, "ok"),
+                });
+                // the first request should be processed immediately
+                // the rest should be processed with ~1s delay
+                if (receivedRequests > 0) {
+                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 100);
+                }
+                lastRequestReceivedAt = performance.now();
+                receivedRequests++;
+                if (receivedRequests >= expectedRequests) resolve();
+              });
+            }),
+            Array.from(Array(expectedRequests).keys()).map(
+              () =>
+                new Promise<void>((resolve) => {
+                  clients.A.request({
+                    topic,
+                    ...TEST_REQUEST_PARAMS,
+                  });
+                  resolve();
+                }),
+            ),
+          ]);
+          await deleteClients(clients);
+        });
       });
     });
   });
@@ -310,7 +363,6 @@ describe("Sign Client Integration", () => {
           clients.A.core.relayer.once(
             RELAYER_EVENTS.publish,
             (payload: RelayerTypes.PublishPayload) => {
-              console.log("expiry payload", payload.opts?.ttl, expiry);
               // ttl of the request should match the expiry
               // expect(payload?.opts?.ttl).toEqual(expiry);
               resolve();

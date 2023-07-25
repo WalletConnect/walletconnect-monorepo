@@ -11,7 +11,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getGlobal, handleDeepLinks } from "../utils";
+import { getGlobal } from "../utils";
 
 class CardanoProvider implements IProvider {
   public name = "cip34";
@@ -49,7 +49,6 @@ class CardanoProvider implements IProvider {
 
   public request<T = unknown>(args: RequestParams): Promise<T> {
     if (this.namespace.methods.includes(args.request.method)) {
-      handleDeepLinks(this.client, args);
       return this.client.request(args as EngineTypes.RequestParams);
     }
     return this.getHttpProvider().request(args.request);

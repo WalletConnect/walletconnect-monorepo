@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 import SignClient from "@walletconnect/sign-client";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
@@ -187,6 +188,7 @@ export class WalletClient {
         const namespaces = {};
         Object.entries(requiredNamespaces).forEach(([key, value]) => {
           namespaces[key] = {
+            chains: value.chains,
             methods: value.methods,
             events: value.events,
             accounts: value.chains.map((chain) => `${chain}:${this.accounts[0]}`),
@@ -265,6 +267,21 @@ export class WalletClient {
                 parseSignDocValues(request.params.signDoc),
               );
               result = signedDirect.signature;
+              break;
+            case "wallet_switchEthereumChain":
+              const session = this.client.session.get(topic);
+              const chainToUpdate = `eip155:${parseInt(request.params[0].chainId)}`;
+              await this.client.update({
+                topic,
+                namespaces: {
+                  ...session.namespaces,
+                  eip155: {
+                    ...session.namespaces.eip155,
+                    chains: session.namespaces.eip155.chains?.concat([chainToUpdate]),
+                  },
+                },
+              });
+              result = null;
               break;
             default:
               throw new Error(`Method not supported: ${request.method}`);

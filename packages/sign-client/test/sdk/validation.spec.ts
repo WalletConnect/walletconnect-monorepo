@@ -82,6 +82,45 @@ describe("Sign Client Validation", () => {
         "Missing or invalid. connect(), optionalNamespaces should be an object with data",
       );
     });
+    it("throws when no chains are specified within requiredNamespaces", async () => {
+      await expect(
+        clients.A.connect({
+          requiredNamespaces: {
+            eip155: {
+              chains: [],
+            },
+          },
+        }),
+      ).rejects.toThrowError(
+        `Unsupported chains. connect() requiredNamespaces, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of CAIP-2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
+      );
+    });
+    it("throws when no chains are specified within optionalNamespaces", async () => {
+      await expect(
+        clients.A.connect({
+          optionalNamespaces: {
+            eip155: {
+              chains: [],
+            },
+          },
+        }),
+      ).rejects.toThrowError(
+        `Unsupported chains. connect() optionalNamespaces, chains must be defined as "namespace:chainId" e.g. "eip155:1": {...} in the namespace key OR as an array of CAIP-2 chainIds e.g. eip155: { chains: ["eip155:1", "eip155:5"] }`,
+      );
+    });
+    it("should create pairing with inline defined chain", async () => {
+      const connect = await clients.A.connect({
+        optionalNamespaces: {
+          "eip155:1": {
+            methods: [],
+            events: [],
+          },
+        },
+      });
+      expect(connect).toBeDefined();
+      expect(connect).toHaveProperty("uri");
+      expect(connect.uri).to.be.string;
+    });
   });
 
   describe("approve", () => {

@@ -107,3 +107,8 @@ export const SESSION_REQUEST_EXPIRY_BOUNDARIES = {
   min: FIVE_MINUTES,
   max: SEVEN_DAYS,
 };
+
+export const REQUEST_QUEUE_STATES: { idle: string; active: string } = {
+  idle: "idle",
+  active: "active",
+};
