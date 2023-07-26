@@ -868,13 +868,13 @@ describe("buildApprovedNamespaces (validators)", () => {
       },
     };
 
-    const chains = ["eip155:1", "eip155:2", "eip155:4"];
+    const chains = ["eip155:1", "eip155:2", "eip155:11"];
     const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
     const events = ["chainChanged", "accountsChanged"];
     const accounts = [
       "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
       "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
-      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:11:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
