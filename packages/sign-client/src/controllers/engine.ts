@@ -441,6 +441,11 @@ export class Engine extends IEngine {
       await this.client.core.crypto.deleteSymKey(topic);
     }
     if (!expirerHasDeleted) this.client.core.expirer.del(topic);
+    // remove any deeplinks from storage after the session is deleted
+    // to avoid navigating to incorrect deeplink later on
+    this.client.core.storage
+      .removeItem(WALLETCONNECT_DEEPLINK_CHOICE)
+      .catch((e) => this.client.logger.warn(e));
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
