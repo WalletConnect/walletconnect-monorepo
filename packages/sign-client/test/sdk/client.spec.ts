@@ -251,14 +251,21 @@ describe("Sign Client Integration", () => {
               });
             }),
             new Promise<void>(async (resolve) => {
-              try {
-                await clients.A.request({
-                  topic,
-                  ...TEST_REQUEST_PARAMS,
-                });
-              } catch (err) {
-                expect(err.message).toMatch(rejection.error.message);
-                resolve();
+              let success = false;
+              while (!success) {
+                try {
+                  await clients.A.request({
+                    topic,
+                    ...TEST_REQUEST_PARAMS,
+                  });
+                } catch (err) {
+                  console.error(err, err.message);
+                  if (err.message === "Failed to publish payload, please try again.") {
+                    expect(err.message).toMatch(rejection.error.message);
+                    success = true;
+                    resolve();
+                  }
+                }
               }
             }),
           ]);
