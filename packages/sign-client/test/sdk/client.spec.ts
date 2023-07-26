@@ -7,7 +7,7 @@ import {
 import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
-import SignClient from "../../src";
+import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 import {
   initTwoClients,
   testConnectMethod,
@@ -153,6 +153,20 @@ describe("Sign Client Integration", () => {
         expect(clients.A.core.crypto.keychain.has(self.publicKey)).to.be.false;
         expect(clients.B.core.crypto.keychain.has(topic)).to.be.false;
         expect(clients.B.core.crypto.keychain.has(selfB.publicKey)).to.be.false;
+        await deleteClients(clients);
+      });
+    });
+    describe("deeplinks", () => {
+      it("should clear `WALLETCONNECT_DEEPLINK_CHOICE` from storage on disconnect", async () => {
+        const clients = await initTwoClients();
+        const {
+          sessionA: { topic, self },
+        } = await testConnectMethod(clients);
+        const deepLink = "dummy deep link";
+        await clients.A.core.storage.setItem(WALLETCONNECT_DEEPLINK_CHOICE, deepLink);
+        expect(await clients.A.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE)).to.eq(deepLink);
+        await clients.A.disconnect({ topic, reason: getSdkError("USER_DISCONNECTED") });
+        expect(await clients.A.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE)).to.be.undefined;
         await deleteClients(clients);
       });
     });
