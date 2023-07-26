@@ -7,7 +7,8 @@ import {
 import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
-import SignClient from "../../src";
+import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
+
 import {
   initTwoClients,
   testConnectMethod,
@@ -24,12 +25,6 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
-  beforeEach(() => {
-    console.log(expect.getState().currentTestName, "started");
-  });
-  afterEach(() => {
-    console.log(expect.getState().currentTestName, "ended");
-  });
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
@@ -162,6 +157,20 @@ describe("Sign Client Integration", () => {
         await deleteClients(clients);
       });
     });
+    describe("deeplinks", () => {
+      it("should clear `WALLETCONNECT_DEEPLINK_CHOICE` from storage on disconnect", async () => {
+        const clients = await initTwoClients();
+        const {
+          sessionA: { topic, self },
+        } = await testConnectMethod(clients);
+        const deepLink = "dummy deep link";
+        await clients.A.core.storage.setItem(WALLETCONNECT_DEEPLINK_CHOICE, deepLink);
+        expect(await clients.A.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE)).to.eq(deepLink);
+        await clients.A.disconnect({ topic, reason: getSdkError("USER_DISCONNECTED") });
+        expect(await clients.A.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE)).to.be.undefined;
+        await deleteClients(clients);
+      });
+    });
   });
 
   describe("ping", () => {
@@ -237,18 +246,54 @@ describe("Sign Client Integration", () => {
             }),
             new Promise<void>(async (resolve) => {
               try {
-                console.log("client A sending request");
                 await clients.A.request({
                   topic,
                   ...TEST_REQUEST_PARAMS,
                 });
-                console.log("should not get here");
               } catch (err) {
-                console.log("client A got error", err.message);
                 expect(err.message).toMatch(rejection.error.message);
                 resolve();
               }
             }),
+          ]);
+          await deleteClients(clients);
+        });
+        it("should process requests queue", async () => {
+          const clients = await initTwoClients({}, {}, { logger: "error" });
+          const {
+            sessionA: { topic },
+          } = await testConnectMethod(clients);
+          const expectedRequests = 5;
+          let receivedRequests = 0;
+          let lastRequestReceivedAt = performance.now();
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.on("session_request", async (args) => {
+                const { id, topic } = args;
+                await clients.B.respond({
+                  topic,
+                  response: formatJsonRpcResult(id, "ok"),
+                });
+                // the first request should be processed immediately
+                // the rest should be processed with ~1s delay
+                if (receivedRequests > 0) {
+                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 100);
+                }
+                lastRequestReceivedAt = performance.now();
+                receivedRequests++;
+                if (receivedRequests >= expectedRequests) resolve();
+              });
+            }),
+            Array.from(Array(expectedRequests).keys()).map(
+              () =>
+                new Promise<void>((resolve) => {
+                  clients.A.request({
+                    topic,
+                    ...TEST_REQUEST_PARAMS,
+                  });
+                  resolve();
+                }),
+            ),
           ]);
           await deleteClients(clients);
         });

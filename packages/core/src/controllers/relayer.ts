@@ -225,7 +225,7 @@ export class Relayer extends IRelayer {
           new Promise<void>(async (resolve, reject) => {
             await createExpiringPromise(
               this.provider.connect(),
-              5_000,
+              10_000,
               `Socket stalled when trying to connect to ${this.relayUrl}`,
             )
               .catch((e) => reject(e))
@@ -303,10 +303,28 @@ export class Relayer extends IRelayer {
     await this.messages.set(topic, message);
   }
 
-  private async shouldIgnoreMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+  private async shouldIgnoreMessageEvent(
+    messageEvent: RelayerTypes.MessageEvent,
+  ): Promise<boolean> {
     const { topic, message } = messageEvent;
-    if (!(await this.subscriber.isSubscribed(topic))) return true;
+
+    // Ignore if incoming `message` is clearly invalid.
+    if (!message || message.length === 0) {
+      this.logger.debug(`Ignoring invalid/empty message: ${message}`);
+      return true;
+    }
+
+    // Ignore if `topic` is not subscribed to.
+    if (!(await this.subscriber.isSubscribed(topic))) {
+      this.logger.debug(`Ignoring message for non-subscribed topic ${topic}`);
+      return true;
+    }
+
+    // Ignore if `message` is a duplicate.
     const exists = this.messages.has(topic, message);
+    if (exists) {
+      this.logger.debug(`Ignoring duplicate message: ${message}`);
+    }
     return exists;
   }
 
