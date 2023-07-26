@@ -167,7 +167,7 @@ export function buildApprovedNamespaces(
     const accountsToAdd = chainsToAdd
       ?.map((chain: string) =>
         supportedNamespaces[optionalNamespace].accounts.filter((account: string) =>
-          account.includes(chain),
+          account.includes(`${chain}:`),
         ),
       )
       .flat();
