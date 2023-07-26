@@ -28,8 +28,9 @@ describe("Sign Client Integration", () => {
   beforeEach(() => {
     console.log(expect.getState().currentTestName, "started");
   });
-  afterEach(() => {
+  afterEach(async () => {
     console.log(expect.getState().currentTestName, "ended");
+    await new Promise((resolve) => setTimeout(resolve, 500));
   });
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
