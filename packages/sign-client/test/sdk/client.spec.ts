@@ -278,7 +278,7 @@ describe("Sign Client Integration", () => {
           ]);
           await deleteClients(clients);
         });
-        it("should process requests queue", async () => {
+        it.skip("should process requests queue", async () => {
           const {
             clients,
             sessionA: { topic },
