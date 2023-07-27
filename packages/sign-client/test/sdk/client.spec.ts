@@ -305,7 +305,7 @@ describe("Sign Client Integration", () => {
               });
             }),
             Array.from(Array(expectedRequests).keys()).map(
-              () =>
+              (i) =>
                 new Promise<void>(async (resolve) => {
                   let success = false;
                   while (!success) {
@@ -314,10 +314,11 @@ describe("Sign Client Integration", () => {
                       ...TEST_REQUEST_PARAMS,
                     })
                       .catch((err: Error) => {
-                        console.log("publish failed");
+                        console.log("publish failed", i);
                         console.error(err, err.message);
                       })
                       .then(() => {
+                        console.log("publish success", i);
                         success = true;
                         resolve();
                       });
