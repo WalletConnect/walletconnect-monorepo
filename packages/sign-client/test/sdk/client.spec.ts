@@ -292,6 +292,8 @@ describe("Sign Client Integration", () => {
                 await clients.B.respond({
                   topic,
                   response: formatJsonRpcResult(id, "ok"),
+                }).catch((err: Error) => {
+                  console.log("on session_request publish failed", err);
                 });
                 console.log("requests received", receivedRequests);
                 // the first request should be processed immediately
