@@ -313,16 +313,13 @@ describe("Sign Client Integration", () => {
                     await clients.A.request({
                       topic,
                       ...TEST_REQUEST_PARAMS,
-                    })
-                      .catch((err: Error) => {
-                        console.log("publish failed", i);
-                        console.error(err, err.message);
-                      })
-                      .then(() => {
-                        console.log("publish success", i);
-                        success = true;
-                        resolve();
-                      });
+                    }).catch((err: Error) => {
+                      console.log("publish failed", i);
+                      console.error(err, err.message);
+                    });
+                    console.log("publish success", i);
+                    success = true;
+                    resolve();
                   }
                 }),
             ),
