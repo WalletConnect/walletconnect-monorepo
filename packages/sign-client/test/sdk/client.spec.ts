@@ -278,12 +278,11 @@ describe("Sign Client Integration", () => {
           ]);
           await deleteClients(clients);
         });
-        it.skip("should process requests queue", async () => {
+        it("should process requests queue", async () => {
           const {
             clients,
             sessionA: { topic },
           } = await initTwoPairedClients({}, {}, { logger: "error" });
-          await throttle(2_000);
           const expectedRequests = 5;
           let receivedRequests = 0;
           let lastRequestReceivedAt = performance.now();
@@ -305,16 +304,26 @@ describe("Sign Client Integration", () => {
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(async () => {
-              await throttle(1_000);
-              return new Promise<void>((resolve) => {
-                clients.A.request({
-                  topic,
-                  ...TEST_REQUEST_PARAMS,
-                });
-                resolve();
-              });
-            }),
+            Array.from(Array(expectedRequests).keys()).map(
+              () =>
+                new Promise<void>(async (resolve) => {
+                  let success = false;
+                  while (!success) {
+                    await clients.A.request({
+                      topic,
+                      ...TEST_REQUEST_PARAMS,
+                    })
+                      .catch((err: Error) => {
+                        console.log("publish failed");
+                        console.error(err, err.message);
+                      })
+                      .then(() => {
+                        success = true;
+                        resolve();
+                      });
+                  }
+                }),
+            ),
           ]);
           await deleteClients(clients);
         });
