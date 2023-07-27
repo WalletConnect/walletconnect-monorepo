@@ -283,6 +283,7 @@ describe("Sign Client Integration", () => {
             clients,
             sessionA: { topic },
           } = await initTwoPairedClients({}, {}, { logger: "error" });
+          await throttle(2_000);
           const expectedRequests = 5;
           let receivedRequests = 0;
           let lastRequestReceivedAt = performance.now();
