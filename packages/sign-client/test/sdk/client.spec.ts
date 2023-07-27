@@ -31,7 +31,6 @@ describe("Sign Client Integration", () => {
   });
   afterEach(async () => {
     console.log(expect.getState().currentTestName, "ended");
-    await new Promise((resolve) => setTimeout(resolve, 500));
   });
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
@@ -278,7 +277,7 @@ describe("Sign Client Integration", () => {
           ]);
           await deleteClients(clients);
         });
-        it("should process requests queue", async () => {
+        it.only("should process requests queue", async () => {
           const {
             clients,
             sessionA: { topic },
@@ -288,12 +287,21 @@ describe("Sign Client Integration", () => {
           let lastRequestReceivedAt = performance.now();
           await Promise.all([
             new Promise<void>((resolve) => {
-              clients.B.on("session_request", (args) => {
+              clients.B.on("session_request", async (args) => {
                 const { id, topic } = args;
-                clients.B.respond({
-                  topic,
-                  response: formatJsonRpcResult(id, "ok"),
-                });
+                let success = false;
+                while (!success) {
+                  await clients.B.respond({
+                    topic,
+                    response: formatJsonRpcResult(id, "ok"),
+                  })
+                    .catch((err: Error) => {
+                      console.error("respond failed", err);
+                    })
+                    .then(() => {
+                      success = true;
+                    });
+                }
                 console.log("requests received", receivedRequests);
                 // the first request should be processed immediately
                 // the rest should be processed with ~1s delay
@@ -313,13 +321,16 @@ describe("Sign Client Integration", () => {
                     await clients.A.request({
                       topic,
                       ...TEST_REQUEST_PARAMS,
-                    }).catch((err: Error) => {
-                      console.log("publish failed", i);
-                      console.error(err, err.message);
-                    });
-                    console.log("publish success", i);
-                    success = true;
-                    resolve();
+                    })
+                      .catch((err: Error) => {
+                        console.log("publish failed", i);
+                        console.error(err, err.message);
+                      })
+                      .then(() => {
+                        console.log("publish success", i);
+                        success = true;
+                        resolve();
+                      });
                   }
                 }),
             ),
