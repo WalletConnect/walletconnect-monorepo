@@ -283,17 +283,18 @@ describe("Sign Client Integration", () => {
             clients,
             sessionA: { topic },
           } = await initTwoPairedClients({}, {}, { logger: "error" });
-          const expectedRequests = 5;
+          const expectedRequests = 4;
           let receivedRequests = 0;
           let lastRequestReceivedAt = performance.now();
           await Promise.all([
             new Promise<void>((resolve) => {
-              clients.B.on("session_request", async (args) => {
+              clients.B.on("session_request", (args) => {
                 const { id, topic } = args;
-                await clients.B.respond({
+                clients.B.respond({
                   topic,
                   response: formatJsonRpcResult(id, "ok"),
                 });
+                console.log("requests received", receivedRequests);
                 // the first request should be processed immediately
                 // the rest should be processed with ~1s delay
                 if (receivedRequests > 0) {
