@@ -246,8 +246,9 @@ export class Pairing implements IPairing {
       // messages of certain types should be ignored as they are handled by their respective SDKs
       if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) return;
 
+      const payload = await this.core.crypto.decode(topic, message);
+
       try {
-        const payload = await this.core.crypto.decode(topic, message);
         if (isJsonRpcRequest(payload)) {
           this.core.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
