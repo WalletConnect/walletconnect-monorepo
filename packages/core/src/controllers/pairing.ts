@@ -247,13 +247,18 @@ export class Pairing implements IPairing {
       if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) return;
 
       const payload = await this.core.crypto.decode(topic, message);
-      if (isJsonRpcRequest(payload)) {
-        this.core.history.set(topic, payload);
-        this.onRelayEventRequest({ topic, payload });
-      } else if (isJsonRpcResponse(payload)) {
-        await this.core.history.resolve(payload);
-        await this.onRelayEventResponse({ topic, payload });
-        this.core.history.delete(topic, payload.id);
+
+      try {
+        if (isJsonRpcRequest(payload)) {
+          this.core.history.set(topic, payload);
+          this.onRelayEventRequest({ topic, payload });
+        } else if (isJsonRpcResponse(payload)) {
+          await this.core.history.resolve(payload);
+          await this.onRelayEventResponse({ topic, payload });
+          this.core.history.delete(topic, payload.id);
+        }
+      } catch (error) {
+        this.logger.error(error);
       }
     });
   }

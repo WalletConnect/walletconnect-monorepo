@@ -601,16 +601,19 @@ export class Engine extends IEngine {
         }
 
         const payload = await this.client.core.crypto.decode(topic, message);
-
-        if (isJsonRpcRequest(payload)) {
-          this.client.core.history.set(topic, payload);
-          this.onRelayEventRequest({ topic, payload });
-        } else if (isJsonRpcResponse(payload)) {
-          await this.client.core.history.resolve(payload);
-          await this.onRelayEventResponse({ topic, payload });
-          this.client.core.history.delete(topic, payload.id);
-        } else {
-          this.onRelayEventUnknownPayload({ topic, payload });
+        try {
+          if (isJsonRpcRequest(payload)) {
+            this.client.core.history.set(topic, payload);
+            this.onRelayEventRequest({ topic, payload });
+          } else if (isJsonRpcResponse(payload)) {
+            await this.client.core.history.resolve(payload);
+            await this.onRelayEventResponse({ topic, payload });
+            this.client.core.history.delete(topic, payload.id);
+          } else {
+            this.onRelayEventUnknownPayload({ topic, payload });
+          }
+        } catch (error) {
+          this.client.logger.error(error);
         }
       },
     );
