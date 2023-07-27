@@ -304,16 +304,16 @@ describe("Sign Client Integration", () => {
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(
-              () =>
-                new Promise<void>((resolve) => {
-                  clients.A.request({
-                    topic,
-                    ...TEST_REQUEST_PARAMS,
-                  });
-                  resolve();
-                }),
-            ),
+            Array.from(Array(expectedRequests).keys()).map(async () => {
+              await throttle(1_000);
+              return new Promise<void>((resolve) => {
+                clients.A.request({
+                  topic,
+                  ...TEST_REQUEST_PARAMS,
+                });
+                resolve();
+              });
+            }),
           ]);
           await deleteClients(clients);
         });
