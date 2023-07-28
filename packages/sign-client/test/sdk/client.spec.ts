@@ -257,24 +257,18 @@ describe("Sign Client Integration", () => {
               });
             }),
             new Promise<void>(async (resolve) => {
-              let success = false;
-              while (!success) {
-                try {
-                  await clients.A.request({
-                    topic,
-                    ...TEST_REQUEST_PARAMS,
-                  });
-                } catch (err) {
-                  console.error(err, err.message);
-                  if (err.message === rejection.error.message) {
-                    expect(err.message).toMatch(rejection.error.message);
-                    success = true;
-                    resolve();
-                  }
-                }
+              try {
+                await clients.A.request({
+                  topic,
+                  ...TEST_REQUEST_PARAMS,
+                });
+              } catch (err) {
+                expect(err.message).toMatch(rejection.error.message);
+                resolve();
               }
             }),
           ]);
+          await throttle(1_000);
           await deleteClients(clients);
         });
         it("should process requests queue", async () => {
@@ -282,7 +276,7 @@ describe("Sign Client Integration", () => {
             clients,
             sessionA: { topic },
           } = await initTwoPairedClients({}, {}, { logger: "error" });
-          const expectedRequests = 3;
+          const expectedRequests = 5;
           let receivedRequests = 0;
           let lastRequestReceivedAt = performance.now();
           await Promise.all([
@@ -292,15 +286,13 @@ describe("Sign Client Integration", () => {
                 await clients.B.respond({
                   topic,
                   response: formatJsonRpcResult(id, "ok"),
-                }).catch((err: Error) => {
-                  console.log("on session_request publish failed", err);
                 });
                 console.log("requests received", receivedRequests + 1, params.request.params[0]);
                 // the first request should be processed immediately
                 // the rest should be processed with ~1s delay
-                // if (receivedRequests > 0) {
-                //   expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 100);
-                // }
+                if (receivedRequests > 0) {
+                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 100);
+                }
                 lastRequestReceivedAt = performance.now();
                 receivedRequests++;
                 if (receivedRequests >= expectedRequests) resolve();
