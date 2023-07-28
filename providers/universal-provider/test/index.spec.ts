@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeAll, afterAll } from "vitest";
+import { expect, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
@@ -76,6 +76,13 @@ describe("UniversalProvider", function () {
     await provider.client.core.relayer.transportClose();
     await walletClient.client?.core.relayer.transportClose();
   });
+  beforeEach(() => {
+    console.log(expect.getState().currentTestName, "started");
+  });
+  afterEach(async () => {
+    console.log(expect.getState().currentTestName, "ended");
+  });
+
   describe("eip155", () => {
     describe("multi chain", () => {
       let web3: Web3;
