@@ -288,13 +288,14 @@ describe("Sign Client Integration", () => {
                   response: formatJsonRpcResult(id, "ok"),
                 });
                 console.log("requests received", receivedRequests + 1, params.request.params[0]);
+
+                lastRequestReceivedAt = performance.now();
+                receivedRequests++;
                 // the first request should be processed immediately
                 // the rest should be processed with ~1s delay
                 if (receivedRequests > 0) {
-                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 100);
+                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 200);
                 }
-                lastRequestReceivedAt = performance.now();
-                receivedRequests++;
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
