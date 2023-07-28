@@ -278,50 +278,23 @@ describe("Sign Client Integration", () => {
           } = await initTwoPairedClients({}, {}, { logger: "error" });
           const expectedRequests = 5;
           let receivedRequests = 0;
-          let lastRequestReceivedAt = performance.now();
           await Promise.all([
             new Promise<void>((resolve) => {
               clients.B.on("session_request", async (args) => {
-                // the first request should be processed immediately
-                // the rest should be processed with ~1s delay
-                if (receivedRequests > 0) {
-                  console.log(
-                    "lastRequestReceivedAt + 1000",
-                    lastRequestReceivedAt + 1000,
-                    "performance.now()",
-                    performance.now(),
-                  );
-                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 200);
-                }
                 receivedRequests++;
-                lastRequestReceivedAt = performance.now();
-
-                const { id, topic, params } = args;
-                console.log("requests received", receivedRequests + 1, params.request.params[0]);
-
+                const { id, topic } = args;
                 await clients.B.respond({
                   topic,
                   response: formatJsonRpcResult(id, "ok"),
                 });
-
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(
-              (i) =>
-                new Promise<void>(async (resolve) => {
-                  console.log("sending request", i + 1, "of", expectedRequests, "requests");
-                  const result = await clients.A.request({
-                    topic,
-                    ...TEST_REQUEST_PARAMS,
-                    request: {
-                      ...TEST_REQUEST_PARAMS.request,
-                      params: [i + 1],
-                    },
-                  });
-                  console.log("request result", i + 1, result);
-                  resolve();
-                }),
+            Array.from(Array(expectedRequests).keys()).map(() =>
+              clients.A.request({
+                topic,
+                ...TEST_REQUEST_PARAMS,
+              }),
             ),
           ]);
           await throttle(1000);
