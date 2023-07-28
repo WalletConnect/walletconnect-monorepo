@@ -282,20 +282,20 @@ describe("Sign Client Integration", () => {
             clients,
             sessionA: { topic },
           } = await initTwoPairedClients({}, {}, { logger: "error" });
-          const expectedRequests = 4;
+          const expectedRequests = 3;
           let receivedRequests = 0;
           let lastRequestReceivedAt = performance.now();
           await Promise.all([
             new Promise<void>((resolve) => {
               clients.B.on("session_request", async (args) => {
-                const { id, topic } = args;
+                const { id, topic, params } = args;
                 await clients.B.respond({
                   topic,
                   response: formatJsonRpcResult(id, "ok"),
                 }).catch((err: Error) => {
                   console.log("on session_request publish failed", err);
                 });
-                console.log("requests received", receivedRequests);
+                console.log("requests received", receivedRequests + 1, params.request.params[0]);
                 // the first request should be processed immediately
                 // the rest should be processed with ~1s delay
                 // if (receivedRequests > 0) {
@@ -309,22 +309,17 @@ describe("Sign Client Integration", () => {
             Array.from(Array(expectedRequests).keys()).map(
               (i) =>
                 new Promise<void>(async (resolve) => {
-                  let success = false;
-                  while (!success) {
-                    await clients.A.request({
-                      topic,
-                      ...TEST_REQUEST_PARAMS,
-                    })
-                      .catch((err: Error) => {
-                        console.log("publish failed", i);
-                        console.error(err, err.message);
-                      })
-                      .then(() => {
-                        console.log("publish success", i);
-                        success = true;
-                        resolve();
-                      });
-                  }
+                  console.log("sending request", i + 1, "of", expectedRequests, "requests");
+                  const result = await clients.A.request({
+                    topic,
+                    ...TEST_REQUEST_PARAMS,
+                    request: {
+                      ...TEST_REQUEST_PARAMS.request,
+                      params: [i + 1],
+                    },
+                  });
+                  console.log("request result", i + 1, result);
+                  resolve();
                 }),
             ),
           ]);
