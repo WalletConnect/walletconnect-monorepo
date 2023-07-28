@@ -282,13 +282,6 @@ describe("Sign Client Integration", () => {
           await Promise.all([
             new Promise<void>((resolve) => {
               clients.B.on("session_request", async (args) => {
-                const { id, topic, params } = args;
-                await clients.B.respond({
-                  topic,
-                  response: formatJsonRpcResult(id, "ok"),
-                });
-                console.log("requests received", receivedRequests + 1, params.request.params[0]);
-
                 // the first request should be processed immediately
                 // the rest should be processed with ~1s delay
                 if (receivedRequests > 0) {
@@ -302,6 +295,15 @@ describe("Sign Client Integration", () => {
                 }
                 receivedRequests++;
                 lastRequestReceivedAt = performance.now();
+
+                const { id, topic, params } = args;
+                console.log("requests received", receivedRequests + 1, params.request.params[0]);
+
+                await clients.B.respond({
+                  topic,
+                  response: formatJsonRpcResult(id, "ok"),
+                });
+
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
