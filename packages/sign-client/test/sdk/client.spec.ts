@@ -294,6 +294,12 @@ describe("Sign Client Integration", () => {
                 // the first request should be processed immediately
                 // the rest should be processed with ~1s delay
                 if (receivedRequests > 0) {
+                  console.log(
+                    "lastRequestReceivedAt + 1000",
+                    lastRequestReceivedAt + 1000,
+                    "performance.now()",
+                    performance.now(),
+                  );
                   expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 200);
                 }
                 if (receivedRequests >= expectedRequests) resolve();
