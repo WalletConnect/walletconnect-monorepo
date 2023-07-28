@@ -323,6 +323,7 @@ describe("Sign Client Integration", () => {
                 }),
             ),
           ]);
+          await throttle(1000);
           await deleteClients(clients);
         });
       });
