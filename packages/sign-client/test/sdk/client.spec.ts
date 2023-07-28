@@ -26,12 +26,6 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
-  beforeEach(() => {
-    console.log(expect.getState().currentTestName, "started");
-  });
-  afterEach(async () => {
-    console.log(expect.getState().currentTestName, "ended");
-  });
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
