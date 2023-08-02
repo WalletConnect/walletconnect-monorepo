@@ -935,7 +935,9 @@ export class Engine extends IEngine {
 
     try {
       const { id, topic, params } = request;
-      const hash = hashMessage(JSON.stringify({ id, params }));
+      const hash = hashMessage(
+        JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
+      );
       const session = this.client.session.get(topic);
       const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
       this.requestQueue.state = REQUEST_QUEUE_STATES.active;
