@@ -12,6 +12,8 @@ export class Verify extends IVerify {
   private initialized = false;
   private abortController: AbortController;
   private isDevEnv;
+  // the queue is only used during the loading phase of the iframe to ensure all attestations are posted
+  private queue: string[] = [];
 
   constructor(public projectId: string, public logger: Logger) {
     super(projectId, logger);
@@ -25,20 +27,22 @@ export class Verify extends IVerify {
     // ignore on non browser environments
     if (isReactNative() || !isBrowser()) return;
 
-    this.verifyUrl = params?.verifyUrl || VERIFY_SERVER;
+    const verifyUrl = params?.verifyUrl || VERIFY_SERVER;
+    // if init is called again with a different url, remove the iframe and start over
+    if (this.verifyUrl !== verifyUrl) {
+      this.removeIframe();
+    }
+    this.verifyUrl = verifyUrl;
     await this.createIframe();
   };
 
   public register: IVerify["register"] = async (params) => {
     if (!this.initialized) {
+      this.addToQueue(params.attestationId);
       await this.init();
+    } else {
+      this.sendPost(params.attestationId);
     }
-
-    if (!this.iframe) return;
-    try {
-      this.iframe.contentWindow?.postMessage(params.attestationId, this.verifyUrl);
-      this.logger.info(`postMessage sent: ${params.attestationId} ${this.verifyUrl}`);
-    } catch (e) {} // fail silently to avoid logging `Failed to execute 'postMessage' on 'DOMWindow': The target origin provided...` while the iframe is still loading
   };
 
   public resolve: IVerify["resolve"] = async (params) => {
@@ -58,6 +62,24 @@ export class Verify extends IVerify {
     return getLoggerContext(this.logger);
   }
 
+  private addToQueue = (attestationId: string) => {
+    this.queue.push(attestationId);
+  };
+
+  private processQueue = () => {
+    if (this.queue.length === 0) return;
+    this.queue.forEach((attestationId) => this.sendPost(attestationId));
+    this.queue = [];
+  };
+
+  private sendPost = (attestationId: string) => {
+    try {
+      if (!this.iframe) return;
+      this.iframe.contentWindow?.postMessage(attestationId, "*"); // setting targetOrigin to "*" fixes the `Failed to execute 'postMessage' on 'DOMWindow': The target origin provided...` while the iframe is still loading
+      this.logger.info(`postMessage sent: ${attestationId} ${this.verifyUrl}`);
+    } catch (e) {}
+  };
+
   private createIframe = async () => {
     try {
       await Promise.race([
@@ -73,6 +95,7 @@ export class Verify extends IVerify {
           iframe.style.display = "none";
           iframe.addEventListener("load", () => {
             this.initialized = true;
+            this.processQueue();
             resolve();
           });
           iframe.addEventListener("error", (error) => {
@@ -82,7 +105,7 @@ export class Verify extends IVerify {
           this.iframe = iframe;
         }),
         new Promise((_reject) => {
-          setTimeout(() => _reject("iframe load timeout"), toMiliseconds(ONE_SECOND / 2));
+          setTimeout(() => _reject("iframe load timeout"), toMiliseconds(ONE_SECOND));
         }),
       ]);
     } catch (error) {
@@ -94,4 +117,11 @@ export class Verify extends IVerify {
   private startAbortTimer(timer: number) {
     return setTimeout(() => this.abortController.abort(), toMiliseconds(timer));
   }
+
+  private removeIframe = () => {
+    if (!this.iframe) return;
+    this.iframe.remove();
+    this.iframe = undefined;
+    this.initialized = false;
+  };
 }
