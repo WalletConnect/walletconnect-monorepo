@@ -1,4 +1,9 @@
-import { EXPIRER_EVENTS, RELAYER_DEFAULT_PROTOCOL, RELAYER_EVENTS } from "@walletconnect/core";
+import {
+  EXPIRER_EVENTS,
+  RELAYER_DEFAULT_PROTOCOL,
+  RELAYER_EVENTS,
+  VERIFY_SERVER,
+} from "@walletconnect/core";
 
 import {
   formatJsonRpcError,
@@ -964,7 +969,9 @@ export class Engine extends IEngine {
 
     try {
       const { id, topic, params } = request;
-      const hash = hashMessage(JSON.stringify({ id, params }));
+      const hash = hashMessage(
+        JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
+      );
       const session = this.client.session.get(topic);
       const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
       this.requestQueue.state = REQUEST_QUEUE_STATES.active;
@@ -1322,7 +1329,7 @@ export class Engine extends IEngine {
   private getVerifyContext = async (hash: string, metadata: CoreTypes.Metadata) => {
     const context: Verify.Context = {
       verified: {
-        verifyUrl: metadata.verifyUrl || "",
+        verifyUrl: metadata.verifyUrl || VERIFY_SERVER,
         validation: "UNKNOWN",
         origin: metadata.url || "",
       },
@@ -1335,7 +1342,7 @@ export class Engine extends IEngine {
       });
       if (origin) {
         context.verified.origin = origin;
-        context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+        context.verified.validation = origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
       }
     } catch (e) {
       this.client.logger.error(e);
