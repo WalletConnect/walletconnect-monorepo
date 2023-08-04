@@ -115,6 +115,10 @@ export class Engine extends IEngine {
 
   public connect: IEngine["connect"] = async (params) => {
     this.isInitialized();
+
+    // confirm we're online as we can't settle a session without being online with the peer
+    await this.client.core.relayer.confirmOnlineStateOrThrow();
+
     const connectParams = {
       ...params,
       requiredNamespaces: params.requiredNamespaces || {},
@@ -197,12 +201,17 @@ export class Engine extends IEngine {
 
   public pair: IEngine["pair"] = async (params) => {
     this.isInitialized();
+    // confirm we're online as we can't settle a session without being online with the peer
+    await this.client.core.relayer.confirmOnlineStateOrThrow();
     return await this.client.core.pairing.pair(params);
   };
 
   public approve: IEngine["approve"] = async (params) => {
     this.isInitialized();
     await this.isValidApprove(params);
+    // confirm we're online as we can't settle a session without being online with the peer
+    await this.client.core.relayer.confirmOnlineStateOrThrow();
+
     const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;

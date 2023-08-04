@@ -116,4 +116,5 @@ export abstract class IRelayer extends IEvents {
   public abstract transportClose(): Promise<void>;
   public abstract transportOpen(relayUrl?: string): Promise<void>;
   public abstract restartTransport(relayUrl?: string): Promise<void>;
+  public abstract confirmOnlineStateOrThrow(): Promise<void>;
 }

@@ -202,12 +202,11 @@ export class Relayer extends IRelayer {
      * in such case provider.disconnect() is not reliable,it might resolve after a long time or not emit disconnect event at all
      */
     if (this.hasExperiencedNetworkDisruption && this.connected) {
-      this.onProviderDisconnect();
-      this.provider.disconnect();
+      await createExpiringPromise(this.provider.disconnect(), 1000, "provider.disconnect()").catch(
+        () => this.onProviderDisconnect(),
+      );
     } else if (this.connected) {
       await this.provider.disconnect();
-    } else {
-      this.onProviderDisconnect();
     }
   }
 
@@ -242,7 +241,6 @@ export class Relayer extends IRelayer {
             reject(e);
             return;
           }
-          this.onConnectHandler();
           resolve();
         }),
       ]);
@@ -266,6 +264,11 @@ export class Relayer extends IRelayer {
     await this.transportClose();
     await this.createProvider();
     await this.transportOpen();
+  }
+
+  public async confirmOnlineStateOrThrow() {
+    if (await isOnline()) return;
+    throw new Error("No internet connection detected. Please restart your network and try again.");
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -448,10 +451,5 @@ export class Relayer extends IRelayer {
       });
     }
     await this.restartTransport();
-  }
-
-  private async confirmOnlineStateOrThrow() {
-    if (await isOnline()) return;
-    throw new Error("No internet connection detected. Please restart your network and try again.");
   }
 }
