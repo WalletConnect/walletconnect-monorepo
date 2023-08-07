@@ -114,10 +114,7 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
-    this.isInitialized();
-
-    // confirm we're online as we can't settle a session without being online with the peer
-    await this.client.core.relayer.confirmOnlineStateOrThrow();
+    await this.isInitialized();
 
     const connectParams = {
       ...params,
@@ -200,17 +197,13 @@ export class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async (params) => {
-    this.isInitialized();
-    // confirm we're online as we can't settle a session without being online with the peer
-    await this.client.core.relayer.confirmOnlineStateOrThrow();
+    await this.isInitialized();
     return await this.client.core.pairing.pair(params);
   };
 
   public approve: IEngine["approve"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidApprove(params);
-    // confirm we're online as we can't settle a session without being online with the peer
-    await this.client.core.relayer.confirmOnlineStateOrThrow();
 
     const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
@@ -287,7 +280,7 @@ export class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidReject(params);
     const { id, reason } = params;
     const { pairingTopic } = this.client.proposal.get(id);
@@ -298,7 +291,7 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidUpdate(params);
     const { topic, namespaces } = params;
     const id = await this.sendRequest({
@@ -317,7 +310,7 @@ export class Engine extends IEngine {
   };
 
   public extend: IEngine["extend"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidExtend(params);
     const { topic } = params;
     const id = await this.sendRequest({ topic, method: "wc_sessionExtend", params: {} });
@@ -332,7 +325,7 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidRequest(params);
     const { chainId, request, topic, expiry } = params;
     const id = payloadId();
@@ -364,7 +357,7 @@ export class Engine extends IEngine {
   };
 
   public respond: IEngine["respond"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
@@ -377,7 +370,7 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidPing(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
@@ -394,14 +387,14 @@ export class Engine extends IEngine {
   };
 
   public emit: IEngine["emit"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidEmit(params);
     const { topic, event, chainId } = params;
     await this.sendRequest({ topic, method: "wc_sessionEvent", params: { event, chainId } });
   };
 
   public disconnect: IEngine["disconnect"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
@@ -595,11 +588,12 @@ export class Engine extends IEngine {
     ]);
   };
 
-  private isInitialized() {
+  private async isInitialized() {
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+    await this.client.core.relayer.confirmOnlineStateOrThrow();
   }
 
   // ---------- Relay Events Router ----------------------------------- //
