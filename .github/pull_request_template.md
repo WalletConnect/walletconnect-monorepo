@@ -2,7 +2,7 @@
 
 ## Description
 
-Please include a brief summary of the change.
+Please include a brief summary of the change. 
 
 ## Type of change
 
