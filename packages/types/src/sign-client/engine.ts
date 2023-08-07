@@ -156,14 +156,14 @@ export interface EnginePrivate {
     expiry?: number;
     relayRpcId?: number;
     clientRpcId?: number;
-    waitDeliveryAck?: boolean;
+    throwOnFailedPublish?: boolean;
   }): Promise<number>;
 
   sendResult<M extends JsonRpcTypes.WcMethod>(args: {
     id: number;
     topic: string;
     result: JsonRpcTypes.Results[M];
-    waitDeliveryAck?: boolean;
+    throwOnFailedPublish?: boolean;
   }): Promise<void>;
 
   sendError(id: number, topic: string, error: JsonRpcTypes.Error): Promise<void>;

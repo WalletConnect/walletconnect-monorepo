@@ -19,7 +19,7 @@ export declare namespace RelayerTypes {
     tag?: number;
     id?: number;
     internal?: {
-      throwOnPublishTimeout?: boolean;
+      throwOnFailedPublish?: boolean;
     };
   }
 

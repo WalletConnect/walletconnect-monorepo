@@ -58,7 +58,7 @@ export class Publisher extends IPublisher {
       } catch (err) {
         this.logger.debug(`Publishing Payload stalled`);
         this.needsTransportRestart = true;
-        if (opts?.internal?.throwOnPublishTimeout) {
+        if (opts?.internal?.throwOnFailedPublish) {
           // remove the request from the queue so it's not retried automatically
           this.removeRequestFromQueue(id);
           throw err;

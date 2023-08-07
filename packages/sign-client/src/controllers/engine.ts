@@ -261,7 +261,7 @@ export class Engine extends IEngine {
       topic: sessionTopic,
       method: "wc_sessionSettle",
       params: sessionSettle,
-      waitDeliveryAck: true,
+      throwOnFailedPublish: true,
     });
     const session = {
       ...sessionSettle,
@@ -349,7 +349,7 @@ export class Engine extends IEngine {
           method: "wc_sessionRequest",
           params: { request, chainId },
           expiry,
-          waitDeliveryAck: true,
+          throwOnFailedPublish: true,
         }).catch((error) => reject(error));
         this.client.events.emit("session_request_sent", { topic, request, chainId, id });
         resolve();
@@ -369,7 +369,7 @@ export class Engine extends IEngine {
     const { topic, response } = params;
     const { id } = response;
     if (isJsonRpcResult(response)) {
-      await this.sendResult({ id, topic, result: response.result, waitDeliveryAck: true });
+      await this.sendResult({ id, topic, result: response.result, throwOnFailedPublish: true });
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }
@@ -410,6 +410,7 @@ export class Engine extends IEngine {
         topic,
         method: "wc_sessionDelete",
         params: getSdkError("USER_DISCONNECTED"),
+        throwOnFailedPublish: true,
       });
       await this.deleteSession(topic);
     } else {
@@ -524,7 +525,7 @@ export class Engine extends IEngine {
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
-    const { topic, method, params, expiry, relayRpcId, clientRpcId, waitDeliveryAck } = args;
+    const { topic, method, params, expiry, relayRpcId, clientRpcId, throwOnFailedPublish } = args;
     const payload = formatJsonRpcRequest(method, params, clientRpcId);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
@@ -535,10 +536,10 @@ export class Engine extends IEngine {
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);
-    if (waitDeliveryAck) {
+    if (throwOnFailedPublish) {
       opts.internal = {
         ...opts.internal,
-        throwOnPublishTimeout: true,
+        throwOnFailedPublish: true,
       };
       await this.client.core.relayer.publish(topic, message, opts);
     } else {
@@ -550,15 +551,15 @@ export class Engine extends IEngine {
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
-    const { id, topic, result, waitDeliveryAck } = args;
+    const { id, topic, result, throwOnFailedPublish } = args;
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.core.crypto.encode(topic, payload);
     const record = await this.client.core.history.get(topic, id);
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    if (waitDeliveryAck) {
+    if (throwOnFailedPublish) {
       opts.internal = {
         ...opts.internal,
-        throwOnPublishTimeout: true,
+        throwOnFailedPublish: true,
       };
       await this.client.core.relayer.publish(topic, message, opts);
     } else {
