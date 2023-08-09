@@ -22,11 +22,12 @@
   },
   "dependencies": {
     "events": "3.3.0",
-    "fast-text-encoding": "^1.0.6"
+    "fast-text-encoding": "^1.0.6",
+    "react-native-url-polyfill": "^2.0.0"
   },
   "peerDependencies": {
     "@react-native-async-storage/async-storage": "*",
-    "react-native-get-random-values": "*",
-    "@react-native-community/netinfo": "*"
+    "@react-native-community/netinfo": "*",
+    "react-native-get-random-values": "*"
   }
 }

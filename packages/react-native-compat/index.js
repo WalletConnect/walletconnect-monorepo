@@ -4,6 +4,9 @@ import "fast-text-encoding";
 // Polyfill crypto.getRandomvalues
 import "react-native-get-random-values";
 
+// Polyfill URL()
+import "react-native-url-polyfill/auto";
+
 // Polyfill Buffer
 if (typeof Buffer === "undefined") {
   global.Buffer = require("buffer").Buffer;
