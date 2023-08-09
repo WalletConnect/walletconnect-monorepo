@@ -38,14 +38,14 @@ export function getNodeOnlineStatus() {
   return true;
 }
 
-export function subscribeToNetworkChange(callBackHendler: (connected: boolean) => void) {
+export function subscribeToNetworkChange(callbackHandler: (connected: boolean) => void) {
   const env = getEnvironment();
   switch (env) {
     case ENV_MAP.browser:
-      subscribeToBrowserNetworkChange(callBackHendler);
+      subscribeToBrowserNetworkChange(callbackHandler);
       break;
     case ENV_MAP.reactNative:
-      subscribeToReactNativeNetworkChange(callBackHendler);
+      subscribeToReactNativeNetworkChange(callbackHandler);
       break;
     case ENV_MAP.node:
       // wip: need to implement
@@ -55,16 +55,16 @@ export function subscribeToNetworkChange(callBackHendler: (connected: boolean) =
   }
 }
 
-export function subscribeToBrowserNetworkChange(callBackHendler: (connected: boolean) => void) {
+export function subscribeToBrowserNetworkChange(callbackHandler: (connected: boolean) => void) {
   if (isBrowser()) {
-    window.addEventListener("online", () => callBackHendler(true));
-    window.addEventListener("offline", () => callBackHendler(false));
+    window.addEventListener("online", () => callbackHandler(true));
+    window.addEventListener("offline", () => callbackHandler(false));
   }
 }
 
 // global.NetInfo is set in react-native-compat
-export function subscribeToReactNativeNetworkChange(callBackHendler: (connected: boolean) => void) {
+export function subscribeToReactNativeNetworkChange(callbackHandler: (connected: boolean) => void) {
   if (isReactNative() && typeof global !== "undefined" && (global as any)?.NetInfo) {
-    (global as any)?.NetInfo.addEventListener((state: any) => callBackHendler(state?.isConnected));
+    (global as any)?.NetInfo.addEventListener((state: any) => callbackHandler(state?.isConnected));
   }
 }
