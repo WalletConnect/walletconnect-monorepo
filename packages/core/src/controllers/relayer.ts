@@ -439,7 +439,7 @@ export class Relayer extends IRelayer {
 
   private async toEstablishConnection() {
     await this.confirmOnlineStateOrThrow();
-    if (this.connected && (await isOnline())) return;
+    if (this.connected) return;
     if (this.connectionAttemptInProgress) {
       return await new Promise<void>((resolve) => {
         const interval = setInterval(() => {
