@@ -76,6 +76,7 @@ describe("UniversalProvider", function () {
     await provider.client.core.relayer.transportClose();
     await walletClient.client?.core.relayer.transportClose();
   });
+
   describe("eip155", () => {
     describe("multi chain", () => {
       let web3: Web3;

@@ -6,11 +6,10 @@ import {
 } from "@walletconnect/core";
 
 import {
-  JsonRpcPayload,
   formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  getBigIntRpcId,
+  payloadId,
   isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
@@ -115,7 +114,8 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
+
     const connectParams = {
       ...params,
       requiredNamespaces: params.requiredNamespaces || {},
@@ -185,7 +185,11 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
 
-    const id = await this.sendRequest(topic, "wc_sessionPropose", proposal);
+    const id = await this.sendRequest({
+      topic,
+      method: "wc_sessionPropose",
+      params: proposal,
+    });
 
     const expiry = calcExpiry(FIVE_MINUTES);
     await this.setProposal(id, { id, expiry, ...proposal });
@@ -193,13 +197,14 @@ export class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     return await this.client.core.pairing.pair(params);
   };
 
   public approve: IEngine["approve"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidApprove(params);
+
     const { id, relayProtocol, namespaces, sessionProperties } = params;
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
@@ -220,11 +225,15 @@ export class Engine extends IEngine {
         topic: pairingTopic,
         metadata: proposer.metadata,
       });
-      await this.sendResult<"wc_sessionPropose">(id, pairingTopic, {
-        relay: {
-          protocol: relayProtocol ?? "irn",
+      await this.sendResult<"wc_sessionPropose">({
+        id,
+        topic: pairingTopic,
+        result: {
+          relay: {
+            protocol: relayProtocol ?? "irn",
+          },
+          responderPublicKey: selfPublicKey,
         },
-        responderPublicKey: selfPublicKey,
       });
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
       await this.client.core.pairing.activate({ topic: pairingTopic });
@@ -241,7 +250,12 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
-    await this.sendRequest(sessionTopic, "wc_sessionSettle", sessionSettle);
+    await this.sendRequest({
+      topic: sessionTopic,
+      method: "wc_sessionSettle",
+      params: sessionSettle,
+      throwOnFailedPublish: true,
+    });
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
@@ -266,7 +280,7 @@ export class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidReject(params);
     const { id, reason } = params;
     const { pairingTopic } = this.client.proposal.get(id);
@@ -277,10 +291,14 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidUpdate(params);
     const { topic, namespaces } = params;
-    const id = await this.sendRequest(topic, "wc_sessionUpdate", { namespaces });
+    const id = await this.sendRequest({
+      topic,
+      method: "wc_sessionUpdate",
+      params: { namespaces },
+    });
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_update", id), ({ error }) => {
       if (error) reject(error);
@@ -292,10 +310,10 @@ export class Engine extends IEngine {
   };
 
   public extend: IEngine["extend"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidExtend(params);
     const { topic } = params;
-    const id = await this.sendRequest(topic, "wc_sessionExtend", {});
+    const id = await this.sendRequest({ topic, method: "wc_sessionExtend", params: {} });
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_extend", id), ({ error }) => {
       if (error) reject(error);
@@ -307,28 +325,44 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidRequest(params);
     const { chainId, request, topic, expiry } = params;
-    const id = await this.sendRequest(topic, "wc_sessionRequest", { request, chainId }, expiry);
+    const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(expiry);
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
       if (error) reject(error);
       else resolve(result);
     });
-    this.client.events.emit("session_request_sent", { topic, request, chainId, id });
-    const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
-    handleDeeplinkRedirect({ id, topic, wcDeepLink });
-    return await done();
+    return await Promise.all([
+      new Promise<void>(async (resolve) => {
+        await this.sendRequest({
+          clientRpcId: id,
+          topic,
+          method: "wc_sessionRequest",
+          params: { request, chainId },
+          expiry,
+          throwOnFailedPublish: true,
+        }).catch((error) => reject(error));
+        this.client.events.emit("session_request_sent", { topic, request, chainId, id });
+        resolve();
+      }),
+      new Promise<void>(async (resolve) => {
+        const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
+        handleDeeplinkRedirect({ id, topic, wcDeepLink });
+        resolve();
+      }),
+      done(),
+    ]).then((result) => result[2]); // order is important here, we want to return the result of the `done` promise
   };
 
   public respond: IEngine["respond"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
     if (isJsonRpcResult(response)) {
-      await this.sendResult(id, topic, response.result);
+      await this.sendResult({ id, topic, result: response.result, throwOnFailedPublish: true });
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }
@@ -336,11 +370,11 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidPing(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      const id = await this.sendRequest(topic, "wc_sessionPing", {});
+      const id = await this.sendRequest({ topic, method: "wc_sessionPing", params: {} });
       const { done, resolve, reject } = createDelayedPromise<void>();
       this.events.once(engineEvent("session_ping", id), ({ error }) => {
         if (error) reject(error);
@@ -353,42 +387,24 @@ export class Engine extends IEngine {
   };
 
   public emit: IEngine["emit"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidEmit(params);
     const { topic, event, chainId } = params;
-    await this.sendRequest(topic, "wc_sessionEvent", { event, chainId });
+    await this.sendRequest({ topic, method: "wc_sessionEvent", params: { event, chainId } });
   };
 
   public disconnect: IEngine["disconnect"] = async (params) => {
-    this.isInitialized();
+    await this.isInitialized();
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      const id = getBigIntRpcId().toString() as any;
-      let resolvePromise: () => void;
-      const onDisconnectAck = (ack: JsonRpcPayload) => {
-        if (ack?.id.toString() === id) {
-          this.client.core.relayer.events.removeListener(
-            RELAYER_EVENTS.message_ack,
-            onDisconnectAck,
-          );
-          resolvePromise();
-        }
-      };
-      // await a relay ACK on the disconnect req before deleting the session, keychain etc.
-      await Promise.all([
-        new Promise<void>((resolve) => {
-          resolvePromise = resolve;
-          this.client.core.relayer.on(RELAYER_EVENTS.message_ack, onDisconnectAck);
-        }),
-        this.sendRequest(
-          topic,
-          "wc_sessionDelete",
-          getSdkError("USER_DISCONNECTED"),
-          undefined,
-          id,
-        ),
-      ]);
+      // await an ack to ensure the relay has received the disconnect request
+      await this.sendRequest({
+        topic,
+        method: "wc_sessionDelete",
+        params: getSdkError("USER_DISCONNECTED"),
+        throwOnFailedPublish: true,
+      });
       await this.deleteSession(topic);
     } else {
       await this.client.core.pairing.disconnect({ topic });
@@ -501,8 +517,9 @@ export class Engine extends IEngine {
     if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
   };
 
-  private sendRequest: EnginePrivate["sendRequest"] = async (topic, method, params, expiry, id) => {
-    const payload = formatJsonRpcRequest(method, params);
+  private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
+    const { topic, method, params, expiry, relayRpcId, clientRpcId, throwOnFailedPublish } = args;
+    const payload = formatJsonRpcRequest(method, params, clientRpcId);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
       await this.client.core.verify.register({ attestationId: hash });
@@ -510,19 +527,39 @@ export class Engine extends IEngine {
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
-    if (id) opts.id = id; // set rpc_id for client -> relay req
+    if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);
-    this.client.core.relayer.publish(topic, message, opts);
+    if (throwOnFailedPublish) {
+      opts.internal = {
+        ...opts.internal,
+        throwOnFailedPublish: true,
+      };
+      await this.client.core.relayer.publish(topic, message, opts);
+    } else {
+      this.client.core.relayer
+        .publish(topic, message, opts)
+        .catch((error) => this.client.logger.error(error));
+    }
     return payload.id;
   };
 
-  private sendResult: EnginePrivate["sendResult"] = async (id, topic, result) => {
+  private sendResult: EnginePrivate["sendResult"] = async (args) => {
+    const { id, topic, result, throwOnFailedPublish } = args;
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.core.crypto.encode(topic, payload);
     const record = await this.client.core.history.get(topic, id);
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    // await is intentionally omitted to speed up performance
-    this.client.core.relayer.publish(topic, message, opts);
+    if (throwOnFailedPublish) {
+      opts.internal = {
+        ...opts.internal,
+        throwOnFailedPublish: true,
+      };
+      await this.client.core.relayer.publish(topic, message, opts);
+    } else {
+      this.client.core.relayer
+        .publish(topic, message, opts)
+        .catch((error) => this.client.logger.error(error));
+    }
     await this.client.core.history.resolve(payload);
   };
 
@@ -551,11 +588,12 @@ export class Engine extends IEngine {
     ]);
   };
 
-  private isInitialized() {
+  private async isInitialized() {
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+    await this.client.core.relayer.confirmOnlineStateOrThrow();
   }
 
   // ---------- Relay Events Router ----------------------------------- //
@@ -749,7 +787,7 @@ export class Engine extends IEngine {
         },
         ...(sessionProperties && { sessionProperties }),
       };
-      await this.sendResult<"wc_sessionSettle">(payload.id, topic, true);
+      await this.sendResult<"wc_sessionSettle">({ id: payload.id, topic, result: true });
       this.events.emit(engineEvent("session_connect"), { session });
       this.cleanupDuplicatePairings(session);
     } catch (err: any) {
@@ -780,7 +818,7 @@ export class Engine extends IEngine {
     try {
       this.isValidUpdate({ topic, ...params });
       await this.client.session.update(topic, { namespaces: params.namespaces });
-      await this.sendResult<"wc_sessionUpdate">(id, topic, true);
+      await this.sendResult<"wc_sessionUpdate">({ id, topic, result: true });
       this.client.events.emit("session_update", { id, topic, params });
     } catch (err: any) {
       await this.sendError(id, topic, err);
@@ -805,7 +843,7 @@ export class Engine extends IEngine {
     try {
       this.isValidExtend({ topic });
       await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
-      await this.sendResult<"wc_sessionExtend">(id, topic, true);
+      await this.sendResult<"wc_sessionExtend">({ id, topic, result: true });
       this.client.events.emit("session_extend", { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
@@ -826,7 +864,7 @@ export class Engine extends IEngine {
     const { id } = payload;
     try {
       this.isValidPing({ topic });
-      await this.sendResult<"wc_sessionPing">(id, topic, true);
+      await this.sendResult<"wc_sessionPing">({ id, topic, result: true });
       this.client.events.emit("session_ping", { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
@@ -861,7 +899,7 @@ export class Engine extends IEngine {
             resolve(await this.deleteSession(topic));
           });
         }),
-        this.sendResult<"wc_sessionDelete">(id, topic, true),
+        this.sendResult<"wc_sessionDelete">({ id, topic, result: true }),
       ]);
       this.client.events.emit("session_delete", { id, topic });
     } catch (err: any) {

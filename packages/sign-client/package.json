@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@walletconnect/jsonrpc-provider": "^1.0.13",
-    "@walletconnect/jsonrpc-ws-connection": "1.0.12",
+    "@walletconnect/jsonrpc-ws-connection": "1.0.13",
     "@walletconnect/relay-api": "^1.0.9",
     "aws-sdk": "2.1194.0",
     "lokijs": "^1.5.12"
