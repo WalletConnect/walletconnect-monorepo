@@ -1,9 +1,9 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
-import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
+import { ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
-import { VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
+import { VERIFY_CONTEXT, VERIFY_FALLBACK_SERVER, VERIFY_SERVER } from "../constants";
 
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
@@ -47,20 +47,34 @@ export class Verify extends IVerify {
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
-
-    this.logger.info(`resolving attestation: ${params.attestationId}`);
-    // set artificial timeout to prevent hanging
-    const timeout = this.startAbortTimer(FIVE_SECONDS);
-    const result = await fetch(`${this.verifyUrl}/attestation/${params.attestationId}`, {
-      signal: this.abortController.signal,
-    });
-    clearTimeout(timeout);
-    return result.status === 200 ? (await result.json())?.origin : "";
+    const mainUrl = params?.verifyUrl || VERIFY_SERVER;
+    let result = "";
+    try {
+      result = await this.fetch(params.attestationId, mainUrl);
+    } catch (error) {
+      this.logger.warn(
+        `failed to resolve attestation: ${params.attestationId} from url: ${mainUrl}`,
+      );
+      this.logger.warn(error);
+      result = await this.fetch(params.attestationId, VERIFY_FALLBACK_SERVER);
+    }
+    return result;
   };
 
   get context(): string {
     return getLoggerContext(this.logger);
   }
+
+  private fetch = async (attestationId: string, url: string) => {
+    this.logger.info(`resolving attestation: ${attestationId} from url: ${url}`);
+    // set artificial timeout to prevent hanging
+    const timeout = this.startAbortTimer(ONE_SECOND * 2);
+    const result = await fetch(`${url}/attestation/${attestationId}`, {
+      signal: this.abortController.signal,
+    });
+    clearTimeout(timeout);
+    return result.status === 200 ? (await result.json())?.origin : "";
+  };
 
   private addToQueue = (attestationId: string) => {
     this.queue.push(attestationId);
