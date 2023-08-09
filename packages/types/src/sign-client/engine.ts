@@ -83,11 +83,11 @@ export declare namespace EngineTypes {
     topic: string;
   }
 
-  interface RequestParams {
+  interface RequestParams<T = any> {
     topic: string;
     request: {
       method: string;
-      params: any;
+      params: T;
     };
     chainId: string;
     expiry?: number;
