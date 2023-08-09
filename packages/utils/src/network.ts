@@ -34,7 +34,9 @@ export async function getReactNativeOnlineStatus(): Promise<boolean> {
 }
 
 export function getNodeOnlineStatus() {
-  // wip: may be send quick request to check?
+  /**
+   * TODO: need to implement
+   */
   return true;
 }
 
