@@ -33,7 +33,21 @@ export class Verify extends IVerify {
       this.removeIframe();
     }
     this.verifyUrl = verifyUrl;
-    await this.createIframe();
+
+    await this.createIframe().catch((error) => {
+      this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.error(error);
+    });
+
+    if (this.initialized) return;
+
+    this.removeIframe();
+    this.verifyUrl = VERIFY_FALLBACK_SERVER;
+
+    await this.createIframe().catch((error) => {
+      this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.error(error);
+    });
   };
 
   public register: IVerify["register"] = async (params) => {
@@ -95,40 +109,40 @@ export class Verify extends IVerify {
   };
 
   private createIframe = async () => {
-    try {
-      await Promise.race([
-        new Promise<void>((resolve, reject) => {
-          const exists = document.getElementById(VERIFY_CONTEXT);
-          if (exists) {
-            return resolve();
-          }
+    let iframeOnLoadResolve: () => void;
+    const onMessage = (event: MessageEvent) => {
+      if (event.data === "verify_ready") {
+        this.initialized = true;
+        this.processQueue();
+        window.removeEventListener("message", onMessage);
+        iframeOnLoadResolve();
+      }
+    };
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const exists = document.getElementById(VERIFY_CONTEXT);
+        if (exists) return resolve();
 
-          const iframe = document.createElement("iframe");
-          iframe.setAttribute("id", VERIFY_CONTEXT);
-          iframe.setAttribute("src", `${this.verifyUrl}/${this.projectId}`);
-          iframe.style.display = "none";
-          iframe.addEventListener("load", () => {
-            this.initialized = true;
-            this.processQueue();
-            resolve();
-          });
-          iframe.addEventListener("error", (error) => {
-            reject(error);
-          });
-          document.body.append(iframe);
-          this.iframe = iframe;
-        }),
-        new Promise((_reject) => {
-          setTimeout(() => _reject("iframe load timeout"), toMiliseconds(ONE_SECOND));
-        }),
-      ]);
-    } catch (error) {
-      this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.error(error);
-    }
+        window.addEventListener("message", onMessage);
+        const iframe = document.createElement("iframe");
+        iframe.id = VERIFY_CONTEXT;
+        iframe.src = `${this.verifyUrl}/${this.projectId}`;
+        iframe.style.display = "none";
+        document.body.append(iframe);
+        this.iframe = iframe;
+        iframeOnLoadResolve = resolve;
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => {
+          window.removeEventListener("message", onMessage);
+          reject("iframe load timeout");
+        }, toMiliseconds(ONE_SECOND)),
+      ),
+    ]);
   };
 
   private startAbortTimer(timer: number) {
+    this.abortController = new AbortController();
     return setTimeout(() => this.abortController.abort(), toMiliseconds(timer));
   }
 
