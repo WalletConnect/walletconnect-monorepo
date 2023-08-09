@@ -1,7 +1,7 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
-import { ONE_SECOND, toMiliseconds } from "@walletconnect/time";
+import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
 import { VERIFY_CONTEXT, VERIFY_FALLBACK_SERVER, VERIFY_SERVER } from "../constants";
 
@@ -136,7 +136,7 @@ export class Verify extends IVerify {
         setTimeout(() => {
           window.removeEventListener("message", onMessage);
           reject("iframe load timeout");
-        }, toMiliseconds(ONE_SECOND)),
+        }, toMiliseconds(FIVE_SECONDS)),
       ),
     ]);
   };
