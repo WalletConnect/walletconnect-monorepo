@@ -199,7 +199,7 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = true;
     /**
      * if there was a network disruption like restart of network driver, the socket is most likely stalled and we can't rely on it
-     * in such case provider.disconnect() is not reliable,it might resolve after a long time or not emit disconnect event at all
+     * as in this case provider.disconnect() is not reliable, since it might resolve after a long time or not emit disconnect event at all.
      */
     if (this.hasExperiencedNetworkDisruption && this.connected) {
       await createExpiringPromise(this.provider.disconnect(), 1000, "provider.disconnect()").catch(
