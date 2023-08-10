@@ -39,22 +39,26 @@ export class Verify extends IVerify {
     }
     this.verifyUrl = verifyUrl;
 
-    await this.createIframe().catch((error) => {
+    try {
+      await this.createIframe();
+    } catch (error) {
       this.logger.warn(`Verify iframe failed to load: ${this.verifyUrl}`);
       this.logger.warn(error);
-    });
+    }
 
     if (this.initialized) return;
 
     this.removeIframe();
     this.verifyUrl = VERIFY_FALLBACK_SERVER;
 
-    await this.createIframe().catch((error) => {
+    try {
+      await this.createIframe();
+    } catch (error) {
       this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
       this.logger.error(error);
       // if the fallback url fails to load as well, disable verify
       this.verifyDisabled = true;
-    });
+    }
   };
 
   public register: IVerify["register"] = async (params) => {
