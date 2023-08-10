@@ -71,13 +71,13 @@ export class Verify extends IVerify {
     const mainUrl = params?.verifyUrl || VERIFY_SERVER;
     let result = "";
     try {
-      result = await this.fetch(params.attestationId, mainUrl);
+      result = await this.fetchAttestation(params.attestationId, mainUrl);
     } catch (error) {
       this.logger.warn(
         `failed to resolve attestation: ${params.attestationId} from url: ${mainUrl}`,
       );
       this.logger.warn(error);
-      result = await this.fetch(params.attestationId, VERIFY_FALLBACK_SERVER);
+      result = await this.fetchAttestation(params.attestationId, VERIFY_FALLBACK_SERVER);
     }
     return result;
   };
@@ -86,7 +86,7 @@ export class Verify extends IVerify {
     return getLoggerContext(this.logger);
   }
 
-  private fetch = async (attestationId: string, url: string) => {
+  private fetchAttestation = async (attestationId: string, url: string) => {
     this.logger.info(`resolving attestation: ${attestationId} from url: ${url}`);
     // set artificial timeout to prevent hanging
     const timeout = this.startAbortTimer(ONE_SECOND * 2);
