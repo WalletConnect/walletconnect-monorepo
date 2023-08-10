@@ -142,7 +142,7 @@ export class Verify extends IVerify {
       new Promise((_, reject) =>
         setTimeout(() => {
           window.removeEventListener("message", onMessage);
-          reject("iframe load timeout");
+          reject("verify iframe load timeout");
         }, toMiliseconds(FIVE_SECONDS)),
       ),
     ]);
