@@ -522,7 +522,7 @@ export class Engine extends IEngine {
     const payload = formatJsonRpcRequest(method, params, clientRpcId);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
-      await this.client.core.verify.register({ attestationId: hash });
+      this.client.core.verify.register({ attestationId: hash });
     }
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;

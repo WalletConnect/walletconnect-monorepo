@@ -14,6 +14,9 @@ export class Verify extends IVerify {
   private isDevEnv;
   // the queue is only used during the loading phase of the iframe to ensure all attestations are posted
   private queue: string[] = [];
+  // flag to disable verify when the iframe fails to load on main & fallback urls.
+  // this means Verify API is not enabled for the current projectId and there's no point in trying to initialize it again.
+  private verifyDisabled = false;
 
   constructor(public projectId: string, public logger: Logger) {
     super(projectId, logger);
@@ -24,6 +27,8 @@ export class Verify extends IVerify {
   }
 
   public init: IVerify["init"] = async (params) => {
+    if (this.verifyDisabled) return;
+
     // ignore on non browser environments
     if (isReactNative() || !isBrowser()) return;
 
@@ -47,6 +52,8 @@ export class Verify extends IVerify {
     await this.createIframe().catch((error) => {
       this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
       this.logger.error(error);
+      // if the fallback url fails to load as well, disable verify
+      this.verifyDisabled = true;
     });
   };
 
