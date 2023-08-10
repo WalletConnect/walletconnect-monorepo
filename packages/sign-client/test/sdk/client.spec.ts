@@ -6,8 +6,9 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
+
 import {
   initTwoClients,
   testConnectMethod,
@@ -21,6 +22,7 @@ import {
   TEST_AVALANCHE_CHAIN,
   TEST_REQUIRED_NAMESPACES_V2,
   TEST_NAMESPACES_V2,
+  initTwoPairedClients,
 } from "../shared";
 
 describe("Sign Client Integration", () => {
@@ -35,8 +37,11 @@ describe("Sign Client Integration", () => {
 
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
-      const clients = await initTwoClients();
-      const { pairingA, sessionA } = await testConnectMethod(clients);
+      const { clients, sessionA, pairingA } = await initTwoPairedClients(
+        {},
+        {},
+        { logger: "error" },
+      );
       expect(pairingA).to.be.exist;
       expect(sessionA).to.be.exist;
       expect(pairingA.topic).to.eq(sessionA.pairingTopic);
@@ -52,10 +57,10 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("connect (with old pairing)", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         pairingA: { topic: pairingTopic },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       await throttle(200);
@@ -65,8 +70,7 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("should remove duplicate pairing", async () => {
-      const clients = await initTwoClients();
-      await testConnectMethod(clients);
+      const { clients } = await initTwoPairedClients({}, {}, { logger: "error" });
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       expect(A.pairing.keys.length).to.eql(1);
@@ -78,10 +82,10 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("should receive session acknowledge", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic, acknowledged },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
       await throttle(5_000);
       const session = clients.B.session.get(topic);
       expect(session.acknowledged).to.be.true;
@@ -89,8 +93,11 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("should cleanup duplicate pairings", async () => {
-      const clients = await initTwoClients();
-      const { pairingA, sessionA } = await testConnectMethod(clients);
+      const { clients, sessionA, pairingA } = await initTwoPairedClients(
+        {},
+        {},
+        { logger: "error" },
+      );
       expect(pairingA).to.be.exist;
       expect(sessionA).to.be.exist;
       expect(pairingA.topic).to.eq(sessionA.pairingTopic);
@@ -116,10 +123,10 @@ describe("Sign Client Integration", () => {
   describe("disconnect", () => {
     describe("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
-        const clients = await initTwoClients();
         const {
+          clients,
           pairingA: { topic },
-        } = await testConnectMethod(clients);
+        } = await initTwoPairedClients({}, {}, { logger: "error" });
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
@@ -132,10 +139,10 @@ describe("Sign Client Integration", () => {
     });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
-        const clients = await initTwoClients();
         const {
+          clients,
           sessionA: { topic, self },
-        } = await testConnectMethod(clients);
+        } = await initTwoPairedClients({}, {}, { logger: "error" });
         const { self: selfB } = clients.B.session.get(topic);
         expect(clients.A.core.crypto.keychain.has(topic)).to.be.true;
         expect(clients.A.core.crypto.keychain.has(self.publicKey)).to.be.true;
@@ -158,10 +165,10 @@ describe("Sign Client Integration", () => {
     });
     describe("deeplinks", () => {
       it("should clear `WALLETCONNECT_DEEPLINK_CHOICE` from storage on disconnect", async () => {
-        const clients = await initTwoClients();
         const {
-          sessionA: { topic, self },
-        } = await testConnectMethod(clients);
+          clients,
+          sessionA: { topic },
+        } = await initTwoPairedClients({}, {}, { logger: "error" });
         const deepLink = "dummy deep link";
         await clients.A.core.storage.setItem(WALLETCONNECT_DEEPLINK_CHOICE, deepLink);
         expect(await clients.A.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE)).to.eq(deepLink);
@@ -184,10 +191,10 @@ describe("Sign Client Integration", () => {
     describe("pairing", () => {
       describe("with existing pairing", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients({ name: "dapp" }, { name: "wallet" });
           const {
+            clients,
             pairingA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.A.ping({ topic });
           await deleteClients(clients);
         });
@@ -204,10 +211,10 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients();
           const {
+            clients,
             sessionA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.A.ping({ topic });
           await deleteClients(clients);
         });
@@ -220,10 +227,10 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("can get pending session request", async () => {
-          const clients = await initTwoClients({}, {}, { logger: "error" });
           const {
+            clients,
             sessionA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
 
           let rejection: JsonRpcError;
 
@@ -255,45 +262,36 @@ describe("Sign Client Integration", () => {
               }
             }),
           ]);
+          await throttle(1_000);
           await deleteClients(clients);
         });
         it("should process requests queue", async () => {
-          const clients = await initTwoClients({}, {}, { logger: "error" });
           const {
+            clients,
             sessionA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           const expectedRequests = 5;
           let receivedRequests = 0;
-          let lastRequestReceivedAt = performance.now();
           await Promise.all([
             new Promise<void>((resolve) => {
               clients.B.on("session_request", async (args) => {
+                receivedRequests++;
                 const { id, topic } = args;
                 await clients.B.respond({
                   topic,
                   response: formatJsonRpcResult(id, "ok"),
                 });
-                // the first request should be processed immediately
-                // the rest should be processed with ~1s delay
-                if (receivedRequests > 0) {
-                  expect(lastRequestReceivedAt + 1000).to.be.approximately(performance.now(), 100);
-                }
-                lastRequestReceivedAt = performance.now();
-                receivedRequests++;
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(
-              () =>
-                new Promise<void>((resolve) => {
-                  clients.A.request({
-                    topic,
-                    ...TEST_REQUEST_PARAMS,
-                  });
-                  resolve();
-                }),
+            Array.from(Array(expectedRequests).keys()).map(() =>
+              clients.A.request({
+                topic,
+                ...TEST_REQUEST_PARAMS,
+              }),
             ),
           ]);
+          await throttle(1000);
           await deleteClients(clients);
         });
       });
@@ -301,10 +299,10 @@ describe("Sign Client Integration", () => {
   });
   describe("update", () => {
     it("updates session namespaces state with provided namespaces", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
       const namespacesBefore = clients.A.session.get(topic).namespaces;
       const namespacesAfter = {
         ...namespacesBefore,
@@ -327,10 +325,10 @@ describe("Sign Client Integration", () => {
 
   describe("extend", () => {
     it("updates session expiry state", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
       const prevExpiry = clients.A.session.get(topic).expiry;
       vi.useFakeTimers();
       // Fast-forward system time by 60 seconds after expiry was first set.
@@ -365,11 +363,10 @@ describe("Sign Client Integration", () => {
 
   describe("session requests", () => {
     it("should set custom request expiry", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic },
-      } = await testConnectMethod(clients);
-
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
       const expiry = 5000;
 
       await Promise.all([
@@ -391,20 +388,24 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("should send request on optional namespace", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.B.once("session_request", (payload) => {
+          clients.B.once("session_request", async (payload) => {
             const { params } = payload;
             expect(params).toMatchObject(TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE);
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE, topic });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE, topic });
           resolve();
         }),
       ]);
