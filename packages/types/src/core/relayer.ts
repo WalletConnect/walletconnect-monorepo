@@ -51,7 +51,7 @@ export declare namespace RelayerTypes {
     auth: string;
     relayUrl: string;
     sdkVersion: string;
-    projectId?: string;
+    projectId: string;
     useOnCloseEvent?: boolean;
   }
 }
@@ -60,7 +60,7 @@ export interface RelayerOptions {
   core: ICore;
   logger?: string | Logger;
   relayUrl?: string;
-  projectId?: string;
+  projectId: string;
 }
 
 export interface RelayerClientMetadata {
